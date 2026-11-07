@@ -396,7 +396,7 @@ fn reopened_drawing_displays_its_authored_active_sheet() {
 #[test]
 fn drawing_sheet_displays_the_referenced_part_projection() {
     use oblikovati_api::{client::Client, wire::OpenDocumentArgs};
-    use oblikovati_model::drawing::{DrawingBaseViewDefinition, DrawingDocument};
+    use oblikovati_model::drawing::DrawingDocument;
     use oblikovati_persistence::package::DocumentPackage;
     let mut world = ApplicationWorld::new();
     let folder = world.scratch_folder();
@@ -425,33 +425,24 @@ fn drawing_sheet_displays_the_referenced_part_projection() {
     };
     open(&mut world, &source);
     let blank_path = folder.join("blank.odd");
-    let view_path = folder.join("view.odd");
     let blank = DrawingDocument::new();
-    let mut view = blank.clone();
-    view.set_model_reference(source.to_str().unwrap()).unwrap();
-    view.add_base_view_definition(
-        0,
-        DrawingBaseViewDefinition::new(
-            "Front",
-            oblikovati_api::types::BASE_VIEW_FRONT,
-            1.,
-            [210., 148.5],
-        )
-        .unwrap(),
-    )
-    .unwrap();
-    for (path, drawing) in [(&blank_path, &blank), (&view_path, &view)] {
-        let bytes = DocumentPackage::decode(b"schemaVersion: 2\ndocumentType: 3\n")
-            .unwrap()
-            .with_drawing(Some(drawing))
-            .unwrap()
-            .encode()
-            .unwrap();
-        std::fs::write(path, bytes).unwrap();
-    }
+    let bytes = DocumentPackage::decode(b"schemaVersion: 2\ndocumentType: 3\n")
+        .unwrap()
+        .with_drawing(Some(&blank))
+        .unwrap()
+        .encode()
+        .unwrap();
+    std::fs::write(&blank_path, bytes).unwrap();
     open(&mut world, &blank_path);
     let before = super::super::super::super::capture_framebuffer(&mut world.app().window.native);
-    open(&mut world, &view_path);
+    world.click_text("Base View");
+    world.expect_text("Orientation");
+    world.key(oblikovati_viewport::ViewportPhysicalKey::Escape, false);
+    assert!(!world.shows("Orientation"));
+    world.click_text("Base View");
+    world.expect_text("Orientation");
+    world.click_text("Apply");
+    world.pump(Vec::new());
     let after = super::super::super::super::capture_framebuffer(&mut world.app().window.native);
     let width = after.extent[0] as usize;
     let height = after.extent[1] as usize;

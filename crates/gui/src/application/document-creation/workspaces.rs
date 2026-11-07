@@ -8,6 +8,8 @@ use crate::{GuiCommandState, GuiShellAction};
 use imgui::{Condition, Ui};
 use oblikovati_api::types::{DOCUMENT_DRAWING, DOCUMENT_PRESENTATION};
 use std::rc::Rc;
+#[path = "base_view_dialog.rs"]
+mod base_view_dialog;
 #[path = "drawing_lines.rs"]
 mod drawing_lines;
 
@@ -32,6 +34,7 @@ pub(crate) struct WorkspaceArea {
 }
 pub(crate) struct DocumentWorkspaces {
     insert: InsertDialog,
+    base_view: base_view_dialog::BaseViewDialog,
     expecting_presentation: bool,
     last_document: Option<u64>,
 }
@@ -39,12 +42,16 @@ impl Default for DocumentWorkspaces {
     fn default() -> Self {
         Self {
             insert: InsertDialog::new(),
+            base_view: Default::default(),
             expecting_presentation: false,
             last_document: None,
         }
     }
 }
 impl DocumentWorkspaces {
+    pub(crate) fn request_base_view(&mut self) {
+        self.base_view.request();
+    }
     /// Open the assembly chooser; example: the ribbon's Insert Model button.
     pub(crate) fn request_insert(&mut self) {
         self.insert.request();
@@ -60,7 +67,7 @@ impl DocumentWorkspaces {
         });
     }
     pub(crate) fn needs_frame(&self) -> bool {
-        self.expecting_presentation || self.insert.opening
+        self.expecting_presentation || self.insert.opening || self.base_view.needs_frame()
     }
     /// Draw the active document's surroundings; example: `workspaces.panel(ui, &state, area)`.
     pub(crate) fn panel(
@@ -69,6 +76,7 @@ impl DocumentWorkspaces {
         state: &GuiCommandState,
         area: WorkspaceArea,
         detached: bool,
+        actions: &mut Vec<GuiShellAction>,
     ) {
         let created = state.document != self.last_document;
         self.last_document = state.document;
@@ -97,6 +105,7 @@ impl DocumentWorkspaces {
             _ => {}
         }
         self.insert.panel(ui);
+        self.base_view.panel(ui, state, actions);
     }
 }
 fn active_name(state: &GuiCommandState) -> &str {

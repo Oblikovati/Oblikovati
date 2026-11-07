@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 #[derive(Clone, Debug, PartialEq)]
 pub enum GuiShellAction {
+    CreateDrawingBaseView(GuiBaseViewRequest),
     SetUiScale(oblikovati_model::ui_scale::UiScaleOptions),
     SetPromptFrequency {
         prompt: oblikovati_model::application_prompts::ApplicationPrompt,
@@ -146,6 +147,15 @@ pub enum GuiShellAction {
     Undo,
     Redo,
     Home,
+}
+/// A drawing view chosen in the desktop dialog.
+#[derive(Clone, Debug, PartialEq)]
+pub struct GuiBaseViewRequest {
+    pub drawing: u64,
+    pub source: u64,
+    pub orientation: String,
+    pub scale: f64,
+    pub center: [f64; 2],
 }
 /// Transient profile preview request owned by the current document.
 #[derive(Clone, Debug, PartialEq)]

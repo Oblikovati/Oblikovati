@@ -35,7 +35,17 @@ pub(crate) fn draw_panel_content(
             muted_commands(ui, origin, &["Flange", "Flat Pattern"], NOT_PORTED);
         }
         RibbonPanel::DrawingViews => {
-            muted_commands(ui, origin, &["Base View", "Projected View"], NOT_PORTED);
+            let _disabled = ui.begin_disabled(state.transaction_open);
+            if crate::widget_abi::button(ui, "Base View", [108., 26.]) {
+                owners.workspaces.request_base_view();
+            }
+            drop(_disabled);
+            muted_commands(
+                ui,
+                [origin[0], origin[1] + 30.],
+                &["Projected View"],
+                NOT_PORTED,
+            );
         }
         RibbonPanel::DrawingModify => muted_commands(ui, origin, &["Break", "Crop"], NOT_PORTED),
         RibbonPanel::DrawingSketch => muted_commands(ui, origin, &["Start Sketch"], NOT_PORTED),

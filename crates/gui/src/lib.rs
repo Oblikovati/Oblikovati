@@ -60,8 +60,8 @@ pub use theme_state::GuiThemeState;
 #[allow(unsafe_code)]
 mod widget_abi;
 pub use commands::{
-    GuiAuthoringContext, GuiBrowserChoice, GuiCommandState, GuiDocumentStorage, GuiDrawingLine,
-    GuiDrawingProjection, GuiExtrudePreview, GuiFeatureCondition, GuiFeatureEdit,
+    GuiAuthoringContext, GuiBaseViewRequest, GuiBrowserChoice, GuiCommandState, GuiDocumentStorage,
+    GuiDrawingLine, GuiDrawingProjection, GuiExtrudePreview, GuiFeatureCondition, GuiFeatureEdit,
     GuiParameterMutation, GuiPreviewImage, GuiProject, GuiProjectGroup, GuiShellAction,
     GuiSketchLineStyle,
 };

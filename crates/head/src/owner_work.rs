@@ -9,6 +9,12 @@ impl<
     S: DispatchWakeup,
 > HeadWork for DesktopOwner<O, W, F, G, R, S>
 {
+    fn base_view_from_gui(
+        &mut self,
+        request: &oblikovati_gui::GuiBaseViewRequest,
+    ) -> Result<bool, String> {
+        self.create_drawing_base_view(request)
+    }
     fn extrude_from_gui(
         &mut self,
         document: u64,

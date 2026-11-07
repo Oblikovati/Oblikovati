@@ -2,6 +2,15 @@
 use crate::HeadWorkStatus;
 /// Owner-thread services borrow model state only while the window loop polls them.
 pub trait HeadWork {
+    /// Create a drawing view through the public drawing commands; example: `work.base_view_from_gui(&request)?`.
+    fn base_view_from_gui(
+        &mut self,
+        request: &oblikovati_gui::GuiBaseViewRequest,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "drawing view {request:?}: expected a drawing owner"
+        ))
+    }
     /// Apply an Extrude dialog request through the document command owner.
     /// Example: `work.extrude_from_gui(document, sketch, 0, "10 mm")?`.
     fn extrude_from_gui(

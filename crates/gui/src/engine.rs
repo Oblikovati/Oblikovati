@@ -300,7 +300,8 @@ impl GuiFrameEngine {
             self.orientation.panel(ui, request, area, &mut selected);
         }
         let detached = self.document_tabs.is_detached(request.commands.document);
-        self.workspaces.panel(ui, &request.commands, area, detached);
+        self.workspaces
+            .panel(ui, &request.commands, area, detached, &mut selected);
         self.plane_selection.panel(
             ui,
             &request.commands,

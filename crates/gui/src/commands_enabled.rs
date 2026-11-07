@@ -4,6 +4,18 @@ impl GuiShellAction {
     /// Preserve Go empty-stack enablement; example: `GuiShellAction::Undo.enabled(&state)`.
     pub fn enabled(&self, state: &GuiCommandState) -> bool {
         match self {
+            Self::CreateDrawingBaseView(request) => {
+                state.document == Some(request.drawing)
+                    && state.document_type == Some(oblikovati_api::types::DOCUMENT_DRAWING)
+                    && !state.transaction_open
+                    && state
+                        .documents
+                        .iter()
+                        .any(|row| row.id == request.source && row.type_ == "part")
+                    && request.scale.is_finite()
+                    && request.scale > 0.
+                    && request.center.iter().all(|value| value.is_finite())
+            }
             Self::SetUiScale(_) => state.ui_scale.is_some(),
             Self::ShowHome | Self::Recent(_) => true,
             Self::ActivateWindow(_) | Self::CloseDocumentWindow(_) | Self::NewDocumentWindow => {

@@ -392,3 +392,65 @@ fn drawing_base_view_api_validates_current_geometry_and_replays() {
     );
     assert!(!state.drawing_projections[&reopened].lines.is_empty());
 }
+
+#[test]
+fn gui_base_view_is_one_undo_step_and_rolls_back_on_failure() {
+    use oblikovati_gui::{
+        GuiBaseViewRequest, GuiDocumentTemplate, GuiTemplateKind, GuiTemplateUnits,
+    };
+    let (mut owner, _) = owner();
+    let part = super::part_scene::open_prism(&mut owner, false);
+    owner
+        .create_document_template(GuiDocumentTemplate {
+            kind: GuiTemplateKind::Drawing,
+            units: GuiTemplateUnits::Metric,
+        })
+        .unwrap();
+    let drawing = owner.documents().workspace().active_document().unwrap();
+    let mut request = GuiBaseViewRequest {
+        drawing,
+        source: part,
+        orientation: "invalid".into(),
+        scale: 1.,
+        center: [100., 80.],
+    };
+    assert!(owner.base_view_from_gui(&request).is_err());
+    let current = owner.gui_command_state().unwrap();
+    assert!(
+        current.drawing_documents[&drawing]
+            .model_reference()
+            .is_empty()
+    );
+    assert!(
+        current.drawing_documents[&drawing].sheets()[0]
+            .views
+            .is_empty()
+    );
+    request.orientation = "front".into();
+    assert!(owner.base_view_from_gui(&request).unwrap());
+    let current = owner.gui_command_state().unwrap();
+    assert_eq!(
+        current.drawing_documents[&drawing].sheets()[0].views.len(),
+        1
+    );
+    assert!(!current.drawing_projections[&drawing].lines.is_empty());
+    owner.files.commands(drawing).unwrap().undo().unwrap();
+    let current = owner.gui_command_state().unwrap();
+    assert!(
+        current.drawing_documents[&drawing]
+            .model_reference()
+            .is_empty()
+    );
+    assert!(
+        current.drawing_documents[&drawing].sheets()[0]
+            .views
+            .is_empty()
+    );
+    owner.files.commands(drawing).unwrap().redo().unwrap();
+    assert_eq!(
+        owner.gui_command_state().unwrap().drawing_documents[&drawing].sheets()[0]
+            .views
+            .len(),
+        1
+    );
+}
