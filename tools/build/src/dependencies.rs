@@ -17,7 +17,11 @@ struct UpstreamRelease {
 #[derive(Deserialize)]
 struct ReleaseAsset {
     name: String,
+    #[serde(default)]
+    digest: Option<String>,
 }
+#[path = "martensite_release.rs"]
+mod martensite_release;
 #[derive(Deserialize)]
 struct CargoLock {
     package: Vec<LockedPackage>,
@@ -99,7 +103,7 @@ fn check_renderer_pin(root: &Path) -> BuildResult<()> {
 }
 
 fn verify_renderer_package(package: &LockedPackage) -> BuildResult<()> {
-    const REVISION: &str = "4141137449d911884c9a3fd261f7913498548e90";
+    const REVISION: &str = "d051ff699982faba4ec2df3ee9a47e14f38dedbd";
     let expected =
         format!("git+https://github.com/Oblikovati/Martensite?rev={REVISION}#{REVISION}");
     if package.source.as_deref() != Some(expected.as_str()) {
@@ -124,7 +128,11 @@ pub(crate) fn verify_release(
     let release: UpstreamRelease = serde_json::from_str(&output).map_err(|error| {
         format!("release {endpoint}: expected GitHub release metadata: {error}")
     })?;
-    require_assets(&release, dependency, names)?;
+    if dependency.repository == "Oblikovati/Martensite" {
+        martensite_release::verify(root, runner, dependency, &release, names)?;
+    } else {
+        require_assets(&release, dependency, names)?;
+    }
     let repository = format!("https://github.com/{}.git", dependency.repository);
     let tag_ref = format!("refs/tags/{tag}");
     let refs = runner.output(
@@ -214,7 +222,7 @@ fn owned_package(name: &str, dependency: &ReleasedDependency) -> bool {
     if dependency.repository.ends_with("Oblikovati.API") {
         return name == "oblikovati-api";
     }
-    name.starts_with("rustycad-")
+    name.starts_with("martensite-")
 }
 
 fn verify_locked(package: &LockedPackage, dependency: &ReleasedDependency) -> BuildResult<()> {
@@ -225,7 +233,7 @@ fn verify_locked(package: &LockedPackage, dependency: &ReleasedDependency) -> Bu
         .next()
         .unwrap_or_default()
         .trim_end_matches(".git");
-    if package.version != dependency.version
+    if (dependency.repository.ends_with("Oblikovati.API") && package.version != dependency.version)
         || base != repository
         || !source.ends_with(&format!("#{}", dependency.revision))
     {

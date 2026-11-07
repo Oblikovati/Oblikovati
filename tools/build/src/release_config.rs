@@ -60,7 +60,7 @@ pub(crate) fn validate_pin(dependency: &ReleasedDependency) -> BuildResult<()> {
             dependency.repository, dependency.revision
         ));
     }
-    if !["Oblikovati/Oblikovati.API", "Oblikovati/RustyCADKernel"]
+    if !["Oblikovati/Oblikovati.API", "Oblikovati/Martensite"]
         .contains(&dependency.repository.as_str())
     {
         return Err(format!(

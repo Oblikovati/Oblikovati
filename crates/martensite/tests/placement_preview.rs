@@ -276,6 +276,7 @@ fn point_preview_retains_position_and_is_a_marker_instead_of_a_curve() {
             sampled,
             vec![PlacementPreviewMember {
                 centerline: false,
+                center_point: false,
                 member_index: 0,
                 construction: false,
                 primitive: SketchDisplayPrimitive::Point(position),
@@ -392,5 +393,33 @@ fn preview_declines_an_axis_role_on_non_line_geometry() {
         sample_placement_preview(&recipe, options(0.01))
             .unwrap_err()
             .contains("expected a line")
+    );
+}
+
+#[test]
+fn resolved_point_preview_retains_explicit_and_implicit_center_roles() {
+    use oblikovati_martensite::planar_curve::sketch::sample_sketch_preview_members;
+    use oblikovati_model::sketch::{Sketch2D, SketchEntityId as Id};
+    let mut geometry = Sketch2D::default();
+    for (index, position) in [[0., 0.], [1., 0.], [1., 1.], [3., 3.]]
+        .into_iter()
+        .enumerate()
+    {
+        geometry.add_point(Id(index as u64 + 1), position).unwrap();
+    }
+    geometry.set_center_point(Id(4), true).unwrap();
+    geometry.add_circle(Id(5), Id(1), 2.).unwrap();
+    geometry
+        .add_arc(Id(6), Id(2), [Id(1), Id(3)], true)
+        .unwrap();
+    let members =
+        sample_sketch_preview_members(&geometry, &[Id(1), Id(2), Id(3), Id(4)], options(0.01))
+            .unwrap();
+    assert_eq!(
+        members
+            .iter()
+            .map(|member| member.center_point)
+            .collect::<Vec<_>>(),
+        [true, true, false, true]
     );
 }

@@ -12,6 +12,11 @@ pub(super) enum SketchPointGlyph {
     Dot,
     Cross,
 }
+impl SketchPointGlyph {
+    pub(super) fn from_center_role(center: bool) -> Self {
+        if center { Self::Cross } else { Self::Dot }
+    }
+}
 /// A dot's sprite, in pixels: the kernel's own ball reads as a ring at this size.
 const DOT_EXTENT: usize = 7;
 const DOT_RADIUS: f64 = 3.2;

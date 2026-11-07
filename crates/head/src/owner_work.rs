@@ -392,7 +392,11 @@ impl<
     fn sketch_preview(&self) -> Option<oblikovati_viewport::ViewportSketchPreview> {
         let recipe = self.placement_preview()?.clone();
         let tool = self.placement_state()?;
-        if tool.tool == crate::SketchPlacementTool::Line || tool.fields_engaged() {
+        if matches!(
+            tool.tool,
+            crate::SketchPlacementTool::Line | crate::SketchPlacementTool::Point
+        ) || tool.fields_engaged()
+        {
             return tool.resolved_preview.clone();
         }
         let session = self.files.workspace().session(tool.document).ok()?;

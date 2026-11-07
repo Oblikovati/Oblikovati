@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Crossing-curve evidence; the sampled diagnostic classifier is not production.
 use super::*;
-use std::collections::BTreeSet;
 
 const CURVED_CASES: [(&str, usize); 8] = [
     ("circle-boundary", 3),
@@ -30,39 +29,7 @@ fn curved_intersections_match_every_occt_face() {
 }
 
 fn verify_curved_case(case: &str, reports: &[RegionReport]) {
-    let rows = curved_oracle_rows(case);
-    assert_eq!(reports.len(), rows.len(), "case {case}");
-    let mut used = BTreeSet::new();
-    for report in reports {
-        let index = unique_region_row(case, report, &rows);
-        assert!(used.insert(index), "case {case}: duplicate region match");
-        verify_occt_region(report, &rows[index]);
-    }
-}
-
-fn unique_region_row(case: &str, report: &RegionReport, rows: &[Vec<f64>]) -> usize {
-    let candidates: Vec<usize> = rows
-        .iter()
-        .enumerate()
-        .filter_map(|(index, row)| same_oracle_region(report, row).then_some(index))
-        .collect();
-    assert_eq!(
-        candidates.len(),
-        1,
-        "case {case}: {report:?}, oracle {rows:?}"
-    );
-    candidates[0]
-}
-
-fn same_oracle_region(report: &RegionReport, row: &[f64]) -> bool {
-    // Independent integrators can reverse the order of mathematically equal areas.
-    // Matching is diagnostic only and must be unique; it never assigns source identity.
-    (report.area - row[0]).abs() < 1e-8
-        && report
-            .centroid
-            .iter()
-            .zip(&row[1..4])
-            .all(|(actual, expected)| (actual - expected).abs() < 1e-8)
+    oracle_match::verify_rows(case, reports, &curved_oracle_rows(case));
 }
 
 fn curved_oracle_rows(case: &str) -> Vec<Vec<f64>> {

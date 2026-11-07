@@ -239,3 +239,25 @@ fn invalid_native_pick_limits_decline_with_the_offending_policy() {
         assert!(cause.to_string().contains(&format!("{options:?}")));
     }
 }
+
+#[test]
+fn rotated_ellipse_pick_matches_the_independent_occt_minimum() {
+    let ellipse = PlanarCurveDefinition {
+        geometry: PlanarGeometry::Ellipse {
+            frame: PlanarConicFrame {
+                center: [2.7574, -6.9211],
+                axis: [0.6, 0.8],
+                counterclockwise: true,
+            },
+            radii: [0.75793, 0.38063],
+        },
+        bounds: None,
+        left_offset: 0.,
+    };
+    let hit = pick(&ellipse, [2.9111111111111105, -6.288888888888888]);
+    assert!(
+        (hit.distance - 0.019024451883025126).abs() < 1e-9,
+        "{hit:?}: expected the independent OCCT closest distance"
+    );
+    assert_eq!(hit.origin, PlanarPickOrigin::Stationary);
+}

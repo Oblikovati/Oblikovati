@@ -36,13 +36,13 @@ fn stored_definition() -> SketchPrismDefinition {
 }
 fn assert_stored_volume(owner: &DocumentEditHistory, expected: f64) {
     let body = retain_stored_sketch_prism(owner.snapshot(), FeatureId(1)).unwrap();
-    assert_volume(body.report().properties.volume, expected);
+    assert_analytic_scalar(body.report().properties.volume, expected);
 }
 #[test]
 fn owned_stored_inputs_build_and_restore_kernel_results_through_undo() {
     let mut owner = stored_owner();
     let first = retain_stored_sketch_prism(owner.snapshot(), FeatureId(1)).unwrap();
-    assert_volume(first.report().properties.volume, 24.);
+    assert_analytic_scalar(first.report().properties.volume, 24.);
     let token = owner.begin("Depth").unwrap();
     owner
         .edit(&token, |snapshot, _| {
@@ -53,7 +53,7 @@ fn owned_stored_inputs_build_and_restore_kernel_results_through_undo() {
     assert_stored_volume(&owner, 36.);
     owner.undo().unwrap();
     assert_stored_volume(&owner, 24.);
-    assert_volume(first.report().properties.volume, 24.);
+    assert_analytic_scalar(first.report().properties.volume, 24.);
 }
 #[test]
 fn stored_suppressed_cutoff_and_absent_entries_do_not_build_shapes() {
@@ -101,7 +101,7 @@ fn assert_stored_decline(snapshot: &DocumentSnapshot, expected: &str) {
 fn stored_condition_selects_enabled_or_suppressed_inputs() {
     let enabled = conditioned_snapshot(3.);
     let body = retain_stored_sketch_prism(&enabled, FeatureId(1)).unwrap();
-    assert_volume(body.report().properties.volume, 24.);
+    assert_analytic_scalar(body.report().properties.volume, 24.);
     assert_stored_decline(&conditioned_snapshot(1.), "Suppressed");
 }
 #[test]

@@ -1108,15 +1108,33 @@ checksum = "b0d28e293f2b8c9d2b2d1c0193bd3c1cbdc0d2cf396888dc01162f7cf9d6c3f3"
 [[package]]
 name = "martensite-cmath"
 version = "0.3.5"
-source = "git+https://github.com/Oblikovati/Martensite?rev=4141137449d911884c9a3fd261f7913498548e90#4141137449d911884c9a3fd261f7913498548e90"
+source = "git+https://github.com/Oblikovati/Martensite?rev=d051ff699982faba4ec2df3ee9a47e14f38dedbd#d051ff699982faba4ec2df3ee9a47e14f38dedbd"
 dependencies = [
  "metallic",
 ]
 
 [[package]]
+name = "martensite-tkbo"
+version = "0.8.1"
+source = "git+https://github.com/Oblikovati/Martensite?rev=d051ff699982faba4ec2df3ee9a47e14f38dedbd#d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+dependencies = [
+ "martensite-cmath",
+ "martensite-tkbrep",
+ "martensite-tkernel",
+ "martensite-tkg2d",
+ "martensite-tkg3d",
+ "martensite-tkgeomalgo",
+ "martensite-tkgeombase",
+ "martensite-tkmath",
+ "martensite-tkprim",
+ "martensite-tkshhealing",
+ "martensite-tktopalgo",
+]
+
+[[package]]
 name = "martensite-tkbrep"
-version = "0.3.9"
-source = "git+https://github.com/Oblikovati/Martensite?rev=4141137449d911884c9a3fd261f7913498548e90#4141137449d911884c9a3fd261f7913498548e90"
+version = "0.3.10"
+source = "git+https://github.com/Oblikovati/Martensite?rev=d051ff699982faba4ec2df3ee9a47e14f38dedbd#d051ff699982faba4ec2df3ee9a47e14f38dedbd"
 dependencies = [
  "martensite-cmath",
  "martensite-tkernel",
@@ -1128,8 +1146,8 @@ dependencies = [
 
 [[package]]
 name = "martensite-tkernel"
-version = "0.4.2"
-source = "git+https://github.com/Oblikovati/Martensite?rev=4141137449d911884c9a3fd261f7913498548e90#4141137449d911884c9a3fd261f7913498548e90"
+version = "0.4.4"
+source = "git+https://github.com/Oblikovati/Martensite?rev=d051ff699982faba4ec2df3ee9a47e14f38dedbd#d051ff699982faba4ec2df3ee9a47e14f38dedbd"
 dependencies = [
  "allocator-api2",
  "bytemuck",
@@ -1148,7 +1166,7 @@ dependencies = [
 [[package]]
 name = "martensite-tkg2d"
 version = "0.3.7"
-source = "git+https://github.com/Oblikovati/Martensite?rev=4141137449d911884c9a3fd261f7913498548e90#4141137449d911884c9a3fd261f7913498548e90"
+source = "git+https://github.com/Oblikovati/Martensite?rev=d051ff699982faba4ec2df3ee9a47e14f38dedbd#d051ff699982faba4ec2df3ee9a47e14f38dedbd"
 dependencies = [
  "martensite-cmath",
  "martensite-tkernel",
@@ -1157,8 +1175,8 @@ dependencies = [
 
 [[package]]
 name = "martensite-tkg3d"
-version = "0.3.8"
-source = "git+https://github.com/Oblikovati/Martensite?rev=4141137449d911884c9a3fd261f7913498548e90#4141137449d911884c9a3fd261f7913498548e90"
+version = "0.3.9"
+source = "git+https://github.com/Oblikovati/Martensite?rev=d051ff699982faba4ec2df3ee9a47e14f38dedbd#d051ff699982faba4ec2df3ee9a47e14f38dedbd"
 dependencies = [
  "martensite-cmath",
  "martensite-tkernel",
@@ -1169,7 +1187,7 @@ dependencies = [
 [[package]]
 name = "martensite-tkgeomalgo"
 version = "0.3.8"
-source = "git+https://github.com/Oblikovati/Martensite?rev=4141137449d911884c9a3fd261f7913498548e90#4141137449d911884c9a3fd261f7913498548e90"
+source = "git+https://github.com/Oblikovati/Martensite?rev=d051ff699982faba4ec2df3ee9a47e14f38dedbd#d051ff699982faba4ec2df3ee9a47e14f38dedbd"
 dependencies = [
  "martensite-cmath",
  "martensite-tkbrep",
@@ -1183,7 +1201,7 @@ dependencies = [
 [[package]]
 name = "martensite-tkgeombase"
 version = "0.3.6"
-source = "git+https://github.com/Oblikovati/Martensite?rev=4141137449d911884c9a3fd261f7913498548e90#4141137449d911884c9a3fd261f7913498548e90"
+source = "git+https://github.com/Oblikovati/Martensite?rev=d051ff699982faba4ec2df3ee9a47e14f38dedbd#d051ff699982faba4ec2df3ee9a47e14f38dedbd"
 dependencies = [
  "martensite-cmath",
  "martensite-tkernel",
@@ -1195,7 +1213,7 @@ dependencies = [
 [[package]]
 name = "martensite-tkhlr"
 version = "0.3.6"
-source = "git+https://github.com/Oblikovati/Martensite?rev=4141137449d911884c9a3fd261f7913498548e90#4141137449d911884c9a3fd261f7913498548e90"
+source = "git+https://github.com/Oblikovati/Martensite?rev=d051ff699982faba4ec2df3ee9a47e14f38dedbd#d051ff699982faba4ec2df3ee9a47e14f38dedbd"
 dependencies = [
  "martensite-cmath",
  "martensite-tkbrep",
@@ -1210,8 +1228,8 @@ dependencies = [
 
 [[package]]
 name = "martensite-tkmath"
-version = "0.3.7"
-source = "git+https://github.com/Oblikovati/Martensite?rev=4141137449d911884c9a3fd261f7913498548e90#4141137449d911884c9a3fd261f7913498548e90"
+version = "0.3.8"
+source = "git+https://github.com/Oblikovati/Martensite?rev=d051ff699982faba4ec2df3ee9a47e14f38dedbd#d051ff699982faba4ec2df3ee9a47e14f38dedbd"
 dependencies = [
  "martensite-cmath",
  "martensite-tkernel",
@@ -1222,8 +1240,8 @@ dependencies = [
 
 [[package]]
 name = "martensite-tkmesh"
-version = "0.3.6"
-source = "git+https://github.com/Oblikovati/Martensite?rev=4141137449d911884c9a3fd261f7913498548e90#4141137449d911884c9a3fd261f7913498548e90"
+version = "0.3.8"
+source = "git+https://github.com/Oblikovati/Martensite?rev=d051ff699982faba4ec2df3ee9a47e14f38dedbd#d051ff699982faba4ec2df3ee9a47e14f38dedbd"
 dependencies = [
  "allocator-api2",
  "martensite-cmath",
@@ -1239,9 +1257,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "martensite-tkprim"
+version = "0.3.10"
+source = "git+https://github.com/Oblikovati/Martensite?rev=d051ff699982faba4ec2df3ee9a47e14f38dedbd#d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+dependencies = [
+ "martensite-cmath",
+ "martensite-tkbrep",
+ "martensite-tkernel",
+ "martensite-tkg2d",
+ "martensite-tkg3d",
+ "martensite-tkgeomalgo",
+ "martensite-tkgeombase",
+ "martensite-tkmath",
+ "martensite-tktopalgo",
+]
+
+[[package]]
 name = "martensite-tkservice"
 version = "0.4.1"
-source = "git+https://github.com/Oblikovati/Martensite?rev=4141137449d911884c9a3fd261f7913498548e90#4141137449d911884c9a3fd261f7913498548e90"
+source = "git+https://github.com/Oblikovati/Martensite?rev=d051ff699982faba4ec2df3ee9a47e14f38dedbd#d051ff699982faba4ec2df3ee9a47e14f38dedbd"
 dependencies = [
  "image",
  "libc",
@@ -1255,8 +1289,8 @@ dependencies = [
 
 [[package]]
 name = "martensite-tkshhealing"
-version = "0.3.8"
-source = "git+https://github.com/Oblikovati/Martensite?rev=4141137449d911884c9a3fd261f7913498548e90#4141137449d911884c9a3fd261f7913498548e90"
+version = "0.3.9"
+source = "git+https://github.com/Oblikovati/Martensite?rev=d051ff699982faba4ec2df3ee9a47e14f38dedbd#d051ff699982faba4ec2df3ee9a47e14f38dedbd"
 dependencies = [
  "martensite-cmath",
  "martensite-tkbrep",
@@ -1271,8 +1305,8 @@ dependencies = [
 
 [[package]]
 name = "martensite-tktopalgo"
-version = "0.4.2"
-source = "git+https://github.com/Oblikovati/Martensite?rev=4141137449d911884c9a3fd261f7913498548e90#4141137449d911884c9a3fd261f7913498548e90"
+version = "0.4.3"
+source = "git+https://github.com/Oblikovati/Martensite?rev=d051ff699982faba4ec2df3ee9a47e14f38dedbd#d051ff699982faba4ec2df3ee9a47e14f38dedbd"
 dependencies = [
  "martensite-cmath",
  "martensite-tkbrep",
@@ -1286,8 +1320,8 @@ dependencies = [
 
 [[package]]
 name = "martensite-tkv3d"
-version = "0.7.0"
-source = "git+https://github.com/Oblikovati/Martensite?rev=4141137449d911884c9a3fd261f7913498548e90#4141137449d911884c9a3fd261f7913498548e90"
+version = "0.7.1"
+source = "git+https://github.com/Oblikovati/Martensite?rev=d051ff699982faba4ec2df3ee9a47e14f38dedbd#d051ff699982faba4ec2df3ee9a47e14f38dedbd"
 dependencies = [
  "martensite-cmath",
  "martensite-tkbrep",
@@ -1305,8 +1339,8 @@ dependencies = [
 
 [[package]]
 name = "martensite-vulkan"
-version = "0.7.1"
-source = "git+https://github.com/Oblikovati/Martensite?rev=4141137449d911884c9a3fd261f7913498548e90#4141137449d911884c9a3fd261f7913498548e90"
+version = "0.7.2"
+source = "git+https://github.com/Oblikovati/Martensite?rev=d051ff699982faba4ec2df3ee9a47e14f38dedbd#d051ff699982faba4ec2df3ee9a47e14f38dedbd"
 dependencies = [
  "ash",
  "martensite-cmath",
@@ -1597,25 +1631,22 @@ dependencies = [
 name = "oblikovati-martensite"
 version = "0.1.0"
 dependencies = [
+ "martensite-tkbo",
+ "martensite-tkbrep",
  "martensite-tkernel",
  "martensite-tkg2d",
+ "martensite-tkg3d",
  "martensite-tkgeomalgo",
  "martensite-tkgeombase",
  "martensite-tkmath",
+ "martensite-tkmesh",
+ "martensite-tkprim",
+ "martensite-tktopalgo",
  "oblikovati-api",
  "oblikovati-model",
  "oblikovati-persistence",
  "oblikovati-session",
  "oblikovati-solve",
- "rustycad-tkbo",
- "rustycad-tkbrep",
- "rustycad-tkernel",
- "rustycad-tkg3d",
- "rustycad-tkgeombase",
- "rustycad-tkmath",
- "rustycad-tkmesh",
- "rustycad-tkprim",
- "rustycad-tktopalgo",
  "serde",
  "serde_json",
 ]
@@ -1950,173 +1981,6 @@ name = "rustversion"
 version = "1.0.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f"
-
-[[package]]
-name = "rustycad-cmath"
-version = "0.2.7"
-source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
-
-[[package]]
-name = "rustycad-tkbo"
-version = "0.2.7"
-source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
-dependencies = [
- "rustycad-tkbrep",
- "rustycad-tkernel",
- "rustycad-tkg2d",
- "rustycad-tkg3d",
- "rustycad-tkgeomalgo",
- "rustycad-tkgeombase",
- "rustycad-tkmath",
- "rustycad-tkprim",
- "rustycad-tkshhealing",
- "rustycad-tktopalgo",
-]
-
-[[package]]
-name = "rustycad-tkbrep"
-version = "0.2.7"
-source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
-dependencies = [
- "rustycad-tkernel",
- "rustycad-tkg2d",
- "rustycad-tkg3d",
- "rustycad-tkgeombase",
- "rustycad-tkmath",
-]
-
-[[package]]
-name = "rustycad-tkernel"
-version = "0.2.7"
-source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
-dependencies = [
- "allocator-api2",
- "bytemuck",
- "libc",
- "mach2",
- "rustycad-cmath",
- "smallvec",
- "windows-sys",
-]
-
-[[package]]
-name = "rustycad-tkg2d"
-version = "0.2.7"
-source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
-dependencies = [
- "rustycad-cmath",
- "rustycad-tkernel",
- "rustycad-tkmath",
-]
-
-[[package]]
-name = "rustycad-tkg3d"
-version = "0.2.7"
-source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
-dependencies = [
- "rustycad-cmath",
- "rustycad-tkernel",
- "rustycad-tkg2d",
- "rustycad-tkmath",
-]
-
-[[package]]
-name = "rustycad-tkgeomalgo"
-version = "0.2.7"
-source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
-dependencies = [
- "rustycad-tkbrep",
- "rustycad-tkernel",
- "rustycad-tkg2d",
- "rustycad-tkg3d",
- "rustycad-tkgeombase",
- "rustycad-tkmath",
-]
-
-[[package]]
-name = "rustycad-tkgeombase"
-version = "0.2.7"
-source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
-dependencies = [
- "rustycad-cmath",
- "rustycad-tkernel",
- "rustycad-tkg2d",
- "rustycad-tkg3d",
- "rustycad-tkmath",
-]
-
-[[package]]
-name = "rustycad-tkmath"
-version = "0.2.7"
-source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
-dependencies = [
- "num-bigint",
- "num-complex",
- "rustc_apfloat",
- "rustycad-cmath",
- "rustycad-tkernel",
-]
-
-[[package]]
-name = "rustycad-tkmesh"
-version = "0.2.7"
-source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
-dependencies = [
- "allocator-api2",
- "rustycad-tkbrep",
- "rustycad-tkernel",
- "rustycad-tkg2d",
- "rustycad-tkg3d",
- "rustycad-tkgeomalgo",
- "rustycad-tkgeombase",
- "rustycad-tkmath",
- "rustycad-tkshhealing",
- "rustycad-tktopalgo",
-]
-
-[[package]]
-name = "rustycad-tkprim"
-version = "0.2.7"
-source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
-dependencies = [
- "rustycad-tkbrep",
- "rustycad-tkernel",
- "rustycad-tkg2d",
- "rustycad-tkg3d",
- "rustycad-tkgeomalgo",
- "rustycad-tkgeombase",
- "rustycad-tkmath",
- "rustycad-tktopalgo",
-]
-
-[[package]]
-name = "rustycad-tkshhealing"
-version = "0.2.7"
-source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
-dependencies = [
- "rustycad-tkbrep",
- "rustycad-tkernel",
- "rustycad-tkg2d",
- "rustycad-tkg3d",
- "rustycad-tkgeomalgo",
- "rustycad-tkgeombase",
- "rustycad-tkmath",
- "rustycad-tktopalgo",
-]
-
-[[package]]
-name = "rustycad-tktopalgo"
-version = "0.2.7"
-source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
-dependencies = [
- "rustycad-tkbrep",
- "rustycad-tkernel",
- "rustycad-tkg2d",
- "rustycad-tkg3d",
- "rustycad-tkgeomalgo",
- "rustycad-tkgeombase",
- "rustycad-tkmath",
-]
 
 [[package]]
 name = "ryu"
