@@ -136,6 +136,7 @@ Each record states its decision date. No application runtime acceptance is claim
 | [ADR-0038](ADR-0038-owned-part-model-state-members.md) | Own part model-state member recipes | R2/R3/R4/R8 |
 | [ADR-0039](ADR-0039-placed-dimension-value-editing.md) | One value editor for placed sketch dimensions | R2/R3/R4/R8 |
 | [ADR-0040](ADR-0040-first-class-cad-document-formats.md) | First-class SolidWorks and Inventor documents through Bessemer and Corliss | R2/R6/R8; K10 |
+| [ADR-0041](ADR-0041-kernel-profile-extrusion.md) | One kernel path for sketch profile extrusion | R3/R4/R8; #3857 |
 
 Use the [domain glossary](../../CONTEXT.md) for shared model terms. The
 [port plan](../rust-port/plan.md#architecture-decisions-and-implementation-evidence)
