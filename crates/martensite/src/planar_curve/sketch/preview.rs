@@ -9,6 +9,8 @@ pub struct PlacementPreviewMember {
     pub member_index: usize,
     pub construction: bool,
     pub centerline: bool,
+    /// Explicit center-point role or an implicit circle/arc center from the authored geometry.
+    pub center_point: bool,
     pub primitive: SketchDisplayPrimitive,
 }
 /// Sample the same authoring graph used by commit, in a private temporary namespace.
@@ -43,7 +45,8 @@ pub fn sample_sketch_preview_members(
         .iter()
         .enumerate()
         .map(|(member_index, id)| {
-            sample_member(&index, *id, member_index, options)
+            let center = geometry.is_center_point(*id) || geometry.is_implicit_circular_center(*id);
+            sample_member(&index, *id, member_index, center, options)
                 .map_err(|cause| format!("preview member {member_index}: {cause}"))
         })
         .collect()
@@ -53,10 +56,12 @@ fn sample_member(
     geometry: &SketchReadIndex<'_>,
     id: SketchEntityId,
     member_index: usize,
+    center_point: bool,
     options: SketchSamplingOptionsV1,
 ) -> Result<PlacementPreviewMember, String> {
     Ok(PlacementPreviewMember {
         member_index,
+        center_point,
         centerline: geometry
             .is_centerline(id)
             .map_err(|cause| cause.to_string())?,

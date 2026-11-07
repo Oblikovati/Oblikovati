@@ -384,3 +384,6 @@ mod ui_scale;
 
 #[path = "application/document-creation/owner.rs"]
 mod document_creation_benchmark;
+
+#[path = "owner/point_preview.rs"]
+mod point_preview;
