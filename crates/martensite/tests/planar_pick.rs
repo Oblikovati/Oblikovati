@@ -239,3 +239,30 @@ fn invalid_native_pick_limits_decline_with_the_offending_policy() {
         assert!(cause.to_string().contains(&format!("{options:?}")));
     }
 }
+
+#[test]
+fn a_nearby_rotated_ellipse_pick_finds_the_interior_minimum() {
+    let curve = PlanarCurveDefinition {
+        geometry: PlanarGeometry::Ellipse {
+            frame: PlanarConicFrame {
+                center: [2.7574, -6.9211],
+                axis: [0.6, 0.8],
+                counterclockwise: true,
+            },
+            radii: [0.75793, 0.38063],
+        },
+        bounds: None,
+        left_offset: 0.,
+    };
+    let hit = pick(&curve, [2.9111111111111105, -6.288888888888888]);
+    let limit = PlanarPickOptionsV1::default().maximum_position_residual;
+    assert!(
+        (hit.distance - 0.019024451883025126).abs() <= limit,
+        "OCCT minimum foot, got {hit:?}"
+    );
+    assert!(
+        (hit.parameter - 0.682_817_513_323_967_3).abs() <= limit,
+        "OCCT parameter, got {hit:?}"
+    );
+    assert_eq!(hit.origin, PlanarPickOrigin::Stationary);
+}
