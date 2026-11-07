@@ -16,6 +16,7 @@ pub(crate) enum RibbonPanel {
     Modify,
     Format,
     Parameters,
+    ToolOptions,
     Navigate,
     Appearance,
     Visibility,
@@ -47,6 +48,7 @@ impl RibbonPanel {
             Self::Modify => "Modify",
             Self::Format => "Format",
             Self::Parameters => "Parameters",
+            Self::ToolOptions => "Options",
             Self::Navigate => "Navigate",
             Self::Appearance => "Appearance",
             Self::Visibility => "Visibility",
@@ -77,6 +79,7 @@ impl RibbonPanel {
             | Self::Constrain
             | Self::Format
             | Self::Parameters
+            | Self::ToolOptions
             | Self::Appearance
             | Self::Visibility
             | Self::Windows
@@ -140,6 +143,7 @@ impl RibbonPanelLayout {
 pub(crate) struct RibbonPanelOwners<'a> {
     pub icons: &'a crate::icons::GuiRibbonIcons,
     pub parameters: &'a mut crate::parameters::GuiParameterEditor,
+    pub preferences: &'a mut crate::ui_scale::GuiScalePreferences,
     pub editor: &'a mut crate::theme_editor::GuiThemeEditor,
     pub workspace: &'a mut crate::application::workspace_layout::WorkspaceLayout,
     pub workspaces: &'a mut crate::application::document_creation::workspaces::DocumentWorkspaces,
@@ -394,6 +398,7 @@ pub(crate) fn panels_for(tab: RibbonTab, state: &GuiCommandState) -> Vec<RibbonP
         RibbonTab::Presentation => vec![PresentationModel],
         RibbonTab::Sketch => vec![Create, Exit, Constrain, Modify, Format],
         RibbonTab::Manage => vec![Parameters],
+        RibbonTab::Tools => vec![ToolOptions],
         RibbonTab::View if state.theme.is_some() || state.color_scheme.is_some() => {
             vec![Visibility, Appearance, Windows, Navigate]
         }

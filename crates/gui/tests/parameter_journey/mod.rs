@@ -138,7 +138,7 @@ pub(crate) fn exercise_parameter_journey(mut engine: GuiFrameEngine, mac_osx: bo
 }
 
 fn open_parameters(engine: &mut GuiFrameEngine, request: &mut GuiFrameRequest) {
-    assert!(click(engine, request, [419., 44.]).is_empty());
+    assert!(click(engine, request, [469., 44.]).is_empty());
     request.events.clear();
     engine.frame(request).unwrap();
     assert!(click(engine, request, [50., 90.]).is_empty());

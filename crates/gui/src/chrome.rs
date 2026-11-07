@@ -176,6 +176,7 @@ fn side_groups(
             crate::ribbon_panels::RibbonPanelOwners {
                 icons: owners.icons,
                 parameters: owners.parameters,
+                preferences: owners.preferences,
                 editor: owners.theme_editor,
                 workspace: owners.workspace,
                 workspaces: owners.workspaces,
@@ -259,6 +260,7 @@ fn ribbon_panel_row(
         crate::ribbon_panels::RibbonPanelOwners {
             icons: owners.icons,
             parameters: owners.parameters,
+            preferences: owners.preferences,
             editor: owners.theme_editor,
             workspace: owners.workspace,
             workspaces: owners.workspaces,

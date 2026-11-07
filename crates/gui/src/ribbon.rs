@@ -17,6 +17,7 @@ pub(crate) enum RibbonTab {
     Annotate,
     Presentation,
     Sketch,
+    Tools,
     Manage,
     View,
 }
@@ -31,6 +32,7 @@ impl RibbonTab {
             Self::Annotate => "Annotate",
             Self::Presentation => "Presentation",
             Self::Sketch => "Sketch",
+            Self::Tools => "Tools",
             Self::Manage => "Manage",
             Self::View => "View",
         }
@@ -116,7 +118,7 @@ fn active_sheet_metal(state: &GuiCommandState) -> bool {
 }
 fn document_tabs(key: &RibbonKey, sketch: bool, sheet_metal: bool) -> Vec<RibbonTab> {
     if *key == ZERO_DOC_RIBBON {
-        return vec![RibbonTab::GetStarted];
+        return vec![RibbonTab::GetStarted, RibbonTab::Tools];
     }
     let mut tabs = Vec::new();
     if *key == PART_RIBBON {
@@ -140,7 +142,10 @@ fn document_tabs(key: &RibbonKey, sketch: bool, sheet_metal: bool) -> Vec<Ribbon
         if sketch {
             tabs.push(RibbonTab::Sketch);
         }
+        tabs.push(RibbonTab::Tools);
         tabs.push(RibbonTab::Manage);
+    } else {
+        tabs.push(RibbonTab::Tools);
     }
     tabs.push(RibbonTab::View);
     if *key == PART_RIBBON {

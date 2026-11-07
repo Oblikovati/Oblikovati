@@ -9,8 +9,8 @@ fn wheel_moves_between_visible_tabs_without_wrapping() {
     ribbon.scroll_tabs(&frame.tabs, 1.);
     assert_eq!(ribbon.active, RibbonTab::Model);
     ribbon.scroll_tabs(&frame.tabs, -1.);
-    assert_eq!(ribbon.active, RibbonTab::Manage);
-    assert_eq!(ribbon.prepare(&state).select, Some(RibbonTab::Manage));
+    assert_eq!(ribbon.active, RibbonTab::Tools);
+    assert_eq!(ribbon.prepare(&state).select, Some(RibbonTab::Tools));
     ribbon.scroll_tabs(&frame.tabs, 1.);
     assert_eq!(ribbon.prepare(&state).select, Some(RibbonTab::Model));
     ribbon.active = *frame.tabs.last().unwrap();
@@ -80,18 +80,26 @@ fn document_tabs_keep_sketch_context_off_other_document_types() {
     for (key, tabs) in [
         (
             DRAWING_RIBBON,
-            &[RibbonTab::PlaceViews, RibbonTab::Annotate, RibbonTab::View][..],
+            &[
+                RibbonTab::PlaceViews,
+                RibbonTab::Annotate,
+                RibbonTab::Tools,
+                RibbonTab::View,
+            ][..],
         ),
         (
             PRESENTATION_RIBBON,
-            &[RibbonTab::Presentation, RibbonTab::View][..],
+            &[RibbonTab::Presentation, RibbonTab::Tools, RibbonTab::View][..],
         ),
-        (UNKNOWN_DOCUMENT_RIBBON, &[RibbonTab::View][..]),
+        (
+            UNKNOWN_DOCUMENT_RIBBON,
+            &[RibbonTab::Tools, RibbonTab::View][..],
+        ),
     ] {
         assert_eq!(document_tabs(&key, true, false), tabs);
     }
     let zero_tabs = document_tabs(&ZERO_DOC_RIBBON, true, false);
-    assert_eq!(zero_tabs, [RibbonTab::GetStarted]);
+    assert_eq!(zero_tabs, [RibbonTab::GetStarted, RibbonTab::Tools]);
     for key in [PART_RIBBON, ASSEMBLY_RIBBON] {
         assert!(document_tabs(&key, true, false).contains(&RibbonTab::Sketch));
         assert!(!document_tabs(&key, false, false).contains(&RibbonTab::Sketch));
@@ -103,6 +111,7 @@ fn tab_names_match_the_go_command_registry() {
         (RibbonTab::GetStarted, "Get Started"),
         (RibbonTab::Model, "3D Model"),
         (RibbonTab::Sketch, "Sketch"),
+        (RibbonTab::Tools, "Tools"),
         (RibbonTab::Manage, "Manage"),
         (RibbonTab::View, "View"),
     ] {

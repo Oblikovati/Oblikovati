@@ -27,6 +27,20 @@ pub(crate) fn draw_panel_content(
             owners.precise_input.toggle(ui);
         }
         RibbonPanel::Parameters => return owners.parameters.toolbar(ui, state, owners.icons),
+        RibbonPanel::ToolOptions => {
+            let disabled = ui.begin_disabled(state.ui_scale.is_none());
+            if crate::widget_abi::button(ui, "Application Options", [150., 26.]) {
+                owners.preferences.request();
+            }
+            drop(disabled);
+            crate::widget_abi::cursor_position(ui, [origin[0], origin[1] + 30.]);
+            let disabled = ui.begin_disabled(true);
+            crate::widget_abi::button(ui, "Document Settings", [150., 26.]);
+            drop(disabled);
+            if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
+                ui.tooltip_text(NOT_PORTED);
+            }
+        }
         RibbonPanel::Appearance => return appearance_controls(ui, state, owners.editor, actions),
         RibbonPanel::Visibility => visibility_controls(ui, state, actions),
         RibbonPanel::Windows => windows_controls(ui, origin, state, owners, actions),

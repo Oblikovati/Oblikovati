@@ -520,9 +520,13 @@ fn mouse_wheel_selects_adjacent_ribbon_tabs() {
     part_with_full_ribbon(&mut world);
     let camera = crate::HeadWindow::view_camera(&world.app().window).unwrap();
     scroll_tab(&mut world, "3D Model", -1);
-    world.expect_text("Parameters");
+    world.expect_text("Application Options");
     world.expect_no_text("Extrude");
+    scroll_tab(&mut world, "Tools", -1);
+    world.expect_text("Parameters");
     scroll_tab(&mut world, "Manage", 1);
+    world.expect_text("Application Options");
+    scroll_tab(&mut world, "Tools", 1);
     world.expect_text("Extrude");
     assert_eq!(
         crate::HeadWindow::view_camera(&world.app().window).unwrap(),
@@ -547,16 +551,8 @@ fn mouse_wheel_keeps_tabs_only_closed_until_a_tab_is_clicked() {
             .count(),
         1
     );
-    world.click_text("Manage");
-    assert!(
-        world
-            .frame
-            .runs
-            .iter()
-            .filter(|run| run.text == "Parameters")
-            .count()
-            > 1
-    );
+    world.click_text("Tools");
+    world.expect_text("Application Options");
     world.close();
 }
 
@@ -569,6 +565,22 @@ fn mouse_wheel_switches_an_open_temporary_ribbon() {
     world.expect_text("Extrude");
     scroll_tab(&mut world, "3D Model", -1);
     world.expect_no_text("Extrude");
+    world.expect_text("Application Options");
+    world.close();
+}
+
+#[given("the full Tools ribbon is visible")]
+fn full_tools(world: &mut ApplicationWorld) {
+    world.click_text("Tools");
+    world.expect_text("Application Options");
+}
+#[when("the user scrolls down over the Tools tab")]
+fn wheel_down_on_tools(world: &mut ApplicationWorld) {
+    scroll_tab(world, "Tools", -1);
+}
+#[then("Manage becomes the active tab")]
+#[then("the full Manage command groups are visible")]
+fn manage_active(world: &mut ApplicationWorld) {
     assert!(
         world
             .frame
@@ -578,5 +590,26 @@ fn mouse_wheel_switches_an_open_temporary_ribbon() {
             .count()
             > 1
     );
+}
+#[when("the user scrolls up over the same position on the tab row")]
+fn wheel_up_over_same_tab_position(world: &mut ApplicationWorld) {
+    scroll_tab(world, "Tools", 1);
+}
+#[then("Tools becomes the active tab")]
+#[then("the full Tools command groups are visible")]
+fn tools_active(world: &mut ApplicationWorld) {
+    world.expect_text("Application Options");
+    world.expect_text("Document Settings");
+}
+
+#[test]
+fn tools_ribbon_opens_application_options() {
+    let mut world = ApplicationWorld::new();
+    part_with_full_ribbon(&mut world);
+    full_tools(&mut world);
+    world.click_text("Application Options");
+    world.expect_text("Text size");
+    world.key(oblikovati_viewport::ViewportPhysicalKey::Escape, false);
+    world.expect_no_text("Text size");
     world.close();
 }
