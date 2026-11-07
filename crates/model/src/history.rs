@@ -69,6 +69,8 @@ use std::sync::{
 /// Owned document recipe and metadata; identity allocation and file identity are outside history.
 #[derive(Clone, Debug)]
 pub struct DocumentSnapshot {
+    /// Drawing content belongs to the document history, not to a GUI window.
+    pub drawing: Option<crate::drawing::DrawingDocument>,
     pub body_names: std::collections::BTreeMap<String, String>,
     /// Named design views, in the order they were made.
     pub design_views: Vec<String>,

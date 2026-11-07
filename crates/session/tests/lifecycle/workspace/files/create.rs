@@ -261,3 +261,6 @@ fn creation_accepts_an_identity_free_package_and_reports_generator_failure() {
 
 #[path = "save_names.rs"]
 mod save_names;
+
+#[path = "../../../application/document-creation/drawing.rs"]
+mod drawing_content;

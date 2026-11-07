@@ -155,6 +155,8 @@ fn capture_nonparameter_sections(
     feature_high_water: u64,
 ) -> Result<DocumentPackage, SnapshotPackageError> {
     original
+        .with_drawing(snapshot.drawing.as_ref())
+        .map_err(SnapshotPackageError::Codec)?
         .with_work_geometry(&snapshot.work_geometry, feature_high_water)
         .map_err(SnapshotPackageError::Codec)?
         .with_sketch_reservations(&snapshot.sketches, sketch_marks)

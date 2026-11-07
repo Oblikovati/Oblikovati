@@ -11,6 +11,7 @@ mod attributes;
 mod binary_text;
 mod container;
 mod copy_metadata;
+mod drawing;
 mod empty;
 mod interests;
 mod parameters;
