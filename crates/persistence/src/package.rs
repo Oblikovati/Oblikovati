@@ -14,6 +14,7 @@ mod copy_metadata;
 mod drawing;
 mod empty;
 mod interests;
+mod model_states;
 mod parameters;
 mod properties;
 mod resource_edit;

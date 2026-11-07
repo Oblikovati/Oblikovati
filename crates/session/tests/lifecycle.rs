@@ -78,6 +78,7 @@ fn recipe() -> DocumentSnapshot {
         interests: Default::default(),
         resources: Default::default(),
         assets: Default::default(),
+        model_states: None,
         drawing: None,
         body_names: Default::default(),
         design_views: Default::default(),

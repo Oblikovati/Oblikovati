@@ -13,6 +13,7 @@ fn empty_history() -> DocumentEditHistory {
             interests: Default::default(),
             resources: Default::default(),
             assets: Default::default(),
+            model_states: None,
             drawing: None,
             body_names: Default::default(),
             design_views: Default::default(),
@@ -72,4 +73,110 @@ fn exhausted_generation_preserves_both_navigation_stacks() {
     assert!(matches!(history.redo(), Err(HistoryError::Exhausted(_))));
     assert_eq!(history.redo_labels(), ["step"]);
     assert!(history.undo_labels().is_empty());
+}
+
+#[test]
+fn model_state_history_keeps_primary_and_never_reuses_undone_identity() {
+    let mut history = empty_history();
+    let initialize = history.begin("Initialize members").unwrap();
+    history
+        .edit(&initialize, |snapshot, _| {
+            snapshot.model_states = Some(Default::default());
+            Ok::<_, String>(())
+        })
+        .unwrap();
+    history.commit(&initialize, false).unwrap();
+    let token = history.begin("Create member").unwrap();
+    let id = history
+        .edit(&token, |snapshot, ids| {
+            let id = ids
+                .allocate_model_state()
+                .map_err(|cause| cause.to_string())?;
+            let members = snapshot.model_states.as_mut().unwrap();
+            members.insert(id, "Large")?;
+            members.activate(id)?;
+            Ok::<_, String>(id)
+        })
+        .unwrap();
+    history.commit(&token, false).unwrap();
+    history.undo().unwrap();
+    assert_eq!(
+        history
+            .snapshot()
+            .model_states
+            .as_ref()
+            .unwrap()
+            .list()
+            .len(),
+        1
+    );
+    history.redo().unwrap();
+    assert_eq!(
+        history
+            .snapshot()
+            .model_states
+            .as_ref()
+            .unwrap()
+            .active()
+            .unwrap()
+            .id,
+        id
+    );
+    history.undo().unwrap();
+    let token = history.begin("Replace undone member").unwrap();
+    let next = history
+        .edit(&token, |snapshot, ids| {
+            let next = ids
+                .allocate_model_state()
+                .map_err(|cause| cause.to_string())?;
+            snapshot
+                .model_states
+                .as_mut()
+                .unwrap()
+                .insert(next, "Other")?;
+            Ok::<_, String>(next)
+        })
+        .unwrap();
+    history.commit(&token, false).unwrap();
+    assert!(next > id);
+}
+
+#[test]
+fn unreserved_model_state_identity_is_refused_without_adopting_candidate() {
+    let mut history = empty_history();
+    let token = history.begin("Unreserved member").unwrap();
+    let result = history.edit(&token, |snapshot, _| {
+        let mut members = crate::model_state::ModelStateMembers::default();
+        members.insert(2, "Invalid")?;
+        snapshot.model_states = Some(members);
+        Ok::<_, String>(())
+    });
+    assert!(matches!(
+        result,
+        Err(EditError::History(HistoryError::UnreservedIdentity(2)))
+    ));
+    assert!(history.snapshot().model_states.is_none());
+}
+
+#[test]
+fn owned_part_members_cannot_be_dropped_from_history() {
+    let mut history = empty_history();
+    let token = history.begin("Initialize part").unwrap();
+    history
+        .edit(&token, |snapshot, _| {
+            snapshot.model_states = Some(Default::default());
+            Ok::<_, String>(())
+        })
+        .unwrap();
+    history.commit(&token, false).unwrap();
+    let token = history.begin("Drop members").unwrap();
+    let result = history.edit(&token, |snapshot, _| {
+        snapshot.model_states = None;
+        Ok::<_, String>(())
+    });
+    assert!(matches!(
+        result,
+        Err(EditError::History(HistoryError::ModelStateMembers(_)))
+    ));
+    assert!(history.snapshot().model_states.is_some());
 }

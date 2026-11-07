@@ -16,6 +16,7 @@ impl DocumentSnapshot {
         self.refresh_prism_reads()
             .map_err(HistoryError::PartProgram)?;
         self.validate_datum_metadata()?;
+        self.validate_model_state_transition(before)?;
         self.validate_scalar_transition(before)
     }
 }

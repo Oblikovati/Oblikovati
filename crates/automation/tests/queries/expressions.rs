@@ -184,6 +184,7 @@ fn expression_queries_resolve_live_parameter_nominals_without_model_offsets() {
         interests: Default::default(),
         resources: Default::default(),
         assets: Default::default(),
+        model_states: None,
         drawing: None,
         body_names: Default::default(),
         design_views: Default::default(),

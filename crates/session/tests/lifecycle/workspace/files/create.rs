@@ -264,3 +264,6 @@ mod save_names;
 
 #[path = "../../../application/document-creation/drawing.rs"]
 mod drawing_content;
+
+#[path = "../../../application/model-browser/model_states.rs"]
+mod model_state_members;

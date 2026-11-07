@@ -5,6 +5,7 @@ impl DocumentSnapshot {
     /// Example: `before.same_metadata_recipe(&after)` cannot omit a newly authored asset assignment.
     pub fn same_metadata_recipe(&self, other: &Self) -> bool {
         self.drawing == other.drawing
+            && self.model_states == other.model_states
             && self.properties.same_recipe(&other.properties)
             && self.assets == other.assets
             && self.body_names == other.body_names
