@@ -2,7 +2,7 @@
 //! Native interactions for the shared compact Options ribbon scenarios.
 use super::*;
 
-fn options_button(world: &ApplicationWorld) -> super::super::diagnostics::RenderedRun {
+pub(super) fn options_button(world: &ApplicationWorld) -> super::super::diagnostics::RenderedRun {
     world
         .frame
         .runs
@@ -87,4 +87,32 @@ fn options_panel_closed(world: &mut ApplicationWorld) {
 fn tabs_without_panels(world: &mut ApplicationWorld) {
     world.expect_text("Tools");
     world.expect_no_text("Options");
+}
+
+#[when("the user clicks the selected Tools tab")]
+fn click_selected_tools(world: &mut ApplicationWorld) {
+    world.click_text("Tools");
+}
+
+#[when("the user clicks the Options title at the bottom of that panel")]
+fn click_options_panel_title(world: &mut ApplicationWorld) {
+    let title = world
+        .frame
+        .runs
+        .iter()
+        .filter(|run| run.text == "Options")
+        .max_by(|a, b| a.minimum[1].total_cmp(&b.minimum[1]))
+        .expect("expected the Options panel title")
+        .center();
+    world.click(super::super::diagnostics::pointer_pixels(title));
+}
+
+#[then("the Tools panel buttons remain visible")]
+fn tools_buttons_remain(world: &mut ApplicationWorld) {
+    world.expect_text("Tools");
+    let _button = options_button(world);
+    assert_eq!(
+        options_button_color(world),
+        world.compact_options_idle_color.unwrap()
+    );
 }

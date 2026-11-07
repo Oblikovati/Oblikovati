@@ -454,6 +454,7 @@ fn draw_expanded(
         context.owners.icons.cursor(ui, origin, [0., 66.]);
         if context.show_panel_titles {
             ui.text(panel.label());
+            local_action |= ui.is_item_clicked();
         }
         if panel == RibbonPanel::Create {
             // Preserve the existing Create grid's trailing space and wide-window command positions.

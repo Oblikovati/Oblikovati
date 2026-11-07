@@ -772,7 +772,9 @@ fn compact_options_stays_highlighted_when_clicked_again() {
     world.expect_text("Document Settings");
     let selected = world.pixel_at(sample);
     assert_ne!(idle, selected, "open Options button: expected a highlight");
-    world.click_text("Options");
+    world.click(super::diagnostics::pointer_pixels(
+        compact_options::options_button(&world).center(),
+    ));
     world.hover([1000, 600]);
     world.expect_text("Document Settings");
     assert_eq!(world.pixel_at(sample), selected);
