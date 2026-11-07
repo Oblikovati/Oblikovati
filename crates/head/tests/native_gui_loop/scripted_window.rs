@@ -71,7 +71,9 @@ impl HeadWindow for ScriptedGuiWindow {
         event: Option<&ViewportEvent>,
         commands: &GuiCommandState,
     ) -> Result<HeadGuiUpdate, String> {
-        self.native.gui_frame(event, commands)
+        let result = self.native.gui_frame(event, commands)?;
+        self.gui_actions.extend(result.actions.iter().cloned());
+        Ok(result)
     }
     fn capture_window_preview(&mut self) -> Result<bool, String> {
         self.native.capture_window_preview()

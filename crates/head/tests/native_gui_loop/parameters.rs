@@ -44,9 +44,11 @@ pub(super) fn edit_size_and_history(
 ) {
     edit_size_parameter(window, owner);
     verify_rectangle(owner, edit, 2.);
+    cube::verify(owner, edit.document, 2.);
     for (button, expected) in [(156, 1.), (201, 2.)] {
         click_shell(window, owner, button);
         verify_rectangle(owner, edit, expected);
+        cube::verify(owner, edit.document, expected);
     }
 }
 pub(super) fn verify_rectangle(
@@ -67,6 +69,33 @@ pub(super) fn verify_rectangle(
         .get(edit.sketch)
         .unwrap()
         .geometry();
+    use oblikovati_model::sketch::PlanarConstraint;
+    let constraints = geometry.constraints();
+    assert!(
+        constraints
+            .iter()
+            .any(|constraint| matches!(constraint.relation, PlanarConstraint::Coincident { .. }))
+    );
+    assert_eq!(
+        constraints
+            .iter()
+            .filter(|constraint| matches!(
+                constraint.relation,
+                PlanarConstraint::LineHorizontal { .. }
+            ))
+            .count(),
+        2
+    );
+    assert_eq!(
+        constraints
+            .iter()
+            .filter(|constraint| matches!(
+                constraint.relation,
+                PlanarConstraint::LineVertical { .. }
+            ))
+            .count(),
+        2
+    );
     assert_eq!(geometry.dimensional_constraints().count(), 2);
     for (constraint, parameter) in geometry.dimensional_constraints() {
         assert_eq!(

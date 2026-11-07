@@ -5,6 +5,8 @@ use oblikovati_gui::GuiCommandState;
 use oblikovati_viewport::{ViewportButton, ViewportInput};
 use scene_tests::{capture_framebuffer, native_set, open_native_part, submit_native_scene};
 use std::time::Duration;
+#[path = "native_gui_loop/cube.rs"]
+mod cube;
 #[path = "native_gui_loop/files.rs"]
 mod files;
 #[path = "native_gui_loop/parameters.rs"]
@@ -13,6 +15,7 @@ struct ScriptedGuiWindow {
     native: NativeHeadWindow,
     scripted: Vec<ViewportEvent>,
     passed: Vec<ViewportEvent>,
+    gui_actions: Vec<oblikovati_gui::GuiShellAction>,
     presentation_delay: Duration,
 }
 fn scripted_window(native: NativeHeadWindow) -> ScriptedGuiWindow {
@@ -20,6 +23,7 @@ fn scripted_window(native: NativeHeadWindow) -> ScriptedGuiWindow {
         native,
         scripted: Vec::new(),
         passed: Vec::new(),
+        gui_actions: Vec::new(),
         presentation_delay: Duration::ZERO,
     }
 }
@@ -156,8 +160,16 @@ fn native_new_part_button_creates_and_selects_an_unsaved_document() {
     assert!(owner.active_sketch_edit().is_none());
     assert!(!owner.placement_active());
     verify_browser_reentry_pixels(&mut window, &mut owner, edit);
+    cube::create_from_ribbon(&mut window, &mut owner, edit.document);
     parameters::edit_size_and_history(&mut window, &mut owner, edit);
+    cube::verify(&mut owner, edit.document, 2.);
+    let key = cube::body_key(&mut owner);
+    let face_keys = cube::face_keys(&owner, edit.document, 2.);
     let _saved_directory = files::save_rectangle_file(&mut window, &mut owner, edit);
+    let reopened = owner.documents().workspace().active_document().unwrap();
+    cube::verify(&mut owner, reopened, 2.);
+    assert_eq!(cube::body_key(&mut owner), key);
+    assert_eq!(cube::face_keys(&owner, reopened, 2.), face_keys);
     owner.finish().unwrap();
     window.finish().unwrap();
 }
