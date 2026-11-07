@@ -55,6 +55,15 @@ macro_rules! forward_owner_view_work {
             self.$owner
                 .set_body_appearance_from_gui(document, key, appearance)
         }
+        fn navigation_prompt_from_gui(&mut self, prompt: Option<&str>) -> Result<bool, String> {
+            self.$owner.navigation_prompt_from_gui(prompt)
+        }
+        fn face_edges_on_line(
+            &mut self,
+            line: [[f64; 3]; 2],
+        ) -> Result<Vec<[[f64; 3]; 2]>, String> {
+            self.$owner.face_edges_on_line(line)
+        }
         fn click_model_from_gui(
             &mut self,
             document: u64,

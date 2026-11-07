@@ -41,6 +41,8 @@ pub(crate) struct WorkspaceLayout {
     pub switcher: crate::application::document_tabs::WindowSwitcher,
     browser_width_override: Option<f32>,
     view: browser_view::BrowserView,
+    /// A navigation command owns the next click on the view, not the browser's selection.
+    pub view_clicks_taken: bool,
     /// What a docked ribbon takes from each side of the window.
     ribbon_left: f32,
     ribbon_right: f32,
@@ -57,6 +59,7 @@ impl Default for WorkspaceLayout {
             switcher: Default::default(),
             browser_width_override: None,
             view: Default::default(),
+            view_clicks_taken: false,
             ribbon_left: 0.,
             ribbon_right: 0.,
         }
@@ -103,6 +106,7 @@ impl WorkspaceLayout {
         if active == panel_tabs::DockPanel::Log {
             self.panels.log_area(ui);
         } else if self.panels.model_open {
+            self.view.view_clicks_taken = self.view_clicks_taken;
             crate::browser::browser_contents(ui, state, &mut self.view, actions);
             self.pending_layout |= self.view.body_properties.needs_frame();
         }

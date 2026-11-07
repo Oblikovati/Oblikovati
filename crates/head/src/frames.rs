@@ -142,9 +142,26 @@ pub trait HeadWindow {
             "view line {pixel:?}: expected a window with a view"
         ))
     }
-    /// Bring the whole model into view; example: after an orientation change, if asked for.
-    fn fit_view(&mut self) -> Result<bool, String> {
-        Err("fit view: expected a window with a view".into())
+    /// Move the view by one navigation step; example: a fit, or a drag of the running command.
+    fn navigate_view(
+        &mut self,
+        command: oblikovati_viewport::ViewportNavigation,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "view navigation {command:?}: expected a window with a view"
+        ))
+    }
+    /// Remember this view, for a dialog that may put it back; example: on opening the dialog.
+    fn mark_view(&mut self) -> Result<(), String> {
+        Err("mark view: expected a window with a view".into())
+    }
+    /// Put the remembered view back; example: from the rotate dialog's Reset.
+    fn restore_marked_view(&mut self) -> Result<bool, String> {
+        Err("restore view: expected a window with a view".into())
+    }
+    /// Step back to the view before the last fit; example: from a navigation command's menu.
+    fn previous_view(&mut self) -> Result<bool, String> {
+        Err("previous view: expected a window with a view".into())
     }
     /// The projection the view keeps to; example: from the orientation control's menu.
     fn view_projection(&self) -> oblikovati_gui::GuiViewProjection {

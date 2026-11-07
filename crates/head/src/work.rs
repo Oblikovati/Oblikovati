@@ -257,6 +257,16 @@ pub trait HeadWork {
             "body {key:?}, appearance {appearance:?}, document {document}: expected a properties owner"
         ))
     }
+    /// Show a running navigation command's prompt, or Ready; example: from the navigation bar.
+    fn navigation_prompt_from_gui(&mut self, prompt: Option<&str>) -> Result<bool, String> {
+        Err(format!(
+            "navigation prompt {prompt:?}: expected a status owner"
+        ))
+    }
+    /// The edges of the face on a line of sight; example: for Zoom Selected.
+    fn face_edges_on_line(&mut self, line: [[f64; 3]; 2]) -> Result<Vec<[[f64; 3]; 2]>, String> {
+        Err(format!("view line {line:?}: expected a selection owner"))
+    }
     /// A click on the view chooses the face on its line of sight, or nothing.
     /// Example: `work.click_model_from_gui(document, window.view_line(pixel)?)?`.
     fn click_model_from_gui(&mut self, document: u64, line: [[f64; 3]; 2]) -> Result<bool, String> {

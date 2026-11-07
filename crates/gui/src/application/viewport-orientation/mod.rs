@@ -4,15 +4,21 @@ use crate::application::document_creation::workspaces::WorkspaceArea;
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::{MouseButton, StyleColor, Ui, WindowFlags};
 
+#[path = "cube.rs"]
+mod cube;
 #[path = "drawing.rs"]
 mod drawing;
+use cube::{ShownFace, inside, shown_faces};
+#[path = "navigation_bar.rs"]
+mod navigation_bar;
+pub use navigation_bar::{GuiNavigationMode, GuiViewCommand};
+use navigation_bar::{NAVIGATION_SIZE, NAVIGATION_WINDOW, NavigationBar};
 #[path = "options.rs"]
 mod options;
 use drawing::{draw_compass, draw_control};
 use options::{OrientationOptions, ScreenCorner};
 
 const CONTROL_WINDOW: &str = "##orientation-control";
-const NAVIGATION_WINDOW: &str = "##navigation-bar";
 const CONTROL_MENU: &str = "##orientation-menu";
 const MARGIN: f32 = 8.;
 /// The cube's half width, as a share of the control's side; the arrows use the rest.
@@ -26,7 +32,6 @@ const LABEL_SHOWS_FROM: f32 = 0.3;
 const FACING_VIEWER: f32 = 0.02;
 const FACE_ON: f32 = 0.999;
 const ARROW_REACH: f32 = 9.;
-const NAVIGATION_SIZE: [f32; 2] = [30., 96.];
 const LOCK_CAPTION: &str = "Locked";
 const LOCK_CAPTION_RISE: f32 = 4.;
 /// The compass ring's distance outside the cube, past its arrows.
@@ -191,43 +196,6 @@ impl GuiOrientationLayout {
         }
     }
 }
-/// A cube face as it shows on screen.
-struct ShownFace {
-    face: GuiCubeFace,
-    facing: f32,
-    corners: [[f32; 2]; 4],
-}
-fn shown_faces(
-    axes: &GuiViewAxes,
-    layout: &GuiOrientationLayout,
-    origin: [f32; 2],
-) -> Vec<ShownFace> {
-    let mut faces: Vec<ShownFace> = GuiCubeFace::ALL
-        .into_iter()
-        .map(|face| ShownFace {
-            face,
-            facing: dot(face.normal(), axes.toward),
-            corners: face.corners().map(|corner| {
-                [
-                    origin[0] + layout.center[0] + dot(corner, axes.right) * layout.half,
-                    origin[1] + layout.center[1] - dot(corner, axes.up) * layout.half,
-                ]
-            }),
-        })
-        .filter(|shown| shown.facing > FACING_VIEWER)
-        .collect();
-    faces.sort_by(|first, second| second.facing.total_cmp(&first.facing));
-    faces
-}
-fn inside([x, y]: [f32; 2], corners: &[[f32; 2]; 4]) -> bool {
-    let side = |index: usize| {
-        let [ax, ay] = corners[index];
-        let [bx, by] = corners[(index + 1) % 4];
-        (bx - ax) * (y - ay) - (by - ay) * (x - ax)
-    };
-    let signs = [side(0), side(1), side(2), side(3)];
-    signs.iter().all(|value| *value >= 0.) || signs.iter().all(|value| *value <= 0.)
-}
 /// What a press at this point of the cube picks. Face-on, its rim picks an edge or a corner.
 fn cube_pick(
     point: [f32; 2],
@@ -271,16 +239,18 @@ pub(crate) struct OrientationControl {
     options: OrientationOptions,
     projection: GuiViewProjection,
     locked: bool,
+    navigation: NavigationBar,
 }
 impl OrientationControl {
     /// Draw over a part's view; example: each frame, once the document area is known.
     pub(crate) fn panel(
         &mut self,
         ui: &Ui,
-        state: &GuiCommandState,
+        request: &crate::GuiFrameRequest,
         area: WorkspaceArea,
         actions: &mut Vec<GuiShellAction>,
     ) {
+        let state = &request.commands;
         let Some(axes) = state.view_axes else {
             return;
         };
@@ -320,7 +290,19 @@ impl OrientationControl {
             }
             self.context_menu(ui, state.model_face_chosen, actions);
         });
-        self.navigation_bar(ui, area, position, side);
+        self.navigation_bar(
+            ui,
+            state,
+            request.extent,
+            area,
+            [position, [side, side]],
+            actions,
+        );
+        self.navigation.follow_view(ui, request, actions);
+        let center = [(area.left + area.right) / 2., (area.top + area.bottom) / 2.];
+        let reach = (area.right - area.left).min(area.bottom - area.top);
+        self.navigation.draw_guide(ui, center, reach);
+        self.navigation.rotate_dialog(ui, actions);
         self.options.panel(ui);
     }
     fn position(&self, area: WorkspaceArea, side: f32) -> [f32; 2] {
@@ -338,7 +320,15 @@ impl OrientationControl {
         [x, y]
     }
     /// The bar keeps to the control's side of the view, under or over it.
-    fn navigation_bar(&self, ui: &Ui, area: WorkspaceArea, control: [f32; 2], side: f32) {
+    fn navigation_bar(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        extent: [u32; 2],
+        area: WorkspaceArea,
+        [control, control_size]: [[f32; 2]; 2],
+        actions: &mut Vec<GuiShellAction>,
+    ) {
         let corner = self.options.corner();
         let x = if corner.is_left() {
             area.left + MARGIN
@@ -347,7 +337,7 @@ impl OrientationControl {
         };
         let below = corner == ScreenCorner::TopLeft || corner == ScreenCorner::TopRight;
         let y = if below {
-            control[1] + side + MARGIN
+            control[1] + control_size[1] + MARGIN
         } else {
             control[1] - NAVIGATION_SIZE[1] - MARGIN
         };
@@ -355,13 +345,7 @@ impl OrientationControl {
             .position([x, y], imgui::Condition::Always)
             .size(NAVIGATION_SIZE, imgui::Condition::Always)
             .flags(control_flags())
-            .build(|| {
-                // Pan, zoom and orbit stay on the keys and the wheel in this build.
-                let _muted = ui.begin_disabled(true);
-                for id in ["##nav-pan", "##nav-zoom", "##nav-orbit"] {
-                    crate::widget_abi::button(ui, id, [18., 22.]);
-                }
-            });
+            .build(|| self.navigation.buttons(ui, state, extent, actions));
     }
     /// Available with something to lock to; once locked, it stays to let the lock go.
     fn lock_row(&mut self, ui: &Ui, has_selection: bool) {
@@ -412,7 +396,11 @@ impl OrientationControl {
     }
     /// A frame must follow so the dialog opens without waiting for an event.
     pub(crate) fn needs_frame(&self) -> bool {
-        self.options.needs_frame()
+        self.options.needs_frame() || self.navigation.needs_frame()
+    }
+    /// A navigation command is running, so a click on the view belongs to it.
+    pub(crate) fn owns_view_clicks(&self) -> bool {
+        self.navigation.is_running()
     }
 }
 /// Listed as observed; no view definition can be stored in this build.

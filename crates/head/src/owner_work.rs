@@ -196,12 +196,7 @@ impl<
             sketch_formats: self.sketch_formats.clone(),
             sketch_format_available: self.gui_sketch_format_available(),
             dimension_labels: Vec::new(),
-            sketch_delete_available: !session.in_transaction()
-                && self.sketch_tool.is_none()
-                && self.active_sketch_edit().is_some_and(|edit| {
-                    edit.document == document
-                        && !session.selected_sketch_picks(edit.sketch).is_empty()
-                }),
+            sketch_delete_available: self.sketch_delete_available(document),
             sketch_selection: browser_selection::gui_sketch_selection(session),
             documents: self.gui_document_rows()?,
             document_storage: self.gui_document_storage()?,
@@ -318,6 +313,12 @@ impl<
         appearance: &str,
     ) -> Result<bool, String> {
         self.set_body_appearance(document, key, appearance)
+    }
+    fn navigation_prompt_from_gui(&mut self, prompt: Option<&str>) -> Result<bool, String> {
+        self.navigation_prompt(prompt)
+    }
+    fn face_edges_on_line(&mut self, line: [[f64; 3]; 2]) -> Result<Vec<[[f64; 3]; 2]>, String> {
+        self.edges_of_face_on_line(line)
     }
     fn click_model_from_gui(&mut self, document: u64, line: [[f64; 3]; 2]) -> Result<bool, String> {
         self.click_model(document, line)

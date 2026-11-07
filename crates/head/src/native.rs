@@ -9,8 +9,6 @@ use oblikovati_viewport::{
     Viewport, ViewportEvent, ViewportOptions, ViewportPresentation, ViewportRuntime, ViewportScene,
     ViewportWake,
 };
-/// The border left around a fitted model, as a share of the view.
-const FIT_MARGIN: f64 = 0.1;
 pub struct NativeHeadWindow {
     capture_files: Box<dyn crate::WindowCaptureFiles>,
     capture_requests: Vec<crate::WindowCaptureJob>,
@@ -18,6 +16,7 @@ pub struct NativeHeadWindow {
     runtime: ViewportRuntime,
     view: Viewport,
     view_projection: oblikovati_gui::GuiViewProjection,
+    marked_view: Option<oblikovati_viewport::ViewportCamera>,
     wake: ViewportWake,
     scene_status: Option<crate::HeadSceneStatus>,
     sketch_scene: Option<crate::HeadSketchSceneUpdate>,
@@ -62,6 +61,7 @@ impl NativeHeadWindow {
             runtime,
             view,
             view_projection: Default::default(),
+            marked_view: None,
             wake: ViewportWake::new()?,
             scene_status: None,
             sketch_scene: None,
@@ -83,41 +83,8 @@ impl NativeHeadWindow {
         self.scene_status.as_ref()
     }
 }
-impl NativeHeadWindow {
-    fn synchronize_sketch_highlights(
-        &mut self,
-        commands: &oblikovati_gui::GuiCommandState,
-    ) -> Result<bool, String> {
-        let matching_document = self
-            .sketch_scene
-            .as_ref()
-            .and_then(|scene| scene.source)
-            .map(|(document, _)| document)
-            == commands.document;
-        let empty = oblikovati_viewport::ViewportSketchSelection::default();
-        let selected = if matching_document {
-            &commands.sketch_selection
-        } else {
-            &empty
-        };
-        self.view.set_sketch_selection(selected)
-    }
-
-    fn apply_navigation_inputs(&mut self, inputs: &[ViewportEvent]) -> Result<bool, String> {
-        let mut changed = false;
-        for event in inputs {
-            let command = self.navigation.command(event)?;
-            if previous_view_pressed(event) {
-                changed |= self.view.previous_view()?;
-                continue;
-            }
-            if let Some(command) = command {
-                changed |= self.view.navigate(command)?;
-            }
-        }
-        Ok(changed)
-    }
-}
+#[path = "native/view_inputs.rs"]
+mod view_inputs;
 impl HeadWindow for NativeHeadWindow {
     fn window_capture_extent(&mut self) -> Result<Option<[u32; 2]>, String> {
         self.view.drawable_extent().map(Some)
@@ -241,9 +208,28 @@ impl HeadWindow for NativeHeadWindow {
         self.view.view_line(pixel)
     }
 
-    fn fit_view(&mut self) -> Result<bool, String> {
-        self.view
-            .navigate(oblikovati_viewport::ViewportNavigation::Fit { margin: FIT_MARGIN })
+    fn navigate_view(
+        &mut self,
+        command: oblikovati_viewport::ViewportNavigation,
+    ) -> Result<bool, String> {
+        self.view.navigate(command)
+    }
+
+    fn previous_view(&mut self) -> Result<bool, String> {
+        self.view.previous_view()
+    }
+
+    fn mark_view(&mut self) -> Result<(), String> {
+        self.marked_view = Some(self.view.camera_state()?);
+        Ok(())
+    }
+
+    fn restore_marked_view(&mut self) -> Result<bool, String> {
+        let Some(camera) = self.marked_view else {
+            return Ok(false);
+        };
+        self.view.set_camera(camera)?;
+        Ok(true)
     }
 
     fn view_projection(&self) -> oblikovati_gui::GuiViewProjection {

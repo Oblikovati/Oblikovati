@@ -33,8 +33,8 @@ pub use application::document_tabs::windows::{GuiDocumentWindow, active_window_n
 pub use application::home_recent_documents::{GuiRecentAction, GuiRecentDocument};
 pub use application::quick_access_toolbar::plane_selection::{GuiOriginPlane, GuiOriginPlaneKind};
 pub use application::viewport_orientation::{
-    GuiCubeFace, GuiOrientCommand, GuiOrientationLayout, GuiViewAxes, GuiViewProjection,
-    GuiViewStep,
+    GuiCubeFace, GuiNavigationMode, GuiOrientCommand, GuiOrientationLayout, GuiViewAxes,
+    GuiViewCommand, GuiViewProjection, GuiViewStep,
 };
 pub use application::workspace_layout::body_properties::{GuiAppearanceChoice, GuiBodyPhysical};
 pub use application::workspace_layout::browser_origin::GuiOriginAxis;

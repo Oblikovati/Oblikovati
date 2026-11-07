@@ -164,6 +164,7 @@ fn mark_remains(world: &mut ApplicationWorld) {
 #[when("I choose Done")]
 fn choose_done_button(world: &mut ApplicationWorld) {
     choose_button(world, "Done");
+    world.pump(Vec::new());
 }
 #[then("the chooser still displays the original active project")]
 fn chooser_keeps_project(world: &mut ApplicationWorld) {

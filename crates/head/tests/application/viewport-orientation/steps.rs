@@ -10,6 +10,7 @@ use oblikovati_viewport::ViewportPhysicalKey;
 mod appearance;
 #[path = "behaviour.rs"]
 mod behaviour;
+pub(super) use behaviour::whole_block_visible;
 #[path = "option_rows.rs"]
 mod option_rows;
 
@@ -61,7 +62,7 @@ fn control_runs(world: &ApplicationWorld) -> Vec<diagnostics::RenderedRun> {
         .cloned()
         .collect()
 }
-fn control_letters(world: &ApplicationWorld) -> String {
+pub(super) fn control_letters(world: &ApplicationWorld) -> String {
     let mut letters: Vec<char> = control_runs(world)
         .iter()
         .flat_map(|run| run.text.chars().collect::<Vec<_>>())
@@ -93,11 +94,11 @@ fn label_is_upright(world: &ApplicationWorld) -> bool {
     maximum(0) - minimum(0) > maximum(1) - minimum(1)
 }
 /// The solid's extent on screen, read from its colour.
-fn solid_extent(world: &mut ApplicationWorld) -> [usize; 2] {
+pub(super) fn solid_extent(world: &mut ApplicationWorld) -> [usize; 2] {
     let (low, high) = solid_bounds(world);
     [high[0] - low[0] + 1, high[1] - low[1] + 1]
 }
-fn solid_bounds(world: &mut ApplicationWorld) -> ([usize; 2], [usize; 2]) {
+pub(super) fn solid_bounds(world: &mut ApplicationWorld) -> ([usize; 2], [usize; 2]) {
     let capture = super::capture_framebuffer(&mut world.app().window.native);
     let width = capture.extent[0] as usize;
     let (mut low, mut high) = ([usize::MAX; 2], [0; 2]);
@@ -123,13 +124,13 @@ fn expect_proportion(wide: usize, tall: usize, across: usize, down: usize) {
         "extent {wide} by {tall}: expected {across} to {down}"
     );
 }
-fn expect_same_part(world: &mut ApplicationWorld) {
+pub(super) fn expect_same_part(world: &mut ApplicationWorld) {
     let active = world.active_id();
     let remembered = *world.parts.last().expect("expected the fixture part");
     assert_eq!(active, remembered, "active part");
     world.expect_text("Origin");
 }
-fn open_block(world: &mut ApplicationWorld) {
+pub(super) fn open_block(world: &mut ApplicationWorld) {
     open_extruded_part(world);
     let id = world.active_id();
     world.parts.push(id);

@@ -62,6 +62,46 @@ impl<
             });
         Ok(true)
     }
+    /// Show a running navigation command's prompt in the status area, or Ready without one.
+    pub(super) fn navigation_prompt(&mut self, prompt: Option<&str>) -> Result<bool, String> {
+        self.command_notice = Some(match prompt {
+            Some(message) => DesktopCommandNotice::PlacementPrompt {
+                message: message.into(),
+            },
+            None => DesktopCommandNotice::Ready,
+        });
+        Ok(true)
+    }
+    /// The outline of the face on a line of sight, leaving what is chosen as it was.
+    pub(super) fn edges_of_face_on_line(
+        &self,
+        line: [[f64; 3]; 2],
+    ) -> Result<Vec<[[f64; 3]; 2]>, String> {
+        let Some(document) = self.files.workspace().active_document() else {
+            return Ok(Vec::new());
+        };
+        let Some((feature, role)) = self.part_scenes.face_on_line(&self.files, document, line)?
+        else {
+            return Ok(Vec::new());
+        };
+        let session = self
+            .files
+            .workspace()
+            .session(document)
+            .map_err(|cause| cause.to_string())?;
+        self.part_scenes.feature_edges(session, feature, Some(role))
+    }
+    /// The open sketch has something to delete, and nothing else is in the way.
+    pub(super) fn sketch_delete_available(&self, document: u64) -> bool {
+        let Ok(session) = self.files.workspace().session(document) else {
+            return false;
+        };
+        !session.in_transaction()
+            && self.sketch_tool.is_none()
+            && self.active_sketch_edit().is_some_and(|edit| {
+                edit.document == document && !session.selected_sketch_picks(edit.sketch).is_empty()
+            })
+    }
     /// The face chosen in the view, while its document is the active one.
     pub(super) fn chosen_model_face(&self, document: u64) -> Option<ChosenModelFace> {
         self.model_face.filter(|face| face.document == document)

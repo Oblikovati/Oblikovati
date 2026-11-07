@@ -71,6 +71,48 @@ pub(crate) fn projects_in_perspective(camera: &ViewportCamera, mode: GuiViewProj
         }
     }
 }
+/// The same viewpoint with the screen turned about the viewer, in radians.
+/// Example: `rolled(&camera, 10f64.to_radians())` from the rotate dialog.
+pub(crate) fn rolled(camera: &ViewportCamera, angle: f64) -> ViewportCamera {
+    let (right, up, toward) = frame(camera);
+    let (sin, cos) = angle.sin_cos();
+    looking(
+        camera,
+        toward,
+        std::array::from_fn(|axis| up[axis] * cos + right[axis] * sin),
+    )
+}
+/// The same direction, moved and scaled so these points fill this much of the view.
+/// Example: `framed(&camera, &corners, [1440, 900], 1.)` for a zoom window.
+pub(crate) fn framed(
+    camera: &ViewportCamera,
+    points: &[Vector],
+    extent: [u32; 2],
+    fill: f64,
+) -> ViewportCamera {
+    let (right, up, _) = frame(camera);
+    let span = |axis: Vector| {
+        let along = points.iter().map(|point| dot(*point, axis));
+        let low = along.clone().fold(f64::MAX, f64::min);
+        (low, along.fold(f64::MIN, f64::max))
+    };
+    let ((left, far_right), (bottom, top)) = (span(right), span(up));
+    let shift = [
+        (left + far_right) / 2. - dot(camera.target, right),
+        (bottom + top) / 2. - dot(camera.target, up),
+    ];
+    let moved = |at: Vector| -> Vector {
+        std::array::from_fn(|axis| at[axis] + right[axis] * shift[0] + up[axis] * shift[1])
+    };
+    let aspect = f64::from(extent[0]) / f64::from(extent[1]);
+    let height = (top - bottom).max((far_right - left) / aspect);
+    ViewportCamera {
+        eye: moved(camera.eye),
+        target: moved(camera.target),
+        scale: height / fill,
+        ..*camera
+    }
+}
 /// The camera a press on the control asks for; example: `oriented(&camera, command)`.
 /// Scale and distance stay, so only the viewpoint changes.
 pub(crate) fn oriented(camera: &ViewportCamera, command: GuiOrientCommand) -> ViewportCamera {
@@ -125,6 +167,22 @@ mod tests {
         assert!(close(turned.up, [-1., 0., 0.]), "{:?}", turned.up);
         let back = oriented(&turned, GuiOrientCommand::Roll { clockwise: false });
         assert!(close(back.up, [0., 1., 0.]), "{:?}", back.up);
+    }
+    #[test]
+    fn rolling_there_and_back_restores_the_screen() {
+        let turned = rolled(&front(), 0.5);
+        let back = rolled(&turned, -0.5);
+        assert!(!close(turned.up, [0., 1., 0.]), "{:?}", turned.up);
+        assert!(close(back.up, [0., 1., 0.]), "{:?}", back.up);
+        assert!(close(back.eye, front().eye), "{:?}", back.eye);
+    }
+    #[test]
+    fn framing_centres_the_points_and_fits_the_taller_side() {
+        let camera = front();
+        let framed = framed(&camera, &[[2., 1., 0.], [6., 3., 0.]], [200, 100], 0.5);
+        assert!(close(framed.target, [4., 2., 0.]), "{:?}", framed.target);
+        assert!(close(framed.eye, [4., 2., 20.]), "{:?}", framed.eye);
+        assert!((framed.scale - 4.).abs() < 1e-9, "{}", framed.scale);
     }
     #[test]
     fn the_hybrid_is_flat_face_on_and_in_perspective_otherwise() {

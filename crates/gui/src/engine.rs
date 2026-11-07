@@ -259,6 +259,7 @@ impl GuiFrameEngine {
         self.workspace
             .panels
             .record_status(request.status.as_deref());
+        self.workspace.view_clicks_taken = self.orientation.owns_view_clicks();
         self.workspace.browser_panel(
             ui,
             &request.commands,
@@ -272,8 +273,7 @@ impl GuiFrameEngine {
         let area = self.workspace.document_area(logical, band_height);
         // Over Home there is no view for it to turn.
         if !self.home.active {
-            self.orientation
-                .panel(ui, &request.commands, area, &mut selected);
+            self.orientation.panel(ui, request, area, &mut selected);
         }
         let detached = self.document_tabs.is_detached(request.commands.document);
         self.workspaces.panel(ui, &request.commands, area, detached);

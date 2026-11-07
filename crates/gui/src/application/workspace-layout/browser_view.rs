@@ -36,6 +36,8 @@ pub(crate) struct BrowserView {
     /// Feature rows also say their operation and depth.
     pub show_extended_names: bool,
     pub body_properties: super::body_properties::BodyPropertiesDialog,
+    /// A navigation command owns the next click on the view.
+    pub view_clicks_taken: bool,
     /// Framebuffer pixels per layout unit, for what a click reports.
     pub layout_scale: [f32; 2],
     /// The branch a row's Expand All Children opens on the next frame.

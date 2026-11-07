@@ -116,7 +116,7 @@ fn magnify(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
 }
 /// A magnified block runs off the window's right edge; a fitted one stops short of it.
-fn whole_block_visible(world: &mut ApplicationWorld) -> bool {
+pub(in super::super) fn whole_block_visible(world: &mut ApplicationWorld) -> bool {
     let (_, high) = solid_bounds(world);
     high[0] + 1 < WINDOW_WIDTH
 }

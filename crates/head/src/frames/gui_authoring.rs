@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
+use crate::HeadWindow;
 use crate::HeadWork;
 use oblikovati_gui::GuiShellAction;
 
@@ -102,6 +103,81 @@ fn unsupported(action: &GuiShellAction) -> Result<bool, String> {
     ))
 }
 
+/// What the navigation bar asks of the view; the owner holds what only the document knows.
+pub(super) fn view_command(
+    window: &mut dyn HeadWindow,
+    owner: &mut dyn HeadWork,
+    command: &oblikovati_gui::GuiViewCommand,
+) -> Result<bool, String> {
+    use oblikovati_gui::GuiViewCommand::{
+        FitAll, MarkView, Orbit, Pan, Previous, Prompt, RestoreMarkedView, Roll, Zoom, ZoomFaceAt,
+        ZoomSelected, ZoomWindow,
+    };
+    use oblikovati_viewport::ViewportNavigation as Navigation;
+    match command {
+        Prompt(prompt) => owner.navigation_prompt_from_gui(*prompt),
+        Pan(delta) => window.navigate_view(Navigation::Pan(*delta)),
+        Zoom(factor) => window.navigate_view(Navigation::Zoom {
+            factor: *factor,
+            anchor: None,
+        }),
+        Orbit { yaw, pitch } => window.navigate_view(Navigation::Orbit {
+            yaw: *yaw,
+            pitch: *pitch,
+        }),
+        FitAll => window.navigate_view(Navigation::Fit { margin: 0.1 }),
+        Previous => window.previous_view(),
+        Roll(angle) => {
+            let camera = window.view_camera()?;
+            window.set_view_camera(crate::view_orientation::rolled(&camera, *angle))
+        }
+        MarkView => {
+            window.mark_view()?;
+            Ok(false)
+        }
+        RestoreMarkedView => window.restore_marked_view(),
+        ZoomWindow { corners, extent } => {
+            let points = [
+                window.view_line(corners[0])?[0],
+                window.view_line(corners[1])?[0],
+            ];
+            frame_view_on(window, &points, *extent, 1.)
+        }
+        ZoomSelected { extent } => {
+            let edges = owner.selected_browser_outline();
+            frame_on_edges(window, &edges, *extent)
+        }
+        ZoomFaceAt { pixel, extent } => {
+            let line = window.view_line(*pixel)?;
+            let edges = owner.face_edges_on_line(line)?;
+            frame_on_edges(window, &edges, *extent)
+        }
+    }
+}
+/// How much of the view a framed face fills, leaving it a border.
+const FACE_FILL: f64 = 0.85;
+fn frame_on_edges(
+    window: &mut dyn HeadWindow,
+    edges: &[[[f64; 3]; 2]],
+    extent: [u32; 2],
+) -> Result<bool, String> {
+    let points: Vec<[f64; 3]> = edges.iter().flatten().copied().collect();
+    frame_view_on(window, &points, extent, FACE_FILL)
+}
+fn frame_view_on(
+    window: &mut dyn HeadWindow,
+    points: &[[f64; 3]],
+    extent: [u32; 2],
+    fill: f64,
+) -> Result<bool, String> {
+    if points.is_empty() {
+        return Ok(false);
+    }
+    let camera = window.view_camera()?;
+    window.set_view_camera(crate::view_orientation::framed(
+        &camera, points, extent, fill,
+    ))
+}
 #[cfg(test)]
 mod tests {
     use super::*;

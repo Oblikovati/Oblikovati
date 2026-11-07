@@ -26,8 +26,20 @@ impl HeadWindow for ScriptedGuiWindow {
     fn view_line(&self, pixel: [i32; 2]) -> Result<[[f64; 3]; 2], String> {
         self.native.view_line(pixel)
     }
-    fn fit_view(&mut self) -> Result<bool, String> {
-        self.native.fit_view()
+    fn navigate_view(
+        &mut self,
+        command: oblikovati_viewport::ViewportNavigation,
+    ) -> Result<bool, String> {
+        self.native.navigate_view(command)
+    }
+    fn previous_view(&mut self) -> Result<bool, String> {
+        self.native.previous_view()
+    }
+    fn mark_view(&mut self) -> Result<(), String> {
+        self.native.mark_view()
+    }
+    fn restore_marked_view(&mut self) -> Result<bool, String> {
+        self.native.restore_marked_view()
     }
     fn view_projection(&self) -> oblikovati_gui::GuiViewProjection {
         self.native.view_projection()

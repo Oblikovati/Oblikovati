@@ -50,11 +50,18 @@ fn dispatch_gui_action(
         GuiShellAction::OrientView { command, fit } => {
             let camera = crate::view_orientation::oriented(&window.view_camera()?, *command);
             let changed = window.set_view_camera(camera)?;
-            return if *fit { window.fit_view() } else { Ok(changed) };
+            return if *fit {
+                window.navigate_view(FIT_THE_MODEL)
+            } else {
+                Ok(changed)
+            };
         }
         GuiShellAction::SetViewProjection(mode) => {
             window.set_view_projection(*mode);
             return Ok(true);
+        }
+        GuiShellAction::ViewCommand(command) => {
+            return authoring::view_command(window, owner, command);
         }
         GuiShellAction::ClickModel { document, pixel } => {
             return owner.click_model_from_gui(*document, window.view_line(*pixel)?);
@@ -111,6 +118,7 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::ClickModel { .. }
         | GuiShellAction::OrientView { .. }
         | GuiShellAction::SetViewProjection(_)
+        | GuiShellAction::ViewCommand(_)
         | GuiShellAction::UpdateBodyProperties { .. }
         | GuiShellAction::SetBodyAppearance { .. }
         | GuiShellAction::EditSketch { .. }
@@ -137,6 +145,9 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         GuiShellAction::Home => ViewportKey::Home,
     })
 }
+/// The whole model in view, with the margin Home leaves.
+const FIT_THE_MODEL: oblikovati_viewport::ViewportNavigation =
+    oblikovati_viewport::ViewportNavigation::Fit { margin: 0.1 };
 /// Keep the camera on the chosen projection as the viewpoint changes, by whatever means.
 fn follow_view_projection(window: &mut dyn HeadWindow) {
     let Ok(camera) = window.view_camera() else {

@@ -103,7 +103,7 @@ pub(crate) fn follow_view_click(
     let on_view = ui.is_mouse_clicked(MouseButton::Left)
         && !ui.is_window_hovered_with_flags(crate::widget_abi::over_any_panel())
         && !crate::widget_abi::any_popup_open(ui);
-    if !on_view || state.authoring != crate::GuiAuthoringContext::Part {
+    if !on_view || view.view_clicks_taken || state.authoring != crate::GuiAuthoringContext::Part {
         return;
     }
     view.selected_origin_row = None;

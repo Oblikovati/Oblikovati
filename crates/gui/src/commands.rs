@@ -62,6 +62,8 @@ pub enum GuiShellAction {
         fit: bool,
     },
     SetViewProjection(crate::GuiViewProjection),
+    /// The navigation bar's commands on the view and the status area.
+    ViewCommand(crate::GuiViewCommand),
     /// A click on the view, off every panel: it chooses the face there, or nothing.
     ClickModel {
         document: u64,
@@ -302,7 +304,9 @@ impl GuiShellAction {
             Self::SaveDocumentAs(request) => {
                 state.document == Some(request.document) && !state.transaction_open
             }
-            Self::OrientView { .. } | Self::SetViewProjection(_) => state.document.is_some(),
+            Self::OrientView { .. } | Self::SetViewProjection(_) | Self::ViewCommand(_) => {
+                state.document.is_some()
+            }
             Self::ClickModel { document, .. } | Self::UpdateBodyProperties { document, .. } => {
                 state.document == Some(*document)
             }
