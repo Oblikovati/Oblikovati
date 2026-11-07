@@ -25,7 +25,7 @@ pub fn retain_certified_sketch_prism(
         .map_err(|cause| cause.for_sketch(sketch, format!("document sketch {sketch:?}")))
 }
 
-fn evaluate(
+pub(crate) fn evaluate(
     input: ResolvedSketchPrism<'_>,
     resolution: Resolution,
 ) -> Result<crate::CertifiedPrismSnapshot, EvaluationFailure> {

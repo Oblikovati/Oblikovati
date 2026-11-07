@@ -11,6 +11,13 @@ use oblikovati_model::{
 pub struct NamedPrismSnapshot {
     snapshot: PrismProbeSnapshot,
     bindings: ExactReferenceBindings<Option<PrismFaceRole>>,
+    certification: Option<CertifiedPrismEvidence>,
+}
+/// Measured tolerance and authored point identities retained with a certified replay.
+#[derive(Clone, Debug, PartialEq)]
+pub struct CertifiedPrismEvidence {
+    pub achieved_tolerance: PrismAchievedTolerance,
+    pub vertex_sources: std::collections::BTreeMap<u64, Vec<u64>>,
 }
 /// Evaluate an authored prism and certify its body/face names against construction history.
 /// Example: `retain_named_sketch_prism(&history, document_guid, FeatureId(1))?`.
@@ -28,7 +35,9 @@ pub fn retain_named_sketch_prism(
     evaluation.into_body(feature).ok_or(decline)
 }
 mod evaluate;
-pub use evaluate::NamedPrismEvaluator;
+pub use evaluate::{
+    CertifiedNamedPrismEvaluator, NamedPrismEvaluator, retain_certified_named_sketch_prism,
+};
 fn attach_names(
     snapshot: PrismProbeSnapshot,
     document: DocumentGuid,
@@ -44,7 +53,11 @@ fn attach_names(
         ));
     }
     let bindings = ExactReferenceBindings::from_entries(document, scope, entries)?;
-    Ok(NamedPrismSnapshot { snapshot, bindings })
+    Ok(NamedPrismSnapshot {
+        snapshot,
+        bindings,
+        certification: None,
+    })
 }
 fn prism_key(
     document: DocumentGuid,
@@ -61,6 +74,10 @@ fn prism_key(
     SemanticReferenceName::new(document, feature.0, kind, "sketch-prism", tag, &sources)?.encode()
 }
 impl NamedPrismSnapshot {
+    /// Read the kernel evidence if this body used certified replay; example: `named.certification()`.
+    pub fn certification(&self) -> Option<&CertifiedPrismEvidence> {
+        self.certification.as_ref()
+    }
     /// The nearest face a line meets; example: `body.face_on_line(window_line)?`.
     pub fn face_on_line(
         &self,

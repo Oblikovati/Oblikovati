@@ -64,12 +64,8 @@ fn package(snapshot: &DocumentSnapshot) -> DocumentPackage {
         .with_work_geometry(&snapshot.work_geometry, 1)
         .unwrap()
 }
-#[test]
-fn saved_recipes_rebuild_the_same_keys_under_a_new_history_owner() {
-    let original = owner(selected_prism_document());
-    let before = named(&original);
-    let keys = before.reference_keys(&original, document()).unwrap();
-    let bytes = package(original.snapshot()).encode().unwrap();
+fn restored_owner(snapshot: &DocumentSnapshot) -> DocumentEditHistory {
+    let bytes = package(snapshot).encode().unwrap();
     let reopened = DocumentPackage::decode(&bytes).unwrap();
     let mut snapshot = DocumentSnapshot {
         parameters: reopened.restore_document_parameters().unwrap().parameters,
@@ -88,9 +84,148 @@ fn saved_recipes_rebuild_the_same_keys_under_a_new_history_owner() {
         resources: Default::default(),
     };
     solve_selected_sketches(&mut snapshot);
-    let restored = owner(snapshot);
+    owner(snapshot)
+}
+#[test]
+fn saved_recipes_rebuild_the_same_keys_under_a_new_history_owner() {
+    let original = owner(selected_prism_document());
+    let before = named(&original);
+    let keys = before.reference_keys(&original, document()).unwrap();
+    let restored = restored_owner(original.snapshot());
     let after = named(&restored);
     assert_eq!(keys, after.reference_keys(&restored, document()).unwrap());
     assert_faces(&after, &restored, 2.);
     assert!(before.reference_keys(&restored, document()).is_err());
+}
+fn certified_resolution() -> martensite_tkbo::profile_extrusion::Resolution {
+    use martensite_tkbo::profile_extrusion::{DisplayTolerance, Resolution, ToleranceCap};
+    Resolution::new(
+        1e-6,
+        1e-7,
+        1e-9,
+        DisplayTolerance {
+            chordal: 1e-3,
+            angular: 0.1,
+        },
+        ToleranceCap::Refuse(1e-5),
+    )
+}
+fn certified(history: &DocumentEditHistory) -> NamedPrismSnapshot {
+    oblikovati_martensite::retain_certified_named_sketch_prism(
+        history,
+        document(),
+        FeatureId(1),
+        certified_resolution(),
+    )
+    .unwrap()
+}
+fn cube_document() -> DocumentSnapshot {
+    use oblikovati_model::sketch::{PlanarConstraint, Sketch2D};
+    let mut snapshot = selected_prism_document();
+    let mut recipe = snapshot.sketches.get(SKETCH).unwrap().geometry().recipe();
+    for constraint in &mut recipe.constraints {
+        if let PlanarConstraint::Distance { parameter, .. } = &mut constraint.relation {
+            *parameter = 1;
+        }
+    }
+    let geometry = Sketch2D::from_recipe(&recipe).unwrap();
+    snapshot
+        .sketches
+        .replace_geometry(SKETCH, geometry)
+        .unwrap();
+    snapshot.parameters.set_expression(1, "10 mm").unwrap();
+    solve_selected_sketches(&mut snapshot);
+    let definition = SketchPrismDefinition::new(
+        SKETCH,
+        selected_sketch_boundary(),
+        [
+            DatumLength::Constant(0.),
+            DatumLength::Constant(0.),
+            DatumLength::Parameter(1),
+        ],
+    )
+    .unwrap();
+    let reads = definition.reads(&snapshot).unwrap();
+    snapshot
+        .work_geometry
+        .replace(
+            FeatureId(1),
+            PartFeatureDefinition::SketchPrism(Box::new(definition)),
+            reads,
+        )
+        .unwrap();
+    snapshot
+}
+fn assert_cube(history: &DocumentEditHistory, size_cm: f64, keys: &[Vec<u8>]) {
+    let cube = certified(history);
+    assert_eq!(cube.reference_keys(history, document()).unwrap(), keys);
+    let body_key = key("body", &[1]);
+    let report = cube.body_report(history, document(), &body_key).unwrap();
+    assert_analytic_scalar(report.properties.volume, size_cm.powi(3));
+    assert_eq!(
+        (
+            report.topology.faces,
+            report.topology.edges,
+            report.topology.vertices
+        ),
+        (6, 12, 8)
+    );
+    for face in keys.iter().filter(|candidate| **candidate != body_key) {
+        assert_analytic_scalar(
+            cube.face_report(history, document(), face).unwrap().area,
+            size_cm.powi(2),
+        );
+    }
+}
+#[test]
+fn one_size_parameter_drives_certified_cube_replay_and_saved_names() {
+    let mut history = owner(cube_document());
+    let keys = certified(&history)
+        .reference_keys(&history, document())
+        .unwrap();
+    assert_cube(&history, 1., &keys);
+    let token = history.begin("Size").unwrap();
+    history
+        .edit(&token, |snapshot, _| {
+            snapshot.parameters.set_expression(1, "20 mm")?;
+            solve_selected_sketches(snapshot);
+            Ok::<(), oblikovati_model::parameter::ParameterError<u64>>(())
+        })
+        .unwrap();
+    history.commit(&token, false).unwrap();
+    assert_cube(&history, 2., &keys);
+    history.undo().unwrap();
+    assert_cube(&history, 1., &keys);
+    history.redo().unwrap();
+    assert_cube(&history, 2., &keys);
+    assert_cube(&restored_owner(history.snapshot()), 2., &keys);
+}
+#[test]
+fn certified_replay_keeps_named_faces_through_undo_redo_and_reopen() {
+    let mut history = owner(selected_prism_document());
+    let first = certified(&history);
+    let keys = first.reference_keys(&history, document()).unwrap();
+    assert_faces(&first, &history, 2.);
+    assert!(first.certification().unwrap().achieved_tolerance.vertex <= 1e-5);
+    let token = history.begin("Depth").unwrap();
+    history
+        .edit(&token, |snapshot, _| {
+            snapshot.parameters.set_expression(3, "3 cm")
+        })
+        .unwrap();
+    history.commit(&token, false).unwrap();
+    let changed = certified(&history);
+    assert_eq!(changed.reference_keys(&history, document()).unwrap(), keys);
+    assert_faces(&changed, &history, 3.);
+    history.undo().unwrap();
+    assert_faces(&certified(&history), &history, 2.);
+    history.redo().unwrap();
+    assert_faces(&certified(&history), &history, 3.);
+    let reopened = restored_owner(history.snapshot());
+    let restored = certified(&reopened);
+    assert_eq!(
+        restored.reference_keys(&reopened, document()).unwrap(),
+        keys
+    );
+    assert_faces(&restored, &reopened, 3.);
 }
