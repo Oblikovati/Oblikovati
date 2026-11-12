@@ -80,7 +80,7 @@ fn typed_spline_and_offset_creation_reaches_native_window_pixels() {
 
 #[test]
 fn block_definition_reaches_the_native_window_as_placed_geometry() {
-    use oblikovati_model::document_sketch::SketchBlockInstance;
+    use oblikovati_api::wire::AddSketchBlockArgs;
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().join("block.opd");
     let mut window = NativeHeadWindow::open().unwrap();
@@ -89,7 +89,7 @@ fn block_definition_reaches_the_native_window_as_placed_geometry() {
     let before = super::scene_tests::publish_native_scene(&mut owner, &mut window);
     owner
         .document_commands(document)
-        .run("Place block", |snapshot, ids| -> Result<(), String> {
+        .run("Capture definition", |snapshot, _| -> Result<(), String> {
             let sketch = DocumentSketchId(1);
             let line = snapshot
                 .sketches
@@ -102,13 +102,15 @@ fn block_definition_reaches_the_native_window_as_placed_geometry() {
                 .sketches
                 .capture_block_definition("Rib", sketch, &[line])
                 .map_err(|e| e.to_string())?;
-            let id = ids.allocate_sketch_entity().map_err(|e| e.to_string())?;
-            let instance = SketchBlockInstance::new(id, "Rib", [-2., -3.], 0., 1.)
-                .map_err(|e| e.to_string())?;
-            snapshot
-                .sketches
-                .insert_block_instance(sketch, instance)
-                .map_err(|e| e.to_string())
+            Ok(())
+        })
+        .unwrap();
+    Client::new(owner.document_host())
+        .sketch()
+        .add_block_instance(&AddSketchBlockArgs {
+            definition: "Rib".into(),
+            position: Some(vec![-2., -3.]),
+            ..Default::default()
         })
         .unwrap();
     let after = super::scene_tests::publish_native_scene(&mut owner, &mut window);

@@ -4,6 +4,7 @@ mod add_constraint;
 mod add_dimension;
 pub(crate) mod add_entity;
 mod block_definitions;
+mod block_placement;
 mod constraints;
 mod coordinates;
 pub(crate) mod create;
@@ -36,7 +37,8 @@ use oblikovati_solve::{
 };
 
 /// Geometry commands require a part or assembly; inference preferences use the workspace owner.
-pub const SKETCH_COMMAND_METHODS: [&str; 15] = [
+pub const SKETCH_COMMAND_METHODS: [&str; 16] = [
+    METHOD_SKETCH_ADD_BLOCK_INSTANCE,
     METHOD_SKETCH_BLOCK_DEFINITION_CREATE,
     METHOD_SKETCH_BLOCK_DEFINITION_DELETE,
     METHOD_SKETCH_CREATE,
@@ -102,6 +104,9 @@ pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     request: &[u8],
     editing: Option<(u64, DocumentSketchId)>,
 ) -> Result<Vec<u8>, Error> {
+    if method == METHOD_SKETCH_ADD_BLOCK_INSTANCE {
+        return block_placement::apply(files, crate::decode(method, request)?);
+    }
     if [
         METHOD_SKETCH_BLOCK_DEFINITION_CREATE,
         METHOD_SKETCH_BLOCK_DEFINITION_DELETE,

@@ -3,7 +3,7 @@
 use super::*;
 use oblikovati_api::types::DOCUMENT_PART;
 
-fn active_part<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+pub(super) fn active_part<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &FileWorkspace<O, W, F>,
 ) -> Result<u64, Error> {
     crate::part_owner::require_active_kind(files, &[DOCUMENT_PART], "part document")

@@ -57,7 +57,10 @@ fn prepared_edit(
         ))),
     }
 }
-fn rotation_angle(parameters: &ParameterCollection<u64>, source: &str) -> Result<f64, Error> {
+pub(super) fn rotation_angle(
+    parameters: &ParameterCollection<u64>,
+    source: &str,
+) -> Result<f64, Error> {
     if let Ok(quantity) = parameters.evaluate_expression(source)
         && quantity.dimension == Dimension::Angle
     {

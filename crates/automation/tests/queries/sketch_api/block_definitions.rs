@@ -116,25 +116,27 @@ fn listing_reports_captured_definition_geometry() {
 
 #[test]
 fn placed_instances_are_listed_and_survive_save_reopen() {
-    use oblikovati_model::document_sketch::SketchBlockInstance;
     let (mut files, document, sketch, mut source) = files_with_circle(Default::default());
     files
         .commands(document)
         .unwrap()
-        .run("Place block", |snapshot, ids| -> Result<(), String> {
+        .run("Capture block", |snapshot, _| {
             snapshot
                 .sketches
                 .capture_block_definition("Circle", sketch, &[SketchEntityId(2)])
-                .map_err(|e| e.to_string())?;
-            let id = ids.allocate_sketch_entity().map_err(|e| e.to_string())?;
-            let instance = SketchBlockInstance::new(id, "Circle", [2., 3.], 0.5, 2.)
-                .map_err(|e| e.to_string())?;
-            snapshot
-                .sketches
-                .insert_block_instance(sketch, instance)
-                .map_err(|e| e.to_string())
         })
         .unwrap();
+    let placed = Client::new(FileHost::new(&mut files, &mut source, "test"))
+        .sketch()
+        .add_block_instance(&AddSketchBlockArgs {
+            definition: "Circle".into(),
+            position: Some(vec![2., 3.]),
+            rotation_angle: "0.5 rad".into(),
+            scale: 2.,
+            ..Default::default()
+        })
+        .unwrap();
+    assert_eq!(placed.entity_id, 3);
     let rows = Client::new(FileQueryHost::new(&files))
         .sketch()
         .block_instances(&SketchArgs::default())
@@ -154,7 +156,7 @@ fn placed_instances_are_listed_and_survive_save_reopen() {
     );
     assert_eq!(definitions(&files)[0].instance_count, 1);
     files.commands(document).unwrap().undo().unwrap();
-    assert!(definitions(&files).is_empty());
+    assert_eq!(definitions(&files)[0].instance_count, 0);
     files.commands(document).unwrap().redo().unwrap();
     assert_eq!(definitions(&files)[0].instance_count, 1);
     files.save(document, "test", &mut source).unwrap();
