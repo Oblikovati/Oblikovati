@@ -82,3 +82,49 @@ fn a_collapsed_feature_does_not_navigate_to_its_hidden_sketch() {
     assert_eq!(before, super::super::viewport_pan::camera(&mut world));
     world.close();
 }
+fn walk_feature_branch(with_tips: bool) {
+    let mut world = ApplicationWorld::new();
+    part_with_feature(&mut world);
+    select_feature(&mut world);
+    if with_tips {
+        super::alt(&mut world);
+    }
+    let before = super::super::viewport_pan::camera(&mut world);
+    world.key(ViewportPhysicalKey::LeftArrow, false);
+    world.expect_no_text(SKETCH);
+    assert_eq!(before, super::super::viewport_pan::camera(&mut world));
+    world.key(ViewportPhysicalKey::RightArrow, false);
+    world.expect_text(SKETCH);
+    assert_eq!(
+        before,
+        super::super::viewport_pan::camera(&mut world),
+        "after opening"
+    );
+    world.key(ViewportPhysicalKey::RightArrow, false);
+    assert!(world.row_highlighted(SKETCH));
+    assert_eq!(
+        before,
+        super::super::viewport_pan::camera(&mut world),
+        "after entering child"
+    );
+    world.key(ViewportPhysicalKey::LeftArrow, false);
+    assert!(world.row_highlighted(FEATURE));
+    world.expect_text(SKETCH);
+    let browser = world.state().browser.unwrap();
+    assert!(browser.selected_feature.is_some());
+    assert!(browser.selected_sketches.is_empty());
+    assert_eq!(before, super::super::viewport_pan::camera(&mut world));
+    if with_tips {
+        assert!(super::exact_tip(&world, "M"));
+    }
+    world.close();
+}
+
+#[test]
+fn left_and_right_walk_feature_branch_without_rotating_the_view() {
+    walk_feature_branch(false);
+}
+#[test]
+fn left_and_right_walk_feature_branch_with_key_tips_open() {
+    walk_feature_branch(true);
+}

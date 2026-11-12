@@ -174,6 +174,7 @@ pub(crate) fn browser_contents(
         return;
     };
     view.feature_rows.clear();
+    view.feature_open.clear();
     view.header(ui, browser.kind == crate::GuiBrowserKind::Drawing);
     browser_origin::follow_view_click(ui, state, view, actions);
     browser_origin::follow_keys(ui, view, actions, state);
@@ -182,6 +183,7 @@ pub(crate) fn browser_contents(
     crate::application::model_browser::browser_root::root_row(ui, state, browser, view, actions);
     if let Some(query) = view.query() {
         crate::application::workspace_layout::browser_view::search_results(ui, browser, query);
+        view.feature_expansion = None;
         return;
     }
     let tree = BrowserTree {
@@ -191,6 +193,8 @@ pub(crate) fn browser_contents(
         expansion: view.take_expansion(),
     };
     tree.draw(view, actions);
+    // A removed or hidden branch cannot receive a pending keyboard expansion.
+    view.feature_expansion = None;
     crate::application::model_browser::feature_keys::follow(ui, state, browser, view, actions);
     view.body_properties.panel(ui, state, browser, actions);
     view.dialogs(ui, state, browser, actions);
@@ -400,6 +404,11 @@ impl BrowserTree<'_> {
             view.feature_rows.push(FeatureRow::Feature(feature.id));
         }
         let _feature = self.ui.push_id(format!("feature-{}", feature.id.0));
+        let expansion = if record_rows {
+            view.take_feature_expansion(feature.id).or(expansion)
+        } else {
+            expansion
+        };
         let token = browser_feature::feature_row(
             self.ui,
             self.state,
@@ -409,6 +418,9 @@ impl BrowserTree<'_> {
             view,
             actions,
         );
+        if record_rows {
+            view.feature_open.insert(feature.id, token.is_some());
+        }
         if let Some(_children) = token {
             for row in self
                 .browser

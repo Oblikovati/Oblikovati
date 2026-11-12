@@ -17,3 +17,6 @@ empty viewport space to clear the selection.
 In the model browser’s Features branch, use Up and Down to select the preceding
 or next visible feature or child sketch. The key tips stay visible while you
 navigate.
+
+In the Features branch, use Left to close a feature or return from its child.
+Use Right to open a feature or enter its first child.

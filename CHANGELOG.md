@@ -4,6 +4,8 @@
 
 ### Added
 
+- Added Left and Right navigation for feature branches in the model browser. (#3856)
+
 - Added Up and Down navigation for visible rows in the model browser’s Features branch. (#3856)
 
 - Added a Zoom Selected toolbar for selected model faces. (#3856)

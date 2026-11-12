@@ -37,7 +37,10 @@ pub(crate) struct BrowserView {
     /// The origin row a click chose.
     pub selected_origin_row: Option<usize>,
     pub arrow_consumed: bool,
+    pub feature_keyboard_focus: bool,
     pub feature_rows: Vec<crate::application::model_browser::feature_keys::FeatureRow>,
+    pub feature_open: std::collections::BTreeMap<oblikovati_model::feature::FeatureId, bool>,
+    pub feature_expansion: Option<(oblikovati_model::feature::FeatureId, bool)>,
     pub model_state_edit: crate::browser::browser_model_state::ModelStateEdit,
     pub hide_work_features: bool,
     /// Feature rows also say their operation and depth.
@@ -136,7 +139,8 @@ impl BrowserView {
     }
     /// A frame must follow so a dialog opens without waiting for an event.
     pub(crate) fn needs_frame(&self) -> bool {
-        self.body_properties.needs_frame()
+        self.feature_expansion.is_some()
+            || self.body_properties.needs_frame()
             || self.find.needs_frame()
             || self.geometry.needs_frame()
             || self.feature_properties.needs_frame()
@@ -174,6 +178,15 @@ impl BrowserView {
     }
     pub(crate) fn take_bodies_expansion(&mut self) -> Option<bool> {
         self.bodies_expansion.take()
+    }
+    pub(crate) fn take_feature_expansion(
+        &mut self,
+        feature: oblikovati_model::feature::FeatureId,
+    ) -> Option<bool> {
+        if self.feature_expansion.is_some_and(|(id, _)| id == feature) {
+            return self.feature_expansion.take().map(|(_, open)| open);
+        }
+        None
     }
     /// Open one branch on the next frame; example: from its menu's Expand All Children.
     pub(crate) fn open_branch(&mut self, branch: BrowserBranch) {

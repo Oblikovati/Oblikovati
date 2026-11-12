@@ -408,24 +408,28 @@ impl GuiFrameEngine {
         capture.keyboard &= capture.text || self.context.io().nav_visible;
         capture.keyboard |=
             popup_open || self.ribbon.tips.consumed || self.workspace.browser_consumed_arrow();
-        let ribbon_view_arrow = self.ribbon.tips.active()
+        let arrow_press = request.events.iter().any(|event| {
+            matches!(
+                event,
+                GuiInputEvent::Key {
+                    key: crate::GuiKey::LeftArrow
+                        | crate::GuiKey::RightArrow
+                        | crate::GuiKey::UpArrow
+                        | crate::GuiKey::DownArrow,
+                    pressed: true
+                }
+            )
+        });
+        if arrow_press
+            && self.ribbon.tips.active()
             && !capture.text
             && !popup_open
             && !self.workspace.browser_consumed_arrow()
-            && request.events.iter().any(|event| {
-                matches!(
-                    event,
-                    GuiInputEvent::Key {
-                        key: crate::GuiKey::LeftArrow
-                            | crate::GuiKey::RightArrow
-                            | crate::GuiKey::UpArrow
-                            | crate::GuiKey::DownArrow,
-                        pressed: true
-                    }
-                )
-            });
-        if ribbon_view_arrow {
+        {
             capture.keyboard = false;
+        }
+        if arrow_press && self.workspace.feature_keyboard_focus() {
+            capture.keyboard = true;
         }
         capture.text |= self.ribbon.tips.consumed
             || (self.ribbon.tips.active()

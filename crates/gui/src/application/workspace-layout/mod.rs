@@ -76,6 +76,9 @@ impl WorkspaceLayout {
     pub(crate) fn browser_consumed_arrow(&self) -> bool {
         self.view.arrow_consumed
     }
+    pub(crate) fn feature_keyboard_focus(&self) -> bool {
+        self.view.feature_keyboard_focus
+    }
     /// Draw the browser in its dock; example: `layout.browser_panel(ui, state, 900., 158., actions)`.
     pub(crate) fn browser_panel(
         &mut self,
@@ -87,6 +90,7 @@ impl WorkspaceLayout {
     ) {
         self.pending_layout = false;
         self.view.arrow_consumed = false;
+        self.view.feature_keyboard_focus = false;
         self.view.document_area = Some(self.document_area(ui.io().display_size, band_height));
         if !self.panels.dock_visible() {
             self.empty_dock_control(ui, band_height);
