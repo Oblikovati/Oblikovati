@@ -90,6 +90,32 @@ pub(super) const COMMANDS: [Command; 26] = [
     Command::Constraint(GuiSketchConstraint::Tangent),
     Command::Dimension,
 ];
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub(super) enum Category {
+    #[default]
+    All,
+    Macros,
+    Sketch,
+}
+impl Category {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::All => "All Commands",
+            Self::Macros => "Macros",
+            Self::Sketch => "Sketch Tab",
+        }
+    }
+    fn contains(self, command: Command) -> bool {
+        match self {
+            Self::All => true,
+            Self::Macros => command == Command::Separator,
+            Self::Sketch => matches!(
+                command,
+                Command::Separator | Command::Tool(_) | Command::Constraint(_) | Command::Dimension
+            ),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) struct Entry {
     pub command: Command,
@@ -110,7 +136,7 @@ pub(super) struct Draft {
     pub selected: Option<usize>,
     pub target_extra: BTreeSet<usize>,
     target_extent: Option<usize>,
-    pub sketch_category: bool,
+    pub category: Category,
     pub source_descending: bool,
 }
 impl Draft {
@@ -129,7 +155,7 @@ impl Draft {
         self.selected = None;
         self.target_extra.clear();
         self.target_extent = None;
-        self.sketch_category = false;
+        self.category = Category::All;
         self.source_descending = false;
     }
     pub fn rows(&self) -> &[Entry] {
@@ -185,14 +211,13 @@ impl Draft {
     }
     pub fn available(&self, command: Command) -> bool {
         (command == Command::Separator || !self.rows().iter().any(|row| row.command == command))
-            && (!self.sketch_category
-                || matches!(
-                    command,
-                    Command::Separator
-                        | Command::Tool(_)
-                        | Command::Constraint(_)
-                        | Command::Dimension
-                ))
+            && self.category.contains(command)
+    }
+    pub fn set_category(&mut self, category: Category) {
+        self.category = category;
+        self.source = None;
+        self.source_extra.clear();
+        self.source_extent = None;
     }
     pub fn available_commands(&self) -> Vec<Command> {
         let mut commands: Vec<_> = COMMANDS

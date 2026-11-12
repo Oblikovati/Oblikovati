@@ -6,6 +6,8 @@ use cucumber::{given, then, when};
 mod custom_panel_title;
 #[path = "file_exchange.rs"]
 mod file_exchange;
+#[path = "macros.rs"]
+mod macros;
 #[path = "missing_file.rs"]
 mod missing_file;
 

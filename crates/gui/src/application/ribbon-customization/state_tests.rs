@@ -2,6 +2,31 @@
 use super::*;
 
 #[test]
+fn empty_macro_category_retains_separator_and_staged_changes() {
+    let mut draft = Draft::default();
+    draft.open(RibbonTab::Tools);
+    draft.reset_source_selection(Command::Sketches);
+    draft.add();
+    draft.set_category(Category::Macros);
+    assert_eq!(draft.available_commands(), vec![Command::Separator]);
+    assert_eq!(draft.source, None);
+    draft.reset_source_selection(Command::Separator);
+    draft.add();
+    assert_eq!(draft.available_commands(), vec![Command::Separator]);
+    assert_eq!(
+        draft
+            .rows()
+            .iter()
+            .map(|entry| entry.command)
+            .collect::<Vec<_>>(),
+        vec![Command::Sketches, Command::Separator]
+    );
+    draft.open(RibbonTab::Tools);
+    assert!(draft.rows().is_empty());
+    assert_eq!(draft.category, Category::All);
+}
+
+#[test]
 fn source_sort_preserves_selection_and_transfers_in_display_order() {
     let mut draft = Draft::default();
     draft.open(RibbonTab::Tools);
@@ -95,7 +120,7 @@ fn reversed_addition_stays_pending_until_apply_or_cancel() {
 fn sketch_category_contains_supported_sketch_commands_once() {
     let mut draft = Draft::default();
     draft.open(RibbonTab::Sketch);
-    draft.sketch_category = true;
+    draft.set_category(Category::Sketch);
     let labels: Vec<_> = COMMANDS
         .iter()
         .copied()

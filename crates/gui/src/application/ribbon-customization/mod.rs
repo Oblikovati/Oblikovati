@@ -8,7 +8,7 @@ mod state;
 mod store;
 use crate::ribbon::RibbonTab;
 use imgui::Ui;
-use state::{Command, Draft};
+use state::{Category, Command, Draft};
 pub use store::GuiRibbonSettingsStore;
 
 #[derive(Clone, Copy)]
@@ -187,18 +187,11 @@ impl RibbonCustomization {
     }
     fn source_list(&mut self, ui: &Ui) {
         ui.text("Available commands");
-        let category = if self.draft.sketch_category {
-            "Sketch Tab"
-        } else {
-            "All Commands"
-        };
         ui.set_next_item_width(230.);
-        if let Some(_category) = ui.begin_combo("##command-category", category) {
-            for (label, sketch) in [("All Commands", false), ("Sketch Tab", true)] {
-                if ui.selectable(label) {
-                    self.draft.sketch_category = sketch;
-                    self.draft.source = None;
-                    self.draft.source_extra.clear();
+        if let Some(_category) = ui.begin_combo("##command-category", self.draft.category.label()) {
+            for category in [Category::All, Category::Macros, Category::Sketch] {
+                if ui.selectable(category.label()) {
+                    self.draft.set_category(category);
                 }
             }
         }
