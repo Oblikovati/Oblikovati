@@ -54,6 +54,13 @@ impl<
             dimension_labels: Vec::new(),
             sketch_delete_available: self.sketch_delete_available(document),
             sketch_selection: browser_selection::gui_sketch_selection(session),
+            sketch_block_names: session
+                .snapshot()
+                .sketches
+                .block_definitions()
+                .iter()
+                .map(|definition| definition.name().to_owned())
+                .collect(),
             documents: self.gui_document_rows()?,
             document_model_states: self.gui_document_model_states()?,
             document_storage: self.gui_document_storage()?,

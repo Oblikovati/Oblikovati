@@ -281,6 +281,8 @@ pub struct GuiCommandState {
     pub dimension_labels: Vec<crate::GuiDimensionLabel>,
     pub dimension_draft: Option<crate::GuiDimensionDraft>,
     pub sketch_selection: oblikovati_viewport::ViewportSketchSelection,
+    /// Names in the active document's block registry.
+    pub sketch_block_names: Vec<String>,
     pub color_scheme: Option<crate::GuiColorSchemeState>,
     pub theme: Option<crate::GuiThemeState>,
     pub browser: Option<crate::GuiModelBrowser>,

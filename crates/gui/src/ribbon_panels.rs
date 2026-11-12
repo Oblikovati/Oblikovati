@@ -156,6 +156,7 @@ pub(crate) struct RibbonPanelOwners<'a> {
     pub workspaces: &'a mut crate::application::document_creation::workspaces::DocumentWorkspaces,
     pub quick_access: &'a mut crate::application::quick_access_toolbar::QuickAccessToolbar,
     pub precise_input: &'a mut crate::sketch::precise_input::PreciseInputBar,
+    pub create_block: &'a mut crate::sketch::create_block::CreateBlockDialog,
     pub plane_selection_active: bool,
     pub hole_tip: bool,
     pub modify_group_tip: bool,

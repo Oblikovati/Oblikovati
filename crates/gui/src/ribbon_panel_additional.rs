@@ -152,7 +152,13 @@ fn draw_window(
         .collapsible(false)
         .focused(focus)
         .build(|| {
-            commands(ui, panel, context.state, context.owners.precise_input);
+            commands(
+                ui,
+                panel,
+                context.state,
+                context.owners.precise_input,
+                context.owners.create_block,
+            );
             ui.separator();
             let active = expansion.pinned.then(|| {
                 ui.push_style_color(
@@ -217,9 +223,10 @@ fn commands(
     panel: RibbonPanel,
     state: &GuiCommandState,
     precise_input: &mut crate::sketch::precise_input::PreciseInputBar,
+    create_block: &mut crate::sketch::create_block::CreateBlockDialog,
 ) {
     if panel == RibbonPanel::Create {
-        create_commands(ui, state, precise_input);
+        create_commands(ui, state, precise_input, create_block);
         return;
     }
     let disabled = ui.begin_disabled(true);
@@ -243,11 +250,11 @@ fn create_commands(
     ui: &Ui,
     state: &GuiCommandState,
     precise_input: &mut crate::sketch::precise_input::PreciseInputBar,
+    create_block: &mut crate::sketch::create_block::CreateBlockDialog,
 ) {
-    let unavailable = ui.begin_disabled(true);
-    ui.button("Create Block");
-    if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
-        ui.tooltip_text("This command is not available in this build.");
+    let unavailable = ui.begin_disabled(!state.sketch_at_ready || state.transaction_open);
+    if ui.button("Create Block") {
+        create_block.open(state);
     }
     drop(unavailable);
     let disabled = ui.begin_disabled(state.precise_target.is_none() || state.transaction_open);

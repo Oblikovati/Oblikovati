@@ -40,6 +40,7 @@ pub struct GuiFrameEngine {
     extrude_dialog: crate::extrude_dialog::ExtrudeDialog,
     dimension_value_editor: crate::sketch::dimension_edit::GuiDimensionValueEditor,
     precise_input: crate::sketch::precise_input::PreciseInputBar,
+    create_block: crate::sketch::create_block::CreateBlockDialog,
     command_alias: crate::sketch::command_alias::CommandAliasBox,
     /// A popup was open last frame: Escape closes it, and the frame that opens is already too
     /// late to ask, since Dear ImGui acts on the key as the frame begins.
@@ -81,6 +82,7 @@ impl GuiFrameEngine {
             extrude_dialog: Default::default(),
             dimension_value_editor: Default::default(),
             precise_input: Default::default(),
+            create_block: Default::default(),
             command_alias: Default::default(),
             popup_was_open: false,
             widget_keys: Vec::new(),
@@ -253,6 +255,7 @@ impl GuiFrameEngine {
                 theme_editor: &mut self.theme_editor,
                 preferences: &mut self.preferences,
                 precise_input: &mut self.precise_input,
+                create_block: &mut self.create_block,
                 workspace: &mut self.workspace,
                 workspaces: &mut self.workspaces,
                 quick_access: &mut self.quick_access,
@@ -342,6 +345,7 @@ impl GuiFrameEngine {
             .panel(ui, &request.commands, &mut selected, self.home.active);
         self.extrude_dialog
             .panel(ui, &request.commands, &mut selected);
+        self.create_block.panel(ui, &request.commands);
         crate::sketch::line::command_menu(ui, &request.commands, &mut selected);
         self.precise_input
             .panel(ui, &request.commands, &mut selected);

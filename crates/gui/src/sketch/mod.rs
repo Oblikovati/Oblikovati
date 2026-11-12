@@ -2,6 +2,7 @@
 //! Sketch commands, one folder per scenario feature under `features/sketch/`.
 pub(crate) mod command_alias;
 pub(crate) mod constraint_glyphs;
+pub(crate) mod create_block;
 #[path = "dimension-edit/mod.rs"]
 pub(crate) mod dimension_edit;
 #[path = "inspect.rs"]

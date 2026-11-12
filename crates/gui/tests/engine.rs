@@ -13,6 +13,7 @@ fn request() -> GuiFrameRequest {
             dimension_draft: None,
             dimension_labels: Vec::new(),
             sketch_selection: Default::default(),
+            sketch_block_names: Vec::new(),
             theme: None,
             color_scheme: None,
             documents: Vec::new(),

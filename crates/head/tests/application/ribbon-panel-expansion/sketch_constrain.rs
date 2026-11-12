@@ -162,6 +162,73 @@ fn sketch_edit_inactive(world: &mut ApplicationWorld) {
     assert!(world.app().owner.active_sketch_edit().is_none());
 }
 
+#[given("a part has an active editable sketch in the MCAD Software")]
+fn active_editable_sketch(world: &mut ApplicationWorld) {
+    world.start_empty_sketch();
+}
+#[given("the Sketch Create panel's additional command area is open")]
+fn create_area_open(world: &mut ApplicationWorld) {
+    open_create(world);
+}
+#[when("I select Create Block from that area")]
+fn choose_create_block(world: &mut ApplicationWorld) {
+    let control = world.run_in_window("##ribbon-additional-Create", "CreateBlock");
+    assert_eq!(control.alpha, u8::MAX);
+    world.click(diagnostics::pointer_pixels(control.center()));
+    world.pump(Vec::new());
+}
+#[then("the Create Block dialog opens over the sketch")]
+fn create_dialog_open(_: &mut ApplicationWorld) {
+    assert!(diagnostics::window_geometry("Create Block").is_some());
+}
+#[then("the dialog offers geometry and insert-point selectors")]
+fn create_dialog_selectors(world: &mut ApplicationWorld) {
+    let text = world.window_text("Create Block");
+    assert!(text.contains("Geometry"));
+    assert!(text.contains("InsertPoint"));
+}
+#[then("the block name and description fields are visible")]
+fn create_dialog_fields(world: &mut ApplicationWorld) {
+    let text = world.window_text("Create Block");
+    assert!(text.contains("BlockName"));
+    assert!(text.contains("Description"));
+    assert!(text.contains("Block1"));
+}
+fn cancel_create_dialog(world: &mut ApplicationWorld) {
+    let cancel = world.run_in_window("Create Block", "Cancel");
+    world.click(diagnostics::pointer_pixels(cancel.center()));
+    world.pump(Vec::new());
+}
+#[then("the dialog closes without creating a block")]
+fn create_dialog_closed(world: &mut ApplicationWorld) {
+    assert!(diagnostics::window_geometry("Create Block").is_none());
+    assert!(world.app().owner.active_sketch_edit().is_some());
+}
+#[then("the sketch remains active and unchanged")]
+fn sketch_remains_active(world: &mut ApplicationWorld) {
+    assert_eq!(
+        world.state().authoring,
+        oblikovati_gui::GuiAuthoringContext::Sketch
+    );
+}
+
+#[test]
+fn create_block_opens_and_cancels_through_the_native_ribbon() {
+    let mut world = ApplicationWorld::new();
+    active_editable_sketch(&mut world);
+    let before = world.state().undo_labels;
+    create_area_open(&mut world);
+    choose_create_block(&mut world);
+    create_dialog_open(&mut world);
+    create_dialog_selectors(&mut world);
+    create_dialog_fields(&mut world);
+    cancel_create_dialog(&mut world);
+    create_dialog_closed(&mut world);
+    sketch_remains_active(&mut world);
+    assert_eq!(world.state().undo_labels, before);
+    world.close();
+}
+
 #[test]
 fn create_expansion_opens_the_existing_precise_input_for_a_line() {
     let mut world = ApplicationWorld::new();
