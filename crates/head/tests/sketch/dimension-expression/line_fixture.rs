@@ -4,6 +4,12 @@ use super::*;
 use oblikovati_api::wire::AddDimensionArgs;
 
 pub(super) fn create(world: &mut ApplicationWorld) {
+    create_with_reference_at(world, [1., 5.]);
+}
+pub(super) fn create_overlapping(world: &mut ApplicationWorld) {
+    create_with_reference_at(world, [5., 4.5]);
+}
+fn create_with_reference_at(world: &mut ApplicationWorld, reference_at: [f64; 2]) {
     if world.state().authoring != oblikovati_gui::GuiAuthoringContext::Sketch {
         world.start_sketch_on("YZ Plane");
     }
@@ -33,7 +39,15 @@ pub(super) fn create(world: &mut ApplicationWorld) {
         Some("d64"),
         false,
     );
-    add(world, &entities, "aligned", "1 mm", [1., 5.], None, true);
+    add(
+        world,
+        &entities,
+        "aligned",
+        "1 mm",
+        reference_at,
+        Some("d78"),
+        true,
+    );
     world.pump(Vec::new());
 }
 fn add(

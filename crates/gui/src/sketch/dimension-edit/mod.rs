@@ -10,6 +10,7 @@ pub struct GuiDimensionEdit {
     pub constraint: u64,
     pub name: String,
     pub expression: String,
+    pub driven: bool,
 }
 /// One accepted value; the owner re-solves the sketch through history.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -33,6 +34,7 @@ pub(crate) struct GuiDimensionValueEditor {
     position: [f32; 2],
 }
 const TITLE: &str = "Edit Dimension";
+const DRIVEN_TITLE: &str = "Driven Dimension";
 const SIZE: [f32; 2] = [240., 70.];
 const INVALID_TEXT: [f32; 4] = [0.95, 0.2, 0.2, 1.];
 
@@ -69,23 +71,25 @@ impl GuiDimensionValueEditor {
         let Some(edit) = self.open.clone() else {
             return;
         };
+        let title = if edit.driven { DRIVEN_TITLE } else { TITLE };
         let mut close = false;
-        crate::widget_abi::fit_dialog(ui, TITLE, self.position, SIZE);
-        ui.window(TITLE).collapsible(false).build(|| {
+        crate::widget_abi::fit_dialog(ui, title, self.position, SIZE);
+        ui.window(title).collapsible(false).build(|| {
             ui.text(&edit.name);
             ui.same_line();
             if std::mem::take(&mut self.focus) {
                 ui.set_keyboard_focus_here();
             }
-            let invalid = !expression_syntax_valid(&self.text);
+            let invalid = !edit.driven && !expression_syntax_valid(&self.text);
             let red = invalid.then(|| ui.push_style_color(imgui::StyleColor::Text, INVALID_TEXT));
             let accepted = ui
                 .input_text("##dimension-value", &mut self.text)
+                .read_only(edit.driven)
                 .auto_select_all(true)
                 .enter_returns_true(true)
                 .build();
             drop(red);
-            if accepted {
+            if accepted && !edit.driven {
                 self.submitted = Some(edit.clone());
                 actions.push(GuiShellAction::EditDimensionValue(GuiDimensionValue {
                     sketch: edit.sketch,
@@ -167,24 +171,34 @@ fn label_under_pointer(
     let [x, y] = ui.io().mouse_pos;
     let scale = request.layout_scale();
     // Labels can overlap on a small shape; the one nearest the pointer is the one meant.
-    let hits = state.dimension_labels.iter().filter_map(|label| {
-        let size = ui.calc_text_size(&label.text);
-        let [cx, cy] = [
-            label.pixel[0] as f32 / scale[0],
-            label.pixel[1] as f32 / scale[1],
-        ];
-        let hit = (x - cx).abs() <= size[0] / 2. + 2. && (y - cy).abs() <= size[1] / 2. + 2.;
-        let edit = label.edit.clone()?;
-        if hit {
-            return Some(((x - cx).hypot(y - cy), edit));
-        }
-        let [from, to] = label.line?;
-        let logical = |point: [i32; 2]| [point[0] as f32 / scale[0], point[1] as f32 / scale[1]];
-        let distance = line_distance([x, y], logical(from), logical(to));
-        (distance <= 5.).then_some((distance, edit))
-    });
-    hits.min_by(|first, second| first.0.total_cmp(&second.0))
-        .map(|(_, edit)| edit)
+    let hits = state
+        .dimension_labels
+        .iter()
+        .enumerate()
+        .filter_map(|(index, label)| {
+            let size = ui.calc_text_size(&label.text);
+            let [cx, cy] = [
+                label.pixel[0] as f32 / scale[0],
+                label.pixel[1] as f32 / scale[1],
+            ];
+            let hit = (x - cx).abs() <= size[0] / 2. + 2. && (y - cy).abs() <= size[1] / 2. + 2.;
+            let edit = label.edit.clone()?;
+            if hit {
+                return Some(((x - cx).hypot(y - cy), index, edit));
+            }
+            let [from, to] = label.line?;
+            let logical =
+                |point: [i32; 2]| [point[0] as f32 / scale[0], point[1] as f32 / scale[1]];
+            let distance = line_distance([x, y], logical(from), logical(to));
+            (distance <= 5.).then_some((distance, index, edit))
+        });
+    hits.min_by(|first, second| {
+        first
+            .0
+            .total_cmp(&second.0)
+            .then_with(|| second.1.cmp(&first.1))
+    })
+    .map(|(_, _, edit)| edit)
 }
 fn line_distance(point: [f32; 2], from: [f32; 2], to: [f32; 2]) -> f32 {
     let direction = [to[0] - from[0], to[1] - from[1]];

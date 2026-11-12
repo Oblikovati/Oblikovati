@@ -331,6 +331,35 @@ fn programmatic_unavailable_sources_keep_their_health_visible_in_annotations() {
 }
 
 #[test]
+fn reference_annotation_uses_measurement_even_when_unused_source_is_unavailable() {
+    let (mut owner, _, _) = geometric_owner(&[[0., 0.], [100., 40.]], false);
+    Client::new(owner.document_host())
+        .dimension()
+        .add(&oblikovati_api::wire::AddDimensionArgs {
+            kind: "distance".into(),
+            entities: Some(vec![1, 2]),
+            expression: "futureWidth".into(),
+            text_point: Some(vec![50., 100.]),
+            driven: true,
+            ..Default::default()
+        })
+        .unwrap();
+    let annotations = owner.sketch_dimension_annotations().unwrap();
+    assert!(annotations.declines.is_empty());
+    let label = &annotations.labels[0];
+    assert!(label.text.starts_with('(') && label.text.ends_with(')'));
+    assert!(label.edit.as_ref().unwrap().driven);
+    assert!(
+        !label
+            .edit
+            .as_ref()
+            .unwrap()
+            .expression
+            .contains("futureWidth")
+    );
+}
+
+#[test]
 fn redundant_dimension_keeps_the_editor_until_explicit_reference_correction() {
     let (mut owner, _, _) = geometric_owner(&[[0., 0.], [100., 40.]], false);
     point_draft(&mut owner, [50, 100]);

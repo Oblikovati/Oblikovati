@@ -189,6 +189,7 @@ fn dimension_annotation(
         .units()
         .format_display(quantity)
         .map_err(|cause| cause.to_string())?;
+    let measured_value = value.clone();
     let state = snapshot
         .parameters
         .get(parameter)
@@ -201,12 +202,13 @@ fn dimension_annotation(
     } else {
         GuiDimensionLabelRole::Driving
     };
-    let text = match &state.health {
-        oblikovati_model::parameter::ParameterHealth::Healthy => {
+    let text = match (&role, &state.health) {
+        (GuiDimensionLabelRole::Driven, _) => {
+            format!("({})", annotation_value(quantity, value))
+        }
+        (_, oblikovati_model::parameter::ParameterHealth::Healthy) => {
             let value = annotation_value(quantity, value);
-            if role == GuiDimensionLabelRole::Driven {
-                format!("({value})")
-            } else if !snapshot
+            if !snapshot
                 .parameters
                 .drivers(parameter)
                 .map_err(|cause| cause.to_string())?
@@ -217,15 +219,20 @@ fn dimension_annotation(
                 value
             }
         }
-        oblikovati_model::parameter::ParameterHealth::Failed(_) => {
+        (_, oblikovati_model::parameter::ParameterHealth::Failed(_)) => {
             format!("{}: {value} (source unavailable)", state.name)
         }
     };
-    let edit = (role == GuiDimensionLabelRole::Driving).then(|| oblikovati_gui::GuiDimensionEdit {
+    let edit = Some(oblikovati_gui::GuiDimensionEdit {
         sketch: sketch.id().0,
         constraint: id.0,
         name: state.name.clone(),
-        expression: stored_expression(snapshot, state, quantity.dimension),
+        expression: if role == GuiDimensionLabelRole::Driven {
+            measured_value
+        } else {
+            stored_expression(snapshot, state, quantity.dimension)
+        },
+        driven: role == GuiDimensionLabelRole::Driven,
     });
     Ok(Some(HeadDimensionAnnotation {
         plane,

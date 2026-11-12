@@ -9,6 +9,8 @@ use oblikovati_api::{
 use oblikovati_viewport::ViewportPhysicalKey;
 #[path = "line_fixture.rs"]
 mod line_fixture;
+#[path = "overlap.rs"]
+mod overlap;
 
 #[given("the MCAD Software is editing an editable metric sketch")]
 fn editable_metric_sketch(world: &mut ApplicationWorld) {
@@ -416,7 +418,7 @@ fn native_dimension_reference_updates_annotation_and_geometry_through_history() 
 }
 
 #[test]
-fn native_reference_dimension_shows_parentheses_and_cannot_be_edited() {
+fn native_reference_dimension_opens_a_read_only_measured_value() {
     let mut world = ApplicationWorld::new();
     ten_millimetre_height(&mut world);
     let client = Client::new(world.app().owner.document_host());
@@ -440,7 +442,11 @@ fn native_reference_dimension_shows_parentheses_and_cannot_be_edited() {
     world.pump(Vec::new());
     world.expect_annotation("(10)");
     world.open_dimension_label("(10)");
-    assert!(diagnostics::window_geometry("Edit Dimension").is_none());
+    assert!(diagnostics::window_geometry("Driven Dimension").is_some());
+    assert!(world.window_text("Driven Dimension").contains("10.000mm"));
+    world.type_text("99");
+    assert!(world.window_text("Driven Dimension").contains("10.000mm"));
+    world.expect_annotation("(10)");
     world.close();
 }
 
