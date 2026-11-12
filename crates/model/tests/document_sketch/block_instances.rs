@@ -5,6 +5,23 @@ use oblikovati_model::document_sketch::SketchBlockInstance;
 fn instance(id: u64, definition: &str) -> SketchBlockInstance {
     SketchBlockInstance::new(SketchEntityId(id), definition, [1., -2.], 0.5, 2.).unwrap()
 }
+
+#[test]
+fn placement_coordinates_round_trip_for_rotation_and_signed_scale() {
+    for scale in [2., -2.] {
+        let block =
+            SketchBlockInstance::new(SketchEntityId(20), "Rib", [3., -4.], 0.7, scale).unwrap();
+        let point = [2., -1.];
+        let restored = block
+            .to_definition(block.to_sketch(point).unwrap())
+            .unwrap();
+        for axis in 0..2 {
+            assert!((restored[axis] - point[axis]).abs() < 1e-12);
+        }
+        assert!(block.to_sketch([f64::MAX, f64::MAX]).is_err());
+        assert!(block.to_definition([f64::INFINITY, 0.]).is_err());
+    }
+}
 #[test]
 fn instances_round_trip_with_global_identities_and_block_deletion_is_refused() {
     let mut sketches = document();

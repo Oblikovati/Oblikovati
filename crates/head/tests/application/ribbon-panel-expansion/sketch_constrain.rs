@@ -271,6 +271,16 @@ fn create_block_groups_four_mouse_selected_edges_and_supports_undo_redo() {
     for [from, to] in &segments {
         world.expect_segment_drawn(*from, *to);
     }
+    let midpoint = std::array::from_fn(|axis| (segments[0][0][axis] + segments[0][1][axis]) / 2);
+    world.click(midpoint);
+    let picked = world.state().sketch_selection.entities;
+    assert_eq!(picked.len(), 1);
+    assert_eq!(
+        picked[0].1,
+        world.state().browser.unwrap().block_instances[0].id
+    );
+    world.click([1150, 650]);
+    assert!(world.state().sketch_selection.entities.is_empty());
     let unselected = super::super::capture_framebuffer(&mut world.app().window.native);
     world.click_text("Block1:1");
     let selection = world.state().sketch_selection.entities;
@@ -306,6 +316,78 @@ fn segment_color_changed(
             before.rgba[index..index + 4] != after.rgba[index..index + 4]
         })
     })
+}
+
+#[test]
+fn viewport_picks_rotated_and_scaled_block_instance() {
+    use crate::HeadWindow;
+    use oblikovati_api::{client::Client, wire::AddSketchBlockArgs};
+    use oblikovati_model::{document_sketch::SketchBlockInstance, sketch::SketchEntityId};
+    let mut world = ApplicationWorld::new();
+    world.start_empty_sketch();
+    world.draw_rectangle();
+    world.escape();
+    let edit = world.app().owner.active_sketch_edit().unwrap();
+    let geometry = world.edited_geometry();
+    let line = geometry.lines()[0];
+    let endpoints = line
+        .endpoints
+        .map(|id| geometry.point(id).unwrap().position);
+    let midpoint = std::array::from_fn(|axis| (endpoints[0][axis] + endpoints[1][axis]) / 2.);
+    let desired = world
+        .app()
+        .window
+        .sketch_point([1100, 550], edit.plane)
+        .unwrap()
+        .unwrap();
+    let transform = SketchBlockInstance::new(
+        SketchEntityId(1),
+        "Rib",
+        [0., 0.],
+        std::f64::consts::FRAC_PI_2,
+        -2.,
+    )
+    .unwrap();
+    let transformed = transform.to_sketch(midpoint).unwrap();
+    let translation: [f64; 2] = std::array::from_fn(|axis| desired[axis] - transformed[axis]);
+    let scale = world
+        .app()
+        .owner
+        .documents()
+        .workspace()
+        .session(edit.document)
+        .unwrap()
+        .snapshot()
+        .parameters
+        .units()
+        .working_scale();
+    world
+        .app()
+        .owner
+        .document_commands(edit.document)
+        .run("Capture block", |snapshot, _| {
+            snapshot
+                .sketches
+                .capture_block_definition("Rib", edit.sketch, &[line.id])
+        })
+        .unwrap();
+    let added = Client::new(world.app().owner.document_host())
+        .sketch()
+        .add_block_instance(&AddSketchBlockArgs {
+            definition: "Rib".into(),
+            position: Some(translation.map(|value| value * scale).to_vec()),
+            rotation_angle: "90 deg".into(),
+            scale: -2.,
+            ..Default::default()
+        })
+        .unwrap();
+    world.pump(Vec::new());
+    world.click([1100, 550]);
+    assert_eq!(
+        world.state().sketch_selection.entities[0].1.0,
+        added.entity_id
+    );
+    world.close();
 }
 fn visible_line_point(world: &mut ApplicationWorld, line: usize) -> [i32; 2] {
     let (position, size) = diagnostics::window_geometry("Create Block").unwrap();

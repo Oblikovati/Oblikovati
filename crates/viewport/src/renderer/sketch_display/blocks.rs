@@ -115,20 +115,9 @@ fn transform_primitive(
     }
 }
 fn transform_point([x, y]: [f64; 2], instance: &SketchBlockInstance) -> Result<[f64; 2], String> {
-    let (sin, cos) = instance.rotation().sin_cos();
-    let scale = instance.scale();
-    let [dx, dy] = instance.position();
-    let point = [
-        dx + scale * (cos * x - sin * y),
-        dy + scale * (sin * x + cos * y),
-    ];
-    if point.iter().any(|value| !value.is_finite()) {
-        return Err(format!(
-            "block instance {:?} point [{x}, {y}]: expected finite transformed coordinates",
-            instance.id()
-        ));
-    }
-    Ok(point)
+    instance
+        .to_sketch([x, y])
+        .map_err(|cause| cause.to_string())
 }
 #[cfg(test)]
 mod tests {

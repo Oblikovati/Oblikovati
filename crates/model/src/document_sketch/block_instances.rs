@@ -67,6 +67,35 @@ impl SketchBlockInstance {
     pub fn scale(&self) -> f64 {
         self.scale
     }
+    /// Map a definition point into its sketch; example: `instance.to_sketch([0., 0.])?`.
+    pub fn to_sketch(&self, [x, y]: [f64; 2]) -> Result<[f64; 2], SketchError> {
+        let (sin, cos) = self.rotation.sin_cos();
+        let point = [
+            self.position[0] + self.scale * (cos * x - sin * y),
+            self.position[1] + self.scale * (sin * x + cos * y),
+        ];
+        self.check_mapped_point([x, y], point)
+    }
+    /// Map a sketch point into the definition; example: `instance.to_definition([1., 2.])?`.
+    pub fn to_definition(&self, point: [f64; 2]) -> Result<[f64; 2], SketchError> {
+        let (sin, cos) = self.rotation.sin_cos();
+        let x = (point[0] - self.position[0]) / self.scale;
+        let y = (point[1] - self.position[1]) / self.scale;
+        self.check_mapped_point(point, [cos * x + sin * y, -sin * x + cos * y])
+    }
+    fn check_mapped_point(
+        &self,
+        source: [f64; 2],
+        mapped: [f64; 2],
+    ) -> Result<[f64; 2], SketchError> {
+        if source.iter().chain(&mapped).any(|value| !value.is_finite()) {
+            return Err(SketchError::Definition(format!(
+                "block instance {:?} point {source:?}: expected finite coordinates in both spaces",
+                self.id
+            )));
+        }
+        Ok(mapped)
+    }
 }
 impl PlacedSketch {
     /// Return placed instances in creation order; example: `sketch.block_instances()`.

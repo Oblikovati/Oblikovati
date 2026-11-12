@@ -69,8 +69,8 @@ impl<
         } else {
             mode
         };
-        let picked = self.resolve_sketch_pick(edit, position, window)?;
-        self.store_sketch_click(edit, picked, mode)?;
+        let picked = self.resolve_sketch_target(edit, position, window)?;
+        self.store_sketch_target(edit, picked, mode)?;
         self.publish_selection_count(edit)?;
         Ok(true)
     }
@@ -95,26 +95,55 @@ impl<
         picked: Option<SketchEntityId>,
         mode: SelectionClickMode,
     ) -> Result<(), String> {
+        self.store_sketch_target(edit, picked.map(SketchPickTarget::Entity), mode)
+    }
+    fn store_sketch_target(
+        &mut self,
+        edit: HeadSketchEdit,
+        picked: Option<SketchPickTarget>,
+        mode: SelectionClickMode,
+    ) -> Result<(), String> {
         self.files
             .commands(edit.document)
             .map_err(|cause| cause.to_string())?
-            .set_sketch_selection(
-                edit.sketch,
-                picked.map(SketchPickTarget::Entity),
-                mode,
-                false,
-            )
+            .set_sketch_selection(edit.sketch, picked, mode, false)
             .map(|_| ())
             .map_err(|cause| cause.to_string())
     }
-    fn resolve_sketch_pick(
+    fn resolve_sketch_target(
         &self,
         edit: HeadSketchEdit,
         pixel: [i32; 2],
         window: &dyn HeadWindow,
-    ) -> Result<Option<SketchEntityId>, String> {
-        self.resolve_sketch_hit(edit, pixel, window, SketchPickFilter::Any)
-            .map(|hit| hit.map(|witness| witness.entity))
+    ) -> Result<Option<SketchPickTarget>, String> {
+        let loose = self.resolve_sketch_hit(edit, pixel, window, SketchPickFilter::Any)?;
+        if self.block_selection == Some(edit) {
+            return Ok(loose.map(|hit| SketchPickTarget::Entity(hit.entity)));
+        }
+        let session = self
+            .files
+            .workspace()
+            .session(edit.document)
+            .map_err(|cause| cause.to_string())?;
+        let snapshot = session.snapshot();
+        let sketch = snapshot
+            .sketches
+            .get(edit.sketch)
+            .map_err(|cause| cause.to_string())?;
+        if loose.is_some_and(|hit| sketch.geometry().point(hit.entity).is_ok()) {
+            return Ok(loose.map(|hit| SketchPickTarget::Entity(hit.entity)));
+        }
+        let block = super::sketch_block_pick::nearest_block(snapshot, edit, pixel, window)?;
+        let loose = loose
+            .map(|hit| -> Result<_, String> {
+                let point = window.sketch_pixel(edit.plane, hit.position)?;
+                Ok((
+                    screen_distance(point, pixel),
+                    SketchPickTarget::Entity(hit.entity),
+                ))
+            })
+            .transpose()?;
+        Ok(super::sketch_block_pick::nearest_target(loose, block))
     }
     pub(super) fn resolve_sketch_hit(
         &self,

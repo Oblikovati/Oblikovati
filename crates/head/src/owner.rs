@@ -47,6 +47,8 @@ mod parameters_gui;
 mod recent;
 #[path = "owner_sketch_block.rs"]
 mod sketch_block;
+#[path = "owner_sketch_block_pick.rs"]
+mod sketch_block_pick;
 #[path = "owner_sketch_delete.rs"]
 mod sketch_delete;
 #[path = "owner_sketch_dimension.rs"]
