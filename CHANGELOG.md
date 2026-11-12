@@ -4,6 +4,8 @@
 
 ### Added
 
+- Added keyboard navigation and scrolling for available ribbon commands. (#3856)
+
 - Added name sorting to the available ribbon commands while preserving selection. (#3856)
 
 - Added expanded-panel placement for custom ribbon commands. (#3856)

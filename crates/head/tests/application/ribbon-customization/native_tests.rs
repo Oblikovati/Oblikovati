@@ -3,6 +3,29 @@
 use super::*;
 
 #[test]
+fn available_commands_support_keyboard_navigation_and_scrolling() {
+    use oblikovati_viewport::ViewportPhysicalKey;
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    open_tools_customization(&mut world);
+    click_in_customize(&mut world, "2DSketches");
+    world.key(ViewportPhysicalKey::End, false);
+    assert!(world.window_text("Customize").contains("Vertical"));
+    world.key(ViewportPhysicalKey::Home, false);
+    assert!(world.window_text("Customize").contains("<Separator>"));
+    world.key(ViewportPhysicalKey::V, false);
+    assert!(world.window_text("Customize").contains("Vertical"));
+    assert_ne!(world.run_in_window("Customize", "Apply").alpha, u8::MAX);
+    click_in_customize(&mut world, ">");
+    assert!(
+        world.run_in_window("Customize", "Vertical").center()[0]
+            >= world.run_in_window("Customize", "Custompanel").minimum[0]
+    );
+    click_in_customize(&mut world, "Cancel");
+    world.close();
+}
+
+#[test]
 fn source_header_reverses_order_without_losing_selected_command() {
     let mut world = ApplicationWorld::new();
     world.add_part();

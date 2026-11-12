@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Ribbon command edits stay in a draft until Apply or OK.
+mod keyboard;
 mod panel;
 mod settings_dialog;
 mod settings_xml;
@@ -26,6 +27,7 @@ pub(crate) struct RibbonCustomization {
     source_focused: bool,
     target_focused: bool,
     visible_source: Vec<Command>,
+    scroll_source_to_selection: bool,
     settings: settings_dialog::SettingsDialog,
     store: Option<Box<dyn GuiRibbonSettingsStore>>,
     save_error: Option<String>,
@@ -76,6 +78,7 @@ impl RibbonCustomization {
         self.draft.open(tab);
         self.escape = Default::default();
         self.list_focus = None;
+        self.scroll_source_to_selection = false;
         self.save_error = None;
         self.open = true;
     }
@@ -224,6 +227,10 @@ impl RibbonCustomization {
                     if ui.is_item_visible() {
                         self.visible_source.push(command);
                     }
+                    if self.scroll_source_to_selection && self.draft.source == Some(command) {
+                        ui.set_scroll_here_y();
+                        self.scroll_source_to_selection = false;
+                    }
                     if ui.is_item_hovered() && ui.is_mouse_double_clicked(imgui::MouseButton::Left)
                     {
                         transfer = Some(command);
@@ -356,6 +363,9 @@ impl RibbonCustomization {
             return;
         }
         if !ui.io().key_shift {
+            if matches!(active_list, ListFocus::Source) && self.navigate_source(ui) {
+                self.navigation_consumed = true;
+            }
             return;
         }
         let direction = if ui.is_key_pressed_no_repeat(imgui::Key::DownArrow) {
