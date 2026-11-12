@@ -4,6 +4,8 @@
 
 ### Added
 
+- Added keyboard selection and transfer of multiple ribbon commands. (#3856)
+
 - Added sketch tools and constraints to the ribbon customization command list. (#3856)
 
 - Added double-click transfer of ribbon user commands. (#3856)

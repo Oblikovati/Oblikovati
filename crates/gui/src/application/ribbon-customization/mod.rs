@@ -6,17 +6,25 @@ use crate::ribbon::RibbonTab;
 use imgui::Ui;
 use state::{COMMANDS, Command, Draft};
 
+#[derive(Clone, Copy)]
+enum ListFocus {
+    Source,
+    Target,
+}
 #[derive(Default)]
 pub(crate) struct RibbonCustomization {
     open: bool,
     draft: Draft,
     escape: crate::application::document_saving::folder_browser::DialogEscape,
     pub(crate) escape_consumed: bool,
+    pub(crate) navigation_consumed: bool,
+    list_focus: Option<ListFocus>,
 }
 impl RibbonCustomization {
     pub(crate) fn open(&mut self, tab: RibbonTab) {
         self.draft.open(tab);
         self.escape = Default::default();
+        self.list_focus = None;
         self.open = true;
     }
     pub(crate) fn has_panel(&self, tab: RibbonTab) -> bool {
@@ -27,6 +35,7 @@ impl RibbonCustomization {
     }
     pub(crate) fn panel(&mut self, ui: &Ui) {
         self.escape_consumed = false;
+        self.navigation_consumed = false;
         if !self.open {
             return;
         }
@@ -37,6 +46,7 @@ impl RibbonCustomization {
             self.buttons(ui);
             let focused =
                 ui.is_window_focused_with_flags(imgui::WindowFocusedFlags::ROOT_AND_CHILD_WINDOWS);
+            self.extend_selection(ui, focused);
             if self.escape.pressed(ui) && focused {
                 self.open = false;
                 self.escape_consumed = true;
@@ -76,6 +86,7 @@ impl RibbonCustomization {
                 if ui.selectable(label) {
                     self.draft.sketch_category = sketch;
                     self.draft.source = None;
+                    self.draft.source_extra.clear();
                 }
             }
         }
@@ -91,10 +102,14 @@ impl RibbonCustomization {
                 {
                     if ui
                         .selectable_config(command.label())
-                        .selected(self.draft.source == Some(command))
+                        .selected(
+                            self.draft.source == Some(command)
+                                || self.draft.source_extra.contains(&command),
+                        )
                         .build()
                     {
-                        self.draft.source = Some(command);
+                        self.draft.reset_source_selection(command);
+                        self.list_focus = Some(ListFocus::Source);
                     }
                     if ui.is_item_hovered() && ui.is_mouse_double_clicked(imgui::MouseButton::Left)
                     {
@@ -102,7 +117,7 @@ impl RibbonCustomization {
                     }
                 }
                 if let Some(command) = transfer {
-                    self.draft.source = Some(command);
+                    self.draft.reset_source_selection(command);
                     self.draft.add();
                 }
             });
@@ -149,21 +164,30 @@ impl RibbonCustomization {
             .build(|| {
                 let mut selected = self.draft.selected;
                 let mut remove = false;
+                let mut clear_extra = false;
                 for (index, entry) in self.draft.rows().iter().enumerate() {
                     if ui
                         .selectable_config(format!("{}##target-{index}", entry.command.label()))
-                        .selected(selected == Some(index))
+                        .selected(
+                            selected == Some(index) || self.draft.target_extra.contains(&index),
+                        )
                         .build()
                     {
                         selected = Some(index);
+                        clear_extra = true;
+                        self.list_focus = Some(ListFocus::Target);
                     }
                     if ui.is_item_hovered() && ui.is_mouse_double_clicked(imgui::MouseButton::Left)
                     {
                         selected = Some(index);
+                        clear_extra = true;
                         remove = true;
                     }
                 }
                 self.draft.selected = selected;
+                if clear_extra && let Some(index) = selected {
+                    self.draft.reset_target_selection(index);
+                }
                 if remove {
                     self.draft.remove();
                 }
@@ -187,6 +211,24 @@ impl RibbonCustomization {
             self.draft.move_selected(1);
         }
         drop(disabled);
+    }
+    fn extend_selection(&mut self, ui: &Ui, focused: bool) {
+        if !focused || !ui.io().key_shift {
+            return;
+        }
+        let direction = if ui.is_key_pressed_no_repeat(imgui::Key::DownArrow) {
+            1
+        } else if ui.is_key_pressed_no_repeat(imgui::Key::UpArrow) {
+            -1
+        } else {
+            return;
+        };
+        match self.list_focus {
+            Some(ListFocus::Source) => self.draft.extend_source(direction),
+            Some(ListFocus::Target) => self.draft.extend_target(direction),
+            None => return,
+        }
+        self.navigation_consumed = true;
     }
     fn buttons(&mut self, ui: &Ui) {
         ui.separator();

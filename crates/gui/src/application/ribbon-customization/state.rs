@@ -69,7 +69,11 @@ pub(super) struct Draft {
     changed_tabs: BTreeSet<RibbonTab>,
     pub target: RibbonTab,
     pub source: Option<Command>,
+    pub source_extra: Vec<Command>,
+    source_extent: Option<usize>,
     pub selected: Option<usize>,
+    pub target_extra: BTreeSet<usize>,
+    target_extent: Option<usize>,
     pub sketch_category: bool,
 }
 impl Draft {
@@ -78,7 +82,11 @@ impl Draft {
         self.changed_tabs.clear();
         self.target = target;
         self.source = None;
+        self.source_extra.clear();
+        self.source_extent = None;
         self.selected = None;
+        self.target_extra.clear();
+        self.target_extent = None;
         self.sketch_category = false;
     }
     pub fn rows(&self) -> &[Entry] {
@@ -96,7 +104,11 @@ impl Draft {
     pub fn switch(&mut self, target: RibbonTab) {
         self.target = target;
         self.selected = None;
+        self.target_extra.clear();
+        self.target_extent = None;
         self.source = None;
+        self.source_extra.clear();
+        self.source_extent = None;
     }
     pub fn available(&self, command: Command) -> bool {
         (command == Command::Separator || !self.rows().iter().any(|row| row.command == command))
@@ -113,19 +125,33 @@ impl Draft {
         let Some(command) = self.source.filter(|command| self.available(*command)) else {
             return;
         };
+        let commands: Vec<_> = COMMANDS
+            .into_iter()
+            .filter(|candidate| {
+                (*candidate == command || self.source_extra.contains(candidate))
+                    && self.available(*candidate)
+            })
+            .collect();
         let index = self.selected.map_or(self.rows().len(), |index| {
             (index + 1).min(self.rows().len())
         });
-        self.staged.entry(self.target).or_default().insert(
-            index,
-            Entry {
-                command,
-                large: false,
-                text: true,
-            },
-        );
+        let rows = self.staged.entry(self.target).or_default();
+        for (offset, command) in commands.iter().enumerate() {
+            rows.insert(
+                index + offset,
+                Entry {
+                    command: *command,
+                    large: false,
+                    text: true,
+                },
+            );
+        }
         self.selected = Some(index);
+        self.target_extra = (index + 1..index + commands.len()).collect();
+        self.target_extent = Some(index + commands.len() - 1);
         self.mark_changed();
+        self.source_extra.clear();
+        self.source_extent = None;
         if command != Command::Separator {
             self.source = None;
         }
@@ -137,12 +163,23 @@ impl Draft {
         let Some(rows) = self.staged.get_mut(&self.target) else {
             return;
         };
-        rows.remove(index);
+        let mut indices = self.target_extra.clone();
+        indices.insert(index);
+        for selected in indices.iter().rev() {
+            if *selected < rows.len() {
+                rows.remove(*selected);
+            }
+        }
         self.selected = (!rows.is_empty()).then_some(index.min(rows.len().saturating_sub(1)));
+        self.target_extra.clear();
+        self.target_extent = None;
         self.mark_changed();
         self.normalize();
     }
     pub fn move_selected(&mut self, delta: isize) {
+        if !self.target_extra.is_empty() {
+            return;
+        }
         let Some(index) = self.selected else {
             return;
         };
@@ -157,6 +194,7 @@ impl Draft {
         };
         rows.swap(index, next);
         self.selected = Some(next);
+        self.target_extent = None;
         self.mark_changed();
     }
     pub fn selected_mut(&mut self) -> Option<&mut Entry> {
@@ -170,6 +208,58 @@ impl Draft {
     }
     pub fn mark_changed(&mut self) {
         self.changed_tabs.insert(self.target);
+    }
+    pub fn reset_source_selection(&mut self, command: Command) {
+        self.source = Some(command);
+        self.source_extra.clear();
+        self.source_extent = None;
+    }
+    pub fn reset_target_selection(&mut self, index: usize) {
+        self.selected = Some(index);
+        self.target_extra.clear();
+        self.target_extent = None;
+    }
+    pub fn extend_source(&mut self, direction: isize) {
+        let Some(anchor) = self.source else {
+            return;
+        };
+        let available: Vec<_> = COMMANDS
+            .into_iter()
+            .filter(|command| self.available(*command))
+            .collect();
+        let Some(index) = available.iter().position(|command| *command == anchor) else {
+            return;
+        };
+        let Some(next) = self
+            .source_extent
+            .unwrap_or(index)
+            .checked_add_signed(direction)
+            .filter(|next| *next < available.len())
+        else {
+            return;
+        };
+        self.source_extent = Some(next);
+        self.source_extra = (index.min(next)..=index.max(next))
+            .filter(|item| *item != index)
+            .map(|item| available[item])
+            .collect();
+    }
+    pub fn extend_target(&mut self, direction: isize) {
+        let Some(index) = self.selected else {
+            return;
+        };
+        let Some(next) = self
+            .target_extent
+            .unwrap_or(index)
+            .checked_add_signed(direction)
+            .filter(|next| *next < self.rows().len())
+        else {
+            return;
+        };
+        self.target_extent = Some(next);
+        self.target_extra = (index.min(next)..=index.max(next))
+            .filter(|item| *item != index)
+            .collect();
     }
     fn normalize(&mut self) {
         self.staged.retain(|_, entries| !entries.is_empty());
@@ -257,5 +347,49 @@ mod tests {
             assert_eq!(labels.iter().filter(|label| **label == expected).count(), 1);
         }
         assert!(!labels.contains(&"Measure"));
+    }
+    #[test]
+    fn multiple_commands_transfer_in_order_and_return_together() {
+        let mut draft = Draft::default();
+        draft.open(RibbonTab::Tools);
+        draft.source = Some(Command::Sketches);
+        draft.extend_source(1);
+        assert_eq!(draft.source_extra, vec![Command::Annotations]);
+        draft.add();
+        assert_eq!(
+            draft
+                .rows()
+                .iter()
+                .map(|row| row.command)
+                .collect::<Vec<_>>(),
+            vec![Command::Sketches, Command::Annotations]
+        );
+        assert_eq!(
+            draft.target_extra.iter().copied().collect::<Vec<_>>(),
+            vec![1]
+        );
+        draft.move_selected(1);
+        assert_eq!(draft.rows()[0].command, Command::Sketches);
+        draft.remove();
+        assert!(draft.rows().is_empty());
+        assert!(draft.available(Command::Sketches) && draft.available(Command::Annotations));
+        assert!(draft.target_changed());
+    }
+    #[test]
+    fn shift_selection_extends_and_shrinks_in_both_directions() {
+        let mut draft = Draft::default();
+        draft.open(RibbonTab::Tools);
+        draft.reset_source_selection(Command::Annotations);
+        draft.extend_source(-1);
+        assert_eq!(draft.source_extra, vec![Command::Sketches]);
+        draft.extend_source(1);
+        assert!(draft.source_extra.is_empty());
+        draft.extend_source(-1);
+        draft.add();
+        draft.reset_target_selection(1);
+        draft.extend_target(-1);
+        assert!(draft.target_extra.contains(&0));
+        draft.extend_target(1);
+        assert!(draft.target_extra.is_empty());
     }
 }
