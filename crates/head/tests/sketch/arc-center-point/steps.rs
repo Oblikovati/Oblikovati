@@ -75,9 +75,10 @@ fn numeric_arc(world: &mut ApplicationWorld, radius: &str, sweep: &str) {
     world.sketch_click(ABOVE);
 }
 fn created_numeric_arc(world: &mut ApplicationWorld, radius: &str) {
-    world.start_empty_sketch();
+    world.start_sketch_on("YZ Plane");
     select_tool(world);
-    world.sketch_click(CENTER);
+    world.open_precise_input();
+    world.precise_point(RECORDED_NUMERIC_CENTER);
     numeric_arc(world, radius, "90");
     world.escape();
     world.pump(Vec::new());
@@ -334,6 +335,12 @@ fn created_arc(world: &mut ApplicationWorld) {
         geometry.point(arc.center).unwrap().position
     ));
 }
+#[given("its measured center is (0, 4.914, 17.623) mm")]
+fn measure_numeric_center(world: &mut ApplicationWorld) {
+    measure_arc(world);
+    world.expect_measure("Center X 0.000 Y 4.914 Z 17.623 mm");
+    close_measure(world);
+}
 #[when("I open the radius dimension and change it to 5 mm")]
 fn change_radius(world: &mut ApplicationWorld) {
     world.open_dimension_label("4");
@@ -372,13 +379,17 @@ fn radius_five_back(world: &mut ApplicationWorld) {
 // arc-center-point-14
 #[given("the recorded arc has radius 5 mm, sweep 90 degrees and center (0, 4.914, 17.623) mm")]
 fn recorded_numeric_arc(world: &mut ApplicationWorld) {
-    world.start_sketch_on("YZ Plane");
-    select_tool(world);
-    world.open_precise_input();
-    world.precise_point(RECORDED_NUMERIC_CENTER);
-    numeric_arc(world, "5", "90");
-    world.escape();
-    world.pump(Vec::new());
+    created_numeric_arc(world, "5");
+}
+#[when("I open the sweep dimension")]
+fn open_sweep(world: &mut ApplicationWorld) {
+    world.open_dimension_label("90.00");
+}
+#[when("I press 1, then 2, then 0")]
+fn type_sweep_digits(world: &mut ApplicationWorld) {
+    for digit in ["1", "2", "0"] {
+        world.type_text(digit);
+    }
 }
 #[when("I open the sweep dimension and enter 120 degrees")]
 fn enter_sweep(world: &mut ApplicationWorld) {
@@ -402,6 +413,19 @@ fn sweep_rows(world: &mut ApplicationWorld) {
 #[then("its center remains (0, 4.914, 17.623) mm")]
 fn numeric_center(world: &mut ApplicationWorld) {
     world.expect_measure("Center X 0.000 Y 4.914 Z 17.623 mm");
+}
+#[then("the arc extends toward the upper left in the recorded view")]
+fn arc_extends_upper_left(world: &mut ApplicationWorld) {
+    let arc = newest_arc(world);
+    let geometry = world.edited_geometry();
+    let center = geometry.point(arc.center).unwrap().position;
+    let end = geometry.point(arc.end).unwrap().position;
+    let center = world.sketch_pixel_of(center);
+    let end = world.sketch_pixel_of(end);
+    assert!(
+        end[0] < center[0] && end[1] < center[1],
+        "arc end {end:?}, center {center:?}"
+    );
 }
 #[then("the displayed sweep returns to 90 degrees")]
 fn sweep_ninety_back(world: &mut ApplicationWorld) {
