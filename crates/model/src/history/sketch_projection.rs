@@ -26,7 +26,7 @@ impl CurrentSketchProjectionInputs {
     pub fn new(snapshot: &DocumentSnapshot) -> Self {
         Self {
             datums: snapshot
-                .work_geometry
+                .effective_work_geometry()
                 .evaluate_work_geometry(&snapshot.parameters),
         }
     }
@@ -97,7 +97,7 @@ impl DocumentSnapshot {
             .map_err(DocumentSketchPlacementError::Sketch)?;
         // #3760: source, host plane and orientation must consume the same immutable replay.
         let datums = self
-            .work_geometry
+            .effective_work_geometry()
             .evaluate_work_geometry(&self.parameters)
             .map_err(DocumentSketchPlacementError::Replay)?;
         project_current_point(placed, &datums, reference)

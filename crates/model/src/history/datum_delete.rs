@@ -114,6 +114,9 @@ fn apply_deletion(
         .work_geometry
         .remove(report.feature)
         .map_err(DocumentDatumDeleteError::Feature)?;
+    if let Some(states) = &mut snapshot.model_states {
+        states.forget_feature(report.feature.0);
+    }
     for id in &report.parameters {
         snapshot
             .parameters

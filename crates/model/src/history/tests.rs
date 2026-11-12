@@ -159,6 +159,23 @@ fn unreserved_model_state_identity_is_refused_without_adopting_candidate() {
 }
 
 #[test]
+fn model_state_override_cannot_reference_a_missing_feature() {
+    let mut history = empty_history();
+    let token = history.begin("Invalid feature override").unwrap();
+    let result = history.edit(&token, |snapshot, _| {
+        let mut members = crate::model_state::ModelStateMembers::default();
+        members.set_suppressed(42, false, true);
+        snapshot.model_states = Some(members);
+        Ok::<_, String>(())
+    });
+    assert!(matches!(
+        result,
+        Err(EditError::History(HistoryError::ModelStateMembers(_)))
+    ));
+    assert!(history.snapshot().model_states.is_none());
+}
+
+#[test]
 fn owned_part_members_cannot_be_dropped_from_history() {
     let mut history = empty_history();
     let token = history.begin("Initialize part").unwrap();

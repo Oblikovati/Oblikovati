@@ -27,8 +27,7 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
             |snapshot, _| {
                 require_extrusion(snapshot, id)?;
                 snapshot
-                    .work_geometry
-                    .set_suppressed(id, request.suppressed)
+                    .set_feature_suppressed(id, request.suppressed)
                     .map_err(api_error)?;
                 Ok(())
             },
@@ -66,7 +65,7 @@ fn detail(
                 id: id.0,
                 name: feature.name().into(),
                 kind: wire::featureargs::KIND_EXTRUDE.into(),
-                suppressed: feature.suppressed(),
+                suppressed: snapshot.feature_suppressed(id).map_err(api_error)?,
                 health,
             },
             index: i64::try_from(index).map_err(api_error)?,

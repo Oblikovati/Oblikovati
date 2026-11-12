@@ -87,7 +87,7 @@ impl DocumentSnapshot {
         if matches!(placed.placement(), SketchPlacement::Fixed(_)) && !needs_axis {
             return Ok(None);
         }
-        self.work_geometry
+        self.effective_work_geometry()
             .evaluate_work_geometry(&self.parameters)
             .map(Some)
             .map_err(DocumentSketchPlacementError::Replay)

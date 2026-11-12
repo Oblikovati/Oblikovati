@@ -26,12 +26,17 @@ pub(crate) fn root_row(
         ui.text(&browser.name);
         return;
     }
-    let caption = crate::application::document_tabs::windows::document_caption(
+    let mut caption = crate::application::document_tabs::windows::document_caption(
         &browser.name,
         state
             .document
             .and_then(|id| state.document_model_states.get(&id)),
     );
+    if browser.model_states.as_ref().is_some_and(|members| {
+        members.edit_scope() == oblikovati_model::model_state::ModelStateEditScope::AllMembers
+    }) {
+        caption.push_str(" (All)");
+    }
     let position = ui.cursor_screen_pos();
     let chosen =
         crate::widget_abi::selectable(ui, "##browser-root-row", browser.root_selected, false);

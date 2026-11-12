@@ -133,6 +133,23 @@ impl BrowserTree<'_> {
             self.ui.same_line_with_spacing(0., 16.);
             self.ui.text(format!("<{}>", active.name));
         }
+        self.ui.same_line_with_spacing(0., 8.);
+        let all =
+            states.edit_scope() == oblikovati_model::model_state::ModelStateEditScope::AllMembers;
+        if self.ui.small_button(if all {
+            "All##state-scope"
+        } else {
+            "1##state-scope"
+        }) {
+            actions.push(GuiShellAction::BrowserChoice {
+                document: self.state.document.unwrap_or(0),
+                choice: crate::GuiBrowserChoice::ToggleModelStateEditScope,
+            });
+        }
+        if self.ui.is_item_hovered() {
+            self.ui
+                .tooltip_text(if all { "All Members" } else { "Single Member" });
+        }
         self.model_state_menu(states, view, actions);
         let Some(_states) = node else {
             return;

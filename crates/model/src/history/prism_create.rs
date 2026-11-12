@@ -36,6 +36,9 @@ impl DocumentSnapshot {
         self.work_geometry
             .append(feature)
             .map_err(|cause| HistoryError::PartProgram(PartFeatureProgramError::Sequence(cause)))?;
+        if let Some(states) = &mut self.model_states {
+            states.register_feature(id.0);
+        }
         // The solid now stands for the profile; its browser row calls the sketch back.
         self.sketches
             .set_visible(sketch, false)

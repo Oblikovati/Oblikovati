@@ -88,8 +88,9 @@ impl DocumentSnapshot {
         mut cancelled: impl FnMut() -> bool,
     ) -> Result<PartFeatureEvaluation<B::Body, B::Failure>, PartFeatureProgramError> {
         let range = self.part_replay_range()?;
+        let sequence = self.effective_work_geometry();
         let mut controller = FeatureReplayController::new_with_parameters(
-            &self.work_geometry,
+            &sequence,
             range,
             vec![],
             &self.parameters,

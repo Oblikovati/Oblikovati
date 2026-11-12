@@ -150,3 +150,16 @@ impl<Definition> FeatureSequence<Definition> {
             .min(self.features.len())
     }
 }
+
+impl<Definition: Clone> FeatureSequence<Definition> {
+    pub(crate) fn with_effective_suppression(
+        &self,
+        resolve: impl Fn(FeatureId, bool) -> bool,
+    ) -> Self {
+        let mut sequence = self.clone();
+        for feature in &mut sequence.features {
+            feature.suppressed = resolve(feature.id, feature.suppressed);
+        }
+        sequence
+    }
+}

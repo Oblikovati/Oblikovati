@@ -106,10 +106,10 @@ impl<
                     .rename(edit.feature, &edit.name)
                     .map_err(|cause| cause.to_string())?;
                 features
-                    .set_suppressed(edit.feature, edit.always_suppressed)
-                    .map_err(|cause| cause.to_string())?;
-                features
                     .set_suppression_condition(edit.feature, condition)
+                    .map_err(|cause| cause.to_string())?;
+                snapshot
+                    .set_feature_suppressed(edit.feature, edit.always_suppressed)
                     .map_err(|cause| cause.to_string())?;
                 Ok::<(), String>(())
             })
@@ -152,6 +152,7 @@ impl<
         use oblikovati_gui::GuiBrowserChoice::{
             ActivateModelState, Body, BodyVisible, CopyModelState, CreateModelState, Nothing,
             RenameModelState, Root, ShowFeatureDimensions, SketchDimensionsShown,
+            ToggleModelStateEditScope,
         };
         self.require_browser_document(document)?;
         if let RenameModelState { id, name } = choice {
@@ -159,6 +160,9 @@ impl<
         }
         if matches!(choice, CreateModelState) {
             return self.create_active_model_state(document);
+        }
+        if matches!(choice, ToggleModelStateEditScope) {
+            return self.toggle_model_state_scope(document);
         }
         if let CopyModelState(id) = choice {
             return self.copy_model_state(*id);
@@ -186,6 +190,7 @@ impl<
             | CopyModelState(_)
             | RenameModelState { .. }
             | ActivateModelState(_)
+            | ToggleModelStateEditScope
             | ShowFeatureDimensions(_)
             | SketchDimensionsShown { .. } => {}
             Nothing => {

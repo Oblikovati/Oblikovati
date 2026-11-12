@@ -399,6 +399,7 @@ mod tests;
 
 mod metadata_recipe;
 mod model_state_ids;
+mod model_state_suppression;
 
 mod sketch_split;
 

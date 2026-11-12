@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Owned model-state members; the built-in Primary member has a stable identity.
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
+mod suppression;
+pub use suppression::ModelStateEditScope;
 
 /// A named document member. Example: `members.active().map(|member| member.name.as_str())`.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -16,6 +19,10 @@ pub struct ModelStateMember {
 pub struct ModelStateMembers {
     members: Vec<ModelStateMember>,
     active: u64,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    suppression: BTreeMap<u64, BTreeMap<u64, bool>>,
+    #[serde(default)]
+    scope: ModelStateEditScope,
 }
 
 impl Default for ModelStateMembers {
@@ -26,6 +33,8 @@ impl Default for ModelStateMembers {
                 name: "Primary".into(),
             }],
             active: 1,
+            suppression: BTreeMap::new(),
+            scope: ModelStateEditScope::SingleMember,
         }
     }
 }
@@ -58,7 +67,8 @@ impl ModelStateMembers {
         for member in self.members.iter().skip(1) {
             seen.insert(member.id, &member.name)?;
         }
-        seen.activate(self.active)
+        seen.activate(self.active)?;
+        self.validate_suppression()
     }
 
     /// Create an inactive member with an externally reserved identity. Example: `members.insert(id, "Variant")?`.
@@ -69,10 +79,14 @@ impl ModelStateMembers {
                 "model-state ID {id}: expected nonzero unused identity"
             ));
         }
+        let inherited = self.suppression.get(&self.active).cloned();
         self.members.push(ModelStateMember {
             id,
             name: name.into(),
         });
+        if let Some(overrides) = inherited {
+            self.suppression.insert(id, overrides);
+        }
         Ok(())
     }
 
@@ -107,7 +121,13 @@ impl ModelStateMembers {
                 "model-state source {source}: expected an existing member"
             ));
         }
-        self.insert(reserved, name)
+        let overrides = self.suppression.get(&source).cloned();
+        self.insert(reserved, name)?;
+        self.suppression.remove(&reserved);
+        if let Some(overrides) = overrides {
+            self.suppression.insert(reserved, overrides);
+        }
+        Ok(())
     }
 
     /// Delete an authored member, returning selection to Primary when required.
@@ -122,6 +142,7 @@ impl ModelStateMembers {
             .position(|member| member.id == id)
             .ok_or_else(|| format!("model-state ID {id}: expected an existing member"))?;
         self.members.remove(index);
+        self.suppression.remove(&id);
         if self.active == id {
             self.active = 1;
         }

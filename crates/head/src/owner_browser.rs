@@ -101,7 +101,9 @@ fn populate_browser<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         .map(|feature| GuiBrowserFeature {
             id: feature.id(),
             name: feature.name().into(),
-            suppressed: feature.suppressed(),
+            suppressed: snapshot
+                .feature_suppressed(feature.id())
+                .unwrap_or(feature.suppressed()),
             extended: extended_feature_name(snapshot, feature),
             kind: feature_kind_name(feature.definition()),
         })

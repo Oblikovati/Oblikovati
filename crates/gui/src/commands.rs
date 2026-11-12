@@ -210,6 +210,8 @@ pub enum GuiBrowserChoice {
     },
     /// Activate a document-owned model state.
     ActivateModelState(u64),
+    /// Change whether a feature edit affects one member or all members.
+    ToggleModelStateEditScope,
     /// No row stays chosen, as after a click on empty space.
     Nothing,
     /// Show this feature's dimensions in the view, or none.

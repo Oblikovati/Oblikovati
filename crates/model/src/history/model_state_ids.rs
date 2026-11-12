@@ -25,10 +25,22 @@ impl DocumentSnapshot {
     }
 
     pub(super) fn validate_model_state_members(&self) -> Result<(), HistoryError> {
-        self.model_states
-            .as_ref()
-            .map_or(Ok(()), |members| members.validate())
-            .map_err(HistoryError::ModelStateMembers)
+        let Some(members) = &self.model_states else {
+            return Ok(());
+        };
+        members
+            .validate()
+            .map_err(HistoryError::ModelStateMembers)?;
+        for feature in members.referenced_features() {
+            self.work_geometry
+                .get(crate::feature::FeatureId(feature))
+                .map_err(|_| {
+                    HistoryError::ModelStateMembers(format!(
+                        "model-state feature {feature}: expected an existing feature"
+                    ))
+                })?;
+        }
+        Ok(())
     }
 }
 impl DocumentEditHistory {

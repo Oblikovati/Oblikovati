@@ -64,7 +64,7 @@ pub(super) fn entries(
 }
 pub(super) fn evaluate(snapshot: &DocumentSnapshot) -> Result<WorkGeometryEvaluation, Error> {
     snapshot
-        .work_geometry
+        .effective_work_geometry()
         .evaluate_work_geometry(&snapshot.parameters)
         .map_err(api_error)
 }

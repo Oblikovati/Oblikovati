@@ -49,6 +49,7 @@ fn names_with_nul_are_rejected_without_changing_members() {
             },
         ],
         active: 1,
+        ..ModelStateMembers::default()
     };
     assert!(malformed.validate().is_err());
 }
@@ -59,6 +60,7 @@ fn restored_member_invariants_are_checked() {
     let invalid = ModelStateMembers {
         members: vec![],
         active: 1,
+        ..ModelStateMembers::default()
     };
     assert!(invalid.validate().is_err());
     let invalid = ModelStateMembers {
@@ -77,4 +79,29 @@ fn member_delete_protects_primary_and_restores_active_selection() {
     assert!(members.delete(99).is_err());
     members.delete(2).unwrap();
     assert_eq!(members, ModelStateMembers::default());
+}
+
+#[test]
+fn suppression_follows_scope_and_copies_the_chosen_member() {
+    let mut states = ModelStateMembers::default();
+    states.insert(2, "Variant").unwrap();
+    states.set_suppressed(42, false, true);
+    states.copy(1, 3, "Copy").unwrap();
+    states.activate(2).unwrap();
+    assert!(!states.suppressed(42, false));
+    states.register_feature(43);
+    states.activate(1).unwrap();
+    assert!(states.suppressed(42, false));
+    assert!(states.suppressed(43, false));
+    states.activate(3).unwrap();
+    assert!(states.suppressed(42, false));
+    states.set_edit_scope(ModelStateEditScope::AllMembers);
+    states.set_suppressed(42, false, false);
+    for member in [1, 2, 3] {
+        states.activate(member).unwrap();
+        assert!(!states.suppressed(42, false));
+    }
+    states.forget_feature(43);
+    assert!(!states.referenced_features().any(|id| id == 43));
+    states.validate().unwrap();
 }

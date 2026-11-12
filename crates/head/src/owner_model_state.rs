@@ -11,6 +11,25 @@ impl<
     S: DispatchWakeup,
 > DesktopOwner<O, W, F, G, R, S>
 {
+    pub(super) fn toggle_model_state_scope(&mut self, document: u64) -> Result<bool, String> {
+        use oblikovati_model::model_state::ModelStateEditScope::{AllMembers, SingleMember};
+        self.files
+            .commands(document)
+            .map_err(|cause| cause.to_string())?
+            .run("Change model-state edit scope", |snapshot, _| {
+                let states = snapshot
+                    .model_states
+                    .as_mut()
+                    .ok_or_else(|| "model-state scope: expected part members".to_string())?;
+                states.set_edit_scope(match states.edit_scope() {
+                    SingleMember => AllMembers,
+                    AllMembers => SingleMember,
+                });
+                Ok::<(), String>(())
+            })
+            .map_err(|cause| cause.to_string())?;
+        Ok(true)
+    }
     pub(super) fn copy_model_state(&mut self, id: u64) -> Result<bool, String> {
         oblikovati_api::client::Client::new(self.document_host())
             .model_states()
