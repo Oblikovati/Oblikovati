@@ -34,6 +34,7 @@ pub(crate) struct GuiDimensionValueEditor {
 }
 const TITLE: &str = "Edit Dimension";
 const SIZE: [f32; 2] = [240., 70.];
+const INVALID_TEXT: [f32; 4] = [0.95, 0.2, 0.2, 1.];
 
 impl GuiDimensionValueEditor {
     pub(crate) fn reject(&mut self, value: &GuiDimensionValue) {
@@ -76,11 +77,14 @@ impl GuiDimensionValueEditor {
             if std::mem::take(&mut self.focus) {
                 ui.set_keyboard_focus_here();
             }
+            let invalid = !expression_syntax_valid(&self.text);
+            let red = invalid.then(|| ui.push_style_color(imgui::StyleColor::Text, INVALID_TEXT));
             let accepted = ui
                 .input_text("##dimension-value", &mut self.text)
                 .auto_select_all(true)
                 .enter_returns_true(true)
                 .build();
+            drop(red);
             if accepted {
                 self.submitted = Some(edit.clone());
                 actions.push(GuiShellAction::EditDimensionValue(GuiDimensionValue {
@@ -143,6 +147,11 @@ impl GuiDimensionValueEditor {
         self.position = ui.io().mouse_pos;
     }
 }
+fn expression_syntax_valid(source: &str) -> bool {
+    let units = oblikovati_model::units::UnitsOfMeasure::default();
+    oblikovati_model::expression::Expression::parse(source, &units).is_ok()
+}
+
 fn label_under_pointer(
     ui: &Ui,
     request: &GuiFrameRequest,
@@ -163,4 +172,19 @@ fn label_under_pointer(
     });
     hits.min_by(|first, second| first.0.total_cmp(&second.0))
         .map(|(_, edit)| edit)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::expression_syntax_valid;
+
+    #[test]
+    fn syntax_feedback_accepts_references_and_marks_incomplete_formulas() {
+        for expression in ["2*6", "width * 2", "2 mm * 6", "radius"] {
+            assert!(expression_syntax_valid(expression), "{expression:?}");
+        }
+        for expression in ["", "2*", "("] {
+            assert!(!expression_syntax_valid(expression), "{expression:?}");
+        }
+    }
 }
