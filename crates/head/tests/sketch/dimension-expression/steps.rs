@@ -67,12 +67,63 @@ fn accepted_twelve(world: &mut ApplicationWorld) {
 }
 
 #[given("the accepted d50 expression is 2 mm * 6 ul")]
+#[given("d50 has accepted the arithmetic expression 2*6")]
+#[given("d50 retains 2 mm * 6 ul and evaluates to 12 mm")]
 fn accepted_arithmetic(world: &mut ApplicationWorld) {
     ten_millimetre_height(world);
     world.open_dimension_label("10");
     world.type_text("2*6");
     world.key(ViewportPhysicalKey::Enter, false);
     world.expect_annotation("12");
+    world.observed_counts = vec![rectangle_height(world)];
+}
+fn rectangle_height(world: &mut ApplicationWorld) -> usize {
+    let points: Vec<_> = (0..4)
+        .flat_map(|line| [world.line_point(line, 0.)[1], world.line_point(line, 1.)[1]])
+        .collect();
+    (points.iter().max().unwrap() - points.iter().min().unwrap()) as usize
+}
+#[when("I invoke General Dimension with d and single-click the existing annotation")]
+#[when("I invoke General Dimension and single-click d50")]
+fn open_d50_from_dimension_tool(world: &mut ApplicationWorld) {
+    world.key(ViewportPhysicalKey::D, false);
+    assert!(world.state().dimension_tool_active);
+    world.click(world.exact_run_center("12"));
+}
+#[then("Edit Dimension d50 shows 2 mm * 6 ul")]
+#[then("the retained expression is 2 mm * 6 ul")]
+fn normalized_arithmetic(world: &mut ApplicationWorld) {
+    world.expect_text("d50");
+    assert!(world.window_text("Edit Dimension").contains("2mm*6ul"));
+}
+#[then("the unchanged editor closes and General Dimension exits")]
+fn unchanged_editor_exits(world: &mut ApplicationWorld) {
+    dimension_exits(world);
+}
+#[then("the annotation reads 10 and the rectangle is shorter")]
+fn undo_shorter(world: &mut ApplicationWorld) {
+    world.expect_annotation("10");
+    assert!(rectangle_height(world) < world.observed_counts[0]);
+}
+#[then("the annotation reads 12 and the rectangle is taller")]
+fn redo_taller(world: &mut ApplicationWorld) {
+    world.expect_annotation("12");
+    assert_eq!(rectangle_height(world), world.observed_counts[0]);
+}
+#[when("I replace its selected expression with 9")]
+fn propose_nine(world: &mut ApplicationWorld) {
+    world.type_text("9");
+    world.pump(Vec::new());
+}
+#[then("the uncommitted value is black")]
+fn proposal_normal(world: &mut ApplicationWorld) {
+    let [_, green, blue] = world.run_in_window("Edit Dimension", "9").color;
+    assert!(green > 100 && blue > 100);
+}
+#[when("I press Escape and reopen d50")]
+fn discard_and_reopen(world: &mut ApplicationWorld) {
+    world.escape();
+    world.click(world.exact_run_center("12"));
 }
 #[when("I replace it with d50 using individual d, 5 and 0 keys")]
 fn enter_self_reference(world: &mut ApplicationWorld) {
