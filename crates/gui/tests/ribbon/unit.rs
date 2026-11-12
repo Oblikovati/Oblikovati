@@ -9,8 +9,8 @@ fn wheel_moves_between_visible_tabs_without_wrapping() {
     ribbon.scroll_tabs(&frame.tabs, 1.);
     assert_eq!(ribbon.active, RibbonTab::Model);
     ribbon.scroll_tabs(&frame.tabs, -1.);
-    assert_eq!(ribbon.active, RibbonTab::Tools);
-    assert_eq!(ribbon.prepare(&state).select, Some(RibbonTab::Tools));
+    assert_eq!(ribbon.active, RibbonTab::Sketch);
+    assert_eq!(ribbon.prepare(&state).select, Some(RibbonTab::Sketch));
     ribbon.scroll_tabs(&frame.tabs, 1.);
     assert_eq!(ribbon.prepare(&state).select, Some(RibbonTab::Model));
     ribbon.active = *frame.tabs.last().unwrap();
@@ -100,10 +100,9 @@ fn document_tabs_keep_sketch_context_off_other_document_types() {
     }
     let zero_tabs = document_tabs(&ZERO_DOC_RIBBON, true, false);
     assert_eq!(zero_tabs, [RibbonTab::GetStarted, RibbonTab::Tools]);
-    for key in [PART_RIBBON, ASSEMBLY_RIBBON] {
-        assert!(document_tabs(&key, true, false).contains(&RibbonTab::Sketch));
-        assert!(!document_tabs(&key, false, false).contains(&RibbonTab::Sketch));
-    }
+    assert!(document_tabs(&PART_RIBBON, false, false).contains(&RibbonTab::Sketch));
+    assert!(document_tabs(&ASSEMBLY_RIBBON, true, false).contains(&RibbonTab::Sketch));
+    assert!(!document_tabs(&ASSEMBLY_RIBBON, false, false).contains(&RibbonTab::Sketch));
 }
 #[test]
 fn tab_names_match_the_go_command_registry() {

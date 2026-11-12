@@ -145,7 +145,7 @@ fn document_tabs(key: &RibbonKey, sketch: bool, sheet_metal: bool) -> Vec<Ribbon
         tabs.push(RibbonTab::Presentation);
     }
     if *key == PART_RIBBON || *key == ASSEMBLY_RIBBON {
-        if sketch {
+        if *key == PART_RIBBON || sketch {
             tabs.push(RibbonTab::Sketch);
         }
         tabs.push(RibbonTab::Tools);

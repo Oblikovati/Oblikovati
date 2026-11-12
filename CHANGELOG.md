@@ -4,6 +4,8 @@
 
 ### Added
 
+- Added the Sketch tab for part documents and its Constrain expansion. (#3856)
+
 - Added immediate placement and value editing for sketch dimensions. Cancel keeps
   the measured dimension, and Undo treats placement and value edits as separate
   steps. (#3855)

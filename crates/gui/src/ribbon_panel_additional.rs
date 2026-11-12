@@ -45,7 +45,7 @@ pub(super) fn available(tab: RibbonTab, panel: RibbonPanel) -> bool {
         (
             RibbonTab::Model,
             RibbonPanel::PartModify | RibbonPanel::PartSimplification
-        )
+        ) | (RibbonTab::Sketch, RibbonPanel::Constrain)
     )
 }
 pub(super) fn trigger(
@@ -218,11 +218,14 @@ fn inside_window(ui: &Ui) -> bool {
 fn commands(ui: &Ui, panel: RibbonPanel) {
     let disabled = ui.begin_disabled(true);
     let labels = match panel {
-        RibbonPanel::PartModify => ["Move Bodies", "Bend Part", "Copy Object"],
-        RibbonPanel::PartSimplification => ["Remove Details", "Fill Voids", "Define Envelopes"],
+        RibbonPanel::PartModify => &["Move Bodies", "Bend Part", "Copy Object"][..],
+        RibbonPanel::PartSimplification => {
+            &["Remove Details", "Fill Voids", "Define Envelopes"][..]
+        }
+        RibbonPanel::Constrain => &["Edit Coordinate System", "Constraint Inference Scope"][..],
         _ => return,
     };
-    for label in labels {
+    for &label in labels {
         ui.button(label);
         if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
             ui.tooltip_text("This command is not available in this build.");

@@ -24,7 +24,9 @@ pub(crate) fn draw_panel_content(
         RibbonPanel::Format => {
             crate::sketch_formats::sketch_format_controls(ui, origin, state, owners.icons, actions);
             owners.icons.cursor(ui, origin, [PRECISE_INPUT_COLUMN, 0.]);
+            let disabled = ui.begin_disabled(state.authoring != crate::GuiAuthoringContext::Sketch);
             owners.precise_input.toggle(ui);
+            drop(disabled);
         }
         RibbonPanel::Parameters => return owners.parameters.toolbar(ui, state, owners.icons),
         RibbonPanel::ToolOptions => {

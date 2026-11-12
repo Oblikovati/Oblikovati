@@ -5,6 +5,8 @@ use super::workspace_layout::browser_feature::{
 };
 use super::{ApplicationWorld, diagnostics};
 use cucumber::{given, then, when};
+#[path = "sketch_constrain.rs"]
+mod sketch_constrain;
 const WINDOW: &str = "##ribbon-additional-PartModify";
 const SIMPLIFICATION: &str = "##ribbon-additional-PartSimplification";
 
