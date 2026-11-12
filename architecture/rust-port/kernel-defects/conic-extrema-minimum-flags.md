@@ -90,3 +90,22 @@ Logs: `/tmp/oblikovati-conic-extrema-flags.log`,
 `/tmp/oblikovati-ellipse-pick-red.log`,
 `/tmp/oblikovati-ellipse-pick-occt.log`, and
 `/tmp/oblikovati-ellipse-pick-occt-parameter.log`.
+
+## Host qualification on 2026-11-12
+
+The native `ellipse-05` scenario still fails on the released 0.13 target: the
+curve click leaves Measure without a selection. The pick query returns the
+period boundary at distance `0.30215614630007825` for the recorded cursor.
+
+An isolated checkout of host commit `92c0fd42e` was tested with a local Cargo
+patch to the clean Martensite `fix/extrema-conic-minima` worktree at
+`fbc6b9b77b9528bc4e0c6e2c287a5c2d89d85e2f`. The kernel's
+`extrema_conic_classification` suite passed 13 tests. The host's
+`rotated_ellipse_pick_matches_the_independent_occt_minimum` regression passed.
+The native `ellipse-05` scenario passed all 11 steps, including its recorded
+radii, diameters, length, and center. Tests ran on Linux under Xvfb.
+
+This is a qualification of that branch, not a release or the full application
+gate. The host remains pinned to released Martensite 0.13. Issue
+[Martensite #406](https://github.com/Oblikovati/Martensite/issues/406) remains
+open with `priority: high`, the priority for blocked application functionality.
