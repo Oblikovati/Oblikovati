@@ -82,3 +82,23 @@ fn list_closes(world: &mut ApplicationWorld) {
         "expected the direct panel list closed"
     );
 }
+
+#[test]
+fn native_panel_selector_uses_arrow_and_activation_keys() {
+    use oblikovati_viewport::ViewportPhysicalKey::{DownArrow, Enter, Space};
+    for activate in [Space, Enter] {
+        let mut world = ApplicationWorld::new();
+        world.add_part();
+        open_selector(&mut world);
+        world.key(DownArrow, false);
+        world.key(DownArrow, false);
+        assert!(world.checked("Create"));
+        world.key(activate, false);
+        assert!(!world.checked("Create"));
+        assert!(selector_is_open(&world));
+        world.key(activate, false);
+        assert!(world.checked("Create"));
+        assert!(selector_is_open(&world));
+        world.close();
+    }
+}

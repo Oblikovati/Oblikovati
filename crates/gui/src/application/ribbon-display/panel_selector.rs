@@ -12,6 +12,7 @@ impl RibbonDisplayState {
         state: &crate::GuiCommandState,
     ) {
         if self.mode != RibbonDisplay::Full || self.placement != RibbonPlacement::Top {
+            self.selector_keyboard_started = false;
             return;
         }
         let width = ui.window_size()[0];
@@ -22,11 +23,28 @@ impl RibbonDisplayState {
     }
     fn selector_choices(&mut self, ui: &Ui, tab: RibbonTab, state: &crate::GuiCommandState) {
         let Some(_list) = ui.begin_popup(SELECTOR_POPUP) else {
+            self.selector_keyboard_started = false;
             return;
         };
-        for panel in crate::ribbon_panels::panels_for(tab, state) {
+        let first_down =
+            !self.selector_keyboard_started && ui.is_key_pressed_no_repeat(imgui::Key::DownArrow);
+        self.selector_keyboard_started |= first_down
+            || ui.is_key_pressed_no_repeat(imgui::Key::UpArrow)
+            || ui.is_key_pressed_no_repeat(imgui::Key::Tab);
+        for (index, panel) in crate::ribbon_panels::panels_for(tab, state)
+            .into_iter()
+            .enumerate()
+        {
+            if first_down && index == 0 {
+                ui.set_keyboard_focus_here();
+            }
             let mut shown = !self.hidden_panels.contains(&(tab, panel));
-            if ui.checkbox(panel.label(), &mut shown) {
+            let clicked = ui.checkbox(panel.label(), &mut shown);
+            let enter = ui.is_item_focused()
+                && (ui.is_key_pressed_no_repeat(imgui::Key::Enter)
+                    || ui.is_key_pressed_no_repeat(imgui::Key::KeypadEnter));
+            if clicked || enter {
+                self.selector_keyboard_started = true;
                 self.toggle_panel(tab, panel);
             }
         }

@@ -66,6 +66,57 @@ fn clicking_panel_selector_again_closes_it_without_changing_visibility() {
     );
     assert_eq!(owner.ribbon.display.hidden_panels, before);
 }
+#[test]
+fn keyboard_moves_and_toggles_a_panel_without_closing_the_selector() {
+    for activate in [GuiKey::Space, GuiKey::Enter] {
+        keyboard_panel_round_trip(activate);
+    }
+}
+fn keyboard_panel_round_trip(activate: GuiKey) {
+    let mut owner = GuiFrameEngine::new().unwrap();
+    let mut request = part_request();
+    settle(&mut owner, &mut request);
+    click(&mut owner, &mut request, [1418., 45.]);
+    press_key(&mut owner, &mut request, GuiKey::DownArrow);
+    press_key(&mut owner, &mut request, GuiKey::DownArrow);
+    let key = (RibbonTab::Model, RibbonPanel::PartCreate);
+    assert!(!owner.ribbon.display.hidden_panels.contains(&key));
+    for hidden in [true, false] {
+        press_key(&mut owner, &mut request, activate);
+        assert_eq!(
+            owner.ribbon.display.hidden_panels.contains(&key),
+            hidden,
+            "hidden panels: {:?}",
+            owner.ribbon.display.hidden_panels
+        );
+        assert!(owner.popup_was_open);
+    }
+}
+#[test]
+fn keyboard_wraps_from_first_to_last_panel() {
+    let mut owner = GuiFrameEngine::new().unwrap();
+    let mut request = part_request();
+    settle(&mut owner, &mut request);
+    click(&mut owner, &mut request, [1418., 45.]);
+    press_key(&mut owner, &mut request, GuiKey::DownArrow);
+    press_key(&mut owner, &mut request, GuiKey::UpArrow);
+    press_key(&mut owner, &mut request, GuiKey::Space);
+    assert!(
+        !owner
+            .ribbon
+            .display
+            .hidden_panels
+            .contains(&(RibbonTab::Model, RibbonPanel::Parameters)),
+        "expected last panel to be selected"
+    );
+    assert!(owner.popup_was_open);
+}
+fn press_key(owner: &mut GuiFrameEngine, request: &mut GuiFrameRequest, key: GuiKey) {
+    for pressed in [true, false] {
+        pointer_frame(owner, request, GuiInputEvent::Key { key, pressed });
+    }
+    settle(owner, request);
+}
 fn direct_selector_round_trip(backing: f32) {
     let mut owner = GuiFrameEngine::new().unwrap();
     let mut request = part_request();
