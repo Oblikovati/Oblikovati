@@ -4,18 +4,21 @@ use super::*;
 
 fn create_directed_arc(world: &mut ApplicationWorld) {
     world.start_empty_sketch();
+    draw_directed_arc(world, "45");
+    world.expect_annotation("45.00");
+}
+fn draw_directed_arc(world: &mut ApplicationWorld, direction: &str) {
     select_tool(world);
     world.sketch_click(CENTER);
     world.type_text("4");
     world.key(ViewportPhysicalKey::Tab, false);
-    world.type_text("45");
+    world.type_text(direction);
     world.key(ViewportPhysicalKey::Tab, false);
     world.sketch_click(START);
     world.type_text("90");
     world.key(ViewportPhysicalKey::Tab, false);
     world.sketch_click(ABOVE);
     world.escape();
-    world.expect_annotation("45.00");
 }
 fn assert_direction(world: &mut ApplicationWorld, degrees: f64) {
     let geometry = world.edited_geometry();
@@ -82,6 +85,44 @@ fn typed_start_direction_drives_history_and_reopens() {
     reopen_saved_sketch(&mut world);
     assert_direction(&mut world, 60.);
     edit_direction(&mut world, "60.00", "30");
+    assert_direction(&mut world, 30.);
+    world.close();
+}
+
+fn set_turn(world: &mut ApplicationWorld, value: &str, add: bool) {
+    use oblikovati_api::{client::Client, wire::ParameterSetArgs};
+    let client = Client::new(world.app().owner.document_host());
+    let argument = ParameterSetArgs {
+        name: "turn".into(),
+        expression: value.into(),
+        ..Default::default()
+    };
+    if add {
+        client.parameters().add(&argument).unwrap();
+    } else {
+        client.parameters().set(&argument).unwrap();
+    }
+    world.pump(Vec::new());
+}
+#[test]
+fn formula_drives_start_direction_through_history_and_storage() {
+    let mut world = ApplicationWorld::new();
+    world.start_empty_sketch();
+    set_turn(&mut world, "22.5 deg", true);
+    draw_directed_arc(&mut world, "turn * 2");
+    world.expect_annotation("fx:45.00");
+    assert_direction(&mut world, 45.);
+    set_turn(&mut world, "30 deg", false);
+    world.expect_annotation("fx:60.00");
+    assert_direction(&mut world, 60.);
+    world.undo();
+    assert_direction(&mut world, 45.);
+    world.redo();
+    assert_direction(&mut world, 60.);
+    reopen_saved_sketch(&mut world);
+    world.expect_annotation("fx:60.00");
+    set_turn(&mut world, "15 deg", false);
+    world.expect_annotation("fx:30.00");
     assert_direction(&mut world, 30.);
     world.close();
 }

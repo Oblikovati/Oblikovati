@@ -214,6 +214,8 @@ fn recorded_radius(world: &mut ApplicationWorld) {
     world.expect_measure("Radius 4.759 mm");
     world.expect_measure("Diameter 9.518 mm");
 }
+// The captured length and radius imply 84.72 degrees, even at their rounding limits.
+// Keep the recorded 81.72-degree assertion until the source observation is reviewed.
 #[then("the length is 7.037 mm and sweep is 81.72 degrees")]
 fn recorded_length(world: &mut ApplicationWorld) {
     world.expect_measure("Length 7.037 mm");
