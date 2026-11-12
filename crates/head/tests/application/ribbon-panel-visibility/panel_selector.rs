@@ -111,6 +111,42 @@ fn view_ribbon_visible(world: &mut ApplicationWorld) {
 fn panel_list_remains_closed(world: &mut ApplicationWorld) {
     list_closes(world);
 }
+#[when("the user clears Modify in the panel list")]
+#[when("the user selects Modify in the panel list")]
+fn toggle_modify(world: &mut ApplicationWorld) {
+    world.click_text("Modify");
+}
+#[then("the Modify panel and its expanded command area disappear")]
+fn hidden_modify_and_expansion(world: &mut ApplicationWorld) {
+    assert!(window_geometry("##ribbon-additional-PartModify").is_none());
+    assert!(!modify_caption_visible(world));
+}
+#[then("the panel list remains open with Modify unchecked")]
+fn open_modify_unchecked(world: &mut ApplicationWorld) {
+    assert!(selector_is_open(world));
+    assert!(!world.checked("Modify"));
+}
+#[then("the Modify panel returns to the ribbon")]
+fn modify_back(world: &mut ApplicationWorld) {
+    assert!(modify_caption_visible(world));
+}
+fn modify_caption_visible(world: &ApplicationWorld) -> bool {
+    let (_, size) = window_geometry("##application-ribbon").unwrap();
+    world.frame.runs.iter().any(|run| {
+        run.text.contains("Modify")
+            && run.center()[0] < size[0] * 0.5
+            && run.center()[1] < ribbon_bottom()
+    })
+}
+#[then("its additional command area is not open")]
+fn no_additional(_: &mut ApplicationWorld) {
+    assert!(window_geometry("##ribbon-additional-PartModify").is_none());
+}
+#[then("the panel list remains open with Modify checked")]
+fn open_modify_checked(world: &mut ApplicationWorld) {
+    assert!(selector_is_open(world));
+    assert!(world.checked("Modify"));
+}
 
 #[test]
 fn native_panel_selector_uses_arrow_and_activation_keys() {

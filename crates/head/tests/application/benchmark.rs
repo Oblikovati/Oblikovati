@@ -92,6 +92,8 @@ mod quick_access_toolbar;
 mod ribbon_display;
 #[path = "ribbon-docking/steps.rs"]
 mod ribbon_docking;
+#[path = "ribbon-panel-expansion/steps.rs"]
+mod ribbon_panel_expansion;
 #[path = "ribbon-panel-visibility/steps.rs"]
 mod ribbon_panel_visibility;
 #[path = "../sketch/benchmark.rs"]

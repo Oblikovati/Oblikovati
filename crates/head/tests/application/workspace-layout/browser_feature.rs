@@ -79,12 +79,19 @@ pub(in super::super) fn open_extruded_part(world: &mut ApplicationWorld) {
     open_extruded_part_named(world, FEATURE);
 }
 pub(in super::super) fn open_extruded_part_named(world: &mut ApplicationWorld, name: &str) {
+    open_extruded_part_with_visibility(world, name, false);
+}
+pub(in super::super) fn open_visible_extruded_part(world: &mut ApplicationWorld) {
+    open_extruded_part_with_visibility(world, FEATURE, true);
+}
+fn open_extruded_part_with_visibility(world: &mut ApplicationWorld, name: &str, visible: bool) {
     let path = world.scratch_folder().join("extruded.opd");
     std::fs::write(&path, extruded_part_bytes(name)).unwrap();
     Client::new(world.app().owner.document_host())
         .documents()
         .open(&OpenDocumentArgs {
             full_document_name: path.to_str().unwrap().into(),
+            visible,
             ..Default::default()
         })
         .unwrap();

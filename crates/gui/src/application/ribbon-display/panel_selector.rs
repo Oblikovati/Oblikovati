@@ -11,6 +11,8 @@ impl RibbonDisplayState {
         tab: RibbonTab,
         state: &crate::GuiCommandState,
     ) {
+        self.selector_escape =
+            self.selector_open && ui.is_key_pressed_no_repeat(imgui::Key::Escape);
         let temporary_tab =
             self.mode == RibbonDisplay::Tabs && self.temporary == Some(TemporaryPanel::WholeTab);
         if (self.mode != RibbonDisplay::Full && !temporary_tab)
@@ -19,10 +21,12 @@ impl RibbonDisplayState {
             self.selector_keyboard_started = false;
             self.selector_open = false;
             self.selector_pointer_inside = false;
+            self.selector_trigger = None;
             return;
         }
         let width = ui.window_size()[0];
         let clicked = selector_button(ui, width);
+        self.selector_trigger = Some([ui.item_rect_min(), ui.item_rect_max()]);
         if temporary_tab && (clicked || self.selector_pointer_press(ui)) {
             self.keep_temporary_on_click = true;
         }

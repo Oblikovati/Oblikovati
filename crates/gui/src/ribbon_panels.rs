@@ -5,6 +5,8 @@ use crate::ribbon::RibbonTab;
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::Ui;
 use std::collections::BTreeMap;
+#[path = "ribbon_panel_additional.rs"]
+mod additional;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum RibbonPanel {
@@ -108,6 +110,7 @@ pub(crate) struct RibbonPanelLayout {
     widths: BTreeMap<(RibbonTab, RibbonPanel), f32>,
     scrollbar_shown: bool,
     pub pending_layout: bool,
+    additional: additional::PanelExpansions,
 }
 impl RibbonPanelLayout {
     pub(crate) fn scrollbar_height(&self, ui: &Ui) -> f32 {
@@ -157,6 +160,8 @@ struct PanelDrawContext<'a> {
     state: &'a GuiCommandState,
     hidden: std::collections::BTreeSet<(RibbonTab, RibbonPanel)>,
     show_panel_titles: bool,
+    additional_allowed: bool,
+    ribbon_bottom: f32,
     owners: RibbonPanelOwners<'a>,
     actions: &'a mut Vec<GuiShellAction>,
 }
@@ -183,17 +188,27 @@ pub(crate) fn draw_panels(
     actions: &mut Vec<GuiShellAction>,
 ) {
     layout.pending_layout = false;
+    layout.additional.use_document(state.document);
+    if owners.home_active {
+        layout.additional.clear();
+    }
     let mut context = PanelDrawContext {
         ui,
         state,
         hidden: display.hidden_panels.clone(),
         show_panel_titles: display.show_panel_titles,
+        additional_allowed: display.mode == RibbonDisplay::Full
+            && !owners.home_active
+            && display.placement == crate::application::ribbon_display::RibbonPlacement::Top,
+        ribbon_bottom: ui.window_pos()[1] + ui.window_size()[1],
         owners,
         actions,
     };
     if display.mode == RibbonDisplay::Full {
         full_row(&mut context, tab, layout);
+        additional::draw(&mut context, tab, layout, display);
     } else {
+        layout.additional.clear();
         compact_row(&mut context, tab, display);
         temporary_panel(&mut context, tab, layout, display);
     }
@@ -223,11 +238,14 @@ pub(crate) fn draw_side_groups(
     actions: &mut Vec<GuiShellAction>,
 ) {
     layout.pending_layout = false;
+    layout.additional.clear();
     let mut context = PanelDrawContext {
         ui,
         state,
         hidden: display.hidden_panels.clone(),
         show_panel_titles: display.show_panel_titles,
+        additional_allowed: false,
+        ribbon_bottom: ui.window_pos()[1] + ui.window_size()[1],
         owners,
         actions,
     };
@@ -366,7 +384,7 @@ fn temporary_contents(
     }
     match shown {
         TemporaryPanel::Group(panel) => {
-            let (width, local) = draw_expanded(context, panel, [0.; 2]);
+            let (width, local) = draw_expanded(context, tab, panel, [0.; 2], layout);
             layout.record_width(tab, panel, width);
             local
         }
@@ -431,7 +449,7 @@ fn draw_row(
     let mut activated = false;
     for (index, panel) in panels.into_iter().enumerate() {
         let width = if index < expanded {
-            let (width, local_action) = draw_expanded(context, panel, [x, 0.]);
+            let (width, local_action) = draw_expanded(context, tab, panel, [x, 0.], layout);
             activated |= local_action;
             layout.record_width(tab, panel, width);
             width
@@ -445,18 +463,28 @@ fn draw_row(
 }
 fn draw_expanded(
     context: &mut PanelDrawContext<'_>,
+    tab: RibbonTab,
     panel: RibbonPanel,
     origin: [f32; 2],
+    layout: &mut RibbonPanelLayout,
 ) -> (f32, bool) {
     let ui = context.ui;
     crate::widget_abi::cursor_position(ui, origin);
+    let anchor = ui.cursor_screen_pos();
     let mut local_action = false;
     ui.group(|| {
         local_action = context.content(panel, origin);
         context.owners.icons.cursor(ui, origin, [0., 66.]);
         if context.show_panel_titles {
             ui.text(panel.label());
-            local_action |= ui.is_item_clicked();
+            let title_clicked = ui.is_item_clicked();
+            local_action |= title_clicked;
+            if context.additional_allowed
+                && tab == RibbonTab::Model
+                && panel == RibbonPanel::PartModify
+            {
+                additional::trigger(ui, tab, panel, anchor, title_clicked, layout);
+            }
         }
         if panel == RibbonPanel::Create {
             // Preserve the existing Create grid's trailing space and wide-window command positions.

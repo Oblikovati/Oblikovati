@@ -96,6 +96,8 @@ pub(crate) struct RibbonDisplayState {
     selector_keyboard_started: bool,
     pub(crate) selector_open: bool,
     pub(crate) selector_pointer_inside: bool,
+    pub(crate) selector_trigger: Option<[[f32; 2]; 2]>,
+    pub(crate) selector_escape: bool,
     /// Panels a user has hidden, per tab; they stay listed in Show Panels.
     pub hidden_panels: BTreeSet<(RibbonTab, RibbonPanel)>,
     pub show_panel_titles: bool,
@@ -117,6 +119,8 @@ impl Default for RibbonDisplayState {
             selector_keyboard_started: false,
             selector_open: false,
             selector_pointer_inside: false,
+            selector_trigger: None,
+            selector_escape: false,
             // Parameters lives on Manage, and is offered here for those who want it beside Create.
             hidden_panels: BTreeSet::from([(RibbonTab::Model, RibbonPanel::Parameters)]),
             show_panel_titles: true,
