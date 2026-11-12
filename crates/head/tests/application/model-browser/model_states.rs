@@ -2,7 +2,134 @@
 //! Model state rows read from and activate the document's canonical members.
 use super::*;
 use crate::HeadWork;
+use cucumber::{given, then, when};
 use oblikovati_api::{client::Client, wire::CreateModelStateArgs};
+
+#[given("a new empty part is active in the MCAD Software")]
+fn new_empty_part(world: &mut ApplicationWorld) {
+    world.add_part();
+}
+
+#[given("the model browser shows the expanded Model State branch with Primary active")]
+fn expanded_primary(world: &mut ApplicationWorld) {
+    world.click_text("Model State");
+    world.expect_text("Primary (Active)");
+    assert!(world.checked("Primary (Active)"));
+}
+
+#[when("I open the Model State branch context menu")]
+fn open_state_menu(world: &mut ApplicationWorld) {
+    right_click_row(world, "Model State");
+}
+
+#[then("it offers New Model State, Expand All Children and Collapse All Children")]
+fn state_menu_options(world: &mut ApplicationWorld) {
+    expect_rows(
+        world,
+        &[
+            "New Model State",
+            "Expand All Children",
+            "Collapse All Children",
+        ],
+    );
+}
+
+#[when("I open the New Model State submenu")]
+fn open_state_submenu(world: &mut ApplicationWorld) {
+    let position = super::super::diagnostics::pointer_pixels(world.run("New Model State").center());
+    world.hover(position);
+    world.pump(Vec::new());
+}
+
+#[then("it offers New Model State and Duplicate Primary")]
+fn state_submenu_options(world: &mut ApplicationWorld) {
+    expect_rows(world, &["New Model State", "Duplicate Primary"]);
+}
+
+#[when("I choose New Model State")]
+fn create_state(world: &mut ApplicationWorld) {
+    world.click_text("New Model State");
+    world.pump(Vec::new());
+}
+
+#[then("a new model-state entry appears and is active")]
+#[then("its generated name is selected for inline editing")]
+fn generated_name_selected(world: &mut ApplicationWorld) {
+    assert!(world.text_is_selected("Model State1"));
+    assert_eq!(
+        world
+            .state()
+            .browser
+            .unwrap()
+            .model_states
+            .unwrap()
+            .active()
+            .unwrap()
+            .name,
+        "Model State1"
+    );
+}
+
+#[when("I enter a new state name and press Enter")]
+fn rename_state(world: &mut ApplicationWorld) {
+    world.type_text("Large");
+    world.key(oblikovati_viewport::ViewportPhysicalKey::Enter, false);
+    world.pump(Vec::new());
+}
+
+#[then("the new name appears in the model-state row and branch label")]
+fn renamed_row_and_branch(world: &mut ApplicationWorld) {
+    world.expect_text("Large (Active)");
+    assert!((world.run("<Large>").center()[1] - world.run("Model State").center()[1]).abs() < 3.);
+}
+
+#[then("the browser root and document tab identify the new state")]
+fn large_caption(world: &mut ApplicationWorld) {
+    expect_state_caption(world, "Large");
+}
+
+#[then("the browser root and document tab identify Primary")]
+fn primary_caption(world: &mut ApplicationWorld) {
+    expect_state_caption(world, "Primary");
+}
+
+fn expect_state_caption(world: &ApplicationWorld, name: &str) {
+    let count = world
+        .frame
+        .runs
+        .iter()
+        .filter(|row| row.text.contains("Part1") && row.text.contains(name))
+        .count();
+    assert_eq!(count, 2, "expected root and document tab to show {name:?}");
+}
+
+#[when("I double-click the Primary model-state entry")]
+fn activate_primary(world: &mut ApplicationWorld) {
+    world.double_click(world.run("Primary").center().map(|v| v as i32));
+}
+
+#[then("Primary is marked as active")]
+fn primary_active(world: &mut ApplicationWorld) {
+    world.expect_text("Primary (Active)");
+    assert!(world.checked("Primary (Active)"));
+}
+
+#[when("I double-click the new model-state entry")]
+fn activate_large(world: &mut ApplicationWorld) {
+    world.double_click(world.run("Large").center().map(|v| v as i32));
+}
+
+#[then("the new state is marked as active")]
+fn large_active(world: &mut ApplicationWorld) {
+    world.expect_text("Large (Active)");
+    assert!(world.checked("Large (Active)"));
+}
+
+#[then("the viewport remains empty")]
+fn viewport_empty(world: &mut ApplicationWorld) {
+    assert!(world.state().browser.unwrap().bodies.is_empty());
+    world.expect_blank_region([400, 1200], [300, 700]);
+}
 
 #[test]
 fn model_state_rows_follow_document_and_double_click_activates_member() {

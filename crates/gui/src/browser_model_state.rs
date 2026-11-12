@@ -153,9 +153,15 @@ impl BrowserTree<'_> {
             let _id = self.ui.push_id(format!("model-state-{}", member.id));
             let position = self.ui.cursor_screen_pos();
             crate::widget_abi::selectable(self.ui, "##model-state", active, true);
+            if active {
+                active_state_mark(self.ui, position);
+            }
             crate::widget_abi::literal_text(
                 self.ui,
-                position,
+                [
+                    position[0] + 16. * self.ui.current_font_size() / 13.,
+                    position[1],
+                ],
                 self.ui.style_color(StyleColor::Text),
                 &label,
             );
@@ -217,5 +223,29 @@ impl BrowserTree<'_> {
                 }
             }
         });
+        // Members have no descendant rows, so both commands leave the direct rows in place.
+        self.ui.menu_item("Expand All Children");
+        self.ui.menu_item("Collapse All Children");
     }
+}
+
+fn active_state_mark(ui: &Ui, position: [f32; 2]) {
+    let [x, y] = position;
+    let scale = ui.current_font_size() / 13.;
+    let color = ui.style_color(StyleColor::CheckMark);
+    let draw = ui.get_window_draw_list();
+    draw.add_line(
+        [x + 2. * scale, y + 7. * scale],
+        [x + 5. * scale, y + 10. * scale],
+        color,
+    )
+    .thickness(2. * scale)
+    .build();
+    draw.add_line(
+        [x + 5. * scale, y + 10. * scale],
+        [x + 12. * scale, y + 2. * scale],
+        color,
+    )
+    .thickness(2. * scale)
+    .build();
 }
