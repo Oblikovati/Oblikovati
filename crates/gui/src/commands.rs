@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 #[derive(Clone, Debug, PartialEq)]
 pub enum GuiShellAction {
+    /// Place instances of a sketch block definition.
+    PlaceSketchBlock(String),
     /// Enter or leave the Create Block geometry selection mode.
     SelectBlockGeometry(bool),
     /// Group the editor's current checked selection under this name.

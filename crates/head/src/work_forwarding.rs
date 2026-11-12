@@ -76,6 +76,9 @@ macro_rules! forward_owner_view_work {
             self.$owner
                 .select_browser_block_from_gui(document, sketch, instance, toggle)
         }
+        fn place_sketch_block_from_gui(&mut self, name: &str) -> Result<bool, String> {
+            self.$owner.place_sketch_block_from_gui(name)
+        }
         fn select_browser_feature_from_gui(
             &mut self,
             document: u64,

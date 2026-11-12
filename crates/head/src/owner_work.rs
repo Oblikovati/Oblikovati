@@ -398,6 +398,9 @@ impl<
     ) -> Result<bool, String> {
         self.toggle_gui_sketch_format(format)
     }
+    fn place_sketch_block_from_gui(&mut self, name: &str) -> Result<bool, String> {
+        self.start_block_placement(name)
+    }
     fn delete_sketch_selection_from_gui(&mut self) -> Result<bool, String> {
         self.delete_gui_sketch_selection()
     }
@@ -456,6 +459,12 @@ impl<
         self.active_sketch_edit()
     }
     fn sketch_preview(&self) -> Option<oblikovati_viewport::ViewportSketchPreview> {
+        if let Some(crate::sketch_tool::SketchToolState::Block(tool)) = &self.sketch_tool {
+            return self
+                .sketch_context_valid(tool.edit.document, tool.edit.sketch, tool.generation)
+                .then(|| tool.preview.clone())
+                .flatten();
+        }
         let recipe = self.placement_preview()?.clone();
         let tool = self.placement_state()?;
         if matches!(

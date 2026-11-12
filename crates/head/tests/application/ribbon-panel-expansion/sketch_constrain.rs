@@ -313,7 +313,7 @@ fn create_block_groups_four_mouse_selected_edges_and_supports_undo_redo() {
     }
     world.close();
 }
-fn segment_color_changed(
+pub(super) fn segment_color_changed(
     before: &oblikovati_viewport::ViewportCapture,
     after: &oblikovati_viewport::ViewportCapture,
     segment: [[i32; 2]; 2],
@@ -415,6 +415,7 @@ fn viewport_picks_rotated_and_scaled_block_instance() {
     assert_eq!((rows[0].id.0, rows[0].ordinal), (second.entity_id, 2));
     world.close();
 }
+
 fn visible_line_point(world: &mut ApplicationWorld, line: usize) -> [i32; 2] {
     let (position, size) = diagnostics::window_geometry("Create Block").unwrap();
     for fraction in [0.5, 0.3, 0.7, 0.15, 0.85, 0.05, 0.95] {

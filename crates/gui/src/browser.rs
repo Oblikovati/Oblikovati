@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
+#[path = "browser_blocks.rs"]
+mod browser_blocks;
 #[path = "browser_model_state.rs"]
 pub(crate) mod browser_model_state;
 use crate::application::workspace_layout::browser_view::BrowserView;
@@ -265,7 +267,7 @@ impl BrowserTree<'_> {
         self.bodies(view, actions);
         self.origin(view, actions);
         self.parameters();
-        self.blocks();
+        self.blocks(actions);
         self.sketches(view, actions);
         self.features(view, actions);
         // The marker closes a modelled document's history; a document without an origin has none.
@@ -352,16 +354,6 @@ impl BrowserTree<'_> {
         if let Some(_parameters) = self.branch("Parameters", false) {
             for row in &self.state.parameters {
                 self.ui.bullet_text(format!("{} = {}", row.name, row.value));
-            }
-        }
-    }
-    fn blocks(&self) {
-        if self.browser.block_definitions.is_empty() {
-            return;
-        }
-        if let Some(_blocks) = self.branch("Blocks", true) {
-            for name in &self.browser.block_definitions {
-                self.ui.text(name);
             }
         }
     }

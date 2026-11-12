@@ -2,6 +2,12 @@
 use crate::HeadWorkStatus;
 /// Owner-thread services borrow model state only while the window loop polls them.
 pub trait HeadWork {
+    /// Start repeated block placement; example: `work.place_sketch_block_from_gui("Rib")?`.
+    fn place_sketch_block_from_gui(&mut self, name: &str) -> Result<bool, String> {
+        Err(format!(
+            "block {name:?}: expected an active sketch placement owner"
+        ))
+    }
     /// Select a block row in the edited sketch; example: `work.select_browser_block_from_gui(document, sketch, block, false)?`.
     fn select_browser_block_from_gui(
         &mut self,

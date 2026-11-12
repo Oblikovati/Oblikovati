@@ -15,6 +15,8 @@ mod documents_gui;
 #[path = "owner_sketch_tools.rs"]
 mod sketch_tools_gui;
 use sketch_tools_gui::gui_placement_tool;
+#[path = "owner_block_placement.rs"]
+pub(crate) mod block_placement;
 #[path = "owner_body_properties.rs"]
 mod body_properties;
 #[path = "owner_browser_selection.rs"]

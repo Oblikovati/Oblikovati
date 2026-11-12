@@ -5,6 +5,7 @@ use oblikovati_gui::GuiShellAction;
 
 pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, String> {
     match action {
+        GuiShellAction::PlaceSketchBlock(name) => owner.place_sketch_block_from_gui(name),
         GuiShellAction::SelectBlockGeometry(active) => {
             owner.select_block_geometry_from_gui(*active)
         }

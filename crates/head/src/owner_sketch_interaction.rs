@@ -83,6 +83,7 @@ impl<
     ) -> bool {
         // #3816: one press belongs to one tool, including the press that completes it.
         match self.sketch_tool.take() {
+            Some(SketchToolState::Block(tool)) => self.process_block_placement(tool, event, window),
             Some(SketchToolState::Placement(tool)) => {
                 self.process_placement_event(tool, event, window)
             }

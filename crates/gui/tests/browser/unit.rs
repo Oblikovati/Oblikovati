@@ -159,6 +159,21 @@ fn block_browser_selection_requires_a_current_instance_and_idle_sketch() {
 }
 
 #[test]
+fn place_block_requires_the_definition_and_an_editable_sketch() {
+    let mut state = sample_state();
+    state.sketch_block_names.push("Rib".into());
+    let action = GuiShellAction::PlaceSketchBlock("Rib".into());
+    assert!(!action.enabled(&state));
+    state.authoring = crate::GuiAuthoringContext::Sketch;
+    assert!(action.enabled(&state));
+    state.transaction_open = true;
+    assert!(!action.enabled(&state));
+    state.transaction_open = false;
+    state.sketch_block_names.clear();
+    assert!(!action.enabled(&state));
+}
+
+#[test]
 fn model_state_labels_reject_nul_before_browser_adoption() {
     let mut browser = sample_state().browser.unwrap();
     let mut states = oblikovati_model::model_state::ModelStateMembers::default();

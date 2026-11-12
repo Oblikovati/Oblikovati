@@ -5,6 +5,8 @@ use super::workspace_layout::browser_feature::{
 };
 use super::{ApplicationWorld, diagnostics};
 use cucumber::{given, then, when};
+#[path = "sketch_block_placement.rs"]
+mod sketch_block_placement;
 #[path = "sketch_constrain.rs"]
 mod sketch_constrain;
 const WINDOW: &str = "##ribbon-additional-PartModify";
