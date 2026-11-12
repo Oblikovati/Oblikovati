@@ -83,6 +83,7 @@ impl RibbonCustomization {
             .size([230., 200.])
             .border(true)
             .build(|| {
+                let mut transfer = None;
                 for command in COMMANDS
                     .into_iter()
                     .filter(|command| self.draft.available(*command))
@@ -95,6 +96,14 @@ impl RibbonCustomization {
                     {
                         self.draft.source = Some(command);
                     }
+                    if ui.is_item_hovered() && ui.is_mouse_double_clicked(imgui::MouseButton::Left)
+                    {
+                        transfer = Some(command);
+                    }
+                }
+                if let Some(command) = transfer {
+                    self.draft.source = Some(command);
+                    self.draft.add();
                 }
             });
     }
@@ -139,6 +148,7 @@ impl RibbonCustomization {
             .border(true)
             .build(|| {
                 let mut selected = self.draft.selected;
+                let mut remove = false;
                 for (index, entry) in self.draft.rows().iter().enumerate() {
                     if ui
                         .selectable_config(format!("{}##target-{index}", entry.command.label()))
@@ -147,13 +157,24 @@ impl RibbonCustomization {
                     {
                         selected = Some(index);
                     }
+                    if ui.is_item_hovered() && ui.is_mouse_double_clicked(imgui::MouseButton::Left)
+                    {
+                        selected = Some(index);
+                        remove = true;
+                    }
                 }
                 self.draft.selected = selected;
+                if remove {
+                    self.draft.remove();
+                }
             });
         if let Some(entry) = self.draft.selected_mut() {
-            ui.checkbox("Large", &mut entry.large);
+            let large_changed = ui.checkbox("Large", &mut entry.large);
             ui.same_line();
-            ui.checkbox("Text", &mut entry.text);
+            let text_changed = ui.checkbox("Text", &mut entry.text);
+            if large_changed || text_changed {
+                self.draft.mark_changed();
+            }
         }
     }
     fn reorder(&mut self, ui: &Ui) {

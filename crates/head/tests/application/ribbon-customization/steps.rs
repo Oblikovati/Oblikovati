@@ -77,6 +77,7 @@ fn part_with_tools(world: &mut ApplicationWorld) {
     world.click_text("Tools");
 }
 #[given("the Ribbon customization dialog has an initially empty Part Tools custom panel")]
+#[given("the ribbon customization dialog has an empty Part Tools custom panel")]
 fn empty_tools_customization(world: &mut ApplicationWorld) {
     open_tools_customization(world);
 }
@@ -85,6 +86,7 @@ fn stage_sketch_command(world: &mut ApplicationWorld) {
     stage_sketch_visibility(world);
 }
 #[then("the target indicates a pending change")]
+#[then("the target still indicates a pending change")]
 fn tools_pending(world: &mut ApplicationWorld) {
     assert!(world.window_text("Customize").contains("Part|Tools*"));
 }
@@ -93,6 +95,7 @@ fn customization_closed(_world: &mut ApplicationWorld) {
     assert!(diagnostics::window_geometry("Customize").is_none());
 }
 #[then("no User Commands panel is displayed on the Tools ribbon")]
+#[then("no User Commands panel appears on the Tools ribbon")]
 fn no_user_commands(world: &mut ApplicationWorld) {
     world.expect_no_text("User Commands");
 }
@@ -101,15 +104,33 @@ fn reopen_tools_customization(world: &mut ApplicationWorld) {
     open_tools_customization(world);
 }
 #[then("the Part Tools custom panel list is empty")]
+#[then("the custom panel list is empty")]
 fn empty_tools_target(world: &mut ApplicationWorld) {
     let command = world.run_in_window("Customize", "2DSketches");
     let target = world.run_in_window("Customize", "Custompanel");
     assert!(command.center()[0] < target.minimum[0]);
 }
 #[then("\"2D Sketches\" is available in the All Commands list")]
+#[given("\"2D Sketches\" is available in the source list")]
+#[then("\"2D Sketches\" is available in the source list again")]
 fn sketches_in_available_commands(world: &mut ApplicationWorld) {
     empty_tools_target(world);
     assert!(world.window_text("Customize").contains("AllCommands"));
+}
+#[when("the user double-clicks \"2D Sketches\" in the source list")]
+#[when("the user double-clicks \"2D Sketches\" in the custom panel list")]
+fn double_click_sketches(world: &mut ApplicationWorld) {
+    let center = world.run_in_window("Customize", "2DSketches").center();
+    world.double_click(diagnostics::pointer_pixels(center));
+    world.pump(Vec::new());
+}
+#[then("\"2D Sketches\" moves to the custom panel list")]
+fn double_click_moved_sketches(world: &mut ApplicationWorld) {
+    sketches_in_target(world);
+}
+#[when("the user clicks \"Cancel\"")]
+fn cancel_customization(world: &mut ApplicationWorld) {
+    click_in_customize(world, "Cancel");
 }
 #[then("the target no longer indicates a pending change")]
 fn tools_not_pending(world: &mut ApplicationWorld) {
@@ -166,6 +187,23 @@ fn customization_cancel_discards_a_staged_command() {
     world.expect_no_text("User Commands");
     open_tools_customization(&mut world);
     assert!(!world.window_text("Customize").contains("Part|Tools*"));
+    click_in_customize(&mut world, "Close");
+    world.close();
+}
+
+#[test]
+fn applying_a_reversed_addition_clears_the_pending_marker() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    open_tools_customization(&mut world);
+    stage_sketch_visibility(&mut world);
+    click_in_customize(&mut world, "<");
+    assert!(world.window_text("Customize").contains("Part|Tools*"));
+    assert_eq!(world.run_in_window("Customize", "Apply").alpha, u8::MAX);
+    click_in_customize(&mut world, "Apply");
+    assert!(!world.window_text("Customize").contains("Part|Tools*"));
+    assert_ne!(world.run_in_window("Customize", "Apply").alpha, u8::MAX);
+    world.expect_no_text("User Commands");
     click_in_customize(&mut world, "Close");
     world.close();
 }

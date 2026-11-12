@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Session-local applied commands and a separate editable draft per ribbon tab.
 use crate::ribbon::RibbonTab;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum Command {
@@ -39,6 +39,7 @@ pub(super) struct Entry {
 pub(super) struct Draft {
     applied: BTreeMap<RibbonTab, Vec<Entry>>,
     staged: BTreeMap<RibbonTab, Vec<Entry>>,
+    changed_tabs: BTreeSet<RibbonTab>,
     pub target: RibbonTab,
     pub source: Option<Command>,
     pub selected: Option<usize>,
@@ -47,6 +48,7 @@ pub(super) struct Draft {
 impl Draft {
     pub fn open(&mut self, target: RibbonTab) {
         self.staged = self.applied.clone();
+        self.changed_tabs.clear();
         self.target = target;
         self.source = None;
         self.selected = None;
@@ -59,10 +61,10 @@ impl Draft {
         self.applied.get(&tab).map_or(&[], Vec::as_slice)
     }
     pub fn changed(&self) -> bool {
-        self.staged != self.applied
+        !self.changed_tabs.is_empty()
     }
     pub fn target_changed(&self) -> bool {
-        self.rows() != self.applied(self.target)
+        self.changed_tabs.contains(&self.target)
     }
     pub fn switch(&mut self, target: RibbonTab) {
         self.target = target;
@@ -89,6 +91,7 @@ impl Draft {
             },
         );
         self.selected = Some(index);
+        self.mark_changed();
         if command != Command::Separator {
             self.source = None;
         }
@@ -102,6 +105,7 @@ impl Draft {
         };
         rows.remove(index);
         self.selected = (!rows.is_empty()).then_some(index.min(rows.len().saturating_sub(1)));
+        self.mark_changed();
         self.normalize();
     }
     pub fn move_selected(&mut self, delta: isize) {
@@ -119,6 +123,7 @@ impl Draft {
         };
         rows.swap(index, next);
         self.selected = Some(next);
+        self.mark_changed();
     }
     pub fn selected_mut(&mut self) -> Option<&mut Entry> {
         let index = self.selected?;
@@ -127,6 +132,10 @@ impl Draft {
     pub fn apply(&mut self) {
         self.normalize();
         self.applied = self.staged.clone();
+        self.changed_tabs.clear();
+    }
+    pub fn mark_changed(&mut self) {
+        self.changed_tabs.insert(self.target);
     }
     fn normalize(&mut self) {
         self.staged.retain(|_, entries| !entries.is_empty());
@@ -176,5 +185,21 @@ mod tests {
         draft.remove();
         assert!(draft.available(Command::Annotations));
         assert!(draft.changed());
+    }
+    #[test]
+    fn reversed_addition_stays_pending_until_apply_or_cancel() {
+        let mut draft = Draft::default();
+        draft.open(RibbonTab::Tools);
+        draft.source = Some(Command::Sketches);
+        draft.add();
+        draft.remove();
+        assert!(draft.rows().is_empty());
+        assert!(draft.changed() && draft.target_changed());
+        draft.switch(RibbonTab::Model);
+        assert!(draft.changed() && !draft.target_changed());
+        draft.apply();
+        assert!(!draft.changed());
+        draft.switch(RibbonTab::Tools);
+        assert!(!draft.target_changed());
     }
 }

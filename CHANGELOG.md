@@ -4,6 +4,8 @@
 
 ### Added
 
+- Added double-click transfer of ribbon user commands. (#3856)
+
 - Added session-local customization of part ribbon user commands. (#3856)
 
 - Added typed API placement of existing sketch block definitions with checked
@@ -41,6 +43,8 @@
 - Added keyboard access to compact and side-docked ribbon groups for part documents. (#3856)
 
 ### Fixed
+
+- Kept reversed ribbon customization edits pending until Apply or Cancel. (#3856)
 
 - Fixed Escape in ribbon customization to discard pending edits without cancelling the active sketch. (#3856)
 
