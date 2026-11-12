@@ -13,3 +13,7 @@ Opposite arrow keys rotate it back.
 Click a visible model face to dismiss the key tips and select the face. Use
 **Zoom Selected** in the toolbar beside the face to frame it in the view. Click
 empty viewport space to clear the selection.
+
+In the model browser’s Features branch, use Up and Down to select the preceding
+or next visible feature or child sketch. The key tips stay visible while you
+navigate.

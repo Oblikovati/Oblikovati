@@ -363,5 +363,7 @@ fn compact_create_group_tips_open_extrude() {
 #[path = "view_rotation.rs"]
 mod view_rotation;
 
+#[path = "browser_navigation.rs"]
+mod browser_navigation;
 #[path = "face_selection.rs"]
 mod face_selection;

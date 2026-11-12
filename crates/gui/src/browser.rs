@@ -173,6 +173,7 @@ pub(crate) fn browser_contents(
         ui.text("(no document)");
         return;
     };
+    view.feature_rows.clear();
     view.header(ui, browser.kind == crate::GuiBrowserKind::Drawing);
     browser_origin::follow_view_click(ui, state, view, actions);
     browser_origin::follow_keys(ui, view, actions, state);
@@ -190,6 +191,7 @@ pub(crate) fn browser_contents(
         expansion: view.take_expansion(),
     };
     tree.draw(view, actions);
+    crate::application::model_browser::feature_keys::follow(ui, state, browser, view, actions);
     view.body_properties.panel(ui, state, browser, actions);
     view.dialogs(ui, state, browser, actions);
 }
@@ -331,7 +333,7 @@ impl BrowserTree<'_> {
     fn features(&self, view: &mut BrowserView, actions: &mut Vec<GuiShellAction>) {
         if let Some(_features) = self.branch("Features", true) {
             for feature in &self.browser.features {
-                self.feature(feature, self.expansion, view, actions);
+                self.feature(feature, self.expansion, view, actions, true);
             }
         }
     }
@@ -382,7 +384,7 @@ impl BrowserTree<'_> {
             .iter()
             .find(|feature| feature.id == body.feature);
         if let Some(feature) = made_by {
-            self.feature(feature, expansion, view, actions);
+            self.feature(feature, expansion, view, actions, false);
         }
     }
     fn feature(
@@ -391,7 +393,12 @@ impl BrowserTree<'_> {
         expansion: Option<bool>,
         view: &mut BrowserView,
         actions: &mut Vec<GuiShellAction>,
+        record_rows: bool,
     ) {
+        use crate::application::model_browser::feature_keys::FeatureRow;
+        if record_rows {
+            view.feature_rows.push(FeatureRow::Feature(feature.id));
+        }
         let _feature = self.ui.push_id(format!("feature-{}", feature.id.0));
         let token = browser_feature::feature_row(
             self.ui,
@@ -409,6 +416,9 @@ impl BrowserTree<'_> {
                 .iter()
                 .filter(|row| row.consumed_by == Some(feature.id))
             {
+                if record_rows {
+                    view.feature_rows.push(FeatureRow::Sketch(row.id));
+                }
                 sketch_row(self.ui, self.state, row, view, actions);
             }
         }

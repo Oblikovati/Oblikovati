@@ -8,6 +8,8 @@ pub(crate) mod browser_root;
 pub(crate) mod color_dialog;
 #[path = "favorites.rs"]
 pub(crate) mod favorites;
+#[path = "feature_keys.rs"]
+pub(crate) mod feature_keys;
 #[path = "feature_properties.rs"]
 pub(crate) mod feature_properties;
 #[path = "find_criteria.rs"]
