@@ -1,0 +1,55 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use super::*;
+use std::{cell::RefCell, rc::Rc};
+
+#[derive(Default)]
+struct StoredSettings {
+    bytes: Option<Vec<u8>>,
+    fail_save: bool,
+}
+#[derive(Clone, Default)]
+struct FakeRibbonStore(Rc<RefCell<StoredSettings>>);
+impl GuiRibbonSettingsStore for FakeRibbonStore {
+    fn load(&mut self) -> Result<Option<Vec<u8>>, String> {
+        Ok(self.0.borrow().bytes.clone())
+    }
+    fn save(&mut self, bytes: &[u8]) -> Result<(), String> {
+        let mut state = self.0.borrow_mut();
+        if state.fail_save {
+            return Err("ribbon settings: expected writable storage".into());
+        }
+        state.bytes = Some(bytes.to_vec());
+        Ok(())
+    }
+}
+#[test]
+fn applied_settings_reload_and_failed_saves_leave_the_draft_pending() {
+    let store = FakeRibbonStore::default();
+    let mut customization = RibbonCustomization::default();
+    customization.set_store(Box::new(store.clone())).unwrap();
+    customization.open(RibbonTab::Tools);
+    customization
+        .draft
+        .reset_source_selection(Command::Sketches);
+    customization.draft.add();
+    store.0.borrow_mut().fail_save = true;
+    assert!(customization.apply().is_err());
+    assert!(customization.draft.changed());
+    assert!(!customization.has_panel(RibbonTab::Tools));
+    assert!(store.0.borrow().bytes.is_none());
+    store.0.borrow_mut().fail_save = false;
+    customization.apply().unwrap();
+    let mut reopened = RibbonCustomization::default();
+    reopened.set_store(Box::new(store)).unwrap();
+    assert!(reopened.has_panel(RibbonTab::Tools));
+    assert!(!reopened.draft.changed());
+}
+#[test]
+fn corrupt_saved_settings_are_rejected_without_a_partial_store() {
+    let store = FakeRibbonStore::default();
+    store.0.borrow_mut().bytes = Some(b"<invalid".to_vec());
+    let mut customization = RibbonCustomization::default();
+    assert!(customization.set_store(Box::new(store)).is_err());
+    assert!(customization.store.is_none());
+    assert!(!customization.has_panel(RibbonTab::Tools));
+}

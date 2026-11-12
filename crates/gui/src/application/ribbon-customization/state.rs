@@ -112,6 +112,10 @@ pub(super) struct Draft {
     pub sketch_category: bool,
 }
 impl Draft {
+    pub fn load_applied(&mut self, settings: BTreeMap<RibbonTab, Vec<Entry>>) {
+        self.applied = settings;
+        self.open(self.target);
+    }
     pub fn open(&mut self, target: RibbonTab) {
         self.staged = self.applied.clone();
         self.removed.clear();

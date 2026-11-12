@@ -35,6 +35,7 @@ pub struct NativeHeadWindow {
     >,
     command_notice: Option<crate::DesktopCommandNotice>,
     gui: Option<gui_loop::NativeGui>,
+    ribbon_settings_directory: Option<std::path::PathBuf>,
     gui_epoch: std::time::Instant,
     clipboard: std::rc::Rc<clipboard::NativeClipboardChannel>,
 }
@@ -72,6 +73,7 @@ impl NativeHeadWindow {
             saved_views: Default::default(),
             command_notice: None,
             gui: None,
+            ribbon_settings_directory: None,
             gui_epoch: std::time::Instant::now(),
             clipboard: clipboard::NativeClipboardChannel::open(),
         })
@@ -345,6 +347,7 @@ type NativeDesktopOwner = crate::DesktopOwner<
     crate::DesktopObservations,
     NativeOwnerWake,
 >;
+#[cfg(test)]
 fn native_owner(wake: ViewportWake) -> Result<NativeDesktopOwner, String> {
     native_owner_at(wake, &preferences::native_config_directory()?)
 }
@@ -415,8 +418,10 @@ pub fn run_native_documents(
     options: HeadOptions,
     documents: &[std::path::PathBuf],
 ) -> Result<HeadSummary, String> {
+    let directory = preferences::native_config_directory()?;
     let mut window = NativeHeadWindow::open()?;
-    let owner = match native_owner(window.wake.clone()) {
+    window.ribbon_settings_directory = Some(directory.clone());
+    let owner = match native_owner_at(window.wake.clone(), &directory) {
         Ok(owner) => owner,
         Err(cause) => return crate::frames::combine_retirement(Err(cause), window.finish()),
     };

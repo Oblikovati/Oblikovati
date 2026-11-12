@@ -62,6 +62,7 @@ mod theme_state;
 pub use theme_state::GuiThemeState;
 #[allow(unsafe_code)]
 mod widget_abi;
+pub use application::ribbon_customization::GuiRibbonSettingsStore;
 pub use commands::{
     GuiAuthoringContext, GuiBaseViewRequest, GuiBrowserChoice, GuiCommandState, GuiDocumentStorage,
     GuiDrawingLine, GuiDrawingProjection, GuiExtrudePreview, GuiFeatureCondition, GuiFeatureEdit,

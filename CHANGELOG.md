@@ -4,6 +4,8 @@
 
 ### Added
 
+- Saved applied part ribbon customization in user preferences across restarts. (#3856)
+
 - Added XML import and export for staged part ribbon customization. (#3856)
 
 - Added Ctrl+A selection and a title-bar close control to ribbon customization. (#3856)

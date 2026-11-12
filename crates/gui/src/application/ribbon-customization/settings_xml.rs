@@ -7,6 +7,7 @@ use xml::reader::XmlEvent;
 use xml::writer::{EmitterConfig, XmlEvent as WriteEvent};
 
 pub(super) type RibbonSettings = BTreeMap<RibbonTab, Vec<Entry>>;
+pub(super) const MAX_SETTINGS_BYTES: usize = 1024 * 1024;
 const TABS: [(RibbonTab, &str); 6] = [
     (RibbonTab::Model, "model"),
     (RibbonTab::Sketch, "sketch"),

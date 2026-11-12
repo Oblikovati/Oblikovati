@@ -54,8 +54,9 @@ impl fmt::Debug for ApplicationWorld {
 }
 impl ApplicationWorld {
     pub(super) fn new() -> Self {
-        let native = NativeHeadWindow::open().unwrap();
         let preferences = tempfile::tempdir().unwrap();
+        let mut native = NativeHeadWindow::open().unwrap();
+        native.ribbon_settings_directory = Some(preferences.path().to_owned());
         let owner = native_owner_at(native.wake.clone(), preferences.path()).unwrap();
         let mut world = Self {
             app: Some(NativeApplication {
@@ -259,6 +260,20 @@ impl ApplicationWorld {
             app.owner.finish().unwrap();
             app.window.finish().unwrap();
         }
+    }
+    pub fn reopen_application(&mut self) {
+        self.close();
+        let mut native = NativeHeadWindow::open().unwrap();
+        native.ribbon_settings_directory = Some(self._preferences.path().to_owned());
+        let owner = native_owner_at(native.wake.clone(), self._preferences.path()).unwrap();
+        self.app = Some(NativeApplication {
+            window: scripted_window(native),
+            owner,
+        });
+        self.pump(Vec::new());
+    }
+    pub fn preferences_directory(&self) -> &std::path::Path {
+        self._preferences.path()
     }
 }
 impl Drop for ApplicationWorld {

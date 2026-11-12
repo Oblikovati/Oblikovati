@@ -13,7 +13,7 @@ use std::{
     rc::Rc,
 };
 
-const MAX_SETTINGS_BYTES: u64 = 1024 * 1024;
+const MAX_SETTINGS_BYTES: u64 = settings_xml::MAX_SETTINGS_BYTES as u64;
 const MISSING_FILE: &str = "File Not Found";
 #[derive(Clone, Copy)]
 pub(super) enum Mode {

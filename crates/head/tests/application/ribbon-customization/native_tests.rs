@@ -137,6 +137,55 @@ fn exported_draft_can_be_imported_applied_and_used() {
 }
 
 #[test]
+fn applied_ribbon_settings_survive_restart_without_unapplied_edits() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    world.add_finished_sketch();
+    open_tools_customization(&mut world);
+    stage_sketch_visibility(&mut world);
+    toggle_row_option(&mut world, "2DSketches", "Text");
+    click_in_customize(&mut world, "Apply");
+    click_in_customize(&mut world, "Line");
+    click_in_customize(&mut world, ">");
+    assert!(world.window_text("Customize").contains("Part|Tools*"));
+    world.reopen_application();
+    world.add_part();
+    world.add_finished_sketch();
+    world.click_text("Tools");
+    world.expect_text("User Commands");
+    world.click_text("2D Sketches");
+    assert!(!world.state().browser.unwrap().sketches[0].visible);
+    open_tools_customization(&mut world);
+    assert!(!world.window_text("Customize").contains("Part|Tools*"));
+    assert!(
+        world.run_in_window("Customize", "Line").center()[0]
+            < world.run_in_window("Customize", "Custompanel").minimum[0]
+    );
+    click_in_customize(&mut world, "Close");
+    world.close();
+}
+
+#[test]
+fn failed_ribbon_settings_save_keeps_the_draft_unapplied() {
+    let mut world = ApplicationWorld::new();
+    let destination = world
+        .preferences_directory()
+        .join("ribbon-customization.xml");
+    std::fs::create_dir(&destination).unwrap();
+    world.add_part();
+    open_tools_customization(&mut world);
+    stage_sketch_visibility(&mut world);
+    click_in_customize(&mut world, "Apply");
+    assert!(diagnostics::window_geometry("Customize").is_some());
+    assert!(world.window_text("Customize").contains("Part|Tools*"));
+    world.expect_no_text("User Commands");
+    world.expect_text("expected a complete atomic file replacement");
+    click_in_customize(&mut world, "Cancel");
+    assert!(destination.is_dir());
+    world.close();
+}
+
+#[test]
 fn malformed_import_keeps_the_existing_draft_and_reports_an_error() {
     let mut world = ApplicationWorld::new();
     world.add_part();

@@ -197,6 +197,11 @@ impl NativeHeadWindow {
         let clipboard =
             GuiClipboard::new(self.clipboard.clone(), super::clipboard::CLIPBOARD_BYTES)?;
         let mut gui = NativeGui::new(Some(clipboard))?;
+        if let Some(directory) = &self.ribbon_settings_directory {
+            gui.engine.set_ribbon_settings_store(Box::new(
+                super::preferences::NativeRibbonSettings::new(directory),
+            ))?;
+        }
         if let Some(crate::DesktopCommandNotice::SavePathRequired { document }) =
             &self.command_notice
         {

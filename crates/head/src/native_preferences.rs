@@ -62,3 +62,48 @@ pub(super) fn load_native_application_options(
     )
     .map_err(|cause| cause.to_string())
 }
+
+/// The desktop's atomically replaced ribbon customization file.
+pub(super) struct NativeRibbonSettings {
+    path: PathBuf,
+}
+impl NativeRibbonSettings {
+    pub(super) fn new(directory: &Path) -> Self {
+        Self {
+            path: directory.join("ribbon-customization.xml"),
+        }
+    }
+}
+impl oblikovati_gui::GuiRibbonSettingsStore for NativeRibbonSettings {
+    fn load(&mut self) -> Result<Option<Vec<u8>>, String> {
+        use std::io::Read;
+        let file = match std::fs::File::open(&self.path) {
+            Ok(file) => file,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+            Err(error) => {
+                return Err(format!(
+                    "ribbon settings {:?}: expected a readable file: {error}",
+                    self.path
+                ));
+            }
+        };
+        let mut bytes = Vec::new();
+        file.take(1024 * 1024 + 1)
+            .read_to_end(&mut bytes)
+            .map_err(|error| {
+                format!(
+                    "ribbon settings {:?}: expected readable bytes: {error}",
+                    self.path
+                )
+            })?;
+        Ok(Some(bytes))
+    }
+    fn save(&mut self, bytes: &[u8]) -> Result<(), String> {
+        oblikovati_persistence::atomic::replace_file(
+            &self.path,
+            bytes,
+            &mut NativeThemePreferenceFiles,
+        )
+        .map_err(|error| error.to_string())
+    }
+}

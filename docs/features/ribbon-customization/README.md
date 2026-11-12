@@ -14,11 +14,13 @@ the list to its earlier state.
 
 The command list includes sketch geometry, constraint, and dimension commands.
 Other commands remain limited to the entries shown in the dialog. Some
-commands are unavailable until their host operations exist. Settings last for
-the current application session. Export writes the current draft as versioned
-Oblikovati XML to a new file. Import replaces the draft and requires Apply or OK.
+commands are unavailable until their host operations exist. Apply and OK save
+settings in the user configuration directory. The desktop loads those settings
+on startup. A save failure leaves the draft open and the applied ribbon unchanged.
+
+Export writes the current draft as versioned Oblikovati XML to a new file.
+Import replaces the draft and requires Apply or OK.
 The export chooser refuses to overwrite an existing file. If an import file is
 missing, dismiss the warning to edit the selected filename.
 
-Keyboard and marking-menu customization, other document types, and automatic
-settings persistence remain open work.
+Keyboard and marking-menu customization and other document types remain open work.

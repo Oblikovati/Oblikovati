@@ -65,6 +65,14 @@ pub struct GuiFrameEngine {
     theme_editor: crate::theme_editor::GuiThemeEditor,
 }
 impl GuiFrameEngine {
+    /// Load and save applied ribbon settings through a host store.
+    /// Example: `engine.set_ribbon_settings_store(store)?`.
+    pub fn set_ribbon_settings_store(
+        &mut self,
+        store: Box<dyn crate::GuiRibbonSettingsStore>,
+    ) -> Result<(), String> {
+        self.ribbon.customization.set_store(store)
+    }
     /// Create the GUI owner on its UI thread without automatic file I/O; example: `GuiFrameEngine::new()?`.
     pub fn new() -> Result<Self, String> {
         require_vacant_context()?;

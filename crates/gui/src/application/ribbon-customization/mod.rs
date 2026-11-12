@@ -4,9 +4,11 @@ mod panel;
 mod settings_dialog;
 mod settings_xml;
 mod state;
+mod store;
 use crate::ribbon::RibbonTab;
 use imgui::Ui;
 use state::{COMMANDS, Command, Draft};
+pub use store::GuiRibbonSettingsStore;
 
 #[derive(Clone, Copy)]
 enum ListFocus {
@@ -25,12 +27,47 @@ pub(crate) struct RibbonCustomization {
     target_focused: bool,
     visible_source: Vec<Command>,
     settings: settings_dialog::SettingsDialog,
+    store: Option<Box<dyn GuiRibbonSettingsStore>>,
+    save_error: Option<String>,
 }
 impl RibbonCustomization {
+    pub(crate) fn set_store(
+        &mut self,
+        mut store: Box<dyn GuiRibbonSettingsStore>,
+    ) -> Result<(), String> {
+        if let Some(bytes) = store.load()? {
+            if bytes.len() > settings_xml::MAX_SETTINGS_BYTES {
+                return Err(format!(
+                    "ribbon settings {} bytes: expected at most {} bytes",
+                    bytes.len(),
+                    settings_xml::MAX_SETTINGS_BYTES
+                ));
+            }
+            self.draft.load_applied(settings_xml::decode(&bytes)?);
+        }
+        self.store = Some(store);
+        Ok(())
+    }
+    fn apply(&mut self) -> Result<(), String> {
+        if let Some(store) = self.store.as_mut() {
+            let bytes = settings_xml::encode(self.draft.snapshot())?;
+            if bytes.len() > settings_xml::MAX_SETTINGS_BYTES {
+                return Err(format!(
+                    "ribbon settings {} bytes: expected at most {} bytes",
+                    bytes.len(),
+                    settings_xml::MAX_SETTINGS_BYTES
+                ));
+            }
+            store.save(&bytes)?;
+        }
+        self.draft.apply();
+        Ok(())
+    }
     pub(crate) fn open(&mut self, tab: RibbonTab) {
         self.draft.open(tab);
         self.escape = Default::default();
         self.list_focus = None;
+        self.save_error = None;
         self.open = true;
     }
     pub(crate) fn has_panel(&self, tab: RibbonTab) -> bool {
@@ -53,6 +90,9 @@ impl RibbonCustomization {
             .build(|| {
                 self.tabs(ui);
                 self.lists(ui);
+                if let Some(error) = &self.save_error {
+                    ui.text_wrapped(error);
+                }
                 self.buttons(ui);
                 let focused = ui.is_window_focused_with_flags(
                     imgui::WindowFocusedFlags::ROOT_AND_CHILD_WINDOWS,
@@ -283,8 +323,13 @@ impl RibbonCustomization {
         let changed = self.draft.changed();
         let disabled = ui.begin_disabled(!changed);
         if ui.button("OK") {
-            self.draft.apply();
-            self.open = false;
+            match self.apply() {
+                Ok(()) => {
+                    self.save_error = None;
+                    self.open = false;
+                }
+                Err(error) => self.save_error = Some(error),
+            }
         }
         ui.same_line();
         if ui.button("Cancel") {
@@ -292,7 +337,7 @@ impl RibbonCustomization {
         }
         ui.same_line();
         if ui.button("Apply") {
-            self.draft.apply();
+            self.save_error = self.apply().err();
         }
         drop(disabled);
         ui.same_line();
@@ -309,3 +354,7 @@ impl RibbonCustomization {
         }
     }
 }
+
+#[cfg(test)]
+#[path = "store_tests.rs"]
+mod store_tests;
