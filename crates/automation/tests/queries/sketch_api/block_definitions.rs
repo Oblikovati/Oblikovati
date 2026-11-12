@@ -19,6 +19,122 @@ fn create(
         .create_block_definition(request)
 }
 #[test]
+fn selected_circle_becomes_one_instance_through_undo_redo_and_reopen() {
+    let (mut files, document, sketch, mut source) = files_with_circle(Default::default());
+    let before = files
+        .workspace()
+        .session(document)
+        .unwrap()
+        .snapshot()
+        .clone();
+    let reply = create(
+        &mut files,
+        &mut source,
+        &CreateBlockDefinitionArgs {
+            name: "Circle".into(),
+            entity_refs: Some(vec![2]),
+            ..Default::default()
+        },
+    )
+    .unwrap();
+    assert_eq!((reply.entity_count, reply.instance_count), (1, 1));
+    assert_grouped_circle(&files, document, sketch);
+    files.commands(document).unwrap().undo().unwrap();
+    let restored = files.workspace().session(document).unwrap().snapshot();
+    assert!(
+        restored
+            .sketches
+            .get(sketch)
+            .unwrap()
+            .geometry()
+            .same_recipe(before.sketches.get(sketch).unwrap().geometry())
+    );
+    assert!(restored.sketches.block_definitions().is_empty());
+    files.commands(document).unwrap().redo().unwrap();
+    assert_grouped_circle(&files, document, sketch);
+    files.save(document, "test", &mut source).unwrap();
+    let reopened =
+        reopen_with_observer(&mut files, document, &mut source, QueryObserver::default());
+    assert_grouped_circle(&files, reopened, sketch);
+}
+fn assert_grouped_circle(files: &DiscoveryWorkspace, document: u64, sketch: DocumentSketchId) {
+    let snapshot = files.workspace().session(document).unwrap().snapshot();
+    let placed = snapshot.sketches.get(sketch).unwrap();
+    assert!(placed.geometry().circles().is_empty());
+    assert!(placed.geometry().constraints().is_empty());
+    assert_eq!(placed.block_instances().len(), 1);
+    assert_eq!(placed.block_instances()[0].position(), [0., 0.]);
+    assert_eq!(
+        snapshot.sketches.block_definitions()[0]
+            .geometry()
+            .circles()[0]
+            .radius,
+        1.
+    );
+}
+
+#[test]
+fn grouping_rectangle_leaves_separate_circle_unchanged() {
+    let (mut files, document, sketch, mut source) = files_with_circle(Default::default());
+    let lines = add_rectangle(&mut files, document, sketch);
+    let reply = create(
+        &mut files,
+        &mut source,
+        &CreateBlockDefinitionArgs {
+            name: "Rectangle".into(),
+            entity_refs: Some(lines.iter().map(|id| id.0).collect()),
+            ..Default::default()
+        },
+    )
+    .unwrap();
+    assert_eq!((reply.entity_count, reply.instance_count), (4, 1));
+    let snapshot = files.workspace().session(document).unwrap().snapshot();
+    let geometry = snapshot.sketches.get(sketch).unwrap().geometry();
+    assert_eq!(geometry.circles().len(), 1);
+    assert_eq!(geometry.circles()[0].radius, 1.);
+    assert!(geometry.lines().is_empty());
+    assert_eq!(geometry.constraints().len(), 2);
+    assert_eq!(
+        snapshot.sketches.block_definitions()[0]
+            .geometry()
+            .lines()
+            .len(),
+        4
+    );
+}
+fn add_rectangle(
+    files: &mut DiscoveryWorkspace,
+    document: u64,
+    sketch: DocumentSketchId,
+) -> Vec<SketchEntityId> {
+    files
+        .commands(document)
+        .unwrap()
+        .run("Rectangle", |snapshot, ids| {
+            let mut geometry = snapshot.sketches.get(sketch).unwrap().geometry().clone();
+            let mut points = Vec::new();
+            for position in [[3., 0.], [4., 0.], [4., 1.], [3., 1.]] {
+                let point = ids.allocate_sketch_entity().unwrap();
+                geometry.add_defining_point(point, position).unwrap();
+                points.push(point);
+            }
+            let mut lines = Vec::new();
+            for index in 0..4 {
+                let line = ids.allocate_sketch_entity().unwrap();
+                geometry
+                    .add_line(line, [points[index], points[(index + 1) % 4]])
+                    .unwrap();
+                lines.push(line);
+            }
+            snapshot
+                .sketches
+                .replace_geometry(sketch, geometry)
+                .unwrap();
+            Ok::<_, String>(lines)
+        })
+        .unwrap()
+}
+#[test]
 fn empty_definition_survives_history_and_save_reopen() {
     let (mut files, document, mut source) = configured_files(DOCUMENT_PART, Default::default());
     let request = CreateBlockDefinitionArgs {
@@ -48,7 +164,7 @@ fn empty_definition_survives_history_and_save_reopen() {
     assert!(definitions(&files).is_empty());
 }
 #[test]
-fn invalid_or_unimplemented_selection_does_not_change_history() {
+fn invalid_name_or_selection_does_not_change_history() {
     let (mut files, document, mut source) = configured_files(DOCUMENT_PART, Default::default());
     let before = owner_revision(&files, document);
     for request in [

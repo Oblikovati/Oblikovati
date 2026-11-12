@@ -103,28 +103,39 @@ fn create<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     document: u64,
     request: CreateBlockDefinitionArgs,
 ) -> Result<Vec<u8>, Error> {
-    if request
-        .entity_refs
-        .as_ref()
-        .is_some_and(|ids| !ids.is_empty())
-    {
-        return Err(Error(format!(
-            "block definition {:?} selected entities {:?}: expected an empty selection until block instances are supported",
-            request.name, request.entity_refs
-        )));
-    }
     files
         .commands(document)
         .map_err(api_error)?
         .run_projected(
             "Create sketch block definition",
-            |snapshot, _| {
+            |snapshot, reservations| {
+                let selected = request.entity_refs.as_deref().unwrap_or_default();
+                if selected.is_empty() {
+                    return snapshot
+                        .sketches
+                        .define_empty_block(&request.name)
+                        .map_err(api_error);
+                }
+                let sketch = sketch_at(snapshot, request.source_sketch_index)?;
+                let ids: Vec<_> = selected
+                    .iter()
+                    .copied()
+                    .map(oblikovati_model::sketch::SketchEntityId)
+                    .collect();
+                let instance = reservations.allocate_sketch_entity().map_err(api_error)?;
                 snapshot
-                    .sketches
-                    .define_empty_block(&request.name)
+                    .create_sketch_block(sketch, &request.name, &ids, instance)
                     .map_err(api_error)
             },
-            |_, index| encode(&info(index, &request.name, 0, 0)?),
+            |snapshot, index| {
+                let definition = &snapshot.sketches.block_definitions()[index];
+                encode(&info(
+                    index,
+                    &request.name,
+                    definition.geometry().entity_ids().len(),
+                    snapshot.sketches.block_instance_count(&request.name),
+                )?)
+            },
         )
         .map_err(api_error)
 }

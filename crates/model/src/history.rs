@@ -15,6 +15,7 @@ mod derived_ids;
 mod feature_ids;
 mod prism_create;
 mod scalar_ownership;
+mod sketch_block_create;
 mod sketch_create;
 mod sketch_current_geometry;
 mod sketch_dimension_create;

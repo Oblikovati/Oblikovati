@@ -58,6 +58,13 @@ impl DocumentSketches {
         entities: &[SketchEntityId],
     ) -> Result<usize, SketchError> {
         let geometry = self.get(sketch)?.geometry().capture_selection(entities)?;
+        self.define_block_geometry(name, geometry)
+    }
+    pub(crate) fn define_block_geometry(
+        &mut self,
+        name: &str,
+        geometry: Sketch2D,
+    ) -> Result<usize, SketchError> {
         let index = self.define_empty_block(name)?;
         self.block_definitions[index].geometry = geometry;
         Ok(index)
