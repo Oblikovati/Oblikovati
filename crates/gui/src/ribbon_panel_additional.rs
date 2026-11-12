@@ -28,6 +28,15 @@ impl PanelExpansions {
         }
     }
 }
+pub(super) fn available(tab: RibbonTab, panel: RibbonPanel) -> bool {
+    matches!(
+        (tab, panel),
+        (
+            RibbonTab::Model,
+            RibbonPanel::PartModify | RibbonPanel::PartSimplification
+        )
+    )
+}
 pub(super) fn trigger(
     ui: &Ui,
     tab: RibbonTab,
@@ -38,6 +47,7 @@ pub(super) fn trigger(
 ) {
     let title_bounds = [ui.item_rect_min(), ui.item_rect_max()];
     ui.same_line_with_spacing(0., 4.);
+    let _panel_id = ui.push_id(format!("{panel:?}"));
     let clicked = ui.small_button("v##additional-commands");
     let arrow_bounds = [ui.item_rect_min(), ui.item_rect_max()];
     let trigger = [
@@ -52,6 +62,7 @@ pub(super) fn trigger(
     ];
     let key = (tab, panel);
     if (clicked || title_clicked) && layout.additional.open.remove(&key).is_none() {
+        layout.additional.open.retain(|_, item| item.pinned);
         layout.additional.open.insert(
             key,
             Expansion {
@@ -126,7 +137,7 @@ fn draw_window(
         .collapsible(false)
         .focused(focus)
         .build(|| {
-            commands(ui);
+            commands(ui, panel);
             ui.separator();
             let active = expansion.pinned.then(|| {
                 ui.push_style_color(
@@ -186,9 +197,14 @@ fn inside_window(ui: &Ui) -> bool {
         [position, [position[0] + size[0], position[1] + size[1]]],
     )
 }
-fn commands(ui: &Ui) {
+fn commands(ui: &Ui, panel: RibbonPanel) {
     let disabled = ui.begin_disabled(true);
-    for label in ["Move Bodies", "Bend Part", "Copy Object"] {
+    let labels = match panel {
+        RibbonPanel::PartModify => ["Move Bodies", "Bend Part", "Copy Object"],
+        RibbonPanel::PartSimplification => ["Remove Details", "Fill Voids", "Define Envelopes"],
+        _ => return,
+    };
+    for label in labels {
         ui.button(label);
         if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
             ui.tooltip_text("This command is not available in this build.");

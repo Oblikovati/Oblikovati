@@ -36,6 +36,7 @@ pub(crate) enum RibbonPanel {
     PartModify,
     PartWorkFeatures,
     PartPattern,
+    PartSimplification,
     PartNotes,
     PresentationModel,
 }
@@ -62,6 +63,7 @@ impl RibbonPanel {
             Self::PartWorkFeatures => "Work Features",
             Self::PartNotes => "Notes",
             Self::PartPattern => "Pattern",
+            Self::PartSimplification => "Simplification",
             Self::DrawingSketch => "Sketch",
             Self::DrawingSheets => "Sheets",
             Self::AnnotateDimension => "Dimension",
@@ -98,6 +100,7 @@ impl RibbonPanel {
             | Self::PartModify
             | Self::PartWorkFeatures
             | Self::PartPattern
+            | Self::PartSimplification
             | Self::PartNotes
             | Self::PresentationModel => {
                 return None;
@@ -412,6 +415,7 @@ pub(crate) fn panels_for(tab: RibbonTab, state: &GuiCommandState) -> Vec<RibbonP
             PartModify,
             PartWorkFeatures,
             PartPattern,
+            PartSimplification,
             Parameters,
         ],
         RibbonTab::SheetMetal => vec![SheetMetalTools, Sketch],
@@ -479,10 +483,7 @@ fn draw_expanded(
             ui.text(panel.label());
             let title_clicked = ui.is_item_clicked();
             local_action |= title_clicked;
-            if context.additional_allowed
-                && tab == RibbonTab::Model
-                && panel == RibbonPanel::PartModify
-            {
+            if context.additional_allowed && additional::available(tab, panel) {
                 additional::trigger(ui, tab, panel, anchor, title_clicked, layout);
             }
         }

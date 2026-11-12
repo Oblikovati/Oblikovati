@@ -135,9 +135,16 @@ fn direct_selector_round_trip(backing: f32) {
 fn toggle_parameter_twice(owner: &mut GuiFrameEngine, request: &mut GuiFrameRequest, backing: f32) {
     let style = owner.context.style();
     let row_height = 13. + 2. * style.frame_padding[1] + style.item_spacing[1];
-    let point =
-        [1280., 60. + style.window_padding[1] + 5. * row_height + 8.].map(|value| value * backing);
     let key = (RibbonTab::Model, RibbonPanel::Parameters);
+    let index = crate::ribbon_panels::panels_for(key.0, &request.commands)
+        .iter()
+        .position(|panel| *panel == key.1)
+        .unwrap();
+    let point = [
+        1280.,
+        60. + style.window_padding[1] + index as f32 * row_height + 8.,
+    ]
+    .map(|value| value * backing);
     for hidden in [false, true] {
         let released = click(owner, request, point);
         assert_eq!(owner.ribbon.display.hidden_panels.contains(&key), hidden);

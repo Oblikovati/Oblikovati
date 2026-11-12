@@ -4,6 +4,7 @@ use super::workspace_layout::browser_feature::{expect_solid_visible, open_visibl
 use super::{ApplicationWorld, diagnostics};
 use cucumber::{given, then, when};
 const WINDOW: &str = "##ribbon-additional-PartModify";
+const SIMPLIFICATION: &str = "##ribbon-additional-PartSimplification";
 
 #[given("a part containing visible solid bodies is active in the MCAD Software")]
 #[given("a part with a visible solid is active in the MCAD Software")]
@@ -23,7 +24,10 @@ fn additional_closed(_: &mut ApplicationWorld) {
 #[when("I select the expansion arrow on the Modify panel title")]
 #[when("the user opens the Modify additional command area")]
 fn open_modify(world: &mut ApplicationWorld) {
-    let title = world.run("Modify");
+    click_expansion_arrow(world, "Modify");
+}
+fn click_expansion_arrow(world: &mut ApplicationWorld, label: &str) {
+    let title = world.run(label);
     if title.text.ends_with('v') {
         let at = [title.maximum[0] - 2., title.center()[1]];
         world.click(diagnostics::pointer_pixels(at));
@@ -41,7 +45,7 @@ fn open_modify(world: &mut ApplicationWorld) {
         .min_by(|a, b| a.center()[0].total_cmp(&b.center()[0]))
         .unwrap_or_else(|| {
             panic!(
-                "expected the Modify expansion arrow in {:?}",
+                "expected the {label} expansion arrow in {:?}",
                 world.frame.runs
             )
         })
@@ -179,4 +183,74 @@ fn model_without_expansion(world: &mut ApplicationWorld) {
 #[then("the Modify additional command area closes")]
 fn modify_closes(world: &mut ApplicationWorld) {
     area_closed(world);
+}
+
+#[given("the 3D Model Modify panel's unpinned additional command area is open")]
+fn modify_unpinned(world: &mut ApplicationWorld) {
+    opened_unpinned(world);
+}
+#[when("the user clicks the Simplification panel expansion arrow")]
+#[when("the user opens the Simplification additional command area")]
+fn open_simplification(world: &mut ApplicationWorld) {
+    click_expansion_arrow(world, "Simplification");
+}
+#[then("the Simplification additional command area opens")]
+fn simplification_opens(_: &mut ApplicationWorld) {
+    assert!(diagnostics::window_geometry(SIMPLIFICATION).is_some());
+}
+#[then("it displays \"Remove Details\", \"Fill Voids\", and \"Define Envelopes\"")]
+fn simplification_commands(world: &mut ApplicationWorld) {
+    for label in ["Remove Details", "Fill Voids", "Define Envelopes"] {
+        world.expect_text(label);
+    }
+}
+#[then("the Simplification additional command area closes")]
+fn simplification_closes(_: &mut ApplicationWorld) {
+    assert!(diagnostics::window_geometry(SIMPLIFICATION).is_none());
+}
+#[then("the part and 3D Model ribbon remain visible")]
+fn part_and_model(world: &mut ApplicationWorld) {
+    ribbon_and_part(world);
+}
+#[then("both the Modify and Simplification additional command areas are visible")]
+#[then("both additional command areas remain visible")]
+fn both_visible(_: &mut ApplicationWorld) {
+    assert!(diagnostics::window_geometry(WINDOW).is_some());
+    assert!(diagnostics::window_geometry(SIMPLIFICATION).is_some());
+}
+#[then("the pinned Modify additional command area remains visible")]
+fn modify_still_visible(world: &mut ApplicationWorld) {
+    pinned_visible(world);
+}
+fn toggle_pin_in(world: &mut ApplicationWorld, window: &str) {
+    let (position, size) = diagnostics::window_geometry(window).unwrap();
+    let pin = world
+        .frame
+        .runs
+        .iter()
+        .find(|run| {
+            let center = run.center();
+            run.text.contains("Pin")
+                && (0..2).all(|i| center[i] >= position[i] && center[i] <= position[i] + size[i])
+        })
+        .expect("expected a pin control inside the expansion");
+    world.click(diagnostics::pointer_pixels([
+        pin.minimum[0] + 6.,
+        pin.center()[1],
+    ]));
+}
+#[when("the user opens and pins the Simplification additional command area")]
+fn pin_simplification(world: &mut ApplicationWorld) {
+    open_simplification(world);
+    toggle_pin_in(world, SIMPLIFICATION);
+}
+#[when("the user unpins Simplification and clicks empty viewport space")]
+fn unpin_simplification(world: &mut ApplicationWorld) {
+    toggle_pin_in(world, SIMPLIFICATION);
+    world.click([1000, 700]);
+}
+#[when("the user unpins Modify and clicks empty viewport space")]
+fn unpin_modify(world: &mut ApplicationWorld) {
+    toggle_pin_in(world, WINDOW);
+    world.click([1000, 700]);
 }

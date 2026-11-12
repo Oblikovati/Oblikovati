@@ -82,6 +82,9 @@ pub(crate) fn draw_panel_content(
         RibbonPanel::PartPattern => {
             muted_commands(ui, origin, &["Rectangular", "Circular"], NOT_PORTED);
         }
+        RibbonPanel::PartSimplification => {
+            muted_commands(ui, origin, &["Simplify"], NOT_PORTED);
+        }
         RibbonPanel::PartNotes => {
             muted_commands(ui, origin, &["General Note", "Leader Note"], NOT_PORTED);
         }
