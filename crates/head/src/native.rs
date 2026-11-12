@@ -346,7 +346,13 @@ type NativeDesktopOwner = crate::DesktopOwner<
     NativeOwnerWake,
 >;
 fn native_owner(wake: ViewportWake) -> Result<NativeDesktopOwner, String> {
-    let themes = preferences::load_native_themes()?;
+    native_owner_at(wake, &preferences::native_config_directory()?)
+}
+fn native_owner_at(
+    wake: ViewportWake,
+    directory: &std::path::Path,
+) -> Result<NativeDesktopOwner, String> {
+    let themes = preferences::load_native_themes(directory)?;
     let observations = crate::DesktopObservations::default();
     let files = oblikovati_session::files::FileWorkspace::new(
         observations.clone(),
@@ -362,10 +368,18 @@ fn native_owner(wake: ViewportWake) -> Result<NativeDesktopOwner, String> {
         crate::DesktopDispatchOptions::default(),
     )
     .with_extrusion_policy(crate::part_scene::resolution_policy::desktop_policy())?
-    .with_ui_scale_preferences(Box::new(preferences::load_native_application_options()?))
-    .with_prompt_preferences(Box::new(preferences::load_native_application_options()?))
-    .with_sketch_preferences(Box::new(preferences::load_native_application_options()?))
-    .with_recent_documents(Box::new(preferences::load_native_application_options()?))
+    .with_ui_scale_preferences(Box::new(preferences::load_native_application_options(
+        directory,
+    )?))
+    .with_prompt_preferences(Box::new(preferences::load_native_application_options(
+        directory,
+    )?))
+    .with_sketch_preferences(Box::new(preferences::load_native_application_options(
+        directory,
+    )?))
+    .with_recent_documents(Box::new(preferences::load_native_application_options(
+        directory,
+    )?))
     .with_theme_store(themes.library, Box::new(themes.preferences))
     .with_theme_file_declines(themes.declines)
     .with_window_captures(crate::DesktopWindowCaptures::new(

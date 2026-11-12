@@ -14,14 +14,13 @@ pub(super) struct NativeThemeStartup {
     pub preferences: NativeThemePreferences,
     pub declines: Vec<ThemeFileDecline>,
 }
-pub(super) fn load_native_themes() -> Result<NativeThemeStartup, String> {
-    let directory = native_config_directory()?;
+pub(super) fn load_native_themes(directory: &Path) -> Result<NativeThemeStartup, String> {
     let preferences = ThemePreferenceFile::load(
         &directory.join("preferences.yaml"),
         NativeThemePreferenceFiles,
     )
     .map_err(|cause| cause.to_string())?;
-    let loaded = load_custom_themes(&directory, &mut NativeThemePreferenceFiles)
+    let loaded = load_custom_themes(directory, &mut NativeThemePreferenceFiles)
         .map_err(|cause| cause.to_string())?;
     let library = ThemeLibrary::new(loaded.customs, preferences.active_name())?;
     let preferences =
@@ -34,7 +33,7 @@ pub(super) fn load_native_themes() -> Result<NativeThemeStartup, String> {
     })
 }
 
-fn native_config_directory() -> Result<PathBuf, String> {
+pub(super) fn native_config_directory() -> Result<PathBuf, String> {
     let explicit = std::env::var_os("OBK_CONFIG_DIR");
     let home = std::env::var_os("HOME");
     let roaming = std::env::var_os("APPDATA");
@@ -46,14 +45,17 @@ fn native_config_directory() -> Result<PathBuf, String> {
     )
 }
 
-/// Load application options from the user config root; example: `owner.with_ui_scale_preferences(Box::new(load_native_application_options()?))`.
-pub(super) fn load_native_application_options() -> Result<
+/// Load options from the selected configuration directory.
+/// Example: `load_native_application_options(config_dir)?`.
+pub(super) fn load_native_application_options(
+    directory: &Path,
+) -> Result<
     oblikovati_persistence::application_options::ApplicationPreferenceFile<
         NativeThemePreferenceFiles,
     >,
     String,
 > {
-    let path = native_config_directory()?.join("options.yaml");
+    let path = directory.join("options.yaml");
     oblikovati_persistence::application_options::ApplicationPreferenceFile::load(
         &path,
         NativeThemePreferenceFiles,

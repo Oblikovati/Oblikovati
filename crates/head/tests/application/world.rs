@@ -5,6 +5,7 @@ use crate::HeadWindow;
 #[world(init = Self::new)]
 pub(super) struct ApplicationWorld {
     pub app: Option<NativeApplication>,
+    _preferences: tempfile::TempDir,
     pub frame: diagnostics::RenderedFrame,
     pub previous_document: Option<u64>,
     pub observed_view_camera: Option<oblikovati_viewport::ViewportCamera>,
@@ -54,14 +55,14 @@ impl fmt::Debug for ApplicationWorld {
 impl ApplicationWorld {
     pub(super) fn new() -> Self {
         let native = NativeHeadWindow::open().unwrap();
-        let mut owner = native_owner(native.wake.clone()).unwrap();
-        // The options file outlives a scenario; one that failed part-way must not reach the next.
-        owner.change_sketch_options(Default::default()).unwrap();
+        let preferences = tempfile::tempdir().unwrap();
+        let owner = native_owner_at(native.wake.clone(), preferences.path()).unwrap();
         let mut world = Self {
             app: Some(NativeApplication {
                 window: scripted_window(native),
                 owner,
             }),
+            _preferences: preferences,
             frame: Default::default(),
             previous_document: None,
             observed_view_camera: None,
@@ -322,4 +323,28 @@ pub(super) struct ObservedSketch {
     pub geometry: oblikovati_model::sketch::Sketch2D,
     pub history: [Vec<String>; 2],
     pub witnesses: Vec<[i32; 2]>,
+}
+
+#[test]
+fn scenario_preferences_are_private_and_removed_after_close() {
+    std::thread::Builder::new()
+        .name("scenario-preference-isolation".into())
+        .stack_size(super::SCENARIO_STACK_BYTES)
+        .spawn(|| {
+            let mut first = ApplicationWorld::new();
+            let directory = first._preferences.path().to_path_buf();
+            let changed = oblikovati_model::application_options::SketchApplicationOptions {
+                grid_visible: false,
+                ..Default::default()
+            };
+            first.app().owner.change_sketch_options(changed).unwrap();
+            assert!(directory.join("options.yaml").exists());
+            drop(first);
+            assert!(!directory.exists());
+            let mut second = ApplicationWorld::new();
+            assert!(second.state().sketch_options.unwrap().grid_visible);
+        })
+        .unwrap()
+        .join()
+        .unwrap();
 }
