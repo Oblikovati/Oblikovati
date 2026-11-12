@@ -51,6 +51,21 @@ fn direct_panel_selector_toggles_repeatedly_without_closing_and_escape_dismisses
         direct_selector_round_trip(backing);
     }
 }
+#[test]
+fn clicking_panel_selector_again_closes_it_without_changing_visibility() {
+    let mut owner = GuiFrameEngine::new().unwrap();
+    let mut request = part_request();
+    settle(&mut owner, &mut request);
+    let before = owner.ribbon.display.hidden_panels.clone();
+    click(&mut owner, &mut request, [1418., 45.]);
+    assert!(owner.popup_was_open, "expected the direct panel list");
+    click(&mut owner, &mut request, [1418., 45.]);
+    assert!(
+        !owner.popup_was_open,
+        "expected the direct panel list to close"
+    );
+    assert_eq!(owner.ribbon.display.hidden_panels, before);
+}
 fn direct_selector_round_trip(backing: f32) {
     let mut owner = GuiFrameEngine::new().unwrap();
     let mut request = part_request();

@@ -19,10 +19,22 @@ fn caption_is_visible(world: &ApplicationWorld) -> bool {
         .any(|row| row.text == PARAMETERS && row.center()[1] < ribbon_bottom())
 }
 #[when("the user clicks the panel selector at the right end of the ribbon")]
+#[when("the user clicks the ribbon panel selector")]
+#[when("the user clicks the ribbon panel selector again")]
 fn open_selector(world: &mut ApplicationWorld) {
     let (_, size) = window_geometry("##application-ribbon").unwrap();
     world.click([size[0] as i32 - 22, 45]);
     world.pump(Vec::new());
+}
+#[given("the full 3D Model ribbon shows the Modify panel")]
+#[then("the Modify panel remains visible")]
+fn modify_panel_visible(world: &mut ApplicationWorld) {
+    world.expect_text("Modify");
+}
+#[then("the panel list opens with Modify checked")]
+fn list_modify_checked(world: &mut ApplicationWorld) {
+    assert!(selector_is_open(world), "expected the direct panel list");
+    assert!(world.checked("Modify"), "expected Modify checked");
 }
 #[then("the panel list opens with Parameters unchecked")]
 fn list_unchecked(world: &mut ApplicationWorld) {
