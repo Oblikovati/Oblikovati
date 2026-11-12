@@ -329,6 +329,7 @@ fn dimension_labels_follow_theme_colours_and_physical_projection_at_both_scales(
         for (role, y) in [(Driving, 400), (Driven, 500), (Preview, 600)] {
             request.commands.dimension_labels.push(GuiDimensionLabel {
                 pixel: [800 * scale as i32, y * scale as i32],
+                line: None,
                 text: "d0 = 10 mm".into(),
                 role,
                 edit: None,

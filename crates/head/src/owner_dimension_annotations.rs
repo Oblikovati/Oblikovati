@@ -3,6 +3,8 @@ use super::*;
 use crate::{HeadDimensionAnnotation, HeadDimensionAnnotations};
 use oblikovati_gui::GuiDimensionLabelRole;
 use oblikovati_model::{document_sketch::PlacedSketch, history::DocumentSnapshot};
+#[path = "dimension_line.rs"]
+mod dimension_line;
 
 impl<
     O: TransactionObserver,
@@ -98,6 +100,7 @@ fn collect_feature_annotations(
     if let Some(text) = feature_depth_text(snapshot, feature) {
         output.labels.push(HeadDimensionAnnotation {
             position: [last.position[0] + DEPTH_LABEL_STEP, last.position[1]],
+            line: None,
             text,
             edit: None,
             ..last
@@ -222,6 +225,7 @@ fn dimension_annotation(
     Ok(Some(HeadDimensionAnnotation {
         plane,
         position,
+        line: dimension_line::distance_line(geometry, id, position),
         text,
         role,
         edit,

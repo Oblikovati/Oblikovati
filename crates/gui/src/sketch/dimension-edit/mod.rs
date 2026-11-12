@@ -174,11 +174,28 @@ fn label_under_pointer(
             label.pixel[1] as f32 / scale[1],
         ];
         let hit = (x - cx).abs() <= size[0] / 2. + 2. && (y - cy).abs() <= size[1] / 2. + 2.;
-        let edit = label.edit.clone().filter(|_| hit)?;
-        Some(((x - cx).hypot(y - cy), edit))
+        let edit = label.edit.clone()?;
+        if hit {
+            return Some(((x - cx).hypot(y - cy), edit));
+        }
+        let [from, to] = label.line?;
+        let logical = |point: [i32; 2]| [point[0] as f32 / scale[0], point[1] as f32 / scale[1]];
+        let distance = line_distance([x, y], logical(from), logical(to));
+        (distance <= 5.).then_some((distance, edit))
     });
     hits.min_by(|first, second| first.0.total_cmp(&second.0))
         .map(|(_, edit)| edit)
+}
+fn line_distance(point: [f32; 2], from: [f32; 2], to: [f32; 2]) -> f32 {
+    let direction = [to[0] - from[0], to[1] - from[1]];
+    let length_squared = direction[0] * direction[0] + direction[1] * direction[1];
+    if length_squared == 0. {
+        return (point[0] - from[0]).hypot(point[1] - from[1]);
+    }
+    let along = (((point[0] - from[0]) * direction[0] + (point[1] - from[1]) * direction[1])
+        / length_squared)
+        .clamp(0., 1.);
+    (point[0] - from[0] - along * direction[0]).hypot(point[1] - from[1] - along * direction[1])
 }
 
 #[cfg(test)]
@@ -193,5 +210,11 @@ mod tests {
         for expression in ["", "2*", "("] {
             assert!(!expression_syntax_valid(expression), "{expression:?}");
         }
+    }
+    #[test]
+    fn dimension_line_hit_distance_is_limited_to_the_segment() {
+        assert_eq!(super::line_distance([5., 3.], [0., 0.], [10., 0.]), 3.);
+        assert_eq!(super::line_distance([13., 4.], [0., 0.], [10., 0.]), 5.);
+        assert_eq!(super::line_distance([3., 4.], [0., 0.], [0., 0.]), 5.);
     }
 }

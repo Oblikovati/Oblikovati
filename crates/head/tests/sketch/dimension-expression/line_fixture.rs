@@ -76,3 +76,15 @@ fn native_oblique_fixture_displays_components_and_reference_length() {
     world.expect_annotation("(53.852)");
     world.close();
 }
+
+#[test]
+fn native_click_on_dimension_line_opens_its_editor() {
+    let mut world = ApplicationWorld::new();
+    create(&mut world);
+    world.key(ViewportPhysicalKey::D, false);
+    let point = world.sketch_pixel_of([5., 2.5]);
+    world.sketch_click(point);
+    world.expect_text("d64");
+    assert!(diagnostics::window_geometry("Edit Dimension").is_some());
+    world.close();
+}

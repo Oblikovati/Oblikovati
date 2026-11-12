@@ -11,12 +11,31 @@ pub(super) fn projected_dimension_labels(
     let mut labels = Vec::new();
     for annotation in annotations.labels {
         match window.sketch_pixel(annotation.plane, annotation.position) {
-            Ok(pixel) => labels.push(GuiDimensionLabel {
-                pixel,
-                text: annotation.text,
-                role: annotation.role,
-                edit: annotation.edit,
-            }),
+            Ok(pixel) => {
+                let line = match annotation
+                    .line
+                    .map(|[from, to]| {
+                        Ok::<_, String>([
+                            window.sketch_pixel(annotation.plane, from)?,
+                            window.sketch_pixel(annotation.plane, to)?,
+                        ])
+                    })
+                    .transpose()
+                {
+                    Ok(line) => line,
+                    Err(cause) => {
+                        declines.push(format!("dimension line {:?}: {cause}", annotation.text));
+                        None
+                    }
+                };
+                labels.push(GuiDimensionLabel {
+                    pixel,
+                    line,
+                    text: annotation.text,
+                    role: annotation.role,
+                    edit: annotation.edit,
+                });
+            }
             Err(cause) => declines.push(format!(
                 "dimension label {:?} at {:?}: {cause}",
                 annotation.text, annotation.position

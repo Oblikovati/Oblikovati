@@ -15,6 +15,8 @@ pub enum GuiDimensionLabelRole {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GuiDimensionLabel {
     pub pixel: [i32; 2],
+    /// The projected dimension line, when this measurement has a linear line.
+    pub line: Option<[[i32; 2]; 2]>,
     pub text: String,
     pub role: GuiDimensionLabelRole,
     /// A driving dimension opens its value editor on a double-click.
@@ -28,6 +30,13 @@ pub(crate) fn draw_dimension_labels(ui: &imgui::Ui, request: &GuiFrameRequest) {
             .zip(request.extent)
             .all(|(pixel, extent)| *pixel >= 0 && i64::from(*pixel) < i64::from(extent))
     }) {
+        if let Some([from, to]) = label.line {
+            let scale = request.layout_scale();
+            let point = |pixel: [i32; 2]| [pixel[0] as f32 / scale[0], pixel[1] as f32 / scale[1]];
+            ui.get_background_draw_list()
+                .add_line(point(from), point(to), label_color(ui, request, label.role))
+                .build();
+        }
         let size = ui.calc_text_size(&label.text);
         let position = std::array::from_fn::<_, 2, _>(|axis| {
             label.pixel[axis] as f32 / request.layout_scale()[axis] - size[axis] / 2.

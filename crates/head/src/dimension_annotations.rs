@@ -7,6 +7,8 @@ use oblikovati_model::sketch::SketchPlane;
 pub struct HeadDimensionAnnotation {
     pub plane: SketchPlane,
     pub position: [f64; 2],
+    /// A distance dimension's measured line in sketch coordinates.
+    pub line: Option<[[f64; 2]; 2]>,
     pub text: String,
     pub role: GuiDimensionLabelRole,
     pub edit: Option<oblikovati_gui::GuiDimensionEdit>,
