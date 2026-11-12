@@ -111,6 +111,7 @@ pub(super) struct Draft {
     pub target_extra: BTreeSet<usize>,
     target_extent: Option<usize>,
     pub sketch_category: bool,
+    pub source_descending: bool,
 }
 impl Draft {
     pub fn load_applied(&mut self, settings: BTreeMap<RibbonTab, Vec<Entry>>) {
@@ -129,6 +130,7 @@ impl Draft {
         self.target_extra.clear();
         self.target_extent = None;
         self.sketch_category = false;
+        self.source_descending = false;
     }
     pub fn rows(&self) -> &[Entry] {
         self.staged.get(&self.target).map_or(&[], Vec::as_slice)
@@ -192,11 +194,31 @@ impl Draft {
                         | Command::Dimension
                 ))
     }
+    pub fn available_commands(&self) -> Vec<Command> {
+        let mut commands: Vec<_> = COMMANDS
+            .into_iter()
+            .filter(|command| self.available(*command))
+            .collect();
+        commands.sort_by(|left, right| {
+            match (*left == Command::Separator, *right == Command::Separator) {
+                (true, false) => std::cmp::Ordering::Less,
+                (false, true) => std::cmp::Ordering::Greater,
+                _ if self.source_descending => sort_name(*right).cmp(&sort_name(*left)),
+                _ => sort_name(*left).cmp(&sort_name(*right)),
+            }
+        });
+        commands
+    }
+    pub fn reverse_source_order(&mut self) {
+        self.source_descending = !self.source_descending;
+        self.source_extent = None;
+    }
     pub fn add(&mut self) {
         let Some(command) = self.source.filter(|command| self.available(*command)) else {
             return;
         };
-        let commands: Vec<_> = COMMANDS
+        let commands: Vec<_> = self
+            .available_commands()
             .into_iter()
             .filter(|candidate| {
                 (*candidate == command || self.source_extra.contains(candidate))
@@ -335,10 +357,7 @@ impl Draft {
         let Some(anchor) = self.source else {
             return;
         };
-        let available: Vec<_> = COMMANDS
-            .into_iter()
-            .filter(|command| self.available(*command))
-            .collect();
+        let available = self.available_commands();
         let Some(index) = available.iter().position(|command| *command == anchor) else {
             return;
         };
@@ -389,6 +408,15 @@ impl Draft {
             expanded: false,
         }
     }
+}
+
+fn sort_name(command: Command) -> String {
+    command
+        .label()
+        .chars()
+        .filter(|character| character.is_alphanumeric())
+        .flat_map(char::to_lowercase)
+        .collect()
 }
 
 #[cfg(test)]

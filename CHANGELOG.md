@@ -4,6 +4,8 @@
 
 ### Added
 
+- Added name sorting to the available ribbon commands while preserving selection. (#3856)
+
 - Added expanded-panel placement for custom ribbon commands. (#3856)
 
 - Saved applied part ribbon customization in user preferences across restarts. (#3856)

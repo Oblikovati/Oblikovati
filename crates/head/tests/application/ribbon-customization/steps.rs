@@ -91,8 +91,9 @@ fn select_sketch_category(world: &mut ApplicationWorld) {
 fn sketch_category_commands(world: &mut ApplicationWorld) {
     let content = world.window_text("Customize");
     assert!(content.contains("Circle(CenterPoint)"));
-    assert!(content.contains("Line"));
     assert!(!content.contains("3DAnnotations"));
+    scroll_source_to_line(world);
+    assert!(world.window_text("Customize").contains("Line"));
 }
 #[then("the selected target remains \"Part | 3D Model\"")]
 fn target_still_model(world: &mut ApplicationWorld) {
@@ -298,8 +299,8 @@ fn shift_down(world: &mut ApplicationWorld) {
 #[then("both commands are selected in the available list")]
 fn available_rows_selected(world: &mut ApplicationWorld) {
     world.hover([800, 900]);
-    assert!(world.row_accented_beside("2D Sketches", "Line"));
-    assert!(world.row_accented_beside("3D Annotations", "Line"));
+    assert!(world.row_accented_beside("2D Sketches", "<Separator>"));
+    assert!(world.row_accented_beside("3D Annotations", "<Separator>"));
 }
 #[then("the custom panel list contains \"2D Sketches\" followed by \"3D Annotations\"")]
 fn target_rows_in_order(world: &mut ApplicationWorld) {
@@ -397,8 +398,24 @@ fn both_target_rows_selected(world: &mut ApplicationWorld) {
 }
 
 fn click_in_customize(world: &mut ApplicationWorld, label: &str) {
+    if label == "Line" && !world.window_text("Customize").contains("Line") {
+        scroll_source_to_line(world);
+    }
     let center = world.run_in_window("Customize", label).center();
     world.click(diagnostics::pointer_pixels(center));
+    world.pump(Vec::new());
+}
+fn scroll_source_to_line(world: &mut ApplicationWorld) {
+    use oblikovati_viewport::{ViewportEvent, ViewportInput};
+    let at = world
+        .run_in_window("Customize", "<Separator>")
+        .center()
+        .map(|value| value as i32);
+    world.hover(at);
+    world.pump(vec![ViewportEvent::Input(ViewportInput::Wheel {
+        notches: -3,
+        position: at,
+    })]);
     world.pump(Vec::new());
 }
 fn open_tools_customization(world: &mut ApplicationWorld) {

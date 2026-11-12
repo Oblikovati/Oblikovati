@@ -3,6 +3,22 @@
 use super::*;
 
 #[test]
+fn source_header_reverses_order_without_losing_selected_command() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    open_tools_customization(&mut world);
+    click_in_customize(&mut world, "2DSketches");
+    click_in_customize(&mut world, "Name");
+    assert!(world.window_text("Customize").contains("Vertical"));
+    assert!(!world.window_text("Customize").contains("Part|Tools*"));
+    click_in_customize(&mut world, ">");
+    sketches_in_target(&mut world);
+    assert!(world.window_text("Customize").contains("Part|Tools*"));
+    click_in_customize(&mut world, "Cancel");
+    world.close();
+}
+
+#[test]
 fn customization_apply_adds_a_working_command_and_removal_hides_it() {
     let mut world = ApplicationWorld::new();
     world.add_part();
@@ -89,7 +105,7 @@ fn control_a_transfers_visible_source_rows_only_when_list_has_focus() {
     click_in_customize(&mut world, ">");
     both_rows_in_target(&mut world);
     assert!(
-        world.run_in_window("Customize", "Line").center()[0]
+        world.run_in_window("Customize", "3-PointArc").center()[0]
             >= world.run_in_window("Customize", "Custompanel").minimum[0]
     );
     click_in_customize(&mut world, "Cancel");
@@ -157,6 +173,7 @@ fn applied_ribbon_settings_survive_restart_without_unapplied_edits() {
     assert!(!world.state().browser.unwrap().sketches[0].visible);
     open_tools_customization(&mut world);
     assert!(!world.window_text("Customize").contains("Part|Tools*"));
+    scroll_source_to_line(&mut world);
     assert!(
         world.run_in_window("Customize", "Line").center()[0]
             < world.run_in_window("Customize", "Custompanel").minimum[0]

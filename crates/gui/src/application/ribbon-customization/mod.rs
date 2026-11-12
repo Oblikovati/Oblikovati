@@ -7,7 +7,7 @@ mod state;
 mod store;
 use crate::ribbon::RibbonTab;
 use imgui::Ui;
-use state::{COMMANDS, Command, Draft};
+use state::{Command, Draft};
 pub use store::GuiRibbonSettingsStore;
 
 #[derive(Clone, Copy)]
@@ -199,6 +199,9 @@ impl RibbonCustomization {
                 }
             }
         }
+        if ui.small_button("Name##available-sort") {
+            self.draft.reverse_source_order();
+        }
         ui.child_window("##custom-available")
             .size([230., 200.])
             .border(true)
@@ -206,11 +209,7 @@ impl RibbonCustomization {
                 self.source_focused = ui.is_window_focused();
                 self.visible_source.clear();
                 let mut transfer = None;
-                for command in COMMANDS
-                    .into_iter()
-                    .filter(|command| self.draft.available(*command))
-                    .collect::<Vec<_>>()
-                {
+                for command in self.draft.available_commands() {
                     if ui
                         .selectable_config(command.label())
                         .selected(

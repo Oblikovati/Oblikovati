@@ -1,5 +1,40 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+
+#[test]
+fn source_sort_preserves_selection_and_transfers_in_display_order() {
+    let mut draft = Draft::default();
+    draft.open(RibbonTab::Tools);
+    let ascending = draft.available_commands();
+    assert_eq!(ascending[0], Command::Separator);
+    assert!(
+        ascending[1..]
+            .windows(2)
+            .all(|pair| sort_name(pair[0]) <= sort_name(pair[1]))
+    );
+    draft.reset_source_selection(Command::Sketches);
+    draft.extend_source(1);
+    draft.reverse_source_order();
+    let descending = draft.available_commands();
+    assert_eq!(descending[0], Command::Separator);
+    assert!(
+        descending[1..]
+            .windows(2)
+            .all(|pair| sort_name(pair[0]) >= sort_name(pair[1]))
+    );
+    assert!(!draft.changed());
+    draft.add();
+    assert_eq!(
+        draft
+            .rows()
+            .iter()
+            .map(|row| row.command)
+            .collect::<Vec<_>>(),
+        vec![Command::Annotations, Command::Sketches]
+    );
+    draft.reverse_source_order();
+    assert_eq!(draft.available_commands()[0], Command::Separator);
+}
 #[test]
 fn staged_tabs_cancel_together_and_applied_tabs_survive_reopening() {
     let mut draft = Draft::default();
