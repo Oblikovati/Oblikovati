@@ -85,6 +85,14 @@ impl<
             return Ok(false);
         }
         match key {
+            ViewportPhysicalKey::D
+                if !modifiers.control
+                    && !modifiers.shift
+                    && !modifiers.alt
+                    && !modifiers.super_key =>
+            {
+                self.apply_dimension_intent(&oblikovati_gui::GuiDimensionAction::Start)?;
+            }
             ViewportPhysicalKey::C if modifiers.control && modifiers.shift => {
                 crate::HeadWork::place_sketch_tool_from_gui(
                     self,

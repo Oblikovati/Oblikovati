@@ -60,3 +60,55 @@ fn accepted_twelve(world: &mut ApplicationWorld) {
     assert!(diagnostics::window_geometry("Edit Dimension").is_none());
     world.expect_annotation("12");
 }
+
+#[given("the accepted d50 expression is 2 mm * 6 ul")]
+fn accepted_arithmetic(world: &mut ApplicationWorld) {
+    ten_millimetre_height(world);
+    world.open_dimension_label("10");
+    world.type_text("2*6");
+    world.key(ViewportPhysicalKey::Enter, false);
+    world.expect_annotation("12");
+}
+#[when("I replace it with d50 using individual d, 5 and 0 keys")]
+fn enter_self_reference(world: &mut ApplicationWorld) {
+    world.key(ViewportPhysicalKey::D, false);
+    assert!(world.state().dimension_tool_active);
+    world.click(world.exact_run_center("12"));
+    for letter in ["d", "5", "0"] {
+        world.type_text(letter);
+    }
+    world.pump(Vec::new());
+}
+#[then("the completed reference appears black")]
+fn self_reference_normal(world: &mut ApplicationWorld) {
+    let [_, green, blue] = world.run_in_window("Edit Dimension", "d50").color;
+    assert!(green > 100 && blue > 100);
+}
+#[then("Edit Dimension Value reports Failed to edit dimension value")]
+fn self_reference_rejected(world: &mut ApplicationWorld) {
+    world.expect_text("Failed to edit dimension value.");
+}
+#[when("I cancel the failed edit and reopen d50")]
+fn cancel_and_reopen(world: &mut ApplicationWorld) {
+    world.click_text("OK");
+    world.escape();
+    world.click(world.exact_run_center("12"));
+}
+#[then("the previous arithmetic expression is retained")]
+fn previous_expression(world: &mut ApplicationWorld) {
+    assert!(world.window_text("Edit Dimension").contains("2*6"));
+}
+#[then("the height annotation remains 12")]
+fn height_remains(world: &mut ApplicationWorld) {
+    world.expect_annotation("12");
+}
+#[when("I press Escape twice")]
+fn escape_twice(world: &mut ApplicationWorld) {
+    world.escape();
+    world.escape();
+}
+#[then("the editor closes and General Dimension exits")]
+fn dimension_exits(world: &mut ApplicationWorld) {
+    assert!(diagnostics::window_geometry("Edit Dimension").is_none());
+    assert!(!world.state().dimension_tool_active);
+}
