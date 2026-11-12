@@ -17,6 +17,8 @@ pub(crate) mod model_browser;
 pub(crate) mod project_dialog;
 #[path = "quick-access-toolbar/mod.rs"]
 pub(crate) mod quick_access_toolbar;
+#[path = "ribbon-customization/mod.rs"]
+pub(crate) mod ribbon_customization;
 #[path = "ribbon-display/mod.rs"]
 pub(crate) mod ribbon_display;
 #[path = "viewport-orientation/mod.rs"]

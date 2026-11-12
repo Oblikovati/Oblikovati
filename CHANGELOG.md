@@ -4,6 +4,8 @@
 
 ### Added
 
+- Added session-local customization of part ribbon user commands. (#3856)
+
 - Added typed API placement of existing sketch block definitions with checked
   position, rotation, scale, and undo/redo. (#3856)
 

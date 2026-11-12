@@ -45,6 +45,7 @@ pub(crate) struct DocumentRibbon {
     pub tips: crate::ribbon_key_tips::RibbonKeyTips,
     pub panels: crate::ribbon_panels::RibbonPanelLayout,
     pub display: crate::application::ribbon_display::RibbonDisplayState,
+    pub customization: crate::application::ribbon_customization::RibbonCustomization,
     settling_frames: u8,
     pending_tab: Option<RibbonTab>,
     pub double_click_tab: Option<RibbonTab>,

@@ -32,6 +32,11 @@ pub(crate) fn draw_panel_content(
                 [108., 26.],
             );
         }
+        RibbonPanel::UserCommands => {
+            owners
+                .customization
+                .draw_panel(ui, owners.active_tab, state, owners.icons, actions)
+        }
         RibbonPanel::Format => {
             crate::sketch_formats::sketch_format_controls(ui, origin, state, owners.icons, actions);
             owners.icons.cursor(ui, origin, [PRECISE_INPUT_COLUMN, 0.]);
@@ -41,6 +46,16 @@ pub(crate) fn draw_panel_content(
         }
         RibbonPanel::Parameters => return owners.parameters.toolbar(ui, state, owners.icons),
         RibbonPanel::ToolOptions => {
+            owners.icons.cursor(ui, origin, [156., 0.]);
+            let disabled = ui.begin_disabled(
+                state.document_type != Some(oblikovati_api::types::DOCUMENT_PART)
+                    || owners.home_active,
+            );
+            if crate::widget_abi::button(ui, "Customize", [108., 26.]) {
+                owners.customization.open(owners.active_tab);
+            }
+            drop(disabled);
+            crate::widget_abi::cursor_position(ui, origin);
             let disabled = ui.begin_disabled(state.ui_scale.is_none());
             let application = crate::widget_abi::button(ui, "Application Options", [150., 26.]);
             if application {

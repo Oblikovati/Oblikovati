@@ -93,6 +93,7 @@ pub(crate) struct RibbonDisplayState {
     pub placement: RibbonPlacement,
     pub side_anchor: Option<SideAnchor>,
     context_requested: bool,
+    customize_requested: bool,
     /// A choice in Show Panels ends the whole menu, as a choice in any other row does.
     close_context_menu: bool,
     selector_keyboard_started: bool,
@@ -120,6 +121,7 @@ impl Default for RibbonDisplayState {
             placement: RibbonPlacement::default(),
             side_anchor: None,
             context_requested: false,
+            customize_requested: false,
             close_context_menu: false,
             selector_keyboard_started: false,
             display_menu_cursor: None,
@@ -198,7 +200,13 @@ impl RibbonDisplayState {
         }
     }
     /// Draw the context menu that any of the ribbon's windows can ask for.
-    pub(crate) fn context_menu(&mut self, ui: &Ui, tab: RibbonTab, panels: &[RibbonPanel]) {
+    pub(crate) fn context_menu(
+        &mut self,
+        ui: &Ui,
+        tab: RibbonTab,
+        panels: &[RibbonPanel],
+        customizable: bool,
+    ) {
         if std::mem::take(&mut self.context_requested) {
             ui.open_popup(CONTEXT_MENU);
         }
@@ -217,7 +225,13 @@ impl RibbonDisplayState {
         if std::mem::take(&mut self.close_context_menu) {
             ui.close_current_popup();
         }
-        muted_context_item(ui, "Customize User Commands");
+        if ui
+            .menu_item_config("Customize User Commands")
+            .enabled(customizable)
+            .build()
+        {
+            self.customize_requested = true;
+        }
         ui.menu("Docking Positions", || {
             for (label, placement) in DOCKING_POSITIONS {
                 let checked = self.placement == placement;
@@ -234,6 +248,9 @@ impl RibbonDisplayState {
         {
             self.place(RibbonPlacement::Floating);
         }
+    }
+    pub(crate) fn take_customization_request(&mut self) -> bool {
+        std::mem::take(&mut self.customize_requested)
     }
     /// Dock a floating ribbon from its title-bar menu.
     pub(crate) fn floating_title_menu(&mut self, ui: &Ui) {

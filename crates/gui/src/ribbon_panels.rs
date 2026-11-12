@@ -16,6 +16,7 @@ pub(crate) enum RibbonPanel {
     Exit,
     Constrain,
     Layout,
+    UserCommands,
     Modify,
     Format,
     Parameters,
@@ -50,6 +51,7 @@ impl RibbonPanel {
             Self::Exit => "Exit",
             Self::Constrain => "Constrain",
             Self::Layout => "Layout",
+            Self::UserCommands => "User Commands",
             Self::Modify => "Modify",
             Self::Format => "Format",
             Self::Parameters => "Parameters",
@@ -84,6 +86,7 @@ impl RibbonPanel {
             Self::Create
             | Self::Constrain
             | Self::Layout
+            | Self::UserCommands
             | Self::Format
             | Self::Parameters
             | Self::ToolOptions
@@ -160,6 +163,8 @@ pub(crate) struct RibbonPanelOwners<'a> {
     pub quick_access: &'a mut crate::application::quick_access_toolbar::QuickAccessToolbar,
     pub precise_input: &'a mut crate::sketch::precise_input::PreciseInputBar,
     pub create_block: &'a mut crate::sketch::create_block::CreateBlockDialog,
+    pub customization: &'a mut crate::application::ribbon_customization::RibbonCustomization,
+    pub active_tab: RibbonTab,
     pub plane_selection_active: bool,
     pub hole_tip: bool,
     pub modify_group_tip: bool,
@@ -265,7 +270,12 @@ pub(crate) fn draw_side_groups(
         owners,
         actions,
     };
-    for panel in shown_panels(tab, state, &display.hidden_panels) {
+    for panel in shown_panels(
+        tab,
+        state,
+        &display.hidden_panels,
+        context.owners.customization,
+    ) {
         let open = display.temporary == Some(TemporaryPanel::Group(panel));
         let lit = ui.style_color(imgui::StyleColor::ButtonActive);
         let _lit = open.then(|| ui.push_style_color(imgui::StyleColor::Button, lit));
@@ -302,7 +312,12 @@ fn compact_row(
         return;
     };
     let ui = context.ui;
-    for panel in shown_panels(tab, context.state, &context.hidden) {
+    for panel in shown_panels(
+        tab,
+        context.state,
+        &context.hidden,
+        context.owners.customization,
+    ) {
         let open = display.temporary == Some(TemporaryPanel::Group(panel));
         let lit = ui.style_color(imgui::StyleColor::ButtonActive);
         let _lit = open.then(|| ui.push_style_color(imgui::StyleColor::Button, lit));
@@ -436,8 +451,14 @@ fn shown_panels(
     tab: RibbonTab,
     state: &GuiCommandState,
     hidden: &std::collections::BTreeSet<(RibbonTab, RibbonPanel)>,
+    customization: &crate::application::ribbon_customization::RibbonCustomization,
 ) -> Vec<RibbonPanel> {
     let mut panels = panels_for(tab, state);
+    if state.document_type == Some(oblikovati_api::types::DOCUMENT_PART)
+        && customization.has_panel(tab)
+    {
+        panels.push(RibbonPanel::UserCommands);
+    }
     panels.retain(|panel| !hidden.contains(&(tab, *panel)));
     panels
 }
@@ -480,7 +501,12 @@ fn draw_row(
     layout: &mut RibbonPanelLayout,
     available: f32,
 ) -> bool {
-    let panels = shown_panels(tab, context.state, &context.hidden);
+    let panels = shown_panels(
+        tab,
+        context.state,
+        &context.hidden,
+        context.owners.customization,
+    );
     let collapsed = panels
         .iter()
         .map(|panel| (context.ui.calc_text_size(panel.label())[0] + 16.).max(108.))

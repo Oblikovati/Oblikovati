@@ -64,7 +64,15 @@ pub(crate) fn ribbon_band(
         }
         let tab = owners.ribbon.active;
         let panels = crate::ribbon_panels::panels_for(tab, &request.commands);
-        owners.ribbon.display.context_menu(ui, tab, &panels);
+        owners.ribbon.display.context_menu(
+            ui,
+            tab,
+            &panels,
+            request.commands.document_type == Some(oblikovati_api::types::DOCUMENT_PART),
+        );
+        if owners.ribbon.display.take_customization_request() {
+            owners.ribbon.customization.open(tab);
+        }
     }
     side_ribbon(
         ui,
@@ -264,6 +272,8 @@ fn side_groups(
                 quick_access: owners.quick_access,
                 precise_input: owners.precise_input,
                 create_block: owners.create_block,
+                customization: &mut ribbon.customization,
+                active_tab: ribbon.active,
                 plane_selection_active: owners.plane_selection_active,
                 hole_tip: ribbon.tips.model_commands() && ribbon.tips.matching("HO"),
                 modify_group_tip: ribbon.tips.model_commands() && ribbon.tips.matching("Y"),
@@ -365,6 +375,8 @@ fn ribbon_panel_row(
             quick_access: owners.quick_access,
             precise_input: owners.precise_input,
             create_block: owners.create_block,
+            customization: &mut ribbon.customization,
+            active_tab: ribbon.active,
             plane_selection_active: owners.plane_selection_active,
             hole_tip: ribbon.tips.model_commands() && ribbon.tips.matching("HO"),
             modify_group_tip: ribbon.tips.model_commands() && ribbon.tips.matching("Y"),
