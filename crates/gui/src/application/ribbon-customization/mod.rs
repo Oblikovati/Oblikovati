@@ -10,10 +10,13 @@ use state::{COMMANDS, Command, Draft};
 pub(crate) struct RibbonCustomization {
     open: bool,
     draft: Draft,
+    escape: crate::application::document_saving::folder_browser::DialogEscape,
+    pub(crate) escape_consumed: bool,
 }
 impl RibbonCustomization {
     pub(crate) fn open(&mut self, tab: RibbonTab) {
         self.draft.open(tab);
+        self.escape = Default::default();
         self.open = true;
     }
     pub(crate) fn has_panel(&self, tab: RibbonTab) -> bool {
@@ -23,6 +26,7 @@ impl RibbonCustomization {
             .any(|entry| entry.command != Command::Separator)
     }
     pub(crate) fn panel(&mut self, ui: &Ui) {
+        self.escape_consumed = false;
         if !self.open {
             return;
         }
@@ -31,6 +35,12 @@ impl RibbonCustomization {
             self.tabs(ui);
             self.lists(ui);
             self.buttons(ui);
+            let focused =
+                ui.is_window_focused_with_flags(imgui::WindowFocusedFlags::ROOT_AND_CHILD_WINDOWS);
+            if self.escape.pressed(ui) && focused {
+                self.open = false;
+                self.escape_consumed = true;
+            }
         });
     }
     fn tabs(&mut self, ui: &Ui) {
