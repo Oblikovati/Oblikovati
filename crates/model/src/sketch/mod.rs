@@ -44,6 +44,7 @@ mod ellipse;
 mod ellipse_axis;
 pub use axis_operand::SketchAxisOperand;
 pub use ellipse::{SketchEllipse2D, SketchEllipseEvaluation};
+mod block_extraction;
 mod entity_delete;
 mod entity_geometry;
 mod entity_order;

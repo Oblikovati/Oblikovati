@@ -8,6 +8,8 @@ use oblikovati_model::{
     sketch::{Sketch2D, SketchEntityId, SketchPlane, SketchRecipe},
 };
 use oblikovati_solve::nonlinear::SolveOptions;
+#[path = "sketch_entity_order/block_extraction.rs"]
+mod block_extraction;
 fn mixed_geometry() -> Sketch2D {
     let mut sketch = Sketch2D::default();
     sketch.add_point(SketchEntityId(9), [0.0; 2]).unwrap();
