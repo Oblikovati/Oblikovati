@@ -196,12 +196,13 @@ fn dimension_annotation(
     let text = match &state.health {
         oblikovati_model::parameter::ParameterHealth::Healthy => {
             let value = annotation_value(quantity, value);
-            if !snapshot
+            if role == GuiDimensionLabelRole::Driven {
+                format!("({value})")
+            } else if !snapshot
                 .parameters
                 .drivers(parameter)
                 .map_err(|cause| cause.to_string())?
                 .is_empty()
-                && role == GuiDimensionLabelRole::Driving
             {
                 format!("fx:{value}")
             } else {

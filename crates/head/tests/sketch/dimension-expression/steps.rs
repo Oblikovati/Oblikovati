@@ -2,7 +2,10 @@
 //! Native interaction with accepted and rejected sketch dimension expressions.
 use super::super::{ApplicationWorld, diagnostics};
 use cucumber::{given, then, when};
-use oblikovati_api::{client::Client, wire::ParameterRenameArgs};
+use oblikovati_api::{
+    client::Client,
+    wire::{DriveDimensionArgs, ParameterRenameArgs, SketchArgs},
+};
 use oblikovati_viewport::ViewportPhysicalKey;
 
 #[given("rectangle height d50 evaluates to 10.000 mm")]
@@ -144,5 +147,34 @@ fn native_dimension_reference_updates_annotation_and_geometry_through_history() 
     world.expect_annotation("fx:16");
     world.open_dimension_label("fx:16");
     assert!(world.window_text("Edit Dimension").contains("d63*2"));
+    world.close();
+}
+
+#[test]
+fn native_reference_dimension_shows_parentheses_and_cannot_be_edited() {
+    let mut world = ApplicationWorld::new();
+    ten_millimetre_height(&mut world);
+    let client = Client::new(world.app().owner.document_host());
+    let dimensions = client.sketch().dimensions(&SketchArgs::default()).unwrap();
+    let index = dimensions
+        .dimensions
+        .unwrap()
+        .into_iter()
+        .find(|dimension| dimension.name == "d50")
+        .unwrap()
+        .index;
+    client
+        .dimension()
+        .edit(&DriveDimensionArgs {
+            dimension_index: index,
+            set_driven: true,
+            driven: true,
+            ..Default::default()
+        })
+        .unwrap();
+    world.pump(Vec::new());
+    world.expect_annotation("(10)");
+    world.open_dimension_label("(10)");
+    assert!(diagnostics::window_geometry("Edit Dimension").is_none());
     world.close();
 }
