@@ -54,6 +54,8 @@
 
 ### Fixed
 
+- Included User Commands in the ribbon panel visibility controls. (#3856)
+
 - Added a missing-file warning and filename recovery to ribbon settings import. (#3856)
 
 - Fixed ribbon customization to keep display options per command and restore them after a staged removal. (#3856)

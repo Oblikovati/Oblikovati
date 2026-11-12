@@ -2,6 +2,8 @@
 //! Native tests for staged user commands and their applied ribbon actions.
 use super::{ApplicationWorld, diagnostics};
 use cucumber::{given, then, when};
+#[path = "custom_panel_title.rs"]
+mod custom_panel_title;
 #[path = "file_exchange.rs"]
 mod file_exchange;
 #[path = "missing_file.rs"]

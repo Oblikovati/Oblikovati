@@ -4,13 +4,8 @@ use super::*;
 pub(crate) const PANEL_SELECTOR_WIDTH: f32 = 32.;
 const SELECTOR_POPUP: &str = "##ribbon-panel-selector-list";
 impl RibbonDisplayState {
-    /// Toggle panels without reopening the list; example: `display.panel_selector(ui, tab, state)`.
-    pub(crate) fn panel_selector(
-        &mut self,
-        ui: &Ui,
-        tab: RibbonTab,
-        state: &crate::GuiCommandState,
-    ) {
+    /// Toggle panels without reopening the list; example: `display.panel_selector(ui, tab, panels)`.
+    pub(crate) fn panel_selector(&mut self, ui: &Ui, tab: RibbonTab, panels: &[RibbonPanel]) {
         self.selector_escape =
             self.selector_open && ui.is_key_pressed_no_repeat(imgui::Key::Escape);
         let temporary_tab =
@@ -32,9 +27,9 @@ impl RibbonDisplayState {
         }
         let origin = ui.window_pos();
         crate::widget_abi::next_window_position(ui, [origin[0] + width - 180., origin[1] + 60.]);
-        self.selector_choices(ui, tab, state);
+        self.selector_choices(ui, tab, panels);
     }
-    fn selector_choices(&mut self, ui: &Ui, tab: RibbonTab, state: &crate::GuiCommandState) {
+    fn selector_choices(&mut self, ui: &Ui, tab: RibbonTab, panels: &[RibbonPanel]) {
         let Some(_list) = ui.begin_popup(SELECTOR_POPUP) else {
             self.selector_keyboard_started = false;
             self.selector_open = false;
@@ -48,10 +43,7 @@ impl RibbonDisplayState {
         self.selector_keyboard_started |= first_down
             || ui.is_key_pressed_no_repeat(imgui::Key::UpArrow)
             || ui.is_key_pressed_no_repeat(imgui::Key::Tab);
-        for (index, panel) in crate::ribbon_panels::panels_for(tab, state)
-            .into_iter()
-            .enumerate()
-        {
+        for (index, panel) in panels.iter().copied().enumerate() {
             if first_down && index == 0 {
                 ui.set_keyboard_focus_here();
             }

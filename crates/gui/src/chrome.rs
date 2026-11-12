@@ -63,7 +63,11 @@ pub(crate) fn ribbon_band(
             request_context_menu_when_clicked(ui, owners.ribbon);
         }
         let tab = owners.ribbon.active;
-        let panels = crate::ribbon_panels::panels_for(tab, &request.commands);
+        let panels = crate::ribbon_panels::available_panels(
+            tab,
+            &request.commands,
+            &owners.ribbon.customization,
+        );
         owners.ribbon.display.context_menu(
             ui,
             tab,
@@ -339,10 +343,15 @@ fn ribbon_contents(
             .display
             .control(ui, control, &owners.ribbon.tips, open_display_menu);
         // #3856: adopt selector changes before the row takes its visibility snapshot.
+        let panels = crate::ribbon_panels::available_panels(
+            owners.ribbon.active,
+            &request.commands,
+            &owners.ribbon.customization,
+        );
         owners
             .ribbon
             .display
-            .panel_selector(ui, owners.ribbon.active, &request.commands);
+            .panel_selector(ui, owners.ribbon.active, &panels);
         ribbon_panel_row(ui, request, owners, actions);
     }
     crate::theme_editor::panel(

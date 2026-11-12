@@ -1,7 +1,8 @@
 # Ribbon customization
 
 A part document can open Customize User Commands from a ribbon panel title or
-from the Tools tab. Add commands to a tab's User Commands panel, reorder them,
+from the Tools tab. Use Show Panels or the ribbon panel selector to hide or
+show User Commands. Add commands to a tab's User Commands panel, reorder them,
 and choose their size and text display on each row. New commands start with
 Large and Text clear. A removed command keeps its options if it is added back
 before Apply. Double-click a command to transfer it between the lists. Select a row and use Shift with Up or Down to select

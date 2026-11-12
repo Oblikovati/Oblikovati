@@ -453,13 +453,22 @@ fn shown_panels(
     hidden: &std::collections::BTreeSet<(RibbonTab, RibbonPanel)>,
     customization: &crate::application::ribbon_customization::RibbonCustomization,
 ) -> Vec<RibbonPanel> {
+    let mut panels = available_panels(tab, state, customization);
+    panels.retain(|panel| !hidden.contains(&(tab, *panel)));
+    panels
+}
+/// Include the user panel in both the ribbon and its visibility controls.
+pub(crate) fn available_panels(
+    tab: RibbonTab,
+    state: &GuiCommandState,
+    customization: &crate::application::ribbon_customization::RibbonCustomization,
+) -> Vec<RibbonPanel> {
     let mut panels = panels_for(tab, state);
     if state.document_type == Some(oblikovati_api::types::DOCUMENT_PART)
         && customization.has_panel(tab)
     {
         panels.push(RibbonPanel::UserCommands);
     }
-    panels.retain(|panel| !hidden.contains(&(tab, *panel)));
     panels
 }
 /// Every panel a tab offers, hidden ones included.
