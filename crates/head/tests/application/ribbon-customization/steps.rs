@@ -2,6 +2,8 @@
 //! Native tests for staged user commands and their applied ribbon actions.
 use super::{ApplicationWorld, diagnostics};
 use cucumber::{given, then, when};
+#[path = "missing_file.rs"]
+mod missing_file;
 
 #[given("a part document is active in The MCAD Software")]
 fn active_part(world: &mut ApplicationWorld) {

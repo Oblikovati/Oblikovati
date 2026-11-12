@@ -156,6 +156,26 @@ fn malformed_import_keeps_the_existing_draft_and_reports_an_error() {
 }
 
 #[test]
+fn escape_dismisses_missing_file_warning_before_import_picker() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    let path = world.scratch_folder().join("missing.xml");
+    open_tools_customization(&mut world);
+    stage_sketch_visibility(&mut world);
+    click_in_customize(&mut world, "Import");
+    enter_settings_file(&mut world, "Import Customization Settings", &path, "Open");
+    assert!(diagnostics::window_geometry("File Not Found").is_some());
+    world.key(oblikovati_viewport::ViewportPhysicalKey::Escape, false);
+    assert!(diagnostics::window_geometry("File Not Found").is_none());
+    assert!(diagnostics::window_geometry("Import Customization Settings").is_some());
+    world.key(oblikovati_viewport::ViewportPhysicalKey::Escape, false);
+    assert!(diagnostics::window_geometry("Import Customization Settings").is_none());
+    assert!(world.window_text("Customize").contains("Part|Tools*"));
+    click_in_customize(&mut world, "Cancel");
+    world.close();
+}
+
+#[test]
 fn custom_line_command_draws_in_the_active_sketch() {
     let mut world = ApplicationWorld::new();
     world.start_empty_sketch();

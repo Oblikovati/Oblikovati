@@ -3,7 +3,7 @@
 use super::settings_xml::{self, RibbonSettings};
 use crate::application::document_saving::folder_browser::{
     DialogEnd, DialogEscape, FileFilter, FolderBrowser, center_dialog, dialog_buttons,
-    file_name_field, full_path,
+    file_name_field_focused, full_path,
 };
 use crate::application::file_system::{GuiFolders, NativeFolders};
 use imgui::Ui;
@@ -14,6 +14,7 @@ use std::{
 };
 
 const MAX_SETTINGS_BYTES: u64 = 1024 * 1024;
+const MISSING_FILE: &str = "File Not Found";
 #[derive(Clone, Copy)]
 pub(super) enum Mode {
     Import,
@@ -34,22 +35,33 @@ impl Mode {
     }
 }
 trait SettingsFiles {
-    fn read(&self, path: &str) -> Result<Vec<u8>, String>;
+    fn read(&self, path: &str) -> Result<Vec<u8>, SettingsError>;
     fn create(&self, path: &str, contents: &[u8]) -> Result<(), String>;
+}
+#[derive(Debug)]
+enum SettingsError {
+    Missing(String),
+    Other(String),
 }
 struct NativeSettingsFiles;
 impl SettingsFiles for NativeSettingsFiles {
-    fn read(&self, path: &str) -> Result<Vec<u8>, String> {
-        let file = std::fs::File::open(path)
-            .map_err(|error| format!("file {path:?}: expected readable XML: {error}"))?;
+    fn read(&self, path: &str) -> Result<Vec<u8>, SettingsError> {
+        let file = std::fs::File::open(path).map_err(|error| {
+            if error.kind() == std::io::ErrorKind::NotFound {
+                return SettingsError::Missing(path.to_owned());
+            }
+            SettingsError::Other(format!("file {path:?}: expected readable XML: {error}"))
+        })?;
         let mut bytes = Vec::new();
         file.take(MAX_SETTINGS_BYTES + 1)
             .read_to_end(&mut bytes)
-            .map_err(|error| format!("file {path:?}: expected readable XML: {error}"))?;
+            .map_err(|error| {
+                SettingsError::Other(format!("file {path:?}: expected readable XML: {error}"))
+            })?;
         if bytes.len() as u64 > MAX_SETTINGS_BYTES {
-            return Err(format!(
+            return Err(SettingsError::Other(format!(
                 "file {path:?}: expected at most {MAX_SETTINGS_BYTES} bytes"
-            ));
+            )));
         }
         Ok(bytes)
     }
@@ -74,6 +86,9 @@ struct DialogDraft {
     name: String,
     opening: bool,
     error: Option<String>,
+    missing: Option<String>,
+    warning_opening: bool,
+    focus_name: bool,
     escape: DialogEscape,
 }
 pub(super) struct SettingsDialog {
@@ -101,6 +116,9 @@ impl SettingsDialog {
             name: String::new(),
             opening: true,
             error: None,
+            missing: None,
+            warning_opening: false,
+            focus_name: false,
             escape: DialogEscape::default(),
         });
     }
@@ -118,7 +136,8 @@ impl SettingsDialog {
             draft.name = name;
         }
         ui.separator();
-        let entered = file_name_field(ui, &mut draft.name);
+        let entered =
+            file_name_field_focused(ui, &mut draft.name, std::mem::take(&mut draft.focus_name));
         ui.text("Files of type");
         ui.same_line();
         ui.text("XML Files (*.xml)");
@@ -137,21 +156,42 @@ impl SettingsDialog {
             ui.close_current_popup();
             return None;
         }
-        if end != Some(DialogEnd::Accepted) {
-            return None;
-        }
-        let path = settings_path(&self.browser.folder, &draft.name, draft.mode);
-        match perform(self.files.as_ref(), draft.mode, &path, snapshot) {
-            Ok(imported) => {
-                self.draft = None;
-                ui.close_current_popup();
-                imported
+        if end == Some(DialogEnd::Accepted) {
+            let path = settings_path(&self.browser.folder, &draft.name, draft.mode);
+            match perform(self.files.as_ref(), draft.mode, &path, snapshot) {
+                Ok(imported) => {
+                    self.draft = None;
+                    ui.close_current_popup();
+                    return imported;
+                }
+                Err(SettingsError::Missing(path)) => {
+                    draft.missing = Some(path);
+                    draft.warning_opening = true;
+                }
+                Err(SettingsError::Other(error)) => draft.error = Some(error),
             }
-            Err(error) => {
-                draft.error = Some(error);
-                None
-            }
         }
+        missing_warning(ui, draft);
+        None
+    }
+}
+fn missing_warning(ui: &Ui, draft: &mut DialogDraft) {
+    let Some(path) = &draft.missing else {
+        return;
+    };
+    if std::mem::take(&mut draft.warning_opening) {
+        ui.open_popup(MISSING_FILE);
+    }
+    center_dialog(ui, [460., 140.]);
+    let Some(_warning) = ui.begin_modal_popup(MISSING_FILE) else {
+        return;
+    };
+    ui.text_wrapped(format!("File {path:?} was not found."));
+    ui.text("Check the file name.");
+    if ui.button("OK") || ui.is_key_pressed_no_repeat(imgui::Key::Escape) {
+        draft.missing = None;
+        draft.focus_name = true;
+        ui.close_current_popup();
     }
 }
 fn settings_path(folder: &str, name: &str, mode: Mode) -> String {
@@ -166,18 +206,22 @@ fn perform(
     mode: Mode,
     path: &str,
     snapshot: &RibbonSettings,
-) -> Result<Option<RibbonSettings>, String> {
+) -> Result<Option<RibbonSettings>, SettingsError> {
     match mode {
-        Mode::Import => Ok(Some(settings_xml::decode(&files.read(path)?)?)),
+        Mode::Import => Ok(Some(
+            settings_xml::decode(&files.read(path)?).map_err(SettingsError::Other)?,
+        )),
         Mode::Export => {
-            let contents = settings_xml::encode(snapshot)?;
+            let contents = settings_xml::encode(snapshot).map_err(SettingsError::Other)?;
             if contents.len() as u64 > MAX_SETTINGS_BYTES {
-                return Err(format!(
+                return Err(SettingsError::Other(format!(
                     "settings {} bytes: expected at most {MAX_SETTINGS_BYTES} bytes",
                     contents.len()
-                ));
+                )));
             }
-            files.create(path, &contents)?;
+            files
+                .create(path, &contents)
+                .map_err(SettingsError::Other)?;
             Ok(None)
         }
     }
@@ -189,12 +233,12 @@ mod tests {
     #[derive(Default)]
     struct MemorySettingsFiles(RefCell<BTreeMap<String, Vec<u8>>>);
     impl SettingsFiles for MemorySettingsFiles {
-        fn read(&self, path: &str) -> Result<Vec<u8>, String> {
+        fn read(&self, path: &str) -> Result<Vec<u8>, SettingsError> {
             self.0
                 .borrow()
                 .get(path)
                 .cloned()
-                .ok_or_else(|| format!("file {path:?}: expected an existing file"))
+                .ok_or_else(|| SettingsError::Missing(path.to_owned()))
         }
         fn create(&self, path: &str, contents: &[u8]) -> Result<(), String> {
             let mut files = self.0.borrow_mut();
@@ -238,5 +282,18 @@ mod tests {
         let settings = RibbonSettings::from([(RibbonTab::Tools, vec![entry; 30_000])]);
         assert!(perform(&files, Mode::Export, "large.xml", &settings).is_err());
         assert!(files.0.borrow().is_empty());
+    }
+    #[test]
+    fn missing_import_is_distinct_from_invalid_xml() {
+        let files = MemorySettingsFiles::default();
+        let empty = RibbonSettings::new();
+        assert!(
+            matches!(perform(&files, Mode::Import, "missing.xml", &empty), Err(SettingsError::Missing(path)) if path == "missing.xml")
+        );
+        files.create("invalid.xml", b"<invalid").unwrap();
+        assert!(matches!(
+            perform(&files, Mode::Import, "invalid.xml", &empty),
+            Err(SettingsError::Other(_))
+        ));
     }
 }

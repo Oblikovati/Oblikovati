@@ -17,7 +17,8 @@ Other commands remain limited to the entries shown in the dialog. Some
 commands are unavailable until their host operations exist. Settings last for
 the current application session. Export writes the current draft as versioned
 Oblikovati XML to a new file. Import replaces the draft and requires Apply or OK.
-The export chooser refuses to overwrite an existing file.
+The export chooser refuses to overwrite an existing file. If an import file is
+missing, dismiss the warning to edit the selected filename.
 
 Keyboard and marking-menu customization, other document types, and automatic
 settings persistence remain open work.

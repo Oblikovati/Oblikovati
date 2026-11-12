@@ -52,6 +52,8 @@
 
 ### Fixed
 
+- Added a missing-file warning and filename recovery to ribbon settings import. (#3856)
+
 - Fixed ribbon customization to keep display options per command and restore them after a staged removal. (#3856)
 
 - Kept reversed ribbon customization edits pending until Apply or Cancel. (#3856)

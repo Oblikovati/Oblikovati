@@ -358,9 +358,13 @@ pub(crate) fn full_path(folder: &str, name: &str) -> String {
 }
 /// Draw the file name field; `true` when Enter accepted it. The whole name starts selected.
 pub(crate) fn file_name_field(ui: &Ui, name: &mut String) -> bool {
+    file_name_field_focused(ui, name, false)
+}
+/// Focus and select the filename after a dialog warning; example: `file_name_field_focused(ui, name, true)`.
+pub(crate) fn file_name_field_focused(ui: &Ui, name: &mut String, focus: bool) -> bool {
     ui.text("File name");
     ui.same_line_with_spacing(0., LABEL_GAP);
-    if ui.is_window_appearing() {
+    if focus || ui.is_window_appearing() {
         ui.set_keyboard_focus_here();
     }
     ui.set_next_item_width(-1.);

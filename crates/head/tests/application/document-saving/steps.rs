@@ -34,6 +34,7 @@ fn free_name(world: &mut ApplicationWorld) {
     assert_eq!(std::fs::read_dir(folder).unwrap().count(), 0);
 }
 #[when("I press Control+S")]
+#[when("I press Control+S again in the same session")]
 fn press_save(world: &mut ApplicationWorld) {
     world.press_save_shortcut();
 }
@@ -51,6 +52,19 @@ fn proposed_selected(world: &mut ApplicationWorld) {
         world.text_is_selected(&name),
         "file name {name:?}: expected a selected proposal"
     );
+    world.proposed_name = Some(name);
+}
+#[then("the Save As dialog reopens with the same proposed document name selected")]
+fn same_proposal_selected(world: &mut ApplicationWorld) {
+    save_as_opens(world);
+    let name = world
+        .proposed_name
+        .clone()
+        .expect("expected the first proposed name");
+    assert!(
+        world.text_is_selected(&name),
+        "file name {name:?}: expected the same selected proposal"
+    );
 }
 #[then("a location, file type and preview options are displayed")]
 fn dialog_contents(world: &mut ApplicationWorld) {
@@ -66,6 +80,7 @@ fn dialog_contents(world: &mut ApplicationWorld) {
     }
 }
 #[when("I cancel the dialog")]
+#[when("I cancel the dialog again")]
 #[when("I cancel Save As")]
 fn cancel_dialog(world: &mut ApplicationWorld) {
     world.click_text("Cancel");
