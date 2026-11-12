@@ -97,14 +97,14 @@ pub(super) fn draw(
         let Some(expansion) = layout.additional.open.get_mut(&key) else {
             continue;
         };
+        let area = context
+            .owners
+            .workspace
+            .document_area(context.ui.io().display_size, context.ribbon_bottom);
         if draw_window(
             context.ui,
             key.1,
-            context
-                .owners
-                .workspace
-                .document_area(context.ui.io().display_size, context.ribbon_bottom)
-                .top,
+            area,
             context.owners.icons.layout_factor(),
             expansion,
             display,
@@ -116,16 +116,18 @@ pub(super) fn draw(
 fn draw_window(
     ui: &Ui,
     panel: RibbonPanel,
-    bottom: f32,
+    area: crate::application::document_creation::workspaces::WorkspaceArea,
     scale: f32,
     expansion: &mut Expansion,
     display: &RibbonDisplayState,
 ) -> bool {
     let [viewport_width, viewport_height] = ui.io().display_size;
-    let width = (ADDITIONAL_WIDTH * scale).min((viewport_width - 2. * VIEWPORT_MARGIN).max(1.));
-    let top = bottom.min((viewport_height - 1.).max(0.));
+    let left = area.left.clamp(0., (viewport_width - 1.).max(0.));
+    let right = area.right.clamp(left + 1., viewport_width.max(left + 1.));
+    let width = (ADDITIONAL_WIDTH * scale).min((right - left - VIEWPORT_MARGIN).max(1.));
+    let top = area.top.min((viewport_height - 1.).max(0.));
     let height = (ADDITIONAL_HEIGHT * scale).min((viewport_height - top).max(1.));
-    let x = expansion.anchor[0].clamp(0., (viewport_width - width).max(0.));
+    let x = expansion.anchor[0].clamp(left, (right - width).max(left));
     crate::widget_abi::window_geometry(ui, [x, top], [width, height], imgui::Condition::Always);
     let mut close = false;
     let focus = std::mem::take(&mut expansion.focus);

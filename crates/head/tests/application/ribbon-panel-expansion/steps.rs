@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Native interaction with the Modify panel's additional commands.
-use super::workspace_layout::browser_feature::{expect_solid_visible, open_visible_extruded_part};
+use super::workspace_layout::browser_feature::{
+    expect_outline, expect_solid_visible, open_visible_extruded_part,
+};
 use super::{ApplicationWorld, diagnostics};
 use cucumber::{given, then, when};
 const WINDOW: &str = "##ribbon-additional-PartModify";
@@ -253,4 +255,43 @@ fn unpin_simplification(world: &mut ApplicationWorld) {
 fn unpin_modify(world: &mut ApplicationWorld) {
     toggle_pin_in(world, WINDOW);
     world.click([1000, 700]);
+}
+#[given("a part containing an extrusion is active in the MCAD Software")]
+fn extrusion_part(world: &mut ApplicationWorld) {
+    open_visible_extruded_part(world);
+    expect_solid_visible(world);
+}
+#[given("the full 3D Model ribbon has the Modify additional-command area open and unpinned")]
+fn browser_unpinned(world: &mut ApplicationWorld) {
+    full_modify(world);
+    opened_unpinned(world);
+}
+#[given("the full 3D Model ribbon has the Modify additional-command area open and pinned")]
+fn browser_pinned(world: &mut ApplicationWorld) {
+    full_modify(world);
+    opened_pinned(world);
+}
+#[when("the user selects the extrusion in the model browser")]
+fn select_browser_extrusion(world: &mut ApplicationWorld) {
+    world.click_text("Extrude1");
+}
+#[then("the additional-command area closes")]
+fn browser_expansion_closed(world: &mut ApplicationWorld) {
+    area_closed(world);
+}
+#[then("the additional-command area remains open")]
+fn browser_expansion_open(world: &mut ApplicationWorld) {
+    pinned_visible(world);
+}
+#[then("the extrusion is selected in the browser")]
+fn browser_extrusion_selected(world: &mut ApplicationWorld) {
+    assert!(world.row_highlighted("Extrude1"));
+}
+#[then("its geometry is highlighted in the viewport")]
+fn browser_geometry_highlighted(world: &mut ApplicationWorld) {
+    expect_outline(world, true);
+}
+#[when("the user unpins the additional-command area and clicks empty viewport space")]
+fn unpin_browser_expansion(world: &mut ApplicationWorld) {
+    unpin_modify(world);
 }
