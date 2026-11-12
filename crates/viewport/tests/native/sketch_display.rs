@@ -8,6 +8,8 @@ use oblikovati_model::{
     },
 };
 use oblikovati_viewport::{ViewportNavigation, ViewportSketchDisplay};
+#[path = "block_display.rs"]
+mod block_display;
 pub(super) fn packet() -> ViewportSketchDisplay {
     let mut geometry = Sketch2D::default();
     for (id, point) in [(100, [-5., 0.]), (101, [5., 0.]), (102, [0., 0.])] {
@@ -20,6 +22,7 @@ pub(super) fn packet() -> ViewportSketchDisplay {
         sketch: DocumentSketchId(1),
         plane: SketchPlane::xy(),
         geometry,
+        blocks: vec![],
         line_color: None,
     }
 }
@@ -249,6 +252,7 @@ fn spline_packet() -> ViewportSketchDisplay {
         sketch: DocumentSketchId(1),
         plane: SketchPlane::xy(),
         geometry,
+        blocks: vec![],
         line_color: None,
     }
 }

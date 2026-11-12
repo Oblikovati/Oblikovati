@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use oblikovati_model::{
-    document_sketch::DocumentSketchId,
+    document_sketch::{DocumentSketchId, SketchBlockInstance},
     sketch::{Sketch2D, SketchPlane},
 };
 /// Owned committed geometry. The document keeps identity; native samples remain disposable.
@@ -9,8 +9,16 @@ pub struct ViewportSketchDisplay {
     pub sketch: DocumentSketchId,
     pub plane: SketchPlane,
     pub geometry: Sketch2D,
+    /// Definition geometry and placement for each visible block instance.
+    pub blocks: Vec<ViewportSketchBlock>,
     /// What its lines draw in, in place of the palette's geometry colour.
     pub line_color: Option<oblikovati_model::theme::Rgba>,
+}
+/// One definition rendered through its owning instance's placement.
+#[derive(Clone, Debug, PartialEq)]
+pub struct ViewportSketchBlock {
+    pub instance: SketchBlockInstance,
+    pub geometry: Sketch2D,
 }
 /// Display failure names the sketch as well as its entity within the current source packet.
 #[derive(Clone, Debug, PartialEq)]

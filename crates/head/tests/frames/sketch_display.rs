@@ -24,6 +24,7 @@ fn nonempty_update() -> crate::HeadSketchSceneUpdate {
         sketch: oblikovati_model::document_sketch::DocumentSketchId(3),
         plane: oblikovati_model::sketch::SketchPlane::xy(),
         geometry: Default::default(),
+        blocks: vec![],
         line_color: None,
     };
     crate::HeadSketchSceneUpdate {

@@ -7,7 +7,7 @@ pub struct HeadSketchSceneUpdate {
     pub source: Option<(u64, u64)>,
     pub sketches: Vec<ViewportSketchDisplay>,
     pub plane_declines: Vec<(DocumentSketchId, String)>,
-    /// Instances that the current display cannot yet draw.
+    /// Block instances whose definitions cannot be resolved for display.
     pub block_declines: Vec<(DocumentSketchId, String)>,
 }
 /// A hidden sketch still shows while it is chosen in the browser or edited.

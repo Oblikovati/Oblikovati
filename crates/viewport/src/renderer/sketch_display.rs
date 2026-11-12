@@ -7,6 +7,8 @@ use oblikovati_martensite::planar_curve::sketch::{
     SketchDisplayEntity, SketchDisplayPrimitive, SketchSamplingOptionsV1, sample_sketch_display,
 };
 use oblikovati_model::theme::Rgba;
+#[path = "sketch_display/blocks.rs"]
+mod blocks;
 #[derive(Default)]
 pub(super) struct SketchDisplayOverlay {
     pub(super) source: Option<(Vec<ViewportSketchDisplay>, f64)>,
@@ -111,6 +113,9 @@ impl SketchDisplayOverlay {
         for entity in report.entities {
             self.append_entity(viewer, sketch, &entity);
         }
+        for block in &sketch.blocks {
+            self.append_block(viewer, sketch, block, deflection);
+        }
         Ok(())
     }
     fn append_marker(
@@ -133,11 +138,17 @@ impl SketchDisplayOverlay {
         sketch: &ViewportSketchDisplay,
         entity: &SketchDisplayEntity,
     ) {
+        self.append_entity_for(viewer, sketch, entity, entity.entity);
+    }
+    fn append_entity_for(
+        &mut self,
+        viewer: &V3dViewer,
+        sketch: &ViewportSketchDisplay,
+        entity: &SketchDisplayEntity,
+        identity: oblikovati_model::sketch::SketchEntityId,
+    ) {
         let color = if self.selected.sketches.contains(&sketch.sketch)
-            || self
-                .selected
-                .entities
-                .contains(&(sketch.sketch, entity.entity))
+            || self.selected.entities.contains(&(sketch.sketch, identity))
         {
             &self.selected_color
         } else {
@@ -145,9 +156,7 @@ impl SketchDisplayOverlay {
         };
         match build_entity(viewer, sketch, entity, color) {
             Ok(structure) => self.structures.push(structure),
-            Err(cause) => self
-                .declines
-                .push(display_decline(sketch, entity.entity, cause)),
+            Err(cause) => self.declines.push(display_decline(sketch, identity, cause)),
         }
     }
     pub(super) fn clear(&mut self) {

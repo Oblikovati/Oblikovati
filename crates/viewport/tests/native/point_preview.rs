@@ -77,6 +77,7 @@ fn committed_point(
         sketch: DocumentSketchId(1),
         plane: preview.plane(),
         geometry,
+        blocks: vec![],
         line_color: None,
     }
 }

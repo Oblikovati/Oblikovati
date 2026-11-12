@@ -4,7 +4,7 @@ use oblikovati_model::document_sketch::DocumentSketchId;
 use oblikovati_model::history::DocumentSnapshot;
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
-use oblikovati_viewport::ViewportSketchDisplay;
+use oblikovati_viewport::{ViewportSketchBlock, ViewportSketchDisplay};
 #[derive(Default)]
 pub(crate) struct DesktopSketchScenes {
     source: Option<(u64, u64)>,
@@ -105,26 +105,50 @@ fn collect_sketches(
         .iter()
         .filter(|sketch| super::sketch_shows(sketch, called_up))
     {
-        for instance in sketch.block_instances() {
+        match snapshot.resolve_sketch_plane(sketch.id()) {
+            Ok(plane) => {
+                let blocks = scene_blocks(snapshot, sketch, update);
+                update.sketches.push(ViewportSketchDisplay {
+                    sketch: sketch.id(),
+                    plane,
+                    geometry: sketch.geometry().clone(),
+                    blocks,
+                    line_color: sketch.line_style().color.map(line_color),
+                })
+            }
+            Err(cause) => update.plane_declines.push((sketch.id(), cause.to_string())),
+        }
+    }
+}
+fn scene_blocks(
+    snapshot: &DocumentSnapshot,
+    sketch: &oblikovati_model::document_sketch::PlacedSketch,
+    update: &mut HeadSketchSceneUpdate,
+) -> Vec<ViewportSketchBlock> {
+    let mut blocks = Vec::new();
+    for instance in sketch.block_instances() {
+        let Some(definition) = snapshot
+            .sketches
+            .block_definitions()
+            .iter()
+            .find(|item| item.name() == instance.definition())
+        else {
             update.block_declines.push((
                 sketch.id(),
                 format!(
-                    "block instance {} of {:?} is not yet displayed",
+                    "block instance {}: missing definition {:?}",
                     instance.id().0,
                     instance.definition()
                 ),
             ));
-        }
-        match snapshot.resolve_sketch_plane(sketch.id()) {
-            Ok(plane) => update.sketches.push(ViewportSketchDisplay {
-                sketch: sketch.id(),
-                plane,
-                geometry: sketch.geometry().clone(),
-                line_color: sketch.line_style().color.map(line_color),
-            }),
-            Err(cause) => update.plane_declines.push((sketch.id(), cause.to_string())),
-        }
+            continue;
+        };
+        blocks.push(ViewportSketchBlock {
+            instance: instance.clone(),
+            geometry: definition.geometry().clone(),
+        });
     }
+    blocks
 }
 
 #[cfg(test)]

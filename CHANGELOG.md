@@ -4,6 +4,9 @@
 
 ### Added
 
+- Added viewport display for placed sketch block definitions, including their
+  rotation, scale, and instance selection color. (#3856)
+
 - Added saved sketch block instance identities and placements, with typed
   instance listing and protection against deleting a definition in use. (#3856)
 

@@ -67,10 +67,20 @@ fn a_hidden_sketch_shows_only_while_it_is_called_up() {
 }
 
 #[test]
-fn undisplayed_block_instance_is_named_in_the_scene_failure() {
+fn block_instance_is_sent_to_the_sketch_scene() {
     use oblikovati_model::{document_sketch::SketchBlockInstance, sketch::SketchEntityId};
     let mut snapshot = crate::scene_fixture::selected_prism_document();
-    snapshot.sketches.define_empty_block("Rib").unwrap();
+    let line = snapshot
+        .sketches
+        .get(DocumentSketchId(1))
+        .unwrap()
+        .geometry()
+        .lines()[0]
+        .id;
+    snapshot
+        .sketches
+        .capture_block_definition("Rib", DocumentSketchId(1), &[line])
+        .unwrap();
     let instance = SketchBlockInstance::new(SketchEntityId(99), "Rib", [0., 0.], 0., 1.).unwrap();
     snapshot
         .sketches
@@ -84,9 +94,11 @@ fn undisplayed_block_instance_is_named_in_the_scene_failure() {
     };
     collect_sketches(&snapshot, &[], &mut update);
     assert_eq!(update.sketches.len(), 1);
-    assert_eq!(update.block_declines.len(), 1);
-    assert_eq!(update.block_declines[0].0, DocumentSketchId(1));
-    assert!(
-        update.block_declines[0].1.contains("99") && update.block_declines[0].1.contains("Rib")
+    assert!(update.block_declines.is_empty());
+    assert_eq!(update.sketches[0].blocks.len(), 1);
+    assert_eq!(update.sketches[0].blocks[0].geometry.lines().len(), 1);
+    assert_eq!(
+        update.sketches[0].blocks[0].instance.id(),
+        SketchEntityId(99)
     );
 }
