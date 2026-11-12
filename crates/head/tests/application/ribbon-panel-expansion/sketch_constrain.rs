@@ -271,6 +271,14 @@ fn create_block_groups_four_mouse_selected_edges_and_supports_undo_redo() {
     for [from, to] in &segments {
         world.expect_segment_drawn(*from, *to);
     }
+    let unselected = super::super::capture_framebuffer(&mut world.app().window.native);
+    world.click_text("Block1:1");
+    let selection = world.state().sketch_selection.entities;
+    assert_eq!(selection.len(), 1);
+    let browser = world.state().browser.unwrap();
+    assert_eq!(selection[0].1, browser.block_instances[0].id);
+    let selected = super::super::capture_framebuffer(&mut world.app().window.native);
+    assert!(segment_color_changed(&unselected, &selected, segments[0]));
     world.command_key(ViewportPhysicalKey::Z, ViewportKey::Undo);
     assert!(world.edited_geometry().same_recipe(&original));
     assert!(world.state().sketch_block_names.is_empty());
@@ -283,6 +291,21 @@ fn create_block_groups_four_mouse_selected_edges_and_supports_undo_redo() {
         world.expect_segment_drawn(from, to);
     }
     world.close();
+}
+fn segment_color_changed(
+    before: &oblikovati_viewport::ViewportCapture,
+    after: &oblikovati_viewport::ViewportCapture,
+    segment: [[i32; 2]; 2],
+) -> bool {
+    let point: [i32; 2] = std::array::from_fn(|axis| (segment[0][axis] + segment[1][axis]) / 2);
+    (-4..=4).any(|dy| {
+        (-4..=4).any(|dx| {
+            let x = (point[0] + dx) as usize;
+            let y = (point[1] + dy) as usize;
+            let index = (y * before.extent[0] as usize + x) * 4;
+            before.rgba[index..index + 4] != after.rgba[index..index + 4]
+        })
+    })
 }
 fn visible_line_point(world: &mut ApplicationWorld, line: usize) -> [i32; 2] {
     let (position, size) = diagnostics::window_geometry("Create Block").unwrap();

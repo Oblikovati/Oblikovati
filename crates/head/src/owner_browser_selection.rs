@@ -369,7 +369,7 @@ impl<
             BrowserOutlineRow::Sketch(sketch) => sketch_outline(session.snapshot(), sketch),
         }
     }
-    fn require_browser_document(&self, document: u64) -> Result<(), String> {
+    pub(super) fn require_browser_document(&self, document: u64) -> Result<(), String> {
         if self.files.workspace().active_document() != Some(document) {
             return Err(format!(
                 "browser document {document}: expected active document {:?}",
@@ -452,7 +452,8 @@ pub(super) fn gui_sketch_selection<O: TransactionObserver>(
             .selected_editor_picks()
             .iter()
             .filter_map(|pick| match pick.target() {
-                oblikovati_session::selection::SketchPickTarget::Entity(entity) => {
+                oblikovati_session::selection::SketchPickTarget::Entity(entity)
+                | oblikovati_session::selection::SketchPickTarget::BlockInstance(entity) => {
                     Some((pick.sketch(), entity))
                 }
                 _ => None,

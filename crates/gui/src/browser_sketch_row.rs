@@ -25,9 +25,14 @@ pub(super) fn sketch_row(
         sketch_activation(ui, state, row.id, &action, actions);
     }
     sketch_context_menu(ui, state, row, view, action, actions);
-    block_instances(ui, state, row.id);
+    block_instances(ui, state, row.id, actions);
 }
-fn block_instances(ui: &Ui, state: &GuiCommandState, sketch: DocumentSketchId) {
+fn block_instances(
+    ui: &Ui,
+    state: &GuiCommandState,
+    sketch: DocumentSketchId,
+    actions: &mut Vec<GuiShellAction>,
+) {
     let Some(browser) = &state.browser else {
         return;
     };
@@ -37,9 +42,39 @@ fn block_instances(ui: &Ui, state: &GuiCommandState, sketch: DocumentSketchId) {
         .iter()
         .filter(|instance| instance.sketch == sketch)
     {
-        ui.text(format!("{}:{}", instance.definition, instance.ordinal));
+        block_instance_row(ui, state, instance, actions);
     }
     ui.unindent();
+}
+fn block_instance_row(
+    ui: &Ui,
+    state: &GuiCommandState,
+    instance: &GuiBrowserBlockInstance,
+    actions: &mut Vec<GuiShellAction>,
+) {
+    let action = GuiShellAction::SelectBrowserBlock {
+        document: state.document.unwrap_or(0),
+        sketch: instance.sketch,
+        instance: instance.id,
+        toggle: ui.io().key_shift || ui.io().key_ctrl,
+    };
+    let selected = state
+        .sketch_selection
+        .entities
+        .contains(&(instance.sketch, instance.id));
+    let _id = ui.push_id(format!("block-{}", instance.id.0));
+    let position = ui.cursor_screen_pos();
+    let disabled = ui.begin_disabled(!action.dispatchable(state));
+    if crate::widget_abi::selectable(ui, "##block-instance", selected, true) {
+        actions.push(action);
+    }
+    crate::widget_abi::literal_text(
+        ui,
+        position,
+        ui.style_color(StyleColor::Text),
+        &format!("{}:{}", instance.definition, instance.ordinal),
+    );
+    drop(disabled);
 }
 fn sketch_activation(
     ui: &Ui,

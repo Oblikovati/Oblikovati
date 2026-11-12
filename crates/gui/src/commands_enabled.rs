@@ -4,6 +4,23 @@ impl GuiShellAction {
     /// Preserve Go empty-stack enablement; example: `GuiShellAction::Undo.enabled(&state)`.
     pub fn enabled(&self, state: &GuiCommandState) -> bool {
         match self {
+            Self::SelectBrowserBlock {
+                document,
+                sketch,
+                instance,
+                ..
+            } => {
+                state.document == Some(*document)
+                    && state.authoring == GuiAuthoringContext::Sketch
+                    && state.sketch_at_ready
+                    && !state.transaction_open
+                    && state.browser.as_ref().is_some_and(|browser| {
+                        browser
+                            .block_instances
+                            .iter()
+                            .any(|row| row.sketch == *sketch && row.id == *instance)
+                    })
+            }
             Self::SelectBlockGeometry(false) => true,
             Self::SelectBlockGeometry(true) => state.sketch_at_ready && !state.transaction_open,
             Self::CreateSketchBlock(name) => {

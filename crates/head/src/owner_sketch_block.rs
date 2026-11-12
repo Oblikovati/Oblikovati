@@ -12,6 +12,34 @@ impl<
     S: DispatchWakeup,
 > DesktopOwner<O, W, F, G, R, S>
 {
+    pub(super) fn select_browser_block(
+        &mut self,
+        document: u64,
+        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+        instance: oblikovati_model::sketch::SketchEntityId,
+        toggle: bool,
+    ) -> Result<bool, String> {
+        self.require_browser_document(document)?;
+        if !self
+            .active_sketch_edit()
+            .is_some_and(|edit| edit.document == document && edit.sketch == sketch)
+        {
+            return Err(format!(
+                "browser block {instance:?} in sketch {sketch:?}: expected the active edited sketch"
+            ));
+        }
+        self.files
+            .commands(document)
+            .map_err(|cause| cause.to_string())?
+            .set_sketch_selection(
+                sketch,
+                Some(SketchPickTarget::BlockInstance(instance)),
+                SelectionClickMode::from_modifiers(toggle, false),
+                self.sketch_tool.is_some(),
+            )
+            .map(|count| count.is_some())
+            .map_err(|cause| cause.to_string())
+    }
     pub(super) fn set_block_selection(&mut self, active: bool) -> Result<bool, String> {
         if !active {
             return self.end_block_selection();

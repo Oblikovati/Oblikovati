@@ -126,6 +126,7 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::SaveDocumentAs(_)
         | GuiShellAction::SetSketchVisibility { .. }
         | GuiShellAction::SelectBrowserSketch { .. }
+        | GuiShellAction::SelectBrowserBlock { .. }
         | GuiShellAction::SelectBrowserFeature { .. }
         | GuiShellAction::BrowserChoice { .. }
         | GuiShellAction::SetSketchLineStyle { .. }

@@ -9,6 +9,7 @@ use oblikovati_model::{
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SketchPickTarget {
     Entity(SketchEntityId),
+    BlockInstance(SketchEntityId),
     Dimension(SketchConstraintId),
     GeometricConstraint(SketchConstraintId),
 }
@@ -62,7 +63,9 @@ impl SketchPick {
 impl Selectable for SketchPick {
     fn selection_kind(&self) -> SelectionKind {
         match self.target {
-            SketchPickTarget::Entity(_) => SelectionKind::SketchEntity,
+            SketchPickTarget::Entity(_) | SketchPickTarget::BlockInstance(_) => {
+                SelectionKind::SketchEntity
+            }
             SketchPickTarget::Dimension(_) => SelectionKind::SketchDimension,
             SketchPickTarget::GeometricConstraint(_) => SelectionKind::SketchConstraint,
         }
@@ -111,6 +114,11 @@ impl SelectionSet<SketchPick> {
         for pick in self.items() {
             match pick.target {
                 SketchPickTarget::Entity(id) => intent.entities.push(id),
+                SketchPickTarget::BlockInstance(id) => {
+                    return Err(SketchError::Definition(format!(
+                        "block instance {id:?}: expected a block-aware deletion command"
+                    )));
+                }
                 SketchPickTarget::Dimension(id) => intent.dimensions.push(id),
                 SketchPickTarget::GeometricConstraint(id) => intent.geometric_constraints.push(id),
             }

@@ -107,6 +107,12 @@ pub enum GuiShellAction {
         sketch: oblikovati_model::document_sketch::DocumentSketchId,
         toggle: bool,
     },
+    SelectBrowserBlock {
+        document: u64,
+        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+        instance: oblikovati_model::sketch::SketchEntityId,
+        toggle: bool,
+    },
     SetSketchVisibility {
         document: u64,
         sketch: oblikovati_model::document_sketch::DocumentSketchId,

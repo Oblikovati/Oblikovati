@@ -2,6 +2,18 @@
 use crate::HeadWorkStatus;
 /// Owner-thread services borrow model state only while the window loop polls them.
 pub trait HeadWork {
+    /// Select a block row in the edited sketch; example: `work.select_browser_block_from_gui(document, sketch, block, false)?`.
+    fn select_browser_block_from_gui(
+        &mut self,
+        document: u64,
+        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+        instance: oblikovati_model::sketch::SketchEntityId,
+        toggle: bool,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "browser block {instance:?} in sketch {sketch:?}, document {document}, toggle {toggle}: expected a sketch selection owner"
+        ))
+    }
     /// Change the block selection mode; example: `work.select_block_geometry_from_gui(true)?`.
     fn select_block_geometry_from_gui(&mut self, active: bool) -> Result<bool, String> {
         Err(format!(

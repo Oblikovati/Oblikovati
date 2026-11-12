@@ -73,6 +73,12 @@ fn sketch(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, Str
             sketch,
             toggle,
         } => owner.select_browser_sketch_from_gui(*document, *sketch, *toggle),
+        GuiShellAction::SelectBrowserBlock {
+            document,
+            sketch,
+            instance,
+            toggle,
+        } => owner.select_browser_block_from_gui(*document, *sketch, *instance, *toggle),
         GuiShellAction::SelectBrowserFeature { document, feature } => {
             owner.select_browser_feature_from_gui(*document, *feature)
         }

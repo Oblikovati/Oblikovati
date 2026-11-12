@@ -66,6 +66,16 @@ macro_rules! forward_owner_view_work {
             self.$owner
                 .select_browser_sketch_from_gui(document, sketch, toggle)
         }
+        fn select_browser_block_from_gui(
+            &mut self,
+            document: u64,
+            sketch: oblikovati_model::document_sketch::DocumentSketchId,
+            instance: oblikovati_model::sketch::SketchEntityId,
+            toggle: bool,
+        ) -> Result<bool, String> {
+            self.$owner
+                .select_browser_block_from_gui(document, sketch, instance, toggle)
+        }
         fn select_browser_feature_from_gui(
             &mut self,
             document: u64,

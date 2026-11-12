@@ -130,6 +130,35 @@ fn block_browser_entries_require_a_valid_owner_definition_and_identity() {
 }
 
 #[test]
+fn block_browser_selection_requires_a_current_instance_and_idle_sketch() {
+    let mut state = sample_state();
+    state.sketch_at_ready = true;
+    state.authoring = crate::GuiAuthoringContext::Sketch;
+    let browser = state.browser.as_mut().unwrap();
+    browser.block_definitions.push("Rib".into());
+    browser
+        .block_instances
+        .push(crate::GuiBrowserBlockInstance {
+            sketch: DocumentSketchId(7),
+            id: oblikovati_model::sketch::SketchEntityId(8),
+            definition: "Rib".into(),
+            ordinal: 1,
+        });
+    let action = GuiShellAction::SelectBrowserBlock {
+        document: 1,
+        sketch: DocumentSketchId(7),
+        instance: oblikovati_model::sketch::SketchEntityId(8),
+        toggle: false,
+    };
+    assert!(action.enabled(&state));
+    state.sketch_at_ready = false;
+    assert!(!action.enabled(&state));
+    state.sketch_at_ready = true;
+    state.browser.as_mut().unwrap().block_instances.clear();
+    assert!(!action.enabled(&state));
+}
+
+#[test]
 fn model_state_labels_reject_nul_before_browser_adoption() {
     let mut browser = sample_state().browser.unwrap();
     let mut states = oblikovati_model::model_state::ModelStateMembers::default();

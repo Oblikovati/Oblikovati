@@ -13,10 +13,22 @@ impl<O: TransactionObserver> DocumentSession<O> {
         sketch: DocumentSketchId,
         target: SketchPickTarget,
     ) -> Result<SketchPick, SketchError> {
-        let geometry = self.snapshot().sketches.get(sketch)?.geometry();
+        let placed = self.snapshot().sketches.get(sketch)?;
+        let geometry = placed.geometry();
         match target {
             SketchPickTarget::Entity(id) => {
                 geometry.entity_kind(id)?;
+            }
+            SketchPickTarget::BlockInstance(id) => {
+                if !placed
+                    .block_instances()
+                    .iter()
+                    .any(|instance| instance.id() == id)
+                {
+                    return Err(SketchError::Definition(format!(
+                        "block instance {id:?} in sketch {sketch:?}: expected a current placed instance"
+                    )));
+                }
             }
             SketchPickTarget::Dimension(id) => {
                 geometry.dimension_source(id)?;
