@@ -158,6 +158,11 @@ impl RibbonCustomization {
                 }
             }
         }
+        ui.text("Name");
+        ui.same_line_with_spacing(0., 110.);
+        ui.text("Large");
+        ui.same_line_with_spacing(0., 12.);
+        ui.text("Text");
         ui.child_window("##custom-selected")
             .size([245., 200.])
             .border(true)
@@ -165,9 +170,11 @@ impl RibbonCustomization {
                 let mut selected = self.draft.selected;
                 let mut remove = false;
                 let mut clear_extra = false;
+                let mut options = Vec::new();
                 for (index, entry) in self.draft.rows().iter().enumerate() {
                     if ui
                         .selectable_config(format!("{}##target-{index}", entry.command.label()))
+                        .size([126., 0.])
                         .selected(
                             selected == Some(index) || self.draft.target_extra.contains(&index),
                         )
@@ -183,6 +190,15 @@ impl RibbonCustomization {
                         clear_extra = true;
                         remove = true;
                     }
+                    ui.same_line();
+                    let mut large = entry.large;
+                    let mut text = entry.text;
+                    let changed_large = ui.checkbox(format!("##large-{index}"), &mut large);
+                    ui.same_line_with_spacing(0., 28.);
+                    let changed_text = ui.checkbox(format!("##text-{index}"), &mut text);
+                    if changed_large || changed_text {
+                        options.push((index, large, text));
+                    }
                 }
                 self.draft.selected = selected;
                 if clear_extra && let Some(index) = selected {
@@ -190,16 +206,12 @@ impl RibbonCustomization {
                 }
                 if remove {
                     self.draft.remove();
+                } else {
+                    for (index, large, text) in options {
+                        self.draft.set_options(index, large, text);
+                    }
                 }
             });
-        if let Some(entry) = self.draft.selected_mut() {
-            let large_changed = ui.checkbox("Large", &mut entry.large);
-            ui.same_line();
-            let text_changed = ui.checkbox("Text", &mut entry.text);
-            if large_changed || text_changed {
-                self.draft.mark_changed();
-            }
-        }
     }
     fn reorder(&mut self, ui: &Ui) {
         ui.dummy([1., 55.]);

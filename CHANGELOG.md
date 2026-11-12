@@ -48,6 +48,8 @@
 
 ### Fixed
 
+- Fixed ribbon customization to keep display options per command and restore them after a staged removal. (#3856)
+
 - Kept reversed ribbon customization edits pending until Apply or Cancel. (#3856)
 
 - Fixed Escape in ribbon customization to discard pending edits without cancelling the active sketch. (#3856)

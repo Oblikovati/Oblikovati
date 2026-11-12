@@ -66,6 +66,7 @@ pub(super) struct Entry {
 pub(super) struct Draft {
     applied: BTreeMap<RibbonTab, Vec<Entry>>,
     staged: BTreeMap<RibbonTab, Vec<Entry>>,
+    removed: BTreeMap<RibbonTab, Vec<Entry>>,
     changed_tabs: BTreeSet<RibbonTab>,
     pub target: RibbonTab,
     pub source: Option<Command>,
@@ -79,6 +80,7 @@ pub(super) struct Draft {
 impl Draft {
     pub fn open(&mut self, target: RibbonTab) {
         self.staged = self.applied.clone();
+        self.removed.clear();
         self.changed_tabs.clear();
         self.target = target;
         self.source = None;
@@ -135,16 +137,13 @@ impl Draft {
         let index = self.selected.map_or(self.rows().len(), |index| {
             (index + 1).min(self.rows().len())
         });
+        let entries: Vec<_> = commands
+            .iter()
+            .map(|command| self.restore_or_default(*command))
+            .collect();
         let rows = self.staged.entry(self.target).or_default();
-        for (offset, command) in commands.iter().enumerate() {
-            rows.insert(
-                index + offset,
-                Entry {
-                    command: *command,
-                    large: false,
-                    text: true,
-                },
-            );
+        for (offset, entry) in entries.into_iter().enumerate() {
+            rows.insert(index + offset, entry);
         }
         self.selected = Some(index);
         self.target_extra = (index + 1..index + commands.len()).collect();
@@ -165,14 +164,21 @@ impl Draft {
         };
         let mut indices = self.target_extra.clone();
         indices.insert(index);
+        let mut removed = Vec::new();
         for selected in indices.iter().rev() {
             if *selected < rows.len() {
-                rows.remove(*selected);
+                removed.push(rows.remove(*selected));
             }
         }
         self.selected = (!rows.is_empty()).then_some(index.min(rows.len().saturating_sub(1)));
         self.target_extra.clear();
         self.target_extent = None;
+        removed.reverse();
+        let first = removed.first().map(|entry| entry.command);
+        self.removed.entry(self.target).or_default().extend(removed);
+        self.source = first.filter(|command| self.available(*command));
+        self.source_extra.clear();
+        self.source_extent = None;
         self.mark_changed();
         self.normalize();
     }
@@ -197,14 +203,25 @@ impl Draft {
         self.target_extent = None;
         self.mark_changed();
     }
-    pub fn selected_mut(&mut self) -> Option<&mut Entry> {
-        let index = self.selected?;
-        self.staged.get_mut(&self.target)?.get_mut(index)
+    pub fn set_options(&mut self, index: usize, large: bool, text: bool) {
+        let Some(entry) = self
+            .staged
+            .get_mut(&self.target)
+            .and_then(|rows| rows.get_mut(index))
+        else {
+            return;
+        };
+        if entry.large != large || entry.text != text {
+            entry.large = large;
+            entry.text = text;
+            self.mark_changed();
+        }
     }
     pub fn apply(&mut self) {
         self.normalize();
         self.applied = self.staged.clone();
         self.changed_tabs.clear();
+        self.removed.clear();
     }
     pub fn mark_changed(&mut self) {
         self.changed_tabs.insert(self.target);
@@ -264,6 +281,18 @@ impl Draft {
     fn normalize(&mut self) {
         self.staged.retain(|_, entries| !entries.is_empty());
     }
+    fn restore_or_default(&mut self, command: Command) -> Entry {
+        if let Some(entries) = self.removed.get_mut(&self.target)
+            && let Some(index) = entries.iter().position(|entry| entry.command == command)
+        {
+            return entries.remove(index);
+        }
+        Entry {
+            command,
+            large: false,
+            text: false,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -301,8 +330,7 @@ mod tests {
         assert!(!draft.available(Command::Sketches));
         draft.move_selected(-1);
         assert_eq!(draft.rows()[1].command, Command::Annotations);
-        draft.selected_mut().unwrap().large = true;
-        draft.selected_mut().unwrap().text = false;
+        draft.set_options(1, true, false);
         draft.apply();
         assert!(draft.applied(RibbonTab::Tools)[1].large);
         assert!(!draft.applied(RibbonTab::Tools)[1].text);
@@ -391,5 +419,23 @@ mod tests {
         assert!(draft.target_extra.contains(&0));
         draft.extend_target(1);
         assert!(draft.target_extra.is_empty());
+    }
+    #[test]
+    fn removed_command_restores_its_options_on_its_own_target() {
+        let mut draft = Draft::default();
+        draft.open(RibbonTab::Tools);
+        draft.reset_source_selection(Command::Sketches);
+        draft.add();
+        assert!(!draft.rows()[0].large && !draft.rows()[0].text);
+        draft.set_options(0, true, true);
+        draft.remove();
+        draft.switch(RibbonTab::Manage);
+        draft.reset_source_selection(Command::Sketches);
+        draft.add();
+        assert!(!draft.rows()[0].large && !draft.rows()[0].text);
+        draft.switch(RibbonTab::Tools);
+        draft.reset_source_selection(Command::Sketches);
+        draft.add();
+        assert!(draft.rows()[0].large && draft.rows()[0].text);
     }
 }

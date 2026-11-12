@@ -228,6 +228,45 @@ fn both_rows_in_source(world: &mut ApplicationWorld) {
         assert!(world.run_in_window("Customize", label).center()[0] < target);
     }
 }
+#[given("the user has staged \"2D Sketches\" followed by \"3D Annotations\"")]
+fn stage_two_commands(world: &mut ApplicationWorld) {
+    stage_sketch_visibility(world);
+    click_in_customize(world, "3DAnnotations");
+    click_in_customize(world, ">");
+}
+#[given("the Large option is clear for both commands")]
+fn both_large_clear(world: &mut ApplicationWorld) {
+    assert!(!row_option_checked(world, "2DSketches", "Large"));
+    assert!(!row_option_checked(world, "3DAnnotations", "Large"));
+}
+#[when("the user selects \"2D Sketches\" and presses Shift+Down")]
+fn select_two_rows(world: &mut ApplicationWorld) {
+    click_in_customize(world, "2DSketches");
+    shift_down(world);
+}
+#[when("the user checks Large on the \"2D Sketches\" row")]
+fn check_sketches_large(world: &mut ApplicationWorld) {
+    toggle_row_option(world, "2DSketches", "Large");
+}
+#[then("Large is checked for \"2D Sketches\"")]
+fn sketches_large_checked(world: &mut ApplicationWorld) {
+    assert!(row_option_checked(world, "2DSketches", "Large"));
+}
+#[then("Large remains clear for \"3D Annotations\"")]
+fn annotations_large_clear(world: &mut ApplicationWorld) {
+    assert!(!row_option_checked(world, "3DAnnotations", "Large"));
+}
+#[then("both rows remain selected")]
+fn both_target_rows_selected(world: &mut ApplicationWorld) {
+    world.hover([800, 900]);
+    let first = world.run_in_window("Customize", "2DSketches").clone();
+    let second = world.run_in_window("Customize", "3DAnnotations").clone();
+    let x = (first.minimum[0] + 100.) as usize;
+    let blank = world.pixel_at([x, (second.center()[1] + 30.) as usize]);
+    for row in [first, second] {
+        assert_ne!(world.pixel_at([x, row.center()[1] as usize]), blank);
+    }
+}
 
 fn click_in_customize(world: &mut ApplicationWorld, label: &str) {
     let center = world.run_in_window("Customize", label).center();
@@ -246,6 +285,21 @@ fn stage_sketch_visibility(world: &mut ApplicationWorld) {
     click_in_customize(world, ">");
     assert!(world.window_text("Customize").contains("Part|Tools*"));
 }
+fn toggle_row_option(world: &mut ApplicationWorld, row: &str, option: &str) {
+    let column = world.run_in_window("Customize", option).center()[0];
+    let height = world.run_in_window("Customize", row).center()[1];
+    world.click(diagnostics::pointer_pixels([column, height]));
+    world.pump(Vec::new());
+}
+fn row_option_checked(world: &ApplicationWorld, row: &str, option: &str) -> bool {
+    let column = world.run_in_window("Customize", option).center()[0];
+    let height = world.run_in_window("Customize", row).center()[1];
+    world.frame.marks.iter().any(|mark| {
+        mark.bright
+            && (mark.position[0] - column).abs() < 10.
+            && (mark.position[1] - height).abs() < 10.
+    })
+}
 #[test]
 fn customization_apply_adds_a_working_command_and_removal_hides_it() {
     let mut world = ApplicationWorld::new();
@@ -253,6 +307,7 @@ fn customization_apply_adds_a_working_command_and_removal_hides_it() {
     world.add_finished_sketch();
     open_tools_customization(&mut world);
     stage_sketch_visibility(&mut world);
+    toggle_row_option(&mut world, "2DSketches", "Text");
     click_in_customize(&mut world, "Apply");
     world.expect_text("User Commands");
     assert!(!world.window_text("Customize").contains("Part|Tools*"));
@@ -300,12 +355,36 @@ fn applying_a_reversed_addition_clears_the_pending_marker() {
 }
 
 #[test]
+fn per_row_options_survive_removal_and_do_not_clear_multi_selection() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    open_tools_customization(&mut world);
+    stage_sketch_visibility(&mut world);
+    click_in_customize(&mut world, "3DAnnotations");
+    click_in_customize(&mut world, ">");
+    click_in_customize(&mut world, "2DSketches");
+    shift_down(&mut world);
+    assert!(!row_option_checked(&world, "2DSketches", "Large"));
+    assert!(!row_option_checked(&world, "3DAnnotations", "Large"));
+    toggle_row_option(&mut world, "2DSketches", "Large");
+    assert!(row_option_checked(&world, "2DSketches", "Large"));
+    assert!(!row_option_checked(&world, "3DAnnotations", "Large"));
+    click_in_customize(&mut world, "<");
+    both_rows_in_source(&mut world);
+    click_in_customize(&mut world, ">");
+    assert!(row_option_checked(&world, "2DSketches", "Large"));
+    click_in_customize(&mut world, "Cancel");
+    world.close();
+}
+
+#[test]
 fn custom_line_command_draws_in_the_active_sketch() {
     let mut world = ApplicationWorld::new();
     world.start_empty_sketch();
     open_tools_customization(&mut world);
     click_in_customize(&mut world, "Line");
     click_in_customize(&mut world, ">");
+    toggle_row_option(&mut world, "Line", "Text");
     click_in_customize(&mut world, "Apply");
     click_in_customize(&mut world, "Close");
     world.expect_text("User Commands");
