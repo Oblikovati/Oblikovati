@@ -37,7 +37,6 @@ pub struct GuiFrameEngine {
     icons: crate::icons::GuiIconCache,
     raster_scale: f32,
     preferences: crate::ui_scale::GuiScalePreferences,
-    dimension_editor: crate::dimensions::GuiDimensionEditor,
     extrude_dialog: crate::extrude_dialog::ExtrudeDialog,
     dimension_value_editor: crate::sketch::dimension_edit::GuiDimensionValueEditor,
     precise_input: crate::sketch::precise_input::PreciseInputBar,
@@ -79,7 +78,6 @@ impl GuiFrameEngine {
             icons,
             raster_scale: 1.,
             preferences: Default::default(),
-            dimension_editor: Default::default(),
             extrude_dialog: Default::default(),
             dimension_value_editor: Default::default(),
             precise_input: Default::default(),
@@ -342,8 +340,6 @@ impl GuiFrameEngine {
             .panel(ui, &request.commands, &mut selected);
         self.preferences
             .panel(ui, &request.commands, &mut selected, self.home.active);
-        self.dimension_editor
-            .panel(ui, &request.commands, &mut selected);
         self.extrude_dialog
             .panel(ui, &request.commands, &mut selected);
         crate::sketch::line::command_menu(ui, &request.commands, &mut selected);

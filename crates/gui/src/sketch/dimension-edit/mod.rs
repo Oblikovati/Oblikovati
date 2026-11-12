@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! The value editor a double-click opens on a dimension annotation.
+//! The shared value editor for placed and previously authored dimensions.
 use crate::{GuiCommandState, GuiFrameRequest, GuiShellAction};
 use imgui::{Key, Ui};
 
@@ -32,10 +32,15 @@ pub(crate) struct GuiDimensionValueEditor {
     warning_requested: bool,
     warning_active: bool,
     position: [f32; 2],
+    seen_draft: Option<u64>,
+    owner_draft: Option<u64>,
+    unplaced: bool,
+    reference: bool,
 }
 const TITLE: &str = "Edit Dimension";
 const DRIVEN_TITLE: &str = "Driven Dimension";
-const SIZE: [f32; 2] = [240., 70.];
+const SIZE: [f32; 2] = [240., 110.];
+const REFUSAL_SIZE: [f32; 2] = [440., 200.];
 const INVALID_TEXT: [f32; 4] = [0.95, 0.2, 0.2, 1.];
 
 impl GuiDimensionValueEditor {
@@ -55,7 +60,7 @@ impl GuiDimensionValueEditor {
     pub(crate) fn had_keyboard(&self) -> bool {
         self.open.is_some() || self.closed_this_frame
     }
-    /// Open on a double-click over a label, then draw while open.
+    /// Open a placed dimension or a selected label, then draw while open.
     pub(crate) fn panel(
         &mut self,
         ui: &Ui,
@@ -63,7 +68,10 @@ impl GuiDimensionValueEditor {
         actions: &mut Vec<GuiShellAction>,
     ) {
         self.closed_this_frame = false;
-        self.open_at_pointer(ui, request);
+        self.open_from_draft(request);
+        if self.owner_draft.is_none() {
+            self.open_at_pointer(ui, request);
+        }
         let state = &request.commands;
         if !state.sketch_at_ready && !state.dimension_tool_active {
             self.open = None;
@@ -73,33 +81,76 @@ impl GuiDimensionValueEditor {
         };
         let title = if edit.driven { DRIVEN_TITLE } else { TITLE };
         let mut close = false;
-        crate::widget_abi::fit_dialog(ui, title, self.position, SIZE);
+        let size = if self.unplaced { REFUSAL_SIZE } else { SIZE };
+        crate::widget_abi::fit_dialog(ui, title, self.position, size);
         ui.window(title).collapsible(false).build(|| {
             ui.text(&edit.name);
-            ui.same_line();
+            if !self.unplaced {
+                ui.same_line();
+            }
+            if self.unplaced {
+                if let Some(refusal) = state
+                    .dimension_draft
+                    .as_ref()
+                    .and_then(|draft| draft.refusal.as_deref())
+                {
+                    ui.text_wrapped(refusal);
+                }
+                ui.checkbox("Reference (driven)", &mut self.reference);
+            }
             if std::mem::take(&mut self.focus) {
                 ui.set_keyboard_focus_here();
             }
             let invalid = !edit.driven && !expression_syntax_valid(&self.text);
             let red = invalid.then(|| ui.push_style_color(imgui::StyleColor::Text, INVALID_TEXT));
-            let accepted = ui
+            let entered = ui
                 .input_text("##dimension-value", &mut self.text)
                 .read_only(edit.driven)
                 .auto_select_all(true)
                 .enter_returns_true(true)
                 .build();
             drop(red);
+            let disabled = ui.begin_disabled(edit.driven || state.transaction_open);
+            let confirmed = crate::widget_abi::button(ui, "OK", [0.; 2]);
+            drop(disabled);
+            ui.same_line();
+            let cancelled_by_button = crate::widget_abi::button(ui, "Cancel", [0.; 2]);
+            let accepted = entered || confirmed;
             if accepted && !edit.driven {
-                self.submitted = Some(edit.clone());
-                actions.push(GuiShellAction::EditDimensionValue(GuiDimensionValue {
-                    sketch: edit.sketch,
-                    constraint: edit.constraint,
-                    expression: self.text.clone(),
-                }));
-                close = true;
+                if let (true, Some(id)) = (self.unplaced, self.owner_draft) {
+                    let action = GuiShellAction::Dimension(crate::GuiDimensionAction::Apply {
+                        id,
+                        expression: self.text.clone(),
+                        driven: self.reference,
+                    });
+                    if action.dispatchable(state) {
+                        actions.push(action);
+                    }
+                } else {
+                    let value = GuiDimensionValue {
+                        sketch: edit.sketch,
+                        constraint: edit.constraint,
+                        expression: self.text.clone(),
+                    };
+                    let action = GuiShellAction::EditDimensionValue(value);
+                    if action.dispatchable(state) {
+                        self.submitted = Some(edit.clone());
+                        actions.push(action);
+                        close = true;
+                    }
+                }
             }
-            close |= !self.warning_active && ui.is_key_pressed_no_repeat(Key::Escape);
-            close |= self.warning(ui);
+            let cancelled = !self.warning_active
+                && (cancelled_by_button || ui.is_key_pressed_no_repeat(Key::Escape));
+            close |= cancelled || self.warning(ui);
+            if close
+                && !accepted
+                && let Some(id) = self.owner_draft
+            {
+                actions.push(GuiShellAction::Dimension(
+                    crate::GuiDimensionAction::Cancel { id },
+                ));
+            }
         });
         if close {
             self.open = None;
@@ -107,6 +158,46 @@ impl GuiDimensionValueEditor {
             // Keyboard focus was this editor's; the sketch's own keys work again without a click.
             crate::widget_abi::release_keyboard_focus(ui);
         }
+    }
+    fn open_from_draft(&mut self, request: &GuiFrameRequest) {
+        let draft = request.commands.dimension_draft.as_ref();
+        let id = draft.map(|draft| draft.id);
+        if id == self.seen_draft {
+            return;
+        }
+        self.seen_draft = id;
+        let Some(draft) = draft else {
+            if self.owner_draft.take().is_some() {
+                self.open = None;
+            }
+            return;
+        };
+        self.owner_draft = Some(draft.id);
+        self.unplaced = draft.committed.is_none();
+        self.reference = false;
+        let edit = draft.committed.clone().unwrap_or_else(|| GuiDimensionEdit {
+            sketch: 0,
+            constraint: 0,
+            name: draft.kind.clone(),
+            expression: draft.expression.clone(),
+            driven: false,
+        });
+        self.text.clone_from(&edit.expression);
+        self.position = request
+            .commands
+            .dimension_labels
+            .iter()
+            .find(|label| label.edit.as_ref() == Some(&edit))
+            .map(|label| {
+                let scale = request.layout_scale();
+                [
+                    label.pixel[0] as f32 / scale[0],
+                    label.pixel[1] as f32 / scale[1],
+                ]
+            })
+            .unwrap_or([640., 240.]);
+        self.open = Some(edit);
+        self.focus = true;
     }
     fn warning(&mut self, ui: &Ui) -> bool {
         const WARNING: &str = "Edit Dimension Value";

@@ -38,19 +38,64 @@ impl<
         let edit = self
             .active_sketch_edit()
             .ok_or_else(|| format!("dimension value {value:?}: expected an edited sketch"))?;
-        self.files
-            .commands(edit.document)
-            .map_err(|cause| cause.to_string())?
-            .edit_sketch_dimension(
-                oblikovati_model::document_sketch::DocumentSketchId(value.sketch),
-                oblikovati_model::sketch::SketchConstraintId(value.constraint),
-                &oblikovati_model::history::SketchDimensionEdit {
-                    target_expression: Some(value.expression.clone()),
-                    reference: None,
-                    drive_limits: None,
-                },
-            )
-            .map_err(|cause| cause.to_string())?;
+        if value.sketch != edit.sketch.0 {
+            return Err(format!(
+                "dimension value {value:?}: expected the active sketch {:?}",
+                edit.sketch
+            ));
+        }
+        if let Some(tool) = self.dimension_state() {
+            if !self.sketch_context_valid(tool.edit.document, tool.edit.sketch, tool.generation) {
+                return Err(format!(
+                    "dimension value {value:?}: expected the current sketch generation"
+                ));
+            }
+            if tool.placed.is_some()
+                && tool.committed.as_ref().is_none_or(|owned| {
+                    owned.sketch != value.sketch || owned.constraint != value.constraint
+                })
+            {
+                return Err(format!(
+                    "dimension value {value:?}: expected the active placed dimension"
+                ));
+            }
+        }
+        let pending = self.dimension_state().and_then(|tool| {
+            let owned = tool.committed.as_ref()?;
+            (owned.sketch == value.sketch && owned.constraint == value.constraint)
+                .then_some((tool.serial, owned.expression.clone()))
+        });
+        if let Some((id, _)) = &pending {
+            self.checked_dimension_draft(*id)?;
+        }
+        if pending
+            .as_ref()
+            .is_none_or(|(_, original)| *original != value.expression)
+        {
+            self.files
+                .commands(edit.document)
+                .map_err(|cause| cause.to_string())?
+                .edit_sketch_dimension(
+                    oblikovati_model::document_sketch::DocumentSketchId(value.sketch),
+                    oblikovati_model::sketch::SketchConstraintId(value.constraint),
+                    &oblikovati_model::history::SketchDimensionEdit {
+                        target_expression: Some(value.expression.clone()),
+                        reference: None,
+                        drive_limits: None,
+                    },
+                )
+                .map_err(|cause| cause.to_string())?;
+        }
+        if let Some((id, _)) = pending {
+            self.reset_dimension_draft(id)?;
+        } else if self.dimension_state().is_some() {
+            self.clear_geometric_picks(edit)?;
+            let generation = self.capture_sketch_tool_context()?.1;
+            if let Some(SketchToolState::Dimension(tool)) = self.sketch_tool.as_mut() {
+                tool.generation = generation;
+                tool.cursor = None;
+            }
+        }
         Ok(true)
     }
     /// Carry out one inspection choice; example: `owner.inspect_from_gui(StartMeasure)`.

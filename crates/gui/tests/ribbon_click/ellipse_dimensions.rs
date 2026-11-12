@@ -11,6 +11,7 @@ fn ellipse_axis_drafts_reach_the_same_editor_and_enter_dispatch() {
     request.extent = [1200, 800];
     enter_part(&mut request);
     request.commands.authoring = GuiAuthoringContext::Sketch;
+    request.commands.dimension_tool_active = true;
     for (id, kind) in [
         (44, DIM_CONSTRAINT_ELLIPSE_RADIUS),
         (45, DIM_CONSTRAINT_ELLIPSE_MINOR_RADIUS),
@@ -25,6 +26,8 @@ fn ellipse_axis_draft(id: u64, kind: DimensionConstraintKind) -> GuiDimensionDra
         kind: kind.0.to_string(),
         orientation: String::new(),
         expression: "8 mm".into(),
+        committed: None,
+        refusal: Some("Driving dimension refused".into()),
     }
 }
 fn assert_ellipse_draft_enter(engine: &mut GuiFrameEngine, request: &mut GuiFrameRequest, id: u64) {

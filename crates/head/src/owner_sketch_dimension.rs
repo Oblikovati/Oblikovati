@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::sketch_picking::{SketchPickFilter, ordinary_click};
 use super::*;
-use crate::{HeadWindow, sketch_dimension::SketchDimensionState, sketch_tool::SketchToolState};
+use crate::{
+    HeadSketchEdit, HeadWindow, sketch_dimension::SketchDimensionState,
+    sketch_tool::SketchToolState,
+};
 use oblikovati_gui::GuiDimensionAction;
 use oblikovati_session::selection::SelectionClickMode;
 use oblikovati_viewport::{ViewportEvent, ViewportInput, ViewportKey};
@@ -47,6 +50,9 @@ impl<
             serial,
             placed: None,
             cursor: None,
+            proposal: None,
+            committed: None,
+            refusal: None,
         })));
         self.dimension_prompt(false);
         Ok(true)
@@ -58,35 +64,93 @@ impl<
         driven: bool,
     ) -> Result<bool, String> {
         let tool = self.checked_dimension_draft(id)?;
-        self.require_edit_document(tool.edit.document)?;
         let edit = tool.edit;
-        let mut request = self.dimension_request(tool)?;
-        if !expression.trim().is_empty() {
-            request.expression = expression.into();
+        let committed = tool.committed.clone();
+        let mut request = tool
+            .proposal
+            .clone()
+            .ok_or_else(|| "dimension proposal None: expected a placed request".to_string())?;
+        if let Some(owned) = committed {
+            self.edit_placed_dimension(edit, &owned, expression, driven)?;
+        } else {
+            if !expression.trim().is_empty() {
+                request.expression = expression.into();
+            }
+            request.driven = driven;
+            self.validate_dimension_source(edit, &request)?;
+            oblikovati_api::client::Client::new(self.document_host())
+                .dimension()
+                .add(&request)
+                .map_err(|cause| cause.to_string())?;
         }
-        request.driven = driven;
-        self.validate_dimension_source(edit, &request)?;
-        let result = oblikovati_api::client::Client::new(self.document_host())
-            .dimension()
-            .add(&request)
-            .map_err(|cause| cause.to_string())?;
-        self.clear_geometric_picks(edit)?;
-        self.sketch_tool = None;
-        self.command_notice = Some(DesktopCommandNotice::PlacementPrompt {
-            message: format!(
-                "Dimension {} applied. Sketch DOF: {}.",
-                result.parameter, result.dof
-            ),
-        });
+        self.reset_dimension_draft(id)?;
         Ok(true)
+    }
+    fn edit_placed_dimension(
+        &mut self,
+        edit: HeadSketchEdit,
+        owned: &oblikovati_gui::GuiDimensionEdit,
+        expression: &str,
+        driven: bool,
+    ) -> Result<(), String> {
+        let target = (!driven && !expression.trim().is_empty() && expression != owned.expression)
+            .then(|| expression.to_owned());
+        let reference = (driven != owned.driven).then_some(driven);
+        if target.is_none() && reference.is_none() {
+            return Ok(());
+        }
+        self.files
+            .commands(edit.document)
+            .map_err(|cause| cause.to_string())?
+            .edit_sketch_dimension(
+                edit.sketch,
+                oblikovati_model::sketch::SketchConstraintId(owned.constraint),
+                &oblikovati_model::history::SketchDimensionEdit {
+                    target_expression: target,
+                    reference,
+                    drive_limits: None,
+                },
+            )
+            .map_err(|cause| cause.to_string())?;
+        Ok(())
     }
     fn cancel_dimension_draft(&mut self, id: u64) -> Result<bool, String> {
         self.checked_dimension_draft(id)?;
-        self.retire_sketch_tool()?;
-        self.command_notice = Some(DesktopCommandNotice::PlacementPrompt {
-            message: "Dimension canceled.".into(),
-        });
+        self.reset_dimension_draft(id)?;
         Ok(true)
+    }
+    pub(super) fn reset_dimension_draft(&mut self, id: u64) -> Result<(), String> {
+        let edit = self
+            .dimension_state()
+            .filter(|tool| tool.serial == id && tool.placed.is_some())
+            .map(|tool| tool.edit)
+            .ok_or_else(|| {
+                format!("dimension draft {id}: expected the current placed owner draft")
+            })?;
+        self.require_edit_document(edit.document)?;
+        self.clear_geometric_picks(edit)?;
+        let generation = self.capture_sketch_tool_context()?.1;
+        let serial = self.dimension_serial.checked_add(1).ok_or_else(|| {
+            format!(
+                "dimension draft sequence {}: expected an available u64 identity",
+                self.dimension_serial
+            )
+        })?;
+        self.dimension_serial = serial;
+        let Some(SketchToolState::Dimension(tool)) = self.sketch_tool.as_mut() else {
+            return Err(format!(
+                "dimension draft {id}: expected an active dimension command"
+            ));
+        };
+        tool.serial = serial;
+        tool.generation = generation;
+        tool.placed = None;
+        tool.cursor = None;
+        tool.proposal = None;
+        tool.committed = None;
+        tool.refusal = None;
+        self.dimension_prompt(false);
+        Ok(())
     }
     /// The General Dimension command is running, so a click on a label opens that dimension.
     pub(super) fn dimension_tool_active(&self) -> bool {
@@ -155,10 +219,78 @@ impl<
         };
         tool.placed = Some(position);
         tool.cursor = Some(position);
+        self.place_measured_dimension(tool)?;
+        Ok(true)
+    }
+    fn place_measured_dimension(&mut self, tool: &mut SketchDimensionState) -> Result<(), String> {
+        let request = match self.dimension_request(tool) {
+            Ok(request) => request,
+            Err(cause) => {
+                tool.placed = None;
+                return Err(cause);
+            }
+        };
+        tool.proposal = Some(request.clone());
+        let result = self
+            .validate_dimension_source(tool.edit, &request)
+            .and_then(|()| {
+                oblikovati_api::client::Client::new(self.document_host())
+                    .dimension()
+                    .add(&request)
+                    .map_err(|cause| cause.to_string())
+            });
+        match result {
+            Ok(result) => {
+                tool.generation = self.capture_sketch_tool_context()?.1;
+                let committed = self.created_dimension_edit(tool.edit, result.index);
+                self.clear_geometric_picks(tool.edit)?;
+                match committed {
+                    Ok(edit) => tool.committed = Some(edit),
+                    Err(cause) => {
+                        tool.placed = None;
+                        tool.proposal = None;
+                        return Err(cause);
+                    }
+                }
+                tool.refusal = None;
+            }
+            Err(cause) => tool.refusal = Some(cause),
+        }
         self.command_notice = Some(DesktopCommandNotice::PlacementPrompt {
             message: "Dimension: enter an expression or keep the measured value.".into(),
         });
-        Ok(true)
+        Ok(())
+    }
+    fn created_dimension_edit(
+        &self,
+        edit: HeadSketchEdit,
+        index: i64,
+    ) -> Result<oblikovati_gui::GuiDimensionEdit, String> {
+        let index = usize::try_from(index)
+            .map_err(|_| format!("dimension index {index}: expected a nonnegative index"))?;
+        let session = self
+            .files
+            .workspace()
+            .session(edit.document)
+            .map_err(|cause| cause.to_string())?;
+        let snapshot = session.snapshot();
+        let sketch = snapshot
+            .sketches
+            .get(edit.sketch)
+            .map_err(|cause| cause.to_string())?;
+        let (constraint, parameter) = sketch
+            .geometry()
+            .dimensional_constraints()
+            .nth(index)
+            .ok_or_else(|| format!("dimension index {index}: expected an owned dimension"))?;
+        super::dimension_annotations::dimension_annotation(
+            snapshot,
+            sketch,
+            constraint.id,
+            parameter,
+        )?
+        .and_then(|label| label.edit)
+        .ok_or_else(|| format!("dimension index {index}: expected an editable placed annotation"))
     }
     fn pick_dimension_operand(
         &mut self,

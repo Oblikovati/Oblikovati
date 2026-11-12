@@ -47,11 +47,14 @@ fn sketch_delete_keyboard_dispatches_once_and_is_inert_without_capability() {
 fn sketch_delete_keyboard_does_not_steal_active_text_entry() {
     let mut engine = GuiFrameEngine::new().unwrap();
     let mut request = deletion_request(1.);
+    request.commands.dimension_tool_active = true;
     request.commands.dimension_draft = Some(GuiDimensionDraft {
         id: 42,
         kind: "distance".into(),
         orientation: "horizontal".into(),
         expression: "10 mm".into(),
+        committed: None,
+        refusal: Some("Driving dimension refused".into()),
     });
     settle_ribbon(&mut engine, &mut request);
     assert!(dimension_editor_key(&mut engine, &mut request, GuiKey::Delete).is_empty());

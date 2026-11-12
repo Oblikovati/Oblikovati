@@ -26,12 +26,17 @@ impl<
         {
             return Ok(None);
         }
-        let request = self.dimension_request(tool)?;
+        let request = tool
+            .proposal
+            .as_ref()
+            .ok_or_else(|| "dimension proposal None: expected a placed request".to_string())?;
         Ok(Some(GuiDimensionDraft {
             id: tool.serial,
-            kind: request.kind,
-            orientation: request.orientation,
-            expression: request.expression,
+            kind: request.kind.clone(),
+            orientation: request.orientation.clone(),
+            expression: request.expression.clone(),
+            committed: tool.committed.clone(),
+            refusal: tool.refusal.clone(),
         }))
     }
     pub(super) fn dimension_preview_annotation(
@@ -40,7 +45,8 @@ impl<
         let Some(tool) = self.dimension_state() else {
             return Ok(None);
         };
-        if !self.sketch_context_valid(tool.edit.document, tool.edit.sketch, tool.generation)
+        if tool.committed.is_some()
+            || !self.sketch_context_valid(tool.edit.document, tool.edit.sketch, tool.generation)
             || !self.dimension_ready(tool)?
         {
             return Ok(None);

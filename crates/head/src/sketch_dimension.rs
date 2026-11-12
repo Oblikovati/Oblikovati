@@ -27,6 +27,9 @@ pub(crate) struct SketchDimensionState {
     pub serial: u64,
     pub placed: Option<[f64; 2]>,
     pub cursor: Option<[f64; 2]>,
+    pub proposal: Option<AddDimensionArgs>,
+    pub committed: Option<oblikovati_gui::GuiDimensionEdit>,
+    pub refusal: Option<String>,
 }
 impl SketchDimensionState {
     pub(crate) fn wants(

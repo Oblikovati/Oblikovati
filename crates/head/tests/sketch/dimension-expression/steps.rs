@@ -484,3 +484,5 @@ fn native_dimension_dependency_survives_save_close_and_reopen() {
     world.expect_annotation("(89.443)");
     world.close();
 }
+#[path = "placement_lifecycle.rs"]
+mod placement_lifecycle;

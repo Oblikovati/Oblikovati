@@ -165,7 +165,7 @@ fn collect_dimension_annotations(
         }
     }
 }
-fn dimension_annotation(
+pub(super) fn dimension_annotation(
     snapshot: &DocumentSnapshot,
     sketch: &PlacedSketch,
     id: oblikovati_model::sketch::SketchConstraintId,

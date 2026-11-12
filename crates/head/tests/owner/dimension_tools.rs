@@ -53,7 +53,8 @@ fn point_dimension_keeps_history_until_placement_and_selects_the_drag_orientatio
         assert_eq!(state.kind, "distance");
         assert_eq!(state.orientation, orientation);
         assert!(!state.expression.is_empty());
-        assert_eq!(owner.gui_command_state().unwrap().undo_label, before);
+        assert_ne!(owner.gui_command_state().unwrap().undo_label, before);
+        assert_eq!(dimensions(&mut owner).len(), 1);
         apply(&mut owner, expression, false).unwrap();
         assert!(owner.gui_command_state().unwrap().dimension_draft.is_none());
         assert!(inspection(&mut owner).healthy);
@@ -122,14 +123,18 @@ fn circular_outlines_create_radius_dimensions_and_reference_keeps_freedom() {
     }
 }
 #[test]
-fn cancellation_replacement_and_stale_dialog_actions_never_create_dimensions() {
+fn cancellation_retains_placement_and_stale_dialog_actions_are_rejected() {
     let (mut owner, _, _) = geometric_owner(&[[0., 0.], [100., 40.]], false);
     point_draft(&mut owner, [50, 100]);
     let old = draft(&owner).id;
     owner
         .dimension_tool_from_gui(&GuiDimensionAction::Cancel { id: old })
         .unwrap();
-    assert!(dimensions(&mut owner).is_empty());
+    assert_eq!(dimensions(&mut owner).len(), 1);
+    Client::new(owner.document_host())
+        .transactions()
+        .undo()
+        .unwrap();
     point_draft(&mut owner, [50, 100]);
     assert_ne!(draft(&owner).id, old);
     assert!(
@@ -143,13 +148,17 @@ fn cancellation_replacement_and_stale_dialog_actions_never_create_dimensions() {
     );
     deliver(&mut owner, &[key(ViewportKey::Cancel, true)]);
     assert!(owner.gui_command_state().unwrap().dimension_draft.is_none());
-    assert!(dimensions(&mut owner).is_empty());
+    assert_eq!(dimensions(&mut owner).len(), 1);
+    Client::new(owner.document_host())
+        .transactions()
+        .undo()
+        .unwrap();
     point_draft(&mut owner, [50, 100]);
     owner
         .constrain_sketch_from_gui(oblikovati_gui::GuiSketchConstraint::Horizontal)
         .unwrap();
     assert!(owner.gui_command_state().unwrap().dimension_draft.is_none());
-    assert!(dimensions(&mut owner).is_empty());
+    assert_eq!(dimensions(&mut owner).len(), 1);
 }
 #[test]
 fn a_parameter_expression_drives_the_dimension_through_undo_and_redo() {
@@ -192,9 +201,10 @@ fn invalid_expression_keeps_the_same_draft_for_correction() {
     let (mut owner, _, _) = geometric_owner(&[[0., 0.], [100., 40.]], false);
     point_draft(&mut owner, [50, 100]);
     let id = draft(&owner).id;
+    let before = dimensions(&mut owner);
     assert!(apply(&mut owner, "1 +", false).is_err());
     assert_eq!(draft(&owner).id, id);
-    assert!(dimensions(&mut owner).is_empty());
+    assert_eq!(dimensions(&mut owner), before);
     apply(&mut owner, "10 cm", false).unwrap();
     assert_eq!(dimensions(&mut owner).len(), 1);
 }
@@ -255,6 +265,13 @@ fn cursor_preview_and_authored_labels_do_not_create_extra_history() {
         .transactions()
         .undo()
         .unwrap();
+    let restored = owner.sketch_dimension_annotations().unwrap();
+    assert_eq!(restored.labels.len(), 1);
+    assert_ne!(restored.labels[0].text, authored.labels[0].text);
+    Client::new(owner.document_host())
+        .transactions()
+        .undo()
+        .unwrap();
     assert!(
         owner
             .sketch_dimension_annotations()
@@ -262,6 +279,11 @@ fn cursor_preview_and_authored_labels_do_not_create_extra_history() {
             .labels
             .is_empty()
     );
+    Client::new(owner.document_host())
+        .transactions()
+        .redo()
+        .unwrap();
+    assert_eq!(owner.sketch_dimension_annotations().unwrap(), restored);
     Client::new(owner.document_host())
         .transactions()
         .redo()
@@ -411,3 +433,54 @@ fn hidden_sketch_dimensions_leave_the_overlay_and_return_after_show() {
 
 #[path = "dimension_ellipses.rs"]
 mod ellipses;
+
+#[test]
+fn placed_dimension_survives_cancellation_and_has_its_own_history_step() {
+    let (mut owner, _, _) = geometric_owner(&[[0., 0.], [100., 40.]], false);
+    let before = owner.gui_command_state().unwrap().undo_label;
+    point_draft(&mut owner, [50, 100]);
+    let rows = dimensions(&mut owner);
+    assert_eq!(rows.len(), 1, "placement must create a measured dimension");
+    assert_eq!(rows[0].text_point, Some(vec![50., 100.]));
+    assert_ne!(owner.gui_command_state().unwrap().undo_label, before);
+    let id = draft(&owner).id;
+    owner
+        .dimension_tool_from_gui(&GuiDimensionAction::Cancel { id })
+        .unwrap();
+    assert_eq!(
+        dimensions(&mut owner).len(),
+        1,
+        "cancel must retain placement"
+    );
+    assert!(owner.gui_command_state().unwrap().dimension_tool_active);
+    Client::new(owner.document_host())
+        .transactions()
+        .undo()
+        .unwrap();
+    assert!(dimensions(&mut owner).is_empty());
+    Client::new(owner.document_host())
+        .transactions()
+        .redo()
+        .unwrap();
+    assert_eq!(dimensions(&mut owner).len(), 1);
+}
+#[test]
+fn placed_editor_rejects_a_different_sketch_or_constraint() {
+    let (mut owner, _, _) = geometric_owner(&[[0., 0.], [100., 40.]], false);
+    point_draft(&mut owner, [50, 100]);
+    let owned = draft(&owner).committed.unwrap();
+    let before = dimensions(&mut owner);
+    for (sketch, constraint) in [
+        (owned.sketch + 1, owned.constraint),
+        (owned.sketch, owned.constraint + 1),
+    ] {
+        let value = oblikovati_gui::GuiDimensionValue {
+            sketch,
+            constraint,
+            expression: "10 cm".into(),
+        };
+        assert!(owner.edit_dimension_value_from_gui(&value).is_err());
+        assert_eq!(dimensions(&mut owner), before);
+        assert!(owner.gui_command_state().unwrap().dimension_draft.is_some());
+    }
+}

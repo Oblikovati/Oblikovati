@@ -137,3 +137,5 @@ fn first_axis_not_advanced(world: &mut ApplicationWorld) {
     assert_eq!(count_ellipses(world), 0, "ellipse count");
     world.expect_no_text("Error");
 }
+#[path = "dimension_lifecycle.rs"]
+mod dimension_lifecycle;
