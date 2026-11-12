@@ -74,6 +74,15 @@ fn dimension_edit_keeps_expression_and_tracks_its_driver() {
     assert_eq!(target(&snapshot), 6.0);
 }
 #[test]
+fn dimension_edit_accepts_bare_arithmetic_in_display_units() {
+    let mut snapshot = snapshot(MODEL_PARAM, "1 cm");
+    drive(&mut snapshot, "2*6").unwrap();
+    assert_eq!(snapshot.parameters.get(1).unwrap().source, "2*6");
+    assert!((target(&snapshot) - 1.2).abs() < 1e-12);
+    drive(&mut snapshot, "2 mm * 6").unwrap();
+    assert!((target(&snapshot) - 1.2).abs() < 1e-12);
+}
+#[test]
 fn self_reference_is_rejected_without_changing_the_dimension() {
     let mut snapshot = snapshot(MODEL_PARAM, "1 cm");
     let before = snapshot.clone();

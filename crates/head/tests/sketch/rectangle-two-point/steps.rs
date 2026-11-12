@@ -445,3 +445,24 @@ fn prior_remains(world: &mut ApplicationWorld) {
     world.expect_ready();
     assert_eq!(sides(world), RECTANGLE_SIDES, "sides");
 }
+
+#[test]
+fn native_dimension_editor_retains_arithmetic_through_undo_and_redo() {
+    let mut world = ApplicationWorld::new();
+    typed_rectangle(&mut world, "10", "6");
+    world.open_dimension_label("10");
+    world.type_text("2*6");
+    world.key(ViewportPhysicalKey::Enter, false);
+    world.pump(Vec::new());
+    world.expect_annotation("12");
+    world.open_dimension_label("12");
+    assert!(world.window_text("Edit Dimension").contains("2*6"));
+    world.escape();
+    world.undo();
+    world.expect_annotation("10");
+    world.redo();
+    world.expect_annotation("12");
+    world.open_dimension_label("12");
+    assert!(world.window_text("Edit Dimension").contains("2*6"));
+    world.close();
+}

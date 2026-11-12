@@ -55,19 +55,29 @@ impl Expression {
         parser::compile(source, units)
     }
 
-    /// Compile a bare numeric input in its captured unit; formula operands remain unitless.
+    /// Compile a reference-free unitless result in its captured unit; formula operands stay unitless.
     /// Example: `Expression::parse_with_bare_unit("10", &units, "mm")?` retains source `10`.
     pub fn parse_with_bare_unit(
         source: &str,
         units: &UnitsOfMeasure,
         unit: &str,
     ) -> Result<Self, ExpressionError> {
-        if !source.trim().parse::<f64>().is_ok_and(f64::is_finite) || unit.is_empty() {
-            return Self::parse(source, units);
+        let expression = Self::parse(source, units)?;
+        if unit.is_empty() || !expression.references.is_empty() {
+            return Ok(expression);
         }
-        let mut expression = Self::parse(&format!("{source} {unit}"), units)?;
-        expression.source = source.into();
-        Ok(expression)
+        let Ok(value) = expression.evaluate() else {
+            return Ok(expression);
+        };
+        if value.dimension != crate::quantity::Dimension::Unitless {
+            return Ok(expression);
+        }
+        let Some(value) = value.value.is_finite().then_some(value.value) else {
+            return Ok(expression);
+        };
+        let mut converted = Self::parse(&format!("{value} {unit}"), units)?;
+        converted.source = source.into();
+        Ok(converted)
     }
 
     /// Return the authored source unchanged; for example `assert_eq!(formula.source(), "width");`.
