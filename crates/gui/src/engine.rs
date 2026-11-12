@@ -413,8 +413,10 @@ impl GuiFrameEngine {
                     .events
                     .iter()
                     .any(|event| matches!(event, GuiInputEvent::Text(_))));
-        capture.popup =
-            popup_open || self.dimension_value_editor.had_keyboard() || self.ribbon.tips.consumed;
+        capture.popup = popup_open
+            || self.dimension_value_editor.had_keyboard()
+            || self.ribbon.tips.consumed
+            || self.ribbon.display.temporary_escape_consumed;
         capture.pointer |= self.dimension_value_editor.over_label || over_fields;
         let mut activity = frame_activity()?;
         activity.pending_layout |= self.orientation.needs_frame();

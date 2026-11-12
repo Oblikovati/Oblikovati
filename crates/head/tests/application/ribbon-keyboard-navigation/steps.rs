@@ -73,6 +73,7 @@ fn model_selected(world: &mut ApplicationWorld) {
 #[then("the 3D Model command key tips appear")]
 #[then("the 3D Model command key tips appear again")]
 #[then("the command key tips remain visible")]
+#[then("command key tips are visible")]
 fn command_tips(world: &mut ApplicationWorld) {
     assert!(exact_tip(world, "HO"), "{:?}", world.text());
 }
@@ -258,6 +259,103 @@ fn scaled_ribbon_key_tips_start_the_sketch_tool() {
     world.key(ViewportPhysicalKey::S, false);
     world.key(ViewportPhysicalKey::K, false);
     world.expect_text("XY Plane");
+    world.escape();
+    world.close();
+}
+
+#[then("the temporary 3D Model command area opens")]
+#[then("the temporary 3D Model command area remains visible")]
+fn temporary_model(world: &mut ApplicationWorld) {
+    world.expect_text("Start 2D Sketch");
+    assert!(super::diagnostics::window_geometry("##ribbon-temporary-panel").is_some());
+}
+#[then("the temporary command area closes and the ribbon remains minimized to tabs")]
+fn temporary_closed(world: &mut ApplicationWorld) {
+    assert!(super::diagnostics::window_geometry("##ribbon-temporary-panel").is_none());
+    world.expect_no_text("Start 2D Sketch");
+    world.expect_text("3D Model");
+}
+
+#[given("Modify is displayed as a compact group button")]
+fn modify_compact(world: &mut ApplicationWorld) {
+    world.run_in_window("##ribbon-column", "Modify");
+}
+#[given(
+    "the user has pressed Alt, \"M\", and \"Y\" to open the Modify panel and its command key tips"
+)]
+fn open_modify_with_keys(world: &mut ApplicationWorld) {
+    show_model_tips(world);
+    world.key(ViewportPhysicalKey::Y, false);
+    modify_panel_and_tips(world);
+}
+#[then("the Modify panel and its command key tips remain visible")]
+fn modify_panel_and_tips(world: &mut ApplicationWorld) {
+    world.expect_text("Fillet");
+    assert!(super::diagnostics::window_geometry("##ribbon-temporary-panel").is_some());
+    assert!(exact_tip(world, "HO"));
+}
+#[then("the command key tips disappear")]
+fn nested_tips_hidden(world: &mut ApplicationWorld) {
+    assert!(!exact_tip(world, "HO"));
+    assert!(super::diagnostics::window_geometry("##ribbon-temporary-panel").is_some());
+    world.expect_text("Fillet");
+}
+
+#[test]
+fn side_docked_group_tips_start_sketch_and_close_the_group() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    super::ribbon_docking::docked_left_on_model(&mut world);
+    show_model_tips(&mut world);
+    assert!(exact_tip(&world, "K"));
+    world.key(ViewportPhysicalKey::K, false);
+    assert!(exact_tip(&world, "SK"));
+    world.key(ViewportPhysicalKey::S, false);
+    world.key(ViewportPhysicalKey::K, false);
+    world.expect_text("XY Plane");
+    assert!(super::diagnostics::window_geometry("##ribbon-temporary-panel").is_none());
+    world.click_text("XY Plane");
+    assert_eq!(
+        world.state().authoring,
+        oblikovati_gui::GuiAuthoringContext::Sketch
+    );
+    world.close();
+}
+#[test]
+fn compact_group_tips_open_the_sketch_command() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    world.click_text("Ribbon Display");
+    show_model_tips(&mut world);
+    assert!(exact_tip(&world, "K"));
+    world.key(ViewportPhysicalKey::K, false);
+    assert!(exact_tip(&world, "SK"));
+    world.key(ViewportPhysicalKey::S, false);
+    world.key(ViewportPhysicalKey::K, false);
+    world.expect_text("XY Plane");
+    assert!(super::diagnostics::window_geometry("##ribbon-temporary-panel").is_none());
+    world.click_text("XY Plane");
+    assert_eq!(
+        world.state().authoring,
+        oblikovati_gui::GuiAuthoringContext::Sketch
+    );
+    world.close();
+}
+#[test]
+fn compact_create_group_tips_open_extrude() {
+    let mut world = ApplicationWorld::new();
+    world.start_empty_sketch();
+    world.draw_rectangle();
+    world.finish_sketch();
+    world.click_text("Ribbon Display");
+    show_model_tips(&mut world);
+    assert!(exact_tip(&world, "C"));
+    world.key(ViewportPhysicalKey::C, false);
+    assert!(exact_tip(&world, "EX"));
+    world.key(ViewportPhysicalKey::E, false);
+    world.key(ViewportPhysicalKey::X, false);
+    assert!(super::diagnostics::window_geometry("Extrude").is_some());
+    assert!(super::diagnostics::window_geometry("##ribbon-temporary-panel").is_none());
     world.escape();
     world.close();
 }

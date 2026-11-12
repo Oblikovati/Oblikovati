@@ -39,15 +39,21 @@ pub(crate) fn ribbon_band(
     } else {
         RibbonDisplay::Tabs.band_height(scrollbar)
     };
+    owners.ribbon.display.temporary_escape_consumed = false;
     let mut frame = owners.ribbon.prepare(&request.commands);
     let blocked = ui.io().want_text_input
         || ui.io().key_ctrl
         || ui.io().key_super
         || crate::widget_abi::any_popup_open(ui);
+    let grouped = owners.ribbon.display.placement != RibbonPlacement::Top
+        || matches!(
+            owners.ribbon.display.mode,
+            RibbonDisplay::PanelButtons | RibbonDisplay::PanelTitles
+        );
     let action = owners
         .ribbon
         .tips
-        .process(&request.events, &frame.tabs, blocked);
+        .process(&request.events, &frame.tabs, blocked, grouped);
     let open_menu = apply_key_tip(action, &mut owners, &request.commands, &mut frame, actions);
     owners.quick_access.command_took_right_click = false;
     if let Some(_band) = begin_ribbon_band(ui, width, height) {
@@ -102,12 +108,25 @@ fn apply_key_tip(
         }
         Some(KeyTipAction::CycleDisplay) => owners.ribbon.display.advance_from_tab(),
         Some(KeyTipAction::OpenDisplayMenu) => return true,
+        Some(KeyTipAction::OpenGroup(panel)) => {
+            if !owners.home_active
+                && !owners
+                    .ribbon
+                    .display
+                    .hidden_panels
+                    .contains(&(owners.ribbon.active, panel))
+                && crate::ribbon_panels::panels_for(owners.ribbon.active, state).contains(&panel)
+            {
+                owners.ribbon.display.request_keyboard_group(panel);
+            }
+        }
         Some(KeyTipAction::QuickAccess(index)) => {
             owners.quick_access.activate_tip(index, state, actions)
         }
         Some(KeyTipAction::StartSketch) => {
             let action = GuiShellAction::ChooseSketchPlane;
             if !owners.home_active && action.enabled(state) {
+                owners.ribbon.display.temporary = None;
                 actions.push(action);
             }
         }
@@ -115,6 +134,7 @@ fn apply_key_tip(
             if !owners.home_active
                 && crate::application::quick_access_toolbar::extrude_can_start(state) =>
         {
+            owners.ribbon.display.temporary = None;
             actions.push(crate::extrude_dialog::start_action(state));
         }
         Some(KeyTipAction::Extrude) | None => {}
@@ -243,9 +263,13 @@ fn side_groups(
                 quick_access: owners.quick_access,
                 precise_input: owners.precise_input,
                 plane_selection_active: owners.plane_selection_active,
-                hole_tip: ribbon.tips.commands() && ribbon.tips.matching("HO"),
-                sketch_tip: ribbon.tips.commands() && ribbon.tips.matching("SK"),
-                extrude_tip: ribbon.tips.commands() && ribbon.tips.matching("EX"),
+                hole_tip: ribbon.tips.model_commands() && ribbon.tips.matching("HO"),
+                modify_group_tip: ribbon.tips.model_commands() && ribbon.tips.matching("Y"),
+                sketch_group_tip: ribbon.tips.model_commands() && ribbon.tips.matching("K"),
+                create_group_tip: ribbon.tips.model_commands() && ribbon.tips.matching("C"),
+                key_tips_active: ribbon.tips.active(),
+                sketch_tip: ribbon.tips.model_commands() && ribbon.tips.matching("SK"),
+                extrude_tip: ribbon.tips.model_commands() && ribbon.tips.matching("EX"),
             },
             &mut ribbon.panels,
             &mut ribbon.display,
@@ -339,9 +363,13 @@ fn ribbon_panel_row(
             quick_access: owners.quick_access,
             precise_input: owners.precise_input,
             plane_selection_active: owners.plane_selection_active,
-            hole_tip: ribbon.tips.commands() && ribbon.tips.matching("HO"),
-            sketch_tip: ribbon.tips.commands() && ribbon.tips.matching("SK"),
-            extrude_tip: ribbon.tips.commands() && ribbon.tips.matching("EX"),
+            hole_tip: ribbon.tips.model_commands() && ribbon.tips.matching("HO"),
+            modify_group_tip: ribbon.tips.model_commands() && ribbon.tips.matching("Y"),
+            sketch_group_tip: ribbon.tips.model_commands() && ribbon.tips.matching("K"),
+            create_group_tip: ribbon.tips.model_commands() && ribbon.tips.matching("C"),
+            key_tips_active: ribbon.tips.active(),
+            sketch_tip: ribbon.tips.model_commands() && ribbon.tips.matching("SK"),
+            extrude_tip: ribbon.tips.model_commands() && ribbon.tips.matching("EX"),
         },
         &mut ribbon.panels,
         &mut ribbon.display,

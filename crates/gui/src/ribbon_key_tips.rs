@@ -25,6 +25,7 @@ pub(crate) enum KeyTipAction {
     QuickAccess(usize),
     StartSketch,
     Extrude,
+    OpenGroup(crate::ribbon_panels::RibbonPanel),
 }
 impl RibbonKeyTips {
     pub(crate) fn active(&self) -> bool {
@@ -35,6 +36,9 @@ impl RibbonKeyTips {
     }
     pub(crate) fn commands(&self) -> bool {
         self.level == Level::Commands
+    }
+    pub(crate) fn model_commands(&self) -> bool {
+        self.commands() && self.command_tab == Some(RibbonTab::Model)
     }
     pub(crate) fn matching(&self, tip: &str) -> bool {
         self.active() && tip.starts_with(&self.prefix)
@@ -50,6 +54,7 @@ impl RibbonKeyTips {
         events: &[GuiInputEvent],
         tabs: &[RibbonTab],
         text_focused: bool,
+        grouped: bool,
     ) -> Option<KeyTipAction> {
         self.consumed = false;
         let mut action = None;
@@ -58,7 +63,7 @@ impl RibbonKeyTips {
                 continue;
             };
             self.expected_text = None;
-            if let Some(selected) = self.key(key, tabs) {
+            if let Some(selected) = self.key(key, tabs, grouped) {
                 action = Some(selected);
             }
             if self.consumed {
@@ -90,7 +95,7 @@ impl RibbonKeyTips {
             _ => None,
         }
     }
-    fn key(&mut self, key: GuiKey, tabs: &[RibbonTab]) -> Option<KeyTipAction> {
+    fn key(&mut self, key: GuiKey, tabs: &[RibbonTab], grouped: bool) -> Option<KeyTipAction> {
         if matches!(key, GuiKey::LeftAlt | GuiKey::RightAlt) {
             self.consumed = true;
             if self.active() {
@@ -118,7 +123,7 @@ impl RibbonKeyTips {
         if self.tabs() {
             return self.tab_key(character, tabs);
         }
-        self.command_key(character)
+        self.command_key(character, grouped)
     }
     fn tab_key(&mut self, character: char, tabs: &[RibbonTab]) -> Option<KeyTipAction> {
         if self.prefix == "X" {
@@ -149,9 +154,20 @@ impl RibbonKeyTips {
         self.prefix.clear();
         Some(KeyTipAction::SelectTab(tab))
     }
-    fn command_key(&mut self, character: char) -> Option<KeyTipAction> {
+    fn command_key(&mut self, character: char, grouped: bool) -> Option<KeyTipAction> {
         if self.command_tab != Some(RibbonTab::Model) {
             return None;
+        }
+        if grouped && self.prefix.is_empty() {
+            let panel = match character {
+                'Y' => Some(crate::ribbon_panels::RibbonPanel::PartModify),
+                'K' => Some(crate::ribbon_panels::RibbonPanel::Sketch),
+                'C' => Some(crate::ribbon_panels::RibbonPanel::PartCreate),
+                _ => None,
+            };
+            if let Some(panel) = panel {
+                return Some(KeyTipAction::OpenGroup(panel));
+            }
         }
         let candidate = format!("{}{character}", self.prefix);
         let action = match candidate.as_str() {
@@ -251,6 +267,7 @@ mod tests {
             &[GuiInputEvent::Key { key, pressed: true }],
             &[RibbonTab::Model, RibbonTab::Tools],
             false,
+            false,
         )
     }
     #[test]
@@ -326,9 +343,9 @@ mod tests {
         press(&mut tips, GuiKey::X);
         press(&mut tips, GuiKey::Alpha2);
         assert!(!tips.active());
-        tips.process(&[GuiInputEvent::Text("2".into())], &[], false);
+        tips.process(&[GuiInputEvent::Text("2".into())], &[], false, false);
         assert!(tips.consumed);
-        tips.process(&[GuiInputEvent::Text("a".into())], &[], false);
+        tips.process(&[GuiInputEvent::Text("a".into())], &[], false, false);
         assert!(!tips.consumed);
     }
     #[test]
@@ -341,6 +358,53 @@ mod tests {
         assert!(!tips.active());
     }
     #[test]
+    fn modify_group_tip_opens_only_for_a_grouped_model_ribbon() {
+        let mut tips = RibbonKeyTips::default();
+        press(&mut tips, GuiKey::LeftAlt);
+        press(&mut tips, GuiKey::M);
+        assert_eq!(press(&mut tips, GuiKey::Y), None);
+        let action = tips.process(
+            &[GuiInputEvent::Key {
+                key: GuiKey::Y,
+                pressed: true,
+            }],
+            &[RibbonTab::Model],
+            false,
+            true,
+        );
+        assert_eq!(
+            action,
+            Some(KeyTipAction::OpenGroup(
+                crate::ribbon_panels::RibbonPanel::PartModify
+            ))
+        );
+        assert!(tips.commands() && tips.matching("HO"));
+    }
+    #[test]
+    fn model_command_tips_are_hidden_on_other_tabs() {
+        let mut tips = RibbonKeyTips::default();
+        tips.process(
+            &[GuiInputEvent::Key {
+                key: GuiKey::LeftAlt,
+                pressed: true,
+            }],
+            &[RibbonTab::Sketch],
+            false,
+            false,
+        );
+        tips.process(
+            &[GuiInputEvent::Key {
+                key: GuiKey::S,
+                pressed: true,
+            }],
+            &[RibbonTab::Sketch],
+            false,
+            false,
+        );
+        assert!(tips.commands());
+        assert!(!tips.model_commands());
+    }
+    #[test]
     fn text_focus_blocks_activation_and_arrows_remain_unclaimed() {
         let mut tips = RibbonKeyTips::default();
         tips.process(
@@ -350,12 +414,13 @@ mod tests {
             }],
             &[],
             true,
+            false,
         );
         assert!(!tips.active());
         press(&mut tips, GuiKey::LeftAlt);
         press(&mut tips, GuiKey::LeftArrow);
         assert!(tips.tabs() && !tips.consumed);
-        tips.process(&[GuiInputEvent::Focus(false)], &[], false);
+        tips.process(&[GuiInputEvent::Focus(false)], &[], false, false);
         assert!(!tips.active());
     }
 }

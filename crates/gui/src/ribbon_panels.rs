@@ -158,6 +158,10 @@ pub(crate) struct RibbonPanelOwners<'a> {
     pub precise_input: &'a mut crate::sketch::precise_input::PreciseInputBar,
     pub plane_selection_active: bool,
     pub hole_tip: bool,
+    pub modify_group_tip: bool,
+    pub sketch_group_tip: bool,
+    pub create_group_tip: bool,
+    pub key_tips_active: bool,
     pub sketch_tip: bool,
     pub extrude_tip: bool,
 }
@@ -261,7 +265,9 @@ pub(crate) fn draw_side_groups(
         let open = display.temporary == Some(TemporaryPanel::Group(panel));
         let lit = ui.style_color(imgui::StyleColor::ButtonActive);
         let _lit = open.then(|| ui.push_style_color(imgui::StyleColor::Button, lit));
-        if crate::widget_abi::button(ui, panel.label(), SIDE_GROUP_BUTTON) {
+        let clicked = crate::widget_abi::button(ui, panel.label(), SIDE_GROUP_BUTTON);
+        group_key_tip(ui, panel, &context.owners);
+        if clicked || display.take_keyboard_group(panel) {
             display.open_temporary(TemporaryPanel::Group(panel));
             display.side_anchor = Some(crate::application::ribbon_display::SideAnchor {
                 x: panel_x.0,
@@ -271,6 +277,15 @@ pub(crate) fn draw_side_groups(
         }
     }
     temporary_panel(&mut context, tab, layout, display);
+}
+fn group_key_tip(ui: &Ui, panel: RibbonPanel, owners: &RibbonPanelOwners<'_>) {
+    let tip = match panel {
+        RibbonPanel::PartModify if owners.modify_group_tip => "Y",
+        RibbonPanel::Sketch if owners.sketch_group_tip => "K",
+        RibbonPanel::PartCreate if owners.create_group_tip => "C",
+        _ => return,
+    };
+    crate::ribbon_key_tips::badge(ui, tip);
 }
 const SIDE_GROUP_BUTTON: [f32; 2] = [112., 48.];
 /// One button per group; a group's commands open in the temporary panel.
@@ -287,7 +302,9 @@ fn compact_row(
         let open = display.temporary == Some(TemporaryPanel::Group(panel));
         let lit = ui.style_color(imgui::StyleColor::ButtonActive);
         let _lit = open.then(|| ui.push_style_color(imgui::StyleColor::Button, lit));
-        if crate::widget_abi::button(ui, panel.label(), size) {
+        let clicked = crate::widget_abi::button(ui, panel.label(), size);
+        group_key_tip(ui, panel, &context.owners);
+        if clicked || display.take_keyboard_group(panel) {
             display.open_temporary(TemporaryPanel::Group(panel));
             display.temporary_anchor = ui.item_rect_min()[0];
         }
@@ -344,7 +361,13 @@ fn temporary_panel(
     if context.additional_allowed && additional::draw(context, tab, layout, display) {
         keep = false;
     }
-    if !keep || context.actions.len() != before {
+    let escape = !context.owners.key_tips_active
+        && !crate::widget_abi::any_popup_open(ui)
+        && ui.is_key_pressed_no_repeat(imgui::Key::Escape);
+    if escape {
+        display.temporary_escape_consumed = true;
+    }
+    if escape || !keep || context.actions.len() != before {
         display.temporary = None;
     }
 }

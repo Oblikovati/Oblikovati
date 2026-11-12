@@ -270,7 +270,9 @@ fn panel_closed(world: &mut ApplicationWorld) {
     assert_eq!(commands, 0, "expected the Work Features commands gone");
 }
 #[given("the ribbon is docked on the left with the 3D Model tab selected")]
-fn docked_left_on_model(world: &mut ApplicationWorld) {
+#[given("the 3D Model ribbon is docked on the left with Modify as a compact group")]
+#[given("the 3D Model ribbon is docked on the left")]
+pub(super) fn docked_left_on_model(world: &mut ApplicationWorld) {
     choose_position(world, "Left");
     world.expect_text("3D Model");
 }

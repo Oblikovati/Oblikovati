@@ -85,6 +85,8 @@ pub(crate) struct RibbonDisplayState {
     minimized: Option<RibbonDisplay>,
     pub temporary: Option<TemporaryPanel>,
     pub temporary_focus: bool,
+    pending_keyboard_group: Option<RibbonPanel>,
+    pub temporary_escape_consumed: bool,
     pub keep_temporary_on_click: bool,
     pub temporary_anchor: f32,
     tab_release_consumed: bool,
@@ -110,6 +112,8 @@ impl Default for RibbonDisplayState {
             minimized: None,
             temporary: None,
             temporary_focus: false,
+            pending_keyboard_group: None,
+            temporary_escape_consumed: false,
             keep_temporary_on_click: false,
             temporary_anchor: 8.,
             tab_release_consumed: false,
@@ -135,6 +139,16 @@ impl RibbonDisplayState {
             self.temporary_focus = true;
         }
         self.temporary = Some(panel);
+    }
+    pub(crate) fn request_keyboard_group(&mut self, panel: RibbonPanel) {
+        self.pending_keyboard_group = Some(panel);
+    }
+    pub(crate) fn take_keyboard_group(&mut self, panel: RibbonPanel) -> bool {
+        if self.pending_keyboard_group != Some(panel) {
+            return false;
+        }
+        self.pending_keyboard_group = None;
+        true
     }
     /// What the display control will do next, for its tooltip.
     fn control_tooltip(&self) -> &'static str {
