@@ -129,6 +129,19 @@ fn invalid_expressions_and_bounds_cannot_publish_partial_settings() {
     }
 }
 #[test]
+fn nonpositive_radius_edits_preserve_the_dimension_and_geometry() {
+    let mut snapshot = snapshot(MODEL_PARAM, "1 cm");
+    for source in ["0", "-1 mm"] {
+        let before = snapshot.clone();
+        let error = drive(&mut snapshot, source).unwrap_err().to_string();
+        assert!(
+            error.contains("expected") && error.contains("length"),
+            "{error}"
+        );
+        assert_unchanged(&before, &snapshot);
+    }
+}
+#[test]
 fn invalid_bounds_cannot_change_reference_mode() {
     let mut snapshot = snapshot(MODEL_PARAM, "1 cm");
     let before = snapshot.clone();

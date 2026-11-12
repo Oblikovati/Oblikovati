@@ -28,6 +28,27 @@ pub(super) fn prepare(
     append_arc_sources(sketch, &mut prepared)?;
     Ok(prepared)
 }
+impl Sketch2D {
+    pub(crate) fn validate_driving_dimension(
+        &self,
+        dimension: super::SketchConstraintId,
+        parameters: &ParameterCollection<u64>,
+    ) -> Result<(), SketchError> {
+        if self.dimension_is_reference(dimension)? {
+            return Ok(());
+        }
+        let constraint = self
+            .constraints
+            .iter()
+            .find(|item| item.id == dimension)
+            .ok_or_else(|| {
+                SketchError::Definition(format!(
+                    "dimension {dimension:?}: expected an existing constraint"
+                ))
+            })?;
+        prepared_source(self, constraint, parameters).map(|_| ())
+    }
+}
 fn authored_sources(
     sketch: &Sketch2D,
     parameters: &ParameterCollection<u64>,

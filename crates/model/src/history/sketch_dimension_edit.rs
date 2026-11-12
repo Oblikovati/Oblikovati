@@ -52,6 +52,10 @@ impl DocumentSnapshot {
             return Ok(());
         };
         self.drive_dimension_target(sketch, dimension, source)?;
+        self.sketches
+            .get(sketch)?
+            .geometry()
+            .validate_driving_dimension(dimension, &self.parameters)?;
         self.hold_measured_start(sketch, dimension)
     }
     /// A distance grows from its first point, an arc's turn from its center and start, a radius

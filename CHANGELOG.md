@@ -17,3 +17,8 @@
 - Added arrow-key view rotation while ribbon key tips are visible. (#3856)
 
 - Added keyboard access to compact and side-docked ribbon groups for part documents. (#3856)
+
+### Fixed
+
+- Reject driving dimension values that fail the sketch constraint's target
+  checks, including a zero radius, before saving the edit. (#3855)

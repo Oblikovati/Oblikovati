@@ -4,7 +4,9 @@ use super::super::super::{ApplicationWorld, diagnostics};
 use super::choose_ellipse;
 use cucumber::{given, then, when};
 use oblikovati_api::{
-    client::Client, types::DIM_CONSTRAINT_ELLIPSE_RADIUS, wire::AddDimensionArgs,
+    client::Client,
+    types::{DIM_CONSTRAINT_ELLIPSE_MINOR_RADIUS, DIM_CONSTRAINT_ELLIPSE_RADIUS},
+    wire::AddDimensionArgs,
 };
 use oblikovati_viewport::ViewportPhysicalKey;
 
@@ -115,4 +117,70 @@ fn ellipse_remains(world: &mut ApplicationWorld) {
     assert_eq!(world.edited_geometry().ellipses().len(), 1);
     world.expect_annotation("4");
     world.expect_annotation("8");
+}
+
+#[given("the recorded ellipse has a driving minor-radius dimension storing 4 mm")]
+fn dimensioned_ellipse(world: &mut ApplicationWorld) {
+    recorded_ellipse(world);
+    let ellipse = world.edited_geometry().ellipses()[0];
+    let label_position = world.sketch_point_of([950, 600]);
+    Client::new(world.app().owner.document_host())
+        .dimension()
+        .add(&AddDimensionArgs {
+            kind: DIM_CONSTRAINT_ELLIPSE_MINOR_RADIUS.0.to_string(),
+            entities: Some(vec![ellipse.id().0]),
+            expression: "4 mm".into(),
+            text_point: Some(label_position.to_vec()),
+            ..Default::default()
+        })
+        .unwrap();
+    world.pump(Vec::new());
+    world.expect_annotation("4");
+}
+#[when(
+    "General Dimension opens the minor-radius dimension and 0 followed by Return attempts an edit"
+)]
+fn reject_zero(world: &mut ApplicationWorld) {
+    world.key(ViewportPhysicalKey::D, false);
+    let label = world.exact_run_center("4");
+    world.click(label);
+    assert!(
+        diagnostics::window_geometry("Edit Dimension").is_some(),
+        "minor editor did not open at {label:?}: {:?}; annotations: {:?}",
+        world.status_text(),
+        crate::HeadWork::sketch_dimension_annotations(&world.app().owner).unwrap()
+    );
+    world.type_text("0");
+    world.key(ViewportPhysicalKey::Enter, false);
+}
+#[when("Cancel dismisses the failure window")]
+fn dismiss_refusal(world: &mut ApplicationWorld) {
+    world.click_text("Cancel");
+}
+#[then("General Dimension remains active with annotations 8 and 4 visible")]
+fn dimensions_remain(world: &mut ApplicationWorld) {
+    assert!(world.state().dimension_tool_active);
+    world.expect_annotation("8");
+    world.expect_annotation("4");
+    let ellipse = world.edited_geometry().ellipses()[0];
+    assert!((ellipse.radii()[1] - 0.4).abs() < 1e-8);
+}
+#[when("the minor-radius dimension is reopened")]
+fn reopen_minor(world: &mut ApplicationWorld) {
+    world.click(world.exact_run_center("4"));
+}
+#[then("its stored expression is 4 mm")]
+fn retained_minor_value(world: &mut ApplicationWorld) {
+    let text = world.window_text("Edit Dimension");
+    assert!(text.contains("4mm"), "editor text: {text:?}");
+}
+#[when("Escape closes the editor and another Escape exits the command")]
+fn close_dimension_command(world: &mut ApplicationWorld) {
+    world.escape();
+    world.escape();
+}
+#[then("Ready appears and the ellipse remains visible")]
+fn ready_with_ellipse(world: &mut ApplicationWorld) {
+    world.expect_ready();
+    ellipse_remains(world);
 }
