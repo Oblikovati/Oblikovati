@@ -21,6 +21,7 @@ fn caption_is_visible(world: &ApplicationWorld) -> bool {
 #[when("the user clicks the panel selector at the right end of the ribbon")]
 #[when("the user clicks the ribbon panel selector")]
 #[when("the user clicks the ribbon panel selector again")]
+#[when("the user opens the ribbon panel selector")]
 fn open_selector(world: &mut ApplicationWorld) {
     let (_, size) = window_geometry("##application-ribbon").unwrap();
     world.click([size[0] as i32 - 22, 45]);
@@ -81,6 +82,34 @@ fn list_closes(world: &mut ApplicationWorld) {
         !selector_is_open(world),
         "expected the direct panel list closed"
     );
+}
+#[given("Modify is visible and Parameters is hidden")]
+#[then("Modify remains visible and Parameters remains hidden")]
+fn model_panel_choices(world: &mut ApplicationWorld) {
+    world.expect_text("Modify");
+    assert!(!caption_is_visible(world));
+}
+#[then("the panel list shows Modify checked and Parameters unchecked")]
+fn initial_panel_choices(world: &mut ApplicationWorld) {
+    assert!(selector_is_open(world));
+    assert!(world.checked("Modify"));
+    assert!(!world.checked(PARAMETERS));
+}
+#[when("the user selects the View ribbon tab")]
+fn select_view(world: &mut ApplicationWorld) {
+    world.click_text("View");
+}
+#[when("the user returns to the 3D Model ribbon tab")]
+fn select_model(world: &mut ApplicationWorld) {
+    world.click_text("3D Model");
+}
+#[then("the View ribbon is displayed")]
+fn view_ribbon_visible(world: &mut ApplicationWorld) {
+    world.expect_text("Navigate");
+}
+#[then("the panel list remains closed")]
+fn panel_list_remains_closed(world: &mut ApplicationWorld) {
+    list_closes(world);
 }
 
 #[test]

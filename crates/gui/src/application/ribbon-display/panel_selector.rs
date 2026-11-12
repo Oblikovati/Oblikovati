@@ -13,6 +13,7 @@ impl RibbonDisplayState {
     ) {
         if self.mode != RibbonDisplay::Full || self.placement != RibbonPlacement::Top {
             self.selector_keyboard_started = false;
+            self.selector_open = false;
             return;
         }
         let width = ui.window_size()[0];
@@ -24,8 +25,10 @@ impl RibbonDisplayState {
     fn selector_choices(&mut self, ui: &Ui, tab: RibbonTab, state: &crate::GuiCommandState) {
         let Some(_list) = ui.begin_popup(SELECTOR_POPUP) else {
             self.selector_keyboard_started = false;
+            self.selector_open = false;
             return;
         };
+        self.selector_open = true;
         let first_down =
             !self.selector_keyboard_started && ui.is_key_pressed_no_repeat(imgui::Key::DownArrow);
         self.selector_keyboard_started |= first_down

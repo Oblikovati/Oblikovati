@@ -54,6 +54,10 @@ pub(crate) struct RibbonFrame {
 }
 const TAB_SETTLING_FRAMES: u8 = 2;
 impl DocumentRibbon {
+    pub(crate) fn select_tab(&mut self, tab: RibbonTab) {
+        self.active = tab;
+        self.pending_tab = Some(tab);
+    }
     pub(crate) fn needs_frame(&self) -> bool {
         self.settling_frames > 0 || self.pending_tab.is_some()
     }

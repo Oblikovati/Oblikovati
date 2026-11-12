@@ -94,6 +94,7 @@ pub(crate) struct RibbonDisplayState {
     /// A choice in Show Panels ends the whole menu, as a choice in any other row does.
     close_context_menu: bool,
     selector_keyboard_started: bool,
+    pub(crate) selector_open: bool,
     /// Panels a user has hidden, per tab; they stay listed in Show Panels.
     pub hidden_panels: BTreeSet<(RibbonTab, RibbonPanel)>,
     pub show_panel_titles: bool,
@@ -113,6 +114,7 @@ impl Default for RibbonDisplayState {
             context_requested: false,
             close_context_menu: false,
             selector_keyboard_started: false,
+            selector_open: false,
             // Parameters lives on Manage, and is offered here for those who want it beside Create.
             hidden_panels: BTreeSet::from([(RibbonTab::Model, RibbonPanel::Parameters)]),
             show_panel_titles: true,
