@@ -89,4 +89,15 @@ mod tests {
                 .is_err()
         );
     }
+    #[test]
+    fn stored_model_state_with_nul_is_refused_before_document_adoption() {
+        let mut package = DocumentPackage::empty(DOCUMENT_PART, "Part");
+        let section: Value = serde_yaml_ng::from_str(
+            "members:\n  - {id: 1, name: Primary}\n  - {id: 2, name: \"bad\\0name\"}\nactive: 1\n",
+        )
+        .unwrap();
+        package.root.insert(SECTION.into(), section);
+        let error = package.restore_model_states().unwrap_err().to_string();
+        assert!(error.contains("bad\\0name"), "{error}");
+    }
 }

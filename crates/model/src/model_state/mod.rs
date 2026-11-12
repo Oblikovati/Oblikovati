@@ -141,13 +141,14 @@ impl ModelStateMembers {
 
     fn require_unique_name(&self, name: &str, except: Option<u64>) -> Result<(), String> {
         if name.trim().is_empty()
+            || name.contains('\0')
             || self
                 .members
                 .iter()
                 .any(|member| member.name == name && Some(member.id) != except)
         {
             return Err(format!(
-                "model-state name {name:?}: expected a nonempty unique name"
+                "model-state name {name:?}: expected a nonempty unique name without NUL"
             ));
         }
         Ok(())

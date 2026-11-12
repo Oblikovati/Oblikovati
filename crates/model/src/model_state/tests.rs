@@ -28,6 +28,31 @@ fn invalid_member_edits_do_not_change_content() {
     assert_eq!(members, before);
 }
 #[test]
+fn names_with_nul_are_rejected_without_changing_members() {
+    let mut members = ModelStateMembers::default();
+    members.insert(2, "Variant").unwrap();
+    let before = members.clone();
+    for result in [
+        members.insert(3, "bad\0name"),
+        members.rename(2, "bad\0name"),
+        members.copy(2, 3, "bad\0name"),
+    ] {
+        assert!(result.unwrap_err().contains("bad\\0name"));
+    }
+    assert_eq!(members, before);
+    let malformed = ModelStateMembers {
+        members: vec![
+            before.members[0].clone(),
+            ModelStateMember {
+                id: 2,
+                name: "bad\0name".into(),
+            },
+        ],
+        active: 1,
+    };
+    assert!(malformed.validate().is_err());
+}
+#[test]
 fn restored_member_invariants_are_checked() {
     let valid = ModelStateMembers::default();
     assert!(valid.validate().is_ok());
