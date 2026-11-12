@@ -27,6 +27,33 @@ fn package() -> DocumentPackage {
     DocumentPackage::decode(b"schemaVersion: 2\ndocumentType: 1\ndisplayName: Bracket\nmodel:\n  parameters: []\n  features: [{kind: legacy-retained}]\n  custom: {nested: [1, 2, 3]}\ndisplaySettings: {grid: true}\n").unwrap()
 }
 #[test]
+fn block_definitions_without_sketches_survive_save_and_can_be_removed() {
+    let mut sketches = DocumentSketches::default();
+    sketches.define_empty_block("Rib").unwrap();
+    let saved = package().with_sketches(&sketches, 0, 0).unwrap();
+    let reopened = DocumentPackage::decode(&saved.encode().unwrap()).unwrap();
+    assert_eq!(
+        reopened
+            .restore_sketches()
+            .unwrap()
+            .sketches
+            .block_definitions()[0]
+            .name(),
+        "Rib"
+    );
+    sketches.delete_empty_block("Rib").unwrap();
+    let saved = reopened.with_sketches(&sketches, 0, 0).unwrap();
+    let reopened = DocumentPackage::decode(&saved.encode().unwrap()).unwrap();
+    assert!(
+        reopened
+            .restore_sketches()
+            .unwrap()
+            .sketches
+            .block_definitions()
+            .is_empty()
+    );
+}
+#[test]
 fn complete_placed_recipes_and_reservations_round_trip_in_native_yaml_without_dropping_model_sections()
  {
     let original = package();

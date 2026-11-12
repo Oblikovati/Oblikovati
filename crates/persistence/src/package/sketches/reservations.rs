@@ -18,7 +18,11 @@ impl DocumentPackage {
             Some(&marks.constraints),
             Some(&marks.dimension_names),
         )?;
-        if restored.sketches.sketches().is_empty() && marks == SketchReservationMarks::default() {
+        if restored.sketches.sketches().is_empty()
+            && restored.sketches.block_definitions().is_empty()
+            && previous.sketches.block_definitions().is_empty()
+            && marks == SketchReservationMarks::default()
+        {
             return Ok(self.clone());
         }
         self.capture_sketches(stored_reservations(restored, marks))

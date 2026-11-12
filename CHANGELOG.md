@@ -4,6 +4,9 @@
 
 ### Added
 
+- Added typed API operations to create, list, and delete empty sketch block
+  definitions, with undo and save/reopen support. (#3856)
+
 - Added the Sketch Create expansion with access to Precise Input while a sketch
   command accepts points. (#3856)
 

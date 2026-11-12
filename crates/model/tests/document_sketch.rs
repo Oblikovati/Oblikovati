@@ -11,6 +11,8 @@ use oblikovati_model::{
     units::UnitsOfMeasure,
 };
 use oblikovati_solve::nonlinear::{SolveOptions, SolveTermination};
+#[path = "document_sketch/block_definitions.rs"]
+mod block_definitions;
 fn geometry(offset: u64) -> Sketch2D {
     let mut sketch = Sketch2D::default();
     let id = |value| SketchEntityId(offset + value);

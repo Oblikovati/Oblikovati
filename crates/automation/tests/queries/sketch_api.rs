@@ -228,6 +228,8 @@ fn an_existing_empty_sketch_is_well_constrained_and_healthy() {
     assert_eq!(structure.redundant, 0);
 }
 
+#[path = "sketch_api/block_definitions.rs"]
+mod block_definitions;
 #[path = "sketch_api/history.rs"]
 mod history;
 

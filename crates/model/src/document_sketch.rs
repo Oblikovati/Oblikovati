@@ -4,11 +4,13 @@ use crate::sketch::{
     Sketch2D, SketchError, SketchPlane, SketchPlaneOptions, SketchPlaneRecipe, SketchRecipe,
 };
 use std::collections::BTreeSet;
+mod block_definitions;
 mod construction;
 mod curve_format;
 mod dimension_placement;
 mod dimension_settings;
 mod health;
+pub use block_definitions::{SketchBlockDefinition, SketchBlockDefinitionRecipe};
 mod translation;
 mod visibility;
 pub use construction::SketchConstructionReport;
@@ -69,6 +71,7 @@ pub struct PlacedSketch {
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct DocumentSketches {
     sketches: Vec<PlacedSketch>,
+    block_definitions: Vec<SketchBlockDefinition>,
 }
 /// One authored placed sketch, without solver or normal caches.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -103,6 +106,8 @@ pub struct PlacedSketchRecipe {
 pub struct DocumentSketchRecipe {
     pub version: u32,
     pub sketches: Vec<PlacedSketchRecipe>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub block_definitions: Vec<SketchBlockDefinitionRecipe>,
 }
 impl PlacedSketch {
     fn new(
@@ -181,7 +186,8 @@ impl PlacedSketch {
 impl DocumentSketches {
     /// Compare exact authored contents for dirty/history decisions; example: `baseline.same_recipe(&candidate)`.
     pub fn same_recipe(&self, other: &Self) -> bool {
-        self.sketches.len() == other.sketches.len()
+        self.block_definitions == other.block_definitions
+            && self.sketches.len() == other.sketches.len()
             && self
                 .sketches
                 .iter()
@@ -286,9 +292,13 @@ impl DocumentSketches {
         DocumentSketchRecipe {
             version: self.placement_recipe_version(),
             sketches: self.sketches.iter().map(PlacedSketch::recipe).collect(),
+            block_definitions: self.block_definition_recipes(),
         }
     }
     fn placement_recipe_version(&self) -> u32 {
+        if !self.block_definitions.is_empty() {
+            return 8;
+        }
         self.sketches
             .iter()
             .map(PlacedSketch::recipe_version)
@@ -297,13 +307,14 @@ impl DocumentSketches {
     }
     /// Restore a complete collection before replacing a document owner; example: `DocumentSketches::from_recipe(&recipe)?`.
     pub fn from_recipe(recipe: &DocumentSketchRecipe) -> Result<Self, SketchError> {
-        if !matches!(recipe.version, 1..=7) {
+        if !matches!(recipe.version, 1..=8) {
             return Err(SketchError::Definition(format!(
-                "document sketch recipe version {}: expected 1 through 7",
+                "document sketch recipe version {}: expected 1 through 8",
                 recipe.version
             )));
         }
         let mut restored = Self::default();
+        restored.restore_block_definitions(recipe)?;
         for sketch in &recipe.sketches {
             let placement = SketchPlacement::from_recipe(sketch, recipe.version)?;
             let geometry = Sketch2D::from_recipe(&sketch.geometry)?;

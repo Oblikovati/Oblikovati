@@ -3,6 +3,7 @@ use crate::encode;
 mod add_constraint;
 mod add_dimension;
 pub(crate) mod add_entity;
+mod block_definitions;
 mod constraints;
 mod coordinates;
 pub(crate) mod create;
@@ -35,7 +36,9 @@ use oblikovati_solve::{
 };
 
 /// Geometry commands require a part or assembly; inference preferences use the workspace owner.
-pub const SKETCH_COMMAND_METHODS: [&str; 13] = [
+pub const SKETCH_COMMAND_METHODS: [&str; 15] = [
+    METHOD_SKETCH_BLOCK_DEFINITION_CREATE,
+    METHOD_SKETCH_BLOCK_DEFINITION_DELETE,
     METHOD_SKETCH_CREATE,
     METHOD_SKETCH_SET_PROPERTY,
     METHOD_SKETCH_SET_INFERENCE_OPTIONS,
@@ -51,7 +54,8 @@ pub const SKETCH_COMMAND_METHODS: [&str; 13] = [
     METHOD_SKETCH_ADD_DIMENSION,
 ];
 /// Read-only sketch queries use one current owner and the canonical API DTOs.
-pub const SKETCH_QUERY_METHODS: [&str; 8] = [
+pub const SKETCH_QUERY_METHODS: [&str; 9] = [
+    METHOD_SKETCH_BLOCK_DEFINITION_LIST,
     METHOD_SKETCH_LIST,
     METHOD_SKETCH_GET,
     METHOD_SKETCH_CONSTRAINTS,
@@ -67,6 +71,9 @@ pub(super) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     request: &[u8],
     editing: Option<(u64, DocumentSketchId)>,
 ) -> Result<Vec<u8>, Error> {
+    if method == METHOD_SKETCH_BLOCK_DEFINITION_LIST {
+        return block_definitions::list(files);
+    }
     if [METHOD_SKETCH_LIST, METHOD_SKETCH_GET].contains(&method) {
         return inspection::query(files, method, request, editing);
     }
@@ -91,6 +98,14 @@ pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     request: &[u8],
     editing: Option<(u64, DocumentSketchId)>,
 ) -> Result<Vec<u8>, Error> {
+    if [
+        METHOD_SKETCH_BLOCK_DEFINITION_CREATE,
+        METHOD_SKETCH_BLOCK_DEFINITION_DELETE,
+    ]
+    .contains(&method)
+    {
+        return block_definitions::apply(files, method, request);
+    }
     if method == METHOD_SKETCH_SET_PROPERTY {
         return properties::apply(files, crate::decode(method, request)?, editing);
     }

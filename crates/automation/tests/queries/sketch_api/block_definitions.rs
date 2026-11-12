@@ -1,0 +1,97 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use super::*;
+
+fn definitions(files: &DiscoveryWorkspace) -> Vec<SketchBlockDefinitionInfo> {
+    Client::new(FileQueryHost::new(files))
+        .sketch()
+        .block_definitions()
+        .unwrap()
+        .definitions
+        .unwrap()
+}
+fn create(
+    files: &mut DiscoveryWorkspace,
+    source: &mut QueryGuids,
+    request: &CreateBlockDefinitionArgs,
+) -> Result<SketchBlockDefinitionInfo, oblikovati_api::Error> {
+    Client::new(FileHost::new(files, source, "test"))
+        .sketch()
+        .create_block_definition(request)
+}
+#[test]
+fn empty_definition_survives_history_and_save_reopen() {
+    let (mut files, document, mut source) = configured_files(DOCUMENT_PART, Default::default());
+    let request = CreateBlockDefinitionArgs {
+        name: "Rib".into(),
+        ..Default::default()
+    };
+    let reply = create(&mut files, &mut source, &request).unwrap();
+    assert_eq!(
+        (reply.index, reply.entity_count, reply.instance_count),
+        (0, 0, 0)
+    );
+    assert_eq!(definitions(&files)[0].name, "Rib");
+    files.commands(document).unwrap().undo().unwrap();
+    assert!(definitions(&files).is_empty());
+    files.commands(document).unwrap().redo().unwrap();
+    files.save(document, "test", &mut source).unwrap();
+    let reopened =
+        reopen_with_observer(&mut files, document, &mut source, QueryObserver::default());
+    assert_eq!(definitions(&files)[0].name, "Rib");
+    Client::new(FileHost::new(&mut files, &mut source, "test"))
+        .sketch()
+        .delete_block_definition(&DeleteBlockDefinitionArgs { name: "Rib".into() })
+        .unwrap();
+    assert!(definitions(&files).is_empty());
+    files.save(reopened, "test", &mut source).unwrap();
+    reopen_with_observer(&mut files, reopened, &mut source, QueryObserver::default());
+    assert!(definitions(&files).is_empty());
+}
+#[test]
+fn invalid_or_unimplemented_selection_does_not_change_history() {
+    let (mut files, document, mut source) = configured_files(DOCUMENT_PART, Default::default());
+    let before = owner_revision(&files, document);
+    for request in [
+        CreateBlockDefinitionArgs {
+            name: "".into(),
+            ..Default::default()
+        },
+        CreateBlockDefinitionArgs {
+            name: "Rib".into(),
+            entity_refs: Some(vec![7]),
+            ..Default::default()
+        },
+    ] {
+        assert!(create(&mut files, &mut source, &request).is_err());
+        assert_eq!(owner_revision(&files, document), before);
+        assert!(definitions(&files).is_empty());
+    }
+}
+
+#[test]
+fn duplicate_and_missing_names_do_not_change_the_registry_or_history() {
+    let (mut files, document, mut source) = configured_files(DOCUMENT_PART, Default::default());
+    let request = CreateBlockDefinitionArgs {
+        name: "Rib".into(),
+        ..Default::default()
+    };
+    create(&mut files, &mut source, &request).unwrap();
+    let before = owner_revision(&files, document);
+    assert!(create(&mut files, &mut source, &request).is_err());
+    assert!(
+        Client::new(FileHost::new(&mut files, &mut source, "test"))
+            .sketch()
+            .delete_block_definition(&DeleteBlockDefinitionArgs {
+                name: "missing".into()
+            })
+            .is_err()
+    );
+    assert_eq!(owner_revision(&files, document), before);
+    assert_eq!(
+        definitions(&files)
+            .iter()
+            .map(|row| row.name.as_str())
+            .collect::<Vec<_>>(),
+        ["Rib"]
+    );
+}
