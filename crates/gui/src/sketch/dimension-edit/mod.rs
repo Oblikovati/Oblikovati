@@ -95,7 +95,7 @@ impl GuiDimensionValueEditor {
                 close = true;
             }
             close |= !self.warning_active && ui.is_key_pressed_no_repeat(Key::Escape);
-            self.warning(ui);
+            close |= self.warning(ui);
         });
         if close {
             self.open = None;
@@ -104,13 +104,13 @@ impl GuiDimensionValueEditor {
             crate::widget_abi::release_keyboard_focus(ui);
         }
     }
-    fn warning(&mut self, ui: &Ui) {
+    fn warning(&mut self, ui: &Ui) -> bool {
         const WARNING: &str = "Edit Dimension Value";
         if std::mem::take(&mut self.warning_requested) {
             ui.open_popup(WARNING);
         }
         let Some(_warning) = ui.begin_modal_popup(WARNING) else {
-            return;
+            return false;
         };
         ui.text("Failed to edit dimension value.");
         ui.text("The expression cannot be evaluated.");
@@ -119,6 +119,13 @@ impl GuiDimensionValueEditor {
             self.warning_active = false;
             self.focus = true;
         }
+        ui.same_line();
+        if ui.button("Cancel") || ui.is_key_pressed_no_repeat(Key::Escape) {
+            ui.close_current_popup();
+            self.warning_active = false;
+            return true;
+        }
+        false
     }
     fn open_at_pointer(&mut self, ui: &Ui, request: &GuiFrameRequest) {
         self.over_label = false;

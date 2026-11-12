@@ -160,6 +160,7 @@ fn aligned_changes(world: &mut ApplicationWorld) {
 }
 
 #[given("d64 depends on d63*2 and source d63 has been changed to 30")]
+#[given("d63 is 30 and d64 retains d63 * 2 ul")]
 fn propagated_line(world: &mut ApplicationWorld) {
     component_dimensions(world);
     world.open_dimension_label("50");
@@ -169,6 +170,28 @@ fn propagated_line(world: &mut ApplicationWorld) {
     world.type_text("30");
     world.key(ViewportPhysicalKey::Enter, false);
     world.expect_annotation("fx:60");
+}
+#[when("I open d63 and type d,6,4 as separate keys and press Return")]
+fn indirect_reference(world: &mut ApplicationWorld) {
+    world.open_dimension_label("30");
+    for character in ["d", "6", "4"] {
+        world.type_text(character);
+    }
+    world.key(ViewportPhysicalKey::Enter, false);
+}
+#[when("I click Cancel and reopen d63")]
+fn cancel_indirect_reference(world: &mut ApplicationWorld) {
+    world.click_text("Cancel");
+    world.open_dimension_label("30");
+}
+#[then("the selected retained value is 30 mm")]
+fn source_value_retained(world: &mut ApplicationWorld) {
+    assert!(world.text_is_selected("30mm"));
+}
+#[then("dependent fx:60 and driven length (67.082) remain visible")]
+fn dependent_geometry_retained(world: &mut ApplicationWorld) {
+    world.expect_annotation("fx:60");
+    world.expect_annotation("(67.082)");
 }
 #[when("I select both line endpoints in Measure")]
 fn measure_endpoints(world: &mut ApplicationWorld) {
@@ -269,5 +292,36 @@ fn native_reference_dimension_shows_parentheses_and_cannot_be_edited() {
     world.expect_annotation("(10)");
     world.open_dimension_label("(10)");
     assert!(diagnostics::window_geometry("Edit Dimension").is_none());
+    world.close();
+}
+
+#[test]
+fn native_dimension_dependency_survives_save_close_and_reopen() {
+    let mut world = ApplicationWorld::new();
+    propagated_line(&mut world);
+    world.finish_sketch();
+    world.press_save_shortcut();
+    let path = world.accept_save_as();
+    world.close_active_tab();
+    world.reopen_through_dialog(&path);
+    let row = world
+        .frame
+        .runs
+        .iter()
+        .find(|run| run.text.starts_with("[DOF"))
+        .expect("expected the saved sketch in the browser")
+        .center()
+        .map(|coordinate| coordinate as i32);
+    world.double_click(row);
+    world.pump(Vec::new());
+    world.expect_annotation("fx:60");
+    world.open_dimension_label("fx:60");
+    assert!(world.window_text("Edit Dimension").contains("d63*2"));
+    world.escape();
+    world.open_dimension_label("30");
+    world.type_text("40");
+    world.key(ViewportPhysicalKey::Enter, false);
+    world.expect_annotation("fx:80");
+    world.expect_annotation("(89.443)");
     world.close();
 }
