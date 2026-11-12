@@ -21,6 +21,34 @@ fn copy_mixed(sketch: &mut Sketch2D) -> SketchCopyReport {
         .unwrap()
 }
 #[test]
+fn captured_selection_keeps_curve_frames_and_shared_point_identity() {
+    let sketch = super::defining_transforms::hidden_geometry();
+    let before = sketch.clone();
+    let selected = [11, 7, 15, 20, 21, 22, 9].map(SketchEntityId);
+    let captured = sketch.capture_selection(&selected).unwrap();
+    assert!(sketch.same_recipe(&before));
+    assert_eq!(
+        captured.ellipse(SketchEntityId(20)).unwrap().major_axis(),
+        sketch.ellipse(SketchEntityId(20)).unwrap().major_axis()
+    );
+    for id in [21, 22].map(SketchEntityId) {
+        assert_eq!(
+            captured.spline(id).unwrap().points(),
+            sketch.spline(id).unwrap().points()
+        );
+        assert_eq!(
+            captured.spline(id).unwrap().kind(),
+            sketch.spline(id).unwrap().kind()
+        );
+    }
+    assert_eq!(
+        captured.line(SketchEntityId(11)).unwrap().endpoints,
+        sketch.line(SketchEntityId(11)).unwrap().endpoints
+    );
+    assert_eq!(captured.points().len(), 3);
+    assert!(captured.constraints().is_empty());
+}
+#[test]
 fn complete_copy_keeps_shared_points_and_returns_selection_and_full_provenance() {
     let mut sketch = super::defining_transforms::hidden_geometry();
     let before = sketch.clone();

@@ -186,7 +186,7 @@ impl PlacedSketch {
 impl DocumentSketches {
     /// Compare exact authored contents for dirty/history decisions; example: `baseline.same_recipe(&candidate)`.
     pub fn same_recipe(&self, other: &Self) -> bool {
-        self.block_definitions == other.block_definitions
+        self.same_block_recipes(other)
             && self.sketches.len() == other.sketches.len()
             && self
                 .sketches
@@ -296,6 +296,13 @@ impl DocumentSketches {
         }
     }
     fn placement_recipe_version(&self) -> u32 {
+        if self
+            .block_definitions
+            .iter()
+            .any(|block| !block.geometry().owned_entity_ids().is_empty())
+        {
+            return 9;
+        }
         if !self.block_definitions.is_empty() {
             return 8;
         }
@@ -307,9 +314,9 @@ impl DocumentSketches {
     }
     /// Restore a complete collection before replacing a document owner; example: `DocumentSketches::from_recipe(&recipe)?`.
     pub fn from_recipe(recipe: &DocumentSketchRecipe) -> Result<Self, SketchError> {
-        if !matches!(recipe.version, 1..=8) {
+        if !matches!(recipe.version, 1..=9) {
             return Err(SketchError::Definition(format!(
-                "document sketch recipe version {}: expected 1 through 8",
+                "document sketch recipe version {}: expected 1 through 9",
                 recipe.version
             )));
         }

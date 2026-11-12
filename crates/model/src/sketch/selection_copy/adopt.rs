@@ -28,9 +28,11 @@ impl PreparedSelectionCopy {
         let id = ids.get(shape.id())?;
         if let OwnedSketchGeometry::Point(point) = shape {
             if self.selected.contains(&point.id) {
-                return target.add_point(id, point.position);
+                target.add_point(id, point.position)?;
+            } else {
+                target.add_defining_point(id, point.position)?;
             }
-            return target.add_defining_point(id, point.position);
+            return target.copy_entity_roles(&self.source, point.id, id);
         }
         append_curve(target, shape, ids, id)?;
         target.copy_entity_roles(&self.source, shape.id(), id)

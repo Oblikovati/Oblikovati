@@ -95,3 +95,21 @@ fn duplicate_and_missing_names_do_not_change_the_registry_or_history() {
         ["Rib"]
     );
 }
+
+#[test]
+fn listing_reports_captured_definition_geometry() {
+    let (mut files, document, sketch, _) = files_with_circle(Default::default());
+    files
+        .commands(document)
+        .unwrap()
+        .run("Capture definition", |snapshot, _| {
+            snapshot
+                .sketches
+                .capture_block_definition("Circle", sketch, &[SketchEntityId(2)])
+        })
+        .unwrap();
+    let rows = definitions(&files);
+    assert_eq!(rows.len(), 1);
+    assert_eq!(rows[0].entity_count, 1);
+    assert_eq!(rows[0].instance_count, 0);
+}

@@ -41,7 +41,7 @@ fn block_definitions_without_sketches_survive_save_and_can_be_removed() {
             .name(),
         "Rib"
     );
-    sketches.delete_empty_block("Rib").unwrap();
+    sketches.delete_block_definition("Rib").unwrap();
     let saved = reopened.with_sketches(&sketches, 0, 0).unwrap();
     let reopened = DocumentPackage::decode(&saved.encode().unwrap()).unwrap();
     assert!(
@@ -51,6 +51,27 @@ fn block_definitions_without_sketches_survive_save_and_can_be_removed() {
             .sketches
             .block_definitions()
             .is_empty()
+    );
+}
+#[test]
+fn captured_block_geometry_survives_yaml_round_trip_without_moving_the_source() {
+    let mut sketches = sketches();
+    sketches
+        .capture_block_definition("Rib", DocumentSketchId(3), &[SketchEntityId(7)])
+        .unwrap();
+    let saved = package().with_sketches(&sketches, 9, 15).unwrap();
+    let reopened = DocumentPackage::decode(&saved.encode().unwrap()).unwrap();
+    let restored = reopened.restore_sketches().unwrap().sketches;
+    assert!(restored.same_recipe(&sketches));
+    assert_eq!(restored.block_definitions()[0].geometry().lines().len(), 1);
+    assert_eq!(
+        restored
+            .get(DocumentSketchId(3))
+            .unwrap()
+            .geometry()
+            .lines()
+            .len(),
+        1
     );
 }
 #[test]

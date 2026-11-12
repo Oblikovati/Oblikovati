@@ -4,6 +4,9 @@
 
 ### Added
 
+- Added saved local geometry for sketch block definitions, including captured
+  shared points and curve roles. (#3856)
+
 - Added typed API operations to create, list, and delete empty sketch block
   definitions, with undo and save/reopen support. (#3856)
 

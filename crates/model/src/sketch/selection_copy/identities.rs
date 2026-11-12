@@ -3,6 +3,15 @@ use super::{RecipeIdError, Sketch2D, SketchCopyError, SketchEntityId, SketchErro
 use std::collections::BTreeMap;
 pub(super) struct CopyIdentities(BTreeMap<SketchEntityId, SketchEntityId>);
 impl CopyIdentities {
+    pub(super) fn local(sources: &[SketchEntityId]) -> Self {
+        Self(
+            sources
+                .iter()
+                .copied()
+                .map(|source| (source, source))
+                .collect(),
+        )
+    }
     pub fn reserve(
         target: &Sketch2D,
         sources: &[SketchEntityId],

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! The canonical empty block-definition registry on a part document.
+//! The canonical block-definition registry on a part document.
 use super::*;
 use oblikovati_api::types::DOCUMENT_PART;
 
@@ -19,7 +19,13 @@ pub(super) fn list<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFile
         .block_definitions()
         .iter()
         .enumerate()
-        .map(|(index, definition)| info(index, definition.name()))
+        .map(|(index, definition)| {
+            info(
+                index,
+                definition.name(),
+                definition.geometry().entity_ids().len(),
+            )
+        })
         .collect::<Result<Vec<_>, _>>()?;
     encode(&ListBlockDefinitionsResult {
         definitions: Some(definitions),
@@ -62,7 +68,7 @@ fn create<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
                     .define_empty_block(&request.name)
                     .map_err(api_error)
             },
-            |_, index| encode(&info(index, &request.name)?),
+            |_, index| encode(&info(index, &request.name, 0)?),
         )
         .map_err(api_error)
 }
@@ -79,18 +85,18 @@ fn delete<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
             |snapshot, _| {
                 snapshot
                     .sketches
-                    .delete_empty_block(&request.name)
+                    .delete_block_definition(&request.name)
                     .map_err(api_error)
             },
             |_, ()| encode(&OKResult { ok: true }),
         )
         .map_err(api_error)
 }
-fn info(index: usize, name: &str) -> Result<SketchBlockDefinitionInfo, Error> {
+fn info(index: usize, name: &str, entities: usize) -> Result<SketchBlockDefinitionInfo, Error> {
     Ok(SketchBlockDefinitionInfo {
         index: wire_count(index)?,
         name: name.into(),
-        entity_count: 0,
+        entity_count: wire_count(entities)?,
         instance_count: 0,
     })
 }

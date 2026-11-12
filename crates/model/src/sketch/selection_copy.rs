@@ -18,6 +18,25 @@ struct PreparedSelectionCopy {
     sources: Vec<SketchEntityId>,
 }
 impl Sketch2D {
+    /// Capture selected geometry in its own identity namespace without changing this sketch.
+    /// Example: `let geometry = sketch.capture_selection(&[line])?;` for a block definition.
+    pub fn capture_selection(&self, entities: &[SketchEntityId]) -> Result<Sketch2D, SketchError> {
+        let selected = copy_selection(self, entities)?;
+        if selected.is_empty() {
+            return Err(SketchError::Definition(format!(
+                "capture selection {entities:?}: expected at least one entity"
+            )));
+        }
+        let sources = capture_sources(self, &selected);
+        let plan = PreparedSelectionCopy {
+            source: self.clone(),
+            selected,
+            sources,
+        };
+        let mut target = Self::default();
+        plan.append(&mut target, &CopyIdentities::local(&plan.sources))?;
+        Ok(target)
+    }
     /// Copy geometry with shared points and fresh identities; constraints stay on the source.
     /// Example: `sketch.copy_entities(&[line], [2.0, 0.0], &mut reserve)?;`.
     pub fn copy_entities(
@@ -45,6 +64,22 @@ impl Sketch2D {
         *self = candidate;
         Ok(report)
     }
+}
+fn capture_sources(source: &Sketch2D, selected: &[SketchEntityId]) -> Vec<SketchEntityId> {
+    let catalogue = entity_geometry::catalogue(source);
+    let is_point = |id: &SketchEntityId| source.points().iter().any(|point| point.id == *id);
+    let mut points: BTreeSet<_> = selected
+        .iter()
+        .flat_map(|id| catalogue[id].ownership_dependencies())
+        .collect();
+    points.extend(selected.iter().copied().filter(is_point));
+    let mut sources: Vec<_> = source
+        .owned_entity_ids()
+        .into_iter()
+        .filter(|id| points.contains(id))
+        .collect();
+    sources.extend(selected.iter().copied().filter(|id| !is_point(id)));
+    sources
 }
 impl PreparedSelectionCopy {
     fn new(

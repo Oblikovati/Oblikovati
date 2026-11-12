@@ -1,22 +1,32 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! The document's ordered registry of empty sketch block definitions.
-use super::{DocumentSketchRecipe, DocumentSketches, SketchError};
+//! The document's ordered registry of sketch block definitions.
+use super::{
+    DocumentSketchId, DocumentSketchRecipe, DocumentSketches, Sketch2D, SketchError, SketchRecipe,
+};
+use crate::sketch::SketchEntityId;
 
-/// A named definition awaiting geometry; example: `definition.name()`.
-#[derive(Clone, Debug, PartialEq, Eq)]
+/// A named definition with local geometry; example: `definition.name()`.
+#[derive(Clone, Debug, PartialEq)]
 pub struct SketchBlockDefinition {
     name: String,
+    geometry: Sketch2D,
 }
-/// Saved empty definition; example: `SketchBlockDefinitionRecipe { name: "Rib".into() }`.
-#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+/// Saved definition; example: `SketchBlockDefinitionRecipe { name: "Rib".into(), geometry: None }`.
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct SketchBlockDefinitionRecipe {
     pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub geometry: Option<SketchRecipe>,
 }
 impl SketchBlockDefinition {
     /// Return the registry name; example: `assert_eq!(definition.name(), "Rib")`.
     pub fn name(&self) -> &str {
         &self.name
+    }
+    /// Return definition-local geometry; example: `definition.geometry().entity_ids()`.
+    pub fn geometry(&self) -> &Sketch2D {
+        &self.geometry
     }
 }
 impl DocumentSketches {
@@ -33,12 +43,27 @@ impl DocumentSketches {
             )));
         }
         let index = self.block_definitions.len();
-        self.block_definitions
-            .push(SketchBlockDefinition { name: name.into() });
+        self.block_definitions.push(SketchBlockDefinition {
+            name: name.into(),
+            geometry: Sketch2D::default(),
+        });
         Ok(index)
     }
-    /// Delete an empty definition; example: `sketches.delete_empty_block("Rib")?`.
-    pub fn delete_empty_block(&mut self, name: &str) -> Result<(), SketchError> {
+    /// Capture a selection in definition-local identities without changing the source sketch.
+    /// Example: `sketches.capture_block_definition("Rib", sketch, &[line])?;`.
+    pub fn capture_block_definition(
+        &mut self,
+        name: &str,
+        sketch: DocumentSketchId,
+        entities: &[SketchEntityId],
+    ) -> Result<usize, SketchError> {
+        let geometry = self.get(sketch)?.geometry().capture_selection(entities)?;
+        let index = self.define_empty_block(name)?;
+        self.block_definitions[index].geometry = geometry;
+        Ok(index)
+    }
+    /// Delete an unplaced definition; example: `sketches.delete_block_definition("Rib")?`.
+    pub fn delete_block_definition(&mut self, name: &str) -> Result<(), SketchError> {
         let index = self
             .block_definitions
             .iter()
@@ -56,6 +81,8 @@ impl DocumentSketches {
             .iter()
             .map(|item| SketchBlockDefinitionRecipe {
                 name: item.name.clone(),
+                geometry: (!item.geometry.owned_entity_ids().is_empty())
+                    .then(|| item.geometry.recipe()),
             })
             .collect()
     }
@@ -70,9 +97,36 @@ impl DocumentSketches {
             )));
         }
         for item in &recipe.block_definitions {
-            self.define_empty_block(&item.name)?;
+            if recipe.version < 9 && item.geometry.is_some() {
+                return Err(SketchError::Definition(format!(
+                    "block definition {:?} geometry in recipe version {}: expected version 9 or later",
+                    item.name, recipe.version
+                )));
+            }
+            let geometry = item
+                .geometry
+                .as_ref()
+                .map(Sketch2D::from_recipe)
+                .transpose()?
+                .unwrap_or_default();
+            if !geometry.constraints().is_empty() {
+                return Err(SketchError::Definition(format!(
+                    "block definition {:?} constraints: expected geometry without sketch constraints",
+                    item.name
+                )));
+            }
+            let index = self.define_empty_block(&item.name)?;
+            self.block_definitions[index].geometry = geometry;
         }
         Ok(())
+    }
+    pub(super) fn same_block_recipes(&self, other: &Self) -> bool {
+        self.block_definitions.len() == other.block_definitions.len()
+            && self
+                .block_definitions
+                .iter()
+                .zip(&other.block_definitions)
+                .all(|(a, b)| a.name == b.name && a.geometry.same_recipe(&b.geometry))
     }
 }
 fn validate_name(name: &str) -> Result<(), SketchError> {
