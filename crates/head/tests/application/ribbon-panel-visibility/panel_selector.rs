@@ -131,3 +131,36 @@ fn native_panel_selector_uses_arrow_and_activation_keys() {
         world.close();
     }
 }
+#[test]
+fn display_control_dismisses_selector_and_minimizes_on_the_same_click() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    super::super::ribbon_display::click_display_menu(&mut world);
+    world.click_text("Minimize to Tabs");
+    world.click_text("Ribbon Display");
+    world.expect_text("Start 2D Sketch");
+    open_selector(&mut world);
+    assert!(world.checked("Modify"));
+    assert!(!world.checked(PARAMETERS));
+    world.click_text("Ribbon Display");
+    assert!(!selector_is_open(&world));
+    world.expect_no_text("Start 2D Sketch");
+    world.click_text("3D Model");
+    world.expect_text("Start 2D Sketch");
+    open_selector(&mut world);
+    assert!(world.checked("Modify"));
+    assert!(!world.checked(PARAMETERS));
+    world.click_text(PARAMETERS);
+    assert!(world.checked(PARAMETERS));
+    world.expect_text("Start 2D Sketch");
+    world.click_text(PARAMETERS);
+    assert!(!world.checked(PARAMETERS));
+    world.expect_text("Start 2D Sketch");
+    world.click_text("Ribbon Display");
+    world.expect_text("Start 2D Sketch");
+    assert!(!selector_is_open(&world));
+    open_selector(&mut world);
+    assert!(world.checked("Modify"));
+    assert!(!world.checked(PARAMETERS));
+    world.close();
+}

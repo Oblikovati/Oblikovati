@@ -36,7 +36,7 @@ fn expect_compact_groups(world: &ApplicationWorld) {
     }
     world.expect_no_text(WINDOWS_COMMAND);
 }
-fn click_display_menu(world: &mut ApplicationWorld) {
+pub(super) fn click_display_menu(world: &mut ApplicationWorld) {
     let control = world.run("Ribbon Display");
     let center = control.center();
     let arrow = world

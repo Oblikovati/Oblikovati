@@ -11,13 +11,21 @@ impl RibbonDisplayState {
         tab: RibbonTab,
         state: &crate::GuiCommandState,
     ) {
-        if self.mode != RibbonDisplay::Full || self.placement != RibbonPlacement::Top {
+        let temporary_tab =
+            self.mode == RibbonDisplay::Tabs && self.temporary == Some(TemporaryPanel::WholeTab);
+        if (self.mode != RibbonDisplay::Full && !temporary_tab)
+            || self.placement != RibbonPlacement::Top
+        {
             self.selector_keyboard_started = false;
             self.selector_open = false;
+            self.selector_pointer_inside = false;
             return;
         }
         let width = ui.window_size()[0];
-        selector_button(ui, width);
+        let clicked = selector_button(ui, width);
+        if temporary_tab && (clicked || self.selector_pointer_press(ui)) {
+            self.keep_temporary_on_click = true;
+        }
         let origin = ui.window_pos();
         crate::widget_abi::next_window_position(ui, [origin[0] + width - 180., origin[1] + 60.]);
         self.selector_choices(ui, tab, state);
@@ -26,9 +34,11 @@ impl RibbonDisplayState {
         let Some(_list) = ui.begin_popup(SELECTOR_POPUP) else {
             self.selector_keyboard_started = false;
             self.selector_open = false;
+            self.selector_pointer_inside = false;
             return;
         };
         self.selector_open = true;
+        self.selector_pointer_inside = ui.is_window_hovered();
         let first_down =
             !self.selector_keyboard_started && ui.is_key_pressed_no_repeat(imgui::Key::DownArrow);
         self.selector_keyboard_started |= first_down
@@ -53,12 +63,15 @@ impl RibbonDisplayState {
         }
     }
 }
-fn selector_button(ui: &Ui, width: f32) {
+fn selector_button(ui: &Ui, width: f32) -> bool {
     crate::widget_abi::cursor_position(ui, [width - 30., 35.]);
-    if crate::widget_abi::button(ui, "v##ribbon-panel-selector", [22., 24.]) {
+    let clicked = crate::widget_abi::button(ui, "v##ribbon-panel-selector", [22., 24.]);
+    let pressed = ui.is_item_hovered() && ui.is_mouse_clicked(imgui::MouseButton::Left);
+    if clicked {
         ui.open_popup(SELECTOR_POPUP);
     }
     if ui.is_item_hovered() {
         ui.tooltip_text("Show Panels");
     }
+    clicked || pressed
 }

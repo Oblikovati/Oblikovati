@@ -291,13 +291,8 @@ fn ribbon_tabs(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame) {
             TabItemFlags::empty()
         };
         let item = ui.tab_item_with_flags(tab.label(), None, flags);
-        if ribbon.display.selector_open && ui.is_mouse_clicked(imgui::MouseButton::Left) {
-            let [left, top] = ui.item_rect_min();
-            let [right, bottom] = ui.item_rect_max();
-            let [x, y] = ui.io().mouse_pos;
-            if (left..=right).contains(&x) && (top..=bottom).contains(&y) {
-                selector_tab = Some(*tab);
-            }
+        if ribbon.display.selector_pointer_press(ui) {
+            selector_tab = Some(*tab);
         }
         hovered |= ui.is_item_hovered();
         // On release: the press itself is a click outside any panel still open, and closes it.

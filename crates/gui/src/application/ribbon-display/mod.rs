@@ -95,6 +95,7 @@ pub(crate) struct RibbonDisplayState {
     close_context_menu: bool,
     selector_keyboard_started: bool,
     pub(crate) selector_open: bool,
+    pub(crate) selector_pointer_inside: bool,
     /// Panels a user has hidden, per tab; they stay listed in Show Panels.
     pub hidden_panels: BTreeSet<(RibbonTab, RibbonPanel)>,
     pub show_panel_titles: bool,
@@ -115,6 +116,7 @@ impl Default for RibbonDisplayState {
             close_context_menu: false,
             selector_keyboard_started: false,
             selector_open: false,
+            selector_pointer_inside: false,
             // Parameters lives on Manage, and is offered here for those who want it beside Create.
             hidden_panels: BTreeSet::from([(RibbonTab::Model, RibbonPanel::Parameters)]),
             show_panel_titles: true,
@@ -266,10 +268,21 @@ impl RibbonDisplayState {
     fn cycle_through_all(&mut self) {
         self.minimized = None;
     }
+    /// The selector dismisses on press, so the item beneath it must receive that press too.
+    pub(crate) fn selector_pointer_press(&self, ui: &Ui) -> bool {
+        if !self.selector_open || !ui.is_mouse_clicked(imgui::MouseButton::Left) {
+            return false;
+        }
+        let [left, top] = ui.item_rect_min();
+        let [right, bottom] = ui.item_rect_max();
+        let [x, y] = ui.io().mouse_pos;
+        (left..=right).contains(&x) && (top..=bottom).contains(&y)
+    }
     /// Draw the display control and its menu at `position`; example: `state.control(ui, [900., 35.])`.
     pub(crate) fn control(&mut self, ui: &Ui, position: [f32; 2]) {
         crate::widget_abi::cursor_position(ui, position);
-        if crate::widget_abi::button(ui, "Ribbon Display", [0.; 2]) {
+        let clicked = crate::widget_abi::button(ui, "Ribbon Display", [0.; 2]);
+        if clicked || self.selector_pointer_press(ui) {
             self.advance();
         }
         if ui.is_item_hovered() {
