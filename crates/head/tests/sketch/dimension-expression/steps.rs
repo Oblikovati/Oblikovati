@@ -7,6 +7,8 @@ use oblikovati_api::{
     wire::{DriveDimensionArgs, ParameterRenameArgs, SketchArgs},
 };
 use oblikovati_viewport::ViewportPhysicalKey;
+#[path = "line_fixture.rs"]
+mod line_fixture;
 
 #[given("rectangle height d50 evaluates to 10.000 mm")]
 fn ten_millimetre_height(world: &mut ApplicationWorld) {
@@ -114,6 +116,47 @@ fn escape_twice(world: &mut ApplicationWorld) {
 fn dimension_exits(world: &mut ApplicationWorld) {
     assert!(diagnostics::window_geometry("Edit Dimension").is_none());
     assert!(!world.state().dimension_tool_active);
+}
+
+#[given("d64 is 50 mm and source d63 is 20 mm")]
+fn component_dimensions(world: &mut ApplicationWorld) {
+    line_fixture::create(world);
+    world.expect_annotation("20");
+    world.expect_annotation("50");
+    world.observed_view = Some(world.line_point(0, 1.));
+}
+#[when("I edit d64 using individual d, 6, 3 and multiplication keys")]
+fn enter_dependent_prefix(world: &mut ApplicationWorld) {
+    world.open_dimension_label("50");
+    world.expect_text("d64");
+    for key in ["d", "6", "3", "*"] {
+        world.type_text(key);
+    }
+    world.pump(Vec::new());
+}
+#[then("the incomplete multiplication expression is red")]
+fn dependent_prefix_red(world: &mut ApplicationWorld) {
+    let [red, green, blue] = world.run_in_window("Edit Dimension", "d63*").color;
+    assert!(red > 200 && green < 100 && blue < 100);
+}
+#[when("I type 2")]
+fn finish_dependent(world: &mut ApplicationWorld) {
+    world.type_text("2");
+    world.pump(Vec::new());
+}
+#[then("the completed expression is black")]
+fn dependent_normal(world: &mut ApplicationWorld) {
+    let [_, green, blue] = world.run_in_window("Edit Dimension", "d63*2").color;
+    assert!(green > 100 && blue > 100);
+}
+#[then("its annotation displays fx:40")]
+fn dependent_forty(world: &mut ApplicationWorld) {
+    world.expect_annotation("fx:40");
+}
+#[then("the line visibly changes and its driven aligned length displays (44.721)")]
+fn aligned_changes(world: &mut ApplicationWorld) {
+    assert_ne!(world.line_point(0, 1.), world.observed_view.unwrap());
+    world.expect_annotation("(44.721)");
 }
 
 #[test]
