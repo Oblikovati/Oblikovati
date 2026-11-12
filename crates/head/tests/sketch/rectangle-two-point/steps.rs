@@ -219,6 +219,44 @@ fn measure_closed(world: &mut ApplicationWorld) {
     );
 }
 // rectangle-two-point-10
+#[given("the recorded fixture sketch is Ready with 22 dimensions needed")]
+fn fixture_twenty_two(world: &mut ApplicationWorld) {
+    world.start_sketch_on("YZ Plane");
+    world.seed_dimensions_needed(22);
+    world.observed_counts = vec![sides(world)];
+    world.expect_ready();
+    world.expect_dimensions_needed(22);
+}
+#[when("I enter 0 and press Tab")]
+fn lock_zero_first(world: &mut ApplicationWorld) {
+    world.type_text("0");
+    world.key(ViewportPhysicalKey::Tab, false);
+}
+#[then("the first size is locked at 0.000 mm and the second field is focused")]
+fn zero_locked(world: &mut ApplicationWorld) {
+    let text = world.window_text("##sketch-hud");
+    assert!(text.contains("0.000mm"), "expected zero in {text:?}");
+    assert!(
+        world.text_is_selected("0.000mm"),
+        "expected the second field selected"
+    );
+}
+#[when("I enter 4 and press Return")]
+fn complete_zero_first(world: &mut ApplicationWorld) {
+    world.type_text("4");
+    world.key(ViewportPhysicalKey::Enter, false);
+    world.pump(Vec::new());
+}
+#[then("the immediate status temporarily shows 24 dimensions needed")]
+fn transient_twenty_four(world: &mut ApplicationWorld) {
+    world.expect_dimensions_needed(24);
+}
+#[then("Ready returns with 22 dimensions needed and no new rectangle visible")]
+fn fixture_unchanged(world: &mut ApplicationWorld) {
+    world.expect_ready();
+    world.expect_dimensions_needed(22);
+    assert_eq!(sides(world), world.observed_counts[0]);
+}
 #[when("I enter 0, press Tab, enter 4 and press Return")]
 fn zero_first(world: &mut ApplicationWorld) {
     type_sizes(world, "0", "4");
