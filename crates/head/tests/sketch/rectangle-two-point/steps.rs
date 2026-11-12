@@ -12,7 +12,6 @@ const POINTER: [i32; 2] = [1100, 700];
 const ELLIPSE_CENTER: [i32; 2] = [915, 500];
 const ELLIPSE_AXIS: [i32; 2] = [1015, 500];
 const ELLIPSE_MINOR: [i32; 2] = [915, 440];
-
 fn select_rectangle(world: &mut ApplicationWorld) {
     world.click_text("Rectangle");
     world.pump(Vec::new());
@@ -28,7 +27,9 @@ fn type_sizes(world: &mut ApplicationWorld, first: &str, second: &str) {
     world.pump(Vec::new());
 }
 pub(super) fn typed_rectangle(world: &mut ApplicationWorld, first: &str, second: &str) {
-    world.start_sketch_on("YZ Plane");
+    if world.state().authoring != oblikovati_gui::GuiAuthoringContext::Sketch {
+        world.start_sketch_on("YZ Plane");
+    }
     select_rectangle(world);
     world.sketch_click(FIRST);
     type_sizes(world, first, second);
@@ -445,7 +446,6 @@ fn prior_remains(world: &mut ApplicationWorld) {
     world.expect_ready();
     assert_eq!(sides(world), RECTANGLE_SIDES, "sides");
 }
-
 #[test]
 fn native_dimension_editor_retains_arithmetic_through_undo_and_redo() {
     let mut world = ApplicationWorld::new();

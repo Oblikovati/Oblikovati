@@ -4,7 +4,9 @@ use super::*;
 use oblikovati_api::wire::AddDimensionArgs;
 
 pub(super) fn create(world: &mut ApplicationWorld) {
-    world.start_sketch_on("YZ Plane");
+    if world.state().authoring != oblikovati_gui::GuiAuthoringContext::Sketch {
+        world.start_sketch_on("YZ Plane");
+    }
     world.select_line_tool();
     for point in [[2., 2.], [4., 7.]] {
         let pixel = world.sketch_pixel_of(point);

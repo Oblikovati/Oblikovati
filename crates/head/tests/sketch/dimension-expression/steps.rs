@@ -10,6 +10,11 @@ use oblikovati_viewport::ViewportPhysicalKey;
 #[path = "line_fixture.rs"]
 mod line_fixture;
 
+#[given("the MCAD Software is editing an editable metric sketch")]
+fn editable_metric_sketch(world: &mut ApplicationWorld) {
+    world.start_sketch_on("YZ Plane");
+}
+
 #[given("rectangle height d50 evaluates to 10.000 mm")]
 fn ten_millimetre_height(world: &mut ApplicationWorld) {
     super::rectangle_two_point::typed_rectangle(world, "10", "6");
@@ -67,6 +72,7 @@ fn accepted_twelve(world: &mut ApplicationWorld) {
 }
 
 #[given("the accepted d50 expression is 2 mm * 6 ul")]
+#[given("d50 retains 2 mm * 6 ul")]
 #[given("d50 has accepted the arithmetic expression 2*6")]
 #[given("d50 retains 2 mm * 6 ul and evaluates to 12 mm")]
 fn accepted_arithmetic(world: &mut ApplicationWorld) {
@@ -76,6 +82,35 @@ fn accepted_arithmetic(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::Enter, false);
     world.expect_annotation("12");
     world.observed_counts = vec![rectangle_height(world)];
+}
+#[when("I enter d50 into d50 and press Return")]
+fn accept_self_reference(world: &mut ApplicationWorld) {
+    enter_self_reference(world);
+    world.key(ViewportPhysicalKey::Enter, false);
+}
+#[then("the prior arithmetic expression and height 12 remain")]
+fn prior_expression_and_height(world: &mut ApplicationWorld) {
+    previous_expression(world);
+    height_remains(world);
+}
+#[given("d50 retains 2 mm * 6 ul and evaluates to 12")]
+fn accepted_expression_open(world: &mut ApplicationWorld) {
+    accepted_arithmetic(world);
+    world.open_dimension_label("12");
+}
+#[when("I replace the selected expression with 9 and press Escape")]
+fn cancel_proposed_expression(world: &mut ApplicationWorld) {
+    world.type_text("9");
+    world.escape();
+}
+#[when("reopen d50")]
+fn reopen_arithmetic(world: &mut ApplicationWorld) {
+    world.open_dimension_label("12");
+}
+#[then("the original normalized expression remains and the annotation still reads 12")]
+fn normalized_expression_and_height(world: &mut ApplicationWorld) {
+    normalized_arithmetic(world);
+    height_remains(world);
 }
 fn rectangle_height(world: &mut ApplicationWorld) -> usize {
     let points: Vec<_> = (0..4)
@@ -170,11 +205,23 @@ fn dimension_exits(world: &mut ApplicationWorld) {
 }
 
 #[given("d64 is 50 mm and source d63 is 20 mm")]
+#[given("d64 is 50 mm and d63 is 20 mm")]
 fn component_dimensions(world: &mut ApplicationWorld) {
     line_fixture::create(world);
     world.expect_annotation("20");
     world.expect_annotation("50");
     world.observed_view = Some(world.line_point(0, 1.));
+}
+#[when("I enter d63*2 in d64 and accept")]
+fn enter_dependent_and_accept(world: &mut ApplicationWorld) {
+    world.open_dimension_label("50");
+    world.type_text("d63*2");
+    world.key(ViewportPhysicalKey::Enter, false);
+}
+#[then("d64 displays fx:40 and the driven line length displays (44.721)")]
+fn dependent_and_reference(world: &mut ApplicationWorld) {
+    world.expect_annotation("fx:40");
+    world.expect_annotation("(44.721)");
 }
 #[when("I edit d64 using individual d, 6, 3 and multiplication keys")]
 fn enter_dependent_prefix(world: &mut ApplicationWorld) {
@@ -218,11 +265,16 @@ fn dependent_line(world: &mut ApplicationWorld) {
     world.expect_annotation("fx:40");
 }
 #[when("I open source d63 and type 3 then 0 and press Return")]
+#[when("I change d63 to 30")]
 fn change_source(world: &mut ApplicationWorld) {
     world.open_dimension_label("20");
     world.type_text("3");
     world.type_text("0");
     world.key(ViewportPhysicalKey::Enter, false);
+}
+#[then("d64 displays fx:60")]
+fn dependent_sixty(world: &mut ApplicationWorld) {
+    world.expect_annotation("fx:60");
 }
 #[then("the source annotation displays 30 and the dependent annotation displays fx:60")]
 fn propagated_annotations(world: &mut ApplicationWorld) {
@@ -234,6 +286,7 @@ fn aligned_length_sixty(world: &mut ApplicationWorld) {
     world.expect_annotation("(67.082)");
 }
 #[when("I reopen d64 by targeting its component dimension line")]
+#[when("I reopen d64 through its component dimension line")]
 fn reopen_by_line(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::D, false);
     let point = world.sketch_pixel_of([5., 2.5]);
@@ -241,12 +294,14 @@ fn reopen_by_line(world: &mut ApplicationWorld) {
     world.expect_text("d64");
 }
 #[then("the retained normalized expression is d63 * 2 ul")]
+#[then("its retained expression is d63 * 2 ul")]
 fn normalized_dependent(world: &mut ApplicationWorld) {
     assert!(world.window_text("Edit Dimension").contains("d63*2ul"));
 }
 
 #[given("d64 depends on d63*2 and source d63 has been changed to 30")]
 #[given("d63 is 30 and d64 retains d63 * 2 ul")]
+#[given("the source is 30 and the dependent value is 60")]
 fn propagated_line(world: &mut ApplicationWorld) {
     component_dimensions(world);
     world.open_dimension_label("50");
@@ -256,6 +311,11 @@ fn propagated_line(world: &mut ApplicationWorld) {
     world.type_text("30");
     world.key(ViewportPhysicalKey::Enter, false);
     world.expect_annotation("fx:60");
+}
+#[when("I undo the source edit and measure both endpoints")]
+fn undo_and_measure(world: &mut ApplicationWorld) {
+    world.undo();
+    measure_endpoints(world);
 }
 #[when("I open d63 and type d,6,4 as separate keys and press Return")]
 fn indirect_reference(world: &mut ApplicationWorld) {
@@ -312,6 +372,7 @@ fn measure_twenty_forty(world: &mut ApplicationWorld) {
     expect_measurement(world, "20.000", "40.000", "44.721");
 }
 #[when("I close Measure, redo the source edit and measure both endpoints again")]
+#[when("I close Measure and redo the source edit and measure the endpoints again")]
 fn measure_after_redo(world: &mut ApplicationWorld) {
     world.click_text("Done");
     world.redo();
