@@ -93,6 +93,7 @@ fn target_still_model(world: &mut ApplicationWorld) {
     model_target(world);
 }
 #[given("a part is active in the MCAD Software with the Tools ribbon visible")]
+#[given("a part is active in the MCAD Software with the full Tools ribbon visible")]
 fn part_with_tools(world: &mut ApplicationWorld) {
     world.add_part();
     world.click_text("Tools");
@@ -100,15 +101,19 @@ fn part_with_tools(world: &mut ApplicationWorld) {
 #[given("the Ribbon customization dialog has an initially empty Part Tools custom panel")]
 #[given("the ribbon customization dialog has an empty Part Tools custom panel")]
 #[given("the Ribbon customization dialog shows an empty Part Tools custom panel")]
+#[given("ribbon customization shows an initially empty Part Tools target")]
+#[given("the ribbon customization dialog shows an empty Part Tools custom panel")]
 fn empty_tools_customization(world: &mut ApplicationWorld) {
     open_tools_customization(world);
 }
 #[when("the user stages \"2D Sketches\" in the custom panel")]
+#[when("the user adds \"2D Sketches\" to the custom panel without applying")]
 fn stage_sketch_command(world: &mut ApplicationWorld) {
     stage_sketch_visibility(world);
 }
 #[then("the target indicates a pending change")]
 #[then("the target still indicates a pending change")]
+#[then("the target is marked as changed")]
 fn tools_pending(world: &mut ApplicationWorld) {
     assert!(world.window_text("Customize").contains("Part|Tools*"));
 }
@@ -118,10 +123,12 @@ fn customization_closed(_world: &mut ApplicationWorld) {
 }
 #[then("no User Commands panel is displayed on the Tools ribbon")]
 #[then("no User Commands panel appears on the Tools ribbon")]
+#[then("no User Commands panel is visible on the Tools ribbon")]
 fn no_user_commands(world: &mut ApplicationWorld) {
     world.expect_no_text("User Commands");
 }
 #[when("the user reopens ribbon customization from Tools")]
+#[when("the user reopens customization from the Tools ribbon")]
 fn reopen_tools_customization(world: &mut ApplicationWorld) {
     open_tools_customization(world);
 }
@@ -156,9 +163,31 @@ fn cancel_customization(world: &mut ApplicationWorld) {
     click_in_customize(world, "Cancel");
 }
 #[then("the target no longer indicates a pending change")]
+#[then("the target is not marked as changed")]
 fn tools_not_pending(world: &mut ApplicationWorld) {
     assert!(world.window_text("Customize").contains("Part|Tools"));
     assert!(!world.window_text("Customize").contains("Part|Tools*"));
+}
+#[then("the dialog offers OK, Cancel, and Apply")]
+fn pending_dialog_actions(world: &mut ApplicationWorld) {
+    editing_actions_are_available(world);
+}
+#[when("the user clicks the title-bar close control")]
+fn close_customization_title(world: &mut ApplicationWorld) {
+    let (position, size) = diagnostics::window_geometry("Customize").unwrap();
+    world.click(diagnostics::pointer_pixels([
+        position[0] + size[0] - 13.,
+        position[1] + 10.,
+    ]));
+    world.pump(Vec::new());
+}
+#[when("the user clicks Close")]
+fn close_customization_button(world: &mut ApplicationWorld) {
+    click_in_customize(world, "Close");
+}
+#[then("\"2D Sketches\" is available in the source list")]
+fn available_again(world: &mut ApplicationWorld) {
+    sketches_in_available_commands(world);
 }
 #[given("All Commands lists \"2D Sketches\" immediately before \"3D Annotations\"")]
 fn available_rows_in_order(world: &mut ApplicationWorld) {
@@ -229,6 +258,7 @@ fn both_rows_in_source(world: &mut ApplicationWorld) {
     }
 }
 #[given("the user has staged \"2D Sketches\" followed by \"3D Annotations\"")]
+#[given("2D Sketches and 3D Annotations are staged on Part Tools in that order")]
 fn stage_two_commands(world: &mut ApplicationWorld) {
     stage_sketch_visibility(world);
     click_in_customize(world, "3DAnnotations");
@@ -238,6 +268,35 @@ fn stage_two_commands(world: &mut ApplicationWorld) {
 fn both_large_clear(world: &mut ApplicationWorld) {
     assert!(!row_option_checked(world, "2DSketches", "Large"));
     assert!(!row_option_checked(world, "3DAnnotations", "Large"));
+}
+#[given("both commands have Large and Text unchecked")]
+#[then("both commands still have Large and Text unchecked")]
+fn both_options_clear(world: &mut ApplicationWorld) {
+    for row in ["2DSketches", "3DAnnotations"] {
+        for option in ["Large", "Text"] {
+            assert!(!row_option_checked(world, row, option));
+        }
+    }
+}
+#[when("I click the 2D Sketches name in the staged target list")]
+fn click_first_staged(world: &mut ApplicationWorld) {
+    click_in_customize(world, "2DSketches");
+}
+#[when("I press Ctrl+A while the target list has focus")]
+fn select_all_staged(world: &mut ApplicationWorld) {
+    world.key(oblikovati_viewport::ViewportPhysicalKey::A, true);
+}
+#[then("both staged command rows are highlighted")]
+fn staged_rows_selected(world: &mut ApplicationWorld) {
+    both_target_rows_selected(world);
+}
+#[then("Part Tools remains marked as having pending changes")]
+fn tools_remains_pending(world: &mut ApplicationWorld) {
+    tools_pending(world);
+}
+#[when("I cancel ribbon customization")]
+fn cancel_from_keyboard_scenario(world: &mut ApplicationWorld) {
+    click_in_customize(world, "Cancel");
 }
 #[when("the user selects \"2D Sketches\" and presses Shift+Down")]
 fn select_two_rows(world: &mut ApplicationWorld) {
@@ -373,6 +432,34 @@ fn per_row_options_survive_removal_and_do_not_clear_multi_selection() {
     both_rows_in_source(&mut world);
     click_in_customize(&mut world, ">");
     assert!(row_option_checked(&world, "2DSketches", "Large"));
+    click_in_customize(&mut world, "Cancel");
+    world.close();
+}
+
+#[test]
+fn control_a_transfers_visible_source_rows_only_when_list_has_focus() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    open_tools_customization(&mut world);
+    click_in_customize(&mut world, "2DSketches");
+    world.key(oblikovati_viewport::ViewportPhysicalKey::A, true);
+    click_in_customize(&mut world, ">");
+    both_rows_in_target(&mut world);
+    assert!(
+        world.run_in_window("Customize", "Line").center()[0]
+            >= world.run_in_window("Customize", "Custompanel").minimum[0]
+    );
+    click_in_customize(&mut world, "Cancel");
+    open_tools_customization(&mut world);
+    click_in_customize(&mut world, "2DSketches");
+    click_in_customize(&mut world, "Custompanel");
+    world.key(oblikovati_viewport::ViewportPhysicalKey::A, true);
+    click_in_customize(&mut world, ">");
+    sketches_in_target(&mut world);
+    assert!(
+        world.run_in_window("Customize", "3DAnnotations").center()[0]
+            < world.run_in_window("Customize", "Custompanel").minimum[0]
+    );
     click_in_customize(&mut world, "Cancel");
     world.close();
 }

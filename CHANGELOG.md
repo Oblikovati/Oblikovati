@@ -4,6 +4,8 @@
 
 ### Added
 
+- Added Ctrl+A selection and a title-bar close control to ribbon customization. (#3856)
+
 - Added keyboard selection and transfer of multiple ribbon commands. (#3856)
 
 - Added sketch tools and constraints to the ribbon customization command list. (#3856)

@@ -19,6 +19,9 @@ pub(crate) struct RibbonCustomization {
     pub(crate) escape_consumed: bool,
     pub(crate) navigation_consumed: bool,
     list_focus: Option<ListFocus>,
+    source_focused: bool,
+    target_focused: bool,
+    visible_source: Vec<Command>,
 }
 impl RibbonCustomization {
     pub(crate) fn open(&mut self, tab: RibbonTab) {
@@ -40,18 +43,24 @@ impl RibbonCustomization {
             return;
         }
         crate::widget_abi::fit_dialog(ui, "Customize", [340., 185.], [760., 440.]);
-        ui.window("Customize").collapsible(false).build(|| {
-            self.tabs(ui);
-            self.lists(ui);
-            self.buttons(ui);
-            let focused =
-                ui.is_window_focused_with_flags(imgui::WindowFocusedFlags::ROOT_AND_CHILD_WINDOWS);
-            self.extend_selection(ui, focused);
-            if self.escape.pressed(ui) && focused {
-                self.open = false;
-                self.escape_consumed = true;
-            }
-        });
+        let mut window_open = self.open;
+        ui.window("Customize")
+            .opened(&mut window_open)
+            .collapsible(false)
+            .build(|| {
+                self.tabs(ui);
+                self.lists(ui);
+                self.buttons(ui);
+                let focused = ui.is_window_focused_with_flags(
+                    imgui::WindowFocusedFlags::ROOT_AND_CHILD_WINDOWS,
+                );
+                self.list_keyboard(ui, focused);
+                if self.escape.pressed(ui) && focused {
+                    self.open = false;
+                    self.escape_consumed = true;
+                }
+            });
+        self.open &= window_open;
     }
     fn tabs(&mut self, ui: &Ui) {
         if let Some(_tabs) = ui.tab_bar("##customize-tabs") {
@@ -94,6 +103,8 @@ impl RibbonCustomization {
             .size([230., 200.])
             .border(true)
             .build(|| {
+                self.source_focused = ui.is_window_focused();
+                self.visible_source.clear();
                 let mut transfer = None;
                 for command in COMMANDS
                     .into_iter()
@@ -110,6 +121,9 @@ impl RibbonCustomization {
                     {
                         self.draft.reset_source_selection(command);
                         self.list_focus = Some(ListFocus::Source);
+                    }
+                    if ui.is_item_visible() {
+                        self.visible_source.push(command);
                     }
                     if ui.is_item_hovered() && ui.is_mouse_double_clicked(imgui::MouseButton::Left)
                     {
@@ -167,6 +181,7 @@ impl RibbonCustomization {
             .size([245., 200.])
             .border(true)
             .build(|| {
+                self.target_focused = ui.is_window_focused();
                 let mut selected = self.draft.selected;
                 let mut remove = false;
                 let mut clear_extra = false;
@@ -224,8 +239,24 @@ impl RibbonCustomization {
         }
         drop(disabled);
     }
-    fn extend_selection(&mut self, ui: &Ui, focused: bool) {
-        if !focused || !ui.io().key_shift {
+    fn list_keyboard(&mut self, ui: &Ui, focused: bool) {
+        let active_list = match self.list_focus {
+            Some(ListFocus::Source) if self.source_focused => ListFocus::Source,
+            Some(ListFocus::Target) if self.target_focused => ListFocus::Target,
+            _ => return,
+        };
+        if !focused {
+            return;
+        }
+        if ui.io().key_ctrl && ui.is_key_pressed_no_repeat(imgui::Key::A) {
+            match active_list {
+                ListFocus::Source => self.draft.select_visible_source(&self.visible_source),
+                ListFocus::Target => self.draft.select_all_target(),
+            }
+            self.navigation_consumed = true;
+            return;
+        }
+        if !ui.io().key_shift {
             return;
         }
         let direction = if ui.is_key_pressed_no_repeat(imgui::Key::DownArrow) {
@@ -235,10 +266,9 @@ impl RibbonCustomization {
         } else {
             return;
         };
-        match self.list_focus {
-            Some(ListFocus::Source) => self.draft.extend_source(direction),
-            Some(ListFocus::Target) => self.draft.extend_target(direction),
-            None => return,
+        match active_list {
+            ListFocus::Source => self.draft.extend_source(direction),
+            ListFocus::Target => self.draft.extend_target(direction),
         }
         self.navigation_consumed = true;
     }

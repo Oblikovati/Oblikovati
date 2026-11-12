@@ -236,6 +236,32 @@ impl Draft {
         self.target_extra.clear();
         self.target_extent = None;
     }
+    pub fn select_visible_source(&mut self, visible: &[Command]) {
+        let Some(first) = visible.first().copied() else {
+            return;
+        };
+        let anchor = self
+            .source
+            .filter(|command| visible.contains(command))
+            .unwrap_or(first);
+        self.source = Some(anchor);
+        self.source_extra = visible
+            .iter()
+            .copied()
+            .filter(|command| *command != anchor)
+            .collect();
+        self.source_extent = None;
+    }
+    pub fn select_all_target(&mut self) {
+        let count = self.rows().len();
+        if count == 0 {
+            return;
+        }
+        let anchor = self.selected.filter(|index| *index < count).unwrap_or(0);
+        self.selected = Some(anchor);
+        self.target_extra = (0..count).filter(|index| *index != anchor).collect();
+        self.target_extent = None;
+    }
     pub fn extend_source(&mut self, direction: isize) {
         let Some(anchor) = self.source else {
             return;
@@ -437,5 +463,19 @@ mod tests {
         draft.reset_source_selection(Command::Sketches);
         draft.add();
         assert!(draft.rows()[0].large && draft.rows()[0].text);
+    }
+    #[test]
+    fn select_all_uses_visible_source_and_all_target_rows() {
+        let mut draft = Draft::default();
+        draft.open(RibbonTab::Tools);
+        draft.reset_source_selection(Command::Sketches);
+        draft.select_visible_source(&[Command::Sketches, Command::Annotations]);
+        draft.add();
+        assert_eq!(draft.rows().len(), 2);
+        draft.reset_target_selection(1);
+        draft.select_all_target();
+        assert_eq!(draft.target_extra, [0].into_iter().collect());
+        draft.remove();
+        assert!(draft.rows().is_empty());
     }
 }

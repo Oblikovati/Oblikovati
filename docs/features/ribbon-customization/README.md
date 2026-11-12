@@ -6,8 +6,9 @@ and choose their size and text display on each row. New commands start with
 Large and Text clear. A removed command keeps its options if it is added back
 before Apply. Double-click a command to transfer it
 between the lists. Select a row and use Shift with Up or Down to select
-multiple rows for transfer. Apply keeps the dialog open; OK applies
-and closes it. Cancel and Escape discard edits since the last Apply. Escape
+multiple rows for transfer. Ctrl+A selects visible source rows or all target
+rows when that list has focus. Apply keeps the dialog open; OK applies
+and closes it. Cancel, Escape, and the title-bar close control discard edits since the last Apply. Escape
 closes an open target or category list before it closes the dialog. A target
 remains marked as changed until Apply, OK, or Cancel, even if an edit returns
 the list to its earlier state.
