@@ -21,6 +21,17 @@ pub(crate) fn draw_panel_content(
         RibbonPanel::Constrain => {
             sketch_constraint_controls(ui, origin, state, owners.icons, actions)
         }
+        RibbonPanel::Layout => {
+            muted_commands(ui, origin, &["Make Part", "Make Components"], NOT_PORTED);
+            owners.icons.cursor(ui, origin, [116., 0.]);
+            crate::sketch::create_block::ribbon_button(
+                ui,
+                state,
+                owners.create_block,
+                actions,
+                [108., 26.],
+            );
+        }
         RibbonPanel::Format => {
             crate::sketch_formats::sketch_format_controls(ui, origin, state, owners.icons, actions);
             owners.icons.cursor(ui, origin, [PRECISE_INPUT_COLUMN, 0.]);

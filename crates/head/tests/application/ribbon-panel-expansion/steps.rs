@@ -9,6 +9,8 @@ use cucumber::{given, then, when};
 mod sketch_block_placement;
 #[path = "sketch_constrain.rs"]
 mod sketch_constrain;
+#[path = "sketch_layout.rs"]
+mod sketch_layout;
 const WINDOW: &str = "##ribbon-additional-PartModify";
 const SIMPLIFICATION: &str = "##ribbon-additional-PartSimplification";
 

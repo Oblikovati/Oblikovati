@@ -3,6 +3,21 @@
 use crate::{GuiAuthoringContext, GuiCommandState, GuiShellAction};
 use imgui::{Key, Ui};
 
+pub(crate) fn ribbon_button(
+    ui: &Ui,
+    state: &GuiCommandState,
+    dialog: &mut CreateBlockDialog,
+    actions: &mut Vec<GuiShellAction>,
+    size: [f32; 2],
+) {
+    let disabled = ui.begin_disabled(!state.sketch_at_ready || state.transaction_open);
+    if crate::widget_abi::button(ui, "Create Block", size) {
+        dialog.open(state);
+        actions.push(GuiShellAction::SelectBlockGeometry(true));
+    }
+    drop(disabled);
+}
+
 #[derive(Default)]
 pub(crate) struct CreateBlockDialog {
     document: Option<u64>,

@@ -255,12 +255,7 @@ fn create_commands(
     create_block: &mut crate::sketch::create_block::CreateBlockDialog,
     actions: &mut Vec<GuiShellAction>,
 ) {
-    let unavailable = ui.begin_disabled(!state.sketch_at_ready || state.transaction_open);
-    if ui.button("Create Block") {
-        create_block.open(state);
-        actions.push(GuiShellAction::SelectBlockGeometry(true));
-    }
-    drop(unavailable);
+    crate::sketch::create_block::ribbon_button(ui, state, create_block, actions, [0., 0.]);
     let disabled = ui.begin_disabled(state.precise_target.is_none() || state.transaction_open);
     precise_input.toggle(ui);
     drop(disabled);

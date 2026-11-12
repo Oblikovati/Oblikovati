@@ -15,6 +15,7 @@ pub(crate) enum RibbonPanel {
     Create,
     Exit,
     Constrain,
+    Layout,
     Modify,
     Format,
     Parameters,
@@ -48,6 +49,7 @@ impl RibbonPanel {
             Self::Create => "Create",
             Self::Exit => "Exit",
             Self::Constrain => "Constrain",
+            Self::Layout => "Layout",
             Self::Modify => "Modify",
             Self::Format => "Format",
             Self::Parameters => "Parameters",
@@ -81,6 +83,7 @@ impl RibbonPanel {
             Self::Navigate => ("Home", GuiShellAction::Home),
             Self::Create
             | Self::Constrain
+            | Self::Layout
             | Self::Format
             | Self::Parameters
             | Self::ToolOptions
@@ -462,7 +465,7 @@ pub(crate) fn panels_for(tab: RibbonTab, state: &GuiCommandState) -> Vec<RibbonP
         }
         RibbonTab::Annotate => vec![AnnotateDimension, AnnotateText, AnnotateSymbols],
         RibbonTab::Presentation => vec![PresentationModel],
-        RibbonTab::Sketch => vec![Create, Exit, Constrain, Modify, Format],
+        RibbonTab::Sketch => vec![Create, Exit, Constrain, Layout, Modify, Format],
         RibbonTab::Manage => vec![Parameters],
         RibbonTab::Tools => vec![ToolOptions],
         RibbonTab::View if state.theme.is_some() || state.color_scheme.is_some() => {
