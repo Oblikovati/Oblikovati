@@ -9,6 +9,8 @@ use std::time::Duration;
 mod cube;
 #[path = "native_gui_loop/files.rs"]
 mod files;
+#[path = "native_gui_loop/model_state_journey.rs"]
+mod model_state_journey;
 #[path = "native_gui_loop/parameters.rs"]
 mod parameters;
 struct ScriptedGuiWindow {
@@ -83,6 +85,7 @@ fn native_new_part_button_creates_and_selects_an_unsaved_document() {
     assert_eq!(owner.documents().workspace().documents().len(), 1);
     assert!(owner.documents().workspace().active_document().is_some());
     assert!(!owner.close_allowed().unwrap());
+    let variant = model_state_journey::prepare(&mut owner);
     parameters::create_size_parameter(&mut window, &mut owner);
     click_shell_position(&mut window, &mut owner, [110, 68]);
     // Start 2D Sketch asks for a plane; facing the view, only XY has any area to click.
@@ -161,6 +164,7 @@ fn native_new_part_button_creates_and_selects_an_unsaved_document() {
     assert!(!owner.placement_active());
     verify_browser_reentry_pixels(&mut window, &mut owner, edit);
     cube::create_from_ribbon(&mut window, &mut owner, edit.document);
+    model_state_journey::check_switches(&mut window, &mut owner, edit.document, variant);
     parameters::edit_size_and_history(&mut window, &mut owner, edit);
     cube::verify(&mut owner, edit.document, 2.);
     let key = cube::body_key(&mut owner);

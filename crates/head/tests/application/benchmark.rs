@@ -16,10 +16,16 @@ use world::ApplicationWorld;
 
 pub(super) fn rendered_label_center(label: &str) -> [i32; 2] {
     let frame = diagnostics::rendered_frame();
+    let wanted: String = label.chars().filter(|ch| !ch.is_whitespace()).collect();
     let run = frame
         .runs
         .iter()
-        .filter(|run| run.text == label)
+        .filter(|run| {
+            run.text
+                .chars()
+                .filter(|ch| !ch.is_whitespace())
+                .eq(wanted.chars())
+        })
         .min_by(|a, b| a.minimum[1].total_cmp(&b.minimum[1]))
         .unwrap_or_else(|| {
             panic!(
@@ -28,6 +34,27 @@ pub(super) fn rendered_label_center(label: &str) -> [i32; 2] {
             )
         });
     diagnostics::pointer_pixels(run.center())
+}
+pub(super) fn rendered_label_start(label: &str) -> [i32; 2] {
+    let wanted: String = label.chars().filter(|ch| !ch.is_whitespace()).collect();
+    let frame = diagnostics::rendered_frame();
+    let run = frame
+        .runs
+        .iter()
+        .find(|run| {
+            run.text
+                .chars()
+                .filter(|ch| !ch.is_whitespace())
+                .collect::<String>()
+                .starts_with(&wanted)
+        })
+        .unwrap_or_else(|| {
+            panic!(
+                "label {label:?}: expected visible control in {:?}",
+                frame.runs
+            )
+        });
+    diagnostics::pointer_pixels([run.minimum[0] + 5., run.center()[1]])
 }
 pub(super) fn rendered_sketch_row_center() -> [i32; 2] {
     let frame = diagnostics::rendered_frame();
