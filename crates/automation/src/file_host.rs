@@ -181,6 +181,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
         if method == METHOD_FEATURES_ADD {
             return crate::extrusion::apply(self.files, self.extrusion, request);
         }
+        if method == METHOD_FEATURES_SET_SUPPRESSED {
+            return crate::feature_suppression::apply(self.files, self.extrusion, request);
+        }
         if crate::BODY_COMMAND_METHODS.contains(&method) {
             return crate::body_commands::apply(
                 self.files,

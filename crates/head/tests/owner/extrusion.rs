@@ -3,6 +3,8 @@ use super::*;
 use oblikovati_api::wire::featureargs::Extrude;
 use oblikovati_martensite::PrismResolution;
 use oblikovati_persistence::package::DocumentPackage;
+#[path = "extrusion_suppression.rs"]
+mod suppression;
 
 fn resolution() -> PrismResolution {
     PrismResolution {

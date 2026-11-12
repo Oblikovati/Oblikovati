@@ -29,6 +29,17 @@ pub trait ExtrudeRegionAccess {
     ) -> Result<SketchPrismSelection, String>;
     /// Validate the solved candidate and return the current body count; example: `backend.validate(candidate, feature)?`.
     fn validate(&self, candidate: &DocumentSnapshot, feature: FeatureId) -> Result<usize, String>;
+    /// Replay a feature and return its failure reason, or an empty string when healthy or suppressed.
+    /// Example: `backend.feature_health(candidate, feature)?`.
+    fn feature_health(
+        &self,
+        _candidate: &DocumentSnapshot,
+        feature: FeatureId,
+    ) -> Result<String, String> {
+        Err(format!(
+            "feature {feature:?}: expected a feature replay service"
+        ))
+    }
 }
 
 pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(

@@ -12,6 +12,7 @@ mod attributes;
 mod command_owner;
 mod edit;
 mod extrusion;
+mod feature_suppression;
 mod file_host;
 pub use extrusion::{ExtrudeRegionAccess, PreparedExtrusion, prepare_extrusion};
 mod interests;

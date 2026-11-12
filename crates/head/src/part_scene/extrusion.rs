@@ -48,4 +48,24 @@ impl ExtrudeRegionAccess for CertifiedExtrudeAccess {
         }
         Ok(replay.ordered_bodies().count())
     }
+    fn feature_health(
+        &self,
+        candidate: &DocumentSnapshot,
+        feature: FeatureId,
+    ) -> Result<String, String> {
+        use oblikovati_model::feature::FeatureEvaluationStatus;
+        let mut backend = CertifiedPrismEvaluator::with_policy(self.0);
+        let replay = candidate
+            .evaluate_part_features(&mut backend)
+            .map_err(|cause| cause.to_string())?;
+        let record = replay
+            .health()
+            .iter()
+            .find(|record| record.feature == feature)
+            .ok_or_else(|| format!("feature {feature:?}: expected a replay health record"))?;
+        Ok(match &record.status {
+            FeatureEvaluationStatus::Healthy | FeatureEvaluationStatus::Suppressed => String::new(),
+            status => format!("{status:?}"),
+        })
+    }
 }
