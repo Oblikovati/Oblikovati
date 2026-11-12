@@ -36,6 +36,7 @@ pub(crate) struct BrowserView {
     pub selected_row: Option<(usize, usize)>,
     /// The origin row a click chose.
     pub selected_origin_row: Option<usize>,
+    pub arrow_consumed: bool,
     pub model_state_edit: crate::browser::browser_model_state::ModelStateEdit,
     pub hide_work_features: bool,
     /// Feature rows also say their operation and depth.

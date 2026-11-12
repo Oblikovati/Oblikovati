@@ -406,7 +406,27 @@ impl GuiFrameEngine {
         // ribbon must leave M and F8 to the sketch unless a widget is really using the keys.
         // A popup always owns them, even on the frame Escape closes it and focus moves on.
         capture.keyboard &= capture.text || self.context.io().nav_visible;
-        capture.keyboard |= popup_open || self.ribbon.tips.consumed;
+        capture.keyboard |=
+            popup_open || self.ribbon.tips.consumed || self.workspace.browser_consumed_arrow();
+        let ribbon_view_arrow = self.ribbon.tips.active()
+            && !capture.text
+            && !popup_open
+            && !self.workspace.browser_consumed_arrow()
+            && request.events.iter().any(|event| {
+                matches!(
+                    event,
+                    GuiInputEvent::Key {
+                        key: crate::GuiKey::LeftArrow
+                            | crate::GuiKey::RightArrow
+                            | crate::GuiKey::UpArrow
+                            | crate::GuiKey::DownArrow,
+                        pressed: true
+                    }
+                )
+            });
+        if ribbon_view_arrow {
+            capture.keyboard = false;
+        }
         capture.text |= self.ribbon.tips.consumed
             || (self.ribbon.tips.active()
                 && request

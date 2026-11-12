@@ -134,6 +134,7 @@ pub(crate) fn follow_keys(
     let Some(key) = pressed_arrow(ui) else {
         return;
     };
+    view.arrow_consumed = true;
     let cursor = OriginCursor {
         row: view.selected_origin_row,
         folder: view.origin_folder_chosen,

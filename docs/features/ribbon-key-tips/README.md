@@ -6,3 +6,6 @@ Sketch, `C` to open Create, or `Y` to open Modify. Press `S`, `K` to start a
 sketch, or `E`, `X` to open Extrude when it is available.
 
 Press `Alt` to hide the key tips. Press `Escape` to close an open group.
+
+With top-level key tips visible, press an arrow key to rotate the model view.
+Opposite arrow keys rotate it back.

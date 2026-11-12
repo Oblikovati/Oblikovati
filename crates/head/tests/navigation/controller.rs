@@ -249,3 +249,66 @@ fn held_modes_capture_pointer_until_release_or_focus_loss() {
     navigation.command(&ViewportEvent::Focus(false)).unwrap();
     assert!(!navigation.captures_pointer());
 }
+#[test]
+fn arrow_keys_orbit_in_opposite_steps_without_modifiers() {
+    let mut navigation = DesktopNavigation::default();
+    let key = |key, pressed, modifiers| {
+        ViewportEvent::Input(ViewportInput::PhysicalKey {
+            key,
+            layout_key: key,
+            command: None,
+            pressed,
+            modifiers,
+        })
+    };
+    let step = 15_f64.to_radians();
+    assert_eq!(
+        navigation
+            .command(&key(
+                ViewportPhysicalKey::RightArrow,
+                true,
+                Default::default()
+            ))
+            .unwrap(),
+        Some(ViewportNavigation::Orbit {
+            yaw: step,
+            pitch: 0.
+        })
+    );
+    assert_eq!(
+        navigation
+            .command(&key(
+                ViewportPhysicalKey::LeftArrow,
+                true,
+                Default::default()
+            ))
+            .unwrap(),
+        Some(ViewportNavigation::Orbit {
+            yaw: -step,
+            pitch: 0.
+        })
+    );
+    assert_eq!(
+        navigation
+            .command(&key(
+                ViewportPhysicalKey::UpArrow,
+                false,
+                Default::default()
+            ))
+            .unwrap(),
+        None
+    );
+    assert_eq!(
+        navigation
+            .command(&key(
+                ViewportPhysicalKey::DownArrow,
+                true,
+                ViewportModifiers {
+                    shift: true,
+                    ..Default::default()
+                }
+            ))
+            .unwrap(),
+        None
+    );
+}

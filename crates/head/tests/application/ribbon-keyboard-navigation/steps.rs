@@ -48,6 +48,7 @@ fn unknown_tip(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::Z, false);
 }
 #[then("the top-level key tips remain visible")]
+#[then("the top-level ribbon key tips remain visible")]
 fn tips_remain(world: &mut ApplicationWorld) {
     tips_shown(world);
 }
@@ -359,3 +360,5 @@ fn compact_create_group_tips_open_extrude() {
     world.escape();
     world.close();
 }
+#[path = "view_rotation.rs"]
+mod view_rotation;

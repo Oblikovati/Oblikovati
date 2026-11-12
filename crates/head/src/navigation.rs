@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use oblikovati_viewport::{
     ViewportButton, ViewportEvent, ViewportInput, ViewportKey, ViewportModifiers,
-    ViewportNavigation,
+    ViewportNavigation, ViewportPhysicalKey,
 };
 #[derive(Clone, Copy)]
 enum DragGesture {
@@ -68,6 +68,15 @@ impl DesktopNavigation {
             } => {
                 self.clear_gesture();
                 return Ok(Some(ViewportNavigation::Home { margin: 0.1 }));
+            }
+            ViewportInput::PhysicalKey {
+                key,
+                pressed: true,
+                modifiers,
+                command: None,
+                ..
+            } if modifiers == ViewportModifiers::default() => {
+                return Ok(arrow_navigation(key));
             }
             ViewportInput::Key { key, pressed }
             | ViewportInput::PhysicalKey {
@@ -137,6 +146,18 @@ impl DesktopNavigation {
         };
         Ok(gesture.map(|gesture| drag_navigation(gesture, delta)))
     }
+}
+// A discrete step lets the opposite key restore the preceding orientation.
+fn arrow_navigation(key: ViewportPhysicalKey) -> Option<ViewportNavigation> {
+    let step = 15_f64.to_radians();
+    let (yaw, pitch) = match key {
+        ViewportPhysicalKey::LeftArrow => (-step, 0.),
+        ViewportPhysicalKey::RightArrow => (step, 0.),
+        ViewportPhysicalKey::UpArrow => (0., -step),
+        ViewportPhysicalKey::DownArrow => (0., step),
+        _ => return None,
+    };
+    Some(ViewportNavigation::Orbit { yaw, pitch })
 }
 fn wheel_navigation(notches: i32, position: [i32; 2]) -> ViewportNavigation {
     ViewportNavigation::Zoom {
