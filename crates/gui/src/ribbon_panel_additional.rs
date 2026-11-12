@@ -158,6 +158,7 @@ fn draw_window(
                 context.state,
                 context.owners.precise_input,
                 context.owners.create_block,
+                context.actions,
             );
             ui.separator();
             let active = expansion.pinned.then(|| {
@@ -224,9 +225,10 @@ fn commands(
     state: &GuiCommandState,
     precise_input: &mut crate::sketch::precise_input::PreciseInputBar,
     create_block: &mut crate::sketch::create_block::CreateBlockDialog,
+    actions: &mut Vec<GuiShellAction>,
 ) {
     if panel == RibbonPanel::Create {
-        create_commands(ui, state, precise_input, create_block);
+        create_commands(ui, state, precise_input, create_block, actions);
         return;
     }
     let disabled = ui.begin_disabled(true);
@@ -251,10 +253,12 @@ fn create_commands(
     state: &GuiCommandState,
     precise_input: &mut crate::sketch::precise_input::PreciseInputBar,
     create_block: &mut crate::sketch::create_block::CreateBlockDialog,
+    actions: &mut Vec<GuiShellAction>,
 ) {
     let unavailable = ui.begin_disabled(!state.sketch_at_ready || state.transaction_open);
     if ui.button("Create Block") {
         create_block.open(state);
+        actions.push(GuiShellAction::SelectBlockGeometry(true));
     }
     drop(unavailable);
     let disabled = ui.begin_disabled(state.precise_target.is_none() || state.transaction_open);

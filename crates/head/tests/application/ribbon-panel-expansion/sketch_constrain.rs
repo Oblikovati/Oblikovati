@@ -230,6 +230,72 @@ fn create_block_opens_and_cancels_through_the_native_ribbon() {
 }
 
 #[test]
+fn create_block_groups_four_mouse_selected_edges_and_supports_undo_redo() {
+    use oblikovati_viewport::{ViewportKey, ViewportPhysicalKey};
+    let mut world = ApplicationWorld::new();
+    world.start_empty_sketch();
+    world.draw_rectangle();
+    world.escape();
+    let original = world.edited_geometry();
+    assert_eq!(original.lines().len(), 4);
+    let segments: Vec<_> = (0..4)
+        .map(|index| [world.line_point(index, 0.3), world.line_point(index, 0.7)])
+        .collect();
+    create_area_open(&mut world);
+    choose_create_block(&mut world);
+    let (position, _) = diagnostics::window_geometry("Create Block").unwrap();
+    world.drag(
+        [(position[0] + 80.) as i32, (position[1] + 10.) as i32],
+        [360, 210],
+    );
+    for index in 0..4 {
+        let point = visible_line_point(&mut world, index);
+        world.click(point);
+        let selection = world.state().sketch_selection.entities;
+        assert_eq!(selection.len(), index + 1);
+        assert!(
+            selection
+                .iter()
+                .any(|(_, entity)| *entity == original.lines()[index].id)
+        );
+    }
+    let ok = world.run_in_window("Create Block", "OK");
+    assert_eq!(ok.alpha, u8::MAX);
+    world.click(diagnostics::pointer_pixels(ok.center()));
+    world.pump(Vec::new());
+    assert!(diagnostics::window_geometry("Create Block").is_none());
+    assert_eq!(world.edited_geometry().lines().len(), 0);
+    assert_eq!(world.state().sketch_block_names, ["Block1"]);
+    for [from, to] in &segments {
+        world.expect_segment_drawn(*from, *to);
+    }
+    world.command_key(ViewportPhysicalKey::Z, ViewportKey::Undo);
+    assert!(world.edited_geometry().same_recipe(&original));
+    assert!(world.state().sketch_block_names.is_empty());
+    world.command_key(ViewportPhysicalKey::Y, ViewportKey::Redo);
+    assert_eq!(world.edited_geometry().lines().len(), 0);
+    assert_eq!(world.state().sketch_block_names, ["Block1"]);
+    for [from, to] in segments {
+        world.expect_segment_drawn(from, to);
+    }
+    world.close();
+}
+fn visible_line_point(world: &mut ApplicationWorld, line: usize) -> [i32; 2] {
+    let (position, size) = diagnostics::window_geometry("Create Block").unwrap();
+    for fraction in [0.5, 0.3, 0.7, 0.15, 0.85, 0.05, 0.95] {
+        let point = world.line_point(line, fraction);
+        let outside = (0..2).any(|axis| {
+            (point[axis] as f32) < position[axis] - 5.
+                || (point[axis] as f32) > position[axis] + size[axis] + 5.
+        });
+        if outside {
+            return point;
+        }
+    }
+    panic!("line {line}: expected a pick outside the dialog");
+}
+
+#[test]
 fn create_expansion_opens_the_existing_precise_input_for_a_line() {
     let mut world = ApplicationWorld::new();
     world.start_empty_sketch();

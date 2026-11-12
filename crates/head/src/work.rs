@@ -2,6 +2,18 @@
 use crate::HeadWorkStatus;
 /// Owner-thread services borrow model state only while the window loop polls them.
 pub trait HeadWork {
+    /// Change the block selection mode; example: `work.select_block_geometry_from_gui(true)?`.
+    fn select_block_geometry_from_gui(&mut self, active: bool) -> Result<bool, String> {
+        Err(format!(
+            "block geometry selection {active}: expected an active sketch owner"
+        ))
+    }
+    /// Group the selected sketch geometry; example: `work.create_sketch_block_from_gui("Block1")?`.
+    fn create_sketch_block_from_gui(&mut self, name: &str) -> Result<bool, String> {
+        Err(format!(
+            "block name {name:?}: expected an active sketch owner"
+        ))
+    }
     /// Set document unit preferences through the typed API; example: `work.set_document_units_from_gui(id, &request)?`.
     fn set_document_units_from_gui(
         &mut self,

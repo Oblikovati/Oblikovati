@@ -187,6 +187,12 @@ macro_rules! forward_owner_view_work {
         fn delete_sketch_selection_from_gui(&mut self) -> Result<bool, String> {
             self.$owner.delete_sketch_selection_from_gui()
         }
+        fn select_block_geometry_from_gui(&mut self, active: bool) -> Result<bool, String> {
+            self.$owner.select_block_geometry_from_gui(active)
+        }
+        fn create_sketch_block_from_gui(&mut self, name: &str) -> Result<bool, String> {
+            self.$owner.create_sketch_block_from_gui(name)
+        }
         fn place_sketch_tool_from_gui(
             &mut self,
             tool: oblikovati_gui::GuiSketchTool,

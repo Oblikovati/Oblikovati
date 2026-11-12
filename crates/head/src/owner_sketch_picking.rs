@@ -64,6 +64,11 @@ impl<
         let Some((position, mode)) = ordinary_click(event) else {
             return Ok(false);
         };
+        let mode = if self.block_selection == Some(edit) {
+            SelectionClickMode::Toggle
+        } else {
+            mode
+        };
         let picked = self.resolve_sketch_pick(edit, position, window)?;
         self.store_sketch_click(edit, picked, mode)?;
         self.publish_selection_count(edit)?;

@@ -95,6 +95,9 @@ fn report_authoring_result(
 }
 fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
     Some(match action {
+        GuiShellAction::SelectBlockGeometry(_) | GuiShellAction::CreateSketchBlock(_) => {
+            return None;
+        }
         GuiShellAction::SetUiScale(_)
         | GuiShellAction::SetDocumentUnits { .. }
         | GuiShellAction::CreateDrawingBaseView(_)

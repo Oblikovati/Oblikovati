@@ -5,6 +5,10 @@ use oblikovati_gui::GuiShellAction;
 
 pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, String> {
     match action {
+        GuiShellAction::SelectBlockGeometry(active) => {
+            owner.select_block_geometry_from_gui(*active)
+        }
+        GuiShellAction::CreateSketchBlock(name) => owner.create_sketch_block_from_gui(name),
         GuiShellAction::SetDocumentUnits { document, request } => {
             owner.set_document_units_from_gui(*document, request)
         }

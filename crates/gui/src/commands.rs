@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 #[derive(Clone, Debug, PartialEq)]
 pub enum GuiShellAction {
+    /// Enter or leave the Create Block geometry selection mode.
+    SelectBlockGeometry(bool),
+    /// Group the editor's current checked selection under this name.
+    CreateSketchBlock(String),
     SetDocumentUnits {
         document: u64,
         request: oblikovati_api::wire::SetDocumentUnitsArgs,
@@ -283,6 +287,8 @@ pub struct GuiCommandState {
     pub sketch_selection: oblikovati_viewport::ViewportSketchSelection,
     /// Names in the active document's block registry.
     pub sketch_block_names: Vec<String>,
+    /// Last block creation acknowledged by the document owner during this dialog.
+    pub sketch_block_created: Option<String>,
     pub color_scheme: Option<crate::GuiColorSchemeState>,
     pub theme: Option<crate::GuiThemeState>,
     pub browser: Option<crate::GuiModelBrowser>,

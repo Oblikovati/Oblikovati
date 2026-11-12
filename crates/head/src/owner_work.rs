@@ -392,6 +392,12 @@ impl<
     fn delete_sketch_selection_from_gui(&mut self) -> Result<bool, String> {
         self.delete_gui_sketch_selection()
     }
+    fn select_block_geometry_from_gui(&mut self, active: bool) -> Result<bool, String> {
+        self.set_block_selection(active)
+    }
+    fn create_sketch_block_from_gui(&mut self, name: &str) -> Result<bool, String> {
+        self.create_selected_sketch_block(name)
+    }
     fn constrain_sketch_from_gui(
         &mut self,
         choice: oblikovati_gui::GuiSketchConstraint,

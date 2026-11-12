@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! The Create Block draft belongs to the GUI until the user accepts it.
-use crate::{GuiAuthoringContext, GuiCommandState};
+use crate::{GuiAuthoringContext, GuiCommandState, GuiShellAction};
 use imgui::{Key, Ui};
 
 #[derive(Default)]
@@ -9,6 +9,7 @@ pub(crate) struct CreateBlockDialog {
     name: String,
     description: String,
     visible: bool,
+    pending: Option<(String, bool)>,
 }
 impl CreateBlockDialog {
     pub(crate) fn open(&mut self, state: &GuiCommandState) {
@@ -16,43 +17,79 @@ impl CreateBlockDialog {
         self.name = next_name(&state.sketch_block_names);
         self.description.clear();
         self.visible = false;
+        self.pending = None;
     }
-    pub(crate) fn panel(&mut self, ui: &Ui, state: &GuiCommandState) {
+    pub(crate) fn panel(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
         if self.document != state.document || state.authoring != GuiAuthoringContext::Sketch {
+            if self.document.is_some() {
+                actions.push(GuiShellAction::SelectBlockGeometry(false));
+            }
             self.document = None;
         }
+        self.finish_pending(state, actions);
         if self.document.is_none() {
             return;
         }
         crate::widget_abi::fit_dialog(ui, "Create Block", [620., 260.], [390., 245.]);
         ui.window("Create Block").collapsible(false).build(|| {
             self.fields(ui);
-            self.buttons(ui);
+            self.buttons(ui, state, actions);
         });
     }
     fn fields(&mut self, ui: &Ui) {
         ui.text("Geometry");
         ui.same_line();
-        let unavailable = ui.begin_disabled(true);
-        ui.button("Select##block-geometry");
+        crate::widget_abi::toggle_button(ui, "Select##block-geometry", [0., 0.], true);
         ui.text("Insert Point");
         ui.same_line();
-        ui.button("Select##block-insertion");
-        drop(unavailable);
-        ui.checkbox("Visibility", &mut self.visible);
-        ui.input_text("Block Name", &mut self.name).build();
-        ui.input_text("Description", &mut self.description).build();
-    }
-    fn buttons(&mut self, ui: &Ui) {
         let unavailable = ui.begin_disabled(true);
-        ui.button("OK");
+        ui.button("Select##block-insertion");
+        ui.checkbox("Visibility", &mut self.visible);
+        drop(unavailable);
+        ui.input_text("Block Name", &mut self.name).build();
+        let unavailable = ui.begin_disabled(true);
+        ui.input_text("Description", &mut self.description).build();
+        drop(unavailable);
+    }
+    fn buttons(&mut self, ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
+        let action = GuiShellAction::CreateSketchBlock(self.name.clone());
+        let enabled = self.pending.is_none() && action.dispatchable(state);
+        let unavailable = ui.begin_disabled(!enabled);
+        if ui.button("OK") && enabled {
+            self.pending = Some((self.name.clone(), true));
+            actions.push(action.clone());
+        }
         ui.same_line();
-        ui.button("Apply");
+        if ui.button("Apply") && enabled {
+            self.pending = Some((self.name.clone(), false));
+            actions.push(action);
+        }
         drop(unavailable);
         ui.same_line();
         if ui.button("Cancel") || ui.is_window_focused() && ui.is_key_pressed_no_repeat(Key::Escape)
         {
             self.document = None;
+            actions.push(GuiShellAction::SelectBlockGeometry(false));
+        }
+    }
+    fn finish_pending(&mut self, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
+        let Some((name, close)) = self.pending.take() else {
+            return;
+        };
+        if state.sketch_block_created.as_deref() != Some(name.as_str()) {
+            return;
+        }
+        if close {
+            self.document = None;
+            actions.push(GuiShellAction::SelectBlockGeometry(false));
+        } else {
+            self.name = next_name(&state.sketch_block_names);
+            self.description.clear();
         }
     }
 }
@@ -68,10 +105,33 @@ fn next_name(names: &[String]) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::next_name;
+    use super::{CreateBlockDialog, GuiCommandState, GuiShellAction, next_name};
     #[test]
     fn proposed_name_skips_existing_definitions() {
         assert_eq!(next_name(&[]), "Block1");
         assert_eq!(next_name(&["Block1".into(), "Block3".into()]), "Block2");
+    }
+    #[test]
+    fn owner_acknowledgement_controls_apply_and_close() {
+        let mut dialog = CreateBlockDialog {
+            document: Some(1),
+            pending: Some(("Block1".into(), false)),
+            ..Default::default()
+        };
+        let mut actions = Vec::new();
+        let mut state = GuiCommandState {
+            sketch_block_names: vec!["Block1".into()],
+            ..Default::default()
+        };
+        dialog.finish_pending(&state, &mut actions);
+        assert!(dialog.name.is_empty());
+        dialog.pending = Some(("Block1".into(), false));
+        state.sketch_block_created = Some("Block1".into());
+        dialog.finish_pending(&state, &mut actions);
+        assert_eq!(dialog.name, "Block2");
+        dialog.pending = Some(("Block1".into(), true));
+        dialog.finish_pending(&state, &mut actions);
+        assert_eq!(dialog.document, None);
+        assert_eq!(actions, vec![GuiShellAction::SelectBlockGeometry(false)]);
     }
 }

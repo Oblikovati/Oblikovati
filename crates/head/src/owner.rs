@@ -45,6 +45,8 @@ pub(crate) mod owner_precise_input;
 mod parameters_gui;
 #[path = "owner_recent.rs"]
 mod recent;
+#[path = "owner_sketch_block.rs"]
+mod sketch_block;
 #[path = "owner_sketch_delete.rs"]
 mod sketch_delete;
 #[path = "owner_sketch_dimension.rs"]
@@ -119,6 +121,8 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     dimension_serial: u64,
     sketch_formats: oblikovati_api::types::SketchFormatModes,
     sketch_memory: owner_precise_input::SketchCommandMemory,
+    block_selection: Option<crate::HeadSketchEdit>,
+    block_created: Option<String>,
     opened_hidden_sketch: Option<oblikovati_model::document_sketch::DocumentSketchId>,
     model_face: Option<browser_selection::ChosenModelFace>,
     inspected_file: Option<oblikovati_gui::GuiInspectedFile>,
@@ -185,6 +189,8 @@ impl<
             sketch_construction: Default::default(),
             sketch_formats: Default::default(),
             sketch_memory: Default::default(),
+            block_selection: None,
+            block_created: None,
             opened_hidden_sketch: None,
             model_face: None,
             inspected_file: None,

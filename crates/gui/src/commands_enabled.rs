@@ -4,6 +4,16 @@ impl GuiShellAction {
     /// Preserve Go empty-stack enablement; example: `GuiShellAction::Undo.enabled(&state)`.
     pub fn enabled(&self, state: &GuiCommandState) -> bool {
         match self {
+            Self::SelectBlockGeometry(false) => true,
+            Self::SelectBlockGeometry(true) => state.sketch_at_ready && !state.transaction_open,
+            Self::CreateSketchBlock(name) => {
+                state.sketch_at_ready
+                    && !state.transaction_open
+                    && !name.trim().is_empty()
+                    && !name.contains('\0')
+                    && !state.sketch_block_names.contains(name)
+                    && !state.sketch_selection.entities.is_empty()
+            }
             Self::SetDocumentUnits { document, .. } => {
                 state.document == Some(*document)
                     && state.document_units.is_some()
