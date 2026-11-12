@@ -111,6 +111,52 @@ fn vetoed_block_deletion_restores_the_instance_and_its_selection() {
 }
 
 #[test]
+fn deleting_first_instance_preserves_the_second_instances_number() {
+    use oblikovati_model::document_sketch::{DocumentSketches, SketchBlockInstance};
+    let mut session = selection_session(None);
+    let first = place_test_block(&mut session);
+    let second = session
+        .run("Place another block", |snapshot, ids| {
+            let id = ids.allocate_sketch_entity().unwrap();
+            snapshot
+                .sketches
+                .insert_block_instance(
+                    SKETCH,
+                    SketchBlockInstance::new(id, "Rib", [2., 0.], 0., 1.).unwrap(),
+                )
+                .unwrap();
+            Ok::<_, String>(id)
+        })
+        .unwrap();
+    session
+        .set_sketch_selection(
+            SKETCH,
+            Some(SketchPickTarget::BlockInstance(first)),
+            SelectionClickMode::Replace,
+            false,
+        )
+        .unwrap();
+    session
+        .delete_editor_selection(Some(SKETCH), false)
+        .unwrap();
+    let restored = DocumentSketches::from_recipe(&session.snapshot().sketches.recipe()).unwrap();
+    let retained = &restored.get(SKETCH).unwrap().block_instances()[0];
+    assert_eq!((retained.id(), retained.ordinal()), (second, Some(2)));
+    session.undo().unwrap();
+    session.redo().unwrap();
+    assert_eq!(
+        session
+            .snapshot()
+            .sketches
+            .get(SKETCH)
+            .unwrap()
+            .block_instances()[0]
+            .ordinal(),
+        Some(2)
+    );
+}
+
+#[test]
 fn invalid_block_in_mixed_deletion_keeps_the_entire_document() {
     let session = selection_session(None);
     let mut snapshot = session.snapshot().clone();

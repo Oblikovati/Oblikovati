@@ -48,7 +48,7 @@ pub struct GuiBrowserBlockInstance {
     pub sketch: DocumentSketchId,
     pub id: oblikovati_model::sketch::SketchEntityId,
     pub definition: String,
-    pub ordinal: usize,
+    pub ordinal: u64,
 }
 /// Stable sketch identity paired with its current canonical API inspection or local decline.
 #[derive(Clone, Debug, PartialEq)]

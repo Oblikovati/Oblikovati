@@ -392,12 +392,27 @@ fn viewport_picks_rotated_and_scaled_block_instance() {
             ..Default::default()
         })
         .unwrap();
+    let second = Client::new(world.app().owner.document_host())
+        .sketch()
+        .add_block_instance(&AddSketchBlockArgs {
+            definition: "Rib".into(),
+            position: Some(vec![0., 0.]),
+            ..Default::default()
+        })
+        .unwrap();
     world.pump(Vec::new());
+    world.expect_text("Rib:1");
+    world.expect_text("Rib:2");
     world.click([1100, 550]);
     assert_eq!(
         world.state().sketch_selection.entities[0].1.0,
         added.entity_id
     );
+    world.key(oblikovati_viewport::ViewportPhysicalKey::Delete, false);
+    world.expect_no_text("Rib:1");
+    world.expect_text("Rib:2");
+    let rows = world.state().browser.unwrap().block_instances;
+    assert_eq!((rows[0].id.0, rows[0].ordinal), (second.entity_id, 2));
     world.close();
 }
 fn visible_line_point(world: &mut ApplicationWorld, line: usize) -> [i32; 2] {

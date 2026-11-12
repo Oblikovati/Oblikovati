@@ -38,7 +38,7 @@ fn instances_round_trip_with_global_identities_and_block_deletion_is_refused() {
         .to_string();
     assert!(error.contains("Sketch1"), "{error}");
     let recipe = sketches.recipe();
-    assert_eq!(recipe.version, 10);
+    assert_eq!(recipe.version, 11);
     let restored = DocumentSketches::from_recipe(&recipe).unwrap();
     assert!(restored.same_recipe(&sketches));
     let guid: DocumentGuid = "00112233-4455-6677-8899-aabbccddeeff".parse().unwrap();
@@ -52,12 +52,64 @@ fn instances_round_trip_with_global_identities_and_block_deletion_is_refused() {
         names.resolve(&key).unwrap().entity,
         Some(SketchEntityId(20))
     );
-    assert_eq!(
-        restored.get(DocumentSketchId(1)).unwrap().block_instances(),
-        &[instance(20, "Rib")]
-    );
+    let placed = &restored.get(DocumentSketchId(1)).unwrap().block_instances()[0];
+    assert_eq!(placed.id(), SketchEntityId(20));
+    assert_eq!(placed.ordinal(), Some(1));
     sketches.remove(DocumentSketchId(1)).unwrap();
     sketches.delete_block_definition("Rib").unwrap();
+}
+
+#[test]
+fn legacy_block_instances_receive_stable_numbers_during_migration() {
+    let mut sketches = document();
+    sketches.define_empty_block("Rib").unwrap();
+    for id in [20, 21] {
+        sketches
+            .insert_block_instance(DocumentSketchId(1), instance(id, "Rib"))
+            .unwrap();
+    }
+    let mut value = serde_json::to_value(sketches.recipe()).unwrap();
+    value["version"] = 10.into();
+    for block in value["sketches"][0]["block_instances"]
+        .as_array_mut()
+        .unwrap()
+    {
+        block.as_object_mut().unwrap().remove("ordinal");
+    }
+    let legacy = serde_json::from_value::<DocumentSketchRecipe>(value).unwrap();
+    let restored = DocumentSketches::from_recipe(&legacy).unwrap();
+    let ordinals: Vec<_> = restored
+        .get(DocumentSketchId(1))
+        .unwrap()
+        .block_instances()
+        .iter()
+        .map(|row| row.ordinal())
+        .collect();
+    assert_eq!(ordinals, [Some(1), Some(2)]);
+    assert_eq!(restored.recipe().version, 11);
+}
+
+#[test]
+fn current_recipes_refuse_missing_or_duplicate_instance_numbers() {
+    let mut sketches = document();
+    sketches.define_empty_block("Rib").unwrap();
+    for id in [20, 21] {
+        sketches
+            .insert_block_instance(DocumentSketchId(1), instance(id, "Rib"))
+            .unwrap();
+    }
+    let original = serde_json::to_value(sketches.recipe()).unwrap();
+    let mut missing = original.clone();
+    missing["sketches"][0]["block_instances"][0]
+        .as_object_mut()
+        .unwrap()
+        .remove("ordinal");
+    let missing = serde_json::from_value::<DocumentSketchRecipe>(missing).unwrap();
+    assert!(DocumentSketches::from_recipe(&missing).is_err());
+    let mut duplicate = original;
+    duplicate["sketches"][0]["block_instances"][1]["ordinal"] = 1.into();
+    let duplicate = serde_json::from_value::<DocumentSketchRecipe>(duplicate).unwrap();
+    assert!(DocumentSketches::from_recipe(&duplicate).is_err());
 }
 #[test]
 fn invalid_or_colliding_instances_never_change_the_document() {

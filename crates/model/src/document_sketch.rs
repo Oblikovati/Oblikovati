@@ -101,6 +101,7 @@ pub struct PlacedSketchRecipe {
     pub orientation: Option<SketchOrientationDefinition>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub point_projections: Vec<SketchPointProjection>,
+    /// Version 11 stores each instance number; version 10 assigns numbers in document order.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub block_instances: Vec<SketchBlockInstance>,
     pub geometry: SketchRecipe,
@@ -170,7 +171,7 @@ impl PlacedSketch {
     }
     fn recipe_version(&self) -> u32 {
         if !self.block_instances.is_empty() {
-            return 10;
+            return 11;
         }
         if self.line_style != SketchLineStyle::default() {
             return 7;
@@ -315,7 +316,7 @@ impl DocumentSketches {
             .iter()
             .any(|sketch| !sketch.block_instances.is_empty())
         {
-            return 10;
+            return 11;
         }
         if self
             .block_definitions
@@ -335,9 +336,9 @@ impl DocumentSketches {
     }
     /// Restore a complete collection before replacing a document owner; example: `DocumentSketches::from_recipe(&recipe)?`.
     pub fn from_recipe(recipe: &DocumentSketchRecipe) -> Result<Self, SketchError> {
-        if !matches!(recipe.version, 1..=10) {
+        if !matches!(recipe.version, 1..=11) {
             return Err(SketchError::Definition(format!(
-                "document sketch recipe version {}: expected 1 through 10",
+                "document sketch recipe version {}: expected 1 through 11",
                 recipe.version
             )));
         }

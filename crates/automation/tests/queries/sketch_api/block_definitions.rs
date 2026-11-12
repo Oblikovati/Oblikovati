@@ -231,6 +231,53 @@ fn listing_reports_captured_definition_geometry() {
 }
 
 #[test]
+fn surviving_block_instance_number_is_preserved_on_save_and_reopen() {
+    let (mut files, document, sketch, mut source) = files_with_circle(Default::default());
+    files
+        .commands(document)
+        .unwrap()
+        .run("Capture block", |snapshot, _| {
+            snapshot
+                .sketches
+                .capture_block_definition("Circle", sketch, &[SketchEntityId(2)])
+        })
+        .unwrap();
+    let request = AddSketchBlockArgs {
+        definition: "Circle".into(),
+        position: Some(vec![0., 0.]),
+        ..Default::default()
+    };
+    let first = Client::new(FileHost::new(&mut files, &mut source, "test"))
+        .sketch()
+        .add_block_instance(&request)
+        .unwrap();
+    let second = Client::new(FileHost::new(&mut files, &mut source, "test"))
+        .sketch()
+        .add_block_instance(&request)
+        .unwrap();
+    files
+        .commands(document)
+        .unwrap()
+        .run("Delete first block", |snapshot, _| {
+            snapshot.delete_sketch_selection_with_blocks(
+                sketch,
+                &Default::default(),
+                &[SketchEntityId(first.entity_id)],
+            )
+        })
+        .unwrap();
+    files.save(document, "test", &mut source).unwrap();
+    let reopened =
+        reopen_with_observer(&mut files, document, &mut source, QueryObserver::default());
+    let snapshot = files.workspace().session(reopened).unwrap().snapshot();
+    let retained = &snapshot.sketches.get(sketch).unwrap().block_instances()[0];
+    assert_eq!(
+        (retained.id().0, retained.ordinal()),
+        (second.entity_id, Some(2))
+    );
+}
+
+#[test]
 fn placed_instances_are_listed_and_survive_save_reopen() {
     let (mut files, document, sketch, mut source) = files_with_circle(Default::default());
     files

@@ -12,6 +12,8 @@ pub struct SketchBlockInstance {
     position: [f64; 2],
     rotation: f64,
     scale: f64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    ordinal: Option<u64>,
 }
 impl SketchBlockInstance {
     /// Validate one placement; example: `SketchBlockInstance::new(id, "Rib", [1., 2.], 0., 1.)?`.
@@ -28,6 +30,7 @@ impl SketchBlockInstance {
             position,
             rotation,
             scale,
+            ordinal: None,
         };
         instance.validate()?;
         Ok(instance)
@@ -40,9 +43,10 @@ impl SketchBlockInstance {
             || !self.rotation.is_finite()
             || !self.scale.is_finite()
             || self.scale == 0.
+            || self.ordinal == Some(0)
         {
             return Err(SketchError::Definition(format!(
-                "block instance {self:?}: expected a nonzero identity, a definition name, finite position and rotation, and a finite nonzero scale"
+                "block instance {self:?}: expected a nonzero identity, a definition name, finite position and rotation, a finite nonzero scale, and a positive assigned ordinal"
             )));
         }
         Ok(())
@@ -66,6 +70,10 @@ impl SketchBlockInstance {
     /// Return the uniform scale; example: `instance.scale()`.
     pub fn scale(&self) -> f64 {
         self.scale
+    }
+    /// Return the assigned instance number; example: `instance.ordinal()` after insertion.
+    pub fn ordinal(&self) -> Option<u64> {
+        self.ordinal
     }
     /// Map a definition point into its sketch; example: `instance.to_sketch([0., 0.])?`.
     pub fn to_sketch(&self, [x, y]: [f64; 2]) -> Result<[f64; 2], SketchError> {
@@ -139,7 +147,7 @@ impl DocumentSketches {
     pub fn insert_block_instance(
         &mut self,
         sketch: DocumentSketchId,
-        instance: SketchBlockInstance,
+        mut instance: SketchBlockInstance,
     ) -> Result<(), SketchError> {
         instance.validate()?;
         let index = self.index(sketch)?;
@@ -160,8 +168,37 @@ impl DocumentSketches {
                 instance.id()
             )));
         }
+        instance.ordinal = Some(self.assign_block_ordinal(&instance)?);
         self.sketches[index].block_instances.push(instance);
         Ok(())
+    }
+    fn assign_block_ordinal(&self, instance: &SketchBlockInstance) -> Result<u64, SketchError> {
+        let used: std::collections::BTreeSet<u64> = self
+            .sketches
+            .iter()
+            .flat_map(|sketch| &sketch.block_instances)
+            .filter(|item| item.definition() == instance.definition())
+            .filter_map(|item| item.ordinal())
+            .collect();
+        if let Some(ordinal) = instance.ordinal {
+            if used.contains(&ordinal) {
+                return Err(SketchError::Definition(format!(
+                    "block {:?} ordinal {ordinal}: expected a unique instance number",
+                    instance.definition()
+                )));
+            }
+            return Ok(ordinal);
+        }
+        used.last()
+            .copied()
+            .unwrap_or(0)
+            .checked_add(1)
+            .ok_or_else(|| {
+                SketchError::Definition(format!(
+                    "block {:?} ordinal: expected an available instance number",
+                    instance.definition()
+                ))
+            })
     }
     pub(super) fn restore_block_instances(
         &mut self,
@@ -175,6 +212,13 @@ impl DocumentSketches {
             )));
         }
         for instance in &recipe.block_instances {
+            if (version >= 11) != instance.ordinal.is_some() {
+                return Err(SketchError::Definition(format!(
+                    "block instance {:?} ordinal {:?} in recipe version {version}: expected an ordinal only in version 11 or later",
+                    instance.id(),
+                    instance.ordinal
+                )));
+            }
             self.insert_block_instance(recipe.id, instance.clone())?;
         }
         Ok(())
@@ -188,6 +232,7 @@ pub(super) fn same_instances(
         && first.iter().zip(second).all(|(a, b)| {
             a.id == b.id
                 && a.definition == b.definition
+                && a.ordinal == b.ordinal
                 && a.position
                     .iter()
                     .zip(b.position)

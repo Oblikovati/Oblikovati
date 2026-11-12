@@ -31,7 +31,7 @@ impl<
             .snapshot();
         let query = oblikovati_automation::FileQueryHost::new(&self.files)
             .with_sketch_edit(self.sketch_inspection_edit());
-        populate_browser(&mut browser, snapshot, &Client::new(query));
+        populate_browser(&mut browser, snapshot, &Client::new(query))?;
         browser.selected_sketches = self.selected_browser_sketches(document);
         browser.bodies = self.gui_browser_bodies(document);
         if !browser.bodies.is_empty() {
@@ -85,7 +85,7 @@ fn populate_browser<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     browser: &mut GuiModelBrowser,
     snapshot: &oblikovati_model::history::DocumentSnapshot,
     client: &Client<oblikovati_automation::FileQueryHost<'_, O, W, F>>,
-) {
+) -> Result<(), String> {
     browser.model_states = snapshot.model_states.clone();
     browser.block_definitions = snapshot
         .sketches
@@ -93,7 +93,7 @@ fn populate_browser<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         .iter()
         .map(|definition| definition.name().to_owned())
         .collect();
-    browser.block_instances = browser_block_instances(snapshot);
+    browser.block_instances = browser_block_instances(snapshot)?;
     browser.sketches = snapshot
         .sketches
         .sketches()
@@ -115,25 +115,28 @@ fn populate_browser<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
             kind: feature_kind_name(feature.definition()),
         })
         .collect();
+    Ok(())
 }
 fn browser_block_instances(
     snapshot: &oblikovati_model::history::DocumentSnapshot,
-) -> Vec<oblikovati_gui::GuiBrowserBlockInstance> {
-    let mut ordinals = std::collections::BTreeMap::<String, usize>::new();
+) -> Result<Vec<oblikovati_gui::GuiBrowserBlockInstance>, String> {
     let mut rows = Vec::new();
     for sketch in snapshot.sketches.sketches() {
         for instance in sketch.block_instances() {
-            let ordinal = ordinals.entry(instance.definition().into()).or_default();
-            *ordinal += 1;
             rows.push(oblikovati_gui::GuiBrowserBlockInstance {
                 sketch: sketch.id(),
                 id: instance.id(),
                 definition: instance.definition().into(),
-                ordinal: *ordinal,
+                ordinal: instance.ordinal().ok_or_else(|| {
+                    format!(
+                        "block instance {:?}: expected an assigned browser number",
+                        instance.id()
+                    )
+                })?,
             });
         }
     }
-    rows
+    Ok(rows)
 }
 /// What a search calls this kind of feature.
 fn feature_kind_name(
