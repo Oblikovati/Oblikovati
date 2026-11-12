@@ -53,3 +53,38 @@ fn corrupt_saved_settings_are_rejected_without_a_partial_store() {
     assert!(customization.store.is_none());
     assert!(!customization.has_panel(RibbonTab::Tools));
 }
+
+#[test]
+fn moving_a_command_saves_atomically_without_committing_other_drafts() {
+    let store = FakeRibbonStore::default();
+    let mut customization = RibbonCustomization::default();
+    customization.set_store(Box::new(store.clone())).unwrap();
+    customization.open(RibbonTab::Tools);
+    customization
+        .draft
+        .reset_source_selection(Command::Sketches);
+    customization.draft.add();
+    customization.apply().unwrap();
+    customization
+        .draft
+        .reset_source_selection(Command::Tool(crate::GuiSketchTool::Line));
+    customization.draft.add();
+    store.0.borrow_mut().fail_save = true;
+    assert!(
+        customization
+            .relocate_command(RibbonTab::Tools, Command::Sketches, true)
+            .is_err()
+    );
+    assert!(!customization.has_expanded(RibbonTab::Tools));
+    assert!(customization.draft.changed());
+    store.0.borrow_mut().fail_save = false;
+    customization
+        .relocate_command(RibbonTab::Tools, Command::Sketches, true)
+        .unwrap();
+    assert!(customization.has_expanded(RibbonTab::Tools));
+    assert!(customization.draft.changed());
+    let mut reopened = RibbonCustomization::default();
+    reopened.set_store(Box::new(store)).unwrap();
+    assert!(reopened.has_expanded(RibbonTab::Tools));
+    assert_eq!(reopened.draft.applied(RibbonTab::Tools).len(), 1);
+}

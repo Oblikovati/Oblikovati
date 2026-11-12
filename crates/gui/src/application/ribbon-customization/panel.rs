@@ -6,16 +6,23 @@ use imgui::Ui;
 
 impl RibbonCustomization {
     pub(crate) fn draw_panel(
-        &self,
+        &mut self,
         ui: &Ui,
         tab: crate::ribbon::RibbonTab,
+        expanded: Option<bool>,
         state: &GuiCommandState,
         icons: &crate::icons::GuiRibbonIcons,
         actions: &mut Vec<GuiShellAction>,
-    ) {
-        let entries = self.draft.applied(tab);
-        for (index, entry) in entries.iter().enumerate() {
-            if index > 0 {
+    ) -> bool {
+        let entries = self.draft.applied(tab).to_vec();
+        let mut right_clicked = false;
+        for (count, (index, entry)) in entries
+            .iter()
+            .enumerate()
+            .filter(|(_, entry)| expanded.is_none_or(|shown| entry.expanded == shown))
+            .enumerate()
+        {
+            if count > 0 {
                 ui.same_line();
             }
             let _id = ui.push_id(format!("custom-command-{index}"));
@@ -66,7 +73,38 @@ impl RibbonCustomization {
                 }
                 Command::Separator => separator(ui),
             }
+            if entry.command != Command::Separator {
+                right_clicked |= self.command_menu(ui, tab, entry.command, entry.expanded);
+            }
         }
+        right_clicked
+    }
+    fn command_menu(
+        &mut self,
+        ui: &Ui,
+        tab: crate::ribbon::RibbonTab,
+        command: Command,
+        expanded: bool,
+    ) -> bool {
+        let right = ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED)
+            && ui.is_mouse_clicked(imgui::MouseButton::Right);
+        if right {
+            ui.open_popup("##custom-command-context");
+        }
+        if let Some(_popup) = ui.begin_popup("##custom-command-context") {
+            let label = if expanded {
+                "Move to Main Panel"
+            } else {
+                "Move to Expanded Panel"
+            };
+            if ui.menu_item(label)
+                && let Err(error) = self.relocate_command(tab, command, !expanded)
+            {
+                self.command_error = Some(error);
+                self.command_error_opening = true;
+            }
+        }
+        right
     }
 }
 fn separator(ui: &Ui) {

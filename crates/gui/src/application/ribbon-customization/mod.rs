@@ -29,6 +29,8 @@ pub(crate) struct RibbonCustomization {
     settings: settings_dialog::SettingsDialog,
     store: Option<Box<dyn GuiRibbonSettingsStore>>,
     save_error: Option<String>,
+    command_error: Option<String>,
+    command_error_opening: bool,
 }
 impl RibbonCustomization {
     pub(crate) fn set_store(
@@ -49,19 +51,26 @@ impl RibbonCustomization {
         Ok(())
     }
     fn apply(&mut self) -> Result<(), String> {
-        if let Some(store) = self.store.as_mut() {
-            let bytes = settings_xml::encode(self.draft.snapshot())?;
-            if bytes.len() > settings_xml::MAX_SETTINGS_BYTES {
-                return Err(format!(
-                    "ribbon settings {} bytes: expected at most {} bytes",
-                    bytes.len(),
-                    settings_xml::MAX_SETTINGS_BYTES
-                ));
-            }
-            store.save(&bytes)?;
-        }
+        Self::save_settings(&mut self.store, self.draft.snapshot())?;
         self.draft.apply();
         Ok(())
+    }
+    fn save_settings(
+        store: &mut Option<Box<dyn GuiRibbonSettingsStore>>,
+        settings: &settings_xml::RibbonSettings,
+    ) -> Result<(), String> {
+        let Some(store) = store.as_mut() else {
+            return Ok(());
+        };
+        let bytes = settings_xml::encode(settings)?;
+        if bytes.len() > settings_xml::MAX_SETTINGS_BYTES {
+            return Err(format!(
+                "ribbon settings {} bytes: expected at most {} bytes",
+                bytes.len(),
+                settings_xml::MAX_SETTINGS_BYTES
+            ));
+        }
+        store.save(&bytes)
     }
     pub(crate) fn open(&mut self, tab: RibbonTab) {
         self.draft.open(tab);
@@ -76,9 +85,54 @@ impl RibbonCustomization {
             .iter()
             .any(|entry| entry.command != Command::Separator)
     }
+    pub(crate) fn has_expanded(&self, tab: RibbonTab) -> bool {
+        self.draft
+            .applied(tab)
+            .iter()
+            .any(|entry| entry.expanded && entry.command != Command::Separator)
+    }
+    fn relocate_command(
+        &mut self,
+        tab: RibbonTab,
+        command: Command,
+        expanded: bool,
+    ) -> Result<(), String> {
+        let mut settings = self.draft.applied_snapshot().clone();
+        let entry = settings
+            .get_mut(&tab)
+            .and_then(|rows| rows.iter_mut().find(|row| row.command == command))
+            .ok_or_else(|| {
+                format!(
+                    "ribbon command {:?}: expected an applied command",
+                    command.id()
+                )
+            })?;
+        entry.expanded = expanded;
+        Self::save_settings(&mut self.store, &settings)?;
+        self.draft.relocate(tab, command, expanded);
+        Ok(())
+    }
+    fn command_error_popup(&mut self, ui: &Ui) {
+        let Some(error) = &self.command_error else {
+            return;
+        };
+        if std::mem::take(&mut self.command_error_opening) {
+            ui.open_popup("Ribbon Settings Error");
+        }
+        crate::application::document_saving::folder_browser::center_dialog(ui, [600., 160.]);
+        let Some(_popup) = ui.begin_modal_popup("Ribbon Settings Error") else {
+            return;
+        };
+        ui.text_wrapped(error);
+        if ui.button("Close") || ui.is_key_pressed_no_repeat(imgui::Key::Escape) {
+            self.command_error = None;
+            ui.close_current_popup();
+        }
+    }
     pub(crate) fn panel(&mut self, ui: &Ui) {
         self.escape_consumed = false;
         self.navigation_consumed = false;
+        self.command_error_popup(ui);
         if !self.open {
             return;
         }

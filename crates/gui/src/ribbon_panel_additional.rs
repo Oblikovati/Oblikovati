@@ -117,7 +117,7 @@ pub(super) fn draw(
             .owners
             .workspace
             .document_area(context.ui.io().display_size, context.ribbon_bottom);
-        if draw_window(context, key.1, area, expansion, display) {
+        if draw_window(context, key.0, key.1, area, expansion, display) {
             layout.additional.open.remove(&key);
             closed = true;
         }
@@ -126,6 +126,7 @@ pub(super) fn draw(
 }
 fn draw_window(
     context: &mut PanelDrawContext<'_>,
+    tab: RibbonTab,
     panel: RibbonPanel,
     area: crate::application::document_creation::workspaces::WorkspaceArea,
     expansion: &mut Expansion,
@@ -152,14 +153,27 @@ fn draw_window(
         .collapsible(false)
         .focused(focus)
         .build(|| {
-            commands(
-                ui,
-                panel,
-                context.state,
-                context.owners.precise_input,
-                context.owners.create_block,
-                context.actions,
-            );
+            if panel == RibbonPanel::UserCommands {
+                let right = context.owners.customization.draw_panel(
+                    ui,
+                    tab,
+                    Some(true),
+                    context.state,
+                    context.owners.icons,
+                    context.actions,
+                );
+                context.owners.quick_access.command_took_right_click |= right;
+                close |= !context.owners.customization.has_expanded(tab);
+            } else {
+                commands(
+                    ui,
+                    panel,
+                    context.state,
+                    context.owners.precise_input,
+                    context.owners.create_block,
+                    context.actions,
+                );
+            }
             ui.separator();
             let active = expansion.pinned.then(|| {
                 ui.push_style_color(

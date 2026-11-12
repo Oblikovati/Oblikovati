@@ -5,6 +5,8 @@ use super::workspace_layout::browser_feature::{
 };
 use super::{ApplicationWorld, diagnostics};
 use cucumber::{given, then, when};
+#[path = "custom_commands.rs"]
+mod custom_commands;
 #[path = "sketch_block_placement.rs"]
 mod sketch_block_placement;
 #[path = "sketch_constrain.rs"]

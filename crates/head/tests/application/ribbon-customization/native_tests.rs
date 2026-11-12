@@ -190,13 +190,13 @@ fn malformed_import_keeps_the_existing_draft_and_reports_an_error() {
     let mut world = ApplicationWorld::new();
     world.add_part();
     let path = world.scratch_folder().join("invalid.xml");
-    std::fs::write(&path, "<ribbon-customization version=\"2\"/>").unwrap();
+    std::fs::write(&path, "<ribbon-customization version=\"99\"/>").unwrap();
     open_tools_customization(&mut world);
     stage_sketch_visibility(&mut world);
     click_in_customize(&mut world, "Import");
     enter_settings_file(&mut world, "Import Customization Settings", &path, "Open");
     assert!(diagnostics::window_geometry("Import Customization Settings").is_some());
-    world.expect_text("expected version 1 ribbon settings");
+    world.expect_text("expected version 1 or 2 ribbon settings");
     cancel_customization(&mut world);
     sketches_in_target(&mut world);
     assert!(world.window_text("Customize").contains("Part|Tools*"));

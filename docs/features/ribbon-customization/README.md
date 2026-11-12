@@ -18,8 +18,12 @@ Other commands remain limited to the entries shown in the dialog. Some
 commands are unavailable until their host operations exist. Apply and OK save
 settings in the user configuration directory. The desktop loads those settings
 on startup. A save failure leaves the draft open and the applied ribbon unchanged.
+Right-click a User Commands button to move it to the expanded panel or back.
+The move is saved immediately and does not apply other pending edits. A side or
+floating ribbon shows both areas in its User Commands group.
 
 Export writes the current draft as versioned Oblikovati XML to a new file.
+Version 2 records expanded-panel placement; version 1 files remain readable.
 Import replaces the draft and requires Apply or OK.
 The export chooser refuses to overwrite an existing file. If an import file is
 missing, dismiss the warning to edit the selected filename.

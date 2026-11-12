@@ -193,6 +193,7 @@ impl PanelDrawContext<'_> {
             self.state,
             &mut self.owners,
             self.actions,
+            self.additional_allowed,
         )
     }
 }
@@ -554,7 +555,10 @@ fn draw_expanded(
         if context.show_panel_titles {
             ui.text(panel.label());
             let title_clicked = ui.is_item_clicked();
-            let expandable = context.additional_allowed && additional::available(tab, panel);
+            let expandable = context.additional_allowed
+                && (additional::available(tab, panel)
+                    || (panel == RibbonPanel::UserCommands
+                        && context.owners.customization.has_expanded(tab)));
             local_action |= title_clicked && !expandable;
             if expandable {
                 additional::trigger(ui, tab, panel, anchor, title_clicked, layout);

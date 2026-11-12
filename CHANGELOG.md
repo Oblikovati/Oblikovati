@@ -4,6 +4,8 @@
 
 ### Added
 
+- Added expanded-panel placement for custom ribbon commands. (#3856)
+
 - Saved applied part ribbon customization in user preferences across restarts. (#3856)
 
 - Added XML import and export for staged part ribbon customization. (#3856)

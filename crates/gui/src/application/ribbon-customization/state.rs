@@ -95,6 +95,7 @@ pub(super) struct Entry {
     pub command: Command,
     pub large: bool,
     pub text: bool,
+    pub expanded: bool,
 }
 #[derive(Default)]
 pub(super) struct Draft {
@@ -137,6 +138,18 @@ impl Draft {
     }
     pub fn snapshot(&self) -> &BTreeMap<RibbonTab, Vec<Entry>> {
         &self.staged
+    }
+    pub fn applied_snapshot(&self) -> &BTreeMap<RibbonTab, Vec<Entry>> {
+        &self.applied
+    }
+    pub fn relocate(&mut self, tab: RibbonTab, command: Command, expanded: bool) {
+        for lists in [&mut self.applied, &mut self.staged, &mut self.removed] {
+            if let Some(entries) = lists.get_mut(&tab) {
+                for entry in entries.iter_mut().filter(|entry| entry.command == command) {
+                    entry.expanded = expanded;
+                }
+            }
+        }
     }
     pub fn import(&mut self, staged: BTreeMap<RibbonTab, Vec<Entry>>) {
         self.changed_tabs.extend(self.staged.keys().copied());
@@ -373,6 +386,7 @@ impl Draft {
             command,
             large: false,
             text: false,
+            expanded: false,
         }
     }
 }

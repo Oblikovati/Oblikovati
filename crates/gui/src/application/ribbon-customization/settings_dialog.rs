@@ -278,6 +278,7 @@ mod tests {
             command: Command::Separator,
             large: false,
             text: false,
+            expanded: false,
         };
         let settings = RibbonSettings::from([(RibbonTab::Tools, vec![entry; 30_000])]);
         assert!(perform(&files, Mode::Export, "large.xml", &settings).is_err());

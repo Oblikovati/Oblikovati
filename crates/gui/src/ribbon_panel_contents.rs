@@ -14,6 +14,7 @@ pub(crate) fn draw_panel_content(
     state: &GuiCommandState,
     owners: &mut crate::ribbon_panels::RibbonPanelOwners<'_>,
     actions: &mut Vec<GuiShellAction>,
+    additional_allowed: bool,
 ) -> bool {
     crate::widget_abi::cursor_position(ui, origin);
     match panel {
@@ -33,9 +34,15 @@ pub(crate) fn draw_panel_content(
             );
         }
         RibbonPanel::UserCommands => {
-            owners
-                .customization
-                .draw_panel(ui, owners.active_tab, state, owners.icons, actions)
+            let right = owners.customization.draw_panel(
+                ui,
+                owners.active_tab,
+                additional_allowed.then_some(false),
+                state,
+                owners.icons,
+                actions,
+            );
+            owners.quick_access.command_took_right_click |= right;
         }
         RibbonPanel::Format => {
             crate::sketch_formats::sketch_format_controls(ui, origin, state, owners.icons, actions);

@@ -22,7 +22,7 @@ pub(super) fn encode(settings: &RibbonSettings) -> Result<Vec<u8>, String> {
         .perform_indent(true)
         .create_writer(Vec::new());
     writer
-        .write(WriteEvent::start_element("ribbon-customization").attr("version", "1"))
+        .write(WriteEvent::start_element("ribbon-customization").attr("version", "2"))
         .map_err(|error| format!("XML root: expected writable settings: {error}"))?;
     for (tab, entries) in settings {
         let id = TABS
@@ -39,7 +39,8 @@ pub(super) fn encode(settings: &RibbonSettings) -> Result<Vec<u8>, String> {
                     WriteEvent::start_element("command")
                         .attr("id", entry.command.id())
                         .attr("large", if entry.large { "true" } else { "false" })
-                        .attr("text", if entry.text { "true" } else { "false" }),
+                        .attr("text", if entry.text { "true" } else { "false" })
+                        .attr("expanded", if entry.expanded { "true" } else { "false" }),
                 )
                 .map_err(|error| error.to_string())?;
             writer
@@ -78,6 +79,7 @@ struct SettingsDecoder {
     path: Vec<String>,
     current: Option<RibbonTab>,
     root: bool,
+    version: u8,
 }
 impl SettingsDecoder {
     fn event(&mut self, event: XmlEvent) -> Result<(), String> {
@@ -115,8 +117,11 @@ impl SettingsDecoder {
     }
     fn start(&mut self, tag: String, attrs: &[(&str, &str)]) -> Result<(), String> {
         match (self.path.as_slice(), tag.as_str()) {
-            ([], "ribbon-customization") if !self.root && attrs == [("version", "1")] => {
-                self.root = true
+            ([], "ribbon-customization")
+                if !self.root && (attrs == [("version", "1")] || attrs == [("version", "2")]) =>
+            {
+                self.root = true;
+                self.version = if attrs == [("version", "1")] { 1 } else { 2 };
             }
             ([parent], "tab") if parent == "ribbon-customization" => self.tab(attrs)?,
             ([root, tab], "command") if root == "ribbon-customization" && tab == "tab" => {
@@ -124,7 +129,7 @@ impl SettingsDecoder {
             }
             _ => {
                 return Err(format!(
-                    "XML element {tag:?}: expected version 1 ribbon settings"
+                    "XML element {tag:?}: expected version 1 or 2 ribbon settings"
                 ));
             }
         }
@@ -145,7 +150,7 @@ impl SettingsDecoder {
         Ok(())
     }
     fn command(&mut self, attrs: &[(&str, &str)]) -> Result<(), String> {
-        let entry = decode_entry(attrs)?;
+        let entry = decode_entry(attrs, self.version)?;
         let tab = self.current.ok_or("command: expected a parent tab")?;
         let rows = self
             .settings
@@ -175,14 +180,15 @@ fn attribute<'a>(attrs: &[(&'a str, &'a str)], key: &str, count: usize) -> Resul
         .map(|(_, value)| *value)
         .ok_or_else(|| format!("XML attributes {attrs:?}: expected {key:?}"))
 }
-fn decode_entry(attrs: &[(&str, &str)]) -> Result<Entry, String> {
-    let name = attribute(attrs, "id", 3)?;
+fn decode_entry(attrs: &[(&str, &str)], version: u8) -> Result<Entry, String> {
+    let count = if version == 1 { 3 } else { 4 };
+    let name = attribute(attrs, "id", count)?;
     let command = COMMANDS
         .into_iter()
         .find(|item| item.id() == name)
         .ok_or_else(|| format!("ribbon command {name:?}: expected a known command"))?;
     let flag = |key| {
-        attribute(attrs, key, 3)?
+        attribute(attrs, key, count)?
             .parse::<bool>()
             .map_err(|_| format!("{key} in {attrs:?}: expected true or false"))
     };
@@ -190,6 +196,7 @@ fn decode_entry(attrs: &[(&str, &str)]) -> Result<Entry, String> {
         command,
         large: flag("large")?,
         text: flag("text")?,
+        expanded: version == 2 && flag("expanded")?,
     })
 }
 
@@ -205,11 +212,13 @@ mod tests {
                     command: Command::Sketches,
                     large: true,
                     text: false,
+                    expanded: true,
                 },
                 Entry {
                     command: Command::Separator,
                     large: false,
                     text: false,
+                    expanded: false,
                 },
             ],
         )]);
@@ -221,9 +230,17 @@ mod tests {
         assert_eq!(ids.len(), COMMANDS.len());
     }
     #[test]
+    fn version_one_commands_remain_in_the_main_panel() {
+        let xml = b"<ribbon-customization version=\"1\"><tab id=\"tools\"><command id=\"sketch-visibility\" large=\"true\" text=\"false\"/></tab></ribbon-customization>";
+        let settings = decode(xml).unwrap();
+        assert!(!settings[&RibbonTab::Tools][0].expanded);
+        assert!(settings[&RibbonTab::Tools][0].large);
+        assert_eq!(decode(&encode(&settings).unwrap()).unwrap(), settings);
+    }
+    #[test]
     fn rejects_invalid_versions_duplicate_commands_and_dtd() {
         for text in [
-            "<ribbon-customization version=\"2\"/>",
+            "<ribbon-customization version=\"99\"/>",
             "<!DOCTYPE x><ribbon-customization version=\"1\"/>",
             "<ribbon-customization version=\"1\"><tab id=\"tools\"><command id=\"sketch-visibility\" large=\"false\" text=\"false\"/><command id=\"sketch-visibility\" large=\"false\" text=\"false\"/></tab></ribbon-customization>",
         ] {
