@@ -9,6 +9,9 @@ const OPPOSITE: [i32; 2] = [1040, 660];
 const EMPTY: [i32; 2] = [420, 300];
 const RECTANGLE_SIDES: usize = 4;
 const POINTER: [i32; 2] = [1100, 700];
+const ELLIPSE_CENTER: [i32; 2] = [915, 500];
+const ELLIPSE_AXIS: [i32; 2] = [1015, 500];
+const ELLIPSE_MINOR: [i32; 2] = [915, 440];
 
 fn select_rectangle(world: &mut ApplicationWorld) {
     world.click_text("Rectangle");
@@ -275,17 +278,64 @@ fn ready_none(world: &mut ApplicationWorld) {
 #[given("a fresh Two Point Rectangle command in the recorded sketch view")]
 fn fresh_command(world: &mut ApplicationWorld) {
     world.start_sketch_on("YZ Plane");
+    world.choose_from_flyout("Circle", "Ellipse");
+    for point in [ELLIPSE_CENTER, ELLIPSE_AXIS, ELLIPSE_MINOR] {
+        world.sketch_click(point);
+    }
+    world.escape();
     select_rectangle(world);
+}
+#[given("the existing ellipse from the recorded fixture is visible")]
+fn existing_ellipse(world: &mut ApplicationWorld) {
+    assert_eq!(world.edited_geometry().ellipses().len(), 1);
+    world.expect_segment_drawn(ELLIPSE_AXIS, ELLIPSE_AXIS);
+    world.expect_segment_drawn(ELLIPSE_MINOR, ELLIPSE_MINOR);
 }
 #[when("I select the fixture first corner, enter 6, press Tab, enter 4 and press Return")]
 fn typed_six_four(world: &mut ApplicationWorld) {
     world.sketch_click(FIRST);
+    world.hover([900, 440]);
     type_sizes(world, "6", "4");
 }
 #[then("the rectangle shows height 6 and width 4")]
 fn six_four(world: &mut ApplicationWorld) {
     world.expect_annotation("6");
     world.expect_annotation("4");
+}
+fn rectangle_bounds(world: &mut ApplicationWorld) -> [[i32; 2]; 2] {
+    let points: Vec<_> = (0..sides(world))
+        .flat_map(|line| [world.line_point(line, 0.), world.line_point(line, 1.)])
+        .collect();
+    let min = std::array::from_fn(|axis| points.iter().map(|p| p[axis]).min().unwrap());
+    let max = std::array::from_fn(|axis| points.iter().map(|p| p[axis]).max().unwrap());
+    [min, max]
+}
+#[then("the rectangle extends upward and rightward in the recorded view")]
+fn extends_up_and_right(world: &mut ApplicationWorld) {
+    let [min, max] = rectangle_bounds(world);
+    assert!(min[1] < FIRST[1] && max[0] > FIRST[0]);
+    assert!((min[0] - FIRST[0]).abs() <= 1 && (max[1] - FIRST[1]).abs() <= 1);
+}
+#[then("it overlaps part of the existing ellipse")]
+fn overlaps_ellipse(world: &mut ApplicationWorld) {
+    let [min, max] = rectangle_bounds(world);
+    let nearest = std::array::from_fn(|axis| ELLIPSE_CENTER[axis].clamp(min[axis], max[axis]));
+    let farthest = std::array::from_fn(|axis| {
+        if (min[axis] - ELLIPSE_CENTER[axis]).abs() > (max[axis] - ELLIPSE_CENTER[axis]).abs() {
+            min[axis]
+        } else {
+            max[axis]
+        }
+    });
+    assert!(
+        ellipse_distance(nearest) < 1. && ellipse_distance(farthest) > 1.,
+        "rectangle {min:?}..{max:?} misses ellipse"
+    );
+}
+fn ellipse_distance(point: [i32; 2]) -> f64 {
+    let x = (point[0] - ELLIPSE_CENTER[0]) as f64 / (ELLIPSE_AXIS[0] - ELLIPSE_CENTER[0]) as f64;
+    let y = (point[1] - ELLIPSE_CENTER[1]) as f64 / (ELLIPSE_CENTER[1] - ELLIPSE_MINOR[1]) as f64;
+    x * x + y * y
 }
 #[then("the rectangle remains and Ready returns")]
 fn remains(world: &mut ApplicationWorld) {
