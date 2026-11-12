@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Session-local applied commands and a separate editable draft per ribbon tab.
 use crate::ribbon::RibbonTab;
+use crate::{GuiSketchConstraint, GuiSketchTool};
 use std::collections::{BTreeMap, BTreeSet};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -8,7 +9,9 @@ pub(super) enum Command {
     Separator,
     Sketches,
     Annotations,
-    Circle,
+    Tool(GuiSketchTool),
+    Constraint(GuiSketchConstraint),
+    Dimension,
     Measure,
 }
 impl Command {
@@ -17,17 +20,41 @@ impl Command {
             Self::Separator => "<Separator>",
             Self::Sketches => "2D Sketches",
             Self::Annotations => "3D Annotations",
-            Self::Circle => "Circle (Center Point)",
+            Self::Tool(GuiSketchTool::Circle) => "Circle (Center Point)",
+            Self::Tool(tool) => tool.label(),
+            Self::Constraint(constraint) => constraint.label(),
+            Self::Dimension => "Dimension",
             Self::Measure => "Measure",
         }
     }
 }
-pub(super) const COMMANDS: [Command; 5] = [
+pub(super) const COMMANDS: [Command; 26] = [
     Command::Separator,
+    Command::Tool(GuiSketchTool::Line),
     Command::Sketches,
     Command::Annotations,
-    Command::Circle,
+    Command::Tool(GuiSketchTool::Circle),
     Command::Measure,
+    Command::Tool(GuiSketchTool::Rectangle),
+    Command::Tool(GuiSketchTool::Point),
+    Command::Tool(GuiSketchTool::CenterPointArc),
+    Command::Tool(GuiSketchTool::Ellipse),
+    Command::Tool(GuiSketchTool::CenterRectangle),
+    Command::Tool(GuiSketchTool::ThreePointRectangle),
+    Command::Tool(GuiSketchTool::ThreePointCenterRectangle),
+    Command::Tool(GuiSketchTool::ThreePointCircle),
+    Command::Tool(GuiSketchTool::ThreePointArc),
+    Command::Constraint(GuiSketchConstraint::Horizontal),
+    Command::Constraint(GuiSketchConstraint::Vertical),
+    Command::Constraint(GuiSketchConstraint::Coincident),
+    Command::Constraint(GuiSketchConstraint::Fix),
+    Command::Constraint(GuiSketchConstraint::Parallel),
+    Command::Constraint(GuiSketchConstraint::Perpendicular),
+    Command::Constraint(GuiSketchConstraint::Collinear),
+    Command::Constraint(GuiSketchConstraint::Equal),
+    Command::Constraint(GuiSketchConstraint::Concentric),
+    Command::Constraint(GuiSketchConstraint::Tangent),
+    Command::Dimension,
 ];
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) struct Entry {
@@ -73,7 +100,14 @@ impl Draft {
     }
     pub fn available(&self, command: Command) -> bool {
         (command == Command::Separator || !self.rows().iter().any(|row| row.command == command))
-            && (!self.sketch_category || matches!(command, Command::Separator | Command::Circle))
+            && (!self.sketch_category
+                || matches!(
+                    command,
+                    Command::Separator
+                        | Command::Tool(_)
+                        | Command::Constraint(_)
+                        | Command::Dimension
+                ))
     }
     pub fn add(&mut self) {
         let Some(command) = self.source.filter(|command| self.available(*command)) else {
@@ -154,7 +188,7 @@ mod tests {
         assert!(draft.changed() && draft.target_changed());
         draft.switch(RibbonTab::Sketch);
         assert!(draft.rows().is_empty() && draft.changed() && !draft.target_changed());
-        draft.source = Some(Command::Circle);
+        draft.source = Some(Command::Tool(GuiSketchTool::Circle));
         draft.add();
         draft.open(RibbonTab::Model);
         assert!(!draft.changed() && draft.rows().is_empty());
@@ -201,5 +235,27 @@ mod tests {
         assert!(!draft.changed());
         draft.switch(RibbonTab::Tools);
         assert!(!draft.target_changed());
+    }
+    #[test]
+    fn sketch_category_contains_supported_sketch_commands_once() {
+        let mut draft = Draft::default();
+        draft.open(RibbonTab::Sketch);
+        draft.sketch_category = true;
+        let labels: Vec<_> = COMMANDS
+            .iter()
+            .copied()
+            .filter(|command| draft.available(*command))
+            .map(Command::label)
+            .collect();
+        for expected in [
+            "Line",
+            "Rectangle",
+            "Circle (Center Point)",
+            "Horizontal",
+            "Dimension",
+        ] {
+            assert_eq!(labels.iter().filter(|label| **label == expected).count(), 1);
+        }
+        assert!(!labels.contains(&"Measure"));
     }
 }

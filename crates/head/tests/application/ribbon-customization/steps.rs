@@ -71,6 +71,27 @@ fn editing_actions_are_available(world: &mut ApplicationWorld) {
         assert_eq!(world.run_in_window("Customize", action).alpha, u8::MAX);
     }
 }
+#[given("the ribbon customization dialog displays all commands")]
+fn customization_all_commands(world: &mut ApplicationWorld) {
+    empty_model_customization(world);
+    assert!(world.window_text("Customize").contains("AllCommands"));
+}
+#[when("the user chooses \"Sketch Tab\" as the command category")]
+fn select_sketch_category(world: &mut ApplicationWorld) {
+    click_in_customize(world, "AllCommands");
+    world.click_text("Sketch Tab");
+}
+#[then("the available list displays sketch commands including \"Circle (Center Point)\"")]
+fn sketch_category_commands(world: &mut ApplicationWorld) {
+    let content = world.window_text("Customize");
+    assert!(content.contains("Circle(CenterPoint)"));
+    assert!(content.contains("Line"));
+    assert!(!content.contains("3DAnnotations"));
+}
+#[then("the selected target remains \"Part | 3D Model\"")]
+fn target_still_model(world: &mut ApplicationWorld) {
+    model_target(world);
+}
 #[given("a part is active in the MCAD Software with the Tools ribbon visible")]
 fn part_with_tools(world: &mut ApplicationWorld) {
     world.add_part();
@@ -205,6 +226,25 @@ fn applying_a_reversed_addition_clears_the_pending_marker() {
     assert_ne!(world.run_in_window("Customize", "Apply").alpha, u8::MAX);
     world.expect_no_text("User Commands");
     click_in_customize(&mut world, "Close");
+    world.close();
+}
+
+#[test]
+fn custom_line_command_draws_in_the_active_sketch() {
+    let mut world = ApplicationWorld::new();
+    world.start_empty_sketch();
+    open_tools_customization(&mut world);
+    click_in_customize(&mut world, "Line");
+    click_in_customize(&mut world, ">");
+    click_in_customize(&mut world, "Apply");
+    click_in_customize(&mut world, "Close");
+    world.expect_text("User Commands");
+    world.click_text("Line");
+    world.expect_status("Select start of line");
+    world.sketch_click([620, 300]);
+    world.sketch_click([840, 420]);
+    world.expect_segment_drawn([620, 300], [840, 420]);
+    world.escape();
     world.close();
 }
 

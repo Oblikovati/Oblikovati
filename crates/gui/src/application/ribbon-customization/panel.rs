@@ -27,10 +27,26 @@ impl RibbonCustomization {
             let size = if entry.large { [90., 58.] } else { [90., 26.] };
             match entry.command {
                 Command::Sketches => sketch_visibility(ui, label, size, state, icons, actions),
-                Command::Circle => icons.command_button(
+                Command::Tool(tool) => icons.command_button(
                     ui,
                     label,
-                    GuiShellAction::PlaceSketchTool(crate::GuiSketchTool::Circle),
+                    GuiShellAction::PlaceSketchTool(tool),
+                    state,
+                    size,
+                    actions,
+                ),
+                Command::Constraint(constraint) => icons.command_button(
+                    ui,
+                    label,
+                    GuiShellAction::ConstrainSketch(constraint),
+                    state,
+                    size,
+                    actions,
+                ),
+                Command::Dimension => icons.command_button(
+                    ui,
+                    label,
+                    GuiShellAction::Dimension(crate::GuiDimensionAction::Start),
                     state,
                     size,
                     actions,

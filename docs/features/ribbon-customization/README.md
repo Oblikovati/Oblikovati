@@ -9,7 +9,8 @@ closes an open target or category list before it closes the dialog. A target
 remains marked as changed until Apply, OK, or Cancel, even if an edit returns
 the list to its earlier state.
 
-The command list is limited to the entries currently shown in the dialog. Some
+The command list includes sketch geometry, constraint, and dimension commands.
+Other commands remain limited to the entries shown in the dialog. Some
 commands are unavailable until their host operations exist. Settings last for
 the current application session. Keyboard and marking-menu customization,
 import and export, other document types, and persistence remain open work.
