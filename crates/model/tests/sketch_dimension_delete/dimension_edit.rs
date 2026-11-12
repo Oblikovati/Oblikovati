@@ -61,6 +61,30 @@ fn drive_uses_document_display_units_and_recomputes_parameter_readers() {
     assert_eq!(target(&snapshot), 2.5);
 }
 #[test]
+fn dimension_edit_keeps_expression_and_tracks_its_driver() {
+    let mut snapshot = snapshot(MODEL_PARAM, "1 cm");
+    snapshot
+        .parameters
+        .insert_expression(2, "width", USER_PARAM, "2 cm")
+        .unwrap();
+    drive(&mut snapshot, "width * 2").unwrap();
+    assert_eq!(snapshot.parameters.get(1).unwrap().source, "width * 2");
+    assert_eq!(target(&snapshot), 4.0);
+    snapshot.parameters.set_expression(2, "3 cm").unwrap();
+    assert_eq!(target(&snapshot), 6.0);
+}
+#[test]
+fn self_reference_is_rejected_without_changing_the_dimension() {
+    let mut snapshot = snapshot(MODEL_PARAM, "1 cm");
+    let before = snapshot.clone();
+    assert!(drive(&mut snapshot, "radius").is_err());
+    assert_unchanged(&before, &snapshot);
+    set_limits(&mut snapshot, 2.0, 3.0);
+    let before = snapshot.clone();
+    assert!(drive(&mut snapshot, "radius * 4").is_err());
+    assert_unchanged(&before, &snapshot);
+}
+#[test]
 fn failed_owned_targets_can_be_driven_but_user_and_missing_targets_cannot() {
     let edit = SketchDimensionEdit {
         target_expression: Some("2 cm".into()),

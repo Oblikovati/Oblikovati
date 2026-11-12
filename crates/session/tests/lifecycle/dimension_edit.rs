@@ -41,6 +41,32 @@ fn measured(session: &DocumentSession<RecordingObserver>) -> f64 {
         .value
 }
 #[test]
+fn dimension_expression_drives_geometry_and_history() {
+    let mut session = dimension_session(None);
+    edit(
+        &mut session,
+        &SketchDimensionEdit {
+            target_expression: Some("width * 2".into()),
+            ..Default::default()
+        },
+    );
+    assert!((measured(&session) - 2.0).abs() < 1e-9);
+    session
+        .run("Change width", |snapshot, _| {
+            snapshot.parameters.set_expression(1, "2 cm")
+        })
+        .unwrap();
+    assert!((measured(&session) - 4.0).abs() < 1e-9);
+    session.undo().unwrap();
+    assert!((measured(&session) - 2.0).abs() < 1e-9);
+    session.redo().unwrap();
+    assert!((measured(&session) - 4.0).abs() < 1e-9);
+    assert_eq!(
+        session.snapshot().parameters.get(2).unwrap().source,
+        "width * 2"
+    );
+}
+#[test]
 fn reference_drive_changes_target_without_moving_measured_geometry() {
     let mut session = dimension_session(None);
     let original = measured(&session);

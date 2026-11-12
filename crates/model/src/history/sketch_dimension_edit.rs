@@ -16,7 +16,7 @@ pub struct SketchDimensionEdit {
     pub drive_limits: Option<SketchDimensionLimits>,
 }
 impl DocumentSnapshot {
-    /// Edit one dimension on an isolated candidate; expression drive stores a clamped constant as in Go.
+    /// Edit one dimension on an isolated candidate, retaining its expression unless limits clamp it.
     /// Example: `snapshot.edit_sketch_dimension(sketch, dimension, &edit)?;` inside an edit.
     pub fn edit_sketch_dimension(
         &mut self,
@@ -124,16 +124,27 @@ impl DocumentSnapshot {
         self.parameters
             .validate_owned_scalar(parameter)
             .map_err(|cause| drive_error(parameter, source, cause))?;
-        let mut target = self
+        let target = self
             .parameters
             .evaluate_scalar_expression(source, category)
             .map_err(|cause| drive_error(parameter, source, cause))?;
-        if let Some(limits) = geometry.dimension_limits(dimension)? {
-            target.value = limits.clamp(target.value);
-        }
+        let limits = geometry.dimension_limits(dimension)?;
         self.parameters
-            .set_value(parameter, target)
-            .map_err(|cause| drive_error(parameter, source, cause))
+            .set_scalar_expression(parameter, source, category)
+            .map_err(|cause| drive_error(parameter, source, cause))?;
+        self.parameters
+            .model_value(parameter)
+            .map_err(|cause| drive_error(parameter, source, cause))?;
+        if let Some(clamped) = limits.map(|bounds| bounds.clamp(target.value))
+            && clamped != target.value
+        {
+            let mut value = target;
+            value.value = clamped;
+            self.parameters
+                .set_value(parameter, value)
+                .map_err(|cause| drive_error(parameter, source, cause))?;
+        }
+        Ok(())
     }
 }
 fn held_while_driven(geometry: &Sketch2D, dimension: SketchConstraintId) -> Vec<SketchEntityId> {
