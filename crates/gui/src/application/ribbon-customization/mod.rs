@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Ribbon command edits stay in a draft until Apply or OK.
 mod panel;
+mod settings_dialog;
+mod settings_xml;
 mod state;
 use crate::ribbon::RibbonTab;
 use imgui::Ui;
@@ -22,6 +24,7 @@ pub(crate) struct RibbonCustomization {
     source_focused: bool,
     target_focused: bool,
     visible_source: Vec<Command>,
+    settings: settings_dialog::SettingsDialog,
 }
 impl RibbonCustomization {
     pub(crate) fn open(&mut self, tab: RibbonTab) {
@@ -61,6 +64,9 @@ impl RibbonCustomization {
                 }
             });
         self.open &= window_open;
+        if let Some(settings) = self.settings.panel(ui, self.draft.snapshot()) {
+            self.draft.import(settings);
+        }
     }
     fn tabs(&mut self, ui: &Ui) {
         if let Some(_tabs) = ui.tab_bar("##customize-tabs") {
@@ -292,6 +298,14 @@ impl RibbonCustomization {
         ui.same_line();
         if ui.button("Close") {
             self.open = false;
+        }
+        ui.same_line();
+        if ui.button("Import") {
+            self.settings.request(settings_dialog::Mode::Import);
+        }
+        ui.same_line();
+        if ui.button("Export") {
+            self.settings.request(settings_dialog::Mode::Export);
         }
     }
 }

@@ -15,6 +15,40 @@ pub(super) enum Command {
     Measure,
 }
 impl Command {
+    pub(super) fn id(self) -> &'static str {
+        match self {
+            Self::Separator => "separator",
+            Self::Sketches => "sketch-visibility",
+            Self::Annotations => "annotations-visibility",
+            Self::Measure => "measure",
+            Self::Dimension => "dimension",
+            Self::Tool(tool) => match tool {
+                GuiSketchTool::Line => "sketch-line",
+                GuiSketchTool::Rectangle => "sketch-rectangle",
+                GuiSketchTool::Circle => "sketch-circle",
+                GuiSketchTool::Point => "sketch-point",
+                GuiSketchTool::CenterPointArc => "sketch-center-arc",
+                GuiSketchTool::Ellipse => "sketch-ellipse",
+                GuiSketchTool::CenterRectangle => "sketch-center-rectangle",
+                GuiSketchTool::ThreePointRectangle => "sketch-three-point-rectangle",
+                GuiSketchTool::ThreePointCenterRectangle => "sketch-three-point-center-rectangle",
+                GuiSketchTool::ThreePointCircle => "sketch-three-point-circle",
+                GuiSketchTool::ThreePointArc => "sketch-three-point-arc",
+            },
+            Self::Constraint(constraint) => match constraint {
+                GuiSketchConstraint::Horizontal => "constraint-horizontal",
+                GuiSketchConstraint::Vertical => "constraint-vertical",
+                GuiSketchConstraint::Coincident => "constraint-coincident",
+                GuiSketchConstraint::Fix => "constraint-fix",
+                GuiSketchConstraint::Parallel => "constraint-parallel",
+                GuiSketchConstraint::Perpendicular => "constraint-perpendicular",
+                GuiSketchConstraint::Collinear => "constraint-collinear",
+                GuiSketchConstraint::Equal => "constraint-equal",
+                GuiSketchConstraint::Concentric => "constraint-concentric",
+                GuiSketchConstraint::Tangent => "constraint-tangent",
+            },
+        }
+    }
     pub(super) fn label(self) -> &'static str {
         match self {
             Self::Separator => "<Separator>",
@@ -96,6 +130,24 @@ impl Draft {
     }
     pub fn applied(&self, tab: RibbonTab) -> &[Entry] {
         self.applied.get(&tab).map_or(&[], Vec::as_slice)
+    }
+    pub fn snapshot(&self) -> &BTreeMap<RibbonTab, Vec<Entry>> {
+        &self.staged
+    }
+    pub fn import(&mut self, staged: BTreeMap<RibbonTab, Vec<Entry>>) {
+        self.changed_tabs.extend(self.staged.keys().copied());
+        self.changed_tabs.extend(staged.keys().copied());
+        self.changed_tabs.extend(self.applied.keys().copied());
+        self.changed_tabs.insert(self.target);
+        self.staged = staged;
+        self.removed.clear();
+        self.selected = None;
+        self.target_extra.clear();
+        self.target_extent = None;
+        self.source = None;
+        self.source_extra.clear();
+        self.source_extent = None;
+        self.normalize();
     }
     pub fn changed(&self) -> bool {
         !self.changed_tabs.is_empty()
@@ -322,160 +374,5 @@ impl Draft {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn staged_tabs_cancel_together_and_applied_tabs_survive_reopening() {
-        let mut draft = Draft::default();
-        draft.open(RibbonTab::Model);
-        draft.source = Some(Command::Sketches);
-        draft.add();
-        assert!(draft.changed() && draft.target_changed());
-        draft.switch(RibbonTab::Sketch);
-        assert!(draft.rows().is_empty() && draft.changed() && !draft.target_changed());
-        draft.source = Some(Command::Tool(GuiSketchTool::Circle));
-        draft.add();
-        draft.open(RibbonTab::Model);
-        assert!(!draft.changed() && draft.rows().is_empty());
-        draft.source = Some(Command::Sketches);
-        draft.add();
-        draft.apply();
-        draft.open(RibbonTab::Model);
-        assert_eq!(draft.rows()[0].command, Command::Sketches);
-        assert!(!draft.changed());
-    }
-    #[test]
-    fn transfer_reorder_options_and_reusable_separators_have_one_draft() {
-        let mut draft = Draft::default();
-        draft.open(RibbonTab::Tools);
-        for command in [Command::Sketches, Command::Separator, Command::Annotations] {
-            draft.source = Some(command);
-            draft.add();
-        }
-        assert!(draft.available(Command::Separator));
-        assert!(!draft.available(Command::Sketches));
-        draft.move_selected(-1);
-        assert_eq!(draft.rows()[1].command, Command::Annotations);
-        draft.set_options(1, true, false);
-        draft.apply();
-        assert!(draft.applied(RibbonTab::Tools)[1].large);
-        assert!(!draft.applied(RibbonTab::Tools)[1].text);
-        draft.remove();
-        assert!(draft.available(Command::Annotations));
-        assert!(draft.changed());
-    }
-    #[test]
-    fn reversed_addition_stays_pending_until_apply_or_cancel() {
-        let mut draft = Draft::default();
-        draft.open(RibbonTab::Tools);
-        draft.source = Some(Command::Sketches);
-        draft.add();
-        draft.remove();
-        assert!(draft.rows().is_empty());
-        assert!(draft.changed() && draft.target_changed());
-        draft.switch(RibbonTab::Model);
-        assert!(draft.changed() && !draft.target_changed());
-        draft.apply();
-        assert!(!draft.changed());
-        draft.switch(RibbonTab::Tools);
-        assert!(!draft.target_changed());
-    }
-    #[test]
-    fn sketch_category_contains_supported_sketch_commands_once() {
-        let mut draft = Draft::default();
-        draft.open(RibbonTab::Sketch);
-        draft.sketch_category = true;
-        let labels: Vec<_> = COMMANDS
-            .iter()
-            .copied()
-            .filter(|command| draft.available(*command))
-            .map(Command::label)
-            .collect();
-        for expected in [
-            "Line",
-            "Rectangle",
-            "Circle (Center Point)",
-            "Horizontal",
-            "Dimension",
-        ] {
-            assert_eq!(labels.iter().filter(|label| **label == expected).count(), 1);
-        }
-        assert!(!labels.contains(&"Measure"));
-    }
-    #[test]
-    fn multiple_commands_transfer_in_order_and_return_together() {
-        let mut draft = Draft::default();
-        draft.open(RibbonTab::Tools);
-        draft.source = Some(Command::Sketches);
-        draft.extend_source(1);
-        assert_eq!(draft.source_extra, vec![Command::Annotations]);
-        draft.add();
-        assert_eq!(
-            draft
-                .rows()
-                .iter()
-                .map(|row| row.command)
-                .collect::<Vec<_>>(),
-            vec![Command::Sketches, Command::Annotations]
-        );
-        assert_eq!(
-            draft.target_extra.iter().copied().collect::<Vec<_>>(),
-            vec![1]
-        );
-        draft.move_selected(1);
-        assert_eq!(draft.rows()[0].command, Command::Sketches);
-        draft.remove();
-        assert!(draft.rows().is_empty());
-        assert!(draft.available(Command::Sketches) && draft.available(Command::Annotations));
-        assert!(draft.target_changed());
-    }
-    #[test]
-    fn shift_selection_extends_and_shrinks_in_both_directions() {
-        let mut draft = Draft::default();
-        draft.open(RibbonTab::Tools);
-        draft.reset_source_selection(Command::Annotations);
-        draft.extend_source(-1);
-        assert_eq!(draft.source_extra, vec![Command::Sketches]);
-        draft.extend_source(1);
-        assert!(draft.source_extra.is_empty());
-        draft.extend_source(-1);
-        draft.add();
-        draft.reset_target_selection(1);
-        draft.extend_target(-1);
-        assert!(draft.target_extra.contains(&0));
-        draft.extend_target(1);
-        assert!(draft.target_extra.is_empty());
-    }
-    #[test]
-    fn removed_command_restores_its_options_on_its_own_target() {
-        let mut draft = Draft::default();
-        draft.open(RibbonTab::Tools);
-        draft.reset_source_selection(Command::Sketches);
-        draft.add();
-        assert!(!draft.rows()[0].large && !draft.rows()[0].text);
-        draft.set_options(0, true, true);
-        draft.remove();
-        draft.switch(RibbonTab::Manage);
-        draft.reset_source_selection(Command::Sketches);
-        draft.add();
-        assert!(!draft.rows()[0].large && !draft.rows()[0].text);
-        draft.switch(RibbonTab::Tools);
-        draft.reset_source_selection(Command::Sketches);
-        draft.add();
-        assert!(draft.rows()[0].large && draft.rows()[0].text);
-    }
-    #[test]
-    fn select_all_uses_visible_source_and_all_target_rows() {
-        let mut draft = Draft::default();
-        draft.open(RibbonTab::Tools);
-        draft.reset_source_selection(Command::Sketches);
-        draft.select_visible_source(&[Command::Sketches, Command::Annotations]);
-        draft.add();
-        assert_eq!(draft.rows().len(), 2);
-        draft.reset_target_selection(1);
-        draft.select_all_target();
-        assert_eq!(draft.target_extra, [0].into_iter().collect());
-        draft.remove();
-        assert!(draft.rows().is_empty());
-    }
-}
+#[path = "state_tests.rs"]
+mod tests;

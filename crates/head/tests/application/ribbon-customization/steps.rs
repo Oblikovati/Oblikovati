@@ -160,7 +160,70 @@ fn double_click_moved_sketches(world: &mut ApplicationWorld) {
 #[when("the user clicks \"Cancel\"")]
 #[when("the user clicks Cancel")]
 fn cancel_customization(world: &mut ApplicationWorld) {
+    for title in [
+        "Import Customization Settings",
+        "Export Customization Settings",
+    ] {
+        if let Some((position, size)) = diagnostics::window_geometry(title) {
+            let center = world
+                .frame
+                .runs
+                .iter()
+                .rev()
+                .find(|run| {
+                    let point = run.center();
+                    run.text == "Cancel"
+                        && (0..2).all(|axis| {
+                            point[axis] >= position[axis]
+                                && point[axis] <= position[axis] + size[axis]
+                        })
+                })
+                .expect("expected the file dialog's Cancel button")
+                .center();
+            world.click(diagnostics::pointer_pixels(center));
+            world.pump(Vec::new());
+            return;
+        }
+    }
     click_in_customize(world, "Cancel");
+}
+#[given("the ribbon customization dialog is open in The MCAD Software")]
+fn customization_open_for_file(world: &mut ApplicationWorld) {
+    empty_model_customization(world);
+}
+#[when("the user clicks \"Export\"")]
+fn export_customization(world: &mut ApplicationWorld) {
+    click_in_customize(world, "Export");
+}
+#[when("the user clicks \"Import\"")]
+fn import_customization(world: &mut ApplicationWorld) {
+    click_in_customize(world, "Import");
+}
+#[then(expr = "a {string} file dialog opens")]
+fn settings_dialog_open(_world: &mut ApplicationWorld, title: String) {
+    assert!(diagnostics::window_geometry(&title).is_some());
+}
+#[then("the file type is \"XML Files (*.xml)\"")]
+fn xml_file_type(world: &mut ApplicationWorld) {
+    world.expect_text("XML Files (*.xml)");
+}
+#[then(expr = "the dialog offers {string} and \"Cancel\"")]
+fn settings_dialog_buttons(world: &mut ApplicationWorld, accept: String) {
+    world.expect_text(&accept);
+    world.expect_text("Cancel");
+}
+#[then("the file dialog closes")]
+fn settings_dialog_closed(_world: &mut ApplicationWorld) {
+    for title in [
+        "Import Customization Settings",
+        "Export Customization Settings",
+    ] {
+        assert!(diagnostics::window_geometry(title).is_none());
+    }
+}
+#[then("the ribbon customization dialog remains open")]
+fn customization_remains_open(_world: &mut ApplicationWorld) {
+    assert!(diagnostics::window_geometry("Customize").is_some());
 }
 #[then("the target no longer indicates a pending change")]
 #[then("the target is not marked as changed")]
@@ -350,6 +413,32 @@ fn toggle_row_option(world: &mut ApplicationWorld, row: &str, option: &str) {
     world.click(diagnostics::pointer_pixels([column, height]));
     world.pump(Vec::new());
 }
+fn settings_file_choice(
+    world: &mut ApplicationWorld,
+    title: &str,
+    path: &std::path::Path,
+    action: &str,
+) {
+    enter_settings_file(world, title, path, action);
+    assert!(diagnostics::window_geometry(title).is_none());
+}
+fn enter_settings_file(
+    world: &mut ApplicationWorld,
+    title: &str,
+    path: &std::path::Path,
+    action: &str,
+) {
+    assert!(diagnostics::window_geometry(title).is_some());
+    let label = world.run_in_window(title, "Filename").clone();
+    world.click(diagnostics::pointer_pixels([
+        label.maximum[0] + 60.,
+        label.center()[1],
+    ]));
+    world.type_text(path.to_str().unwrap());
+    let button = world.run_in_window(title, action).center();
+    world.click(diagnostics::pointer_pixels(button));
+    world.pump(Vec::new());
+}
 fn row_option_checked(world: &ApplicationWorld, row: &str, option: &str) -> bool {
     let column = world.run_in_window("Customize", option).center()[0];
     let height = world.run_in_window("Customize", row).center()[1];
@@ -359,160 +448,5 @@ fn row_option_checked(world: &ApplicationWorld, row: &str, option: &str) -> bool
             && (mark.position[1] - height).abs() < 10.
     })
 }
-#[test]
-fn customization_apply_adds_a_working_command_and_removal_hides_it() {
-    let mut world = ApplicationWorld::new();
-    world.add_part();
-    world.add_finished_sketch();
-    open_tools_customization(&mut world);
-    stage_sketch_visibility(&mut world);
-    toggle_row_option(&mut world, "2DSketches", "Text");
-    click_in_customize(&mut world, "Apply");
-    world.expect_text("User Commands");
-    assert!(!world.window_text("Customize").contains("Part|Tools*"));
-    click_in_customize(&mut world, "Close");
-    assert!(world.state().browser.unwrap().sketches[0].visible);
-    world.click_text("2D Sketches");
-    assert!(!world.state().browser.unwrap().sketches[0].visible);
-    open_tools_customization(&mut world);
-    click_in_customize(&mut world, "2DSketches");
-    click_in_customize(&mut world, "<");
-    click_in_customize(&mut world, "Apply");
-    world.expect_no_text("User Commands");
-    click_in_customize(&mut world, "Close");
-    world.close();
-}
-#[test]
-fn customization_cancel_discards_a_staged_command() {
-    let mut world = ApplicationWorld::new();
-    world.add_part();
-    open_tools_customization(&mut world);
-    stage_sketch_visibility(&mut world);
-    click_in_customize(&mut world, "Cancel");
-    world.expect_no_text("User Commands");
-    open_tools_customization(&mut world);
-    assert!(!world.window_text("Customize").contains("Part|Tools*"));
-    click_in_customize(&mut world, "Close");
-    world.close();
-}
-
-#[test]
-fn applying_a_reversed_addition_clears_the_pending_marker() {
-    let mut world = ApplicationWorld::new();
-    world.add_part();
-    open_tools_customization(&mut world);
-    stage_sketch_visibility(&mut world);
-    click_in_customize(&mut world, "<");
-    assert!(world.window_text("Customize").contains("Part|Tools*"));
-    assert_eq!(world.run_in_window("Customize", "Apply").alpha, u8::MAX);
-    click_in_customize(&mut world, "Apply");
-    assert!(!world.window_text("Customize").contains("Part|Tools*"));
-    assert_ne!(world.run_in_window("Customize", "Apply").alpha, u8::MAX);
-    world.expect_no_text("User Commands");
-    click_in_customize(&mut world, "Close");
-    world.close();
-}
-
-#[test]
-fn per_row_options_survive_removal_and_do_not_clear_multi_selection() {
-    let mut world = ApplicationWorld::new();
-    world.add_part();
-    open_tools_customization(&mut world);
-    stage_sketch_visibility(&mut world);
-    click_in_customize(&mut world, "3DAnnotations");
-    click_in_customize(&mut world, ">");
-    click_in_customize(&mut world, "2DSketches");
-    shift_down(&mut world);
-    assert!(!row_option_checked(&world, "2DSketches", "Large"));
-    assert!(!row_option_checked(&world, "3DAnnotations", "Large"));
-    toggle_row_option(&mut world, "2DSketches", "Large");
-    assert!(row_option_checked(&world, "2DSketches", "Large"));
-    assert!(!row_option_checked(&world, "3DAnnotations", "Large"));
-    click_in_customize(&mut world, "<");
-    both_rows_in_source(&mut world);
-    click_in_customize(&mut world, ">");
-    assert!(row_option_checked(&world, "2DSketches", "Large"));
-    click_in_customize(&mut world, "Cancel");
-    world.close();
-}
-
-#[test]
-fn control_a_transfers_visible_source_rows_only_when_list_has_focus() {
-    let mut world = ApplicationWorld::new();
-    world.add_part();
-    open_tools_customization(&mut world);
-    click_in_customize(&mut world, "2DSketches");
-    world.key(oblikovati_viewport::ViewportPhysicalKey::A, true);
-    click_in_customize(&mut world, ">");
-    both_rows_in_target(&mut world);
-    assert!(
-        world.run_in_window("Customize", "Line").center()[0]
-            >= world.run_in_window("Customize", "Custompanel").minimum[0]
-    );
-    click_in_customize(&mut world, "Cancel");
-    open_tools_customization(&mut world);
-    click_in_customize(&mut world, "2DSketches");
-    click_in_customize(&mut world, "Custompanel");
-    world.key(oblikovati_viewport::ViewportPhysicalKey::A, true);
-    click_in_customize(&mut world, ">");
-    sketches_in_target(&mut world);
-    assert!(
-        world.run_in_window("Customize", "3DAnnotations").center()[0]
-            < world.run_in_window("Customize", "Custompanel").minimum[0]
-    );
-    click_in_customize(&mut world, "Cancel");
-    world.close();
-}
-
-#[test]
-fn custom_line_command_draws_in_the_active_sketch() {
-    let mut world = ApplicationWorld::new();
-    world.start_empty_sketch();
-    open_tools_customization(&mut world);
-    click_in_customize(&mut world, "Line");
-    click_in_customize(&mut world, ">");
-    toggle_row_option(&mut world, "Line", "Text");
-    click_in_customize(&mut world, "Apply");
-    click_in_customize(&mut world, "Close");
-    world.expect_text("User Commands");
-    world.click_text("Line");
-    world.expect_status("Select start of line");
-    world.sketch_click([620, 300]);
-    world.sketch_click([840, 420]);
-    world.expect_segment_drawn([620, 300], [840, 420]);
-    world.escape();
-    world.close();
-}
-
-#[test]
-fn escape_discards_customization_without_cancelling_the_active_sketch() {
-    let mut world = ApplicationWorld::new();
-    world.start_empty_sketch();
-    let geometry = world.edited_geometry();
-    open_tools_customization(&mut world);
-    stage_sketch_visibility(&mut world);
-    world.key(oblikovati_viewport::ViewportPhysicalKey::Escape, false);
-    assert!(diagnostics::window_geometry("Customize").is_none());
-    assert!(world.edited_geometry().same_recipe(&geometry));
-    world.expect_no_text("User Commands");
-    open_tools_customization(&mut world);
-    assert!(!world.window_text("Customize").contains("Part|Tools*"));
-    click_in_customize(&mut world, "Close");
-    world.close();
-}
-
-#[test]
-fn escape_closes_the_target_list_before_the_customization_dialog() {
-    let mut world = ApplicationWorld::new();
-    world.add_part();
-    open_tools_customization(&mut world);
-    stage_sketch_visibility(&mut world);
-    click_in_customize(&mut world, "Part|Tools*");
-    world.expect_text("Part | Annotate");
-    world.key(oblikovati_viewport::ViewportPhysicalKey::Escape, false);
-    assert!(diagnostics::window_geometry("Customize").is_some());
-    assert!(world.window_text("Customize").contains("Part|Tools*"));
-    world.key(oblikovati_viewport::ViewportPhysicalKey::Escape, false);
-    assert!(diagnostics::window_geometry("Customize").is_none());
-    world.close();
-}
+#[path = "native_tests.rs"]
+mod native_tests;
