@@ -45,7 +45,10 @@ pub(super) fn available(tab: RibbonTab, panel: RibbonPanel) -> bool {
         (
             RibbonTab::Model,
             RibbonPanel::PartModify | RibbonPanel::PartSimplification
-        ) | (RibbonTab::Sketch, RibbonPanel::Constrain)
+        ) | (
+            RibbonTab::Sketch,
+            RibbonPanel::Constrain | RibbonPanel::Create
+        )
     )
 }
 pub(super) fn trigger(
@@ -114,14 +117,7 @@ pub(super) fn draw(
             .owners
             .workspace
             .document_area(context.ui.io().display_size, context.ribbon_bottom);
-        if draw_window(
-            context.ui,
-            key.1,
-            area,
-            context.owners.icons.layout_factor(),
-            expansion,
-            display,
-        ) {
+        if draw_window(context, key.1, area, expansion, display) {
             layout.additional.open.remove(&key);
             closed = true;
         }
@@ -129,13 +125,14 @@ pub(super) fn draw(
     closed
 }
 fn draw_window(
-    ui: &Ui,
+    context: &mut PanelDrawContext<'_>,
     panel: RibbonPanel,
     area: crate::application::document_creation::workspaces::WorkspaceArea,
-    scale: f32,
     expansion: &mut Expansion,
     display: &RibbonDisplayState,
 ) -> bool {
+    let ui = context.ui;
+    let scale = context.owners.icons.layout_factor();
     let [viewport_width, viewport_height] = ui.io().display_size;
     let left = area.left.clamp(0., (viewport_width - 1.).max(0.));
     let right = area.right.clamp(left + 1., viewport_width.max(left + 1.));
@@ -155,7 +152,7 @@ fn draw_window(
         .collapsible(false)
         .focused(focus)
         .build(|| {
-            commands(ui, panel);
+            commands(ui, panel, context.state, context.owners.precise_input);
             ui.separator();
             let active = expansion.pinned.then(|| {
                 ui.push_style_color(
@@ -215,7 +212,16 @@ fn inside_window(ui: &Ui) -> bool {
         [position, [position[0] + size[0], position[1] + size[1]]],
     )
 }
-fn commands(ui: &Ui, panel: RibbonPanel) {
+fn commands(
+    ui: &Ui,
+    panel: RibbonPanel,
+    state: &GuiCommandState,
+    precise_input: &mut crate::sketch::precise_input::PreciseInputBar,
+) {
+    if panel == RibbonPanel::Create {
+        create_commands(ui, state, precise_input);
+        return;
+    }
     let disabled = ui.begin_disabled(true);
     let labels = match panel {
         RibbonPanel::PartModify => &["Move Bodies", "Bend Part", "Copy Object"][..],
@@ -231,6 +237,21 @@ fn commands(ui: &Ui, panel: RibbonPanel) {
             ui.tooltip_text("This command is not available in this build.");
         }
     }
+    drop(disabled);
+}
+fn create_commands(
+    ui: &Ui,
+    state: &GuiCommandState,
+    precise_input: &mut crate::sketch::precise_input::PreciseInputBar,
+) {
+    let unavailable = ui.begin_disabled(true);
+    ui.button("Create Block");
+    if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
+        ui.tooltip_text("This command is not available in this build.");
+    }
+    drop(unavailable);
+    let disabled = ui.begin_disabled(state.precise_target.is_none() || state.transaction_open);
+    precise_input.toggle(ui);
     drop(disabled);
 }
 fn inside(point: [f32; 2], bounds: [[f32; 2]; 2]) -> bool {

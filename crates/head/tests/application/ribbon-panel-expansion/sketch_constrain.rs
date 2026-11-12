@@ -132,3 +132,54 @@ fn constrain_area_closes(world: &mut ApplicationWorld) {
 fn original_part_visible(world: &mut ApplicationWorld) {
     expect_solid_visible(world);
 }
+
+#[given("a part containing an existing sketch is active in the MCAD Software")]
+fn existing_sketch_part(world: &mut ApplicationWorld) {
+    open_visible_extruded_part(world);
+}
+#[given("the full Sketch ribbon is selected outside sketch edit")]
+fn select_sketch_outside_edit(world: &mut ApplicationWorld) {
+    sketch_visible_outside_edit(world);
+}
+#[given("the Create additional-command area is closed")]
+fn create_closed(_: &mut ApplicationWorld) {
+    assert!(diagnostics::window_geometry("##ribbon-additional-Create").is_none());
+}
+#[when("the user opens the Create additional-command area")]
+fn open_create(world: &mut ApplicationWorld) {
+    click_expansion_arrow(world, "Create");
+}
+#[then("Create Block and Precise Input are visible but unavailable")]
+fn create_commands_unavailable(world: &mut ApplicationWorld) {
+    let window = "##ribbon-additional-Create";
+    for label in ["CreateBlock", "PreciseInput"] {
+        let run = world.run_in_window(window, label);
+        assert!(run.alpha < u8::MAX, "{label}: expected unavailable");
+    }
+}
+#[then("no sketch edit is active")]
+fn sketch_edit_inactive(world: &mut ApplicationWorld) {
+    assert!(world.app().owner.active_sketch_edit().is_none());
+}
+
+#[test]
+fn create_expansion_opens_the_existing_precise_input_for_a_line() {
+    let mut world = ApplicationWorld::new();
+    world.start_empty_sketch();
+    world.select_line_tool();
+    assert!(world.state().precise_target.is_some());
+    open_create(&mut world);
+    let control = world.run_in_window("##ribbon-additional-Create", "PreciseInput");
+    assert_eq!(control.alpha, u8::MAX);
+    let center = diagnostics::pointer_pixels(control.center());
+    world.click(center);
+    world.pump(Vec::new());
+    assert!(diagnostics::window_geometry("Precise Input").is_some());
+    let footer = world.run_in_window("##ribbon-additional-Create", "Create");
+    world.click(diagnostics::pointer_pixels(footer.center()));
+    let control = world.run_in_window("##application-ribbon", "PreciseInput");
+    world.click(diagnostics::pointer_pixels(control.center()));
+    world.pump(Vec::new());
+    assert!(diagnostics::window_geometry("Precise Input").is_none());
+    world.close();
+}

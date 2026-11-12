@@ -4,6 +4,9 @@
 
 ### Added
 
+- Added the Sketch Create expansion with access to Precise Input while a sketch
+  command accepts points. (#3856)
+
 - Added the Sketch tab for part documents and its Constrain expansion. (#3856)
 
 - Added immediate placement and value editing for sketch dimensions. Cancel keeps
