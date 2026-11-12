@@ -159,6 +159,56 @@ fn aligned_changes(world: &mut ApplicationWorld) {
     world.expect_annotation("(44.721)");
 }
 
+#[given("d64 depends on d63*2 and source d63 has been changed to 30")]
+fn propagated_line(world: &mut ApplicationWorld) {
+    component_dimensions(world);
+    world.open_dimension_label("50");
+    world.type_text("d63*2");
+    world.key(ViewportPhysicalKey::Enter, false);
+    world.open_dimension_label("20");
+    world.type_text("30");
+    world.key(ViewportPhysicalKey::Enter, false);
+    world.expect_annotation("fx:60");
+}
+#[when("I select both line endpoints in Measure")]
+fn measure_endpoints(world: &mut ApplicationWorld) {
+    world.key(ViewportPhysicalKey::M, false);
+    for fraction in [0., 1.] {
+        let point = world.line_point(0, fraction);
+        world.sketch_click(point);
+    }
+}
+#[then("both selections are Points")]
+fn points_selected(world: &mut ApplicationWorld) {
+    world.expect_measure("Selection 1: Point");
+    world.expect_measure("Selection 2: Point");
+}
+fn expect_measurement(world: &mut ApplicationWorld, y: &str, z: &str, distance: &str) {
+    world.expect_measure(&format!("Minimum distance {distance} mm"));
+    world.expect_measure(&format!("Minimum delta X 0.000 Y {y} Z {z} mm"));
+}
+#[then("Delta Y is 30.000 mm and Delta Z is 60.000 mm and distance is 67.082 mm")]
+#[then("the 30/60 deltas and 67.082 mm distance return")]
+fn measure_thirty_sixty(world: &mut ApplicationWorld) {
+    expect_measurement(world, "30.000", "60.000", "67.082");
+}
+#[when("I close Measure, undo the source edit and measure both endpoints again")]
+fn measure_after_undo(world: &mut ApplicationWorld) {
+    world.click_text("Done");
+    world.undo();
+    measure_endpoints(world);
+}
+#[then("Delta Y is 20.000 mm and Delta Z is 40.000 mm and distance is 44.721 mm")]
+fn measure_twenty_forty(world: &mut ApplicationWorld) {
+    expect_measurement(world, "20.000", "40.000", "44.721");
+}
+#[when("I close Measure, redo the source edit and measure both endpoints again")]
+fn measure_after_redo(world: &mut ApplicationWorld) {
+    world.click_text("Done");
+    world.redo();
+    measure_endpoints(world);
+}
+
 #[test]
 fn native_dimension_reference_updates_annotation_and_geometry_through_history() {
     let mut world = ApplicationWorld::new();

@@ -32,18 +32,33 @@ pub(crate) fn measure_panel(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<
         [width - MEASURE_SIZE[0] - 24., 220.],
         MEASURE_SIZE,
     );
-    ui.window("Measure").collapsible(false).build(|| {
-        if panel.rows.is_empty() {
-            ui.text("Select geometry to measure");
-        }
-        for row in &panel.rows {
-            ui.text(row);
-        }
-        ui.separator();
-        if ui.button("Done") {
-            actions.push(GuiShellAction::Inspect(GuiInspectAction::FinishMeasure));
-        }
-    });
+    let minimum_width = measure_width(ui, panel);
+    ui.window("Measure")
+        .size_constraints([minimum_width, 1.], [width.max(minimum_width), f32::MAX])
+        .collapsible(false)
+        .build(|| {
+            if panel.rows.is_empty() {
+                ui.text("Select geometry to measure");
+            }
+            for row in &panel.rows {
+                ui.text(row);
+            }
+            ui.separator();
+            if ui.button("Done") {
+                actions.push(GuiShellAction::Inspect(GuiInspectAction::FinishMeasure));
+            }
+        });
+}
+fn measure_width(ui: &Ui, panel: &GuiMeasurePanel) -> f32 {
+    let padding = ui.clone_style().window_padding[0] * 2.;
+    let content = panel
+        .rows
+        .iter()
+        .map(|row| ui.calc_text_size(row)[0])
+        .fold(0., f32::max);
+    (content + padding)
+        .max(MEASURE_SIZE[0])
+        .min((ui.io().display_size[0] - 32.).max(1.))
 }
 /// The empty canvas's menu while a sketch waits at Ready; a running command has its own.
 /// What was under the pointer when the canvas menu was asked for.
