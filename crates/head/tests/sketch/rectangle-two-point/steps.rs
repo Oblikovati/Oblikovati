@@ -27,7 +27,7 @@ fn type_sizes(world: &mut ApplicationWorld, first: &str, second: &str) {
     world.key(ViewportPhysicalKey::Enter, false);
     world.pump(Vec::new());
 }
-fn typed_rectangle(world: &mut ApplicationWorld, first: &str, second: &str) {
+pub(super) fn typed_rectangle(world: &mut ApplicationWorld, first: &str, second: &str) {
     world.start_sketch_on("YZ Plane");
     select_rectangle(world);
     world.sketch_click(FIRST);

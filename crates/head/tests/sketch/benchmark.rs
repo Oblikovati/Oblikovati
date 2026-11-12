@@ -7,6 +7,8 @@ mod arc_center_point;
 mod arc_three_point;
 #[path = "circle-center-point/steps.rs"]
 mod circle_center_point;
+#[path = "dimension-expression/steps.rs"]
+mod dimension_expression;
 #[path = "ellipse/steps.rs"]
 mod ellipse;
 #[path = "fixtures.rs"]
