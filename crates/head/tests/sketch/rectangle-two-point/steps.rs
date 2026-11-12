@@ -466,3 +466,21 @@ fn native_dimension_editor_retains_arithmetic_through_undo_and_redo() {
     assert!(world.window_text("Edit Dimension").contains("2*6"));
     world.close();
 }
+
+#[test]
+fn native_dimension_editor_keeps_rejected_input_for_correction() {
+    let mut world = ApplicationWorld::new();
+    typed_rectangle(&mut world, "10", "6");
+    world.open_dimension_label("10");
+    world.type_text("2*");
+    world.key(ViewportPhysicalKey::Enter, false);
+    world.pump(Vec::new());
+    assert!(world.window_text("Edit Dimension").contains("2*"));
+    world.expect_annotation("10");
+    assert!(world.status_shows("Command failed"));
+    world.type_text("2*6");
+    world.key(ViewportPhysicalKey::Enter, false);
+    world.pump(Vec::new());
+    world.expect_annotation("12");
+    world.close();
+}

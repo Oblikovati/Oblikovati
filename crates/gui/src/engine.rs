@@ -140,6 +140,10 @@ impl GuiFrameEngine {
     pub fn receive_window_preview(&mut self, image: crate::GuiPreviewImage) {
         self.document_files.receive_window_preview(image);
     }
+    /// Restore a rejected dimension draft; example: `engine.reject_dimension_edit(&value)`.
+    pub fn reject_dimension_edit(&mut self, value: &crate::GuiDimensionValue) {
+        self.dimension_value_editor.reject(value);
+    }
     /// Request a path for the owner's unsaved document without writing it.
     /// Example: `engine.request_save_path(document)?` after a SavePathRequired notice.
     pub fn request_save_path(&mut self, document: u64) -> Result<(), String> {

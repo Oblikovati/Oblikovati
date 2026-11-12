@@ -72,7 +72,13 @@ fn dispatch_gui_action(
         let event = ViewportEvent::Input(ViewportInput::Key { key, pressed: true });
         return dispatch_frame_input(window, owner, &event);
     }
-    let changed = report_authoring_result(window, authoring::apply(owner, action))?;
+    let result = authoring::apply(owner, action);
+    if result.is_err()
+        && let GuiShellAction::EditDimensionValue(value) = action
+    {
+        window.reject_dimension_edit(value);
+    }
+    let changed = report_authoring_result(window, result)?;
     Ok(synchronize_sketch_view(window, owner)? || changed)
 }
 fn report_authoring_result(

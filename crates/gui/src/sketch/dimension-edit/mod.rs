@@ -22,6 +22,7 @@ pub struct GuiDimensionValue {
 #[derive(Default)]
 pub(crate) struct GuiDimensionValueEditor {
     open: Option<GuiDimensionEdit>,
+    submitted: Option<GuiDimensionEdit>,
     closed_this_frame: bool,
     /// The pointer is on a label that opens an editor, so its clicks are not a viewport pick.
     pub over_label: bool,
@@ -33,6 +34,17 @@ const TITLE: &str = "Edit Dimension";
 const SIZE: [f32; 2] = [240., 70.];
 
 impl GuiDimensionValueEditor {
+    pub(crate) fn reject(&mut self, value: &GuiDimensionValue) {
+        let Some(edit) = self.submitted.take() else {
+            return;
+        };
+        if edit.sketch != value.sketch || edit.constraint != value.constraint {
+            return;
+        }
+        self.text.clone_from(&value.expression);
+        self.open = Some(edit);
+        self.focus = true;
+    }
     /// The editor owned this frame's keys; the Escape that closed it was not the command's.
     pub(crate) fn had_keyboard(&self) -> bool {
         self.open.is_some() || self.closed_this_frame
@@ -67,6 +79,7 @@ impl GuiDimensionValueEditor {
                 .enter_returns_true(true)
                 .build();
             if accepted {
+                self.submitted = Some(edit.clone());
                 actions.push(GuiShellAction::EditDimensionValue(GuiDimensionValue {
                     sketch: edit.sketch,
                     constraint: edit.constraint,

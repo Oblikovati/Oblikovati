@@ -49,6 +49,8 @@ pub trait HeadWindow {
     ) -> Result<HeadGuiUpdate, String> {
         Ok(HeadGuiUpdate::default())
     }
+    /// Return a rejected draft to its editor; example: `window.reject_dimension_edit(&value)`.
+    fn reject_dimension_edit(&mut self, _value: &oblikovati_gui::GuiDimensionValue) {}
 
     /// Replace the active document's committed sketches; example: `window.submit_sketch_scene(update)?` after Undo.
     fn submit_sketch_scene(&mut self, update: crate::HeadSketchSceneUpdate) -> Result<(), String> {
