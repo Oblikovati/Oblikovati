@@ -229,6 +229,65 @@ fn dimensions_after_finish(world: &mut ApplicationWorld) {
         direction.iter().all(|value| value.abs() > 1e-8),
         "{direction:?}"
     );
+    assert_rendered_ellipse(world);
+}
+fn assert_rendered_ellipse(world: &mut ApplicationWorld) {
+    let sketches = world
+        .app()
+        .window
+        .native
+        .sketch_scene
+        .as_ref()
+        .unwrap()
+        .sketches
+        .clone();
+    let points = ellipse_pixels(world, &sketches[0]);
+    let native = &mut world.app().window.native;
+    let visible = super::super::super::capture_framebuffer(native);
+    native.view.set_sketch_display(&[]).unwrap();
+    let hidden = super::super::super::capture_framebuffer(native);
+    native.view.set_sketch_display(&sketches).unwrap();
+    super::super::super::capture_framebuffer(native);
+    let changed = points
+        .iter()
+        .filter(|point| pixels_differ_near(&visible, &hidden, **point))
+        .count();
+    assert!(
+        changed >= 4,
+        "ellipse samples with rendered pixels: {changed} of {}",
+        points.len()
+    );
+}
+fn ellipse_pixels(
+    world: &mut ApplicationWorld,
+    sketch: &oblikovati_viewport::ViewportSketchDisplay,
+) -> Vec<[i32; 2]> {
+    let ellipse = sketch.geometry.ellipses()[0];
+    let center = sketch.geometry.point(ellipse.center()).unwrap().position;
+    (0..32)
+        .map(|index| {
+            let parameter = std::f64::consts::TAU * f64::from(index) / 32.;
+            let point = ellipse.evaluate(center, parameter).unwrap().position;
+            crate::HeadWindow::sketch_pixel(&world.app().window, sketch.plane, point).unwrap()
+        })
+        .collect()
+}
+fn pixels_differ_near(
+    visible: &oblikovati_viewport::ViewportCapture,
+    hidden: &oblikovati_viewport::ViewportCapture,
+    point: [i32; 2],
+) -> bool {
+    let [width, height] = visible.extent.map(|side| side as i32);
+    (-3..=3).any(|dy| {
+        (-3..=3).any(|dx| {
+            let [x, y] = [point[0] + dx, point[1] + dy];
+            if x < 0 || y < 0 || x >= width || y >= height {
+                return false;
+            }
+            let offset = ((y * width + x) * 4) as usize;
+            visible.rgba[offset..offset + 3] != hidden.rgba[offset..offset + 3]
+        })
+    })
 }
 #[when("the sketch is right-clicked in the browser")]
 fn open_sketch_menu(world: &mut ApplicationWorld) {
