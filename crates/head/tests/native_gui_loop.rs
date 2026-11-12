@@ -5,6 +5,8 @@ use oblikovati_gui::GuiCommandState;
 use oblikovati_viewport::{ViewportButton, ViewportInput};
 use scene_tests::{capture_framebuffer, native_set, open_native_part, submit_native_scene};
 use std::time::Duration;
+#[path = "native_gui_loop/create.rs"]
+mod create;
 #[path = "native_gui_loop/cube.rs"]
 mod cube;
 #[path = "native_gui_loop/files.rs"]
@@ -81,7 +83,7 @@ fn native_new_part_button_creates_and_selects_an_unsaved_document() {
         .with_themes(oblikovati_model::theme::ThemeLibrary::new(Vec::new(), "Dark").unwrap());
     let mut window = scripted_window(native);
     crate::frames::run_frames(&mut window, HeadOptions { frames: Some(3) }, &mut owner).unwrap();
-    click_shell_position(&mut window, &mut owner, [40, 68]);
+    create::metric_part(&mut window, &mut owner);
     assert_eq!(owner.documents().workspace().documents().len(), 1);
     assert!(owner.documents().workspace().active_document().is_some());
     assert!(!owner.close_allowed().unwrap());

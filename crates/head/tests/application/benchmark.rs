@@ -13,7 +13,12 @@ mod solid_visibility;
 mod viewport_background;
 mod world;
 use world::ApplicationWorld;
-
+pub(super) fn window_geometry(title: &str) -> Option<([f32; 2], [f32; 2])> {
+    diagnostics::window_geometry(title)
+}
+pub(super) fn pointer_pixels(position: [f32; 2]) -> [i32; 2] {
+    diagnostics::pointer_pixels(position)
+}
 pub(super) fn rendered_label_center(label: &str) -> [i32; 2] {
     let frame = diagnostics::rendered_frame();
     let wanted: String = label.chars().filter(|ch| !ch.is_whitespace()).collect();

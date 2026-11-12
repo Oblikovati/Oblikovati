@@ -7,14 +7,14 @@ pub(super) fn create_size_parameter(
     owner: &mut NativeDesktopOwner,
 ) {
     open_parameter_ribbon(window, owner);
-    click_shell_position(window, owner, [518, 43]);
+    click_parameter_input(window, owner, 36.);
     type_native_text(window, owner, "size");
-    click_shell_position(window, owner, [400, 66]);
+    click_parameter_input(window, owner, 60.);
     type_native_text(window, owner, "10 mm");
-    click_shell_position(window, owner, [345, 90]);
+    click_parameter_label(window, owner, "Add");
     assert_size_expression(owner, "10 mm");
-    click_shell_position(window, owner, [440, 90]);
-    click_shell_position(window, owner, [368, 44]);
+    click_parameter_label(window, owner, "Cancel");
+    click_parameter_label(window, owner, "3D Model");
 }
 fn assert_size_expression(owner: &NativeDesktopOwner, expression: &str) {
     let state = owner.gui_command_state().unwrap();
@@ -36,6 +36,22 @@ fn edit_size_parameter(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktop
     click_shell_position(window, owner, [380, 90]);
     assert_size_expression(owner, "20 mm");
     click_shell_position(window, owner, [440, 90]);
+}
+fn click_parameter_input(
+    window: &mut ScriptedGuiWindow,
+    owner: &mut NativeDesktopOwner,
+    offset: f32,
+) {
+    let (position, _) = application_bdd::window_geometry("Parameters").unwrap();
+    let pixels = application_bdd::pointer_pixels([position[0] + 150., position[1] + offset]);
+    click_shell_position(window, owner, pixels);
+}
+fn click_parameter_label(
+    window: &mut ScriptedGuiWindow,
+    owner: &mut NativeDesktopOwner,
+    label: &str,
+) {
+    click_shell_position(window, owner, application_bdd::rendered_label_center(label));
 }
 pub(super) fn edit_size_and_history(
     window: &mut ScriptedGuiWindow,
