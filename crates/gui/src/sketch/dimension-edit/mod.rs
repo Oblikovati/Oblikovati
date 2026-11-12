@@ -31,6 +31,7 @@ pub(crate) struct GuiDimensionValueEditor {
     focus: bool,
     warning_requested: bool,
     warning_active: bool,
+    refusal: String,
     position: [f32; 2],
     seen_draft: Option<u64>,
     owner_draft: Option<u64>,
@@ -44,7 +45,7 @@ const REFUSAL_SIZE: [f32; 2] = [440., 200.];
 const INVALID_TEXT: [f32; 4] = [0.95, 0.2, 0.2, 1.];
 
 impl GuiDimensionValueEditor {
-    pub(crate) fn reject(&mut self, value: &GuiDimensionValue) {
+    pub(crate) fn reject(&mut self, value: &GuiDimensionValue, cause: &str) {
         let Some(edit) = self.submitted.take() else {
             return;
         };
@@ -52,6 +53,7 @@ impl GuiDimensionValueEditor {
             return;
         }
         self.text.clone_from(&value.expression);
+        self.refusal = cause.to_owned();
         self.open = Some(edit);
         self.warning_requested = true;
         self.warning_active = true;
@@ -208,7 +210,11 @@ impl GuiDimensionValueEditor {
             return false;
         };
         ui.text("Failed to edit dimension value.");
-        ui.text("The expression cannot be evaluated.");
+        if !expression_syntax_valid(&self.text) {
+            ui.text("The expression cannot be evaluated.");
+        } else {
+            ui.text_wrapped(&self.refusal);
+        }
         if ui.button("OK") || ui.is_key_pressed_no_repeat(Key::Enter) {
             ui.close_current_popup();
             self.warning_active = false;

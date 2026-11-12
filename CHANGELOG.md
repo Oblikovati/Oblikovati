@@ -20,5 +20,7 @@
 
 ### Fixed
 
+- Show the model's reason when a sketch dimension value is refused. (#3855)
+
 - Reject driving dimension values that fail the sketch constraint's target
   checks, including a zero radius, before saving the edit. (#3855)

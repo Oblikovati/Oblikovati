@@ -73,10 +73,10 @@ fn dispatch_gui_action(
         return dispatch_frame_input(window, owner, &event);
     }
     let result = authoring::apply(owner, action);
-    if result.is_err()
+    if let Err(cause) = &result
         && let GuiShellAction::EditDimensionValue(value) = action
     {
-        window.reject_dimension_edit(value);
+        window.reject_dimension_edit(value, cause);
     }
     let changed = report_authoring_result(window, result)?;
     Ok(synchronize_sketch_view(window, owner)? || changed)

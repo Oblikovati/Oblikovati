@@ -152,6 +152,8 @@ fn reject_zero(world: &mut ApplicationWorld) {
     );
     world.type_text("0");
     world.key(ViewportPhysicalKey::Enter, false);
+    let refusal = world.window_text("Edit Dimension Value");
+    assert!(refusal.contains("positive"), "refusal text: {refusal:?}");
 }
 #[when("Cancel dismisses the failure window")]
 fn dismiss_refusal(world: &mut ApplicationWorld) {

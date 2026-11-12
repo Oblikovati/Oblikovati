@@ -128,9 +128,9 @@ impl HeadWindow for NativeHeadWindow {
         update.changed |= changed || sketch_changed || selection_changed;
         Ok(update)
     }
-    fn reject_dimension_edit(&mut self, value: &oblikovati_gui::GuiDimensionValue) {
+    fn reject_dimension_edit(&mut self, value: &oblikovati_gui::GuiDimensionValue, cause: &str) {
         if let Some(gui) = self.gui.as_mut() {
-            gui.reject_dimension_edit(value);
+            gui.reject_dimension_edit(value, cause);
         }
     }
 

@@ -27,8 +27,12 @@ pub(super) struct NativeGui {
     clipboard: Option<GuiClipboard>,
 }
 impl NativeGui {
-    pub(super) fn reject_dimension_edit(&mut self, value: &oblikovati_gui::GuiDimensionValue) {
-        self.engine.reject_dimension_edit(value);
+    pub(super) fn reject_dimension_edit(
+        &mut self,
+        value: &oblikovati_gui::GuiDimensionValue,
+        cause: &str,
+    ) {
+        self.engine.reject_dimension_edit(value, cause);
         self.deadline = Some(Duration::ZERO);
     }
     pub(super) fn request_save_path(&mut self, document: u64) -> Result<(), String> {
