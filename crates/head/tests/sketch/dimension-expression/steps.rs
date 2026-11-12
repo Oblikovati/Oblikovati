@@ -112,3 +112,37 @@ fn dimension_exits(world: &mut ApplicationWorld) {
     assert!(diagnostics::window_geometry("Edit Dimension").is_none());
     assert!(!world.state().dimension_tool_active);
 }
+
+#[test]
+fn native_dimension_reference_updates_annotation_and_geometry_through_history() {
+    let mut world = ApplicationWorld::new();
+    ten_millimetre_height(&mut world);
+    let parameters = world.state().parameters;
+    let source = parameters
+        .into_iter()
+        .find(|row| row.name != "d50")
+        .expect("expected the 6 mm source dimension");
+    Client::new(world.app().owner.document_host())
+        .parameters()
+        .rename(&ParameterRenameArgs {
+            name: source.name,
+            new_name: "d63".into(),
+        })
+        .unwrap();
+    world.pump(Vec::new());
+    world.open_dimension_label("10");
+    world.type_text("d63*2");
+    world.key(ViewportPhysicalKey::Enter, false);
+    world.expect_annotation("fx:12");
+    world.open_dimension_label("6");
+    world.type_text("8");
+    world.key(ViewportPhysicalKey::Enter, false);
+    world.expect_annotation("fx:16");
+    world.undo();
+    world.expect_annotation("fx:12");
+    world.redo();
+    world.expect_annotation("fx:16");
+    world.open_dimension_label("fx:16");
+    assert!(world.window_text("Edit Dimension").contains("d63*2"));
+    world.close();
+}
