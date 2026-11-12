@@ -27,6 +27,8 @@ mod line_properties;
 mod model_state_copy;
 #[path = "model_state_scope.rs"]
 mod model_state_scope;
+#[path = "model_state_suppression.rs"]
+mod model_state_suppression;
 #[path = "model_states.rs"]
 mod model_states;
 #[path = "origin_rows.rs"]

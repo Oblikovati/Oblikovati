@@ -53,10 +53,35 @@ pub(crate) fn feature_row<'ui>(
         (false, Some(open)) => node.opened(open, Condition::Always),
         (false, None) => node,
     };
+    let muted = feature.suppressed.then(|| {
+        ui.push_style_color(
+            imgui::StyleColor::Text,
+            ui.style_color(imgui::StyleColor::TextDisabled),
+        )
+    });
     let token = node.push();
+    drop(muted);
+    if feature.suppressed {
+        strike_feature_name(ui, &feature.name);
+    }
     choose_on_press(ui, state, feature, view, actions);
     feature_menu(ui, state, browser, feature, view, actions);
     token
+}
+fn strike_feature_name(ui: &Ui, name: &str) {
+    let [left, top] = ui.item_rect_min();
+    let bottom = ui.item_rect_max()[1];
+    let start = left + ui.current_font_size() + 2. * ui.clone_style().frame_padding[0];
+    let end = start + ui.calc_text_size(name)[0];
+    let height = (top + bottom) * 0.5;
+    ui.get_window_draw_list()
+        .add_line(
+            [start, height],
+            [end, height],
+            ui.style_color(imgui::StyleColor::TextDisabled),
+        )
+        .thickness((ui.current_font_size() / 13.).max(1.))
+        .build();
 }
 /// The arrow only folds the branch; the rest of the row chooses the feature.
 fn choose_on_press(

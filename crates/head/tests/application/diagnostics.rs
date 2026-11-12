@@ -72,6 +72,34 @@ pub(super) fn rendered_frame() -> RenderedFrame {
     let draws = unsafe { imgui::DrawData::from_raw(raw) };
     frame_of_draw_data(draws, &glyph_lookup(), current_font_size())
 }
+/// Check the completed draw list for a solid-colour line crossing a text run.
+pub(super) fn has_strike(run: &RenderedRun) -> bool {
+    let raw =
+        unsafe { sys::igGetDrawData().as_ref() }.expect("expected completed native GUI draws");
+    let draws = unsafe { imgui::DrawData::from_raw(raw) };
+    let io = unsafe { sys::igGetIO().as_ref() }.expect("expected live GUI input");
+    let atlas = unsafe { io.Fonts.as_ref() }.expect("expected the font atlas");
+    let Some(list) = draws.draw_lists().nth(run.list) else {
+        return false;
+    };
+    let middle = run.center()[1];
+    let points: Vec<_> = list
+        .vtx_buffer()
+        .iter()
+        .filter(|vertex| {
+            atlas.TexUvLines.iter().any(|line| {
+                vertex.uv[1] == line.y && (vertex.uv[0] == line.x || vertex.uv[0] == line.z)
+            }) && vertex.col[..3] == run.color
+                && (vertex.pos[1] - middle).abs() <= 3.
+                && vertex.pos[0] >= run.minimum[0] - 3.
+                && vertex.pos[0] <= run.maximum[0] + 3.
+        })
+        .map(|vertex| vertex.pos[0])
+        .collect();
+    points
+        .iter()
+        .any(|left| points.iter().any(|right| right - left > 20.))
+}
 pub(super) fn frame_of_draw_data(
     draws: &imgui::DrawData,
     lookup: &BTreeMap<GlyphCoordinates, char>,
