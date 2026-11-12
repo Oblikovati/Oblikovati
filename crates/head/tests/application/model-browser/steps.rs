@@ -23,6 +23,8 @@ mod find;
 mod find_lists;
 #[path = "line_properties.rs"]
 mod line_properties;
+#[path = "model_state_copy.rs"]
+mod model_state_copy;
 #[path = "model_states.rs"]
 mod model_states;
 #[path = "origin_rows.rs"]
