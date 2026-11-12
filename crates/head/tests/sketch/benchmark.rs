@@ -32,6 +32,7 @@ mod rectangle_two_point;
 const ACCEPTED_FEATURES: &[&str] = &[
     "arc-three-point",
     "circle-center-point",
+    "dimension-expression",
     "line",
     "point",
     "precise-input",

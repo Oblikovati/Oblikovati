@@ -7,6 +7,8 @@ use oblikovati_api::{
     wire::{DriveDimensionArgs, ParameterRenameArgs, SketchArgs},
 };
 use oblikovati_viewport::ViewportPhysicalKey;
+#[path = "circle_reference.rs"]
+mod circle_reference;
 #[path = "line_fixture.rs"]
 mod line_fixture;
 #[path = "overlap.rs"]
