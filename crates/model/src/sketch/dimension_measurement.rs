@@ -59,7 +59,9 @@ fn measurement(
                 .counter_clockwise,
         ),
         Angle { .. } | ThreePointAngle { .. } => Ok(super::angle::angle_measure(variables)?.abs()?),
-        LineAngle { .. } => positive_direction(super::angle::line_angle_measure(variables)?),
+        LineAngle { .. } | PointAngle { .. } => {
+            positive_direction(super::angle::line_angle_measure(variables)?)
+        }
         TangentDistance { options, .. } => tangent_measurement(variables, *options),
         _ => linear_measurement(relation, variables),
     }

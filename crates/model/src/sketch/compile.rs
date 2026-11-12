@@ -148,7 +148,8 @@ fn equation(
             target: angle_target(constraint, parameter, parameters)?,
             turn,
         },
-        PlanarConstraint::LineAngle { parameter, .. } => PlanarEquation::LineAngle {
+        PlanarConstraint::LineAngle { parameter, .. }
+        | PlanarConstraint::PointAngle { parameter, .. } => PlanarEquation::LineAngle {
             target: line_angle_target(constraint, parameter, parameters)?,
         },
         PlanarConstraint::AxisCollinear { axes } => PlanarEquation::AxisCollinear {

@@ -18,6 +18,10 @@ impl SeededDimensionOperands {
             Self::Angle(lines) => angle_ownership_relation(lines),
             Self::ArcSweep(arc) => PlanarConstraint::ArcSweep { arc, parameter: 0 },
             Self::LineAngle(line) => PlanarConstraint::LineAngle { line, parameter: 0 },
+            Self::PointAngle(points) => PlanarConstraint::PointAngle {
+                points,
+                parameter: 0,
+            },
             Self::ThreePointAngle([vertex, first, second]) => {
                 three_point_ownership_relation(vertex, [first, second])
             }

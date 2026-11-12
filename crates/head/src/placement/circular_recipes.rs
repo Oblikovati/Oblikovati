@@ -10,7 +10,18 @@ pub(super) fn center_recipe(
     let ccw = construction
         .arc_direction([center, start, end])
         .map_err(|cause| SketchError::Definition(cause.to_string()))?;
-    SketchPlacementRecipe::arc(center, [start, end], ccw)
+    let mut recipe = SketchPlacementRecipe::arc(center, [start, end], ccw)?;
+    let delta = [start[0] - center[0], start[1] - center[1]];
+    recipe.fields.insert(
+        1,
+        oblikovati_model::sketch::SketchPlacementField {
+            label: "Start angle".into(),
+            value: delta[1].atan2(delta[0]),
+            witness: [center, start],
+            binding: oblikovati_model::sketch::SketchPlacementBinding::PointAngle([0, 1]),
+        },
+    );
+    Ok(recipe)
 }
 pub(super) fn circular_recipe(
     points: [[f64; 2]; 3],

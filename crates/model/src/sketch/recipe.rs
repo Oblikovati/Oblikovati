@@ -3,8 +3,8 @@ use super::{
     Sketch2D, SketchArc2D, SketchCircle2D, SketchConstraint, SketchError, SketchLine2D,
     SketchPoint2D,
 };
-/// Latest planar schema: v2 records order, v3 construction roles, v4 line axis roles, v5 dimension placements, v6 drive settings, v7 analytic ellipses, v8 ground anchors, v9 ellipse minor-radius dimensions, v10 parent and offset splines, v11 offset dimensions, v12 defining-point ownership.
-pub const SKETCH_RECIPE_VERSION: u32 = 12;
+/// Latest planar schema: v2 records order, v3 construction roles, v4 line axis roles, v5 dimension placements, v6 drive settings, v7 analytic ellipses, v8 ground anchors, v9 ellipse minor-radius dimensions, v10 parent and offset splines, v11 offset dimensions, v12 defining-point ownership, v13 point direction dimensions.
+pub const SKETCH_RECIPE_VERSION: u32 = 13;
 /// Owned authored values; no numerical workspace, derived topology or system equations.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -49,7 +49,15 @@ impl Sketch2D {
         self.capture_ellipse_dimension_schema(&mut recipe);
         self.capture_spline_schema(&mut recipe);
         self.capture_point_ownership_schema(&mut recipe);
+        self.capture_point_angle_schema(&mut recipe);
         recipe
+    }
+    fn capture_point_angle_schema(&self, recipe: &mut SketchRecipe) {
+        if !has_point_angle(recipe) {
+            return;
+        }
+        self.capture_point_ownership_metadata(recipe);
+        recipe.version = 13;
     }
     fn geometry_recipe(&self) -> SketchRecipe {
         SketchRecipe {
@@ -103,6 +111,7 @@ impl Sketch2D {
     /// Restore into a fresh owner after validation; example: `let sketch = Sketch2D::from_recipe(&recipe)?;`.
     pub fn from_recipe(recipe: &SketchRecipe) -> Result<Self, SketchError> {
         require_recipe_version(recipe.version)?;
+        require_point_angle_schema(recipe)?;
         super::point_ownership::require_point_ownership_schema(recipe)?;
         super::spline::require_spline_schema(recipe)?;
         let mut sketch = Self::default();
@@ -163,4 +172,20 @@ fn planar_recipe_version(ordered: bool, construction: bool, centerline: bool) ->
         (true, false, false) => 2,
         (false, false, false) => 1,
     }
+}
+
+fn has_point_angle(recipe: &SketchRecipe) -> bool {
+    recipe
+        .constraints
+        .iter()
+        .any(|row| matches!(row.relation, super::PlanarConstraint::PointAngle { .. }))
+}
+fn require_point_angle_schema(recipe: &SketchRecipe) -> Result<(), SketchError> {
+    if recipe.version < 13 && has_point_angle(recipe) {
+        return Err(SketchError::Definition(format!(
+            "point angle recipe version {}: expected version 13",
+            recipe.version
+        )));
+    }
+    Ok(())
 }

@@ -177,7 +177,8 @@ fn centered_arc_keeps_radius_and_sweep_at_their_recipe_fields() {
     let recipe = state.preview.clone().unwrap();
     let locks = state.locks_for(&recipe).unwrap();
     assert_eq!(locks[0].as_ref().unwrap().expression, "4");
-    assert_eq!(locks[1].as_ref().unwrap().expression, "1");
+    assert!(locks[1].is_none());
+    assert_eq!(locks[2].as_ref().unwrap().expression, "1");
 }
 #[test]
 fn centered_arc_start_angle_zero_is_direction_not_zero_radius() {
@@ -188,9 +189,10 @@ fn centered_arc_start_angle_zero_is_direction_not_zero_radius() {
     assert!(!state.typed_size_is_zero());
     assert_eq!(state.arc_start_at_radius([0., 3.]), [4., 0.]);
     let construction = oblikovati_martensite::planar_curve::MartensiteSketchConstruction;
-    let cause = state
-        .cursor(Some([0., 3.]), true, &construction)
-        .unwrap_err();
-    assert!(cause.contains("arc start angle"));
-    assert_eq!(state.prompt(), "Select start point");
+    state.cursor(Some([0., 3.]), true, &construction).unwrap();
+    assert_eq!(state.prompt(), "Select end point");
+    state.cursor(Some([0., 4.]), false, &construction).unwrap();
+    let recipe = state.preview.clone().unwrap();
+    let locks = state.locks_for(&recipe).unwrap();
+    assert_eq!(locks[1].as_ref().unwrap().expression, "0");
 }

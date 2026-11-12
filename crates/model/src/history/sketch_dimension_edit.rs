@@ -163,7 +163,9 @@ fn held_while_driven(geometry: &Sketch2D, dimension: SketchConstraintId) -> Vec<
             .map_or(Vec::new(), |center| vec![center])
     };
     match constraint.relation {
-        PlanarConstraint::Distance { points, .. } => vec![points[0]],
+        PlanarConstraint::Distance { points, .. } | PlanarConstraint::PointAngle { points, .. } => {
+            vec![points[0]]
+        }
         PlanarConstraint::Radius { curve, .. } | PlanarConstraint::Diameter { curve, .. } => {
             center_of(curve)
         }

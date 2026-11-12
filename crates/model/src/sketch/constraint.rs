@@ -87,6 +87,11 @@ pub enum PlanarConstraint {
         parameter: u64,
         turn: AngleTurn,
     },
+    /// Direction from the first point to the second relative to the sketch +x axis.
+    PointAngle {
+        points: [SketchEntityId; 2],
+        parameter: u64,
+    },
     /// The line's direction from the sketch +x axis, the angle a numeric Line input retains.
     LineAngle {
         line: SketchEntityId,
@@ -217,7 +222,8 @@ impl Sketch2D {
             PlanarConstraint::Coincident { points }
             | PlanarConstraint::Horizontal { points }
             | PlanarConstraint::Vertical { points }
-            | PlanarConstraint::Distance { points, .. } => points.to_vec(),
+            | PlanarConstraint::Distance { points, .. }
+            | PlanarConstraint::PointAngle { points, .. } => points.to_vec(),
             PlanarConstraint::Fix { point, .. } => vec![*point],
             PlanarConstraint::Ground { points } => points.iter().map(|point| point.id).collect(),
             PlanarConstraint::LineHorizontal { line } | PlanarConstraint::LineVertical { line } => {

@@ -4,6 +4,8 @@ use super::super::{ApplicationWorld, diagnostics};
 use cucumber::{given, then, when};
 use oblikovati_model::sketch::SketchArc2D;
 use oblikovati_viewport::ViewportPhysicalKey;
+#[path = "start_angle.rs"]
+mod start_angle;
 
 const TOOL: &str = "Center Arc";
 const CENTER: [i32; 2] = [860, 560];
