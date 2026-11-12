@@ -25,6 +25,9 @@ pub struct GuiModelBrowser {
     /// Part members owned by the document, including its active member.
     pub model_states: Option<oblikovati_model::model_state::ModelStateMembers>,
     pub sketches: Vec<GuiBrowserSketch>,
+    /// Definitions and their placed instances, in authored order.
+    pub block_definitions: Vec<String>,
+    pub block_instances: Vec<GuiBrowserBlockInstance>,
     pub features: Vec<GuiBrowserFeature>,
     pub selected_sketches: Vec<DocumentSketchId>,
     /// The feature row a press chose.
@@ -38,6 +41,14 @@ pub struct GuiModelBrowser {
     /// The part's solids, each made by a feature of the program.
     pub bodies: Vec<GuiBrowserBody>,
     pub appearances: Vec<crate::GuiAppearanceChoice>,
+}
+/// A placed block's document identity and browser caption.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GuiBrowserBlockInstance {
+    pub sketch: DocumentSketchId,
+    pub id: oblikovati_model::sketch::SketchEntityId,
+    pub definition: String,
+    pub ordinal: usize,
 }
 /// Stable sketch identity paired with its current canonical API inspection or local decline.
 #[derive(Clone, Debug, PartialEq)]
@@ -93,12 +104,33 @@ impl GuiModelBrowser {
         for row in &self.sketches {
             row.validate(&self.features)?;
         }
+        self.validate_blocks()?;
+        Ok(())
+    }
+    fn validate_blocks(&self) -> Result<(), String> {
+        let mut identities = std::collections::BTreeSet::new();
+        for instance in &self.block_instances {
+            if instance.id.0 == 0
+                || instance.ordinal == 0
+                || !identities.insert(instance.id)
+                || !self
+                    .sketches
+                    .iter()
+                    .any(|sketch| sketch.id == instance.sketch)
+                || !self.block_definitions.contains(&instance.definition)
+            {
+                return Err(format!(
+                    "browser block instance {instance:?}: expected a unique identity, existing sketch and definition, and positive ordinal"
+                ));
+            }
+        }
         Ok(())
     }
     fn validate_labels(&self) -> Result<(), String> {
         for text in std::iter::once(&self.name)
             .chain(self.sketches.iter().map(|row| &row.name))
             .chain(self.features.iter().map(|row| &row.name))
+            .chain(self.block_definitions.iter())
             .chain(
                 self.model_states
                     .iter()
@@ -233,6 +265,7 @@ impl BrowserTree<'_> {
         self.bodies(view, actions);
         self.origin(view, actions);
         self.parameters();
+        self.blocks();
         self.sketches(view, actions);
         self.features(view, actions);
         // The marker closes a modelled document's history; a document without an origin has none.
@@ -319,6 +352,16 @@ impl BrowserTree<'_> {
         if let Some(_parameters) = self.branch("Parameters", false) {
             for row in &self.state.parameters {
                 self.ui.bullet_text(format!("{} = {}", row.name, row.value));
+            }
+        }
+    }
+    fn blocks(&self) {
+        if self.browser.block_definitions.is_empty() {
+            return;
+        }
+        if let Some(_blocks) = self.branch("Blocks", true) {
+            for name in &self.browser.block_definitions {
+                self.ui.text(name);
             }
         }
     }

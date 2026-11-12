@@ -87,6 +87,13 @@ fn populate_browser<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     client: &Client<oblikovati_automation::FileQueryHost<'_, O, W, F>>,
 ) {
     browser.model_states = snapshot.model_states.clone();
+    browser.block_definitions = snapshot
+        .sketches
+        .block_definitions()
+        .iter()
+        .map(|definition| definition.name().to_owned())
+        .collect();
+    browser.block_instances = browser_block_instances(snapshot);
     browser.sketches = snapshot
         .sketches
         .sketches()
@@ -108,6 +115,25 @@ fn populate_browser<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
             kind: feature_kind_name(feature.definition()),
         })
         .collect();
+}
+fn browser_block_instances(
+    snapshot: &oblikovati_model::history::DocumentSnapshot,
+) -> Vec<oblikovati_gui::GuiBrowserBlockInstance> {
+    let mut ordinals = std::collections::BTreeMap::<String, usize>::new();
+    let mut rows = Vec::new();
+    for sketch in snapshot.sketches.sketches() {
+        for instance in sketch.block_instances() {
+            let ordinal = ordinals.entry(instance.definition().into()).or_default();
+            *ordinal += 1;
+            rows.push(oblikovati_gui::GuiBrowserBlockInstance {
+                sketch: sketch.id(),
+                id: instance.id(),
+                definition: instance.definition().into(),
+                ordinal: *ordinal,
+            });
+        }
+    }
+    rows
 }
 /// What a search calls this kind of feature.
 fn feature_kind_name(

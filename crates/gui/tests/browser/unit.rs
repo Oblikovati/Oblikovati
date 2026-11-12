@@ -107,6 +107,29 @@ fn labels_are_checked_before_imgui_receives_a_nul_terminated_name() {
 }
 
 #[test]
+fn block_browser_entries_require_a_valid_owner_definition_and_identity() {
+    let mut browser = sample_state().browser.unwrap();
+    browser.block_definitions.push("Rib".into());
+    browser
+        .block_instances
+        .push(crate::GuiBrowserBlockInstance {
+            sketch: DocumentSketchId(7),
+            id: oblikovati_model::sketch::SketchEntityId(8),
+            definition: "Rib".into(),
+            ordinal: 1,
+        });
+    browser.validate().unwrap();
+    browser.block_instances[0].sketch = DocumentSketchId(99);
+    assert!(browser.validate().unwrap_err().contains("existing sketch"));
+    browser.block_instances[0].sketch = DocumentSketchId(7);
+    browser.block_instances[0].definition = "Missing".into();
+    assert!(browser.validate().is_err());
+    browser.block_instances[0].definition = "Rib".into();
+    browser.block_instances[0].id = oblikovati_model::sketch::SketchEntityId(0);
+    assert!(browser.validate().is_err());
+}
+
+#[test]
 fn model_state_labels_reject_nul_before_browser_adoption() {
     let mut browser = sample_state().browser.unwrap();
     let mut states = oblikovati_model::model_state::ModelStateMembers::default();

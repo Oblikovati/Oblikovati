@@ -266,15 +266,19 @@ fn create_block_groups_four_mouse_selected_edges_and_supports_undo_redo() {
     assert!(diagnostics::window_geometry("Create Block").is_none());
     assert_eq!(world.edited_geometry().lines().len(), 0);
     assert_eq!(world.state().sketch_block_names, ["Block1"]);
+    world.expect_text("Blocks");
+    world.expect_text("Block1:1");
     for [from, to] in &segments {
         world.expect_segment_drawn(*from, *to);
     }
     world.command_key(ViewportPhysicalKey::Z, ViewportKey::Undo);
     assert!(world.edited_geometry().same_recipe(&original));
     assert!(world.state().sketch_block_names.is_empty());
+    world.expect_no_text("Block1:1");
     world.command_key(ViewportPhysicalKey::Y, ViewportKey::Redo);
     assert_eq!(world.edited_geometry().lines().len(), 0);
     assert_eq!(world.state().sketch_block_names, ["Block1"]);
+    world.expect_text("Block1:1");
     for [from, to] in segments {
         world.expect_segment_drawn(from, to);
     }

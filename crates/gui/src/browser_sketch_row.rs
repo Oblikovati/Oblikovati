@@ -25,6 +25,21 @@ pub(super) fn sketch_row(
         sketch_activation(ui, state, row.id, &action, actions);
     }
     sketch_context_menu(ui, state, row, view, action, actions);
+    block_instances(ui, state, row.id);
+}
+fn block_instances(ui: &Ui, state: &GuiCommandState, sketch: DocumentSketchId) {
+    let Some(browser) = &state.browser else {
+        return;
+    };
+    ui.indent();
+    for instance in browser
+        .block_instances
+        .iter()
+        .filter(|instance| instance.sketch == sketch)
+    {
+        ui.text(format!("{}:{}", instance.definition, instance.ordinal));
+    }
+    ui.unindent();
 }
 fn sketch_activation(
     ui: &Ui,
