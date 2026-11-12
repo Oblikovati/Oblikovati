@@ -39,10 +39,19 @@ pub(crate) fn ribbon_band(
     } else {
         RibbonDisplay::Tabs.band_height(scrollbar)
     };
-    let frame = owners.ribbon.prepare(&request.commands);
+    let mut frame = owners.ribbon.prepare(&request.commands);
+    let blocked = ui.io().want_text_input
+        || ui.io().key_ctrl
+        || ui.io().key_super
+        || crate::widget_abi::any_popup_open(ui);
+    let action = owners
+        .ribbon
+        .tips
+        .process(&request.events, &frame.tabs, blocked);
+    let open_menu = apply_key_tip(action, &mut owners, &request.commands, &mut frame, actions);
     owners.quick_access.command_took_right_click = false;
     if let Some(_band) = begin_ribbon_band(ui, width, height) {
-        ribbon_contents(ui, request, &mut owners, &frame, actions);
+        ribbon_contents(ui, request, &mut owners, &frame, open_menu, actions);
         if !owners.quick_access.command_took_right_click {
             request_context_menu_when_clicked(ui, owners.ribbon);
         }
@@ -62,10 +71,55 @@ pub(crate) fn ribbon_band(
     if !owners.quick_access.below_ribbon {
         return height;
     }
-    owners
-        .quick_access
-        .band_below(ui, [0., height], width, &request.commands, actions);
+    owners.quick_access.band_below(
+        ui,
+        [0., height],
+        width,
+        &request.commands,
+        actions,
+        &owners.ribbon.tips,
+    );
     height + crate::application::quick_access_toolbar::BELOW_ROW_HEIGHT
+}
+fn apply_key_tip(
+    action: Option<crate::ribbon_key_tips::KeyTipAction>,
+    owners: &mut RibbonDrawOwners<'_>,
+    state: &GuiCommandState,
+    frame: &mut RibbonFrame,
+    actions: &mut Vec<GuiShellAction>,
+) -> bool {
+    use crate::ribbon_key_tips::KeyTipAction;
+    match action {
+        Some(KeyTipAction::SelectTab(tab)) => {
+            owners.ribbon.select_tab(tab);
+            frame.select = Some(tab);
+            if owners.ribbon.display.mode == RibbonDisplay::Tabs {
+                owners
+                    .ribbon
+                    .display
+                    .open_temporary(TemporaryPanel::WholeTab);
+            }
+        }
+        Some(KeyTipAction::CycleDisplay) => owners.ribbon.display.advance_from_tab(),
+        Some(KeyTipAction::OpenDisplayMenu) => return true,
+        Some(KeyTipAction::QuickAccess(index)) => {
+            owners.quick_access.activate_tip(index, state, actions)
+        }
+        Some(KeyTipAction::StartSketch) => {
+            let action = GuiShellAction::ChooseSketchPlane;
+            if !owners.home_active && action.enabled(state) {
+                actions.push(action);
+            }
+        }
+        Some(KeyTipAction::Extrude)
+            if !owners.home_active
+                && crate::application::quick_access_toolbar::extrude_can_start(state) =>
+        {
+            actions.push(crate::extrude_dialog::start_action(state));
+        }
+        Some(KeyTipAction::Extrude) | None => {}
+    }
+    false
 }
 fn request_context_menu_when_clicked(ui: &Ui, ribbon: &mut DocumentRibbon) {
     let hovered = ui.is_window_hovered_with_flags(imgui::WindowHoveredFlags::CHILD_WINDOWS);
@@ -151,6 +205,10 @@ fn side_tabs(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame) {
                 .selected(ribbon.active == *tab)
                 .size([SIDE_TABS_WIDTH - 16., 0.])
                 .build();
+            let tip = crate::ribbon_key_tips::tab_tip(*tab).to_string();
+            if ribbon.tips.tabs() && ribbon.tips.matching(&tip) {
+                crate::ribbon_key_tips::badge(ui, &tip);
+            }
             hovered |= ui.is_item_hovered();
             if chosen {
                 ribbon.active = *tab;
@@ -185,6 +243,9 @@ fn side_groups(
                 quick_access: owners.quick_access,
                 precise_input: owners.precise_input,
                 plane_selection_active: owners.plane_selection_active,
+                hole_tip: ribbon.tips.commands() && ribbon.tips.matching("HO"),
+                sketch_tip: ribbon.tips.commands() && ribbon.tips.matching("SK"),
+                extrude_tip: ribbon.tips.commands() && ribbon.tips.matching("EX"),
             },
             &mut ribbon.panels,
             &mut ribbon.display,
@@ -212,6 +273,7 @@ fn ribbon_contents(
     request: &GuiFrameRequest,
     owners: &mut RibbonDrawOwners<'_>,
     frame: &RibbonFrame,
+    open_display_menu: bool,
     actions: &mut Vec<GuiShellAction>,
 ) {
     ui.menu_bar(|| {
@@ -223,7 +285,9 @@ fn ribbon_contents(
     crate::widget_abi::cursor_position(ui, [16., 35.]);
     let row_above = !owners.quick_access.below_ribbon;
     if row_above {
-        owners.quick_access.row(ui, &request.commands, actions);
+        owners
+            .quick_access
+            .row(ui, &request.commands, actions, &owners.ribbon.tips);
     }
     if owners.ribbon.display.placement == RibbonPlacement::Top {
         if row_above {
@@ -234,7 +298,10 @@ fn ribbon_contents(
             ui.window_size()[0] - 160. - crate::application::ribbon_display::PANEL_SELECTOR_WIDTH,
             35.,
         ];
-        owners.ribbon.display.control(ui, control);
+        owners
+            .ribbon
+            .display
+            .control(ui, control, &owners.ribbon.tips, open_display_menu);
         // #3856: adopt selector changes before the row takes its visibility snapshot.
         owners
             .ribbon
@@ -272,6 +339,9 @@ fn ribbon_panel_row(
             quick_access: owners.quick_access,
             precise_input: owners.precise_input,
             plane_selection_active: owners.plane_selection_active,
+            hole_tip: ribbon.tips.commands() && ribbon.tips.matching("HO"),
+            sketch_tip: ribbon.tips.commands() && ribbon.tips.matching("SK"),
+            extrude_tip: ribbon.tips.commands() && ribbon.tips.matching("EX"),
         },
         &mut ribbon.panels,
         &mut ribbon.display,
@@ -291,6 +361,10 @@ fn ribbon_tabs(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame) {
             TabItemFlags::empty()
         };
         let item = ui.tab_item_with_flags(tab.label(), None, flags);
+        let tip = crate::ribbon_key_tips::tab_tip(*tab).to_string();
+        if ribbon.tips.tabs() && ribbon.tips.matching(&tip) {
+            crate::ribbon_key_tips::badge(ui, &tip);
+        }
         if ribbon.display.selector_pointer_press(ui) {
             selector_tab = Some(*tab);
         }

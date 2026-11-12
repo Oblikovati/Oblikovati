@@ -77,7 +77,7 @@ pub(crate) fn draw_panel_content(
         }
         RibbonPanel::PartCreate => part_create_controls(ui, origin, state, owners, actions),
         RibbonPanel::PartModify => {
-            muted_commands(ui, origin, &["Hole", "Fillet", "Chamfer"], NOT_PORTED);
+            part_modify_controls(ui, origin, owners.hole_tip);
         }
         RibbonPanel::PartPattern => {
             muted_commands(ui, origin, &["Rectangular", "Circular"], NOT_PORTED);
@@ -104,6 +104,24 @@ pub(crate) fn draw_panel_content(
 /// Commands a document kind will offer: shown muted with the reason, never as a working button.
 const NOT_PORTED: &str = "This command is not available in this build.";
 fn muted_commands(ui: &Ui, origin: [f32; 2], labels: &[&str], reason: &str) {
+    muted_commands_with_hole_tip(ui, origin, labels, reason, false);
+}
+fn part_modify_controls(ui: &Ui, origin: [f32; 2], hole_tip: bool) {
+    muted_commands_with_hole_tip(
+        ui,
+        origin,
+        &["Hole", "Fillet", "Chamfer"],
+        NOT_PORTED,
+        hole_tip,
+    );
+}
+fn muted_commands_with_hole_tip(
+    ui: &Ui,
+    origin: [f32; 2],
+    labels: &[&str],
+    reason: &str,
+    hole_tip: bool,
+) {
     for (index, label) in labels.iter().enumerate() {
         let column = (index / 2) as f32 * 116.;
         let row = (index % 2) as f32 * 30.;
@@ -111,6 +129,9 @@ fn muted_commands(ui: &Ui, origin: [f32; 2], labels: &[&str], reason: &str) {
         {
             let _muted = ui.begin_disabled(true);
             crate::widget_abi::button(ui, label, [108., 26.]);
+        }
+        if hole_tip && *label == "Hole" {
+            crate::ribbon_key_tips::badge(ui, "HO");
         }
         if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
             ui.tooltip_text(reason);
@@ -131,6 +152,9 @@ fn part_create_controls(
         let _muted = ui.begin_disabled(!extrude_can_start(state));
         if crate::widget_abi::button(ui, EXTRUDE, [108., 26.]) {
             actions.push(crate::extrude_dialog::start_action(state));
+        }
+        if owners.extrude_tip {
+            crate::ribbon_key_tips::badge(ui, "EX");
         }
     }
     if !extrude_can_start(state)
@@ -163,6 +187,9 @@ fn start_sketch_command(
         .plane_selection_active
         .then(|| ui.push_style_color(imgui::StyleColor::Button, lit));
     single_command(ui, RibbonPanel::Sketch, state, owners.icons, actions);
+    if owners.sketch_tip {
+        crate::ribbon_key_tips::badge(ui, "SK");
+    }
 }
 fn single_command(
     ui: &Ui,

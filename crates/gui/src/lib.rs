@@ -27,6 +27,7 @@ mod input;
 mod parameters;
 mod ribbon;
 mod ribbon_fit;
+mod ribbon_key_tips;
 mod ribbon_panel_contents;
 mod ribbon_panels;
 mod sketch;

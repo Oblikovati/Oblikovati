@@ -19,6 +19,7 @@ pub(crate) fn prepare_frame_inputs(
     request: &GuiFrameRequest,
     held: &mut crate::GuiModifiers,
     popup_was_open: bool,
+    key_tips_active: bool,
     widget_keys: &mut Vec<crate::GuiKey>,
 ) -> FrameKeys {
     let io = context.io_mut();
@@ -38,7 +39,7 @@ pub(crate) fn prepare_frame_inputs(
         }
         if sketch_tool_key(
             event,
-            request.commands.sketch_tool_keyboard && !popup_was_open,
+            request.commands.sketch_tool_keyboard && !popup_was_open && !key_tips_active,
             io.want_text_input,
             widget_keys,
         ) {

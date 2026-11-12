@@ -42,6 +42,7 @@ impl RibbonTab {
 pub(crate) struct DocumentRibbon {
     previous: Option<(RibbonKey, bool, bool)>,
     pub active: RibbonTab,
+    pub tips: crate::ribbon_key_tips::RibbonKeyTips,
     pub panels: crate::ribbon_panels::RibbonPanelLayout,
     pub display: crate::application::ribbon_display::RibbonDisplayState,
     settling_frames: u8,

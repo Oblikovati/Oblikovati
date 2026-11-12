@@ -94,6 +94,7 @@ pub(crate) struct RibbonDisplayState {
     /// A choice in Show Panels ends the whole menu, as a choice in any other row does.
     close_context_menu: bool,
     selector_keyboard_started: bool,
+    display_menu_cursor: Option<usize>,
     pub(crate) selector_open: bool,
     pub(crate) selector_pointer_inside: bool,
     pub(crate) selector_trigger: Option<[[f32; 2]; 2]>,
@@ -117,6 +118,7 @@ impl Default for RibbonDisplayState {
             context_requested: false,
             close_context_menu: false,
             selector_keyboard_started: false,
+            display_menu_cursor: None,
             selector_open: false,
             selector_pointer_inside: false,
             selector_trigger: None,
@@ -283,9 +285,18 @@ impl RibbonDisplayState {
         (left..=right).contains(&x) && (top..=bottom).contains(&y)
     }
     /// Draw the display control and its menu at `position`; example: `state.control(ui, [900., 35.])`.
-    pub(crate) fn control(&mut self, ui: &Ui, position: [f32; 2]) {
+    pub(crate) fn control(
+        &mut self,
+        ui: &Ui,
+        position: [f32; 2],
+        tips: &crate::ribbon_key_tips::RibbonKeyTips,
+        open_menu: bool,
+    ) {
         crate::widget_abi::cursor_position(ui, position);
         let clicked = crate::widget_abi::button(ui, "Ribbon Display", [0.; 2]);
+        if tips.tabs() && tips.matching("X2") {
+            crate::ribbon_key_tips::badge(ui, "X2");
+        }
         if clicked || self.selector_pointer_press(ui) {
             self.advance();
         }
@@ -293,35 +304,74 @@ impl RibbonDisplayState {
             ui.tooltip_text(self.control_tooltip());
         }
         ui.same_line();
-        if crate::widget_abi::button(ui, "v##ribbon-display-menu", [0.; 2]) {
+        let menu_clicked = crate::widget_abi::button(ui, "v##ribbon-display-menu", [0.; 2]);
+        if tips.tabs() && tips.matching("X3") {
+            crate::ribbon_key_tips::badge(ui, "X3");
+        }
+        if menu_clicked || open_menu {
             ui.open_popup("##ribbon-display-menu");
         }
         self.keep_temporary_on_click =
             ui.is_item_hovered() && ui.is_mouse_clicked(imgui::MouseButton::Left);
         if let Some(_menu) = ui.begin_popup("##ribbon-display-menu") {
             self.menu(ui);
+        } else {
+            self.display_menu_cursor = None;
         }
     }
     fn menu(&mut self, ui: &Ui) {
-        for choice in [
+        let selected = self.display_menu_keyboard(ui);
+        for (index, choice) in [
             RibbonDisplay::Tabs,
             RibbonDisplay::PanelTitles,
             RibbonDisplay::PanelButtons,
-        ] {
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            if self.display_menu_cursor == Some(index) {
+                ui.set_keyboard_focus_here();
+            }
             let label = choice.menu_label().unwrap_or_default();
             let checked = self.minimized == Some(choice);
-            if ui.menu_item_config(label).selected(checked).build() {
+            if ui.menu_item_config(label).selected(checked).build() || selected == Some(index) {
                 self.choose(choice);
+                ui.close_current_popup();
             }
         }
         let cycling = self.minimized.is_none();
+        if self.display_menu_cursor == Some(3) {
+            ui.set_keyboard_focus_here();
+        }
         if ui
             .menu_item_config("Cycle through All")
             .selected(cycling)
             .build()
+            || selected == Some(3)
         {
             self.cycle_through_all();
+            ui.close_current_popup();
         }
+    }
+    fn display_menu_keyboard(&mut self, ui: &Ui) -> Option<usize> {
+        if ui.is_mouse_clicked(imgui::MouseButton::Left) {
+            self.display_menu_cursor = None;
+        }
+        if ui.is_key_pressed_no_repeat(imgui::Key::DownArrow) {
+            self.display_menu_cursor = Some(
+                self.display_menu_cursor
+                    .map_or(0, |index| (index + 1).min(3)),
+            );
+        } else if ui.is_key_pressed_no_repeat(imgui::Key::UpArrow) {
+            self.display_menu_cursor = Some(
+                self.display_menu_cursor
+                    .map_or(3, |index| index.saturating_sub(1)),
+            );
+        }
+        (ui.is_key_pressed_no_repeat(imgui::Key::Enter)
+            || ui.is_key_pressed_no_repeat(imgui::Key::KeypadEnter))
+        .then_some(self.display_menu_cursor)
+        .flatten()
     }
 }
 #[cfg(test)]

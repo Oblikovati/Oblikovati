@@ -120,13 +120,19 @@ impl QuickAccessToolbar {
         ui: &Ui,
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
+        tips: &crate::ribbon_key_tips::RibbonKeyTips,
     ) {
         let selection = self.selection(state).clone();
-        for command in STANDARD
+        for (index, command) in STANDARD
             .into_iter()
             .filter(|command| selection.shows(*command))
+            .enumerate()
         {
             self.standard_button(ui, command, state, actions);
+            let tip = (index + 1).to_string();
+            if tips.tabs() && index < 9 && tips.matching(&tip) {
+                crate::ribbon_key_tips::badge(ui, &tip);
+            }
             ui.same_line();
         }
         for entry in &selection.added {
@@ -135,6 +141,36 @@ impl QuickAccessToolbar {
         }
         self.shortcut_menu(ui, state);
         self.customize_control(ui, state);
+    }
+    pub(crate) fn activate_tip(
+        &mut self,
+        index: usize,
+        state: &GuiCommandState,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        let selection = self.selection(state).clone();
+        let command = STANDARD
+            .into_iter()
+            .filter(|command| selection.shows(*command))
+            .nth(index);
+        let action = match command {
+            Some(StandardCommand::New) => {
+                self.requests.new_document = true;
+                return;
+            }
+            Some(StandardCommand::Open) => {
+                self.requests.open_document = true;
+                return;
+            }
+            Some(StandardCommand::Save) => GuiShellAction::Save,
+            Some(StandardCommand::Undo) => GuiShellAction::Undo,
+            Some(StandardCommand::Redo) => GuiShellAction::Redo,
+            Some(StandardCommand::Home) => GuiShellAction::ShowHome,
+            _ => return,
+        };
+        if action.enabled(state) {
+            actions.push(action);
+        }
     }
     fn standard_button(
         &mut self,
@@ -292,6 +328,7 @@ impl QuickAccessToolbar {
         width: f32,
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
+        tips: &crate::ribbon_key_tips::RibbonKeyTips,
     ) {
         crate::widget_abi::window_geometry(
             ui,
@@ -307,7 +344,7 @@ impl QuickAccessToolbar {
                     | imgui::WindowFlags::NO_SAVED_SETTINGS
                     | imgui::WindowFlags::NO_FOCUS_ON_APPEARING,
             )
-            .build(|| self.row(ui, state, actions));
+            .build(|| self.row(ui, state, actions, tips));
     }
 }
 pub(crate) const EXTRUDE: &str = "Extrude";

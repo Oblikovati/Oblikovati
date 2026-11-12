@@ -157,6 +157,9 @@ pub(crate) struct RibbonPanelOwners<'a> {
     pub quick_access: &'a mut crate::application::quick_access_toolbar::QuickAccessToolbar,
     pub precise_input: &'a mut crate::sketch::precise_input::PreciseInputBar,
     pub plane_selection_active: bool,
+    pub hole_tip: bool,
+    pub sketch_tip: bool,
+    pub extrude_tip: bool,
 }
 struct PanelDrawContext<'a> {
     ui: &'a Ui,

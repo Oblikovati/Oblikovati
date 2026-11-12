@@ -233,6 +233,7 @@ impl GuiFrameEngine {
             request,
             &mut self.modifiers_held,
             self.popup_was_open,
+            self.ribbon.tips.active(),
             &mut self.widget_keys,
         );
         let ui = self.context.frame();
@@ -268,7 +269,9 @@ impl GuiFrameEngine {
             &mut self.extrude_dialog,
             &selected,
         );
-        self.command_alias.panel(ui, &request.commands, &keys.typed);
+        if !self.ribbon.tips.active() && !self.ribbon.tips.consumed {
+            self.command_alias.panel(ui, &request.commands, &keys.typed);
+        }
         crate::application::workspace_layout::status_bar::status_bar(
             ui,
             request,
@@ -403,8 +406,15 @@ impl GuiFrameEngine {
         // ribbon must leave M and F8 to the sketch unless a widget is really using the keys.
         // A popup always owns them, even on the frame Escape closes it and focus moves on.
         capture.keyboard &= capture.text || self.context.io().nav_visible;
-        capture.keyboard |= popup_open;
-        capture.popup = popup_open || self.dimension_value_editor.had_keyboard();
+        capture.keyboard |= popup_open || self.ribbon.tips.consumed;
+        capture.text |= self.ribbon.tips.consumed
+            || (self.ribbon.tips.active()
+                && request
+                    .events
+                    .iter()
+                    .any(|event| matches!(event, GuiInputEvent::Text(_))));
+        capture.popup =
+            popup_open || self.dimension_value_editor.had_keyboard() || self.ribbon.tips.consumed;
         capture.pointer |= self.dimension_value_editor.over_label || over_fields;
         let mut activity = frame_activity()?;
         activity.pending_layout |= self.orientation.needs_frame();
