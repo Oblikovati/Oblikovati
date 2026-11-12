@@ -101,7 +101,7 @@ fn cancel_and_reopen(world: &mut ApplicationWorld) {
 }
 #[then("the previous arithmetic expression is retained")]
 fn previous_expression(world: &mut ApplicationWorld) {
-    assert!(world.window_text("Edit Dimension").contains("2*6"));
+    assert!(world.window_text("Edit Dimension").contains("2mm*6ul"));
 }
 #[then("the height annotation remains 12")]
 fn height_remains(world: &mut ApplicationWorld) {
@@ -157,6 +157,41 @@ fn dependent_forty(world: &mut ApplicationWorld) {
 fn aligned_changes(world: &mut ApplicationWorld) {
     assert_ne!(world.line_point(0, 1.), world.observed_view.unwrap());
     world.expect_annotation("(44.721)");
+}
+#[given("d64 has accepted d63*2")]
+fn dependent_line(world: &mut ApplicationWorld) {
+    component_dimensions(world);
+    world.open_dimension_label("50");
+    world.type_text("d63*2");
+    world.key(ViewportPhysicalKey::Enter, false);
+    world.expect_annotation("fx:40");
+}
+#[when("I open source d63 and type 3 then 0 and press Return")]
+fn change_source(world: &mut ApplicationWorld) {
+    world.open_dimension_label("20");
+    world.type_text("3");
+    world.type_text("0");
+    world.key(ViewportPhysicalKey::Enter, false);
+}
+#[then("the source annotation displays 30 and the dependent annotation displays fx:60")]
+fn propagated_annotations(world: &mut ApplicationWorld) {
+    world.expect_annotation("30");
+    world.expect_annotation("fx:60");
+}
+#[then("the driven aligned length displays (67.082)")]
+fn aligned_length_sixty(world: &mut ApplicationWorld) {
+    world.expect_annotation("(67.082)");
+}
+#[when("I reopen d64 by targeting its component dimension line")]
+fn reopen_by_line(world: &mut ApplicationWorld) {
+    world.key(ViewportPhysicalKey::D, false);
+    let point = world.sketch_pixel_of([5., 2.5]);
+    world.sketch_click(point);
+    world.expect_text("d64");
+}
+#[then("the retained normalized expression is d63 * 2 ul")]
+fn normalized_dependent(world: &mut ApplicationWorld) {
+    assert!(world.window_text("Edit Dimension").contains("d63*2ul"));
 }
 
 #[given("d64 depends on d63*2 and source d63 has been changed to 30")]
@@ -262,7 +297,9 @@ fn native_dimension_reference_updates_annotation_and_geometry_through_history() 
     world.redo();
     world.expect_annotation("fx:16");
     world.open_dimension_label("fx:16");
-    assert!(world.window_text("Edit Dimension").contains("d63*2"));
+    assert!(world.window_text("Edit Dimension").contains("d63*2ul"));
+    world.key(ViewportPhysicalKey::Enter, false);
+    world.expect_annotation("fx:16");
     world.close();
 }
 
@@ -316,7 +353,7 @@ fn native_dimension_dependency_survives_save_close_and_reopen() {
     world.pump(Vec::new());
     world.expect_annotation("fx:60");
     world.open_dimension_label("fx:60");
-    assert!(world.window_text("Edit Dimension").contains("d63*2"));
+    assert!(world.window_text("Edit Dimension").contains("d63*2ul"));
     world.escape();
     world.open_dimension_label("30");
     world.type_text("40");

@@ -77,6 +77,37 @@ pub(super) fn compile_context_source(
     Expression::parse_with_bare_unit(source, units, &context.bare_unit)
 }
 impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
+    /// Format an owned scalar for editing without changing its stored source.
+    /// Example: `parameters.scalar_editor_expression(id, Dimension::Length)?`.
+    pub fn scalar_editor_expression(
+        &self,
+        id: Id,
+        dimension: Dimension,
+    ) -> Result<String, ParameterError<Id>> {
+        let state = &self.require_record(id)?.state;
+        let source = &state.source;
+        let unit = state
+            .expression_context
+            .as_ref()
+            .map_or(self.units.preferred_name(dimension), |context| {
+                context.bare_unit.as_str()
+            });
+        let expression = Expression::parse(source, &self.units)?;
+        let promote = expression.references().is_empty()
+            && expression
+                .evaluate()
+                .is_ok_and(|value| value.dimension == Dimension::Unitless);
+        let formatted = expression.scalar_display(&self.units, unit, promote);
+        let result = self.evaluate_scalar_expression(&formatted, dimension);
+        if state
+            .current_value()
+            .is_some_and(|original| result.as_ref() == Ok(&original))
+        {
+            Ok(formatted)
+        } else {
+            Ok(source.clone())
+        }
+    }
     /// Store a dimensioned Model expression with its original text and captured unit.
     /// Example: `parameters.insert_scalar_expression(id, "depth", "width / 2", Dimension::Length)?`.
     pub fn insert_scalar_expression(

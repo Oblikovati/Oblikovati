@@ -44,6 +44,65 @@ fn authored_bare_unit_survives_preference_changes_and_copy() {
 }
 
 #[test]
+fn editor_format_preserves_units_dependencies_and_authored_source() {
+    let mut parameters = scalars();
+    parameters
+        .set_scalar_expression(2, "width*2", Dimension::Length)
+        .unwrap();
+    assert_eq!(
+        parameters
+            .scalar_editor_expression(2, Dimension::Length)
+            .unwrap(),
+        "width * 2 ul"
+    );
+    assert_eq!(parameters.get(2).unwrap().source, "width*2");
+    let formatted = parameters
+        .scalar_editor_expression(2, Dimension::Length)
+        .unwrap();
+    parameters
+        .set_scalar_expression(2, &formatted, Dimension::Length)
+        .unwrap();
+    parameters.set_expression(1, "3 cm").unwrap();
+    assert_eq!(parameters.model_value(2).unwrap().value, 6.0);
+    assert_eq!(parameters.drivers(2).unwrap(), [1]);
+    parameters
+        .set_scalar_expression(2, "2*6", Dimension::Length)
+        .unwrap();
+    assert_eq!(
+        parameters
+            .scalar_editor_expression(2, Dimension::Length)
+            .unwrap(),
+        "2 mm * 6 ul"
+    );
+    prefer_inches(&mut parameters);
+    assert_eq!(
+        parameters
+            .scalar_editor_expression(2, Dimension::Length)
+            .unwrap(),
+        "2 mm * 6 ul"
+    );
+    parameters
+        .set_scalar_expression(2, "2 mm * 6 ul", Dimension::Length)
+        .unwrap();
+    assert!((parameters.model_value(2).unwrap().value - 1.2).abs() < 1e-12);
+}
+
+#[test]
+fn editor_format_falls_back_when_unit_placement_would_change_meaning() {
+    let mut parameters = scalars();
+    parameters
+        .set_scalar_expression(2, "2+6", Dimension::Length)
+        .unwrap();
+    assert_eq!(
+        parameters
+            .scalar_editor_expression(2, Dimension::Length)
+            .unwrap(),
+        "2+6"
+    );
+    assert!((parameters.model_value(2).unwrap().value - 0.8).abs() < 1e-12);
+}
+
+#[test]
 fn explicit_edits_capture_the_current_input_unit() {
     let mut parameters = scalars();
     prefer_inches(&mut parameters);

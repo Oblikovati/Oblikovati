@@ -59,11 +59,16 @@ fn stored_expression(
     state: &oblikovati_model::parameter::ParameterState<u64>,
     dimension: oblikovati_model::quantity::Dimension,
 ) -> String {
-    if state.source.trim().parse::<f64>().is_err() {
-        return state.source.clone();
-    }
-    let unit = snapshot.parameters.units().preferred_name(dimension);
-    format!("{} {unit}", state.source.trim())
+    snapshot
+        .parameters
+        .find(&state.name)
+        .and_then(|id| {
+            snapshot
+                .parameters
+                .scalar_editor_expression(id, dimension)
+                .ok()
+        })
+        .unwrap_or_else(|| state.source.clone())
 }
 /// A sketch reads a length without its document unit and an angle with two decimals.
 fn annotation_value(quantity: oblikovati_model::quantity::Quantity, shown: String) -> String {

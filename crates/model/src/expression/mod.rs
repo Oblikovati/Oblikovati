@@ -2,6 +2,7 @@
 
 //! Compile authored formulas and bind references to caller-owned stable identities.
 mod binding;
+mod display;
 mod error;
 mod evaluate;
 mod functions;
@@ -34,6 +35,15 @@ pub struct Expression {
 }
 
 impl Expression {
+    /// Format explicit scalar units for an editor; example: `formula.scalar_display(&units, "mm", false)`.
+    pub fn scalar_display(
+        &self,
+        units: &UnitsOfMeasure,
+        bare_unit: &str,
+        promote_first: bool,
+    ) -> String {
+        display::scalar_display(&self.source, units, bare_unit, promote_first)
+    }
     /// Store an already measured quantity without parsing it; for example `Expression::constant(area)`.
     pub fn constant(quantity: Quantity) -> Self {
         Self {

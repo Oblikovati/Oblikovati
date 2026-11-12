@@ -456,14 +456,14 @@ fn native_dimension_editor_retains_arithmetic_through_undo_and_redo() {
     world.pump(Vec::new());
     world.expect_annotation("12");
     world.open_dimension_label("12");
-    assert!(world.window_text("Edit Dimension").contains("2*6"));
+    assert!(world.window_text("Edit Dimension").contains("2mm*6ul"));
     world.escape();
     world.undo();
     world.expect_annotation("10");
     world.redo();
     world.expect_annotation("12");
     world.open_dimension_label("12");
-    assert!(world.window_text("Edit Dimension").contains("2*6"));
+    assert!(world.window_text("Edit Dimension").contains("2mm*6ul"));
     world.close();
 }
 
