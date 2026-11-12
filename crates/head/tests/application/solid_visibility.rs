@@ -6,6 +6,25 @@ const HUE_MARGIN: u8 = 20;
 pub(super) fn visible_solid_fill(capture: &ViewportCapture, windows: &[[f32; 4]]) -> bool {
     visible_fill(capture, windows, &fixture_hue)
 }
+pub(super) fn visible_fixture_point(
+    capture: &ViewportCapture,
+    windows: &[[f32; 4]],
+) -> Option<[i32; 2]> {
+    let [width, height] = capture.extent.map(|side| side as usize);
+    if width < PATCH_SIDE || height < PATCH_SIDE {
+        return None;
+    }
+    for y in 0..=height - PATCH_SIDE {
+        for x in 0..=width - PATCH_SIDE {
+            if !windows.iter().any(|window| patch_overlaps(x, y, *window))
+                && filled_patch(capture, x, y, &green_fixture_hue)
+            {
+                return Some([(x + PATCH_SIDE / 2) as i32, (y + PATCH_SIDE / 2) as i32]);
+            }
+        }
+    }
+    None
+}
 pub(super) fn visible_appearance_fill(
     capture: &ViewportCapture,
     windows: &[[f32; 4]],
@@ -52,9 +71,11 @@ fn filled_patch(
         })
     })
 }
+fn green_fixture_hue(pixel: &[u8]) -> bool {
+    pixel[1] > pixel[0].saturating_add(HUE_MARGIN) && pixel[1] > pixel[2].saturating_add(HUE_MARGIN)
+}
 fn fixture_hue(pixel: &[u8]) -> bool {
-    let green = pixel[1] > pixel[0].saturating_add(HUE_MARGIN)
-        && pixel[1] > pixel[2].saturating_add(HUE_MARGIN);
+    let green = green_fixture_hue(pixel);
     let blue = pixel[2] > pixel[0].saturating_add(HUE_MARGIN)
         && pixel[2] > pixel[1].saturating_add(HUE_MARGIN);
     green || blue

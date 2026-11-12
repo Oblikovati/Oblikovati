@@ -59,3 +59,17 @@ fn black_appearance_requires_model_pixels_outside_all_ui_panels() {
         [2, 2, 2]
     ));
 }
+#[test]
+fn fixture_point_excludes_ui_and_requires_filled_green() {
+    let green = capture_with_patch([0, 255, 0, 255], true);
+    assert_eq!(visible_fixture_point(&green, &[]), Some([12, 12]));
+    assert_eq!(visible_fixture_point(&green, &[[8., 8., 24., 24.]]), None);
+    assert_eq!(
+        visible_fixture_point(&capture_with_patch([0, 255, 0, 255], false), &[]),
+        None
+    );
+    assert_eq!(
+        visible_fixture_point(&capture_with_patch([63, 153, 255, 255], true), &[]),
+        None
+    );
+}

@@ -277,6 +277,10 @@ pub(crate) fn selection_toolbar(
     actions: &mut Vec<GuiShellAction>,
 ) {
     let commands = &request.commands;
+    if commands.model_face_chosen {
+        face_selection_toolbar(ui, request, actions);
+        return;
+    }
     let browser = commands.browser.as_ref();
     let chosen = browser.and_then(|browser| {
         let feature = browser.selected_feature?;
@@ -288,18 +292,35 @@ pub(crate) fn selection_toolbar(
     let Some(corner) = outline_corner(request) else {
         return;
     };
+    selection_toolbar_window(ui, corner, || {
+        edit_sketch_row_button(ui, commands, browser, feature, actions);
+        ui.same_line();
+        let _muted = ui.begin_disabled(true);
+        crate::widget_abi::button(ui, "Edit Feature", [0.; 2]);
+    });
+}
+fn face_selection_toolbar(ui: &Ui, request: &GuiFrameRequest, actions: &mut Vec<GuiShellAction>) {
+    let Some(corner) = outline_corner(request) else {
+        return;
+    };
+    selection_toolbar_window(ui, corner, || {
+        if crate::widget_abi::button(ui, "Zoom Selected", [0.; 2]) {
+            actions.push(GuiShellAction::ViewCommand(
+                crate::GuiViewCommand::ZoomSelected {
+                    extent: request.extent,
+                },
+            ));
+        }
+    });
+}
+fn selection_toolbar_window(ui: &Ui, corner: [f32; 2], draw: impl FnOnce()) {
     ui.window(SELECTION_TOOLBAR)
         .position([corner[0], corner[1] - TOOLBAR_RISE], Condition::Always)
         .always_auto_resize(true)
         .no_decoration()
         .focus_on_appearing(false)
         .save_settings(false)
-        .build(|| {
-            edit_sketch_row_button(ui, commands, browser, feature, actions);
-            ui.same_line();
-            let _muted = ui.begin_disabled(true);
-            crate::widget_abi::button(ui, "Edit Feature", [0.; 2]);
-        });
+        .build(draw);
 }
 fn edit_sketch_row_button(
     ui: &Ui,

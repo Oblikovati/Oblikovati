@@ -21,12 +21,15 @@ impl<
     ) -> Result<bool, String> {
         self.require_browser_document(document)?;
         let mode = SelectionClickMode::from_modifiers(toggle, false);
-        self.files
+        let changed = self
+            .files
             .commands(document)
             .map_err(|cause| cause.to_string())?
             .set_browser_sketch_selection(Some(sketch), mode, self.sketch_tool.is_some())
             .map(|count| count.is_some())
-            .map_err(|cause| cause.to_string())
+            .map_err(|cause| cause.to_string())?;
+        self.model_face = None;
+        Ok(changed)
     }
     pub(super) fn select_browser_feature(
         &mut self,
@@ -39,6 +42,7 @@ impl<
             .map_err(|cause| cause.to_string())?
             .set_browser_feature_selection(feature)
             .map_err(|cause| cause.to_string())?;
+        self.model_face = None;
         Ok(true)
     }
     /// A click on the view: the face on the line of sight is chosen, and every browser row is
@@ -203,6 +207,9 @@ impl<
             BodyVisible { key, visible } => {
                 commands.set_body_visible(key, *visible)?;
             }
+        }
+        if matches!(choice, Nothing | Root | Body { .. }) {
+            self.model_face = None;
         }
         Ok(true)
     }
