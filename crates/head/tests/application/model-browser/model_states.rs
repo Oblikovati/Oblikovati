@@ -255,3 +255,48 @@ fn created_model_state_name_can_be_edited_or_cancelled() {
     );
     world.close();
 }
+
+#[test]
+fn model_states_reopen_with_the_active_member_and_stable_names() {
+    use oblikovati_api::wire::{CloseDocumentArgs, OpenDocumentArgs};
+    let mut world = ApplicationWorld::new();
+    let document = world.add_part();
+    world.click_text("Model State");
+    open_new_state_menu(&mut world);
+    world.click_text("New Model State");
+    world.type_text("Large");
+    world.key(oblikovati_viewport::ViewportPhysicalKey::Enter, false);
+    world.pump(Vec::new());
+    world.expect_text("Large (Active)");
+    let before = world.state().browser.unwrap().model_states.unwrap();
+    let path = world.save_part_to_file(document, "states.opd");
+    let client = Client::new(world.app().owner.document_host());
+    client
+        .documents()
+        .close(&CloseDocumentArgs {
+            id: document,
+            force: false,
+        })
+        .unwrap();
+    let reopened = client
+        .documents()
+        .open(&OpenDocumentArgs {
+            full_document_name: path.to_str().unwrap().into(),
+            ..Default::default()
+        })
+        .unwrap()
+        .id;
+    assert_ne!(reopened, document);
+    world.pump(Vec::new());
+    let state = world.state();
+    assert_eq!(state.browser.unwrap().model_states.unwrap(), before);
+    assert_eq!(
+        state
+            .document_model_states
+            .get(&reopened)
+            .map(String::as_str),
+        Some("Large")
+    );
+    world.expect_text("<Large>");
+    world.close();
+}
