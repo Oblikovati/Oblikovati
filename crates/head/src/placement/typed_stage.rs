@@ -92,16 +92,26 @@ impl SketchPlacementState {
             second[1] + normal[1] * width * side,
         ])
     }
-    /// A typed radius puts the start on that circle, in the pointer's direction from the center.
+    /// Typed radius and direction set the start; an untyped field follows the pointer.
     pub(super) fn arc_start_at_radius(&self, point: [f64; 2]) -> [f64; 2] {
-        let radius = self.fields.typed_values()[0];
-        let (crate::SketchPlacementTool::CenterPointArc, [center], Some(radius)) =
-            (self.tool, self.accepted.as_slice(), radius)
+        let (crate::SketchPlacementTool::CenterPointArc, [center]) =
+            (self.tool, self.accepted.as_slice())
         else {
             return point;
         };
+        let [radius, angle, _] = self.fields.typed_values();
         let delta = [point[0] - center[0], point[1] - center[1]];
         let length = delta[0].hypot(delta[1]);
+        if let Some(angle) = angle {
+            let radius = radius.unwrap_or(length);
+            return [
+                center[0] + radius * angle.cos(),
+                center[1] + radius * angle.sin(),
+            ];
+        }
+        let Some(radius) = radius.filter(|_| length > 0.) else {
+            return point;
+        };
         [
             center[0] + delta[0] / length * radius,
             center[1] + delta[1] / length * radius,
@@ -109,7 +119,7 @@ impl SketchPlacementState {
     }
     /// A typed sweep turns the start about the center, toward the pointer's side.
     pub(super) fn arc_end_at_sweep(&self, point: [f64; 2]) -> [f64; 2] {
-        let sweep = self.fields.typed_values()[1];
+        let sweep = self.fields.typed_values()[2];
         let (crate::SketchPlacementTool::CenterPointArc, [center, start], Some(sweep)) =
             (self.tool, self.accepted.as_slice(), sweep)
         else {

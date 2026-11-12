@@ -134,3 +134,63 @@ fn enter_at_the_arcs_point_goes_back_for_its_end_because_a_radius_names_no_side(
     assert_eq!(state.prompt(), "Select end of arc");
     assert!(!state.fields_engaged());
 }
+
+fn centered_arc_state() -> SketchPlacementState {
+    let mut state = SketchPlacementState::new(
+        7,
+        DocumentSketchId(3),
+        11,
+        SketchPlane::xy(),
+        crate::SketchPlacementTool::CenterPointArc,
+    )
+    .unwrap();
+    let construction = oblikovati_martensite::planar_curve::MartensiteSketchConstruction;
+    state.cursor(Some([0., 0.]), true, &construction).unwrap();
+    state
+}
+fn type_field(state: &mut SketchPlacementState, text: &str) {
+    for character in text.chars() {
+        state.event(ViewportEvent::Input(ViewportInput::Text(character)));
+    }
+    state.evaluate_line_values(&|_, source| source.parse().ok());
+}
+fn tab_field(state: &mut SketchPlacementState) {
+    state.event(ViewportEvent::Input(ViewportInput::PhysicalKey {
+        key: ViewportPhysicalKey::Tab,
+        layout_key: ViewportPhysicalKey::Tab,
+        command: None,
+        pressed: true,
+        modifiers: Default::default(),
+    }));
+}
+#[test]
+fn centered_arc_keeps_radius_and_sweep_at_their_recipe_fields() {
+    let mut state = centered_arc_state();
+    let construction = oblikovati_martensite::planar_curve::MartensiteSketchConstruction;
+    type_field(&mut state, "4");
+    tab_field(&mut state);
+    assert!(state.field_view(0).locked && state.field_view(1).active);
+    state.cursor(Some([3., 0.]), true, &construction).unwrap();
+    assert!(state.field_view(2).active);
+    type_field(&mut state, "1");
+    state.cursor(Some([0., 4.]), false, &construction).unwrap();
+    let recipe = state.preview.clone().unwrap();
+    let locks = state.locks_for(&recipe).unwrap();
+    assert_eq!(locks[0].as_ref().unwrap().expression, "4");
+    assert_eq!(locks[1].as_ref().unwrap().expression, "1");
+}
+#[test]
+fn centered_arc_start_angle_zero_is_direction_not_zero_radius() {
+    let mut state = centered_arc_state();
+    type_field(&mut state, "4");
+    tab_field(&mut state);
+    type_field(&mut state, "0");
+    assert!(!state.typed_size_is_zero());
+    assert_eq!(state.arc_start_at_radius([0., 3.]), [4., 0.]);
+    let construction = oblikovati_martensite::planar_curve::MartensiteSketchConstruction;
+    let cause = state
+        .cursor(Some([0., 3.]), true, &construction)
+        .unwrap_err();
+    assert!(cause.contains("arc start angle"));
+    assert_eq!(state.prompt(), "Select start point");
+}

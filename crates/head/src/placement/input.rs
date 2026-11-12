@@ -144,10 +144,12 @@ impl SketchPlacementState {
         if let Some(typed) = self.fields.typed_values().get(index).copied().flatten() {
             return typed;
         }
-        if let Some(field) = self
-            .preview
-            .as_ref()
-            .and_then(|recipe| recipe.fields.get(index))
+        let recipe_index = match (self.tool, self.accepted.len(), index) {
+            (crate::SketchPlacementTool::CenterPointArc, 1, 1) => None,
+            (crate::SketchPlacementTool::CenterPointArc, 2, 2) => Some(1),
+            _ => Some(index),
+        };
+        if let Some(field) = recipe_index.and_then(|index| self.preview.as_ref()?.fields.get(index))
         {
             return field.value;
         }
@@ -194,7 +196,15 @@ impl SketchPlacementState {
     }
     /// A typed zero size on a tool that shrugs it off: the shape is dropped, not refused.
     pub(crate) fn typed_size_is_zero(&self) -> bool {
-        self.fields.typed_values().contains(&Some(0.))
+        self.fields
+            .typed_values()
+            .iter()
+            .enumerate()
+            .any(|(index, value)| {
+                *value == Some(0.)
+                    && self.tool.typed_field_dimension(index)
+                        != oblikovati_model::quantity::Dimension::Angle
+            })
     }
     /// Keep Point preview and commit bound to the same authored role and coincidence.
     pub(crate) fn point_placement(
@@ -240,6 +250,12 @@ impl SketchPlacementState {
         recipe: &SketchPlacementRecipe,
     ) -> Result<Vec<Option<oblikovati_model::history::SketchPlacementFieldLock>>, String> {
         let mut locks = self.fields.preview_locks();
+        if self.tool == crate::SketchPlacementTool::CenterPointArc {
+            self.require_supported_arc_direction()?;
+            if locks.len() > 1 {
+                locks.remove(1);
+            }
+        }
         fields::validate_dimension_locks(&recipe.fields, &locks)?;
         for (lock, field) in locks.iter_mut().zip(&recipe.fields) {
             if let Some(lock) = lock {
@@ -253,6 +269,17 @@ impl SketchPlacementState {
             }
         }
         Ok(locks)
+    }
+    /// Refuse before leaving the start stage, so the direction stays editable.
+    fn require_supported_arc_direction(&self) -> Result<(), String> {
+        let locks = self.fields.preview_locks();
+        if let Some(Some(direction)) = locks.get(1) {
+            return Err(format!(
+                "arc start angle {:?}: expected a pointer-selected direction; a driving angle is not yet supported",
+                direction.expression
+            ));
+        }
+        Ok(())
     }
     fn input(&mut self, input: ViewportInput) -> PlacementAction {
         match input {
@@ -365,6 +392,11 @@ impl SketchPlacementState {
         self.repeated_click = false;
         if self.accepted.len() + 1 < self.tool.point_count() {
             if place {
+                if self.tool == crate::SketchPlacementTool::CenterPointArc
+                    && self.accepted.len() == 1
+                {
+                    self.require_supported_arc_direction()?;
+                }
                 let point = self.typed_stage_point(self.arc_start_at_radius(point));
                 self.accept_stage_point(point)?;
             }

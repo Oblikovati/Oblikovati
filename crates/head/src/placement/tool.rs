@@ -198,8 +198,8 @@ impl SketchPlacementTool {
     /// The values asked for at each stage, as a range of the shape's fields.
     pub(crate) fn stage_fields(self, stage: usize) -> std::ops::Range<usize> {
         match (self, stage) {
-            (Self::CenterPointArc, 1) => 0..1,
-            (Self::CenterPointArc, 2) => 1..2,
+            (Self::CenterPointArc, 1) => 0..2,
+            (Self::CenterPointArc, 2) => 2..3,
             (Self::ThreePointRectangle | Self::ThreePointCenterRectangle, 1) => 0..2,
             (Self::ThreePointRectangle | Self::ThreePointCenterRectangle, 2) => 2..3,
             // The end's distance and direction become its point; only the radius outlives them.
@@ -223,7 +223,7 @@ impl SketchPlacementTool {
         index: usize,
     ) -> oblikovati_model::quantity::Dimension {
         let angle = match self {
-            Self::CenterPointArc => index == 1,
+            Self::CenterPointArc => index == 1 || index == 2,
             Self::ThreePointRectangle
             | Self::ThreePointCenterRectangle
             | Self::ThreePointArc { .. } => index == 1,
@@ -243,7 +243,8 @@ impl SketchPlacementTool {
         let direction = index == 1
             && matches!(
                 self,
-                Self::ThreePointRectangle
+                Self::CenterPointArc
+                    | Self::ThreePointRectangle
                     | Self::ThreePointCenterRectangle
                     | Self::ThreePointArc { .. }
             );

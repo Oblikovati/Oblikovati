@@ -140,6 +140,7 @@ fn center_and_start(world: &mut ApplicationWorld) {
     world.sketch_click(CENTER);
     world.sketch_click(START);
 }
+#[then("the command requests the end point")]
 #[then("the prompt requests the end point")]
 fn asks_end(world: &mut ApplicationWorld) {
     world.expect_status("Select end point");
@@ -264,9 +265,41 @@ fn exits_without(world: &mut ApplicationWorld) {
 // arc-center-point-11
 #[given("a fresh Center Point Arc command with a selected center")]
 fn fresh_with_center(world: &mut ApplicationWorld) {
-    world.start_empty_sketch();
+    world.start_sketch_on("YZ Plane");
     select_tool(world);
-    world.sketch_click(CENTER);
+    world.open_precise_input();
+    world.precise_point(RECORDED_NUMERIC_CENTER);
+    world.hover(START);
+}
+#[when("I enter 4 for radius")]
+fn type_radius(world: &mut ApplicationWorld) {
+    world.type_text("4");
+}
+#[then("the radius is locked at 4 mm and focus moves to the start-angle field")]
+fn radius_locked_and_angle_active(world: &mut ApplicationWorld) {
+    let hud = world.state().sketch_hud.expect("expected arc fields");
+    assert_eq!(hud.fields.len(), 2);
+    assert!(hud.fields[0].locked && hud.fields[0].text.contains("4.000"));
+    assert!(hud.fields[1].active && hud.fields[1].text.contains("deg"));
+}
+#[when("I click the recorded start location")]
+fn click_recorded_start(world: &mut ApplicationWorld) {
+    world.sketch_click(START);
+}
+#[when("I press 9 and then 0 for the sweep")]
+fn type_sweep(world: &mut ApplicationWorld) {
+    world.type_text("9");
+    world.type_text("0");
+}
+#[then("the sweep is locked at 90 degrees")]
+fn sweep_locked(world: &mut ApplicationWorld) {
+    let hud = world.state().sketch_hud.expect("expected sweep field");
+    assert_eq!(hud.fields.len(), 1);
+    assert!(hud.fields[0].locked && hud.fields[0].text.contains("90.00"));
+}
+#[when("I click the recorded endpoint location")]
+fn click_recorded_end(world: &mut ApplicationWorld) {
+    world.sketch_click(ABOVE);
 }
 #[when("I enter 4 mm for radius and press Tab")]
 fn radius_four(world: &mut ApplicationWorld) {
@@ -298,9 +331,12 @@ fn typed_rows(world: &mut ApplicationWorld) {
 #[then("the resulting arc is oriented toward the upper right")]
 fn upper_right(world: &mut ApplicationWorld) {
     let middle = arc_fraction_pixel(world, 0.5);
+    let arc = newest_arc(world);
+    let center = world.edited_geometry().point(arc.center).unwrap().position;
+    let center = world.sketch_pixel_of(center);
     assert!(
-        middle[0] > CENTER[0] && middle[1] < CENTER[1],
-        "middle pixel {middle:?} from center {CENTER:?}"
+        middle[0] > center[0] && middle[1] < center[1],
+        "middle {middle:?}, center {center:?}"
     );
 }
 // arc-center-point-12 and arc-center-point-13
@@ -410,6 +446,7 @@ fn sweep_rows(world: &mut ApplicationWorld) {
     world.expect_measure("Length 10.472 mm");
     world.expect_measure("Radius 5.000 mm");
 }
+#[then("its center is (0, 4.914, 17.623) mm")]
 #[then("its center remains (0, 4.914, 17.623) mm")]
 fn numeric_center(world: &mut ApplicationWorld) {
     world.expect_measure("Center X 0.000 Y 4.914 Z 17.623 mm");
