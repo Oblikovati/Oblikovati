@@ -11,10 +11,12 @@ use oblikovati_viewport::ViewportPhysicalKey;
 mod line_fixture;
 #[path = "overlap.rs"]
 mod overlap;
+#[path = "rectangle_measure.rs"]
+mod rectangle_measure;
 
 #[given("the MCAD Software is editing an editable metric sketch")]
 fn editable_metric_sketch(world: &mut ApplicationWorld) {
-    world.start_sketch_on("YZ Plane");
+    world.start_sketch_on_plane(oblikovati_model::sketch::SketchPlane::yz());
 }
 
 #[given("rectangle height d50 evaluates to 10.000 mm")]
