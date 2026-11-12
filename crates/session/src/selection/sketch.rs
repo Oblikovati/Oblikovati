@@ -84,10 +84,12 @@ impl SelectionSet<SketchPick> {
         Ok(())
     }
     pub(crate) fn deletion_label(&self) -> &'static str {
-        let entities = self
-            .items()
-            .iter()
-            .any(|pick| matches!(pick.target, SketchPickTarget::Entity(_)));
+        let entities = self.items().iter().any(|pick| {
+            matches!(
+                pick.target,
+                SketchPickTarget::Entity(_) | SketchPickTarget::BlockInstance(_)
+            )
+        });
         let dimensions = self
             .items()
             .iter()
@@ -108,21 +110,18 @@ impl SelectionSet<SketchPick> {
         document: u64,
         generation: u64,
         sketch: DocumentSketchId,
-    ) -> Result<SketchDeletionSelection, SketchError> {
+    ) -> Result<(SketchDeletionSelection, Vec<SketchEntityId>), SketchError> {
         self.validate_scope(document, generation, sketch)?;
         let mut intent = SketchDeletionSelection::default();
+        let mut blocks = Vec::new();
         for pick in self.items() {
             match pick.target {
                 SketchPickTarget::Entity(id) => intent.entities.push(id),
-                SketchPickTarget::BlockInstance(id) => {
-                    return Err(SketchError::Definition(format!(
-                        "block instance {id:?}: expected a block-aware deletion command"
-                    )));
-                }
+                SketchPickTarget::BlockInstance(id) => blocks.push(id),
                 SketchPickTarget::Dimension(id) => intent.dimensions.push(id),
                 SketchPickTarget::GeometricConstraint(id) => intent.geometric_constraints.push(id),
             }
         }
-        Ok(intent)
+        Ok((intent, blocks))
     }
 }

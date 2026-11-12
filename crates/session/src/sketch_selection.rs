@@ -59,8 +59,8 @@ impl<O: TransactionObserver> DocumentSession<O> {
         };
         let (document, generation) = (self.document, self.generation());
         let report = self.run(picks.deletion_label(), |snapshot, _| {
-            let intent = picks.deletion_intent(document, generation, sketch)?;
-            snapshot.delete_sketch_selection(sketch, &intent)
+            let (intent, blocks) = picks.deletion_intent(document, generation, sketch)?;
+            snapshot.delete_sketch_selection_with_blocks(sketch, &intent, &blocks)
         })?;
         picks.clear();
         Ok(report)

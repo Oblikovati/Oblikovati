@@ -27,10 +27,19 @@ impl DocumentSnapshot {
         sketch: DocumentSketchId,
         selection: &SketchDeletionSelection,
     ) -> Result<SketchEntityDeletion, SketchError> {
+        self.delete_sketch_selection_with_blocks(sketch, selection, &[])
+    }
+    /// Delete geometry and block instances in one edit; example: `snapshot.delete_sketch_selection_with_blocks(sketch, &selection, &[instance])?`.
+    pub fn delete_sketch_selection_with_blocks(
+        &mut self,
+        sketch: DocumentSketchId,
+        selection: &SketchDeletionSelection,
+        blocks: &[SketchEntityId],
+    ) -> Result<SketchEntityDeletion, SketchError> {
         let placed = self.sketches.get(sketch)?;
         let sources = dimension_sources(placed.geometry());
         let mut geometry = placed.geometry().clone();
-        let report = geometry.delete_selection(selection)?;
+        let mut report = geometry.delete_selection(selection)?;
         let bindings = placed
             .point_projections()
             .iter()
@@ -38,6 +47,9 @@ impl DocumentSnapshot {
             .filter(|binding| !report.entities.contains(&binding.anchor))
             .collect();
         let mut candidate = self.clone();
+        report
+            .entities
+            .extend(candidate.sketches.remove_block_instances(sketch, blocks)?);
         candidate.sketches.set_point_projections(sketch, bindings)?;
         candidate.sketches.replace_geometry(sketch, geometry)?;
         candidate.remove_retired_dimension_sources(sources)?;

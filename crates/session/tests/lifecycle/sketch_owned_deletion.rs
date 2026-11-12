@@ -4,11 +4,9 @@ use super::*;
 use oblikovati_model::{document_sketch::DocumentSketchId, sketch::*};
 use oblikovati_session::selection::{SelectionClickMode, SketchPickTarget};
 const SKETCH: DocumentSketchId = DocumentSketchId(1);
-#[test]
-fn block_pick_is_checked_and_refused_by_geometry_only_deletion() {
+fn place_test_block(session: &mut DocumentSession<RecordingObserver>) -> SketchEntityId {
     use oblikovati_model::document_sketch::SketchBlockInstance;
-    let mut session = selection_session(None);
-    let id = session
+    session
         .run("Place block", |snapshot, ids| {
             snapshot.sketches.define_empty_block("Rib").unwrap();
             let id = ids.allocate_sketch_entity().unwrap();
@@ -19,7 +17,12 @@ fn block_pick_is_checked_and_refused_by_geometry_only_deletion() {
                 .unwrap();
             Ok::<_, String>(id)
         })
-        .unwrap();
+        .unwrap()
+}
+#[test]
+fn block_pick_deletes_only_the_instance_and_survives_undo_redo() {
+    let mut session = selection_session(None);
+    let id = place_test_block(&mut session);
     let target = SketchPickTarget::BlockInstance(id);
     assert!(session.sketch_pick(SKETCH, target).is_ok());
     assert!(
@@ -31,12 +34,102 @@ fn block_pick_is_checked_and_refused_by_geometry_only_deletion() {
         .set_sketch_selection(SKETCH, Some(target), SelectionClickMode::Replace, false)
         .unwrap();
     let before = session.snapshot().sketches.clone();
-    let error = session
+    let report = session
         .delete_editor_selection(Some(SKETCH), false)
-        .unwrap_err();
-    assert!(error.to_string().contains("block-aware deletion"));
+        .unwrap();
+    assert_eq!(report.entities, [id]);
+    assert_eq!(session.snapshot().sketches.block_definitions().len(), 1);
+    assert!(
+        session
+            .snapshot()
+            .sketches
+            .get(SKETCH)
+            .unwrap()
+            .block_instances()
+            .is_empty()
+    );
+    assert!(session.selected_sketch_picks(SKETCH).is_empty());
+    session.undo().unwrap();
+    assert!(session.snapshot().sketches.same_recipe(&before));
+    session.redo().unwrap();
+    assert!(
+        session
+            .snapshot()
+            .sketches
+            .get(SKETCH)
+            .unwrap()
+            .block_instances()
+            .is_empty()
+    );
+}
+
+#[test]
+fn mixed_block_and_geometry_selection_is_one_atomic_history_step() {
+    let mut session = selection_session(None);
+    let id = place_test_block(&mut session);
+    for target in [
+        SketchPickTarget::Entity(SketchEntityId(2)),
+        SketchPickTarget::BlockInstance(id),
+    ] {
+        session
+            .set_sketch_selection(SKETCH, Some(target), SelectionClickMode::Toggle, false)
+            .unwrap();
+    }
+    let before = session.snapshot().sketches.clone();
+    let report = session
+        .delete_editor_selection(Some(SKETCH), false)
+        .unwrap();
+    assert!(report.entities.contains(&SketchEntityId(2)) && report.entities.contains(&id));
+    assert_eq!(
+        session.undo_labels().last(),
+        Some(&"Delete Sketch Entities")
+    );
+    session.undo().unwrap();
+    assert!(session.snapshot().sketches.same_recipe(&before));
+}
+
+#[test]
+fn vetoed_block_deletion_restores_the_instance_and_its_selection() {
+    let mut seed = selection_session(None);
+    let id = place_test_block(&mut seed);
+    let mut session = super::sketch_dimension_delete::dimension_session_from_snapshot(
+        seed.snapshot().clone(),
+        Some(EVENT_TRANSACTION_COMMITTED),
+    );
+    let target = SketchPickTarget::BlockInstance(id);
+    session
+        .set_sketch_selection(SKETCH, Some(target), SelectionClickMode::Replace, false)
+        .unwrap();
+    let before = session.snapshot().sketches.clone();
+    assert!(
+        session
+            .delete_editor_selection(Some(SKETCH), false)
+            .is_err()
+    );
     assert!(session.snapshot().sketches.same_recipe(&before));
     assert_eq!(session.selected_sketch_picks(SKETCH)[0].target(), target);
+}
+
+#[test]
+fn invalid_block_in_mixed_deletion_keeps_the_entire_document() {
+    let session = selection_session(None);
+    let mut snapshot = session.snapshot().clone();
+    let before = snapshot.sketches.clone();
+    let selection = SketchDeletionSelection {
+        entities: vec![SketchEntityId(2)],
+        ..Default::default()
+    };
+    assert!(
+        snapshot
+            .delete_sketch_selection_with_blocks(SKETCH, &selection, &[SketchEntityId(999)])
+            .is_err()
+    );
+    assert!(snapshot.sketches.same_recipe(&before));
+    assert!(
+        snapshot
+            .parameters
+            .same_recipe(&session.snapshot().parameters)
+    );
 }
 pub(super) fn select_owned_mixed(session: &mut DocumentSession<RecordingObserver>) {
     for target in [

@@ -289,6 +289,17 @@ fn create_block_groups_four_mouse_selected_edges_and_supports_undo_redo() {
     assert_eq!(selection[0].1, browser.block_instances[0].id);
     let selected = super::super::capture_framebuffer(&mut world.app().window.native);
     assert!(segment_color_changed(&unselected, &selected, segments[0]));
+    world.key(ViewportPhysicalKey::Delete, false);
+    assert!(world.state().browser.unwrap().block_instances.is_empty());
+    assert_eq!(world.state().sketch_block_names, ["Block1"]);
+    world.expect_no_text("Block1:1");
+    world.expect_segment_absent(segments[0][0], segments[0][1]);
+    world.command_key(ViewportPhysicalKey::Z, ViewportKey::Undo);
+    world.expect_text("Block1:1");
+    world.command_key(ViewportPhysicalKey::Y, ViewportKey::Redo);
+    world.expect_no_text("Block1:1");
+    world.command_key(ViewportPhysicalKey::Z, ViewportKey::Undo);
+    world.expect_text("Block1:1");
     world.command_key(ViewportPhysicalKey::Z, ViewportKey::Undo);
     assert!(world.edited_geometry().same_recipe(&original));
     assert!(world.state().sketch_block_names.is_empty());

@@ -104,6 +104,28 @@ impl PlacedSketch {
     }
 }
 impl DocumentSketches {
+    pub(crate) fn remove_block_instances(
+        &mut self,
+        sketch: DocumentSketchId,
+        selected: &[SketchEntityId],
+    ) -> Result<Vec<SketchEntityId>, SketchError> {
+        let index = self.index(sketch)?;
+        let instances = &mut self.sketches[index].block_instances;
+        for id in selected {
+            if !instances.iter().any(|instance| instance.id() == *id) {
+                return Err(SketchError::Definition(format!(
+                    "block instance {id:?} in sketch {sketch:?}: expected a current placed instance"
+                )));
+            }
+        }
+        let removed = instances
+            .iter()
+            .filter(|instance| selected.contains(&instance.id()))
+            .map(|instance| instance.id())
+            .collect();
+        instances.retain(|instance| !selected.contains(&instance.id()));
+        Ok(removed)
+    }
     /// Count references across the document; example: `sketches.block_instance_count("Rib")`.
     pub fn block_instance_count(&self, definition: &str) -> usize {
         self.sketches
