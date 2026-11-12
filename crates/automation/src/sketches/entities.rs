@@ -87,7 +87,7 @@ fn fit_method_name(
         ))),
     }
 }
-fn centimetres(value: f64, scale: f64) -> Result<f64, Error> {
+pub(super) fn centimetres(value: f64, scale: f64) -> Result<f64, Error> {
     let converted = value * scale;
     if !converted.is_finite() {
         return Err(Error(format!(

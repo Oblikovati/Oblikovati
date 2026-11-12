@@ -5,6 +5,7 @@ fn empty_update() -> crate::HeadSketchSceneUpdate {
         source: None,
         sketches: vec![],
         plane_declines: vec![],
+        block_declines: vec![],
     }
 }
 #[test]
@@ -29,6 +30,7 @@ fn nonempty_update() -> crate::HeadSketchSceneUpdate {
         source: Some((1, 2)),
         sketches: vec![packet],
         plane_declines: vec![],
+        block_declines: vec![],
     }
 }
 #[test]

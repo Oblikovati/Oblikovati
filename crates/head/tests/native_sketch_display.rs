@@ -16,6 +16,7 @@ fn native_display_failure_names_the_sketch_and_entity_and_clears_with_source() {
             source: None,
             sketches: vec![],
             plane_declines: vec![],
+            block_declines: vec![],
         })
         .unwrap();
     assert_eq!(window.view.native_title().unwrap(), "Oblikovati");
@@ -39,6 +40,10 @@ fn failure_update() -> crate::HeadSketchSceneUpdate {
         source: Some((1, 2)),
         sketches: vec![packet],
         plane_declines: vec![(DocumentSketchId(9), "missing plane 99".into())],
+        block_declines: vec![(
+            DocumentSketchId(4),
+            "block instance 99 of Rib is not yet displayed".into(),
+        )],
     }
 }
 
@@ -48,9 +53,10 @@ fn verify_failure_feedback(window: &mut NativeHeadWindow) {
     window.present().unwrap();
     let title = window.view.native_title().unwrap();
     assert!(
-        title.contains("2 sketch display failures")
+        title.contains("3 sketch display failures")
             && title.contains("sketch 4, entity 2")
-            && title.contains("missing plane 99"),
+            && title.contains("missing plane 99")
+            && title.contains("block instance 99"),
         "{title}"
     );
 }

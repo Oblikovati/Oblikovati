@@ -73,6 +73,22 @@ impl DocumentSketches {
                     "block definition {name:?}: expected an existing name"
                 ))
             })?;
+        let consumers: Vec<_> = self
+            .sketches
+            .iter()
+            .filter(|sketch| {
+                sketch
+                    .block_instances()
+                    .iter()
+                    .any(|instance| instance.definition() == name)
+            })
+            .map(|sketch| sketch.name())
+            .collect();
+        if !consumers.is_empty() {
+            return Err(SketchError::Definition(format!(
+                "block definition {name:?} is used by sketches {consumers:?}: expected no placed instances before deletion"
+            )));
+        }
         self.block_definitions.remove(index);
         Ok(())
     }

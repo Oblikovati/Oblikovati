@@ -24,7 +24,7 @@ impl NativeHeadWindow {
         let mut title = format!(
             " - {} sketches, {} sketch display failures",
             scene.sketches.len(),
-            scene.plane_declines.len() + declines.len()
+            scene.plane_declines.len() + scene.block_declines.len() + declines.len()
         );
         append_failure_names(&mut title, scene, declines);
         Ok(title)
@@ -37,6 +37,9 @@ fn append_failure_names(
     declines: &[oblikovati_viewport::ViewportSketchDecline],
 ) {
     if let Some((sketch, cause)) = scene.plane_declines.first() {
+        title.push_str(&format!(" - sketch {}: {cause}", sketch.0));
+    }
+    if let Some((sketch, cause)) = scene.block_declines.first() {
         title.push_str(&format!(" - sketch {}: {cause}", sketch.0));
     }
     if let Some(decline) = declines.first() {

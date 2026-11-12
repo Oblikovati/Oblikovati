@@ -13,9 +13,8 @@ pub(super) fn list<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFile
 ) -> Result<Vec<u8>, Error> {
     let document = active_part(files)?;
     let session = files.workspace().session(document).map_err(api_error)?;
-    let definitions = session
-        .snapshot()
-        .sketches
+    let sketches = &session.snapshot().sketches;
+    let definitions = sketches
         .block_definitions()
         .iter()
         .enumerate()
@@ -24,11 +23,68 @@ pub(super) fn list<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFile
                 index,
                 definition.name(),
                 definition.geometry().entity_ids().len(),
+                sketches.block_instance_count(definition.name()),
             )
         })
         .collect::<Result<Vec<_>, _>>()?;
     encode(&ListBlockDefinitionsResult {
         definitions: Some(definitions),
+    })
+}
+pub(super) fn list_instances<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &FileWorkspace<O, W, F>,
+    request: SketchArgs,
+) -> Result<Vec<u8>, Error> {
+    let document = active_part(files)?;
+    let snapshot = files
+        .workspace()
+        .session(document)
+        .map_err(api_error)?
+        .snapshot();
+    let id = sketch_at(snapshot, request.sketch_index)?;
+    let sketch = snapshot.sketches.get(id).map_err(api_error)?;
+    let scale = snapshot.parameters.units().working_scale();
+    let rows = sketch
+        .block_instances()
+        .iter()
+        .enumerate()
+        .map(|(index, instance)| instance_info(snapshot, index, instance, scale))
+        .collect::<Result<Vec<_>, Error>>()?;
+    encode(&ListBlockInstancesResult {
+        instances: Some(rows),
+    })
+}
+fn instance_info(
+    snapshot: &DocumentSnapshot,
+    index: usize,
+    instance: &oblikovati_model::document_sketch::SketchBlockInstance,
+    scale: f64,
+) -> Result<SketchBlockInfo, Error> {
+    let definition = snapshot
+        .sketches
+        .block_definitions()
+        .iter()
+        .find(|definition| definition.name() == instance.definition())
+        .ok_or_else(|| {
+            Error(format!(
+                "block instance {:?} definition {:?}: expected an existing definition",
+                instance.id(),
+                instance.definition()
+            ))
+        })?;
+    let position = instance
+        .position()
+        .into_iter()
+        .map(|value| super::entities::centimetres(value, scale))
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(SketchBlockInfo {
+        index: wire_count(index)?,
+        id: instance.id().0,
+        definition: instance.definition().into(),
+        position: Some(position),
+        rotation: instance.rotation(),
+        scale: instance.scale(),
+        entity_count: wire_count(definition.geometry().entity_ids().len())?,
     })
 }
 pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
@@ -68,7 +124,7 @@ fn create<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
                     .define_empty_block(&request.name)
                     .map_err(api_error)
             },
-            |_, index| encode(&info(index, &request.name, 0)?),
+            |_, index| encode(&info(index, &request.name, 0, 0)?),
         )
         .map_err(api_error)
 }
@@ -92,11 +148,16 @@ fn delete<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
         )
         .map_err(api_error)
 }
-fn info(index: usize, name: &str, entities: usize) -> Result<SketchBlockDefinitionInfo, Error> {
+fn info(
+    index: usize,
+    name: &str,
+    entities: usize,
+    instances: usize,
+) -> Result<SketchBlockDefinitionInfo, Error> {
     Ok(SketchBlockDefinitionInfo {
         index: wire_count(index)?,
         name: name.into(),
         entity_count: wire_count(entities)?,
-        instance_count: 0,
+        instance_count: wire_count(instances)?,
     })
 }

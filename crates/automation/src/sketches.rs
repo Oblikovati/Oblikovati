@@ -54,8 +54,9 @@ pub const SKETCH_COMMAND_METHODS: [&str; 15] = [
     METHOD_SKETCH_ADD_DIMENSION,
 ];
 /// Read-only sketch queries use one current owner and the canonical API DTOs.
-pub const SKETCH_QUERY_METHODS: [&str; 9] = [
+pub const SKETCH_QUERY_METHODS: [&str; 10] = [
     METHOD_SKETCH_BLOCK_DEFINITION_LIST,
+    METHOD_SKETCH_LIST_BLOCK_INSTANCES,
     METHOD_SKETCH_LIST,
     METHOD_SKETCH_GET,
     METHOD_SKETCH_CONSTRAINTS,
@@ -73,6 +74,9 @@ pub(super) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
 ) -> Result<Vec<u8>, Error> {
     if method == METHOD_SKETCH_BLOCK_DEFINITION_LIST {
         return block_definitions::list(files);
+    }
+    if method == METHOD_SKETCH_LIST_BLOCK_INSTANCES {
+        return block_definitions::list_instances(files, crate::decode(method, request)?);
     }
     if [METHOD_SKETCH_LIST, METHOD_SKETCH_GET].contains(&method) {
         return inspection::query(files, method, request, editing);

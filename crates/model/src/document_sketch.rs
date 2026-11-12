@@ -5,12 +5,14 @@ use crate::sketch::{
 };
 use std::collections::BTreeSet;
 mod block_definitions;
+mod block_instances;
 mod construction;
 mod curve_format;
 mod dimension_placement;
 mod dimension_settings;
 mod health;
 pub use block_definitions::{SketchBlockDefinition, SketchBlockDefinitionRecipe};
+pub use block_instances::SketchBlockInstance;
 mod translation;
 mod visibility;
 pub use construction::SketchConstructionReport;
@@ -64,6 +66,7 @@ pub struct PlacedSketch {
     placement: SketchPlacement,
     orientation: Option<SketchOrientationDefinition>,
     point_projections: Vec<SketchPointProjection>,
+    block_instances: Vec<SketchBlockInstance>,
     geometry: Sketch2D,
     evaluation: Option<health::SketchEvaluationStamp>,
 }
@@ -98,6 +101,8 @@ pub struct PlacedSketchRecipe {
     pub orientation: Option<SketchOrientationDefinition>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub point_projections: Vec<SketchPointProjection>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub block_instances: Vec<SketchBlockInstance>,
     pub geometry: SketchRecipe,
 }
 /// Collection schema and records; the enclosing document owns reservation marks.
@@ -125,6 +130,7 @@ impl PlacedSketch {
             placement,
             orientation: None,
             point_projections: Vec::new(),
+            block_instances: Vec::new(),
             geometry,
             evaluation: None,
         }
@@ -158,10 +164,14 @@ impl PlacedSketch {
             plane_feature,
             orientation: self.orientation,
             point_projections: self.point_projections.clone(),
+            block_instances: self.block_instances.clone(),
             geometry: self.geometry.recipe(),
         }
     }
     fn recipe_version(&self) -> u32 {
+        if !self.block_instances.is_empty() {
+            return 10;
+        }
         if self.line_style != SketchLineStyle::default() {
             return 7;
         }
@@ -201,6 +211,10 @@ impl DocumentSketches {
                         && first.placement.same_recipe(second.placement)
                         && orientation::same_orientation(first.orientation, second.orientation)
                         && first.point_projections == second.point_projections
+                        && block_instances::same_instances(
+                            &first.block_instances,
+                            &second.block_instances,
+                        )
                         && first.geometry.same_recipe(&second.geometry)
                 })
     }
@@ -297,6 +311,13 @@ impl DocumentSketches {
     }
     fn placement_recipe_version(&self) -> u32 {
         if self
+            .sketches
+            .iter()
+            .any(|sketch| !sketch.block_instances.is_empty())
+        {
+            return 10;
+        }
+        if self
             .block_definitions
             .iter()
             .any(|block| !block.geometry().owned_entity_ids().is_empty())
@@ -314,9 +335,9 @@ impl DocumentSketches {
     }
     /// Restore a complete collection before replacing a document owner; example: `DocumentSketches::from_recipe(&recipe)?`.
     pub fn from_recipe(recipe: &DocumentSketchRecipe) -> Result<Self, SketchError> {
-        if !matches!(recipe.version, 1..=9) {
+        if !matches!(recipe.version, 1..=10) {
             return Err(SketchError::Definition(format!(
-                "document sketch recipe version {}: expected 1 through 9",
+                "document sketch recipe version {}: expected 1 through 10",
                 recipe.version
             )));
         }
@@ -331,6 +352,7 @@ impl DocumentSketches {
             visibility::restore_visibility(&mut restored, sketch, recipe.version)?;
             visibility::restore_constraints_shown(&mut restored, sketch, recipe.version)?;
             visibility::restore_line_style(&mut restored, sketch, recipe.version)?;
+            restored.restore_block_instances(sketch, recipe.version)?;
         }
         Ok(restored)
     }
@@ -343,7 +365,14 @@ impl DocumentSketches {
     pub fn entity_ids(&self) -> Vec<u64> {
         self.sketches
             .iter()
-            .flat_map(|sketch| geometry_ids(&sketch.geometry))
+            .flat_map(|sketch| {
+                geometry_ids(&sketch.geometry).into_iter().chain(
+                    sketch
+                        .block_instances
+                        .iter()
+                        .map(|instance| instance.id().0),
+                )
+            })
             .collect()
     }
     fn index(&self, id: DocumentSketchId) -> Result<usize, SketchError> {
@@ -362,6 +391,12 @@ impl DocumentSketches {
             .iter()
             .filter(|sketch| Some(sketch.id) != replacing)
             .flat_map(|sketch| geometry_ids(&sketch.geometry))
+            .chain(self.sketches.iter().flat_map(|sketch| {
+                sketch
+                    .block_instances
+                    .iter()
+                    .map(|instance| instance.id().0)
+            }))
             .collect();
         for id in geometry_ids(geometry) {
             if retained.contains(&id) {
@@ -397,6 +432,7 @@ impl PartialEq for PlacedSketch {
             && self.placement == other.placement
             && self.orientation == other.orientation
             && self.point_projections == other.point_projections
+            && self.block_instances == other.block_instances
             && self.geometry == other.geometry
     }
 }

@@ -54,7 +54,10 @@ pub trait HeadWindow {
 
     /// Replace the active document's committed sketches; example: `window.submit_sketch_scene(update)?` after Undo.
     fn submit_sketch_scene(&mut self, update: crate::HeadSketchSceneUpdate) -> Result<(), String> {
-        if update.sketches.is_empty() && update.plane_declines.is_empty() {
+        if update.sketches.is_empty()
+            && update.plane_declines.is_empty()
+            && update.block_declines.is_empty()
+        {
             return Ok(());
         }
         Err(format!(

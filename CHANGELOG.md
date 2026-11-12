@@ -4,6 +4,9 @@
 
 ### Added
 
+- Added saved sketch block instance identities and placements, with typed
+  instance listing and protection against deleting a definition in use. (#3856)
+
 - Added saved local geometry for sketch block definitions, including captured
   shared points and curve roles. (#3856)
 

@@ -16,6 +16,7 @@ fn invalid_plane_is_named_without_removing_other_sketches() {
         source: Some((1, 0)),
         sketches: vec![],
         plane_declines: vec![],
+        block_declines: vec![],
     };
     collect_sketches(&snapshot, &[], &mut update);
     assert_eq!(update.sketches.len(), 1);
@@ -43,6 +44,7 @@ fn hidden_sketches_leave_the_scene_before_plane_resolution() {
         source: Some((1, 0)),
         sketches: vec![],
         plane_declines: vec![],
+        block_declines: vec![],
     };
     collect_sketches(&snapshot, &[], &mut update);
     assert!(update.sketches.is_empty());
@@ -62,4 +64,29 @@ fn a_hidden_sketch_shows_only_while_it_is_called_up() {
     let hidden = snapshot.sketches.get(sketch).unwrap();
     assert!(!crate::sketch_scene::sketch_shows(hidden, &[]));
     assert!(crate::sketch_scene::sketch_shows(hidden, &[sketch]));
+}
+
+#[test]
+fn undisplayed_block_instance_is_named_in_the_scene_failure() {
+    use oblikovati_model::{document_sketch::SketchBlockInstance, sketch::SketchEntityId};
+    let mut snapshot = crate::scene_fixture::selected_prism_document();
+    snapshot.sketches.define_empty_block("Rib").unwrap();
+    let instance = SketchBlockInstance::new(SketchEntityId(99), "Rib", [0., 0.], 0., 1.).unwrap();
+    snapshot
+        .sketches
+        .insert_block_instance(DocumentSketchId(1), instance)
+        .unwrap();
+    let mut update = HeadSketchSceneUpdate {
+        source: Some((1, 0)),
+        sketches: vec![],
+        plane_declines: vec![],
+        block_declines: vec![],
+    };
+    collect_sketches(&snapshot, &[], &mut update);
+    assert_eq!(update.sketches.len(), 1);
+    assert_eq!(update.block_declines.len(), 1);
+    assert_eq!(update.block_declines[0].0, DocumentSketchId(1));
+    assert!(
+        update.block_declines[0].1.contains("99") && update.block_declines[0].1.contains("Rib")
+    );
 }

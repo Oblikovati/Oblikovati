@@ -79,6 +79,7 @@ fn prepare_sketch_scene<O: TransactionObserver, W: WorkspaceObserver, F: Documen
         source,
         sketches: Vec::new(),
         plane_declines: Vec::new(),
+        block_declines: Vec::new(),
     };
     if let Some((id, _)) = source {
         let session = files
@@ -104,6 +105,16 @@ fn collect_sketches(
         .iter()
         .filter(|sketch| super::sketch_shows(sketch, called_up))
     {
+        for instance in sketch.block_instances() {
+            update.block_declines.push((
+                sketch.id(),
+                format!(
+                    "block instance {} of {:?} is not yet displayed",
+                    instance.id().0,
+                    instance.definition()
+                ),
+            ));
+        }
         match snapshot.resolve_sketch_plane(sketch.id()) {
             Ok(plane) => update.sketches.push(ViewportSketchDisplay {
                 sketch: sketch.id(),
