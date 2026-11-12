@@ -2,6 +2,8 @@
 //! Native tests for staged user commands and their applied ribbon actions.
 use super::{ApplicationWorld, diagnostics};
 use cucumber::{given, then, when};
+#[path = "file_exchange.rs"]
+mod file_exchange;
 #[path = "missing_file.rs"]
 mod missing_file;
 
@@ -430,6 +432,10 @@ fn enter_settings_file(
     path: &std::path::Path,
     action: &str,
 ) {
+    type_settings_file(world, title, path);
+    click_settings_button(world, title, action);
+}
+fn type_settings_file(world: &mut ApplicationWorld, title: &str, path: &std::path::Path) {
     assert!(diagnostics::window_geometry(title).is_some());
     let label = world.run_in_window(title, "Filename").clone();
     world.click(diagnostics::pointer_pixels([
@@ -437,6 +443,8 @@ fn enter_settings_file(
         label.center()[1],
     ]));
     world.type_text(path.to_str().unwrap());
+}
+fn click_settings_button(world: &mut ApplicationWorld, title: &str, action: &str) {
     let button = world.run_in_window(title, action).center();
     world.click(diagnostics::pointer_pixels(button));
     world.pump(Vec::new());
