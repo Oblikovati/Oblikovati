@@ -5,6 +5,8 @@ use super::{
 };
 use cucumber::{given, then, when};
 const PARAMETERS: &str = "Parameters";
+#[path = "minimized_context.rs"]
+mod minimized_context;
 
 fn expand_show_panels(world: &mut ApplicationWorld) {
     world.hover([700, 500]);
