@@ -140,6 +140,21 @@ fn typed_ten_six(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::Enter, false);
     world.pump(Vec::new());
 }
+#[when("I press 1 and then 0")]
+fn type_ten(world: &mut ApplicationWorld) {
+    world.type_text("1");
+    world.type_text("0");
+}
+#[when("I press Tab")]
+fn type_tab(world: &mut ApplicationWorld) {
+    world.key(ViewportPhysicalKey::Tab, false);
+}
+#[when("I press 6 and then Enter")]
+fn type_six_and_enter(world: &mut ApplicationWorld) {
+    world.type_text("6");
+    world.key(ViewportPhysicalKey::Enter, false);
+    world.pump(Vec::new());
+}
 #[then("a rectangle with size annotations 10 and 6 is committed")]
 #[then("the rectangle and both annotations return")]
 fn ten_six(world: &mut ApplicationWorld) {
@@ -318,6 +333,7 @@ fn height_eight(world: &mut ApplicationWorld) {
     world.expect_annotation("8");
 }
 #[then("width annotation 4 remains")]
+#[then("the width annotation remains 4")]
 fn width_four(world: &mut ApplicationWorld) {
     world.expect_annotation("4");
 }
