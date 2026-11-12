@@ -28,6 +28,8 @@ pub(crate) struct GuiDimensionValueEditor {
     pub over_label: bool,
     text: String,
     focus: bool,
+    warning_requested: bool,
+    warning_active: bool,
     position: [f32; 2],
 }
 const TITLE: &str = "Edit Dimension";
@@ -43,7 +45,8 @@ impl GuiDimensionValueEditor {
         }
         self.text.clone_from(&value.expression);
         self.open = Some(edit);
-        self.focus = true;
+        self.warning_requested = true;
+        self.warning_active = true;
     }
     /// The editor owned this frame's keys; the Escape that closed it was not the command's.
     pub(crate) fn had_keyboard(&self) -> bool {
@@ -87,13 +90,30 @@ impl GuiDimensionValueEditor {
                 }));
                 close = true;
             }
-            close |= ui.is_key_pressed_no_repeat(Key::Escape);
+            close |= !self.warning_active && ui.is_key_pressed_no_repeat(Key::Escape);
+            self.warning(ui);
         });
         if close {
             self.open = None;
             self.closed_this_frame = true;
             // Keyboard focus was this editor's; the sketch's own keys work again without a click.
             crate::widget_abi::release_keyboard_focus(ui);
+        }
+    }
+    fn warning(&mut self, ui: &Ui) {
+        const WARNING: &str = "Edit Dimension Value";
+        if std::mem::take(&mut self.warning_requested) {
+            ui.open_popup(WARNING);
+        }
+        let Some(_warning) = ui.begin_modal_popup(WARNING) else {
+            return;
+        };
+        ui.text("Failed to edit dimension value.");
+        ui.text("The expression cannot be evaluated.");
+        if ui.button("OK") || ui.is_key_pressed_no_repeat(Key::Enter) {
+            ui.close_current_popup();
+            self.warning_active = false;
+            self.focus = true;
         }
     }
     fn open_at_pointer(&mut self, ui: &Ui, request: &GuiFrameRequest) {

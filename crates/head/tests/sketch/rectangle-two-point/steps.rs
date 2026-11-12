@@ -478,7 +478,11 @@ fn native_dimension_editor_keeps_rejected_input_for_correction() {
     assert!(world.window_text("Edit Dimension").contains("2*"));
     world.expect_annotation("10");
     assert!(world.status_shows("Command failed"));
-    world.type_text("2*6");
+    world.expect_text("The expression cannot be evaluated.");
+    world.click_text("OK");
+    assert!(world.text_is_selected("2*"));
+    world.key(ViewportPhysicalKey::End, false);
+    world.type_text("6");
     world.key(ViewportPhysicalKey::Enter, false);
     world.pump(Vec::new());
     world.expect_annotation("12");
