@@ -17,6 +17,9 @@ const MINOR: f64 = 2.9788523;
 )]
 fn recorded_ellipse(world: &mut ApplicationWorld) {
     world.start_sketch_on("YZ Plane");
+    create_recorded_ellipse(world);
+}
+fn create_recorded_ellipse(world: &mut ApplicationWorld) {
     choose_ellipse(world);
     world.open_precise_input();
     for point in [
@@ -122,6 +125,9 @@ fn ellipse_remains(world: &mut ApplicationWorld) {
 #[given("the recorded ellipse has a driving minor-radius dimension storing 4 mm")]
 fn dimensioned_ellipse(world: &mut ApplicationWorld) {
     recorded_ellipse(world);
+    add_minor_dimension(world);
+}
+fn add_minor_dimension(world: &mut ApplicationWorld) {
     let ellipse = world.edited_geometry().ellipses()[0];
     let label_position = world.sketch_point_of([950, 600]);
     Client::new(world.app().owner.document_host())
@@ -185,4 +191,77 @@ fn close_dimension_command(world: &mut ApplicationWorld) {
 fn ready_with_ellipse(world: &mut ApplicationWorld) {
     world.expect_ready();
     ellipse_remains(world);
+}
+
+#[given("the fixture sketch contains the ellipse with annotations 8 and 4")]
+fn visible_dimensioned_ellipse(world: &mut ApplicationWorld) {
+    world.add_part();
+    let (position, size) = diagnostics::window_geometry("##orientation-control").unwrap();
+    let home = oblikovati_gui::GuiOrientationLayout::for_side(size[0]).home;
+    world.click([
+        (position[0] + home[0]) as i32,
+        (position[1] + home[1]) as i32,
+    ]);
+    world.click_text("Start 2D Sketch");
+    world.pump(Vec::new());
+    world.click_text("YZ Plane");
+    world.pump(Vec::new());
+    create_recorded_ellipse(world);
+    add_minor_dimension(world);
+}
+#[when("Finish Sketch returns to 3D Model")]
+fn finish_dimensioned_sketch(world: &mut ApplicationWorld) {
+    world.finish_sketch();
+    world.pump(Vec::new());
+}
+#[then("the ellipse and its dimension annotations remain visible in the oblique view")]
+fn dimensions_after_finish(world: &mut ApplicationWorld) {
+    world.expect_annotation("8");
+    world.expect_annotation("4");
+    let labels = crate::HeadWork::sketch_dimension_annotations(&world.app().owner).unwrap();
+    assert_eq!(labels.labels.len(), 2);
+    let scene = world.app().window.native.sketch_scene.as_ref().unwrap();
+    assert_eq!(scene.sketches.len(), 1);
+    assert_eq!(scene.sketches[0].geometry.ellipses().len(), 1);
+    let camera = crate::HeadWindow::view_camera(&world.app().window).unwrap();
+    let direction = std::array::from_fn::<_, 3, _>(|axis| camera.eye[axis] - camera.target[axis]);
+    assert!(
+        direction.iter().all(|value| value.abs() > 1e-8),
+        "{direction:?}"
+    );
+}
+#[when("the sketch is right-clicked in the browser")]
+fn open_sketch_menu(world: &mut ApplicationWorld) {
+    let row = world
+        .frame
+        .runs
+        .iter()
+        .find(|run| run.text.starts_with("[DOF"))
+        .expect("expected the finished sketch row")
+        .center()
+        .map(|coordinate| coordinate as i32);
+    world.right_click(row);
+    world.pump(Vec::new());
+}
+#[then("Edit Sketch is available and Visibility and Dimension Visibility are checked")]
+fn sketch_menu_state(world: &mut ApplicationWorld) {
+    assert!(world.shows("Edit Sketch"));
+    assert!(world.checked("Visibility"));
+    assert!(world.checked("Dimension Visibility"));
+}
+#[when("Edit Sketch is selected")]
+fn reopen_dimensioned_sketch(world: &mut ApplicationWorld) {
+    world.click_text("Edit Sketch");
+    world.pump(Vec::new());
+}
+#[then("the editable sketch returns in Right view with the ellipse and annotations 8 and 4")]
+fn ellipse_after_reopen(world: &mut ApplicationWorld) {
+    ellipse_remains(world);
+    assert!(world.app().owner.active_sketch_edit().is_some());
+    let camera = crate::HeadWindow::view_camera(&world.app().window).unwrap();
+    let direction = std::array::from_fn::<_, 3, _>(|axis| camera.eye[axis] - camera.target[axis]);
+    assert!(
+        direction[0] > 0. && direction[1].abs() < 1e-8 && direction[2].abs() < 1e-8,
+        "{direction:?}"
+    );
 }
