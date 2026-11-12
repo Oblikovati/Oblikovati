@@ -9,6 +9,7 @@ const VIEWPORT_MARGIN: f32 = 8.;
 pub(super) struct PanelExpansions {
     open: BTreeMap<(RibbonTab, RibbonPanel), Expansion>,
     document: Option<u64>,
+    mode: Option<RibbonDisplay>,
 }
 #[derive(Clone, Copy)]
 struct Expansion {
@@ -16,6 +17,7 @@ struct Expansion {
     trigger: [[f32; 2]; 2],
     pinned: bool,
     focus: bool,
+    bounds: [[f32; 2]; 2],
 }
 impl PanelExpansions {
     pub(super) fn clear(&mut self) {
@@ -26,6 +28,15 @@ impl PanelExpansions {
             self.clear();
             self.document = document;
         }
+    }
+    pub(super) fn use_mode(&mut self, mode: RibbonDisplay) {
+        if self.mode != Some(mode) {
+            self.clear();
+            self.mode = Some(mode);
+        }
+    }
+    pub(super) fn contains(&self, point: [f32; 2]) -> bool {
+        self.open.values().any(|entry| inside(point, entry.bounds))
     }
 }
 pub(super) fn available(tab: RibbonTab, panel: RibbonPanel) -> bool {
@@ -70,6 +81,7 @@ pub(super) fn trigger(
                 trigger,
                 pinned: false,
                 focus: true,
+                bounds: [[0.; 2]; 2],
             },
         );
     }
@@ -86,7 +98,8 @@ pub(super) fn draw(
     tab: RibbonTab,
     layout: &mut RibbonPanelLayout,
     display: &RibbonDisplayState,
-) {
+) -> bool {
+    let mut closed = false;
     layout.additional.open.retain(|(owner, panel), _| {
         *owner == tab
             && !display.hidden_panels.contains(&(tab, *panel))
@@ -110,8 +123,10 @@ pub(super) fn draw(
             display,
         ) {
             layout.additional.open.remove(&key);
+            closed = true;
         }
     }
+    closed
 }
 fn draw_window(
     ui: &Ui,
@@ -128,6 +143,7 @@ fn draw_window(
     let top = area.top.min((viewport_height - 1.).max(0.));
     let height = (ADDITIONAL_HEIGHT * scale).min((viewport_height - top).max(1.));
     let x = expansion.anchor[0].clamp(left, (right - width).max(left));
+    expansion.bounds = [[x, top], [x + width, top + height]];
     crate::widget_abi::window_geometry(ui, [x, top], [width, height], imgui::Condition::Always);
     let mut close = false;
     let focus = std::mem::take(&mut expansion.focus);
@@ -232,6 +248,7 @@ mod tests {
                 trigger: [[0.; 2]; 2],
                 pinned: true,
                 focus: false,
+                bounds: [[0.; 2]; 2],
             },
         );
         expansions.use_document(Some(1));
@@ -244,5 +261,22 @@ mod tests {
         let bounds = [[1., 2.], [5., 7.]];
         assert!(inside([1., 7.], bounds));
         assert!(!inside([5.1, 4.], bounds));
+    }
+    #[test]
+    fn changing_display_mode_discards_pinned_expansions() {
+        let mut expansions = PanelExpansions::default();
+        expansions.use_mode(RibbonDisplay::Full);
+        expansions.open.insert(
+            (RibbonTab::Model, RibbonPanel::PartModify),
+            Expansion {
+                anchor: [0.; 2],
+                trigger: [[0.; 2]; 2],
+                pinned: true,
+                focus: false,
+                bounds: [[0.; 2]; 2],
+            },
+        );
+        expansions.use_mode(RibbonDisplay::Tabs);
+        assert!(expansions.open.is_empty());
     }
 }

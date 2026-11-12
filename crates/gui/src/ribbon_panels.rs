@@ -192,6 +192,7 @@ pub(crate) fn draw_panels(
 ) {
     layout.pending_layout = false;
     layout.additional.use_document(state.document);
+    layout.additional.use_mode(display.mode);
     if owners.home_active {
         layout.additional.clear();
     }
@@ -200,8 +201,7 @@ pub(crate) fn draw_panels(
         state,
         hidden: display.hidden_panels.clone(),
         show_panel_titles: display.show_panel_titles,
-        additional_allowed: display.mode == RibbonDisplay::Full
-            && !owners.home_active
+        additional_allowed: !owners.home_active
             && display.placement == crate::application::ribbon_display::RibbonPlacement::Top,
         ribbon_bottom: ui.window_pos()[1] + ui.window_size()[1],
         owners,
@@ -211,9 +211,11 @@ pub(crate) fn draw_panels(
         full_row(&mut context, tab, layout);
         additional::draw(&mut context, tab, layout, display);
     } else {
-        layout.additional.clear();
         compact_row(&mut context, tab, display);
         temporary_panel(&mut context, tab, layout, display);
+        if display.temporary.is_none() {
+            layout.additional.clear();
+        }
     }
 }
 fn full_row(context: &mut PanelDrawContext<'_>, tab: RibbonTab, layout: &mut RibbonPanelLayout) {
@@ -310,6 +312,7 @@ fn temporary_panel(
         top,
         context.owners.icons.layout_factor(),
     );
+    context.ribbon_bottom = position[1] + size[1];
     crate::widget_abi::window_geometry(ui, position, size, imgui::Condition::Always);
     let before = context.actions.len();
     let mut keep = true;
@@ -332,8 +335,12 @@ fn temporary_panel(
                         | imgui::WindowHoveredFlags::ALLOW_WHEN_BLOCKED_BY_ACTIVE_ITEM,
                 ) || !ui.is_mouse_clicked(imgui::MouseButton::Left)
                     || keep_on_click
-                    || selector_hovered);
+                    || selector_hovered
+                    || layout.additional.contains(ui.io().mouse_pos));
         });
+    if context.additional_allowed && additional::draw(context, tab, layout, display) {
+        keep = false;
+    }
     if !keep || context.actions.len() != before {
         display.temporary = None;
     }
@@ -482,8 +489,9 @@ fn draw_expanded(
         if context.show_panel_titles {
             ui.text(panel.label());
             let title_clicked = ui.is_item_clicked();
-            local_action |= title_clicked;
-            if context.additional_allowed && additional::available(tab, panel) {
+            let expandable = context.additional_allowed && additional::available(tab, panel);
+            local_action |= title_clicked && !expandable;
+            if expandable {
                 additional::trigger(ui, tab, panel, anchor, title_clicked, layout);
             }
         }

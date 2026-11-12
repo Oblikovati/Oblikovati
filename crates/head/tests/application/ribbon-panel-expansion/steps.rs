@@ -25,6 +25,7 @@ fn additional_closed(_: &mut ApplicationWorld) {
 }
 #[when("I select the expansion arrow on the Modify panel title")]
 #[when("the user opens the Modify additional command area")]
+#[when("the user opens the Modify additional-command area")]
 fn open_modify(world: &mut ApplicationWorld) {
     click_expansion_arrow(world, "Modify");
 }
@@ -121,6 +122,7 @@ fn area_closed(_: &mut ApplicationWorld) {
 #[when("the user clicks the Modify title at the bottom of the expanded area")]
 #[when("the user clicks the Modify title at the bottom of the additional area")]
 #[when("the user clicks its Modify title again")]
+#[when("the user clicks the lower Modify title")]
 fn click_lower_title(world: &mut ApplicationWorld) {
     let (position, size) = diagnostics::window_geometry(WINDOW).unwrap();
     let row = world
@@ -294,4 +296,55 @@ fn browser_geometry_highlighted(world: &mut ApplicationWorld) {
 #[when("the user unpins the additional-command area and clicks empty viewport space")]
 fn unpin_browser_expansion(world: &mut ApplicationWorld) {
     unpin_modify(world);
+}
+#[when("the user clicks the 3D Model tab")]
+#[when("the user clicks the 3D Model tab again")]
+#[when("the user clicks the selected 3D Model tab")]
+fn click_model_tab(world: &mut ApplicationWorld) {
+    world.click_text("3D Model");
+}
+#[when("the user clicks the selected 3D Model tab again")]
+fn click_model_tab_again(world: &mut ApplicationWorld) {
+    std::thread::sleep(std::time::Duration::from_millis(500));
+    click_model_tab(world);
+}
+#[then("the additional area shows Move Bodies, Bend Part and Copy Object")]
+fn temporary_commands(world: &mut ApplicationWorld) {
+    extra_commands(world);
+}
+#[then("the additional area and the temporary command area close")]
+#[then("both command areas close")]
+fn temporary_and_additional_close(world: &mut ApplicationWorld) {
+    area_closed(world);
+    assert!(diagnostics::window_geometry("##ribbon-temporary-panel").is_none());
+}
+#[then("the Modify additional-command area remains closed")]
+fn temporary_expansion_closed(world: &mut ApplicationWorld) {
+    area_closed(world);
+}
+#[then("the temporary command area remains visible")]
+fn temporary_remains(_: &mut ApplicationWorld) {
+    assert!(diagnostics::window_geometry("##ribbon-temporary-panel").is_some());
+}
+#[then("the Modify additional-command area remains visible")]
+fn temporary_expansion_visible(world: &mut ApplicationWorld) {
+    pinned_visible(world);
+}
+#[then("the temporary command area closes")]
+fn temporary_area_closed(_: &mut ApplicationWorld) {
+    assert!(diagnostics::window_geometry("##ribbon-temporary-panel").is_none());
+}
+#[then("the Modify additional-command area closes")]
+fn temporary_modify_closes(world: &mut ApplicationWorld) {
+    area_closed(world);
+}
+#[then("the temporary command area displays the Tools panels")]
+fn temporary_tools(world: &mut ApplicationWorld) {
+    temporary_remains(world);
+    world.expect_text("Document Settings");
+}
+#[then("the temporary command area displays the 3D Model panels")]
+fn temporary_model(world: &mut ApplicationWorld) {
+    temporary_remains(world);
+    world.expect_text("Start 2D Sketch");
 }
