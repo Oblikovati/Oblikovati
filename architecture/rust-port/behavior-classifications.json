@@ -385,6 +385,21 @@
       "state": "inventoried",
       "last_receipt": null,
       "mapping_reason": "Persist and reopen the accumulated sketch with pattern geometry."
+    },
+    {
+      "id": "scenario:59bbc7159c8ea4f06a7778692656e22f14242938f0a79f1cd0ce64c305d9dac4",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Reverse a rotation using the remaining adjacent pairs",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3872"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation belongs to the full desktop shell."
     }
   ]
 }

@@ -57,8 +57,10 @@ The classification's `last_receipt` has the same `path` and `sha256` shape.
 The checker requires Python 3.11 or newer, a clean pinned checkout before and
 after the run, matching application inputs, a native runner, a PNG capture, a passing cleanup hook,
 and every source step in the Cucumber report. It verifies feature and rule
-backgrounds separately. It refuses outline verification until all example
-cases can be checked. It does not treat a PNG alone, a diagnostic report, or a
+backgrounds separately. For an outline, it requires every inventoried example
+line, expanded name, and expanded step sequence to pass, including cleanup.
+It refuses outlines with unchecked step tables or docstrings. It does not
+treat a PNG alone, a diagnostic report, or a
 source binding as acceptance. Visual inspection and the other milestone exit
 checks still apply.
 

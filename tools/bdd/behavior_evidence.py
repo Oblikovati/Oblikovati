@@ -103,11 +103,10 @@ def check_steps(element: Mapping[str, object], expected: object, label: str) -> 
 
 
 def check_scenario(report: object, row: Mapping[str, object]) -> None:
-    """Require a complete passing ordinary scenario; for example, check_scenario(report, row)."""
+    """Require every source case to pass; for example, check_scenario(report, row)."""
     if row["outline"]:
-        raise ValueError(
-            f"scenario {row['id']!r}: expected expanded outline evidence, which is not supported yet"
-        )
+        check_outline(report, row)
+        return
     expected = row["scenario_steps"]
     if not isinstance(expected, list) or not expected:
         raise ValueError(
@@ -130,6 +129,87 @@ def check_scenario(report: object, row: Mapping[str, object]) -> None:
             )
         for hook in hooks:
             require_passed_result(hook, phase)
+
+
+def example_values(example: object) -> tuple[int, dict[str, str]]:
+    """Validate example values; for example, example_values(example)."""
+    if not isinstance(example, dict):
+        raise ValueError(f"outline example {example!r}: expected an object")
+    line, columns, values = (
+        example.get("line"),
+        example.get("columns"),
+        example.get("values"),
+    )
+    if (
+        type(line) is not int
+        or line <= 0
+        or not isinstance(columns, list)
+        or not isinstance(values, list)
+        or not columns
+        or len(columns) != len(values)
+        or not all(isinstance(value, str) for value in columns + values)
+        or len(set(columns)) != len(columns)
+    ):
+        raise ValueError(
+            f"outline example {example!r}: expected a positive line and unique string columns with matching values"
+        )
+    return line, dict(zip(columns, values))
+
+
+def expand_example(value: object, values: Mapping[str, str]) -> str:
+    """Expand a Cucumber placeholder; for example, expand_example('select <x>', {'x': '1'})."""
+    if not isinstance(value, str):
+        raise ValueError(f"outline text {value!r}: expected a string")
+    pattern = r"<([^>\s](?:[^>\s]?|[^>\t\n\r\v\f]*[^>\s]))>"
+
+    def substitute(match: re.Match[str]) -> str:
+        name = match.group(1)
+        if name not in values:
+            raise ValueError(
+                f"outline placeholder {name!r}: expected an example column"
+            )
+        return values[name]
+
+    return re.sub(pattern, substitute, value)
+
+
+def expand_case(row: Mapping[str, object], example: object) -> dict[str, object]:
+    """Build one expected example; for example, expand_case(row, example)."""
+    line, values = example_values(example)
+    steps = row.get("scenario_steps")
+    if not isinstance(steps, list) or not all(isinstance(step, dict) for step in steps):
+        raise ValueError(f"outline steps {steps!r}: expected source step objects")
+    case = dict(
+        row,
+        line=line,
+        outline=False,
+        scenario=expand_example(row.get("scenario"), values),
+    )
+    case["scenario_steps"] = [
+        dict(step, name=expand_example(step.get("name"), values)) for step in steps
+    ]
+    return case
+
+
+def check_outline(report: object, row: Mapping[str, object]) -> None:
+    """Verify every expanded example; for example, check_outline(report, outline)."""
+    examples = row.get("examples")
+    if not isinstance(examples, list) or not examples:
+        raise ValueError(
+            f"scenario {row['id']!r}: expected expanded outline evidence with examples"
+        )
+    if row.get("outline_step_arguments"):
+        raise ValueError(
+            f"scenario {row['id']!r}: expected outline evidence without unchecked step arguments"
+        )
+    cases = [expand_case(row, example) for example in examples]
+    lines = [case["line"] for case in cases]
+    if len(set(lines)) != len(lines):
+        raise ValueError(
+            f"outline example lines {lines!r}: expected unique case identities"
+        )
+    for case in cases:
+        check_scenario(report, case)
 
 
 def check_background(report: object, row: Mapping[str, object]) -> None:

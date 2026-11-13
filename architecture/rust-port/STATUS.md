@@ -30,12 +30,13 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 
 ## Open items
 
-- A2: the diagnostic gate started on `6c5c1014a` and failed with 36 head test failures. The source changed during the run, so it cannot certify the current HEAD. See issue #3860 and `receipts/2026-11-13-gate-diagnostic/`. The gate preflight reports 2,695 unclassified scenarios. A fresh passing gate is required before the first push.
+- A2: the diagnostic gate started on `6c5c1014a` and failed with 36 head test failures. The source changed during the run, so it cannot certify the current HEAD. See issue #3860 and `receipts/2026-11-13-gate-diagnostic/`. The gate preflight reports 2,694 unclassified scenarios. A fresh passing gate is required before the first push.
 - A3: stale worktrees and 24 ancestor branches removed. Two branches contain commits outside the working branch and remain for review; `unmerged-lanes-20261113.bundle` on the NAS backs up both. The `oblikovati-rust-backups` directory on the NAS holds the latest verified branch bundle.
 - A8: stale application or source evidence is downgraded without hiding damaged artifacts (#3869). Ledger-tool-only edits do not invalidate native UI tests.
-- A8: the ledger records 2,719 declarations, including 62 blocked by invalid Gherkin (#3866). Eight scenarios have current native receipts after the automation refactor; 2,695 remain unclassified. See `behavior-receipts.md` and issue #3865.
+- A8: the ledger records 2,719 declarations, including 62 blocked by invalid Gherkin (#3866). Eight scenarios have current native receipts after the automation refactor; 2,694 remain unclassified. Outline receipts now require every expanded example and cleanup. See `behavior-receipts.md` and issue #3865.
 - A8: `behavior_cli.py backlog` groups the 195 feature files by their assigned milestones and shows missing classifications and R0 evidence. All 2,719 rows still have incomplete R0 baseline fields; unassigned work is not given an inferred milestone.
 - A10: the former prose ledger is archived in `archive/bdd-work-ledger-2026-11-13-*.md`. Its old temporary paths and pass labels are historical, not current evidence. Only the linked receipts can support current verified claims.
+- R7 orbit: both examples and all 18 steps passed in a native run, but the final capture shows a large flat-colored shape with no visible edges. The scenario stays inventoried pending visual review (#3872); see `receipts/2026-11-14-outline-diagnostic/`.
 - R4 rectangle sizing: the first two-point rectangle scenario has a current native receipt; later rectangle scenarios remain unverified. See issue #3857.
 - R4 extrusion: `extrusion-01` has a current native receipt. The full cube journey remains unverified (#3870).
 - R3 cube evidence: the headless certified replay and the native GUI-loop cube test passed on `77f03cf61`; see `receipts/2026-11-14-r3-cube-check/`. The native test uses injected events and an API model-state fixture. Foreground MCPBridge input and screenshot evidence, full R3 exit checks, and the gate remain open (#3857).

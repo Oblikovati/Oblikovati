@@ -25,6 +25,10 @@ struct ScenarioRow {
     background_steps: Vec<StepSignature>,
     scenario_steps: Vec<StepSignature>,
     outline: bool,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    examples: Vec<ExampleRow>,
+    #[serde(skip_serializing_if = "is_false")]
+    outline_step_arguments: bool,
     milestone: Option<String>,
     owner: Option<String>,
     state: &'static str,
@@ -160,6 +164,15 @@ struct StepSignature {
     line: usize,
     name: String,
 }
+#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
+struct ExampleRow {
+    line: usize,
+    columns: Vec<String>,
+    values: Vec<String>,
+}
+fn is_false(value: &bool) -> bool {
+    !value
+}
 #[derive(Debug)]
 struct Declaration {
     name: String,
@@ -168,6 +181,8 @@ struct Declaration {
     background_steps: Vec<StepSignature>,
     scenario_steps: Vec<StepSignature>,
     outline: bool,
+    examples: Vec<ExampleRow>,
+    outline_step_arguments: bool,
 }
 fn parsed_declarations(feature: &Feature) -> Vec<Declaration> {
     let mut declarations = Vec::new();
@@ -204,8 +219,42 @@ fn parsed_declaration(
         rule: rule.cloned(),
         background_steps: backgrounds.map(step_signature).collect(),
         scenario_steps: scenario.steps.iter().map(step_signature).collect(),
-        outline: !scenario.examples.is_empty(),
+        outline: !scenario.examples.is_empty()
+            || matches!(
+                scenario.keyword.as_str(),
+                "Scenario Outline" | "Scenario Template"
+            ),
+        examples: example_rows(scenario),
+        outline_step_arguments: !scenario.examples.is_empty()
+            && scenario
+                .steps
+                .iter()
+                .chain(background_steps(feature_background))
+                .chain(background_steps(rule_background))
+                .any(|step| step.docstring.is_some() || step.table.is_some()),
     }
+}
+fn example_rows(scenario: &Scenario) -> Vec<ExampleRow> {
+    scenario
+        .examples
+        .iter()
+        .flat_map(|example| {
+            let rows = example
+                .table
+                .as_ref()
+                .map(|table| table.rows.as_slice())
+                .unwrap_or_default();
+            let columns = rows.first().cloned().unwrap_or_default();
+            rows.iter()
+                .skip(1)
+                .enumerate()
+                .map(move |(index, values)| ExampleRow {
+                    line: example.position.line + index + 2,
+                    columns: columns.clone(),
+                    values: values.clone(),
+                })
+        })
+        .collect()
 }
 fn background_steps(background: Option<&Background>) -> impl Iterator<Item = &Step> {
     background.into_iter().flat_map(|item| item.steps.iter())
@@ -263,6 +312,8 @@ fn fallback_declaration(line: &str, position: usize) -> Option<Declaration> {
                 background_steps: Vec::new(),
                 scenario_steps: Vec::new(),
                 outline,
+                examples: Vec::new(),
+                outline_step_arguments: false,
             });
         }
     }
@@ -300,6 +351,8 @@ fn describe_scenario(
         background_steps: scenario.background_steps.clone(),
         scenario_steps: scenario.scenario_steps.clone(),
         outline: scenario.outline,
+        examples: scenario.examples.clone(),
+        outline_step_arguments: scenario.outline_step_arguments,
         milestone: None,
         owner: None,
         state: if error.is_some() {

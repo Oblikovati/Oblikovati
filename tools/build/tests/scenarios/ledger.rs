@@ -37,6 +37,11 @@ fn records_outline_once_and_keeps_identity_when_lines_move() {
     .unwrap();
     assert_eq!(first.scenarios.len(), 2);
     assert!(!first.scenarios[0].outline && first.scenarios[1].outline);
+    assert_eq!(first.scenarios[1].examples.len(), 2);
+    assert_eq!(first.scenarios[1].examples[0].line, 8);
+    assert_eq!(first.scenarios[1].examples[0].columns, ["x"]);
+    assert_eq!(first.scenarios[1].examples[0].values, ["one"]);
+    assert_eq!(first.scenarios[1].examples[1].line, 9);
     assert_eq!(first.scenarios[0].id, second.scenarios[0].id);
     assert_ne!(
         first.scenarios[0].source_sha256,
@@ -48,6 +53,24 @@ fn records_outline_once_and_keeps_identity_when_lines_move() {
             .iter()
             .all(|row| row.state == "inventoried" && row.last_receipt.is_none())
     );
+}
+#[test]
+fn records_multiple_example_tables_and_unchecked_step_arguments() {
+    let text = "Feature: cases\n Scenario Outline: <x>\n  Given choose <x>\n   | detail |\n   | value |\n  Examples: first\n   | x |\n   | one |\n  Examples: second\n   | x |\n   | two |\n";
+    let ledger = inventory(Path::new("root"), REVISION, &mut fixture(text)).unwrap();
+    let row = &ledger.scenarios[0];
+    assert!(row.outline_step_arguments);
+    assert_eq!(row.examples.len(), 2);
+    assert_eq!(row.examples[0].line, 8);
+    assert_eq!(row.examples[1].line, 11);
+    assert_eq!(row.examples[1].values, ["two"]);
+}
+#[test]
+fn an_outline_without_examples_is_not_misclassified_as_a_normal_scenario() {
+    let text = "Feature: empty\n Scenario Outline: no examples\n  Given a step\n";
+    let ledger = inventory(Path::new("root"), REVISION, &mut fixture(text)).unwrap();
+    assert!(ledger.scenarios[0].outline);
+    assert!(ledger.scenarios[0].examples.is_empty());
 }
 #[test]
 fn refuses_duplicate_names_invalid_gherkin_and_invalid_revision() {
