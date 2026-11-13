@@ -18,6 +18,12 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
     ) -> Result<T, String> {
         let reference = self.placement_reference(owner, component, name)?;
         validate(&transform)?;
+        let ground_first = self
+            .retained_file(owner)
+            .map_err(|error| error.to_string())?
+            .package
+            .ground_first_component()
+            .map_err(|error| error.to_string())?;
         let previous = self.document_references.clone();
         let mut proposed = previous.clone();
         let existing = proposed
@@ -46,11 +52,13 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
                                 let id = ids
                                     .allocate_occurrence()
                                     .map_err(|error| error.to_string())?;
+                                let grounded = ground_first && records.is_empty();
                                 records.push(AssemblyOccurrenceRecipe {
                                     session_id: id,
                                     name: name.into(),
                                     component: reference,
                                     transform: transform.cells.to_vec(),
+                                    grounded,
                                     ..Default::default()
                                 });
                                 Ok(id)

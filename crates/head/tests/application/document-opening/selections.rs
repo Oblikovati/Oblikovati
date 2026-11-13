@@ -79,6 +79,13 @@ fn assembly_ribbon_places_an_open_component_and_replays_it() {
         1
     );
     assert_eq!(world.active_id(), assembly);
+    let occurrences = Client::new(world.app().owner.document_host())
+        .assembly()
+        .occurrences(&Default::default())
+        .unwrap()
+        .occurrences
+        .unwrap();
+    assert!(occurrences[0].grounded);
     world.key(ViewportPhysicalKey::Z, true);
     settle(&mut world);
     assert_eq!(

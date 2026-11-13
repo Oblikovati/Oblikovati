@@ -4,6 +4,47 @@ use super::*;
 use oblikovati_model::assembly::AssemblyOccurrenceRecipe;
 
 #[test]
+fn placement_respects_disabled_first_component_grounding() {
+    let mut files = DiscoveryWorkspace::new(QueryObserver::default(), DiscoveryFiles::default());
+    let mut source = QueryGuids(0);
+    save_component_fixture(&mut files, &mut source, "free-part.opd");
+    let assembly = Path::new("/fixtures/free-assembly.oad");
+    files.files().packages.borrow_mut().insert(assembly.into(), b"schemaVersion: 2\ndocumentType: 2\nmodel: {options: {placeAndGroundFirstComponentAtOrigin: false}}\n".to_vec());
+    let mut factory = QueryObserverFactory {
+        created: 0,
+        limit: 4,
+    };
+    let part = FileHost::new(&mut files, &mut source, "test")
+        .with_observer_factory(&mut factory)
+        .open_path(Path::new("/fixtures/free-part.opd"), true)
+        .unwrap();
+    let root = FileHost::new(&mut files, &mut source, "test")
+        .with_observer_factory(&mut factory)
+        .open_path(assembly, true)
+        .unwrap();
+    let client = Client::new(FileHost::new(&mut files, &mut source, "test"));
+    let placed = client
+        .assembly()
+        .place(&PlaceOccurrenceArgs {
+            document: part,
+            name: "Part:1".into(),
+            transform: oblikovati_api::types::Matrix {
+                cells: [
+                    1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1.,
+                ],
+            },
+        })
+        .unwrap();
+    assert!(!placed.occurrence.grounded);
+    drop(client);
+    files.save(root, "test", &mut source).unwrap();
+    let bytes = files.files().packages.borrow()[assembly].clone();
+    let package = oblikovati_persistence::package::DocumentPackage::decode(&bytes).unwrap();
+    assert!(!package.ground_first_component().unwrap());
+    assert!(!package.assembly_occurrences().unwrap().unwrap()[0].grounded);
+}
+
+#[test]
 fn redo_reopens_a_component_closed_after_undo() {
     let mut files = DiscoveryWorkspace::new(QueryObserver::default(), DiscoveryFiles::default());
     let mut source = QueryGuids(0);
@@ -128,9 +169,10 @@ fn canonical_placement_survives_history_save_and_reopen() {
         };
         let placed = client.assembly().place(&args).unwrap().occurrence;
         assert_eq!((placed.id, placed.name.as_str()), (1, "Part:1"));
-        assert!(!placed.grounded);
+        assert!(placed.grounded);
         let duplicate = client.assembly().place(&args).unwrap().occurrence;
         assert_ne!(duplicate.id, placed.id);
+        assert!(!duplicate.grounded);
         client.transactions().undo().unwrap();
         let mut invalid = args.clone();
         invalid.name = "Part:2".into();

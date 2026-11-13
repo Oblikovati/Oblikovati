@@ -5,6 +5,36 @@ use oblikovati_api::types::DOCUMENT_ASSEMBLY;
 use oblikovati_model::assembly::AssemblyOccurrenceRecipe;
 
 impl DocumentPackage {
+    /// Read the Go assembly's first-placement option; example: `package.ground_first_component()?`.
+    pub fn ground_first_component(&self) -> Result<bool, PackageCodecError> {
+        if self.manifest.document_type != DOCUMENT_ASSEMBLY.0 {
+            return Err(PackageCodecError(format!(
+                "document type {}: expected an assembly",
+                self.manifest.document_type
+            )));
+        }
+        let Some(options) = self
+            .root
+            .get("model")
+            .and_then(|model| model.get("options"))
+        else {
+            return Ok(true);
+        };
+        if options.is_null() {
+            return Ok(true);
+        }
+        let mapping = options.as_mapping().ok_or_else(|| {
+            PackageCodecError(format!("assembly options {options:?}: expected a mapping"))
+        })?;
+        let Some(value) = mapping.get("placeAndGroundFirstComponentAtOrigin") else {
+            return Ok(false);
+        };
+        value.as_bool().ok_or_else(|| {
+            PackageCodecError(format!(
+                "assembly placeAndGroundFirstComponentAtOrigin {value:?}: expected a boolean"
+            ))
+        })
+    }
     /// Read saved occurrence recipes without opening their references; example: `package.assembly_occurrences()?`.
     pub fn assembly_occurrences(
         &self,

@@ -3,6 +3,45 @@ use oblikovati_model::assembly::AssemblyOccurrenceRecipe;
 use oblikovati_persistence::package::DocumentPackage;
 
 #[test]
+fn first_component_grounding_follows_go_assembly_options() {
+    for (model, expected) in [
+        ("{}", true),
+        ("{options: null}", true),
+        ("{options: {}}", false),
+        (
+            "{options: {placeAndGroundFirstComponentAtOrigin: true}}",
+            true,
+        ),
+        (
+            "{options: {placeAndGroundFirstComponentAtOrigin: false}}",
+            false,
+        ),
+    ] {
+        let yaml = format!("schemaVersion: 2\ndocumentType: 2\nmodel: {model}\n");
+        assert_eq!(
+            DocumentPackage::decode(yaml.as_bytes())
+                .unwrap()
+                .ground_first_component()
+                .unwrap(),
+            expected,
+            "{model}"
+        );
+    }
+    for options in [
+        "{options: invalid}",
+        "{options: {placeAndGroundFirstComponentAtOrigin: invalid}}",
+    ] {
+        let yaml = format!("schemaVersion: 2\ndocumentType: 2\nmodel: {options}\n");
+        assert!(
+            DocumentPackage::decode(yaml.as_bytes())
+                .unwrap()
+                .ground_first_component()
+                .is_err()
+        );
+    }
+}
+
+#[test]
 fn reads_an_assembly_package_written_by_the_go_host() {
     let package =
         DocumentPackage::decode(include_bytes!("fixtures/go-assembly-occurrences.yaml")).unwrap();
