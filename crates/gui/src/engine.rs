@@ -312,6 +312,13 @@ impl GuiFrameEngine {
             band_height,
             &mut selected,
         );
+        for action in &selected {
+            if let GuiShellAction::OpenSketchPattern { sketch, pattern } = action {
+                self.sketch_pattern
+                    .open_edit(&request.commands, *sketch, *pattern);
+            }
+        }
+        selected.retain(|action| !matches!(action, GuiShellAction::OpenSketchPattern { .. }));
         let logical =
             std::array::from_fn(|axis| request.extent[axis] as f32 / request.layout_scale()[axis]);
         let area = self.workspace.document_area(logical, band_height);

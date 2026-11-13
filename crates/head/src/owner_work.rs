@@ -455,6 +455,20 @@ impl<
     ) -> Result<bool, String> {
         self.create_gui_pattern(request)
     }
+    fn preview_sketch_pattern_edit_from_gui(
+        &mut self,
+        pattern: oblikovati_model::sketch::SketchEntityId,
+        request: oblikovati_model::history::SketchRectangularPatternRequest,
+    ) -> Result<bool, String> {
+        self.preview_gui_pattern_edit(pattern, request)
+    }
+    fn edit_sketch_pattern_from_gui(
+        &mut self,
+        pattern: oblikovati_model::sketch::SketchEntityId,
+        request: oblikovati_model::history::SketchRectangularPatternRequest,
+    ) -> Result<bool, String> {
+        self.edit_gui_pattern(pattern, request)
+    }
     fn sketch_move_from_gui(
         &mut self,
         action: oblikovati_gui::GuiSketchMoveAction,

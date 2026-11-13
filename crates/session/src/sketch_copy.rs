@@ -11,6 +11,49 @@ pub type SketchCopyProjectionInput = Result<SketchCopyReport, SketchCopyError>;
 /// Example: `let reply: SketchCopyBatchProjectionInput = Ok(reports);`.
 pub type SketchCopyBatchProjectionInput = Result<Vec<SketchCopyReport>, SketchCopyError>;
 impl<O: TransactionObserver> DocumentSession<O> {
+    /// Preview a pattern edit with expression inputs without changing the document.
+    /// Example: `session.preview_pattern_edit_from_expressions(sketch, pattern, request)?;`.
+    pub fn preview_pattern_edit_from_expressions(
+        &self,
+        sketch: DocumentSketchId,
+        pattern: SketchEntityId,
+        request: oblikovati_model::history::SketchRectangularPatternRequest,
+    ) -> Result<crate::SketchTransformPreview, CommandError<SketchCopyError>> {
+        self.preview_projected(
+            |snapshot, ids| snapshot.edit_pattern_from_expressions(sketch, pattern, request, ids),
+            |snapshot, edit| {
+                Ok(crate::SketchTransformPreview {
+                    geometry: snapshot
+                        .sketches
+                        .get(sketch)
+                        .map_err(SketchCopyError::Sketch)?
+                        .geometry()
+                        .clone(),
+                    members: edit
+                        .pattern
+                        .members
+                        .into_iter()
+                        .flat_map(|member| member.entities)
+                        .collect(),
+                })
+            },
+        )
+    }
+    /// Edit a pattern and its expressions as one undoable command.
+    /// Example: `session.edit_pattern_from_expressions_projected(sketch, pattern, request, |result| result)?;`.
+    pub fn edit_pattern_from_expressions_projected<R, E>(
+        &mut self,
+        sketch: DocumentSketchId,
+        pattern: SketchEntityId,
+        request: oblikovati_model::history::SketchRectangularPatternRequest,
+        project: impl FnOnce(
+            Result<oblikovati_model::sketch::SketchRectangularPatternEdit, SketchCopyError>,
+        ) -> Result<R, E>,
+    ) -> Result<R, CommandError<E>> {
+        self.run("Edit rectangular sketch pattern", |snapshot, ids| {
+            project(snapshot.edit_pattern_from_expressions(sketch, pattern, request, ids))
+        })
+    }
     /// Preview a pattern with expression inputs without reserving live identities.
     /// Example: `session.preview_pattern_from_expressions(sketch, request)?;`.
     pub fn preview_pattern_from_expressions(

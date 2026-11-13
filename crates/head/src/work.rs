@@ -484,6 +484,26 @@ pub trait HeadWork {
             "pattern {request:?}: expected an active sketch owner"
         ))
     }
+    /// Preview a recorded pattern edit; example: `work.preview_sketch_pattern_edit_from_gui(pattern, request)?`.
+    fn preview_sketch_pattern_edit_from_gui(
+        &mut self,
+        pattern: oblikovati_model::sketch::SketchEntityId,
+        request: oblikovati_model::history::SketchRectangularPatternRequest,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "pattern {pattern:?} preview {request:?}: expected an active sketch owner"
+        ))
+    }
+    /// Edit a recorded pattern; example: `work.edit_sketch_pattern_from_gui(pattern, request)?`.
+    fn edit_sketch_pattern_from_gui(
+        &mut self,
+        pattern: oblikovati_model::sketch::SketchEntityId,
+        request: oblikovati_model::history::SketchRectangularPatternRequest,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "pattern {pattern:?} edit {request:?}: expected an active sketch owner"
+        ))
+    }
     /// Start or finish the sketch Move tool; example: `work.sketch_move_from_gui(action)?`.
     fn sketch_move_from_gui(
         &mut self,

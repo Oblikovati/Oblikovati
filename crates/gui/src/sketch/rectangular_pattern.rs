@@ -26,6 +26,8 @@ pub(crate) struct RectangularPatternDialog {
     spacing: [String; 2],
     fitted: bool,
     reverse: [bool; 2],
+    directions: [[f64; 2]; 2],
+    edit: Option<crate::GuiBrowserRectangularPattern>,
     last_preview: Option<SketchRectangularPatternRequest>,
     pending: Option<Option<(u64, bool)>>,
 }
@@ -36,6 +38,49 @@ impl RectangularPatternDialog {
         self.spacing = ["10 mm".into(), "10 mm".into()];
         self.fitted = false;
         self.reverse = [false; 2];
+        self.directions = [[1., 0.], [0., 1.]];
+        self.edit = None;
+        self.last_preview = None;
+        self.pending = None;
+    }
+    pub(crate) fn open_edit(
+        &mut self,
+        state: &GuiCommandState,
+        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+        pattern: oblikovati_model::sketch::SketchEntityId,
+    ) {
+        let Some(row) = state.browser.as_ref().and_then(|browser| {
+            browser
+                .rectangular_patterns
+                .iter()
+                .find(|row| row.sketch == sketch && row.pattern.id == pattern)
+        }) else {
+            return;
+        };
+        let Ok(spacing) = &row.spacing else {
+            return;
+        };
+        let Ok(first) = i32::try_from(row.pattern.definition.counts[0]) else {
+            return;
+        };
+        let Ok(second) = i32::try_from(row.pattern.definition.counts[1]) else {
+            return;
+        };
+        self.document = state.document;
+        self.counts = [first, second];
+        self.spacing = spacing.clone();
+        self.fitted = row.pattern.definition.fitted;
+        self.directions = row.pattern.definition.directions;
+        self.reverse = [false; 2];
+        for axis in 0..2 {
+            let mut negative_axis = [0.; 2];
+            negative_axis[axis] = -1.;
+            if self.directions[axis] == negative_axis {
+                self.directions[axis] = self.directions[axis].map(|value| -value);
+                self.reverse[axis] = true;
+            }
+        }
+        self.edit = Some(row.clone());
         self.last_preview = None;
         self.pending = None;
     }
@@ -45,7 +90,13 @@ impl RectangularPatternDialog {
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
     ) {
-        if self.document != state.document || state.authoring != GuiAuthoringContext::Sketch {
+        if self.document != state.document
+            || state.authoring != GuiAuthoringContext::Sketch
+            || self
+                .edit
+                .as_ref()
+                .is_some_and(|row| state.active_sketch != Some(row.sketch))
+        {
             self.close(actions);
         }
         self.observe_result(state, actions);
@@ -56,21 +107,25 @@ impl RectangularPatternDialog {
         ui.window("Rectangular Pattern")
             .collapsible(false)
             .build(|| {
-                ui.text("Select seed geometry in the sketch");
+                ui.text(if self.edit.is_some() {
+                    "Edit the saved pattern"
+                } else {
+                    "Select seed geometry in the sketch"
+                });
                 ui.text("Direction 1 count");
                 ui.input_int("##pattern-count-1", &mut self.counts[0])
                     .build();
                 ui.text("Direction 1 spacing");
                 ui.input_text("##pattern-spacing-1", &mut self.spacing[0])
                     .build();
-                ui.checkbox("Reverse X", &mut self.reverse[0]);
+                ui.checkbox("Reverse Direction 1", &mut self.reverse[0]);
                 ui.text("Direction 2 count");
                 ui.input_int("##pattern-count-2", &mut self.counts[1])
                     .build();
                 ui.text("Direction 2 spacing");
                 ui.input_text("##pattern-spacing-2", &mut self.spacing[1])
                     .build();
-                ui.checkbox("Reverse Y", &mut self.reverse[1]);
+                ui.checkbox("Reverse Direction 2", &mut self.reverse[1]);
                 ui.checkbox("Fitted", &mut self.fitted);
                 self.update_preview(state, actions);
                 let request = self.request(state);
@@ -79,7 +134,13 @@ impl RectangularPatternDialog {
                     && let Some(request) = request
                 {
                     self.pending = Some(state.sketch_pattern_created);
-                    actions.push(GuiShellAction::CreateSketchPattern(request));
+                    actions.push(match &self.edit {
+                        Some(row) => GuiShellAction::EditSketchPattern {
+                            pattern: row.pattern.id,
+                            request,
+                        },
+                        None => GuiShellAction::CreateSketchPattern(request),
+                    });
                 }
                 drop(disabled);
                 ui.same_line();
@@ -98,32 +159,49 @@ impl RectangularPatternDialog {
         if counts.contains(&0) || self.spacing.iter().any(|value| value.trim().is_empty()) {
             return None;
         }
-        let seed: Vec<_> = state
-            .sketch_selection
-            .entities
-            .iter()
-            .map(|(_, id)| *id)
-            .collect();
+        let seed: Vec<_> = self
+            .edit
+            .as_ref()
+            .map(|row| row.pattern.definition.seed.clone())
+            .unwrap_or_else(|| {
+                state
+                    .sketch_selection
+                    .entities
+                    .iter()
+                    .map(|(_, id)| *id)
+                    .collect()
+            });
         if seed.is_empty() {
             return None;
+        }
+        let mut directions = self.directions;
+        for (axis, direction) in directions.iter_mut().enumerate() {
+            if self.reverse[axis] {
+                *direction = direction.map(|value| -value);
+            }
         }
         Some(SketchRectangularPatternRequest {
             seed,
             counts,
-            directions: [
-                [if self.reverse[0] { -1. } else { 1. }, 0.],
-                [0., if self.reverse[1] { -1. } else { 1. }],
-            ],
+            directions,
             spacing: self.spacing.clone(),
             fitted: self.fitted,
-            suppressed: BTreeSet::new(),
+            suppressed: self.edit.as_ref().map_or_else(BTreeSet::new, |row| {
+                row.pattern.definition.suppressed.clone()
+            }),
         })
     }
     fn update_preview(&mut self, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
         let request = self.request(state);
         if self.last_preview != request {
             self.last_preview = request.clone();
-            actions.push(GuiShellAction::PreviewSketchPattern(request));
+            actions.push(match (self.edit.as_ref(), request) {
+                (Some(row), Some(request)) => GuiShellAction::PreviewSketchPatternEdit {
+                    pattern: row.pattern.id,
+                    request,
+                },
+                (_, request) => GuiShellAction::PreviewSketchPattern(request),
+            });
         }
     }
     fn observe_result(&mut self, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
@@ -147,6 +225,7 @@ impl RectangularPatternDialog {
             actions.push(GuiShellAction::PreviewSketchPattern(None));
         }
         self.last_preview = None;
+        self.edit = None;
         self.pending = None;
     }
 }

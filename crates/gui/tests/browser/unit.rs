@@ -226,3 +226,50 @@ fn browser_preserves_wide_width_and_leaves_the_view_centre_available_when_narrow
     }
     assert_eq!(model_browser_width(1.), 1.);
 }
+
+#[test]
+fn pattern_rows_require_unique_identities_current_sketches_and_safe_text() {
+    use oblikovati_model::sketch::{
+        SketchEntityId, SketchRectangularPattern, SketchRectangularPatternDefinition,
+    };
+    use std::collections::BTreeSet;
+    let mut browser = sample_state().browser.unwrap();
+    browser.block_definitions.push("Rib".into());
+    browser
+        .block_instances
+        .push(crate::GuiBrowserBlockInstance {
+            sketch: DocumentSketchId(7),
+            id: SketchEntityId(8),
+            definition: "Rib".into(),
+            ordinal: 1,
+        });
+    let pattern = SketchRectangularPattern {
+        id: SketchEntityId(9),
+        definition: SketchRectangularPatternDefinition {
+            seed: vec![SketchEntityId(3)],
+            counts: [1, 1],
+            directions: [[1., 0.], [0., 1.]],
+            spacing: [1, 2],
+            fitted: false,
+            suppressed: BTreeSet::new(),
+        },
+        members: vec![],
+    };
+    browser
+        .rectangular_patterns
+        .push(crate::GuiBrowserRectangularPattern {
+            sketch: DocumentSketchId(7),
+            ordinal: 1,
+            pattern,
+            spacing: Ok(["1 cm".into(), "2 cm".into()]),
+        });
+    browser.validate().unwrap();
+    browser.rectangular_patterns[0].pattern.id = SketchEntityId(8);
+    assert!(browser.validate().unwrap_err().contains("unique identity"));
+    browser.rectangular_patterns[0].pattern.id = SketchEntityId(9);
+    browser.rectangular_patterns[0].sketch = DocumentSketchId(99);
+    assert!(browser.validate().unwrap_err().contains("existing sketch"));
+    browser.rectangular_patterns[0].sketch = DocumentSketchId(7);
+    browser.rectangular_patterns[0].spacing = Ok(["bad\0text".into(), "2 cm".into()]);
+    assert!(browser.validate().unwrap_err().contains("without NUL"));
+}

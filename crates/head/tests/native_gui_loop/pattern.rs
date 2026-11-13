@@ -112,6 +112,11 @@ fn native_rectangular_pattern_dialog_previews_cancels_and_creates() {
     click_shell_position(
         &mut window,
         &mut owner,
+        application_bdd::rendered_label_center("Reverse Direction 1"),
+    );
+    click_shell_position(
+        &mut window,
+        &mut owner,
         application_bdd::rendered_label_center("OK"),
     );
     let geometry = owner
@@ -126,10 +131,131 @@ fn native_rectangular_pattern_dialog_previews_cancels_and_creates() {
         .geometry();
     assert_eq!(geometry.rectangular_patterns().len(), 1);
     assert_eq!(geometry.rectangular_patterns()[0].definition.counts, [3, 1]);
+    assert_eq!(
+        geometry.rectangular_patterns()[0].definition.directions[0],
+        [-1., 0.]
+    );
+    let direction_bits =
+        geometry.rectangular_patterns()[0].definition.directions[0].map(f64::to_bits);
     assert_eq!(geometry.lines().len(), 3);
     assert!(owner.sketch_preview().is_none());
+    open_saved_pattern_menu(&mut window, &mut owner);
+    set_first_count(&mut window, &mut owner, "4");
+    assert!(owner.sketch_preview().is_some());
+    click_shell_position(
+        &mut window,
+        &mut owner,
+        application_bdd::rendered_label_center("Cancel"),
+    );
+    assert_eq!(pattern_counts(&owner, document, sketch), [3, 1]);
+    open_saved_pattern(&mut window, &mut owner);
+    set_first_count(&mut window, &mut owner, "4");
+    click_shell_position(
+        &mut window,
+        &mut owner,
+        application_bdd::rendered_label_center("OK"),
+    );
+    assert_eq!(pattern_counts(&owner, document, sketch), [4, 1]);
+    assert_eq!(
+        owner
+            .documents()
+            .workspace()
+            .session(document)
+            .unwrap()
+            .snapshot()
+            .sketches
+            .get(sketch)
+            .unwrap()
+            .geometry()
+            .rectangular_patterns()[0]
+            .definition
+            .directions[0],
+        [-1., 0.]
+    );
+    let edited_direction = owner
+        .documents()
+        .workspace()
+        .session(document)
+        .unwrap()
+        .snapshot()
+        .sketches
+        .get(sketch)
+        .unwrap()
+        .geometry()
+        .rectangular_patterns()[0]
+        .definition
+        .directions[0];
+    assert_eq!(edited_direction.map(f64::to_bits), direction_bits);
+    click_shell_position(
+        &mut window,
+        &mut owner,
+        application_bdd::rendered_label_center("Undo"),
+    );
+    assert_eq!(pattern_counts(&owner, document, sketch), [3, 1]);
+    click_shell_position(
+        &mut window,
+        &mut owner,
+        application_bdd::rendered_label_center("Redo"),
+    );
+    assert_eq!(pattern_counts(&owner, document, sketch), [4, 1]);
     owner.finish().unwrap();
     window.finish().unwrap();
+}
+
+fn open_saved_pattern(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOwner) {
+    let position = application_bdd::rendered_label_center("Rectangular Pattern1");
+    drive_pointer_clicks(window, owner, position, 2);
+    assert!(application_bdd::window_geometry("Rectangular Pattern").is_some());
+}
+fn open_saved_pattern_menu(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOwner) {
+    let position = application_bdd::rendered_label_center("Rectangular Pattern1");
+    window.scripted = [true, false]
+        .map(|pressed| {
+            ViewportEvent::Input(ViewportInput::Button {
+                button: ViewportButton::Right,
+                pressed,
+                position,
+                modifiers: Default::default(),
+            })
+        })
+        .into();
+    crate::frames::run_frames(window, HeadOptions { frames: Some(3) }, owner).unwrap();
+    click_shell_position(
+        window,
+        owner,
+        application_bdd::rendered_label_center("Edit Pattern"),
+    );
+    assert!(application_bdd::window_geometry("Rectangular Pattern").is_some());
+}
+fn set_first_count(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOwner, value: &str) {
+    let (position, _) = application_bdd::window_geometry("Rectangular Pattern").unwrap();
+    let field = application_bdd::pointer_pixels([position[0] + 80., position[1] + 65.]);
+    click_shell_position(window, owner, field);
+    press_shell_key(
+        window,
+        owner,
+        oblikovati_viewport::ViewportPhysicalKey::Backspace,
+    );
+    type_native_text(window, owner, value);
+}
+fn pattern_counts(
+    owner: &NativeDesktopOwner,
+    document: u64,
+    sketch: oblikovati_model::document_sketch::DocumentSketchId,
+) -> [u32; 2] {
+    owner
+        .documents()
+        .workspace()
+        .session(document)
+        .unwrap()
+        .snapshot()
+        .sketches
+        .get(sketch)
+        .unwrap()
+        .geometry()
+        .rectangular_patterns()[0]
+        .definition
+        .counts
 }
 
 fn open_pattern_group(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOwner) {

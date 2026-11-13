@@ -26,6 +26,18 @@ pub enum GuiShellAction {
     SketchMove(crate::GuiSketchMoveAction),
     PreviewSketchPattern(Option<oblikovati_model::history::SketchRectangularPatternRequest>),
     CreateSketchPattern(oblikovati_model::history::SketchRectangularPatternRequest),
+    OpenSketchPattern {
+        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+        pattern: oblikovati_model::sketch::SketchEntityId,
+    },
+    PreviewSketchPatternEdit {
+        pattern: oblikovati_model::sketch::SketchEntityId,
+        request: oblikovati_model::history::SketchRectangularPatternRequest,
+    },
+    EditSketchPattern {
+        pattern: oblikovati_model::sketch::SketchEntityId,
+        request: oblikovati_model::history::SketchRectangularPatternRequest,
+    },
     LineCommand(crate::GuiLineCommand),
     PrecisePoint(crate::GuiPrecisePoint),
     PreciseTriad(crate::GuiTriadCommand),
@@ -319,6 +331,7 @@ pub struct GuiCommandState {
     pub sketch_pattern_created: Option<(u64, bool)>,
     /// The host provides the rectangular sketch-pattern command.
     pub sketch_pattern_available: bool,
+    pub active_sketch: Option<oblikovati_model::document_sketch::DocumentSketchId>,
     pub color_scheme: Option<crate::GuiColorSchemeState>,
     pub theme: Option<crate::GuiThemeState>,
     pub browser: Option<crate::GuiModelBrowser>,

@@ -46,11 +46,68 @@ impl<
     ) -> Result<bool, String> {
         self.pattern_preview = None;
         let outcome = self.commit_gui_pattern(request);
+        self.pattern_completed(outcome)
+    }
+    pub(super) fn preview_gui_pattern_edit(
+        &mut self,
+        pattern: oblikovati_model::sketch::SketchEntityId,
+        request: SketchRectangularPatternRequest,
+    ) -> Result<bool, String> {
+        self.pattern_preview = None;
+        let (edit, generation) = self.pattern_context()?;
+        let session = self
+            .files
+            .workspace()
+            .session(edit.document)
+            .map_err(|cause| cause.to_string())?;
+        let preview = session
+            .preview_pattern_edit_from_expressions(edit.sketch, pattern, request)
+            .map_err(|cause| cause.to_string())?;
+        self.pattern_preview = Some((
+            edit,
+            generation,
+            ViewportSketchPreview::Resolved {
+                plane: edit.plane,
+                geometry: Box::new(preview.geometry),
+                members: preview.members,
+            },
+        ));
+        Ok(true)
+    }
+    pub(super) fn edit_gui_pattern(
+        &mut self,
+        pattern: oblikovati_model::sketch::SketchEntityId,
+        request: SketchRectangularPatternRequest,
+    ) -> Result<bool, String> {
+        self.pattern_preview = None;
+        let outcome = self.commit_gui_pattern_edit(pattern, request);
+        self.pattern_completed(outcome)
+    }
+    fn pattern_completed(&mut self, outcome: Result<bool, String>) -> Result<bool, String> {
         let serial = self
             .pattern_result
             .map_or(1, |(serial, _)| serial.saturating_add(1));
         self.pattern_result = Some((serial, outcome.is_ok()));
         outcome
+    }
+    fn commit_gui_pattern_edit(
+        &mut self,
+        pattern: oblikovati_model::sketch::SketchEntityId,
+        request: SketchRectangularPatternRequest,
+    ) -> Result<bool, String> {
+        let (edit, _) = self.pattern_context()?;
+        self.files
+            .commands(edit.document)
+            .map_err(|cause| cause.to_string())?
+            .run_projected(
+                "Edit rectangular sketch pattern",
+                |snapshot, ids| {
+                    snapshot.edit_pattern_from_expressions(edit.sketch, pattern, request, ids)
+                },
+                |_, edit| Ok(edit.pattern.id),
+            )
+            .map_err(|cause| cause.to_string())?;
+        Ok(true)
     }
     fn commit_gui_pattern(
         &mut self,

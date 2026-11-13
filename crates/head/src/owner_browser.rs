@@ -94,6 +94,7 @@ fn populate_browser<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         .map(|definition| definition.name().to_owned())
         .collect();
     browser.block_instances = browser_block_instances(snapshot)?;
+    browser.rectangular_patterns = browser_rectangular_patterns(snapshot);
     browser.sketches = snapshot
         .sketches
         .sketches()
@@ -116,6 +117,34 @@ fn populate_browser<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         })
         .collect();
     Ok(())
+}
+fn browser_rectangular_patterns(
+    snapshot: &oblikovati_model::history::DocumentSnapshot,
+) -> Vec<oblikovati_gui::GuiBrowserRectangularPattern> {
+    let mut rows = Vec::new();
+    for sketch in snapshot.sketches.sketches() {
+        for (index, pattern) in sketch.geometry().rectangular_patterns().iter().enumerate() {
+            let resolve = |id| {
+                snapshot
+                    .parameters
+                    .get(id)
+                    .map(|state| state.source.clone())
+                    .ok_or_else(|| {
+                        format!("pattern spacing parameter {id}: expected an existing parameter")
+                    })
+            };
+            let spacing = resolve(pattern.definition.spacing[0]).and_then(|first| {
+                resolve(pattern.definition.spacing[1]).map(|second| [first, second])
+            });
+            rows.push(oblikovati_gui::GuiBrowserRectangularPattern {
+                sketch: sketch.id(),
+                ordinal: index + 1,
+                pattern: pattern.clone(),
+                spacing,
+            });
+        }
+    }
+    rows
 }
 fn browser_block_instances(
     snapshot: &oblikovati_model::history::DocumentSnapshot,

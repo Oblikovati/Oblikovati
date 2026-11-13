@@ -32,6 +32,8 @@
 
 ### Added
 
+- Added browser rows and an editor for saved rectangular sketch patterns.
+
 - Added a rectangular sketch-pattern dialog with live preview and cancel.
 
 - Added rectangular sketch-pattern creation through the typed API.

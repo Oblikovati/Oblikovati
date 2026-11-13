@@ -30,6 +30,8 @@ pub struct GuiModelBrowser {
     /// Definitions and their placed instances, in authored order.
     pub block_definitions: Vec<String>,
     pub block_instances: Vec<GuiBrowserBlockInstance>,
+    /// Rectangular patterns owned by each sketch.
+    pub rectangular_patterns: Vec<GuiBrowserRectangularPattern>,
     pub features: Vec<GuiBrowserFeature>,
     pub selected_sketches: Vec<DocumentSketchId>,
     /// The feature row a press chose.
@@ -43,6 +45,14 @@ pub struct GuiModelBrowser {
     /// The part's solids, each made by a feature of the program.
     pub bodies: Vec<GuiBrowserBody>,
     pub appearances: Vec<crate::GuiAppearanceChoice>,
+}
+/// Pattern identity, authored settings and spacing source text for the browser editor.
+#[derive(Clone, Debug, PartialEq)]
+pub struct GuiBrowserRectangularPattern {
+    pub sketch: DocumentSketchId,
+    pub ordinal: usize,
+    pub pattern: oblikovati_model::sketch::SketchRectangularPattern,
+    pub spacing: Result<[String; 2], String>,
 }
 /// A placed block's document identity and browser caption.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -107,6 +117,36 @@ impl GuiModelBrowser {
             row.validate(&self.features)?;
         }
         self.validate_blocks()?;
+        self.validate_patterns()?;
+        Ok(())
+    }
+    fn validate_patterns(&self) -> Result<(), String> {
+        let mut identities: std::collections::BTreeSet<_> = self
+            .block_instances
+            .iter()
+            .map(|instance| instance.id)
+            .collect();
+        for row in &self.rectangular_patterns {
+            if row.pattern.id.0 == 0
+                || row.ordinal == 0
+                || !identities.insert(row.pattern.id)
+                || !self.sketches.iter().any(|sketch| sketch.id == row.sketch)
+            {
+                return Err(format!(
+                    "browser rectangular pattern {row:?}: expected a unique identity, positive ordinal and existing sketch"
+                ));
+            }
+            let bad_text = match &row.spacing {
+                Ok(values) => values.iter().any(|value| value.contains('\0')),
+                Err(cause) => cause.contains('\0'),
+            };
+            if bad_text {
+                return Err(format!(
+                    "browser rectangular pattern {:?} spacing {:?}: expected text without NUL",
+                    row.pattern.id, row.spacing
+                ));
+            }
+        }
         Ok(())
     }
     fn validate_blocks(&self) -> Result<(), String> {

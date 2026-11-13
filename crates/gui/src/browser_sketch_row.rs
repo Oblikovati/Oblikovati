@@ -26,6 +26,51 @@ pub(super) fn sketch_row(
     }
     sketch_context_menu(ui, state, row, view, action, actions);
     block_instances(ui, state, row.id, actions);
+    rectangular_patterns(ui, state, row.id, actions);
+}
+fn rectangular_patterns(
+    ui: &Ui,
+    state: &GuiCommandState,
+    sketch: DocumentSketchId,
+    actions: &mut Vec<GuiShellAction>,
+) {
+    let Some(browser) = &state.browser else {
+        return;
+    };
+    ui.indent();
+    for row in browser
+        .rectangular_patterns
+        .iter()
+        .filter(|row| row.sketch == sketch)
+    {
+        let _id = ui.push_id(format!("rectangular-pattern-{}", row.pattern.id.0));
+        let position = ui.cursor_screen_pos();
+        let action = GuiShellAction::OpenSketchPattern {
+            sketch,
+            pattern: row.pattern.id,
+        };
+        if crate::widget_abi::selectable(ui, "##pattern", false, true)
+            && ui.is_mouse_double_clicked(MouseButton::Left)
+            && action.dispatchable(state)
+        {
+            actions.push(action.clone());
+        }
+        crate::widget_abi::literal_text(
+            ui,
+            position,
+            ui.style_color(StyleColor::Text),
+            &format!("Rectangular Pattern{}", row.ordinal),
+        );
+        if let Some(_popup) = ui.begin_popup_context_item()
+            && ui
+                .menu_item_config("Edit Pattern")
+                .enabled(action.dispatchable(state))
+                .build()
+        {
+            actions.push(action);
+        }
+    }
+    ui.unindent();
 }
 fn block_instances(
     ui: &Ui,

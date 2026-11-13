@@ -75,6 +75,10 @@ impl<
             sketch_block_created: self.block_created.clone(),
             sketch_pattern_created: self.pattern_result,
             sketch_pattern_available: true,
+            active_sketch: self
+                .active_sketch_edit()
+                .filter(|edit| edit.document == document)
+                .map(|edit| edit.sketch),
             documents: self.gui_document_rows()?,
             document_model_states: self.gui_document_model_states()?,
             document_storage: self.gui_document_storage()?,

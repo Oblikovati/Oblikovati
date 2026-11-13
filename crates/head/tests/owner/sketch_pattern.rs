@@ -105,3 +105,86 @@ fn invalid_preview_clears_old_geometry_and_failed_creation_reports_retry() {
         Some((1, false))
     );
 }
+
+#[test]
+fn recorded_pattern_is_exposed_to_browser_and_edits_keep_its_identity() {
+    let (mut owner, document, sketch) =
+        super::geometric_tools::geometric_owner(&[[0., 0.], [100., 20.]], true);
+    let line = owner
+        .documents()
+        .workspace()
+        .session(document)
+        .unwrap()
+        .snapshot()
+        .sketches
+        .get(sketch)
+        .unwrap()
+        .geometry()
+        .lines()[0]
+        .id;
+    let mut request = input(line);
+    owner
+        .create_sketch_pattern_from_gui(request.clone())
+        .unwrap();
+    let state = owner.gui_command_state().unwrap();
+    assert_eq!(state.active_sketch, Some(sketch));
+    let pattern_id = state.browser.as_ref().unwrap().rectangular_patterns[0]
+        .pattern
+        .id;
+    let action = oblikovati_gui::GuiShellAction::OpenSketchPattern {
+        sketch,
+        pattern: pattern_id,
+    };
+    assert!(action.enabled(&state));
+    let mut inactive = state.clone();
+    inactive.active_sketch = None;
+    assert!(!action.enabled(&inactive));
+    inactive = state.clone();
+    inactive.transaction_open = true;
+    assert!(!action.enabled(&inactive));
+    let browser = state.browser.unwrap();
+    assert_eq!(browser.rectangular_patterns.len(), 1);
+    let row = &browser.rectangular_patterns[0];
+    assert_eq!(row.sketch, sketch);
+    assert_eq!(row.spacing.as_ref().unwrap(), &["10 mm", "5 mm"]);
+    let before = row.pattern.clone();
+    request.counts[0] = 4;
+    request.spacing[0] = "20 mm".into();
+    owner
+        .preview_sketch_pattern_edit_from_gui(before.id, request.clone())
+        .unwrap();
+    assert!(owner.sketch_preview().is_some());
+    owner.preview_sketch_pattern_from_gui(None).unwrap();
+    assert_eq!(
+        owner
+            .gui_command_state()
+            .unwrap()
+            .browser
+            .unwrap()
+            .rectangular_patterns[0]
+            .pattern,
+        before
+    );
+    owner
+        .edit_sketch_pattern_from_gui(before.id, request)
+        .unwrap();
+    let row = &owner
+        .gui_command_state()
+        .unwrap()
+        .browser
+        .unwrap()
+        .rectangular_patterns[0];
+    assert_eq!(row.pattern.id, before.id);
+    assert_eq!(row.pattern.definition.counts, [4, 2]);
+    assert_eq!(row.spacing.as_ref().unwrap(), &["20 mm", "5 mm"]);
+    for member in &before.members {
+        assert_eq!(
+            row.pattern
+                .members
+                .iter()
+                .find(|item| item.index == member.index)
+                .unwrap(),
+            member
+        );
+    }
+}

@@ -5,7 +5,29 @@ impl GuiShellAction {
     pub fn enabled(&self, state: &GuiCommandState) -> bool {
         match self {
             Self::PreviewSketchPattern(None) => true,
-            Self::PreviewSketchPattern(Some(_)) | Self::CreateSketchPattern(_) => {
+            Self::OpenSketchPattern { sketch, pattern } => {
+                state.sketch_pattern_available
+                    && state.sketch_at_ready
+                    && !state.transaction_open
+                    && state.active_sketch == Some(*sketch)
+                    && state.browser.as_ref().is_some_and(|browser| {
+                        browser.rectangular_patterns.iter().any(|row| {
+                            row.sketch == *sketch
+                                && row.pattern.id == *pattern
+                                && row.spacing.is_ok()
+                                && row
+                                    .pattern
+                                    .definition
+                                    .counts
+                                    .iter()
+                                    .all(|count| i32::try_from(*count).is_ok())
+                        })
+                    })
+            }
+            Self::PreviewSketchPattern(Some(_))
+            | Self::CreateSketchPattern(_)
+            | Self::PreviewSketchPatternEdit { .. }
+            | Self::EditSketchPattern { .. } => {
                 state.sketch_pattern_available && state.sketch_at_ready && !state.transaction_open
             }
 

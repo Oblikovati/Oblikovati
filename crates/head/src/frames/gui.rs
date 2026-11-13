@@ -148,6 +148,9 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::Dimension(_)
         | GuiShellAction::PreviewSketchPattern(_)
         | GuiShellAction::CreateSketchPattern(_)
+        | GuiShellAction::OpenSketchPattern { .. }
+        | GuiShellAction::PreviewSketchPatternEdit { .. }
+        | GuiShellAction::EditSketchPattern { .. }
         | GuiShellAction::SketchMove(_)
         | GuiShellAction::ConstrainSketch(_)
         | GuiShellAction::PlaceSketchTool(_)

@@ -212,6 +212,21 @@ macro_rules! forward_owner_view_work {
         ) -> Result<bool, String> {
             self.$owner.create_sketch_pattern_from_gui(request)
         }
+        fn preview_sketch_pattern_edit_from_gui(
+            &mut self,
+            pattern: oblikovati_model::sketch::SketchEntityId,
+            request: oblikovati_model::history::SketchRectangularPatternRequest,
+        ) -> Result<bool, String> {
+            self.$owner
+                .preview_sketch_pattern_edit_from_gui(pattern, request)
+        }
+        fn edit_sketch_pattern_from_gui(
+            &mut self,
+            pattern: oblikovati_model::sketch::SketchEntityId,
+            request: oblikovati_model::history::SketchRectangularPatternRequest,
+        ) -> Result<bool, String> {
+            self.$owner.edit_sketch_pattern_from_gui(pattern, request)
+        }
         fn sketch_move_from_gui(
             &mut self,
             action: oblikovati_gui::GuiSketchMoveAction,

@@ -8,8 +8,8 @@ pub use application::document_creation::templates::{
 mod appearance_choice;
 mod browser;
 pub use browser::{
-    GuiBrowserBlockInstance, GuiBrowserBody, GuiBrowserFeature, GuiBrowserKind, GuiBrowserSketch,
-    GuiModelBrowser,
+    GuiBrowserBlockInstance, GuiBrowserBody, GuiBrowserFeature, GuiBrowserKind,
+    GuiBrowserRectangularPattern, GuiBrowserSketch, GuiModelBrowser,
 };
 mod clipboard;
 pub use activity::GuiFrameActivity;

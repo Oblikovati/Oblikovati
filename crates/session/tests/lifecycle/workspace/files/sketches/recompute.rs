@@ -85,7 +85,7 @@ fn assert_recompute_report(
 
 #[test]
 fn edited_rectangular_pattern_survives_undo_redo_save_and_reopen() {
-    use oblikovati_model::sketch::SketchRectangularPatternDefinition;
+    use oblikovati_model::history::SketchRectangularPatternRequest;
     use std::collections::BTreeSet;
     let (mut host, mut source, document, sketch) = saved_driven_sketch();
     let line = host
@@ -99,11 +99,11 @@ fn edited_rectangular_pattern_survives_undo_redo_save_and_reopen() {
         .geometry()
         .lines()[0]
         .id;
-    let mut definition = SketchRectangularPatternDefinition {
+    let mut definition = SketchRectangularPatternRequest {
         seed: vec![line],
         counts: [3, 2],
         directions: [[1., 0.], [0., 1.]],
-        spacing: [1, 1],
+        spacing: ["10 mm".into(), "5 mm".into()],
         fitted: false,
         suppressed: BTreeSet::new(),
     };
@@ -111,15 +111,16 @@ fn edited_rectangular_pattern_survives_undo_redo_save_and_reopen() {
         .commands(document)
         .unwrap()
         .run("Create pattern", |snapshot, ids| {
-            snapshot.create_rectangular_pattern(sketch, definition.clone(), ids)
+            snapshot.create_pattern_from_expressions(sketch, definition.clone(), ids)
         })
         .unwrap();
     definition.counts = [4, 2];
+    definition.spacing[0] = "20 mm".into();
     let edited = host
         .commands(document)
         .unwrap()
         .run("Edit pattern", |snapshot, ids| {
-            snapshot.edit_rectangular_pattern(sketch, original.id, definition.clone(), ids)
+            snapshot.edit_pattern_from_expressions(sketch, original.id, definition.clone(), ids)
         })
         .unwrap();
     for member in &original.members {
@@ -163,4 +164,8 @@ fn edited_rectangular_pattern_survives_undo_redo_save_and_reopen() {
         .geometry();
     assert_eq!(geometry.rectangular_patterns(), &[edited.pattern]);
     assert_eq!(geometry.rectangular_patterns()[0].definition.counts, [4, 2]);
+    let snapshot = host.workspace().session(reopened).unwrap().snapshot();
+    let spacing = geometry.rectangular_patterns()[0].definition.spacing;
+    assert_eq!(snapshot.parameters.get(spacing[0]).unwrap().source, "20 mm");
+    assert_eq!(snapshot.parameters.get(spacing[1]).unwrap().source, "5 mm");
 }

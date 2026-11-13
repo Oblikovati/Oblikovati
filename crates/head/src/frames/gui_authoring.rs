@@ -144,6 +144,12 @@ fn sketch(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, Str
         GuiShellAction::CreateSketchPattern(request) => {
             owner.create_sketch_pattern_from_gui(request.clone())
         }
+        GuiShellAction::PreviewSketchPatternEdit { pattern, request } => {
+            owner.preview_sketch_pattern_edit_from_gui(*pattern, request.clone())
+        }
+        GuiShellAction::EditSketchPattern { pattern, request } => {
+            owner.edit_sketch_pattern_from_gui(*pattern, request.clone())
+        }
         GuiShellAction::SketchMove(action) => owner.sketch_move_from_gui(*action),
         GuiShellAction::ConstrainSketch(choice) => owner.constrain_sketch_from_gui(*choice),
         GuiShellAction::PlaceSketchTool(tool) => owner.place_sketch_tool_from_gui(*tool),
