@@ -18,6 +18,17 @@ pub(crate) fn draw_panel_content(
 ) -> bool {
     crate::widget_abi::cursor_position(ui, origin);
     match panel {
+        RibbonPanel::Modify => {
+            let start = GuiShellAction::SketchMove(crate::GuiSketchMoveAction::Start);
+            crate::chrome::command_control(ui, "Move", start, state, actions, || {
+                crate::widget_abi::button(ui, "Move", [108., 26.])
+            });
+            owners.icons.cursor(ui, origin, [0., 30.]);
+            let delete = GuiShellAction::DeleteSketchSelection;
+            crate::chrome::command_control(ui, "Delete", delete, state, actions, || {
+                crate::widget_abi::button(ui, "Delete", [108., 26.])
+            });
+        }
         RibbonPanel::Create => sketch_create_controls(ui, origin, state, owners.icons, actions),
         RibbonPanel::Constrain => {
             sketch_constraint_controls(ui, origin, state, owners.icons, actions)

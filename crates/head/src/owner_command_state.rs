@@ -108,6 +108,7 @@ impl<
                 .is_some_and(|tool| tool.takes_command_alias()),
             sketch_alias: (!self.sketch_alias.is_empty()).then(|| self.sketch_alias.clone()),
             dimensions_needed: self.gui_dimensions_needed(document),
+            sketch_move: self.gui_sketch_move_stage(),
             sketch_at_ready: self.sketch_tool.is_none() && self.active_sketch_edit().is_some(),
             // Projected by the frame, which owns the camera.
             origin_planes: Vec::new(),

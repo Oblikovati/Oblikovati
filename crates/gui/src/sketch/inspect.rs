@@ -11,6 +11,7 @@ pub struct GuiMeasurePanel {
 /// The last sketch command that can be started again from its context menu.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GuiSketchRepeat {
+    Move,
     Placement(crate::GuiSketchTool),
     Constraint(crate::GuiSketchConstraint),
 }
@@ -89,6 +90,10 @@ fn repeat_row(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction
         return;
     };
     let (label, action) = match command {
+        GuiSketchRepeat::Move => (
+            "Move",
+            GuiShellAction::SketchMove(crate::GuiSketchMoveAction::Start),
+        ),
         GuiSketchRepeat::Placement(tool) => (tool.label(), GuiShellAction::PlaceSketchTool(tool)),
         GuiSketchRepeat::Constraint(choice) => {
             (choice.label(), GuiShellAction::ConstrainSketch(choice))

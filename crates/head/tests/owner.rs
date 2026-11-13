@@ -527,6 +527,8 @@ mod curve_relations;
 
 #[path = "owner/sketch_delete.rs"]
 mod sketch_delete;
+#[path = "owner/sketch_move.rs"]
+mod sketch_move;
 
 #[path = "owner/sketch_formats.rs"]
 mod sketch_formats;

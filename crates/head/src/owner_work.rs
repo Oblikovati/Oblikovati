@@ -443,6 +443,12 @@ impl<
     fn place_sketch_block_from_gui(&mut self, name: &str) -> Result<bool, String> {
         self.start_block_placement(name)
     }
+    fn sketch_move_from_gui(
+        &mut self,
+        action: oblikovati_gui::GuiSketchMoveAction,
+    ) -> Result<bool, String> {
+        self.sketch_move_command(action)
+    }
     fn delete_sketch_selection_from_gui(&mut self) -> Result<bool, String> {
         self.delete_gui_sketch_selection()
     }
@@ -506,6 +512,16 @@ impl<
         self.active_sketch_edit()
     }
     fn sketch_preview(&self) -> Option<oblikovati_viewport::ViewportSketchPreview> {
+        if let Some(crate::sketch_tool::SketchToolState::Move(tool)) = &self.sketch_tool {
+            let available =
+                self.sketch_context_valid(tool.edit.document, tool.edit.sketch, tool.generation)
+                    && self
+                        .files
+                        .workspace()
+                        .session(tool.edit.document)
+                        .is_ok_and(|session| !session.in_transaction());
+            return available.then(|| tool.preview.clone()).flatten();
+        }
         if let Some(crate::sketch_tool::SketchToolState::Block(tool)) = &self.sketch_tool {
             return self
                 .sketch_context_valid(tool.edit.document, tool.edit.sketch, tool.generation)

@@ -61,6 +61,8 @@ mod sketch_formats;
 mod sketch_geometric;
 #[path = "owner_sketch_interaction.rs"]
 mod sketch_interaction;
+#[path = "owner_sketch_move.rs"]
+pub(crate) mod sketch_move;
 #[path = "owner_sketch_picking.rs"]
 mod sketch_picking;
 #[path = "owner_sketch_relation_context.rs"]

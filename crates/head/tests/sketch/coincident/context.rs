@@ -161,3 +161,86 @@ fn stale_context_relation_cannot_delete_a_different_relation() {
     assert_eq!(world.edited_geometry().geometric_constraints().count(), 0);
     world.close();
 }
+
+#[test]
+fn move_freed_segment_with_canvas_points_and_replay_history() {
+    let mut world = ApplicationWorld::new();
+    joined_lines(&mut world);
+    let joined = world.edited_geometry();
+    let lines = joined.lines().to_vec();
+    let first = lines[0]
+        .endpoints
+        .map(|id| joined.point(id).unwrap().position);
+    let second = lines[1]
+        .endpoints
+        .map(|id| joined.point(id).unwrap().position);
+    let midpoint = std::array::from_fn(|axis| (first[0][axis] + first[1][axis]) * 0.5);
+    let pixel =
+        crate::HeadWindow::sketch_pixel(&world.app().window, SketchPlane::xy(), midpoint).unwrap();
+    world.right_click(pixel);
+    world.click_text("Delete Coincident Constraint");
+    let deleted = world.edited_geometry();
+    world.click_text("Move");
+    world.expect_status("Move: Select geometry");
+    world.sketch_click(pixel);
+    world.expect_status("Move: Select base point");
+    let base =
+        crate::HeadWindow::sketch_pixel(&world.app().window, SketchPlane::xy(), first[0]).unwrap();
+    world.sketch_click(base);
+    world.expect_status("Move: Select end point");
+    let target = [base[0] + 120, base[1] + 80];
+    world.hover(target);
+    assert!(crate::HeadWork::sketch_preview(&world.app().owner).is_some());
+    assert!(world.edited_geometry().same_recipe(&deleted));
+    world.sketch_click(target);
+    let moved = world.edited_geometry();
+    assert_ne!(
+        moved.point(lines[0].endpoints[0]).unwrap().position,
+        first[0]
+    );
+    assert_eq!(
+        lines[1]
+            .endpoints
+            .map(|id| moved.point(id).unwrap().position),
+        second
+    );
+    let done = world.run_in_window("Move", "Done").center();
+    world.click(diagnostics::pointer_pixels(done));
+    world.undo();
+    assert!(world.edited_geometry().same_recipe(&deleted));
+    world.undo();
+    assert!(world.edited_geometry().same_recipe(&joined));
+    world.redo();
+    assert!(world.edited_geometry().same_recipe(&deleted));
+    world.redo();
+    assert!(world.edited_geometry().same_recipe(&moved));
+    world.close();
+}
+
+#[test]
+fn cancelling_a_move_discards_its_solved_preview_and_preserves_history() {
+    let mut world = ApplicationWorld::new();
+    joined_lines(&mut world);
+    let geometry = world.edited_geometry();
+    let ends = geometry.lines()[0]
+        .endpoints
+        .map(|id| geometry.point(id).unwrap().position);
+    let midpoint = std::array::from_fn(|axis| (ends[0][axis] + ends[1][axis]) * 0.5);
+    let middle =
+        crate::HeadWindow::sketch_pixel(&world.app().window, SketchPlane::xy(), midpoint).unwrap();
+    let base =
+        crate::HeadWindow::sketch_pixel(&world.app().window, SketchPlane::xy(), ends[0]).unwrap();
+    let history = world.state().undo_label;
+    world.click_text("Move");
+    world.sketch_click(middle);
+    world.sketch_click(base);
+    world.hover([base[0] + 120, base[1] + 80]);
+    assert!(crate::HeadWork::sketch_preview(&world.app().owner).is_some());
+    world.escape();
+    assert!(crate::HeadWork::sketch_preview(&world.app().owner).is_none());
+    assert!(world.edited_geometry().same_recipe(&geometry));
+    assert_eq!(world.state().undo_label, history);
+    world.right_click([1000, 600]);
+    world.expect_text("Repeat Move");
+    world.close();
+}

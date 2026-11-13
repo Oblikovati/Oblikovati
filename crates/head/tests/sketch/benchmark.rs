@@ -9,6 +9,8 @@ mod arc_three_point;
 mod circle_center_point;
 #[path = "coincident/context.rs"]
 mod coincident_context;
+#[path = "coincident/move_relation.rs"]
+mod coincident_move_relation;
 #[path = "coincident/points.rs"]
 mod coincident_points;
 #[path = "coincident/segments.rs"]

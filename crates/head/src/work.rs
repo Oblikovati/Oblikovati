@@ -466,6 +466,15 @@ pub trait HeadWork {
             "Format {format:?}: expected a document editor owner"
         ))
     }
+    /// Start or finish the sketch Move tool; example: `work.sketch_move_from_gui(action)?`.
+    fn sketch_move_from_gui(
+        &mut self,
+        action: oblikovati_gui::GuiSketchMoveAction,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "sketch move {action:?}: expected an active sketch owner"
+        ))
+    }
     /// Delete checked editor picks through their owner; example: `work.delete_sketch_selection_from_gui()?`.
     fn delete_sketch_selection_from_gui(&mut self) -> Result<bool, String> {
         Err("Delete Sketch Selection: expected a document editor owner".into())

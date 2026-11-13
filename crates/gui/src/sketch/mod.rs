@@ -14,3 +14,5 @@ pub(crate) mod marking_menu;
 pub(crate) mod precise_input;
 #[path = "region-properties/mod.rs"]
 pub(crate) mod region_properties;
+
+pub(crate) mod move_tool;

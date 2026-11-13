@@ -16,6 +16,8 @@
 
 ### Added
 
+- Added single-entity sketch Move with a solved preview, canvas points, and undo/redo.
+
 - Added undoable geometric relation removal from sketch curve context menus.
 
 - Added repeat of sketch constraints to the sketch context menu. (#3856)

@@ -76,10 +76,16 @@ impl<
         window: &dyn HeadWindow,
     ) -> Result<bool, String> {
         let mut changed = self.synchronize_sketch_edit();
-        changed |= self.check_sketch_tool_context();
+        let mut retired = self.check_sketch_tool_context();
+        changed |= retired;
         for input in inputs {
             changed |= self.process_document_inputs(&[*input])?;
-            changed |= self.check_sketch_tool_context();
+            let retired_now = self.check_sketch_tool_context();
+            changed |= retired_now;
+            if retired || retired_now {
+                retired = false;
+                continue;
+            }
             changed |= self.process_sketch_tool_event(*input, window);
         }
         Ok(changed)

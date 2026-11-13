@@ -4,6 +4,10 @@ impl GuiShellAction {
     /// Preserve Go empty-stack enablement; example: `GuiShellAction::Undo.enabled(&state)`.
     pub fn enabled(&self, state: &GuiCommandState) -> bool {
         match self {
+            Self::SketchMove(crate::GuiSketchMoveAction::Start) => {
+                state.sketch_at_ready && !state.transaction_open
+            }
+            Self::SketchMove(crate::GuiSketchMoveAction::Done) => state.sketch_move.is_some(),
             Self::PlaceSketchBlock(name) => {
                 state.authoring == GuiAuthoringContext::Sketch
                     && !state.transaction_open

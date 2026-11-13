@@ -200,6 +200,12 @@ macro_rules! forward_owner_view_work {
         fn delete_sketch_relation_from_gui(&mut self, id: u64) -> Result<bool, String> {
             self.$owner.delete_sketch_relation_from_gui(id)
         }
+        fn sketch_move_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiSketchMoveAction,
+        ) -> Result<bool, String> {
+            self.$owner.sketch_move_from_gui(action)
+        }
         fn delete_sketch_selection_from_gui(&mut self) -> Result<bool, String> {
             self.$owner.delete_sketch_selection_from_gui()
         }

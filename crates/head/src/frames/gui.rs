@@ -146,6 +146,7 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::SetBodyAppearance { .. }
         | GuiShellAction::EditSketch { .. }
         | GuiShellAction::Dimension(_)
+        | GuiShellAction::SketchMove(_)
         | GuiShellAction::ConstrainSketch(_)
         | GuiShellAction::PlaceSketchTool(_)
         | GuiShellAction::ToggleSketchFormat(_)

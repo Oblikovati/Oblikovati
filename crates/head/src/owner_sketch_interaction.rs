@@ -31,6 +31,7 @@ impl<
         let edit = match self.sketch_tool.take() {
             Some(SketchToolState::Geometric(tool)) => tool.edit,
             Some(SketchToolState::Dimension(tool)) => tool.edit,
+            Some(SketchToolState::Move(tool)) => tool.edit,
             _ => return Ok(()),
         };
         if !self.files.workspace().documents().contains(&edit.document) {
@@ -84,6 +85,7 @@ impl<
         // #3816: one press belongs to one tool, including the press that completes it.
         match self.sketch_tool.take() {
             Some(SketchToolState::Block(tool)) => self.process_block_placement(tool, event, window),
+            Some(SketchToolState::Move(tool)) => self.process_sketch_move(tool, event, window),
             Some(SketchToolState::Placement(tool)) => {
                 self.process_placement_event(tool, event, window)
             }

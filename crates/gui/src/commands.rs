@@ -23,6 +23,7 @@ pub enum GuiShellAction {
         frequency: oblikovati_model::application_prompts::PromptFrequency,
     },
     SetSketchOptions(oblikovati_model::application_options::SketchApplicationOptions),
+    SketchMove(crate::GuiSketchMoveAction),
     LineCommand(crate::GuiLineCommand),
     PrecisePoint(crate::GuiPrecisePoint),
     PreciseTriad(crate::GuiTriadCommand),
@@ -363,6 +364,8 @@ pub struct GuiCommandState {
     pub sketch_options: Option<oblikovati_model::application_options::SketchApplicationOptions>,
     /// A sketch is open with no command running: the canvas offers its own menu.
     pub sketch_at_ready: bool,
+    /// Current canvas move stage when the Move tool is open.
+    pub sketch_move: Option<crate::GuiSketchMoveStage>,
     pub origin_planes: Vec<crate::GuiOriginPlane>,
     /// The chosen browser row's outline in the view, in pixels: a solid's edges or a sketch.
     pub feature_edges: Vec<[[i32; 2]; 2]>,
