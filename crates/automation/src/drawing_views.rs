@@ -20,6 +20,13 @@ pub trait DrawingViewProjectionAccess {
         document: DocumentGuid,
         view: &DrawingBaseViewDefinition,
     ) -> Result<[usize; 2], String>;
+    /// Sample one view for saved presentation; example: `backend.saved_lines(history, document, view)?`.
+    fn saved_lines(
+        &self,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        view: &DrawingBaseViewDefinition,
+    ) -> Result<Vec<oblikovati_persistence::package::SavedDrawingLine>, String>;
 }
 /// Drawing calls served by the document owner.
 pub const DRAWING_COMMAND_METHODS: [&str; 2] = [

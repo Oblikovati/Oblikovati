@@ -40,11 +40,24 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         version: &str,
         source: &mut dyn GuidSource,
     ) -> Result<BatchSaveResult, BatchSaveError> {
+        self.batch_save_with(request, version, source, |_, _| Ok(()))
+    }
+    /// Prepare each item after batch validation; example: `files.batch_save_with(args, version, ids, prepare)`.
+    pub fn batch_save_with<P>(
+        &mut self,
+        request: BatchSaveArgs,
+        version: &str,
+        source: &mut dyn GuidSource,
+        mut prepare: P,
+    ) -> Result<BatchSaveResult, BatchSaveError>
+    where
+        P: FnMut(&mut Self, u64) -> Result<(), String>,
+    {
         let operation = SaveOperation::parse(&request.operation)?;
         let prepared = self.prepare_batch(operation, request.items.unwrap_or_default())?;
         let results: Vec<_> = prepared
             .into_iter()
-            .map(|item| self.execute_batch_item(operation, item, version, source))
+            .map(|item| self.execute_batch_item(operation, item, version, source, &mut prepare))
             .collect();
         Ok(BatchSaveResult {
             saved: results.iter().filter(|item| item.ok).count() as i64,
@@ -52,14 +65,19 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         })
     }
 
-    fn execute_batch_item(
+    fn execute_batch_item<P>(
         &mut self,
         operation: SaveOperation,
         item: PreparedSave,
         version: &str,
         source: &mut dyn GuidSource,
-    ) -> BatchSaveItemResult {
+        prepare: &mut P,
+    ) -> BatchSaveItemResult
+    where
+        P: FnMut(&mut Self, u64) -> Result<(), String>,
+    {
         let outcome = item.destination.and_then(|path| {
+            prepare(self, item.document)?;
             self.execute_save_operation(operation, item.document, &path, version, source)
                 .map_err(|error| error.to_string())
         });

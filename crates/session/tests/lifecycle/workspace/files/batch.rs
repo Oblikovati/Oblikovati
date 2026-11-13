@@ -19,6 +19,52 @@ fn batch_request(operation: &str, items: &[(u64, &Path)]) -> BatchSaveArgs {
     }
 }
 
+fn refuse_first_presentation(_: &mut Host, document: u64) -> Result<(), String> {
+    if document == 1 {
+        return Err("projection unavailable".into());
+    }
+    Ok(())
+}
+#[test]
+fn batch_reports_one_presentation_failure_and_saves_the_next_item() {
+    let mut host = host(RecordingWorkspace::default());
+    let mut source = SequenceGuids(1000);
+    let first = open_file(&mut host, "a.obk", &mut source, OpenActivation::Activate);
+    let second = open_file(&mut host, "b.obk", &mut source, OpenActivation::Background);
+    assert_eq!(first, 1);
+    let result = host
+        .batch_save_with(
+            batch_request(
+                "saveCopyAs",
+                &[
+                    (first, &path("first-copy.obk")),
+                    (second, &path("second-copy.obk")),
+                ],
+            ),
+            "alpha",
+            &mut source,
+            refuse_first_presentation,
+        )
+        .unwrap();
+    let items = result.results.unwrap();
+    assert_eq!(result.saved, 1);
+    assert!(!items[0].ok && items[0].error.contains("projection unavailable"));
+    assert!(items[1].ok);
+    assert!(
+        !host
+            .files()
+            .contents
+            .borrow()
+            .contains_key(&path("first-copy.obk"))
+    );
+    assert!(
+        host.files()
+            .contents
+            .borrow()
+            .contains_key(&path("second-copy.obk"))
+    );
+}
+
 #[test]
 fn copy_batch_continues_after_conflict_and_keeps_order_and_source_identity() {
     let mut host = host(RecordingWorkspace::default());

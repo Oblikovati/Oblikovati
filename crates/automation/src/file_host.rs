@@ -12,6 +12,7 @@ use std::cell::RefCell;
 mod attachments;
 mod close;
 mod derived_links;
+mod drawing_snapshots;
 mod selection;
 pub use derived_links::DERIVED_COMMAND_METHODS;
 mod create;
@@ -345,9 +346,12 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
     }
 
     fn batch_save(&mut self, request: BatchSaveArgs) -> Result<Vec<u8>, Error> {
+        let backend = self.drawing_views;
         let response = self
             .files
-            .batch_save(request, self.version, self.source)
+            .batch_save_with(request, self.version, self.source, |files, id| {
+                drawing_snapshots::stage(files, backend, id)
+            })
             .map_err(|error| Error(error.to_string()))?;
         encode(&response)
     }
@@ -373,6 +377,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
         let response = encode(&SaveDocumentResult {
             full_document_name: name.into(),
         })?;
+        self.stage_drawing_views(request.document)?;
         self.files
             .save(request.document, self.version, self.source)
             .map_err(|error| Error(error.to_string()))?;
@@ -380,6 +385,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
     }
 
     fn save_as(&mut self, request: SaveDocumentAsArgs) -> Result<Vec<u8>, Error> {
+        self.stage_drawing_views(request.document)?;
         let response = self
             .files
             .save_as_report(request, self.version, self.source)
@@ -391,6 +397,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
         let response = encode(&SaveDocumentResult {
             full_document_name: request.target_file_name.clone(),
         })?;
+        self.stage_drawing_views(request.document)?;
         self.files
             .save_copy(
                 request.document,
@@ -401,6 +408,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
             )
             .map_err(|error| Error(error.to_string()))?;
         Ok(response)
+    }
+    fn stage_drawing_views(&mut self, document: u64) -> Result<(), Error> {
+        drawing_snapshots::stage(self.files, self.drawing_views, document).map_err(Error)
     }
 }
 

@@ -36,6 +36,14 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
                 .close_discarding_changes(id)
                 .map_err(|error| Error(error.to_string()))?;
         } else {
+            if self
+                .files
+                .workspace()
+                .needs_save(id)
+                .map_err(|error| Error(error.to_string()))?
+            {
+                self.stage_drawing_views(id)?;
+            }
             self.files
                 .close_saving_changes(id, self.version, self.source)
                 .map_err(|error| Error(error.to_string()))?;

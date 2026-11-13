@@ -24,15 +24,39 @@ impl oblikovati_automation::DrawingViewProjectionAccess for DrawingProjectionAcc
         document: oblikovati_model::identity::DocumentGuid,
         view: &oblikovati_model::drawing::DrawingBaseViewDefinition,
     ) -> Result<[usize; 2], String> {
-        let result = evaluate_part(history, document)?;
-        let bodies: Vec<_> = result.ordered_bodies().collect();
-        let projection =
-            oblikovati_martensite::drawing_base_view_bodies(history, document, &bodies, view)?;
+        let projection = project_authored_view(history, document, view)?;
         Ok([
             projection.curves.visible.len(),
             projection.curves.hidden.len(),
         ])
     }
+    fn saved_lines(
+        &self,
+        history: &oblikovati_model::history::DocumentEditHistory,
+        document: oblikovati_model::identity::DocumentGuid,
+        view: &oblikovati_model::drawing::DrawingBaseViewDefinition,
+    ) -> Result<Vec<oblikovati_persistence::package::SavedDrawingLine>, String> {
+        let projected = project_authored_view(history, document, view)?;
+        let mut output = GuiDrawingProjection::default();
+        append_curves(&mut output, &projected, view.style, history, document)?;
+        Ok(output
+            .lines
+            .into_iter()
+            .map(|line| oblikovati_persistence::package::SavedDrawingLine {
+                points: line.points,
+                hidden: line.hidden,
+            })
+            .collect())
+    }
+}
+fn project_authored_view(
+    history: &oblikovati_model::history::DocumentEditHistory,
+    document: oblikovati_model::identity::DocumentGuid,
+    view: &oblikovati_model::drawing::DrawingBaseViewDefinition,
+) -> Result<oblikovati_martensite::DrawingBaseProjection, String> {
+    let result = evaluate_part(history, document)?;
+    let bodies: Vec<_> = result.ordered_bodies().collect();
+    oblikovati_martensite::drawing_base_view_bodies(history, document, &bodies, view)
 }
 
 impl<

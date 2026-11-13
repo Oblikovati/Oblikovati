@@ -36,6 +36,33 @@ claim that each file has been individually triaged.
 
 ### Drawing browser and saved views, 2026-11-13
 
+- Deferred-open assessment on the same feature source: the focused native
+  scenario reaches the information message and passes ten steps, then fails
+  because acknowledging it does not open the drawing. The dialog sends
+  `deferContent`, whose API contract requests a reference stub rather than
+  deferred drawing updates; the host rejects that option. A separate drawing
+  defer contract and persisted view geometry are needed. The current test
+  fixture contains a saved view definition and model, not a saved projection;
+  extend it when saved projections exist. Local report:
+  `/tmp/obk-deferred-baseline2`.
+- The package layer now has a versioned `presentation/drawing-views-v1` stream
+  for saved sheet-space view geometry. It checks the complete drawing recipe, exact
+  sheet/view coverage, duplicate names and finite line coordinates. A changed
+  drawing recipe removes the old stream; ordinary cache compaction keeps it.
+  The Go YAML codec retains named streams. Deferred-open behavior remains
+  incomplete: the host does not yet display this stream. The
+  full persistence suite passed 382 tests after correcting a stale sketch
+  projection version assertion that also failed at the prior commit.
+- The session save target can stage a saved-view snapshot in the same atomic
+  candidate as the drawing recipe. Tests cover Save As, Save Copy As,
+  save-on-close, and refusal of a stale snapshot without changing the file.
+  The desktop's shared host now captures the projected lines for Save, Save As,
+  Save Copy As, save-on-close and batch saves. Capture failure refuses that
+  save and a batch continues with the other items. A host without the injected
+  projection service cannot save a drawing with views; the CLI script host
+  still needs the same service. Direct CLI file operations also need review.
+  Seven native drawing tests passed, including real projected-line storage and
+  a mixed-success batch; the 416 session lifecycle and 726 API query tests passed.
 - The full Open feature, SHA-256
   `d7965f270ecc21d99f2ed9a0837f17a1996203fccf4d4d1966e7876ebb01464c`,
   passed 23 of 27 scenarios and 227 of 231 executed steps on Linux with Xvfb
