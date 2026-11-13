@@ -636,3 +636,18 @@ revisions checked before they support a current pass claim.
   native_new_part_button_creates_and_selects_an_unsaved_document --
   --test-threads=1 --nocapture`. The local log is
   `/tmp/obk-native-cube-34a4-20261113.log`.
+
+### Model-browser Find scenario, 2026-11-13
+
+- Corrected two lowercase Gherkin `and` keywords at lines 587 and 930 in
+  the live model-browser feature file. These syntax changes leave the step
+  text unchanged. The source is outside the Rust repository and is not part
+  of this commit. The phrase after the second keyword still needs a semantic
+  review by the scenario author.
+- The native `Inspect the Find feature criteria` scenario passed all ten
+  steps after binding its revised interaction wording. The corrected source
+  SHA-256 was `603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e`
+  before and after the run. The rest of the feature was not run.
+- Application: `1d7a12698` plus these bindings; unrelated README and AGENTS
+  files were present. Linux, Xvfb at 1600 × 1000 and Lavapipe. The filtered
+  native report is `/tmp/obk-model-browser-find-native-20261113`, a local path.

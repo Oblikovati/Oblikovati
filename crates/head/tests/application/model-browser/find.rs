@@ -74,6 +74,7 @@ pub(super) fn add_is_enabled(world: &ApplicationWorld) -> bool {
     world.run_is_enabled("Add to list")
 }
 #[when("I choose Find from the model browser menu")]
+#[when("the user chooses Find from the model browser menu")]
 fn choose_find(world: &mut ApplicationWorld) {
     open_find(world);
 }
@@ -96,6 +97,7 @@ fn object_rows(world: &mut ApplicationWorld) {
     close_lists(world);
 }
 #[when("I select Features and open the Property list")]
+#[when("the user selects Features and opens the Property list")]
 fn features_property(world: &mut ApplicationWorld) {
     choose_in_list(world, "Find", "Features");
     open_list(world, "Property");
@@ -114,6 +116,7 @@ fn feature_properties(world: &mut ApplicationWorld) {
     );
 }
 #[when("I select Name and open the Condition list")]
+#[when("the user selects Name and opens the Condition list")]
 fn name_condition(world: &mut ApplicationWorld) {
     world.click_text("Name");
     settle(world);
@@ -134,6 +137,7 @@ fn text_conditions(world: &mut ApplicationWorld) {
     );
 }
 #[when("I dismiss the list and close the dialog")]
+#[when("the user dismisses the list and closes the dialog")]
 fn dismiss_and_close(world: &mut ApplicationWorld) {
     close_lists(world);
     world.click_text("Close");
