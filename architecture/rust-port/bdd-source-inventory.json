@@ -52,8 +52,8 @@
     },
     "features/application/ribbon-appearance/ribbon-appearance.feature": {
       "outlines": 0,
-      "scenario_declarations": 20,
-      "sha256": "78b9430cb31f51db78c85be31fd142ff61c937db3553630a07ea2383edd84bd8"
+      "scenario_declarations": 18,
+      "sha256": "5de53f4ed08ea45af82b8e9c2cf628f859c713d96118848bd32304fadcb0a4a0"
     },
     "features/application/ribbon-command-availability/ribbon-command-availability.feature": {
       "outlines": 0,
@@ -68,7 +68,7 @@
     "features/application/ribbon-display/ribbon-display.feature": {
       "outlines": 0,
       "scenario_declarations": 50,
-      "sha256": "3469c4d05914bc353a437d07b6c199c9caa4ee26321a8fff3d30b921e38a72a0"
+      "sha256": "f9ba81ff8402ee803738937424dbf2b6335e500cbcadfbc5e91e3f9ea78a82ea"
     },
     "features/application/ribbon-docking/ribbon-docking.feature": {
       "outlines": 0,

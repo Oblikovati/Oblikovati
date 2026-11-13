@@ -8,6 +8,8 @@ claim that each file has been individually triaged.
 | Priority | Feature and scope | State | Evidence and next action |
 | --- | --- | --- | --- |
 | 1 | `features/application` | In progress | The native application runner exists. A complete, current area result has not been recorded. Run and retain the full area report; triage failures against the current source. |
+| 1 | `features/application/ribbon-appearance/ribbon-appearance.feature` | In progress | Source changed. Revalidate every scenario against the revised file. Panel title visibility exists; the Ribbon Appearance submenu and command layout modes remain unavailable and need implementation. |
+| 1 | `features/application/ribbon-display/ribbon-display.feature` | In progress | Source changed. Revalidate all scenarios against the revised file, including appearance and modeling-preview cases. |
 | 2 | `features/sketch/pattern-rectangular/scenario.feature` | In progress | Rectangular patterns can be created and edited in the native UI, but directions are fixed to the sketch axes. Implement line-reference selection and associativity, then run the affected native scenarios. |
 | 2 | Other `features/sketch` | In progress | The native sketch gate runs only selected folders. Inventory and run the remaining folders before reporting total coverage. |
 | 3 | `features/solid-model` | In progress | Implementations exist, but this area has not been assessed against the current complete source. Assess each feature after the application and sketch priorities; no total execution result is recorded. |
@@ -40,3 +42,23 @@ revisions checked before they support a current pass claim.
   `/tmp/obk-bdd-two-window-20261113`; they are not durable shared artifacts.
 - Scope: this is one filtered case, not a feature or area total. The other
   application and sketch scenarios still require current native evidence.
+
+### Panel titles across tabs, 2026-11-13
+
+- Source: `features/application/ribbon-appearance/ribbon-appearance.feature`,
+  SHA-256 `5de53f4ed08ea45af82b8e9c2cf628f859c713d96118848bd32304fadcb0a4a0`.
+  The source matched before and after the run.
+- Application: commit `1d1643274` plus the scenario bindings in this ledger's
+  commit, with the locked Martensite dependency. The unrelated README and
+  AGENTS files were present.
+- Environment: Linux, Xvfb at 1600 × 1000, configured Vulkan runtime.
+- Filter: feature `ribbon-appearance`, scenario `Share the panel-title setting
+  between two ribbon tabs`. One scenario and all 11 steps passed using the
+  native window. The test reads the actual rendered panel titles and menu
+  check mark and operates both tab context menus by mouse.
+- Command: `xvfb-run -a -s '-screen 0 1600x1000x24' cargo test --locked -p
+  oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture`,
+  with the source, report directory and filters set in `OBK_BDD_ROOT`,
+  `OBK_BDD_REPORTS`, `OBK_BDD_FEATURE` and `OBK_BDD_SCENARIO`. Local reports
+  are in `/tmp/obk-bdd-panel-title-share-final-20261113` and are not durable
+  shared artifacts. This filtered pass does not establish feature coverage.
