@@ -13,6 +13,7 @@ fn click_side_selector(world: &mut ApplicationWorld) {
 
 #[when("I open the direct panel selector")]
 #[when("the user clicks the direct panel selector at the bottom of the ribbon")]
+#[when("the user clicks the direct panel selector arrow")]
 fn open_side_selector(world: &mut ApplicationWorld) {
     click_side_selector(world);
     assert!(popup_depth() > 0, "expected side selector popup");
@@ -97,12 +98,13 @@ fn side_modify_checked(world: &mut ApplicationWorld) {
     assert!(world.checked("Modify"));
 }
 
-fn popup_depth() -> i32 {
+pub(super) fn popup_depth() -> i32 {
     let context = unsafe { imgui::sys::igGetCurrentContext().as_ref() }.expect("expected GUI");
     context.OpenPopupStack.Size
 }
 
 #[given("the 3D Model ribbon is docked on the left with Modify visible")]
+#[given("the 3D Model ribbon is docked on the left with the Modify panel visible")]
 fn dock_left_with_modify(world: &mut ApplicationWorld) {
     dock_side(world, "Left");
     side_group_y(world, "Modify");
@@ -125,6 +127,7 @@ fn checklist_open(_: &mut ApplicationWorld) {
 }
 
 #[when("the user clicks the direct panel selector again")]
+#[when("the user clicks the direct panel selector arrow again")]
 fn close_side_selector(world: &mut ApplicationWorld) {
     click_side_selector(world);
 }
@@ -170,4 +173,35 @@ fn side_selector_toggles_panel_on_both_sides() {
         assert_eq!(popup_depth(), 0, "{side}: expected popup closed");
         world.close();
     }
+}
+
+#[test]
+fn side_selector_preserves_open_group_until_escape() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    dock_side(&mut world, "Left");
+    world.click_text("Modify");
+    world.expect_text("Fillet");
+    click_side_selector(&mut world);
+    assert!(popup_depth() > 0, "expected selector popup");
+    world.expect_text("Fillet");
+    world.escape();
+    assert_eq!(popup_depth(), 0, "expected selector popup closed");
+    world.expect_no_text("Fillet");
+    world.close();
+}
+
+#[test]
+fn hiding_an_open_side_group_closes_its_commands() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    dock_side(&mut world, "Left");
+    world.click_text("Modify");
+    world.expect_text("Fillet");
+    click_side_selector(&mut world);
+    world.click_text("Modify");
+    assert!(!world.checked("Modify"));
+    world.expect_no_text("Fillet");
+    assert!(popup_depth() > 0, "expected selector popup to remain open");
+    world.close();
 }

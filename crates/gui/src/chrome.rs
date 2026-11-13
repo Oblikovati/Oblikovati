@@ -227,9 +227,7 @@ fn side_ribbon(
     if !floating || ui.io().mouse_pos[1] >= title_bottom {
         request_context_menu_when_clicked(ui, owners.ribbon);
     }
-    side_tabs(ui, owners.ribbon, frame);
-    ui.same_line_with_pos(SIDE_TABS_WIDTH);
-    side_groups(ui, request, owners, panel_x, actions);
+    let cursor = ui.cursor_pos();
     let panels = crate::ribbon_panels::available_panels(
         owners.ribbon.active,
         &request.commands,
@@ -239,6 +237,10 @@ fn side_ribbon(
         .ribbon
         .display
         .side_panel_selector(ui, owners.ribbon.active, &panels);
+    crate::widget_abi::cursor_position(ui, cursor);
+    side_tabs(ui, owners.ribbon, frame);
+    ui.same_line_with_pos(SIDE_TABS_WIDTH);
+    side_groups(ui, request, owners, panel_x, actions);
 }
 fn side_tabs(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame) {
     ui.group(|| {

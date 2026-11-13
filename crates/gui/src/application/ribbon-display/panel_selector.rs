@@ -36,8 +36,11 @@ impl RibbonDisplayState {
             self.selector_open && ui.is_key_pressed_no_repeat(imgui::Key::Escape);
         let size = ui.window_size();
         let position = [size[0] - 30., size[1] - 32.];
-        selector_button(ui, position);
+        let clicked = selector_button(ui, position);
         self.selector_trigger = Some([ui.item_rect_min(), ui.item_rect_max()]);
+        if clicked || self.selector_pointer_press(ui) {
+            self.keep_temporary_on_click = true;
+        }
         let origin = ui.window_pos();
         let x = if self.placement == RibbonPlacement::Right {
             origin[0] - 180.

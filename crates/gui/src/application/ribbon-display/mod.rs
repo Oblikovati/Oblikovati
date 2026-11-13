@@ -202,6 +202,10 @@ impl RibbonDisplayState {
     fn toggle_panel(&mut self, tab: RibbonTab, panel: RibbonPanel) {
         if !self.hidden_panels.remove(&(tab, panel)) {
             self.hidden_panels.insert((tab, panel));
+            if self.temporary == Some(TemporaryPanel::Group(panel)) {
+                self.temporary = None;
+                self.side_anchor = None;
+            }
         }
     }
     /// Opened by a click, not by hovering: Escape closes this list alone, and a pointer still

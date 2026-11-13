@@ -388,9 +388,10 @@ fn temporary_panel(
     if context.additional_allowed && additional::draw(context, tab, layout, display) {
         keep = false;
     }
-    let escape = !context.owners.key_tips_active
-        && !crate::widget_abi::any_popup_open(ui)
-        && ui.is_key_pressed_no_repeat(imgui::Key::Escape);
+    let escape = display.selector_escape
+        || !context.owners.key_tips_active
+            && !crate::widget_abi::any_popup_open(ui)
+            && ui.is_key_pressed_no_repeat(imgui::Key::Escape);
     if escape {
         display.temporary_escape_consumed = true;
     }

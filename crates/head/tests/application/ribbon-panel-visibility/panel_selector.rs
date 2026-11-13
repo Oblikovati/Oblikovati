@@ -7,6 +7,9 @@ fn ribbon_bottom() -> f32 {
     position[1] + size[1]
 }
 fn selector_is_open(world: &ApplicationWorld) -> bool {
+    if window_geometry("##ribbon-column").is_some() {
+        return super::side_selector::popup_depth() > 0;
+    }
     let row = world.run(PARAMETERS).center();
     let (_, size) = window_geometry("##application-ribbon").unwrap();
     row[0] > size[0] * 0.5 && row[1] > ribbon_bottom()
