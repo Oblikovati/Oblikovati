@@ -14,7 +14,7 @@ claim that each file has been individually triaged.
 | 1 | `features/application/ribbon-appearance/ribbon-appearance.feature` | In progress | Source changed. Revalidate every scenario against the revised file. Panel title visibility and the appearance menu exist. The menu marks Normal as active and disables the other modes. A caption-free native icon primitive is available but is not connected to the ribbon. The 3D Model ribbon now uses the Go icons for Revolve, Hole, Fillet and Chamfer; these commands remain unavailable. Implement Text Off, Small, Compact, Large and Reset Ribbon across all commands and layouts; then enable and verify them. |
 | 1 | `features/application/ribbon-docking/ribbon-docking.feature` | In progress | Source changed after the inventory checkpoint. A full native run at commit `139b82a42` found 6 passes and 17 scenarios stopped by undefined steps. With corrected bindings, a second run found 8 passes, 14 undefined steps, and one ambiguous step. Resolve the remaining steps and implement missing command-group behavior. |
 | 1 | `features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature` | Needs rerun | Source changed since the inventory checkpoint. Review the corrections and rerun affected native scenarios. |
-| 1 | `features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature` | In progress | Full run at `6e80b9bde`: 15 of 54 scenarios passed, 38 stopped at undefined steps, and one failed a Parameters icon assertion. Later steps in stopped scenarios were not tested. Rerun after the changes below. |
+| 1 | `features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature` | In progress | Full run at `6e80b9bde`: 15 of 54 scenarios passed, 38 stopped at undefined steps, and one failed an icon assertion on a collapsed panel. Later steps in stopped scenarios were not tested. The Parameters scenario now passes with its expanded-panel fixture; rerun the full feature. |
 | 1 | `features/application/ribbon-panel-visibility` side selector | In progress | The left and right selector and group reflow scenarios pass on the recorded source. Rerun the full feature and cover the remaining selector interactions. |
 | 1 | `features/application/ribbon-display/ribbon-display.feature` | In progress | Source changed. Revalidate all scenarios against the revised file, including appearance and modeling-preview cases. |
 | 2 | `features/sketch/pattern-rectangular/scenario.feature` | In progress | Rectangular patterns can be created and edited in the native UI, but directions are fixed to the sketch axes. Implement line-reference selection and associativity, then run the affected native scenarios. |
@@ -313,3 +313,29 @@ revisions checked before they support a current pass claim.
   `/tmp/obk-side-group-dismiss-final-20261113` and
   `/tmp/obk-side-group-both-final-20261113`; they are not durable artifacts.
   The full feature baseline above predates these changes.
+
+### Sketch ribbon visibility fixtures, 2026-11-13
+
+- The current `Show and hide the Parameters panel during sketch editing`
+  scenario requires the large icon inside an expanded panel. At the default
+  1440-pixel window the panel collapses to a flyout; the previous icon check
+  sampled that flyout button. The fixture now sets a 2400 × 900 window for the
+  expanded Sketch panel scenarios and retains the icon assertion. The Go
+  reference also collapses panels when the ribbon is too narrow.
+- The native editor regression opens Parameters through the collapsed flyout
+  at the default size and verifies parameter creation, undo and redo while the
+  sketch remains active. The Layout native regression passes at the expanded
+  width and verifies its disabled commands and Create Block dialog.
+- The Parameters BDD scenario passed all 14 steps on source SHA-256
+  `92f73c0f2a3167708cf0d04ffa2d6fde640b52a35c685637de13aadb2e224e24`,
+  unchanged during the run. Application: `e86133af9` plus these test changes;
+  unrelated README and AGENTS files were present. Linux, Xvfb at 1600 × 1000,
+  Lavapipe, and a 2400 × 900 application window were used. The filtered run
+  used `OBK_BDD_FEATURE=ribbon-panel-visibility`, `OBK_BDD_SCENARIO='Show and
+  hide the Parameters panel during sketch editing'` and `cargo test --locked
+  -p oblikovati-head --lib application_scenarios_use_the_native_window --
+  --nocapture`. Local reports are in `/tmp/obk-sketch-param-bdd-final-20261113`;
+  they are not durable artifacts.
+- The Layout scenario now reaches the panel-order step after seven passing
+  steps. Its required Sketch Insert panel is absent from the Rust ribbon, and
+  its order step is not yet bound. Do not count this scenario as passed.

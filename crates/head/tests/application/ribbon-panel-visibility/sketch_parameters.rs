@@ -10,6 +10,9 @@ fn sketch_tab(world: &mut ApplicationWorld) {
         world.state().authoring,
         oblikovati_gui::GuiAuthoringContext::Sketch
     );
+    // These scenarios inspect commands inside expanded panels, not collapsed flyouts.
+    world.app().window.native.view.resize([2400, 900]).unwrap();
+    world.pump(Vec::new());
     world.expect_text("Finish Sketch");
 }
 
@@ -93,6 +96,11 @@ fn sketch_parameters_panel_opens_the_live_editor_without_finishing_the_sketch() 
     let caption = panel_caption(&world, PARAMETERS, y);
     let button = [caption.center()[0] as i32, caption.center()[1] as i32 - 35];
     world.click(button);
+    // A narrow ribbon opens the panel flyout before the command can be selected.
+    if diagnostics::window_geometry("Parameters").is_none() {
+        let command = world.run(PARAMETERS).center();
+        world.click(diagnostics::pointer_pixels([command[0], command[1] - 20.]));
+    }
     assert!(diagnostics::window_geometry("Parameters").is_some());
     assert_eq!(
         world.state().authoring,
