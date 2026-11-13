@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Made Precise Input show coordinates and the triad for the selected reference mode.
+
 - Resolved API dimension Drive expressions once, as in the Go host, while keeping desktop formulas live.
 
 - Kept selected sketch geometry at the requested transform, and refused moves blocked by constraints.
@@ -19,6 +21,8 @@
 - Kept origin-plane labels inside the clickable workspace when starting a sketch. (#3857)
 
 ### Added
+
+- Added document unit labels to Precise Input coordinates.
 
 - Added Copy mode to sketch Move, with preview and undo/redo.
 

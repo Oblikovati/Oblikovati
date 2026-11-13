@@ -144,16 +144,38 @@ impl<
     /// What the toolbar acts on: any placement command's next point.
     pub(super) fn gui_precise_target(&self) -> Option<oblikovati_gui::GuiPreciseTarget> {
         if let Some(tool) = self.placement_state() {
-            return Some(oblikovati_gui::GuiPreciseTarget {
-                pointer: self.precise_pointer_at(tool.document, tool.pointer_position()),
-                triad: None,
-            });
+            return Some(self.precise_target_at(tool.document, tool.pointer_position()));
         }
         let (edit, pointer) = self.move_precise_target()?;
-        Some(oblikovati_gui::GuiPreciseTarget {
-            pointer: self.precise_pointer_at(edit.document, pointer),
+        Some(self.precise_target_at(edit.document, pointer))
+    }
+    fn precise_target_at(
+        &self,
+        document: u64,
+        pointer: Option<[f64; 2]>,
+    ) -> oblikovati_gui::GuiPreciseTarget {
+        let origin = self.sketch_memory.triad.unwrap_or_default();
+        let relative = pointer.map(|at| std::array::from_fn(|axis| at[axis] - origin[axis]));
+        let units = self
+            .files
+            .workspace()
+            .session(document)
+            .ok()
+            .map(|session| {
+                let units = session.snapshot().parameters.units();
+                [
+                    units.preferred_name(Dimension::Length).to_owned(),
+                    units.preferred_name(Dimension::Angle).to_owned(),
+                ]
+            })
+            .unwrap_or_default();
+        oblikovati_gui::GuiPreciseTarget {
+            pointer: self.precise_pointer_at(document, pointer),
+            relative_pointer: self.precise_pointer_at(document, relative),
+            units,
             triad: None,
-        })
+            origin_triad: None,
+        }
     }
     fn precise_pointer_at(&self, document: u64, at: Option<[f64; 2]>) -> Option<[String; 2]> {
         let at = at?;

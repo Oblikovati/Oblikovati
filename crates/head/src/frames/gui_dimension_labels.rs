@@ -93,13 +93,15 @@ pub(super) fn project_precise_triad(
     let Some((plane, at)) = owner.precise_triad_position() else {
         return;
     };
-    target.triad = window.sketch_pixel(plane, at).ok().map(|origin| {
-        [
-            origin,
-            [origin[0] + TRIAD_REACH, origin[1]],
-            [origin[0], origin[1] - TRIAD_REACH],
-        ]
-    });
+    target.triad = window.sketch_pixel(plane, at).ok().map(triad_pixels);
+    target.origin_triad = window.sketch_pixel(plane, [0., 0.]).ok().map(triad_pixels);
+}
+fn triad_pixels(origin: [i32; 2]) -> [[i32; 2]; 3] {
+    [
+        origin,
+        [origin[0] + TRIAD_REACH, origin[1]],
+        [origin[0], origin[1] - TRIAD_REACH],
+    ]
 }
 /// A half-side of the displayed origin planes, in working lengths: readable at the default view.
 const ORIGIN_PLANE_REACH: f64 = 6.;

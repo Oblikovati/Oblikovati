@@ -56,8 +56,23 @@ pub enum GuiTriadCommand {
 pub struct GuiPreciseTarget {
     /// The pointer's position in the display unit, shown until a value is typed.
     pub pointer: Option<[String; 2]>,
+    /// Pointer offset from the reference triad, in display units.
+    pub relative_pointer: Option<[String; 2]>,
+    /// Document units for length and angle input.
+    pub units: [String; 2],
     /// The triad's origin and its axis tips, in window pixels.
     pub triad: Option<[[i32; 2]; 3]>,
+    /// The sketch origin and its axis tips, in window pixels.
+    pub origin_triad: Option<[[i32; 2]; 3]>,
+}
+impl GuiPreciseTarget {
+    fn displayed_triad(&self, relative: bool) -> Option<[[i32; 2]; 3]> {
+        if relative {
+            self.triad
+        } else {
+            self.origin_triad
+        }
+    }
 }
 const OPTIONS: &str = "##precise-input-options";
 const REFERENCE: &str = "##precise-input-reference";
@@ -114,7 +129,7 @@ impl PreciseInputBar {
         if !self.open {
             return;
         }
-        draw_triad(ui, target);
+        draw_triad(ui, target, self.relative);
         let [width, _] = ui.io().display_size;
         ui.window("Precise Input")
             .position([width * 0.5, 200.], imgui::Condition::FirstUseEver)
@@ -132,6 +147,12 @@ impl PreciseInputBar {
                 triad_controls(ui, actions);
                 ui.same_line();
                 self.options(ui);
+                let second_unit = if self.mode == GuiPreciseMode::XAndY {
+                    &target.units[0]
+                } else {
+                    &target.units[1]
+                };
+                ui.text_disabled(format!("{} / {}", target.units[0], second_unit));
             });
     }
     fn fields(
@@ -140,10 +161,13 @@ impl PreciseInputBar {
         target: &crate::GuiPreciseTarget,
         actions: &mut Vec<GuiShellAction>,
     ) {
-        let pointer = target
-            .pointer
-            .as_ref()
-            .filter(|_| self.mode == GuiPreciseMode::XAndY);
+        let pointer = if self.relative {
+            &target.relative_pointer
+        } else {
+            &target.pointer
+        }
+        .as_ref()
+        .filter(|_| self.mode == GuiPreciseMode::XAndY);
         self.first.follow(pointer.map(|values| &values[0]));
         self.second.follow(pointer.map(|values| &values[1]));
         let [first_label, second_label] = self.mode.field_labels();
@@ -174,15 +198,23 @@ impl PreciseInputBar {
             .selected(self.relative)
             .build()
         {
-            self.relative = true;
+            self.set_reference(true);
         }
         if ui
             .menu_item_config("Absolute")
             .selected(!self.relative)
             .build()
         {
-            self.relative = false;
+            self.set_reference(false);
         }
+    }
+    fn set_reference(&mut self, relative: bool) {
+        if self.relative == relative {
+            return;
+        }
+        self.relative = relative;
+        self.first = PreciseField::default();
+        self.second = PreciseField::default();
     }
     fn mode_control(&mut self, ui: &Ui) {
         if ui.button("Mode") {
@@ -229,8 +261,8 @@ fn triad_controls(ui: &Ui, actions: &mut Vec<GuiShellAction>) {
         actions.push(GuiShellAction::PreciseTriad(GuiTriadCommand::ResetToOrigin));
     }
 }
-fn draw_triad(ui: &Ui, target: &GuiPreciseTarget) {
-    let Some([origin, x_tip, y_tip]) = target.triad else {
+fn draw_triad(ui: &Ui, target: &GuiPreciseTarget, relative: bool) {
+    let Some([origin, x_tip, y_tip]) = target.displayed_triad(relative) else {
         return;
     };
     let scale = ui.io().display_framebuffer_scale;
@@ -278,6 +310,33 @@ mod tests {
         field.typed = true;
         field.follow(Some(&"9.000".to_owned()));
         assert_eq!(field.text, "5.000");
+    }
+    #[test]
+    fn changing_reference_discards_values_typed_for_the_other_origin() {
+        let mut bar = PreciseInputBar::default();
+        bar.first.text = "5".into();
+        bar.first.typed = true;
+        bar.second.text = "6".into();
+        bar.second.typed = true;
+        bar.set_reference(true);
+        assert!(bar.relative);
+        assert!(bar.first.text.is_empty() && bar.second.text.is_empty());
+        assert!(!bar.first.typed && !bar.second.typed);
+        bar.first.text = "3".into();
+        bar.set_reference(true);
+        assert_eq!(bar.first.text, "3");
+    }
+    #[test]
+    fn reference_mode_selects_the_matching_visible_triad() {
+        let reference = [[30, 40], [58, 40], [30, 12]];
+        let origin = [[0, 0], [28, 0], [0, -28]];
+        let target = GuiPreciseTarget {
+            triad: Some(reference),
+            origin_triad: Some(origin),
+            ..Default::default()
+        };
+        assert_eq!(target.displayed_triad(true), Some(reference));
+        assert_eq!(target.displayed_triad(false), Some(origin));
     }
     #[test]
     fn each_mode_names_its_two_values() {

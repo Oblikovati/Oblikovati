@@ -34,6 +34,91 @@ fn select_ellipse(world: &mut ApplicationWorld) {
     world.click_text("Relative");
 }
 
+#[given("the selected ellipse is at the precise Base Point stage")]
+fn precise_base_point(world: &mut ApplicationWorld) {
+    select_ellipse(world);
+}
+
+#[then("four coordinate and angle combinations are listed")]
+fn coordinate_modes(world: &mut ApplicationWorld) {
+    for name in [
+        "X and Y coordinate",
+        "X coordinate and X axis angle",
+        "Y coordinate and X axis angle",
+        "Distance and X axis angle",
+    ] {
+        world.expect_text(name);
+    }
+}
+
+#[when("I choose Distance and X axis angle")]
+fn distance_angle(world: &mut ApplicationWorld) {
+    world.click_text("Distance and X axis angle");
+}
+
+#[then("the toolbar exposes Distance in mm and Angle in degrees")]
+fn distance_angle_units(world: &mut ApplicationWorld) {
+    let text = world.window_text("Precise Input");
+    assert!(
+        text.contains("Distance") && text.contains("Angle") && text.contains("mm/deg"),
+        "{text:?}"
+    );
+}
+
+#[given("the selected ellipse is in precise Base Point mode")]
+fn reference_base_point(world: &mut ApplicationWorld) {
+    select_ellipse(world);
+}
+
+#[when("I open the left toolbar dropdown")]
+fn reference_menu(world: &mut ApplicationWorld) {
+    let current = if world.window_text("Precise Input").contains("Rel") {
+        "Rel"
+    } else {
+        "Abs"
+    };
+    let button = world.run_in_window("Precise Input", current).center();
+    world.click(diagnostics::pointer_pixels(button));
+}
+
+#[then("Relative and Absolute choices are visible")]
+fn reference_choices(world: &mut ApplicationWorld) {
+    world.expect_text("Relative");
+    world.expect_text("Absolute");
+}
+
+#[when("I choose Absolute")]
+fn choose_absolute(world: &mut ApplicationWorld) {
+    world.click_text("Absolute");
+}
+
+#[then("the visible triad is at the sketch axes intersection")]
+#[then("the triad remains at the axes intersection")]
+fn triad_at_origin(world: &mut ApplicationWorld) {
+    let origin = world.sketch_pixel_of([0., 0.]);
+    world.expect_segment_drawn(origin, [origin[0] + 24, origin[1]]);
+    assert_eq!(
+        world.app().owner.precise_triad_position().unwrap().1,
+        [0., 0.]
+    );
+}
+
+#[then("the selected ellipse retains its recorded position")]
+fn reference_retains_ellipse(world: &mut ApplicationWorld) {
+    original_only(world);
+}
+
+#[when("I reopen the dropdown and choose Relative")]
+fn choose_relative(world: &mut ApplicationWorld) {
+    reference_menu(world);
+    world.click_text("Relative");
+}
+
+#[then("the toolbar icon changes")]
+fn relative_icon(world: &mut ApplicationWorld) {
+    world.run_in_window("Precise Input", "Rel");
+}
+
 #[when("I choose Base Point and click its center")]
 fn choose_base(world: &mut ApplicationWorld) {
     world.sketch_click(CENTER);
@@ -223,5 +308,40 @@ fn cancelling_copy_preview_keeps_the_source_and_history() {
     assert_eq!(world.state().undo_label, history);
     world.click_text("Move");
     assert!(world.state().sketch_move.unwrap().copy);
+    world.close();
+}
+
+#[test]
+fn relative_pointer_values_accept_the_displayed_endpoint() {
+    let mut world = ApplicationWorld::new();
+    editable_ellipse(&mut world);
+    let before = world.edited_geometry();
+    let center = before.ellipses()[0].center();
+    select_ellipse(&mut world);
+    choose_base(&mut world);
+    let endpoint = [CENTER[0] + 110, CENTER[1] - 100];
+    world.hover(endpoint);
+    let target = world.state().precise_target.unwrap();
+    let shown = target.relative_pointer.unwrap();
+    assert_ne!(Some(shown.clone()), target.pointer);
+    let text = world.window_text("Precise Input");
+    assert!(
+        text.contains(&shown[0]) && text.contains(&shown[1]),
+        "expected {shown:?} in {text:?}"
+    );
+    world.click_precise_field("Y");
+    world.key(ViewportPhysicalKey::Enter, false);
+    world.pump(Vec::new());
+    assert_eq!(
+        world.state().sketch_move.unwrap().stage,
+        GuiSketchMoveStage::Geometry
+    );
+    let geometry = world.edited_geometry();
+    let center = geometry.point(center).unwrap().position;
+    let pixel = world.sketch_pixel_of(center);
+    assert!(
+        (pixel[0] - endpoint[0]).abs() <= 1 && (pixel[1] - endpoint[1]).abs() <= 1,
+        "expected {endpoint:?}, observed {pixel:?}"
+    );
     world.close();
 }
