@@ -17,17 +17,19 @@ fn open_title_menu(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
 }
 #[then("a menu offers \"Dock to Top\", \"Dock to Left\", and \"Dock to Right\"")]
+#[then("the title menu offers Dock to Top, Dock to Left, and Dock to Right")]
 fn dock_choices(world: &mut ApplicationWorld) {
     for label in ["Dock to Top", "Dock to Left", "Dock to Right"] {
         world.expect_text(label);
     }
 }
-#[when("the user selects \"Dock to Top\"")]
+#[when("the user selects Dock to Top")]
 fn select_top(world: &mut ApplicationWorld) {
     world.click_text("Dock to Top");
     world.pump(Vec::new());
 }
 #[then("the ribbon is docked horizontally above the viewport")]
+#[then("the full ribbon is docked horizontally above the workspace")]
 fn ribbon_top(world: &mut ApplicationWorld) {
     expect_top_dock(world);
     same_part(world);
@@ -62,4 +64,11 @@ fn title_menu_docks_to_each_edge() {
         same_part(&mut world);
     }
     world.close();
+}
+
+#[then("the title menu closes")]
+fn title_menu_closed(world: &mut ApplicationWorld) {
+    world.expect_no_text("Dock to Top");
+    world.expect_no_text("Dock to Left");
+    world.expect_no_text("Dock to Right");
 }

@@ -88,6 +88,13 @@ fn docked_top_on_model_tab(world: &mut ApplicationWorld) {
 fn docked_top(world: &mut ApplicationWorld) {
     expect_top_dock(world);
 }
+#[when("the user right-clicks the Modify group title")]
+#[when("the user right-clicks the Modify panel title")]
+fn right_click_modify_title(world: &mut ApplicationWorld) {
+    let point = super::diagnostics::pointer_pixels(world.run("Modify").center());
+    world.right_click(point);
+    world.pump(Vec::new());
+}
 #[when("I open the ribbon context menu")]
 #[when("I open the floating ribbon context menu")]
 fn context_menu(world: &mut ApplicationWorld) {
@@ -196,6 +203,7 @@ fn ribbon_on_top(world: &mut ApplicationWorld) {
     expect_top_dock(world);
 }
 #[when("I choose Undock Ribbon")]
+#[when("the user selects Undock Ribbon")]
 fn choose_undock(world: &mut ApplicationWorld) {
     world.click_text("Undock Ribbon");
     world.pump(Vec::new());
@@ -207,10 +215,16 @@ fn expect_floating(_world: &mut ApplicationWorld) {
         "ribbon {size:?}: expected a vertical panel"
     );
 }
+#[then("the ribbon floats over the workspace")]
 #[then("the ribbon floats over the workspace in a vertical panel")]
 #[then("the ribbon remains floating")]
 fn ribbon_floats(world: &mut ApplicationWorld) {
     expect_floating(world);
+}
+#[then("the ribbon floats over the workspace with vertical tabs and command groups")]
+fn floating_with_groups(world: &mut ApplicationWorld) {
+    expect_floating(world);
+    floating_contents(world);
 }
 #[then("its tabs and 3D Model group buttons remain visible")]
 fn floating_contents(world: &mut ApplicationWorld) {
