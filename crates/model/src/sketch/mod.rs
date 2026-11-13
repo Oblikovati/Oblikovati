@@ -119,6 +119,7 @@ pub struct Sketch2D {
     constraints: Vec<SketchConstraint>,
     pattern_point_links: Vec<SketchPatternPointLink>,
     pattern_offsets: Vec<SketchPatternOffset>,
+    rectangular_patterns: Vec<SketchRectangularPattern>,
     pattern_radius_links: Vec<SketchPatternRadiusLink>,
     reference_dimensions: std::collections::BTreeSet<SketchConstraintId>,
     dimension_drive_limits: std::collections::BTreeMap<SketchConstraintId, SketchDimensionLimits>,
@@ -161,6 +162,10 @@ pub use line_split::SketchLineSplitReport;
 
 mod line_endpoint;
 pub use line_endpoint::{SketchLineEnd, SketchLineEndpointReport};
+mod rectangular_pattern;
+pub use rectangular_pattern::{
+    SketchRectangularPattern, SketchRectangularPatternDefinition, SketchRectangularPatternMember,
+};
 mod rectangular_pattern_layout;
 pub use rectangular_pattern_layout::{SketchRectangularOccurrence, SketchRectangularPatternLayout};
 mod pattern_radius_link;

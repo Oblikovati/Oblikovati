@@ -32,6 +32,8 @@
 
 ### Added
 
+- Added saved rectangular sketch-pattern records with preview and undoable creation.
+
 - Added parameter-driven spacing for linked sketch copies and recompute.
 
 - Linked translated sketch copies to their seed points and circle radii through solve and history.

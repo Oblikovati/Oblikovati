@@ -46,9 +46,9 @@ impl Sketch2D {
         require_minor_dimension_schema(recipe)?;
         match (recipe.version, &recipe.ellipses) {
             (1..=6, None) => Ok(()),
-            (7..=15, Some(shapes)) => shapes.iter().try_for_each(|shape| self.add_ellipse(*shape)),
+            (7..=16, Some(shapes)) => shapes.iter().try_for_each(|shape| self.add_ellipse(*shape)),
             shape => Err(SketchError::Definition(format!(
-                "ellipse recipe {shape:?}: expected no ellipses in versions 1-6 or explicit ellipse values in versions 7-15"
+                "ellipse recipe {shape:?}: expected no ellipses in versions 1-6 or explicit ellipse values in versions 7-16"
             ))),
         }
     }
@@ -72,7 +72,7 @@ fn has_minor_dimension(recipe: &SketchRecipe) -> bool {
 fn require_minor_dimension_schema(recipe: &SketchRecipe) -> Result<(), SketchError> {
     if recipe.version < 9 && has_minor_dimension(recipe) {
         return Err(SketchError::Definition(format!(
-            "ellipse minor-radius recipe version {}: expected version 9, version 10, version 11, version 12, version 13, version 14, or version 15",
+            "ellipse minor-radius recipe version {}: expected version 9, version 10, version 11, version 12, version 13, version 14, version 15, or version 16",
             recipe.version
         )));
     }

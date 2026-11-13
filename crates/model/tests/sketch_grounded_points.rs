@@ -154,3 +154,6 @@ mod pattern_links;
 
 #[path = "sketch_grounded_points/associative_copies.rs"]
 mod associative_copies;
+
+#[path = "sketch_grounded_points/rectangular_pattern_record.rs"]
+mod rectangular_pattern_record;

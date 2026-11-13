@@ -11,6 +11,51 @@ pub type SketchCopyProjectionInput = Result<SketchCopyReport, SketchCopyError>;
 /// Example: `let reply: SketchCopyBatchProjectionInput = Ok(reports);`.
 pub type SketchCopyBatchProjectionInput = Result<Vec<SketchCopyReport>, SketchCopyError>;
 impl<O: TransactionObserver> DocumentSession<O> {
+    /// Preview a recorded rectangular pattern without reserving live identities.
+    /// Example: `session.preview_rectangular_pattern(sketch, definition)?;`.
+    pub fn preview_rectangular_pattern(
+        &self,
+        sketch: DocumentSketchId,
+        definition: oblikovati_model::sketch::SketchRectangularPatternDefinition,
+    ) -> Result<crate::SketchTransformPreview, CommandError<SketchCopyError>> {
+        self.preview_projected(
+            |snapshot, reservations| {
+                snapshot.create_rectangular_pattern(sketch, definition, reservations)
+            },
+            |snapshot, pattern| {
+                Ok(crate::SketchTransformPreview {
+                    geometry: snapshot
+                        .sketches
+                        .get(sketch)
+                        .map_err(SketchCopyError::Sketch)?
+                        .geometry()
+                        .clone(),
+                    members: pattern
+                        .members
+                        .into_iter()
+                        .flat_map(|member| member.entities)
+                        .collect(),
+                })
+            },
+        )
+    }
+    /// Create a recorded rectangular pattern as one undoable command.
+    /// Example: `session.create_rectangular_pattern_projected(sketch, definition, |result| result)?;`.
+    pub fn create_rectangular_pattern_projected<R, E>(
+        &mut self,
+        sketch: DocumentSketchId,
+        definition: oblikovati_model::sketch::SketchRectangularPatternDefinition,
+        project: impl FnOnce(
+            Result<oblikovati_model::sketch::SketchRectangularPattern, SketchCopyError>,
+        ) -> Result<R, E>,
+    ) -> Result<R, CommandError<E>> {
+        self.run(
+            "Create rectangular sketch pattern",
+            |snapshot, reservations| {
+                project(snapshot.create_rectangular_pattern(sketch, definition, reservations))
+            },
+        )
+    }
     /// Preview parameter-driven linked copies without changing the document.
     /// Example: `session.preview_parametric_translations(sketch, &[circle], &[terms])?;`.
     pub fn preview_parametric_translations(

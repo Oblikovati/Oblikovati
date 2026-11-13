@@ -3,7 +3,8 @@ use super::{PlanarConstraint, Sketch2D, SketchConstraint, SketchPoint2D};
 impl Sketch2D {
     /// Compare authored recipe bits for history and storage; example: `old.same_recipe(&candidate)`.
     pub fn same_recipe(&self, other: &Self) -> bool {
-        self.same_pattern_offsets(other)
+        self.same_rectangular_patterns(other)
+            && self.same_pattern_offsets(other)
             && self.pattern_radius_links == other.pattern_radius_links
             && self.pattern_point_links.len() == other.pattern_point_links.len()
             && self
@@ -80,6 +81,27 @@ fn same_ellipses(first: &[super::SketchEllipse2D], second: &[super::SketchEllips
 }
 
 impl Sketch2D {
+    fn same_rectangular_patterns(&self, other: &Self) -> bool {
+        self.rectangular_patterns.len() == other.rectangular_patterns.len()
+            && self
+                .rectangular_patterns
+                .iter()
+                .zip(&other.rectangular_patterns)
+                .all(|(a, b)| {
+                    a.id == b.id
+                        && a.members == b.members
+                        && a.definition.seed == b.definition.seed
+                        && a.definition.counts == b.definition.counts
+                        && a.definition.spacing == b.definition.spacing
+                        && a.definition.fitted == b.definition.fitted
+                        && a.definition.suppressed == b.definition.suppressed
+                        && a.definition
+                            .directions
+                            .into_iter()
+                            .zip(b.definition.directions)
+                            .all(|(x, y)| same_components(x, y))
+                })
+    }
     fn same_pattern_offsets(&self, other: &Self) -> bool {
         self.pattern_offsets.len() == other.pattern_offsets.len()
             && self

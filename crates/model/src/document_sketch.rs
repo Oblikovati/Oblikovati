@@ -414,6 +414,12 @@ fn geometry_ids(geometry: &Sketch2D) -> Vec<u64> {
         .owned_entity_ids()
         .into_iter()
         .map(|entity| entity.0)
+        .chain(
+            geometry
+                .rectangular_patterns()
+                .iter()
+                .map(|pattern| pattern.id.0),
+        )
         .collect()
 }
 fn missing_sketch(id: DocumentSketchId) -> SketchError {

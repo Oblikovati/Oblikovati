@@ -19,6 +19,20 @@ pub struct SketchPatternOffset {
 impl Sketch2D {
     /// Bind a member point to parameter-driven offset terms; example: `sketch.set_pattern_offset(offset)?;`.
     pub fn set_pattern_offset(&mut self, offset: SketchPatternOffset) -> Result<(), SketchError> {
+        if self.rectangular_patterns.iter().any(|pattern| {
+            let shapes = super::entity_geometry::catalogue(self);
+            pattern
+                .members
+                .iter()
+                .flat_map(|member| &member.entities)
+                .any(|id| {
+                    shapes
+                        .get(id)
+                        .is_some_and(|shape| shape.points().contains(&offset.member))
+                })
+        }) {
+            return Err(offset.invalid("an offset not owned by a recorded pattern"));
+        }
         if !self
             .pattern_point_links
             .iter()
@@ -54,8 +68,8 @@ impl Sketch2D {
         recipe: &SketchRecipe,
     ) -> Result<(), SketchError> {
         match (recipe.version, &recipe.pattern_offsets) {
-            (1..=14, None) => Ok(()),
-            (15, Some(offsets)) if !offsets.is_empty() => {
+            (1..=14, None) | (16, None) => Ok(()),
+            (15..=16, Some(offsets)) if !offsets.is_empty() => {
                 for offset in offsets {
                     if self
                         .pattern_offsets

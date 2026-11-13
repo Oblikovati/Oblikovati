@@ -556,3 +556,56 @@ fn parameter_driven_linked_copy_recomputes_and_undoes_spacing_edits() {
     session.redo().unwrap();
     assert!((offset(&session)[0] - 6.).abs() < 1e-7);
 }
+
+#[test]
+fn rectangular_pattern_preview_commit_and_history_keep_record_identity() {
+    use oblikovati_model::sketch::SketchRectangularPatternDefinition;
+    use std::collections::BTreeSet;
+    let mut session = session_with_line();
+    let before = session.snapshot().sketches.clone();
+    let definition = SketchRectangularPatternDefinition {
+        seed: vec![SketchEntityId(3)],
+        counts: [3, 2],
+        directions: [[-1., 0.], [0., 1.]],
+        spacing: [1, 1],
+        fitted: false,
+        suppressed: BTreeSet::new(),
+    };
+    let preview = session
+        .preview_rectangular_pattern(DocumentSketchId(1), definition.clone())
+        .unwrap();
+    assert!(session.undo_labels().is_empty());
+    assert!(before.same_evaluated_state(&session.snapshot().sketches));
+    let pattern = session
+        .create_rectangular_pattern_projected(DocumentSketchId(1), definition, |result| result)
+        .unwrap();
+    assert_eq!(
+        preview.members,
+        pattern
+            .members
+            .iter()
+            .flat_map(|member| member.entities.iter().copied())
+            .collect::<Vec<_>>()
+    );
+    let geometry = session
+        .snapshot()
+        .sketches
+        .get(DocumentSketchId(1))
+        .unwrap()
+        .geometry();
+    assert!(preview.geometry.same_recipe(geometry));
+    assert_eq!(geometry.rectangular_patterns(), &[pattern.clone()]);
+    assert!(
+        session
+            .snapshot()
+            .sketches
+            .entity_ids()
+            .contains(&pattern.id.0)
+    );
+    let after = session.snapshot().sketches.clone();
+    assert_eq!(session.undo_labels(), ["Create rectangular sketch pattern"]);
+    session.undo().unwrap();
+    assert!(before.same_evaluated_state(&session.snapshot().sketches));
+    session.redo().unwrap();
+    assert!(after.same_evaluated_state(&session.snapshot().sketches));
+}

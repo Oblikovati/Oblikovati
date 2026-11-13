@@ -60,6 +60,10 @@ impl Sketch2D {
     }
     pub(super) fn require_new_entity(&self, id: SketchEntityId) -> Result<(), SketchError> {
         if id.0 == 0
+            || self
+                .rectangular_patterns
+                .iter()
+                .any(|pattern| pattern.id == id)
             || self.points.iter().any(|point| point.id == id)
             || self.lines.iter().any(|line| line.id == id)
             || self.circles.iter().any(|circle| circle.id == id)

@@ -18,6 +18,7 @@ pub(super) fn prepare(
     sketch: &Sketch2D,
     parameters: &ParameterCollection<u64>,
 ) -> Result<PreparedSketch, SketchError> {
+    sketch.validate_pattern_parameters(parameters)?;
     let (sources, origins) = authored_sources(sketch, parameters)?;
     let mut prepared = PreparedSketch {
         origins,

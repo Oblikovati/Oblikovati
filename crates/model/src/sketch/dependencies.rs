@@ -49,6 +49,15 @@ impl Sketch2D {
                 dependencies.push(term.parameter);
             }
         }
+        for parameter in self
+            .rectangular_patterns
+            .iter()
+            .flat_map(|pattern| pattern.definition.spacing)
+        {
+            if !dependencies.contains(&parameter) {
+                dependencies.push(parameter);
+            }
+        }
         dependencies
     }
 }

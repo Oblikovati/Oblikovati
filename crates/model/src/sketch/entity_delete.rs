@@ -21,6 +21,7 @@ impl Sketch2D {
         }
         self.validate_deletion_selection(selected)?;
         let retired = self.deletion_closure(selected);
+        self.require_pattern_members_survive(&retired)?;
         let mut candidate = self.clone();
         candidate.retain_surviving_geometry(&retired);
         let constraints = candidate.remove_dangling_relations()?;
@@ -31,6 +32,26 @@ impl Sketch2D {
             entities,
             constraints,
         })
+    }
+    fn require_pattern_members_survive(
+        &self,
+        retired: &BTreeSet<SketchEntityId>,
+    ) -> Result<(), SketchError> {
+        for pattern in &self.rectangular_patterns {
+            if pattern
+                .definition
+                .seed
+                .iter()
+                .chain(pattern.members.iter().flat_map(|member| &member.entities))
+                .any(|id| retired.contains(id))
+            {
+                return Err(SketchError::Definition(format!(
+                    "delete entities {retired:?}: expected the owning pattern {:?} to be removed first",
+                    pattern.id
+                )));
+            }
+        }
+        Ok(())
     }
     fn retired_entity_ids(&self, retired: &BTreeSet<SketchEntityId>) -> Vec<SketchEntityId> {
         self.owned_entity_ids()

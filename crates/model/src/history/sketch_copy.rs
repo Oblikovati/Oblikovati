@@ -5,6 +5,28 @@ use crate::{
     sketch::{SketchCopyError, SketchCopyOperation, SketchCopyReport, SketchEntityId},
 };
 impl DocumentSnapshot {
+    /// Create a recorded rectangular pattern with permanently reserved identities.
+    /// Example: `snapshot.create_rectangular_pattern(sketch, definition, reservations)?;`.
+    pub fn create_rectangular_pattern(
+        &mut self,
+        sketch: DocumentSketchId,
+        definition: crate::sketch::SketchRectangularPatternDefinition,
+        reservations: &mut RecipeReservations<'_>,
+    ) -> Result<crate::sketch::SketchRectangularPattern, SketchCopyError> {
+        let source = self.sketches.get(sketch).map_err(SketchCopyError::Sketch)?;
+        let mut geometry = source.geometry().clone();
+        let id = reservations
+            .allocate_sketch_entity()
+            .map_err(SketchCopyError::Identity)?;
+        let pattern =
+            geometry.create_rectangular_pattern(id, definition, &self.parameters, &mut || {
+                reservations.allocate_sketch_entity()
+            })?;
+        self.sketches
+            .replace_geometry(sketch, geometry)
+            .map_err(SketchCopyError::Sketch)?;
+        Ok(pattern)
+    }
     /// Copy linked members whose offsets are evaluated from document parameters.
     /// Example: `snapshot.copy_parametric_translations(sketch, &[circle], &[terms], reservations)?;`.
     pub fn copy_parametric_translations(
