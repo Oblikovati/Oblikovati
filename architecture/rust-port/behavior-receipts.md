@@ -7,8 +7,9 @@ both and retains unclassified, blocked, stale, and orphaned work. It is not a
 count of bindings or diagnostic runs.
 
 Use `python3 -B tools/bdd/behavior_cli.py report` to print verified and total
-counts by area and milestone. `generate --output PATH` writes the combined
-ledger. Both commands restore the pinned source into a temporary checkout when
+counts by area and milestone. Milestone totals include only assigned scenarios;
+unclassified scenarios may belong to any milestone. `generate --output PATH`
+writes the combined ledger. Both commands restore the pinned source into a temporary checkout when
 no checkout path is supplied. `check` also requires the checked-in ledger to
 match the generated ledger and all R0 classification and evidence fields to be
 present. The full gate runs this check. It is expected to fail while those
