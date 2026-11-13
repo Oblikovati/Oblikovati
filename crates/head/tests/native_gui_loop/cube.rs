@@ -11,6 +11,57 @@ pub(super) fn create_from_ribbon(
     owner: &mut NativeDesktopOwner,
     document: u64,
 ) {
+    preview_from_ribbon(window, owner, document);
+    click_shell_position(
+        window,
+        owner,
+        application_bdd::rendered_label_center("Cancel"),
+    );
+    assert!(
+        window
+            .gui_actions
+            .iter()
+            .any(|action| matches!(action, oblikovati_gui::GuiShellAction::PreviewExtrude(None)))
+    );
+    assert!(
+        body_list(owner).is_empty(),
+        "cancelled preview must not create a body"
+    );
+    preview_from_ribbon(window, owner, document);
+    press_shell_key(
+        window,
+        owner,
+        oblikovati_viewport::ViewportPhysicalKey::Enter,
+    );
+    assert!(
+        window
+            .gui_actions
+            .iter()
+            .any(|action| matches!(action, oblikovati_gui::GuiShellAction::Extrude { .. })),
+        "expected an extrusion action"
+    );
+    assert!(
+        !matches!(
+            window.native.command_notice,
+            Some(crate::DesktopCommandNotice::AuthoringFailed { .. })
+        ),
+        "apply failed: {:?}",
+        window.native.command_notice
+    );
+    assert_eq!(body_list(owner).len(), 1, "expected one extruded body");
+    verify(owner, document, 1.);
+    let displayed = capture_framebuffer(&mut window.native);
+    assert!(
+        scene_tests::solid_pixels(&displayed) > 0,
+        "expected visible solid pixels in the native viewport"
+    );
+}
+
+fn preview_from_ribbon(
+    window: &mut ScriptedGuiWindow,
+    owner: &mut NativeDesktopOwner,
+    document: u64,
+) {
     window.gui_actions.clear();
     click_shell_position(
         window,
@@ -62,42 +113,6 @@ pub(super) fn create_from_ribbon(
             .work_geometry
             .features()
             .is_empty()
-    );
-    press_shell_key(
-        window,
-        owner,
-        oblikovati_viewport::ViewportPhysicalKey::Enter,
-    );
-    assert!(
-        window
-            .gui_actions
-            .iter()
-            .any(|action| matches!(action, oblikovati_gui::GuiShellAction::Extrude { .. })),
-        "apply actions {:?}",
-        window.gui_actions
-    );
-    assert!(
-        !matches!(
-            window.native.command_notice,
-            Some(crate::DesktopCommandNotice::AuthoringFailed { .. })
-        ),
-        "apply failed: {:?}",
-        window.native.command_notice
-    );
-    let scene = window.native.scene_status();
-    let bodies = body_list(owner);
-    assert_eq!(
-        bodies.len(),
-        1,
-        "scene {scene:?}; actions {:?}; notice {:?}",
-        window.gui_actions,
-        window.native.command_notice
-    );
-    verify(owner, document, 1.);
-    let displayed = capture_framebuffer(&mut window.native);
-    assert!(
-        scene_tests::solid_pixels(&displayed) > 0,
-        "expected visible solid pixels in the native viewport"
     );
 }
 pub(super) fn verify(owner: &mut NativeDesktopOwner, document: u64, side: f64) {

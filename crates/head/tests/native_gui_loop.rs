@@ -258,10 +258,9 @@ fn verify_browser_reentry_pixels(
             (500..1200).find(|x| old[x * 4..x * 4 + 4] != new[x * 4..x * 4 + 4])
         );
     }
-    owner.finish_sketch_edit().unwrap();
-    window.native.set_sketch_edit(None).unwrap();
-    window.scripted.clear();
-    crate::frames::run_frames(window, HeadOptions { frames: Some(3) }, owner).unwrap();
+    let finish = application_bdd::rendered_label_center("Finish Sketch");
+    click_shell_position(window, owner, finish);
+    assert!(owner.active_sketch_edit().is_none());
 }
 fn move_pointer_away(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOwner) {
     window.scripted = vec![ViewportEvent::Input(ViewportInput::Motion {
