@@ -418,3 +418,55 @@ fn failed_batch_keeps_history_unchanged_and_retires_allocated_ids() {
         .unwrap();
     assert!(reports[0].copies[0].0 > preview.members[0].0);
 }
+
+#[test]
+fn rectangular_layout_preview_and_commit_share_fitted_suppression_and_history() {
+    use oblikovati_model::sketch::SketchRectangularPatternLayout;
+    use std::collections::BTreeSet;
+    let mut session = session_with_line();
+    let before = session.snapshot().sketches.clone();
+    let layout = SketchRectangularPatternLayout {
+        counts: [3, 2],
+        vectors: [[-10., 0.], [0., 5.]],
+        fitted: true,
+        suppressed: BTreeSet::from([[1, 1]]),
+    };
+    let operations: Vec<_> = layout
+        .occurrences()
+        .unwrap()
+        .into_iter()
+        .map(|item| item.operation)
+        .collect();
+    let preview = session
+        .preview_selected_sketch_copies(DocumentSketchId(1), &[SketchEntityId(3)], &operations)
+        .unwrap();
+    let positions: Vec<_> = preview
+        .members
+        .iter()
+        .map(|id| {
+            let line = preview.geometry.line(*id).unwrap();
+            preview.geometry.point(line.endpoints[0]).unwrap().position
+        })
+        .collect();
+    assert_eq!(positions, [[0., 5.], [-5., 0.], [-10., 0.], [-10., 5.]]);
+    let reports = session
+        .copy_selected_sketch_entities_batch_projected(
+            DocumentSketchId(1),
+            &[SketchEntityId(3)],
+            &operations,
+            |result| result,
+        )
+        .unwrap();
+    assert_eq!(
+        preview.members,
+        reports
+            .into_iter()
+            .flat_map(|report| report.copies)
+            .collect::<Vec<_>>()
+    );
+    let committed = session.snapshot().sketches.clone();
+    session.undo().unwrap();
+    assert!(before.same_evaluated_state(&session.snapshot().sketches));
+    session.redo().unwrap();
+    assert!(committed.same_evaluated_state(&session.snapshot().sketches));
+}

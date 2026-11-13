@@ -272,3 +272,6 @@ mod split;
 
 #[path = "sketch_entity_order/curve_format.rs"]
 mod curve_format;
+
+#[path = "sketch_entity_order/rectangular_pattern.rs"]
+mod rectangular_pattern;

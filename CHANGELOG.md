@@ -32,6 +32,8 @@
 
 ### Added
 
+- Added rectangular sketch-pattern layouts with fitted spans and suppressed instances.
+
 - Added atomic sketch-copy batches and previews as a foundation for patterns.
 
 - Added rotated sketch-copy previews and undoable copy operations.

@@ -158,6 +158,8 @@ pub use line_split::SketchLineSplitReport;
 
 mod line_endpoint;
 pub use line_endpoint::{SketchLineEnd, SketchLineEndpointReport};
+mod rectangular_pattern_layout;
+pub use rectangular_pattern_layout::{SketchRectangularOccurrence, SketchRectangularPatternLayout};
 mod rectangle_seed;
 pub use rectangle_seed::SketchRectangleSeed;
 
