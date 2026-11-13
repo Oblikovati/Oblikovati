@@ -403,6 +403,9 @@ mod sketch_primitive;
 #[path = "lifecycle/sketch_inference.rs"]
 mod sketch_inference;
 
+#[path = "lifecycle/sketch_transform_preview.rs"]
+mod sketch_transform_preview;
+
 #[path = "lifecycle/sketch_relation_delete.rs"]
 mod sketch_relation_delete;
 

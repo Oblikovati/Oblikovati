@@ -2,12 +2,40 @@
 use crate::{CommandError, DocumentSession, TransactionObserver};
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
-    sketch::{SketchEntityId, SketchError, SketchSelectionTransform},
+    sketch::{Sketch2D, SketchEntityId, SketchError, SketchSelectionTransform},
 };
+/// Solved private geometry and the selected entities for a transform preview.
+#[derive(Clone, Debug, PartialEq)]
+pub struct SketchTransformPreview {
+    pub geometry: Sketch2D,
+    pub members: Vec<SketchEntityId>,
+}
 /// Authored defining points or an input decline before adoption.
 /// Example: `let reply: SketchTransformProjectionInput = Ok(points);`.
 pub type SketchTransformProjectionInput = Result<Vec<SketchEntityId>, SketchError>;
 impl<O: TransactionObserver> DocumentSession<O> {
+    /// Preview a transform with the same recompute as commit, without changing history.
+    /// Example: `session.preview_sketch_transform(sketch, &[line], transform)?`.
+    pub fn preview_sketch_transform(
+        &self,
+        sketch: DocumentSketchId,
+        entities: &[SketchEntityId],
+        transform: SketchSelectionTransform,
+    ) -> Result<SketchTransformPreview, CommandError<SketchError>> {
+        self.preview_projected(
+            |snapshot, _| {
+                snapshot
+                    .sketches
+                    .transform_entities(sketch, entities, transform)
+            },
+            |snapshot, _| {
+                Ok(SketchTransformPreview {
+                    geometry: snapshot.sketches.get(sketch)?.geometry().clone(),
+                    members: entities.to_vec(),
+                })
+            },
+        )
+    }
     /// Move selected defining points through history and current constraint/projection recompute.
     /// Example: `session.translate_sketch_entities(sketch, &[line], [2.0, 3.0])?;`.
     pub fn translate_sketch_entities(

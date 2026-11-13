@@ -43,7 +43,7 @@ pub use sketch_construction::SketchConstructionProjectionInput;
 pub use sketch_copy::SketchCopyProjectionInput;
 pub use sketch_create::SketchCreationProjectionInput;
 pub use sketch_primitive::SketchPrimitiveProjectionInput;
-pub use sketch_translation::SketchTransformProjectionInput;
+pub use sketch_translation::{SketchTransformPreview, SketchTransformProjectionInput};
 mod sketch_delete;
 mod sketch_recompute;
 pub use sketch_delete::SketchDeleteProjectionInput;
