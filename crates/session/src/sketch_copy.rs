@@ -7,7 +7,61 @@ use oblikovati_model::{
 /// A complete geometry copy or a typed decline before publication.
 /// Example: `let reply: SketchCopyProjectionInput = Ok(report);`.
 pub type SketchCopyProjectionInput = Result<SketchCopyReport, SketchCopyError>;
+/// A complete batch of copies or a typed decline before publication.
+/// Example: `let reply: SketchCopyBatchProjectionInput = Ok(reports);`.
+pub type SketchCopyBatchProjectionInput = Result<Vec<SketchCopyReport>, SketchCopyError>;
 impl<O: TransactionObserver> DocumentSession<O> {
+    /// Preview a batch without changing live geometry, history, or identity reservations.
+    /// Example: `session.preview_selected_sketch_copies(sketch, &[line], &[operation])?;`.
+    pub fn preview_selected_sketch_copies(
+        &self,
+        sketch: DocumentSketchId,
+        entities: &[SketchEntityId],
+        operations: &[SketchCopyOperation],
+    ) -> Result<crate::SketchTransformPreview, CommandError<SketchCopyError>> {
+        self.preview_projected(
+            |snapshot, reservations| {
+                snapshot.copy_selected_sketch_entities_batch(
+                    sketch,
+                    entities,
+                    operations,
+                    reservations,
+                )
+            },
+            |snapshot, reports| {
+                Ok(crate::SketchTransformPreview {
+                    geometry: snapshot
+                        .sketches
+                        .get(sketch)
+                        .map_err(SketchCopyError::Sketch)?
+                        .geometry()
+                        .clone(),
+                    members: reports
+                        .into_iter()
+                        .flat_map(|report| report.copies)
+                        .collect(),
+                })
+            },
+        )
+    }
+    /// Publish all copies in one history transaction after preparing the response.
+    /// Example: `session.copy_selected_sketch_entities_batch_projected(sketch, &[line], &[operation], |result| result)?;`.
+    pub fn copy_selected_sketch_entities_batch_projected<R, E>(
+        &mut self,
+        sketch: DocumentSketchId,
+        entities: &[SketchEntityId],
+        operations: &[SketchCopyOperation],
+        project: impl FnOnce(SketchCopyBatchProjectionInput) -> Result<R, E>,
+    ) -> Result<R, CommandError<E>> {
+        self.run("Copy sketch instances", |snapshot, reservations| {
+            project(snapshot.copy_selected_sketch_entities_batch(
+                sketch,
+                entities,
+                operations,
+                reservations,
+            ))
+        })
+    }
     /// Preview a solved copy without changing the live sketch or reserving its identities.
     /// Example: `session.preview_sketch_copy(sketch, &[line], [2.0, 0.0])?;`.
     pub fn preview_sketch_copy(

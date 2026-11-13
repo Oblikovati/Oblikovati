@@ -259,6 +259,8 @@ mod rotated_copy;
 #[path = "sketch_entity_order/rotation.rs"]
 mod rotation;
 
+#[path = "sketch_entity_order/batch_copy.rs"]
+mod batch_copy;
 #[path = "sketch_entity_order/copy.rs"]
 mod copy;
 #[path = "sketch_entity_order/endpoint.rs"]

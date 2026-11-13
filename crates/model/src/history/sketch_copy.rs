@@ -5,6 +5,25 @@ use crate::{
     sketch::{SketchCopyError, SketchCopyOperation, SketchCopyReport, SketchEntityId},
 };
 impl DocumentSnapshot {
+    /// Copy multiple instances as one snapshot edit; failed edits retain reserved identities.
+    /// Example: `snapshot.copy_selected_sketch_entities_batch(sketch, &[line], &[operation], reservations)?;`.
+    pub fn copy_selected_sketch_entities_batch(
+        &mut self,
+        sketch: DocumentSketchId,
+        entities: &[SketchEntityId],
+        operations: &[SketchCopyOperation],
+        reservations: &mut RecipeReservations<'_>,
+    ) -> Result<Vec<SketchCopyReport>, SketchCopyError> {
+        let source = self.sketches.get(sketch).map_err(SketchCopyError::Sketch)?;
+        let mut geometry = source.geometry().clone();
+        let reports = geometry.copy_selected_entities_batch(entities, operations, &mut || {
+            reservations.allocate_sketch_entity()
+        })?;
+        self.sketches
+            .replace_geometry(sketch, geometry)
+            .map_err(SketchCopyError::Sketch)?;
+        Ok(reports)
+    }
     /// Copy an owned selection; reservations stay consumed if a later command stage declines. Resolve the operation in its current owner; example: `snapshot.copy_selected_sketch_entities(sketch, &[arc], SketchCopyOperation::Mirror(line), reservations)?;`.
     pub fn copy_selected_sketch_entities(
         &mut self,

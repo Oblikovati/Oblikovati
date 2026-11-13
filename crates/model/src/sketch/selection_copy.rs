@@ -56,13 +56,29 @@ impl Sketch2D {
     ) -> Result<SketchCopyReport, SketchCopyError> {
         let plan = PreparedSelectionCopy::new(self, entities, operation)
             .map_err(SketchCopyError::Sketch)?;
-        let identities = CopyIdentities::reserve(self, &plan.sources, reserve)?;
         let mut candidate = self.clone();
-        plan.append(&mut candidate, &identities)
-            .map_err(SketchCopyError::Sketch)?;
-        let report = plan.report(&identities).map_err(SketchCopyError::Sketch)?;
+        let report = plan.append_reserved(&mut candidate, reserve)?;
         *self = candidate;
         Ok(report)
+    }
+    /// Copy each instance from the original selection and publish the whole batch together.
+    /// Example: `sketch.copy_selected_entities_batch(&[line], &[operation], &mut reserve)?;`.
+    pub fn copy_selected_entities_batch(
+        &mut self,
+        entities: &[SketchEntityId],
+        operations: &[SketchCopyOperation],
+        reserve: &mut impl FnMut() -> Result<SketchEntityId, RecipeIdError>,
+    ) -> Result<Vec<SketchCopyReport>, SketchCopyError> {
+        copy_selection(self, entities).map_err(SketchCopyError::Sketch)?;
+        let mut candidate = self.clone();
+        let mut reports = Vec::with_capacity(operations.len());
+        for &operation in operations {
+            let plan = PreparedSelectionCopy::new(self, entities, operation)
+                .map_err(SketchCopyError::Sketch)?;
+            reports.push(plan.append_reserved(&mut candidate, reserve)?);
+        }
+        *self = candidate;
+        Ok(reports)
     }
 }
 fn capture_sources(source: &Sketch2D, selected: &[SketchEntityId]) -> Vec<SketchEntityId> {
@@ -82,6 +98,16 @@ fn capture_sources(source: &Sketch2D, selected: &[SketchEntityId]) -> Vec<Sketch
     sources
 }
 impl PreparedSelectionCopy {
+    fn append_reserved(
+        &self,
+        target: &mut Sketch2D,
+        reserve: &mut impl FnMut() -> Result<SketchEntityId, RecipeIdError>,
+    ) -> Result<SketchCopyReport, SketchCopyError> {
+        let identities = CopyIdentities::reserve(target, &self.sources, reserve)?;
+        self.append(target, &identities)
+            .map_err(SketchCopyError::Sketch)?;
+        self.report(&identities).map_err(SketchCopyError::Sketch)
+    }
     fn new(
         source: &Sketch2D,
         entities: &[SketchEntityId],

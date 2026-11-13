@@ -32,6 +32,8 @@
 
 ### Added
 
+- Added atomic sketch-copy batches and previews as a foundation for patterns.
+
 - Added rotated sketch-copy previews and undoable copy operations.
 
 - Kept Finish Sketch available on document ribbon tabs while a sketch is being edited.

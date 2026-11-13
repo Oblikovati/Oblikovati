@@ -322,3 +322,99 @@ fn invalid_rotated_copy_leaves_history_and_geometry_unchanged() {
     assert!(session.undo_labels().is_empty());
     assert!(before.same_evaluated_state(&session.snapshot().sketches));
 }
+
+#[test]
+fn batch_copy_preview_matches_one_undoable_commit() {
+    use oblikovati_model::sketch::SketchCopyOperation;
+    let mut session = session_with_line();
+    let before = session.snapshot().sketches.clone();
+    let operations = [
+        SketchCopyOperation::Translate([2., 3.]),
+        SketchCopyOperation::Rotate {
+            center: [0.; 2],
+            radians: std::f64::consts::FRAC_PI_2,
+        },
+    ];
+    let generation = session.generation();
+    let preview = session
+        .preview_selected_sketch_copies(DocumentSketchId(1), &[SketchEntityId(3)], &operations)
+        .unwrap();
+    assert_eq!(session.generation(), generation);
+    assert!(session.undo_labels().is_empty());
+    assert!(before.same_evaluated_state(&session.snapshot().sketches));
+    let reports = session
+        .copy_selected_sketch_entities_batch_projected(
+            DocumentSketchId(1),
+            &[SketchEntityId(3)],
+            &operations,
+            |result| result,
+        )
+        .unwrap();
+    assert_eq!(
+        preview.members,
+        reports
+            .into_iter()
+            .flat_map(|report| report.copies)
+            .collect::<Vec<_>>()
+    );
+    assert!(
+        preview.geometry.same_recipe(
+            session
+                .snapshot()
+                .sketches
+                .get(DocumentSketchId(1))
+                .unwrap()
+                .geometry()
+        )
+    );
+    let after = session.snapshot().sketches.clone();
+    assert_eq!(session.undo_labels(), ["Copy sketch instances"]);
+    session.undo().unwrap();
+    assert!(before.same_evaluated_state(&session.snapshot().sketches));
+    session.redo().unwrap();
+    assert!(after.same_evaluated_state(&session.snapshot().sketches));
+}
+
+#[test]
+fn failed_batch_keeps_history_unchanged_and_retires_allocated_ids() {
+    use oblikovati_model::sketch::SketchCopyOperation;
+    let mut session = session_with_line();
+    let before = session.snapshot().sketches.clone();
+    let first = SketchCopyOperation::Translate([2., 3.]);
+    let preview = session
+        .preview_selected_sketch_copies(DocumentSketchId(1), &[SketchEntityId(3)], &[first])
+        .unwrap();
+    let operations = [
+        first,
+        SketchCopyOperation::Rotate {
+            center: [0.; 2],
+            radians: f64::NAN,
+        },
+    ];
+    assert!(
+        session
+            .preview_selected_sketch_copies(DocumentSketchId(1), &[SketchEntityId(3)], &operations)
+            .is_err()
+    );
+    assert!(
+        session
+            .copy_selected_sketch_entities_batch_projected(
+                DocumentSketchId(1),
+                &[SketchEntityId(3)],
+                &operations,
+                |result| result
+            )
+            .is_err()
+    );
+    assert!(before.same_evaluated_state(&session.snapshot().sketches));
+    assert!(session.undo_labels().is_empty());
+    let reports = session
+        .copy_selected_sketch_entities_batch_projected(
+            DocumentSketchId(1),
+            &[SketchEntityId(3)],
+            &[first],
+            |result| result,
+        )
+        .unwrap();
+    assert!(reports[0].copies[0].0 > preview.members[0].0);
+}
