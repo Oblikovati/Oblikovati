@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Native ribbon appearance scenarios from the live application benchmark.
 use super::{ApplicationWorld, diagnostics};
+use crate::work::HeadWork;
 use cucumber::{given, then, when};
 #[path = "reset.rs"]
 mod reset;
@@ -14,6 +15,25 @@ fn model_ribbon_shows_unavailable_work_and_pattern_commands() {
         assert!(!world.run_is_enabled(label), "expected {label} unavailable");
     }
     world.save_capture("model-ribbon-work-and-pattern-icons");
+    world.close();
+}
+
+#[test]
+fn text_only_ribbon_commands_follow_the_icon_scale_grid() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    let scale = oblikovati_model::ui_scale::UiScaleOptions::new(1., 2.).unwrap();
+    world.app().owner.set_ui_scale_from_gui(scale).unwrap();
+    world.pump(Vec::new());
+    world.click_text("Annotate");
+    world.pump(Vec::new());
+    let first = world.run("General Note").center();
+    let second = world.run("Leader Note").center();
+    assert!(
+        second[1] - first[1] >= 55.,
+        "scaled row positions: {first:?}, {second:?}"
+    );
+    world.save_capture("scaled-text-command-grid");
     world.close();
 }
 

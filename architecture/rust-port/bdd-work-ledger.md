@@ -54,6 +54,15 @@ claim that each file has been individually triaged.
   `/tmp/obk-model-ribbon-icons-20261113/model-ribbon-work-and-pattern-icons.png`.
   The capture was visually inspected. The icon rasterization and draw-batch
   tests, 43 ribbon interaction tests, and the native cube journey passed.
+- A subsequent native regression found that text-only command rows remained
+  30 pixels apart at twice the icon scale. The shared command grid now scales
+  text-only and icon command positions and button sizes together. The native
+  scale regression, drawing Base View test, 43 ribbon interaction tests, and
+  the 15-step panel-title and expansion scenario passed. The scaled ribbon
+  capture at `/tmp/obk-scaled-command-grid-20261113/scaled-text-command-grid.png`
+  was inspected.
+  Focused scenario reports are in `/tmp/obk-ribbon-scaled-baseline-20261113`.
+  This does not implement the appearance modes.
 
 ### Viewport Orbit, 2026-11-13
 

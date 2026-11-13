@@ -3,6 +3,8 @@
 use crate::ribbon_panels::RibbonPanel;
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::Ui;
+mod muted;
+use muted::{muted_commands, muted_icon_commands, part_modify_controls};
 
 /// Beside the format toggles, which fill the panel's height.
 const PRECISE_INPUT_COLUMN: f32 = 116.;
@@ -45,7 +47,13 @@ pub(crate) fn draw_panel_content(
             sketch_constraint_controls(ui, origin, state, owners.icons, actions)
         }
         RibbonPanel::Layout => {
-            muted_commands(ui, origin, &["Make Part", "Make Components"], NOT_PORTED);
+            muted_commands(
+                ui,
+                origin,
+                owners.icons,
+                &["Make Part", "Make Components"],
+                NOT_PORTED,
+            );
             owners.icons.cursor(ui, origin, [116., 0.]);
             crate::sketch::create_block::ribbon_button(
                 ui,
@@ -122,32 +130,55 @@ pub(crate) fn draw_panel_content(
         RibbonPanel::Appearance => return appearance_controls(ui, state, owners.editor, actions),
         RibbonPanel::Visibility => visibility_controls(ui, state, actions),
         RibbonPanel::Windows => windows_controls(ui, origin, state, owners, actions),
-        RibbonPanel::Component => muted_commands(ui, origin, &["Place", "Create"], NOT_PORTED),
+        RibbonPanel::Component => {
+            muted_commands(ui, origin, owners.icons, &["Place", "Create"], NOT_PORTED)
+        }
         RibbonPanel::SheetMetalTools => {
-            muted_commands(ui, origin, &["Flange", "Flat Pattern"], NOT_PORTED);
+            muted_commands(
+                ui,
+                origin,
+                owners.icons,
+                &["Flange", "Flat Pattern"],
+                NOT_PORTED,
+            );
         }
         RibbonPanel::DrawingViews => {
             let _disabled = ui.begin_disabled(state.transaction_open);
-            if crate::widget_abi::button(ui, "Base View", [108., 26.]) {
+            if crate::widget_abi::button(ui, "Base View", owners.icons.cell([108., 26.])) {
                 owners.workspaces.request_base_view();
             }
             drop(_disabled);
             muted_commands(
                 ui,
-                [origin[0], origin[1] + 30.],
+                [origin[0], origin[1] + owners.icons.cell([0., 30.])[1]],
+                owners.icons,
                 &["Projected View"],
                 NOT_PORTED,
             );
         }
-        RibbonPanel::DrawingModify => muted_commands(ui, origin, &["Break", "Crop"], NOT_PORTED),
-        RibbonPanel::DrawingSketch => muted_commands(ui, origin, &["Start Sketch"], NOT_PORTED),
-        RibbonPanel::DrawingSheets => muted_commands(ui, origin, &["New Sheet"], NOT_PORTED),
-        RibbonPanel::AnnotateDimension => {
-            muted_commands(ui, origin, &["General", "Baseline"], NOT_PORTED);
+        RibbonPanel::DrawingModify => {
+            muted_commands(ui, origin, owners.icons, &["Break", "Crop"], NOT_PORTED)
         }
-        RibbonPanel::AnnotateText => muted_commands(ui, origin, &["Leader"], NOT_PORTED),
+        RibbonPanel::DrawingSketch => {
+            muted_commands(ui, origin, owners.icons, &["Start Sketch"], NOT_PORTED)
+        }
+        RibbonPanel::DrawingSheets => {
+            muted_commands(ui, origin, owners.icons, &["New Sheet"], NOT_PORTED)
+        }
+        RibbonPanel::AnnotateDimension => {
+            muted_commands(
+                ui,
+                origin,
+                owners.icons,
+                &["General", "Baseline"],
+                NOT_PORTED,
+            );
+        }
+        RibbonPanel::AnnotateText => {
+            muted_commands(ui, origin, owners.icons, &["Leader"], NOT_PORTED)
+        }
         RibbonPanel::AnnotateSymbols => {
-            muted_commands(ui, origin, &["Surface", "Weld"], NOT_PORTED);
+            muted_commands(ui, origin, owners.icons, &["Surface", "Weld"], NOT_PORTED);
         }
         RibbonPanel::PartCreate => part_create_controls(ui, origin, state, owners, actions),
         RibbonPanel::PartModify => {
@@ -176,7 +207,13 @@ pub(crate) fn draw_panel_content(
             );
         }
         RibbonPanel::PartNotes => {
-            muted_commands(ui, origin, &["General Note", "Leader Note"], NOT_PORTED);
+            muted_commands(
+                ui,
+                origin,
+                owners.icons,
+                &["General Note", "Leader Note"],
+                NOT_PORTED,
+            );
         }
         RibbonPanel::PartWorkFeatures => {
             use crate::icons::IconGlyph;
@@ -205,78 +242,6 @@ pub(crate) fn draw_panel_content(
 }
 /// Commands a document kind will offer: shown muted with the reason, never as a working button.
 const NOT_PORTED: &str = "This command is not available in this build.";
-fn muted_commands(ui: &Ui, origin: [f32; 2], labels: &[&str], reason: &str) {
-    for (index, label) in labels.iter().enumerate() {
-        muted_command_position(ui, origin, index);
-        muted_command(ui, label, reason, None, false);
-    }
-}
-fn part_modify_controls(
-    ui: &Ui,
-    origin: [f32; 2],
-    icons: &crate::icons::GuiRibbonIcons,
-    hole_tip: bool,
-) {
-    use crate::icons::IconGlyph;
-    muted_icon_commands(
-        ui,
-        origin,
-        icons,
-        &[
-            ("Hole", Some(IconGlyph::Hole)),
-            ("Fillet", Some(IconGlyph::Fillet)),
-            ("Chamfer", Some(IconGlyph::Chamfer)),
-        ],
-        hole_tip,
-    );
-}
-fn muted_icon_commands(
-    ui: &Ui,
-    origin: [f32; 2],
-    icons: &crate::icons::GuiRibbonIcons,
-    commands: &[(&str, Option<crate::icons::IconGlyph>)],
-    hole_tip: bool,
-) {
-    for (index, (label, glyph)) in commands.iter().enumerate() {
-        icons.cursor(
-            ui,
-            origin,
-            [(index / 2) as f32 * 116., (index % 2) as f32 * 30.],
-        );
-        muted_command(
-            ui,
-            label,
-            NOT_PORTED,
-            glyph.map(|glyph| (icons, glyph)),
-            hole_tip && *label == "Hole",
-        );
-    }
-}
-fn muted_command_position(ui: &Ui, origin: [f32; 2], index: usize) {
-    let column = (index / 2) as f32 * 116.;
-    let row = (index % 2) as f32 * 30.;
-    crate::widget_abi::cursor_position(ui, [origin[0] + column, origin[1] + row]);
-}
-fn muted_command(
-    ui: &Ui,
-    label: &str,
-    reason: &str,
-    icon: Option<(&crate::icons::GuiRibbonIcons, crate::icons::IconGlyph)>,
-    hole_tip: bool,
-) {
-    let disabled = ui.begin_disabled(true);
-    match icon {
-        Some((icons, glyph)) => icons.button(ui, label, glyph, [108., 26.]),
-        None => crate::widget_abi::button(ui, label, [108., 26.]),
-    };
-    drop(disabled);
-    if hole_tip {
-        crate::ribbon_key_tips::badge(ui, "HO");
-    }
-    if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
-        ui.tooltip_text(reason);
-    }
-}
 /// Extrude starts a sketch when needed, or opens the profile dialog.
 fn part_create_controls(
     ui: &Ui,
