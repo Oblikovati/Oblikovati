@@ -14,6 +14,7 @@ pub use input::{
 pub use keyboard::ViewportPhysicalKey;
 pub use oblikovati_model::viewport_keyboard_keys;
 mod presentation;
+mod scene_placement;
 pub use presentation::{PartPresentation, PartPresentationDecline};
 mod types;
 pub use types::{

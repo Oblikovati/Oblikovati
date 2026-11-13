@@ -181,6 +181,10 @@ claim that each file has been individually triaged.
   cover shared sources, recovery and invalid target cleanup; native drawing
   tests cover shared and missing sources. This resolver is not yet connected to
   populated assembly opening, which remains guarded pending rendering support.
+- Viewport scenes can now be copied through a checked row-major occurrence
+  placement. Tests cover a saved occurrence's rotation and translation, source
+  preservation, and invalid or overflowing placements. This display operation
+  is not yet connected to assembly scene composition or live opening.
 - The drawing browser now lists the authored sheets, borders, title blocks and
   views, and browser search uses those same rows. Unit tests cover multiple
   sheets, a missing border and searching for a view.
