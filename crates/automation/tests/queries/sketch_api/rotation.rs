@@ -114,18 +114,19 @@ fn rejected_rotation_reply_discards_coordinates_and_evidence() {
     assert_eq!(owner_revision(&files, document), before);
 }
 #[test]
-fn grounded_circle_centers_remain_controlled_in_part_and_assembly() {
+fn grounded_circle_centers_refuse_rotation_in_part_and_assembly() {
     for kind in [DOCUMENT_PART, DOCUMENT_ASSEMBLY] {
         let (mut files, document, mut source) = configured_files(kind, Default::default());
         let sketch = create_owner(&mut files, document);
         let circle = create_circle(&mut files, document, sketch);
         let before = rows(&files);
-        move_call(
+        assert_move_refused(
             &mut files,
+            document,
             &mut source,
             &rotation(vec![circle.entity.0], vec![3.0, 4.0], "90 deg"),
-        )
-        .unwrap();
+            "expected its projected position",
+        );
         assert_eq!(rows(&files), before);
     }
 }

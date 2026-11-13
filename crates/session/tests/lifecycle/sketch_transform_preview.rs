@@ -141,3 +141,114 @@ fn rejected_copy_preview_does_not_change_live_history() {
     assert_eq!(session.generation(), generation);
     assert!(session.undo_labels().is_empty());
 }
+
+fn session_with_linked_lines(fixed: bool) -> DocumentSession<RecordingObserver> {
+    let mut snapshot = session_with_line().snapshot().clone();
+    let mut geometry = snapshot
+        .sketches
+        .get(DocumentSketchId(1))
+        .unwrap()
+        .geometry()
+        .clone();
+    geometry.add_point(SketchEntityId(4), [4., 0.]).unwrap();
+    geometry.add_point(SketchEntityId(5), [7., 2.]).unwrap();
+    geometry
+        .add_line(SketchEntityId(6), [SketchEntityId(4), SketchEntityId(5)])
+        .unwrap();
+    geometry
+        .add_constraint(
+            SketchConstraintId(2),
+            PlanarConstraint::Coincident {
+                points: [SketchEntityId(2), SketchEntityId(4)],
+            },
+        )
+        .unwrap();
+    if fixed {
+        geometry
+            .add_constraint(
+                SketchConstraintId(3),
+                PlanarConstraint::Fix {
+                    point: SketchEntityId(1),
+                    position: [0., 0.],
+                },
+            )
+            .unwrap();
+    }
+    snapshot
+        .sketches
+        .replace_geometry(DocumentSketchId(1), geometry)
+        .unwrap();
+    let history =
+        DocumentEditHistory::new(snapshot, RecipeIdAllocator::restore(Some(1), &[1]).unwrap())
+            .unwrap();
+    DocumentSession::new(17, history, RecordingObserver::default())
+}
+
+#[test]
+fn moving_a_linked_line_holds_the_selected_points_at_their_targets() {
+    let mut session = session_with_linked_lines(false);
+    let transform = SketchSelectionTransform::Move([2., 3.]);
+    let preview = session
+        .preview_sketch_transform(DocumentSketchId(1), &[SketchEntityId(3)], transform)
+        .unwrap();
+    assert_eq!(
+        preview.geometry.point(SketchEntityId(1)).unwrap().position,
+        [2., 3.]
+    );
+    assert_eq!(
+        preview.geometry.point(SketchEntityId(2)).unwrap().position,
+        [6., 3.]
+    );
+    let linked = preview.geometry.point(SketchEntityId(4)).unwrap().position;
+    assert!(
+        (linked[0] - 6.).abs() < 1e-7 && (linked[1] - 3.).abs() < 1e-7,
+        "{linked:?}"
+    );
+    session
+        .transform_sketch_entities_projected(
+            DocumentSketchId(1),
+            &[SketchEntityId(3)],
+            transform,
+            |result| result,
+        )
+        .unwrap();
+    assert!(
+        preview.geometry.same_recipe(
+            session
+                .snapshot()
+                .sketches
+                .get(DocumentSketchId(1))
+                .unwrap()
+                .geometry()
+        )
+    );
+}
+
+#[test]
+fn moving_a_fixed_line_refuses_the_candidate_and_preserves_history() {
+    let mut session = session_with_linked_lines(true);
+    let before = session.snapshot().sketches.clone();
+    let history: Vec<String> = session
+        .undo_labels()
+        .into_iter()
+        .map(str::to_owned)
+        .collect();
+    let transform = SketchSelectionTransform::Move([2., 3.]);
+    assert!(
+        session
+            .preview_sketch_transform(DocumentSketchId(1), &[SketchEntityId(3)], transform)
+            .is_err()
+    );
+    assert!(
+        session
+            .transform_sketch_entities_projected(
+                DocumentSketchId(1),
+                &[SketchEntityId(3)],
+                transform,
+                |result| result
+            )
+            .is_err()
+    );
+    assert!(before.same_evaluated_state(&session.snapshot().sketches));
+    assert_eq!(history, session.undo_labels());
+}

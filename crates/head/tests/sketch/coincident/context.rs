@@ -15,7 +15,7 @@ pub(super) fn draw_oblique_lines(world: &mut ApplicationWorld) {
     }
 }
 #[given("the joined line endpoints and visible constraints")]
-fn joined_lines(world: &mut ApplicationWorld) {
+pub(super) fn joined_lines(world: &mut ApplicationWorld) {
     draw_oblique_lines(world);
     world.click_text("Coincident");
     world.sketch_click([750, 350]);
@@ -49,6 +49,57 @@ fn joined_lines(world: &mut ApplicationWorld) {
         crate::HeadWindow::sketch_pixel(&world.app().window, SketchPlane::xy(), mark.at).unwrap();
     world.observed_view = Some(position);
     world.record_initial_sketch();
+}
+
+#[test]
+fn moving_a_constrained_segment_follows_the_cursor_and_drags_the_join() {
+    let mut world = ApplicationWorld::new();
+    joined_lines(&mut world);
+    let before = world.edited_geometry();
+    let first = before.lines()[0].endpoints;
+    let joined = before.lines()[1].endpoints[0];
+    let points = first.map(|id| before.point(id).unwrap().position);
+    let midpoint = std::array::from_fn(|axis| (points[0][axis] + points[1][axis]) * 0.5);
+    let pixel =
+        crate::HeadWindow::sketch_pixel(&world.app().window, SketchPlane::xy(), midpoint).unwrap();
+    let base =
+        crate::HeadWindow::sketch_pixel(&world.app().window, SketchPlane::xy(), points[0]).unwrap();
+    world.click_text("Move");
+    world.sketch_click(pixel);
+    world.sketch_click(base);
+    let target = [base[0] + 120, base[1] + 80];
+    world.hover(target);
+    assert!(crate::HeadWork::sketch_preview(&world.app().owner).is_some());
+    assert!(world.edited_geometry().same_recipe(&before));
+    world.sketch_click(target);
+    let after = world.edited_geometry();
+    for (index, id) in first.into_iter().enumerate() {
+        let original =
+            crate::HeadWindow::sketch_pixel(&world.app().window, SketchPlane::xy(), points[index])
+                .unwrap();
+        let actual = crate::HeadWindow::sketch_pixel(
+            &world.app().window,
+            SketchPlane::xy(),
+            after.point(id).unwrap().position,
+        )
+        .unwrap();
+        assert!(
+            (actual[0] - original[0] - 120).abs() <= 1 && (actual[1] - original[1] - 80).abs() <= 1,
+            "point {id:?}: {original:?} -> {actual:?}"
+        );
+    }
+    let first_end = after.point(first[1]).unwrap().position;
+    let linked_end = after.point(joined).unwrap().position;
+    assert!(
+        (first_end[0] - linked_end[0]).abs() < 1e-7 && (first_end[1] - linked_end[1]).abs() < 1e-7
+    );
+    let done = world.run_in_window("Move", "Done").center();
+    world.click(diagnostics::pointer_pixels(done));
+    world.undo();
+    assert!(world.edited_geometry().same_recipe(&before));
+    world.redo();
+    assert!(world.edited_geometry().same_recipe(&after));
+    world.close();
 }
 #[when("I right-click the joint")]
 fn right_click_joint(world: &mut ApplicationWorld) {

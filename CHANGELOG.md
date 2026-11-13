@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Kept selected sketch geometry at the requested transform, and refused moves blocked by constraints.
+
 - Kept geometric constraint tools active for repeated selections and restored Coincident prompts.
 
 - Preserved sketch selection when opening a point context menu. (#3856)

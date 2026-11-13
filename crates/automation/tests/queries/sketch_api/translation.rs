@@ -167,18 +167,19 @@ fn undo_redo_and_save_reopen_restore_the_moved_recipe() {
     assert!(!files.workspace().needs_save(document).unwrap());
 }
 #[test]
-fn grounded_centers_are_restored_by_current_source_recompute_in_both_document_kinds() {
+fn grounded_centers_refuse_translation_in_both_document_kinds() {
     for kind in [DOCUMENT_PART, DOCUMENT_ASSEMBLY] {
         let (mut files, document, mut source) = configured_files(kind, Default::default());
         let sketch = create_owner(&mut files, document);
         let circle = create_circle(&mut files, document, sketch);
         let before = rows(&files);
-        move_call(
+        assert_move_refused(
             &mut files,
+            document,
             &mut source,
             &movement(vec![circle.entity.0], vec![3.0, 4.0]),
-        )
-        .unwrap();
+            "expected its projected position",
+        );
         assert_eq!(rows(&files), before);
         verify_keys(&files, &before);
     }
@@ -301,10 +302,16 @@ fn start_moved_group(
     move_call(files, source, &movement(ids, vec![3.0, 4.0])).unwrap();
 }
 #[test]
-fn fixed_dimensions_still_control_the_shape_after_a_translation_seed_edit() {
+fn fixed_dimensions_refuse_an_impossible_translation() {
     let (mut files, document, sketch, mut source) = files_with_circle(Default::default());
     let radius = circle_radius(files.workspace(), document, sketch);
-    move_call(&mut files, &mut source, &movement(vec![2], vec![3.0, 4.0])).unwrap();
+    assert_move_refused(
+        &mut files,
+        document,
+        &mut source,
+        &movement(vec![2], vec![3.0, 4.0]),
+        "expected a converged move",
+    );
     let snapshot = files.workspace().session(document).unwrap().snapshot();
     let view = snapshot.require_resolved_sketch(sketch).unwrap();
     assert_eq!(view.verification.structure.degrees_of_freedom, 0);
