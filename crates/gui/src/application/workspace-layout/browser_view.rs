@@ -308,6 +308,27 @@ fn matching_rows(browser: &GuiModelBrowser, query: &str) -> Vec<ResultRow> {
         .map(|row| row.name.as_str())
         .collect();
     push_branch(&mut results, "Features", 0, kept(&features));
+    results.extend(matching_occurrences(&browser.occurrences, query, 0));
+    results
+}
+fn matching_occurrences(
+    rows: &[crate::GuiBrowserOccurrence],
+    query: &str,
+    depth: usize,
+) -> Vec<ResultRow> {
+    let mut results = Vec::new();
+    for row in rows {
+        let children = matching_occurrences(&row.children, query, depth + 1);
+        let is_match = match_start(&row.name, query).is_some();
+        if is_match || !children.is_empty() {
+            results.push(ResultRow {
+                depth,
+                text: row.name.clone(),
+                is_match,
+            });
+            results.extend(children);
+        }
+    }
     results
 }
 /// A drawing's rows under the branches that hold them; a branch with no match is left out.

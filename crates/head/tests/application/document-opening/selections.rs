@@ -149,6 +149,8 @@ fn populated_assembly_reports_a_missing_component() {
             .any(|error| error.contains("part.opd"))
     );
     assert_eq!(status.visible_bodies, 0);
+    world.expect_text("Part:1");
+    world.expect_text("[unresolved]");
     world.close();
 }
 
@@ -169,16 +171,32 @@ fn opening_an_assembly_displays_its_referenced_part() {
     .with_work_geometry(&fixture.work_geometry, 1)
     .unwrap();
     std::fs::write(folder.join("part.opd"), part.encode().unwrap()).unwrap();
-    std::fs::write(folder.join(ASSEMBLY_FILE), b"schemaVersion: 2\ndocumentType: 2\nmodel: {occurrences: [{name: 'Part:1', component: part.opd}]}\n").unwrap();
+    std::fs::write(folder.join("nested.oad"), b"schemaVersion: 2\ndocumentType: 2\nmodel: {occurrences: [{name: 'Part:2', component: part.opd}]}\n").unwrap();
+    std::fs::write(folder.join(ASSEMBLY_FILE), b"schemaVersion: 2\ndocumentType: 2\nmodel: {occurrences: [{name: 'Part:1', component: part.opd}, {name: 'Nested:1', component: nested.oad}, {name: 'Suppressed:1', component: part.opd, suppressed: true}]}\n").unwrap();
     open_dialog(&mut world);
     look_in(&mut world, &folder);
     select_row(&mut world, ASSEMBLY_FILE);
     choose_open(&mut world);
     settle(&mut world);
     let status = world.app().window.native.scene_status().unwrap();
-    assert_eq!(status.visible_bodies, 1);
+    assert_eq!(status.visible_bodies, 2);
     assert!(status.scene_errors.is_empty(), "{:?}", status.scene_errors);
+    world.expect_text("Part:1");
+    world.expect_text("Nested:1");
+    world.expect_text("Part:2");
+    let brightness = |run: &super::super::diagnostics::RenderedRun| {
+        run.color.iter().map(|value| u32::from(*value)).sum::<u32>() * u32::from(run.alpha)
+    };
+    let active = brightness(world.run("Part:1"));
+    let suppressed = brightness(world.run("Suppressed:1"));
+    assert!(suppressed < active);
     world.save_capture("assembly-referenced-part");
+    world.click_text("Search");
+    world.pump(Vec::new());
+    super::super::workspace_layout::browser_tree::type_in_search(&mut world, "Part:2");
+    world.expect_text("Nested:1");
+    world.expect_text("Part:2");
+    world.expect_no_text("Part:1");
     world.close();
 }
 // Already open files

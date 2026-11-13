@@ -49,6 +49,29 @@ fn a_query_with_no_match_leaves_no_rows() {
     assert!(matching_rows(&browser(&[]), "zzz").is_empty());
 }
 #[test]
+fn occurrence_search_keeps_nested_ancestors() {
+    let occurrence = |name: &str, children| crate::GuiBrowserOccurrence {
+        name: name.into(),
+        component: String::new(),
+        suppressed: false,
+        virtual_: false,
+        error: None,
+        children,
+    };
+    let tree = GuiModelBrowser {
+        kind: GuiBrowserKind::Assembly,
+        occurrences: vec![occurrence("Housing:1", vec![occurrence("Bolt:1", vec![])])],
+        ..Default::default()
+    };
+    let rows = matching_rows(&tree, "bolt");
+    assert_eq!(
+        rows.iter()
+            .map(|row| (row.depth, row.text.as_str(), row.is_match))
+            .collect::<Vec<_>>(),
+        [(0, "Housing:1", false), (1, "Bolt:1", true)]
+    );
+}
+#[test]
 fn a_document_without_an_origin_does_not_search_origin_rows() {
     let mut tree = browser(&[]);
     tree.has_origin = false;

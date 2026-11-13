@@ -11,7 +11,8 @@ pub use asset_choice::GuiAssetChoice;
 mod browser;
 pub use browser::{
     GuiBrowserBlockInstance, GuiBrowserBody, GuiBrowserFeature, GuiBrowserKind,
-    GuiBrowserRectangularPattern, GuiBrowserSketch, GuiMaterialChoice, GuiModelBrowser,
+    GuiBrowserOccurrence, GuiBrowserRectangularPattern, GuiBrowserSketch, GuiMaterialChoice,
+    GuiModelBrowser,
 };
 mod clipboard;
 pub use activity::GuiFrameActivity;

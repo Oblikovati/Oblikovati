@@ -35,6 +35,8 @@ pub struct GuiModelBrowser {
     /// Rectangular patterns owned by each sketch.
     pub rectangular_patterns: Vec<GuiBrowserRectangularPattern>,
     pub features: Vec<GuiBrowserFeature>,
+    /// Placed components in assembly order, including their reference status.
+    pub occurrences: Vec<GuiBrowserOccurrence>,
     pub selected_sketches: Vec<DocumentSketchId>,
     /// The feature row a press chose.
     pub selected_feature: Option<FeatureId>,
@@ -54,6 +56,16 @@ pub struct GuiModelBrowser {
 }
 /// A material available to a selector.
 pub type GuiMaterialChoice = crate::GuiAssetChoice;
+/// A placed assembly component and the occurrences under its referenced assembly.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GuiBrowserOccurrence {
+    pub name: String,
+    pub component: String,
+    pub suppressed: bool,
+    pub virtual_: bool,
+    pub error: Option<String>,
+    pub children: Vec<GuiBrowserOccurrence>,
+}
 /// Pattern identity, authored settings and spacing source text for the browser editor.
 #[derive(Clone, Debug, PartialEq)]
 pub struct GuiBrowserRectangularPattern {
@@ -319,6 +331,9 @@ impl BrowserTree<'_> {
         self.blocks(actions);
         self.sketches(view, actions);
         self.features(view, actions);
+        if self.browser.kind == GuiBrowserKind::Assembly {
+            self.occurrences(&self.browser.occurrences);
+        }
         // The marker closes a modelled document's history; a document without an origin has none.
         if self.browser.has_origin {
             self.ui.text(end_marker);
@@ -333,6 +348,36 @@ impl BrowserTree<'_> {
         self.ui.text("Representations");
         self.ui.text("Relationships");
         self.modeling("End of Assembly", view, actions);
+    }
+    fn occurrences(&self, rows: &[GuiBrowserOccurrence]) {
+        for (index, row) in rows.iter().enumerate() {
+            let _id = self.ui.push_id(format!("occurrence-{index}"));
+            let _muted = row.suppressed.then(|| {
+                self.ui.push_style_color(
+                    StyleColor::Text,
+                    self.ui.style_color(StyleColor::TextDisabled),
+                )
+            });
+            if row.children.is_empty() {
+                self.occurrence_label(row);
+            } else if let Some(_node) = self.branch(&row.name, true) {
+                self.occurrences(&row.children);
+            }
+        }
+    }
+    fn occurrence_label(&self, row: &GuiBrowserOccurrence) {
+        if row.suppressed {
+            self.ui.text_disabled(&row.name);
+        } else {
+            self.ui.text(&row.name);
+        }
+        if let Some(error) = &row.error {
+            self.ui.same_line();
+            self.ui.text_colored([1., 0.35, 0.25, 1.], "[unresolved]");
+            if self.ui.is_item_hovered() {
+                self.ui.tooltip_text(error);
+            }
+        }
     }
     fn drawing(&self, view: &mut BrowserView) {
         let drawing = self

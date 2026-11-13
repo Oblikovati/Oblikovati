@@ -9,6 +9,8 @@ use oblikovati_api::{
     wire::SketchArgs,
 };
 use oblikovati_gui::{GuiBrowserFeature, GuiBrowserSketch, GuiModelBrowser};
+#[path = "owner_browser/occurrences.rs"]
+mod occurrences;
 impl<
     O: TransactionObserver,
     W: WorkspaceObserver,
@@ -32,6 +34,7 @@ impl<
         let query = oblikovati_automation::FileQueryHost::new(&self.files)
             .with_sketch_edit(self.sketch_inspection_edit());
         populate_browser(&mut browser, snapshot, &Client::new(query))?;
+        browser.occurrences = occurrences::browser_occurrences(&self.files, document)?;
         browser.selected_sketches = self.selected_browser_sketches(document);
         browser.bodies = self.gui_browser_bodies(document);
         if matches!(

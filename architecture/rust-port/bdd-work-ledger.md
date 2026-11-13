@@ -204,6 +204,11 @@ claim that each file has been individually triaged.
   frame shows that the model browser does not yet list occurrences. Assembly
   features, patterns, adaptive, flexible and substitute occurrences remain
   refused on open. The earlier open-guard notes describe the prior state.
+- The model browser now lists assembly occurrences in their authored order,
+  including nested components, suppressed rows and missing-reference markers.
+  Browser search keeps the parent of a matching nested occurrence. Native tests
+  cover opening and searching the tree; selection and component commands are
+  not yet implemented for those rows.
 - The drawing browser now lists the authored sheets, borders, title blocks and
   views, and browser search uses those same rows. Unit tests cover multiple
   sheets, a missing border and searching for a view.
