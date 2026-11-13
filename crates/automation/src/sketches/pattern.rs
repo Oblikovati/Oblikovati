@@ -1,18 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use oblikovati_model::{
-    history::RecipeReservations,
-    quantity::Dimension,
-    sketch::{SketchEntityId, SketchRectangularPatternDefinition},
-};
+use oblikovati_model::{history::SketchRectangularPatternRequest, sketch::SketchEntityId};
 use std::collections::BTreeSet;
 
-struct RectangularPatternInput {
-    seed: Vec<SketchEntityId>,
-    counts: [u32; 2],
-    directions: [[f64; 2]; 2],
-    spacing: [String; 2],
-}
 pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
     request: AddSketchPatternArgs,
@@ -24,7 +14,11 @@ pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         .map_err(api_error)?
         .run_projected(
             "Create rectangular sketch pattern",
-            |snapshot, reservations| create(snapshot, reservations, sketch, input),
+            |snapshot, reservations| {
+                snapshot
+                    .create_pattern_from_expressions(sketch, input, reservations)
+                    .map_err(api_error)
+            },
             |_, pattern| {
                 encode(&AddSketchPatternResult {
                     created: Some(
@@ -39,7 +33,7 @@ pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         )
         .map_err(api_error)
 }
-fn prepare(request: AddSketchPatternArgs) -> Result<RectangularPatternInput, Error> {
+fn prepare(request: AddSketchPatternArgs) -> Result<SketchRectangularPatternRequest, Error> {
     if request.kind != "rectangular" {
         return Err(Error(format!(
             "sketch.addPattern kind {:?}: expected rectangular; circular patterns are not available yet",
@@ -57,7 +51,7 @@ fn prepare(request: AddSketchPatternArgs) -> Result<RectangularPatternInput, Err
             "sketch.addPattern entities []: expected at least one seed entity".into(),
         ));
     }
-    Ok(RectangularPatternInput {
+    Ok(SketchRectangularPatternRequest {
         seed,
         counts: [count(request.count1)?, count(request.count2)?],
         directions: [
@@ -65,6 +59,8 @@ fn prepare(request: AddSketchPatternArgs) -> Result<RectangularPatternInput, Err
             direction(request.dir2, [0., 1.])?,
         ],
         spacing: [request.spacing1, request.spacing2],
+        fitted: false,
+        suppressed: BTreeSet::new(),
     })
 }
 fn count(value: i64) -> Result<u32, Error> {
@@ -93,42 +89,4 @@ fn direction(input: Option<Vec<f64>>, fallback: [f64; 2]) -> Result<[f64; 2], Er
     let scaled = vector.map(|value| value / scale);
     let length = scaled[0].hypot(scaled[1]);
     Ok(scaled.map(|value| value / length))
-}
-fn create(
-    snapshot: &mut DocumentSnapshot,
-    reservations: &mut RecipeReservations<'_>,
-    sketch: DocumentSketchId,
-    input: RectangularPatternInput,
-) -> Result<oblikovati_model::sketch::SketchRectangularPattern, Error> {
-    let spacing = [
-        insert_spacing(snapshot, reservations, sketch, &input.spacing[0])?,
-        insert_spacing(snapshot, reservations, sketch, &input.spacing[1])?,
-    ];
-    let definition = SketchRectangularPatternDefinition {
-        seed: input.seed,
-        counts: input.counts,
-        directions: input.directions,
-        spacing,
-        fitted: false,
-        suppressed: BTreeSet::new(),
-    };
-    snapshot
-        .create_rectangular_pattern(sketch, definition, reservations)
-        .map_err(api_error)
-}
-fn insert_spacing(
-    snapshot: &mut DocumentSnapshot,
-    reservations: &mut RecipeReservations<'_>,
-    sketch: DocumentSketchId,
-    source: &str,
-) -> Result<u64, Error> {
-    let name = reservations
-        .allocate_dimension_name(sketch, &snapshot.parameters)
-        .map_err(api_error)?;
-    let id = reservations.allocate().map_err(api_error)?;
-    snapshot
-        .parameters
-        .insert_scalar_expression(id, &name, source, Dimension::Length)
-        .map_err(api_error)?;
-    Ok(id)
 }

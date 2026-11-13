@@ -28,6 +28,8 @@ pub use sketch_dimension_create::{
 mod sketch_dimension_edit;
 pub use sketch_dimension_edit::SketchDimensionEdit;
 mod sketch_copy;
+mod sketch_pattern_expressions;
+pub use sketch_pattern_expressions::SketchRectangularPatternRequest;
 mod sketch_line;
 mod sketch_point;
 mod sketch_primitive;

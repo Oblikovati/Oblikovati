@@ -11,6 +11,51 @@ pub type SketchCopyProjectionInput = Result<SketchCopyReport, SketchCopyError>;
 /// Example: `let reply: SketchCopyBatchProjectionInput = Ok(reports);`.
 pub type SketchCopyBatchProjectionInput = Result<Vec<SketchCopyReport>, SketchCopyError>;
 impl<O: TransactionObserver> DocumentSession<O> {
+    /// Preview a pattern with expression inputs without reserving live identities.
+    /// Example: `session.preview_pattern_from_expressions(sketch, request)?;`.
+    pub fn preview_pattern_from_expressions(
+        &self,
+        sketch: DocumentSketchId,
+        request: oblikovati_model::history::SketchRectangularPatternRequest,
+    ) -> Result<crate::SketchTransformPreview, CommandError<SketchCopyError>> {
+        self.preview_projected(
+            |snapshot, reservations| {
+                snapshot.create_pattern_from_expressions(sketch, request, reservations)
+            },
+            |snapshot, pattern| {
+                Ok(crate::SketchTransformPreview {
+                    geometry: snapshot
+                        .sketches
+                        .get(sketch)
+                        .map_err(SketchCopyError::Sketch)?
+                        .geometry()
+                        .clone(),
+                    members: pattern
+                        .members
+                        .into_iter()
+                        .flat_map(|member| member.entities)
+                        .collect(),
+                })
+            },
+        )
+    }
+    /// Create a pattern with expression inputs as one undoable command.
+    /// Example: `session.create_pattern_from_expressions_projected(sketch, request, |result| result)?;`.
+    pub fn create_pattern_from_expressions_projected<R, E>(
+        &mut self,
+        sketch: DocumentSketchId,
+        request: oblikovati_model::history::SketchRectangularPatternRequest,
+        project: impl FnOnce(
+            Result<oblikovati_model::sketch::SketchRectangularPattern, SketchCopyError>,
+        ) -> Result<R, E>,
+    ) -> Result<R, CommandError<E>> {
+        self.run(
+            "Create rectangular sketch pattern",
+            |snapshot, reservations| {
+                project(snapshot.create_pattern_from_expressions(sketch, request, reservations))
+            },
+        )
+    }
     /// Preview a rectangular pattern edit without changing the document.
     /// Example: `session.preview_rectangular_pattern_edit(sketch, pattern, definition)?;`.
     pub fn preview_rectangular_pattern_edit(
