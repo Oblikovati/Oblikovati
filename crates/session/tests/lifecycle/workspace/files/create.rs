@@ -29,6 +29,21 @@ fn populated_assembly_template_is_refused_before_creating_a_document() {
 }
 
 #[test]
+fn empty_assembly_creation_owns_an_empty_occurrence_recipe() {
+    let mut host = host(RecordingWorkspace::default());
+    let mut source = SequenceGuids(1000);
+    let package = DocumentPackage::empty(oblikovati_api::types::DOCUMENT_ASSEMBLY, "Assembly1");
+    let id = host
+        .create_unbound(package, RecordingObserver::default(), "alpha", &mut source)
+        .unwrap()
+        .session_id;
+    assert_eq!(
+        host.workspace().session(id).unwrap().snapshot().assembly,
+        Some(vec![])
+    );
+}
+
+#[test]
 fn creation_mints_unsaved_identity_and_emits_created_then_activation() {
     let mut host = host(RecordingWorkspace::default());
     let mut source = SequenceGuids(1000);

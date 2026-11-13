@@ -14,6 +14,7 @@ fn empty_history() -> DocumentEditHistory {
             resources: Default::default(),
             assets: Default::default(),
             model_states: None,
+            assembly: None,
             drawing: None,
             body_names: Default::default(),
             design_views: Default::default(),
@@ -24,6 +25,36 @@ fn empty_history() -> DocumentEditHistory {
         RecipeIdAllocator::default(),
     )
     .unwrap()
+}
+
+#[test]
+fn assembly_occurrence_changes_follow_undo_and_redo() {
+    let mut history = empty_history();
+    let before = history.snapshot().clone();
+    let token = history.begin("Place occurrence").unwrap();
+    history
+        .edit(&token, |snapshot, _| -> Result<(), ()> {
+            snapshot.assembly = Some(vec![crate::assembly::AssemblyOccurrenceRecipe {
+                name: "Part:1".into(),
+                component: "part.opd".into(),
+                ..Default::default()
+            }]);
+            Ok(())
+        })
+        .unwrap();
+    history.commit(&token, true).unwrap();
+    assert!(!before.same_metadata_recipe(history.snapshot()));
+    assert_eq!(
+        history.snapshot().assembly.as_ref().unwrap()[0].name,
+        "Part:1"
+    );
+    history.undo().unwrap();
+    assert!(history.snapshot().assembly.is_none());
+    history.redo().unwrap();
+    assert_eq!(
+        history.snapshot().assembly.as_ref().unwrap()[0].component,
+        "part.opd"
+    );
 }
 
 #[test]

@@ -70,6 +70,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
 
 fn initial_history(package: &DocumentPackage) -> Result<DocumentEditHistory, FileWorkspaceError> {
     require_document_kind(package.manifest().document_type)?;
+    package
+        .require_supported_assembly()
+        .map_err(FileWorkspaceError::Package)?;
     let restored = package
         .restore_document_parameters()
         .map_err(FileWorkspaceError::Package)?;
@@ -101,6 +104,9 @@ fn initial_history(package: &DocumentPackage) -> Result<DocumentEditHistory, Fil
             .map_err(FileWorkspaceError::Package)?,
         drawing: package
             .restore_drawing()
+            .map_err(FileWorkspaceError::Package)?,
+        assembly: package
+            .assembly_occurrences()
             .map_err(FileWorkspaceError::Package)?,
         body_names: package
             .restore_body_names()

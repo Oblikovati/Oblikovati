@@ -73,6 +73,7 @@ fn restored_owner(snapshot: &DocumentSnapshot) -> DocumentEditHistory {
         work_geometry: reopened.restore_work_geometry().unwrap().program,
         assets: Default::default(),
         model_states: None,
+        assembly: None,
         drawing: None,
         body_names: Default::default(),
         design_views: Default::default(),

@@ -72,6 +72,8 @@ use std::sync::{
 /// Owned document recipe and metadata; identity allocation and file identity are outside history.
 #[derive(Clone, Debug)]
 pub struct DocumentSnapshot {
+    /// Saved assembly placements owned by document history.
+    pub assembly: Option<Vec<crate::assembly::AssemblyOccurrenceRecipe>>,
     /// Drawing content belongs to the document history, not to a GUI window.
     pub drawing: Option<crate::drawing::DrawingDocument>,
     pub model_states: Option<crate::model_state::ModelStateMembers>,

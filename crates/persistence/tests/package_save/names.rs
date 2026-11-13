@@ -16,6 +16,7 @@ fn snapshot() -> DocumentSnapshot {
         resources: Default::default(),
         assets: Default::default(),
         model_states: None,
+        assembly: None,
         drawing: None,
         body_names: Default::default(),
         design_views: Default::default(),
@@ -23,6 +24,30 @@ fn snapshot() -> DocumentSnapshot {
         parameters: ParameterCollection::new(Default::default()),
         properties: Default::default(),
     }
+}
+#[test]
+fn assembly_occurrence_edits_are_saved_from_the_owned_snapshot() {
+    use oblikovati_persistence::atomic::NativeAtomicFiles;
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("assembly.oad");
+    let mut package =
+        DocumentPackage::decode(include_bytes!("../fixtures/go-assembly-occurrences.yaml"))
+            .unwrap();
+    let mut records = package.assembly_occurrences().unwrap().unwrap();
+    records[1].transform[3] = 8.;
+    let mut document = snapshot();
+    document.assembly = Some(records.clone());
+    let mut guids = CountingGuidSource(0);
+    let identity = FileIdentity::new("alpha", &mut guids).unwrap();
+    let mut files = NativeAtomicFiles;
+    let mut target = ParameterPackageTarget::new(&mut package, &path, &mut files);
+    let digest = target
+        .prepare(&document, 0, 0, Default::default(), 0)
+        .unwrap();
+    let identity = identity.prepare_save(digest, "alpha", &mut guids).unwrap();
+    target.persist(&identity).unwrap();
+    let saved = DocumentPackage::decode(&std::fs::read(path).unwrap()).unwrap();
+    assert_eq!(saved.assembly_occurrences().unwrap(), Some(records));
 }
 #[test]
 fn staged_title_changes_do_not_reach_the_retained_package_on_failed_storage() {

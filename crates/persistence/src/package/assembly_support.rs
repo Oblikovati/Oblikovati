@@ -83,7 +83,8 @@ impl DocumentPackage {
         }
         Ok(())
     }
-    pub(crate) fn require_supported_assembly(&self) -> Result<(), PackageCodecError> {
+    /// Refuse live reconstruction until components can be resolved; example: `package.require_supported_assembly()?` before registration.
+    pub fn require_supported_assembly(&self) -> Result<(), PackageCodecError> {
         if self.manifest.document_type != DOCUMENT_ASSEMBLY.0 {
             return Ok(());
         }

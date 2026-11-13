@@ -151,6 +151,13 @@ claim that each file has been individually triaged.
   edits with unported dependent patterns or features; a document owner must
   eventually perform those operations with the reference graph. This does not
   enable populated assembly opening or claim an atomic save by itself.
+- Occurrence recipes are now owned by document history, included in snapshot
+  change comparison, and captured by the existing atomic save target. Tests
+  cover undo/redo, a saved placement edit, empty assembly creation and the
+  populated-template decline. The workspace all-target compile check, 419
+  session lifecycle tests, 39 selected persistence tests, and the native
+  parameter-driven cube journey passed. Populated assembly opening stays
+  disabled until component resolution and rendering are in place.
 - The drawing browser now lists the authored sheets, borders, title blocks and
   views, and browser search uses those same rows. Unit tests cover multiple
   sheets, a missing border and searching for a view.

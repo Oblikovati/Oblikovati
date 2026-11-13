@@ -135,6 +135,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
             assets: prepared.assets,
             model_states: prepared.model_states,
             drawing: prepared.drawing,
+            assembly: prepared.assembly,
             body_names: prepared.body_names,
             design_views: prepared.design_views,
             sketch_settings: prepared.sketch_settings,

@@ -20,6 +20,7 @@ pub struct LoadedParameterPackage {
     pub design_views: Vec<String>,
     pub model_states: Option<oblikovati_model::model_state::ModelStateMembers>,
     pub drawing: Option<oblikovati_model::drawing::DrawingDocument>,
+    pub assembly: Option<Vec<oblikovati_model::assembly::AssemblyOccurrenceRecipe>>,
     pub assets: oblikovati_model::assets::DocumentAssets,
     pub sketch_settings: Option<oblikovati_model::sketch_settings::SketchSettings>,
     pub properties: oblikovati_model::property::DocumentProperties,
@@ -56,6 +57,7 @@ pub fn load_parameter_package(
         design_views: prepared.design_views,
         model_states: prepared.model_states,
         drawing: prepared.drawing,
+        assembly: prepared.assembly,
         assets: prepared.assets,
         sketch_settings: prepared.sketch_settings,
     })
@@ -77,6 +79,7 @@ pub struct PreparedParameterPackage {
     pub design_views: Vec<String>,
     pub model_states: Option<oblikovati_model::model_state::ModelStateMembers>,
     pub drawing: Option<oblikovati_model::drawing::DrawingDocument>,
+    pub assembly: Option<Vec<oblikovati_model::assembly::AssemblyOccurrenceRecipe>>,
     pub assets: oblikovati_model::assets::DocumentAssets,
     pub sketch_settings: Option<oblikovati_model::sketch_settings::SketchSettings>,
     pub properties: oblikovati_model::property::DocumentProperties,
@@ -92,11 +95,17 @@ pub fn read_parameter_package(
     reader: &mut dyn PackageFileReader,
 ) -> Result<PreparedParameterPackage, PackageLoadError> {
     let package = read_package(path, reader)?;
+    package
+        .require_supported_assembly()
+        .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;
     let model_states = package
         .restore_model_states()
         .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;
     let drawing = package
         .restore_drawing()
+        .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;
+    let assembly = package
+        .assembly_occurrences()
         .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;
     let body_names = package
         .restore_body_names()
@@ -152,6 +161,7 @@ pub fn read_parameter_package(
         design_views,
         model_states,
         drawing,
+        assembly,
         sketch_settings,
         properties,
         identity,

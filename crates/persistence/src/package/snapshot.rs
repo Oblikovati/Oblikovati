@@ -170,7 +170,13 @@ fn capture_nonparameter_sections(
     sketch_marks: oblikovati_model::history::SketchReservationMarks,
     feature_high_water: u64,
 ) -> Result<DocumentPackage, SnapshotPackageError> {
-    original
+    let candidate = match &snapshot.assembly {
+        Some(occurrences) => original
+            .with_assembly_occurrences(occurrences)
+            .map_err(SnapshotPackageError::Codec)?,
+        None => original.clone(),
+    };
+    candidate
         .with_model_states(snapshot.model_states.as_ref())
         .map_err(SnapshotPackageError::Codec)?
         .with_drawing(snapshot.drawing.as_ref())

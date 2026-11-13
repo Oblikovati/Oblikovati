@@ -65,6 +65,7 @@ fn empty_snapshot() -> DocumentSnapshot {
         resources: Default::default(),
         assets: Default::default(),
         model_states: None,
+        assembly: None,
         drawing: None,
         body_names: Default::default(),
         design_views: Default::default(),
