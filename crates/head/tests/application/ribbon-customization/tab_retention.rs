@@ -76,11 +76,14 @@ fn no_pending(world: &mut ApplicationWorld) {
 }
 #[then("the active sketch remains unchanged")]
 #[then("the editable sketch remains active and unchanged")]
+#[then("the part and editable sketch remain active and unchanged")]
+#[then("sketch editing remains active and unchanged")]
 fn sketch_unchanged(world: &mut ApplicationWorld) {
     assert_eq!(
         world.state().authoring,
         oblikovati_gui::GuiAuthoringContext::Sketch
     );
+    assert!(world.state().document.is_some());
     let current = world.edited_geometry();
     let before = &world
         .observed_sketch

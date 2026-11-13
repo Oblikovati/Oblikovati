@@ -12,7 +12,7 @@ claim that each file has been individually triaged.
 | 1 | `features/application/file-menu/file-menu.feature` | Verified | All 8 scenarios passed after the secondary-button chooser changes. Weldment remains unavailable. |
 | 1 | `features/application/document-creation` | In progress | Name and size sorting, horizontal icon tiles, and keyboard and secondary-button selection work for available templates. The BDD scenarios still require additional named templates and native bindings. |
 | 1 | `features/application/ribbon-customization/ribbon-customization.feature` | Needs rerun | Source changed since the inventory checkpoint. Review the corrections and rerun affected native scenarios. |
-| 1 | `features/application/ribbon-appearance/ribbon-appearance.feature` | In progress | On the recorded source, two of 18 scenarios pass; the others stop at undefined steps. Panel titles can be hidden without losing expansion arrows. Implement Text Off, Small, Compact, Large and Reset Ribbon across all commands and layouts. |
+| 1 | `features/application/ribbon-appearance/ribbon-appearance.feature` | In progress | On the recorded source, five of 18 scenarios pass; the others stop at undefined steps. Panel titles can be hidden without losing expansion arrows. Implement Text Off, Small, Compact, Large and Reset Ribbon across all commands and layouts. |
 | 1 | `features/application/ribbon-docking/ribbon-docking.feature` | In progress | Source changed after the inventory checkpoint. A full native run at commit `139b82a42` found 6 passes and 17 scenarios stopped by undefined steps. With corrected bindings, a second run found 8 passes, 14 undefined steps, and one ambiguous step. Resolve the remaining steps and implement missing command-group behavior. |
 | 1 | `features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature` | Needs rerun | Source changed since the inventory checkpoint. Review the corrections and rerun affected native scenarios. |
 | 1 | `features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature` | Needs rerun | The source changed after the full run at `6e80b9bde`. Review the corrections and run the whole feature against a stable source; earlier counts are historical. |
@@ -448,6 +448,23 @@ revisions checked before they support a current pass claim.
   reported two of 18 scenarios passed. The other 16 stopped at undefined
   steps; their later steps were not tested. Reports are in
   `/tmp/obk-ribbon-appearance-full-20261113`. These paths are local artifacts.
+
+### Appearance menu and tab changes, 2026-11-13
+
+- Native BDD bindings now check that an inactive Sketch tab's context menu
+  changes title visibility without selecting that tab, and that selecting
+  another tab dismisses the appearance submenu. A sketch-editing variant also
+  compares the sketch recipe before and after the tab changes.
+- The full feature run on source SHA-256
+  `5de53f4ed08ea45af82b8e9c2cf628f859c713d96118848bd32304fadcb0a4a0`,
+  unchanged across the run, reported five of 18 scenarios passed. The other
+  13 stopped at undefined steps. Application: `6efd3e9a9` plus this commit's
+  test bindings; unrelated README and AGENTS files were present. Linux, Xvfb
+  at 1600 × 1000 and Lavapipe were used. The unfiltered feature command was
+  `cargo test --locked -p oblikovati-head --lib
+  application_scenarios_use_the_native_window -- --nocapture` with
+  `OBK_BDD_FEATURE=ribbon-appearance`. Reports are in
+  `/tmp/obk-appearance-full-checked-20261113`, a local location.
 
 ### Switching side ribbon tabs with the selector open, 2026-11-13
 

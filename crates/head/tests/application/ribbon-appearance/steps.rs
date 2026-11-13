@@ -17,12 +17,82 @@ fn select_title_setting(world: &mut ApplicationWorld) {
     world.click_text("Show Panel Titles");
     world.pump(Vec::new());
 }
+#[given("the full 3D Model ribbon uses the Normal appearance")]
+fn model_normal_appearance(world: &mut ApplicationWorld) {
+    expect_normal_appearance(world, "3D Model", "Start 2D Sketch");
+}
+fn expect_normal_appearance(world: &mut ApplicationWorld, tab: &str, command: &str) {
+    open_tab_menu(world, tab);
+    world.click_text("Ribbon Appearance");
+    assert!(world.checked("Normal"));
+    world.escape();
+    world.escape();
+    world.expect_text(command);
+}
+#[given("the Sketch ribbon uses Normal appearance")]
+fn sketch_normal_appearance(world: &mut ApplicationWorld) {
+    expect_normal_appearance(world, "Sketch", "Finish Sketch");
+}
+#[when("the user opens Ribbon Appearance from the Create panel title context menu")]
+fn sketch_appearance_submenu(world: &mut ApplicationWorld) {
+    open_panel_appearance(world, "Create");
+}
+fn open_panel_appearance(world: &mut ApplicationWorld, panel: &str) {
+    let title = diagnostics::pointer_pixels(world.run(panel).center());
+    world.right_click(title);
+    world.click_text("Ribbon Appearance");
+    assert!(world.checked("Normal"));
+}
+#[when("the user clicks the Tools tab while the submenu is open")]
+fn tools_tab_with_appearance_open(world: &mut ApplicationWorld) {
+    select_tab(world, "Tools");
+}
+#[when("the user selects the Sketch tab")]
+fn sketch_tab(world: &mut ApplicationWorld) {
+    select_tab(world, "Sketch");
+}
+#[then("the Sketch ribbon is displayed")]
+fn sketch_ribbon_displayed(world: &mut ApplicationWorld) {
+    world.expect_text("Finish Sketch");
+}
+#[given("the Ribbon Appearance submenu is open from a panel context menu")]
+fn appearance_submenu_open(world: &mut ApplicationWorld) {
+    open_panel_appearance(world, "Modify");
+}
+#[then("the appearance submenu and panel context menu close")]
+fn appearance_menus_closed(world: &mut ApplicationWorld) {
+    world.expect_no_text("Ribbon Appearance");
+    world.expect_no_text("Normal");
+}
+#[then("the Tools ribbon is displayed")]
+fn tools_ribbon_displayed(world: &mut ApplicationWorld) {
+    world.expect_text("Application Options");
+}
 #[given("the full 3D Model ribbon shows panel titles")]
+#[given("panel titles are visible")]
 fn model_titles_shown(world: &mut ApplicationWorld) {
     world.expect_text("Start 2D Sketch");
     world.expect_text("Modify");
     let title = world.run("Modify");
     world.modify_title_anchor = Some([title.minimum[0], title.center()[1]]);
+}
+#[when("the user opens the inactive Sketch tab context menu")]
+fn inactive_sketch_context(world: &mut ApplicationWorld) {
+    open_tab_menu(world, "Sketch");
+}
+#[then("3D Model remains selected and Show Panel Titles is checked")]
+fn model_active_titles_checked(world: &mut ApplicationWorld) {
+    world.expect_text("Start 2D Sketch");
+    assert!(world.checked("Show Panel Titles"));
+}
+#[then("the menu closes and the 3D Model panel titles are hidden")]
+fn menu_closed_model_titles_hidden(world: &mut ApplicationWorld) {
+    world.expect_no_text("Show Panel Titles");
+    model_titles_hidden(world);
+}
+#[then("3D Model remains selected")]
+fn model_remains_selected(world: &mut ApplicationWorld) {
+    world.expect_text("Start 2D Sketch");
 }
 #[when("the user opens the 3D Model tab context menu")]
 fn model_tab_menu(world: &mut ApplicationWorld) {
@@ -78,10 +148,12 @@ fn hide_titles(world: &mut ApplicationWorld) {
     select_title_setting(world);
 }
 #[when("the user selects the Tools tab")]
+#[when("the user selects Tools")]
 fn tools_tab(world: &mut ApplicationWorld) {
     select_tab(world, "Tools");
 }
 #[then("the Tools panel titles are hidden")]
+#[then("the Tools panel titles are also hidden")]
 fn tools_titles_hidden(world: &mut ApplicationWorld) {
     world.expect_text("Application Options");
     assert!(
@@ -96,6 +168,20 @@ fn tools_tab_menu(world: &mut ApplicationWorld) {
 #[then("Show Panel Titles is unchecked")]
 fn titles_unchecked(world: &mut ApplicationWorld) {
     assert!(!world.checked("Show Panel Titles"));
+}
+#[then("Show Panel Titles is unchecked and Tools remains selected")]
+fn tools_active_titles_unchecked(world: &mut ApplicationWorld) {
+    titles_unchecked(world);
+    world.expect_text("Application Options");
+}
+#[then("the menu closes and the Tools panel titles are visible")]
+fn menu_closed_tools_titles_visible(world: &mut ApplicationWorld) {
+    world.expect_no_text("Show Panel Titles");
+    tools_titles_visible(world);
+}
+#[then("Tools remains selected")]
+fn tools_remains_selected(world: &mut ApplicationWorld) {
+    world.expect_text("Application Options");
 }
 #[when("the user selects Show Panel Titles from that menu")]
 fn show_titles(world: &mut ApplicationWorld) {

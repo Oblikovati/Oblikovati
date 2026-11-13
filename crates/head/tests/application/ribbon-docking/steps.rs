@@ -75,6 +75,7 @@ fn expect_vertical(world: &mut ApplicationWorld, labels: &[&str]) {
     }
 }
 #[given("a part is active in the MCAD Software")]
+#[given("a part is active in the MCAD Software with the full 3D Model ribbon selected")]
 fn part_active(world: &mut ApplicationWorld) {
     world.previous_document = Some(world.add_part());
 }
