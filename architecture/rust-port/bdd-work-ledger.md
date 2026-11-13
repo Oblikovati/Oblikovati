@@ -16,7 +16,7 @@ complete. The checkpoint has not been advanced: the changes still need triage.
 | 1 | `features/application` | In progress | The native application runner exists. A complete, current area result has not been recorded. Run and retain the full area report; triage failures against the current source. |
 | 1 | Native parameter-driven cube journey | In progress | The native journey creates a constrained rectangle and extrude, edits the size, uses undo/redo, saves and reopens, and resolves a face. Maintain the live test and rerun it after relevant changes. |
 | 1 | `features/application/file-menu/file-menu.feature` | Verified | All eight scenarios passed on the recorded updated source. Weldment remains unavailable. |
-| 1 | `features/application/document-creation` | In progress | The current-source run with updated bindings passed 26 of 39 native scenarios; 13 stopped at undefined steps. Add the remaining scenario bindings and the named template and populated-layout fixtures. See the current run below. |
+| 1 | `features/application/document-creation` | In progress | The current-source run with gallery setup bindings passed 27 of 39 native scenarios; 12 stopped at undefined steps. Add the named template and populated-layout fixtures and remaining scenario bindings. See the current run below. |
 | 1 | `features/application/document-opening` | In progress | The current-source native run passed 26 of 27 scenarios. Express assembly loading stopped at a missing component fixture; its later steps did not run. The saved-drawing scenario passes with its referenced part initially closed. |
 | 1 | `features/application/document-saving` | Passing | The current-source native feature run passed 23 of 23 scenarios. The first-save preview is rendered from the part and stored in the saved file. See the save evidence below. |
 | 1 | `features/application/model-browser` | In progress | After action wording updates, a full native run passed 29 of 100 scenarios. Of the other 71, 62 stopped at undefined steps and nine at failed checks. Focused fixes passed later; rerun the full feature before reporting a current total. |
@@ -66,6 +66,14 @@ complete. The checkpoint has not been advanced: the changes still need triage.
   `OBK_BDD_REPORTS=/tmp/obk-bdd-create-20261113-final`; JSON, JUnit and log
   are there. Remaining work includes the named template fixtures, keyboard
   navigation setup, populated drawing layouts and their update behavior.
+- A further full run on the same source hash passed 27 of 39 scenarios
+  (69.2%); 12 stopped at undefined steps. The test returned failure. It used
+  application commit `18f721807` with the gallery setup, inch-template action,
+  and active-sketch setup bindings modified. The same native command and
+  environment were used, with `OBK_BDD_REPORTS` set to
+  `/tmp/obk-bdd-create-20261113-gallery`. The setup now reaches the named
+  template checks. The active-sketch scenario asks for a `Create New File`
+  title; the current chooser title is `New document`.
 
 ### Document creation focused scenarios, 2026-11-13
 

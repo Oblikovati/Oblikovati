@@ -6,6 +6,31 @@ mod chooser_details;
 mod gallery_icons;
 #[path = "gallery_secondary.rs"]
 mod gallery_secondary;
+#[given("the new-document chooser shows the metric folder grouped by type using Medium icons")]
+#[given("the template chooser shows the metric folder grouped by type using Medium icons")]
+fn metric_medium_chooser(world: &mut ApplicationWorld) {
+    open_chooser(world);
+    metric_selected(world);
+    grouped_by_default(world);
+    choose_template_view(world, "Medium Icons");
+    medium_tiles(world);
+}
+
+#[given("the template chooser shows the metric folder grouped by type")]
+#[given("the template chooser shows the metric folder and its grouped templates")]
+fn metric_grouped_chooser(world: &mut ApplicationWorld) {
+    open_chooser(world);
+    metric_selected(world);
+    grouped_by_default(world);
+}
+#[given("the template chooser shows the English folder grouped by type using Medium icons")]
+fn english_medium_chooser(world: &mut ApplicationWorld) {
+    open_chooser(world);
+    world.click_text("English");
+    grouped_by_default(world);
+    choose_template_view(world, "Medium Icons");
+    world.expect_text("Standard inch part");
+}
 #[given("the metric template folder is selected")]
 fn metric_selected(world: &mut ApplicationWorld) {
     world.click_text("Metric");

@@ -299,6 +299,7 @@ fn details_still_metric(world: &mut ApplicationWorld) {
     world.expect_text("millimeters (mm)");
 }
 #[when("I select the inch sheet-metal template")]
+#[when("the user selects the inch sheet-metal template")]
 fn select_inch_sheet_metal(world: &mut ApplicationWorld) {
     world.click_text(INCH_SHEET_METAL);
 }
