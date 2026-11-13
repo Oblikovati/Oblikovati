@@ -31,6 +31,18 @@ fn select_manage_by_keyboard(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::Enter, false);
 }
 
+#[when("the user presses Down to highlight Part Manage")]
+fn highlight_manage(world: &mut ApplicationWorld) {
+    world.key(ViewportPhysicalKey::DownArrow, false);
+    world.hover([1100, 800]);
+    let selected = world.run("Part | Manage").clone();
+    let other = world.run("Part | View").clone();
+    let x = selected.maximum[0].max(other.maximum[0]) + 8.;
+    let selected_at = diagnostics::pointer_pixels([x, selected.center()[1]]).map(|v| v as usize);
+    let other_at = diagnostics::pointer_pixels([x, other.center()[1]]).map(|v| v as usize);
+    assert_ne!(world.pixel_at(selected_at), world.pixel_at(other_at));
+}
+
 #[when("the user presses Up and Enter to select Part Tools")]
 fn select_tools_by_keyboard(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::UpArrow, false);

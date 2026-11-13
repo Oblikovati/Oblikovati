@@ -359,17 +359,19 @@ fn escape_discards_customization_without_cancelling_the_active_sketch() {
 }
 
 #[test]
-fn escape_closes_the_target_list_before_the_customization_dialog() {
+fn escape_from_the_target_list_discards_the_pending_draft() {
     let mut world = ApplicationWorld::new();
     world.add_part();
     open_tools_customization(&mut world);
     stage_sketch_visibility(&mut world);
     click_in_customize(&mut world, "Part|Tools*");
     world.expect_text("Part | Annotate");
-    world.key(oblikovati_viewport::ViewportPhysicalKey::Escape, false);
-    assert!(diagnostics::window_geometry("Customize").is_some());
-    assert!(world.window_text("Customize").contains("Part|Tools*"));
+    world.key(oblikovati_viewport::ViewportPhysicalKey::DownArrow, false);
     world.key(oblikovati_viewport::ViewportPhysicalKey::Escape, false);
     assert!(diagnostics::window_geometry("Customize").is_none());
+    open_tools_customization(&mut world);
+    assert!(!world.window_text("Customize").contains("Part|Tools*"));
+    sketches_in_available_commands(&mut world);
+    click_in_customize(&mut world, "Close");
     world.close();
 }

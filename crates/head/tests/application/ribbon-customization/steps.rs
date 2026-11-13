@@ -143,6 +143,7 @@ fn no_user_commands(world: &mut ApplicationWorld) {
 }
 #[when("the user reopens ribbon customization from Tools")]
 #[when("the user reopens customization from the Tools ribbon")]
+#[when("the user reopens Ribbon customization")]
 fn reopen_tools_customization(world: &mut ApplicationWorld) {
     open_tools_customization(world);
 }
@@ -244,6 +245,7 @@ fn customization_remains_open(_world: &mut ApplicationWorld) {
 #[then("the target no longer indicates a pending change")]
 #[then("the target is not marked as changed")]
 #[then("the target has no pending-change marker")]
+#[then("the Part Tools target has no pending-change marker")]
 fn tools_not_pending(world: &mut ApplicationWorld) {
     assert!(world.window_text("Customize").contains("Part|Tools"));
     assert!(!world.window_text("Customize").contains("Part|Tools*"));

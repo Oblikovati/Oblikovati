@@ -150,6 +150,7 @@ impl RibbonCustomization {
         crate::widget_abi::fit_dialog(ui, "Customize", [340., 185.], [760., 440.]);
         let mut window_open = self.open;
         let category_was_open = self.category_open;
+        let target_was_open = self.target_selector_open;
         ui.window("Customize")
             .opened(&mut window_open)
             .collapsible(false)
@@ -164,9 +165,10 @@ impl RibbonCustomization {
                     imgui::WindowFocusedFlags::ROOT_AND_CHILD_WINDOWS,
                 );
                 self.list_keyboard(ui, focused);
+                let selector_was_open = category_was_open || target_was_open;
                 let close_dialog = self.escape.pressed(ui)
-                    || (category_was_open && ui.is_key_pressed_no_repeat(imgui::Key::Escape));
-                if close_dialog && (focused || category_was_open) {
+                    || (selector_was_open && ui.is_key_pressed_no_repeat(imgui::Key::Escape));
+                if close_dialog && (focused || selector_was_open) {
                     self.open = false;
                     self.escape_consumed = true;
                 }
