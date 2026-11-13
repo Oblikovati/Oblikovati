@@ -4,6 +4,179 @@ use super::*;
 use oblikovati_model::assembly::AssemblyOccurrenceRecipe;
 
 #[test]
+fn redo_reopens_a_component_closed_after_undo() {
+    let mut files = DiscoveryWorkspace::new(QueryObserver::default(), DiscoveryFiles::default());
+    let mut source = QueryGuids(0);
+    save_component_fixture(&mut files, &mut source, "redo-part.opd");
+    let path = Path::new("/fixtures/redo-root.oad");
+    files
+        .files()
+        .packages
+        .borrow_mut()
+        .insert(path.into(), b"schemaVersion: 2\ndocumentType: 2\n".to_vec());
+    let mut factory = QueryObserverFactory {
+        created: 0,
+        limit: 8,
+    };
+    let part = FileHost::new(&mut files, &mut source, "test")
+        .with_observer_factory(&mut factory)
+        .open_path(Path::new("/fixtures/redo-part.opd"), true)
+        .unwrap();
+    let root = FileHost::new(&mut files, &mut source, "test")
+        .with_observer_factory(&mut factory)
+        .open_path(path, true)
+        .unwrap();
+    let matrix = oblikovati_api::types::Matrix {
+        cells: [
+            1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1.,
+        ],
+    };
+    {
+        let client = Client::new(FileHost::new(&mut files, &mut source, "test"));
+        client
+            .assembly()
+            .place(&PlaceOccurrenceArgs {
+                document: part,
+                name: "Part:1".into(),
+                transform: matrix,
+            })
+            .unwrap();
+        client.transactions().undo().unwrap();
+    }
+    files.close_discarding_changes(part).unwrap();
+    let client = Client::new(
+        FileHost::new(&mut files, &mut source, "test").with_observer_factory(&mut factory),
+    );
+    client.transactions().redo().unwrap();
+    let rows = client
+        .assembly()
+        .occurrences(&Default::default())
+        .unwrap()
+        .occurrences
+        .unwrap();
+    assert_eq!((rows.len(), rows[0].name.as_str()), (1, "Part:1"));
+    drop(client);
+    assert_ne!(
+        files.document_reference(root, "/fixtures/redo-part.opd"),
+        Some(part)
+    );
+    assert!(
+        files
+            .document_reference(root, "/fixtures/redo-part.opd")
+            .is_some()
+    );
+    let reopened = files
+        .document_reference(root, "/fixtures/redo-part.opd")
+        .unwrap();
+    Client::new(FileHost::new(&mut files, &mut source, "test"))
+        .transactions()
+        .undo()
+        .unwrap();
+    if files.workspace().documents().contains(&reopened) {
+        files.close_discarding_changes(reopened).unwrap();
+    }
+    files
+        .files()
+        .packages
+        .borrow_mut()
+        .remove(Path::new("/fixtures/redo-part.opd"));
+    let client = Client::new(
+        FileHost::new(&mut files, &mut source, "test").with_observer_factory(&mut factory),
+    );
+    client.transactions().redo().unwrap();
+    let error = client
+        .assembly()
+        .occurrences(&Default::default())
+        .unwrap_err();
+    assert!(error.to_string().contains("redo-part.opd"));
+    assert!(error.to_string().contains("reference"));
+}
+
+#[test]
+fn canonical_placement_survives_history_save_and_reopen() {
+    let mut files = DiscoveryWorkspace::new(QueryObserver::default(), DiscoveryFiles::default());
+    let mut source = QueryGuids(0);
+    save_component_fixture(&mut files, &mut source, "placed.opd");
+    let assembly_path = Path::new("/fixtures/placed.oad");
+    files.files().packages.borrow_mut().insert(
+        assembly_path.into(),
+        b"schemaVersion: 2\ndocumentType: 2\n".to_vec(),
+    );
+    let mut factory = QueryObserverFactory {
+        created: 0,
+        limit: 6,
+    };
+    let part = FileHost::new(&mut files, &mut source, "test")
+        .with_observer_factory(&mut factory)
+        .open_path(Path::new("/fixtures/placed.opd"), true)
+        .unwrap();
+    let root = FileHost::new(&mut files, &mut source, "test")
+        .with_observer_factory(&mut factory)
+        .open_path(assembly_path, true)
+        .unwrap();
+    let identity = oblikovati_api::types::Matrix {
+        cells: [
+            1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1.,
+        ],
+    };
+    {
+        let client = Client::new(FileHost::new(&mut files, &mut source, "test"));
+        let args = PlaceOccurrenceArgs {
+            document: part,
+            name: "Part:1".into(),
+            transform: identity.clone(),
+        };
+        let placed = client.assembly().place(&args).unwrap().occurrence;
+        assert_eq!((placed.id, placed.name.as_str()), (1, "Part:1"));
+        assert!(!placed.grounded);
+        let duplicate = client.assembly().place(&args).unwrap().occurrence;
+        assert_ne!(duplicate.id, placed.id);
+        client.transactions().undo().unwrap();
+        let mut invalid = args.clone();
+        invalid.name = "Part:2".into();
+        invalid.transform.cells[0] = 0.;
+        assert!(client.assembly().place(&invalid).is_err());
+        client.transactions().undo().unwrap();
+        assert!(
+            client
+                .assembly()
+                .occurrences(&Default::default())
+                .unwrap()
+                .occurrences
+                .unwrap()
+                .is_empty()
+        );
+        client.transactions().redo().unwrap();
+        assert_eq!(
+            client
+                .assembly()
+                .occurrences(&Default::default())
+                .unwrap()
+                .occurrences
+                .unwrap()[0]
+                .id,
+            placed.id
+        );
+    }
+    files.save(root, "test", &mut source).unwrap();
+    files.close_discarding_changes(root).unwrap();
+    FileHost::new(&mut files, &mut source, "test")
+        .with_observer_factory(&mut factory)
+        .open_path(assembly_path, true)
+        .unwrap();
+    let rows = Client::new(FileQueryHost::new(&files))
+        .assembly()
+        .occurrences(&Default::default())
+        .unwrap()
+        .occurrences
+        .unwrap();
+    assert_eq!(
+        (rows.len(), rows[0].name.as_str(), &rows[0].transform),
+        (1, "Part:1", &identity)
+    );
+}
+
+#[test]
 fn canonical_assembly_api_keeps_occurrence_ids_through_edits_and_history() {
     let mut files = DiscoveryWorkspace::new(QueryObserver::default(), DiscoveryFiles::default());
     let mut source = QueryGuids(0);

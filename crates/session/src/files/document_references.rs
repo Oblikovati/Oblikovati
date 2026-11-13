@@ -129,7 +129,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
                     .any(|record| record.component_reference() == Some(name))
             })
     }
-    fn reference_graph(
+    pub(super) fn reference_graph(
         &self,
         bindings: &BTreeMap<u64, BTreeMap<String, u64>>,
     ) -> Result<DependencyGraph<u64>, FileWorkspaceError> {

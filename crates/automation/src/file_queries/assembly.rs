@@ -15,7 +15,7 @@ pub(super) fn occurrences<O: TransactionObserver, W: WorkspaceObserver, F: Docum
     })
 }
 
-fn rows<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+pub(crate) fn rows<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &FileWorkspace<O, W, F>,
     document: u64,
     depth: usize,
@@ -64,7 +64,10 @@ pub(crate) fn occurrence<O: TransactionObserver, W: WorkspaceObserver, F: Docume
     depth: usize,
 ) -> Result<OccurrenceInfo, Error> {
     let children = if let Some(name) = record.component_reference() {
-        let target = files.document_reference(owner, name).ok_or_else(|| Error(format!("assembly {owner} occurrence {:?} component {name:?}: expected a resolved reference", record.name)))?;
+        let target = files.document_reference(owner, name).ok_or_else(|| {
+            let reason = files.document_reference_error(owner, name).unwrap_or("reference is not resolved");
+            Error(format!("assembly {owner} occurrence {:?} component {name:?}: expected a resolved reference: {reason}", record.name))
+        })?;
         let session = files
             .workspace()
             .session(target)
@@ -77,6 +80,13 @@ pub(crate) fn occurrence<O: TransactionObserver, W: WorkspaceObserver, F: Docume
     } else {
         None
     };
+    occurrence_info(record, children)
+}
+
+pub(crate) fn occurrence_info(
+    record: &AssemblyOccurrenceRecipe,
+    children: Option<Vec<OccurrenceInfo>>,
+) -> Result<OccurrenceInfo, Error> {
     Ok(OccurrenceInfo {
         id: record.session_id,
         name: record.name.clone(),

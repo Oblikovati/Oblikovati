@@ -37,3 +37,24 @@ fn refuses_singular_ill_conditioned_and_invalid_lines() {
     );
     assert!(line_in_occurrence(&Matrix { cells }, [[0.; 3], [f64::MAX; 3]]).is_err());
 }
+
+#[test]
+fn placement_validation_uses_the_same_inverse_as_picking() {
+    let mut cells = [
+        1., 0., 0., 2., 0., 1., 0., 3., 0., 0., 1., 4., 0., 0., 0., 1.,
+    ];
+    assert!(validate_occurrence_placement(&Matrix { cells }).is_ok());
+    cells[10] = f64::EPSILON;
+    assert!(
+        validate_occurrence_placement(&Matrix { cells })
+            .unwrap_err()
+            .contains("condition")
+    );
+    cells[10] = 1.;
+    cells[12] = 1.;
+    assert!(
+        validate_occurrence_placement(&Matrix { cells })
+            .unwrap_err()
+            .contains("affine")
+    );
+}

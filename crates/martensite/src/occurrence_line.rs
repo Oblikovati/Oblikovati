@@ -10,18 +10,10 @@ pub fn line_in_occurrence(
     line: [[f64; 3]; 2],
 ) -> Result<[[f64; 3]; 2], String> {
     let cells = &placement.cells;
-    if !cells.iter().all(|value| value.is_finite()) || cells[12..] != [0., 0., 0., 1.] {
-        return Err(format!(
-            "occurrence placement {cells:?}: expected a finite affine matrix"
-        ));
-    }
+    let inverse = inverse_placement(placement)?;
     if !line.iter().flatten().all(|value| value.is_finite()) {
         return Err(format!("sight line {line:?}: expected finite coordinates"));
     }
-    let matrix = Matrix3::new(std::array::from_fn(|row| {
-        std::array::from_fn(|column| cells[row * 4 + column])
-    }));
-    let inverse = checked_inverse(matrix, cells)?;
     let offset = Xyz::new(cells[3], cells[7], cells[11]);
     let transform = GeneralTransform3::new(inverse, inverse.apply(offset).reversed());
     let origin = transform.apply(xyz(line[0]));
@@ -37,6 +29,25 @@ pub fn line_in_occurrence(
         ));
     }
     Ok(result)
+}
+
+/// Check that a placement has a usable affine inverse.
+/// Example: `validate_occurrence_placement(&matrix)?` before placing a component.
+pub fn validate_occurrence_placement(placement: &Matrix) -> Result<(), String> {
+    inverse_placement(placement).map(|_| ())
+}
+
+fn inverse_placement(placement: &Matrix) -> Result<Matrix3, String> {
+    let cells = &placement.cells;
+    if !cells.iter().all(|value| value.is_finite()) || cells[12..] != [0., 0., 0., 1.] {
+        return Err(format!(
+            "occurrence placement {cells:?}: expected a finite affine matrix"
+        ));
+    }
+    let matrix = Matrix3::new(std::array::from_fn(|row| {
+        std::array::from_fn(|column| cells[row * 4 + column])
+    }));
+    checked_inverse(matrix, cells)
 }
 
 fn checked_inverse(matrix: Matrix3, cells: &[f64; 16]) -> Result<Matrix3, String> {

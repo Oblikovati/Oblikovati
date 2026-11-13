@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 //! File bindings owned together with their document sessions.
+mod assembly_placement;
 mod asset_catalog;
 pub use asset_catalog::WorkspaceAssetCatalogSource;
 mod batch;

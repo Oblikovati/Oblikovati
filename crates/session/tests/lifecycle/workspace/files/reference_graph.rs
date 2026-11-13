@@ -3,6 +3,108 @@ use super::*;
 use oblikovati_model::assembly::AssemblyOccurrenceRecipe;
 type ReferenceHost = FileWorkspace<ContentObserver, RecordingWorkspace, WorkspaceFiles>;
 
+fn accept_identity_placement(matrix: &oblikovati_api::types::Matrix) -> Result<(), String> {
+    let expected = [
+        1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1.,
+    ];
+    if matrix.cells == expected {
+        Ok(())
+    } else {
+        Err(format!("matrix {:?}: expected identity", matrix.cells))
+    }
+}
+
+#[test]
+fn placement_keeps_reference_and_history_atomic_on_refusal_and_replay() {
+    let files = WorkspaceFiles::default();
+    files
+        .contents
+        .borrow_mut()
+        .insert(path("placed.obk"), fixture(1));
+    let mut host = FileWorkspace::new(RecordingWorkspace::default(), files);
+    let mut source = SequenceGuids(1000);
+    let part = host
+        .open(
+            &path("placed.obk"),
+            ContentObserver,
+            "alpha",
+            &mut source,
+            OpenActivation::Background,
+        )
+        .unwrap()
+        .session_id();
+    let owner = assembly(&mut host, &mut source, &[]);
+    let identity = oblikovati_api::types::Matrix {
+        cells: [
+            1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1.,
+        ],
+    };
+    let reference = path("placed.obk").to_str().unwrap().to_owned();
+    let rejected = host.place_occurrence(
+        owner,
+        part,
+        "Part:1",
+        identity.clone(),
+        accept_identity_placement,
+        |_, _| Err::<u64, _>("projection refused".into()),
+    );
+    assert!(rejected.unwrap_err().contains("projection refused"));
+    assert_eq!(host.document_reference(owner, &reference), None);
+    assert!(!host.has_reference_dependents(part));
+    let id = host
+        .place_occurrence(
+            owner,
+            part,
+            "Part:1",
+            identity.clone(),
+            accept_identity_placement,
+            |_, id| Ok(id),
+        )
+        .unwrap();
+    assert!(id > 1);
+    assert_eq!(host.document_reference(owner, &reference), Some(part));
+    assert!(
+        host.place_occurrence(
+            owner,
+            part,
+            "",
+            identity,
+            accept_identity_placement,
+            |_, id| Ok(id)
+        )
+        .is_err()
+    );
+    assert_eq!(host.document_reference(owner, &reference), Some(part));
+    host.commands(owner).unwrap().undo().unwrap();
+    assert_eq!(host.document_reference(owner, &reference), None);
+    host.commands(owner).unwrap().redo().unwrap();
+    assert_eq!(host.document_reference(owner, &reference), Some(part));
+    host.save_as(owner, &path("placed.oad"), "alpha", &mut source)
+        .unwrap();
+    let self_reference = host.place_occurrence(
+        owner,
+        owner,
+        "Self:1",
+        oblikovati_api::types::Matrix {
+            cells: [
+                1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1.,
+            ],
+        },
+        accept_identity_placement,
+        |_, id| Ok(id),
+    );
+    assert!(self_reference.unwrap_err().contains("acyclic"));
+    assert_eq!(host.document_reference(owner, &reference), Some(part));
+    let bytes = host.files().contents.borrow()[&path("placed.oad")].clone();
+    let saved = DocumentPackage::decode(&bytes)
+        .unwrap()
+        .assembly_occurrences()
+        .unwrap()
+        .unwrap();
+    assert_eq!(saved[0].component, reference);
+    assert_eq!(saved[0].name, "Part:1");
+}
+
 #[test]
 fn assembly_save_requires_each_new_reference_to_match_its_owned_file() {
     let files = WorkspaceFiles::default();

@@ -10,6 +10,7 @@ use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 use std::cell::RefCell;
 mod assembly_occurrence_edits;
+mod assembly_placement;
 mod assembly_references;
 mod attachments;
 pub use assembly_references::{AssemblyReferenceFailure, AssemblyReferenceReport};
@@ -41,7 +42,7 @@ pub const FILE_COMMAND_METHODS: [&str; 10] = [
     METHOD_DOCUMENTS_CLOSE_ALL,
 ];
 /// Assembly mutations currently owned by the file host.
-pub const ASSEMBLY_COMMAND_METHODS: [&str; 1] = [METHOD_ASSEMBLY_SUPPRESS];
+pub const ASSEMBLY_COMMAND_METHODS: [&str; 2] = [METHOD_ASSEMBLY_SUPPRESS, METHOD_ASSEMBLY_PLACE];
 
 /// Synchronous API access that retains file, history, and identity ownership.
 pub struct FileHost<'a, O: TransactionObserver, W, F> {
@@ -254,6 +255,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
 }
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext<'_, O, W, F> {
     fn owned_command(&mut self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
+        if method == METHOD_ASSEMBLY_PLACE {
+            return assembly_placement::place(self.files, decode(method, request)?);
+        }
         if method == METHOD_ASSEMBLY_SUPPRESS {
             return assembly_occurrence_edits::suppress_wire(self.files, decode(method, request)?);
         }
@@ -314,6 +318,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
             let result = transactions::apply(self.files, method, request)?;
             if method != METHOD_TRANSACTION_BEGIN {
                 self.synchronize_drawing_references();
+                self.synchronize_assembly_references().map_err(|error| {
+                    Error(format!("transaction {method} was applied, but reference synchronization failed: {error}"))
+                })?;
             }
             return Ok(result);
         }
@@ -333,6 +340,19 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
         for document in self.files.workspace().documents().to_vec() {
             self.open_drawing_reference(document);
         }
+    }
+    fn synchronize_assembly_references(&mut self) -> Result<(), Error> {
+        let documents = self.files.workspace().documents().to_vec();
+        for document in documents {
+            let Ok(session) = self.files.workspace().session(document) else {
+                continue;
+            };
+            let is_assembly = session.snapshot().assembly.is_some();
+            if is_assembly {
+                self.resolve_assembly_references(document)?;
+            }
+        }
+        Ok(())
     }
 }
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext<'_, O, W, F> {
