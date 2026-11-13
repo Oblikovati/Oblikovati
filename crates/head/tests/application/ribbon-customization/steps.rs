@@ -208,6 +208,8 @@ fn cancel_customization(world: &mut ApplicationWorld) {
     for title in [
         "Import Customization Settings",
         "Export Customization Settings",
+        "Geometry Properties",
+        "Feature Properties",
     ] {
         if let Some((position, size)) = diagnostics::window_geometry(title) {
             let center = world

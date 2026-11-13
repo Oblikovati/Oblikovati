@@ -54,7 +54,9 @@ fn yz_hidden(world: &mut ApplicationWorld) {
     assert!(!plane_shows_at(world, YZ), "expected the plane hidden");
 }
 #[when("I select the YZ Plane row")]
+#[when("the user selects the YZ Plane row")]
 #[when("I select the YZ Plane row in the model browser")]
+#[when("the user selects the YZ Plane row in the model browser")]
 fn select_yz(world: &mut ApplicationWorld) {
     world.click_text(YZ);
     settle(world);
@@ -87,6 +89,7 @@ fn plane_gone_block_stays(world: &mut ApplicationWorld) {
 }
 // Visibility
 #[when("I right-click the YZ Plane row again")]
+#[when("the user right-clicks the YZ Plane row again")]
 fn right_click_yz(world: &mut ApplicationWorld) {
     right_click_row(world, YZ);
 }
@@ -95,6 +98,7 @@ fn plane_menu(world: &mut ApplicationWorld) {
     expect_rows(world, &["Visibility", "New Sketch"]);
 }
 #[when("I choose Visibility and click empty viewport space")]
+#[when("the user chooses Visibility and clicks empty viewport space")]
 fn visibility_and_click(world: &mut ApplicationWorld) {
     choose_menu_row(world, "Visibility");
     click_empty_viewport(world);
@@ -121,7 +125,9 @@ fn x_axis_hidden(world: &mut ApplicationWorld) {
     expect_outline(world, false);
 }
 #[when("I right-click the X Axis row")]
+#[when("the user right-clicks the X Axis row")]
 #[when("I right-click the X Axis row again")]
+#[when("the user right-clicks the X Axis row again")]
 fn right_click_axis(world: &mut ApplicationWorld) {
     right_click_row(world, "X Axis");
 }
@@ -168,17 +174,23 @@ fn press_up(world: &mut ApplicationWorld) {
     press_arrow(world, ViewportPhysicalKey::UpArrow, false);
 }
 #[when("I press Left Arrow")]
+#[when("the user presses Left Arrow")]
 #[when("I press Left Arrow again")]
+#[when("the user presses Left Arrow again")]
 fn press_left(world: &mut ApplicationWorld) {
     press_arrow(world, ViewportPhysicalKey::LeftArrow, false);
 }
 #[when("I press Right Arrow")]
+#[when("the user presses Right Arrow")]
 #[when("I press Right Arrow again")]
+#[when("the user presses Right Arrow again")]
 fn press_right(world: &mut ApplicationWorld) {
     press_arrow(world, ViewportPhysicalKey::RightArrow, false);
 }
 #[when("I press Shift and Down Arrow together")]
+#[when("the user presses Shift and Down Arrow together")]
 #[when("I press Shift and Down Arrow together again")]
+#[when("the user presses Shift and Down Arrow together again")]
 fn press_shift_down(world: &mut ApplicationWorld) {
     press_arrow(world, ViewportPhysicalKey::DownArrow, true);
 }
@@ -221,16 +233,19 @@ fn branch_opens(world: &mut ApplicationWorld) {
 }
 // Folder menu
 #[when("I right-click the Origin folder")]
+#[when("the user right-clicks the Origin folder")]
 fn right_click_origin(world: &mut ApplicationWorld) {
     right_click_row(world, "Origin");
 }
 #[when("I choose Collapse All Children")]
+#[when("the user chooses Collapse All Children")]
 fn choose_collapse(world: &mut ApplicationWorld) {
     choose_menu_row(world, "Collapse All Children");
     settle(world);
 }
 // Show Input
 #[when("I choose Show Input from the sketch row context menu")]
+#[when("the user chooses Show Input from the sketch row context menu")]
 fn show_input(world: &mut ApplicationWorld) {
     right_click_row(world, SKETCH);
     choose_menu_row(world, "Show Input");

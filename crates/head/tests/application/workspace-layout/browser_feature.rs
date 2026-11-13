@@ -307,9 +307,22 @@ fn sketch_more_rows(world: &mut ApplicationWorld) {
 }
 #[then("the sketch row is highlighted")]
 fn sketch_row_highlighted(world: &mut ApplicationWorld) {
-    assert!(
-        world.row_highlighted(SKETCH),
-        "expected the sketch row's accent"
+    let browser = world.state().browser.expect("expected a model browser");
+    let sketch = browser
+        .sketches
+        .iter()
+        .find(|row| row.name == SKETCH)
+        .unwrap();
+    assert!(browser.selected_sketches.contains(&sketch.id));
+    let row = world.run(SKETCH).clone();
+    // The open context menu covers the right side of this row.
+    let x = (row.minimum[0] as usize).saturating_sub(3);
+    let (position, size) =
+        super::super::diagnostics::window_geometry("Model").expect("expected the browser");
+    let background_y = (position[1] + size[1] - 12.) as usize;
+    assert_ne!(
+        world.pixel_at([x, row.center()[1] as usize]),
+        world.pixel_at([x, background_y])
     );
 }
 fn sketch_dimension_texts(world: &mut ApplicationWorld) -> Vec<String> {

@@ -37,6 +37,7 @@ fn duplicate_named(world: &mut ApplicationWorld) {
 }
 
 #[when("I choose to duplicate the active state")]
+#[when("the user chooses to duplicate the active state")]
 fn duplicate_active(world: &mut ApplicationWorld) {
     world.click_text("Duplicate Large");
     world.pump(Vec::new());
@@ -54,6 +55,7 @@ fn source_active(world: &mut ApplicationWorld) {
 }
 
 #[when("I enter a distinct name and press Enter")]
+#[when("the user enters a distinct name and presses Enter")]
 fn rename_copy(world: &mut ApplicationWorld) {
     world.type_text("Small");
     world.key(oblikovati_viewport::ViewportPhysicalKey::Enter, false);
@@ -66,6 +68,7 @@ fn both_members(world: &mut ApplicationWorld) {
 }
 
 #[when("I double-click the duplicate")]
+#[when("the user double-clicks the duplicate")]
 fn activate_copy(world: &mut ApplicationWorld) {
     world.double_click(world.run("Small").center().map(|v| v as i32));
 }

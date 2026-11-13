@@ -32,6 +32,7 @@ fn nested_rows(world: &mut ApplicationWorld) {
     expect_rows(world, &[FEATURE, SKETCH]);
 }
 #[when("I select the extrusion row in the model browser")]
+#[when("the user selects the extrusion row in the model browser")]
 fn select_extrusion(world: &mut ApplicationWorld) {
     world.click_text(FEATURE);
     settle(world);
@@ -60,7 +61,9 @@ fn block_stays(world: &mut ApplicationWorld) {
     expect_solid_visible(world);
 }
 #[when("I click the extrusion branch expansion control")]
+#[when("the user clicks the extrusion branch expansion control")]
 #[when("I click the extrusion branch expansion control again")]
+#[when("the user clicks the extrusion branch expansion control again")]
 fn fold_extrusion(world: &mut ApplicationWorld) {
     click_branch_arrow(world, FEATURE);
     settle(world);
@@ -91,6 +94,7 @@ fn sketch_back(world: &mut ApplicationWorld) {
 #[when("I right-click the extrusion row")]
 #[when("the user right-clicks the extrusion row")]
 #[when("I right-click the extrusion row in the model browser")]
+#[when("the user right-clicks the extrusion row in the model browser")]
 fn right_click_extrusion(world: &mut ApplicationWorld) {
     right_click_row(world, FEATURE);
 }
@@ -123,6 +127,7 @@ fn expand_rows(world: &mut ApplicationWorld) {
     expect_rows(world, &["Expand All Children", "Collapse All Children"]);
 }
 #[when("I dismiss the menu and click empty viewport space")]
+#[when("the user dismisses the menu and clicks empty viewport space")]
 fn dismiss_and_click(world: &mut ApplicationWorld) {
     world.escape();
     settle(world);
@@ -147,6 +152,7 @@ fn block_small(world: &mut ApplicationWorld) {
     settle(world);
 }
 #[when("I choose Find in Window")]
+#[when("the user chooses Find in Window")]
 fn choose_find_in_window(world: &mut ApplicationWorld) {
     choose_menu_row(world, "Find in Window");
     settle(world);
@@ -205,7 +211,9 @@ fn body_listed(world: &mut ApplicationWorld) {
     expect_rows(world, &[BODY, FEATURE]);
 }
 #[when("I right-click the solid body row")]
+#[when("the user right-clicks the solid body row")]
 #[when("I right-click the hidden body row")]
+#[when("the user right-clicks the hidden body row")]
 fn right_click_body(world: &mut ApplicationWorld) {
     right_click_row(world, BODY);
 }
@@ -225,7 +233,9 @@ fn visibility_off(world: &mut ApplicationWorld) {
     assert!(!world.checked("Visibility"), "expected Visibility clear");
 }
 #[when("I choose Visibility")]
+#[when("the user chooses Visibility")]
 #[when("I choose Visibility again")]
+#[when("the user chooses Visibility again")]
 fn choose_visibility(world: &mut ApplicationWorld) {
     choose_menu_row(world, "Visibility");
     settle(world);
@@ -263,6 +273,7 @@ fn expand_folder(world: &mut ApplicationWorld) {
     folder_menu(world, "Expand All Children");
 }
 #[when("I right-click Solid Bodies and choose Expand All Children")]
+#[when("the user right-clicks Solid Bodies and chooses Expand All Children")]
 fn expand_bodies(world: &mut ApplicationWorld) {
     expand_folder(world);
 }
@@ -295,7 +306,9 @@ fn folder_visible(world: &mut ApplicationWorld) {
     open_bodies_folder(world);
 }
 #[when("I right-click the Solid Bodies folder")]
+#[when("the user right-clicks the Solid Bodies folder")]
 #[when("I right-click the Solid Bodies folder again")]
+#[when("the user right-clicks the Solid Bodies folder again")]
 fn right_click_folder(world: &mut ApplicationWorld) {
     right_click_row(world, "Solid Bodies");
 }
@@ -309,6 +322,7 @@ fn root_name(world: &mut ApplicationWorld) -> String {
     world.state().browser.expect("expected a browser").name
 }
 #[when("I right-click the document root row")]
+#[when("the user right-clicks the document root row")]
 fn right_click_root(world: &mut ApplicationWorld) {
     let name = root_name(world);
     right_click_row(world, &name);
@@ -349,6 +363,7 @@ fn edges_gone_block_stays(world: &mut ApplicationWorld) {
 }
 // The nested sketch
 #[when("I right-click the nested sketch row")]
+#[when("the user right-clicks the nested sketch row")]
 fn right_click_sketch(world: &mut ApplicationWorld) {
     right_click_row(world, SKETCH);
 }
@@ -377,6 +392,7 @@ fn sketch_more(world: &mut ApplicationWorld) {
     expect_rows(world, &["Visibility", "Export Sketch As"]);
 }
 #[when("I dismiss the menu and clear the selection")]
+#[when("the user dismisses the menu and clears the selection")]
 fn dismiss_and_clear(world: &mut ApplicationWorld) {
     world.escape();
     settle(world);

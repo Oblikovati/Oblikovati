@@ -146,8 +146,6 @@ fn unrelated_filtered(world: &mut ApplicationWorld) {
         );
     }
 }
-#[when("I clear the search text")]
-#[when("I clear the search query")]
 #[when("I close the empty search field")]
 fn press_search_close(world: &mut ApplicationWorld) {
     world.click_text("x");

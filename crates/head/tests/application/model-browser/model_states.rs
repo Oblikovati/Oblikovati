@@ -18,6 +18,7 @@ fn expanded_primary(world: &mut ApplicationWorld) {
 }
 
 #[when("I open the Model State branch context menu")]
+#[when("the user opens the Model State branch context menu")]
 fn open_state_menu(world: &mut ApplicationWorld) {
     right_click_row(world, "Model State");
 }
@@ -35,6 +36,7 @@ fn state_menu_options(world: &mut ApplicationWorld) {
 }
 
 #[when("I open the New Model State submenu")]
+#[when("the user opens the New Model State submenu")]
 fn open_state_submenu(world: &mut ApplicationWorld) {
     let position = super::super::diagnostics::pointer_pixels(world.run("New Model State").center());
     world.hover(position);
@@ -47,6 +49,7 @@ fn state_submenu_options(world: &mut ApplicationWorld) {
 }
 
 #[when("I choose New Model State")]
+#[when("the user chooses New Model State")]
 fn create_state(world: &mut ApplicationWorld) {
     world.click_text("New Model State");
     world.pump(Vec::new());
@@ -71,6 +74,7 @@ fn generated_name_selected(world: &mut ApplicationWorld) {
 }
 
 #[when("I enter a new state name and press Enter")]
+#[when("the user enters a new state name and presses Enter")]
 fn rename_state(world: &mut ApplicationWorld) {
     world.type_text("Large");
     world.key(oblikovati_viewport::ViewportPhysicalKey::Enter, false);
@@ -104,6 +108,7 @@ fn expect_state_caption(world: &ApplicationWorld, name: &str) {
 }
 
 #[when("I double-click the Primary model-state entry")]
+#[when("the user double-clicks the Primary model-state entry")]
 fn activate_primary(world: &mut ApplicationWorld) {
     world.double_click(world.run("Primary").center().map(|v| v as i32));
 }
@@ -115,6 +120,7 @@ fn primary_active(world: &mut ApplicationWorld) {
 }
 
 #[when("I double-click the new model-state entry")]
+#[when("the user double-clicks the new model-state entry")]
 fn activate_large(world: &mut ApplicationWorld) {
     world.double_click(world.run("Large").center().map(|v| v as i32));
 }

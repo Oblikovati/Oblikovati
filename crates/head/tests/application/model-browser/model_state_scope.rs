@@ -33,7 +33,9 @@ fn single_scope(world: &mut ApplicationWorld) {
     assert_eq!(states.edit_scope(), SingleMember);
 }
 #[when("I click the edit-scope control on the Model State branch")]
+#[when("the user clicks the edit-scope control on the Model State branch")]
 #[when("I click the edit-scope control again")]
+#[when("the user clicks the edit-scope control again")]
 fn toggle_scope(world: &mut ApplicationWorld) {
     let scope = world
         .state()

@@ -153,11 +153,13 @@ fn part_stays(world: &mut ApplicationWorld) {
 }
 // Sketch criteria
 #[when("I choose Sketches in the object type list")]
+#[when("the user chooses Sketches in the object type list")]
 fn choose_sketches(world: &mut ApplicationWorld) {
     choose_in_list(world, "Find", "Sketches");
     world.expect_text("Find: Sketches");
 }
 #[when("I open the Property list")]
+#[when("the user opens the Property list")]
 fn open_property(world: &mut ApplicationWorld) {
     open_list(world, "Property");
 }
@@ -174,6 +176,7 @@ fn sketch_properties(world: &mut ApplicationWorld) {
     );
 }
 #[when("I choose Sketch Parameter Name")]
+#[when("the user chooses Sketch Parameter Name")]
 fn choose_parameter(world: &mut ApplicationWorld) {
     world.click_text("Sketch Parameter Name");
     settle(world);
@@ -187,6 +190,7 @@ fn value_empty(world: &mut ApplicationWorld) {
     assert!(!add_is_enabled(world), "expected Add to list disabled");
 }
 #[when("I open the Condition list")]
+#[when("the user opens the Condition list")]
 fn open_condition(world: &mut ApplicationWorld) {
     open_list(world, "Condition");
 }
@@ -201,10 +205,12 @@ fn nothing_listed(world: &mut ApplicationWorld) {
     world.expect_no_text(EXTRUSION_ROW);
 }
 #[when("I select Features as the object type")]
+#[when("the user selects Features as the object type")]
 fn select_features(world: &mut ApplicationWorld) {
     choose_in_list(world, "Find", "Features");
 }
 #[when("I select Type as the property and Extrusion as the value")]
+#[when("the user selects Type as the property and Extrusion as the value")]
 fn select_type_extrusion(world: &mut ApplicationWorld) {
     choose_in_list(world, "Property", "Type");
     choose_in_list(world, "Value", "Extrusion");
@@ -214,6 +220,7 @@ fn condition_equals(world: &mut ApplicationWorld) {
     expect_control(world, "Condition", "equals");
 }
 #[when("I click Add to list")]
+#[when("the user clicks Add to list")]
 fn click_add(world: &mut ApplicationWorld) {
     add_pending(world);
 }
@@ -223,6 +230,7 @@ fn extrusion_listed(world: &mut ApplicationWorld) {
     expect_listed(world, &[EXTRUSION_ROW]);
 }
 #[when("I click Find Now")]
+#[when("the user clicks Find Now")]
 fn click_find_now(world: &mut ApplicationWorld) {
     world.click_text("Find Now");
     settle(world);
@@ -236,7 +244,9 @@ fn find_open(world: &mut ApplicationWorld) {
     world.expect_text("Find Now");
 }
 #[when("I close the dialog")]
+#[when("the user closes the dialog")]
 #[when("I close the Find dialog")]
+#[when("the user closes the Find dialog")]
 fn close_find(world: &mut ApplicationWorld) {
     world.click_text("Close");
     settle(world);
@@ -260,6 +270,7 @@ fn and_chosen(world: &mut ApplicationWorld) {
     assert!(world.radio_selected("And"), "expected And selected");
 }
 #[when("I choose Type equals Fillet and click Add to list")]
+#[when("the user chooses Type equals Fillet and clicks Add to list")]
 fn add_fillet(world: &mut ApplicationWorld) {
     add_type(world, "Fillet");
 }
@@ -274,6 +285,7 @@ fn prompt_offers(world: &mut ApplicationWorld) {
     expect_rows(world, &["Yes", "No"]);
 }
 #[when("I choose Yes")]
+#[when("the user chooses Yes")]
 fn choose_yes(world: &mut ApplicationWorld) {
     world.click_text("Yes");
     settle(world);
@@ -285,6 +297,7 @@ fn fillet_below(world: &mut ApplicationWorld) {
     assert!(second > first, "fillet row {second} beneath {first}");
 }
 #[when("I close and reopen the Find dialog")]
+#[when("the user closes and reopens the Find dialog")]
 fn reopen_find(world: &mut ApplicationWorld) {
     close_find(world);
     open_find(world);
@@ -294,6 +307,7 @@ fn both_listed(world: &mut ApplicationWorld) {
     expect_listed(world, &[EXTRUSION_ROW, FILLET_ROW]);
 }
 #[when("I close the Find dialog and click empty viewport space")]
+#[when("the user closes the Find dialog and clicks empty viewport space")]
 fn close_and_click(world: &mut ApplicationWorld) {
     close_find(world);
     click_empty_viewport(world);
@@ -314,6 +328,7 @@ fn part_with_grouped_list(world: &mut ApplicationWorld) {
     grouped_types(world);
 }
 #[when("I select Suppress status as the property")]
+#[when("the user selects Suppress status as the property")]
 fn select_suppress(world: &mut ApplicationWorld) {
     choose_in_list(world, "Property", "Suppress status");
 }

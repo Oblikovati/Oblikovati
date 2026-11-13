@@ -82,6 +82,13 @@ fn expect_no_origin_rows(world: &ApplicationWorld) {
     }
 }
 #[given("an active part in the MCAD Software has a visible model browser")]
+#[given(
+    "an active part in the MCAD Software contains a visible solid and has a visible model browser"
+)]
+#[given(
+    "an active part in the MCAD Software contains a visible block made by an extrusion with a nested sketch"
+)]
+#[given("an active part in the MCAD Software contains a visible block made by an extrusion")]
 #[given("an active saved part in the MCAD Software contains one visible solid block")]
 #[given("The MCAD Software shows a visible block made by an extrusion")]
 #[given("an active part in the MCAD Software contains a single block created by an extrusion")]
@@ -137,9 +144,13 @@ fn origin_rows_shown(world: &mut ApplicationWorld) {
     expect_origin_rows(world);
 }
 #[when("I click the Origin branch expansion control")]
+#[when("the user clicks the Origin branch expansion control")]
 #[when("I click the Origin branch expansion control again")]
+#[when("the user clicks the Origin branch expansion control again")]
 #[when("I click the Origin expansion control")]
+#[when("the user clicks the Origin expansion control")]
 #[when("I click the Origin expansion control again")]
+#[when("the user clicks the Origin expansion control again")]
 fn fold_origin(world: &mut ApplicationWorld) {
     click_branch_arrow(world, "Origin");
 }
@@ -168,6 +179,9 @@ fn same_view(world: &mut ApplicationWorld) {
 }
 // Search
 #[given("an active part in the MCAD Software has an extrusion named Extrusion1")]
+#[given(
+    "an active part in the MCAD Software contains a visible block made by an extrusion named Extrusion1"
+)]
 fn named_extrusion(world: &mut ApplicationWorld) {
     open_extruded_part_named(world, "Extrusion1");
     world.observed_view_camera = Some(camera(world));
@@ -182,6 +196,7 @@ fn normal_tree(world: &mut ApplicationWorld) {
     );
 }
 #[when("I open browser search and enter \"Extrusion\"")]
+#[when("the user opens browser search and enters \"Extrusion\"")]
 fn search_extrusion(world: &mut ApplicationWorld) {
     world.click_text("Search");
     world.pump(Vec::new());
@@ -206,7 +221,33 @@ fn no_origin_results(world: &mut ApplicationWorld) {
     world.expect_no_text(ORIGIN_RESULT_ROW);
     world.expect_no_text("Center Point");
 }
+#[when("the user clears the search text")]
+#[when("I clear the search text")]
+#[when("I clear the search query")]
+fn clear_search_text(world: &mut ApplicationWorld) {
+    use oblikovati_viewport::{
+        ViewportEvent, ViewportInput, ViewportModifiers, ViewportPhysicalKey,
+    };
+    let modifiers = ViewportModifiers {
+        control: !cfg!(target_os = "macos"),
+        super_key: cfg!(target_os = "macos"),
+        ..Default::default()
+    };
+    let key = |pressed, modifiers| {
+        ViewportEvent::Input(ViewportInput::PhysicalKey {
+            key: ViewportPhysicalKey::A,
+            layout_key: ViewportPhysicalKey::A,
+            pressed,
+            command: None,
+            modifiers,
+        })
+    };
+    world.pump(vec![key(true, modifiers), key(false, Default::default())]);
+    world.key(ViewportPhysicalKey::Backspace, false);
+    settle(world);
+}
 #[when("I close browser search")]
+#[when("the user closes browser search")]
 fn press_search_close(world: &mut ApplicationWorld) {
     let close = world.run("x").center().map(|value| value as i32);
     world.click(close);
@@ -230,16 +271,19 @@ fn names_short(world: &mut ApplicationWorld) {
     close_menus(world);
 }
 #[when("I enable Show Extended Names from the browser display preferences")]
+#[when("the user enables Show Extended Names from the browser display preferences")]
 fn enable_names(world: &mut ApplicationWorld) {
     expand_display_preferences(world);
     choose_menu_row(world, "Show Extended Names");
     settle(world);
 }
 #[when("I reopen the browser display preferences")]
+#[when("the user reopens the browser display preferences")]
 fn reopen_preferences(world: &mut ApplicationWorld) {
     expand_display_preferences(world);
 }
 #[when("I choose Show Extended Names again")]
+#[when("the user chooses Show Extended Names again")]
 fn names_again(world: &mut ApplicationWorld) {
     choose_menu_row(world, "Show Extended Names");
     settle(world);
@@ -255,12 +299,14 @@ fn names_shorter(world: &mut ApplicationWorld) {
 }
 // The whole tree
 #[when("I open the model browser menu and choose Collapse All")]
+#[when("the user opens the model browser menu and chooses Collapse All")]
 fn collapse_all(world: &mut ApplicationWorld) {
     open_browser_menu(world);
     choose_menu_row(world, "Collapse All");
     settle(world);
 }
 #[when("I open the model browser menu and choose Expand All")]
+#[when("the user opens the model browser menu and chooses Expand All")]
 fn expand_all(world: &mut ApplicationWorld) {
     open_browser_menu(world);
     choose_menu_row(world, "Expand All");
@@ -320,12 +366,15 @@ fn expansion_off(world: &mut ApplicationWorld) {
     assert!(!world.checked("Design View Expansion"), "expected it clear");
 }
 #[when("I choose Design View Expansion")]
+#[when("the user chooses Design View Expansion")]
 #[when("I choose Design View Expansion again")]
+#[when("the user chooses Design View Expansion again")]
 fn choose_expansion(world: &mut ApplicationWorld) {
     choose_menu_row(world, "Design View Expansion");
     settle(world);
 }
 #[when("I reopen the Display Preferences menu")]
+#[when("the user reopens the Display Preferences menu")]
 fn reopen_display_menu(world: &mut ApplicationWorld) {
     expand_display_preferences(world);
 }

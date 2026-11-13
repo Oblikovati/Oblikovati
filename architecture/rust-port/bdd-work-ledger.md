@@ -12,7 +12,7 @@ claim that each file has been individually triaged.
 | 1 | `features/application/file-menu/file-menu.feature` | Verified | All eight scenarios passed on the recorded updated source. Weldment remains unavailable. |
 | 1 | `features/application/document-creation` | In progress | On the updated source, 8 of 39 native scenarios pass; 31 stop at undefined steps. Name and size sorting, horizontal icon tiles, and keyboard and secondary-button selection work for available templates. The remaining scenarios need bindings and additional named templates. |
 | 1 | `features/application/document-opening` | In progress | A full run passed 16 of 27 native scenarios. A later focused saved-part scenario also passed after its fixture was corrected; rerun the whole feature for a current total. The remaining scenarios need bindings and saved-document fixtures. |
-| 1 | `features/application/model-browser` | In progress | The application snapshot run passed 4 of 100 scenarios; 96 stopped at undefined steps with the test bindings at `14f93537f`. Update and rerun the bindings before classifying later behavior. |
+| 1 | `features/application/model-browser` | In progress | After action wording updates, a full native run passed 29 of 100 scenarios. Of the other 71, 62 stopped at undefined steps and nine at failed checks. Focused fixes passed later; rerun the full feature before reporting a current total. |
 | 1 | `features/application/quick-access-toolbar` | In progress | The previous full native feature run passed 11 of 12 scenarios. Projects now opens the project dialog; the focused customization choices scenario next fails because Update is missing. Later checks did not run. Material Browser editing, duplication, and the Physical tab remain open. |
 | 1 | `features/application/ribbon-customization/ribbon-customization.feature` | Needs rerun | Source changed since the inventory checkpoint. Review the corrections and rerun affected native scenarios. |
 | 1 | `features/application/ribbon-appearance/ribbon-appearance.feature` | In progress | On the current recorded source, six of 18 scenarios pass; 11 stop at undefined steps and one fails on a missing Tools group. Reset Ribbon is implemented. Implement the standard Tools groups and Text Off, Small, Compact and Large across all commands and layouts. |
@@ -856,3 +856,22 @@ revisions checked before they support a current pass claim.
   plus the updated bindings; Linux, Xvfb at 1600 × 1000, Lavapipe. Local
   reports begin `/tmp/obk-open-focus-` and end `-20261113`. The complete
   feature was not rerun with these bindings.
+
+### Model browser source reassessment, 2026-11-13
+
+- Updated existing native actions for exact current-source wording and added
+  matching block fixtures. A full run passed 29 of 100 scenarios and 523 of
+  594 executed steps; 62 scenarios stopped at undefined steps and nine at
+  failed checks. No ambiguous step was reported. Source SHA-256
+  `603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e`
+  matched the live file after the run. Application: `e94784d32` plus the
+  initial wording and fixture changes. Linux, Xvfb at 1600 × 1000, Lavapipe.
+  Local report: `/tmp/obk-model-browser-reassessment-20261113`.
+- Later focused runs passed filtering and clearing browser search (11 steps),
+  canceling a sketch line-style change (12 steps), declining an extra Find
+  criterion, canceling adaptive feature options, and inspecting a nested sketch
+  (10 steps). The sketch check reads selected identity and an uncovered pixel;
+  its context menu covers the earlier pixel sample. Those fixes correct test
+  actions and fixtures; they do not change the recorded full-run count.
+  The source's `collapses All Children` wording remains unbound pending a
+  scenario correction or clarification.

@@ -77,6 +77,7 @@ fn sketch_uses_center(world: &mut ApplicationWorld) {
     world.expect_text(CENTER);
 }
 #[when("I choose Relationships from the sketch row context menu")]
+#[when("the user chooses Relationships from the sketch row context menu")]
 fn from_sketch(world: &mut ApplicationWorld) {
     open_on_row(world, SKETCH);
 }
@@ -97,6 +98,7 @@ fn sketch_children(world: &mut ApplicationWorld) {
     expect_lists(children(world), &[FEATURE]);
 }
 #[when("I select the XY plane in the Parents list")]
+#[when("the user selects the XY plane in the Parents list")]
 fn choose_plane(world: &mut ApplicationWorld) {
     choose_row(world, XY, "Parents", "Children");
 }
@@ -124,6 +126,7 @@ fn plane_tinted(world: &mut ApplicationWorld) {
     assert!(plane_shows_at(world, XY), "expected the plane in the view");
 }
 #[when("I select the extrusion in the Children list")]
+#[when("the user selects the extrusion in the Children list")]
 fn choose_extrusion(world: &mut ApplicationWorld) {
     choose_row(world, FEATURE, "Children", "Done");
 }
@@ -133,6 +136,7 @@ fn extrusion_lit(world: &mut ApplicationWorld) {
     expect_outline(world, true);
 }
 #[when("I activate the navigation control beside the extrusion")]
+#[when("the user activates the navigation control beside the extrusion")]
 fn go_to_extrusion(world: &mut ApplicationWorld) {
     navigate(world, FEATURE, "Children", "Done");
 }
@@ -150,6 +154,7 @@ fn no_children(world: &mut ApplicationWorld) {
     expect_empty(children(world));
 }
 #[when("I activate the navigation control beside the sketch in the Parents list")]
+#[when("the user activates the navigation control beside the sketch in the Parents list")]
 fn go_to_sketch_parent(world: &mut ApplicationWorld) {
     navigate(world, SKETCH, "Parents", "Children");
 }
@@ -159,6 +164,7 @@ fn dialog_closed(world: &mut ApplicationWorld) {
 }
 // From a plane
 #[when("I choose Relationships from the XY plane row context menu")]
+#[when("the user chooses Relationships from the XY plane row context menu")]
 fn from_xy(world: &mut ApplicationWorld) {
     open_on_row(world, XY);
 }
@@ -176,14 +182,17 @@ fn plane_children(world: &mut ApplicationWorld) {
     expect_lists(children(world), &[SKETCH, FEATURE]);
 }
 #[when("I activate the navigation control beside the sketch")]
+#[when("the user activates the navigation control beside the sketch")]
 fn go_to_sketch(world: &mut ApplicationWorld) {
     navigate(world, SKETCH, "Children", "Done");
 }
 #[when("I activate the navigation control beside the XY plane")]
+#[when("the user activates the navigation control beside the XY plane")]
 fn go_to_plane(world: &mut ApplicationWorld) {
     navigate(world, XY, "Parents", "Children");
 }
 #[when("I choose Relationships from the YZ plane row context menu")]
+#[when("the user chooses Relationships from the YZ plane row context menu")]
 fn from_yz(world: &mut ApplicationWorld) {
     open_on_row(world, "YZ Plane");
 }

@@ -46,11 +46,13 @@ fn model_active(world: &mut ApplicationWorld) {
     world.expect_text(TREE_ROW);
 }
 #[when("I open the add-pane menu in the browser header")]
+#[when("the user opens the add-pane menu in the browser header")]
 fn open_add_menu(world: &mut ApplicationWorld) {
     world.click_text("+");
     settle(world);
 }
 #[when("I choose Favorites")]
+#[when("the user chooses Favorites")]
 fn choose_favorites(world: &mut ApplicationWorld) {
     choose_menu_row(world, FAVORITES);
     settle(world);
@@ -66,6 +68,7 @@ fn favorites_controls(world: &mut ApplicationWorld) {
     world.expect_text("No favorites yet");
 }
 #[when("I select the Model tab")]
+#[when("the user selects the Model tab")]
 fn select_model(world: &mut ApplicationWorld) {
     click_tab(world, "Model");
 }
@@ -74,6 +77,7 @@ fn tree_again(world: &mut ApplicationWorld) {
     world.expect_text(TREE_ROW);
 }
 #[when("I select Favorites and close its tab")]
+#[when("the user selects Favorites and closes its tab")]
 fn select_and_close(world: &mut ApplicationWorld) {
     click_tab(world, FAVORITES);
     close_favorites(world);
@@ -89,7 +93,9 @@ fn favorites_tree(world: &mut ApplicationWorld) {
     world.expect_text(TREE_VIEW);
 }
 #[when("I open the Favorites view-mode menu")]
+#[when("the user opens the Favorites view-mode menu")]
 #[when("I reopen the view-mode menu")]
+#[when("the user reopens the view-mode menu")]
 fn open_view_menu(world: &mut ApplicationWorld) {
     let shown = if world.shows(THUMBNAIL_VIEW) {
         THUMBNAIL_VIEW
@@ -115,6 +121,7 @@ fn tree_checked(world: &mut ApplicationWorld) {
     assert!(marked, "expected {TREE_VIEW} checked");
 }
 #[when("I choose Thumbnail View")]
+#[when("the user chooses Thumbnail View")]
 fn choose_thumbnails(world: &mut ApplicationWorld) {
     world.click_text(THUMBNAIL_VIEW);
     settle(world);
@@ -135,6 +142,7 @@ fn thumbnails_checked(world: &mut ApplicationWorld) {
     );
 }
 #[when("I choose Tree View")]
+#[when("the user chooses Tree View")]
 fn choose_tree(world: &mut ApplicationWorld) {
     world.click_text(TREE_VIEW);
     settle(world);
@@ -144,6 +152,7 @@ fn shows_tree(world: &mut ApplicationWorld) {
     world.expect_text(TREE_VIEW);
 }
 #[when("I close the Favorites tab")]
+#[when("the user closes the Favorites tab")]
 fn close_tab(world: &mut ApplicationWorld) {
     close_favorites(world);
 }
@@ -182,6 +191,7 @@ fn tree_and_block(world: &mut ApplicationWorld) {
     expect_solid_visible(world);
 }
 #[when("I drag the divider between the browser and viewport to the right")]
+#[when("the user drags the divider between the browser and viewport to the right")]
 fn divider_right(world: &mut ApplicationWorld) {
     world.observed_row_gap = Some(browser_geometry().1[0]);
     let from = divider();
@@ -208,6 +218,7 @@ fn block_kept(world: &mut ApplicationWorld) {
     expect_block_kept(world);
 }
 #[when("I drag the divider back to the left")]
+#[when("the user drags the divider back to the left")]
 fn divider_left(world: &mut ApplicationWorld) {
     world.observed_row_gap = Some(browser_geometry().1[0]);
     let from = divider();
@@ -223,6 +234,7 @@ fn browser_narrower(world: &mut ApplicationWorld) {
     );
 }
 #[when("I drag the Model tab into the viewport and release it")]
+#[when("the user drags the Model tab into the viewport and release it")]
 fn tab_into_view(world: &mut ApplicationWorld) {
     drag_model_tab(world, OVER_VIEW);
 }
@@ -236,7 +248,9 @@ fn view_spreads(world: &mut ApplicationWorld) {
     super::super::workspace_layout::left_space_free(world);
 }
 #[when("I drag the floating Model tab to the left edge and release it")]
+#[when("the user drags the floating Model tab to the left edge and release it")]
 #[when("I drag the Model tab to the left edge and release it")]
+#[when("the user drags the Model tab to the left edge and release it")]
 fn tab_to_left(world: &mut ApplicationWorld) {
     drag_model_tab(world, LEFT_EDGE);
 }
@@ -245,6 +259,7 @@ fn docks_left(_: &mut ApplicationWorld) {
     assert_eq!(browser_geometry().0[0], 8., "expected the left dock");
 }
 #[when("I drag the Model tab to the right edge and release it")]
+#[when("the user drags the Model tab to the right edge and release it")]
 fn tab_to_right(world: &mut ApplicationWorld) {
     drag_model_tab(world, RIGHT_EDGE);
 }

@@ -25,6 +25,7 @@ fn expect_controls(world: &ApplicationWorld, property: &str, value: &str) {
 #[given("a part is open in the MCAD Software with the Find dialog open")]
 fn find_on_part(world: &mut ApplicationWorld) {
     open_block(world);
+    world.previous_document = Some(world.active_id());
     super::find::open_find(world);
 }
 #[given("the criteria list contains Type equals Extrusion OR Type equals Fillet")]
@@ -38,6 +39,7 @@ fn listed_suppressed(world: &mut ApplicationWorld) {
     add_pending(world);
 }
 #[when("I choose Type equals Hole and click Add to list")]
+#[when("the user chooses Type equals Hole and clicks Add to list")]
 fn add_hole(world: &mut ApplicationWorld) {
     add_type(world, "Hole");
 }
@@ -61,6 +63,7 @@ fn table_criteria(world: &mut ApplicationWorld) {
     three_criteria(world);
 }
 #[when("I select the Suppress status criterion")]
+#[when("the user selects the Suppress status criterion")]
 fn select_suppressed(world: &mut ApplicationWorld) {
     select_row(world, SUPPRESSED_ROW);
 }
@@ -69,6 +72,7 @@ fn suppressed_controls(world: &mut ApplicationWorld) {
     expect_controls(world, "Suppress status", "Suppressed");
 }
 #[when("I select the Fillet criterion")]
+#[when("the user selects the Fillet criterion")]
 fn select_fillet(world: &mut ApplicationWorld) {
     select_row(world, FILLET_ROW);
 }
@@ -81,6 +85,7 @@ fn or_chosen(world: &mut ApplicationWorld) {
     assert!(world.radio_selected("Or"), "expected Or selected");
 }
 #[when("I select the Extrusion criterion")]
+#[when("the user selects the Extrusion criterion")]
 fn select_extrusion(world: &mut ApplicationWorld) {
     select_row(world, EXTRUSION_ROW);
 }
@@ -99,6 +104,7 @@ fn extrusion_chosen(world: &mut ApplicationWorld) {
     assert!(world.radio_selected("And"), "expected And selected");
 }
 #[when("I choose Hole in the Value list")]
+#[when("the user chooses Hole in the Value list")]
 fn choose_hole(world: &mut ApplicationWorld) {
     choose_in_list(world, "Value", "Hole");
 }
@@ -133,6 +139,7 @@ fn with_criteria(world: &mut ApplicationWorld) {
     grouped_types(world);
 }
 #[when("I choose Save Search")]
+#[when("the user chooses Save Search")]
 fn choose_save(world: &mut ApplicationWorld) {
     world.click_text("Save Search");
     settle(world);
@@ -162,6 +169,7 @@ fn one_saved(world: &mut ApplicationWorld) {
     settle(world);
 }
 #[when("I choose Open Search")]
+#[when("the user chooses Open Search")]
 fn choose_open_search(world: &mut ApplicationWorld) {
     world.click_text("Open Search");
     settle(world);

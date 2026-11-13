@@ -29,6 +29,7 @@ fn expect_field_and_apply(world: &ApplicationWorld, field: &str, value: &str, en
 #[given("its line color is Default")]
 fn sketch_default(_: &mut ApplicationWorld) {}
 #[when("I open Properties from the sketch row context menu")]
+#[when("the user opens Properties from the sketch row context menu")]
 #[given("its geometry properties dialog is open")]
 #[given("its geometry properties dialog is open with Scale unchecked")]
 fn open_dialog(world: &mut ApplicationWorld) {
@@ -51,6 +52,7 @@ fn apply_on(world: &mut ApplicationWorld) {
     assert!(apply_enabled(world), "expected Apply enabled");
 }
 #[when("I choose Dashed as the line type")]
+#[when("the user chooses Dashed as the line type")]
 fn choose_dashed(world: &mut ApplicationWorld) {
     open_list(world, "Line Type");
     choose_row(world, "Dashed");
@@ -60,6 +62,7 @@ fn type_dashed(world: &mut ApplicationWorld) {
     expect_field_and_apply(world, "Line Type", "Dashed", true);
 }
 #[when("I click Cancel and reopen the sketch properties")]
+#[when("the user clicks Cancel and reopens the sketch properties")]
 fn cancel_reopen(world: &mut ApplicationWorld) {
     cancel(world);
     world.expect_no_text(TITLE);
@@ -72,6 +75,7 @@ fn dialog_closed(world: &mut ApplicationWorld) {
 }
 // Color
 #[when("I open the Line Color list")]
+#[when("the user opens the Line Color list")]
 fn open_colors(world: &mut ApplicationWorld) {
     open_list(world, "Line Color");
 }
@@ -89,6 +93,7 @@ fn select_row(world: &mut ApplicationWorld) {
     world.expect_text("Select");
 }
 #[when("I choose Red")]
+#[when("the user chooses Red")]
 fn choose_red(world: &mut ApplicationWorld) {
     choose_row(world, "Red");
 }
@@ -102,6 +107,7 @@ fn color_default(world: &mut ApplicationWorld) {
     expect_field_and_apply(world, "Line Color", "Default", false);
 }
 #[when("I choose Select from the Line Color list")]
+#[when("the user chooses Select from the Line Color list")]
 fn choose_select(world: &mut ApplicationWorld) {
     open_list(world, "Line Color");
     choose_row(world, "Select");
@@ -112,6 +118,7 @@ fn color_dialog(world: &mut ApplicationWorld) {
     expect_rows(world, &["Basic colors", "Custom colors"]);
 }
 #[when("I choose Define Custom Colors")]
+#[when("the user chooses Define Custom Colors")]
 fn define(world: &mut ApplicationWorld) {
     choose_row(world, "Define Custom Colors");
 }
@@ -133,10 +140,12 @@ fn add_custom(world: &mut ApplicationWorld) {
     world.expect_text("Add to Custom Colors");
 }
 #[when("I cancel the color dialog")]
+#[when("the user cancels the color dialog")]
 fn cancel_colors(world: &mut ApplicationWorld) {
     cancel(world);
 }
 #[when("I cancel the geometry properties dialog")]
+#[when("the user cancels the geometry properties dialog")]
 fn cancel_properties(world: &mut ApplicationWorld) {
     cancel(world);
 }
@@ -149,6 +158,7 @@ fn closed_unapplied(world: &mut ApplicationWorld) {
 }
 // Weight
 #[when("I open the Line Weight list")]
+#[when("the user opens the Line Weight list")]
 fn open_weights(world: &mut ApplicationWorld) {
     open_list(world, "Line Weight");
 }
@@ -161,6 +171,7 @@ fn quarter(world: &mut ApplicationWorld) {
     world.expect_text("0.25 mm");
 }
 #[when("I choose 0.25 mm")]
+#[when("the user chooses 0.25 mm")]
 fn choose_quarter(world: &mut ApplicationWorld) {
     choose_row(world, "0.25 mm");
 }
@@ -183,7 +194,9 @@ fn scale_off(world: &mut ApplicationWorld) {
     assert!(!scale_field_enabled(world), "expected the field disabled");
 }
 #[when("I check Scale")]
+#[when("the user checks Scale")]
 #[when("I clear Scale")]
+#[when("the user clears Scale")]
 fn toggle_scale(world: &mut ApplicationWorld) {
     choose_row(world, "Scale");
 }

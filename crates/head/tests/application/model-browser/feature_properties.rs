@@ -40,7 +40,9 @@ fn extrusion_selected(world: &mut ApplicationWorld) {
     settle(world);
 }
 #[when("I choose Properties from the extrusion context menu")]
+#[when("the user chooses Properties from the extrusion context menu")]
 #[when("I open Feature Properties from its browser context menu")]
+#[when("the user opens Feature Properties from its browser context menu")]
 fn from_menu(world: &mut ApplicationWorld) {
     open_properties(world);
 }
@@ -65,6 +67,7 @@ fn controls_off(world: &mut ApplicationWorld) {
     expect_condition_controls(world, false);
 }
 #[when("I check If")]
+#[when("the user checks If")]
 fn check_if(world: &mut ApplicationWorld) {
     toggle(world, IF);
 }
@@ -78,6 +81,7 @@ fn ok_off(world: &mut ApplicationWorld) {
     assert!(!world.run_is_enabled("OK"), "expected OK disabled");
 }
 #[when("I open the comparison operator list")]
+#[when("the user opens the comparison operator list")]
 fn open_operators(world: &mut ApplicationWorld) {
     open_list(world, "Comparison");
 }
@@ -98,6 +102,7 @@ fn operator_rows(world: &mut ApplicationWorld) {
     );
 }
 #[when("I choose greater than or equal")]
+#[when("the user chooses greater than or equal")]
 fn choose_operator(world: &mut ApplicationWorld) {
     toggle(world, "greater than or equal");
 }
@@ -106,6 +111,7 @@ fn operator_shown(world: &mut ApplicationWorld) {
     expect_control(world, "Comparison", "greater than or equal");
 }
 #[when("I click Cancel and reopen Feature Properties")]
+#[when("the user clicks Cancel and reopens Feature Properties")]
 fn cancel_reopen(world: &mut ApplicationWorld) {
     cancel(world);
     world.expect_no_text(TITLE);
@@ -128,7 +134,9 @@ fn dialog_open(world: &mut ApplicationWorld) {
     open_properties(world);
 }
 #[when("I check Always")]
+#[when("the user checks Always")]
 #[when("I check Always again")]
+#[when("the user checks Always again")]
 fn check_always(world: &mut ApplicationWorld) {
     toggle(world, ALWAYS);
 }
@@ -161,6 +169,7 @@ fn from_to_off(world: &mut ApplicationWorld) {
     );
 }
 #[when("I check Sketch and Parameters")]
+#[when("the user checks Sketch and Parameters")]
 fn check_adaptive(world: &mut ApplicationWorld) {
     toggle(world, "Sketch");
     toggle(world, "Parameters");
@@ -176,6 +185,7 @@ fn as_body(world: &mut ApplicationWorld) {
     open_block(world);
 }
 #[when("I open the Feature Appearance list")]
+#[when("the user opens the Feature Appearance list")]
 fn open_appearances(world: &mut ApplicationWorld) {
     open_list(world, "Feature Appearance");
 }
@@ -208,6 +218,7 @@ fn no_annotations(world: &mut ApplicationWorld) {
     );
 }
 #[when("I choose Show Dimensions from the extrusion row context menu")]
+#[when("the user chooses Show Dimensions from the extrusion row context menu")]
 fn show_dimensions(world: &mut ApplicationWorld) {
     right_click_row(world, FEATURE);
     choose_menu_row(world, "Show Dimensions");
@@ -261,12 +272,14 @@ fn sketch_hidden(world: &mut ApplicationWorld) {
     click_empty_viewport(world);
 }
 #[when("I choose Visibility from the sketch row context menu")]
+#[when("the user chooses Visibility from the sketch row context menu")]
 fn visibility_from_row(world: &mut ApplicationWorld) {
     sketch_menu(world);
     choose_menu_row(world, "Visibility");
     settle(world);
 }
 #[when("I choose Visibility from the sketch context menu")]
+#[when("the user chooses Visibility from the sketch context menu")]
 fn visibility_from_menu(world: &mut ApplicationWorld) {
     if !world.shows("Dimension Visibility") {
         sketch_menu(world);
@@ -286,6 +299,7 @@ fn dimensions_shown(world: &mut ApplicationWorld) {
     );
 }
 #[when("I reopen the sketch context menu")]
+#[when("the user reopens the sketch context menu")]
 fn reopen_menu(world: &mut ApplicationWorld) {
     sketch_menu(world);
 }
@@ -298,7 +312,9 @@ fn both_checked(world: &mut ApplicationWorld) {
     );
 }
 #[when("I choose Dimension Visibility")]
+#[when("the user chooses Dimension Visibility")]
 #[when("I choose Dimension Visibility again")]
+#[when("the user chooses Dimension Visibility again")]
 fn choose_dimension_visibility(world: &mut ApplicationWorld) {
     if !world.shows("Dimension Visibility") {
         sketch_menu(world);
