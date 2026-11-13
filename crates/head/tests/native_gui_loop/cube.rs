@@ -12,19 +12,28 @@ pub(super) fn create_from_ribbon(
     document: u64,
 ) {
     window.gui_actions.clear();
-    click_shell_position(window, owner, [160, 70]);
+    click_shell_position(
+        window,
+        owner,
+        application_bdd::rendered_label_center("Extrude"),
+    );
     assert!(
         window
             .gui_actions
             .contains(&oblikovati_gui::GuiShellAction::OpenExtrude),
-        "ribbon actions {:?}",
-        window.gui_actions
+        "expected Extrude ribbon action"
     );
     window.gui_actions.clear();
-    click_shell_position(window, owner, [710, 365]);
+    let (position, _) = application_bdd::window_geometry("Extrude").unwrap();
+    let distance = application_bdd::pointer_pixels([position[0] + 70., position[1] + 85.]);
+    click_shell_position(window, owner, distance);
     type_native_text(window, owner, "size");
     let before = capture_framebuffer(&mut window.native);
-    click_shell_position(window, owner, [660, 390]);
+    click_shell_position(
+        window,
+        owner,
+        application_bdd::rendered_label_center("Preview"),
+    );
     let after = capture_framebuffer(&mut window.native);
     assert!(
         window.gui_actions.iter().any(|action| matches!(

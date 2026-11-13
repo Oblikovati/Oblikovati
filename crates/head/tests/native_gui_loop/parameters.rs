@@ -27,15 +27,17 @@ fn assert_size_expression(owner: &NativeDesktopOwner, expression: &str) {
 }
 fn edit_size_parameter(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOwner) {
     open_parameter_ribbon(window, owner);
-    click_shell_position(window, owner, [350, 137]);
-    click_shell_position(window, owner, [400, 66]);
+    let (position, _) = application_bdd::window_geometry("Parameters").unwrap();
+    let row = application_bdd::pointer_pixels([position[0] + 30., position[1] + 129.]);
+    click_shell_position(window, owner, row);
+    click_parameter_input(window, owner, 60.);
     for _ in "10 mm".chars() {
         press_shell_key(window, owner, ViewportPhysicalKey::Backspace);
     }
     type_native_text(window, owner, "20 mm");
-    click_shell_position(window, owner, [380, 90]);
+    click_parameter_label(window, owner, "Apply");
     assert_size_expression(owner, "20 mm");
-    click_shell_position(window, owner, [440, 90]);
+    click_parameter_label(window, owner, "Cancel");
 }
 fn click_parameter_input(
     window: &mut ScriptedGuiWindow,
@@ -63,8 +65,8 @@ pub(super) fn edit_size_and_history(
     assert_eq!(cube::topology_keys(owner), keys);
     verify_rectangle(owner, edit, 2.);
     cube::verify(owner, edit.document, 2.);
-    for (button, expected) in [(156, 1.), (201, 2.)] {
-        click_shell(window, owner, button);
+    for (label, expected) in [("Undo", 1.), ("Redo", 2.)] {
+        click_parameter_label(window, owner, label);
         verify_rectangle(owner, edit, expected);
         cube::verify(owner, edit.document, expected);
         assert_eq!(cube::topology_keys(owner), keys);

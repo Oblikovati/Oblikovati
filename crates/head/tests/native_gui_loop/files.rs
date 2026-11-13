@@ -42,9 +42,13 @@ pub(super) fn save_rectangle_file(
     close_and_reopen(window, owner, edit, &path);
     directory
 }
-fn choose_file_menu(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOwner, item_y: i32) {
-    click_shell_position(window, owner, [20, 10]);
-    click_shell_position(window, owner, [50, item_y - 74]);
+fn choose_file_menu(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOwner, label: &str) {
+    click_shell_position(
+        window,
+        owner,
+        application_bdd::rendered_label_center("File"),
+    );
+    click_shell_position(window, owner, application_bdd::rendered_label_center(label));
 }
 fn close_and_reopen(
     window: &mut ScriptedGuiWindow,
@@ -52,9 +56,9 @@ fn close_and_reopen(
     edit: crate::HeadSketchEdit,
     path: &std::path::Path,
 ) {
-    choose_file_menu(window, owner, 173);
+    choose_file_menu(window, owner, "Close");
     assert!(owner.documents().workspace().active_document().is_none());
-    choose_file_menu(window, owner, 122);
+    choose_file_menu(window, owner, "Open...");
     type_native_text(window, owner, path.to_str().unwrap());
     press_shell_key(window, owner, ViewportPhysicalKey::Enter);
     let document = owner.documents().workspace().active_document().unwrap();
@@ -64,7 +68,11 @@ fn close_and_reopen(
 }
 fn cancel_save_dialog(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOwner) {
     let before = owner.gui_command_state().unwrap();
-    click_shell(window, owner, 111);
+    click_shell_position(
+        window,
+        owner,
+        application_bdd::rendered_label_center("Save"),
+    );
     assert_eq!(owner.gui_command_state().unwrap(), before);
     // Enter would accept the proposed name, so only Escape leaves the document unbound.
     press_shell_key(window, owner, ViewportPhysicalKey::Escape);
@@ -76,7 +84,11 @@ fn save_from_dialog(
     owner: &mut NativeDesktopOwner,
     path: &std::path::Path,
 ) {
-    click_shell(window, owner, 111);
+    click_shell_position(
+        window,
+        owner,
+        application_bdd::rendered_label_center("Save"),
+    );
     type_native_text(window, owner, path.to_str().unwrap());
     press_shell_key(window, owner, ViewportPhysicalKey::Enter);
     assert!(matches!(

@@ -202,6 +202,7 @@ fn verify_browser_reentry_pixels(
     owner: &mut NativeDesktopOwner,
     edit: crate::HeadSketchEdit,
 ) {
+    move_pointer_away(window, owner);
     let before = capture_framebuffer(&mut window.native);
     assert!(
         before
@@ -228,31 +229,46 @@ fn verify_browser_reentry_pixels(
             .selected_sketches,
         [edit.sketch]
     );
+    move_pointer_away(window, owner);
     let before = capture_framebuffer(&mut window.native);
     let original = window.native.view.camera_state().unwrap();
     browser::double_click_browser_row(window, owner);
     assert_eq!(owner.active_sketch_edit().unwrap(), edit);
     assert_eq!(window.native.view.camera_state().unwrap(), original);
+    move_pointer_away(window, owner);
     let after = capture_framebuffer(&mut window.native);
     let width = before.extent[0] as usize;
+    let (tabs, size) = application_bdd::window_geometry("##open-document-tabs").unwrap();
+    let content_top = application_bdd::pointer_pixels([0., tabs[1] + size[1] + 1.])[1] as usize;
+    assert!(width >= 1200 && content_top + STATUS_LINE_ROWS < before.extent[1] as usize);
     // #3798: contextual chrome changes on entry; the camera and visible model must not.
     for (row, (old, new)) in before
         .rgba
         .chunks_exact(width * 4)
         .zip(after.rgba.chunks_exact(width * 4))
         .enumerate()
-        .skip(168)
+        .skip(content_top)
         // The status line at the foot reports the edit, as it should.
-        .take(before.extent[1] as usize - 168 - STATUS_LINE_ROWS)
+        .take((before.extent[1] as usize).saturating_sub(content_top + STATUS_LINE_ROWS))
     {
         assert!(
-            // The orientation control shows over a part and not over a sketch; it sits past 1300.
-            old[500 * 4..1300 * 4] == new[500 * 4..1300 * 4],
-            "re-entering the same XY camera must preserve rectangle pixels on row {row}"
+            // The view controls overlap the right side of the viewport in the part workspace.
+            old[500 * 4..1200 * 4] == new[500 * 4..1200 * 4],
+            "re-entering the same XY camera must preserve rectangle pixels on row {row}, first difference at {:?}",
+            (500..1200).find(|x| old[x * 4..x * 4 + 4] != new[x * 4..x * 4 + 4])
         );
     }
     owner.finish_sketch_edit().unwrap();
     window.native.set_sketch_edit(None).unwrap();
+    window.scripted.clear();
+    crate::frames::run_frames(window, HeadOptions { frames: Some(3) }, owner).unwrap();
+}
+fn move_pointer_away(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOwner) {
+    window.scripted = vec![ViewportEvent::Input(ViewportInput::Motion {
+        position: [1100, 800],
+        modifiers: Default::default(),
+    })];
+    crate::frames::run_frames(window, HeadOptions { frames: Some(3) }, owner).unwrap();
 }
 fn type_native_text(
     window: &mut ScriptedGuiWindow,
