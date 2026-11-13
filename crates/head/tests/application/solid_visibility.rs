@@ -3,6 +3,30 @@
 use oblikovati_viewport::ViewportCapture;
 const PATCH_SIDE: usize = 5;
 const HUE_MARGIN: u8 = 20;
+pub(super) fn visible_fixture_bounds(
+    capture: &ViewportCapture,
+    windows: &[[f32; 4]],
+) -> Option<([usize; 2], [usize; 2])> {
+    let width = capture.extent[0] as usize;
+    let (mut low, mut high) = ([usize::MAX; 2], [0; 2]);
+    for (index, pixel) in capture.rgba.as_chunks::<4>().0.iter().enumerate() {
+        if green_fixture_hue(pixel) {
+            let point = [index % width, index / width];
+            if windows.iter().any(|window| point_in_window(point, *window)) {
+                continue;
+            }
+            for axis in 0..2 {
+                low[axis] = low[axis].min(point[axis]);
+                high[axis] = high[axis].max(point[axis]);
+            }
+        }
+    }
+    (low[0] != usize::MAX).then_some((low, high))
+}
+fn point_in_window(point: [usize; 2], window: [f32; 4]) -> bool {
+    let [x, y] = point.map(|coordinate| coordinate as f32);
+    x >= window[0] && x < window[2] && y >= window[1] && y < window[3]
+}
 pub(super) fn visible_solid_fill(capture: &ViewportCapture, windows: &[[f32; 4]]) -> bool {
     visible_fill(capture, windows, &fixture_hue)
 }

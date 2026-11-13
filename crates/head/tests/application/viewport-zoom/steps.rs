@@ -111,6 +111,7 @@ fn no_command(world: &mut ApplicationWorld) {
     world.expect_ready();
 }
 #[when("I scroll the mouse wheel over the block in the direction that zooms out")]
+#[when("the user scrolls the mouse wheel over the block in the direction that zooms out")]
 fn wheel_out(world: &mut ApplicationWorld) {
     wheel(world, -ZOOM_OUT_NOTCHES);
 }
@@ -126,6 +127,7 @@ fn part_and_orientation(world: &mut ApplicationWorld) {
     expect_same_orientation(world);
 }
 #[when("I scroll the mouse wheel over the block in the opposite direction")]
+#[when("the user scrolls the mouse wheel over the block in the opposite direction")]
 fn wheel_in(world: &mut ApplicationWorld) {
     wheel(world, ZOOM_OUT_NOTCHES);
 }
@@ -136,6 +138,7 @@ fn appears_larger(world: &mut ApplicationWorld) {
 }
 // The command
 #[when("I select Zoom on the navigation bar")]
+#[when("the user selects Zoom on the navigation bar")]
 fn select_zoom(world: &mut ApplicationWorld) {
     press_bar(world, "Z");
 }
@@ -150,7 +153,9 @@ fn appears_small(world: &mut ApplicationWorld) {
     shrink_the_block(world);
 }
 #[when("I open the Zoom menu on the navigation bar")]
+#[when("the user opens the Zoom menu on the navigation bar")]
 #[when("I reopen the Zoom menu")]
+#[when("the user reopens the Zoom menu")]
 fn open_zoom_menu(world: &mut ApplicationWorld) {
     zoom_menu(world);
 }
@@ -161,6 +166,7 @@ fn zoom_rows(world: &mut ApplicationWorld) {
     }
 }
 #[when("I choose Zoom All")]
+#[when("the user chooses Zoom All")]
 fn choose_zoom_all(world: &mut ApplicationWorld) {
     choose_row(world, "Zoom All");
 }
@@ -178,6 +184,7 @@ fn all_marked(world: &mut ApplicationWorld) {
     assert!(world.checked("Zoom All"), "expected Zoom All marked");
 }
 #[when("I select Zoom and press Escape")]
+#[when("the user selects Zoom and presses Escape")]
 fn zoom_then_escape(world: &mut ApplicationWorld) {
     choose_row(world, "Zoom");
     world.escape();
@@ -195,6 +202,7 @@ fn face_large(world: &mut ApplicationWorld) {
     );
 }
 #[when("I choose Zoom Window from the navigation bar Zoom menu")]
+#[when("the user chooses Zoom Window from the navigation bar Zoom menu")]
 fn choose_window(world: &mut ApplicationWorld) {
     choose_from_zoom_menu(world, "Zoom Window");
 }
@@ -203,12 +211,15 @@ fn window_prompt(world: &mut ApplicationWorld) {
     world.expect_status("Zoom Window");
 }
 #[when("I click one corner within the visible face")]
+#[when("the user clicks one corner within the visible face")]
 #[when("I click a first corner within the face")]
+#[when("the user clicks a first corner within the face")]
 fn first_corner(world: &mut ApplicationWorld) {
     let at = window_corner(world, -1);
     click_pump(world, at);
 }
 #[when("I click an opposite corner within that face")]
+#[when("the user clicks an opposite corner within that face")]
 fn opposite_corner(world: &mut ApplicationWorld) {
     let at = window_corner(world, 1);
     click_pump(world, at);
@@ -238,6 +249,7 @@ fn window_marked(world: &mut ApplicationWorld) {
     assert!(world.checked("Zoom Window"), "expected Zoom Window marked");
 }
 #[when("I choose Zoom All and then restore Zoom as the selected action")]
+#[when("the user chooses Zoom All and then restores Zoom as the selected action")]
 fn all_then_zoom(world: &mut ApplicationWorld) {
     choose_row(world, "Zoom All");
     choose_from_zoom_menu(world, "Zoom");
@@ -250,6 +262,7 @@ fn select_face(world: &mut ApplicationWorld) {
     assert!(world.state().model_face_chosen, "expected the face chosen");
 }
 #[when("I choose Zoom Selected from the navigation bar Zoom menu")]
+#[when("the user chooses Zoom Selected from the navigation bar Zoom menu")]
 fn choose_selected(world: &mut ApplicationWorld) {
     choose_from_zoom_menu(world, "Zoom Selected");
 }
@@ -279,16 +292,19 @@ fn none_selected(world: &mut ApplicationWorld) {
     assert!(!world.state().model_face_chosen, "expected nothing chosen");
 }
 #[then("the status area prompts me to select an entity to zoom")]
+#[then("the status area prompts the user to select an entity to zoom")]
 fn entity_prompt(world: &mut ApplicationWorld) {
     world.expect_status("select an entity to zoom");
 }
 #[when("I click the visible planar face")]
+#[when("the user clicks the visible planar face")]
 fn click_face(world: &mut ApplicationWorld) {
     let at = face_middle(world);
     click_pump(world, at);
 }
 // A cancelled window
 #[when("I press Escape before choosing the opposite corner")]
+#[when("the user presses Escape before choosing the opposite corner")]
 fn escape_window(world: &mut ApplicationWorld) {
     world.escape();
     world.pump(Vec::new());

@@ -73,3 +73,13 @@ fn fixture_point_excludes_ui_and_requires_filled_green() {
         None
     );
 }
+
+#[test]
+fn fixture_bounds_exclude_green_pixels_in_application_chrome() {
+    let mut capture = capture_with_patch([0, 255, 0, 255], true);
+    capture.rgba[(2 * 32 + 2) * 4..(2 * 32 + 2) * 4 + 4].copy_from_slice(&[0, 255, 0, 255]);
+    assert_eq!(
+        visible_fixture_bounds(&capture, &[[0., 0., 8., 8.]]),
+        Some(([10, 10], [21, 21]))
+    );
+}

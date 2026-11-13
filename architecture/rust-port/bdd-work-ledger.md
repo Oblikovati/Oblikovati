@@ -15,6 +15,7 @@ claim that each file has been individually triaged.
 | 1 | `features/application/model-browser` | In progress | After action wording updates, a full native run passed 29 of 100 scenarios. Of the other 71, 62 stopped at undefined steps and nine at failed checks. Focused fixes passed later; rerun the full feature before reporting a current total. |
 | 1 | `features/application/quick-access-toolbar` | In progress | The previous full native feature run passed 11 of 12 scenarios. Projects now opens the project dialog; the focused customization choices scenario next fails because Update is missing. Later checks did not run. Material Browser editing, duplication, and the Physical tab remain open. |
 | 1 | `features/application/viewport-pan/viewport-pan.feature` | Verified | All four current scenarios passed in the native window after the step wording was updated; see the Pan evidence below. |
+| 1 | `features/application/viewport-zoom/viewport-zoom.feature` | Verified | All seven current scenarios passed in the native window after the step wording and fixture bounds measurement were corrected; see the Zoom evidence below. |
 | 1 | `features/application/ribbon-customization/ribbon-customization.feature` | Needs rerun | Source changed since the inventory checkpoint. Review the corrections and rerun affected native scenarios. |
 | 1 | `features/application/ribbon-appearance/ribbon-appearance.feature` | In progress | On the current recorded source, six of 18 scenarios pass; 11 stop at undefined steps and one fails on a missing Tools group. Reset Ribbon is implemented. Implement the standard Tools groups and Text Off, Small, Compact and Large across all commands and layouts. |
 | 1 | `features/application/ribbon-docking/ribbon-docking.feature` | In progress | Source changed after the inventory checkpoint. A full native run at commit `139b82a42` found 6 passes and 17 scenarios stopped by undefined steps. With corrected bindings, a second run found 8 passes, 14 undefined steps, and one ambiguous step. Resolve the remaining steps and implement missing command-group behavior. |
@@ -30,6 +31,27 @@ claim that each file has been individually triaged.
 | 3 | `features/solid-model` | In progress | Implementations exist, but this area has not been assessed against the current complete source. Assess each feature after the application and sketch priorities; no total execution result is recorded. |
 
 ## Evidence records
+
+### Viewport Zoom, 2026-11-13
+
+- Source: `features/application/viewport-zoom/viewport-zoom.feature`, SHA-256
+  `cb07444a13797a6d98fac5b8f26463343a1cbff5ed4781c359290bd6e4856e9c`,
+  unchanged before and after the run. Application: `28ff1ad31` plus updated
+  scenario bindings and fixture measurement; Martensite uses the lockfile.
+- Linux, Xvfb at 1600 × 1000, configured Vulkan runtime, `XMODIFIERS` unset.
+  All seven scenarios and 74 steps passed with no skipped steps. A separate
+  five-test fixture visibility suite passed. Pan was rerun and its four
+  scenarios and 32 steps also passed after the shared measurement change.
+- A green ribbon icon had contaminated the fixture's image bounds and caused
+  the face-selection tests to click outside the block. The bounds calculation
+  now excludes GUI windows; a regression test includes a green chrome pixel.
+- Run: `xvfb-run -a -s '-screen 0 1600x1000x24' cargo test --locked -p
+  oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture`,
+  with `OBK_BDD_ROOT` pointing to the live source and
+  `OBK_BDD_FEATURE=viewport-zoom`. Reports are in
+  `/tmp/obk-zoom-occlusion-final-20261113`; Pan reports are in
+  `/tmp/obk-pan-after-bounds-20261113`. These local reports are not durable
+  shared artifacts. These results cover these two features only.
 
 ### Viewport Pan, 2026-11-13
 

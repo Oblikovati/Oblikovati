@@ -21,8 +21,8 @@ const NAVIGATION: &str = "##navigation-bar";
 const OPTIONS_TITLE: &str = "Orientation Options";
 /// Letters a compass adds around the control; no face's label holds them.
 const COMPASS_LETTERS: [&str; 4] = ["N", "E", "S", "W"];
-const GREEN_MARGIN: u8 = 40;
 const PIXEL_ROUNDING: usize = 2;
+const GREEN_MARGIN: u8 = 40;
 const AWAY: [i32; 2] = [420, 300];
 /// A press on a face's middle, away from where its rim picks an edge or a corner.
 const IN_THE_CORNER: f32 = 0.85;
@@ -113,21 +113,9 @@ pub(super) fn solid_extent(world: &mut ApplicationWorld) -> [usize; 2] {
 }
 pub(super) fn solid_bounds(world: &mut ApplicationWorld) -> ([usize; 2], [usize; 2]) {
     let capture = super::capture_framebuffer(&mut world.app().window.native);
-    let width = capture.extent[0] as usize;
-    let (mut low, mut high) = ([usize::MAX; 2], [0; 2]);
-    for (index, pixel) in capture.rgba.as_chunks::<4>().0.iter().enumerate() {
-        let green = pixel[1] > pixel[0].saturating_add(GREEN_MARGIN)
-            && pixel[1] > pixel[2].saturating_add(GREEN_MARGIN);
-        if green {
-            let at = [index % width, index / width];
-            for axis in 0..2 {
-                low[axis] = low[axis].min(at[axis]);
-                high[axis] = high[axis].max(at[axis]);
-            }
-        }
-    }
-    assert!(high[0] >= low[0], "expected the solid in the viewport");
-    (low, high)
+    let windows = super::diagnostics::window_occlusions();
+    super::solid_visibility::visible_fixture_bounds(&capture, &windows)
+        .expect("expected the solid in the viewport outside GUI windows")
 }
 /// Sides in this proportion, give or take the pixels an edge rounds to.
 fn expect_proportion(wide: usize, tall: usize, across: usize, down: usize) {
