@@ -88,6 +88,10 @@ claim that each file has been individually triaged.
   shared source. It checks the thumbnail selection, both drawing tabs and
   rendered sheets, and preservation of the original tab. On the same feature
   SHA, all 11 steps pass under Xvfb; report: `/tmp/obk-two-drawings.log`.
+- The focused “Open a different drawing by double-clicking its row” scenario
+  passes all nine steps with an active assembly and two closed drawings. It
+  checks the second drawing's saved view, its rendered sheet and tab, and the
+  retained assembly tab. Report: `/tmp/obk-double-drawing.log`.
 - The drawing browser now lists the authored sheets, borders, title blocks and
   views, and browser search uses those same rows. Unit tests cover multiple
   sheets, a missing border and searching for a view.

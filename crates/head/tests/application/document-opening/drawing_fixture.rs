@@ -142,6 +142,70 @@ fn other_drawing_active(world: &mut ApplicationWorld) {
     assert_eq!(world.state().document, world.other_document);
     sheet_and_border(world);
 }
+
+#[given("an assembly document is active in the MCAD Software")]
+fn active_assembly(world: &mut ApplicationWorld) {
+    world.previous_document = Some(world.add_template(GuiTemplateKind::Assembly));
+}
+#[given("the Open dialog displays two saved drawings in a folder")]
+fn two_drawing_rows(world: &mut ApplicationWorld) {
+    two_closed_drawings(world);
+    let folder = models_folder(world);
+    open_dialog(world);
+    look_in(world, &folder);
+}
+#[given("the first drawing is selected")]
+fn first_drawing_selected(world: &mut ApplicationWorld) {
+    select_row(world, DRAWING_FILE);
+}
+#[given("the second drawing has a sheet, border and saved views and is not already open")]
+fn second_drawing_has_saved_views(world: &mut ApplicationWorld) {
+    let path = models_folder(world).join(SECOND_DRAWING_FILE);
+    let package = DocumentPackage::decode(&std::fs::read(path).unwrap()).unwrap();
+    let drawing = package.restore_drawing().unwrap().unwrap();
+    assert!(drawing.sheets()[0].border);
+    assert!(
+        !package
+            .restore_saved_drawing_views()
+            .unwrap()
+            .unwrap()
+            .views[0]
+            .lines
+            .is_empty()
+    );
+    assert!(world.state().drawing_documents.is_empty());
+}
+#[when("the user double-clicks the second drawing's row")]
+fn double_click_second_drawing(world: &mut ApplicationWorld) {
+    let position = world
+        .run(SECOND_DRAWING_FILE)
+        .center()
+        .map(|value| value as i32);
+    world.pump(super::super::pointer_click_events(position, 2));
+    settle(world);
+}
+#[then("the second drawing opens in a new active document tab")]
+fn second_drawing_active(world: &mut ApplicationWorld) {
+    let state = world.state();
+    let id = state.document.unwrap();
+    assert!(
+        state.document_storage[&id]
+            .path
+            .as_deref()
+            .unwrap()
+            .ends_with(SECOND_DRAWING_FILE)
+    );
+    let title = world.document_name(id);
+    world.expect_tab(&title);
+}
+#[then("its sheet, border and saved views are displayed")]
+fn second_drawing_sheet(world: &mut ApplicationWorld) {
+    sheet_and_border(world);
+}
+#[then("the assembly tab remains available")]
+fn assembly_tab_remains(world: &mut ApplicationWorld) {
+    existing_tab_remains(world);
+}
 #[given("the deferred-update information message is enabled")]
 fn deferred_message_enabled(world: &mut ApplicationWorld) {
     // ApplicationWorld gives each scenario a new preferences directory and dialog state.
