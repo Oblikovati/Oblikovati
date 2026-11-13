@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Kept origin-plane labels inside the clickable workspace when starting a sketch. (#3857)
+
 ### Added
 
 - Added the Macros category to ribbon customization for sessions with no macros. (#3856)

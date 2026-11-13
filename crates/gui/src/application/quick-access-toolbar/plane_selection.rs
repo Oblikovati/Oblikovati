@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Choosing an origin plane to sketch on: Start 2D Sketch, or Extrude with nothing to extrude.
+use crate::application::document_creation::workspaces::WorkspaceArea;
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::{MouseButton, Ui};
 
@@ -58,7 +59,7 @@ impl PlaneSelection {
             .iter()
             .map(|plane| (logical_corners(plane.corners, scale), plane.kind))
             .collect();
-        draw_planes(ui, &planes);
+        draw_planes(ui, &planes, area);
         if ui.is_key_pressed_no_repeat(imgui::Key::Escape) {
             self.active = false;
             return;
@@ -73,7 +74,7 @@ impl PlaneSelection {
 fn plane_chosen_over_workspace(
     ui: &Ui,
     planes: &[([[f32; 2]; 4], GuiOriginPlaneKind)],
-    area: crate::application::document_creation::workspaces::WorkspaceArea,
+    area: WorkspaceArea,
 ) -> Option<GuiOriginPlaneKind> {
     crate::widget_abi::window_geometry(
         ui,
@@ -91,7 +92,7 @@ fn plane_chosen_over_workspace(
         )
         .build(|| {
             (ui.is_window_hovered() && ui.is_mouse_clicked(MouseButton::Left))
-                .then(|| chosen_plane(ui, planes))
+                .then(|| chosen_plane(ui, planes, area))
                 .flatten()
         })
         .flatten()
@@ -99,7 +100,7 @@ fn plane_chosen_over_workspace(
 fn logical_corners(corners: [[i32; 2]; 4], scale: [f32; 2]) -> [[f32; 2]; 4] {
     corners.map(|corner| [corner[0] as f32 / scale[0], corner[1] as f32 / scale[1]])
 }
-fn draw_planes(ui: &Ui, planes: &[([[f32; 2]; 4], GuiOriginPlaneKind)]) {
+fn draw_planes(ui: &Ui, planes: &[([[f32; 2]; 4], GuiOriginPlaneKind)], area: WorkspaceArea) {
     let draw = ui.get_foreground_draw_list();
     for (corners, kind) in planes {
         draw.add_triangle(corners[0], corners[1], corners[2], PLANE_FILL)
@@ -112,24 +113,37 @@ fn draw_planes(ui: &Ui, planes: &[([[f32; 2]; 4], GuiOriginPlaneKind)]) {
             draw.add_line(corners[index], corners[(index + 1) % 4], PLANE_EDGE)
                 .build();
         }
-        draw.add_text(label_position(corners), LABEL, kind.label());
+        draw.add_text(
+            label_position(corners, ui.calc_text_size(kind.label()), area),
+            LABEL,
+            kind.label(),
+        );
     }
 }
-fn label_position(corners: &[[f32; 2]; 4]) -> [f32; 2] {
-    [
+pub(crate) fn label_position(
+    corners: &[[f32; 2]; 4],
+    size: [f32; 2],
+    area: WorkspaceArea,
+) -> [f32; 2] {
+    let projected = [
         corners[2][0] * 0.8 + corners[0][0] * 0.2,
         corners[2][1] * 0.8 + corners[0][1] * 0.2,
+    ];
+    [
+        projected[0].clamp(area.left, (area.right - size[0]).max(area.left)),
+        projected[1].clamp(area.top, (area.bottom - size[1]).max(area.top)),
     ]
 }
 /// A label is always unambiguous; inside overlapping planes the most face-on one wins.
 fn chosen_plane(
     ui: &Ui,
     planes: &[([[f32; 2]; 4], GuiOriginPlaneKind)],
+    workspace: WorkspaceArea,
 ) -> Option<GuiOriginPlaneKind> {
     let pointer = ui.io().mouse_pos;
     for (corners, kind) in planes {
-        let at = label_position(corners);
         let size = ui.calc_text_size(kind.label());
+        let at = label_position(corners, size, workspace);
         if (at[0]..=at[0] + size[0]).contains(&pointer[0])
             && (at[1]..=at[1] + size[1]).contains(&pointer[1])
         {

@@ -89,9 +89,16 @@ fn native_new_part_button_creates_and_selects_an_unsaved_document() {
     assert!(!owner.close_allowed().unwrap());
     let variant = model_state_journey::prepare(&mut owner);
     parameters::create_size_parameter(&mut window, &mut owner);
-    click_shell_position(&mut window, &mut owner, [110, 68]);
-    // Start 2D Sketch asks for a plane; facing the view, only XY has any area to click.
-    click_shell_position(&mut window, &mut owner, [800, 500]);
+    click_shell_position(
+        &mut window,
+        &mut owner,
+        application_bdd::rendered_label_center("Start 2D Sketch"),
+    );
+    click_shell_position(
+        &mut window,
+        &mut owner,
+        application_bdd::rendered_label_center("XY Plane"),
+    );
     assert!(owner.active_sketch_edit().is_some());
     click_shell_position(&mut window, &mut owner, [40, 107]);
     assert!(owner.placement_active());
@@ -143,8 +150,12 @@ fn native_new_part_button_creates_and_selects_an_unsaved_document() {
             .len(),
         4
     );
-    for (button_x, expected_lines) in [(156, 0), (201, 4)] {
-        click_shell(&mut window, &mut owner, button_x);
+    for (label, expected_lines) in [("Undo", 0), ("Redo", 4)] {
+        click_shell_position(
+            &mut window,
+            &mut owner,
+            application_bdd::rendered_label_center(label),
+        );
         assert_eq!(
             owner
                 .documents()
@@ -161,7 +172,11 @@ fn native_new_part_button_creates_and_selects_an_unsaved_document() {
             expected_lines
         );
     }
-    click_shell_position(&mut window, &mut owner, [440, 68]);
+    click_shell_position(
+        &mut window,
+        &mut owner,
+        application_bdd::rendered_label_center("Finish Sketch"),
+    );
     assert!(owner.active_sketch_edit().is_none());
     assert!(!owner.placement_active());
     verify_browser_reentry_pixels(&mut window, &mut owner, edit);
