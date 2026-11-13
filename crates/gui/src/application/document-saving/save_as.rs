@@ -53,6 +53,8 @@ struct SaveAsDraft {
     image: Option<String>,
     image_name: String,
     window_preview: Option<crate::GuiPreviewImage>,
+    isometric_preview: Option<crate::GuiPreviewImage>,
+    isometric_error: Option<String>,
     /// The path Save would replace, while its confirmation is open.
     replacing: Option<String>,
     images: FolderBrowser,
@@ -101,6 +103,8 @@ impl SaveAsDialog {
             image: None,
             image_name: String::new(),
             window_preview: None,
+            isometric_preview: None,
+            isometric_error: None,
             replacing: None,
             images: FolderBrowser::new(self.folders.clone()),
             image_escape: DialogEscape::default(),
@@ -112,6 +116,26 @@ impl SaveAsDialog {
     pub(crate) fn receive_window_preview(&mut self, image: crate::GuiPreviewImage) {
         if let Some(draft) = &mut self.draft {
             draft.window_preview = Some(image);
+        }
+    }
+    pub(crate) fn receive_isometric_preview(
+        &mut self,
+        document: u64,
+        image: crate::GuiPreviewImage,
+    ) {
+        if let Some(draft) = &mut self.draft
+            && draft.document == document
+        {
+            draft.isometric_preview = Some(image);
+            draft.isometric_error = None;
+        }
+    }
+    pub(crate) fn reject_isometric_preview(&mut self, document: u64, cause: String) {
+        if let Some(draft) = &mut self.draft
+            && draft.document == document
+        {
+            draft.isometric_preview = None;
+            draft.isometric_error = Some(cause);
         }
     }
     /// A frame must follow so the popup opens without waiting for an event.
@@ -155,6 +179,16 @@ impl SaveAsDialog {
         self.synchronize(state);
         let draft = self.draft.as_mut()?;
         if std::mem::take(&mut draft.opening) {
+            if state.document == Some(draft.document)
+                && state
+                    .browser
+                    .as_ref()
+                    .is_some_and(|browser| browser.bodies.iter().any(|body| body.visible))
+            {
+                actions.push(GuiShellAction::CaptureIsometricPreview {
+                    document: draft.document,
+                });
+            }
             ui.open_popup(TITLE);
         }
         center_dialog(ui, [1040., 450.]);
@@ -198,7 +232,7 @@ impl SaveAsDialog {
 /// What the Save Preview Picture choice asks of this save; the Active Window's capture replaces
 /// the workspace's last picture, and without the choice the file holds none.
 fn kept_picture(draft: &SaveAsDraft) -> Option<GuiShellAction> {
-    let picture = match (draft.save_preview, shown_window_preview(draft)) {
+    let picture = match (draft.save_preview, shown_preview(draft)) {
         (false, _) => None,
         (true, Some(image)) => Some(image.clone()),
         (true, None) => return None,
@@ -216,13 +250,20 @@ fn preview_text(draft: &SaveAsDraft) -> &str {
     match (draft.source, &draft.image) {
         (PreviewSource::ImportFromFile, Some(image)) => image,
         (PreviewSource::ImportFromFile | PreviewSource::ActiveWindow, _) => NO_PREVIEW,
-        _ => CAPTURED_ON_SAVE,
+        (PreviewSource::ActiveComponentIso, _) => {
+            draft.isometric_error.as_deref().unwrap_or(CAPTURED_ON_SAVE)
+        }
     }
 }
-fn shown_window_preview(draft: &SaveAsDraft) -> Option<&crate::GuiPreviewImage> {
-    (draft.save_preview && draft.source == PreviewSource::ActiveWindow)
-        .then_some(draft.window_preview.as_ref())
-        .flatten()
+fn shown_preview(draft: &SaveAsDraft) -> Option<&crate::GuiPreviewImage> {
+    if !draft.save_preview {
+        return None;
+    }
+    match draft.source {
+        PreviewSource::ActiveWindow => draft.window_preview.as_ref(),
+        PreviewSource::ActiveComponentIso => draft.isometric_preview.as_ref(),
+        PreviewSource::ImportFromFile => None,
+    }
 }
 /// A grid of filled cells: the GUI binds one font texture, and a preview needs no other.
 pub(crate) fn draw_preview_image(ui: &Ui, image: &crate::GuiPreviewImage) {
@@ -255,7 +296,7 @@ fn preview_options(ui: &Ui, draft: &mut SaveAsDraft, actions: &mut Vec<GuiShellA
     ui.child_window("##save-preview")
         .size([0., PREVIEW_HEIGHT])
         .border(true)
-        .build(|| match shown_window_preview(draft) {
+        .build(|| match shown_preview(draft) {
             Some(image) => draw_preview_image(ui, image),
             None => ui.text_disabled(preview_text(draft)),
         });

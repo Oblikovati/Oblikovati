@@ -159,6 +159,10 @@ pub enum GuiShellAction {
     CreateDocument(crate::GuiDocumentTemplate),
     /// Picture the active window for the Save As preview; the file is not changed.
     CaptureWindowPreview,
+    /// Render the active part from an isometric view for Save As.
+    CaptureIsometricPreview {
+        document: u64,
+    },
     /// Close the application through the window's own close policy.
     Exit,
     /// Show the Home workspace in front of the active document.

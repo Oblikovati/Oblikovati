@@ -152,6 +152,18 @@ impl GuiFrameEngine {
     pub fn receive_window_preview(&mut self, image: crate::GuiPreviewImage) {
         self.document_files.receive_window_preview(image);
     }
+    /// Supply an isometric Save As preview for its document.
+    /// Example: `engine.receive_isometric_preview(document, image)`.
+    pub fn receive_isometric_preview(&mut self, document: u64, image: crate::GuiPreviewImage) {
+        self.document_files
+            .receive_isometric_preview(document, image);
+    }
+    /// Report a failed preview on the matching Save As dialog.
+    /// Example: `engine.reject_isometric_preview(document, cause)`.
+    pub fn reject_isometric_preview(&mut self, document: u64, cause: String) {
+        self.document_files
+            .reject_isometric_preview(document, cause);
+    }
     /// Restore a rejected dimension draft; example: `engine.reject_dimension_edit(&value, "invalid")`.
     pub fn reject_dimension_edit(&mut self, value: &crate::GuiDimensionValue, cause: &str) {
         self.dimension_value_editor.reject(value, cause);

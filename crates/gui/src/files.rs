@@ -208,6 +208,16 @@ impl GuiDocumentFiles {
     pub(crate) fn receive_window_preview(&mut self, image: crate::GuiPreviewImage) {
         self.save_as.receive_window_preview(image);
     }
+    pub(crate) fn receive_isometric_preview(
+        &mut self,
+        document: u64,
+        image: crate::GuiPreviewImage,
+    ) {
+        self.save_as.receive_isometric_preview(document, image);
+    }
+    pub(crate) fn reject_isometric_preview(&mut self, document: u64, cause: String) {
+        self.save_as.reject_isometric_preview(document, cause);
+    }
     fn open_menu_item(&mut self, ui: &Ui, state: &GuiCommandState) {
         if ui
             .menu_item_config("Open...")

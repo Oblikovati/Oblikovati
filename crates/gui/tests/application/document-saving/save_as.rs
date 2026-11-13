@@ -77,16 +77,61 @@ fn the_active_window_shows_a_placeholder_until_its_image_arrives() {
     let draft = dialog.draft.as_mut().unwrap();
     draft.source = PreviewSource::ActiveWindow;
     assert_eq!(preview_text(draft), NO_PREVIEW);
-    assert!(shown_window_preview(draft).is_none());
+    assert!(shown_preview(draft).is_none());
     let image = crate::GuiPreviewImage {
         extent: [1, 1],
         rgb: std::sync::Arc::new(vec![[1, 2, 3]]),
     };
     dialog.receive_window_preview(image);
     let draft = dialog.draft.as_mut().unwrap();
-    assert!(shown_window_preview(draft).is_some());
+    assert!(shown_preview(draft).is_some());
     draft.save_preview = false;
-    assert!(shown_window_preview(draft).is_none());
+    assert!(shown_preview(draft).is_none());
+}
+#[test]
+fn isometric_preview_is_document_scoped_and_saved_only_when_selected() {
+    let mut dialog = requested(false);
+    let image = crate::GuiPreviewImage {
+        extent: [1, 1],
+        rgb: std::sync::Arc::new(vec![[1, 2, 3]]),
+    };
+    dialog.receive_isometric_preview(8, image.clone());
+    assert!(shown_preview(dialog.draft.as_ref().unwrap()).is_none());
+    dialog.receive_isometric_preview(7, image.clone());
+    let draft = dialog.draft.as_mut().unwrap();
+    assert_eq!(shown_preview(draft), Some(&image));
+    assert!(matches!(
+        kept_picture(draft),
+        Some(GuiShellAction::KeepDocumentPicture {
+            document: 7,
+            picture: Some(_)
+        })
+    ));
+    draft.source = PreviewSource::ActiveWindow;
+    assert!(shown_preview(draft).is_none());
+    assert!(kept_picture(draft).is_none());
+}
+#[test]
+fn preview_failure_is_visible_only_for_the_matching_document() {
+    let mut dialog = requested(false);
+    dialog.reject_isometric_preview(8, "other document failed".into());
+    assert_eq!(
+        preview_text(dialog.draft.as_ref().unwrap()),
+        CAPTURED_ON_SAVE
+    );
+    dialog.reject_isometric_preview(7, "renderer unavailable".into());
+    assert_eq!(
+        preview_text(dialog.draft.as_ref().unwrap()),
+        "renderer unavailable"
+    );
+    dialog.receive_isometric_preview(
+        7,
+        crate::GuiPreviewImage {
+            extent: [1, 1],
+            rgb: std::sync::Arc::new(vec![[1, 2, 3]]),
+        },
+    );
+    assert!(dialog.draft.as_ref().unwrap().isometric_error.is_none());
 }
 #[test]
 fn a_new_request_forgets_what_a_cancelled_dialog_changed() {

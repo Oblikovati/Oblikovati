@@ -46,6 +46,10 @@ pub(super) fn dispatch_gui_action(
 ) -> Result<bool, String> {
     match action {
         GuiShellAction::CaptureWindowPreview => return window.capture_window_preview(),
+        GuiShellAction::CaptureIsometricPreview { document } => {
+            super::publish_owner_scene(window, owner)?;
+            return window.capture_isometric_preview(*document);
+        }
         GuiShellAction::Exit => return window.request_close(),
         GuiShellAction::OrientView { command, fit } => {
             let camera = crate::view_orientation::oriented(&window.view_camera()?, *command);
@@ -117,6 +121,7 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::EditDimensionValue(_)
         | GuiShellAction::SetPromptFrequency { .. }
         | GuiShellAction::CaptureWindowPreview
+        | GuiShellAction::CaptureIsometricPreview { .. }
         | GuiShellAction::Exit
         | GuiShellAction::EditThemeColor { .. }
         | GuiShellAction::DuplicateTheme { .. }

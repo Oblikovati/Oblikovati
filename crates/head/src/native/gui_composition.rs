@@ -1,7 +1,49 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::NativeHeadWindow;
 use oblikovati_viewport::{GuiFrame, GuiFrameCompiler};
+mod preview_shading;
 impl NativeHeadWindow {
+    pub(super) fn publish_isometric_preview(&mut self, document: u64) -> Result<bool, String> {
+        match self.isometric_preview_image(document) {
+            Ok(image) => {
+                if let Some(gui) = &mut self.gui {
+                    gui.receive_isometric_preview(document, image);
+                }
+            }
+            Err(cause) => {
+                if let Some(gui) = &mut self.gui {
+                    gui.reject_isometric_preview(document, cause.clone());
+                }
+                crate::HeadWindow::show_command_notice(
+                    self,
+                    crate::DesktopCommandNotice::PreviewFailed { cause },
+                )?;
+            }
+        }
+        Ok(true)
+    }
+    pub(super) fn isometric_preview_image(
+        &self,
+        document: u64,
+    ) -> Result<oblikovati_gui::GuiPreviewImage, String> {
+        let source = self.scene_status.as_ref().and_then(|status| status.source);
+        if source.map(|(id, _)| id) != Some(document) {
+            return Err(format!(
+                "isometric preview document {document}, scene {source:?}: expected the active document scene"
+            ));
+        }
+        let scene = self.current_scene.as_ref().ok_or_else(|| {
+            format!("isometric preview document {document}: expected a submitted scene")
+        })?;
+        let mut preview = self.runtime.open_offscreen([256, 144])?;
+        preview.submit(&preview_shading::shaded_scene(scene))?;
+        if let Some(background) = self.preview_background {
+            preview.set_background(background)?;
+        }
+        preview.navigate(oblikovati_viewport::ViewportNavigation::Home { margin: 0.1 })?;
+        let capture = preview.redraw()?;
+        Ok(downsampled_preview(&capture))
+    }
     /// Read the actual target for the next GUI frame; example: `request.extent = window.drawable_extent()?;`.
     pub fn drawable_extent(&mut self) -> Result<[u32; 2], String> {
         self.view.drawable_extent()

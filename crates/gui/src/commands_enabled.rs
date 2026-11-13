@@ -124,6 +124,7 @@ impl GuiShellAction {
                 (state.sketch_at_ready || state.dimension_tool_active) && !state.transaction_open
             }
             Self::SetPromptFrequency { .. } | Self::CaptureWindowPreview | Self::Exit => true,
+            Self::CaptureIsometricPreview { document } => state.document == Some(*document),
             Self::ActivateDocument(request) => {
                 !state.transaction_open
                     && state

@@ -19,6 +19,8 @@ pub struct NativeHeadWindow {
     marked_view: Option<oblikovati_viewport::ViewportCamera>,
     wake: ViewportWake,
     scene_status: Option<crate::HeadSceneStatus>,
+    current_scene: Option<ViewportScene>,
+    preview_background: Option<oblikovati_viewport::ViewportBackground>,
     sketch_scene: Option<crate::HeadSketchSceneUpdate>,
     navigation: crate::navigation::DesktopNavigation,
     sketch_view: Option<(crate::HeadSketchEdit, oblikovati_viewport::ViewportCamera)>,
@@ -65,6 +67,8 @@ impl NativeHeadWindow {
             marked_view: None,
             wake: ViewportWake::new()?,
             scene_status: None,
+            current_scene: None,
+            preview_background: None,
             sketch_scene: None,
             navigation: Default::default(),
             sketch_view: None,
@@ -79,12 +83,7 @@ impl NativeHeadWindow {
         })
     }
 }
-impl NativeHeadWindow {
-    /// Inspect the current displayed generation and detailed declines; example: `window.scene_status()` for a health panel.
-    pub fn scene_status(&self) -> Option<&crate::HeadSceneStatus> {
-        self.scene_status.as_ref()
-    }
-}
+mod scene_status;
 #[path = "native/view_inputs.rs"]
 mod view_inputs;
 impl HeadWindow for NativeHeadWindow {
@@ -117,6 +116,10 @@ impl HeadWindow for NativeHeadWindow {
         commands: &oblikovati_gui::GuiCommandState,
     ) -> Result<crate::HeadGuiUpdate, String> {
         self.note_document_title(commands)?;
+        self.preview_background = commands
+            .color_scheme
+            .as_ref()
+            .map(|palette| palette.background());
         let changed = match &commands.color_scheme {
             Some(palette) => self.view.set_background(palette.background())?,
             None => false,
@@ -262,6 +265,7 @@ impl HeadWindow for NativeHeadWindow {
 
     fn submit_scene(&mut self, update: crate::HeadSceneUpdate) -> Result<(), String> {
         self.view.submit(&update.scene)?;
+        self.current_scene = Some(update.scene);
         self.scene_status = Some(update.status);
         self.refresh_title()
     }
@@ -280,6 +284,9 @@ impl HeadWindow for NativeHeadWindow {
             gui.receive_window_preview(image);
         }
         Ok(true)
+    }
+    fn capture_isometric_preview(&mut self, document: u64) -> Result<bool, String> {
+        self.publish_isometric_preview(document)
     }
     fn request_close(&mut self) -> Result<bool, String> {
         self.exit_requested = true;
@@ -449,32 +456,7 @@ mod navigation_tests;
 #[path = "../tests/native_startup.rs"]
 mod startup_tests;
 
-fn previous_view_pressed(event: &ViewportEvent) -> bool {
-    matches!(
-        event,
-        ViewportEvent::Input(oblikovati_viewport::ViewportInput::Key {
-            key: oblikovati_viewport::ViewportKey::Previous,
-            pressed: true
-        })
-    )
-}
-
-impl NativeHeadWindow {
-    fn refresh_title(&mut self) -> Result<(), String> {
-        let mut title = self
-            .scene_status
-            .as_ref()
-            .map_or_else(|| "Oblikovati".into(), crate::HeadSceneStatus::title);
-        if let Some(document) = &self.document_title {
-            title = format!("{document} - {title}");
-        }
-        title.push_str(&self.sketch_display_title()?);
-        if let Some(notice) = &self.command_notice {
-            title.push_str(&format!(" - {}", notice.message()));
-        }
-        self.view.set_title(&title)
-    }
-}
+mod title;
 
 #[cfg(test)]
 #[path = "../tests/native_save.rs"]

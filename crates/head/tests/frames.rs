@@ -354,6 +354,40 @@ impl HeadWork for FakeSceneWork {
         }))
     }
 }
+#[derive(Default)]
+struct PreviewSceneWindow {
+    calls: Vec<&'static str>,
+}
+impl HeadWindow for PreviewSceneWindow {
+    fn submit_scene(&mut self, _: crate::HeadSceneUpdate) -> Result<(), String> {
+        self.calls.push("scene");
+        Ok(())
+    }
+    fn capture_isometric_preview(&mut self, document: u64) -> Result<bool, String> {
+        assert_eq!(document, 1);
+        self.calls.push("preview");
+        Ok(true)
+    }
+    fn events(&mut self, _: usize) -> Result<Vec<ViewportEvent>, String> {
+        Ok(vec![])
+    }
+    fn present(&mut self) -> Result<HeadPresentation, String> {
+        Ok(HeadPresentation::Completed)
+    }
+    fn wait(&mut self, _: Option<std::time::Duration>) -> Result<bool, String> {
+        Ok(false)
+    }
+    fn finish(&mut self) -> Result<(), String> {
+        Ok(())
+    }
+}
+#[test]
+fn isometric_preview_uses_the_latest_owner_scene() {
+    let mut window = PreviewSceneWindow::default();
+    let action = oblikovati_gui::GuiShellAction::CaptureIsometricPreview { document: 1 };
+    assert!(gui::dispatch_gui_action(&mut window, &mut FakeSceneWork, &action).unwrap());
+    assert_eq!(window.calls, ["scene", "preview"]);
+}
 #[test]
 fn an_unsupported_scene_window_refuses_publication_and_retires() {
     let mut window = FakeHeadWindow::default();

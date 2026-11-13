@@ -39,3 +39,13 @@ impl NativeHeadWindow {
         Ok(changed)
     }
 }
+
+fn previous_view_pressed(event: &ViewportEvent) -> bool {
+    matches!(
+        event,
+        ViewportEvent::Input(oblikovati_viewport::ViewportInput::Key {
+            key: oblikovati_viewport::ViewportKey::Previous,
+            pressed: true
+        })
+    )
+}

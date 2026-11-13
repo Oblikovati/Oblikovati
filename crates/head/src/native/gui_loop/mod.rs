@@ -47,6 +47,18 @@ impl NativeGui {
         self.engine.receive_window_preview(image);
         self.deadline = Some(Duration::ZERO);
     }
+    pub(super) fn receive_isometric_preview(
+        &mut self,
+        document: u64,
+        image: oblikovati_gui::GuiPreviewImage,
+    ) {
+        self.engine.receive_isometric_preview(document, image);
+        self.deadline = Some(Duration::ZERO);
+    }
+    pub(super) fn reject_isometric_preview(&mut self, document: u64, cause: String) {
+        self.engine.reject_isometric_preview(document, cause);
+        self.deadline = Some(Duration::ZERO);
+    }
     pub(super) fn require_publication(&mut self) {
         self.dirty = true;
     }

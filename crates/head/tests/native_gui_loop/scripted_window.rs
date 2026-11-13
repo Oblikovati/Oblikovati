@@ -81,6 +81,9 @@ impl HeadWindow for ScriptedGuiWindow {
     fn capture_window_preview(&mut self) -> Result<bool, String> {
         self.native.capture_window_preview()
     }
+    fn capture_isometric_preview(&mut self, document: u64) -> Result<bool, String> {
+        self.native.capture_isometric_preview(document)
+    }
     fn request_close(&mut self) -> Result<bool, String> {
         self.native.request_close()
     }

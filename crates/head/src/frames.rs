@@ -37,6 +37,13 @@ pub trait HeadWindow {
     fn capture_window_preview(&mut self) -> Result<bool, String> {
         Err("window preview: expected a native window that presents frames".into())
     }
+    /// Render a document's isometric Save As preview without changing its live view.
+    /// Example: `window.capture_isometric_preview(document)?`.
+    fn capture_isometric_preview(&mut self, document: u64) -> Result<bool, String> {
+        Err(format!(
+            "isometric preview for document {document}: expected a native offscreen renderer"
+        ))
+    }
     /// Ask the window to close through its own close policy; example: the File menu's Exit.
     fn request_close(&mut self) -> Result<bool, String> {
         Err("exit: expected a native window that can close".into())

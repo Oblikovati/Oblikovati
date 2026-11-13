@@ -5,6 +5,8 @@ use cucumber::{given, then, when};
 use oblikovati_model::application_prompts::{ApplicationPrompt, PromptFrequency};
 #[path = "dialog_navigation.rs"]
 mod dialog_navigation;
+#[path = "solid_preview.rs"]
+mod solid_preview;
 const SAVE_IN: &str = "Save in";
 const ICONIC: &str = "Active Component Iso View on Save";
 const WINDOW: &str = "Active Window on Save";

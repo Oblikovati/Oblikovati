@@ -12,7 +12,7 @@ claim that each file has been individually triaged.
 | 1 | `features/application/file-menu/file-menu.feature` | Verified | All eight scenarios passed on the recorded updated source. Weldment remains unavailable. |
 | 1 | `features/application/document-creation` | In progress | On the updated source, 8 of 39 native scenarios pass; 31 stop at undefined steps. Name and size sorting, horizontal icon tiles, and keyboard and secondary-button selection work for available templates. The remaining scenarios need bindings and additional named templates. |
 | 1 | `features/application/document-opening` | In progress | The full current-source native run passed 20 of 27 scenarios; seven stopped at undefined steps. The remaining cases need drawing and assembly fixtures and updated checks. See the save evidence below. |
-| 1 | `features/application/document-saving` | In progress | The full current-source run passed 22 of 23 scenarios. The remaining first-save isometric preview scenario stopped at its unsaved-solid fixture; the preview still needs implementation and native verification. See the save evidence below. |
+| 1 | `features/application/document-saving` | Passing | The current-source native feature run passed 23 of 23 scenarios. The first-save preview is rendered from the part and stored in the saved file. See the save evidence below. |
 | 1 | `features/application/model-browser` | In progress | After action wording updates, a full native run passed 29 of 100 scenarios. Of the other 71, 62 stopped at undefined steps and nine at failed checks. Focused fixes passed later; rerun the full feature before reporting a current total. |
 | 1 | `features/application/quick-access-toolbar` | In progress | The previous full native feature run passed 11 of 12 scenarios. Projects now opens the project dialog; the focused customization choices scenario next fails because Update is missing. Later checks did not run. Material Browser editing, duplication, and the Physical tab remain open. |
 | 1 | `features/application/viewport-pan/viewport-pan.feature` | Verified | All four current scenarios passed in the native window after the step wording was updated; see the Pan evidence below. |
@@ -33,6 +33,22 @@ claim that each file has been individually triaged.
 | 3 | `features/solid-model` | In progress | Implementations exist, but this area has not been assessed against the current complete source. Assess each feature after the application and sketch priorities; no total execution result is recorded. |
 
 ## Evidence records
+
+### First-save isometric preview, 2026-11-13
+
+- Source: `features/application/document-saving/document-saving.feature`,
+  SHA-256 `ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2`.
+  The full native feature run passed 23 of 23 scenarios and 218 of 218 steps
+  on Linux with Xvfb and the configured Vulkan runtime. Reports are in
+  `/tmp/obk-save-current-20261113`; they are local and not durable.
+- A separate native test creates a constrained rectangle and extrudes it,
+  checks the shaded preview and unchanged active camera, saves the part,
+  checks its stored picture, and reopens the solid. The preview is rendered
+  offscreen and an error is shown if capture fails. GUI save tests passed;
+  the preview lighting tests cover face shading and degenerate geometry.
+- The owner scene is refreshed before an isometric capture. A focused test
+  checks that scene publication comes before preview capture; the feature run
+  above includes that change.
 
 ### Save As selection and save scenarios, 2026-11-13
 
