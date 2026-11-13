@@ -2,7 +2,7 @@
 //! Scenario declarations, not acceptance results or expanded example counts.
 use super::{ScenarioSource, describe};
 use crate::process::{BuildResult, Runner};
-use gherkin::Feature;
+use gherkin::{Background, Feature, Scenario, Step};
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 use std::{collections::BTreeSet, path::Path};
@@ -21,6 +21,9 @@ struct ScenarioRow {
     source_sha256: String,
     line: usize,
     scenario: String,
+    rule: Option<String>,
+    background_steps: Vec<StepSignature>,
+    scenario_steps: Vec<StepSignature>,
     outline: bool,
     milestone: Option<String>,
     owner: Option<String>,
@@ -152,24 +155,68 @@ fn unique_rows(
         .collect()
 }
 
+#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
+struct StepSignature {
+    line: usize,
+    name: String,
+}
 #[derive(Debug)]
 struct Declaration {
     name: String,
     line: usize,
+    rule: Option<String>,
+    background_steps: Vec<StepSignature>,
+    scenario_steps: Vec<StepSignature>,
     outline: bool,
 }
 fn parsed_declarations(feature: &Feature) -> Vec<Declaration> {
-    feature
-        .scenarios
-        .iter()
-        .chain(feature.rules.iter().flat_map(|rule| rule.scenarios.iter()))
-        .map(|scenario| Declaration {
-            name: scenario.name.clone(),
-            line: scenario.position.line,
-            outline: !scenario.examples.is_empty(),
-        })
-        .collect()
+    let mut declarations = Vec::new();
+    for scenario in &feature.scenarios {
+        declarations.push(parsed_declaration(
+            scenario,
+            None,
+            feature.background.as_ref(),
+            None,
+        ));
+    }
+    for rule in &feature.rules {
+        for scenario in &rule.scenarios {
+            declarations.push(parsed_declaration(
+                scenario,
+                Some(&rule.name),
+                feature.background.as_ref(),
+                rule.background.as_ref(),
+            ));
+        }
+    }
+    declarations
 }
+fn parsed_declaration(
+    scenario: &Scenario,
+    rule: Option<&String>,
+    feature_background: Option<&Background>,
+    rule_background: Option<&Background>,
+) -> Declaration {
+    let backgrounds = background_steps(feature_background).chain(background_steps(rule_background));
+    Declaration {
+        name: scenario.name.clone(),
+        line: scenario.position.line,
+        rule: rule.cloned(),
+        background_steps: backgrounds.map(step_signature).collect(),
+        scenario_steps: scenario.steps.iter().map(step_signature).collect(),
+        outline: !scenario.examples.is_empty(),
+    }
+}
+fn background_steps(background: Option<&Background>) -> impl Iterator<Item = &Step> {
+    background.into_iter().flat_map(|item| item.steps.iter())
+}
+fn step_signature(step: &Step) -> StepSignature {
+    StepSignature {
+        line: step.position.line,
+        name: step.value.clone(),
+    }
+}
+
 fn fallback_declarations(path: &Path, bytes: &[u8]) -> BuildResult<Vec<Declaration>> {
     let text = std::str::from_utf8(bytes)
         .map_err(|error| format!("scenario source {path:?}: expected UTF-8: {error}"))?;
@@ -212,6 +259,9 @@ fn fallback_declaration(line: &str, position: usize) -> Option<Declaration> {
             return Some(Declaration {
                 name: name.trim().to_owned(),
                 line: position,
+                rule: None,
+                background_steps: Vec::new(),
+                scenario_steps: Vec::new(),
                 outline,
             });
         }
@@ -246,6 +296,9 @@ fn describe_scenario(
         source_sha256: feature.sha256.clone(),
         line: scenario.line,
         scenario: scenario.name.clone(),
+        rule: scenario.rule.clone(),
+        background_steps: scenario.background_steps.clone(),
+        scenario_steps: scenario.scenario_steps.clone(),
         outline: scenario.outline,
         milestone: None,
         owner: None,

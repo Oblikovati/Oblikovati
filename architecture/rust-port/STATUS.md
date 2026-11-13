@@ -22,7 +22,7 @@ Last checked: 2026-11-13. Update this file from current evidence at each checkpo
 
 | Order | Action | State | Evidence / dependency |
 | --- | --- | --- | --- |
-| 1 | A8: generate the behavior ledger and progress counts | In progress | Issue #3865; source inventory exists, but mappings, receipt reconciliation, and coverage counts remain. |
+| 1 | A8: complete the behavior ledger and progress counts | In progress | Issue #3865; reporting and receipt checks exist, but classifications, outline evidence, and R0 fields remain. |
 | 2 | A9: map feature files to milestones | Ready | Issue #3861; validate mappings against the milestone exits. |
 | 3 | A10: replace prose evidence with durable receipts | Ready | Keep historical records distinct from verified evidence. |
 | 4 | A11: record R0–R3 exit evidence or named gaps | Ready | Depends on the inventory and milestone mappings. |
@@ -30,9 +30,9 @@ Last checked: 2026-11-13. Update this file from current evidence at each checkpo
 
 ## Open items
 
-- A2: the diagnostic gate started on `6c5c1014a` and failed with 36 head test failures. The source changed during the run, so it cannot certify the current HEAD. See issue #3860 and `receipts/2026-11-13-gate-diagnostic/`. A fresh gate is required before the first push.
+- A2: the diagnostic gate started on `6c5c1014a` and failed with 36 head test failures. The source changed during the run, so it cannot certify the current HEAD. See issue #3860 and `receipts/2026-11-13-gate-diagnostic/`. The new gate preflight also reports 2,713 unclassified scenarios. A fresh passing gate is required before the first push.
 - A3: stale worktrees and 24 ancestor branches removed. Two branches contain commits outside the working branch and remain for review; `unmerged-lanes-20261113.bundle` on the NAS backs up both. The `oblikovati-rust-backups` directory on the NAS holds the latest verified branch bundle.
-- A8: `behavior-source-inventory.json` records 2,719 declarations at the pinned source commit; 62 are blocked by invalid Gherkin (#3866). It is an inventory, not verified coverage.
+- A8: the ledger records 2,719 declarations, including 62 blocked by invalid Gherkin (#3866). Six Body Properties rows are classified under R7; 2,713 remain unclassified. The strict gate reports these gaps. See `behavior-receipts.md` and issue #3865.
 - A7: the scenario bundle, file manifest, and verifier are tracked in `test-utilities/benchmarks/scenario-snapshots/` and `tools/bdd/`. See issue #3864.
 - A6: diagnostic runner reports all steps and taints results after a failure. See issue #3863 and `receipts/2026-11-13-bdd-diagnostics/`. Fixture blockers require an explicit fixture signal.
 - A4: this status file is the initial manual queue. Generate it from the ledger when A8 is ready.

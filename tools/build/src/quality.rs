@@ -166,6 +166,7 @@ pub(crate) fn gate(root: &Path, runner: &dyn Runner) -> BuildResult<()> {
         std::env::var_os("DISPLAY").is_some() || std::env::var_os("WAYLAND_DISPLAY").is_some(),
     )?;
     gate_tool_versions(root, runner)?;
+    gate_behavior_ledger(root, runner)?;
     for (index, workspace) in workspaces.iter().enumerate() {
         gate_workspace(root, runner, workspace, index)?;
     }
@@ -174,6 +175,45 @@ pub(crate) fn gate(root: &Path, runner: &dyn Runner) -> BuildResult<()> {
         "Gate passed for {} discovered Cargo workspace(s). Runtime evidence covers only the crates present in this tree.",
         workspaces.len()
     );
+    Ok(())
+}
+
+fn gate_behavior_ledger(root: &Path, runner: &dyn Runner) -> BuildResult<()> {
+    let tool = std::env::current_exe()
+        .map_err(|error| format!("ledger generator: expected current executable: {error}"))?;
+    let executable = tool
+        .to_str()
+        .ok_or_else(|| format!("ledger generator {tool:?}: expected UTF-8 executable path"))?;
+    let python = if cfg!(windows) { "python" } else { "python3" };
+    execute(
+        runner,
+        root,
+        &[
+            python,
+            "-c",
+            "import sys; assert sys.version_info >= (3, 11), f'Python {sys.version} does not meet the required Python 3.11'",
+        ],
+    )?;
+    execute(
+        runner,
+        root,
+        &[
+            python,
+            "-B",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "tools/bdd",
+        ],
+    )?;
+    let output = runner.output_env(
+        root,
+        python,
+        &["-B", "tools/bdd/behavior_cli.py", "check"],
+        &[("OBK_SCENARIO_LEDGER_TOOL", executable)],
+    )?;
+    print!("{output}");
     Ok(())
 }
 

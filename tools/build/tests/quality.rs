@@ -135,6 +135,9 @@ fn full_gate_schedules_coverage_docs_workflow_lint_and_duplication_without_skips
     assert!(coverage.ends_with(" -- --test-threads=1"));
     for fragment in [
         "llvm-cov --locked",
+        "behavior_cli.py check",
+        "required Python 3.11",
+        "unittest discover -s tools/bdd",
         "--doc",
         "markdownlint-cli2",
         "actionlint",

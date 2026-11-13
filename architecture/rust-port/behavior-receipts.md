@@ -1,0 +1,54 @@
+# Behavior ledger and native receipts
+
+The source inventory contains one row per scenario declaration. A scenario
+outline is one declaration; its examples are separate executable cases. The
+classification file is reviewed input. The generated behavior ledger combines
+both and retains unclassified, blocked, stale, and orphaned work. It is not a
+count of bindings or diagnostic runs.
+
+Use `python3 -B tools/bdd/behavior_cli.py report` to print verified and total
+counts by area and milestone. `generate --output PATH` writes the combined
+ledger. Both commands restore the pinned source into a temporary checkout when
+no checkout path is supplied. `check` also requires the checked-in ledger to
+match the generated ledger and all R0 classification and evidence fields to be
+present. The full gate runs this check. It is expected to fail while those
+fields remain incomplete.
+
+A classification records the scenario ID, the source revision and feature
+hash, milestone, owner, target module, acceptance test, issue links, state, and
+last receipt. R0 also requires the Go reference and test premise, API revision,
+kernel capability and integration information, platform profiles, Rust tests,
+oracle, and expected result. Explain an inapplicable field instead of leaving
+it empty. A renamed scenario receives a new ID; review its orphaned former
+classification. A changed feature invalidates the prior receipt even when the
+scenario name stays the same.
+
+A verified ordinary scenario requires a receipt with this shape. Artifact paths
+are relative to the repository root; each hash is the SHA-256 of that file.
+
+```json
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:<source-id>",
+  "scenario_revision": "<pinned-source-commit>",
+  "source_sha256": "<feature-file-sha256>",
+  "application_commit": "<tested-app-commit>",
+  "api_revision": "<locked-api-commit>",
+  "kernel_revision": "<locked-kernel-commit>",
+  "runner": "application_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {"os": "Linux", "renderer": "Vulkan"},
+  "cucumber": {"path": "path/to/cucumber.json", "sha256": "<sha256>"},
+  "source_report": {"path": "path/to/source-revision.json", "sha256": "<sha256>"},
+  "capture": {"path": "path/to/capture.png", "sha256": "<sha256>"}
+}
+```
+
+The classification's `last_receipt` has the same `path` and `sha256` shape.
+The checker requires Python 3.11 or newer and a clean pinned checkout before and after the run, matching
+application inputs, a native runner, a PNG capture, a passing cleanup hook,
+and every source step in the Cucumber report. It verifies feature and rule
+backgrounds separately. It refuses outline verification until all example
+cases can be checked. It does not treat a PNG alone, a diagnostic report, or a
+source binding as acceptance. Visual inspection and the other milestone exit
+checks still apply.

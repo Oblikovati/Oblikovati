@@ -31,5 +31,8 @@
     "wrong-revision and dirty-checkout CLI tests rejected without output",
     "all row source hashes matched the pinned checkout"
   ],
-  "scope": "Source inventory only. Milestones, owners, reconciliation, receipt validation, and verified coverage remain open."
+  "scope": "Source inventory only. Milestones, owners, reconciliation, receipt validation, and verified coverage remain open.",
+  "inventory_artifact": "source-inventory.json.gz",
+  "inventory_artifact_sha256": "1c7d74b9ef18e6a0a3159a38d88d8271717f0f5074a10509600355151bdd504d",
+  "tested_commit": "06d440b38ec8311dba26968bc2ada3ca13d2d2f9"
 }

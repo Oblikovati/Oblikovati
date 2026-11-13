@@ -11,6 +11,8 @@
 
 # Installed development tools and local test/coverage output.
 **/node_modules/
+**/__pycache__/
+*.py[cod]
 *.profraw
 *.profdata
 *.gcda

@@ -134,3 +134,25 @@ fn rejects_a_source_that_changes_between_reads() {
     .unwrap_err();
     assert!(error.contains("expected unchanged bytes"));
 }
+
+#[test]
+fn records_feature_and_rule_backgrounds_with_the_scenario_steps() {
+    let text = "Feature: test\n Background: shared\n  Given global setup\n Rule: constraints\n  Background: local\n   Given rule setup\n  Scenario: named\n   When action\n   Then outcome\n";
+    let ledger = inventory(Path::new("root"), REVISION, &mut fixture(text)).unwrap();
+    let row = &ledger.scenarios[0];
+    assert_eq!(row.rule.as_deref(), Some("constraints"));
+    assert_eq!(
+        row.background_steps
+            .iter()
+            .map(|step| step.name.as_str())
+            .collect::<Vec<_>>(),
+        ["global setup", "rule setup"]
+    );
+    assert_eq!(
+        row.scenario_steps
+            .iter()
+            .map(|step| step.name.as_str())
+            .collect::<Vec<_>>(),
+        ["action", "outcome"]
+    );
+}

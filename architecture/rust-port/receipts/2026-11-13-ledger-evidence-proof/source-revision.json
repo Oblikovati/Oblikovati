@@ -1,0 +1,13 @@
+{
+  "after": {
+    "commit": "79f56de210ab255ba8b29b2e7b68ded0404c235e",
+    "dirty": false,
+    "root": "/tmp/obk-background-proof/source"
+  },
+  "before": {
+    "commit": "79f56de210ab255ba8b29b2e7b68ded0404c235e",
+    "dirty": false,
+    "root": "/tmp/obk-background-proof/source"
+  },
+  "source_changed": false
+}

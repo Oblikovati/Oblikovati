@@ -1,0 +1,11 @@
+"cargo" xtask gate
+   Compiling oblikovati-build v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/tools/build)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.85s
+     Running `target/xtask/debug/oblikovati-build gate`
++ python3 -c import sys; assert sys.version_info >= (3, 11), f'Python {sys.version} does not meet the required Python 3.11'
++ python3 -B -m unittest discover -s tools/bdd
+oblikovati-build: python3 ["-B", "tools/bdd/behavior_cli.py", "check"] failed (exit status: 1):
+
+behavior ledger: ledger classifications: expected all current; 2713 missing, 0 stale, 0 orphaned
+
+make: *** [Makefile:27: gate] Error 1

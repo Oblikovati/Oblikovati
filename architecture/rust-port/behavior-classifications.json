@@ -1,0 +1,89 @@
+{
+  "version": 1,
+  "scenarios": [
+    {
+      "id": "scenario:290c0844328af2d23fb51f9930f988f5eff00430051c3f715469cdddc44fb612",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "0b20ae95482d755cafe546d0bae98db647acdaa2ebfb5353e3fcb3bc6af0cf50",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head",
+      "acceptance_test": "application_scenarios_use_the_native_window: Update unavailable physical properties for a solid body",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3859"
+      ],
+      "state": "inventoried",
+      "last_receipt": null
+    },
+    {
+      "id": "scenario:f024b2250132b3239960cbba948d906a930fcb48716f2817e11ec492c5b22183",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "0b20ae95482d755cafe546d0bae98db647acdaa2ebfb5353e3fcb3bc6af0cf50",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head",
+      "acceptance_test": "application_scenarios_use_the_native_window: Cancel a body appearance selection",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3859"
+      ],
+      "state": "inventoried",
+      "last_receipt": null
+    },
+    {
+      "id": "scenario:48efe943e9ecc0d7d078db980ad1b05fe2fd5abeeab9ec6d0b23399eee5eaf48",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "0b20ae95482d755cafe546d0bae98db647acdaa2ebfb5353e3fcb3bc6af0cf50",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head",
+      "acceptance_test": "application_scenarios_use_the_native_window: Apply and restore a body appearance",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3859"
+      ],
+      "state": "inventoried",
+      "last_receipt": null
+    },
+    {
+      "id": "scenario:137ba03d06c38c439efdffa8bd1c217086f374111802a3b24d86c40d67786a59",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "0b20ae95482d755cafe546d0bae98db647acdaa2ebfb5353e3fcb3bc6af0cf50",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head",
+      "acceptance_test": "application_scenarios_use_the_native_window: Dismiss body properties with Escape",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3859"
+      ],
+      "state": "inventoried",
+      "last_receipt": null
+    },
+    {
+      "id": "scenario:e22ccad1ec1386a7ad84cb79333cd58f0181509d54a4677a552cee1f48cbbd1f",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "0b20ae95482d755cafe546d0bae98db647acdaa2ebfb5353e3fcb3bc6af0cf50",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head",
+      "acceptance_test": "application_scenarios_use_the_native_window: Discard a pending appearance with Escape",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3859"
+      ],
+      "state": "inventoried",
+      "last_receipt": null
+    },
+    {
+      "id": "scenario:fe23247614f79aca0704e532303b65fb17e0d762b899246236fee674a3ae7350",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "0b20ae95482d755cafe546d0bae98db647acdaa2ebfb5353e3fcb3bc6af0cf50",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head",
+      "acceptance_test": "application_scenarios_use_the_native_window: Discard a pending appearance using the title-bar close control",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3859"
+      ],
+      "state": "inventoried",
+      "last_receipt": null
+    }
+  ]
+}
