@@ -36,6 +36,7 @@ impl<
             .session(document)
             .map_err(|cause| cause.to_string())?;
         Ok(oblikovati_gui::GuiCommandState {
+            selection_mode: self.selection_mode,
             marking_menus: Some(self.marking_menus.clone()),
             sketch_marking_menu: Some(
                 self.marking_menus

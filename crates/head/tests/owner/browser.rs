@@ -3,6 +3,67 @@ use super::*;
 use oblikovati_model::{document_sketch::DocumentSketchId, sketch::SketchPlane};
 
 #[test]
+fn selection_modes_filter_viewport_faces_without_blocking_measure() {
+    use oblikovati_gui::{GuiInspectAction, GuiSelectionMode};
+    let (mut owner, _) = owner();
+    let document = super::part_scene::open_prism(&mut owner, false);
+    owner.take_scene().unwrap();
+    let line = [[1., 1., 10.], [0., 0., -1.]];
+    assert!(owner.click_model(document, line).unwrap());
+    assert!(owner.model_face.is_some());
+    assert!(
+        owner
+            .set_selection_mode_from_gui(GuiSelectionMode::Components)
+            .unwrap()
+    );
+    assert!(!owner.click_model(document, line).unwrap());
+    assert!(owner.model_face.is_some());
+    owner
+        .inspect_from_gui(GuiInspectAction::StartMeasure)
+        .unwrap();
+    assert!(owner.click_model(document, line).unwrap());
+    assert!(
+        owner
+            .gui_measure_panel()
+            .unwrap()
+            .rows
+            .iter()
+            .any(|row| row.contains("Area"))
+    );
+    assert!(
+        owner
+            .set_selection_mode_from_gui(GuiSelectionMode::Faces)
+            .unwrap()
+    );
+    assert!(owner.click_model(document, line).unwrap());
+    assert!(owner.model_face.is_some());
+}
+
+#[test]
+fn selection_mode_respects_the_measure_owner_document() {
+    use oblikovati_gui::{GuiInspectAction, GuiSelectionMode};
+    let (mut owner, awake) = owner();
+    assert!(
+        owner
+            .set_selection_mode_from_gui(GuiSelectionMode::Components)
+            .is_err()
+    );
+    super::part_scene::open_prism(&mut owner, false);
+    owner
+        .set_selection_mode_from_gui(GuiSelectionMode::Components)
+        .unwrap();
+    owner
+        .inspect_from_gui(GuiInspectAction::StartMeasure)
+        .unwrap();
+    let other = create(&mut owner, &awake);
+    assert!(
+        !owner
+            .click_model(other, [[1., 1., 10.], [0., 0., -1.]])
+            .unwrap()
+    );
+}
+
+#[test]
 fn occurrence_selection_rejects_stale_paths_without_editing_history() {
     let (mut owner, _) = owner();
     let path = std::path::PathBuf::from("/fixtures/browser-assembly.oad");

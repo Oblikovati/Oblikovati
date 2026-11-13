@@ -2,13 +2,14 @@
 //! The customizable command row: which commands each document kind shows, and where the row sits.
 #[path = "plane_selection.rs"]
 pub(crate) mod plane_selection;
+mod selection;
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::{MouseButton, Ui};
 use oblikovati_api::types::DocumentType;
 use std::collections::BTreeMap;
 
 /// Commands the customization menu lists, in its order.
-const STANDARD: [StandardCommand; 11] = [
+const STANDARD: [StandardCommand; 12] = [
     StandardCommand::New,
     StandardCommand::Open,
     StandardCommand::Save,
@@ -17,6 +18,7 @@ const STANDARD: [StandardCommand; 11] = [
     StandardCommand::Home,
     StandardCommand::Projects,
     StandardCommand::Update,
+    StandardCommand::Select,
     StandardCommand::MaterialBrowser,
     StandardCommand::Parameters,
     StandardCommand::Print,
@@ -39,6 +41,7 @@ enum StandardCommand {
     Home,
     Projects,
     Update,
+    Select,
     MaterialBrowser,
     Parameters,
     Print,
@@ -54,6 +57,7 @@ impl StandardCommand {
             Self::Home => "Home",
             Self::Projects => "Projects",
             Self::Update => "Update",
+            Self::Select => "Select",
             Self::MaterialBrowser => "Material Browser",
             Self::Parameters => "Parameters",
             Self::Print => "Print",
@@ -115,6 +119,7 @@ pub(crate) struct QuickAccessToolbar {
     kinds: BTreeMap<String, KindSelection>,
     pub below_ribbon: bool,
     shortcut_under_menu: Option<String>,
+    open_selection: bool,
     requests: QuickAccessRequests,
     /// A right press landed on a command with its own menu, not on the ribbon behind it.
     pub command_took_right_click: bool,
@@ -182,6 +187,13 @@ impl QuickAccessToolbar {
             Some(StandardCommand::Redo) => GuiShellAction::Redo,
             Some(StandardCommand::Home) => GuiShellAction::ShowHome,
             Some(StandardCommand::Update) => GuiShellAction::UpdatePart,
+            Some(StandardCommand::Select)
+                if GuiShellAction::SetSelectionMode(crate::GuiSelectionMode::All)
+                    .enabled(state) =>
+            {
+                self.open_selection = true;
+                return;
+            }
             Some(StandardCommand::Projects) if !state.transaction_open => {
                 self.requests.open_projects = true;
                 return;
@@ -239,6 +251,9 @@ impl QuickAccessToolbar {
                 [0.; 2],
                 actions,
             ),
+            StandardCommand::Select => {
+                selection::button(ui, state, actions, &mut self.open_selection)
+            }
             StandardCommand::Undo => {
                 crate::chrome::command_button(
                     ui,

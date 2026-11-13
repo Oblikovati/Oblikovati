@@ -76,7 +76,7 @@ pub use commands::{
     GuiAuthoringContext, GuiBaseViewRequest, GuiBrowserChoice, GuiCommandState, GuiDocumentStorage,
     GuiDrawingLine, GuiDrawingProjection, GuiExtrudePreview, GuiFeatureCondition, GuiFeatureEdit,
     GuiParameterMutation, GuiPartAssetKind, GuiPreviewImage, GuiProject, GuiProjectGroup,
-    GuiShellAction, GuiSketchLineStyle,
+    GuiSelectionMode, GuiShellAction, GuiSketchLineStyle,
 };
 pub use engine::{GuiFrameEngine, GuiFrameOutput, GuiFrameRequest};
 pub use input::{GuiInputCapture, GuiInputEvent, GuiKey, GuiModifiers, GuiPointerButton};

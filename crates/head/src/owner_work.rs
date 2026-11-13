@@ -9,6 +9,28 @@ impl<
     S: DispatchWakeup,
 > HeadWork for DesktopOwner<O, W, F, G, R, S>
 {
+    fn set_selection_mode_from_gui(
+        &mut self,
+        mode: oblikovati_gui::GuiSelectionMode,
+    ) -> Result<bool, String> {
+        use oblikovati_gui::GuiSelectionMode;
+        use oblikovati_session::selection::SelectionPriority;
+        let state = self.gui_command_snapshot()?;
+        if !oblikovati_gui::GuiShellAction::SetSelectionMode(mode).enabled(&state) {
+            return Err(format!(
+                "selection mode {mode:?}: expected an idle part or assembly"
+            ));
+        }
+        let priority = match mode {
+            GuiSelectionMode::All => SelectionPriority::General,
+            GuiSelectionMode::Faces => SelectionPriority::Face,
+            GuiSelectionMode::Components => SelectionPriority::Part,
+        };
+        self.ambient_selection.apply_priority(priority);
+        let changed = self.selection_mode != mode;
+        self.selection_mode = mode;
+        Ok(changed)
+    }
     fn update_part_from_gui(&mut self) -> Result<bool, String> {
         oblikovati_api::client::Client::new(self.document_host())
             .documents()

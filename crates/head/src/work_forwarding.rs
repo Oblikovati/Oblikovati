@@ -2,6 +2,12 @@
 // Keep authoring state on the same document owner when scripts or add-ins wrap frame work.
 macro_rules! forward_owner_view_work {
     ($owner:ident) => {
+        fn set_selection_mode_from_gui(
+            &mut self,
+            mode: oblikovati_gui::GuiSelectionMode,
+        ) -> Result<bool, String> {
+            self.$owner.set_selection_mode_from_gui(mode)
+        }
         fn update_part_from_gui(&mut self) -> Result<bool, String> {
             self.$owner.update_part_from_gui()
         }

@@ -5,6 +5,7 @@ use oblikovati_gui::GuiShellAction;
 
 pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, String> {
     match action {
+        GuiShellAction::SetSelectionMode(mode) => owner.set_selection_mode_from_gui(*mode),
         GuiShellAction::SetMarkingMenu(args) => owner.set_marking_menu_from_gui(args),
         GuiShellAction::SetKeymap(delta) => owner.set_keymap_from_gui(delta),
         GuiShellAction::PlaceSketchBlock(name) => owner.place_sketch_block_from_gui(name),

@@ -64,7 +64,25 @@ impl<
             .assembly
             .is_some()
         {
+            if !self
+                .ambient_selection
+                .filter()
+                .accepts(oblikovati_session::selection::SelectionKind::Occurrence)
+            {
+                return Ok(false);
+            }
             return self.click_assembly(document, line);
+        }
+        if self
+            .part_measure
+            .as_ref()
+            .is_none_or(|measure| measure.document != document)
+            && !self
+                .ambient_selection
+                .filter()
+                .accepts(oblikovati_session::selection::SelectionKind::Face)
+        {
+            return Ok(false);
         }
         self.selected_occurrence = None;
         self.files

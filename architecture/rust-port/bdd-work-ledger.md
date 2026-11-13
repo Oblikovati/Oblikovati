@@ -20,7 +20,7 @@ complete. The checkpoint has not been advanced: the changes still need triage.
 | 1 | `features/application/document-opening` | In progress | The current-source native run passed 26 of 27 scenarios. Express assembly loading stopped at a missing component fixture; its later steps did not run. The saved-drawing scenario passes with its referenced part initially closed. |
 | 1 | `features/application/document-saving` | Passing | The current-source native feature run passed 23 of 23 scenarios. The first-save preview is rendered from the part and stored in the saved file. See the save evidence below. |
 | 1 | `features/application/model-browser` | In progress | After action wording updates, a full native run passed 29 of 100 scenarios. Of the other 71, 62 stopped at undefined steps and nine at failed checks. Focused fixes passed later; rerun the full feature before reporting a current total. |
-| 1 | `features/application/quick-access-toolbar` | In progress | The current-source full native run passed 11 of 12 scenarios. Update and Parameters now work from Quick Access; the remaining customization-choices scenario stops at Select. Later checks did not run. The CLI script host now shares the part replay operation. Material Browser editing, duplication, and the Physical tab remain open. |
+| 1 | `features/application/quick-access-toolbar` | In progress | The current-source full native run passed 11 of 12 scenarios. Update, Select and Parameters work from Quick Access; the remaining customization-choices scenario stops at Refine Appearance. Later checks did not run. The CLI script host shares the part replay operation. Material Browser editing, duplication, and the Physical tab remain open. |
 | 1 | `features/application/viewport-pan/viewport-pan.feature` | Verified | All four current scenarios passed in the native window after the step wording was updated; see the Pan evidence below. |
 | 1 | `features/application/viewport-zoom/viewport-zoom.feature` | Verified | All seven current scenarios passed in the native window after the step wording and fixture bounds measurement were corrected; see the Zoom evidence below. |
 | 1 | `features/application/viewport-orbit/viewport-orbit.feature` | Verified | All ten expanded cases passed in the native window after the step wording was updated; see the Orbit evidence below. |
@@ -39,6 +39,24 @@ complete. The checkpoint has not been advanced: the changes still need triage.
 | 3 | `features/solid-model` | In progress | Implementations exist, but this area has not been assessed against the current complete source. Assess each feature after the application and sketch priorities; no total execution result is recorded. |
 
 ## Evidence records
+
+### Quick Access Select, 2026-11-13
+
+- On source SHA-256
+  `e7546a712fe3f42b2c6f9885e47292b69cb3ef0ebe3105a9ad9a26bbed40bbbd`,
+  the native Quick Access run passed 11 of 12 scenarios and 122 of 123 steps.
+  The remaining scenario passed its Select check and stopped at the missing
+  Refine Appearance choice. The benchmark returned failure. The source hash was
+  checked during and after the run. Application base `6b46442e4` plus the
+  Select changes; Linux, Xvfb and Lavapipe; Martensite revision
+  `d051ff699982faba4ec2df3ee9a47e14f38dedbd`.
+- Ran `xvfb-run -a -s '-screen 0 1600x1000x24' cargo test --locked -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture`
+  with `OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios`,
+  `OBK_BDD_FEATURE=quick-access-toolbar` and
+  `OBK_BDD_REPORTS=/tmp/obk-bdd-qat-20261113-select`. The directory holds the
+  reports and log. Native pointer tests cover the selection menu and an assembly
+  component pick. An owner test covers part face picks and Measure priority.
+  Edge and body picking remain outside this selection menu's current support.
 
 ### Quick Access Update, 2026-11-13
 

@@ -296,6 +296,18 @@ impl GuiShellAction {
                 state.document_type == Some(oblikovati_api::types::DOCUMENT_PART)
                     && !state.transaction_open
             }
+            Self::SetSelectionMode(_) => {
+                state.document.is_some()
+                    && !state.transaction_open
+                    && state.authoring != crate::GuiAuthoringContext::Sketch
+                    && matches!(
+                        state.document_type,
+                        Some(
+                            oblikovati_api::types::DOCUMENT_PART
+                                | oblikovati_api::types::DOCUMENT_ASSEMBLY
+                        )
+                    )
+            }
             Self::Undo => state.undo_label.is_some(),
             Self::Redo => state.redo_label.is_some(),
             Self::ChooseSketchPlane | Self::StartSketchOn(_) => {

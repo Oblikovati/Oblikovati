@@ -2,6 +2,15 @@
 use crate::HeadWorkStatus;
 /// Owner-thread services borrow model state only while the window loop polls them.
 pub trait HeadWork {
+    /// Set the viewport selection mode; example: `work.set_selection_mode_from_gui(mode)?`.
+    fn set_selection_mode_from_gui(
+        &mut self,
+        mode: oblikovati_gui::GuiSelectionMode,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "selection mode {mode:?}: expected a desktop selection owner"
+        ))
+    }
     /// Recompute the active part; example: `work.update_part_from_gui()?`.
     fn update_part_from_gui(&mut self) -> Result<bool, String> {
         Err("part update: expected a part evaluation owner".into())

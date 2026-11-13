@@ -214,9 +214,19 @@ pub enum GuiShellAction {
     Save,
     /// Recompute the active part and report failed features.
     UpdatePart,
+    /// Set the ambient selection priority for viewport picks.
+    SetSelectionMode(GuiSelectionMode),
     Undo,
     Redo,
     Home,
+}
+/// The selection categories supported by the viewport's current pickers.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum GuiSelectionMode {
+    #[default]
+    All,
+    Faces,
+    Components,
 }
 /// A drawing view chosen in the desktop dialog.
 #[derive(Clone, Debug, PartialEq)]
@@ -354,6 +364,7 @@ pub struct GuiDrawingLine {
 /// Command availability derived from the active document owner.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct GuiCommandState {
+    pub selection_mode: GuiSelectionMode,
     /// Per-environment marking-menu settings owned by the desktop.
     pub marking_menus: Option<oblikovati_model::marking_menu::MarkingMenus>,
     /// Marking menu for the current sketch environment.

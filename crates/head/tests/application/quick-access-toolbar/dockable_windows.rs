@@ -2,6 +2,24 @@
 //! Drive shared dockable windows with the native pointer.
 use super::*;
 
+#[test]
+fn quick_access_select_changes_the_viewport_selection_mode() {
+    use oblikovati_gui::GuiSelectionMode;
+    let mut world = ApplicationWorld::new();
+    part_active(&mut world);
+    for (label, expected) in [
+        ("Faces", GuiSelectionMode::Faces),
+        ("Components", GuiSelectionMode::Components),
+        ("All Types", GuiSelectionMode::All),
+    ] {
+        world.click(row_center(&world, "Select"));
+        world.click_text(label);
+        world.pump(Vec::new());
+        assert_eq!(world.state().selection_mode, expected);
+    }
+    world.close();
+}
+
 fn close_title(world: &mut ApplicationWorld, title: &str) {
     let (position, size) = window_geometry(title).expect("expected a visible tool window");
     let center = [position[0] + size[0] - 13., position[1] + 10.];

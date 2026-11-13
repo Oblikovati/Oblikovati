@@ -8,7 +8,7 @@ use oblikovati_model::feature::FeatureId;
 const SELECT_FACE: &str = "Select a solid face to measure its area";
 
 pub(super) struct PartMeasure {
-    document: u64,
+    pub(super) document: u64,
     generation: u64,
     rows: Vec<String>,
 }
