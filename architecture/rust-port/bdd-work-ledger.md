@@ -10,7 +10,7 @@ claim that each file has been individually triaged.
 | 1 | `features/application` | In progress | The native application runner exists. A complete, current area result has not been recorded. Run and retain the full area report; triage failures against the current source. |
 | 1 | Native parameter-driven cube journey | In progress | The native journey creates a constrained rectangle and extrude, edits the size, uses undo/redo, saves and reopens, and resolves a face. Maintain the live test and rerun it after relevant changes. |
 | 1 | `features/application/file-menu/file-menu.feature` | Verified | All eight scenarios passed on the recorded updated source. Weldment remains unavailable. |
-| 1 | `features/application/document-creation` | In progress | Name and size sorting, horizontal icon tiles, and keyboard and secondary-button selection work for available templates. The BDD scenarios still require additional named templates and native bindings. |
+| 1 | `features/application/document-creation` | In progress | On the updated source, 8 of 39 native scenarios pass; 31 stop at undefined steps. Name and size sorting, horizontal icon tiles, and keyboard and secondary-button selection work for available templates. The remaining scenarios need bindings and additional named templates. |
 | 1 | `features/application/quick-access-toolbar` | In progress | The previous full native feature run passed 11 of 12 scenarios. Projects now opens the project dialog; the focused customization choices scenario next fails because Update is missing. Later checks did not run. Material Browser editing, duplication, and the Physical tab remain open. |
 | 1 | `features/application/ribbon-customization/ribbon-customization.feature` | Needs rerun | Source changed since the inventory checkpoint. Review the corrections and rerun affected native scenarios. |
 | 1 | `features/application/ribbon-appearance/ribbon-appearance.feature` | In progress | On the current recorded source, six of 18 scenarios pass; 11 stop at undefined steps and one fails on a missing Tools group. Reset Ribbon is implemented. Implement the standard Tools groups and Text Off, Small, Compact and Large across all commands and layouts. |
@@ -825,3 +825,10 @@ revisions checked before they support a current pass claim.
   choices scenario progressed past Projects and failed at the missing Update
   choice. GUI library: 358 passed; File dialog: four passed; GUI/head Clippy
   passed. The full toolbar feature needs a new run after the layout change.
+- A full document-creation run after updating common action bindings passed
+  eight of 39 scenarios and 145 of 176 executed steps. All 31 failed scenarios
+  stopped at undefined steps, so later behavior was not assessed. Source
+  SHA-256 `e9a93d4c096090667952b8080a0cad01c48f480022a4b8ac72ae210607ca138d`
+  matched the live file after the run. Application: `14f93537f` plus these
+  bindings; Linux, Xvfb at 1600 × 1000 and Lavapipe. Local report:
+  `/tmp/obk-document-creation-reassessment-20261113`.

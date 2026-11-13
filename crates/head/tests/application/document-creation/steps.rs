@@ -18,6 +18,7 @@ fn open_document(world: &mut ApplicationWorld) {
     world.previous_document = Some(id);
 }
 #[when("I press Control+N")]
+#[when("the user presses Control+N")]
 #[given("the new-document template chooser is open")]
 #[given("the new-document template chooser is open in the MCAD Software")]
 fn open_chooser(world: &mut ApplicationWorld) {
@@ -32,18 +33,22 @@ fn grouped_by_type(world: &mut ApplicationWorld) {
     world.expect_text("Part");
 }
 #[when("I select the metric template folder")]
+#[when("the user selects the metric template folder")]
 fn metric_folder(world: &mut ApplicationWorld) {
     world.click_text("Metric");
 }
 #[when("I select the English template folder")]
+#[when("the user selects the English template folder")]
 fn english_folder(world: &mut ApplicationWorld) {
     world.click_text("English");
 }
 #[when("I select the standard metric part template")]
+#[when("the user selects the standard metric part template")]
 fn select_metric(world: &mut ApplicationWorld) {
     world.click_text("Standard metric part");
 }
 #[when("I select the standard inch part template")]
+#[when("the user selects the standard inch part template")]
 fn select_inch(world: &mut ApplicationWorld) {
     world.click_text("Standard inch part");
 }
@@ -63,6 +68,7 @@ fn inch_details(world: &mut ApplicationWorld) {
     world.expect_text("inches (in)");
 }
 #[when("I cancel the chooser")]
+#[when("the user cancels the chooser")]
 fn cancel_chooser(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::Escape, false);
 }
@@ -78,6 +84,7 @@ fn previous_document(world: &mut ApplicationWorld) {
     );
 }
 #[when("I choose Create")]
+#[when("the user chooses Create")]
 fn create_part(world: &mut ApplicationWorld) {
     world.click_text("Create");
 }
@@ -116,10 +123,12 @@ fn new_tab(world: &mut ApplicationWorld) {
     world.expect_tab(&name);
 }
 #[when("I select the standard metric assembly template")]
+#[when("the user selects the standard metric assembly template")]
 fn select_assembly(world: &mut ApplicationWorld) {
     world.click_text(METRIC_ASSEMBLY);
 }
 #[when("I select the metric sheet-metal part template")]
+#[when("the user selects the metric sheet-metal part template")]
 #[given("a sheet-metal part template is selected")]
 fn select_sheet_metal(world: &mut ApplicationWorld) {
     world.click_text(METRIC_SHEET_METAL);
@@ -289,6 +298,7 @@ fn select_inch_sheet_metal(world: &mut ApplicationWorld) {
     world.click_text(INCH_SHEET_METAL);
 }
 #[when("I select the metric presentation template")]
+#[when("the user selects the metric presentation template")]
 fn select_presentation(world: &mut ApplicationWorld) {
     world.click_text("Standard metric presentation");
 }
@@ -325,6 +335,7 @@ fn insert_model(world: &mut ApplicationWorld) {
     world.expect_no_text("Look in");
 }
 #[when("I open the template display menu")]
+#[when("the user opens the template display menu")]
 fn open_display_menu(world: &mut ApplicationWorld) {
     world.click_text("Display");
     // A popup in a modal lays out one frame later; the frame budget of a pump can end before it.
@@ -347,6 +358,7 @@ fn display_menu(world: &mut ApplicationWorld) {
     );
 }
 #[when("I choose Details")]
+#[when("the user chooses Details")]
 fn choose_details(world: &mut ApplicationWorld) {
     world.click_text("Details");
 }
