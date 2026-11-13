@@ -144,19 +144,17 @@ impl RibbonCustomization {
             return;
         };
         ui.input_text("Shortcut", &mut self.keyboard_chord).build();
-        let alias_available = self.keyboard_draft.as_ref().is_some_and(|draft| {
-            draft
-                .catalog()
-                .iter()
-                .any(|binding| binding.action_id == id && binding.kind == "command")
-        });
+        let alias_available = self
+            .keyboard_draft
+            .as_ref()
+            .is_some_and(|draft| draft.supports_sketch_alias(&id));
         let disabled = ui.begin_disabled(!alias_available);
         ui.input_text("Alias", &mut self.keyboard_alias).build();
         drop(disabled);
         if alias_available {
             ui.text_disabled("Aliases run when the sketch is ready.");
         } else {
-            ui.text_disabled("Aliases are available for sketch commands.");
+            ui.text_disabled("An alias is not available for this action.");
         }
         if ui.button("Set binding") {
             let result = self.stage_binding(&id);
@@ -184,11 +182,7 @@ impl RibbonCustomization {
         };
         let mut candidate = draft.clone();
         candidate.set_chord(id, &self.keyboard_chord)?;
-        if candidate
-            .catalog()
-            .iter()
-            .any(|binding| binding.action_id == id && binding.kind == "command")
-        {
+        if candidate.supports_sketch_alias(id) {
             candidate.set_alias(id, &self.keyboard_alias)?;
         }
         *draft = candidate;
@@ -326,17 +320,17 @@ mod tests {
     #[test]
     fn shortcut_edit_preserves_a_saved_alias() {
         let mut original = oblikovati_model::keymap::Keymap::desktop_defaults();
-        original.set_alias("edit.undo", "reverse").unwrap();
+        original.set_alias("view.pan", "move").unwrap();
         let mut dialog = RibbonCustomization {
             keyboard_draft: Some(original),
             keyboard_chord: "Ctrl+U".into(),
             keyboard_alias: "different".into(),
             ..Default::default()
         };
-        dialog.stage_binding("edit.undo").unwrap();
+        dialog.stage_binding("view.pan").unwrap();
         assert_eq!(
-            dialog.keyboard_draft.unwrap().resolve_alias("reverse"),
-            Some("edit.undo")
+            dialog.keyboard_draft.unwrap().resolve_alias("move"),
+            Some("view.pan")
         );
     }
     #[test]

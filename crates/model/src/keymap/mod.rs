@@ -209,6 +209,17 @@ impl Keymap {
             .find(|(id, value)| self.has_action(id) && value.eq_ignore_ascii_case(alias))
             .map(|(id, _)| id.as_str())
     }
+    /// Check whether an alias can run at sketch Ready; example: `keymap.supports_sketch_alias("edit.undo")`.
+    pub fn supports_sketch_alias(&self, id: &str) -> bool {
+        self.actions.iter().any(|action| {
+            action.id == id
+                && (action.kind == "command"
+                    || matches!(
+                        id,
+                        "edit.undo" | "edit.redo" | "file.save" | "view.home" | "view.previous"
+                    ))
+        })
+    }
     /// Replace one shortcut if it is valid and unoccupied; example: `keymap.set_chord("edit.undo", "Ctrl+U")?`.
     pub fn set_chord(&mut self, id: &str, chord: &str) -> Result<(), String> {
         self.require_action(id)?;

@@ -275,6 +275,18 @@ fn keyboard_shortcut_edit_is_staged_and_applied_from_the_dialog() {
     assert!(world.edited_geometry().same_recipe(&before_undo));
     world.key(ViewportPhysicalKey::U, true);
     assert!(world.edited_geometry().lines().is_empty());
+    world.key(ViewportPhysicalKey::Y, true);
+    assert_eq!(world.edited_geometry().lines().len(), 4);
+    oblikovati_api::client::Client::new(world.app().owner.document_host())
+        .keymap()
+        .set_alias(&oblikovati_api::wire::SetAliasArgs {
+            action_id: "edit.undo".into(),
+            alias: "BACK".into(),
+        })
+        .unwrap();
+    world.type_text("back");
+    world.key(ViewportPhysicalKey::Enter, false);
+    assert!(world.edited_geometry().lines().is_empty());
     world.close();
 }
 

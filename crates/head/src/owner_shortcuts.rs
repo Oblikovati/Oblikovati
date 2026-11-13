@@ -56,7 +56,7 @@ impl<
     }
     fn submit_sketch_alias(&mut self) -> (bool, Option<oblikovati_gui::GuiShellAction>) {
         let typed = std::mem::take(&mut self.sketch_alias);
-        let action = self.keymap.resolve_alias(&typed).and_then(sketch_action);
+        let action = self.keymap.resolve_alias(&typed).and_then(alias_action);
         if action.is_none() {
             self.command_notice = Some(super::DesktopCommandNotice::AuthoringFailed {
                 cause: format!("command alias {typed:?}: expected a registered sketch command"),
@@ -64,6 +64,17 @@ impl<
         }
         (true, action)
     }
+}
+fn alias_action(id: &str) -> Option<oblikovati_gui::GuiShellAction> {
+    use oblikovati_gui::GuiShellAction;
+    Some(match id {
+        "edit.undo" => GuiShellAction::Undo,
+        "edit.redo" => GuiShellAction::Redo,
+        "file.save" => GuiShellAction::Save,
+        "view.home" => GuiShellAction::Home,
+        "view.previous" => GuiShellAction::ViewCommand(oblikovati_gui::GuiViewCommand::Previous),
+        _ => return sketch_action(id),
+    })
 }
 
 impl<O, W, F, G, R, S: super::DispatchWakeup> super::DesktopOwner<O, W, F, G, R, S> {

@@ -73,6 +73,14 @@ fn aliases_are_unique_and_resolve_without_case_sensitivity() {
     map.set_alias("draw.line", "").unwrap();
     assert_eq!(map.resolve_alias("line"), None);
 }
+#[test]
+fn sketch_ready_alias_availability_matches_supported_actions() {
+    let map = Keymap::desktop_defaults();
+    assert!(map.supports_sketch_alias("sketch-rectangle"));
+    assert!(map.supports_sketch_alias("edit.undo"));
+    assert!(!map.supports_sketch_alias("view.pan"));
+    assert!(!map.supports_sketch_alias("missing"));
+}
 
 #[test]
 fn resetting_all_shortcuts_preserves_aliases() {

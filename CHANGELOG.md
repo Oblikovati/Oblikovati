@@ -10,6 +10,8 @@
 
 ### Added
 
+- Added sketch-ready aliases for Undo, Redo, Save, Home, and Previous View. (#3856)
+
 - Added saved keyboard shortcuts and sketch command aliases to the Customize dialog. (#3856)
 
 - Added ribbon location information for the sketch visibility command. (#3856)
