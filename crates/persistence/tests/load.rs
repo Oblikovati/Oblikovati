@@ -82,6 +82,25 @@ fn populated_assemblies_are_refused_before_identity_registration() {
     }
 }
 #[test]
+fn a_go_written_assembly_is_not_opened_as_an_empty_model() {
+    use oblikovati_persistence::load::load_parameter_package;
+    let bytes = include_bytes!("fixtures/go-assembly-occurrences.yaml");
+    let mut index = DocumentIdentityIndex::default();
+    let mut guids = source();
+    let error = load_parameter_package(
+        Path::new("assembly.oad"),
+        1,
+        "alpha",
+        &mut index,
+        &mut guids,
+        &mut reader(bytes),
+    )
+    .unwrap_err();
+    assert!(error.to_string().contains("assembly model.occurrences"));
+    assert!(index.identity(1).is_none());
+    assert_eq!(guids.next, 0);
+}
+#[test]
 fn an_empty_assembly_can_still_be_loaded() {
     use oblikovati_persistence::load::load_parameter_package;
     let encoded = b"schemaVersion: 2\ndocumentType: 2\nmodel: {occurrences: [], patterns: []}\n";

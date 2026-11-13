@@ -3,6 +3,23 @@ use oblikovati_model::assembly::AssemblyOccurrenceRecipe;
 use oblikovati_persistence::package::DocumentPackage;
 
 #[test]
+fn reads_an_assembly_package_written_by_the_go_host() {
+    let package =
+        DocumentPackage::decode(include_bytes!("fixtures/go-assembly-occurrences.yaml")).unwrap();
+    let records = package.assembly_occurrences().unwrap().unwrap();
+    assert_eq!(records.len(), 2);
+    assert_eq!(records[0].name, "widget:1");
+    assert_eq!(records[1].name, "widget:2");
+    assert_eq!(records[0].component, "parts/widget.opd");
+    assert_eq!(records[0].component, records[1].component);
+    assert!(records[0].grounded && !records[0].suppressed);
+    assert!(records[1].suppressed && !records[1].grounded);
+    assert_eq!(records[1].placement().unwrap().cells[3], 3.);
+    let reopened = DocumentPackage::decode(&package.encode().unwrap()).unwrap();
+    assert_eq!(reopened.assembly_occurrences().unwrap(), Some(records));
+}
+
+#[test]
 fn reads_go_occurrences_without_resolving_their_shared_component() {
     let yaml = b"schemaVersion: 2\ndocumentType: 2\nmodel:\n  occurrences:\n    - name: 'Part:1'\n      component: parts/model.opd\n      transform: [1, 0, 0, 10, 0, 1, 0, 20, 0, 0, 1, 30, 0, 0, 0, 1]\n      grounded: true\n    - name: 'Part:2'\n      component: parts/model.opd\n      suppressed: true\n      flexible: true\n      childTransforms: { 'Child:1': [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1] }\n    - name: 'Virtual:1'\n      virtual: true\n      virtualPartNumber: P123\n";
     let package = DocumentPackage::decode(yaml).unwrap();
