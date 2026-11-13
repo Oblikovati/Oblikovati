@@ -311,3 +311,9 @@ fn name_sort_reverses_group_order_without_changing_selected_template() {
     assert_eq!(world.active_id(), part);
     world.close();
 }
+
+#[given("the selected template folder contains templates")]
+fn selected_folder_contains_templates(world: &mut ApplicationWorld) {
+    world.expect_text(METRIC_PART);
+    world.expect_text(METRIC_ASSEMBLY);
+}

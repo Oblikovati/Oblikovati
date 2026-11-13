@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+#[path = "chooser_details/type_visibility.rs"]
+mod type_visibility;
+use type_visibility::expect_full_type_value;
 #[test]
 fn details_view_retains_controls_in_a_narrow_window_with_larger_text() {
     let mut world = ApplicationWorld::new();
@@ -9,7 +12,8 @@ fn details_view_retains_controls_in_a_narrow_window_with_larger_text() {
     world.drag([300, 503], [540, 503]);
     world.expect_text("Size");
     world.expect_text("Type");
-    world.expect_text("Presentation");
+    expect_full_type_value(&world, "Presentation");
+    expect_full_type_value(&world, "Assembly");
     world.save_capture("template-details-narrow-scrolled");
     world.close();
 }

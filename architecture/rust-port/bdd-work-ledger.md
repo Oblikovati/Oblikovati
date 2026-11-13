@@ -12,6 +12,7 @@ claim that each file has been individually triaged.
 | 1 | `features/application/document-creation` | In progress | Name and size sorting are implemented for available templates. The name-order scenario also requires additional template variants and native BDD bindings. |
 | 1 | `features/application/ribbon-appearance/ribbon-appearance.feature` | In progress | Source changed. Revalidate every scenario against the revised file. Panel title visibility and the appearance menu exist. The menu marks Normal as active and disables the other modes. A caption-free native icon primitive is available but is not connected to the ribbon. The 3D Model ribbon now uses the Go icons for Revolve, Hole, Fillet and Chamfer; these commands remain unavailable. Implement Text Off, Small, Compact, Large and Reset Ribbon across all commands and layouts; then enable and verify them. |
 | 1 | `features/application/ribbon-docking/ribbon-docking.feature` | In progress | Source changed after the inventory checkpoint. A full native run at commit `139b82a42` found 6 passes and 17 scenarios stopped by undefined steps. With corrected bindings, a second run found 8 passes, 14 undefined steps, and one ambiguous step. Resolve the remaining steps and implement missing command-group behavior. |
+| 1 | `features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature` | Needs rerun | Source changed since the inventory checkpoint. Review the corrections and rerun affected native scenarios. |
 | 1 | `features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature` | Needs rerun | Source changed since the inventory checkpoint. Review its corrections and rerun affected native scenarios before updating the checkpoint. |
 | 1 | `features/application/ribbon-display/ribbon-display.feature` | In progress | Source changed. Revalidate all scenarios against the revised file, including appearance and modeling-preview cases. |
 | 2 | `features/sketch/pattern-rectangular/scenario.feature` | In progress | Rectangular patterns can be created and edited in the native UI, but directions are fixed to the sketch axes. Implement line-reference selection and associativity, then run the affected native scenarios. |
@@ -156,3 +157,22 @@ revisions checked before they support a current pass claim.
   screenshots are in `/tmp/obk-file-area-sort-20261113`, a local location.
   The command was `xvfb-run -a -s '-screen 0 1600x1000x24' cargo test --locked
   -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture`.
+
+### Template Details visibility, 2026-11-13
+
+- Source: `features/application/document-creation/document-creation.feature`,
+  SHA-256 `003a02efcb9c8f0629eeb8cabd4c52945533a1387d3918c417b7eac09a0d7522`,
+  unchanged across the BDD run. Application: commit `0f6c0af70` plus the
+  fixture and test changes in this ledger's commit; the unrelated README and
+  AGENTS files were present.
+- The native `Display templates as details` scenario passed all seven steps.
+  The report and screenshot are in `/tmp/obk-doc-details-bdd-20261113`; that
+  local directory is not a durable shared artifact.
+- Focused native tests read complete Assembly and Presentation values in the
+  Type column at the default 1440 × 900 window and after horizontal scrolling
+  in an 800 × 600 window with 150% text scale. The latter screenshot is in
+  `/tmp/obk-details-layout-final-20261113`. This is Linux/Xvfb evidence for
+  issue #3858; it does not establish behavior on macOS or Windows.
+- The name-sort BDD scenario still needs the distinct DIN/JIS template
+  definitions. The Go reference does not provide those templates, so the
+  application must not claim placeholder files as real templates.
