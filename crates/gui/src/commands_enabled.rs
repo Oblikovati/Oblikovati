@@ -111,6 +111,15 @@ impl GuiShellAction {
                     && !path.trim().is_empty()
                     && !name.trim().is_empty()
             }
+            Self::PreviewComponent(None) => true,
+            Self::PreviewComponent(Some((assembly, source))) => {
+                state.document == Some(*assembly)
+                    && state.document_type == Some(oblikovati_api::types::DOCUMENT_ASSEMBLY)
+                    && *source != *assembly
+                    && state.documents.iter().any(|row| {
+                        row.id == *source && matches!(row.type_.as_str(), "part" | "assembly")
+                    })
+            }
             Self::PreviewDrawingBaseView(Some(request)) => {
                 Self::CreateDrawingBaseView(request.clone()).enabled(state)
             }

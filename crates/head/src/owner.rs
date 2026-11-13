@@ -94,6 +94,11 @@ impl Default for DesktopDispatchOptions {
         }
     }
 }
+struct ComponentPreview {
+    assembly: u64,
+    generations: Vec<(u64, u64)>,
+    scene: oblikovati_viewport::ViewportScene,
+}
 /// Documents and queue admission share one owner. The worker transport contains no model.
 /// ```compile_fail
 /// use oblikovati_head::DesktopOwner;
@@ -130,6 +135,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     drawing_view_preview: Option<drawing_projection::DrawingViewPreview>,
     extrusion_access: Option<crate::part_scene::extrusion::CertifiedExtrudeAccess>,
     extrusion_preview: Option<(u64, u64, oblikovati_viewport::ViewportScene)>,
+    component_preview: Option<ComponentPreview>,
     sketch_scenes: crate::sketch_scene::DesktopSketchScenes,
     command_notice: Option<DesktopCommandNotice>,
     /// Sketches being edited in documents that are not active, by document.
@@ -222,6 +228,7 @@ impl<
             drawing_view_preview: None,
             extrusion_access: None,
             extrusion_preview: None,
+            component_preview: None,
             sketch_scenes: Default::default(),
             command_notice: None,
             sketch_construction: Default::default(),

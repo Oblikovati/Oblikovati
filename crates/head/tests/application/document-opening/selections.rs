@@ -90,6 +90,9 @@ fn assembly_ribbon_places_an_open_component_and_replays_it() {
     );
     world.click_text("Place");
     world.expect_text("Choose an open saved component");
+    world.click_text("Choose an open saved component");
+    world.click_text(&name);
+    settle(&mut world);
     world.click_text("Cancel");
     assert_eq!(
         world

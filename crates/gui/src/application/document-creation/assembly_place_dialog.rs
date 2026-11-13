@@ -25,6 +25,7 @@ pub(super) struct AssemblyPlaceDialog {
     browser: FolderBrowser,
     file_name: String,
     file_escape: DialogEscape,
+    preview_source: Option<u64>,
 }
 impl Default for AssemblyPlaceDialog {
     fn default() -> Self {
@@ -37,6 +38,7 @@ impl Default for AssemblyPlaceDialog {
             browser: FolderBrowser::new(Rc::new(NativeFolders)),
             file_name: String::new(),
             file_escape: DialogEscape::default(),
+            preview_source: None,
         }
     }
 }
@@ -64,6 +66,7 @@ impl AssemblyPlaceDialog {
             self.assembly = None;
         }
         let Some(assembly) = self.assembly else {
+            self.clear_preview(actions);
             return;
         };
         Self::fit_dockable(ui, "Place Component", [420., 200.], [380., 190.]);
@@ -77,11 +80,18 @@ impl AssemblyPlaceDialog {
                 ui.open_popup(FILE_CHOOSER);
             }
             self.file_chooser(ui);
+            if self.preview_source != self.source {
+                self.preview_source = self.source;
+                actions.push(GuiShellAction::PreviewComponent(
+                    self.source.map(|source| (assembly, source)),
+                ));
+            }
             ui.input_text("Occurrence name", &mut self.name).build();
             let action = self.action(assembly);
             let disabled =
                 ui.begin_disabled(action.as_ref().is_none_or(|item| !item.enabled(state)));
             if crate::widget_abi::button(ui, "Place", [90., 0.]) {
+                self.clear_preview(actions);
                 if let Some(action) = action {
                     actions.push(action);
                 }
@@ -91,11 +101,18 @@ impl AssemblyPlaceDialog {
             ui.same_line();
             if crate::widget_abi::button(ui, "Cancel", [90., 0.]) || ui.is_key_pressed(Key::Escape)
             {
+                self.clear_preview(actions);
                 self.assembly = None;
             }
         });
         if !open {
+            self.clear_preview(actions);
             self.assembly = None;
+        }
+    }
+    fn clear_preview(&mut self, actions: &mut Vec<GuiShellAction>) {
+        if self.preview_source.take().is_some() {
+            actions.push(GuiShellAction::PreviewComponent(None));
         }
     }
     fn source_choice(&mut self, ui: &Ui, state: &GuiCommandState, assembly: u64) {

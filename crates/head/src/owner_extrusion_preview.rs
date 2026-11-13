@@ -10,6 +10,58 @@ impl<
     S: DispatchWakeup,
 > DesktopOwner<O, W, F, G, R, S>
 {
+    pub(super) fn set_component_preview(
+        &mut self,
+        request: Option<(u64, u64)>,
+    ) -> Result<bool, String> {
+        let changed = self.component_preview.take().is_some();
+        self.part_scenes.invalidate_presentation();
+        let Some((assembly, source)) = request else {
+            return Ok(changed);
+        };
+        if self.files.workspace().active_document() != Some(assembly) || assembly == source {
+            return Err(format!(
+                "assembly {assembly} component {source}: expected an active assembly and a different component"
+            ));
+        }
+        let root = self
+            .files
+            .workspace()
+            .session(assembly)
+            .map_err(|error| error.to_string())?;
+        if root.snapshot().assembly.is_none() {
+            return Err(format!("document {assembly}: expected an assembly"));
+        }
+        let generations = self.component_preview_generations();
+        let identity = oblikovati_api::types::Matrix {
+            cells: [
+                1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1.,
+            ],
+        };
+        let scene = self
+            .part_scenes
+            .component_preview(&mut self.files, source, &identity)?;
+        self.component_preview = Some(ComponentPreview {
+            assembly,
+            generations,
+            scene,
+        });
+        Ok(true)
+    }
+    fn component_preview_generations(&self) -> Vec<(u64, u64)> {
+        self.files
+            .workspace()
+            .documents()
+            .iter()
+            .filter_map(|&id| {
+                self.files
+                    .workspace()
+                    .session(id)
+                    .ok()
+                    .map(|session| (id, session.generation()))
+            })
+            .collect()
+    }
     pub(super) fn set_extrusion_preview(
         &mut self,
         document: u64,
@@ -69,6 +121,13 @@ impl<
         {
             self.clear_extrusion_preview();
         }
+        let stale = self.component_preview.as_ref().is_some_and(|preview| {
+            current.map(|(document, _)| document) != Some(preview.assembly)
+                || preview.generations != self.component_preview_generations()
+        });
+        if stale {
+            self.set_component_preview(None)?;
+        }
         let selected = self
             .selected_occurrence
             .as_ref()
@@ -86,6 +145,12 @@ impl<
                 .scene
                 .triangles
                 .extend(preview.triangles.iter().copied());
+        }
+        if let Some(preview) = &self.component_preview {
+            update
+                .scene
+                .triangles
+                .extend(preview.scene.triangles.iter().copied());
         }
         Ok(Some(update))
     }

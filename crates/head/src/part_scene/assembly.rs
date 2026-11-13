@@ -88,6 +88,46 @@ fn component_document<O: TransactionObserver, W: WorkspaceObserver, F: DocumentF
 }
 
 impl DesktopPartScenes {
+    /// Build a transient component presentation without changing its assembly recipe.
+    /// Example: `scenes.component_preview(files, source, &placement)?` before accepting placement.
+    pub(crate) fn component_preview<
+        O: TransactionObserver,
+        W: WorkspaceObserver,
+        F: DocumentFiles,
+    >(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        component: u64,
+        placement: &oblikovati_api::types::Matrix,
+    ) -> Result<ViewportScene, String> {
+        let nested = files
+            .workspace()
+            .session(component)
+            .map_err(|error| error.to_string())?
+            .snapshot()
+            .assembly
+            .is_some();
+        let result = if nested {
+            self.evaluate_assembly(files, component)?
+        } else {
+            self.evaluate(files, component)?
+        };
+        if !result.status.scene_errors.is_empty()
+            || !result.status.presentation_declines.is_empty()
+            || result.status.unavailable_count() > 0
+        {
+            return Err(format!(
+                "component {component}: expected a complete preview: {:?}",
+                result.status
+            ));
+        }
+        let mut scene = result.scene.placed(placement)?;
+        for triangle in &mut scene.triangles {
+            triangle.color = [1., 0.65, 0.1, 1.];
+        }
+        Ok(scene)
+    }
+
     pub(super) fn failed_assembly_scene<
         O: TransactionObserver,
         W: WorkspaceObserver,

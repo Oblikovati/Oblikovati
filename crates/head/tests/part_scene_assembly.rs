@@ -81,6 +81,48 @@ fn occurrence(name: &str, x: f64) -> AssemblyOccurrenceRecipe {
 }
 
 #[test]
+fn component_preview_is_transformed_without_an_assembly_edit() {
+    let (mut files, part, assembly, _) = workspace();
+    let generation = files.workspace().session(assembly).unwrap().generation();
+    let before = files
+        .workspace()
+        .session(assembly)
+        .unwrap()
+        .snapshot()
+        .assembly
+        .clone();
+    let placement = oblikovati_api::types::Matrix {
+        cells: [
+            1., 0., 0., 20., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1.,
+        ],
+    };
+    let preview = DesktopPartScenes::default()
+        .component_preview(&mut files, part, &placement)
+        .unwrap();
+    assert!(!preview.triangles.is_empty());
+    assert!(
+        preview
+            .triangles
+            .iter()
+            .flat_map(|triangle| triangle.positions)
+            .all(|point| point[0] >= 20.)
+    );
+    assert_eq!(
+        files.workspace().session(assembly).unwrap().generation(),
+        generation
+    );
+    assert_eq!(
+        files
+            .workspace()
+            .session(assembly)
+            .unwrap()
+            .snapshot()
+            .assembly,
+        before
+    );
+}
+
+#[test]
 fn assembly_repeats_components_and_refreshes_after_component_edits() {
     let (mut files, part, assembly, _) = workspace();
     let mut scenes = DesktopPartScenes::default();
