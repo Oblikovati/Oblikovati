@@ -142,6 +142,83 @@ fn occurrence_selection_tints_only_its_placement_and_clears() {
 }
 
 #[test]
+fn sight_lines_pick_the_correct_analytic_component_and_refuse_ties() {
+    let (mut files, _, assembly, _) = workspace();
+    let generation = files.workspace().session(assembly).unwrap().generation();
+    let mut scenes = DesktopPartScenes::default();
+    let first = scenes
+        .occurrence_on_line(&mut files, assembly, [[1., 1., 10.], [0., 0., -1.]])
+        .unwrap()
+        .unwrap();
+    let second = scenes
+        .occurrence_on_line(&mut files, assembly, [[11., 1., 10.], [0., 0., -1.]])
+        .unwrap()
+        .unwrap();
+    assert_eq!(first, [(assembly, generation, 0)]);
+    assert_eq!(second, [(assembly, generation, 1)]);
+    assert!(
+        scenes
+            .occurrence_on_line(&mut files, assembly, [[30., 1., 10.], [0., 0., -1.]])
+            .unwrap()
+            .is_none()
+    );
+    files
+        .commands(assembly)
+        .unwrap()
+        .run("Overlap", |snapshot, _| -> Result<(), ()> {
+            snapshot.assembly.as_mut().unwrap()[1].transform[3] = 0.;
+            Ok(())
+        })
+        .unwrap();
+    assert!(
+        scenes
+            .occurrence_on_line(&mut files, assembly, [[1., 1., 10.], [0., 0., -1.]])
+            .unwrap_err()
+            .contains("unambiguous")
+    );
+    files
+        .commands(assembly)
+        .unwrap()
+        .run("Place nearer component", |snapshot, _| -> Result<(), ()> {
+            let mut nearer = occurrence("Near", 0.);
+            nearer.transform[11] = 5.;
+            snapshot.assembly.as_mut().unwrap().push(nearer);
+            Ok(())
+        })
+        .unwrap();
+    let generation = files.workspace().session(assembly).unwrap().generation();
+    assert_eq!(
+        scenes
+            .occurrence_on_line(&mut files, assembly, [[1., 1., 10.], [0., 0., -1.]])
+            .unwrap()
+            .unwrap(),
+        [(assembly, generation, 2)]
+    );
+}
+
+#[test]
+fn analytic_pick_compares_reaches_in_owner_coordinates_after_scaling() {
+    let (mut files, _, assembly, _) = workspace();
+    files
+        .commands(assembly)
+        .unwrap()
+        .run("Scale placement", |snapshot, _| -> Result<(), ()> {
+            let matrix = &mut snapshot.assembly.as_mut().unwrap()[1].transform;
+            matrix[3] = 0.;
+            matrix[10] = 10.;
+            matrix[11] = -19.;
+            Ok(())
+        })
+        .unwrap();
+    let generation = files.workspace().session(assembly).unwrap().generation();
+    let hit = DesktopPartScenes::default()
+        .occurrence_on_line(&mut files, assembly, [[1., 1., 10.], [0., 0., -1.]])
+        .unwrap()
+        .unwrap();
+    assert_eq!(hit, [(assembly, generation, 0)]);
+}
+
+#[test]
 fn assembly_reports_unresolved_components_instead_of_showing_an_empty_scene() {
     let (mut files, part, assembly, _) = workspace();
     files

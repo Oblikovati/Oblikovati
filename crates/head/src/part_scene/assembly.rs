@@ -2,7 +2,7 @@
 //! Compose referenced component scenes in occurrence order.
 use super::*;
 use oblikovati_model::assembly::AssemblyOccurrenceRecipe;
-const MAX_ASSEMBLY_DEPTH: usize = 128;
+pub(super) const MAX_ASSEMBLY_DEPTH: usize = 128;
 
 #[derive(PartialEq, Eq)]
 pub(super) struct SceneSource {

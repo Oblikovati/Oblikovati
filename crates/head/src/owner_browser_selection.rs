@@ -55,6 +55,17 @@ impl<
         line: [[f64; 3]; 2],
     ) -> Result<bool, String> {
         self.require_browser_document(document)?;
+        if self
+            .files
+            .workspace()
+            .session(document)
+            .map_err(|cause| cause.to_string())?
+            .snapshot()
+            .assembly
+            .is_some()
+        {
+            return self.click_assembly(document, line);
+        }
         self.selected_occurrence = None;
         self.files
             .commands(document)
@@ -69,6 +80,20 @@ impl<
             role,
         });
         Ok(true)
+    }
+    fn click_assembly(&mut self, document: u64, line: [[f64; 3]; 2]) -> Result<bool, String> {
+        let picked = self
+            .part_scenes
+            .occurrence_on_line(&mut self.files, document, line);
+        let choice = match picked {
+            Ok(Some(path)) => oblikovati_gui::GuiBrowserChoice::Occurrence(path),
+            Ok(None) => oblikovati_gui::GuiBrowserChoice::Nothing,
+            Err(cause) => {
+                self.command_notice = Some(crate::DesktopCommandNotice::SelectionFailed { cause });
+                return Ok(true);
+            }
+        };
+        self.browser_choice(document, &choice)
     }
     fn set_sketch_dimensions_shown(
         &mut self,

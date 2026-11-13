@@ -10,6 +10,7 @@ use oblikovati_session::{
 };
 use oblikovati_viewport::{PartPresentationDecline, ViewportScene};
 mod assembly;
+mod assembly_pick;
 pub(crate) mod extrusion;
 pub(crate) mod resolution_policy;
 /// Owned display state names its document and generation; kernel handles stay in result storage.

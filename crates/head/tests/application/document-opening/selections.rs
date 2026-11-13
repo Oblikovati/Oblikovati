@@ -227,6 +227,30 @@ fn opening_an_assembly_displays_its_referenced_part() {
     assert_ne!(parent, other);
     assert_selected_and_unselected_solids(&mut world, false);
     world.save_capture("assembly-referenced-part");
+    let capture = super::super::capture_framebuffer(&mut world.app().window.native);
+    let (minimum, maximum) = super::super::solid_visibility::visible_fixture_bounds(
+        &capture,
+        &super::super::diagnostics::window_occlusions(),
+    )
+    .expect("expected the unselected green occurrence");
+    let point = std::array::from_fn(|axis| ((minimum[axis] + maximum[axis]) / 2) as i32);
+    world.click(point);
+    assert_eq!(
+        world.state().browser.as_ref().unwrap().selected_occurrence,
+        Some(selected)
+    );
+    assert_selected_and_unselected_solids(&mut world, true);
+    world.save_capture("assembly-picked-occurrence");
+    world.click([400, 700]);
+    assert!(
+        world
+            .state()
+            .browser
+            .as_ref()
+            .unwrap()
+            .selected_occurrence
+            .is_none()
+    );
     world.click_text("Search");
     world.pump(Vec::new());
     super::super::workspace_layout::browser_tree::type_in_search(&mut world, "Part:2");

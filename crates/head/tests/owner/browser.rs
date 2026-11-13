@@ -89,6 +89,40 @@ fn occurrence_selection_rejects_stale_paths_without_editing_history() {
 }
 
 #[test]
+fn an_unpickable_assembly_placement_reports_a_selection_failure() {
+    let (mut owner, _) = owner();
+    super::part_scene::open_prism(&mut owner, false);
+    let path = std::path::PathBuf::from("/fixtures/singular-assembly.oad");
+    let component = std::env::temp_dir().join("head-scene.opd");
+    let package = format!(
+        "schemaVersion: 2\ndocumentType: 2\nmodel:\n  occurrences:\n    - name: Part:1\n      component: {}\n      transform: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]\n",
+        component.display()
+    );
+    owner
+        .documents()
+        .files()
+        .saved
+        .borrow_mut()
+        .insert(path.clone(), package.into_bytes());
+    let document = Client::new(owner.document_host())
+        .documents()
+        .open(&OpenDocumentArgs {
+            full_document_name: path.to_string_lossy().into_owned(),
+            ..Default::default()
+        })
+        .unwrap()
+        .id;
+    assert!(
+        owner
+            .click_model(document, [[1., 1., 10.], [0., 0., -1.]])
+            .unwrap()
+    );
+    assert!(
+        matches!(owner.take_command_notice(), Some(crate::DesktopCommandNotice::SelectionFailed { cause }) if cause.contains("invertible"))
+    );
+}
+
+#[test]
 fn browser_reads_current_document_and_owned_sketch_edit_state() {
     let (mut owner, awake) = owner();
     assert!(owner.gui_browser_snapshot(999).is_err());

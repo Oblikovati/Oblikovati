@@ -218,6 +218,12 @@ claim that each file has been individually triaged.
   a subassembly tints its visible children. Scene tests check independent
   placements and clearing, and a native mouse test checks the pixel colors of
   two separated placements. Component commands and viewport picking remain open.
+- Assembly viewport clicks now query the referenced component B-reps through
+  Martensite after transforming the sight line into each placement. The owner
+  compares hit distances in one coordinate system, rejects exact placement
+  ties and reports invalid transforms. Tests cover translated and scaled
+  placements, a nested mouse pick and a miss. Face-level assembly references
+  and occurrence editing commands remain open.
 - The drawing browser now lists the authored sheets, borders, title blocks and
   views, and browser search uses those same rows. Unit tests cover multiple
   sheets, a missing border and searching for a view.

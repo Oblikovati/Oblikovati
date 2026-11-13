@@ -174,10 +174,15 @@ pub(crate) fn follow_view_click(
     let on_document = view.document_area.is_some_and(|area| {
         (area.left..area.right).contains(&x) && (area.top..area.bottom).contains(&y)
     });
+    let assembly = state.authoring == crate::GuiAuthoringContext::OtherDocument
+        && state
+            .browser
+            .as_ref()
+            .is_some_and(|browser| browser.kind == crate::GuiBrowserKind::Assembly);
     if !on_view
         || !on_document
         || view.view_clicks_taken
-        || state.authoring != crate::GuiAuthoringContext::Part
+        || (state.authoring != crate::GuiAuthoringContext::Part && !assembly)
     {
         return;
     }

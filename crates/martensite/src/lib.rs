@@ -5,6 +5,8 @@
 use martensite_tkbrep::topods::Shape;
 use martensite_tkprim::brep_prim_api::BRepPrimAPIMakeBox;
 mod checked_shape;
+mod occurrence_line;
+pub use occurrence_line::line_in_occurrence;
 
 /// Analytic values from a release probe, in the supplied working units.
 #[derive(Clone, Debug, PartialEq)]
