@@ -197,6 +197,9 @@ macro_rules! forward_owner_view_work {
         ) -> Result<bool, String> {
             self.$owner.toggle_sketch_format_from_gui(format)
         }
+        fn delete_sketch_relation_from_gui(&mut self, id: u64) -> Result<bool, String> {
+            self.$owner.delete_sketch_relation_from_gui(id)
+        }
         fn delete_sketch_selection_from_gui(&mut self) -> Result<bool, String> {
             self.$owner.delete_sketch_selection_from_gui()
         }

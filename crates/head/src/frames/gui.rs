@@ -112,6 +112,7 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::PreciseTriad(_)
         | GuiShellAction::ToggleCenterPointFormat
         | GuiShellAction::SetCenterPoint { .. }
+        | GuiShellAction::DeleteSketchRelation(_)
         | GuiShellAction::Inspect(_)
         | GuiShellAction::EditDimensionValue(_)
         | GuiShellAction::SetPromptFrequency { .. }

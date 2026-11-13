@@ -75,6 +75,14 @@ pub struct GuiSketchContext {
     pub center_point: bool,
     /// Every entity within reach; two or more is what Select Other is for.
     pub candidates: Vec<String>,
+    /// Geometric relations owned by the curve under the context pointer.
+    pub relations: Vec<GuiSketchRelation>,
+}
+/// One geometric relation resolved from the picked curve.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GuiSketchRelation {
+    pub id: u64,
+    pub label: String,
 }
 fn repeat_row(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
     let Some(command) = state.repeat_command else {
@@ -126,6 +134,24 @@ fn delete_selection_row(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiS
         actions.push(action);
     }
 }
+fn relation_rows(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
+    let Some(context) = &state.sketch_context else {
+        return;
+    };
+    for relation in &context.relations {
+        let action = GuiShellAction::DeleteSketchRelation(relation.id);
+        if ui
+            .menu_item_config(format!(
+                "Delete {} Constraint##relation-{}",
+                relation.label, relation.id
+            ))
+            .enabled(action.enabled(state))
+            .build()
+        {
+            actions.push(action);
+        }
+    }
+}
 fn select_other_row(ui: &Ui, state: &GuiCommandState) {
     let Some(context) = state
         .sketch_context
@@ -161,6 +187,7 @@ pub(crate) fn canvas_menu(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<Gu
     repeat_row(ui, state, actions);
     center_point_row(ui, state, actions);
     delete_selection_row(ui, state, actions);
+    relation_rows(ui, state, actions);
     select_other_row(ui, state);
     if ui.menu_item("Measure") {
         actions.push(GuiShellAction::Inspect(GuiInspectAction::StartMeasure));

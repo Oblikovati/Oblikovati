@@ -33,6 +33,8 @@ pub enum GuiShellAction {
         point: u64,
         center: bool,
     },
+    /// Delete the stable relation selected in the sketch context menu.
+    DeleteSketchRelation(u64),
     Inspect(crate::GuiInspectAction),
     EditDimensionValue(crate::GuiDimensionValue),
     SetTheme(String),

@@ -63,6 +63,10 @@ mod sketch_geometric;
 mod sketch_interaction;
 #[path = "owner_sketch_picking.rs"]
 mod sketch_picking;
+#[path = "owner_sketch_relation_context.rs"]
+mod sketch_relation_context;
+#[path = "owner_sketch_relation_delete.rs"]
+mod sketch_relation_delete;
 #[path = "owner_windows.rs"]
 mod windows;
 #[path = "owner_work.rs"]

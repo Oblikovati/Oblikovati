@@ -237,6 +237,9 @@ impl<
     fn toggle_center_point_format_from_gui(&mut self) -> Result<bool, String> {
         DesktopOwner::toggle_center_point_format_from_gui(self)
     }
+    fn delete_sketch_relation_from_gui(&mut self, id: u64) -> Result<bool, String> {
+        self.delete_context_relation(id)
+    }
     fn set_center_point_from_gui(&mut self, point: u64, center: bool) -> Result<bool, String> {
         DesktopOwner::set_center_point_from_gui(self, point, center)
     }

@@ -66,7 +66,9 @@ impl GuiShellAction {
             Self::LineCommand(_) => state.line_command.is_some(),
             Self::PrecisePoint(_) | Self::PreciseTriad(_) => state.precise_target.is_some(),
             Self::ToggleCenterPointFormat => state.authoring == GuiAuthoringContext::Sketch,
-            Self::SetCenterPoint { .. } => state.sketch_at_ready && !state.transaction_open,
+            Self::SetCenterPoint { .. } | Self::DeleteSketchRelation(_) => {
+                state.sketch_at_ready && !state.transaction_open
+            }
             Self::Inspect(_) => state.authoring == GuiAuthoringContext::Sketch,
             Self::EditDimensionValue(_) => {
                 (state.sketch_at_ready || state.dimension_tool_active) && !state.transaction_open

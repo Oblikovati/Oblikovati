@@ -98,3 +98,66 @@ fn geometry_remains(world: &mut ApplicationWorld) {
     assert_eq!(current.lines().len(), 2);
     assert!(current.same_recipe(before));
 }
+
+#[test]
+fn curve_context_deletes_its_relation_without_moving_geometry_and_supports_history() {
+    let mut world = ApplicationWorld::new();
+    joined_lines(&mut world);
+    let before = world.edited_geometry();
+    let line = before.lines()[0];
+    let points = line.endpoints.map(|id| before.point(id).unwrap().position);
+    let midpoint = std::array::from_fn(|axis| (points[0][axis] + points[1][axis]) * 0.5);
+    let pixel =
+        crate::HeadWindow::sketch_pixel(&world.app().window, SketchPlane::xy(), midpoint).unwrap();
+    world.right_click(pixel);
+    world.pump(Vec::new());
+    world.expect_text("Delete Coincident Constraint");
+    world.click_text("Delete Coincident Constraint");
+    let deleted = world.edited_geometry();
+    assert!(deleted.geometric_constraints().next().is_none());
+    assert_eq!(deleted.points(), before.points());
+    assert_eq!(deleted.lines(), before.lines());
+    assert!(world.app().owner.sketch_constraint_marks().is_empty());
+    world.undo();
+    assert!(world.edited_geometry().same_recipe(&before));
+    assert!(
+        world
+            .app()
+            .owner
+            .sketch_constraint_marks()
+            .iter()
+            .any(|mark| mark.text == "C")
+    );
+    world.redo();
+    assert!(world.edited_geometry().same_recipe(&deleted));
+    world.close();
+}
+
+#[test]
+fn stale_context_relation_cannot_delete_a_different_relation() {
+    use oblikovati_api::{client::Client, wire::DeleteConstraintArgs};
+    let mut world = ApplicationWorld::new();
+    joined_lines(&mut world);
+    let geometry = world.edited_geometry();
+    let ends = geometry.lines()[0]
+        .endpoints
+        .map(|id| geometry.point(id).unwrap().position);
+    let midpoint = std::array::from_fn(|axis| (ends[0][axis] + ends[1][axis]) * 0.5);
+    let pixel =
+        crate::HeadWindow::sketch_pixel(&world.app().window, SketchPlane::xy(), midpoint).unwrap();
+    world.right_click(pixel);
+    world.pump(Vec::new());
+    let id = world.state().sketch_context.unwrap().relations[0].id;
+    Client::new(world.app().owner.document_host())
+        .constrain()
+        .delete(&DeleteConstraintArgs {
+            sketch_index: 0,
+            constraint_index: 0,
+        })
+        .unwrap();
+    let error =
+        crate::HeadWork::delete_sketch_relation_from_gui(&mut world.app().owner, id).unwrap_err();
+    assert!(error.contains("expected an available relation"));
+    assert_eq!(world.edited_geometry().geometric_constraints().count(), 0);
+    world.close();
+}

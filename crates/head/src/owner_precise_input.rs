@@ -260,23 +260,9 @@ impl<
             .get(edit.sketch)
             .map_err(|cause| cause.to_string())?
             .geometry();
-        let target = context_target(geometry, edit.plane, position, window)?;
+        let target = context_target(geometry, edit, session.generation(), position, window)?;
         self.sketch_memory.context = Some(target);
         Ok(())
-    }
-    pub(super) fn gui_sketch_context(&self) -> Option<oblikovati_gui::GuiSketchContext> {
-        let target = self.sketch_memory.context.as_ref()?;
-        let edit = self.active_sketch_edit()?;
-        let session = self.files.workspace().session(edit.document).ok()?;
-        let sketch = session.snapshot().sketches.get(edit.sketch).ok()?;
-        let point = target
-            .point
-            .filter(|point| sketch.geometry().point(*point).is_ok());
-        Some(oblikovati_gui::GuiSketchContext {
-            point: point.map(|point| point.0),
-            center_point: point.is_some_and(|point| sketch.geometry().is_center_point(point)),
-            candidates: target.candidates.clone(),
-        })
     }
     /// Show or hide the edited sketch's relation marks; the choice is a history step.
     pub(super) fn set_constraints_shown(&mut self, shown: bool) -> Result<(), String> {
@@ -343,18 +329,24 @@ pub(super) enum TriadPick {
 /// What a right press landed on.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) struct SketchContextTarget {
-    point: Option<SketchEntityId>,
-    candidates: Vec<String>,
+    pub(super) point: Option<SketchEntityId>,
+    pub(super) curve: Option<SketchEntityId>,
+    pub(super) generation: u64,
+    pub(super) document: u64,
+    pub(super) sketch: oblikovati_model::document_sketch::DocumentSketchId,
+    pub(super) candidates: Vec<String>,
 }
 /// A right press acts on a point within this reach, in pixels.
 const CONTEXT_POINT_REACH: f64 = 6.;
 
 fn context_target(
     geometry: &Sketch2D,
-    plane: SketchPlane,
+    edit: crate::HeadSketchEdit,
+    generation: u64,
     pixel: [i32; 2],
     window: &dyn HeadWindow,
 ) -> Result<SketchContextTarget, String> {
+    let plane = edit.plane;
     let mut within = Vec::new();
     for point in geometry.points() {
         let at = window.sketch_pixel(plane, point.position)?;
@@ -364,8 +356,24 @@ fn context_target(
         }
     }
     within.sort_by(|first, second| first.0.total_cmp(&second.0).then(first.1.cmp(&second.1)));
+    let curve = if within.is_empty() {
+        super::sketch_picking::pick_witness(
+            geometry,
+            plane,
+            pixel,
+            window,
+            super::sketch_picking::SketchPickFilter::Curves,
+        )?
+        .map(|hit| hit.entity)
+    } else {
+        None
+    };
     Ok(SketchContextTarget {
         point: within.first().map(|(_, id)| *id),
+        curve,
+        generation,
+        document: edit.document,
+        sketch: edit.sketch,
         candidates: vec!["Point".to_owned(); within.len()],
     })
 }

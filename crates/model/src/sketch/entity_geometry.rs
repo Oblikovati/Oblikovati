@@ -72,7 +72,8 @@ impl OwnedSketchGeometry<'_> {
         }
         Ok(self.points())
     }
-    pub(crate) fn points(self) -> Vec<SketchEntityId> {
+    /// Read defining points owned by this entity; example: `geometry.points()`.
+    pub fn points(self) -> Vec<SketchEntityId> {
         match self {
             Self::Point(shape) => vec![shape.id],
             Self::Line(shape) => shape.endpoints.to_vec(),

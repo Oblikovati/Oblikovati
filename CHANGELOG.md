@@ -16,6 +16,8 @@
 
 ### Added
 
+- Added undoable geometric relation removal from sketch curve context menus.
+
 - Added repeat of sketch constraints to the sketch context menu. (#3856)
 
 - Added selection-aware Delete to the sketch context menu. (#3856)

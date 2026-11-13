@@ -218,6 +218,12 @@ pub trait HeadWork {
             "point {point} center {center}: expected a document owner"
         ))
     }
+    /// Delete one context relation; example: `work.delete_sketch_relation_from_gui(1)?`.
+    fn delete_sketch_relation_from_gui(&mut self, id: u64) -> Result<bool, String> {
+        Err(format!(
+            "sketch relation {id}: expected an active sketch owner"
+        ))
+    }
     /// The edited sketch's shown relation marks; example: `work.sketch_constraint_marks()`.
     fn sketch_constraint_marks(&self) -> Vec<crate::HeadConstraintMark> {
         Vec::new()
