@@ -158,6 +158,12 @@ claim that each file has been individually triaged.
   session lifecycle tests, 39 selected persistence tests, and the native
   parameter-driven cube journey passed. Populated assembly opening stays
   disabled until component resolution and rendering are in place.
+- Assembly recipes now provide distinct external component references in
+  first-placement order, including suppressed placements and excluding virtual
+  components. Relative reference paths use the owning document's folder through
+  a shared document-owner operation; the drawing loader uses the same operation.
+  Tests cover duplicate references, path errors and the native lifecycle of two
+  drawings sharing one relative model. Assembly reference loading is still open.
 - The drawing browser now lists the authored sheets, borders, title blocks and
   views, and browser search uses those same rows. Unit tests cover multiple
   sheets, a missing border and searching for a view.

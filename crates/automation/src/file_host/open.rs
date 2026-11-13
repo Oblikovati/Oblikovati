@@ -102,20 +102,12 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
                 return;
             }
         }
-        let path = Path::new(&reference);
-        let path = if path.is_absolute() {
-            path.to_path_buf()
-        } else {
-            match self.files.path(drawing).ok().and_then(Path::parent) {
-                Some(folder) => folder.join(path),
-                None => {
-                    self.files.reject_drawing_reference(
-                        drawing,
-                        reference,
-                        "drawing has no saved folder for its relative model reference".into(),
-                    );
-                    return;
-                }
+        let path = match self.files.reference_path(drawing, Path::new(&reference)) {
+            Ok(path) => path,
+            Err(cause) => {
+                self.files
+                    .reject_drawing_reference(drawing, reference, cause.to_string());
+                return;
             }
         };
         let observers = &mut self.observers;

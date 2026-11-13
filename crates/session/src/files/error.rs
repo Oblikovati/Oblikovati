@@ -47,6 +47,10 @@ pub enum FileWorkspaceError {
     DeferredOpen(PathBuf, String),
     ReferencedModel(u64),
     UnboundDocument(u64),
+    ReferencePath {
+        document: u64,
+        reference: PathBuf,
+    },
     RelativeCanonical(PathBuf),
     NonUtf8ResponsePath(PathBuf),
     Path {
@@ -131,6 +135,13 @@ impl fmt::Display for FileWorkspaceError {
                 output,
                 "document {id}: expected a storage path; use Save As first"
             ),
+            Self::ReferencePath {
+                document,
+                reference,
+            } => write!(
+                output,
+                "document {document} reference {reference:?}: expected a nonempty absolute path or a relative path with a saved document folder"
+            ),
             Self::MissingFile(id) => {
                 write!(output, "document {id}: expected an owned file binding")
             }
@@ -187,6 +198,7 @@ impl Error for FileWorkspaceError {
             | Self::DocumentType(_)
             | Self::TemplateIdentity(_)
             | Self::UnboundDocument(_)
+            | Self::ReferencePath { .. }
             | Self::MissingFile(_)
             | Self::ReferencedModel(_)
             | Self::NonUtf8ResponsePath(_)

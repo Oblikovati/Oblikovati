@@ -107,6 +107,10 @@ fn reads_go_occurrences_without_resolving_their_shared_component() {
     assert_eq!(occurrences[1].child_transforms["Child:1"].len(), 16);
     assert!(occurrences[2].virtual_);
     assert_eq!(occurrences[2].virtual_part_number, "P123");
+    assert_eq!(
+        oblikovati_model::assembly::component_references(&occurrences),
+        ["parts/model.opd"]
+    );
     let encoded = serde_yaml_ng::to_string(&occurrences).unwrap();
     let restored: Vec<AssemblyOccurrenceRecipe> = serde_yaml_ng::from_str(&encoded).unwrap();
     assert_eq!(restored, occurrences);
@@ -136,4 +140,25 @@ fn empty_and_non_assembly_packages_remain_distinct() {
     let part = DocumentPackage::decode(b"schemaVersion: 2\ndocumentType: 1\n").unwrap();
     assert_eq!(assembly.assembly_occurrences().unwrap(), Some(vec![]));
     assert_eq!(part.assembly_occurrences().unwrap(), None);
+}
+
+#[test]
+fn component_references_are_unique_in_first_placement_order() {
+    let record = |name: &str, virtual_: bool, suppressed: bool| AssemblyOccurrenceRecipe {
+        component: name.into(),
+        virtual_,
+        suppressed,
+        ..Default::default()
+    };
+    let records = [
+        record("z.opd", false, true),
+        record("a.opd", false, false),
+        record("z.opd", false, false),
+        record("virtual.opd", true, false),
+        record("", false, false),
+    ];
+    assert_eq!(
+        oblikovati_model::assembly::component_references(&records),
+        ["z.opd", "a.opd"]
+    );
 }

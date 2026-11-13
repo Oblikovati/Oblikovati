@@ -44,6 +44,34 @@ fn empty_assembly_creation_owns_an_empty_occurrence_recipe() {
 }
 
 #[test]
+fn component_paths_use_the_owning_document_folder_without_opening_files() {
+    let mut host = host(RecordingWorkspace::default());
+    let mut source = SequenceGuids(1000);
+    let package = DocumentPackage::empty(oblikovati_api::types::DOCUMENT_ASSEMBLY, "Assembly1");
+    let id = host
+        .create_unbound(package, RecordingObserver::default(), "alpha", &mut source)
+        .unwrap()
+        .session_id;
+    let relative = Path::new("parts/part.opd");
+    assert!(
+        host.reference_path(id, relative)
+            .unwrap_err()
+            .to_string()
+            .contains("parts/part.opd")
+    );
+    let absolute = path("external.opd");
+    assert_eq!(host.reference_path(id, &absolute).unwrap(), absolute);
+    host.save_as(id, &path("assembly.oad"), "alpha", &mut source)
+        .unwrap();
+    assert_eq!(
+        host.reference_path(id, relative).unwrap(),
+        path("parts/part.opd")
+    );
+    assert!(host.reference_path(id, Path::new("")).is_err());
+    assert!(host.reference_path(u64::MAX, relative).is_err());
+}
+
+#[test]
 fn creation_mints_unsaved_identity_and_emits_created_then_activation() {
     let mut host = host(RecordingWorkspace::default());
     let mut source = SequenceGuids(1000);

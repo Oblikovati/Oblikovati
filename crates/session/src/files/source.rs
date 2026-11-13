@@ -4,6 +4,31 @@ use super::*;
 use oblikovati_api::types::{DOCUMENT_ASSEMBLY, DOCUMENT_PART, DocumentType};
 
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspace<O, W, F> {
+    /// Locate a document reference without opening it; example: `host.reference_path(id, Path::new("parts/a.opd"))?`.
+    pub fn reference_path(
+        &self,
+        owner: u64,
+        reference: &Path,
+    ) -> Result<PathBuf, FileWorkspaceError> {
+        let file = self.retained_file(owner)?;
+        if reference.as_os_str().is_empty() {
+            return Err(FileWorkspaceError::ReferencePath {
+                document: owner,
+                reference: reference.to_owned(),
+            });
+        }
+        if reference.is_absolute() {
+            return Ok(reference.to_owned());
+        }
+        file.path
+            .as_deref()
+            .and_then(Path::parent)
+            .map(|folder| folder.join(reference))
+            .ok_or_else(|| FileWorkspaceError::ReferencePath {
+                document: owner,
+                reference: reference.to_owned(),
+            })
+    }
     /// Resolve an open parameter source without I/O or activation; ambiguous names are errors.
     /// Example: `host.resolve_parameter_source("/parts/gear.opd")?`.
     pub fn resolve_parameter_source(&self, name: &str) -> Result<Option<u64>, FileWorkspaceError> {

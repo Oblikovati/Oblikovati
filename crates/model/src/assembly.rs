@@ -25,6 +25,10 @@ pub struct AssemblyOccurrenceRecipe {
 }
 
 impl AssemblyOccurrenceRecipe {
+    /// Read the external component reference, if any; example: `occurrence.component_reference()`.
+    pub fn component_reference(&self) -> Option<&str> {
+        (!self.virtual_ && !self.component.is_empty()).then_some(self.component.as_str())
+    }
     /// Validate saved matrices before resolving the component; example: `occurrence.validate()?`.
     pub fn validate(&self) -> Result<(), String> {
         validate_cells(&self.name, "transform", &self.transform, true)?;
@@ -48,6 +52,16 @@ impl AssemblyOccurrenceRecipe {
         };
         Ok(oblikovati_api::types::Matrix { cells })
     }
+}
+
+/// Return each external component once, in placement order; example: `component_references(&occurrences)`.
+pub fn component_references(records: &[AssemblyOccurrenceRecipe]) -> Vec<&str> {
+    let mut seen = std::collections::BTreeSet::new();
+    records
+        .iter()
+        .filter_map(AssemblyOccurrenceRecipe::component_reference)
+        .filter(|name| seen.insert(*name))
+        .collect()
 }
 fn validate_cells(
     name: &str,

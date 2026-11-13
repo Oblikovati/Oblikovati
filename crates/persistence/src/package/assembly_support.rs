@@ -100,10 +100,8 @@ impl DocumentPackage {
     }
 }
 fn component_references(records: &[AssemblyOccurrenceRecipe]) -> std::collections::BTreeSet<&str> {
-    records
-        .iter()
-        .filter(|record| !record.virtual_ && !record.component.is_empty())
-        .map(|record| record.component.as_str())
+    oblikovati_model::assembly::component_references(records)
+        .into_iter()
         .collect()
 }
 fn unsupported_assembly_content(name: &str, value: &Value) -> PackageCodecError {
