@@ -14,7 +14,7 @@ claim that each file has been individually triaged.
 | 1 | `features/application/ribbon-appearance/ribbon-appearance.feature` | In progress | Source changed. Revalidate every scenario against the revised file. Panel title visibility and the appearance menu exist. The menu marks Normal as active and disables the other modes. A caption-free native icon primitive is available but is not connected to the ribbon. The 3D Model ribbon now uses the Go icons for Revolve, Hole, Fillet and Chamfer; these commands remain unavailable. Implement Text Off, Small, Compact, Large and Reset Ribbon across all commands and layouts; then enable and verify them. |
 | 1 | `features/application/ribbon-docking/ribbon-docking.feature` | In progress | Source changed after the inventory checkpoint. A full native run at commit `139b82a42` found 6 passes and 17 scenarios stopped by undefined steps. With corrected bindings, a second run found 8 passes, 14 undefined steps, and one ambiguous step. Resolve the remaining steps and implement missing command-group behavior. |
 | 1 | `features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature` | Needs rerun | Source changed since the inventory checkpoint. Review the corrections and rerun affected native scenarios. |
-| 1 | `features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature` | Needs rerun | Source changed since the inventory checkpoint. Review its corrections and rerun affected native scenarios before updating the checkpoint. |
+| 1 | `features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature` | Needs rerun | Source changed again after a run with 12 of 54 scenarios passing. Review the corrections and rerun the full feature; the earlier result is historical. |
 | 1 | `features/application/ribbon-display/ribbon-display.feature` | In progress | Source changed. Revalidate all scenarios against the revised file, including appearance and modeling-preview cases. |
 | 2 | `features/sketch/pattern-rectangular/scenario.feature` | In progress | Rectangular patterns can be created and edited in the native UI, but directions are fixed to the sketch axes. Implement line-reference selection and associativity, then run the affected native scenarios. |
 | 2 | Other `features/sketch` | In progress | The native sketch gate runs only selected folders. Inventory and run the remaining folders before reporting total coverage. |
@@ -240,3 +240,32 @@ revisions checked before they support a current pass claim.
 - The source scenario names `Standard (in)` and `Sheet Metal (in)`. The
   current catalog uses different names. The full BDD scenario is not claimed
   as passed; reconcile the catalog and bindings with the current source.
+
+### Ribbon panel visibility baseline, 2026-11-13
+
+- Source: `features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature`,
+  SHA-256 `3db03005baf02cddf7049fd563de2aeb9767e254c66458ceaa6fc365bbb316f0`,
+  unchanged during the run. Application: commit `4d98e0a2c`; unrelated README and
+  AGENTS files were present. The native run used Linux, Xvfb at 1600 × 1000,
+  and Lavapipe. It executed the full feature with `OBK_BDD_FEATURE` set to
+  `ribbon-panel-visibility` and no scenario filter.
+- The runner reported 12 passed and 42 failed scenarios. Of the failures, 39
+  stopped at an undefined step, two at the same ambiguous docking binding, and
+  one at a failed Parameters icon assertion. Later steps in each stopped
+  scenario were not tested. Local reports are in
+  `/tmp/obk-panel-visibility-current-20261113`; they are not durable artifacts.
+- The scenario file changed after this run to SHA-256
+  `bdf21e3769aa826ac9106e0235328249209eccd14b471430d03442bc4fa71a79`.
+  The earlier run is historical and must not be reported as the current result.
+- Subsequent changes bind the corrected direct-selector wording, remove the
+  duplicate docking binding, and locate the Parameters caption inside the
+  ribbon instead of counting the open selector as a panel. The baseline above
+  predates these changes and is not a pass count for the changed application.
+- On the revised source, the native `Show and hide a ribbon panel` scenario
+  passed 13 steps and `Retain panel visibility while switching tabs and parts`
+  passed 10. The revised source hash was stable across both runs. Reports are
+  in `/tmp/obk-panel-selector-revised-20261113` and
+  `/tmp/obk-panel-retain-revised-20261113`. The side-docked scenario gets past
+  the duplicate binding and stops at an undefined selector step. The GUI only
+  draws the direct selector for the top placement, so the side placement
+  needs implementation and native verification.

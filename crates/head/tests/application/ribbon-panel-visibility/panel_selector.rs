@@ -11,23 +11,28 @@ fn selector_is_open(world: &ApplicationWorld) -> bool {
     let (_, size) = window_geometry("##application-ribbon").unwrap();
     row[0] > size[0] * 0.5 && row[1] > ribbon_bottom()
 }
-fn caption_is_visible(world: &ApplicationWorld) -> bool {
-    world
-        .frame
-        .runs
-        .iter()
-        .any(|row| row.text == PARAMETERS && row.center()[1] < ribbon_bottom())
+pub(super) fn caption_is_visible(world: &ApplicationWorld) -> bool {
+    let (position, size) = window_geometry("##application-ribbon").unwrap();
+    world.frame.runs.iter().any(|row| {
+        let center = row.center();
+        row.text == PARAMETERS
+            && (0..2).all(|axis| {
+                center[axis] >= position[axis] && center[axis] < position[axis] + size[axis]
+            })
+    })
 }
 #[when("the user clicks the panel selector at the right end of the ribbon")]
 #[when("the user clicks the ribbon panel selector")]
 #[when("the user clicks the ribbon panel selector again")]
 #[when("the user opens the ribbon panel selector")]
+#[when("I click the direct panel selector")]
 fn open_selector(world: &mut ApplicationWorld) {
     let (_, size) = window_geometry("##application-ribbon").unwrap();
     world.click([size[0] as i32 - 22, 45]);
     world.pump(Vec::new());
 }
 #[given("the full 3D Model ribbon shows the Modify panel")]
+#[given("the expanded 3D Model ribbon shows the Modify panel")]
 #[then("the Modify panel remains visible")]
 fn modify_panel_visible(world: &mut ApplicationWorld) {
     world.expect_text("Modify");
@@ -44,9 +49,20 @@ fn list_unchecked(world: &mut ApplicationWorld) {
 }
 #[when("the user selects Parameters in the list")]
 #[when("the user selects Parameters again")]
+#[when("I select Parameters in the panel list")]
 fn toggle_selector_parameter(world: &mut ApplicationWorld) {
     world.click_text(PARAMETERS);
     world.pump(Vec::new());
+}
+#[then("the panel list remains open with Parameters checked")]
+fn open_parameters_checked(world: &mut ApplicationWorld) {
+    assert!(selector_is_open(world), "expected the direct panel list");
+    assert!(world.checked(PARAMETERS), "expected Parameters checked");
+}
+#[then("the panel list remains open with Parameters unchecked")]
+fn open_parameters_unchecked(world: &mut ApplicationWorld) {
+    assert!(selector_is_open(world), "expected the direct panel list");
+    assert!(!world.checked(PARAMETERS), "expected Parameters unchecked");
 }
 #[then("Parameters is checked and its panel appears in the ribbon")]
 fn checked_and_visible(world: &mut ApplicationWorld) {

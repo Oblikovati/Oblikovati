@@ -21,10 +21,8 @@ fn toggle_panel(world: &mut ApplicationWorld, panel: &str) {
     world.pump(Vec::new());
     world.hover([700, 500]);
 }
-/// The browser also has a Parameters row, so the ribbon's panel is the second such run.
 fn parameters_panel_shown(world: &ApplicationWorld) -> bool {
-    let runs = world.frame.runs.iter().filter(|run| run.text == PARAMETERS);
-    runs.count() > 1
+    panel_selector::caption_is_visible(world)
 }
 fn expect_parameters_panel(world: &ApplicationWorld) {
     assert!(
@@ -160,7 +158,6 @@ fn return_expanded(world: &mut ApplicationWorld) {
         world.pump(Vec::new());
     }
 }
-#[given("the 3D Model ribbon is docked on the left")]
 fn model_docked_left(world: &mut ApplicationWorld) {
     open_context_menu(world);
     world.click_text("Docking Positions");
