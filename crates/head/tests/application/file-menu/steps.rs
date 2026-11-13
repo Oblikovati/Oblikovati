@@ -2,6 +2,7 @@
 use super::ApplicationWorld;
 use cucumber::{given, then, when};
 #[when("I select File")]
+#[when("the user selects File")]
 fn select_file(world: &mut ApplicationWorld) {
     world.click_text("File");
 }
@@ -63,6 +64,7 @@ fn press_escape(world: &mut ApplicationWorld) {
     world.escape();
 }
 #[when("I click an empty area of the viewport outside the menu")]
+#[when("the user clicks an empty area of the viewport outside the menu")]
 fn click_outside(world: &mut ApplicationWorld) {
     world.click([1000, 600]);
 }
@@ -212,6 +214,7 @@ fn press_alt_f(world: &mut ApplicationWorld) {
     )]);
 }
 #[when("I press Alt+F to open the File menu")]
+#[when("the user presses Alt+F to open the File menu")]
 fn open_file_with_alt_f(world: &mut ApplicationWorld) {
     press_alt_f(world);
 }

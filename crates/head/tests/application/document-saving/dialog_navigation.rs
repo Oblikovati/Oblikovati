@@ -356,6 +356,7 @@ fn open_app_menu(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
 }
 #[when("I expand Save As")]
+#[when("the user expands Save As")]
 fn expand_save_as(world: &mut ApplicationWorld) {
     let center = world.run("Save As").center().map(|value| value as i32);
     world.hover(center);

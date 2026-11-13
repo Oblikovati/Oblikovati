@@ -9,7 +9,7 @@ claim that each file has been individually triaged.
 | --- | --- | --- | --- |
 | 1 | `features/application` | In progress | The native application runner exists. A complete, current area result has not been recorded. Run and retain the full area report; triage failures against the current source. |
 | 1 | Native parameter-driven cube journey | In progress | The native journey creates a constrained rectangle and extrude, edits the size, uses undo/redo, saves and reopens, and resolves a face. Maintain the live test and rerun it after relevant changes. |
-| 1 | `features/application/file-menu/file-menu.feature` | Needs rerun | Source changed after the eight-scenario pass. Review the correction and rerun the feature; the previous result is historical. Weldment remains unavailable. |
+| 1 | `features/application/file-menu/file-menu.feature` | Verified | All eight scenarios passed on the current recorded source. Weldment remains unavailable. |
 | 1 | `features/application/document-creation` | In progress | Name and size sorting, horizontal icon tiles, and keyboard and secondary-button selection work for available templates. The BDD scenarios still require additional named templates and native bindings. |
 | 1 | `features/application/ribbon-customization/ribbon-customization.feature` | Needs rerun | Source changed since the inventory checkpoint. Review the corrections and rerun affected native scenarios. |
 | 1 | `features/application/ribbon-appearance/ribbon-appearance.feature` | In progress | On the current recorded source, six of 18 scenarios pass; 11 stop at undefined steps and one fails on a missing Tools group. Reset Ribbon is implemented. Implement the standard Tools groups and Text Off, Small, Compact and Large across all commands and layouts. |
@@ -575,3 +575,22 @@ revisions checked before they support a current pass claim.
   unchanged during the attempt. Its local report is
   `/tmp/obk-tools-find-browser-bdd-20261113`. Review the source and rerun it
   when the parse error is corrected.
+
+### Current File menu scenarios, 2026-11-13
+
+- All eight File menu scenarios passed, with 59 steps, on source SHA-256
+  `fd33924caea15cf97ba75ad3600c7244cf17592b6bdf26bdc9882f7cae71fb91`.
+  The source stayed unchanged during the run. Four revised interaction phrases
+  were bound to the existing native mouse and keyboard steps. Weldment remains
+  unavailable; the New submenu test checks that it is disabled.
+- Application: `c0999b07f` plus these step bindings, with unrelated README
+  and AGENTS files present. Linux, Xvfb at 1600 × 1000, and Lavapipe. Command:
+  `xvfb-run -a -s '-screen 0 1600x1000x24' cargo test --locked -p
+  oblikovati-head --lib application_scenarios_use_the_native_window --
+  --nocapture`, with `OBK_BDD_FEATURE=file-menu`, no scenario filter, and the
+  live source root. Reports are in `/tmp/obk-file-menu-full-final-20261113`,
+  a local path.
+- The latest inventory reports 23 changed application files against the
+  unchanged discovery baseline, including model browser and five viewport
+  features added to the earlier change list. The list is recorded in
+  `/tmp/obk-bdd-discovery-filemenu.log`; each changed file needs review.
