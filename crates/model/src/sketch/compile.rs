@@ -26,7 +26,7 @@ pub(super) fn prepare(
         parameter_dependencies: sketch.parameter_dependencies(),
     };
     append_arc_sources(sketch, &mut prepared)?;
-    append_pattern_point_sources(sketch, &mut prepared)?;
+    append_pattern_point_sources(sketch, parameters, &mut prepared)?;
     append_pattern_radius_sources(sketch, &mut prepared)?;
     Ok(prepared)
 }
@@ -84,6 +84,7 @@ fn append_arc_sources(sketch: &Sketch2D, prepared: &mut PreparedSketch) -> Resul
 
 fn append_pattern_point_sources(
     sketch: &Sketch2D,
+    parameters: &ParameterCollection<u64>,
     prepared: &mut PreparedSketch,
 ) -> Result<(), SketchError> {
     for link in &sketch.pattern_point_links {
@@ -93,7 +94,16 @@ fn append_pattern_point_sources(
             .map(|variable| sketch.variable_column(variable))
             .collect::<Result<_, _>>()?;
         prepared.sources.push(PreparedConstraint {
-            equation: PlanarEquation::PatternPointLink(link.offset),
+            equation: PlanarEquation::PatternPointLink(
+                match sketch
+                    .pattern_offsets
+                    .iter()
+                    .find(|offset| offset.member == link.member)
+                {
+                    Some(offset) => super::pattern_offset::resolve_offset(offset, parameters)?,
+                    None => link.offset,
+                },
+            ),
             projection: None,
             variables,
         });

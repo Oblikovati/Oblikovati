@@ -11,6 +11,55 @@ pub type SketchCopyProjectionInput = Result<SketchCopyReport, SketchCopyError>;
 /// Example: `let reply: SketchCopyBatchProjectionInput = Ok(reports);`.
 pub type SketchCopyBatchProjectionInput = Result<Vec<SketchCopyReport>, SketchCopyError>;
 impl<O: TransactionObserver> DocumentSession<O> {
+    /// Preview parameter-driven linked copies without changing the document.
+    /// Example: `session.preview_parametric_translations(sketch, &[circle], &[terms])?;`.
+    pub fn preview_parametric_translations(
+        &self,
+        sketch: DocumentSketchId,
+        entities: &[SketchEntityId],
+        occurrences: &[Vec<oblikovati_model::sketch::SketchPatternOffsetTerm>],
+    ) -> Result<crate::SketchTransformPreview, CommandError<SketchCopyError>> {
+        self.preview_projected(
+            |snapshot, reservations| {
+                snapshot.copy_parametric_translations(sketch, entities, occurrences, reservations)
+            },
+            |snapshot, reports| {
+                Ok(crate::SketchTransformPreview {
+                    geometry: snapshot
+                        .sketches
+                        .get(sketch)
+                        .map_err(SketchCopyError::Sketch)?
+                        .geometry()
+                        .clone(),
+                    members: reports
+                        .into_iter()
+                        .flat_map(|report| report.copies)
+                        .collect(),
+                })
+            },
+        )
+    }
+    /// Publish parameter-driven linked copies as one undoable command.
+    /// Example: `session.copy_parametric_translations_projected(sketch, &[circle], &[terms], |result| result)?;`.
+    pub fn copy_parametric_translations_projected<R, E>(
+        &mut self,
+        sketch: DocumentSketchId,
+        entities: &[SketchEntityId],
+        occurrences: &[Vec<oblikovati_model::sketch::SketchPatternOffsetTerm>],
+        project: impl FnOnce(SketchCopyBatchProjectionInput) -> Result<R, E>,
+    ) -> Result<R, CommandError<E>> {
+        self.run(
+            "Copy parameter-driven sketch instances",
+            |snapshot, reservations| {
+                project(snapshot.copy_parametric_translations(
+                    sketch,
+                    entities,
+                    occurrences,
+                    reservations,
+                ))
+            },
+        )
+    }
     /// Preview linked translations without changing live history or identities.
     /// Example: `session.preview_associative_translations(sketch, &[circle], &[[10.0, 0.0]])?;`.
     pub fn preview_associative_translations(

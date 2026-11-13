@@ -69,7 +69,7 @@ impl Sketch2D {
         }
         match (recipe.version, &recipe.pattern_point_links) {
             (1..=13, None) => Ok(()),
-            (14, Some(links))
+            (14..=15, Some(links))
                 if !links.is_empty()
                     || recipe
                         .pattern_radius_links

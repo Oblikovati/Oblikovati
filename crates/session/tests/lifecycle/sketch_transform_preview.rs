@@ -509,3 +509,50 @@ fn linked_copy_preview_matches_commit_and_one_undo_redo() {
     session.redo().unwrap();
     assert!(committed.same_evaluated_state(&session.snapshot().sketches));
 }
+
+#[test]
+fn parameter_driven_linked_copy_recomputes_and_undoes_spacing_edits() {
+    use oblikovati_model::sketch::SketchPatternOffsetTerm;
+    let mut session = session_with_line();
+    let terms = vec![vec![SketchPatternOffsetTerm {
+        parameter: 1,
+        coefficient: [2., 0.],
+    }]];
+    let preview = session
+        .preview_parametric_translations(DocumentSketchId(1), &[SketchEntityId(3)], &terms)
+        .unwrap();
+    let reports = session
+        .copy_parametric_translations_projected(
+            DocumentSketchId(1),
+            &[SketchEntityId(3)],
+            &terms,
+            |result| result,
+        )
+        .unwrap();
+    assert_eq!(preview.members, reports[0].copies);
+    let copy = reports[0].copies[0];
+    let offset = |session: &DocumentSession<RecordingObserver>| {
+        let geometry = session
+            .snapshot()
+            .sketches
+            .get(DocumentSketchId(1))
+            .unwrap()
+            .geometry();
+        let original = geometry.line(SketchEntityId(3)).unwrap();
+        let member = geometry.line(copy).unwrap();
+        let source = geometry.point(original.endpoints[0]).unwrap().position;
+        let target = geometry.point(member.endpoints[0]).unwrap().position;
+        [target[0] - source[0], target[1] - source[1]]
+    };
+    assert!((offset(&session)[0] - 2.).abs() < 1e-7);
+    session
+        .run("Edit spacing", |snapshot, _| {
+            snapshot.parameters.set_expression(1, "3 cm")
+        })
+        .unwrap();
+    assert!((offset(&session)[0] - 6.).abs() < 1e-7);
+    session.undo().unwrap();
+    assert!((offset(&session)[0] - 2.).abs() < 1e-7);
+    session.redo().unwrap();
+    assert!((offset(&session)[0] - 6.).abs() < 1e-7);
+}

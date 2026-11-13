@@ -118,6 +118,7 @@ pub struct Sketch2D {
     offset_splines: Vec<SketchOffsetSpline2D>,
     constraints: Vec<SketchConstraint>,
     pattern_point_links: Vec<SketchPatternPointLink>,
+    pattern_offsets: Vec<SketchPatternOffset>,
     pattern_radius_links: Vec<SketchPatternRadiusLink>,
     reference_dimensions: std::collections::BTreeSet<SketchConstraintId>,
     dimension_drive_limits: std::collections::BTreeMap<SketchConstraintId, SketchDimensionLimits>,
@@ -164,6 +165,8 @@ mod rectangular_pattern_layout;
 pub use rectangular_pattern_layout::{SketchRectangularOccurrence, SketchRectangularPatternLayout};
 mod pattern_radius_link;
 pub use pattern_radius_link::SketchPatternRadiusLink;
+mod pattern_offset;
+pub use pattern_offset::{SketchPatternOffset, SketchPatternOffsetTerm};
 mod pattern_point_link;
 pub use pattern_point_link::SketchPatternPointLink;
 mod rectangle_seed;

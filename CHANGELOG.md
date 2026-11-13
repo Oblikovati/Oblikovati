@@ -32,6 +32,8 @@
 
 ### Added
 
+- Added parameter-driven spacing for linked sketch copies and recompute.
+
 - Linked translated sketch copies to their seed points and circle radii through solve and history.
 
 - Added saved structural point links for associative sketch-pattern solving.

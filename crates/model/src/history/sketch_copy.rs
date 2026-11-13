@@ -5,6 +5,28 @@ use crate::{
     sketch::{SketchCopyError, SketchCopyOperation, SketchCopyReport, SketchEntityId},
 };
 impl DocumentSnapshot {
+    /// Copy linked members whose offsets are evaluated from document parameters.
+    /// Example: `snapshot.copy_parametric_translations(sketch, &[circle], &[terms], reservations)?;`.
+    pub fn copy_parametric_translations(
+        &mut self,
+        sketch: DocumentSketchId,
+        entities: &[SketchEntityId],
+        occurrences: &[Vec<crate::sketch::SketchPatternOffsetTerm>],
+        reservations: &mut RecipeReservations<'_>,
+    ) -> Result<Vec<SketchCopyReport>, SketchCopyError> {
+        let source = self.sketches.get(sketch).map_err(SketchCopyError::Sketch)?;
+        let mut geometry = source.geometry().clone();
+        let reports = geometry.copy_parametric_translations(
+            entities,
+            occurrences,
+            &self.parameters,
+            &mut || reservations.allocate_sketch_entity(),
+        )?;
+        self.sketches
+            .replace_geometry(sketch, geometry)
+            .map_err(SketchCopyError::Sketch)?;
+        Ok(reports)
+    }
     /// Copy and link translated sketch members as one document edit.
     /// Example: `snapshot.copy_associative_translations(sketch, &[circle], &[[10.0, 0.0]], reservations)?;`.
     pub fn copy_associative_translations(

@@ -44,6 +44,11 @@ impl Sketch2D {
                 dependencies.push(parameter);
             }
         }
+        for term in self.pattern_offsets.iter().flat_map(|offset| &offset.terms) {
+            if !dependencies.contains(&term.parameter) {
+                dependencies.push(term.parameter);
+            }
+        }
         dependencies
     }
 }

@@ -15,6 +15,11 @@ pub enum SketchError {
         point: SketchEntityId,
         cause: Box<crate::history::DocumentSketchPlacementError>,
     },
+    PatternParameter {
+        member: SketchEntityId,
+        parameter: u64,
+        cause: Box<ParameterError<u64>>,
+    },
     Parameter {
         constraint: SketchConstraintId,
         parameter: u64,
@@ -55,6 +60,11 @@ impl fmt::Display for SketchError {
         match self {
             Self::Definition(message) => message.fmt(f),
             Self::ProjectionSource { point, cause } => point_failure(f, point, cause),
+            Self::PatternParameter {
+                member,
+                parameter,
+                cause,
+            } => write!(f, "pattern point {member:?} parameter {parameter}: {cause}"),
             Self::Parameter {
                 constraint,
                 parameter,
@@ -132,6 +142,7 @@ impl Error for SketchError {
             Self::Definition(_) => None,
             Self::ProjectionSource { cause, .. } => Some(cause.as_ref()),
             Self::Parameter { cause, .. } => Some(cause),
+            Self::PatternParameter { cause, .. } => Some(cause.as_ref()),
             Self::Numerical(cause) => Some(cause),
             Self::AngleSelection { cause, .. }
             | Self::ContactSelection { cause, .. }
