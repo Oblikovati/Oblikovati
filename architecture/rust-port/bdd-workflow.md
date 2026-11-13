@@ -89,3 +89,16 @@ their accessible location in the ledger. If reports are lost, the run remains
 historical context, not auditable current acceptance evidence. Do not sum
 reports from different revisions, changed scenario files, or overlapping
 filters as a current total.
+
+## Diagnose a feature
+
+Set `OBK_BDD_DIAGNOSTIC=1` on the focused command to write `gap-report.json`.
+The runner uses the native window and continues after a failed or unbound step.
+It marks subsequent step results as tainted because the earlier failure may have
+changed the world. The report includes the exact feature text and is discarded
+if that source changes during the run. Ambiguous bindings and window setup
+failures have their own classifications. A fixture tag alone does not establish
+that a fixture is missing; investigate fixture failures before classifying them.
+
+Diagnostic results are for sizing work. Run the normal command without
+`OBK_BDD_DIAGNOSTIC` to collect acceptance evidence.

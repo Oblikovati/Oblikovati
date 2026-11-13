@@ -30,7 +30,26 @@
 
 - Kept origin-plane labels inside the clickable workspace when starting a sketch. (#3857)
 
+- Included User Commands in the ribbon panel visibility controls. (#3856)
+
+- Added a missing-file warning and filename recovery to ribbon settings import. (#3856)
+
+- Fixed ribbon customization to keep display options per command and restore them after a staged removal. (#3856)
+
+- Kept reversed ribbon customization edits pending until Apply or Cancel. (#3856)
+
+- Fixed Escape in ribbon customization to discard pending edits without cancelling the active sketch. (#3856)
+
+- Show the model's reason when a sketch dimension value is refused. (#3855)
+
+- Reject driving dimension values that fail the sketch constraint's target
+  checks, including a zero radius, before saving the edit. (#3855)
+
+- Resolved viewport body colors from document and catalog appearances. (#3859)
+
 ### Added
+
+- Added a diagnostic mode to report native BDD step gaps after failures. (#3863)
 
 - Added browser rows and an editor for saved rectangular sketch patterns.
 
@@ -147,20 +166,3 @@
 - Added arrow-key view rotation while ribbon key tips are visible. (#3856)
 
 - Added keyboard access to compact and side-docked ribbon groups for part documents. (#3856)
-
-### Fixed
-
-- Included User Commands in the ribbon panel visibility controls. (#3856)
-
-- Added a missing-file warning and filename recovery to ribbon settings import. (#3856)
-
-- Fixed ribbon customization to keep display options per command and restore them after a staged removal. (#3856)
-
-- Kept reversed ribbon customization edits pending until Apply or Cancel. (#3856)
-
-- Fixed Escape in ribbon customization to discard pending edits without cancelling the active sketch. (#3856)
-
-- Show the model's reason when a sketch dimension value is refused. (#3855)
-
-- Reject driving dimension values that fail the sketch constraint's target
-  checks, including a zero radius, before saving the edit. (#3855)

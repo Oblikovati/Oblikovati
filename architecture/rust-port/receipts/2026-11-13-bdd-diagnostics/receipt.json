@@ -1,0 +1,32 @@
+{
+  "date": "2026-11-13",
+  "issue": "https://github.com/Oblikovati/Oblikovati/issues/3863",
+  "base_commit": "899ba78335f081d3621d21f8885e0fe70c822d0e",
+  "tested_file_sha256": {
+    "crates/head/tests/application/benchmark.rs": "2e492c2bfd97f281e14d64bedb64b40433b3f96f5ad220a431b598977924664e",
+    "crates/head/tests/application/gap_runner.rs": "36cdb4e0e5e826f3d1ada35c7d2d1b12306b44b94b30e697ea0fdbb8ba4feb51",
+    "crates/head/tests/application/gap_runner_tests.rs": "57e618635a4c7bc5a32b7f3237ab5c27811459f20c4471ebb4579ecb3b78a0ed"
+  },
+  "scenario_source_sha256": "4e20c3cb39c613164227fe6e491f1bc7ceb2a51b9a1ffbb33bc80f26c9facd29",
+  "diagnostic_report_sha256": "4ed44985075eb2eb0011a58bb916dfa391127f8071d10fa032c6dd75867d979b",
+  "renderer": "Xvfb 1920x1080x24 with configured native Vulkan runtime",
+  "checks": [
+    {
+      "command": "cargo test --locked -p oblikovati-head --lib gap_runner::tests",
+      "result": "8 passed"
+    },
+    {
+      "command": "OBK_BDD_DIAGNOSTIC=1 OBK_BDD_FEATURE=smoke cargo test --locked -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture",
+      "result": "2 diagnostic scenarios: one expected failure followed by two tainted passes; next window clean"
+    },
+    {
+      "command": "OBK_BDD_SCENARIO=\"next window starts clean\" cargo test --locked -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture",
+      "result": "normal acceptance runner: 1 scenario and 2 steps passed"
+    },
+    {
+      "command": "cargo clippy --locked -p oblikovati-head --all-targets --all-features -- -D warnings",
+      "result": "passed"
+    }
+  ],
+  "scope": "Synthetic diagnostic regression only; not an MCAD-Scenarios acceptance result."
+}

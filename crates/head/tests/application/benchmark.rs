@@ -9,6 +9,7 @@ use std::{fmt, fs, path::PathBuf};
 mod binding_inventory;
 mod diagnostics;
 mod documents;
+mod gap_runner;
 mod refinements;
 mod solid_visibility;
 mod viewport_background;
@@ -138,6 +139,9 @@ fn application_scenarios_use_the_native_window() {
 }
 /// Run one area's features. `OBK_BDD_SCENARIO` narrows a run to matching scenario names.
 fn run_scenarios(root: PathBuf, keep_feature: fn(&cucumber::gherkin::Feature) -> bool) {
+    if std::env::var_os("OBK_BDD_DIAGNOSTIC").is_some() {
+        return gap_runner::run(&root, keep_feature);
+    }
     let reports = world::reports_folder();
     fs::create_dir_all(&reports).unwrap();
     let json = fs::File::create(reports.join("cucumber.json")).unwrap();
