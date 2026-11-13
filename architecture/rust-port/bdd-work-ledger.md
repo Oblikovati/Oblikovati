@@ -692,3 +692,20 @@ revisions checked before they support a current pass claim.
   unrelated README and AGENTS files were present. Linux, Xvfb at 1600 × 1000
   and Lavapipe. The local report is `/tmp/obk-ribbon-import-v3-final-20261113`;
   the built-in import log is `/tmp/obk-builtin-import-native-20261113.log`.
+
+### Working built-in command relocation, 2026-11-13
+
+- The same saved location path now handles both unavailable Copy and the
+  working sketch Measure command. The main and expanded controls dispatch the
+  same Measure action and keep its sketch-only availability.
+- Two native Measure tests passed, including moving Measure to the expanded
+  panel, running it there, moving it back, and running it again. Three native
+  Clipboard tests passed, including restart and import/export. The GUI ribbon
+  customization tests passed 36 cases, the command identity test passed, and
+  GUI Clippy passed. Application: `9eaeb2d1f` plus this change; unrelated
+  README and AGENTS files were present. Linux, Xvfb at 1600 × 1000, Lavapipe.
+- The native Copy relocation BDD scenario still passed all 15 steps on source
+  SHA-256 `645576c3b62e89cdb6c668d5579123e6880a33f9e4a8020f922f1b08e0502ca2`,
+  unchanged during the run. The local report is
+  `/tmp/obk-builtin-working-copy-bdd-20261113`. Part-mode Measure remains
+  unavailable; the full ribbon feature has not been rerun.

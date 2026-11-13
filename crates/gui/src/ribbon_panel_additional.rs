@@ -184,10 +184,9 @@ fn draw_window(
                 close |= !context.owners.customization.has_expanded(tab);
             } else {
                 commands(context, tab, panel, display);
-                if panel == RibbonPanel::ToolClipboard {
-                    close |= !context.owners.customization.builtin_expanded(
-                        &crate::ribbon_panel_contents::clipboard_command_id(context.state),
-                    );
+                if builtin::supports(panel) {
+                    close |=
+                        !builtin::is_expanded(panel, context.state, context.owners.customization);
                 }
             }
             ui.separator();
@@ -265,13 +264,15 @@ fn commands(
     display: &mut RibbonDisplayState,
 ) {
     let ui = context.ui;
-    if panel == RibbonPanel::ToolClipboard {
-        let id = crate::ribbon_panel_contents::clipboard_command_id(context.state);
-        let right = context
-            .owners
-            .customization
-            .builtin_control(ui, &id, "Copy", true);
-        context.owners.quick_access.command_took_right_click |= right;
+    if builtin::supports(panel) {
+        builtin::draw(
+            ui,
+            panel,
+            context.state,
+            &mut context.owners,
+            context.actions,
+            true,
+        );
         return;
     }
     if panel == RibbonPanel::Create {

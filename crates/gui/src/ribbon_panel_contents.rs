@@ -102,10 +102,8 @@ pub(crate) fn draw_panel_content(
             }
             return application || document;
         }
-        RibbonPanel::ToolClipboard => {
-            let id = clipboard_command_id(state);
-            let right = owners.customization.builtin_control(ui, &id, "Copy", false);
-            owners.quick_access.command_took_right_click |= right;
+        RibbonPanel::ToolClipboard | RibbonPanel::ToolMeasure => {
+            crate::ribbon_panels::builtin::draw(ui, panel, state, owners, actions, false);
         }
         RibbonPanel::ToolFind => {
             let disabled = ui.begin_disabled(
@@ -175,20 +173,6 @@ pub(crate) fn draw_panel_content(
         other => single_command(ui, other, state, owners.icons, actions),
     }
     false
-}
-/// The same built-in command has an independent location in each document ribbon.
-pub(crate) fn clipboard_command_id(state: &GuiCommandState) -> String {
-    use oblikovati_api::types::{
-        DOCUMENT_ASSEMBLY, DOCUMENT_DRAWING, DOCUMENT_PART, DOCUMENT_PRESENTATION,
-    };
-    let document = match state.document_type {
-        Some(DOCUMENT_PART) => "part",
-        Some(DOCUMENT_ASSEMBLY) => "assembly",
-        Some(DOCUMENT_DRAWING) => "drawing",
-        Some(DOCUMENT_PRESENTATION) => "presentation",
-        _ => "unknown",
-    };
-    format!("{document}.tools.clipboard.copy")
 }
 /// Commands a document kind will offer: shown muted with the reason, never as a working button.
 const NOT_PORTED: &str = "This command is not available in this build.";
@@ -461,22 +445,4 @@ fn sketch_create_controls(
         [108., 18.],
         actions,
     );
-}
-
-#[cfg(test)]
-mod builtin_identity_tests {
-    use super::*;
-    #[test]
-    fn clipboard_locations_are_independent_for_document_kinds() {
-        let mut state = GuiCommandState {
-            document_type: Some(oblikovati_api::types::DOCUMENT_PART),
-            ..Default::default()
-        };
-        assert_eq!(clipboard_command_id(&state), "part.tools.clipboard.copy");
-        state.document_type = Some(oblikovati_api::types::DOCUMENT_ASSEMBLY);
-        assert_eq!(
-            clipboard_command_id(&state),
-            "assembly.tools.clipboard.copy"
-        );
-    }
 }

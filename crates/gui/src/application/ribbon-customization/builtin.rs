@@ -144,26 +144,20 @@ impl RibbonCustomization {
         }
         Ok(())
     }
-    /// Draw an unavailable built-in command and its location menu.
-    /// Example: `customization.builtin_control(ui, id, "Copy", false)`.
-    pub(crate) fn builtin_control(
+    /// Draw a built-in command and its location menu; example: `layout.builtin_draw(ui, id, false, draw)`.
+    pub(crate) fn builtin_draw(
         &mut self,
         ui: &imgui::Ui,
         id: &str,
-        label: &str,
         expanded: bool,
+        draw: impl FnOnce(),
     ) -> bool {
         if self.builtin_expanded(id) != expanded {
             return false;
         }
         let _command_id = ui.push_id(id);
-        let disabled = ui.begin_disabled(true);
-        crate::widget_abi::button(ui, label, [108., 26.]);
-        drop(disabled);
+        draw();
         let hovered = ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED);
-        if hovered {
-            ui.tooltip_text("This command is not available in this build.");
-        }
         let right = hovered
             && (ui.is_mouse_clicked(imgui::MouseButton::Right)
                 || ui.is_mouse_released(imgui::MouseButton::Right));

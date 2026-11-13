@@ -7,6 +7,8 @@ use imgui::Ui;
 use std::collections::BTreeMap;
 #[path = "ribbon_panel_additional.rs"]
 mod additional;
+#[path = "ribbon_builtin.rs"]
+pub(crate) mod builtin;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum RibbonPanel {
@@ -603,10 +605,7 @@ fn draw_expanded(
         context.owners.icons.cursor(ui, origin, [0., 66.]);
         let expandable = context.additional_allowed
             && (additional::available(tab, panel)
-                || (panel == RibbonPanel::ToolClipboard
-                    && context.owners.customization.builtin_expanded(
-                        &crate::ribbon_panel_contents::clipboard_command_id(context.state),
-                    ))
+                || builtin::is_expanded(panel, context.state, context.owners.customization)
                 || (panel == RibbonPanel::UserCommands
                     && context.owners.customization.has_expanded(tab)));
         if context.show_panel_titles {
