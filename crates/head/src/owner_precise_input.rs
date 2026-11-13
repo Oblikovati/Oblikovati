@@ -261,15 +261,7 @@ impl<
             .map_err(|cause| cause.to_string())?
             .geometry();
         let target = context_target(geometry, edit.plane, position, window)?;
-        let picked = target.point;
         self.sketch_memory.context = Some(target);
-        if picked.is_some() {
-            self.store_sketch_click(
-                edit,
-                picked,
-                oblikovati_session::selection::SelectionClickMode::Replace,
-            )?;
-        }
         Ok(())
     }
     pub(super) fn gui_sketch_context(&self) -> Option<oblikovati_gui::GuiSketchContext> {

@@ -228,3 +228,63 @@ fn marking_menu_disables_commands_during_an_open_transaction() {
         world.close();
     }
 }
+
+#[test]
+fn sketch_context_delete_requires_selection_and_undo_restores_the_line() {
+    let mut world = ApplicationWorld::new();
+    world.start_empty_sketch();
+    world.click_text("Line");
+    world.sketch_click([620, 300]);
+    world.sketch_click([840, 420]);
+    world.escape();
+    world.right_click([620, 300]);
+    world.pump(Vec::new());
+    let delete = world
+        .frame
+        .runs
+        .iter()
+        .find(|run| run.text == "Delete" && run.center()[0] > 500. && run.center()[1] > 200.)
+        .expect("expected Delete in sketch context menu");
+    assert!(
+        delete.alpha < u8::MAX,
+        "Delete entries: {:?}",
+        world
+            .frame
+            .runs
+            .iter()
+            .filter(|run| run.text == "Delete")
+            .collect::<Vec<_>>()
+    );
+    let position = delete.center();
+    world.click(diagnostics::pointer_pixels(position));
+    assert_eq!(world.edited_geometry().lines().len(), 1);
+    world.escape();
+    world.sketch_click([730, 360]);
+    assert!(world.state().sketch_delete_available);
+    let selected = Client::new(world.app().owner.document_host())
+        .model()
+        .selection()
+        .unwrap();
+    world.right_click([620, 300]);
+    world.pump(Vec::new());
+    assert_eq!(
+        Client::new(world.app().owner.document_host())
+            .model()
+            .selection()
+            .unwrap(),
+        selected
+    );
+    let delete = world
+        .frame
+        .runs
+        .iter()
+        .find(|run| run.text == "Delete" && run.center()[0] > 500. && run.center()[1] > 200.)
+        .expect("expected Delete in sketch context menu");
+    assert_eq!(delete.alpha, u8::MAX);
+    let position = delete.center();
+    world.click(diagnostics::pointer_pixels(position));
+    assert!(world.edited_geometry().lines().is_empty());
+    world.undo();
+    assert_eq!(world.edited_geometry().lines().len(), 1);
+    world.close();
+}

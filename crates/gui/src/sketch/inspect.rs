@@ -100,6 +100,16 @@ fn center_point_row(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShell
         None => GuiShellAction::ToggleCenterPointFormat,
     });
 }
+fn delete_selection_row(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
+    let action = GuiShellAction::DeleteSketchSelection;
+    if ui
+        .menu_item_config("Delete")
+        .enabled(action.enabled(state))
+        .build()
+    {
+        actions.push(action);
+    }
+}
 fn select_other_row(ui: &Ui, state: &GuiCommandState) {
     let Some(context) = state
         .sketch_context
@@ -134,6 +144,7 @@ pub(crate) fn canvas_menu(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<Gu
     }
     repeat_row(ui, state, actions);
     center_point_row(ui, state, actions);
+    delete_selection_row(ui, state, actions);
     select_other_row(ui, state);
     if ui.menu_item("Measure") {
         actions.push(GuiShellAction::Inspect(GuiInspectAction::StartMeasure));

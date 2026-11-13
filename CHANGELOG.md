@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Preserved sketch selection when opening a point context menu. (#3856)
+
 - Disabled sketch marking-menu commands while a transaction is open. (#3856)
 
 - Made Escape from the ribbon target selector discard the pending customization. (#3856)
@@ -11,6 +13,8 @@
 - Kept origin-plane labels inside the clickable workspace when starting a sketch. (#3857)
 
 ### Added
+
+- Added selection-aware Delete to the sketch context menu. (#3856)
 
 - Added sketch marking-menu overflow command editing. (#3856)
 
