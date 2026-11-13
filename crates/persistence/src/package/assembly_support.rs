@@ -48,6 +48,20 @@ impl DocumentPackage {
         &self,
         records: &[AssemblyOccurrenceRecipe],
     ) -> Result<Self, PackageCodecError> {
+        self.capture_assembly_occurrences(records, None)
+    }
+    pub(super) fn with_owned_assembly_occurrences(
+        &self,
+        records: &[AssemblyOccurrenceRecipe],
+        references: &std::collections::BTreeSet<String>,
+    ) -> Result<Self, PackageCodecError> {
+        self.capture_assembly_occurrences(records, Some(references))
+    }
+    fn capture_assembly_occurrences(
+        &self,
+        records: &[AssemblyOccurrenceRecipe],
+        references: Option<&std::collections::BTreeSet<String>>,
+    ) -> Result<Self, PackageCodecError> {
         let previous = self.assembly_occurrences()?.ok_or_else(|| {
             PackageCodecError(format!(
                 "document type {}: expected an assembly",
@@ -60,7 +74,7 @@ impl DocumentPackage {
         if same_authored_occurrences(&previous, records) {
             return Ok(self.clone());
         }
-        self.require_safe_occurrence_change(&previous, records)?;
+        self.require_safe_occurrence_change(&previous, records, references)?;
         let encoded = serde_yaml_ng::to_value(records).map_err(|cause| PackageCodecError(format!("assembly occurrences {records:?}: expected serializable occurrence records: {cause}")))?;
         let mut candidate = self.clone();
         let mut model = candidate
@@ -77,6 +91,7 @@ impl DocumentPackage {
         &self,
         previous: &[AssemblyOccurrenceRecipe],
         records: &[AssemblyOccurrenceRecipe],
+        references: Option<&std::collections::BTreeSet<String>>,
     ) -> Result<(), PackageCodecError> {
         for name in ["patterns", "features"] {
             if let Some(value) = self.root.get("model").and_then(|model| model.get(name))
@@ -88,10 +103,7 @@ impl DocumentPackage {
                 )));
             }
         }
-        if component_references(previous) != component_references(records) {
-            return Err(PackageCodecError("assembly occurrence component references changed: expected the reference graph owner to perform this edit".into()));
-        }
-        Ok(())
+        validate_reference_changes(previous, records, references)
     }
     /// Refuse live reconstruction until components can be resolved; example: `package.require_supported_assembly()?` before registration.
     pub fn require_supported_assembly(&self) -> Result<(), PackageCodecError> {
@@ -136,6 +148,28 @@ impl DocumentPackage {
         }
         Ok(())
     }
+}
+fn validate_reference_changes(
+    previous: &[AssemblyOccurrenceRecipe],
+    records: &[AssemblyOccurrenceRecipe],
+    authorized: Option<&std::collections::BTreeSet<String>>,
+) -> Result<(), PackageCodecError> {
+    let before = component_references(previous);
+    let after = component_references(records);
+    if before == after {
+        return Ok(());
+    }
+    let Some(authorized) = authorized else {
+        return Err(PackageCodecError("assembly occurrence component references changed: expected the reference graph owner to perform this edit".into()));
+    };
+    for added in after.difference(&before) {
+        if !authorized.contains(*added) {
+            return Err(PackageCodecError(format!(
+                "assembly component reference {added:?}: expected an owned reference to its current file"
+            )));
+        }
+    }
+    Ok(())
 }
 fn same_authored_occurrences(
     left: &[AssemblyOccurrenceRecipe],

@@ -249,7 +249,8 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         version: &str,
         source: &mut dyn GuidSource,
     ) -> Result<(), FileWorkspaceError> {
-        let mut target = bound_target(&mut self.retained, &mut self.files, id)?;
+        let references = self.owned_assembly_references(id);
+        let mut target = bound_target(&mut self.retained, &mut self.files, id, references)?;
         self.workspace
             .save(id, version, source, &mut target)
             .map_err(FileWorkspaceError::Save)
@@ -279,7 +280,8 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         if self.has_reference_dependents(id) {
             return Err(FileWorkspaceError::ReferencedModel(id));
         }
-        let mut target = bound_target(&mut self.retained, &mut self.files, id)?;
+        let references = self.owned_assembly_references(id);
+        let mut target = bound_target(&mut self.retained, &mut self.files, id, references)?;
         let observer = self
             .workspace
             .close_saving_changes(id, version, source, &mut target)
@@ -333,6 +335,7 @@ fn bound_target<'a, F: DocumentFiles>(
     retained: &'a mut BTreeMap<u64, RetainedFile>,
     files: &'a mut F,
     id: u64,
+    references: std::collections::BTreeSet<String>,
 ) -> Result<ParameterPackageTarget<'a, F>, FileWorkspaceError> {
     let file = retained
         .get_mut(&id)
@@ -345,6 +348,7 @@ fn bound_target<'a, F: DocumentFiles>(
     let name = name::saved_name(file, path);
     Ok(ParameterPackageTarget::new(&mut file.package, path, files)
         .with_display_name(name)
+        .with_assembly_references(references)
         .with_drawing_views(file.drawing_views.clone()))
 }
 

@@ -53,12 +53,14 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         version: &str,
         source: &mut dyn GuidSource,
     ) -> Result<(), FileWorkspaceError> {
+        let references = self.owned_assembly_references(id);
         let file = self.retained.get_mut(&id).expect("validated binding");
         file.apply_picture();
         let name = name::saved_name(file, &destination);
         let mut target =
             ParameterPackageTarget::new(&mut file.package, &destination, &mut self.files)
                 .with_display_name(name)
+                .with_assembly_references(references)
                 .with_drawing_views(file.drawing_views.clone());
         self.workspace
             .save(id, version, source, &mut target)

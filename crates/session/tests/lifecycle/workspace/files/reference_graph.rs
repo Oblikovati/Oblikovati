@@ -3,6 +3,65 @@ use super::*;
 use oblikovati_model::assembly::AssemblyOccurrenceRecipe;
 type ReferenceHost = FileWorkspace<ContentObserver, RecordingWorkspace, WorkspaceFiles>;
 
+#[test]
+fn assembly_save_requires_each_new_reference_to_match_its_owned_file() {
+    let files = WorkspaceFiles::default();
+    files
+        .contents
+        .borrow_mut()
+        .insert(path("a.obk"), fixture(1));
+    files
+        .contents
+        .borrow_mut()
+        .insert(path("b.obk"), fixture(2));
+    let mut host = FileWorkspace::new(RecordingWorkspace::default(), files);
+    let mut source = SequenceGuids(1000);
+    let open = |host: &mut ReferenceHost, source: &mut SequenceGuids, name: &str| {
+        host.open(
+            &path(name),
+            ContentObserver,
+            "alpha",
+            source,
+            OpenActivation::Background,
+        )
+        .unwrap()
+        .session_id()
+    };
+    let first = open(&mut host, &mut source, "a.obk");
+    let second = open(&mut host, &mut source, "b.obk");
+    let reference = path("a.obk").to_str().unwrap().to_owned();
+    let owner = assembly(&mut host, &mut source, &[&reference]);
+    assert!(
+        host.save_as(owner, &path("assembly.oad"), "alpha", &mut source)
+            .is_err()
+    );
+    host.attach_document_reference(owner, reference.clone(), second, false)
+        .unwrap();
+    assert!(
+        host.save_copy(owner, &path("copy.oad"), None, "alpha", &mut source)
+            .is_err()
+    );
+    host.attach_document_reference(owner, reference.clone(), first, false)
+        .unwrap();
+    host.save_copy(owner, &path("copy.oad"), None, "alpha", &mut source)
+        .unwrap();
+    host.save_as(owner, &path("assembly.oad"), "alpha", &mut source)
+        .unwrap();
+    host.commands(owner).unwrap().undo().unwrap();
+    host.save(owner, "alpha", &mut source).unwrap();
+    host.commands(owner).unwrap().redo().unwrap();
+    host.close_saving_changes(owner, "alpha", &mut source)
+        .unwrap();
+    let saved = host.files().contents.borrow();
+    for name in ["copy.oad", "assembly.oad"] {
+        let package = DocumentPackage::decode(&saved[&path(name)]).unwrap();
+        assert_eq!(
+            package.assembly_occurrences().unwrap().unwrap()[0].component,
+            reference
+        );
+    }
+}
+
 fn assembly(host: &mut ReferenceHost, source: &mut SequenceGuids, names: &[&str]) -> u64 {
     let package = DocumentPackage::empty(oblikovati_api::types::DOCUMENT_ASSEMBLY, "Assembly");
     let id = host

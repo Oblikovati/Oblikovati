@@ -17,9 +17,11 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
     ) -> Result<FileIdentity, FileWorkspaceError> {
         self.retained_file(id)?;
         let destination = self.unowned_destination(requested)?;
+        let references = self.owned_assembly_references(id);
         let original = &self.retained[&id];
         let mut package = copy_package(original, metadata);
         let mut target = ParameterPackageTarget::new(&mut package, &destination, &mut self.files)
+            .with_assembly_references(references)
             .with_drawing_views(original.drawing_views.clone());
         self.workspace
             .save_copy(id, version, source, &mut target)

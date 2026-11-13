@@ -82,6 +82,22 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
             .flatten()
             .filter(|model| self.retained.contains_key(model))
     }
+    pub(super) fn owned_assembly_references(&self, owner: u64) -> BTreeSet<String> {
+        self.document_references
+            .get(&owner)
+            .into_iter()
+            .flat_map(|refs| refs.keys())
+            .filter(|name| {
+                let path = Path::new(name);
+                path.is_absolute()
+                    && self
+                        .document_reference(owner, name)
+                        .and_then(|target| self.path(target).ok())
+                        == Some(path)
+            })
+            .cloned()
+            .collect()
+    }
     /// Find a drawing model; example: `files.drawing_reference(drawing, name)`.
     pub fn drawing_reference(&self, drawing: u64, name: &str) -> Option<u64> {
         self.document_reference(drawing, name)

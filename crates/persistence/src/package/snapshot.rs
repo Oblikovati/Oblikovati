@@ -8,6 +8,7 @@ use oblikovati_model::{
     history::{DocumentSnapshot, DocumentSnapshotTarget},
     identity::{DocumentSaveTarget, FileIdentity, RecipeDigest},
 };
+use std::collections::BTreeSet;
 use std::{error::Error, fmt, path::Path};
 
 /// Prepare a live parameter/property recipe while retaining all other package sections.
@@ -18,6 +19,7 @@ pub struct ParameterPackageTarget<'a, Files> {
     prepared: Option<DocumentPackage>,
     display_name: Option<String>,
     drawing_views: Option<SavedDrawingViews>,
+    assembly_references: Option<BTreeSet<String>>,
 }
 
 /// A snapshot could not be captured or atomically persisted.
@@ -43,7 +45,14 @@ impl<'a, Files: AtomicFiles> ParameterPackageTarget<'a, Files> {
             prepared: None,
             display_name: None,
             drawing_views: None,
+            assembly_references: None,
         }
+    }
+    /// Supply references verified by the document owner; example: `target.with_assembly_references(names)`.
+    pub fn with_assembly_references(mut self, names: BTreeSet<String>) -> Self {
+        self.assembly_references = Some(names);
+        self.prepared = None;
+        self
     }
     /// Add saved drawing presentation to the same atomic candidate; example: `target.with_drawing_views(views)`.
     pub fn with_drawing_views(mut self, views: Option<SavedDrawingViews>) -> Self {
@@ -82,6 +91,7 @@ impl<Files: AtomicFiles> DocumentSnapshotTarget for ParameterPackageTarget<'_, F
             parameter_high_water,
             sketch_marks,
             feature_high_water,
+            self.assembly_references.as_ref(),
         )?;
         let candidate = self.named_candidate(candidate);
         let candidate = match &self.drawing_views {
@@ -148,32 +158,42 @@ fn capture_candidate(
     parameter_high_water: u64,
     sketch_marks: oblikovati_model::history::SketchReservationMarks,
     feature_high_water: u64,
+    assembly_references: Option<&BTreeSet<String>>,
 ) -> Result<DocumentPackage, SnapshotPackageError> {
     snapshot
         .validate_scalar_ownership()
         .map_err(|error| SnapshotPackageError::Codec(PackageCodecError(error.to_string())))?;
-    capture_nonparameter_sections(original, snapshot, sketch_marks, feature_high_water)?
-        .with_derived_reservations(derived_high_water)
-        .map_err(SnapshotPackageError::Codec)?
-        .with_parameter_properties(
-            &snapshot.parameters,
-            &snapshot.properties,
-            snapshot.parameters.units().clone(),
-        )
-        .map_err(SnapshotPackageError::Codec)?
-        .with_parameter_reservations(&snapshot.parameters, parameter_high_water)
-        .map_err(SnapshotPackageError::Codec)
+    capture_nonparameter_sections(
+        original,
+        snapshot,
+        sketch_marks,
+        feature_high_water,
+        assembly_references,
+    )?
+    .with_derived_reservations(derived_high_water)
+    .map_err(SnapshotPackageError::Codec)?
+    .with_parameter_properties(
+        &snapshot.parameters,
+        &snapshot.properties,
+        snapshot.parameters.units().clone(),
+    )
+    .map_err(SnapshotPackageError::Codec)?
+    .with_parameter_reservations(&snapshot.parameters, parameter_high_water)
+    .map_err(SnapshotPackageError::Codec)
 }
 fn capture_nonparameter_sections(
     original: &DocumentPackage,
     snapshot: &DocumentSnapshot,
     sketch_marks: oblikovati_model::history::SketchReservationMarks,
     feature_high_water: u64,
+    assembly_references: Option<&BTreeSet<String>>,
 ) -> Result<DocumentPackage, SnapshotPackageError> {
     let candidate = match &snapshot.assembly {
-        Some(occurrences) => original
-            .with_assembly_occurrences(occurrences)
-            .map_err(SnapshotPackageError::Codec)?,
+        Some(occurrences) => match assembly_references {
+            Some(names) => original.with_owned_assembly_occurrences(occurrences, names),
+            None => original.with_assembly_occurrences(occurrences),
+        }
+        .map_err(SnapshotPackageError::Codec)?,
         None => original.clone(),
     };
     candidate
