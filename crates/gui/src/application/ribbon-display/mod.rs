@@ -96,6 +96,8 @@ pub(crate) struct RibbonDisplayState {
     pub side_anchor: Option<SideAnchor>,
     context_requested: bool,
     context_expansion: Option<(RibbonTab, RibbonPanel)>,
+    context_command: Option<&'static str>,
+    context_had_submenu: bool,
     context_bounds: Option<[[f32; 2]; 2]>,
     submenu_bounds: Option<[[f32; 2]; 2]>,
     docking_selected: bool,
@@ -130,6 +132,8 @@ impl Default for RibbonDisplayState {
             side_anchor: None,
             context_requested: false,
             context_expansion: None,
+            context_command: None,
+            context_had_submenu: false,
             context_bounds: None,
             submenu_bounds: None,
             docking_selected: false,
@@ -183,6 +187,8 @@ impl RibbonDisplayState {
     /// Ask for the context menu from any of the ribbon's windows.
     pub(crate) fn request_context_menu(&mut self) {
         self.context_expansion = None;
+        self.context_command = None;
+        self.context_had_submenu = false;
         self.context_requested = true;
     }
     /// Move the ribbon; a temporary panel opened for the old place closes.
@@ -230,6 +236,8 @@ impl RibbonDisplayState {
         }
         let Some(_menu) = ui.begin_popup(CONTEXT_MENU) else {
             self.context_expansion = None;
+            self.context_command = None;
+            self.context_had_submenu = false;
             self.context_bounds = None;
             self.submenu_bounds = None;
             self.docking_open = false;
@@ -238,6 +246,10 @@ impl RibbonDisplayState {
         };
         self.capture_context_bounds(ui);
         muted_context_item(ui, "Ribbon Appearance");
+        if self.context_command.is_some() {
+            muted_context_item(ui, "Add to Quick Access Toolbar");
+            muted_context_item(ui, "Move to Main Panel");
+        }
         self.show_panels_menu(ui, tab, panels);
         if ui
             .menu_item_config("Show Panel Titles")

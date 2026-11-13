@@ -165,14 +165,7 @@ fn draw_window(
                 context.owners.quick_access.command_took_right_click |= right;
                 close |= !context.owners.customization.has_expanded(tab);
             } else {
-                commands(
-                    ui,
-                    panel,
-                    context.state,
-                    context.owners.precise_input,
-                    context.owners.create_block,
-                    context.actions,
-                );
+                commands(context, tab, panel, display);
             }
             ui.separator();
             let active = expansion.pinned.then(|| {
@@ -243,15 +236,20 @@ fn inside_window(ui: &Ui) -> bool {
     )
 }
 fn commands(
-    ui: &Ui,
+    context: &mut PanelDrawContext<'_>,
+    tab: RibbonTab,
     panel: RibbonPanel,
-    state: &GuiCommandState,
-    precise_input: &mut crate::sketch::precise_input::PreciseInputBar,
-    create_block: &mut crate::sketch::create_block::CreateBlockDialog,
-    actions: &mut Vec<GuiShellAction>,
+    display: &mut RibbonDisplayState,
 ) {
+    let ui = context.ui;
     if panel == RibbonPanel::Create {
-        create_commands(ui, state, precise_input, create_block, actions);
+        create_commands(
+            ui,
+            context.state,
+            context.owners.precise_input,
+            context.owners.create_block,
+            context.actions,
+        );
         return;
     }
     let disabled = ui.begin_disabled(true);
@@ -266,7 +264,17 @@ fn commands(
     for &label in labels {
         ui.button(label);
         if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
-            ui.tooltip_text("This command is not available in this build.");
+            if ui.is_mouse_clicked(imgui::MouseButton::Right) {
+                display.request_expansion_command_context(tab, panel, label);
+            }
+            let help = if label == "Edit Coordinate System" {
+                "Change the sketch origin and coordinate axes.\n"
+            } else {
+                ""
+            };
+            ui.tooltip_text(format!(
+                "{label}\n{help}This command is not available in this build."
+            ));
         }
     }
     drop(disabled);

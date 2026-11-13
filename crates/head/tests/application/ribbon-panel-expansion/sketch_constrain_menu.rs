@@ -93,3 +93,88 @@ fn dismissing_the_title_menu_keeps_a_pinned_constrain_area_open() {
     );
     world.close();
 }
+
+#[when("the user right-clicks Edit Coordinate System")]
+fn right_click_coordinate_command(world: &mut ApplicationWorld) {
+    let command = world
+        .run_in_window(CONSTRAIN, "EditCoordinateSystem")
+        .center();
+    world.right_click(diagnostics::pointer_pixels(command));
+    world.pump(Vec::new());
+}
+#[then(
+    "the command context menu lists Ribbon Appearance, Add to Quick Access Toolbar, Move to Main Panel, Show Panels, Customize User Commands, Undock Ribbon and Docking Positions"
+)]
+fn coordinate_command_menu(world: &mut ApplicationWorld) {
+    title_menu_choices(world);
+    for label in ["Add to Quick Access Toolbar", "Move to Main Panel"] {
+        world.expect_text(label);
+        assert!(
+            !world.run_is_enabled(label),
+            "{label}: unavailable command must stay disabled"
+        );
+    }
+}
+#[then("the command context menu closes")]
+fn command_menu_closes(world: &mut ApplicationWorld) {
+    world.expect_no_text("Add to Quick Access Toolbar");
+    world.expect_no_text("Undock Ribbon");
+}
+#[then(
+    "the Edit Coordinate System help tooltip appears while the pointer remains over that command"
+)]
+fn unavailable_command_tooltip(world: &mut ApplicationWorld) {
+    for _ in 0..32 {
+        if world.shows("Change the sketch origin and coordinate axes.")
+            && world.shows("This command is not available in this build.")
+        {
+            return;
+        }
+        world.pump(Vec::new());
+    }
+    panic!("expected the unavailable Edit Coordinate System tooltip");
+}
+
+#[test]
+fn command_submenu_escape_closes_submenu_then_unpinned_area() {
+    let mut world = sketch_with_constrain_area();
+    right_click_coordinate_command(&mut world);
+    world.click_text("Show Panels");
+    world.pump(Vec::new());
+    world.expect_text("Layout");
+    world.escape();
+    world.pump(Vec::new());
+    world.expect_text("Add to Quick Access Toolbar");
+    constrain_remains_open(&mut world);
+    world.escape();
+    world.pump(Vec::new());
+    command_menu_closes(&mut world);
+    assert!(diagnostics::window_geometry(CONSTRAIN).is_none());
+    assert!(
+        world
+            .edited_geometry()
+            .same_recipe(&world.observed_sketch.as_ref().unwrap().geometry)
+    );
+    world.close();
+}
+
+#[test]
+fn inference_scope_context_menu_closes_on_tab_switch() {
+    let mut world = sketch_with_constrain_area();
+    let command = world
+        .run_in_window(CONSTRAIN, "ConstraintInferenceScope")
+        .center();
+    world.right_click(diagnostics::pointer_pixels(command));
+    world.pump(Vec::new());
+    coordinate_command_menu(&mut world);
+    world.click_text("Tools");
+    world.pump(Vec::new());
+    command_menu_closes(&mut world);
+    assert!(diagnostics::window_geometry(CONSTRAIN).is_none());
+    assert!(
+        world
+            .edited_geometry()
+            .same_recipe(&world.observed_sketch.as_ref().unwrap().geometry)
+    );
+    world.close();
+}

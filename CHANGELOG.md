@@ -30,6 +30,8 @@
 
 ### Added
 
+- Added context menus for unavailable commands in expanded ribbon panels.
+
 - Added the optional Parameters panel to the Sketch ribbon.
 
 - Added document unit labels to Precise Input coordinates.

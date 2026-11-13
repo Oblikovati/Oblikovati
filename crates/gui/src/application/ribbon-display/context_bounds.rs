@@ -6,7 +6,18 @@ use imgui::Ui;
 impl RibbonDisplayState {
     pub(crate) fn request_expansion_context(&mut self, tab: RibbonTab, panel: RibbonPanel) {
         self.context_expansion = Some((tab, panel));
+        self.context_command = None;
+        self.context_had_submenu = false;
         self.context_requested = true;
+    }
+    pub(crate) fn request_expansion_command_context(
+        &mut self,
+        tab: RibbonTab,
+        panel: RibbonPanel,
+        command: &'static str,
+    ) {
+        self.request_expansion_context(tab, panel);
+        self.context_command = Some(command);
     }
     pub(crate) fn expansion_context_escape(
         &self,
@@ -17,6 +28,7 @@ impl RibbonDisplayState {
         self.context_expansion == Some((tab, panel))
             && self.context_bounds.is_some()
             && self.submenu_bounds.is_none()
+            && (self.context_command.is_none() || self.context_had_submenu)
             && ui.is_key_pressed_no_repeat(imgui::Key::Escape)
     }
     pub(super) fn capture_context_bounds(&mut self, ui: &Ui) {
@@ -25,6 +37,7 @@ impl RibbonDisplayState {
     }
     pub(super) fn capture_submenu_bounds(&mut self, ui: &Ui) {
         self.submenu_bounds = Some(window_bounds(ui));
+        self.context_had_submenu = true;
     }
     pub(crate) fn context_contains(&self, point: [f32; 2]) -> bool {
         [self.context_bounds, self.submenu_bounds]
