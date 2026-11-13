@@ -107,6 +107,7 @@ impl<
                 oblikovati_model::sketch::SketchConstraintId(owned.constraint),
                 &oblikovati_model::history::SketchDimensionEdit {
                     target_expression: target,
+                    resolve_once: false,
                     reference,
                     drive_limits: None,
                 },

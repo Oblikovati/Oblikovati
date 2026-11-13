@@ -12,6 +12,8 @@ use oblikovati_solve::nonlinear::{SolveOptions, SolveTermination};
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct SketchDimensionEdit {
     pub target_expression: Option<String>,
+    /// Resolve the source once instead of retaining its parameter references.
+    pub resolve_once: bool,
     pub reference: Option<bool>,
     pub drive_limits: Option<SketchDimensionLimits>,
 }
@@ -51,7 +53,7 @@ impl DocumentSnapshot {
         let Some(source) = &edit.target_expression else {
             return Ok(());
         };
-        self.drive_dimension_target(sketch, dimension, source)?;
+        self.drive_dimension_target(sketch, dimension, source, edit.resolve_once)?;
         self.sketches
             .get(sketch)?
             .geometry()
@@ -122,6 +124,7 @@ impl DocumentSnapshot {
         sketch: DocumentSketchId,
         dimension: SketchConstraintId,
         source: &str,
+        resolve_once: bool,
     ) -> Result<(), SketchError> {
         let geometry = self.sketches.get(sketch)?.geometry();
         let (parameter, category) = geometry.dimension_source(dimension)?;
@@ -133,9 +136,15 @@ impl DocumentSnapshot {
             .evaluate_scalar_expression(source, category)
             .map_err(|cause| drive_error(parameter, source, cause))?;
         let limits = geometry.dimension_limits(dimension)?;
-        self.parameters
-            .set_scalar_expression(parameter, source, category)
-            .map_err(|cause| drive_error(parameter, source, cause))?;
+        if resolve_once {
+            self.parameters
+                .set_value(parameter, target)
+                .map_err(|cause| drive_error(parameter, source, cause))?;
+        } else {
+            self.parameters
+                .set_scalar_expression(parameter, source, category)
+                .map_err(|cause| drive_error(parameter, source, cause))?;
+        }
         self.parameters
             .model_value(parameter)
             .map_err(|cause| drive_error(parameter, source, cause))?;

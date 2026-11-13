@@ -41,6 +41,7 @@ fn prepare(
     };
     let edit = SketchDimensionEdit {
         target_expression: (!request.expression.is_empty()).then(|| request.expression.clone()),
+        resolve_once: true,
         reference: request.set_driven.then_some(request.driven),
         drive_limits,
     };

@@ -120,6 +120,7 @@ fn invalid_expressions_and_bounds_cannot_publish_partial_settings() {
         let before = snapshot.clone();
         let edit = SketchDimensionEdit {
             target_expression: Some(source.into()),
+            resolve_once: false,
             reference: Some(true),
             drive_limits: Some(bounds(2.0, 3.0)),
         };

@@ -9,6 +9,7 @@ fn edit(session: &mut DocumentSession<RecordingObserver>, input: &SketchDimensio
 fn changes() -> SketchDimensionEdit {
     SketchDimensionEdit {
         target_expression: Some("4 cm".into()),
+        resolve_once: false,
         reference: Some(true),
         drive_limits: Some(SketchDimensionLimits {
             lower: 2.0,
@@ -65,6 +66,35 @@ fn dimension_expression_drives_geometry_and_history() {
         session.snapshot().parameters.get(2).unwrap().source,
         "width * 2"
     );
+}
+#[test]
+fn one_time_dimension_value_does_not_follow_its_source_parameter() {
+    let mut session = dimension_session(None);
+    edit(
+        &mut session,
+        &SketchDimensionEdit {
+            target_expression: Some("width * 2".into()),
+            resolve_once: true,
+            ..Default::default()
+        },
+    );
+    assert_eq!(
+        session.snapshot().parameters.get(2).unwrap().source,
+        "2 length"
+    );
+    assert!((measured(&session) - 2.0).abs() < 1e-9);
+    session
+        .run("Change width", |snapshot, _| {
+            snapshot.parameters.set_expression(1, "2 cm")
+        })
+        .unwrap();
+    assert!((measured(&session) - 2.0).abs() < 1e-9);
+    session.undo().unwrap();
+    session.undo().unwrap();
+    assert!((measured(&session) - 1.0).abs() < 1e-9);
+    session.redo().unwrap();
+    session.redo().unwrap();
+    assert!((measured(&session) - 2.0).abs() < 1e-9);
 }
 #[test]
 fn reference_drive_changes_target_without_moving_measured_geometry() {

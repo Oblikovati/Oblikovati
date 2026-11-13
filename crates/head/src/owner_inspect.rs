@@ -80,6 +80,7 @@ impl<
                     oblikovati_model::sketch::SketchConstraintId(value.constraint),
                     &oblikovati_model::history::SketchDimensionEdit {
                         target_expression: Some(value.expression.clone()),
+                        resolve_once: false,
                         reference: None,
                         drive_limits: None,
                     },
