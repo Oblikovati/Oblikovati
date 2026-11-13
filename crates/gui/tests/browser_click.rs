@@ -48,7 +48,7 @@ fn mouse_frame(
 fn single_click_selects_and_double_click_selects_then_opens_the_row() {
     let mut engine = GuiFrameEngine::new().unwrap();
     let mut request = browser_request();
-    engine.frame(&request).unwrap();
+    settle_browser_layout(&mut engine, &request);
     request.events = vec![GuiInputEvent::PointerMoved([90., 297.])];
     engine.frame(&request).unwrap();
     assert!(mouse_frame(&mut engine, &mut request, true).is_empty());
@@ -98,7 +98,7 @@ fn pointer_gesture(
 fn context_engine() -> (GuiFrameEngine, GuiFrameRequest) {
     let mut engine = GuiFrameEngine::new().unwrap();
     let mut request = browser_request();
-    engine.frame(&request).unwrap();
+    settle_browser_layout(&mut engine, &request);
     // A right-click chooses the row it opens the menu for.
     assert_eq!(
         pointer_gesture(
@@ -140,7 +140,7 @@ fn context_edit_is_inert_during_transactions_and_existing_sketch_edits() {
         if editing {
             request.commands.authoring = GuiAuthoringContext::Sketch;
         }
-        engine.frame(&request).unwrap();
+        settle_browser_layout(&mut engine, &request);
         assert!(
             pointer_gesture(
                 &mut engine,
@@ -206,7 +206,7 @@ fn identically_named_sketch_contexts_use_the_clicked_row_identity() {
     let mut second = rows[0].clone();
     second.id = DocumentSketchId(8);
     rows.push(second);
-    engine.frame(&request).unwrap();
+    settle_browser_layout(&mut engine, &request);
     assert_eq!(
         pointer_gesture(
             &mut engine,
@@ -238,7 +238,7 @@ fn identically_named_sketch_contexts_use_the_clicked_row_identity() {
 fn shift_click_requests_membership_toggle_without_entering_edit_mode() {
     let mut engine = GuiFrameEngine::new().unwrap();
     let mut request = browser_request();
-    engine.frame(&request).unwrap();
+    settle_browser_layout(&mut engine, &request);
     request.events = vec![GuiInputEvent::Modifiers(GuiModifiers {
         shift: true,
         ..Default::default()
@@ -263,7 +263,7 @@ fn shift_click_requests_membership_toggle_without_entering_edit_mode() {
 fn modified_double_click_selects_the_sketch_before_editing() {
     let mut engine = GuiFrameEngine::new().unwrap();
     let mut request = browser_request();
-    engine.frame(&request).unwrap();
+    settle_browser_layout(&mut engine, &request);
     request.events = vec![
         GuiInputEvent::Modifiers(GuiModifiers {
             control: true,
