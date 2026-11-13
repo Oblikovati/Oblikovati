@@ -37,12 +37,13 @@ fn assembly_with_references(files: &mut DiscoveryWorkspace, source: &mut QueryGu
     files
         .commands(id)
         .unwrap()
-        .run("Add references", |snapshot, _| -> Result<(), ()> {
+        .run("Add references", |snapshot, ids| -> Result<(), ()> {
             snapshot.assembly = Some(
                 ["part.opd", "part.opd", "missing.opd"]
                     .iter()
                     .enumerate()
                     .map(|(index, name)| AssemblyOccurrenceRecipe {
+                        session_id: ids.allocate_occurrence().unwrap(),
                         name: format!("Part:{index}"),
                         component: (*name).into(),
                         ..Default::default()
@@ -144,8 +145,9 @@ fn wrong_component_kind_is_reported_and_new_background_document_is_closed() {
     files
         .commands(owner)
         .unwrap()
-        .run("Reference drawing", |snapshot, _| -> Result<(), ()> {
+        .run("Reference drawing", |snapshot, ids| -> Result<(), ()> {
             snapshot.assembly = Some(vec![AssemblyOccurrenceRecipe {
+                session_id: ids.allocate_occurrence().unwrap(),
                 name: "Wrong:1".into(),
                 component: "drawing.odd".into(),
                 ..Default::default()
@@ -351,8 +353,9 @@ fn occurrence_edit_rejects_a_path_through_an_unrelated_owner() {
     files
         .commands(other)
         .unwrap()
-        .run("Add virtual", |snapshot, _| -> Result<(), ()> {
+        .run("Add virtual", |snapshot, ids| -> Result<(), ()> {
             snapshot.assembly = Some(vec![AssemblyOccurrenceRecipe {
+                session_id: ids.allocate_occurrence().unwrap(),
                 name: "Virtual".into(),
                 virtual_: true,
                 ..Default::default()

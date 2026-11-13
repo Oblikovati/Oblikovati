@@ -54,8 +54,12 @@ fn workspace() -> (TestFiles, u64, u64, OwnerThreadGuids) {
     files
         .commands(assembly)
         .unwrap()
-        .run("Place", |snapshot, _| -> Result<(), ()> {
-            snapshot.assembly = Some(vec![occurrence("First", 0.), occurrence("Second", 10.)]);
+        .run("Place", |snapshot, ids| -> Result<(), ()> {
+            let mut first = occurrence("First", 0.);
+            first.session_id = ids.allocate_occurrence().unwrap();
+            let mut second = occurrence("Second", 10.);
+            second.session_id = ids.allocate_occurrence().unwrap();
+            snapshot.assembly = Some(vec![first, second]);
             Ok(())
         })
         .unwrap();
@@ -179,12 +183,16 @@ fn sight_lines_pick_the_correct_analytic_component_and_refuse_ties() {
     files
         .commands(assembly)
         .unwrap()
-        .run("Place nearer component", |snapshot, _| -> Result<(), ()> {
-            let mut nearer = occurrence("Near", 0.);
-            nearer.transform[11] = 5.;
-            snapshot.assembly.as_mut().unwrap().push(nearer);
-            Ok(())
-        })
+        .run(
+            "Place nearer component",
+            |snapshot, ids| -> Result<(), ()> {
+                let mut nearer = occurrence("Near", 0.);
+                nearer.session_id = ids.allocate_occurrence().unwrap();
+                nearer.transform[11] = 5.;
+                snapshot.assembly.as_mut().unwrap().push(nearer);
+                Ok(())
+            },
+        )
         .unwrap();
     let generation = files.workspace().session(assembly).unwrap().generation();
     assert_eq!(
@@ -224,12 +232,13 @@ fn assembly_reports_unresolved_components_instead_of_showing_an_empty_scene() {
     files
         .commands(assembly)
         .unwrap()
-        .run("Missing", |snapshot, _| -> Result<(), ()> {
+        .run("Missing", |snapshot, ids| -> Result<(), ()> {
             snapshot
                 .assembly
                 .as_mut()
                 .unwrap()
                 .push(AssemblyOccurrenceRecipe {
+                    session_id: ids.allocate_occurrence().unwrap(),
                     name: "Missing".into(),
                     component: "missing.opd".into(),
                     ..Default::default()
@@ -271,8 +280,10 @@ fn nested_placements_compose_and_suppressed_occurrences_are_hidden() {
     files
         .commands(nested)
         .unwrap()
-        .run("Place part", |snapshot, _| -> Result<(), ()> {
-            snapshot.assembly = Some(vec![occurrence("Child", 5.)]);
+        .run("Place part", |snapshot, ids| -> Result<(), ()> {
+            let mut child = occurrence("Child", 5.);
+            child.session_id = ids.allocate_occurrence().unwrap();
+            snapshot.assembly = Some(vec![child]);
             Ok(())
         })
         .unwrap();
@@ -282,8 +293,9 @@ fn nested_placements_compose_and_suppressed_occurrences_are_hidden() {
     files
         .commands(assembly)
         .unwrap()
-        .run("Place nested", |snapshot, _| -> Result<(), ()> {
+        .run("Place nested", |snapshot, ids| -> Result<(), ()> {
             let mut nested = occurrence("Nested", 20.);
+            nested.session_id = ids.allocate_occurrence().unwrap();
             nested.component = "nested.oad".into();
             snapshot.assembly.as_mut().unwrap().push(nested);
             Ok(())

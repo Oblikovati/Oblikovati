@@ -46,6 +46,8 @@ impl DocumentEditHistory {
             .map_err(EditError::History)?;
         self.validate_feature_ids(&candidate, self.feature_high_water())
             .map_err(EditError::History)?;
+        self.validate_occurrence_ids(&candidate, self.occurrence_high_water())
+            .map_err(EditError::History)?;
         self.validate_sketch_ids(&candidate, self.sketch_reservations())
             .map_err(EditError::History)?;
         self.validate_derived_ids(&candidate, self.derived_high_water)

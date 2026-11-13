@@ -115,10 +115,11 @@ fn canonical_assembly_api_keeps_occurrence_ids_through_edits_and_history() {
     files
         .commands(root)
         .unwrap()
-        .run("Replace occurrence", |snapshot, _| -> Result<(), ()> {
+        .run("Replace occurrence", |snapshot, ids| -> Result<(), ()> {
             let rows = snapshot.assembly.as_mut().unwrap();
             rows.retain(|row| row.session_id != 2);
             rows.push(AssemblyOccurrenceRecipe {
+                session_id: ids.allocate_occurrence().unwrap(),
                 name: "New".into(),
                 virtual_: true,
                 ..Default::default()
@@ -127,6 +128,13 @@ fn canonical_assembly_api_keeps_occurrence_ids_through_edits_and_history() {
         })
         .unwrap();
     let client = Client::new(FileHost::new(&mut files, &mut source, "test"));
+    let current = client
+        .assembly()
+        .occurrences(&Default::default())
+        .unwrap()
+        .occurrences
+        .unwrap();
+    assert_eq!((current[1].id, current[1].name.as_str()), (3, "New"));
     assert!(
         client
             .assembly()
@@ -143,7 +151,7 @@ fn canonical_assembly_api_keeps_occurrence_ids_through_edits_and_history() {
                 id: 1,
                 suppressed: true
             })
-            .is_err()
+            .is_ok()
     );
     drop(client);
     assert!(
@@ -204,23 +212,24 @@ fn canonical_occurrence_api_refuses_duplicate_session_ids() {
         .with_observer_factory(&mut factory)
         .open_path(path, true)
         .unwrap();
-    files
-        .commands(root)
-        .unwrap()
-        .run("Invalid identity", |snapshot, _| -> Result<(), ()> {
-            snapshot.assembly.as_mut().unwrap()[1].session_id = 1;
-            Ok(())
-        })
-        .unwrap();
+    let result =
+        files
+            .commands(root)
+            .unwrap()
+            .run("Invalid identity", |snapshot, _| -> Result<(), ()> {
+                snapshot.assembly.as_mut().unwrap()[1].session_id = 1;
+                Ok(())
+            });
+    assert!(result.is_err());
     let client = Client::new(FileHost::new(&mut files, &mut source, "test"));
-    assert!(client.assembly().occurrences(&Default::default()).is_err());
-    assert!(
+    assert_eq!(
         client
             .assembly()
-            .suppress(&SuppressOccurrenceArgs {
-                id: 1,
-                suppressed: true
-            })
-            .is_err()
+            .occurrences(&Default::default())
+            .unwrap()
+            .occurrences
+            .unwrap()
+            .len(),
+        2
     );
 }

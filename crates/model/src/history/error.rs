@@ -14,6 +14,7 @@ pub enum HistoryError {
     DatumMetadata(crate::feature::work_geometry::WorkGeometryError),
     UnreservedIdentity(u64),
     UnreservedFeatureId(u64),
+    UnreservedOccurrenceId(u64),
     UnreservedSketchId(u64),
     UnreservedSketchEntityId(u64),
     UnreservedSketchConstraintId {
@@ -44,6 +45,10 @@ impl fmt::Display for HistoryError {
             Self::UnreservedFeatureId(id) => write!(
                 output,
                 "feature ID {id}: expected an existing identity or one reserved by this edit"
+            ),
+            Self::UnreservedOccurrenceId(id) => write!(
+                output,
+                "occurrence ID {id}: expected an existing identity or one reserved by this edit"
             ),
             Self::UnreservedSketchId(id) => write!(
                 output,

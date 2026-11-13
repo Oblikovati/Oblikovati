@@ -20,6 +20,7 @@ impl DocumentEditHistory {
         Self::new(self.current.clone(), ids)?
             .with_sketch_reservations(self.sketch_reservations())?
             .with_feature_reservations(self.feature_high_water())?
+            .with_occurrence_reservations(self.occurrence_high_water())?
             .with_derived_reservations(self.derived_high_water())
             .map_err(HistoryError::from)
     }

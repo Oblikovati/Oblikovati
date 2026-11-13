@@ -13,6 +13,7 @@ mod datum_delete;
 mod datum_metadata;
 mod derived_ids;
 mod feature_ids;
+mod occurrence_ids;
 mod prism_create;
 mod scalar_ownership;
 mod sketch_block_create;
@@ -112,6 +113,7 @@ pub struct RecipeReservations<'a> {
     ids: &'a mut RecipeIdAllocator,
     sketch_ids: &'a mut RecipeIdAllocator,
     feature_ids: &'a mut RecipeIdAllocator,
+    occurrence_ids: &'a mut RecipeIdAllocator,
     sketch_entity_ids: &'a mut RecipeIdAllocator,
     sketch_constraint_ids: &'a mut SketchConstraintReservations,
     dimension_names: &'a mut SketchDimensionNameReservations,
@@ -159,6 +161,7 @@ pub struct DocumentEditHistory {
     ids: RecipeIdAllocator,
     sketch_ids: RecipeIdAllocator,
     feature_ids: RecipeIdAllocator,
+    occurrence_ids: RecipeIdAllocator,
     sketch_entity_ids: RecipeIdAllocator,
     sketch_constraint_ids: SketchConstraintReservations,
     dimension_names: SketchDimensionNameReservations,
@@ -200,6 +203,8 @@ impl DocumentEditHistory {
         )?;
         let feature_ids =
             RecipeIdAllocator::restore(None, &feature_ids::datum_feature_ids(&snapshot))?;
+        let occurrence_ids =
+            RecipeIdAllocator::restore(None, &occurrence_ids::authored_occurrence_ids(&snapshot))?;
         let dimension_names = SketchDimensionNameReservations::restore(
             &snapshot.sketches,
             &snapshot.parameters,
@@ -209,6 +214,7 @@ impl DocumentEditHistory {
         Ok(Self {
             dimension_names,
             feature_ids,
+            occurrence_ids,
             sketch_ids,
             sketch_entity_ids,
             sketch_constraint_ids,
@@ -272,10 +278,12 @@ impl DocumentEditHistory {
         let tables_before = self.derived_high_water;
         let sketches_before = self.sketch_reservations();
         let features_before = self.feature_high_water();
+        let occurrences_before = self.occurrence_high_water();
         let result = edit(
             &mut candidate,
             &mut RecipeReservations {
                 feature_ids: &mut self.feature_ids,
+                occurrence_ids: &mut self.occurrence_ids,
                 ids: &mut self.ids,
                 sketch_ids: &mut self.sketch_ids,
                 sketch_entity_ids: &mut self.sketch_entity_ids,
@@ -289,6 +297,8 @@ impl DocumentEditHistory {
             .validate_snapshot_transition(&self.current)
             .map_err(EditError::History)?;
         self.validate_feature_ids(&candidate, features_before)
+            .map_err(EditError::History)?;
+        self.validate_occurrence_ids(&candidate, occurrences_before)
             .map_err(EditError::History)?;
         self.validate_candidate_ids(&candidate, reserved_before)
             .map_err(EditError::History)?;

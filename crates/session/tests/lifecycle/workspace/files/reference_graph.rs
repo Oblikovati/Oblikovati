@@ -11,11 +11,12 @@ fn assembly(host: &mut ReferenceHost, source: &mut SequenceGuids, names: &[&str]
         .session_id;
     host.commands(id)
         .unwrap()
-        .run("Add references", |snapshot, _| -> Result<(), ()> {
+        .run("Add references", |snapshot, ids| -> Result<(), ()> {
             snapshot.assembly = Some(
                 names
                     .iter()
                     .map(|name| AssemblyOccurrenceRecipe {
+                        session_id: ids.allocate_occurrence().unwrap(),
                         name: format!("{name}:1"),
                         component: (*name).into(),
                         ..Default::default()

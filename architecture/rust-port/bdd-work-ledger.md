@@ -237,6 +237,11 @@ claim that each file has been individually triaged.
   reordering; the IDs are not written into Go packages. Querying an unresolved
   component reports an error. Placement creation and an allocator for new
   occurrence IDs are still needed, and nested IDs belong to their own assembly.
+- Document history now reserves occurrence IDs outside undo snapshots. It
+  refuses zero, duplicate and unreserved IDs, and keeps reservations after
+  abort and undo. Preview uses a private copy of the reservation mark. This
+  supplies the allocator for placement; the placement command and its
+  reference-graph and save integration remain open.
 - The drawing browser now lists the authored sheets, borders, title blocks and
   views, and browser search uses those same rows. Unit tests cover multiple
   sheets, a missing border and searching for a view.

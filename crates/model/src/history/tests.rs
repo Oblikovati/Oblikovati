@@ -33,8 +33,9 @@ fn assembly_occurrence_changes_follow_undo_and_redo() {
     let before = history.snapshot().clone();
     let token = history.begin("Place occurrence").unwrap();
     history
-        .edit(&token, |snapshot, _| -> Result<(), ()> {
+        .edit(&token, |snapshot, ids| -> Result<(), ()> {
             snapshot.assembly = Some(vec![crate::assembly::AssemblyOccurrenceRecipe {
+                session_id: ids.allocate_occurrence().unwrap(),
                 name: "Part:1".into(),
                 component: "part.opd".into(),
                 ..Default::default()
@@ -55,6 +56,102 @@ fn assembly_occurrence_changes_follow_undo_and_redo() {
         history.snapshot().assembly.as_ref().unwrap()[0].component,
         "part.opd"
     );
+}
+
+#[test]
+fn occurrence_ids_are_reserved_across_abort_preview_and_undo() {
+    let mut history = empty_history();
+    let first = history.begin("Rejected placement").unwrap();
+    history
+        .edit(&first, |snapshot, ids| -> Result<(), ()> {
+            snapshot.assembly = Some(vec![crate::assembly::AssemblyOccurrenceRecipe {
+                session_id: ids.allocate_occurrence().unwrap(),
+                name: "First".into(),
+                ..Default::default()
+            }]);
+            Ok(())
+        })
+        .unwrap();
+    history.abort(&first).unwrap();
+    assert_eq!(history.occurrence_high_water(), 1);
+    let preview = history
+        .preview(|_, ids| -> Result<u64, ()> { Ok(ids.allocate_occurrence().unwrap()) })
+        .unwrap();
+    assert_eq!(preview, 2);
+    assert_eq!(history.occurrence_high_water(), 1);
+    let second = history.begin("Place").unwrap();
+    history
+        .edit(&second, |snapshot, ids| -> Result<(), ()> {
+            snapshot.assembly = Some(vec![crate::assembly::AssemblyOccurrenceRecipe {
+                session_id: ids.allocate_occurrence().unwrap(),
+                name: "Second".into(),
+                ..Default::default()
+            }]);
+            Ok(())
+        })
+        .unwrap();
+    history.commit(&second, false).unwrap();
+    assert_eq!(
+        history.snapshot().assembly.as_ref().unwrap()[0].session_id,
+        2
+    );
+    history.undo().unwrap();
+    let retry = history.begin("Retry").unwrap();
+    let rejected = history.edit(&retry, |snapshot, _| -> Result<(), ()> {
+        snapshot.assembly = Some(vec![crate::assembly::AssemblyOccurrenceRecipe {
+            session_id: 1,
+            ..Default::default()
+        }]);
+        Ok(())
+    });
+    assert!(rejected.is_err());
+    history
+        .edit(&retry, |snapshot, ids| -> Result<(), ()> {
+            snapshot.assembly = Some(vec![crate::assembly::AssemblyOccurrenceRecipe {
+                session_id: ids.allocate_occurrence().unwrap(),
+                name: "Third".into(),
+                ..Default::default()
+            }]);
+            Ok(())
+        })
+        .unwrap();
+    history.commit(&retry, false).unwrap();
+    assert_eq!(
+        history.snapshot().assembly.as_ref().unwrap()[0].session_id,
+        3
+    );
+}
+
+#[test]
+fn duplicate_and_unreserved_occurrence_ids_cannot_enter_history() {
+    let mut history = empty_history();
+    let token = history.begin("Place").unwrap();
+    history
+        .edit(&token, |snapshot, ids| -> Result<(), ()> {
+            snapshot.assembly = Some(vec![crate::assembly::AssemblyOccurrenceRecipe {
+                session_id: ids.allocate_occurrence().unwrap(),
+                name: "A".into(),
+                ..Default::default()
+            }]);
+            Ok(())
+        })
+        .unwrap();
+    history.commit(&token, false).unwrap();
+    let before = history.snapshot().clone();
+    let duplicate = history.begin("Duplicate ID").unwrap();
+    let result = history.edit(&duplicate, |snapshot, _| -> Result<(), ()> {
+        let rows = snapshot.assembly.as_mut().unwrap();
+        rows.push(rows[0].clone());
+        Ok(())
+    });
+    assert!(result.is_err());
+    history.abort(&duplicate).unwrap();
+    let result = history.refresh(|snapshot| -> Result<(), ()> {
+        snapshot.assembly.as_mut().unwrap()[0].session_id = 99;
+        Ok(())
+    });
+    assert!(result.is_err());
+    assert_eq!(history.snapshot().assembly, before.assembly);
 }
 
 #[test]
