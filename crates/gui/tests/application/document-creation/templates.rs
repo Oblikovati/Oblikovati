@@ -45,7 +45,7 @@ fn an_open_transaction_or_no_selection_blocks_creation() {
     assert!(!chooser.can_create(&busy));
 }
 #[test]
-fn every_view_has_its_label_and_only_icon_sizes_change_the_row_height() {
+fn every_view_has_its_label_and_icon_sizes_change_the_tile_height() {
     let labels: Vec<&str> = TemplateView::ALL.map(TemplateView::label).into();
     assert_eq!(
         labels,
@@ -57,10 +57,12 @@ fn every_view_has_its_label_and_only_icon_sizes_change_the_row_height() {
             "Details"
         ]
     );
-    assert!(TemplateView::ExtraLargeIcons.row_height() > TemplateView::MediumIcons.row_height());
-    assert!(TemplateView::MediumIcons.row_height() > TemplateView::SmallIcons.row_height());
-    assert_eq!(TemplateView::List.row_height(), 0.);
-    assert_eq!(TemplateView::Details.row_height(), 0.);
+    assert!(
+        TemplateView::ExtraLargeIcons.tile_size(1.)[1] > TemplateView::MediumIcons.tile_size(1.)[1]
+    );
+    assert!(TemplateView::MediumIcons.tile_size(1.)[1] > TemplateView::SmallIcons.tile_size(1.)[1]);
+    assert!(!TemplateView::List.is_icon_view());
+    assert!(!TemplateView::Details.is_icon_view());
 }
 #[test]
 fn back_and_forward_walk_the_folders_visited() {

@@ -357,8 +357,12 @@ impl GuiFrameEngine {
         if let Some(path) = home_requests.file_properties {
             self.document_tabs.menu.properties.request_file(&path);
         }
-        self.document_files
-            .panel(ui, &request.commands, &mut selected);
+        self.document_files.panel(
+            ui,
+            &request.commands,
+            &mut selected,
+            &self.icons.presentation,
+        );
         self.preferences
             .panel(ui, &request.commands, &mut selected, self.home.active);
         self.extrude_dialog

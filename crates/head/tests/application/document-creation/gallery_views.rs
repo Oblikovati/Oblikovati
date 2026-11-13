@@ -2,6 +2,8 @@
 use super::*;
 #[path = "chooser_details.rs"]
 mod chooser_details;
+#[path = "gallery_icons.rs"]
+mod gallery_icons;
 #[given("the metric template folder is selected")]
 fn metric_selected(world: &mut ApplicationWorld) {
     world.click_text("Metric");
@@ -129,10 +131,19 @@ fn choose_medium_view(world: &mut ApplicationWorld) {
 }
 #[then("the gallery displays medium-sized template icons")]
 fn medium_tiles(world: &mut ApplicationWorld) {
-    let spacing = tile_spacing(world);
+    expect_icon_row(world, 40.);
+}
+fn expect_icon_row(world: &ApplicationWorld, expected_size: f32) {
+    let first = world.run(METRIC_SHEET_METAL).center();
+    let second = world.run(METRIC_PART).center();
     assert!(
-        spacing > 30.,
-        "tile spacing {spacing}: expected medium tiles"
+        second[0] > first[0] && (second[1] - first[1]).abs() < 3.,
+        "expected template icons in a horizontal row"
+    );
+    let size = gallery_icons::template_icon_size(world, METRIC_SHEET_METAL);
+    assert!(
+        (size[0] - expected_size).abs() < 1. && (size[1] - expected_size).abs() < 1.,
+        "icon size {size:?}: expected {expected_size}"
     );
 }
 #[when("I choose Back in the chooser navigation bar")]
@@ -235,11 +246,7 @@ fn choose_extra_large(world: &mut ApplicationWorld) {
 }
 #[then("the template gallery displays extra-large tiles")]
 fn extra_large_tiles(world: &mut ApplicationWorld) {
-    let spacing = tile_spacing(world);
-    assert!(
-        spacing > 50.,
-        "tile spacing {spacing}: expected extra-large tiles"
-    );
+    expect_icon_row(world, 56.);
 }
 #[when("I choose Small icons in the template display menu")]
 fn choose_small(world: &mut ApplicationWorld) {
@@ -247,11 +254,7 @@ fn choose_small(world: &mut ApplicationWorld) {
 }
 #[then("the template gallery displays small icons")]
 fn small_tiles(world: &mut ApplicationWorld) {
-    let spacing = tile_spacing(world);
-    assert!(
-        spacing < 40.,
-        "tile spacing {spacing}: expected small tiles"
-    );
+    expect_icon_row(world, 18.);
 }
 #[then("the template gallery displays medium-sized icons")]
 fn medium_sized(world: &mut ApplicationWorld) {
@@ -321,12 +324,15 @@ fn selected_folder_contains_templates(world: &mut ApplicationWorld) {
 fn expect_selected_template(world: &ApplicationWorld, title: &str) {
     let details_x = world.run("Template details").minimum[0];
     let expected = title.replace(' ', "");
+    let shown: String = world
+        .frame
+        .runs
+        .iter()
+        .filter(|run| run.minimum[0] >= details_x)
+        .map(|run| run.text.as_str())
+        .collect();
     assert!(
-        world
-            .frame
-            .runs
-            .iter()
-            .any(|run| run.minimum[0] >= details_x && run.text == expected),
+        shown.contains(&expected),
         "expected {title:?} in the details pane: {}",
         world.text()
     );
@@ -364,4 +370,53 @@ fn selected_folder_is_not_english(world: &mut ApplicationWorld) {
         world.row_accented_beside("Metric", "English"),
         "expected Metric selected"
     );
+}
+
+#[test]
+fn double_clicking_a_medium_icon_creates_the_selected_part() {
+    let mut world = ApplicationWorld::new();
+    let first = world.add_part();
+    world.key(ViewportPhysicalKey::N, true);
+    choose_template_view(&mut world, "Medium Icons");
+    let center = super::super::diagnostics::pointer_pixels(world.run(METRIC_PART).center());
+    world.pump(super::super::pointer_click_events(center, 2));
+    world.pump(Vec::new());
+    assert_eq!(world.state().documents.len(), 2);
+    assert_ne!(world.active_id(), first);
+    assert_eq!(
+        world.state().document_type,
+        Some(oblikovati_api::types::DOCUMENT_PART)
+    );
+    world.close();
+}
+
+#[test]
+fn keyboard_selection_scrolls_narrow_icon_gallery_to_each_endpoint() {
+    let mut world = ApplicationWorld::new();
+    super::super::super::verify_gui_resize_recovery(&mut world.app().window.native, [800, 600]);
+    world
+        .app()
+        .owner
+        .set_ui_scale_from_gui(oblikovati_model::ui_scale::UiScaleOptions::new(1.5, 1.).unwrap())
+        .unwrap();
+    world.pump(Vec::new());
+    world.key(ViewportPhysicalKey::N, true);
+    choose_template_view(&mut world, "Medium Icons");
+    world.click_text(METRIC_SHEET_METAL);
+    expect_selected_template(&world, METRIC_SHEET_METAL);
+    let first_y = world.run(METRIC_SHEET_METAL).center()[1];
+    world.key(ViewportPhysicalKey::End, false);
+    world.pump(Vec::new());
+    expect_selected_template(&world, METRIC_PART);
+    world.save_capture("template-icon-scroll-end");
+    world.expect_text(METRIC_PART);
+    assert!(
+        (world.run(METRIC_PART).center()[1] - first_y).abs() < 3.,
+        "expected the same vertical position"
+    );
+    world.key(ViewportPhysicalKey::Home, false);
+    world.pump(Vec::new());
+    expect_selected_template(&world, METRIC_SHEET_METAL);
+    world.expect_text(METRIC_SHEET_METAL);
+    world.close();
 }

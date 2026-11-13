@@ -8,8 +8,9 @@ claim that each file has been individually triaged.
 | Priority | Feature and scope | State | Evidence and next action |
 | --- | --- | --- | --- |
 | 1 | `features/application` | In progress | The native application runner exists. A complete, current area result has not been recorded. Run and retain the full area report; triage failures against the current source. |
-| 1 | `features/application/file-menu/file-menu.feature` | Verified | All 8 scenarios passed again with the shared chooser sorting changes in this ledger's commit. Weldment remains unavailable. |
-| 1 | `features/application/document-creation` | In progress | Name and size sorting and keyboard selection within available template groups are implemented. The name-order and navigation scenarios also require additional template variants, icon layout, and native BDD bindings. |
+| 1 | `features/application/file-menu/file-menu.feature` | Verified | All 8 scenarios passed again with the icon gallery changes in this ledger's commit. Weldment remains unavailable. |
+| 1 | `features/application/document-creation` | In progress | Name and size sorting, horizontal icon tiles, and keyboard selection are implemented for available templates. The name-order and navigation scenarios still require additional DIN/JIS template variants and native BDD bindings. |
+| 1 | `features/application/ribbon-customization/ribbon-customization.feature` | Needs rerun | Source changed since the inventory checkpoint. Review the corrections and rerun affected native scenarios. |
 | 1 | `features/application/ribbon-appearance/ribbon-appearance.feature` | In progress | Source changed. Revalidate every scenario against the revised file. Panel title visibility and the appearance menu exist. The menu marks Normal as active and disables the other modes. A caption-free native icon primitive is available but is not connected to the ribbon. The 3D Model ribbon now uses the Go icons for Revolve, Hole, Fillet and Chamfer; these commands remain unavailable. Implement Text Off, Small, Compact, Large and Reset Ribbon across all commands and layouts; then enable and verify them. |
 | 1 | `features/application/ribbon-docking/ribbon-docking.feature` | In progress | Source changed after the inventory checkpoint. A full native run at commit `139b82a42` found 6 passes and 17 scenarios stopped by undefined steps. With corrected bindings, a second run found 8 passes, 14 undefined steps, and one ambiguous step. Resolve the remaining steps and implement missing command-group behavior. |
 | 1 | `features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature` | Needs rerun | Source changed since the inventory checkpoint. Review the corrections and rerun affected native scenarios. |
@@ -196,3 +197,27 @@ revisions checked before they support a current pass claim.
 - The recorded adjacent-template and group-boundary scenarios still require
   the named DIN/JIS templates and a horizontal icon gallery. This test uses
   the existing metric templates and does not establish those full scenarios.
+
+### Template icon gallery, 2026-11-13
+
+- Source: `features/application/document-creation/document-creation.feature`,
+  SHA-256 `003a02efcb9c8f0629eeb8cabd4c52945533a1387d3918c417b7eac09a0d7522`,
+  unchanged across the runs. Application: commit `c58da4e42` plus the gallery
+  changes in this ledger's commit; unrelated README and AGENTS files were present.
+- Linux, Xvfb at 1600 × 1000, configured Vulkan runtime. Three filtered native
+  scenarios passed: `Change template icon size` (12 steps), `Select an assembly
+  template in list view` (11 steps), and `Retain template sort order when
+  reopening the chooser` (10 steps). The tests inspect actual icon draw quads.
+- The native chooser regressions also covered double-click creation and
+  keyboard scrolling at 800 × 600 with 150% text scale. The GUI library passed
+  348 tests, the File dialog passed four, and Clippy passed.
+- The File menu feature was rerun with source SHA-256
+  `19b41182a9710f6a5debb2e73e74b38c32a2d955583afe2e380ba01c850fa10f`:
+  all eight scenarios and 59 steps passed.
+- The BDD runs used `xvfb-run -a -s '-screen 0 1600x1000x24' cargo test
+  --locked -p oblikovati-head --lib application_scenarios_use_the_native_window
+  -- --nocapture` with the live source and feature/scenario filters. Local
+  reports are under `/tmp/obk-final-icons-*` and
+  `/tmp/obk-file-area-icons-20261113`; they are not durable shared artifacts.
+- The DIN/JIS template variants remain unavailable. The related navigation
+  scenarios are not claimed as passed.

@@ -4,6 +4,7 @@ pub(crate) mod component_dialog;
 mod kind_selection;
 mod template_navigation;
 mod template_sort;
+mod template_tiles;
 #[path = "templates.rs"]
 pub(crate) mod templates;
 #[path = "workspaces.rs"]
@@ -53,6 +54,9 @@ pub(crate) struct TemplateChooser {
     ungrouped: bool,
     sort: TemplateSort,
     gallery_keyboard: bool,
+    gallery_scroll_target: Option<f32>,
+    gallery_scroll_frames: u8,
+    gallery_scroll_y: Option<f32>,
     /// A double click on a tile asks for what Create does.
     create_requested: bool,
     projects: crate::application::project_dialog::ProjectsDialog,
@@ -95,15 +99,6 @@ impl TemplateView {
             Self::Details => "Details",
         }
     }
-    /// Zero lets the row take its text's own height.
-    fn row_height(self) -> f32 {
-        match self {
-            Self::ExtraLargeIcons => 64.,
-            Self::MediumIcons => 40.,
-            Self::SmallIcons => 28.,
-            Self::List | Self::Details => 0.,
-        }
-    }
 }
 impl TemplateChooser {
     fn details_layout(&self, ui: &Ui, state: &GuiCommandState) -> DetailsLayout {
@@ -129,7 +124,7 @@ impl TemplateChooser {
         DetailsLayout::new(widths, style.indent_spacing, style.item_spacing[0])
     }
     pub(crate) fn request(&mut self) {
-        self.gallery_keyboard = false;
+        self.clear_gallery_navigation();
         self.requested = true;
     }
     pub(crate) fn panel(
@@ -137,6 +132,7 @@ impl TemplateChooser {
         ui: &Ui,
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
+        icons: &crate::icons::GuiRibbonIcons,
     ) {
         if ui.io().key_ctrl && ui.is_key_pressed(imgui::Key::N) && !state.transaction_open {
             self.request();
@@ -146,17 +142,21 @@ impl TemplateChooser {
             dialog_geometry(ui);
         }
         if let Some(_dialog) = ui.begin_modal_popup("New document") {
-            self.contents(ui, state);
+            self.contents(ui, state, icons);
             self.buttons(ui, state, actions);
             self.projects.panel(ui, state);
+        } else {
+            self.clear_gallery_navigation();
         }
         self.component.panel(ui);
     }
     /// A frame must follow so a nested dialog opens without waiting for an event.
     pub(crate) fn needs_frame(&self) -> bool {
-        self.projects.needs_frame() || self.component.needs_frame()
+        self.projects.needs_frame()
+            || self.component.needs_frame()
+            || self.gallery_scroll_frames > 0
     }
-    fn contents(&mut self, ui: &Ui, state: &GuiCommandState) {
+    fn contents(&mut self, ui: &Ui, state: &GuiCommandState, icons: &crate::icons::GuiRibbonIcons) {
         let gallery_width = gallery_column_width(ui.content_region_avail()[0]);
         ui.columns(3, "template-layout", true);
         ui.set_column_width(0, FOLDER_COLUMN_WIDTH);
@@ -168,16 +168,9 @@ impl TemplateChooser {
         let layout = self.details_layout(ui, state);
         ui.child_window("##template-gallery")
             .size([0., GALLERY_HEIGHT])
-            .horizontal_scrollbar(self.view == TemplateView::Details)
-            .content_size([
-                if self.view == TemplateView::Details {
-                    layout.width
-                } else {
-                    0.
-                },
-                0.,
-            ])
-            .build(|| self.gallery(ui, state, layout));
+            .horizontal_scrollbar(self.view != TemplateView::List)
+            .content_size([self.gallery_width(ui, icons, layout), 0.])
+            .build(|| self.gallery(ui, state, layout, icons));
         ui.next_column();
         self.details(ui);
         ui.columns(1, "template-layout-end", false);
@@ -249,7 +242,13 @@ impl TemplateChooser {
             self.ungrouped = !self.ungrouped;
         }
     }
-    fn gallery(&mut self, ui: &Ui, state: &GuiCommandState, layout: DetailsLayout) {
+    fn gallery(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        layout: DetailsLayout,
+        icons: &crate::icons::GuiRibbonIcons,
+    ) {
         self.navigate_gallery(ui, state);
         if self.view == TemplateView::Details {
             self.details_header(ui, layout);
@@ -259,13 +258,13 @@ impl TemplateChooser {
                 .iter()
                 .flat_map(|(_, kinds)| kinds.iter().copied())
                 .collect();
-            self.tiles(ui, state, &all, layout);
+            self.tiles(ui, state, &all, layout, icons);
             return;
         }
         // A collapsed group hides its tiles only: the selection and its details stay.
         for (group, kinds) in TEMPLATE_GROUPS {
             if let Some(_tiles) = ui.tree_node_config(group).default_open(true).push() {
-                self.tiles(ui, state, kinds, layout);
+                self.tiles(ui, state, kinds, layout, icons);
             }
         }
     }
@@ -297,13 +296,19 @@ impl TemplateChooser {
         state: &GuiCommandState,
         kinds: &[GuiTemplateKind],
         layout: DetailsLayout,
+        icons: &crate::icons::GuiRibbonIcons,
     ) {
         let units = match self.folder {
             TemplateFolder::Units(units) => units,
             TemplateFolder::Root => GuiTemplateUnits::default(),
         };
-        for kind in ordered_kinds(kinds, self.sort, state, units) {
-            self.tile(ui, state, kind, layout);
+        let kinds = ordered_kinds(kinds, self.sort, state, units);
+        let width = self.tile_width(ui, icons, &kinds, units);
+        for (index, kind) in kinds.into_iter().enumerate() {
+            if index > 0 && self.view.is_icon_view() {
+                ui.same_line();
+            }
+            self.tile(ui, state, kind, layout, icons, width);
         }
     }
     fn tile(
@@ -312,13 +317,18 @@ impl TemplateChooser {
         state: &GuiCommandState,
         kind: GuiTemplateKind,
         layout: DetailsLayout,
+        icons: &crate::icons::GuiRibbonIcons,
+        width: f32,
     ) {
         // The root holds folders only: its gallery shows the headings above nothing.
         let TemplateFolder::Units(units) = self.folder else {
             return;
         };
         let template = GuiDocumentTemplate { kind, units };
-        if self.tile_row(ui, state, template, layout) {
+        if self.selected == Some(template) && self.gallery_scroll_target.is_some() {
+            ui.set_keyboard_focus_here();
+        }
+        if self.tile_row(ui, state, template, layout, icons, width) {
             self.selected = Some(template);
             self.drawing_layout = None;
             self.gallery_keyboard = true;
@@ -330,17 +340,24 @@ impl TemplateChooser {
         state: &GuiCommandState,
         template: GuiDocumentTemplate,
         layout: DetailsLayout,
+        icons: &crate::icons::GuiRibbonIcons,
+        width: f32,
     ) -> bool {
         let selected = self.selected == Some(template);
-        let chosen = ui
-            .selectable_config(template.title())
-            .flags(
-                imgui::SelectableFlags::DONT_CLOSE_POPUPS
-                    | imgui::SelectableFlags::ALLOW_DOUBLE_CLICK,
-            )
-            .selected(selected)
-            .size([0., self.view.row_height()])
-            .build();
+        let chosen = if self.view.is_icon_view() {
+            self.icon_tile(ui, icons, template, width, selected)
+        } else {
+            ui.selectable_config(template.title())
+                .flags(
+                    imgui::SelectableFlags::DONT_CLOSE_POPUPS
+                        | imgui::SelectableFlags::ALLOW_DOUBLE_CLICK,
+                )
+                .selected(selected)
+                .size([0., 0.])
+                .build()
+        };
+        self.remember_selected_tile_y(ui, template);
+        self.scroll_selected_tile(ui, template);
         self.create_requested |=
             ui.is_item_hovered() && ui.is_mouse_double_clicked(imgui::MouseButton::Left);
         if self.view == TemplateView::Details {

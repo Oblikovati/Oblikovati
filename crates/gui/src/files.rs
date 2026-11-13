@@ -237,8 +237,9 @@ impl GuiDocumentFiles {
         ui: &Ui,
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
+        icons: &crate::icons::GuiRibbonIcons,
     ) {
-        self.templates.panel(ui, state, actions);
+        self.templates.panel(ui, state, actions, icons);
         self.open.panel(ui, state, actions);
     }
     /// Route this frame's closes, then draw the prompts and Save As. Runs after every control has
