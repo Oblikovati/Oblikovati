@@ -36,6 +36,10 @@ impl FileChoices {
     pub(super) fn defers(&self) -> bool {
         self.defer
     }
+    /// Express loading must not silently open the full assembly.
+    pub(super) fn express_unavailable(&self, path: &str) -> bool {
+        self.express && FileKind::of(path) == FileKind::Assembly
+    }
     pub(super) fn panel(&mut self, ui: &Ui, kind: FileKind, views: &[String]) {
         match kind {
             FileKind::Part => self.part_rows(ui, views),
@@ -83,5 +87,13 @@ mod tests {
         assert_eq!(FileKind::of("/a/set.oad"), FileKind::Assembly);
         assert_eq!(FileKind::of("/a/sheet.odd"), FileKind::Drawing);
         assert_eq!(FileKind::of("/a/notes.txt"), FileKind::Other);
+    }
+    #[test]
+    fn express_loading_is_refused_only_for_an_assembly_with_the_option_selected() {
+        let mut choices = FileChoices::default();
+        assert!(!choices.express_unavailable("gearbox.oad"));
+        choices.express = true;
+        assert!(choices.express_unavailable("gearbox.oad"));
+        assert!(!choices.express_unavailable("part.opd"));
     }
 }

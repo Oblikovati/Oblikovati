@@ -98,6 +98,37 @@ fn views_on(world: &mut ApplicationWorld) {
 fn assembly_preview(world: &mut ApplicationWorld) {
     world.expect_no_text("No preview image");
 }
+
+#[test]
+fn express_open_refuses_mouse_and_enter_until_full_mode_is_selected() {
+    let mut world = ApplicationWorld::new();
+    let part = world.add_part();
+    let folder = models_folder(&mut world);
+    saved_document(
+        &mut world,
+        GuiTemplateKind::Assembly,
+        &folder,
+        ASSEMBLY_FILE,
+    );
+    close_active(&mut world);
+    open_dialog(&mut world);
+    look_in(&mut world, &folder);
+    select_row(&mut world, ASSEMBLY_FILE);
+    toggle_express(&mut world);
+    world.expect_text("Express assembly loading is not available");
+    choose_open(&mut world);
+    world.key(ViewportPhysicalKey::Enter, false);
+    let center = world.run(ASSEMBLY_FILE).center().map(|value| value as i32);
+    world.pump(super::super::pointer_click_events(center, 2));
+    settle(&mut world);
+    world.expect_text("Look in");
+    assert_eq!(world.active_id(), part);
+    toggle_express(&mut world);
+    choose_open(&mut world);
+    world.expect_no_text("Look in");
+    assert_ne!(world.active_id(), part);
+    world.close();
+}
 // Already open files
 #[given("a saved part is open in the MCAD Software")]
 fn part_open(world: &mut ApplicationWorld) {

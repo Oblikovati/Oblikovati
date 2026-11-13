@@ -259,8 +259,10 @@ fn contents(
     ui.columns(2, "open-layout", true);
     ui.set_column_width(0, BROWSER_COLUMN_WIDTH);
     if let Some(name) = browser.controls(ui, "Look in", draft.types.filter(draft.file_type)) {
+        if draft.name != name {
+            draft.choices = FileChoices::default();
+        }
         draft.name = name;
-        draft.choices = FileChoices::default();
     }
     if !browser.several_selected().is_empty() {
         draft.name = quoted_names(browser.several_selected());
@@ -367,13 +369,21 @@ fn accept(
         }
     };
     if let Some(name) = requested {
+        if draft.choices.express_unavailable(&name) {
+            return None;
+        }
         let action = open_action(&full_path(&browser.folder, &name), false);
         actions.push(action);
         return Some(DialogOutcome::Opened { name, defer: None });
     }
+    let express_unavailable = several.is_empty() && draft.choices.express_unavailable(&draft.name);
+    if express_unavailable {
+        ui.text_disabled("Express assembly loading is not available");
+    }
     let can_open = browser.highlighted_folder().is_some()
         || !several.is_empty()
         || (!draft.name.is_empty()
+            && !express_unavailable
             && open_action(&full_path(&browser.folder, &draft.name), false).dispatchable(state));
     match dialog_buttons(ui, "Open", can_open, entered, &mut draft.escape)? {
         DialogEnd::Cancelled => Some(DialogOutcome::Cancelled),

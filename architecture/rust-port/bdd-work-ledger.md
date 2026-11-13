@@ -92,6 +92,12 @@ claim that each file has been individually triaged.
   passes all nine steps with an active assembly and two closed drawings. It
   checks the second drawing's saved view, its rendered sheet and tab, and the
   retained assembly tab. Report: `/tmp/obk-double-drawing.log`.
+- Express assembly loading remains unimplemented: the Rust host has no
+  assembly occurrence loading or component rendering path. The Open dialog
+  now reports that limit and refuses Open, Enter and double-click while Express
+  is selected, instead of silently opening in full mode. Native input tests
+  cover those routes and the drawing-option reset scenario still passes all
+  11 steps. Go's `model/occurrence` is the reference for component instances.
 - The drawing browser now lists the authored sheets, borders, title blocks and
   views, and browser search uses those same rows. Unit tests cover multiple
   sheets, a missing border and searching for a view.
