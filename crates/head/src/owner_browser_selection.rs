@@ -182,10 +182,18 @@ impl<
     ) -> Result<bool, String> {
         use oblikovati_gui::GuiBrowserChoice::{
             ActivateModelState, Body, BodyVisible, CopyModelState, CreateModelState, Nothing,
-            Occurrence, RenameModelState, Root, ShowFeatureDimensions, SketchDimensionsShown,
-            ToggleModelStateEditScope,
+            Occurrence, RenameModelState, Root, SetOccurrenceSuppressed, ShowFeatureDimensions,
+            SketchDimensionsShown, ToggleModelStateEditScope,
         };
         self.require_browser_document(document)?;
+        if let SetOccurrenceSuppressed { path, suppressed } = choice {
+            self.document_host()
+                .set_occurrence_suppressed(document, path, *suppressed)
+                .map_err(|cause| cause.to_string())?;
+            self.selected_occurrence = None;
+            self.model_face = None;
+            return Ok(true);
+        }
         if let Occurrence(path) = choice {
             let browser = self.gui_browser_snapshot(document)?;
             if !super::model_browser::occurrences::contains_occurrence(&browser.occurrences, path) {
@@ -240,6 +248,7 @@ impl<
             | ToggleModelStateEditScope
             | ShowFeatureDimensions(_)
             | SketchDimensionsShown { .. }
+            | SetOccurrenceSuppressed { .. }
             | Occurrence(_) => {}
             Nothing => {
                 commands

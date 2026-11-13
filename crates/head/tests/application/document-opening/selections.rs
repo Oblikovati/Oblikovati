@@ -251,6 +251,73 @@ fn opening_an_assembly_displays_its_referenced_part() {
             .selected_occurrence
             .is_none()
     );
+    let before = green_assembly_bounds(&mut world);
+    occurrence_menu(&mut world, "Part:1", "Suppress");
+    assert_eq!(
+        world
+            .app()
+            .window
+            .native
+            .scene_status()
+            .unwrap()
+            .visible_bodies,
+        1
+    );
+    let after = green_assembly_bounds(&mut world);
+    assert!(
+        after.0[0] > before.0[0],
+        "expected the left placement to disappear"
+    );
+    world.save_capture("assembly-suppressed-occurrence");
+    world.key(ViewportPhysicalKey::Z, true);
+    assert_eq!(
+        world
+            .app()
+            .window
+            .native
+            .scene_status()
+            .unwrap()
+            .visible_bodies,
+        2
+    );
+    world.key(ViewportPhysicalKey::Y, true);
+    assert_eq!(
+        world
+            .app()
+            .window
+            .native
+            .scene_status()
+            .unwrap()
+            .visible_bodies,
+        1
+    );
+    occurrence_menu(&mut world, "Part:1", "Unsuppress");
+    assert_eq!(
+        world
+            .app()
+            .window
+            .native
+            .scene_status()
+            .unwrap()
+            .visible_bodies,
+        2
+    );
+    world.click_text("Save");
+    close_active(&mut world);
+    open_dialog(&mut world);
+    look_in(&mut world, &folder);
+    select_row(&mut world, ASSEMBLY_FILE);
+    choose_open(&mut world);
+    assert_eq!(
+        world
+            .app()
+            .window
+            .native
+            .scene_status()
+            .unwrap()
+            .visible_bodies,
+        2
+    );
     world.click_text("Search");
     world.pump(Vec::new());
     super::super::workspace_layout::browser_tree::type_in_search(&mut world, "Part:2");
@@ -258,6 +325,19 @@ fn opening_an_assembly_displays_its_referenced_part() {
     world.expect_text("Part:2");
     world.expect_no_text("Part:1");
     world.close();
+}
+fn occurrence_menu(world: &mut ApplicationWorld, name: &str, command: &str) {
+    let center = world.run(name).center();
+    world.right_click(super::super::diagnostics::pointer_pixels(center));
+    world.click_text(command);
+}
+fn green_assembly_bounds(world: &mut ApplicationWorld) -> ([usize; 2], [usize; 2]) {
+    let capture = super::super::capture_framebuffer(&mut world.app().window.native);
+    super::super::solid_visibility::visible_fixture_bounds(
+        &capture,
+        &super::super::diagnostics::window_occlusions(),
+    )
+    .expect("expected a visible assembly component")
 }
 fn assert_selected_and_unselected_solids(world: &mut ApplicationWorld, selected_right: bool) {
     let capture = super::super::capture_framebuffer(&mut world.app().window.native);

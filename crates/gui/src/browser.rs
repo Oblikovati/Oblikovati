@@ -380,6 +380,7 @@ impl BrowserTree<'_> {
         {
             self.select_occurrence(row, actions);
         }
+        self.occurrence_menu(row, actions);
         if let Some(error) = &row.error {
             self.ui.same_line();
             self.ui.text_colored([1., 0.35, 0.25, 1.], "[unresolved]");
@@ -400,6 +401,7 @@ impl BrowserTree<'_> {
         if self.ui.is_item_clicked() && !self.ui.is_item_toggled_open() {
             self.select_occurrence(row, actions);
         }
+        self.occurrence_menu(row, actions);
         if let Some(_node) = token {
             self.occurrences(&row.children, actions);
         }
@@ -409,6 +411,30 @@ impl BrowserTree<'_> {
             document: self.state.document.unwrap_or(0),
             choice: crate::GuiBrowserChoice::Occurrence(row.path.clone()),
         });
+    }
+    fn occurrence_menu(&self, row: &GuiBrowserOccurrence, actions: &mut Vec<GuiShellAction>) {
+        let Some(_menu) = self.ui.begin_popup_context_item() else {
+            return;
+        };
+        let label = if row.suppressed {
+            "Unsuppress"
+        } else {
+            "Suppress"
+        };
+        if self
+            .ui
+            .menu_item_config(label)
+            .enabled(row.path.len() == 1 && !self.state.transaction_open)
+            .build()
+        {
+            actions.push(GuiShellAction::BrowserChoice {
+                document: self.state.document.unwrap_or(0),
+                choice: crate::GuiBrowserChoice::SetOccurrenceSuppressed {
+                    path: row.path.clone(),
+                    suppressed: !row.suppressed,
+                },
+            });
+        }
     }
     fn drawing(&self, view: &mut BrowserView) {
         let drawing = self

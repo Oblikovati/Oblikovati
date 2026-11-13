@@ -224,6 +224,13 @@ claim that each file has been individually triaged.
   ties and reports invalid transforms. Tests cover translated and scaled
   placements, a nested mouse pick and a miss. Face-level assembly references
   and occurrence editing commands remain open.
+- Top-level occurrence rows now offer Suppress and Unsuppress through one
+  generation-checked host operation. A native mouse and keyboard test covers
+  suppression, undo, redo, restoration, save and reopen; framebuffer checks
+  confirm that the suppressed placement disappears. Host tests cover stale
+  paths, vetoes and persistence. The public `assembly.suppress` wire method
+  and stable occurrence session IDs are not yet implemented; nested rows must
+  be edited in their owning assembly.
 - The drawing browser now lists the authored sheets, borders, title blocks and
   views, and browser search uses those same rows. Unit tests cover multiple
   sheets, a missing border and searching for a view.

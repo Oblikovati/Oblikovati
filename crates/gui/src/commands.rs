@@ -275,6 +275,11 @@ pub enum GuiBrowserChoice {
     Root,
     /// Choose a placed component by its generation-scoped owner path.
     Occurrence(crate::GuiOccurrencePath),
+    /// Change the suppression state of an assembly-owned occurrence.
+    SetOccurrenceSuppressed {
+        path: crate::GuiOccurrencePath,
+        suppressed: bool,
+    },
     Body {
         key: String,
         feature: oblikovati_model::feature::FeatureId,

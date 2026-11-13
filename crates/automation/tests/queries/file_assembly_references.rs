@@ -225,3 +225,170 @@ fn opening_an_assembly_resolves_nested_components_without_activating_them() {
     );
     files.close_discarding_changes(reopened).unwrap();
 }
+
+#[test]
+fn occurrence_suppression_is_undoable_saved_and_rejects_stale_paths() {
+    let mut files = DiscoveryWorkspace::new(QueryObserver::default(), DiscoveryFiles::default());
+    let mut source = QueryGuids(0);
+    let path = Path::new("/fixtures/edit.oad");
+    files.files().packages.borrow_mut().insert(path.into(), b"schemaVersion: 2\ndocumentType: 2\nmodel: {occurrences: [{name: 'Part:1', component: part.opd}]}\n".to_vec());
+    let mut factory = QueryObserverFactory {
+        created: 0,
+        limit: 8,
+    };
+    let root = FileHost::new(&mut files, &mut source, "test")
+        .with_observer_factory(&mut factory)
+        .open_path(path, true)
+        .unwrap();
+    let generation = files.workspace().session(root).unwrap().generation();
+    let selection = [(root, generation, 0)];
+    FileHost::new(&mut files, &mut source, "test")
+        .set_occurrence_suppressed(root, &selection, false)
+        .unwrap();
+    assert_eq!(
+        files.workspace().session(root).unwrap().generation(),
+        generation
+    );
+    FileHost::new(&mut files, &mut source, "test")
+        .set_occurrence_suppressed(root, &selection, true)
+        .unwrap();
+    assert!(
+        files
+            .workspace()
+            .session(root)
+            .unwrap()
+            .snapshot()
+            .assembly
+            .as_ref()
+            .unwrap()[0]
+            .suppressed
+    );
+    assert!(
+        FileHost::new(&mut files, &mut source, "test")
+            .set_occurrence_suppressed(root, &selection, false)
+            .is_err()
+    );
+    files.commands(root).unwrap().undo().unwrap();
+    assert!(
+        !files
+            .workspace()
+            .session(root)
+            .unwrap()
+            .snapshot()
+            .assembly
+            .as_ref()
+            .unwrap()[0]
+            .suppressed
+    );
+    files.commands(root).unwrap().redo().unwrap();
+    assert!(
+        files
+            .workspace()
+            .session(root)
+            .unwrap()
+            .snapshot()
+            .assembly
+            .as_ref()
+            .unwrap()[0]
+            .suppressed
+    );
+    files.save(root, "test", &mut source).unwrap();
+    files.close_discarding_changes(root).unwrap();
+    let reopened = FileHost::new(&mut files, &mut source, "test")
+        .with_observer_factory(&mut factory)
+        .open_path(path, true)
+        .unwrap();
+    assert!(
+        files
+            .workspace()
+            .session(reopened)
+            .unwrap()
+            .snapshot()
+            .assembly
+            .as_ref()
+            .unwrap()[0]
+            .suppressed
+    );
+}
+
+#[test]
+fn occurrence_edit_rejects_a_path_through_an_unrelated_owner() {
+    let mut files = DiscoveryWorkspace::new(QueryObserver::default(), DiscoveryFiles::default());
+    let mut source = QueryGuids(0);
+    let first = assembly_with_references(&mut files, &mut source);
+    let other = files
+        .create_unbound(
+            DocumentPackage::empty(DOCUMENT_ASSEMBLY, "Other"),
+            QueryObserver::default(),
+            "test",
+            &mut source,
+        )
+        .unwrap()
+        .session_id;
+    files
+        .commands(other)
+        .unwrap()
+        .run("Add virtual", |snapshot, _| -> Result<(), ()> {
+            snapshot.assembly = Some(vec![AssemblyOccurrenceRecipe {
+                name: "Virtual".into(),
+                virtual_: true,
+                ..Default::default()
+            }]);
+            Ok(())
+        })
+        .unwrap();
+    let first_generation = files.workspace().session(first).unwrap().generation();
+    let other_generation = files.workspace().session(other).unwrap().generation();
+    let path = [(first, first_generation, 0), (other, other_generation, 0)];
+    let error = FileHost::new(&mut files, &mut source, "test")
+        .set_occurrence_suppressed(first, &path, true)
+        .unwrap_err();
+    assert!(
+        error.to_string().contains("top-level occurrence"),
+        "{error}"
+    );
+    assert!(
+        !files
+            .workspace()
+            .session(other)
+            .unwrap()
+            .snapshot()
+            .assembly
+            .as_ref()
+            .unwrap()[0]
+            .suppressed
+    );
+}
+
+#[test]
+fn occurrence_suppression_honors_a_transaction_veto() {
+    let mut files = DiscoveryWorkspace::new(QueryObserver::default(), DiscoveryFiles::default());
+    let mut source = QueryGuids(0);
+    let path = Path::new("/fixtures/veto.oad");
+    files.files().packages.borrow_mut().insert(path.into(), b"schemaVersion: 2\ndocumentType: 2\nmodel: {occurrences: [{name: 'Virtual', virtual: true}]}\n".to_vec());
+    let root = files
+        .open(
+            path,
+            QueryObserver {
+                veto: true,
+                ..Default::default()
+            },
+            "test",
+            &mut source,
+            OpenActivation::Activate,
+        )
+        .unwrap()
+        .session_id();
+    let generation = files.workspace().session(root).unwrap().generation();
+    let history = files.workspace().session(root).unwrap().history_entries();
+    let result = FileHost::new(&mut files, &mut source, "test").set_occurrence_suppressed(
+        root,
+        &[(root, generation, 0)],
+        true,
+    );
+    assert!(result.is_err());
+    let session = files.workspace().session(root).unwrap();
+    assert!(!session.snapshot().assembly.as_ref().unwrap()[0].suppressed);
+    assert_eq!(session.history_entries(), history);
+    assert!(!session.in_transaction());
+}
