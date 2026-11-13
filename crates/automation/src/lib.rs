@@ -270,4 +270,5 @@ mod themes;
 pub use themes::{THEME_QUERY_METHODS, ThemeQueryHost};
 
 mod color_schemes;
+mod keymap;
 pub use color_schemes::COLOR_SCHEME_METHODS;

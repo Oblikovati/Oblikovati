@@ -12,6 +12,7 @@ pub use input::{
     ViewportButton, ViewportInput, ViewportKey, ViewportModifiers, ViewportNavigation,
 };
 pub use keyboard::ViewportPhysicalKey;
+pub use oblikovati_model::viewport_keyboard_keys;
 mod presentation;
 pub use presentation::{PartPresentation, PartPresentationDecline};
 mod types;

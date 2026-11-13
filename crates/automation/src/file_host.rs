@@ -41,6 +41,8 @@ pub struct FileHost<'a, O: TransactionObserver, W, F> {
     context: RefCell<FileContext<'a, O, W, F>>,
 }
 struct FileContext<'a, O: TransactionObserver, W, F> {
+    keymap: Option<&'a mut oblikovati_model::keymap::Keymap>,
+    keymap_store: Option<&'a mut dyn oblikovati_model::keymap::KeymapPreferenceAccess>,
     color_schemes: Option<&'a mut oblikovati_model::color_scheme::ColorSchemeRegistry>,
     themes: Option<&'a oblikovati_model::theme::ThemeLibrary>,
     window_capture: Option<&'a mut dyn crate::WindowCaptureAccess>,
@@ -58,6 +60,19 @@ struct FileContext<'a, O: TransactionObserver, W, F> {
         Option<&'a mut dyn oblikovati_model::application_options::SketchPreferenceAccess>,
 }
 impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHost<'a, O, W, F> {
+    /// Share the application keymap; example: `host.with_keymap(&mut keymap)`.
+    pub fn with_keymap(mut self, keymap: &'a mut oblikovati_model::keymap::Keymap) -> Self {
+        self.context.get_mut().keymap = Some(keymap);
+        self
+    }
+    /// Share keymap storage; example: `host.with_keymap_store(&mut store)`.
+    pub fn with_keymap_store(
+        mut self,
+        store: &'a mut dyn oblikovati_model::keymap::KeymapPreferenceAccess,
+    ) -> Self {
+        self.context.get_mut().keymap_store = Some(store);
+        self
+    }
     /// Supply exact drawing projection; example: `host.with_drawing_views(&backend)`.
     pub fn with_drawing_views(
         mut self,
@@ -111,6 +126,8 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHos
     ) -> Self {
         Self {
             context: RefCell::new(FileContext {
+                keymap: None,
+                keymap_store: None,
                 color_schemes: None,
                 themes: None,
                 window_capture: None,
@@ -134,6 +151,27 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
 {
     fn call(&self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
         let mut context = self.context.try_borrow_mut().map_err(|_| busy(method))?;
+        if crate::keymap::METHODS.contains(&method) {
+            let FileContext {
+                keymap,
+                keymap_store,
+                ..
+            } = &mut *context;
+            let keymap = keymap.as_deref_mut().ok_or_else(|| {
+                Error(format!(
+                    "keymap call {method:?}: expected an injected application keymap"
+                ))
+            })?;
+            let mut candidate = keymap.clone();
+            let reply = crate::keymap::apply(&mut candidate, method, request)?;
+            if method != METHOD_KEYMAP_LIST && method != METHOD_KEYMAP_EXPORT {
+                if let Some(store) = keymap_store.as_deref_mut() {
+                    store.set_keymap(&candidate.export()).map_err(Error)?;
+                }
+                *keymap = candidate;
+            }
+            return Ok(reply);
+        }
         if crate::COLOR_SCHEME_METHODS.contains(&method) {
             let registry = context.color_schemes.as_deref_mut().ok_or_else(|| Error(format!(
                 "color scheme call {method:?}: expected an injected application palette registry"
