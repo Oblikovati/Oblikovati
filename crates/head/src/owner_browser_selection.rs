@@ -58,14 +58,13 @@ impl<
             .map_err(|cause| cause.to_string())?
             .set_browser_sketch_selection(None, SelectionClickMode::Replace, false)
             .map_err(|cause| cause.to_string())?;
-        self.model_face = self
-            .part_scenes
-            .face_on_line(&self.files, document, line)?
-            .map(|(feature, role)| ChosenModelFace {
-                document,
-                feature,
-                role,
-            });
+        let picked = self.part_scenes.face_on_line(&self.files, document, line)?;
+        self.measure_part_face(document, picked)?;
+        self.model_face = picked.map(|(feature, role)| ChosenModelFace {
+            document,
+            feature,
+            role,
+        });
         Ok(true)
     }
     fn set_sketch_dimensions_shown(

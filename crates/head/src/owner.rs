@@ -45,6 +45,8 @@ mod model_browser;
 pub(crate) mod owner_precise_input;
 #[path = "owner_parameters.rs"]
 mod parameters_gui;
+#[path = "owner_part_measure.rs"]
+mod part_measure;
 #[path = "owner_recent.rs"]
 mod recent;
 #[path = "owner_sketch_block.rs"]
@@ -150,6 +152,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     block_created: Option<String>,
     opened_hidden_sketch: Option<oblikovati_model::document_sketch::DocumentSketchId>,
     model_face: Option<browser_selection::ChosenModelFace>,
+    part_measure: Option<part_measure::PartMeasure>,
     inspected_file: Option<oblikovati_gui::GuiInspectedFile>,
     /// The feature whose dimensions a row's Show Dimensions put in the view.
     shown_feature_dimensions: Option<(u64, oblikovati_model::feature::FeatureId)>,
@@ -225,6 +228,7 @@ impl<
             block_created: None,
             opened_hidden_sketch: None,
             model_face: None,
+            part_measure: None,
             inspected_file: None,
             shown_feature_dimensions: None,
             body_physical: Default::default(),

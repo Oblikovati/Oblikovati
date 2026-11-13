@@ -19,7 +19,7 @@ claim that each file has been individually triaged.
 | 1 | `features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature` | Needs rerun | The source changed after the full run at `6e80b9bde`. Review the corrections and run the whole feature against a stable source; earlier counts are historical. |
 | 1 | `features/application/ribbon-panel-visibility` side selector | In progress | The left and right selector and group reflow scenarios pass on the recorded source. Rerun the full feature and cover the remaining selector interactions. |
 | 1 | `features/application/ribbon-panel-visibility` selector keyboard | In progress | Home and End retain the focused panel row; native verification and the current-source scenario are recorded below. Other keyboard scenarios need their named panel fixtures and a full feature rerun. |
-| 1 | `features/application/ribbon-display/ribbon-display.feature` | In progress | Source changed. Revalidate all scenarios against the revised file, including appearance and modeling-preview cases. |
+| 1 | `features/application/ribbon-display/ribbon-display.feature` | In progress | The command-panel tab-switch scenario passes on the recorded source. Revalidate the remaining scenarios, including appearance and modeling-preview cases. |
 | 1 | `features/application/workspace-layout/workspace-layout.feature` | Needs rerun | Source changed since the inventory checkpoint. Review the correction and rerun affected native scenarios. |
 | 2 | `features/sketch/pattern-rectangular/scenario.feature` | In progress | Rectangular patterns can be created and edited in the native UI, but directions are fixed to the sketch axes. Implement line-reference selection and associativity, then run the affected native scenarios. |
 | 2 | Other `features/sketch` | In progress | The native sketch gate runs only selected folders. Inventory and run the remaining folders before reporting total coverage. |
@@ -709,3 +709,27 @@ revisions checked before they support a current pass claim.
   unchanged during the run. The local report is
   `/tmp/obk-builtin-working-copy-bdd-20261113`. Part-mode Measure remains
   unavailable; the full ribbon feature has not been rerun.
+
+### Part face measurement, 2026-11-13
+
+- Measure is available in a part and reports a selected solid face's analytic
+  area in mm². The B-rep line pick and face report come from Martensite; the
+  measurement does not use the display mesh. The dialog states that it accepts
+  a solid face. Edge, distance, and angle measurements remain unimplemented.
+- Model-face picking now works when the model browser is hidden. A native
+  mouse test measured a 40 × 30 mm face as 1,200 mm², switched ribbon tabs,
+  and cleared the selection. The captured image is the local file
+  `target/benchmarks/application/part-measure-analytic-face.png`.
+- The native `Switch ribbon tabs with a command panel open` scenario passed
+  all 10 steps on source SHA-256
+  `82542b170cbae71ede004fcb11be64a14bedbb10fdaf9b40df7b2eec462f636e`,
+  unchanged during the run. Application: `b114cdba9` plus this change;
+  unrelated README and AGENTS files were present. Linux, Xvfb at 1600 × 1000,
+  and Lavapipe. The local report is `/tmp/obk-part-measure-bdd-scope-20261113`.
+- Three native Measure tests and two existing face-selection tests passed.
+  Unit checks cover invalid, duplicate, and non-finite face reports and stale
+  model generations. The GUI suite passed 354 tests and the file-dialog suite
+  passed four. The native cube journey and GUI/head Clippy passed after the
+  viewport-picking change. The final prompt change was checked with the native
+  Measure tests, the BDD scenario and head Clippy. Earlier records stating that
+  part-mode Measure was unavailable are historical.

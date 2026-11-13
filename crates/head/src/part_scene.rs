@@ -357,6 +357,7 @@ mod references;
 
 mod bodies;
 
+mod measure;
 mod physical;
 
 mod topology;

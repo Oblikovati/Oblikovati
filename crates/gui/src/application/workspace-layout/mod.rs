@@ -101,6 +101,8 @@ impl WorkspaceLayout {
         self.view.arrow_consumed = false;
         self.view.feature_keyboard_focus = false;
         self.view.document_area = Some(self.document_area(ui.io().display_size, band_height));
+        self.view.view_clicks_taken = self.view_clicks_taken;
+        browser_origin::follow_view_click(ui, state, &mut self.view, actions);
         if !self.panels.dock_visible() {
             self.empty_dock_control(ui, band_height);
             self.draw_find(ui, state, actions);
@@ -135,7 +137,6 @@ impl WorkspaceLayout {
         } else if active == panel_tabs::DockPanel::Favorites {
             self.panels.favorites.panel(ui);
         } else if self.panels.model_open {
-            self.view.view_clicks_taken = self.view_clicks_taken;
             crate::browser::browser_contents(ui, state, &mut self.view, actions);
             self.pending_layout |= self.view.needs_frame();
         }

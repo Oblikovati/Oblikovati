@@ -102,11 +102,19 @@ impl<
     /// Carry out one inspection choice; example: `owner.inspect_from_gui(StartMeasure)`.
     pub fn inspect_from_gui(&mut self, action: GuiInspectAction) -> Result<bool, String> {
         match action {
-            GuiInspectAction::StartMeasure => self.start_measure()?,
+            GuiInspectAction::StartMeasure => {
+                if self.active_sketch_edit().is_some() {
+                    self.part_measure = None;
+                    self.start_measure()?;
+                } else {
+                    self.start_part_measure()?;
+                }
+            }
             GuiInspectAction::OpenRegionProperties => self.open_region_properties()?,
             GuiInspectAction::CalculateRegions => self.calculate_regions()?,
             GuiInspectAction::FinishMeasure | GuiInspectAction::FinishRegionProperties => {
                 self.sketch_tool = None;
+                self.part_measure = None;
                 self.command_notice = Some(DesktopCommandNotice::Ready);
             }
         }
@@ -192,12 +200,12 @@ impl<
         Ok(())
     }
     pub(super) fn gui_measure_panel(&self) -> Option<GuiMeasurePanel> {
-        let Some(SketchToolState::Measure(tool)) = self.sketch_tool.as_ref() else {
-            return None;
-        };
-        Some(GuiMeasurePanel {
-            rows: tool.rows.clone(),
-        })
+        if let Some(SketchToolState::Measure(tool)) = self.sketch_tool.as_ref() {
+            return Some(GuiMeasurePanel {
+                rows: tool.rows.clone(),
+            });
+        }
+        self.gui_part_measure()
     }
     pub(super) fn gui_region_panel(&self) -> Option<GuiRegionPanel> {
         let Some(SketchToolState::Region(tool)) = self.sketch_tool.as_ref() else {

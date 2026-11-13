@@ -250,7 +250,6 @@ pub(crate) fn browser_contents(
     view.feature_rows.clear();
     view.feature_open.clear();
     view.header(ui, browser.kind == crate::GuiBrowserKind::Drawing);
-    browser_origin::follow_view_click(ui, state, view, actions);
     browser_origin::follow_keys(ui, view, actions, state);
     view.follow_relationships();
     let _document = ui.push_id(format!("document-{:?}", state.document));

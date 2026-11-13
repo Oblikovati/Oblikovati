@@ -112,6 +112,13 @@ impl GuiShellAction {
             Self::SetCenterPoint { .. } | Self::DeleteSketchRelation(_) => {
                 state.sketch_at_ready && !state.transaction_open
             }
+            Self::Inspect(crate::GuiInspectAction::StartMeasure) => {
+                matches!(
+                    state.authoring,
+                    GuiAuthoringContext::Sketch | GuiAuthoringContext::Part
+                ) && !state.transaction_open
+            }
+            Self::Inspect(crate::GuiInspectAction::FinishMeasure) => state.measure.is_some(),
             Self::Inspect(_) => state.authoring == GuiAuthoringContext::Sketch,
             Self::EditDimensionValue(_) => {
                 (state.sketch_at_ready || state.dimension_tool_active) && !state.transaction_open

@@ -3,6 +3,7 @@ use super::{ApplicationWorld, diagnostics::window_geometry};
 use cucumber::{given, then, when};
 mod compact_options;
 mod double_click;
+mod measure;
 mod sketch_exit;
 mod tabs_only;
 const VIEW_GROUPS: [&str; 4] = ["Visibility", "Appearance", "Windows", "Navigate"];
