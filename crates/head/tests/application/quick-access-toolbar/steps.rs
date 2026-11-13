@@ -2,6 +2,8 @@
 use super::{ApplicationWorld, diagnostics::window_geometry};
 use cucumber::{given, then, when};
 mod material_browser;
+mod menu_choices;
+mod redo;
 
 const DEFAULT_ENTRIES: [&str; 6] = ["New", "Open", "Save", "Undo", "Redo", "Home"];
 const CONTROL: &str = "...";
@@ -80,7 +82,11 @@ fn print_absent(world: &mut ApplicationWorld) {
     assert!(!on_row(world, "Print"), "expected no Print on the row");
 }
 #[when("I open the quick access customization menu")]
+#[when("the user opens the quick access customization menu")]
+#[when("the user opens the quick access toolbar customization menu")]
+#[when("the user opens its quick access customization menu")]
 #[when("I reopen the customization menu")]
+#[when("the user reopens the customization menu")]
 fn open_menu(world: &mut ApplicationWorld) {
     open_customization(world);
 }
@@ -95,13 +101,16 @@ fn defaults_present(world: &mut ApplicationWorld) {
     }
 }
 #[then("New, Open, Save, Undo, Redo and Home are checked")]
+#[then("New, Open, Save, Undo, Redo, and Home are checked")]
 fn defaults_checked(world: &mut ApplicationWorld) {
     for entry in DEFAULT_ENTRIES {
         assert!(world.checked(entry), "expected {entry} checked");
     }
 }
 #[when("I select Print")]
+#[when("the user selects Print")]
 #[when("I select Print again")]
+#[when("the user selects Print again")]
 fn select_print(world: &mut ApplicationWorld) {
     world.click_text("Print");
     world.pump(Vec::new());
@@ -115,6 +124,7 @@ fn print_checked(world: &mut ApplicationWorld) {
     assert!(world.checked("Print"), "expected Print checked");
 }
 #[when("I choose Show Below the Ribbon")]
+#[when("the user chooses Show Below the Ribbon")]
 fn show_below(world: &mut ApplicationWorld) {
     world.click_text("Show Below the Ribbon");
     world.pump(Vec::new());
@@ -152,6 +162,7 @@ fn above_offered(world: &mut ApplicationWorld) {
     world.expect_text("Show Above the Ribbon");
 }
 #[when("I choose Show Above the Ribbon")]
+#[when("the user chooses Show Above the Ribbon")]
 fn show_above(world: &mut ApplicationWorld) {
     world.click_text("Show Above the Ribbon");
     world.pump(Vec::new());
@@ -175,7 +186,9 @@ fn extrude_absent(world: &mut ApplicationWorld) {
     assert!(!on_row(world, "Extrude"), "expected no Extrude on the row");
 }
 #[when("I right-click Extrude on the ribbon")]
+#[when("the user right-clicks Extrude on the ribbon")]
 #[when("I right-click Extrude on the ribbon again")]
+#[when("the user right-clicks Extrude on the ribbon again")]
 fn right_click_extrude(world: &mut ApplicationWorld) {
     right_click_ribbon_extrude(world);
 }
@@ -184,6 +197,7 @@ fn offers_add(world: &mut ApplicationWorld) {
     world.expect_text("Add to Quick Access Toolbar");
 }
 #[when("I choose Add to Quick Access Toolbar")]
+#[when("the user chooses Add to Quick Access Toolbar")]
 fn choose_add(world: &mut ApplicationWorld) {
     world.click_text("Add to Quick Access Toolbar");
     world.pump(Vec::new());
@@ -204,7 +218,9 @@ fn extrude_remains(world: &mut ApplicationWorld) {
     );
 }
 #[when("I right-click the added quick access icon")]
+#[when("the user right-clicks the added quick access icon")]
 #[when("I right-click its quick access icon")]
+#[when("the user right-clicks its quick access icon")]
 fn right_click_shortcut(world: &mut ApplicationWorld) {
     let at = row_center(world, "Extrude");
     world.right_click(at);
@@ -215,6 +231,7 @@ fn offers_remove(world: &mut ApplicationWorld) {
     world.expect_text("Remove from Quick Access Toolbar");
 }
 #[when("I choose Remove from Quick Access Toolbar")]
+#[when("the user chooses Remove from Quick Access Toolbar")]
 fn choose_remove(world: &mut ApplicationWorld) {
     world.click_text("Remove from Quick Access Toolbar");
     world.pump(Vec::new());
@@ -234,6 +251,7 @@ fn offers_separator(world: &mut ApplicationWorld) {
     world.expect_text("Add Separator");
 }
 #[when("I choose Add Separator")]
+#[when("the user chooses Add Separator")]
 fn choose_separator(world: &mut ApplicationWorld) {
     world.observed_row_gap = Some(row_gap_after_extrude(world));
     world.click_text("Add Separator");
@@ -266,6 +284,7 @@ fn empty_part(world: &mut ApplicationWorld) {
     part_active(world);
 }
 #[when("I select the Extrude quick access icon")]
+#[when("the user selects the Extrude quick access icon")]
 fn select_shortcut(world: &mut ApplicationWorld) {
     let at = row_center(world, "Extrude");
     world.click(at);
@@ -336,6 +355,8 @@ fn extrude_from_ribbon(world: &mut ApplicationWorld) {
     add_extrude(world);
 }
 #[when("I activate the assembly")]
+#[when("the user activates the assembly")]
+#[when("the user activates the assembly document")]
 fn activate_assembly(world: &mut ApplicationWorld) {
     let assembly = world.other_document.expect("expected an assembly");
     world.click_tab(assembly);
@@ -349,6 +370,7 @@ fn not_on_assembly(world: &mut ApplicationWorld) {
     );
 }
 #[when("I reactivate the first part")]
+#[when("the user reactivates the first part")]
 fn reactivate_first(world: &mut ApplicationWorld) {
     let first = world.parts[0];
     world.click_tab(first);
@@ -360,6 +382,7 @@ fn on_part(world: &mut ApplicationWorld) {
     assert!(on_row(world, "Extrude"), "expected Extrude on the part");
 }
 #[when("I activate the second part")]
+#[when("the user activates the second part")]
 fn activate_second(world: &mut ApplicationWorld) {
     let second = world.parts[1];
     world.click_tab(second);
@@ -386,6 +409,7 @@ fn add_disabled(world: &mut ApplicationWorld) {
     );
 }
 #[when("I dismiss the menu and remove the Extrude quick access icon")]
+#[when("the user dismisses the menu and remove the Extrude quick access icon")]
 fn dismiss_and_remove(world: &mut ApplicationWorld) {
     world.escape();
     world.pump(Vec::new());
@@ -415,6 +439,7 @@ fn print_unselected(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
 }
 #[when("I activate the part and select Print in its quick access customization menu")]
+#[when("the user activates the part and selects Print in its quick access customization menu")]
 fn select_print_on_part(world: &mut ApplicationWorld) {
     let part = world.parts[0];
     world.click_tab(part);
@@ -432,6 +457,7 @@ fn print_off_assembly(world: &mut ApplicationWorld) {
     assert!(!on_row(world, "Print"), "expected no Print on the assembly");
 }
 #[when("I return to the part")]
+#[when("the user returns to the part")]
 fn return_to_part(world: &mut ApplicationWorld) {
     // The customization menu is still up from the step before; it takes the next click.
     world.escape();

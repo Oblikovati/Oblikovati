@@ -3,6 +3,7 @@
 use super::*;
 
 #[given("the Tools ribbon is selected")]
+#[given("the full Tools ribbon is selected")]
 fn tools_selected(world: &mut ApplicationWorld) {
     world.click_text("Tools");
     world.expect_text("Material and Appearance");
