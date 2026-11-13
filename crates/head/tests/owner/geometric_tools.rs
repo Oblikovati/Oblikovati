@@ -59,6 +59,8 @@ fn horizontal_and_vertical_line_tools_commit_through_the_typed_host_and_undo() {
         owner.constrain_sketch_from_gui(choice).unwrap();
         assert_tool_active(&owner, true);
         deliver(&mut owner, &[button(pixel, true)]);
+        assert_tool_active(&owner, true);
+        deliver(&mut owner, &[key(ViewportKey::Cancel, true)]);
         assert_tool_active(&owner, false);
         assert_eq!(inspection(&mut owner).dof, before - 1);
         Client::new(owner.document_host())
@@ -108,7 +110,7 @@ fn two_point_constraints_keep_picked_highlights_until_commit() {
             1
         );
         deliver(&mut owner, &[button([100, 50], true)]);
-        assert_tool_active(&owner, false);
+        assert_tool_active(&owner, true);
         assert_eq!(
             inspection(&mut owner).dof,
             before - if choice == Coincident { 2 } else { 1 }
@@ -178,7 +180,7 @@ fn first_midpoint_snap_is_retained_and_duplicate_line_clicks_do_not_replace_it()
                 button([50, 50], true),
             ],
         );
-        assert_tool_active(&owner, false);
+        assert_tool_active(&owner, true);
         let geometry = owner
             .documents()
             .workspace()
@@ -222,7 +224,7 @@ fn coincident_accepts_circle_and_arc_outlines_through_the_same_host_operation() 
         deliver(&mut owner, &[button(pixel, true)]);
         assert_tool_active(&owner, true);
         deliver(&mut owner, &[button([150, 50], true)]);
-        assert_tool_active(&owner, false);
+        assert_tool_active(&owner, true);
         assert_eq!(inspection(&mut owner).dof, before - 1);
     }
 }
@@ -369,4 +371,64 @@ pub(super) fn geometry_for_relation(
         .get(sketch)
         .unwrap()
         .geometry()
+}
+
+#[test]
+fn coincident_remains_active_for_a_second_relation_until_escape() {
+    let (mut owner, document, sketch) =
+        geometric_owner(&[[0., 0.], [100., 50.], [200., 0.], [300., 50.]], false);
+    owner.constrain_sketch_from_gui(Coincident).unwrap();
+    deliver(&mut owner, &[button([0, 0], true), button([100, 50], true)]);
+    assert_tool_active(&owner, true);
+    assert_eq!(
+        Client::new(owner.document_host())
+            .model()
+            .selection()
+            .unwrap()
+            .count,
+        0
+    );
+    deliver(
+        &mut owner,
+        &[button([200, 0], true), button([300, 50], true)],
+    );
+    assert_tool_active(&owner, true);
+    let snapshot = owner
+        .documents()
+        .workspace()
+        .session(document)
+        .unwrap()
+        .snapshot();
+    assert_eq!(
+        snapshot
+            .sketches
+            .get(sketch)
+            .unwrap()
+            .geometry()
+            .geometric_constraints()
+            .count(),
+        2
+    );
+    deliver(&mut owner, &[key(ViewportKey::Cancel, true)]);
+    assert_tool_active(&owner, false);
+    Client::new(owner.document_host())
+        .transactions()
+        .undo()
+        .unwrap();
+    let snapshot = owner
+        .documents()
+        .workspace()
+        .session(document)
+        .unwrap()
+        .snapshot();
+    assert_eq!(
+        snapshot
+            .sketches
+            .get(sketch)
+            .unwrap()
+            .geometry()
+            .geometric_constraints()
+            .count(),
+        1
+    );
 }

@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Kept geometric constraint tools active for repeated selections and restored Coincident prompts.
+
 - Preserved sketch selection when opening a point context menu. (#3856)
 
 - Disabled sketch marking-menu commands while a transaction is open. (#3856)

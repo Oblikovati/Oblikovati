@@ -13,6 +13,10 @@ fn native_delete_uses_the_common_cascade_and_one_history_step() {
         .constrain_sketch_from_gui(GuiSketchConstraint::Horizontal)
         .unwrap();
     deliver(&mut owner, &[button([50, 10], true)]);
+    deliver(
+        &mut owner,
+        &[key(oblikovati_viewport::ViewportKey::Cancel, true)],
+    );
     let before = owner
         .documents()
         .workspace()

@@ -26,7 +26,7 @@ impl<
         self.retire_sketch_tool()?;
         let tool = self.geometric_state(choice)?;
         self.clear_geometric_picks(tool.edit)?;
-        self.geometric_prompt(&tool);
+        self.geometric_prompt(&tool)?;
         self.sketch_tool = Some(SketchToolState::Geometric(Box::new(tool)));
         Ok(true)
     }
@@ -95,19 +95,15 @@ impl<
     fn finish_geometric_pick(&mut self, tool: &mut SketchGeometricState) -> Result<bool, String> {
         let requests = self.geometric_request(tool)?;
         if requests.is_empty() {
-            self.geometric_prompt(tool);
+            self.geometric_prompt(tool)?;
             return Ok(false);
         };
-        let result = self.apply_geometric_requests(tool, &requests)?;
+        self.apply_geometric_requests(tool, &requests)?;
+        tool.generation = self.capture_sketch_tool_context()?.1;
         self.clear_geometric_picks(tool.edit)?;
-        self.command_notice = Some(DesktopCommandNotice::PlacementPrompt {
-            message: format!(
-                "{} applied. Sketch DOF: {}.",
-                tool.choice.label(),
-                result.dof
-            ),
-        });
-        Ok(true)
+        tool.midpoint_lines.clear();
+        self.geometric_prompt(tool)?;
+        Ok(false)
     }
     fn geometric_midpoint_hit(
         &self,
@@ -196,10 +192,12 @@ impl<
             .map_err(|cause| cause.to_string())?;
         Ok(session.selected_sketch_picks(tool.edit.sketch))
     }
-    fn geometric_prompt(&mut self, tool: &SketchGeometricState) {
+    fn geometric_prompt(&mut self, tool: &SketchGeometricState) -> Result<(), String> {
+        let has_pick = !self.current_geometric_picks(tool)?.is_empty();
         self.command_notice = Some(DesktopCommandNotice::PlacementPrompt {
-            message: format!("{}: {}", tool.choice.label(), tool.prompt()),
+            message: format!("{}: {}", tool.choice.label(), tool.prompt(has_pick)),
         });
+        Ok(())
     }
     fn cancel_geometric_tool(&mut self, tool: &SketchGeometricState) -> bool {
         self.command_notice = Some(match self.clear_geometric_picks(tool.edit) {

@@ -9,6 +9,8 @@ mod arc_three_point;
 mod circle_center_point;
 #[path = "coincident/context.rs"]
 mod coincident_context;
+#[path = "coincident/points.rs"]
+mod coincident_points;
 #[path = "dimension-expression/steps.rs"]
 mod dimension_expression;
 #[path = "ellipse/steps.rs"]

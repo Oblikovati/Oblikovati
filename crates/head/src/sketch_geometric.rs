@@ -33,7 +33,7 @@ pub(crate) fn accepts(choice: GuiSketchConstraint, kind: &SketchEntityKind) -> b
     }
 }
 impl SketchGeometricState {
-    pub(crate) fn prompt(&self) -> &'static str {
+    pub(crate) fn prompt(&self, has_pick: bool) -> &'static str {
         match self.choice {
             GuiSketchConstraint::Horizontal | GuiSketchConstraint::Vertical => {
                 "Select a line or two points. Escape cancels."
@@ -47,9 +47,10 @@ impl SketchGeometricState {
                 "Select a line and circle/arc, or two circles/arcs. Escape cancels."
             }
             GuiSketchConstraint::Fix => "Select a point or line to fix. Escape cancels.",
-            GuiSketchConstraint::Coincident => {
-                "Select two points, or a point and a line, circle or arc. Escape cancels."
+            GuiSketchConstraint::Coincident if has_pick => {
+                "Select second curve or point. Escape cancels."
             }
+            GuiSketchConstraint::Coincident => "Select first curve or point. Escape cancels.",
         }
     }
     pub(crate) fn request(
