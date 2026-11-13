@@ -27,6 +27,7 @@ fn project_active(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
 }
 #[when("I choose Projects in the chooser")]
+#[when("the user chooses Projects in the chooser")]
 fn choose_projects(world: &mut ApplicationWorld) {
     world.click_text("Projects");
     world.pump(Vec::new());
@@ -57,6 +58,7 @@ fn project_tree(world: &mut ApplicationWorld) {
     world.expect_text("Workspace: work");
 }
 #[when("I choose Done without changing the project")]
+#[when("the user chooses Done without changing the project")]
 fn choose_done(world: &mut ApplicationWorld) {
     world.click_text("Done");
     world.pump(Vec::new());

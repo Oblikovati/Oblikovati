@@ -154,10 +154,12 @@ fn expect_icon_row(world: &ApplicationWorld, expected_size: f32) {
     );
 }
 #[when("I choose Back in the chooser navigation bar")]
+#[when("the user chooses Back in the chooser navigation bar")]
 fn chooser_back(world: &mut ApplicationWorld) {
     world.click_text("Back");
 }
 #[when("I choose Forward in the chooser navigation bar")]
+#[when("the user chooses Forward in the chooser navigation bar")]
 fn chooser_forward(world: &mut ApplicationWorld) {
     world.click_text("Forward");
 }
@@ -193,6 +195,7 @@ fn assembly_details_shown(world: &mut ApplicationWorld) {
     expect_assembly_details(world);
 }
 #[when("I reopen the new-document chooser during the same session")]
+#[when("the user reopens the new-document chooser during the same session")]
 fn reopen_chooser(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::N, true);
     world.pump(Vec::new());
@@ -216,6 +219,7 @@ fn root_has_no_templates(world: &mut ApplicationWorld) {
     world.expect_text("Templates");
 }
 #[when("I select Home in the chooser navigation bar")]
+#[when("the user selects Home in the chooser navigation bar")]
 fn chooser_home(world: &mut ApplicationWorld) {
     world.click_text("Home");
 }
@@ -248,6 +252,7 @@ fn metric_grouped(world: &mut ApplicationWorld) {
     grouped_by_default(world);
 }
 #[when("I choose Extra large icons in the template display menu")]
+#[when("the user chooses Extra large icons in the template display menu")]
 fn choose_extra_large(world: &mut ApplicationWorld) {
     choose_template_view(world, "Extra Large Icons");
 }
@@ -256,6 +261,7 @@ fn extra_large_tiles(world: &mut ApplicationWorld) {
     expect_icon_row(world, 56.);
 }
 #[when("I choose Small icons in the template display menu")]
+#[when("the user chooses Small icons in the template display menu")]
 fn choose_small(world: &mut ApplicationWorld) {
     choose_template_view(world, "Small Icons");
 }
@@ -268,12 +274,14 @@ fn medium_sized(world: &mut ApplicationWorld) {
     medium_tiles(world);
 }
 #[when("I double-click the standard metric part template")]
+#[when("the user double-clicks the standard metric part template")]
 fn double_click_part(world: &mut ApplicationWorld) {
     let center = world.run(METRIC_PART).center().map(|value| value as i32);
     world.pump(super::super::pointer_click_events(center, 2));
     world.pump(Vec::new());
 }
 #[when("I press Enter")]
+#[when("the user presses Enter")]
 fn press_enter(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::Enter, false);
     world.pump(Vec::new());

@@ -115,6 +115,7 @@ fn sorted_decreasing(world: &mut ApplicationWorld) {
     expect_part_tiles_ordered(world, false);
 }
 #[when("I reopen the chooser in the same session")]
+#[when("the user reopens the chooser in the same session")]
 fn reopen_same_session(world: &mut ApplicationWorld) {
     reopen_chooser(world);
 }
@@ -124,6 +125,7 @@ fn metric_medium(world: &mut ApplicationWorld) {
     medium_tiles(world);
 }
 #[when("I choose Details in the template display menu")]
+#[when("the user chooses Details in the template display menu")]
 fn choose_details_view(world: &mut ApplicationWorld) {
     open_details_view(world);
 }
@@ -141,6 +143,7 @@ fn root_empty(world: &mut ApplicationWorld) {
     world.expect_text("Templates");
 }
 #[when("I choose Home in the template chooser")]
+#[when("the user chooses Home in the template chooser")]
 fn home_in_chooser(world: &mut ApplicationWorld) {
     chooser_home(world);
 }
@@ -189,6 +192,7 @@ fn assembly_chosen(world: &mut ApplicationWorld) {
     assembly_details_shown(world);
 }
 #[when("I select the English template folder without selecting another template")]
+#[when("the user selects the English template folder without selecting another template")]
 fn english_only(world: &mut ApplicationWorld) {
     world.click_text("English");
 }
@@ -216,6 +220,7 @@ fn inch_drawing_available(world: &mut ApplicationWorld) {
     world.expect_text(INCH_DRAWING);
 }
 #[when("I select the inch drawing template")]
+#[when("the user selects the inch drawing template")]
 fn select_inch_drawing(world: &mut ApplicationWorld) {
     world.click_text(INCH_DRAWING);
 }
@@ -225,6 +230,7 @@ fn layout_previews(world: &mut ApplicationWorld) {
     world.expect_text("Assembly Layout");
 }
 #[when("I select the populated assembly layout preview")]
+#[when("the user selects the populated assembly layout preview")]
 fn select_assembly_layout(world: &mut ApplicationWorld) {
     world.click_text("Assembly Layout");
 }
@@ -243,6 +249,7 @@ fn component_controls(world: &mut ApplicationWorld) {
     world.expect_text("Browse...");
 }
 #[when("I cancel component selection")]
+#[when("the user cancels component selection")]
 fn cancel_component(world: &mut ApplicationWorld) {
     world.click_text("Cancel");
     world.pump(Vec::new());
@@ -280,6 +287,7 @@ fn component_name_shown(world: &mut ApplicationWorld) {
     world.expect_text(&name);
 }
 #[when("I choose Browse beside the document name")]
+#[when("the user chooses Browse beside the document name")]
 fn browse_component(world: &mut ApplicationWorld) {
     world.click_text("Browse...");
     world.pump(Vec::new());
@@ -294,6 +302,7 @@ fn file_dialog_above(world: &mut ApplicationWorld) {
     );
 }
 #[when("I cancel the file-selection dialog")]
+#[when("the user cancels the file-selection dialog")]
 fn cancel_file_dialog(world: &mut ApplicationWorld) {
     world.click_text("Cancel");
     world.pump(Vec::new());

@@ -5,12 +5,18 @@ before changing a status. The source inventory is a discovery checkpoint, not
 a pass count. The initial inventory records the current files; it does not
 claim that each file has been individually triaged.
 
+The live inventory on 2026-11-13 reports changes in 23 of 24 application
+feature files against the discovery checkpoint, as well as changes in sketch
+and solid-model files. Treat older feature results as historical until their
+recorded source hash is compared with the live file and the required rerun is
+complete. The checkpoint has not been advanced: the changes still need triage.
+
 | Priority | Feature and scope | State | Evidence and next action |
 | --- | --- | --- | --- |
 | 1 | `features/application` | In progress | The native application runner exists. A complete, current area result has not been recorded. Run and retain the full area report; triage failures against the current source. |
 | 1 | Native parameter-driven cube journey | In progress | The native journey creates a constrained rectangle and extrude, edits the size, uses undo/redo, saves and reopens, and resolves a face. Maintain the live test and rerun it after relevant changes. |
 | 1 | `features/application/file-menu/file-menu.feature` | Verified | All eight scenarios passed on the recorded updated source. Weldment remains unavailable. |
-| 1 | `features/application/document-creation` | In progress | On the updated source, 8 of 39 native scenarios pass; 31 stop at undefined steps. Name and size sorting, horizontal icon tiles, and keyboard and secondary-button selection work for available templates. The remaining scenarios need bindings and additional named templates. |
+| 1 | `features/application/document-creation` | In progress | The current-source run with updated bindings passed 26 of 39 native scenarios; 13 stopped at undefined steps. Add the remaining scenario bindings and the named template and populated-layout fixtures. See the current run below. |
 | 1 | `features/application/document-opening` | In progress | The current-source native run passed 26 of 27 scenarios. Express assembly loading stopped at a missing component fixture; its later steps did not run. The saved-drawing scenario passes with its referenced part initially closed. |
 | 1 | `features/application/document-saving` | Passing | The current-source native feature run passed 23 of 23 scenarios. The first-save preview is rendered from the part and stored in the saved file. See the save evidence below. |
 | 1 | `features/application/model-browser` | In progress | After action wording updates, a full native run passed 29 of 100 scenarios. Of the other 71, 62 stopped at undefined steps and nine at failed checks. Focused fixes passed later; rerun the full feature before reporting a current total. |
@@ -33,6 +39,33 @@ claim that each file has been individually triaged.
 | 3 | `features/solid-model` | In progress | Implementations exist, but this area has not been assessed against the current complete source. Assess each feature after the application and sketch priorities; no total execution result is recorded. |
 
 ## Evidence records
+
+### Document creation current-source run, 2026-11-13
+
+- Source: `features/application/document-creation/document-creation.feature`,
+  SHA-256 `e9a93d4c096090667952b8080a0cad01c48f480022a4b8ac72ae210607ca138d`
+  before and after the run. Application commit `9b1fe4978`; unrelated local
+  `README.md` and `AGENTS.md` changes were present. Linux, Xvfb, Lavapipe;
+  Martensite revision `d051ff699982faba4ec2df3ee9a47e14f38dedbd`.
+- With `OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios`,
+  `OBK_BDD_FEATURE=document-creation`, and `OBK_BDD_REPORTS` set to
+  `/tmp/obk-bdd-create-20261113-current`, ran
+  `xvfb-run -a -s '-screen 0 1600x1000x24' cargo test --locked -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture`.
+  All 39 scenarios ran: 14 passed; 25 stopped at undefined steps. The test
+  returned failure. JSON, JUnit, and the log are in that report directory.
+  A run after the binding updates is required for current results.
+- A second full run with the first wording bindings passed 22 of 39 scenarios;
+  17 stopped at undefined steps. Source hash was unchanged. Reports:
+  `/tmp/obk-bdd-create-20261113-bindings`. More bindings were added while
+  that run was in progress, so it does not establish the current count.
+- The full run with all current wording bindings passed 26 of 39 scenarios
+  (66.7%); 13 stopped at undefined steps, and the benchmark returned failure.
+  The source hash was unchanged before and after the run. The application was
+  `9b1fe4978` with the three document-creation and project-dialog binding
+  files modified. The same native command and environment were used, with
+  `OBK_BDD_REPORTS=/tmp/obk-bdd-create-20261113-final`; JSON, JUnit and log
+  are there. Remaining work includes the named template fixtures, keyboard
+  navigation setup, populated drawing layouts and their update behavior.
 
 ### Document creation focused scenarios, 2026-11-13
 
