@@ -2,6 +2,7 @@
 //! Ribbon command edits stay in a draft until Apply or OK.
 mod category;
 mod keyboard;
+mod locations;
 mod panel;
 mod settings_dialog;
 mod settings_xml;
@@ -242,6 +243,7 @@ impl RibbonCustomization {
                     {
                         transfer = Some(command);
                     }
+                    locations::show(ui, command);
                 }
                 if let Some(command) = transfer {
                     self.draft.reset_source_selection(command);

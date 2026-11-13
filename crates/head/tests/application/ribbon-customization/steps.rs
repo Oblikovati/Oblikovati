@@ -8,6 +8,8 @@ mod category_steps;
 mod custom_panel_title;
 #[path = "file_exchange.rs"]
 mod file_exchange;
+#[path = "location_steps.rs"]
+mod location_steps;
 #[path = "macros.rs"]
 mod macros;
 #[path = "missing_file.rs"]

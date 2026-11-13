@@ -111,6 +111,11 @@ pub(crate) fn any_popup_open(_: &Ui) -> bool {
     // A null identity is the documented form with AnyPopupId; no string crosses the ABI.
     unsafe { imgui::sys::igIsPopupOpen_Str(std::ptr::null(), flags) }
 }
+/// Check pointer hover even after keyboard navigation; example: `item_mouse_hovered(ui)` after a row.
+pub(crate) fn item_mouse_hovered(_: &Ui) -> bool {
+    // The live Ui owns the context; imgui-rs omits this scalar flag.
+    unsafe { imgui::sys::igIsItemHovered(imgui::sys::ImGuiHoveredFlags_NoNavOverride as i32) }
+}
 /// Draw literal UTF-8 in the current window; example: `literal_text(ui, point, color, "Part##1")` preserves hashes.
 pub(crate) fn literal_text(ui: &Ui, position: [f32; 2], color: [f32; 4], text: &str) {
     draw_literal_text(ui, position, color, text, false);
