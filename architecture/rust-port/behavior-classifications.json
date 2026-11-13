@@ -253,9 +253,10 @@
       "milestone": "R4",
       "owner": "desktop",
       "target_module": "crates/head, crates/gui, crates/session",
-      "acceptance_test": "solid-model native BDD runner and bindings required: extrusion-01 Empty part entry requests a sketch plane",
+      "acceptance_test": "application_scenarios_use_the_native_window with OBK_BDD_AREA=solid-model: extrusion-01 Empty part entry requests a sketch plane",
       "issues": [
-        "https://github.com/Oblikovati/Oblikovati/issues/3857"
+        "https://github.com/Oblikovati/Oblikovati/issues/3857",
+        "https://github.com/Oblikovati/Oblikovati/issues/3870"
       ],
       "state": "inventoried",
       "last_receipt": null
@@ -267,9 +268,10 @@
       "milestone": "R4",
       "owner": "desktop",
       "target_module": "crates/head, crates/gui, crates/session",
-      "acceptance_test": "solid-model native BDD runner and bindings required: extrusion-02 Finish profile returns to waiting extrusion",
+      "acceptance_test": "application_scenarios_use_the_native_window with OBK_BDD_AREA=solid-model: extrusion-02 Finish profile returns to waiting extrusion",
       "issues": [
-        "https://github.com/Oblikovati/Oblikovati/issues/3857"
+        "https://github.com/Oblikovati/Oblikovati/issues/3857",
+        "https://github.com/Oblikovati/Oblikovati/issues/3870"
       ],
       "state": "inventoried",
       "last_receipt": null
@@ -281,9 +283,10 @@
       "milestone": "R4",
       "owner": "desktop",
       "target_module": "crates/head, crates/gui, crates/session",
-      "acceptance_test": "solid-model native BDD runner and bindings required: extrusion-04 Cancel preserves the source sketch",
+      "acceptance_test": "application_scenarios_use_the_native_window with OBK_BDD_AREA=solid-model: extrusion-04 Cancel preserves the source sketch",
       "issues": [
-        "https://github.com/Oblikovati/Oblikovati/issues/3857"
+        "https://github.com/Oblikovati/Oblikovati/issues/3857",
+        "https://github.com/Oblikovati/Oblikovati/issues/3870"
       ],
       "state": "inventoried",
       "last_receipt": null
@@ -295,9 +298,10 @@
       "milestone": "R4",
       "owner": "desktop",
       "target_module": "crates/head, crates/gui, crates/session",
-      "acceptance_test": "solid-model native BDD runner and bindings required: extrusion-05 Zero distance validation and recovery",
+      "acceptance_test": "application_scenarios_use_the_native_window with OBK_BDD_AREA=solid-model: extrusion-05 Zero distance validation and recovery",
       "issues": [
-        "https://github.com/Oblikovati/Oblikovati/issues/3857"
+        "https://github.com/Oblikovati/Oblikovati/issues/3857",
+        "https://github.com/Oblikovati/Oblikovati/issues/3870"
       ],
       "state": "inventoried",
       "last_receipt": null

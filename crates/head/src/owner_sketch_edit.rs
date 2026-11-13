@@ -73,15 +73,36 @@ impl<
         document: u64,
         request: &DocumentSketchCreation,
     ) -> Result<DocumentSketchId, String> {
+        self.create_sketch_edit_entry(document, request, false)
+    }
+    /// Create and select a sketch with the next available default name.
+    /// Example: `owner.create_automatic_sketch_for_edit(document, &request)?`.
+    pub(super) fn create_automatic_sketch_for_edit(
+        &mut self,
+        document: u64,
+        request: &DocumentSketchCreation,
+    ) -> Result<DocumentSketchId, String> {
+        self.create_sketch_edit_entry(document, request, true)
+    }
+    fn create_sketch_edit_entry(
+        &mut self,
+        document: u64,
+        request: &DocumentSketchCreation,
+        automatic: bool,
+    ) -> Result<DocumentSketchId, String> {
         self.require_sketch_edit_entry(document)?;
         let mut request = request.clone();
         request.project_origin &= self.sketch_document_kind(document)? == DOCUMENT_PART;
-        let sketch = self
+        let mut commands = self
             .files
             .commands(document)
-            .map_err(|cause| cause.to_string())?
-            .create_sketch(&request)
             .map_err(|cause| cause.to_string())?;
+        let sketch = if automatic {
+            commands.create_automatic_sketch(&request)
+        } else {
+            commands.create_sketch(&request)
+        }
+        .map_err(|cause| cause.to_string())?;
         self.watch_sketch_edit(document, sketch)?;
         Ok(sketch)
     }

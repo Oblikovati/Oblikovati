@@ -173,6 +173,23 @@ class EvidenceBoundaryTests(unittest.TestCase):
         fixture = EvidenceFixture(Path("."))
         with self.assertRaisesRegex(ValueError, "runner"):
             check_runner({"runner": "diagnostic"}, fixture.row)
+        fixture.row["area"] = "solid-model"
+        with self.assertRaisesRegex(ValueError, "expected integer 0"):
+            check_runner(
+                {
+                    "runner": "application_scenarios_use_the_native_window",
+                    "exit_code": False,
+                },
+                fixture.row,
+            )
+        check_runner(
+            {
+                "runner": "application_scenarios_use_the_native_window",
+                "exit_code": 0,
+                "environment": {"os": "Linux", "renderer": "Vulkan"},
+            },
+            fixture.row,
+        )
         with tempfile.TemporaryDirectory() as folder:
             fixture = EvidenceFixture(Path(folder))
             state = {"commit": "source", "dirty": True}

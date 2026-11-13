@@ -396,6 +396,8 @@ mod resources;
 #[path = "lifecycle/attachments.rs"]
 mod attachments;
 
+#[path = "lifecycle/sketch_auto_names.rs"]
+mod sketch_auto_names;
 #[path = "lifecycle/sketch_create.rs"]
 mod sketch_create;
 #[path = "lifecycle/sketch_primitive.rs"]

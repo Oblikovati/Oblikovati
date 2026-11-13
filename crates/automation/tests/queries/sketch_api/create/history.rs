@@ -1,5 +1,28 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+#[test]
+fn typed_creation_uses_shared_default_names_after_explicit_collision() {
+    let (mut files, document, mut source) = configured_files(DOCUMENT_PART, Default::default());
+    files
+        .commands(document)
+        .unwrap()
+        .create_sketch(&oblikovati_model::history::DocumentSketchCreation {
+            name: "Sketch1".into(),
+            placement: SketchPlacement::Fixed(SketchPlane::xy()),
+            orientation: None,
+            project_origin: false,
+        })
+        .unwrap();
+    create_call(&mut files, &mut source, &Default::default()).unwrap();
+    create_call(&mut files, &mut source, &Default::default()).unwrap();
+    let sketches = &snapshot(&files, document).sketches;
+    let names: Vec<_> = sketches
+        .sketches()
+        .iter()
+        .map(|sketch| sketch.name())
+        .collect();
+    assert_eq!(names, ["Sketch1", "Sketch2", "Sketch3"]);
+}
 fn grouped_creations(files: &mut DiscoveryWorkspace, source: &mut QueryGuids, abort: bool) {
     let client = Client::new(FileHost::new(files, source, "test"));
     client

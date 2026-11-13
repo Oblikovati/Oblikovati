@@ -253,10 +253,10 @@ impl<
             oblikovati_gui::GuiOriginPlaneKind::Xz => SketchPlane::xz(),
             oblikovati_gui::GuiOriginPlaneKind::Yz => SketchPlane::yz(),
         };
-        self.create_sketch_for_edit(
+        self.create_automatic_sketch_for_edit(
             document,
             &oblikovati_model::history::DocumentSketchCreation {
-                name: "Sketch".into(),
+                name: String::new(),
                 placement: oblikovati_model::document_sketch::SketchPlacement::Fixed(frame),
                 orientation: None,
                 project_origin: true,

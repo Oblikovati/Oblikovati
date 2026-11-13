@@ -121,6 +121,12 @@ that a fixture is missing; investigate fixture failures before classifying them.
 Diagnostic results are for sizing work. Run the normal command without
 `OBK_BDD_DIAGNOSTIC` to collect acceptance evidence.
 
+To select a solid-model feature, set `OBK_BDD_AREA=solid-model` and use
+`application_scenarios_use_the_native_window` with `OBK_BDD_FEATURE`. The
+runner uses the same native window and step registry. Unbound steps still fail
+normal acceptance. Unset `OBK_BDD_AREA` to restore the application default;
+sketch features use the separate sketch runner.
+
 ## Inventory scenario declarations
 
 After restoring and verifying the pinned checkout, generate the source inventory:

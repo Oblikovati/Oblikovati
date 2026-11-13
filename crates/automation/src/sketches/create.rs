@@ -24,7 +24,9 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     files
         .commands(document)
         .map_err(api_error)?
-        .create_sketch_projected(&definition, |result| creation_reply(result, index, label))
+        .create_automatic_sketch_projected(&definition, |result| {
+            creation_reply(result, index, label)
+        })
         .map_err(api_error)
 }
 fn creation_inputs(
@@ -43,7 +45,7 @@ fn creation_inputs(
         .transpose()?;
     Ok((
         DocumentSketchCreation {
-            name: "Sketch".into(),
+            name: String::new(),
             placement,
             orientation,
             project_origin,

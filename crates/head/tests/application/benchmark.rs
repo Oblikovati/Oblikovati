@@ -112,6 +112,8 @@ mod ribbon_panel_expansion;
 mod ribbon_panel_visibility;
 #[path = "../sketch/benchmark.rs"]
 mod sketch;
+#[path = "../solid-model/extrusion/steps.rs"]
+mod solid_extrusion;
 #[path = "viewport-navigation-wheel/steps.rs"]
 mod viewport_navigation_wheel;
 #[path = "viewport-orbit/steps.rs"]
@@ -133,10 +135,36 @@ fn application_scenarios_use_the_native_window() {
     std::thread::Builder::new()
         .name("application-scenarios".into())
         .stack_size(SCENARIO_STACK_BYTES)
-        .spawn(|| run_scenarios(feature_root("application"), |_| true))
+        .spawn(|| {
+            let configured = std::env::var_os("OBK_BDD_AREA");
+            let setting = configured
+                .as_deref()
+                .map(|value| value.to_str().expect("BDD area: expected UTF-8"));
+            let area = selected_area(setting).unwrap();
+            run_scenarios(feature_root(area), |_| true);
+        })
         .unwrap()
         .join()
         .unwrap();
+}
+fn selected_area(setting: Option<&str>) -> Result<&str, String> {
+    match setting {
+        None | Some("application") => Ok("application"),
+        Some("solid-model") => Ok("solid-model"),
+        Some(other) => Err(format!(
+            "BDD area {other:?}: expected application or solid-model"
+        )),
+    }
+}
+#[test]
+fn native_area_selection_keeps_application_default_and_rejects_invalid_values() {
+    assert_eq!(selected_area(None).unwrap(), "application");
+    assert_eq!(selected_area(Some("solid-model")).unwrap(), "solid-model");
+    assert!(
+        selected_area(Some("sketch"))
+            .unwrap_err()
+            .contains("expected application or solid-model")
+    );
 }
 /// Run one area's features. `OBK_BDD_SCENARIO` narrows a run to matching scenario names.
 fn run_scenarios(root: PathBuf, keep_feature: fn(&cucumber::gherkin::Feature) -> bool) {

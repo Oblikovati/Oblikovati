@@ -182,6 +182,7 @@ def check_runner(receipt: Mapping[str, object], row: Mapping[str, object]) -> No
     """Require the area's native acceptance runner; for example, check_runner(receipt, row)."""
     runners = {
         "application": "application_scenarios_use_the_native_window",
+        "solid-model": "application_scenarios_use_the_native_window",
         "sketch": "sketch_scenarios_use_the_native_window",
     }
     expected = runners.get(str(row["area"]))
@@ -190,7 +191,9 @@ def check_runner(receipt: Mapping[str, object], row: Mapping[str, object]) -> No
             f"scenario area {row['area']!r}: expected a supported native acceptance runner"
         )
     require_equal("receipt runner", receipt.get("runner"), expected)
-    require_equal("receipt exit code", receipt.get("exit_code"), 0)
+    exit_code = receipt.get("exit_code")
+    if type(exit_code) is not int or exit_code != 0:
+        raise ValueError(f"receipt exit code {exit_code!r}: expected integer 0")
     environment = receipt.get("environment")
     if not isinstance(environment, dict) or not all(
         isinstance(environment.get(key), str) and environment[key].strip()

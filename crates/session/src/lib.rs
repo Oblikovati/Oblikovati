@@ -16,6 +16,7 @@ mod sketch_inference;
 pub use sketch_inference::SketchInferenceProjectionInput;
 mod editor_selection_scope;
 mod prism_create;
+mod sketch_auto_names;
 mod sketch_construction;
 mod sketch_create;
 mod sketch_curve_format;
@@ -76,6 +77,7 @@ pub struct DocumentSession<O> {
     observer: O,
     group: Option<BoundedGroup>,
     sketch_options: oblikovati_solve::nonlinear::SolveOptions,
+    next_sketch_name: u64,
     body_visibility: body_visibility::BodyVisibilityState,
     sketch_continuity: sketch_continuity::SketchContinuityWatches,
 }
@@ -106,6 +108,7 @@ impl<O: TransactionObserver> DocumentSession<O> {
             body_visibility: Default::default(),
             sketch_continuity: Default::default(),
             sketch_options,
+            next_sketch_name: 1,
         }
     }
 
