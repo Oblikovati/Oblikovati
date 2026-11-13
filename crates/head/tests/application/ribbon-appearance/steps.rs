@@ -277,3 +277,28 @@ fn pinned_additional_commands_survive_panel_title_changes() {
     assert!(diagnostics::window_geometry("##ribbon-additional-PartModify").is_some());
     world.close();
 }
+
+#[given("the full Tools ribbon uses the Normal appearance")]
+fn tools_normal_appearance(world: &mut ApplicationWorld) {
+    select_tab(world, "Tools");
+    expect_normal_appearance(world, "Tools", "Application Options");
+}
+#[when("the user right-clicks the Options panel title and opens \"Ribbon Appearance\"")]
+fn open_tools_appearance(world: &mut ApplicationWorld) {
+    open_panel_appearance(world, "Options");
+}
+#[then("the appearance submenu closes and the panel context menu remains open")]
+fn appearance_closes_context_remains(world: &mut ApplicationWorld) {
+    world.expect_no_text("Text Off");
+    world.expect_text("Ribbon Appearance");
+    world.expect_text("Show Panels");
+}
+#[then("the panel context menu closes")]
+fn panel_context_closes(world: &mut ApplicationWorld) {
+    world.expect_no_text("Ribbon Appearance");
+    world.expect_no_text("Show Panels");
+}
+#[then("the Tools ribbon remains in the Normal appearance")]
+fn tools_still_normal(world: &mut ApplicationWorld) {
+    expect_normal_appearance(world, "Tools", "Application Options");
+}

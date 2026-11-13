@@ -543,3 +543,18 @@ revisions checked before they support a current pass claim.
   --nocapture`, with `OBK_BDD_FEATURE=ribbon-appearance`, no scenario filter,
   and the live scenario root. Cucumber and JUnit reports are in
   `/tmp/obk-ribbon-appearance-full-dc95-20261113`, a local path.
+
+### Dismiss the appearance submenu, 2026-11-13
+
+- The current-source native scenario passed all eight steps: Escape first
+  closes the appearance submenu, then closes its parent; the Tools ribbon
+  remains in Normal appearance. The test opens the menu again to check the
+  selected setting. This validates existing behavior and adds scenario
+  bindings; it does not implement the missing appearance modes.
+- Source: `features/application/ribbon-appearance/ribbon-appearance.feature`,
+  SHA-256 `846aff6433de2b69e222aa0580140c53adb7fdbe3aeba04ccab2a69ddc8c9438`
+  before and after the run. Application: `beb3028c0` plus these bindings, with
+  unrelated README and AGENTS files present. Linux, Xvfb at 1600 × 1000 and
+  Lavapipe. The filtered native runner report is in
+  `/tmp/obk-appearance-escape-20261113`, a local path. The previous full
+  feature count belongs to an earlier application revision.
