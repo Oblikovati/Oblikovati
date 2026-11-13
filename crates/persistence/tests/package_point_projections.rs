@@ -62,10 +62,22 @@ fn yaml_round_trip_preserves_binding_identity_seed_bits_and_reservation_marks() 
 }
 #[test]
 fn older_recipe_versions_cannot_silently_accept_projection_sources() {
-    for version in [1u64, 2, 3, 7] {
+    for version in [1u64, 2, 3] {
         let mut document = yaml_document();
         document["model"]["planarSketches"]["recipe"]["version"] = version.into();
         assert!(decode_document(&document).restore_sketches().is_err());
+    }
+}
+#[test]
+fn later_recipe_versions_preserve_projection_sources() {
+    for version in [4u64, 5, 6, 7] {
+        let mut document = yaml_document();
+        document["model"]["planarSketches"]["recipe"]["version"] = version.into();
+        let restored = decode_document(&document).restore_sketches().unwrap();
+        assert!(
+            restored.sketches.same_recipe(&sketches()),
+            "version {version}"
+        );
     }
 }
 #[test]
