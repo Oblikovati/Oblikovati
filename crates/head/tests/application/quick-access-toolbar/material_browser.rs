@@ -2,6 +2,41 @@
 //! Open and use the Material Browser from the native quick access toolbar.
 use super::*;
 
+#[test]
+fn quick_access_materials_assigns_a_material_and_undoes_it() {
+    let mut world = ApplicationWorld::new();
+    part_active(&mut world);
+    let browser = world.state().browser.unwrap();
+    let choice = browser
+        .materials
+        .get(1)
+        .expect("expected two catalog materials");
+    let (id, name) = (choice.id.clone(), choice.name.clone());
+    world.click(row_center(&world, "Materials"));
+    world.click_text(&name);
+    assert_eq!(
+        world.state().browser.unwrap().part_material.as_deref(),
+        Some(id.as_str())
+    );
+    world.click(row_center(&world, "Undo"));
+    assert_eq!(world.state().browser.unwrap().part_material, None);
+    for visible in [false, true] {
+        open_customization(&mut world);
+        assert_ne!(world.checked("Materials"), visible);
+        let choice = world
+            .frame
+            .runs
+            .iter()
+            .rev()
+            .find(|run| run.text == "Materials")
+            .unwrap()
+            .center();
+        world.click(super::super::diagnostics::pointer_pixels(choice));
+        assert_eq!(on_row(&world, "Materials"), visible);
+    }
+    world.close();
+}
+
 #[given("the Tools ribbon is selected")]
 #[given("the full Tools ribbon is selected")]
 fn tools_selected(world: &mut ApplicationWorld) {

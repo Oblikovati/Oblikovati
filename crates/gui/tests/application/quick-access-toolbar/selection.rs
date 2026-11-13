@@ -3,6 +3,25 @@ use super::plane_selection::{area, inside, label_position};
 use super::*;
 
 #[test]
+fn material_key_tip_opens_only_for_an_idle_part() {
+    let mut toolbar = QuickAccessToolbar::default();
+    let mut state = GuiCommandState {
+        document: Some(1),
+        document_type: Some(oblikovati_api::types::DOCUMENT_PART),
+        authoring: crate::GuiAuthoringContext::Part,
+        ..Default::default()
+    };
+    toolbar.selection(&state).toggle(StandardCommand::New);
+    toolbar.selection(&state).toggle(StandardCommand::Open);
+    toolbar.activate_tip(8, &state, &mut Vec::new());
+    assert!(toolbar.open_materials);
+    toolbar.open_materials = false;
+    state.transaction_open = true;
+    toolbar.activate_tip(8, &state, &mut Vec::new());
+    assert!(!toolbar.open_materials);
+}
+
+#[test]
 fn the_default_row_leaves_print_out_and_a_toggle_applies_once_each_way() {
     let mut selection = KindSelection::default();
     assert!(selection.shows(StandardCommand::Home));

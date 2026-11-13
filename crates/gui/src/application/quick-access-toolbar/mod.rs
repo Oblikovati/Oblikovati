@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! The customizable command row: which commands each document kind shows, and where the row sits.
+mod materials;
 #[path = "plane_selection.rs"]
 pub(crate) mod plane_selection;
 mod selection;
@@ -9,7 +10,7 @@ use oblikovati_api::types::DocumentType;
 use std::collections::BTreeMap;
 
 /// Commands the customization menu lists, in its order.
-const STANDARD: [StandardCommand; 12] = [
+const STANDARD: [StandardCommand; 13] = [
     StandardCommand::New,
     StandardCommand::Open,
     StandardCommand::Save,
@@ -20,6 +21,7 @@ const STANDARD: [StandardCommand; 12] = [
     StandardCommand::Update,
     StandardCommand::Select,
     StandardCommand::MaterialBrowser,
+    StandardCommand::Materials,
     StandardCommand::Parameters,
     StandardCommand::Print,
 ];
@@ -43,6 +45,7 @@ enum StandardCommand {
     Update,
     Select,
     MaterialBrowser,
+    Materials,
     Parameters,
     Print,
 }
@@ -59,6 +62,7 @@ impl StandardCommand {
             Self::Update => "Update",
             Self::Select => "Select",
             Self::MaterialBrowser => "Material Browser",
+            Self::Materials => "Materials",
             Self::Parameters => "Parameters",
             Self::Print => "Print",
         }
@@ -120,6 +124,7 @@ pub(crate) struct QuickAccessToolbar {
     pub below_ribbon: bool,
     shortcut_under_menu: Option<String>,
     open_selection: bool,
+    open_materials: bool,
     requests: QuickAccessRequests,
     /// A right press landed on a command with its own menu, not on the ribbon behind it.
     pub command_took_right_click: bool,
@@ -204,6 +209,13 @@ impl QuickAccessToolbar {
                 self.requests.open_material_browser = true;
                 return;
             }
+            Some(StandardCommand::Materials)
+                if state.authoring == crate::GuiAuthoringContext::Part
+                    && !state.transaction_open =>
+            {
+                self.open_materials = true;
+                return;
+            }
             Some(StandardCommand::Parameters) if state.document.is_some() => {
                 self.requests.open_parameters = true;
                 return;
@@ -278,6 +290,9 @@ impl QuickAccessToolbar {
                     ui.begin_disabled(state.authoring != crate::GuiAuthoringContext::Part);
                 self.requests.open_material_browser |= ui.button(label);
                 drop(disabled);
+            }
+            StandardCommand::Materials => {
+                materials::button(ui, state, actions, &mut self.open_materials)
             }
             StandardCommand::Parameters => {
                 let disabled = ui.begin_disabled(state.document.is_none());
