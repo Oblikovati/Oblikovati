@@ -68,7 +68,9 @@ fn assembly_rows(world: &mut ApplicationWorld) {
     }
 }
 #[when("I select Load in Express Mode")]
+#[when("the user selects Load in Express Mode")]
 #[when("I clear Load in Express Mode")]
+#[when("the user clears Load in Express Mode")]
 fn toggle_express(world: &mut ApplicationWorld) {
     click_option(world, EXPRESS);
 }
@@ -116,6 +118,7 @@ fn location_known(world: &mut ApplicationWorld) {
     );
 }
 #[when("I press Control+O and choose the already open part at that location")]
+#[when("the user presses Control+O and chooses the already open part at that location")]
 fn choose_open_part(world: &mut ApplicationWorld) {
     let folder = models_folder(world);
     open_dialog(world);
@@ -123,6 +126,7 @@ fn choose_open_part(world: &mut ApplicationWorld) {
     select_row(world, PART_FILE);
 }
 #[when("I choose Open")]
+#[when("the user chooses Open")]
 fn press_open(world: &mut ApplicationWorld) {
     choose_open(world);
 }
@@ -165,7 +169,9 @@ fn skip_on(world: &mut ApplicationWorld) {
     assert!(world.checked(SKIP), "expected {SKIP} checked");
 }
 #[when("I select Load in Defer Mode")]
+#[when("the user selects Load in Defer Mode")]
 #[when("I clear Load in Defer Mode")]
+#[when("the user clears Load in Defer Mode")]
 fn toggle_defer(world: &mut ApplicationWorld) {
     click_option(world, DEFER);
 }
@@ -201,6 +207,7 @@ fn first_selected(world: &mut ApplicationWorld) {
     select_row(world, DRAWING_FILE);
 }
 #[when("I select the second drawing")]
+#[when("the user selects the second drawing")]
 fn select_second(world: &mut ApplicationWorld) {
     select_row(world, SECOND_DRAWING_FILE);
 }
@@ -210,6 +217,7 @@ fn second_shown(world: &mut ApplicationWorld) {
     assert!(shown.contains(SECOND_DRAWING_FILE), "file name {shown:?}");
 }
 #[when("I select the first drawing again")]
+#[when("the user selects the first drawing again")]
 fn select_first_again(world: &mut ApplicationWorld) {
     select_row(world, DRAWING_FILE);
 }
@@ -241,6 +249,7 @@ fn drawing_choices(world: &mut ApplicationWorld) {
     world.expect_text(DEFER);
 }
 #[when("I select the part thumbnail")]
+#[when("the user selects the part thumbnail")]
 fn select_part_tile(world: &mut ApplicationWorld) {
     select_row(world, PART_FILE);
 }
@@ -272,6 +281,7 @@ fn part_tile_selected(world: &mut ApplicationWorld) {
     expect_name_and_preview(world, PART_FILE);
 }
 #[when("I right-click the part thumbnail")]
+#[when("the user right-clicks the part thumbnail")]
 fn right_click_tile(world: &mut ApplicationWorld) {
     let at = world.run(PART_FILE).center().map(|value| value as i32);
     world.right_click(at);
@@ -284,6 +294,7 @@ fn tile_menu(world: &mut ApplicationWorld) {
     }
 }
 #[when("I click an empty area of the file list")]
+#[when("the user clicks an empty area of the file list")]
 fn click_empty_list(world: &mut ApplicationWorld) {
     let tile = world.run(PART_FILE).clone();
     world.click([tile.center()[0] as i32 + 120, tile.center()[1] as i32 + 90]);
@@ -307,7 +318,9 @@ fn each_preview(world: &mut ApplicationWorld) {
     expect_name_and_preview(world, SECOND_DRAWING_FILE);
 }
 #[when("I drag a selection rectangle from empty list space across both thumbnails")]
+#[when("the user drags a selection rectangle from empty list space across both thumbnails")]
 #[when("I select both drawing thumbnails with a selection rectangle")]
+#[when("the user selects both drawing thumbnails with a selection rectangle")]
 fn drag_rectangle(world: &mut ApplicationWorld) {
     rectangle_over_drawings(world);
 }
@@ -339,6 +352,7 @@ fn no_options(world: &mut ApplicationWorld) {
     world.expect_no_text(DEFER);
 }
 #[when("I select one of the drawing thumbnails")]
+#[when("the user selects one of the drawing thumbnails")]
 fn select_one(world: &mut ApplicationWorld) {
     select_row(world, DRAWING_FILE);
 }
@@ -385,6 +399,7 @@ fn dialog_shows_files(world: &mut ApplicationWorld) {
     switch_to_tiles(world);
 }
 #[when("I select both drawings and choose Open")]
+#[when("the user selects both drawings and chooses Open")]
 fn select_both_open(world: &mut ApplicationWorld) {
     rectangle_over_drawings(world);
     choose_open(world);

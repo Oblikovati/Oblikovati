@@ -26,6 +26,7 @@ fn project_pane(world: &mut ApplicationWorld) {
     world.expect_text("Recent Folders");
 }
 #[when("I switch to the system folder navigation pane")]
+#[when("the user switches to the system folder navigation pane")]
 fn system_pane(world: &mut ApplicationWorld) {
     world.click_text("Locations");
     settle(world);
@@ -36,12 +37,14 @@ fn system_rows(world: &mut ApplicationWorld) {
     world.expect_text("Computer");
 }
 #[when("I switch back to the project navigation pane")]
+#[when("the user switches back to the project navigation pane")]
 fn back_project(world: &mut ApplicationWorld) {
     world.click_text("Recent");
     settle(world);
 }
 // File views
 #[when("I choose the thumbnail view control")]
+#[when("the user chooses the thumbnail view control")]
 fn tiles_control(world: &mut ApplicationWorld) {
     world.click_text("Tiles");
     settle(world);
@@ -51,6 +54,7 @@ fn shown_as_tiles(world: &mut ApplicationWorld) {
     world.expect_no_text("Date modified");
 }
 #[when("I choose the details view control")]
+#[when("the user chooses the details view control")]
 fn details_control(world: &mut ApplicationWorld) {
     let at = world
         .frame
@@ -112,7 +116,9 @@ fn part_in_child(world: &mut ApplicationWorld) {
     select_row(world, PART_FILE);
 }
 #[when("I choose Up to the parent folder")]
+#[when("the user chooses Up to the parent folder")]
 #[when("I navigate up to its parent folder")]
+#[when("the user navigates up to its parent folder")]
 fn choose_up(world: &mut ApplicationWorld) {
     world.click_text("Up");
     settle(world);
@@ -138,6 +144,7 @@ fn folder_placeholder(world: &mut ApplicationWorld) {
     expect_placeholder(world);
 }
 #[when("I choose Forward")]
+#[when("the user chooses Forward")]
 fn choose_forward(world: &mut ApplicationWorld) {
     world.click_text("Forward");
     settle(world);
@@ -162,6 +169,7 @@ fn parent_lists_child(world: &mut ApplicationWorld) {
     folder_row(world);
 }
 #[when("I select the child folder in the file list")]
+#[when("the user selects the child folder in the file list")]
 fn select_child(world: &mut ApplicationWorld) {
     let row = folder_row(world);
     select_row(world, &row);
@@ -202,6 +210,7 @@ fn showing_child(world: &mut ApplicationWorld) {
     world.expect_text(DRAWING_FILE);
 }
 #[when("I reopen the Open dialog in the same session")]
+#[when("the user reopens the Open dialog in the same session")]
 fn reopen(world: &mut ApplicationWorld) {
     open_dialog(world);
 }
@@ -227,6 +236,7 @@ fn dialog_geometry() -> ([f32; 2], [f32; 2]) {
     super::super::diagnostics::window_geometry("Open").expect("expected the Open dialog")
 }
 #[when("I maximize the Open dialog")]
+#[when("the user maximizes the Open dialog")]
 fn maximize(world: &mut ApplicationWorld) {
     world.observed_row_gap = Some(dialog_geometry().1[0]);
     world.click_text("Maximize");
@@ -249,6 +259,7 @@ fn all_visible(world: &mut ApplicationWorld) {
     world.expect_no_text("No preview image");
 }
 #[when("I restore the Open dialog")]
+#[when("the user restores the Open dialog")]
 fn restore(world: &mut ApplicationWorld) {
     world.click_text("Restore");
     settle(world);
@@ -261,6 +272,7 @@ fn restored_size(world: &mut ApplicationWorld) {
 }
 // File types
 #[when("I open the file-type filter list")]
+#[when("the user opens the file-type filter list")]
 fn open_type_list(world: &mut ApplicationWorld) {
     let label = world.run("Files of type").clone();
     world.click([label.maximum[0] as i32 + 60, label.center()[1] as i32]);
@@ -289,6 +301,7 @@ fn other_filters(world: &mut ApplicationWorld) {
     );
 }
 #[when("I dismiss the list without choosing a different filter")]
+#[when("the user dismisses the list without choosing a different filter")]
 fn dismiss_types(world: &mut ApplicationWorld) {
     world.escape();
     settle(world);
@@ -321,6 +334,7 @@ fn saved_part_selected_here(world: &mut ApplicationWorld) {
     select_row(world, PART_FILE);
 }
 #[when("I open the file display menu")]
+#[when("the user opens the file display menu")]
 fn open_display(world: &mut ApplicationWorld) {
     world.click_text("Display");
     settle(world);
@@ -347,6 +361,7 @@ fn details_marked(world: &mut ApplicationWorld) {
     assert!(world.checked("Details"), "expected Details marked");
 }
 #[when("I dismiss the menu without choosing another view")]
+#[when("the user dismisses the menu without choosing another view")]
 fn dismiss_display(world: &mut ApplicationWorld) {
     world.escape();
     settle(world);

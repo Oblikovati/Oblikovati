@@ -11,6 +11,7 @@ claim that each file has been individually triaged.
 | 1 | Native parameter-driven cube journey | In progress | The native journey creates a constrained rectangle and extrude, edits the size, uses undo/redo, saves and reopens, and resolves a face. Maintain the live test and rerun it after relevant changes. |
 | 1 | `features/application/file-menu/file-menu.feature` | Verified | All eight scenarios passed on the recorded updated source. Weldment remains unavailable. |
 | 1 | `features/application/document-creation` | In progress | On the updated source, 8 of 39 native scenarios pass; 31 stop at undefined steps. Name and size sorting, horizontal icon tiles, and keyboard and secondary-button selection work for available templates. The remaining scenarios need bindings and additional named templates. |
+| 1 | `features/application/document-opening` | In progress | On the recorded source, 16 of 27 native scenarios pass. The other 11 stop at undefined steps; their later behavior and saved-document fixtures require verification. |
 | 1 | `features/application/quick-access-toolbar` | In progress | The previous full native feature run passed 11 of 12 scenarios. Projects now opens the project dialog; the focused customization choices scenario next fails because Update is missing. Later checks did not run. Material Browser editing, duplication, and the Physical tab remain open. |
 | 1 | `features/application/ribbon-customization/ribbon-customization.feature` | Needs rerun | Source changed since the inventory checkpoint. Review the corrections and rerun affected native scenarios. |
 | 1 | `features/application/ribbon-appearance/ribbon-appearance.feature` | In progress | On the current recorded source, six of 18 scenarios pass; 11 stop at undefined steps and one fails on a missing Tools group. Reset Ribbon is implemented. Implement the standard Tools groups and Text Off, Small, Compact and Large across all commands and layouts. |
@@ -832,3 +833,11 @@ revisions checked before they support a current pass claim.
   matched the live file after the run. Application: `14f93537f` plus these
   bindings; Linux, Xvfb at 1600 × 1000 and Lavapipe. Local report:
   `/tmp/obk-document-creation-reassessment-20261113`.
+- A full document-opening run after updating action wording passed 16 of 27
+  scenarios and 184 of 195 executed steps. The other 11 scenarios stopped at
+  undefined steps; no later behavior is claimed. Source SHA-256
+  `d7965f270ecc21d99f2ed9a0837f17a1996203fccf4d4d1966e7876ebb01464c`
+  matched the live file after the run. Application: `5b88dbb7d` plus these
+  test bindings; unrelated README and AGENTS files were present. Linux, Xvfb
+  at 1600 × 1000 and Lavapipe. Local report:
+  `/tmp/obk-document-opening-reassessment-20261113`.

@@ -188,6 +188,7 @@ fn part_in_folder(world: &mut ApplicationWorld) {
     world.opened_value = Some(id.to_string());
 }
 #[when("I press Control+O and navigate to that folder")]
+#[when("the user presses Control+O and navigates to that folder")]
 fn control_o_to_folder(world: &mut ApplicationWorld) {
     let folder = models_folder(world);
     open_dialog(world);
@@ -225,6 +226,7 @@ fn part_details(world: &mut ApplicationWorld) {
     );
 }
 #[when("I cancel the Open dialog")]
+#[when("the user cancels the Open dialog")]
 fn cancel_open(world: &mut ApplicationWorld) {
     cancel_dialog(world);
 }
@@ -251,6 +253,7 @@ fn part_selected_details(world: &mut ApplicationWorld) {
     choose_pane(world, "Details");
 }
 #[when("I select the drawing")]
+#[when("the user selects the drawing")]
 fn select_drawing(world: &mut ApplicationWorld) {
     select_row(world, DRAWING_FILE);
 }
@@ -270,6 +273,7 @@ fn drawing_details(world: &mut ApplicationWorld) {
     }
 }
 #[when("I choose Options")]
+#[when("the user chooses Options")]
 fn choose_options(world: &mut ApplicationWorld) {
     choose_pane(world, "Options");
 }
@@ -322,6 +326,7 @@ fn dialog_stays(world: &mut ApplicationWorld) {
     world.expect_text("Look in");
 }
 #[when("I choose the selected file's properties link")]
+#[when("the user chooses the selected file's properties link")]
 fn choose_properties(world: &mut ApplicationWorld) {
     let at = world
         .frame
@@ -355,6 +360,7 @@ fn choose_tab(world: &mut ApplicationWorld, tab: &str) {
     settle(world);
 }
 #[when("I choose the Summary tab")]
+#[when("the user chooses the Summary tab")]
 fn summary_tab(world: &mut ApplicationWorld) {
     choose_tab(world, "Summary");
 }
@@ -365,6 +371,7 @@ fn summary_rows(world: &mut ApplicationWorld) {
     }
 }
 #[when("I choose the Project tab")]
+#[when("the user chooses the Project tab")]
 fn project_tab(world: &mut ApplicationWorld) {
     choose_tab(world, "Project");
 }
@@ -380,6 +387,7 @@ fn project_rows(world: &mut ApplicationWorld) {
     }
 }
 #[when("I choose the Thumbnail tab")]
+#[when("the user chooses the Thumbnail tab")]
 fn thumbnail_tab(world: &mut ApplicationWorld) {
     choose_tab(world, "Thumbnail");
 }
@@ -388,6 +396,7 @@ fn thumbnail_shown(world: &mut ApplicationWorld) {
     world.expect_no_text("No saved image");
 }
 #[when("I cancel the properties window without editing")]
+#[when("the user cancels the properties window without editing")]
 fn cancel_properties(world: &mut ApplicationWorld) {
     world.click_text("Cancel");
     settle(world);
