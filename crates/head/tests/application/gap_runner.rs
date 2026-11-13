@@ -96,7 +96,7 @@ fn write_report(root: &Path, source: &BTreeMap<PathBuf, Vec<u8>>, path: &Path, r
     fs::write(path, serde_json::to_vec_pretty(report).unwrap()).unwrap();
 }
 
-fn read_sources(root: &Path) -> BTreeMap<PathBuf, Vec<u8>> {
+pub(super) fn read_sources(root: &Path) -> BTreeMap<PathBuf, Vec<u8>> {
     let mut sources = BTreeMap::new();
     collect_sources(root, &mut sources);
     sources

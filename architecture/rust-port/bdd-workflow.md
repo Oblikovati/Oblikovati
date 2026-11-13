@@ -1,20 +1,38 @@
 # BDD workflow for the Rust port
 
-The live MCAD-Scenarios source is the behavior benchmark. The Go implementation
-in `../Oblikovati` is the architecture and implementation reference. Application
-features have priority; sketch work proceeds in parallel. Do not treat a source
+MCAD-Scenarios is the behavior benchmark. Use the pinned snapshot for runs and
+review live source updates in the weekly sync. The Go implementation in
+`../Oblikovati` is the architecture and implementation reference. Follow
+milestone order, with application and sketch scenarios as acceptance evidence. Do not treat a source
 binding, a unit test, or an API-only test as proof of a native UI scenario.
+
+## Restore the pinned source
+
+The source directory is edited without Git. The pinned commit is a local snapshot,
+not an upstream revision. Restore and verify it before using it for a run:
+
+```sh
+git clone -c core.autocrlf=false --branch snapshot \
+  "$PWD/test-utilities/benchmarks/scenario-snapshots/mcad-scenarios-2026-11-13.bundle" \
+  /absolute/path/to/scenario-checkout
+python3 tools/bdd/verify_snapshot.py /absolute/path/to/scenario-checkout
+export OBK_BDD_ROOT=/absolute/path/to/scenario-checkout
+```
+
+Keep the checkout outside the live source directory. Each native run records
+`source-revision.json`, including the commit and dirty state before and after
+the run. A source change during a run invalidates its results. If the source is
+not a Git checkout, the report records a null commit and dirty state.
 
 ## Discover and triage changes
 
-Run this command at the start of a work session and before reporting results:
+During the weekly source sync, compare the live directory with the inventory:
 
 ```sh
-python3 tools/bdd/inventory.py "$OBK_BDD_ROOT" \
+python3 tools/bdd/inventory.py /mnt/vininas-projects/MCAD-Scenarios \
   --baseline architecture/rust-port/bdd-source-inventory.json
 ```
 
-Set `OBK_BDD_ROOT` to the absolute path of the live MCAD-Scenarios directory.
 The inventory compares file content hashes, not modification times. It reports
 added, changed, and removed files. Scenario counts are declarations, not
 executable test counts: an outline can produce multiple cases. The command does
@@ -36,7 +54,7 @@ while work is in progress.
 
 ## Select and implement work
 
-Choose application work first, then sketch. Record the feature path, the
+Choose the next ready item in milestone order. Record the feature path, the
 scenario names or range, the problem, and the current state in the ledger.
 Keep one active row per coherent work item. Link its issue when one exists.
 Use the Go source as a design reference and implement through the shared Rust

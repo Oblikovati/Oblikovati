@@ -1,0 +1,11 @@
+{
+  "snapshot_commit": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+  "branch": "snapshot",
+  "bundle": "mcad-scenarios-2026-11-13.bundle",
+  "bundle_sha256": "ec03850d07a2a0f0939b14b4fda1b797e9ba740b76cd0a46046c67bd30f4de69",
+  "manifest": "mcad-scenarios-2026-11-13.sha256.json",
+  "manifest_sha256": "fdf6d37cf3220d2112dc29a91e780c12b9aa3614ac44083a755de2333c453b8c",
+  "file_count": 1287,
+  "captured_utc_date": "2026-11-13",
+  "provenance": "Locally created commit from the unversioned live MCAD-Scenarios directory. All file hashes matched before copying, after copying, and after bundle checkout. This is not an upstream commit."
+}

@@ -11,6 +11,7 @@ mod diagnostics;
 mod documents;
 mod gap_runner;
 mod refinements;
+mod scenario_revision;
 mod solid_visibility;
 mod viewport_background;
 mod world;
@@ -139,8 +140,25 @@ fn application_scenarios_use_the_native_window() {
 }
 /// Run one area's features. `OBK_BDD_SCENARIO` narrows a run to matching scenario names.
 fn run_scenarios(root: PathBuf, keep_feature: fn(&cucumber::gherkin::Feature) -> bool) {
+    let before = scenario_revision::inspect(&root);
+    let source = gap_runner::read_sources(&root);
     if std::env::var_os("OBK_BDD_DIAGNOSTIC").is_some() {
-        return gap_runner::run(&root, keep_feature);
+        gap_runner::run(&root, keep_feature);
+        let after = scenario_revision::inspect(&root);
+        let source_changed = source != gap_runner::read_sources(&root);
+        scenario_revision::save(
+            &world::reports_folder().join("source-revision.json"),
+            &before,
+            &after,
+            source_changed,
+        );
+        scenario_revision::require_unchanged(
+            &before,
+            &after,
+            source_changed,
+            &[&world::reports_folder().join("gap-report.json")],
+        );
+        return;
     }
     let reports = world::reports_folder();
     fs::create_dir_all(&reports).unwrap();
@@ -170,6 +188,20 @@ fn run_scenarios(root: PathBuf, keep_feature: fn(&cucumber::gherkin::Feature) ->
             .filter_run(root.clone(), move |feature, _, scenario| {
                 keep_feature(feature) && scenario_selected(&scenario.name)
             }),
+    );
+    let after = scenario_revision::inspect(&root);
+    let source_changed = source != gap_runner::read_sources(&root);
+    scenario_revision::save(
+        &reports.join("source-revision.json"),
+        &before,
+        &after,
+        source_changed,
+    );
+    scenario_revision::require_unchanged(
+        &before,
+        &after,
+        source_changed,
+        &[&reports.join("cucumber.json"), &reports.join("junit.xml")],
     );
     if result.execution_has_failed() {
         report_parser_errors(&root);
