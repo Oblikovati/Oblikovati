@@ -14,7 +14,7 @@ claim that each file has been individually triaged.
 | 1 | `features/application/ribbon-appearance/ribbon-appearance.feature` | In progress | Source changed. Revalidate every scenario against the revised file. Panel title visibility and the appearance menu exist. The menu marks Normal as active and disables the other modes. A caption-free native icon primitive is available but is not connected to the ribbon. The 3D Model ribbon now uses the Go icons for Revolve, Hole, Fillet and Chamfer; these commands remain unavailable. Implement Text Off, Small, Compact, Large and Reset Ribbon across all commands and layouts; then enable and verify them. |
 | 1 | `features/application/ribbon-docking/ribbon-docking.feature` | In progress | Source changed after the inventory checkpoint. A full native run at commit `139b82a42` found 6 passes and 17 scenarios stopped by undefined steps. With corrected bindings, a second run found 8 passes, 14 undefined steps, and one ambiguous step. Resolve the remaining steps and implement missing command-group behavior. |
 | 1 | `features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature` | Needs rerun | Source changed since the inventory checkpoint. Review the corrections and rerun affected native scenarios. |
-| 1 | `features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature` | In progress | Full run at `6e80b9bde`: 15 of 54 scenarios passed, 38 stopped at undefined steps, and one failed an icon assertion on a collapsed panel. Later steps in stopped scenarios were not tested. The Parameters scenario now passes with its expanded-panel fixture; rerun the full feature. |
+| 1 | `features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature` | Needs rerun | The source changed after the full run at `6e80b9bde`. Review the corrections and run the whole feature against a stable source; earlier counts are historical. |
 | 1 | `features/application/ribbon-panel-visibility` side selector | In progress | The left and right selector and group reflow scenarios pass on the recorded source. Rerun the full feature and cover the remaining selector interactions. |
 | 1 | `features/application/ribbon-panel-visibility` selector keyboard | In progress | Home and End retain the focused panel row; native verification and the current-source scenario are recorded below. Other keyboard scenarios need their named panel fixtures and a full feature rerun. |
 | 1 | `features/application/ribbon-display/ribbon-display.feature` | In progress | Source changed. Revalidate all scenarios against the revised file, including appearance and modeling-preview cases. |
@@ -356,3 +356,21 @@ revisions checked before they support a current pass claim.
   A prior GUI run passed 350 library and four File dialog tests; the final
   change additionally clears stored focus when the selector is unavailable.
   GUI Clippy passed. The complete feature remains unverified after this change.
+
+### Side ribbon additional commands, 2026-11-13
+
+- Side-docked groups can open their additional commands. A pinned additional
+  panel remains visible after its temporary group closes, and hiding the group
+  removes the panel. Native mouse tests cover these interactions on both sides.
+- The source changed after earlier evidence. On SHA-256
+  `28915f5d5ef1f8360f7cb61481bdb48b6143c5a65c0167b25d4fdb16a30d2271`, stable
+  during the run, `Dismiss the panel selector and expansion with Escape` passed
+  all 10 steps. Application: `89dc46de1` plus this commit's changes; unrelated
+  README and AGENTS files were present. Linux, Xvfb 1600 × 1000, Lavapipe.
+  The filtered native command was `cargo test --locked -p oblikovati-head --lib
+  application_scenarios_use_the_native_window -- --nocapture` with
+  `OBK_BDD_FEATURE=ribbon-panel-visibility` and the scenario name filter.
+  Local reports are in `/tmp/obk-side-additional-bdd-latest-20261113`; they are
+  not durable artifacts. The GUI library passed 350 tests, the File dialog
+  passed four, and GUI Clippy passed. Other scenarios require a full rerun on
+  this source.

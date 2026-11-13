@@ -435,7 +435,7 @@ mod panel_selector;
 #[path = "selector_keyboard.rs"]
 mod selector_keyboard;
 #[path = "side_selector.rs"]
-mod side_selector;
+pub(super) mod side_selector;
 
 #[then("the other compact group buttons remain visible")]
 fn other_compact_groups(world: &mut ApplicationWorld) {

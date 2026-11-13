@@ -267,13 +267,17 @@ pub(crate) fn draw_side_groups(
     actions: &mut Vec<GuiShellAction>,
 ) {
     layout.pending_layout = false;
-    layout.additional.clear();
+    layout.additional.use_document(state.document);
+    layout.additional.use_mode(display.mode);
+    if display.take_docking_selection() || owners.home_active {
+        layout.additional.clear();
+    }
     let mut context = PanelDrawContext {
         ui,
         state,
         hidden: display.hidden_panels.clone(),
         show_panel_titles: display.show_panel_titles,
-        additional_allowed: false,
+        additional_allowed: !owners.home_active,
         ribbon_bottom: ui.window_pos()[1] + ui.window_size()[1],
         owners,
         actions,
@@ -298,7 +302,12 @@ pub(crate) fn draw_side_groups(
             });
         }
     }
+    let temporary_open = display.temporary.is_some();
     temporary_panel(&mut context, tab, layout, display);
+    if !temporary_open && layout.additional.has_open() {
+        context.ribbon_bottom = layout.additional.last_ribbon_bottom();
+        additional::draw(&mut context, tab, layout, display);
+    }
 }
 fn group_key_tip(ui: &Ui, panel: RibbonPanel, owners: &RibbonPanelOwners<'_>) {
     let tip = match panel {

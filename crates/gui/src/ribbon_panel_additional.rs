@@ -10,6 +10,7 @@ pub(super) struct PanelExpansions {
     open: BTreeMap<(RibbonTab, RibbonPanel), Expansion>,
     document: Option<u64>,
     mode: Option<RibbonDisplay>,
+    last_ribbon_bottom: f32,
 }
 #[derive(Clone, Copy)]
 struct Expansion {
@@ -37,6 +38,12 @@ impl PanelExpansions {
     }
     pub(super) fn contains(&self, point: [f32; 2]) -> bool {
         self.open.values().any(|entry| inside(point, entry.bounds))
+    }
+    pub(super) fn has_open(&self) -> bool {
+        !self.open.is_empty()
+    }
+    pub(super) fn last_ribbon_bottom(&self) -> f32 {
+        self.last_ribbon_bottom
     }
 }
 pub(super) fn available(tab: RibbonTab, panel: RibbonPanel) -> bool {
@@ -103,6 +110,7 @@ pub(super) fn draw(
     display: &mut RibbonDisplayState,
 ) -> bool {
     let mut closed = false;
+    layout.additional.last_ribbon_bottom = context.ribbon_bottom;
     layout.additional.open.retain(|(owner, panel), _| {
         *owner == tab
             && !display.hidden_panels.contains(&(tab, *panel))

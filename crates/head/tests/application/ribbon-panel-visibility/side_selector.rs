@@ -14,6 +14,7 @@ fn click_side_selector(world: &mut ApplicationWorld) {
 #[when("I open the direct panel selector")]
 #[when("the user clicks the direct panel selector at the bottom of the ribbon")]
 #[when("the user clicks the direct panel selector arrow")]
+#[when("the user opens the direct panel selector")]
 fn open_side_selector(world: &mut ApplicationWorld) {
     click_side_selector(world);
     assert!(popup_depth() > 0, "expected side selector popup");
@@ -228,4 +229,56 @@ fn side_selector_home_and_end_keep_keyboard_focus() {
         }
         world.close();
     }
+}
+
+#[test]
+fn side_additional_commands_remain_open_with_selector_and_close_on_escape() {
+    for side in ["Left", "Right"] {
+        side_additional_escape(side);
+    }
+}
+fn side_additional_escape(side: &str) {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    dock_side(&mut world, side);
+    world.click_text("Modify");
+    open_side_additional(&mut world);
+    assert!(window_geometry("##ribbon-additional-PartModify").is_some());
+    click_side_selector(&mut world);
+    assert!(window_geometry("##ribbon-additional-PartModify").is_some());
+    world.save_capture(&format!("side-additional-selector-{side}"));
+    world.escape();
+    assert!(window_geometry("##ribbon-additional-PartModify").is_none());
+    assert_eq!(popup_depth(), 0);
+    world.close();
+}
+
+#[test]
+fn pinned_side_additional_commands_survive_outside_click_and_close_when_hidden() {
+    for side in ["Left", "Right"] {
+        pinned_side_additional(side);
+    }
+}
+fn pinned_side_additional(side: &str) {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    dock_side(&mut world, side);
+    world.click_text("Modify");
+    open_side_additional(&mut world);
+    let pin = world.run("Pin");
+    world.click(pointer_pixels([pin.minimum[0] + 6., pin.center()[1]]));
+    world.click([1000, 700]);
+    assert!(window_geometry("##ribbon-additional-PartModify").is_some());
+    click_side_selector(&mut world);
+    world.click_text("Modify");
+    assert!(window_geometry("##ribbon-additional-PartModify").is_none());
+    world.click_text("Modify");
+    assert!(window_geometry("##ribbon-additional-PartModify").is_none());
+    world.close();
+}
+
+pub(in super::super) fn open_side_additional(world: &mut ApplicationWorld) {
+    let title = world.run("Modifyv");
+    let arrow = [title.maximum[0] - 2., title.center()[1]];
+    world.click(pointer_pixels(arrow));
 }

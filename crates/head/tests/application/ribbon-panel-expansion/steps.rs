@@ -88,7 +88,14 @@ fn solid_and_browser(world: &mut ApplicationWorld) {
 #[given("the Modify additional command area is open and unpinned")]
 #[given("the 3D Model Modify panel is expanded and unpinned")]
 #[given("the 3D Model Modify additional command area is open")]
+#[given("the Modify additional command area is open")]
 pub(super) fn opened_unpinned(world: &mut ApplicationWorld) {
+    if diagnostics::window_geometry("##ribbon-column").is_some() {
+        world.click_text("Modify");
+        super::ribbon_panel_visibility::side_selector::open_side_additional(world);
+        world.expect_text("Pin");
+        return;
+    }
     open_modify(world);
     world.expect_text("Pin");
 }
