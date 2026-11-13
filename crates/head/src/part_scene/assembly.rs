@@ -9,6 +9,7 @@ pub(super) struct SceneSource {
     pub document: u64,
     pub is_assembly: bool,
     revisions: Vec<(u64, u64, u64)>,
+    failures: Vec<String>,
 }
 
 pub(super) fn active_scene_source<
@@ -29,15 +30,16 @@ pub(super) fn active_scene_source<
         document,
         is_assembly: session.snapshot().assembly.is_some(),
         revisions: Vec::new(),
+        failures: Vec::new(),
     };
-    collect_revisions(files, document, &mut source.revisions, 0)?;
+    collect_revisions(files, document, &mut source, 0)?;
     Ok(Some(source))
 }
 
 fn collect_revisions<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &FileWorkspace<O, W, F>,
     document: u64,
-    revisions: &mut Vec<(u64, u64, u64)>,
+    source: &mut SceneSource,
     depth: usize,
 ) -> Result<(), String> {
     if depth > MAX_ASSEMBLY_DEPTH {
@@ -49,7 +51,7 @@ fn collect_revisions<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFi
         .workspace()
         .session(document)
         .map_err(|error| error.to_string())?;
-    revisions.push((
+    source.revisions.push((
         document,
         session.generation(),
         session.body_visibility_revision(),
@@ -59,8 +61,10 @@ fn collect_revisions<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFi
             .iter()
             .filter(|item| !item.suppressed && !item.virtual_)
         {
-            let component = component_document(files, document, occurrence)?;
-            collect_revisions(files, component, revisions, depth + 1)?;
+            match component_document(files, document, occurrence) {
+                Ok(component) => collect_revisions(files, component, source, depth + 1)?,
+                Err(error) => source.failures.push(error),
+            }
         }
     }
     Ok(())
@@ -84,6 +88,37 @@ fn component_document<O: TransactionObserver, W: WorkspaceObserver, F: DocumentF
 }
 
 impl DesktopPartScenes {
+    pub(super) fn failed_assembly_scene<
+        O: TransactionObserver,
+        W: WorkspaceObserver,
+        F: DocumentFiles,
+    >(
+        &mut self,
+        files: &FileWorkspace<O, W, F>,
+        error: String,
+    ) -> Result<Option<HeadSceneUpdate>, String> {
+        let document = files
+            .workspace()
+            .active_document()
+            .ok_or_else(|| error.clone())?;
+        let generation = files
+            .workspace()
+            .session(document)
+            .map_err(|cause| cause.to_string())?
+            .generation();
+        let failure = (document, generation, error);
+        if self.scene_failure.as_ref() == Some(&failure) && !self.presentation_invalidated {
+            return Ok(None);
+        }
+        let mut scene = self.empty();
+        scene.status.source = Some((document, generation));
+        scene.status.scene_errors.push(failure.2.clone());
+        self.source = None;
+        self.scene_failure = Some(failure);
+        self.presentation_invalidated = false;
+        Ok(Some(scene))
+    }
+
     pub(super) fn evaluate_assembly<
         O: TransactionObserver,
         W: WorkspaceObserver,
@@ -129,7 +164,12 @@ impl DesktopPartScenes {
             .iter()
             .filter(|item| !item.suppressed && !item.virtual_)
         {
-            self.append_occurrence(files, document, occurrence, result, depth)?;
+            if let Err(error) = self.append_occurrence(files, document, occurrence, result, depth) {
+                result
+                    .status
+                    .scene_errors
+                    .push(format!("occurrence {:?}: {error}", occurrence.name));
+            }
         }
         Ok(())
     }
@@ -161,6 +201,7 @@ impl DesktopPartScenes {
         result.scene.triangles.extend(scene.scene.triangles);
         result.status.visible_bodies += scene.status.visible_bodies;
         result.status.health.extend(scene.status.health);
+        result.status.scene_errors.extend(scene.status.scene_errors);
         result
             .status
             .presentation_declines

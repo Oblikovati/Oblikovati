@@ -96,6 +96,7 @@ fn empty_save_scene() -> crate::HeadSceneUpdate {
             visible_bodies: 0,
             health: Vec::new(),
             presentation_declines: Vec::new(),
+            scene_errors: Vec::new(),
         },
     }
 }

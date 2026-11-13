@@ -350,6 +350,7 @@ impl HeadWork for FakeSceneWork {
                 visible_bodies: 0,
                 health: Vec::new(),
                 presentation_declines: Vec::new(),
+                scene_errors: Vec::new(),
             },
         }))
     }

@@ -20,6 +20,7 @@ pub struct HeadSceneStatus {
     pub health:
         Vec<FeatureHealthRecord<PartFeatureFailure<oblikovati_martensite::EvaluationFailure>>>,
     pub presentation_declines: Vec<PartPresentationDecline>,
+    pub scene_errors: Vec<String>,
 }
 impl HeadSceneStatus {
     /// Show current solid and failure counts; example: `status.title()` for the native window.
@@ -28,10 +29,13 @@ impl HeadSceneStatus {
             return "Oblikovati".into();
         };
         let unavailable = self.unavailable_count();
-        format!(
+        let title = format!(
             "Oblikovati - document {document} generation {generation} - {} solids, {unavailable} unavailable features",
             self.visible_bodies
-        )
+        );
+        self.scene_errors
+            .first()
+            .map_or(title.clone(), |error| format!("{title} - {error}"))
     }
     fn unavailable_count(&self) -> usize {
         self.health
@@ -46,6 +50,7 @@ impl HeadSceneStatus {
             })
             .count()
             + self.presentation_declines.len()
+            + self.scene_errors.len()
     }
 }
 /// One complete replacement, including empty scenes after close or suppression.
@@ -56,6 +61,7 @@ pub struct HeadSceneUpdate {
 #[derive(Default)]
 pub(crate) struct DesktopPartScenes {
     source: Option<assembly::SceneSource>,
+    scene_failure: Option<(u64, u64, String)>,
     presentation_invalidated: bool,
     resolution: Option<oblikovati_martensite::PrismResolutionPolicy>,
     slot: PartEvaluationSlot<NamedPrismSnapshot, oblikovati_martensite::EvaluationFailure>,
@@ -72,16 +78,25 @@ impl DesktopPartScenes {
         &mut self,
         files: &mut FileWorkspace<O, W, F>,
     ) -> Result<Option<HeadSceneUpdate>, String> {
-        let source = assembly::active_scene_source(files)?;
-        if source == self.source && !self.presentation_invalidated {
+        let source = match assembly::active_scene_source(files) {
+            Ok(source) => source,
+            Err(error) => return self.failed_assembly_scene(files, error),
+        };
+        if source == self.source && self.scene_failure.is_none() && !self.presentation_invalidated {
             return Ok(None);
         }
         let update = match &source {
-            Some(source) if source.is_assembly => self.evaluate_assembly(files, source.document)?,
+            Some(source) if source.is_assembly => {
+                match self.evaluate_assembly(files, source.document) {
+                    Ok(scene) => scene,
+                    Err(error) => return self.failed_assembly_scene(files, error),
+                }
+            }
             Some(source) => self.evaluate(files, source.document)?,
             None => self.empty(),
         };
         self.source = source;
+        self.scene_failure = None;
         self.presentation_invalidated = false;
         Ok(Some(update))
     }
@@ -181,6 +196,7 @@ impl DesktopPartScenes {
                 visible_bodies: 0,
                 health: Vec::new(),
                 presentation_declines: Vec::new(),
+                scene_errors: Vec::new(),
             },
         }
     }
@@ -243,6 +259,7 @@ impl DesktopPartScenes {
     pub fn clear(&mut self) {
         self.slot.clear();
         self.source = None;
+        self.scene_failure = None;
     }
 }
 
@@ -332,6 +349,7 @@ pub(crate) fn render_part_scene(
             visible_bodies: presentation.visible_bodies,
             health: evaluated.health().to_vec(),
             presentation_declines: presentation.declines,
+            scene_errors: Vec::new(),
         },
     })
 }

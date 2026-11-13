@@ -112,7 +112,7 @@ fn assembly_repeats_components_and_refreshes_after_component_edits() {
 
 #[test]
 fn assembly_reports_unresolved_components_instead_of_showing_an_empty_scene() {
-    let (mut files, _, assembly, _) = workspace();
+    let (mut files, part, assembly, _) = workspace();
     files
         .commands(assembly)
         .unwrap()
@@ -129,14 +129,23 @@ fn assembly_reports_unresolved_components_instead_of_showing_an_empty_scene() {
             Ok(())
         })
         .unwrap();
-    let error = match DesktopPartScenes::default().refresh(&mut files) {
-        Err(error) => error,
-        Ok(_) => panic!("expected unresolved component failure"),
-    };
+    let mut scenes = DesktopPartScenes::default();
+    let failed = scenes.refresh(&mut files).unwrap().unwrap();
+    assert_eq!(failed.status.visible_bodies, 2);
+    assert!(!failed.scene.triangles.is_empty());
+    let error = &failed.status.scene_errors[0];
     assert!(
         error.contains("Missing") && error.contains("missing.opd"),
         "{error}"
     );
+    assert!(failed.status.title().contains("missing.opd"));
+    assert!(scenes.refresh(&mut files).unwrap().is_none());
+    files
+        .attach_document_reference(assembly, "missing.opd".into(), part, false)
+        .unwrap();
+    let recovered = scenes.refresh(&mut files).unwrap().unwrap();
+    assert!(recovered.status.scene_errors.is_empty());
+    assert_eq!(recovered.status.visible_bodies, 3);
 }
 
 #[test]

@@ -191,6 +191,12 @@ claim that each file has been individually triaged.
   references. Populated assembly files still cannot open: reference loading,
   scene composition and the user-facing failure path need integration and a
   native end-to-end test.
+- A scene that cannot resolve or place a component now reports the occurrence
+  and cause in the desktop scene status while showing the other components,
+  instead of terminating the frame loop.
+  The same failure is not published every frame, and a resolved reference
+  triggers a new scene. Tests cover the failure and recovery path; populated
+  assembly file opening remains guarded.
 - The drawing browser now lists the authored sheets, borders, title blocks and
   views, and browser search uses those same rows. Unit tests cover multiple
   sheets, a missing border and searching for a view.
