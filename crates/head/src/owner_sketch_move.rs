@@ -43,6 +43,7 @@ impl<
         match action {
             GuiSketchMoveAction::Start => self.start_sketch_move(),
             GuiSketchMoveAction::SetOptimizeSingle(value) => self.set_move_optimize_single(value),
+            GuiSketchMoveAction::SetCopy(value) => self.set_move_copy(value),
             GuiSketchMoveAction::ChooseBase => self.choose_move_base(),
             GuiSketchMoveAction::Done => {
                 if !matches!(self.sketch_tool, Some(SketchToolState::Move(_))) {
@@ -101,7 +102,20 @@ impl<
             stage,
             selection_count: tool.entities.len(),
             optimize_single: self.sketch_memory.move_optimize_single,
+            copy: self.sketch_memory.move_copy,
         })
+    }
+    fn set_move_copy(&mut self, value: bool) -> Result<bool, String> {
+        let Some(SketchToolState::Move(tool)) = &self.sketch_tool else {
+            return Err(format!("move copy {value}: expected an active Move tool"));
+        };
+        if !matches!(tool.stage, MoveStage::Geometry) {
+            return Err(format!(
+                "move copy {value}: expected geometry selection stage"
+            ));
+        }
+        self.sketch_memory.move_copy = value;
+        Ok(true)
     }
     fn set_move_optimize_single(&mut self, value: bool) -> Result<bool, String> {
         let Some(SketchToolState::Move(tool)) = &self.sketch_tool else {
@@ -350,13 +364,19 @@ impl<
             .workspace()
             .session(tool.edit.document)
             .map_err(|e| e.to_string())?;
-        let preview = session
-            .preview_sketch_transform(
-                tool.edit.sketch,
-                &tool.entities,
-                SketchSelectionTransform::Move(vector),
-            )
-            .map_err(|e| e.to_string())?;
+        let preview = if self.sketch_memory.move_copy {
+            session
+                .preview_sketch_copy(tool.edit.sketch, &tool.entities, vector)
+                .map_err(|e| e.to_string())?
+        } else {
+            session
+                .preview_sketch_transform(
+                    tool.edit.sketch,
+                    &tool.entities,
+                    SketchSelectionTransform::Move(vector),
+                )
+                .map_err(|e| e.to_string())?
+        };
         Ok(ViewportSketchPreview::Resolved {
             plane: tool.edit.plane,
             geometry: Box::new(preview.geometry),
@@ -380,7 +400,12 @@ impl<
         let scale = snapshot.parameters.units().working_scale();
         Ok(TransformSketchArgs {
             sketch_index,
-            op: "move".into(),
+            op: if self.sketch_memory.move_copy {
+                "copy"
+            } else {
+                "move"
+            }
+            .into(),
             entities: Some(entities.iter().map(|id| id.0).collect()),
             vector: Some(vector.map(|v| v * scale).to_vec()),
             ..Default::default()

@@ -16,6 +16,7 @@ pub struct GuiSketchMoveStatus {
     pub stage: GuiSketchMoveStage,
     pub selection_count: usize,
     pub optimize_single: bool,
+    pub copy: bool,
 }
 /// Control the current Move command.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -23,6 +24,7 @@ pub enum GuiSketchMoveAction {
     Start,
     Done,
     SetOptimizeSingle(bool),
+    SetCopy(bool),
     ChooseBase,
 }
 
@@ -35,7 +37,7 @@ pub(crate) fn panel(
     let Some(status) = state.sketch_move else {
         return;
     };
-    crate::widget_abi::fit_dialog(ui, "Move", [1100., 250.], [330., 180.]);
+    crate::widget_abi::fit_dialog(ui, "Move", [1100., 250.], [330., 205.]);
     ui.window("Move").collapsible(false).build(|| {
         ui.text(match status.stage {
             GuiSketchMoveStage::Geometry => "Select geometry",
@@ -48,6 +50,12 @@ pub(crate) fn panel(
             actions.push(GuiShellAction::SketchMove(
                 GuiSketchMoveAction::SetOptimizeSingle(optimize),
             ));
+        }
+        let mut copy = status.copy;
+        if ui.checkbox("Copy", &mut copy) {
+            actions.push(GuiShellAction::SketchMove(GuiSketchMoveAction::SetCopy(
+                copy,
+            )));
         }
         drop(disabled);
         ui.checkbox("Precise Input", &mut precise.open);

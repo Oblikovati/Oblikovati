@@ -334,6 +334,7 @@ pub(super) struct SketchCommandMemory {
     pub center_point: bool,
     pub repeat_command: Option<oblikovati_gui::GuiSketchRepeat>,
     pub move_optimize_single: bool,
+    pub move_copy: bool,
     /// Where relative values are measured from; none means the sketch origin.
     pub triad: Option<[f64; 2]>,
     pub triad_pick: Option<TriadPick>,
@@ -345,6 +346,7 @@ impl Default for SketchCommandMemory {
             center_point: true,
             repeat_command: None,
             move_optimize_single: true,
+            move_copy: false,
             triad: None,
             triad_pick: None,
             context: None,

@@ -16,6 +16,8 @@
 
 ### Added
 
+- Added Copy mode to sketch Move, with preview and undo/redo.
+
 - Added precise coordinates and triad controls to sketch Move.
 
 - Added multi-entity selection and single-selection optimization to sketch Move.

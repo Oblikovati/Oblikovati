@@ -93,3 +93,135 @@ fn finished(world: &mut ApplicationWorld) {
         world.observed_view.unwrap()
     );
 }
+
+#[given("Move Copy is checked and the original ellipse is selected")]
+fn select_copy(world: &mut ApplicationWorld) {
+    world.click_text("Move");
+    enable_copy_and_select(world);
+}
+
+#[when("I enable Copy and select the original ellipse")]
+fn enable_copy_and_select(world: &mut ApplicationWorld) {
+    let check = world.run_in_window("Move", "Copy").center();
+    world.click(diagnostics::pointer_pixels(check));
+    assert!(world.state().sketch_move.unwrap().copy);
+    world.sketch_click(EDGE);
+    assert_eq!(
+        world.state().sketch_move.unwrap().stage,
+        GuiSketchMoveStage::Base
+    );
+}
+
+#[given("Move has reopened with Precise Input checked and Copy unchecked")]
+fn reopened_move(world: &mut ApplicationWorld) {
+    world.click_text("Move");
+    let check = world.run_in_window("Move", "PreciseInput").center();
+    world.click(diagnostics::pointer_pixels(check));
+    done(world);
+    world.click_text("Move");
+    assert!(!world.state().sketch_move.unwrap().copy);
+}
+
+#[when("I choose its center as Base Point and click the displaced endpoint")]
+fn copy_from_center(world: &mut ApplicationWorld) {
+    place_copy(world);
+}
+
+#[then("Move returns to geometry selection")]
+fn copy_returns_to_selection(world: &mut ApplicationWorld) {
+    assert_eq!(
+        world.state().sketch_move.unwrap().stage,
+        GuiSketchMoveStage::Geometry
+    );
+}
+
+#[then("a displaced ellipse and the original ellipse are both visible")]
+#[then("both ellipse outlines remain")]
+fn copy_outlines(world: &mut ApplicationWorld) {
+    both_ellipses(world);
+}
+
+#[when("the base and displaced endpoint are clicked")]
+fn place_copy(world: &mut ApplicationWorld) {
+    world.sketch_click(CENTER);
+    let endpoint = [CENTER[0] + 110, CENTER[1] - 100];
+    world.hover(endpoint);
+    let preview = crate::HeadWork::sketch_preview(&world.app().owner).unwrap();
+    assert!(
+        matches!(preview, oblikovati_viewport::ViewportSketchPreview::Resolved { members, .. } if members.len() == 1)
+    );
+    assert_eq!(world.edited_geometry().ellipses().len(), 1);
+    world.expect_segment_drawn(EDGE, EDGE);
+    let copy_edge = [EDGE[0] + 110, EDGE[1] - 100];
+    world.expect_segment_drawn(copy_edge, copy_edge);
+    world.sketch_click(endpoint);
+}
+
+#[then("a second ellipse appears while the original remains")]
+#[then("both outlines remain visible")]
+fn both_ellipses(world: &mut ApplicationWorld) {
+    let original = &world.observed_sketch.as_ref().unwrap().geometry;
+    let old = original.ellipses()[0];
+    let old_center = original.point(old.center()).unwrap().position;
+    let geometry = world.edited_geometry();
+    assert_eq!(geometry.ellipses().len(), 2);
+    assert_eq!(geometry.point(old.center()).unwrap().position, old_center);
+    assert_ne!(
+        geometry
+            .point(geometry.ellipses()[1].center())
+            .unwrap()
+            .position,
+        old_center
+    );
+    world.expect_segment_drawn(EDGE, EDGE);
+    world.expect_segment_drawn(
+        [EDGE[0] + 110, EDGE[1] - 100],
+        [EDGE[0] + 110, EDGE[1] - 100],
+    );
+}
+
+#[when("Done is clicked")]
+fn done(world: &mut ApplicationWorld) {
+    let done = world.run_in_window("Move", "Done").center();
+    world.click(diagnostics::pointer_pixels(done));
+    assert!(world.state().sketch_move.is_none());
+}
+
+#[given("Move Copy has created the displaced ellipse and Move is closed")]
+fn copied_ellipse(world: &mut ApplicationWorld) {
+    select_copy(world);
+    place_copy(world);
+    both_ellipses(world);
+    done(world);
+}
+
+#[then("only the original ellipse remains in the pair")]
+#[then("the trial copy is removed again")]
+fn original_only(world: &mut ApplicationWorld) {
+    let current = world.edited_geometry();
+    let before = &world.observed_sketch.as_ref().unwrap().geometry;
+    assert!(current.same_recipe(before));
+}
+
+#[then("the displaced ellipse returns")]
+fn copied_again(world: &mut ApplicationWorld) {
+    both_ellipses(world);
+}
+
+#[test]
+fn cancelling_copy_preview_keeps_the_source_and_history() {
+    let mut world = ApplicationWorld::new();
+    editable_ellipse(&mut world);
+    let history = world.state().undo_label;
+    select_copy(&mut world);
+    world.sketch_click(CENTER);
+    world.hover([CENTER[0] + 110, CENTER[1] - 100]);
+    assert!(crate::HeadWork::sketch_preview(&world.app().owner).is_some());
+    world.escape();
+    assert!(crate::HeadWork::sketch_preview(&world.app().owner).is_none());
+    original_only(&mut world);
+    assert_eq!(world.state().undo_label, history);
+    world.click_text("Move");
+    assert!(world.state().sketch_move.unwrap().copy);
+    world.close();
+}

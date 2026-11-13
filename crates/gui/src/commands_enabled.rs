@@ -8,7 +8,10 @@ impl GuiShellAction {
                 state.sketch_at_ready && !state.transaction_open
             }
             Self::SketchMove(crate::GuiSketchMoveAction::Done) => state.sketch_move.is_some(),
-            Self::SketchMove(crate::GuiSketchMoveAction::SetOptimizeSingle(_)) => state
+            Self::SketchMove(
+                crate::GuiSketchMoveAction::SetOptimizeSingle(_)
+                | crate::GuiSketchMoveAction::SetCopy(_),
+            ) => state
                 .sketch_move
                 .is_some_and(|status| status.stage == crate::GuiSketchMoveStage::Geometry),
             Self::SketchMove(crate::GuiSketchMoveAction::ChooseBase) => {

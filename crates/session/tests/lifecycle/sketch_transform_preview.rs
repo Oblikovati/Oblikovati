@@ -88,3 +88,56 @@ fn rejected_preview_preserves_the_live_sketch_and_history() {
     assert_eq!(session.generation(), generation);
     assert!(session.undo_labels().is_empty());
 }
+
+#[test]
+fn copy_preview_matches_commit_and_reserves_no_live_ids() {
+    let mut session = session_with_line();
+    let before = session.snapshot().sketches.clone();
+    let generation = session.generation();
+    let preview = session
+        .preview_sketch_copy(DocumentSketchId(1), &[SketchEntityId(3)], [2., 3.])
+        .unwrap();
+    assert!(before.same_evaluated_state(&session.snapshot().sketches));
+    assert_eq!(session.generation(), generation);
+    assert!(session.undo_labels().is_empty());
+    let report = session
+        .copy_sketch_entities(DocumentSketchId(1), &[SketchEntityId(3)], [2., 3.])
+        .unwrap();
+    assert_eq!(preview.members, report.copies);
+    let committed = session
+        .snapshot()
+        .sketches
+        .get(DocumentSketchId(1))
+        .unwrap()
+        .geometry();
+    assert!(preview.geometry.same_recipe(committed));
+    assert_eq!(committed.lines().len(), 2);
+    session.undo().unwrap();
+    assert!(before.same_evaluated_state(&session.snapshot().sketches));
+    session.redo().unwrap();
+    assert!(
+        preview.geometry.same_recipe(
+            session
+                .snapshot()
+                .sketches
+                .get(DocumentSketchId(1))
+                .unwrap()
+                .geometry()
+        )
+    );
+}
+
+#[test]
+fn rejected_copy_preview_does_not_change_live_history() {
+    let session = session_with_line();
+    let before = session.snapshot().sketches.clone();
+    let generation = session.generation();
+    assert!(
+        session
+            .preview_sketch_copy(DocumentSketchId(1), &[SketchEntityId(99)], [1., 2.])
+            .is_err()
+    );
+    assert!(before.same_evaluated_state(&session.snapshot().sketches));
+    assert_eq!(session.generation(), generation);
+    assert!(session.undo_labels().is_empty());
+}

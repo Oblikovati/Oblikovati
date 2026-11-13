@@ -8,6 +8,36 @@ use oblikovati_model::{
 /// Example: `let reply: SketchCopyProjectionInput = Ok(report);`.
 pub type SketchCopyProjectionInput = Result<SketchCopyReport, SketchCopyError>;
 impl<O: TransactionObserver> DocumentSession<O> {
+    /// Preview a solved copy without changing the live sketch or reserving its identities.
+    /// Example: `session.preview_sketch_copy(sketch, &[line], [2.0, 0.0])?;`.
+    pub fn preview_sketch_copy(
+        &self,
+        sketch: DocumentSketchId,
+        entities: &[SketchEntityId],
+        vector: [f64; 2],
+    ) -> Result<crate::SketchTransformPreview, CommandError<SketchCopyError>> {
+        self.preview_projected(
+            |snapshot, reservations| {
+                snapshot.copy_selected_sketch_entities(
+                    sketch,
+                    entities,
+                    SketchCopyOperation::Translate(vector),
+                    reservations,
+                )
+            },
+            |snapshot, report| {
+                Ok(crate::SketchTransformPreview {
+                    geometry: snapshot
+                        .sketches
+                        .get(sketch)
+                        .map_err(SketchCopyError::Sketch)?
+                        .geometry()
+                        .clone(),
+                    members: report.copies,
+                })
+            },
+        )
+    }
     /// Copy geometry through history and recompute, retaining consumed identity reservations.
     /// Example: `session.copy_sketch_entities(sketch, &[line], [2.0, 0.0])?;`.
     pub fn copy_sketch_entities(
