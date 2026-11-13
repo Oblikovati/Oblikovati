@@ -5,6 +5,25 @@ use crate::{
     sketch::{SketchCopyError, SketchCopyOperation, SketchCopyReport, SketchEntityId},
 };
 impl DocumentSnapshot {
+    /// Copy and link translated sketch members as one document edit.
+    /// Example: `snapshot.copy_associative_translations(sketch, &[circle], &[[10.0, 0.0]], reservations)?;`.
+    pub fn copy_associative_translations(
+        &mut self,
+        sketch: DocumentSketchId,
+        entities: &[SketchEntityId],
+        offsets: &[[f64; 2]],
+        reservations: &mut RecipeReservations<'_>,
+    ) -> Result<Vec<SketchCopyReport>, SketchCopyError> {
+        let source = self.sketches.get(sketch).map_err(SketchCopyError::Sketch)?;
+        let mut geometry = source.geometry().clone();
+        let reports = geometry.copy_associative_translations(entities, offsets, &mut || {
+            reservations.allocate_sketch_entity()
+        })?;
+        self.sketches
+            .replace_geometry(sketch, geometry)
+            .map_err(SketchCopyError::Sketch)?;
+        Ok(reports)
+    }
     /// Copy multiple instances as one snapshot edit; failed edits retain reserved identities.
     /// Example: `snapshot.copy_selected_sketch_entities_batch(sketch, &[line], &[operation], reservations)?;`.
     pub fn copy_selected_sketch_entities_batch(

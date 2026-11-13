@@ -33,6 +33,10 @@ pub enum SketchError {
         arc: SketchEntityId,
         cause: ResidualError,
     },
+    PatternRadiusLink {
+        member: SketchEntityId,
+        cause: EvaluationError,
+    },
     PatternPointLink {
         member: SketchEntityId,
         cause: EvaluationError,
@@ -63,6 +67,9 @@ impl fmt::Display for SketchError {
             }
             Self::ArcMidpoint { arc, cause } => arc_error(f, arc, "midpoint", cause),
             Self::ArcCircularity { arc, cause } => arc_error(f, arc, "circularity", cause),
+            Self::PatternRadiusLink { member, cause } => {
+                write!(f, "pattern circle {member:?} radius link: {cause}")
+            }
             Self::PatternPointLink { member, cause } => {
                 write!(f, "pattern point {member:?} link: {cause}")
             }
@@ -131,7 +138,8 @@ impl Error for SketchError {
             | Self::ArcMidpoint { cause, .. } => Some(cause),
             Self::Residual { cause, .. }
             | Self::ArcCircularity { cause, .. }
-            | Self::PatternPointLink { cause, .. } => Some(cause),
+            | Self::PatternPointLink { cause, .. }
+            | Self::PatternRadiusLink { cause, .. } => Some(cause),
         }
     }
 }

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 mod adopt;
+mod associative;
 mod identities;
 mod operation;
 mod report;

@@ -11,6 +11,47 @@ pub type SketchCopyProjectionInput = Result<SketchCopyReport, SketchCopyError>;
 /// Example: `let reply: SketchCopyBatchProjectionInput = Ok(reports);`.
 pub type SketchCopyBatchProjectionInput = Result<Vec<SketchCopyReport>, SketchCopyError>;
 impl<O: TransactionObserver> DocumentSession<O> {
+    /// Preview linked translations without changing live history or identities.
+    /// Example: `session.preview_associative_translations(sketch, &[circle], &[[10.0, 0.0]])?;`.
+    pub fn preview_associative_translations(
+        &self,
+        sketch: DocumentSketchId,
+        entities: &[SketchEntityId],
+        offsets: &[[f64; 2]],
+    ) -> Result<crate::SketchTransformPreview, CommandError<SketchCopyError>> {
+        self.preview_projected(
+            |snapshot, reservations| {
+                snapshot.copy_associative_translations(sketch, entities, offsets, reservations)
+            },
+            |snapshot, reports| {
+                Ok(crate::SketchTransformPreview {
+                    geometry: snapshot
+                        .sketches
+                        .get(sketch)
+                        .map_err(SketchCopyError::Sketch)?
+                        .geometry()
+                        .clone(),
+                    members: reports
+                        .into_iter()
+                        .flat_map(|report| report.copies)
+                        .collect(),
+                })
+            },
+        )
+    }
+    /// Publish linked translations as one undoable command after preparing its reply.
+    /// Example: `session.copy_associative_translations_projected(sketch, &[circle], &[[10.0, 0.0]], |result| result)?;`.
+    pub fn copy_associative_translations_projected<R, E>(
+        &mut self,
+        sketch: DocumentSketchId,
+        entities: &[SketchEntityId],
+        offsets: &[[f64; 2]],
+        project: impl FnOnce(SketchCopyBatchProjectionInput) -> Result<R, E>,
+    ) -> Result<R, CommandError<E>> {
+        self.run("Copy linked sketch instances", |snapshot, reservations| {
+            project(snapshot.copy_associative_translations(sketch, entities, offsets, reservations))
+        })
+    }
     /// Preview a batch without changing live geometry, history, or identity reservations.
     /// Example: `session.preview_selected_sketch_copies(sketch, &[line], &[operation])?;`.
     pub fn preview_selected_sketch_copies(

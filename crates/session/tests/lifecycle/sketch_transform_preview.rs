@@ -470,3 +470,42 @@ fn rectangular_layout_preview_and_commit_share_fitted_suppression_and_history() 
     session.redo().unwrap();
     assert!(committed.same_evaluated_state(&session.snapshot().sketches));
 }
+
+#[test]
+fn linked_copy_preview_matches_commit_and_one_undo_redo() {
+    let mut session = session_with_line();
+    let before = session.snapshot().sketches.clone();
+    let offsets = [[10., 0.], [0., 5.]];
+    let preview = session
+        .preview_associative_translations(DocumentSketchId(1), &[SketchEntityId(3)], &offsets)
+        .unwrap();
+    assert_eq!(preview.geometry.pattern_point_links().len(), 4);
+    assert!(session.undo_labels().is_empty());
+    assert!(before.same_evaluated_state(&session.snapshot().sketches));
+    let reports = session
+        .copy_associative_translations_projected(
+            DocumentSketchId(1),
+            &[SketchEntityId(3)],
+            &offsets,
+            |result| result,
+        )
+        .unwrap();
+    assert_eq!(
+        preview.members,
+        reports
+            .into_iter()
+            .flat_map(|report| report.copies)
+            .collect::<Vec<_>>()
+    );
+    let committed = session.snapshot().sketches.clone();
+    assert!(
+        preview
+            .geometry
+            .same_recipe(committed.get(DocumentSketchId(1)).unwrap().geometry())
+    );
+    assert_eq!(session.undo_labels(), ["Copy linked sketch instances"]);
+    session.undo().unwrap();
+    assert!(before.same_evaluated_state(&session.snapshot().sketches));
+    session.redo().unwrap();
+    assert!(committed.same_evaluated_state(&session.snapshot().sketches));
+}

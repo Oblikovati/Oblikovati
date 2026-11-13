@@ -151,3 +151,6 @@ mod inspection;
 
 #[path = "sketch_grounded_points/pattern_links.rs"]
 mod pattern_links;
+
+#[path = "sketch_grounded_points/associative_copies.rs"]
+mod associative_copies;

@@ -8,12 +8,15 @@ pub enum SketchRelationId {
     Authored(SketchConstraintId),
     ArcCircularity(SketchEntityId),
     PatternPointLink(SketchEntityId),
+    PatternRadiusLink(SketchEntityId),
 }
 impl SketchRelationId {
     pub(super) fn authored(self) -> Option<SketchConstraintId> {
         match self {
             Self::Authored(id) => Some(id),
-            Self::ArcCircularity(_) | Self::PatternPointLink(_) => None,
+            Self::ArcCircularity(_) | Self::PatternPointLink(_) | Self::PatternRadiusLink(_) => {
+                None
+            }
         }
     }
 }
@@ -25,6 +28,9 @@ pub(super) fn source_failure(origins: &[SketchRelationId], cause: SolveError) ->
         return match *origin {
             SketchRelationId::Authored(constraint) => SketchError::Residual { constraint, cause },
             SketchRelationId::ArcCircularity(arc) => SketchError::ArcCircularity { arc, cause },
+            SketchRelationId::PatternRadiusLink(member) => {
+                SketchError::PatternRadiusLink { member, cause }
+            }
             SketchRelationId::PatternPointLink(member) => {
                 SketchError::PatternPointLink { member, cause }
             }

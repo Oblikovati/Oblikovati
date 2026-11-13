@@ -27,6 +27,7 @@ pub(super) fn prepare(
     };
     append_arc_sources(sketch, &mut prepared)?;
     append_pattern_point_sources(sketch, &mut prepared)?;
+    append_pattern_radius_sources(sketch, &mut prepared)?;
     Ok(prepared)
 }
 impl Sketch2D {
@@ -99,6 +100,28 @@ fn append_pattern_point_sources(
         prepared
             .origins
             .push(SketchRelationId::PatternPointLink(link.member));
+    }
+    Ok(())
+}
+
+fn append_pattern_radius_sources(
+    sketch: &Sketch2D,
+    prepared: &mut PreparedSketch,
+) -> Result<(), SketchError> {
+    use super::variables::SketchVariable;
+    for link in &sketch.pattern_radius_links {
+        let variables = [link.source, link.member]
+            .into_iter()
+            .map(|circle| sketch.variable_column(SketchVariable::Radius(circle)))
+            .collect::<Result<_, _>>()?;
+        prepared.sources.push(PreparedConstraint {
+            equation: PlanarEquation::EqualRadius,
+            projection: None,
+            variables,
+        });
+        prepared
+            .origins
+            .push(SketchRelationId::PatternRadiusLink(link.member));
     }
     Ok(())
 }

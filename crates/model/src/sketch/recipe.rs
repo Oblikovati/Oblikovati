@@ -3,7 +3,7 @@ use super::{
     Sketch2D, SketchArc2D, SketchCircle2D, SketchConstraint, SketchError, SketchLine2D,
     SketchPoint2D,
 };
-/// Latest planar schema: v2 records order, v3 construction roles, v4 line axis roles, v5 dimension placements, v6 drive settings, v7 analytic ellipses, v8 ground anchors, v9 ellipse minor-radius dimensions, v10 parent and offset splines, v11 offset dimensions, v12 defining-point ownership, v13 point direction dimensions, v14 structural pattern point links.
+/// Latest planar schema: v2 records order, v3 construction roles, v4 line axis roles, v5 dimension placements, v6 drive settings, v7 analytic ellipses, v8 ground anchors, v9 ellipse minor-radius dimensions, v10 parent and offset splines, v11 offset dimensions, v12 defining-point ownership, v13 point direction dimensions, v14 structural pattern point and radius links.
 pub const SKETCH_RECIPE_VERSION: u32 = 14;
 /// Owned authored values; no numerical workspace, derived topology or system equations.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -25,6 +25,8 @@ pub struct SketchRecipe {
     pub constraints: Vec<SketchConstraint>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pattern_point_links: Option<Vec<super::SketchPatternPointLink>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pattern_radius_links: Option<Vec<super::SketchPatternRadiusLink>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub entity_order: Option<Vec<super::SketchEntityId>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -75,6 +77,7 @@ impl Sketch2D {
             defining_points: None,
             constraints: self.constraints.clone(),
             pattern_point_links: None,
+            pattern_radius_links: None,
             entity_order: self.saved_entity_order(),
             construction_curves: self.saved_construction_curves(),
             center_points: self.saved_center_points(),

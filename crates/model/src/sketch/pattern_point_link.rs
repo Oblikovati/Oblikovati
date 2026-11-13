@@ -47,24 +47,45 @@ impl Sketch2D {
         &self.pattern_point_links
     }
     pub(super) fn capture_pattern_point_links(&self, recipe: &mut SketchRecipe) {
-        if self.pattern_point_links.is_empty() {
+        if self.pattern_point_links.is_empty() && self.pattern_radius_links.is_empty() {
             return;
         }
         self.capture_point_ownership_metadata(recipe);
         recipe.version = 14;
         recipe.pattern_point_links = Some(self.pattern_point_links.clone());
+        if !self.pattern_radius_links.is_empty() {
+            recipe.pattern_radius_links = Some(self.pattern_radius_links.clone());
+        }
     }
     pub(super) fn restore_pattern_point_links(
         &mut self,
         recipe: &SketchRecipe,
     ) -> Result<(), SketchError> {
+        if recipe.version < 14 && recipe.pattern_radius_links.is_some() {
+            return Err(SketchError::Definition(format!(
+                "pattern radius links in version {}: expected version 14",
+                recipe.version
+            )));
+        }
         match (recipe.version, &recipe.pattern_point_links) {
             (1..=13, None) => Ok(()),
-            (14, Some(links)) if !links.is_empty() => links
-                .iter()
-                .try_for_each(|link| self.add_pattern_point_link(*link)),
+            (14, Some(links))
+                if !links.is_empty()
+                    || recipe
+                        .pattern_radius_links
+                        .as_ref()
+                        .is_some_and(|r| !r.is_empty()) =>
+            {
+                for link in links {
+                    self.add_pattern_point_link(*link)?;
+                }
+                for link in recipe.pattern_radius_links.iter().flatten() {
+                    self.add_pattern_radius_link(*link)?;
+                }
+                Ok(())
+            }
             shape => Err(SketchError::Definition(format!(
-                "pattern point link recipe {shape:?}: expected no links before version 14 or a nonempty link list in version 14"
+                "pattern link recipe {shape:?}: expected no links before version 14 or at least one link in version 14"
             ))),
         }
     }
