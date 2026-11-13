@@ -149,11 +149,18 @@ fn verify_invalid_requests(engine: &mut GuiFrameEngine) {
 
 const SCALE_SETTLING_FRAMES: usize = 3;
 fn verify_scaled_frame(engine: &mut GuiFrameEngine) {
-    let baseline = engine.frame(&request()).unwrap().draws;
     let mut input = request();
+    // At narrow widths ImGui truncates tab text based on rasterized font metrics.
+    // Use enough room to compare the same visible glyphs at both scales.
+    input.extent[0] = 1440;
+    for _ in 0..SCALE_SETTLING_FRAMES {
+        engine.frame(&input).unwrap();
+    }
+    let baseline = engine.frame(&input).unwrap().draws;
     // Preserve logical viewport size so responsive panels have the same layout.
     input.extent = input.extent.map(|value| value * 2);
     input.framebuffer_scale = [2.; 2];
+    input.events = vec![GuiInputEvent::PointerMoved([1260., 700.])];
     // A new raster scale measures the ribbon's panels again, so the layout settles first.
     for _ in 0..SCALE_SETTLING_FRAMES {
         engine.frame(&input).unwrap();
@@ -170,6 +177,25 @@ fn verify_scaled_frame(engine: &mut GuiFrameEngine) {
             .map(|point| point.map(|value| value * 2.))
             .collect::<Vec<_>>()
     );
+}
+fn verify_narrow_backing_click(engine: &mut GuiFrameEngine) {
+    for scale in [1., 2.] {
+        let mut input = request();
+        input.commands = GuiCommandState::default();
+        input.extent = [(640. * scale) as u32, (360. * scale) as u32];
+        input.framebuffer_scale = [scale; 2];
+        input.events = vec![GuiInputEvent::PointerMoved([40. * scale, 68. * scale])];
+        for _ in 0..SCALE_SETTLING_FRAMES {
+            engine.frame(&input).unwrap();
+        }
+        input.events = vec![left_button_event(true)];
+        engine.frame(&input).unwrap();
+        input.events = vec![left_button_event(false)];
+        assert_eq!(
+            engine.frame(&input).unwrap().actions,
+            [GuiShellAction::NewPart]
+        );
+    }
 }
 fn verify_exclusive_context(engine: &mut GuiFrameEngine) {
     assert!(
@@ -242,6 +268,7 @@ fn exercise_gui_inputs(engine: &mut GuiFrameEngine) {
     }
     verify_keyboard_save_activation(engine);
     verify_scaled_frame(engine);
+    verify_narrow_backing_click(engine);
     verify_exclusive_context(engine);
     verify_invalid_requests(engine);
     verify_scaled_input_overflow(engine);
