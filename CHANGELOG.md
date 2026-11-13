@@ -22,6 +22,8 @@
 
 ### Added
 
+- Added the optional Parameters panel to the Sketch ribbon.
+
 - Added document unit labels to Precise Input coordinates.
 
 - Added Copy mode to sketch Move, with preview and undo/redo.

@@ -7,6 +7,8 @@ use cucumber::{given, then, when};
 const PARAMETERS: &str = "Parameters";
 #[path = "minimized_context.rs"]
 mod minimized_context;
+#[path = "sketch_parameters.rs"]
+mod sketch_parameters;
 
 fn expand_show_panels(world: &mut ApplicationWorld) {
     world.hover([700, 500]);

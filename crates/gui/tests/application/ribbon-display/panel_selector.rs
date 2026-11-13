@@ -3,6 +3,36 @@ use super::*;
 use crate::{GuiAuthoringContext, GuiInputEvent, GuiKey, GuiPointerButton};
 use crate::{ribbon::RibbonTab, ribbon_panels::RibbonPanel};
 
+#[test]
+fn sketch_parameters_panel_starts_hidden_between_format_and_exit() {
+    let state = GuiCommandState {
+        document: Some(7),
+        document_type: Some(oblikovati_api::types::DOCUMENT_PART),
+        authoring: GuiAuthoringContext::Sketch,
+        ..Default::default()
+    };
+    let panels = crate::ribbon_panels::panels_for(RibbonTab::Sketch, &state);
+    let index = |panel| {
+        panels
+            .iter()
+            .position(|candidate| *candidate == panel)
+            .unwrap()
+    };
+    assert!(index(RibbonPanel::Format) < index(RibbonPanel::Parameters));
+    assert!(index(RibbonPanel::Parameters) < index(RibbonPanel::Exit));
+    let display = crate::application::ribbon_display::RibbonDisplayState::default();
+    assert!(
+        display
+            .hidden_panels
+            .contains(&(RibbonTab::Sketch, RibbonPanel::Parameters))
+    );
+    assert!(
+        display
+            .hidden_panels
+            .contains(&(RibbonTab::Model, RibbonPanel::Parameters))
+    );
+}
+
 fn part_request() -> GuiFrameRequest {
     GuiFrameRequest {
         extent: [1440, 900],

@@ -133,6 +133,7 @@ impl Default for RibbonDisplayState {
             hidden_panels: BTreeSet::from([
                 (RibbonTab::Model, RibbonPanel::Parameters),
                 (RibbonTab::Sketch, RibbonPanel::Layout),
+                (RibbonTab::Sketch, RibbonPanel::Parameters),
             ]),
             show_panel_titles: true,
         }

@@ -496,7 +496,7 @@ pub(crate) fn panels_for(tab: RibbonTab, state: &GuiCommandState) -> Vec<RibbonP
         }
         RibbonTab::Annotate => vec![AnnotateDimension, AnnotateText, AnnotateSymbols],
         RibbonTab::Presentation => vec![PresentationModel],
-        RibbonTab::Sketch => vec![Create, Exit, Constrain, Layout, Modify, Format],
+        RibbonTab::Sketch => vec![Create, Constrain, Layout, Modify, Format, Parameters, Exit],
         RibbonTab::Manage => vec![Parameters],
         RibbonTab::Tools => vec![ToolOptions],
         RibbonTab::View if state.theme.is_some() || state.color_scheme.is_some() => {
