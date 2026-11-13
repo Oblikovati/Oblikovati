@@ -72,6 +72,8 @@ pub enum GuiShellAction {
     ActivateDocument(oblikovati_api::wire::ActivateDocumentArgs),
     CloseDocument(oblikovati_api::wire::CloseDocumentArgs),
     OpenDocument(oblikovati_api::wire::OpenDocumentArgs),
+    /// Open a drawing with its saved views and deferred updates.
+    OpenDeferredDrawing(String),
     SaveDocumentAs(oblikovati_api::wire::SaveDocumentAsArgs),
     SelectBrowserFeature {
         document: u64,
@@ -359,6 +361,8 @@ pub struct GuiCommandState {
     pub drawing_documents:
         std::collections::BTreeMap<u64, oblikovati_model::drawing::DrawingDocument>,
     pub drawing_projections: std::collections::BTreeMap<u64, GuiDrawingProjection>,
+    /// Whether the active drawing uses frozen saved views.
+    pub drawing_updates_deferred: bool,
     pub prompts: oblikovati_model::application_prompts::PromptPreferences,
     pub projects: Vec<GuiProject>,
     /// What a new document from each template measures as a file, in bytes.

@@ -143,7 +143,8 @@ pub(crate) fn draw_panel_content(
             );
         }
         RibbonPanel::DrawingViews => {
-            let _disabled = ui.begin_disabled(state.transaction_open);
+            let _disabled =
+                ui.begin_disabled(state.transaction_open || state.drawing_updates_deferred);
             if crate::widget_abi::button(ui, "Base View", owners.icons.cell([108., 26.])) {
                 owners.workspaces.request_base_view();
             }

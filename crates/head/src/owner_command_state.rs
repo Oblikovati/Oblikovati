@@ -84,6 +84,11 @@ impl<
             document_storage: self.gui_document_storage()?,
             drawing_documents: self.gui_drawing_documents()?,
             drawing_projections: self.gui_drawing_projections()?,
+            drawing_updates_deferred: self
+                .files
+                .deferred_drawing_views(document)
+                .map_err(|cause| cause.to_string())?
+                .is_some(),
             projects: self.gui_projects(),
             template_sizes: document_creation::gui_template_sizes(),
             prompts: self.prompt_frequencies,

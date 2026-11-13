@@ -90,6 +90,7 @@ impl GuiShellAction {
             }
             Self::CreateDrawingBaseView(request) => {
                 state.document == Some(request.drawing)
+                    && !state.drawing_updates_deferred
                     && state.document_type == Some(oblikovati_api::types::DOCUMENT_DRAWING)
                     && !state.transaction_open
                     && state
@@ -156,7 +157,9 @@ impl GuiShellAction {
                 .theme
                 .as_ref()
                 .is_some_and(|theme| theme.contains(name)),
-            Self::OpenDocument(_) | Self::CreateDocument(_) => !state.transaction_open,
+            Self::OpenDocument(_) | Self::OpenDeferredDrawing(_) | Self::CreateDocument(_) => {
+                !state.transaction_open
+            }
             Self::CloseDocument(request) => {
                 (state.document == Some(request.id)
                     || state.documents.iter().any(|row| row.id == request.id))

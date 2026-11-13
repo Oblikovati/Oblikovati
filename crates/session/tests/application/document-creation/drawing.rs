@@ -32,6 +32,43 @@ fn author_view(host: &mut DrawingHost, id: u64) {
         .unwrap();
 }
 #[test]
+fn deferred_open_rejects_missing_geometry_before_changing_active_document() {
+    let mut host = FileWorkspace::new(RecordingWorkspace::default(), WorkspaceFiles::default());
+    let mut source = SequenceGuids(1000);
+    let drawing = host
+        .create_unbound(
+            DocumentPackage::empty(DOCUMENT_DRAWING, "Drawing1"),
+            ContentObserver,
+            "alpha",
+            &mut source,
+        )
+        .unwrap()
+        .session_id;
+    let target = path("no-saved-views.odd");
+    host.save_as(drawing, &target, "alpha", &mut source)
+        .unwrap();
+    host.close_discarding_changes(drawing).unwrap();
+    let part = host
+        .create_unbound(
+            DocumentPackage::empty(DOCUMENT_PART, "Part1"),
+            ContentObserver,
+            "alpha",
+            &mut source,
+        )
+        .unwrap()
+        .session_id;
+    let result =
+        host.open_deferred_with_factory(&target, || Ok(ContentObserver), "alpha", &mut source);
+    assert!(
+        result
+            .unwrap_err()
+            .to_string()
+            .contains("expected saved drawing view geometry")
+    );
+    assert_eq!(host.workspace().active_document(), Some(part));
+    assert_eq!(host.workspace().documents(), &[part]);
+}
+#[test]
 fn drawing_content_is_owned_by_history_and_survives_save_close_and_reopen() {
     let mut host = FileWorkspace::new(RecordingWorkspace::default(), WorkspaceFiles::default());
     let mut source = SequenceGuids(1000);
@@ -176,20 +213,13 @@ fn staged_view_geometry_is_saved_atomically_and_rejects_a_stale_recipe() {
         Some(updated.clone())
     );
     let reopened = host
-        .open(
-            &target,
-            ContentObserver,
-            "alpha",
-            &mut source,
-            OpenActivation::Activate,
-        )
+        .open_deferred_with_factory(&target, || Ok(ContentObserver), "alpha", &mut source)
         .unwrap()
         .session_id();
     assert_eq!(
         host.saved_drawing_views(reopened).unwrap(),
         Some(updated.clone())
     );
-    host.defer_drawing_updates(reopened).unwrap();
     assert_eq!(
         host.deferred_drawing_views(reopened).unwrap(),
         Some(&updated)

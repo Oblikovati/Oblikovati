@@ -60,6 +60,17 @@ impl<
         &self,
         request: &oblikovati_gui::GuiBaseViewRequest,
     ) -> Result<String, String> {
+        if self
+            .files
+            .deferred_drawing_views(request.drawing)
+            .map_err(|cause| cause.to_string())?
+            .is_some()
+        {
+            return Err(format!(
+                "drawing {}: expected updates enabled before creating views",
+                request.drawing
+            ));
+        }
         let workspace = self.files.workspace();
         if workspace.active_document() != Some(request.drawing)
             || self

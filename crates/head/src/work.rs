@@ -321,6 +321,12 @@ pub trait HeadWork {
             request.full_document_name
         ))
     }
+    /// Open a drawing with deferred updates; example: `work.open_deferred_drawing_from_gui(path)?`.
+    fn open_deferred_drawing_from_gui(&mut self, path: &str) -> Result<bool, String> {
+        Err(format!(
+            "deferred drawing {path:?}: expected a drawing owner"
+        ))
+    }
     /// Select a checked browser row without starting an edit.
     /// Example: `work.select_browser_sketch_from_gui(document, sketch, false)?`.
     fn select_browser_sketch_from_gui(

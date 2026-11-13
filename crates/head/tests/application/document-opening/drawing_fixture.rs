@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Saved drawing with a resolvable model and a real projected view.
 use super::*;
+use oblikovati_automation::DrawingViewProjectionAccess;
 use oblikovati_model::drawing::{DrawingBaseViewDefinition, DrawingDocument};
 use oblikovati_persistence::package::DocumentPackage;
 
@@ -28,10 +29,30 @@ fn write_drawing(path: &Path, source: &Path) {
         [210., 148.5],
     )
     .unwrap();
-    drawing.add_base_view_definition(0, view).unwrap();
+    drawing.add_base_view_definition(0, view.clone()).unwrap();
+    let snapshot = crate::scene_fixture::selected_prism_document();
+    let ids =
+        oblikovati_model::identity::RecipeIdAllocator::restore(None, snapshot.parameters.ids())
+            .unwrap();
+    let history = oblikovati_model::history::DocumentEditHistory::new(snapshot, ids).unwrap();
+    let guid = "11111111-2222-3333-4444-555555555555".parse().unwrap();
+    let lines = oblikovati_drawing::DrawingProjectionService
+        .saved_lines(&history, guid, &view)
+        .unwrap();
+    let views = oblikovati_persistence::package::SavedDrawingViews {
+        version: oblikovati_persistence::package::SavedDrawingViews::VERSION,
+        drawing_recipe: drawing.recipe().clone(),
+        views: vec![oblikovati_persistence::package::SavedDrawingView {
+            sheet: drawing.sheets()[0].name.clone(),
+            view: view.name.clone(),
+            lines,
+        }],
+    };
     let package = DocumentPackage::decode(b"schemaVersion: 2\ndocumentType: 3\n")
         .unwrap()
         .with_drawing(Some(&drawing))
+        .unwrap()
+        .with_saved_drawing_views(&views)
         .unwrap();
     std::fs::write(path, package.encode().unwrap()).unwrap();
 }
@@ -99,6 +120,23 @@ fn deferred_drawing_active(world: &mut ApplicationWorld) {
 #[then("the sheet, border and saved view geometry are displayed")]
 fn deferred_sheet(world: &mut ApplicationWorld) {
     sheet_and_border(world);
+    let path = world.saved_path.as_ref().unwrap();
+    let package = DocumentPackage::decode(&std::fs::read(path).unwrap()).unwrap();
+    let saved = package.restore_saved_drawing_views().unwrap().unwrap();
+    let state = world.state();
+    let projection = &state.drawing_projections[&state.document.unwrap()];
+    let expected: Vec<_> = saved.views[0]
+        .lines
+        .iter()
+        .map(|line| (&line.points, line.hidden))
+        .collect();
+    let actual: Vec<_> = projection
+        .lines
+        .iter()
+        .map(|line| (&line.points, line.hidden))
+        .collect();
+    assert_eq!(actual, expected);
+    assert!(!state.documents.iter().any(|row| row.name == "source"));
 }
 #[then("the drawing browser shows the sheet and a view")]
 fn deferred_browser(world: &mut ApplicationWorld) {

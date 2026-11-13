@@ -25,6 +25,23 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHos
 }
 
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext<'_, O, W, F> {
+    pub(super) fn open_deferred_drawing_path(&mut self, path: &Path) -> Result<u64, Error> {
+        let observers = &mut self.observers;
+        let outcome = self
+            .files
+            .open_deferred_with_factory(
+                path,
+                || create_observer(observers),
+                self.version,
+                self.source,
+            )
+            .map_err(|cause| Error(cause.to_string()))?;
+        let id = outcome.session_id();
+        self.files
+            .set_visible(id, true)
+            .map_err(|cause| Error(cause.to_string()))?;
+        Ok(id)
+    }
     pub(super) fn open(&mut self, request: OpenDocumentArgs) -> Result<Vec<u8>, Error> {
         validate_open(&request)?;
         let id = self.open_path(Path::new(&request.full_document_name), request.visible)?;

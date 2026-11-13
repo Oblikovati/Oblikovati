@@ -44,6 +44,7 @@ pub enum FileWorkspaceError {
     },
     MissingFile(u64),
     DeferredDrawing(u64, String),
+    DeferredOpen(PathBuf, String),
     ReferencedModel(u64),
     UnboundDocument(u64),
     RelativeCanonical(PathBuf),
@@ -134,6 +135,9 @@ impl fmt::Display for FileWorkspaceError {
                 write!(output, "document {id}: expected an owned file binding")
             }
             Self::DeferredDrawing(id, reason) => write!(output, "deferred drawing {id}: {reason}"),
+            Self::DeferredOpen(path, reason) => {
+                write!(output, "deferred drawing {path:?}: {reason}")
+            }
             Self::ReferencedModel(id) => write!(
                 output,
                 "document {id}: expected dependent drawings to close before their model"
@@ -189,7 +193,8 @@ impl Error for FileWorkspaceError {
             | Self::RelativeCanonical(_)
             | Self::OpenVeto { .. }
             | Self::DestinationInUse { .. }
-            | Self::DeferredDrawing(..) => None,
+            | Self::DeferredDrawing(..)
+            | Self::DeferredOpen(..) => None,
         }
     }
 }

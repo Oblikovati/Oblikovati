@@ -36,7 +36,7 @@ claim that each file has been individually triaged.
 
 ### Drawing browser and saved views, 2026-11-13
 
-- Deferred-open assessment on the same feature source: the focused native
+- Historical deferred-open assessment on the same feature source: the focused native
   scenario reaches the information message and passes ten steps, then fails
   because acknowledging it does not open the drawing. The dialog sends
   `deferContent`, whose API contract requests a reference stub rather than
@@ -49,8 +49,7 @@ claim that each file has been individually triaged.
   for saved sheet-space view geometry. It checks the complete drawing recipe, exact
   sheet/view coverage, duplicate names and finite line coordinates. A changed
   drawing recipe removes the old stream; ordinary cache compaction keeps it.
-  The Go YAML codec retains named streams. Deferred-open behavior remains
-  incomplete: the host does not yet display this stream. The
+  The Go YAML codec retains named streams. The
   full persistence suite passed 382 tests after correcting a stale sketch
   projection version assertion that also failed at the prior commit.
 - The session save target can stage a saved-view snapshot in the same atomic
@@ -66,8 +65,15 @@ claim that each file has been individually triaged.
   The file workspace can now retrieve the validated last-saved view geometry
   after save or reopen, even when the live drawing has since changed. A session
   can freeze a matching saved presentation and the desktop projection selects its
-  active-sheet lines without evaluating the model. Deferred-open dispatch and
-  command policy still need to activate and protect this state.
+  active-sheet lines without evaluating the model. The open dialog now uses a
+  distinct deferred drawing action and disables view creation. The focused
+  native BDD scenario passes all 15 steps with a Martensite-generated saved
+  projection. A drawing without a saved presentation is refused before its
+  document is registered. Changing defer status and deferred saves are not
+  established by this scenario and are not yet implemented. The full current
+  application benchmark also reports a parse error in the separately updated
+  home-recent-documents feature; the focused run used an unchanged copy of the
+  document-opening feature. Report: `/tmp/obk-deferred-isolated.log`.
   Seven native drawing tests passed, including real projected-line storage and
   a mixed-success batch; the 416 session lifecycle and 726 API query tests passed.
 - The full Open feature, SHA-256

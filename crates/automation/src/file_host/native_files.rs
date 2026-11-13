@@ -4,6 +4,18 @@ use super::*;
 use std::path::Path;
 
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHost<'_, O, W, F> {
+    /// Open a drawing using its saved presentation; example: `host.open_deferred_drawing_path(path)?`.
+    pub fn open_deferred_drawing_path(&self, path: &Path) -> Result<u64, Error> {
+        let mut context = self
+            .context
+            .try_borrow_mut()
+            .map_err(|_| busy("open_deferred_drawing_path"))?;
+        let before = context.source_bindings()?;
+        let response = context.open_deferred_drawing_path(path);
+        let refresh =
+            context.refresh_after_native_file_change(&before, "open_deferred_drawing_path");
+        super::lifecycle::combine_lifecycle_result("open_deferred_drawing_path", response, refresh)
+    }
     /// Open an OS path without converting it to UTF-8; example: `host.open_path(path, true)?`.
     pub fn open_path(&self, path: &Path, visible: bool) -> Result<u64, Error> {
         let mut context = self

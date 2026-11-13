@@ -436,10 +436,13 @@ fn in_opening_order(
     paths
 }
 fn open_action(path: &str, defer_content: bool) -> GuiShellAction {
+    if defer_content {
+        return GuiShellAction::OpenDeferredDrawing(path.to_owned());
+    }
     GuiShellAction::OpenDocument(OpenDocumentArgs {
         full_document_name: path.to_string(),
         visible: true,
-        defer_content,
+        defer_content: false,
     })
 }
 #[cfg(test)]

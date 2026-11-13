@@ -56,6 +56,9 @@ macro_rules! forward_owner_view_work {
         ) -> Result<bool, String> {
             self.$owner.open_document_from_gui(request)
         }
+        fn open_deferred_drawing_from_gui(&mut self, path: &str) -> Result<bool, String> {
+            self.$owner.open_deferred_drawing_from_gui(path)
+        }
         // #3811: live browser actions must reach the same owner through every wrapper.
         fn select_browser_sketch_from_gui(
             &mut self,

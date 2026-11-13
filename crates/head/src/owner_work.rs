@@ -419,6 +419,18 @@ impl<
         });
         Ok(true)
     }
+    fn open_deferred_drawing_from_gui(&mut self, path: &str) -> Result<bool, String> {
+        let document = self
+            .document_host()
+            .open_deferred_drawing_path(std::path::Path::new(path))
+            .map_err(|cause| cause.to_string())?;
+        self.note_recent_file(path);
+        self.command_notice = Some(DesktopCommandNotice::DocumentOpened {
+            document,
+            path: path.to_owned(),
+        });
+        Ok(true)
+    }
     fn close_document_from_gui(
         &mut self,
         request: &oblikovati_api::wire::CloseDocumentArgs,

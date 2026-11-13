@@ -28,15 +28,61 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         source: &mut dyn GuidSource,
         activation: OpenActivation,
     ) -> Result<FileOpenOutcome, FileWorkspaceError> {
+        self.open_in_mode(path, factory, version, source, activation, false)
+    }
+
+    /// Open a drawing with its saved views frozen; example: `files.open_deferred_with_factory(path, factory, version, source)?`.
+    pub fn open_deferred_with_factory(
+        &mut self,
+        path: &Path,
+        factory: impl FnOnce() -> Result<O, String>,
+        version: &str,
+        source: &mut dyn GuidSource,
+    ) -> Result<FileOpenOutcome, FileWorkspaceError> {
+        self.open_in_mode(
+            path,
+            factory,
+            version,
+            source,
+            OpenActivation::Activate,
+            true,
+        )
+    }
+
+    fn open_in_mode(
+        &mut self,
+        path: &Path,
+        factory: impl FnOnce() -> Result<O, String>,
+        version: &str,
+        source: &mut dyn GuidSource,
+        activation: OpenActivation,
+        deferred: bool,
+    ) -> Result<FileOpenOutcome, FileWorkspaceError> {
         if let Some(&id) = self.paths.get(path) {
+            self.require_matching_defer_mode(id, deferred)?;
             return self.reuse_open(id, activation);
         }
         let canonical = checked_path(path, self.files.canonical_path(path))?;
         if let Some(&id) = self.paths.get(&canonical) {
+            self.require_matching_defer_mode(id, deferred)?;
             return self.reuse_open(id, activation);
         }
         let observer = factory().map_err(FileWorkspaceError::ObserverFactory)?;
-        self.open_new(canonical, observer, version, source, activation)
+        self.open_new(canonical, observer, version, source, activation, deferred)
+    }
+
+    fn require_matching_defer_mode(
+        &self,
+        id: u64,
+        deferred: bool,
+    ) -> Result<(), FileWorkspaceError> {
+        if deferred && self.deferred_drawing_views(id)?.is_none() {
+            return Err(FileWorkspaceError::DeferredDrawing(
+                id,
+                "expected a drawing already open in deferred mode".into(),
+            ));
+        }
+        Ok(())
     }
 
     fn reuse_open(
@@ -59,8 +105,25 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         version: &str,
         source: &mut dyn GuidSource,
         activation: OpenActivation,
+        deferred: bool,
     ) -> Result<FileOpenOutcome, FileWorkspaceError> {
         let prepared = self.prepare_open(&path, version, source)?;
+        let views = if deferred {
+            Some(
+                prepared
+                    .package
+                    .restore_saved_drawing_views()
+                    .map_err(FileWorkspaceError::Package)?
+                    .ok_or_else(|| {
+                        FileWorkspaceError::DeferredOpen(
+                            path.clone(),
+                            "expected saved drawing view geometry".into(),
+                        )
+                    })?,
+            )
+        } else {
+            None
+        };
         let feature_mark = prepared.work_geometry.ids.high_water();
         let snapshot = DocumentSnapshot {
             work_geometry: prepared.work_geometry.program,
@@ -96,6 +159,12 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
             .register(history, prepared.identity, observer, source, activation)
             .map_err(FileWorkspaceError::Workspace)?;
         let outcome = self.install_file(path, prepared.package, registration);
+        if let Some(views) = views {
+            self.retained
+                .get_mut(&registration.session_id)
+                .expect("installed file")
+                .deferred_views = Some(views);
+        }
         self.workspace
             .notify_unavailable_interest_clients(registration.session_id);
         Ok(outcome)
