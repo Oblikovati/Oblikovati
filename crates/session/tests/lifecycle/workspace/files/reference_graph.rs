@@ -154,3 +154,65 @@ fn references_refuse_non_component_document_types() {
     assert!(error.to_string().contains("expected a part or assembly"));
     assert_eq!(host.document_reference(owner, "drawing"), None);
 }
+
+#[test]
+fn failures_are_local_to_each_reference_and_clear_on_recovery() {
+    let files = WorkspaceFiles::default();
+    files
+        .contents
+        .borrow_mut()
+        .insert(path("a.obk"), fixture(1));
+    let mut host = FileWorkspace::new(RecordingWorkspace::default(), files);
+    let mut source = SequenceGuids(1000);
+    let model = host
+        .open(
+            &path("a.obk"),
+            ContentObserver,
+            "alpha",
+            &mut source,
+            OpenActivation::Activate,
+        )
+        .unwrap()
+        .session_id();
+    let owner = assembly(&mut host, &mut source, &["a", "b", "c"]);
+    host.attach_document_reference(owner, "a".into(), model, false)
+        .unwrap();
+    host.attach_document_reference(owner, "b".into(), model, false)
+        .unwrap();
+    host.reject_document_reference(owner, "b".into(), "missing b".into())
+        .unwrap();
+    host.reject_document_reference(owner, "c".into(), "missing c".into())
+        .unwrap();
+    assert_eq!(host.document_reference(owner, "a"), Some(model));
+    assert_eq!(host.document_reference(owner, "b"), None);
+    assert_eq!(host.document_reference_error(owner, "b"), Some("missing b"));
+    assert_eq!(host.document_reference_error(owner, "c"), Some("missing c"));
+    host.attach_document_reference(owner, "b".into(), model, false)
+        .unwrap();
+    assert_eq!(host.document_reference_error(owner, "b"), None);
+    assert_eq!(host.document_reference_error(owner, "c"), Some("missing c"));
+    host.commands(owner)
+        .unwrap()
+        .run(
+            "Remove missing reference",
+            |snapshot, _| -> Result<(), ()> {
+                snapshot
+                    .assembly
+                    .as_mut()
+                    .unwrap()
+                    .retain(|record| record.component != "c");
+                Ok(())
+            },
+        )
+        .unwrap();
+    assert_eq!(host.document_reference_error(owner, "c"), None);
+    host.commands(owner).unwrap().undo().unwrap();
+    assert_eq!(host.document_reference_error(owner, "c"), Some("missing c"));
+    assert!(
+        host.reject_document_reference(owner, "unknown".into(), "failure".into())
+            .is_err()
+    );
+    host.close_discarding_changes(owner).unwrap();
+    assert_eq!(host.document_reference_error(owner, "c"), None);
+    assert!(host.workspace().documents().contains(&model));
+}

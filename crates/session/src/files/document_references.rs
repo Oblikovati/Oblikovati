@@ -35,9 +35,15 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
             )));
         }
         let mut proposed = self.document_references.clone();
-        let previous = proposed.entry(owner).or_default().insert(name, model);
+        let previous = proposed
+            .entry(owner)
+            .or_default()
+            .insert(name.clone(), model);
         self.reference_graph(&proposed)?;
         self.document_references = proposed;
+        if let Some(errors) = self.document_reference_errors.get_mut(&owner) {
+            errors.remove(&name);
+        }
         if background {
             self.background_reference_models.insert(model);
         }
@@ -55,7 +61,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         background: bool,
     ) -> Result<(), FileWorkspaceError> {
         self.attach_document_reference(drawing, name.clone(), model, background)?;
-        self.drawing_reference_errors.remove(&drawing);
+        self.document_reference_errors.remove(&drawing);
         let stale: Vec<_> = self
             .document_references
             .get(&drawing)
@@ -127,21 +133,51 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         }
         Ok(graph)
     }
+    /// Record one unresolved authored reference; example: `files.reject_document_reference(id, name, reason)?`.
+    pub fn reject_document_reference(
+        &mut self,
+        owner: u64,
+        name: String,
+        cause: String,
+    ) -> Result<(), FileWorkspaceError> {
+        self.retained_file(owner)?;
+        if name.is_empty() || !self.reference_is_authored(owner, &name) {
+            return Err(FileWorkspaceError::ReferenceGraph(format!(
+                "document {owner} reference {name:?}: expected a nonempty authored reference"
+            )));
+        }
+        self.detach_document_reference(owner, &name);
+        self.store_reference_error(owner, name, cause);
+        Ok(())
+    }
+    /// Read the current failure for an authored reference; example: `files.document_reference_error(id, name)`.
+    pub fn document_reference_error(&self, owner: u64, name: &str) -> Option<&str> {
+        if !self.reference_is_authored(owner, name) {
+            return None;
+        }
+        self.document_reference_errors
+            .get(&owner)?
+            .get(name)
+            .map(String::as_str)
+    }
+    fn store_reference_error(&mut self, owner: u64, name: String, cause: String) {
+        self.document_reference_errors
+            .entry(owner)
+            .or_default()
+            .insert(name, cause);
+    }
     /// Record a failed drawing model load; example: `files.reject_drawing_reference(id, name, cause)`.
     pub fn reject_drawing_reference(&mut self, drawing: u64, name: String, cause: String) {
         self.clear_drawing_reference(drawing);
-        self.drawing_reference_errors.insert(drawing, (name, cause));
+        self.store_reference_error(drawing, name, cause);
     }
     /// Read the last failure for a drawing reference; example: `files.drawing_reference_error(id, name)`.
     pub fn drawing_reference_error(&self, drawing: u64, name: &str) -> Option<&str> {
-        self.drawing_reference_errors
-            .get(&drawing)
-            .filter(|(reference, _)| reference == name)
-            .map(|(_, cause)| cause.as_str())
+        self.document_reference_error(drawing, name)
     }
     /// Release a drawing's old model; example: `files.clear_drawing_reference(id)`.
     pub fn clear_drawing_reference(&mut self, drawing: u64) {
-        self.drawing_reference_errors.remove(&drawing);
+        self.document_reference_errors.remove(&drawing);
         self.release_document_references(drawing);
     }
     fn detach_document_reference(&mut self, owner: u64, name: &str) {
@@ -154,7 +190,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         }
     }
     pub(super) fn release_document_references(&mut self, owner: u64) {
-        self.drawing_reference_errors.remove(&owner);
+        self.document_reference_errors.remove(&owner);
         let Some(refs) = self.document_references.remove(&owner) else {
             return;
         };

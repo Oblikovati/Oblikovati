@@ -170,6 +170,11 @@ claim that each file has been individually triaged.
   order for nested references. Tests cover cycles, nested order, invalid target
   types, shared ownership and the existing native drawing lifecycle. Assembly
   files are still guarded until their reference loader and renderer are ready.
+- Reference failures are now stored per authored component rather than per
+  drawing. A failed component leaves other bindings intact, and a successful
+  rebind clears only its own error. The drawing path uses the same error owner.
+  Session tests cover independent failures, recovery and cleanup; the native
+  missing-model drawing regression also passes.
 - The drawing browser now lists the authored sheets, borders, title blocks and
   views, and browser search uses those same rows. Unit tests cover multiple
   sheets, a missing border and searching for a view.
