@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Drawing display state follows the current drawing and referenced part generations.
 use super::*;
+use oblikovati_drawing::evaluate_part;
 use oblikovati_gui::{GuiDrawingLine, GuiDrawingProjection};
-use oblikovati_model::{drawing::DrawingDocument, feature::FeatureEvaluationStatus};
+use oblikovati_model::drawing::DrawingDocument;
 use std::collections::BTreeMap;
 
 type ProjectionKey = (u64, u64, u64);
@@ -16,49 +17,6 @@ pub(super) struct DrawingViewPreview {
     focus: oblikovati_session::workspace::WorkspaceFocusIdentity,
     projection: GuiDrawingProjection,
 }
-pub(super) struct DrawingProjectionAccess;
-impl oblikovati_automation::DrawingViewProjectionAccess for DrawingProjectionAccess {
-    fn counts(
-        &self,
-        history: &oblikovati_model::history::DocumentEditHistory,
-        document: oblikovati_model::identity::DocumentGuid,
-        view: &oblikovati_model::drawing::DrawingBaseViewDefinition,
-    ) -> Result<[usize; 2], String> {
-        let projection = project_authored_view(history, document, view)?;
-        Ok([
-            projection.curves.visible.len(),
-            projection.curves.hidden.len(),
-        ])
-    }
-    fn saved_lines(
-        &self,
-        history: &oblikovati_model::history::DocumentEditHistory,
-        document: oblikovati_model::identity::DocumentGuid,
-        view: &oblikovati_model::drawing::DrawingBaseViewDefinition,
-    ) -> Result<Vec<oblikovati_persistence::package::SavedDrawingLine>, String> {
-        let projected = project_authored_view(history, document, view)?;
-        let mut output = GuiDrawingProjection::default();
-        append_curves(&mut output, &projected, view.style, history, document)?;
-        Ok(output
-            .lines
-            .into_iter()
-            .map(|line| oblikovati_persistence::package::SavedDrawingLine {
-                points: line.points,
-                hidden: line.hidden,
-            })
-            .collect())
-    }
-}
-fn project_authored_view(
-    history: &oblikovati_model::history::DocumentEditHistory,
-    document: oblikovati_model::identity::DocumentGuid,
-    view: &oblikovati_model::drawing::DrawingBaseViewDefinition,
-) -> Result<oblikovati_martensite::DrawingBaseProjection, String> {
-    let result = evaluate_part(history, document)?;
-    let bodies: Vec<_> = result.ordered_bodies().collect();
-    oblikovati_martensite::drawing_base_view_bodies(history, document, &bodies, view)
-}
-
 impl<
     O: TransactionObserver,
     W: WorkspaceObserver,
@@ -260,40 +218,6 @@ impl<
         Ok(output)
     }
 }
-fn evaluate_part(
-    history: &oblikovati_model::history::DocumentEditHistory,
-    document: oblikovati_model::identity::DocumentGuid,
-) -> Result<
-    oblikovati_model::feature::part::PartFeatureEvaluation<
-        oblikovati_martensite::NamedPrismSnapshot,
-        oblikovati_martensite::EvaluationFailure,
-    >,
-    String,
-> {
-    let mut evaluator = oblikovati_martensite::CertifiedNamedPrismEvaluator::with_policy(
-        history,
-        document,
-        crate::part_scene::resolution_policy::desktop_policy(),
-    );
-    let result = history
-        .snapshot()
-        .evaluate_part_features(&mut evaluator)
-        .map_err(|cause| cause.to_string())?;
-    for health in result.health() {
-        if matches!(
-            health.status,
-            FeatureEvaluationStatus::Failed(_)
-                | FeatureEvaluationStatus::Blocked { .. }
-                | FeatureEvaluationStatus::ConditionFailed(_)
-        ) {
-            return Err(format!(
-                "drawing source feature {:?}: {:?}",
-                health.feature, health.status
-            ));
-        }
-    }
-    Ok(result)
-}
 fn append_curves(
     output: &mut GuiDrawingProjection,
     view: &oblikovati_martensite::DrawingBaseProjection,
@@ -301,35 +225,13 @@ fn append_curves(
     history: &oblikovati_model::history::DocumentEditHistory,
     document: oblikovati_model::identity::DocumentGuid,
 ) -> Result<(), String> {
-    use oblikovati_api::types::{
-        HIDDEN_LINE_REMOVED_VIEW_STYLE, HIDDEN_LINE_VIEW_STYLE, WIREFRAME_VIEW_STYLE,
-    };
-    let hidden = match style {
-        HIDDEN_LINE_REMOVED_VIEW_STYLE => false,
-        HIDDEN_LINE_VIEW_STYLE | WIREFRAME_VIEW_STYLE => true,
-        _ => {
-            return Err(format!(
-                "drawing view style {style:?}: expected wireframe or hidden-line style"
-            ));
-        }
-    };
-    for visible in [true, false] {
-        if !visible && !hidden {
-            continue;
-        }
-        let curves = if visible {
-            &view.curves.visible
-        } else {
-            &view.curves.hidden
-        };
-        for index in 0..curves.len() {
-            let points = view.sheet_polyline(visible, index, history, document, 0.05)?;
-            output.lines.push(GuiDrawingLine {
-                points,
-                hidden: !visible && style != WIREFRAME_VIEW_STYLE,
-                preview: false,
-            });
-        }
-    }
+    let lines = oblikovati_drawing::sample_projection(view, style, history, document)?;
+    output
+        .lines
+        .extend(lines.into_iter().map(|line| GuiDrawingLine {
+            points: line.points,
+            hidden: line.hidden,
+            preview: false,
+        }));
     Ok(())
 }

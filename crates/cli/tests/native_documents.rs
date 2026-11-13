@@ -6,6 +6,8 @@ use std::{
     path::Path,
     process::{Command, Output},
 };
+#[path = "support/drawing_fixture.rs"]
+mod drawing_fixture;
 
 fn command(verb: &str, operands: &[&OsStr]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_oblikovati-cli"))
@@ -22,6 +24,26 @@ fn successful(verb: &str, operands: &[&OsStr]) -> String {
 }
 fn package(path: &Path) -> DocumentPackage {
     DocumentPackage::decode(&std::fs::read(path).unwrap()).unwrap()
+}
+#[test]
+fn native_save_as_captures_a_referenced_drawing_view() {
+    let directory = tempfile::tempdir().unwrap();
+    let drawing = drawing_fixture::saved_drawing(directory.path());
+    let copy = directory.path().join("copy.odd");
+    successful("save-as", &[drawing.as_os_str(), copy.as_os_str()]);
+    drawing_fixture::assert_saved_view(&copy);
+}
+#[test]
+fn native_drawing_save_refuses_a_missing_model_without_replacing_destination() {
+    let directory = tempfile::tempdir().unwrap();
+    let drawing = drawing_fixture::saved_drawing(directory.path());
+    std::fs::remove_file(directory.path().join("model.opd")).unwrap();
+    let copy = directory.path().join("copy.odd");
+    std::fs::write(&copy, b"existing destination").unwrap();
+    let result = command("save-as", &[drawing.as_os_str(), copy.as_os_str()]);
+    assert!(!result.status.success());
+    assert!(String::from_utf8_lossy(&result.stderr).contains("model.opd"));
+    assert_eq!(std::fs::read(copy).unwrap(), b"existing destination");
 }
 #[test]
 fn native_new_open_save_as_reopen_preserves_kind_and_saved_identity() {

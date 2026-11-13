@@ -3,7 +3,7 @@ use super::*;
 use oblikovati_model::identity::GuidSource;
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_script::{IsolatedLuaEngine, ScriptLimits, ScriptProgram};
-use oblikovati_session::{files::FileWorkspace, workspace::OpenActivation};
+use oblikovati_session::files::FileWorkspace;
 use std::path::{Path, PathBuf};
 mod arguments;
 mod source;
@@ -64,16 +64,18 @@ impl<'a, F: DocumentFiles> ScriptSession<'a, F> {
         let Some(path) = path else {
             return Ok(());
         };
-        self.documents
-            .open(
-                path,
-                observations::CliObservations,
-                &self.version,
-                self.guids,
-                OpenActivation::Activate,
-            )
-            .map(|_| ())
-            .map_err(|error| format!("script run: open {path:?}: {error}"))
+        let mut factory = observations::CliObservationFactory;
+        let projection = oblikovati_drawing::DrawingProjectionService;
+        owned_host::host(
+            &mut self.documents,
+            self.guids,
+            &self.version,
+            &mut factory,
+            &projection,
+        )
+        .open_path(path, true)
+        .map(|_| ())
+        .map_err(|error| format!("script run: open {path:?}: {error}"))
     }
     fn execute(
         &mut self,
@@ -91,10 +93,15 @@ impl<'a, F: DocumentFiles> ScriptSession<'a, F> {
         let mut execution = engine.start(program)?;
         let mut factory = observations::CliObservationFactory;
         let construction = oblikovati_martensite::planar_curve::MartensiteSketchConstruction;
-        let host =
-            oblikovati_automation::FileHost::new(&mut self.documents, self.guids, &self.version)
-                .with_observer_factory(&mut factory)
-                .with_sketch_construction(&construction, Default::default());
+        let projection = oblikovati_drawing::DrawingProjectionService;
+        let host = owned_host::host(
+            &mut self.documents,
+            self.guids,
+            &self.version,
+            &mut factory,
+            &projection,
+        )
+        .with_sketch_construction(&construction, Default::default());
         execution
             .wait(&host, output)
             .map(|_| ())
@@ -109,9 +116,17 @@ impl<'a, F: DocumentFiles> ScriptSession<'a, F> {
             .workspace()
             .active_document()
             .ok_or("script run: save requested with no active document")?;
-        self.documents
-            .save_as(active, path, &self.version, self.guids)
-            .map_err(|error| format!("script run: save {path:?}: {error}"))?;
+        let mut factory = observations::CliObservationFactory;
+        let projection = oblikovati_drawing::DrawingProjectionService;
+        owned_host::host(
+            &mut self.documents,
+            self.guids,
+            &self.version,
+            &mut factory,
+            &projection,
+        )
+        .save_as_path(active, path)
+        .map_err(|error| format!("script run: save {path:?}: {error}"))?;
         write_line(
             output,
             &format!("saved active document to {}", path.display()),

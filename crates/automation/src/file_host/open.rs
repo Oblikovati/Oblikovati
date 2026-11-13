@@ -27,11 +27,21 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHos
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext<'_, O, W, F> {
     pub(super) fn open(&mut self, request: OpenDocumentArgs) -> Result<Vec<u8>, Error> {
         validate_open(&request)?;
+        let id = self.open_path(Path::new(&request.full_document_name), request.visible)?;
+        encode(
+            &self
+                .files
+                .document_info(id)
+                .map_err(|error| Error(error.to_string()))?,
+        )
+    }
+
+    pub(super) fn open_path(&mut self, path: &Path, visible: bool) -> Result<u64, Error> {
         let observers = &mut self.observers;
         let outcome = self
             .files
             .open_with_factory(
-                Path::new(&request.full_document_name),
+                path,
                 || create_observer(observers),
                 self.version,
                 self.source,
@@ -40,15 +50,10 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
             .map_err(|error| Error(error.to_string()))?;
         let id = outcome.session_id();
         self.files
-            .set_visible(id, request.visible)
+            .set_visible(id, visible)
             .map_err(|error| Error(error.to_string()))?;
         self.open_drawing_reference(id);
-        encode(
-            &self
-                .files
-                .document_info(id)
-                .map_err(|error| Error(error.to_string()))?,
-        )
+        Ok(id)
     }
 
     pub(super) fn open_drawing_reference(&mut self, drawing: u64) {

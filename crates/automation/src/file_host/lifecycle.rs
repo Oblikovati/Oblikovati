@@ -4,7 +4,7 @@ use super::*;
 use oblikovati_session::files::FileWorkspaceError;
 use std::path::PathBuf;
 
-type SourceBindings = Vec<(u64, Option<PathBuf>)>;
+pub(super) type SourceBindings = Vec<(u64, Option<PathBuf>)>;
 
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext<'_, O, W, F> {
     pub(super) fn lifecycle_command(
@@ -26,7 +26,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
         combine_lifecycle_result(method, response, refresh)
     }
 
-    fn source_bindings(&self) -> Result<SourceBindings, Error> {
+    pub(super) fn source_bindings(&self) -> Result<SourceBindings, Error> {
         self.files
             .workspace()
             .documents()
@@ -41,13 +41,26 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
             })
             .collect()
     }
+    pub(super) fn refresh_after_native_file_change(
+        &mut self,
+        before: &SourceBindings,
+        operation: &str,
+    ) -> Result<(), String> {
+        if *before == self.source_bindings().map_err(|error| error.to_string())? {
+            return Ok(());
+        }
+        self.files
+            .refresh_all_derived()
+            .map_err(|error| format!("{operation}: {error}"))
+            .and_then(command_owner::check_refresh_report)
+    }
 }
 
-fn combine_lifecycle_result(
+pub(super) fn combine_lifecycle_result<T>(
     method: &str,
-    response: Result<Vec<u8>, Error>,
+    response: Result<T, Error>,
     refresh: Result<(), String>,
-) -> Result<Vec<u8>, Error> {
+) -> Result<T, Error> {
     let Err(reason) = refresh else {
         return response;
     };

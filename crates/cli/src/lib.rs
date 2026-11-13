@@ -8,6 +8,7 @@ mod create;
 mod documents;
 mod info;
 mod observations;
+mod owned_host;
 mod paths;
 mod scripts;
 use oblikovati_persistence::load::PackageFileReader;

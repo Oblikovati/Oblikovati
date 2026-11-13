@@ -1629,6 +1629,7 @@ version = "0.1.0"
 dependencies = [
  "oblikovati-api",
  "oblikovati-automation",
+ "oblikovati-drawing",
  "oblikovati-martensite",
  "oblikovati-model",
  "oblikovati-persistence",
@@ -1637,6 +1638,17 @@ dependencies = [
  "serde",
  "serde_json",
  "tempfile",
+]
+
+[[package]]
+name = "oblikovati-drawing"
+version = "0.1.0"
+dependencies = [
+ "oblikovati-api",
+ "oblikovati-automation",
+ "oblikovati-martensite",
+ "oblikovati-model",
+ "oblikovati-persistence",
 ]
 
 [[package]]
@@ -1668,6 +1680,7 @@ dependencies = [
  "oblikovati-api",
  "oblikovati-automation",
  "oblikovati-cli",
+ "oblikovati-drawing",
  "oblikovati-gui",
  "oblikovati-martensite",
  "oblikovati-model",

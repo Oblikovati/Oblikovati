@@ -20,6 +20,7 @@ tempfile = "=3.27.0"
 oblikovati-addin-host = { path = "../addin-host" }
 oblikovati-gui = { path = "../gui" }
 oblikovati-martensite = { path = "../martensite" }
+oblikovati-drawing = { path = "../drawing" }
 oblikovati-cli = { path = "../cli" }
 oblikovati-script = { path = "../script" }
 oblikovati-viewport = { path = "../viewport" }

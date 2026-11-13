@@ -2,7 +2,7 @@
 use super::*;
 use oblikovati_model::identity::GuidSource;
 use oblikovati_persistence::file_access::DocumentFiles;
-use oblikovati_session::{files::FileWorkspace, workspace::OpenActivation};
+use oblikovati_session::files::FileWorkspace;
 use std::path::Path;
 
 type CliFileWorkspace<F> =
@@ -36,15 +36,10 @@ fn load<F: DocumentFiles>(
     source: &mut dyn GuidSource,
     command: &str,
 ) -> Result<u64, String> {
-    owner
-        .open(
-            path,
-            observations::CliObservations,
-            version,
-            source,
-            OpenActivation::Activate,
-        )
-        .map(|outcome| outcome.session_id())
+    let mut factory = observations::CliObservationFactory;
+    let projection = oblikovati_drawing::DrawingProjectionService;
+    owned_host::host(owner, source, version, &mut factory, &projection)
+        .open_path(path, true)
         .map_err(|error| format!("{command}: open {path:?}: {error}"))
 }
 fn report_open<F: DocumentFiles>(
@@ -79,8 +74,10 @@ fn save_as<F: DocumentFiles>(
         .map_err(|error| format!("save-as: {error}"))?;
     let extension = paths::kind_extension(kind)?;
     let destination = paths::with_extension(&args[1], extension);
-    owner
-        .save_as(document, &destination, version, source)
+    let mut factory = observations::CliObservationFactory;
+    let projection = oblikovati_drawing::DrawingProjectionService;
+    owned_host::host(owner, source, version, &mut factory, &projection)
+        .save_as_path(document, &destination)
         .map_err(|error| format!("save-as: {error}"))?;
     report_saved(owner, document, &destination, output)
 }

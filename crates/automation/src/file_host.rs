@@ -17,6 +17,7 @@ mod selection;
 pub use derived_links::DERIVED_COMMAND_METHODS;
 mod create;
 mod lifecycle;
+mod native_files;
 mod open;
 mod sketch_construction;
 mod sketch_preferences;

@@ -4,6 +4,8 @@ use std::{
     path::Path,
     process::{Command, Output},
 };
+#[path = "support/drawing_fixture.rs"]
+mod drawing_fixture;
 fn cli(arguments: &[&str]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_oblikovati-cli"))
         .args(arguments)
@@ -14,6 +16,52 @@ fn write_source(directory: &Path, source: &str) -> std::path::PathBuf {
     let path = directory.join("model.lua");
     std::fs::write(&path, source).unwrap();
     path
+}
+#[test]
+fn script_save_captures_a_referenced_drawing_view() {
+    let directory = tempfile::tempdir().unwrap();
+    let drawing = drawing_fixture::saved_drawing(directory.path());
+    let script = write_source(directory.path(), "print('drawing ready')");
+    let copy = directory.path().join("script-copy.odd");
+    let output = cli(&[
+        "script",
+        "run",
+        script.to_str().unwrap(),
+        "--doc",
+        drawing.to_str().unwrap(),
+        "--save",
+        copy.to_str().unwrap(),
+    ]);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    drawing_fixture::assert_saved_view(&copy);
+}
+#[test]
+fn lua_save_as_captures_a_referenced_drawing_view() {
+    let directory = tempfile::tempdir().unwrap();
+    let drawing = drawing_fixture::saved_drawing(directory.path());
+    let copy = directory.path().join("lua-copy.odd");
+    let source = format!(
+        "local doc=oblikovati.documents.list().documents[1]; oblikovati.documents.saveAs{{document=doc.id,newFullDocumentName={:?}}}",
+        copy.to_str().unwrap()
+    );
+    let script = write_source(directory.path(), &source);
+    let output = cli(&[
+        "script",
+        "run",
+        script.to_str().unwrap(),
+        "--doc",
+        drawing.to_str().unwrap(),
+    ]);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    drawing_fixture::assert_saved_view(&copy);
 }
 #[test]
 fn executable_script_run_creates_a_real_native_document_that_info_can_read() {

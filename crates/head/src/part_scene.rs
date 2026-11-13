@@ -294,10 +294,7 @@ fn active_scene_source<O: TransactionObserver, W: WorkspaceObserver, F: Document
 }
 
 /// How finely a body is meshed for display, in working units and radians.
-pub(crate) const DISPLAY_MESH: PrismMeshOptions = PrismMeshOptions {
-    chord_error: 0.05,
-    angular_error: 0.5,
-};
+pub(crate) const DISPLAY_MESH: PrismMeshOptions = oblikovati_drawing::DISPLAY_MESH;
 /// The colour a body shows without an appearance of its own or of its part.
 const PART_COLOR: [f32; 4] = [0., 1., 0., 1.];
 /// A body whose browser row is chosen: scene colours are linear, so this draws as the accent

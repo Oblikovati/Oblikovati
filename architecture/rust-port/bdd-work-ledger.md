@@ -58,9 +58,11 @@ claim that each file has been individually triaged.
   save-on-close, and refusal of a stale snapshot without changing the file.
   The desktop's shared host now captures the projected lines for Save, Save As,
   Save Copy As, save-on-close and batch saves. Capture failure refuses that
-  save and a batch continues with the other items. A host without the injected
-  projection service cannot save a drawing with views; the CLI script host
-  still needs the same service. Direct CLI file operations also need review.
+  save and a batch continues with the other items. The desktop and CLI now use
+  the same Martensite projection service and document host. CLI Save As and
+  script saves capture referenced views, and native file paths retain their OS
+  bytes. A missing source prevents a drawing save. A host without the injected
+  projection service still refuses to save a drawing with views.
   Seven native drawing tests passed, including real projected-line storage and
   a mixed-success batch; the 416 session lifecycle and 726 API query tests passed.
 - The full Open feature, SHA-256
