@@ -160,6 +160,35 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
             .get(name)
             .map(String::as_str)
     }
+    /// Remove bindings no longer in the recipe; example: `files.reconcile_document_references(id)?` after an edit.
+    pub fn reconcile_document_references(&mut self, owner: u64) -> Result<(), FileWorkspaceError> {
+        self.retained_file(owner)?;
+        let stale: Vec<String> = self
+            .document_references
+            .get(&owner)
+            .into_iter()
+            .flat_map(|references| references.keys())
+            .filter(|name| !self.reference_is_authored(owner, name))
+            .cloned()
+            .collect();
+        for name in stale {
+            self.detach_document_reference(owner, &name);
+        }
+        let stale_errors: Vec<String> = self
+            .document_reference_errors
+            .get(&owner)
+            .into_iter()
+            .flat_map(|errors| errors.keys())
+            .filter(|name| !self.reference_is_authored(owner, name))
+            .cloned()
+            .collect();
+        if let Some(errors) = self.document_reference_errors.get_mut(&owner) {
+            for name in stale_errors {
+                errors.remove(&name);
+            }
+        }
+        Ok(())
+    }
     fn store_reference_error(&mut self, owner: u64, name: String, cause: String) {
         self.document_reference_errors
             .entry(owner)

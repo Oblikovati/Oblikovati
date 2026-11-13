@@ -17,7 +17,8 @@ mod file_host;
 pub use extrusion::{ExtrudeRegionAccess, PreparedExtrusion, prepare_extrusion};
 mod interests;
 pub use file_host::{
-    DERIVED_COMMAND_METHODS, DocumentObserverFactory, FILE_COMMAND_METHODS, FileHost,
+    AssemblyReferenceFailure, AssemblyReferenceReport, DERIVED_COMMAND_METHODS,
+    DocumentObserverFactory, FILE_COMMAND_METHODS, FileHost,
 };
 pub mod dispatch;
 mod file_queries;

@@ -297,6 +297,9 @@ mod create;
 #[path = "file_close_all.rs"]
 mod close_all;
 
+#[path = "file_assembly_references.rs"]
+mod assembly_references;
+
 #[path = "file_units.rs"]
 mod units;
 

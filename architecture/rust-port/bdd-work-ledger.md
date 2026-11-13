@@ -175,6 +175,12 @@ claim that each file has been individually triaged.
   rebind clears only its own error. The drawing path uses the same error owner.
   Session tests cover independent failures, recovery and cleanup; the native
   missing-model drawing regression also passes.
+- The host can resolve distinct assembly component references in the background,
+  report failures separately, retry missing files, and release unused background
+  documents after an edit. Drawings share the same loading path. Host tests
+  cover shared sources, recovery and invalid target cleanup; native drawing
+  tests cover shared and missing sources. This resolver is not yet connected to
+  populated assembly opening, which remains guarded pending rendering support.
 - The drawing browser now lists the authored sheets, borders, title blocks and
   views, and browser search uses those same rows. Unit tests cover multiple
   sheets, a missing border and searching for a view.

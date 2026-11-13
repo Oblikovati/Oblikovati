@@ -9,7 +9,9 @@ use oblikovati_model::{attachment::ExternalAttachmentFiles, identity::GuidSource
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 use std::cell::RefCell;
+mod assembly_references;
 mod attachments;
+pub use assembly_references::{AssemblyReferenceFailure, AssemblyReferenceReport};
 mod close;
 mod derived_links;
 mod drawing_snapshots;

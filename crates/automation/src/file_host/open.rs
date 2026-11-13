@@ -89,67 +89,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
         if self.files.drawing_reference(drawing, &reference).is_some() {
             return;
         }
-        match self.files.resolve_parameter_source(&reference) {
-            Ok(Some(model)) => {
-                self.attach_drawing_reference(drawing, reference, model, false);
-                return;
-            }
-            Ok(None) => {}
-            Err(cause) => {
-                self.files
-                    .reject_drawing_reference(drawing, reference, cause.to_string());
-                return;
-            }
-        }
-        let path = match self.files.reference_path(drawing, Path::new(&reference)) {
-            Ok(path) => path,
-            Err(cause) => {
-                self.files
-                    .reject_drawing_reference(drawing, reference, cause.to_string());
-                return;
-            }
-        };
-        let observers = &mut self.observers;
-        let outcome = self.files.open_with_factory(
-            &path,
-            || create_observer(observers),
-            self.version,
-            self.source,
-            OpenActivation::Background,
-        );
-        let outcome = match outcome {
-            Ok(outcome) => outcome,
-            Err(cause) => {
-                self.files
-                    .reject_drawing_reference(drawing, reference, cause.to_string());
-                return;
-            }
-        };
-        let model = outcome.session_id();
-        let background = matches!(
-            outcome,
-            oblikovati_session::files::FileOpenOutcome::Opened(_)
-        );
-        if background && let Err(cause) = self.files.set_visible(model, false) {
+        if let Err(cause) = self.resolve_document_reference(drawing, &reference, true) {
             self.files
-                .reject_drawing_reference(drawing, reference, cause.to_string());
-            return;
-        }
-        self.attach_drawing_reference(drawing, reference, model, background);
-    }
-    fn attach_drawing_reference(
-        &mut self,
-        drawing: u64,
-        reference: String,
-        model: u64,
-        background: bool,
-    ) {
-        if let Err(cause) =
-            self.files
-                .attach_drawing_reference(drawing, reference.clone(), model, background)
-        {
-            self.files
-                .reject_drawing_reference(drawing, reference, cause.to_string());
+                .reject_drawing_reference(drawing, reference, cause);
         }
     }
 }
