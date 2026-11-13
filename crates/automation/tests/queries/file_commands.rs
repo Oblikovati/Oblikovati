@@ -300,6 +300,9 @@ mod close_all;
 #[path = "file_assembly_references.rs"]
 mod assembly_references;
 
+#[path = "file_assembly_contract.rs"]
+mod assembly_contract;
+
 #[path = "file_units.rs"]
 mod units;
 

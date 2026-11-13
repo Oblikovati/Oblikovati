@@ -105,7 +105,7 @@ pub fn read_parameter_package(
         .restore_drawing()
         .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;
     let assembly = package
-        .assembly_occurrences()
+        .assembly_occurrences_for_open()
         .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;
     let body_names = package
         .restore_body_names()

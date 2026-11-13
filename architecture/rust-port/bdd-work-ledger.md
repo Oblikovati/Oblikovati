@@ -231,6 +231,12 @@ claim that each file has been individually triaged.
   paths, vetoes and persistence. The public `assembly.suppress` wire method
   and stable occurrence session IDs are not yet implemented; nested rows must
   be edited in their owning assembly.
+- The canonical `assembly.occurrences` and `assembly.suppress` methods now
+  share the host's suppression operation with the browser. Opened occurrences
+  receive session IDs that stay with them through edits and undo/redo, including
+  reordering; the IDs are not written into Go packages. Querying an unresolved
+  component reports an error. Placement creation and an allocator for new
+  occurrence IDs are still needed, and nested IDs belong to their own assembly.
 - The drawing browser now lists the authored sheets, borders, title blocks and
   views, and browser search uses those same rows. Unit tests cover multiple
   sheets, a missing border and searching for a view.

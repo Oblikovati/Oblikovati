@@ -6,7 +6,8 @@ use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 
 /// Additional queries that require a file owner, rather than bare recipe sessions.
-pub const FILE_QUERY_METHODS: [&str; 13] = [
+pub const FILE_QUERY_METHODS: [&str; 14] = [
+    METHOD_ASSEMBLY_OCCURRENCES,
     METHOD_SKETCH_LIST,
     METHOD_SKETCH_GET,
     METHOD_DOCUMENTS_LIST,
@@ -21,6 +22,7 @@ pub const FILE_QUERY_METHODS: [&str; 13] = [
     METHOD_WORK_POINTS_LIST,
     METHOD_WORK_PLANES_LIST,
 ];
+pub(crate) mod assembly;
 pub(crate) mod derived;
 
 /// Immutable API access to file-owned documents and their session state.
@@ -48,6 +50,10 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
     for FileQueryHost<'_, O, W, F>
 {
     fn call(&self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
+        if method == METHOD_ASSEMBLY_OCCURRENCES {
+            let _: oblikovati_api::json::EmptyObject = crate::decode(method, request)?;
+            return encode(&assembly::occurrences(self.files)?);
+        }
         if crate::ASSET_QUERY_METHODS.contains(&method) {
             return crate::assets::query(self.files, method, request);
         }

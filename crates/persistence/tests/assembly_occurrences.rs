@@ -8,6 +8,7 @@ fn reads_an_assembly_package_written_by_the_go_host() {
         DocumentPackage::decode(include_bytes!("fixtures/go-assembly-occurrences.yaml")).unwrap();
     let records = package.assembly_occurrences().unwrap().unwrap();
     assert_eq!(records.len(), 2);
+    assert_eq!([records[0].session_id, records[1].session_id], [0, 0]);
     assert_eq!(records[0].name, "widget:1");
     assert_eq!(records[1].name, "widget:2");
     assert_eq!(records[0].component, "parts/widget.opd");
@@ -17,6 +18,28 @@ fn reads_an_assembly_package_written_by_the_go_host() {
     assert_eq!(records[1].placement().unwrap().cells[3], 3.);
     let reopened = DocumentPackage::decode(&package.encode().unwrap()).unwrap();
     assert_eq!(reopened.assembly_occurrences().unwrap(), Some(records));
+}
+
+#[test]
+fn session_ids_do_not_change_the_saved_recipe() {
+    let package =
+        DocumentPackage::decode(include_bytes!("fixtures/go-assembly-occurrences.yaml")).unwrap();
+    let mut records = package.assembly_occurrences().unwrap().unwrap();
+    oblikovati_model::assembly::assign_open_occurrence_ids(&mut records).unwrap();
+    records.swap(0, 1);
+    let reordered = package.with_assembly_occurrences(&records).unwrap();
+    assert_eq!(
+        reordered.with_assembly_occurrences(&records).unwrap(),
+        reordered
+    );
+    assert!(
+        !String::from_utf8(reordered.encode().unwrap())
+            .unwrap()
+            .contains("sessionId")
+    );
+    let original = records.clone();
+    assert!(oblikovati_model::assembly::assign_open_occurrence_ids(&mut records).is_err());
+    assert_eq!(records, original);
 }
 
 #[test]

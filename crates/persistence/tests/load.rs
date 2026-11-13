@@ -99,6 +99,10 @@ fn a_go_written_assembly_retains_its_occurrences_on_load() {
     .unwrap();
     let occurrences = loaded.assembly.unwrap();
     assert_eq!(occurrences.len(), 2);
+    assert_eq!(
+        [occurrences[0].session_id, occurrences[1].session_id],
+        [1, 2]
+    );
     assert_eq!(occurrences[0].component, "parts/widget.opd");
     assert!(occurrences[1].suppressed);
 }

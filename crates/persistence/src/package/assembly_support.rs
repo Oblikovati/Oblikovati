@@ -33,6 +33,16 @@ impl DocumentPackage {
         }
         Ok(Some(records))
     }
+    pub(crate) fn assembly_occurrences_for_open(
+        &self,
+    ) -> Result<Option<Vec<AssemblyOccurrenceRecipe>>, PackageCodecError> {
+        let mut records = self.assembly_occurrences()?;
+        if let Some(records) = &mut records {
+            oblikovati_model::assembly::assign_open_occurrence_ids(records)
+                .map_err(PackageCodecError)?;
+        }
+        Ok(records)
+    }
     /// Prepare occurrence edits while retaining the rest of the package; example: `package.with_assembly_occurrences(&records)?` before an atomic save.
     pub fn with_assembly_occurrences(
         &self,
@@ -47,7 +57,7 @@ impl DocumentPackage {
         for record in records {
             record.validate().map_err(PackageCodecError)?;
         }
-        if previous == records {
+        if same_authored_occurrences(&previous, records) {
             return Ok(self.clone());
         }
         self.require_safe_occurrence_change(&previous, records)?;
@@ -126,6 +136,17 @@ impl DocumentPackage {
         }
         Ok(())
     }
+}
+fn same_authored_occurrences(
+    left: &[AssemblyOccurrenceRecipe],
+    right: &[AssemblyOccurrenceRecipe],
+) -> bool {
+    left.len() == right.len()
+        && left.iter().zip(right).all(|(a, b)| {
+            let mut other = b.clone();
+            other.session_id = a.session_id;
+            *a == other
+        })
 }
 fn component_references(records: &[AssemblyOccurrenceRecipe]) -> std::collections::BTreeSet<&str> {
     oblikovati_model::assembly::component_references(records)

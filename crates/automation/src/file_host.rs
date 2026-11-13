@@ -40,6 +40,8 @@ pub const FILE_COMMAND_METHODS: [&str; 10] = [
     METHOD_DOCUMENTS_CLOSE,
     METHOD_DOCUMENTS_CLOSE_ALL,
 ];
+/// Assembly mutations currently owned by the file host.
+pub const ASSEMBLY_COMMAND_METHODS: [&str; 1] = [METHOD_ASSEMBLY_SUPPRESS];
 
 /// Synchronous API access that retains file, history, and identity ownership.
 pub struct FileHost<'a, O: TransactionObserver, W, F> {
@@ -252,6 +254,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
 }
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext<'_, O, W, F> {
     fn owned_command(&mut self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
+        if method == METHOD_ASSEMBLY_SUPPRESS {
+            return assembly_occurrence_edits::suppress_wire(self.files, decode(method, request)?);
+        }
         if method == oblikovati_api::wire::METHOD_DRAWING_SET_MODEL_REFERENCE {
             let result = crate::drawing_reference::apply(self.files, decode(method, request)?)?;
             self.synchronize_drawing_references();

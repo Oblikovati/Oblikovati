@@ -2,7 +2,7 @@
 use super::*;
 use oblikovati_model::assembly::AssemblyOccurrenceRecipe;
 
-fn save_component_fixture(
+pub(super) fn save_component_fixture(
     files: &mut DiscoveryWorkspace,
     source: &mut QueryGuids,
     name: &str,
@@ -240,6 +240,29 @@ fn occurrence_suppression_is_undoable_saved_and_rejects_stale_paths() {
         .with_observer_factory(&mut factory)
         .open_path(path, true)
         .unwrap();
+    let error = Client::new(FileQueryHost::new(&files))
+        .assembly()
+        .occurrences(&Default::default())
+        .unwrap_err();
+    assert!(error.to_string().contains("part.opd"), "{error}");
+    let rejected = Client::new(FileHost::new(&mut files, &mut source, "test"))
+        .assembly()
+        .suppress(&SuppressOccurrenceArgs {
+            id: 1,
+            suppressed: true,
+        });
+    assert!(rejected.is_err());
+    assert!(
+        !files
+            .workspace()
+            .session(root)
+            .unwrap()
+            .snapshot()
+            .assembly
+            .as_ref()
+            .unwrap()[0]
+            .suppressed
+    );
     let generation = files.workspace().session(root).unwrap().generation();
     let selection = [(root, generation, 0)];
     FileHost::new(&mut files, &mut source, "test")

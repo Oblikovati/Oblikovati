@@ -7,6 +7,9 @@ use std::collections::BTreeMap;
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase", deny_unknown_fields)]
 pub struct AssemblyOccurrenceRecipe {
+    /// Session identity; it is assigned on open and is not stored in Go packages.
+    #[serde(skip)]
+    pub session_id: u64,
     pub name: String,
     pub component: String,
     pub transform: Vec<f64>,
@@ -22,6 +25,27 @@ pub struct AssemblyOccurrenceRecipe {
     pub virtual_part_number: String,
     pub virtual_description: String,
     pub virtual_structure: String,
+}
+
+/// Assign session IDs in saved placement order when an assembly is opened.
+/// Example: `assign_open_occurrence_ids(&mut records)?` before creating history.
+pub fn assign_open_occurrence_ids(records: &mut [AssemblyOccurrenceRecipe]) -> Result<(), String> {
+    if let Some(record) = records.iter().find(|record| record.session_id != 0) {
+        return Err(format!(
+            "occurrence {:?} session ID {}: expected an unassigned record",
+            record.name, record.session_id
+        ));
+    }
+    let count = u64::try_from(records.len()).map_err(|_| {
+        format!(
+            "occurrence count {}: expected an available session ID",
+            records.len()
+        )
+    })?;
+    for (id, record) in (1..=count).zip(records.iter_mut()) {
+        record.session_id = id;
+    }
+    Ok(())
 }
 
 impl AssemblyOccurrenceRecipe {
