@@ -58,6 +58,7 @@ fn file_menu_open(world: &mut ApplicationWorld) {
     world.expect_text("Recent documents");
 }
 #[when("I press Escape")]
+#[when("the user press Escape")]
 fn press_escape(world: &mut ApplicationWorld) {
     let active = active_document(world);
     world.previous_document.get_or_insert(active);
