@@ -157,3 +157,74 @@ fn overflow_edits_are_staged_and_removal_is_saved() {
     click_in_customize(&mut world, "Close");
     world.close();
 }
+
+#[test]
+fn marking_menu_disables_commands_during_an_open_transaction() {
+    use oblikovati_api::wire::TransactionBeginArgs;
+    for classic in [false, true] {
+        let mut world = ApplicationWorld::new();
+        if classic {
+            std::fs::write(
+                world.preferences_directory().join("markingmenu.yaml"),
+                "classic: true\n",
+            )
+            .unwrap();
+            world.reopen_application();
+        }
+        world.start_empty_sketch();
+        let menu = MarkingMenuView {
+            environment: types::SKETCH_ENVIRONMENT,
+            quadrants: Some(vec![MarkingMenuItem {
+                quadrant: types::QUADRANT_NORTH,
+                command_id: "Sketch.Line".into(),
+            }]),
+            overflow: Some(vec!["Sketch.Rectangle".into()]),
+        };
+        Client::new(world.app().owner.document_host())
+            .ui()
+            .set_marking_menu(&SetMarkingMenuArgs { menu })
+            .unwrap();
+        Client::new(world.app().owner.document_host())
+            .transactions()
+            .begin(&TransactionBeginArgs {
+                label: "Caller".into(),
+            })
+            .unwrap();
+        world.right_click([900, 450]);
+        world.pump(Vec::new());
+        for label in ["Line", "Rectangle"] {
+            let run = world
+                .frame
+                .runs
+                .iter()
+                .find(|run| run.text == label && run.center()[0] > 700. && run.center()[1] > 250.)
+                .unwrap_or_else(|| panic!("expected {label} in marking menu"));
+            assert!(run.alpha < u8::MAX, "{label}: expected disabled menu item");
+        }
+        let line = world
+            .frame
+            .runs
+            .iter()
+            .find(|run| run.text == "Line" && run.center()[0] > 700. && run.center()[1] > 250.)
+            .unwrap()
+            .center();
+        world.click(diagnostics::pointer_pixels(line));
+        assert!(world.state().sketch_at_ready);
+        Client::new(world.app().owner.document_host())
+            .transactions()
+            .abort()
+            .unwrap();
+        world.pump(Vec::new());
+        let line = world
+            .frame
+            .runs
+            .iter()
+            .find(|run| run.text == "Line" && run.center()[0] > 700. && run.center()[1] > 250.)
+            .expect("expected Line after the transaction");
+        assert_eq!(line.alpha, u8::MAX);
+        let position = line.center();
+        world.click(diagnostics::pointer_pixels(position));
+        assert!(!world.state().sketch_at_ready);
+        world.close();
+    }
+}

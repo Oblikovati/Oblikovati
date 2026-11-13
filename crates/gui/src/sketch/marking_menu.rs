@@ -1,44 +1,74 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Radial slot layout for the sketch canvas menu.
-use crate::{GuiDimensionAction, GuiShellAction, GuiSketchConstraint, GuiSketchTool};
+use crate::{
+    GuiCommandState, GuiDimensionAction, GuiShellAction, GuiSketchConstraint, GuiSketchTool,
+};
 use imgui::Ui;
 use oblikovati_api::wire::MarkingMenuView;
 
-pub(super) fn draw(ui: &Ui, menu: &MarkingMenuView, actions: &mut Vec<GuiShellAction>) {
+pub(super) fn draw(
+    ui: &Ui,
+    menu: &MarkingMenuView,
+    state: &GuiCommandState,
+    actions: &mut Vec<GuiShellAction>,
+) {
     let slots = [[7, 0, 1], [6, 8, 2], [5, 4, 3]];
     for row in slots {
         for (index, slot) in row.into_iter().enumerate() {
             if index > 0 {
                 ui.same_line();
             }
-            draw_slot(ui, menu, slot, actions);
+            draw_slot(ui, menu, slot, state, actions);
         }
     }
     ui.separator();
-    draw_overflow(ui, menu, actions);
+    draw_overflow(ui, menu, state, actions);
 }
-fn draw_overflow(ui: &Ui, menu: &MarkingMenuView, actions: &mut Vec<GuiShellAction>) {
+fn draw_overflow(
+    ui: &Ui,
+    menu: &MarkingMenuView,
+    state: &GuiCommandState,
+    actions: &mut Vec<GuiShellAction>,
+) {
     for id in menu.overflow.iter().flatten() {
         let Some((label, command)) = action(id) else {
             continue;
         };
-        if ui.menu_item(label) {
-            actions.push(command);
-        }
-    }
-}
-pub(super) fn draw_classic(ui: &Ui, menu: &MarkingMenuView, actions: &mut Vec<GuiShellAction>) {
-    for item in menu.quadrants.iter().flatten() {
-        if let Some((label, command)) = action(&item.command_id)
-            && ui.menu_item(label)
+        if ui
+            .menu_item_config(label)
+            .enabled(command.enabled(state))
+            .build()
         {
             actions.push(command);
         }
     }
-    draw_overflow(ui, menu, actions);
+}
+pub(super) fn draw_classic(
+    ui: &Ui,
+    menu: &MarkingMenuView,
+    state: &GuiCommandState,
+    actions: &mut Vec<GuiShellAction>,
+) {
+    for item in menu.quadrants.iter().flatten() {
+        if let Some((label, command)) = action(&item.command_id)
+            && ui
+                .menu_item_config(label)
+                .enabled(command.enabled(state))
+                .build()
+        {
+            actions.push(command);
+        }
+    }
+    draw_overflow(ui, menu, state, actions);
     ui.separator();
 }
-fn draw_slot(ui: &Ui, menu: &MarkingMenuView, slot: u8, actions: &mut Vec<GuiShellAction>) {
+fn draw_slot(
+    ui: &Ui,
+    menu: &MarkingMenuView,
+    slot: u8,
+    state: &GuiCommandState,
+    actions: &mut Vec<GuiShellAction>,
+) {
     let item = menu
         .quadrants
         .iter()
@@ -48,7 +78,10 @@ fn draw_slot(ui: &Ui, menu: &MarkingMenuView, slot: u8, actions: &mut Vec<GuiShe
         ui.dummy([100., 24.]);
         return;
     };
-    if ui.button_with_size(format!("{label}##marking-{slot}"), [100., 24.]) {
+    let disabled = ui.begin_disabled(!action.enabled(state));
+    let pressed = ui.button_with_size(format!("{label}##marking-{slot}"), [100., 24.]);
+    drop(disabled);
+    if pressed {
         actions.push(action);
         ui.close_current_popup();
     }
