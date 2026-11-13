@@ -127,6 +127,27 @@ impl<'a, D: ScriptDocumentOwner, W: DispatchWakeup + 'static> NativeAddInDesktop
 impl<D: ScriptDocumentOwner, W: DispatchWakeup + 'static> HeadWork
     for NativeAddInDesktop<'_, D, W>
 {
+    fn accept_sketch_alias(
+        &mut self,
+        event: oblikovati_viewport::ViewportEvent,
+    ) -> (bool, Option<oblikovati_gui::GuiShellAction>) {
+        self.owner.accept_sketch_alias(event)
+    }
+    fn take_shortcut_action(&mut self) -> Option<oblikovati_gui::GuiShellAction> {
+        self.owner.take_shortcut_action()
+    }
+    fn set_keymap_from_gui(
+        &mut self,
+        delta: &oblikovati_api::wire::KeymapExport,
+    ) -> Result<bool, String> {
+        self.owner.set_keymap_from_gui(delta)
+    }
+    fn resolve_shortcut(
+        &mut self,
+        event: oblikovati_viewport::ViewportEvent,
+    ) -> oblikovati_viewport::ViewportEvent {
+        self.owner.resolve_shortcut(event)
+    }
     fn startup_ready(&self) -> bool {
         self.owner.startup_ready() && self.startup.as_ref().is_none_or(NativeStartupPlan::ready)
     }

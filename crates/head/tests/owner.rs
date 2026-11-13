@@ -28,6 +28,85 @@ type TestOwner = DesktopOwner<
 fn owner() -> (TestOwner, Receiver<()>) {
     owner_with_options(Default::default())
 }
+
+#[derive(Clone, Default)]
+struct FakeKeymapStore {
+    saved: std::sync::Arc<std::sync::Mutex<KeymapExport>>,
+    fail: std::sync::Arc<std::sync::atomic::AtomicBool>,
+}
+impl oblikovati_model::keymap::KeymapPreferenceAccess for FakeKeymapStore {
+    fn keymap(&self) -> KeymapExport {
+        self.saved.lock().unwrap().clone()
+    }
+    fn set_keymap(&mut self, delta: &KeymapExport) -> Result<(), String> {
+        if self.fail.load(std::sync::atomic::Ordering::SeqCst) {
+            return Err("keymap write: expected writable preferences".into());
+        }
+        *self.saved.lock().unwrap() = delta.clone();
+        Ok(())
+    }
+}
+fn shortcut_event(
+    key: oblikovati_viewport::ViewportPhysicalKey,
+) -> oblikovati_viewport::ViewportEvent {
+    use oblikovati_viewport::{ViewportEvent, ViewportInput, ViewportModifiers};
+    ViewportEvent::Input(ViewportInput::PhysicalKey {
+        key,
+        layout_key: key,
+        command: None,
+        pressed: true,
+        modifiers: ViewportModifiers {
+            control: true,
+            ..Default::default()
+        },
+    })
+}
+#[test]
+fn keymap_api_persists_and_changes_desktop_shortcut_atomically() {
+    use oblikovati_viewport::{ViewportEvent, ViewportInput, ViewportKey, ViewportPhysicalKey};
+    let store = FakeKeymapStore::default();
+    let (desktop, awake) = owner();
+    let mut desktop = desktop
+        .with_keymap_preferences(Box::new(store.clone()))
+        .unwrap();
+    invoke(&mut desktop, &awake, |client| {
+        client.keymap().set_chord(&SetChordArgs {
+            action_id: "edit.undo".into(),
+            chord: "Ctrl+U".into(),
+        })
+    })
+    .unwrap();
+    assert!(matches!(
+        desktop.resolve_shortcut(shortcut_event(ViewportPhysicalKey::U)),
+        ViewportEvent::Input(ViewportInput::PhysicalKey {
+            command: Some(ViewportKey::Undo),
+            ..
+        })
+    ));
+    store.fail.store(true, std::sync::atomic::Ordering::SeqCst);
+    assert!(
+        Client::new(desktop.document_host())
+            .keymap()
+            .set_chord(&SetChordArgs {
+                action_id: "edit.undo".into(),
+                chord: "Ctrl+J".into(),
+            })
+            .is_err()
+    );
+    let (fresh, _) = owner();
+    let mut fresh = fresh.with_keymap_preferences(Box::new(store)).unwrap();
+    assert!(matches!(
+        fresh.resolve_shortcut(shortcut_event(ViewportPhysicalKey::U)),
+        ViewportEvent::Input(ViewportInput::PhysicalKey {
+            command: Some(ViewportKey::Undo),
+            ..
+        })
+    ));
+    assert!(matches!(
+        fresh.resolve_shortcut(shortcut_event(ViewportPhysicalKey::J)),
+        ViewportEvent::Input(ViewportInput::PhysicalKey { command: None, .. })
+    ));
+}
 fn owner_with_options(
     options: oblikovati_solve::nonlinear::SolveOptions,
 ) -> (TestOwner, Receiver<()>) {

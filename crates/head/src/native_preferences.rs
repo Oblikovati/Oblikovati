@@ -9,6 +9,19 @@ use oblikovati_persistence::{
 use std::path::{Path, PathBuf};
 type NativeThemePreferences = ThemeFilePreferences<NativeThemePreferenceFiles>;
 
+pub(super) fn load_native_keymap(
+    directory: &Path,
+) -> Result<
+    oblikovati_persistence::keymap_preferences::KeymapPreferenceFile<NativeThemePreferenceFiles>,
+    String,
+> {
+    oblikovati_persistence::keymap_preferences::KeymapPreferenceFile::load(
+        &directory.join("keymap.yaml"),
+        NativeThemePreferenceFiles,
+    )
+    .map_err(|cause| cause.to_string())
+}
+
 pub(super) struct NativeThemeStartup {
     pub library: ThemeLibrary,
     pub preferences: NativeThemePreferences,

@@ -39,7 +39,7 @@ pub(super) fn advance_gui(
     }
     Ok(update)
 }
-fn dispatch_gui_action(
+pub(super) fn dispatch_gui_action(
     window: &mut dyn HeadWindow,
     owner: &mut dyn HeadWork,
     action: &GuiShellAction,
@@ -100,7 +100,8 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::PlaceSketchBlock(_) => {
             return None;
         }
-        GuiShellAction::SetUiScale(_)
+        GuiShellAction::SetKeymap(_)
+        | GuiShellAction::SetUiScale(_)
         | GuiShellAction::SetDocumentUnits { .. }
         | GuiShellAction::CreateDrawingBaseView(_)
         | GuiShellAction::PreviewDrawingBaseView(_)

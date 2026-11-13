@@ -90,6 +90,10 @@ impl Default for DesktopDispatchOptions {
 /// require_send::<DesktopOwner<(), (), (), (), (), PollingDispatchWakeup>>();
 /// ```
 pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
+    keymap: oblikovati_model::keymap::Keymap,
+    keymap_store: Option<Box<dyn oblikovati_model::keymap::KeymapPreferenceAccess>>,
+    shortcut_keys: owner_shortcuts::ShortcutKeys,
+    sketch_alias: String,
     color_schemes: oblikovati_model::color_scheme::ColorSchemeRegistry,
     ui_scale_store: Option<Box<dyn oblikovati_model::ui_scale::UiScalePreferenceAccess>>,
     new_document_counts: std::collections::BTreeMap<&'static str, u32>,
@@ -167,6 +171,10 @@ impl<
     ) -> Self {
         let (dispatch, caller) = owner_dispatch(options.capacity, options.timeout, wake);
         Self {
+            keymap: oblikovati_model::keymap::Keymap::desktop_defaults(),
+            keymap_store: None,
+            shortcut_keys: Default::default(),
+            sketch_alias: String::new(),
             color_schemes: Default::default(),
             ui_scale_store: None,
             new_document_counts: Default::default(),
@@ -273,7 +281,12 @@ impl<
         )
         .with_drawing_views(&self.drawing_projection_access)
         .with_sketch_edit(editing)
+        .with_keymap(&mut self.keymap)
         .with_color_schemes(&mut self.color_schemes);
+        let host = match self.keymap_store.as_mut() {
+            Some(store) => host.with_keymap_store(store.as_mut()),
+            None => host,
+        };
         let host = match &self.extrusion_access {
             Some(backend) => host.with_extrusion(backend),
             None => host,
@@ -296,7 +309,12 @@ impl<
         )
         .with_drawing_views(&self.drawing_projection_access)
         .with_sketch_edit(editing)
+        .with_keymap(&mut self.keymap)
         .with_color_schemes(&mut self.color_schemes);
+        let host = match self.keymap_store.as_mut() {
+            Some(store) => host.with_keymap_store(store.as_mut()),
+            None => host,
+        };
         let host = match &self.extrusion_access {
             Some(backend) => host.with_extrusion(backend),
             None => host,
@@ -359,6 +377,8 @@ fn borrowed_host<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFi
         None => host,
     }
 }
+#[path = "owner_shortcuts.rs"]
+mod owner_shortcuts;
 #[path = "owner_placement.rs"]
 mod placement;
 #[path = "owner_point_preview.rs"]

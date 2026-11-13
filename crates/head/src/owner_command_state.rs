@@ -17,6 +17,8 @@ impl<
         )?);
         let Some(document) = self.files.workspace().active_document() else {
             return Ok(oblikovati_gui::GuiCommandState {
+                keymap: Some(self.keymap.clone()),
+                keymap_bindings: self.keymap.catalog(),
                 ui_scale: self.gui_ui_scale(),
                 sketch_options: Some(self.sketch_options.clone()),
                 recent_documents: self.gui_recent_rows(),
@@ -33,6 +35,8 @@ impl<
             .session(document)
             .map_err(|cause| cause.to_string())?;
         Ok(oblikovati_gui::GuiCommandState {
+            keymap: Some(self.keymap.clone()),
+            keymap_bindings: self.keymap.catalog(),
             document_units: Some(
                 oblikovati_api::client::Client::new(oblikovati_automation::FileQueryHost::new(
                     &self.files,
@@ -95,6 +99,7 @@ impl<
             takes_command_alias: self
                 .placement_state()
                 .is_some_and(|tool| tool.takes_command_alias()),
+            sketch_alias: (!self.sketch_alias.is_empty()).then(|| self.sketch_alias.clone()),
             dimensions_needed: self.gui_dimensions_needed(document),
             sketch_at_ready: self.sketch_tool.is_none() && self.active_sketch_edit().is_some(),
             // Projected by the frame, which owns the camera.

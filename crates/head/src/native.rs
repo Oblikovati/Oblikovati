@@ -371,6 +371,7 @@ fn native_owner_at(
         crate::DesktopDispatchOptions::default(),
     )
     .with_extrusion_policy(crate::part_scene::resolution_policy::desktop_policy())?
+    .with_keymap_preferences(Box::new(preferences::load_native_keymap(directory)?))?
     .with_ui_scale_preferences(Box::new(preferences::load_native_application_options(
         directory,
     )?))

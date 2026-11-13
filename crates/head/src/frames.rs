@@ -385,10 +385,23 @@ fn process_frame_inputs(
     changed |= synchronize_sketch_view(window, owner)?;
     changed |= gui::advance_gui(window, owner, None)?.changed;
     for event in inputs {
-        let gui = gui::advance_gui(window, owner, Some(event))?;
+        let event = owner.resolve_shortcut(*event);
+        let gui = gui::advance_gui(window, owner, Some(&event))?;
+        let shortcut = owner.take_shortcut_action();
         changed |= gui.changed;
         if !gui.consumed_input {
-            changed |= gui::dispatch_frame_input(window, owner, event)?;
+            if let Some(action) = shortcut {
+                changed |= gui::dispatch_gui_action(window, owner, &action)?;
+            } else {
+                let (consumed, action) = owner.accept_sketch_alias(event);
+                if let Some(action) = action {
+                    changed |= gui::dispatch_gui_action(window, owner, &action)?;
+                } else if consumed {
+                    changed = true;
+                } else {
+                    changed |= gui::dispatch_frame_input(window, owner, &event)?;
+                }
+            }
         }
     }
     Ok(changed)

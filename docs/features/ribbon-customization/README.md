@@ -28,4 +28,8 @@ Import replaces the draft and requires Apply or OK.
 The export chooser refuses to overwrite an existing file. If an import file is
 missing, dismiss the warning to edit the selected filename.
 
-Keyboard and marking-menu customization and other document types remain open work.
+The Keyboard tab lists the supported commands and lets users change shortcuts.
+It saves applied changes in `keymap.yaml`. Sketch commands also accept aliases
+when a sketch is ready. A keyboard draft is not applied if another client changes
+the keymap while the dialog is open. Marking-menu customization, aliases for
+built-in actions, and the full command catalog remain open work.

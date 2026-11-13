@@ -353,7 +353,9 @@ impl GuiFrameEngine {
             .panel(ui, &request.commands, &mut selected, self.home.active);
         self.extrude_dialog
             .panel(ui, &request.commands, &mut selected);
-        self.ribbon.customization.panel(ui);
+        self.ribbon
+            .customization
+            .panel(ui, &request.commands, &mut selected);
         self.create_block
             .panel(ui, &request.commands, &mut selected);
         crate::sketch::line::command_menu(ui, &request.commands, &mut selected);

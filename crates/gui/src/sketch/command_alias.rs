@@ -7,6 +7,7 @@ use imgui::{Ui, WindowFlags};
 #[derive(Default)]
 pub(crate) struct CommandAliasBox {
     text: String,
+    owner_text_active: bool,
 }
 impl CommandAliasBox {
     /// Borrow the existing command buffer for status feedback; example: `alias.text()`.
@@ -17,11 +18,19 @@ impl CommandAliasBox {
     /// Show what was typed; a command that ends or regains a field closes the box.
     /// Example: `alias.panel(ui, state, &keys.typed)` once per frame.
     pub(crate) fn panel(&mut self, ui: &Ui, state: &GuiCommandState, typed: &str) {
-        if !state.takes_command_alias {
+        if let Some(text) = &state.sketch_alias {
+            self.text.clone_from(text);
+            self.owner_text_active = true;
+        } else if !state.takes_command_alias {
             self.text.clear();
+            self.owner_text_active = false;
             return;
+        } else {
+            if std::mem::take(&mut self.owner_text_active) {
+                self.text.clear();
+            }
+            self.text.push_str(typed);
         }
-        self.text.push_str(typed);
         if self.text.is_empty() {
             return;
         }
@@ -46,7 +55,10 @@ mod tests {
     #[test]
     fn only_a_nonempty_command_buffer_has_status_feedback() {
         assert_eq!(CommandAliasBox::default().text(), None);
-        let alias = CommandAliasBox { text: "86".into() };
+        let alias = CommandAliasBox {
+            text: "86".into(),
+            ..Default::default()
+        };
         assert_eq!(alias.text(), Some("86"));
     }
 }

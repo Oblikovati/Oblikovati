@@ -231,7 +231,7 @@ impl GuiShellAction {
             Self::FinishSketch => {
                 state.authoring == GuiAuthoringContext::Sketch && !state.transaction_open
             }
-            Self::NewPart | Self::Save | Self::Home => true,
+            Self::SetKeymap(_) | Self::NewPart | Self::Save | Self::Home => true,
         }
     }
     /// Keep available history controls inert during an edit; example: `action.dispatchable(&state)` after a click.

@@ -2,6 +2,33 @@
 use crate::HeadWorkStatus;
 /// Owner-thread services borrow model state only while the window loop polls them.
 pub trait HeadWork {
+    /// Consume an alias input after the GUI releases it; example: `work.accept_sketch_alias(event)`.
+    fn accept_sketch_alias(
+        &mut self,
+        _: oblikovati_viewport::ViewportEvent,
+    ) -> (bool, Option<oblikovati_gui::GuiShellAction>) {
+        (false, None)
+    }
+    /// Take a resolved command shortcut after GUI input ownership is known.
+    /// Example: `work.take_shortcut_action()` after resolving one input.
+    fn take_shortcut_action(&mut self) -> Option<oblikovati_gui::GuiShellAction> {
+        None
+    }
+    /// Apply a keymap draft; example: `work.set_keymap_from_gui(&delta)?`.
+    fn set_keymap_from_gui(
+        &mut self,
+        delta: &oblikovati_api::wire::KeymapExport,
+    ) -> Result<bool, String> {
+        Err(format!("keymap {delta:?}: expected a desktop keymap owner"))
+    }
+    /// Resolve application shortcuts before GUI ownership is decided.
+    /// Example: `work.resolve_shortcut(event)` before dispatch.
+    fn resolve_shortcut(
+        &mut self,
+        event: oblikovati_viewport::ViewportEvent,
+    ) -> oblikovati_viewport::ViewportEvent {
+        event
+    }
     /// Start repeated block placement; example: `work.place_sketch_block_from_gui("Rib")?`.
     fn place_sketch_block_from_gui(&mut self, name: &str) -> Result<bool, String> {
         Err(format!(

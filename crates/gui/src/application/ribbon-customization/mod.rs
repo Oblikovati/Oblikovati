@@ -2,6 +2,7 @@
 //! Ribbon command edits stay in a draft until Apply or OK.
 mod category;
 mod keyboard;
+mod keyboard_catalog;
 mod locations;
 mod panel;
 mod settings_dialog;
@@ -40,6 +41,18 @@ pub(crate) struct RibbonCustomization {
     save_error: Option<String>,
     command_error: Option<String>,
     command_error_opening: bool,
+    keyboard_search: String,
+    keyboard_category: usize,
+    keyboard_kind: usize,
+    keyboard_draft: Option<oblikovati_model::keymap::Keymap>,
+    keyboard_base: Option<oblikovati_api::wire::KeymapExport>,
+    keyboard_selected: Option<String>,
+    keyboard_chord: String,
+    keyboard_alias: String,
+    keyboard_error: Option<String>,
+    keyboard_close_pending: bool,
+    keyboard_conflict: bool,
+    ribbon_tab_active: bool,
 }
 impl RibbonCustomization {
     pub(crate) fn set_store(
@@ -83,6 +96,12 @@ impl RibbonCustomization {
     }
     pub(crate) fn open(&mut self, tab: RibbonTab) {
         self.draft.open(tab);
+        self.keyboard_draft = None;
+        self.keyboard_base = None;
+        self.keyboard_selected = None;
+        self.keyboard_error = None;
+        self.keyboard_close_pending = false;
+        self.keyboard_conflict = false;
         self.escape = Default::default();
         self.list_focus = None;
         self.category_open = false;
@@ -141,14 +160,23 @@ impl RibbonCustomization {
             ui.close_current_popup();
         }
     }
-    pub(crate) fn panel(&mut self, ui: &Ui) {
+    pub(crate) fn panel(
+        &mut self,
+        ui: &Ui,
+        commands: &crate::GuiCommandState,
+        actions: &mut Vec<crate::GuiShellAction>,
+    ) {
         self.escape_consumed = false;
         self.navigation_consumed = false;
         self.command_error_popup(ui);
         if !self.open {
             return;
         }
-        crate::widget_abi::fit_dialog(ui, "Customize", [340., 185.], [760., 440.]);
+        self.sync_keyboard(commands);
+        if !self.open {
+            return;
+        }
+        crate::widget_abi::fit_dialog(ui, "Customize", [340., 185.], [760., 540.]);
         let mut window_open = self.open;
         let category_was_open = self.category_open;
         let target_was_open = self.target_selector_open;
@@ -157,15 +185,19 @@ impl RibbonCustomization {
             .collapsible(false)
             .build(|| {
                 self.tabs(ui);
-                self.lists(ui);
                 if let Some(error) = &self.save_error {
                     ui.text_wrapped(error);
                 }
-                self.buttons(ui);
+                if self.keyboard_conflict {
+                    ui.text_wrapped("Keyboard settings changed outside this dialog. Close and reopen Customize to edit the current settings.");
+                }
+                self.buttons(ui, actions);
                 let focused = ui.is_window_focused_with_flags(
                     imgui::WindowFocusedFlags::ROOT_AND_CHILD_WINDOWS,
                 );
-                self.list_keyboard(ui, focused);
+                if self.ribbon_tab_active {
+                    self.list_keyboard(ui, focused);
+                }
                 let selector_was_open = category_was_open || target_was_open;
                 let close_dialog = self.escape.pressed(ui)
                     || (selector_was_open && ui.is_key_pressed_no_repeat(imgui::Key::Escape));
@@ -180,12 +212,17 @@ impl RibbonCustomization {
         }
     }
     fn tabs(&mut self, ui: &Ui) {
+        self.ribbon_tab_active = false;
         if let Some(_tabs) = ui.tab_bar("##customize-tabs") {
             if let Some(_ribbon) = ui.tab_item("Ribbon") {
+                self.ribbon_tab_active = true;
                 ui.text("Customize user commands");
+                self.lists(ui);
+            }
+            if let Some(_keyboard) = ui.tab_item("Keyboard") {
+                self.keyboard_catalog(ui);
             }
             let disabled = ui.begin_disabled(true);
-            ui.tab_item("Keyboard");
             ui.tab_item("Marking Menu");
             drop(disabled);
         }
@@ -384,26 +421,37 @@ impl RibbonCustomization {
         }
         self.navigation_consumed = true;
     }
-    fn buttons(&mut self, ui: &Ui) {
+    fn buttons(&mut self, ui: &Ui, actions: &mut Vec<crate::GuiShellAction>) {
         ui.separator();
-        let changed = self.draft.changed();
-        let disabled = ui.begin_disabled(!changed);
+        let changed = self.draft.changed() || self.keyboard_changed();
+        let disabled = ui.begin_disabled(!changed || self.keyboard_conflict);
         if ui.button("OK") {
             match self.apply() {
                 Ok(()) => {
                     self.save_error = None;
-                    self.open = false;
+                    if self.submit_keyboard(actions) {
+                        self.keyboard_close_pending = true;
+                    } else {
+                        self.open = false;
+                    }
                 }
                 Err(error) => self.save_error = Some(error),
             }
         }
+        drop(disabled);
         ui.same_line();
+        let cancel_disabled = ui.begin_disabled(!changed);
         if ui.button("Cancel") {
             self.open = false;
         }
+        drop(cancel_disabled);
         ui.same_line();
+        let disabled = ui.begin_disabled(!changed || self.keyboard_conflict);
         if ui.button("Apply") {
             self.save_error = self.apply().err();
+            if self.save_error.is_none() {
+                self.submit_keyboard(actions);
+            }
         }
         drop(disabled);
         ui.same_line();

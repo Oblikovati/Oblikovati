@@ -9,6 +9,35 @@ impl<
     S: DispatchWakeup,
 > HeadWork for DesktopOwner<O, W, F, G, R, S>
 {
+    fn accept_sketch_alias(
+        &mut self,
+        event: oblikovati_viewport::ViewportEvent,
+    ) -> (bool, Option<oblikovati_gui::GuiShellAction>) {
+        self.route_sketch_alias(event)
+    }
+    fn take_shortcut_action(&mut self) -> Option<oblikovati_gui::GuiShellAction> {
+        let action = self.shortcut_keys.take_action();
+        if action.is_some() {
+            self.sketch_alias.clear();
+        }
+        action
+    }
+    fn set_keymap_from_gui(
+        &mut self,
+        delta: &oblikovati_api::wire::KeymapExport,
+    ) -> Result<bool, String> {
+        oblikovati_api::client::Client::new(self.document_host())
+            .keymap()
+            .import(delta)
+            .map_err(|cause| cause.to_string())?;
+        Ok(true)
+    }
+    fn resolve_shortcut(
+        &mut self,
+        event: oblikovati_viewport::ViewportEvent,
+    ) -> oblikovati_viewport::ViewportEvent {
+        self.shortcut_keys.resolve(&self.keymap, event)
+    }
     fn set_document_units_from_gui(
         &mut self,
         document: u64,

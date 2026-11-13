@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 #[derive(Clone, Debug, PartialEq)]
 pub enum GuiShellAction {
+    /// Apply a staged keyboard customization.
+    SetKeymap(oblikovati_api::wire::KeymapExport),
     /// Place instances of a sketch block definition.
     PlaceSketchBlock(String),
     /// Enter or leave the Create Block geometry selection mode.
@@ -288,6 +290,10 @@ pub struct GuiDrawingLine {
 /// Command availability derived from the active document owner.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct GuiCommandState {
+    /// The owner's effective shortcut state for a customization draft.
+    pub keymap: Option<oblikovati_model::keymap::Keymap>,
+    /// Bindable commands currently provided by the desktop owner.
+    pub keymap_bindings: Vec<oblikovati_api::wire::BindingInfo>,
     pub document_units: Option<oblikovati_api::wire::DocumentUnitsInfo>,
     pub ui_scale: Option<oblikovati_model::ui_scale::UiScaleOptions>,
     pub dimension_labels: Vec<crate::GuiDimensionLabel>,
@@ -328,6 +334,8 @@ pub struct GuiCommandState {
     pub dimension_tool_active: bool,
     /// A running command has no field for what is typed, so it opens the command box.
     pub takes_command_alias: bool,
+    /// Alias text entered while a sketch is ready for a command.
+    pub sketch_alias: Option<String>,
     /// The edited sketch's remaining freedom; `None` outside a sketch.
     pub dimensions_needed: Option<usize>,
     pub sketch_hud: Option<crate::GuiSketchHud>,
