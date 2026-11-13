@@ -32,7 +32,7 @@ fn constrain_closed(_: &mut ApplicationWorld) {
     assert!(diagnostics::window_geometry(WINDOW).is_none());
 }
 #[when("the user opens the Constrain additional-command area")]
-fn open_constrain(world: &mut ApplicationWorld) {
+pub(super) fn open_constrain(world: &mut ApplicationWorld) {
     click_expansion_arrow(world, "Constrain");
 }
 #[then("the additional area appears below the Sketch ribbon")]

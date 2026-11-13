@@ -11,6 +11,8 @@ mod custom_commands;
 mod sketch_block_placement;
 #[path = "sketch_constrain.rs"]
 mod sketch_constrain;
+#[path = "sketch_constrain_menu.rs"]
+mod sketch_constrain_menu;
 #[path = "sketch_layout.rs"]
 mod sketch_layout;
 const WINDOW: &str = "##ribbon-additional-PartModify";

@@ -190,7 +190,7 @@ fn draw_window(
             ui.same_line();
             let title_clicked = ui.small_button(panel.label());
             if ui.is_item_hovered() && ui.is_mouse_clicked(imgui::MouseButton::Right) {
-                display.request_context_menu();
+                display.request_expansion_context(tab, panel);
             }
             if title_clicked && !expansion.pinned {
                 close = true;
@@ -205,6 +205,10 @@ fn draw_window(
                     .selector_trigger
                     .is_some_and(|bounds| inside(ui.io().mouse_pos, bounds))
             {
+                close = true;
+            }
+            if !expansion.pinned && display.expansion_context_escape(ui, tab, panel) {
+                display.temporary_escape_consumed = true;
                 close = true;
             }
             if !expansion.pinned && display.selector_escape {

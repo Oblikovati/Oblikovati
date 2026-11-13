@@ -47,6 +47,7 @@ fn model_still_visible(world: &mut ApplicationWorld) {
     world.expect_text("Modify");
 }
 #[then("the Docking Positions submenu closes and the context menu remains open")]
+#[then("the Docking Positions submenu closes and the title context menu remains open")]
 fn docking_submenu_closed(world: &mut ApplicationWorld) {
     world.expect_no_text("Left");
     world.expect_no_text("Right");

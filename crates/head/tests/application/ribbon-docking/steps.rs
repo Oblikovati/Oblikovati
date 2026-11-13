@@ -95,6 +95,7 @@ fn context_menu(world: &mut ApplicationWorld) {
 }
 #[when("I open Docking Positions")]
 #[when("opens Docking Positions")]
+#[when("the user opens Docking Positions")]
 #[when("the user opens \"Docking Positions\"")]
 fn docking_positions(world: &mut ApplicationWorld) {
     open_docking_positions(world);

@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Closed unpinned ribbon expansions when Escape dismisses their title menu.
+
 - Kept expanded ribbon commands open while their docking menu is in use.
 
 - Kept the ribbon docking submenu closed after Escape until it is opened again.

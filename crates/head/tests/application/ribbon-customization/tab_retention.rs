@@ -75,6 +75,7 @@ fn no_pending(world: &mut ApplicationWorld) {
     }
 }
 #[then("the active sketch remains unchanged")]
+#[then("the editable sketch remains active and unchanged")]
 fn sketch_unchanged(world: &mut ApplicationWorld) {
     assert_eq!(
         world.state().authoring,

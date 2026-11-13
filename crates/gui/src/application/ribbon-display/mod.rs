@@ -95,6 +95,7 @@ pub(crate) struct RibbonDisplayState {
     pub placement: RibbonPlacement,
     pub side_anchor: Option<SideAnchor>,
     context_requested: bool,
+    context_expansion: Option<(RibbonTab, RibbonPanel)>,
     context_bounds: Option<[[f32; 2]; 2]>,
     submenu_bounds: Option<[[f32; 2]; 2]>,
     docking_selected: bool,
@@ -128,6 +129,7 @@ impl Default for RibbonDisplayState {
             placement: RibbonPlacement::default(),
             side_anchor: None,
             context_requested: false,
+            context_expansion: None,
             context_bounds: None,
             submenu_bounds: None,
             docking_selected: false,
@@ -180,6 +182,7 @@ impl RibbonDisplayState {
     }
     /// Ask for the context menu from any of the ribbon's windows.
     pub(crate) fn request_context_menu(&mut self) {
+        self.context_expansion = None;
         self.context_requested = true;
     }
     /// Move the ribbon; a temporary panel opened for the old place closes.
@@ -226,6 +229,7 @@ impl RibbonDisplayState {
             ui.open_popup(CONTEXT_MENU);
         }
         let Some(_menu) = ui.begin_popup(CONTEXT_MENU) else {
+            self.context_expansion = None;
             self.context_bounds = None;
             self.submenu_bounds = None;
             self.docking_open = false;
