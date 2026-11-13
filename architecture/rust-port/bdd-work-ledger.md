@@ -9,10 +9,10 @@ claim that each file has been individually triaged.
 | --- | --- | --- | --- |
 | 1 | `features/application` | In progress | The native application runner exists. A complete, current area result has not been recorded. Run and retain the full area report; triage failures against the current source. |
 | 1 | Native parameter-driven cube journey | In progress | The native journey creates a constrained rectangle and extrude, edits the size, uses undo/redo, saves and reopens, and resolves a face. Maintain the live test and rerun it after relevant changes. |
-| 1 | `features/application/file-menu/file-menu.feature` | Verified | All 8 scenarios passed after the secondary-button chooser changes. Weldment remains unavailable. |
+| 1 | `features/application/file-menu/file-menu.feature` | Needs rerun | Source changed after the eight-scenario pass. Review the correction and rerun the feature; the previous result is historical. Weldment remains unavailable. |
 | 1 | `features/application/document-creation` | In progress | Name and size sorting, horizontal icon tiles, and keyboard and secondary-button selection work for available templates. The BDD scenarios still require additional named templates and native bindings. |
 | 1 | `features/application/ribbon-customization/ribbon-customization.feature` | Needs rerun | Source changed since the inventory checkpoint. Review the corrections and rerun affected native scenarios. |
-| 1 | `features/application/ribbon-appearance/ribbon-appearance.feature` | In progress | On the recorded source, five of 18 scenarios pass; the others stop at undefined steps. Panel titles can be hidden without losing expansion arrows. Reset Ribbon is implemented; its affirmative scenario is blocked by missing standard Tools groups. Implement Text Off, Small, Compact and Large across all commands and layouts. |
+| 1 | `features/application/ribbon-appearance/ribbon-appearance.feature` | In progress | On the current recorded source, six of 18 scenarios pass; 11 stop at undefined steps and one fails on a missing Tools group. Reset Ribbon is implemented. Implement the standard Tools groups and Text Off, Small, Compact and Large across all commands and layouts. |
 | 1 | `features/application/ribbon-docking/ribbon-docking.feature` | In progress | Source changed after the inventory checkpoint. A full native run at commit `139b82a42` found 6 passes and 17 scenarios stopped by undefined steps. With corrected bindings, a second run found 8 passes, 14 undefined steps, and one ambiguous step. Resolve the remaining steps and implement missing command-group behavior. |
 | 1 | `features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature` | Needs rerun | Source changed since the inventory checkpoint. Review the corrections and rerun affected native scenarios. |
 | 1 | `features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature` | Needs rerun | The source changed after the full run at `6e80b9bde`. Review the corrections and run the whole feature against a stable source; earlier counts are historical. |
@@ -514,3 +514,32 @@ revisions checked before they support a current pass claim.
   The local log is `/tmp/obk-tools-measure-native-20261113-2.log`.
 - The remaining standard Tools panels and part-mode measurement are still
   required before the Reset Ribbon and ribbon display scenarios can pass.
+
+### Scenario discovery checkpoint, 2026-11-13
+
+- The live inventory reports changes to 16 application feature files since the
+  committed baseline: document creation, opening, saving and tabs; file menu;
+  Home recent documents; project dialog; quick access toolbar; ribbon
+  appearance, customization, display, docking, keyboard navigation, panel
+  expansion and panel visibility; and workspace layout. There are no added or
+  removed files. Prior results for these files are historical until rerun.
+- The baseline remains unchanged until each correction has been reviewed, as
+  required by the BDD workflow. The local inventory output is
+  `/tmp/obk-bdd-discovery-20261113.log`. The current source is not a Git
+  checkout, so a prior source revision is not available there for comparison.
+
+### Full ribbon appearance run, 2026-11-13
+
+- Source: `features/application/ribbon-appearance/ribbon-appearance.feature`,
+  SHA-256 `846aff6433de2b69e222aa0580140c53adb7fdbe3aeba04ccab2a69ddc8c9438`
+  before and after the run. Application: `dc95f9e97`, with the unrelated
+  README and AGENTS files present. Linux, Xvfb at 1600 × 1000 and Lavapipe.
+- The full feature run passed six of 18 scenarios. Eleven stopped at an
+  undefined step; the affirmative Reset Ribbon scenario failed when the
+  Material and Appearance panel was absent. Its later steps were not tested.
+  The 105 attempted steps were 93 passed and 12 failed.
+- Command: `xvfb-run -a -s '-screen 0 1600x1000x24' cargo test --locked -p
+  oblikovati-head --lib application_scenarios_use_the_native_window --
+  --nocapture`, with `OBK_BDD_FEATURE=ribbon-appearance`, no scenario filter,
+  and the live scenario root. Cucumber and JUnit reports are in
+  `/tmp/obk-ribbon-appearance-full-dc95-20261113`, a local path.
