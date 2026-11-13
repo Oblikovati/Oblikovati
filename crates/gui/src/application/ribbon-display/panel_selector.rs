@@ -20,13 +20,31 @@ impl RibbonDisplayState {
             return;
         }
         let width = ui.window_size()[0];
-        let clicked = selector_button(ui, width);
+        let clicked = selector_button(ui, [width - 30., 35.]);
         self.selector_trigger = Some([ui.item_rect_min(), ui.item_rect_max()]);
         if temporary_tab && (clicked || self.selector_pointer_press(ui)) {
             self.keep_temporary_on_click = true;
         }
         let origin = ui.window_pos();
         crate::widget_abi::next_window_position(ui, [origin[0] + width - 180., origin[1] + 60.]);
+        self.selector_choices(ui, tab, panels);
+    }
+    /// Show the same checklist at the bottom of a side ribbon.
+    /// Example: `display.side_panel_selector(ui, tab, panels)`.
+    pub(crate) fn side_panel_selector(&mut self, ui: &Ui, tab: RibbonTab, panels: &[RibbonPanel]) {
+        self.selector_escape =
+            self.selector_open && ui.is_key_pressed_no_repeat(imgui::Key::Escape);
+        let size = ui.window_size();
+        let position = [size[0] - 30., size[1] - 32.];
+        selector_button(ui, position);
+        self.selector_trigger = Some([ui.item_rect_min(), ui.item_rect_max()]);
+        let origin = ui.window_pos();
+        let x = if self.placement == RibbonPlacement::Right {
+            origin[0] - 180.
+        } else {
+            origin[0] + size[0]
+        };
+        crate::widget_abi::next_window_position(ui, [x, origin[1] + position[1]]);
         self.selector_choices(ui, tab, panels);
     }
     fn selector_choices(&mut self, ui: &Ui, tab: RibbonTab, panels: &[RibbonPanel]) {
@@ -59,8 +77,8 @@ impl RibbonDisplayState {
         }
     }
 }
-fn selector_button(ui: &Ui, width: f32) -> bool {
-    crate::widget_abi::cursor_position(ui, [width - 30., 35.]);
+fn selector_button(ui: &Ui, position: [f32; 2]) -> bool {
+    crate::widget_abi::cursor_position(ui, position);
     let clicked = crate::widget_abi::button(ui, "v##ribbon-panel-selector", [22., 24.]);
     let pressed = ui.is_item_hovered() && ui.is_mouse_clicked(imgui::MouseButton::Left);
     if clicked {

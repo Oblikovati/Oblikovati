@@ -230,6 +230,15 @@ fn side_ribbon(
     side_tabs(ui, owners.ribbon, frame);
     ui.same_line_with_pos(SIDE_TABS_WIDTH);
     side_groups(ui, request, owners, panel_x, actions);
+    let panels = crate::ribbon_panels::available_panels(
+        owners.ribbon.active,
+        &request.commands,
+        &owners.ribbon.customization,
+    );
+    owners
+        .ribbon
+        .display
+        .side_panel_selector(ui, owners.ribbon.active, &panels);
 }
 fn side_tabs(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame) {
     ui.group(|| {
@@ -265,40 +274,42 @@ fn side_groups(
     actions: &mut Vec<GuiShellAction>,
 ) {
     let ribbon = &mut *owners.ribbon;
-    ui.child_window("##ribbon-groups").build(|| {
-        crate::ribbon_panels::draw_side_groups(
-            ui,
-            ribbon.active,
-            &request.commands,
-            crate::ribbon_panels::RibbonPanelOwners {
-                home_active: owners.home_active,
-                icons: owners.icons,
-                parameters: owners.parameters,
-                preferences: owners.preferences,
-                editor: owners.theme_editor,
-                workspace: owners.workspace,
-                workspaces: owners.workspaces,
-                quick_access: owners.quick_access,
-                precise_input: owners.precise_input,
-                sketch_pattern: owners.sketch_pattern,
-                create_block: owners.create_block,
-                customization: &mut ribbon.customization,
-                active_tab: ribbon.active,
-                plane_selection_active: owners.plane_selection_active,
-                hole_tip: ribbon.tips.model_commands() && ribbon.tips.matching("HO"),
-                modify_group_tip: ribbon.tips.model_commands() && ribbon.tips.matching("Y"),
-                sketch_group_tip: ribbon.tips.model_commands() && ribbon.tips.matching("K"),
-                create_group_tip: ribbon.tips.model_commands() && ribbon.tips.matching("C"),
-                key_tips_active: ribbon.tips.active(),
-                sketch_tip: ribbon.tips.model_commands() && ribbon.tips.matching("SK"),
-                extrude_tip: ribbon.tips.model_commands() && ribbon.tips.matching("EX"),
-            },
-            &mut ribbon.panels,
-            &mut ribbon.display,
-            panel_x,
-            actions,
-        );
-    });
+    ui.child_window("##ribbon-groups")
+        .size([0., -32.])
+        .build(|| {
+            crate::ribbon_panels::draw_side_groups(
+                ui,
+                ribbon.active,
+                &request.commands,
+                crate::ribbon_panels::RibbonPanelOwners {
+                    home_active: owners.home_active,
+                    icons: owners.icons,
+                    parameters: owners.parameters,
+                    preferences: owners.preferences,
+                    editor: owners.theme_editor,
+                    workspace: owners.workspace,
+                    workspaces: owners.workspaces,
+                    quick_access: owners.quick_access,
+                    precise_input: owners.precise_input,
+                    sketch_pattern: owners.sketch_pattern,
+                    create_block: owners.create_block,
+                    customization: &mut ribbon.customization,
+                    active_tab: ribbon.active,
+                    plane_selection_active: owners.plane_selection_active,
+                    hole_tip: ribbon.tips.model_commands() && ribbon.tips.matching("HO"),
+                    modify_group_tip: ribbon.tips.model_commands() && ribbon.tips.matching("Y"),
+                    sketch_group_tip: ribbon.tips.model_commands() && ribbon.tips.matching("K"),
+                    create_group_tip: ribbon.tips.model_commands() && ribbon.tips.matching("C"),
+                    key_tips_active: ribbon.tips.active(),
+                    sketch_tip: ribbon.tips.model_commands() && ribbon.tips.matching("SK"),
+                    extrude_tip: ribbon.tips.model_commands() && ribbon.tips.matching("EX"),
+                },
+                &mut ribbon.panels,
+                &mut ribbon.display,
+                panel_x,
+                actions,
+            );
+        });
 }
 fn begin_ribbon_band(ui: &Ui, width: f32, height: f32) -> Option<imgui::WindowToken<'_>> {
     // #3798: chrome owns a fixed band; wheel input must never move its commands.

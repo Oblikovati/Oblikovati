@@ -168,7 +168,6 @@ fn model_docked_left(world: &mut ApplicationWorld) {
 }
 #[given("the Modify group is visible")]
 #[given("the 3D Model ribbon is docked at the top with Modify visible")]
-#[then("the Modify group returns to the side-docked ribbon")]
 #[then("the Modify group returns to the left-docked ribbon")]
 #[then("the Modify panel is visible in the top ribbon")]
 #[then("the Modify group appears in the floating ribbon")]
@@ -186,7 +185,6 @@ fn toggle_modify(world: &mut ApplicationWorld) {
     world.ribbon_height = world.run("Work Features").center()[1];
     toggle_panel(world, "Modify");
 }
-#[then("the Modify group disappears from the side-docked ribbon")]
 #[then("the Modify panel disappears from the ribbon")]
 #[then("the floating ribbon does not show the Modify group")]
 #[then("the floating ribbon no longer shows the Modify group")]
@@ -198,7 +196,7 @@ fn modify_gone(world: &mut ApplicationWorld) {
 #[then("the remaining ribbon groups reflow vertically")]
 fn groups_reflow(world: &mut ApplicationWorld) {
     let before = world.ribbon_height;
-    let now = world.run("Work Features").center()[1];
+    let now = side_selector::side_group_y(world, "Work Features");
     assert!(
         now < before,
         "Work Features at {now}: expected it to move up from {before}"
@@ -434,6 +432,8 @@ fn parameters_is_hidden(world: &mut ApplicationWorld) {
 
 #[path = "panel_selector.rs"]
 mod panel_selector;
+#[path = "side_selector.rs"]
+mod side_selector;
 
 #[then("the other compact group buttons remain visible")]
 fn other_compact_groups(world: &mut ApplicationWorld) {

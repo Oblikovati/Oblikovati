@@ -15,6 +15,7 @@ claim that each file has been individually triaged.
 | 1 | `features/application/ribbon-docking/ribbon-docking.feature` | In progress | Source changed after the inventory checkpoint. A full native run at commit `139b82a42` found 6 passes and 17 scenarios stopped by undefined steps. With corrected bindings, a second run found 8 passes, 14 undefined steps, and one ambiguous step. Resolve the remaining steps and implement missing command-group behavior. |
 | 1 | `features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature` | Needs rerun | Source changed since the inventory checkpoint. Review the corrections and rerun affected native scenarios. |
 | 1 | `features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature` | Needs rerun | Source changed again after a run with 12 of 54 scenarios passing. Review the corrections and rerun the full feature; the earlier result is historical. |
+| 1 | `features/application/ribbon-panel-visibility` side selector | In progress | The left and right selector and group reflow scenarios pass on the recorded source. Rerun the full feature and cover the remaining selector interactions. |
 | 1 | `features/application/ribbon-display/ribbon-display.feature` | In progress | Source changed. Revalidate all scenarios against the revised file, including appearance and modeling-preview cases. |
 | 2 | `features/sketch/pattern-rectangular/scenario.feature` | In progress | Rectangular patterns can be created and edited in the native UI, but directions are fixed to the sketch axes. Implement line-reference selection and associativity, then run the affected native scenarios. |
 | 2 | Other `features/sketch` | In progress | The native sketch gate runs only selected folders. Inventory and run the remaining folders before reporting total coverage. |
@@ -269,3 +270,22 @@ revisions checked before they support a current pass claim.
   the duplicate binding and stops at an undefined selector step. The GUI only
   draws the direct selector for the top placement, so the side placement
   needs implementation and native verification.
+
+### Side ribbon panel selector, 2026-11-13
+
+- Source: `features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature`,
+  SHA-256 `92f73c0f2a3167708cf0d04ffa2d6fde640b52a35c685637de13aadb2e224e24`,
+  stable during the runs. Application: `ef91ac7d3` plus the selector and test
+  changes in this ledger's commit. The unrelated README and AGENTS files were
+  present. Linux, Xvfb at 1600 × 1000, Lavapipe Vulkan.
+- The native `Toggle a panel from the left-docked ribbon selector` and right
+  counterpart passed 22 steps together. `Hide and restore a panel on the
+  side-docked ribbon` passed 12 steps, including group reflow. The runs used
+  `OBK_BDD_FEATURE=ribbon-panel-visibility` with scenario filters and
+  `xvfb-run -a -s '-screen 0 1600x1000x24' cargo test --locked -p
+  oblikovati-head --lib application_scenarios_use_the_native_window --
+  --nocapture`. Reports and screenshots are in `/tmp/obk-side-both-bdd-revised-20261113`
+  and `/tmp/obk-side-reflow-revised-20261113`; these are local artifacts.
+- The native mouse regression covers repeated toggles and dismissal on both
+  sides. The GUI library passed 349 tests, the File dialog passed four, and
+  GUI Clippy passed. Other panel-visibility scenarios remain unverified.
