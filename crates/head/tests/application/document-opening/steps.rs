@@ -198,7 +198,16 @@ fn control_o_to_folder(world: &mut ApplicationWorld) {
 }
 #[when("the user selects the saved part")]
 fn select_saved_part(world: &mut ApplicationWorld) {
-    select_row(world, PART_FILE);
+    let path = world
+        .saved_path
+        .clone()
+        .filter(|path| path.extension().is_some_and(|extension| extension == "opd"));
+    let Some(path) = path else {
+        select_row(world, PART_FILE);
+        return;
+    };
+    look_in(world, path.parent().expect("expected a saved part folder"));
+    select_row(world, path.file_name().unwrap().to_str().unwrap());
 }
 #[then("the part row is selected and the file name field identifies it")]
 fn part_row_selected(world: &mut ApplicationWorld) {

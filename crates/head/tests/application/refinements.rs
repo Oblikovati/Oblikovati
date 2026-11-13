@@ -36,6 +36,7 @@ fn browser_root_named(world: &mut ApplicationWorld) {
     world.expect_browser_of(id);
 }
 #[when("I open the file-opening dialog in the same session")]
+#[when("the user opens the file-opening dialog in the same session")]
 fn open_dialog(world: &mut ApplicationWorld) {
     world.click_text("Open");
     world.pump(Vec::new());
@@ -57,6 +58,7 @@ fn dialog_thumbnail(world: &mut ApplicationWorld) {
     world.expect_no_text("No preview image");
 }
 #[when("I open the selected part")]
+#[when("the user opens the selected part")]
 fn open_selected(world: &mut ApplicationWorld) {
     let open = world
         .frame

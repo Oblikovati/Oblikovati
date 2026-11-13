@@ -72,8 +72,10 @@ impl Default for SaveAsDialog {
 }
 impl SaveAsDialog {
     pub(crate) fn with_folders(folders: Rc<dyn GuiFolders>) -> Self {
+        let mut browser = FolderBrowser::new(folders.clone());
+        browser.folders_select_first = true;
         Self {
-            browser: FolderBrowser::new(folders.clone()),
+            browser,
             folders,
             draft: None,
         }
@@ -114,7 +116,9 @@ impl SaveAsDialog {
     }
     /// A frame must follow so the popup opens without waiting for an event.
     pub(crate) fn is_opening(&self) -> bool {
-        self.draft.as_ref().is_some_and(|draft| draft.opening)
+        self.draft.as_ref().is_some_and(|draft| {
+            draft.opening || self.browser.selection_redraw || draft.images.selection_redraw
+        })
     }
     pub(crate) fn is_open(&self) -> bool {
         self.draft.is_some()
@@ -258,6 +262,8 @@ fn preview_options(ui: &Ui, draft: &mut SaveAsDraft, actions: &mut Vec<GuiShellA
     ui.checkbox("Save Preview Picture", &mut draft.save_preview);
     if draft.save_preview {
         source_choices(ui, draft, actions);
+    } else {
+        draft.images.selection_redraw = false;
     }
 }
 fn source_choices(ui: &Ui, draft: &mut SaveAsDraft, actions: &mut Vec<GuiShellAction>) {
@@ -293,6 +299,7 @@ fn source_control(ui: &Ui, draft: &mut SaveAsDraft, actions: &mut Vec<GuiShellAc
 fn image_chooser(ui: &Ui, draft: &mut SaveAsDraft) {
     center_dialog(ui, [860., 400.]);
     let Some(_chooser) = ui.begin_modal_popup(IMAGE_CHOOSER) else {
+        draft.images.selection_redraw = false;
         return;
     };
     if let Some(name) = draft
@@ -308,6 +315,7 @@ fn image_chooser(ui: &Ui, draft: &mut SaveAsDraft) {
         draft.image = Some(full_path(&draft.images.folder, &draft.image_name));
     }
     if end.is_some() {
+        draft.images.selection_redraw = false;
         ui.close_current_popup();
     }
 }

@@ -116,6 +116,7 @@ impl OpenDialog {
     /// A frame must follow so the popup opens without waiting for an event.
     pub(crate) fn is_opening(&self) -> bool {
         self.draft.as_ref().is_some_and(|draft| draft.opening)
+            || self.draft.is_some() && self.browser.selection_redraw
             || self.properties.is_opening()
             || self.defer_opening
     }

@@ -31,6 +31,19 @@ fn a_request_proposes_the_name_and_the_default_preview() {
     assert!(dialog.is_opening() && dialog.is_open());
 }
 #[test]
+fn a_selection_change_requests_one_follow_up_frame_only_while_open() {
+    let mut dialog = requested(false);
+    dialog.draft.as_mut().unwrap().opening = false;
+    assert!(!dialog.is_opening());
+    dialog.browser.selection_redraw = true;
+    assert!(dialog.is_opening());
+    dialog.browser.selection_redraw = false;
+    dialog.draft.as_mut().unwrap().images.selection_redraw = true;
+    assert!(dialog.is_opening());
+    dialog.draft = None;
+    assert!(!dialog.is_opening());
+}
+#[test]
 fn an_assembly_proposes_its_own_file_type() {
     let mut dialog = SaveAsDialog::with_folders(Rc::new(FakeFolders));
     dialog.request(

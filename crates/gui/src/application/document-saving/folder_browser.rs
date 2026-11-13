@@ -36,6 +36,8 @@ pub(crate) struct FolderBrowser {
     pub(super) several: Vec<String>,
     /// A folder row chosen, or just left through Up; Open enters it.
     pub(super) folder_highlight: Option<String>,
+    /// Rows are drawn before their click updates selection, so one more frame must show it.
+    pub(crate) selection_redraw: bool,
     /// A click on a folder only chooses it, in a dialog that opens things with its button.
     pub folders_select_first: bool,
     pub(super) size_order_descending: Option<bool>,
@@ -96,6 +98,7 @@ impl FolderBrowser {
             selected: None,
             several: Vec::new(),
             folder_highlight: None,
+            selection_redraw: false,
             folders_select_first: false,
             size_order_descending: None,
             request: Default::default(),
@@ -123,12 +126,18 @@ impl FolderBrowser {
     pub(crate) fn reset(&mut self) {
         self.folder = self.folders.default_folder();
         self.history.clear();
+        self.folder_highlight = None;
         self.navigation = NavigationPane::default();
         self.refresh();
     }
     /// Draw the location and listing; returns the file row a click chose.
     /// Example: `browser.controls(ui, "Save in", FileFilter::Extension("opd"))`.
     pub(crate) fn controls(&mut self, ui: &Ui, label: &str, filter: FileFilter) -> Option<String> {
+        let previous = (
+            self.selected.clone(),
+            self.folder_highlight.clone(),
+            self.several.clone(),
+        );
         self.location(ui, label);
         ui.text_disabled(breadcrumb(&self.folder));
         self.toolbar(ui);
@@ -136,7 +145,8 @@ impl FolderBrowser {
         ui.same_line();
         let outcome = self.listing_rows(ui, filter);
         let (chosen, opened) = (outcome.chosen, outcome.entered);
-        let selected = self.several.len().max(usize::from(self.selected.is_some()));
+        let one_selected = self.selected.is_some() || self.folder_highlight.is_some();
+        let selected = self.several.len().max(usize::from(one_selected));
         ui.text_disabled(status_text(selected, self.shown_count(filter)));
         if let Some(folder) = opened {
             self.navigate(&folder);
@@ -147,6 +157,12 @@ impl FolderBrowser {
         if let Some(name) = &chosen {
             self.selected = Some(name.clone());
         }
+        self.selection_redraw = previous
+            != (
+                self.selected.clone(),
+                self.folder_highlight.clone(),
+                self.several.clone(),
+            );
         chosen
     }
     fn toolbar(&mut self, ui: &Ui) {

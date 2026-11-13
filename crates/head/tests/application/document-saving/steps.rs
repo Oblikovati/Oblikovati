@@ -35,6 +35,8 @@ fn free_name(world: &mut ApplicationWorld) {
 }
 #[when("I press Control+S")]
 #[when("I press Control+S again in the same session")]
+#[when("the user presses Control+S")]
+#[when("the user presses Control+S again in the same session")]
 fn press_save(world: &mut ApplicationWorld) {
     world.press_save_shortcut();
 }
@@ -81,6 +83,8 @@ fn dialog_contents(world: &mut ApplicationWorld) {
 }
 #[when("I cancel the dialog")]
 #[when("I cancel the dialog again")]
+#[when("the user cancels the dialog")]
+#[when("the user cancels the dialog again")]
 #[when("I cancel Save As")]
 #[when("the user cancels Save As")]
 fn cancel_dialog(world: &mut ApplicationWorld) {
@@ -99,6 +103,8 @@ fn unsaved_remains(world: &mut ApplicationWorld) {
 }
 #[when("I accept the proposed file name in the Save As dialog")]
 #[when("I accept the proposed file name in Save As")]
+#[when("the user accepts the proposed file name in the Save As dialog")]
+#[when("the user accepts the proposed file name in Save As")]
 fn accept_proposed(world: &mut ApplicationWorld) {
     world.accept_save_as();
 }
@@ -122,12 +128,16 @@ fn tab_has_file_name(world: &mut ApplicationWorld) {
 }
 #[when("I close that document tab")]
 #[when("I close the document tab")]
+#[when("the user closes that document tab")]
+#[when("the user closes the document tab")]
 fn close_tab(world: &mut ApplicationWorld) {
     world.closed_document = Some(world.active_id());
     world.close_active_tab();
 }
 #[when("I open the saved file from the same folder")]
+#[when("the user opens the saved file from the same folder")]
 #[when("I reopen the newly saved part in the same session")]
+#[when("the user reopens the newly saved part in the same session")]
 #[when("I reopen the saved part in the same session")]
 #[when("I reopen the saved part file")]
 fn reopen(world: &mut ApplicationWorld) {
@@ -172,11 +182,13 @@ fn saved_part(world: &mut ApplicationWorld) {
     world.saved_path = Some(path);
 }
 #[when("I create a planar sketch with a rectangular profile")]
+#[when("the user creates a planar sketch with a rectangular profile")]
 fn create_rectangle(world: &mut ApplicationWorld) {
     world.start_sketch();
     world.draw_rectangle();
 }
 #[when("I finish the sketch")]
+#[when("the user finishes the sketch")]
 fn finish(world: &mut ApplicationWorld) {
     world.finish_sketch();
     let path = world.saved_path.as_ref().expect("expected a saved file");
@@ -218,7 +230,9 @@ fn preview_selected(world: &mut ApplicationWorld) {
     world.expect_text(ICONIC);
 }
 #[when("I clear Save Preview Picture")]
+#[when("the user clears Save Preview Picture")]
 #[when("I select Save Preview Picture again")]
+#[when("the user selects Save Preview Picture again")]
 fn toggle_preview(world: &mut ApplicationWorld) {
     world.click_text("Save Preview Picture");
 }
@@ -239,6 +253,7 @@ fn sources_back(world: &mut ApplicationWorld) {
     world.expect_no_text(NO_PREVIEW);
 }
 #[when("I choose Active Window on Save")]
+#[when("the user chooses Active Window on Save")]
 fn choose_window(world: &mut ApplicationWorld) {
     world.click_text(WINDOW);
 }
@@ -251,11 +266,13 @@ fn iso_not_selected(world: &mut ApplicationWorld) {
     assert!(!world.radio_selected(ICONIC), "expected {ICONIC:?} cleared");
 }
 #[when("I choose Active Component Iso View on Save")]
+#[when("the user chooses Active Component Iso View on Save")]
 fn choose_iso(world: &mut ApplicationWorld) {
     world.click_text(ICONIC);
     assert!(world.radio_selected(ICONIC), "expected {ICONIC:?} selected");
 }
 #[when("I choose Import From File as the preview source")]
+#[when("the user chooses Import From File as the preview source")]
 fn choose_import(world: &mut ApplicationWorld) {
     world.click_text(IMPORT);
 }
@@ -270,6 +287,7 @@ fn browse_beside(world: &mut ApplicationWorld) {
     );
 }
 #[when("I choose the browse control")]
+#[when("the user chooses the browse control")]
 fn choose_browse(world: &mut ApplicationWorld) {
     world.click_text("Browse...");
 }
@@ -283,6 +301,7 @@ fn chooser_above(world: &mut ApplicationWorld) {
     );
 }
 #[when("I cancel the image file chooser")]
+#[when("the user cancels the image file chooser")]
 fn cancel_chooser(world: &mut ApplicationWorld) {
     world.click_text("Cancel");
 }
@@ -296,6 +315,7 @@ fn import_selected(world: &mut ApplicationWorld) {
     assert!(world.radio_selected(IMPORT), "expected {IMPORT:?} selected");
 }
 #[when("I open the file type list")]
+#[when("the user opens the file type list")]
 fn open_types(world: &mut ApplicationWorld) {
     world.click_text("Part Files (*.opd)");
 }
@@ -342,7 +362,9 @@ fn prompt_buttons(world: &mut ApplicationWorld) {
     world.expect_text("Always show this message");
 }
 #[when("I choose Cancel")]
+#[when("the user chooses Cancel")]
 #[when("I cancel the save-changes prompt")]
+#[when("the user cancels the save-changes prompt")]
 #[when("I choose Cancel at the save-changes prompt")]
 fn prompt_cancel(world: &mut ApplicationWorld) {
     world.click_text("Cancel");
@@ -357,11 +379,13 @@ fn part_remains(world: &mut ApplicationWorld) {
     }
 }
 #[when("I choose Yes in the save-changes prompt")]
+#[when("the user chooses Yes in the save-changes prompt")]
 #[when("I choose Yes to save changes")]
 fn prompt_yes(world: &mut ApplicationWorld) {
     world.click_text("Yes");
 }
 #[when("I open the prompt-frequency list")]
+#[when("the user opens the prompt-frequency list")]
 fn open_frequency(world: &mut ApplicationWorld) {
     world.click_text("Always show this message");
 }
@@ -379,6 +403,7 @@ fn frequency_offers(world: &mut ApplicationWorld) {
     }
 }
 #[when("I dismiss the list without changing its selection")]
+#[when("the user dismisses the list without changing its selection")]
 fn dismiss_frequency(world: &mut ApplicationWorld) {
     world.escape();
     world.expect_no_text("Show once per operation");

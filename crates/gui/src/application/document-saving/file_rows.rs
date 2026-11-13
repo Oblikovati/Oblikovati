@@ -26,8 +26,9 @@ pub(in super::super) fn details_heading(ui: &Ui) -> bool {
     ui.separator();
     pressed
 }
-pub(in super::super) fn details_row(ui: &Ui, row: &FolderEntry, highlighted: bool) -> bool {
+pub(in super::super) fn details_row(ui: &Ui, row: &FolderEntry, highlighted: bool) -> RowHit {
     let chosen = crate::widget_abi::dialog_selectable(ui, &row_label(row), highlighted);
+    let hit = RowHit::current(ui, chosen);
     ui.same_line_with_pos(DATE_COLUMN);
     ui.text_disabled(modified_text(row));
     ui.same_line_with_pos(TYPE_COLUMN);
@@ -36,7 +37,23 @@ pub(in super::super) fn details_row(ui: &Ui, row: &FolderEntry, highlighted: boo
         ui.same_line_with_pos(SIZE_COLUMN);
         ui.text_disabled(format!("{} B", row.size));
     }
-    chosen
+    hit
+}
+pub(in super::super) struct RowHit {
+    pub chosen: bool,
+    pub hovered: bool,
+    pub minimum: [f32; 2],
+    pub maximum: [f32; 2],
+}
+impl RowHit {
+    pub fn current(ui: &Ui, chosen: bool) -> Self {
+        Self {
+            chosen,
+            hovered: ui.is_item_hovered(),
+            minimum: ui.item_rect_min(),
+            maximum: ui.item_rect_max(),
+        }
+    }
 }
 /// How a picture view lays out one file: its size, the picture's side, and where the name goes.
 /// A width of zero takes the row.

@@ -11,7 +11,8 @@ claim that each file has been individually triaged.
 | 1 | Native parameter-driven cube journey | In progress | The native journey creates a constrained rectangle and extrude, edits the size, uses undo/redo, saves and reopens, and resolves a face. Maintain the live test and rerun it after relevant changes. |
 | 1 | `features/application/file-menu/file-menu.feature` | Verified | All eight scenarios passed on the recorded updated source. Weldment remains unavailable. |
 | 1 | `features/application/document-creation` | In progress | On the updated source, 8 of 39 native scenarios pass; 31 stop at undefined steps. Name and size sorting, horizontal icon tiles, and keyboard and secondary-button selection work for available templates. The remaining scenarios need bindings and additional named templates. |
-| 1 | `features/application/document-opening` | In progress | A full run passed 16 of 27 native scenarios. A later focused saved-part scenario also passed after its fixture was corrected; rerun the whole feature for a current total. The remaining scenarios need bindings and saved-document fixtures. |
+| 1 | `features/application/document-opening` | In progress | The full current-source native run passed 20 of 27 scenarios; seven stopped at undefined steps. The remaining cases need drawing and assembly fixtures and updated checks. See the save evidence below. |
+| 1 | `features/application/document-saving` | In progress | The full current-source run passed 22 of 23 scenarios. The remaining first-save isometric preview scenario stopped at its unsaved-solid fixture; the preview still needs implementation and native verification. See the save evidence below. |
 | 1 | `features/application/model-browser` | In progress | After action wording updates, a full native run passed 29 of 100 scenarios. Of the other 71, 62 stopped at undefined steps and nine at failed checks. Focused fixes passed later; rerun the full feature before reporting a current total. |
 | 1 | `features/application/quick-access-toolbar` | In progress | The previous full native feature run passed 11 of 12 scenarios. Projects now opens the project dialog; the focused customization choices scenario next fails because Update is missing. Later checks did not run. Material Browser editing, duplication, and the Physical tab remain open. |
 | 1 | `features/application/viewport-pan/viewport-pan.feature` | Verified | All four current scenarios passed in the native window after the step wording was updated; see the Pan evidence below. |
@@ -32,6 +33,31 @@ claim that each file has been individually triaged.
 | 3 | `features/solid-model` | In progress | Implementations exist, but this area has not been assessed against the current complete source. Assess each feature after the application and sketch priorities; no total execution result is recorded. |
 
 ## Evidence records
+
+### Save As selection and save scenarios, 2026-11-13
+
+- Source: `features/application/document-saving/document-saving.feature`,
+  SHA-256 `ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2`.
+  Application: `5e3f27e4f` plus the Save As selection, redraw, and binding
+  changes in this work; Martensite uses the workspace lockfile.
+- Linux, Xvfb at 1600 × 1000, configured Vulkan runtime, `XMODIFIERS` unset.
+  The full native feature run passed 22 of 23 scenarios and 211 of 212
+  executed steps. The remaining scenario stopped at an undefined unsaved-solid
+  fixture, so its preview checks did not run. Reports are in
+  `/tmp/obk-save-final-20261113`; they are local and not durable.
+- Selecting a Save As folder now highlights it without changing the file
+  name; double-click opens it, and clicking empty list space clears the
+  highlight. Details-view double-clicks use the row's actual hit bounds, and
+  a selection change requests another frame to show its highlight. The
+  selection and folder-navigation native scenarios passed. The image chooser
+  cancellation scenario passed after a follow-up guard for its redraw state.
+- The GUI Save tests passed, as did a focused native saved-sketch reopen and
+  an Open-dialog saved-part inspection. The full Open feature, source SHA-256
+  `d7965f270ecc21d99f2ed9a0837f17a1996203fccf4d4d1966e7876ebb01464c`,
+  passed 20 of 27 scenarios and 209 of 216 executed steps; seven cases stopped
+  at undefined steps. Its local reports are in `/tmp/obk-open-final-20261113`.
+  The full runs preceded the image-chooser redraw guard, which was checked
+  separately through the image-chooser cancellation scenario.
 
 ### Ribbon appearance baseline, 2026-11-13
 

@@ -401,10 +401,11 @@ impl ApplicationWorld {
     }
     /// The location steps as rendered, without spaces; no other text in a dialog holds `>`.
     pub fn breadcrumb_text(&self) -> String {
+        let dialog_list = self.run("Save in").list;
         self.frame
             .runs
             .iter()
-            .find(|run| run.text.contains('>'))
+            .find(|run| run.list == dialog_list && run.text.contains('>'))
             .unwrap_or_else(|| panic!("expected a breadcrumb in rendered text {:?}", self.text()))
             .text
             .clone()

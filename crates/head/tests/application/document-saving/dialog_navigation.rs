@@ -8,6 +8,7 @@ fn dialog_open_on_empty_part(world: &mut ApplicationWorld) {
     world.expect_text(SAVE_IN);
 }
 #[when("I choose Active Window as the preview source")]
+#[when("the user chooses Active Window as the preview source")]
 fn choose_active_window(world: &mut ApplicationWorld) {
     world.click_text(WINDOW);
 }
@@ -22,6 +23,7 @@ fn capture_beside(world: &mut ApplicationWorld) {
     );
 }
 #[when("I activate the capture control")]
+#[when("the user activates the capture control")]
 fn activate_capture(world: &mut ApplicationWorld) {
     world.click_text("Capture");
     world.pump(Vec::new());
@@ -55,7 +57,13 @@ fn folder_with_part(world: &mut ApplicationWorld) {
     world.enter_in_field(SAVE_IN, folder.to_str().unwrap());
     world.expect_text(EXISTING_PART);
 }
+
+fn folder_pixel(world: &mut ApplicationWorld) -> [u8; 4] {
+    let folder = world.run("archive/").clone();
+    world.pixel_at([folder.maximum[0] as usize + 10, folder.center()[1] as usize])
+}
 #[when("I select that part file in the file list")]
+#[when("the user selects that part file in the file list")]
 fn select_existing(world: &mut ApplicationWorld) {
     world.click_text(EXISTING_PART);
 }
@@ -106,10 +114,12 @@ fn proposal_shown(world: &mut ApplicationWorld) {
     world.proposed_name = Some(name);
 }
 fn open_subfolder_row(world: &mut ApplicationWorld) {
-    world.click_text(SUBFOLDER);
+    let at = world.run(SUBFOLDER).center().map(|value| value as i32);
+    world.double_click(at);
     world.expect_text(NESTED_FOLDER);
 }
 #[when("I open the subfolder")]
+#[when("the user opens the subfolder")]
 fn open_subfolder(world: &mut ApplicationWorld) {
     open_subfolder_row(world);
 }
@@ -142,6 +152,7 @@ fn initial_folder(world: &mut ApplicationWorld) {
     world.expect_text(SUBFOLDER);
 }
 #[given("I have navigated from the initial folder into a subfolder")]
+#[given("the user has navigated from the initial folder into a subfolder")]
 fn navigated(world: &mut ApplicationWorld) {
     world.initial_breadcrumb = Some(world.breadcrumb_text());
     let id = world.active_id();
@@ -149,6 +160,7 @@ fn navigated(world: &mut ApplicationWorld) {
     open_subfolder_row(world);
 }
 #[when("I press Control+S again for the same part")]
+#[when("the user presses Control+S again for the same part")]
 fn save_again(world: &mut ApplicationWorld) {
     world.press_save_shortcut();
     world.expect_text(SAVE_IN);
@@ -208,6 +220,7 @@ fn current_and_proposed(world: &mut ApplicationWorld) {
     world.expect_text(&name);
 }
 #[when("I switch to system-location navigation")]
+#[when("the user switches to system-location navigation")]
 fn switch_system(world: &mut ApplicationWorld) {
     world.click_text("Locations");
 }
@@ -231,10 +244,12 @@ fn preview_settings_remain(world: &mut ApplicationWorld) {
     world.expect_text(ICONIC);
 }
 #[when("I switch back to recent-folder navigation")]
+#[when("the user switches back to recent-folder navigation")]
 fn switch_recent(world: &mut ApplicationWorld) {
     world.click_text("Recent");
 }
 #[when("I open Save As again for the same part")]
+#[when("the user opens Save As again for the same part")]
 fn save_as_again(world: &mut ApplicationWorld) {
     save_again(world);
 }
@@ -247,12 +262,71 @@ fn proposed_is_selected(world: &mut ApplicationWorld) {
     );
 }
 #[given("the current folder contains part files and subfolders")]
+#[given("the current folder contains a part file and a subfolder")]
 fn folder_with_entries(world: &mut ApplicationWorld) {
     let folder = world.scratch_folder();
     std::fs::write(folder.join(EXISTING_PART), b"listed, never opened").unwrap();
     std::fs::create_dir(folder.join("archive")).unwrap();
     world.enter_in_field(SAVE_IN, folder.to_str().unwrap());
     world.expect_text(EXISTING_PART);
+    world.observed_counts = folder_pixel(world).into_iter().map(usize::from).collect();
+}
+
+#[when("the user selects the part file in the file list")]
+fn choose_listed_part(world: &mut ApplicationWorld) {
+    world.click_text(EXISTING_PART);
+    move_pointer_off_dialog(world);
+}
+#[then("the file is highlighted and its name appears in the file name field")]
+fn listed_part_selected(world: &mut ApplicationWorld) {
+    row_highlighted(world);
+    name_follows(world);
+}
+#[when("the user selects the subfolder with a single click")]
+fn select_folder_once(world: &mut ApplicationWorld) {
+    world.click_text("archive/");
+    move_pointer_off_dialog(world);
+}
+fn move_pointer_off_dialog(world: &mut ApplicationWorld) {
+    world.pump(vec![oblikovati_viewport::ViewportEvent::Input(
+        oblikovati_viewport::ViewportInput::Motion {
+            position: [20, 850],
+            modifiers: Default::default(),
+        },
+    )]);
+}
+#[then("the subfolder is highlighted without opening")]
+fn folder_selected_without_opening(world: &mut ApplicationWorld) {
+    world.expect_text(EXISTING_PART);
+    assert!(world.shows("archive/"), "expected the folder row");
+    let baseline: Vec<usize> = folder_pixel(world).into_iter().map(usize::from).collect();
+    assert_ne!(baseline, world.observed_counts, "expected selected folder");
+}
+#[then("the file name field still displays the selected part file name")]
+#[then("the file name field still displays the part file name")]
+fn selected_name_retained(world: &mut ApplicationWorld) {
+    world.expect_text(EXISTING_PART);
+    let shown = world
+        .frame
+        .runs
+        .iter()
+        .filter(|run| run.text == EXISTING_PART.replace(' ', ""))
+        .count();
+    assert!(shown >= 2, "expected file name in the list and field");
+}
+#[when("the user clicks empty space in the file list")]
+fn clear_list_selection(world: &mut ApplicationWorld) {
+    let row = world.run("archive/").clone();
+    world.click([row.center()[0] as i32 + 80, row.center()[1] as i32 + 100]);
+}
+#[then("no file or folder is highlighted")]
+fn no_list_selection(world: &mut ApplicationWorld) {
+    world.expect_no_text("1 item selected");
+    let baseline: Vec<usize> = folder_pixel(world).into_iter().map(usize::from).collect();
+    assert_eq!(
+        baseline, world.observed_counts,
+        "expected folder unselected"
+    );
 }
 #[given("the file list is displayed in Details view")]
 #[then("the file list displays rows with name, modification date, type and size columns")]
@@ -262,6 +336,7 @@ fn details_columns(world: &mut ApplicationWorld) {
     }
 }
 #[when("I activate the file-list view control")]
+#[when("the user activates the file-list view control")]
 fn activate_view(world: &mut ApplicationWorld) {
     world.click_text("Tiles");
 }
@@ -281,6 +356,7 @@ fn name_and_preview_remain(world: &mut ApplicationWorld) {
     preview_settings_remain(world);
 }
 #[when("I choose the Details view shortcut")]
+#[when("the user chooses the Details view shortcut")]
 fn choose_details_shortcut(world: &mut ApplicationWorld) {
     world.click_text("Details");
 }
@@ -352,6 +428,7 @@ fn saved_part_active(world: &mut ApplicationWorld) {
     world.saved_path = Some(world.save_part_to_file(id, "saved part.opd"));
 }
 #[when("I open the application menu")]
+#[when("the user opens the application menu")]
 fn open_app_menu(world: &mut ApplicationWorld) {
     world.click_text("File");
     world.pump(Vec::new());

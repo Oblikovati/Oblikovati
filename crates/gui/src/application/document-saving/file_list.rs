@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! The dialogs' file list: its rows, their order, and how they are chosen, one or several.
-use super::folder_browser::file_rows::{FileCell, cell_row, details_heading, details_row};
+use super::folder_browser::file_rows::{FileCell, RowHit, cell_row, details_heading, details_row};
 use super::folder_browser::{FileFilter, FileListView, FolderBrowser, LISTING_HEIGHT, listed};
 use crate::application::file_system::FolderEntry;
 use imgui::{MouseButton, Ui};
@@ -75,11 +75,10 @@ impl FolderBrowser {
         let mut over_a_row = false;
         let mut boxes = Vec::with_capacity(rows.len());
         for row in &rows {
-            let chosen = self.file_row(ui, row);
-            boxes.push((row.name.clone(), ui.item_rect_min(), ui.item_rect_max()));
-            let hovered = ui.is_item_hovered();
-            over_a_row |= hovered;
-            self.row_actions(ui, row, chosen, hovered, outcome);
+            let hit = self.file_row(ui, row);
+            boxes.push((row.name.clone(), hit.minimum, hit.maximum));
+            over_a_row |= hit.hovered;
+            self.row_actions(ui, row, hit.chosen, hit.hovered, outcome);
             continue_the_grid(ui, self.view);
         }
         self.row_menu(ui);
@@ -113,6 +112,7 @@ impl FolderBrowser {
             self.folder_highlight = None;
             outcome.chosen = Some(row.name.clone());
         } else if self.folders_select_first {
+            self.selected = None;
             self.folder_highlight = Some(row.name.clone());
         } else {
             outcome.entered = Some(row.name.clone());
@@ -165,9 +165,11 @@ impl FolderBrowser {
         let travelled = (high[0] - low[0]).max(high[1] - low[1]);
         if travelled < DRAG_REACH {
             self.selected = None;
+            self.folder_highlight = None;
             self.several.clear();
             return;
         }
+        self.folder_highlight = None;
         self.several = boxes
             .iter()
             .filter(|(_, minimum, maximum)| {
@@ -185,7 +187,7 @@ impl FolderBrowser {
             self.selected = None;
         }
     }
-    fn file_row(&self, ui: &Ui, row: &FolderEntry) -> bool {
+    fn file_row(&self, ui: &Ui, row: &FolderEntry) -> RowHit {
         let highlighted = self.selected.as_deref() == Some(row.name.as_str())
             || self.folder_highlight.as_deref() == Some(row.name.as_str())
             || self.several.contains(&row.name);
@@ -193,13 +195,17 @@ impl FolderBrowser {
             (FileListView::Details, _) => details_row(ui, row, highlighted),
             (_, Some(cell)) => {
                 let path = super::folder_browser::full_path(&self.folder, &row.name);
-                cell_row(ui, row, highlighted, cell, self.file_pictures.get(&path))
+                let chosen = cell_row(ui, row, highlighted, cell, self.file_pictures.get(&path));
+                RowHit::current(ui, chosen)
             }
-            (_, None) => crate::widget_abi::dialog_selectable(
-                ui,
-                &super::folder_browser::row_label(row),
-                highlighted,
-            ),
+            (_, None) => {
+                let chosen = crate::widget_abi::dialog_selectable(
+                    ui,
+                    &super::folder_browser::row_label(row),
+                    highlighted,
+                );
+                RowHit::current(ui, chosen)
+            }
         }
     }
     /// The files a view needs a stored picture of, in the order it lists them.
