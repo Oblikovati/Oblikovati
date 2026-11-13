@@ -1,0 +1,981 @@
+{
+  "features": {
+    "features/application/body-properties/body-properties.feature": {
+      "outlines": 0,
+      "scenario_declarations": 6,
+      "sha256": "72ddbff85411da6db7d4062ff7a4dcaf895accb398ba567f2fdd4ac7d71c2abb"
+    },
+    "features/application/document-creation/document-creation.feature": {
+      "outlines": 0,
+      "scenario_declarations": 39,
+      "sha256": "003a02efcb9c8f0629eeb8cabd4c52945533a1387d3918c417b7eac09a0d7522"
+    },
+    "features/application/document-opening/document-opening.feature": {
+      "outlines": 0,
+      "scenario_declarations": 27,
+      "sha256": "1f503f263f2c52817b5537c81f560ad177231fb08e64f6a01872c5ecc9f4e86f"
+    },
+    "features/application/document-saving/document-saving.feature": {
+      "outlines": 0,
+      "scenario_declarations": 24,
+      "sha256": "689ab6fe6474eaad0b250fa9981a528f57ed4e6830d7fddc4f1190dd81f21804"
+    },
+    "features/application/document-tabs/document-tabs.feature": {
+      "outlines": 0,
+      "scenario_declarations": 38,
+      "sha256": "30014c87d865f758818ee93193b5550de1fea7d56ad46c493cd504fd2908560d"
+    },
+    "features/application/file-menu/file-menu.feature": {
+      "outlines": 0,
+      "scenario_declarations": 8,
+      "sha256": "19b41182a9710f6a5debb2e73e74b38c32a2d955583afe2e380ba01c850fa10f"
+    },
+    "features/application/home-recent-documents/home-recent-documents.feature": {
+      "outlines": 0,
+      "scenario_declarations": 35,
+      "sha256": "4243398161342eb3e72dbfc8e28763920e65d228f2c769d64ea8990acd1bd1fc"
+    },
+    "features/application/model-browser/model-browser.feature": {
+      "outlines": 0,
+      "scenario_declarations": 100,
+      "sha256": "2744756d6e2550f6d19f89ff0e8e1bf51ab8f90256308e1f833c3fb60d1bcfdd"
+    },
+    "features/application/project-dialog/project-dialog.feature": {
+      "outlines": 0,
+      "scenario_declarations": 8,
+      "sha256": "7aed8c59285f6de53ecca888549ec6564310900fc4e68a96a5a98da389e2d084"
+    },
+    "features/application/quick-access-toolbar/quick-access-toolbar.feature": {
+      "outlines": 0,
+      "scenario_declarations": 12,
+      "sha256": "91c11cb6be729518a127e30f486adb5ca7fff416a873b59a842614b941cceb87"
+    },
+    "features/application/ribbon-appearance/ribbon-appearance.feature": {
+      "outlines": 0,
+      "scenario_declarations": 20,
+      "sha256": "78b9430cb31f51db78c85be31fd142ff61c937db3553630a07ea2383edd84bd8"
+    },
+    "features/application/ribbon-command-availability/ribbon-command-availability.feature": {
+      "outlines": 0,
+      "scenario_declarations": 3,
+      "sha256": "6d929998fec183a7df203e81cb5425c9e41130ec606c5e21406a298115420c7e"
+    },
+    "features/application/ribbon-customization/ribbon-customization.feature": {
+      "outlines": 3,
+      "scenario_declarations": 121,
+      "sha256": "22d6218b25d46600e0730997fd3c1031070ed5b8f48dea2f5ebb34e9e5638134"
+    },
+    "features/application/ribbon-display/ribbon-display.feature": {
+      "outlines": 0,
+      "scenario_declarations": 50,
+      "sha256": "3469c4d05914bc353a437d07b6c199c9caa4ee26321a8fff3d30b921e38a72a0"
+    },
+    "features/application/ribbon-docking/ribbon-docking.feature": {
+      "outlines": 0,
+      "scenario_declarations": 26,
+      "sha256": "f3e5a889a9da242c3e8f50c10bb6f7fdb5fe27a42608107f595556c3271e4c62"
+    },
+    "features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature": {
+      "outlines": 0,
+      "scenario_declarations": 22,
+      "sha256": "d174bcae3fc37c0ab8a2e05dfc4148c5aaf02e965f429039e1445293c7e89847"
+    },
+    "features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature": {
+      "outlines": 0,
+      "scenario_declarations": 67,
+      "sha256": "5668721e5b43956a4c223974417898e815669f6ed040eff4679dfc7f0a0254fb"
+    },
+    "features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature": {
+      "outlines": 1,
+      "scenario_declarations": 51,
+      "sha256": "c22d637eb79ad3e5ec3c2236f7a31bbfefc6fc8d133fdc5b4baf245f29aabe67"
+    },
+    "features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature": {
+      "outlines": 0,
+      "scenario_declarations": 12,
+      "sha256": "db150010df515711055f793b9d5b577ec2e6aba12624b0fac829c641bf8af190"
+    },
+    "features/application/viewport-orbit/viewport-orbit.feature": {
+      "outlines": 1,
+      "scenario_declarations": 9,
+      "sha256": "35a802f383f94685b3fb1f72465b9612841ea79d7934f592dfe608d9991f2976"
+    },
+    "features/application/viewport-orientation/viewport-orientation.feature": {
+      "outlines": 0,
+      "scenario_declarations": 20,
+      "sha256": "a76480cd22cdf30f2e42835c6867f34447bfac05ee4854e80e79a6c8b0ba3601"
+    },
+    "features/application/viewport-pan/viewport-pan.feature": {
+      "outlines": 0,
+      "scenario_declarations": 4,
+      "sha256": "640461d77df0084aab1d625205de9ad39e4ad4183ba60ea97faee883c72ffda6"
+    },
+    "features/application/viewport-zoom/viewport-zoom.feature": {
+      "outlines": 0,
+      "scenario_declarations": 7,
+      "sha256": "fd7083183df77048f0a79568a547491495fc9097096135eb39b7e72e9e1e7f31"
+    },
+    "features/application/workspace-layout/workspace-layout.feature": {
+      "outlines": 1,
+      "scenario_declarations": 41,
+      "sha256": "94f84fb07fd0bc4289774ad19ed43309f5eba137438ef35b3a60bc8d1439e3a6"
+    },
+    "features/sketch/acad-import/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 8,
+      "sha256": "d76b7bebec2f5372eff21ef3ceaeedbaa16858d072ade73a63468261524cbc20"
+    },
+    "features/sketch/arc-center-point/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 10,
+      "sha256": "d3a3f91b364b794679d42251c438064dcdf8c0cb13a4e8e8fdc4e6560616164b"
+    },
+    "features/sketch/arc-tangent/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 13,
+      "sha256": "b185ca929cda024de5ca402429acb3c83ed2122202c8ac7ccb5efea2511dc95a"
+    },
+    "features/sketch/arc-three-point/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 16,
+      "sha256": "4fb46e9c3d17ca76f75c10bfd79d08039d80b7803f09564d840f388a6cd35d40"
+    },
+    "features/sketch/auto-dimension/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 11,
+      "sha256": "2d8b6586f2418feeb0d7fc1dacd8c16b5b8e5fa95a8e90b09945185e948546e4"
+    },
+    "features/sketch/block-properties/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 14,
+      "sha256": "1e870a9dc01f927af6b6dce185f66f3f4078b6918132bf110c22ef0dffe84ea3"
+    },
+    "features/sketch/bridge-curve/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 13,
+      "sha256": "d7606d14e5eb7f9b5bcae43787a67682c049c9e250f4fe0a45cb41f2cdc6ff35"
+    },
+    "features/sketch/centerline/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 14,
+      "sha256": "364a5dd9fa56e9e188b47058a0b19520a1fb8e64d06f01457ef3ba3d26cc44cc"
+    },
+    "features/sketch/chamfer/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 14,
+      "sha256": "5208e7848d14bed8986fddc02dc4b5eb24b81e094fd0d25b7ce74d4e54454760"
+    },
+    "features/sketch/circle-center-point/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 9,
+      "sha256": "dc894b6bfddff740290cd13f8ce127265f8bc4fe864fb5e3d67df51f10d5a5dc"
+    },
+    "features/sketch/circle-tangent/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 10,
+      "sha256": "18fa8643dcea9f1fcd3408f1eae53d4de28cb8c0196010d3f1961542d44ac66d"
+    },
+    "features/sketch/coincident/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 8,
+      "sha256": "27e91134c39926a7edc9759571e9f12fb2934881f46b5bcd0b309944f333804a"
+    },
+    "features/sketch/collinear/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 8,
+      "sha256": "b498c3658e9e793029f4e5514fa239347cf0df91bf05a6f45cf38f4e6d79b5e0"
+    },
+    "features/sketch/concentric/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 8,
+      "sha256": "01a61818bb58a9d742e8379090f1cd7bc3b86fd85d09d0dea9000cea6317d7e6"
+    },
+    "features/sketch/constraint-inference-scope/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 4,
+      "sha256": "ffe0d0b153f074f356c7a37b9a3fe4ed66273c6b2cc14d30884c2502e15dfcdb"
+    },
+    "features/sketch/constraint-settings/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 8,
+      "sha256": "39d24d858faa1dd69a66d0d8ad2c3e4d9304f740e96b8bbeb3584eb5a8223e86"
+    },
+    "features/sketch/construction/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 10,
+      "sha256": "699b4ba39e2308e8fd8d7ac4221b7b16cdaf271b059bc26fd5d60c6e64449fc1"
+    },
+    "features/sketch/copy/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 27,
+      "sha256": "cee7e14d1a900c7ff8000657458760e01c4e51c22bceb57c2c51852c9657a3f1"
+    },
+    "features/sketch/create-block/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 13,
+      "sha256": "e1d77094ea833c6bacdd5397700de5930396c0d0d8736a058845252ad8673cbc"
+    },
+    "features/sketch/degrees-of-freedom/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 4,
+      "sha256": "01d50328f3b5b5a53b41177083ed2c33ea8ca5a5848a8d64630ac5423fb1de10"
+    },
+    "features/sketch/dimension-aligned/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 16,
+      "sha256": "25b075e0808570306832728cf8f662585d958d6a27ea94db8ecd057223b5bb4d"
+    },
+    "features/sketch/dimension-angular/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 16,
+      "sha256": "00742c4657720636aac26efe526bb52b1e88472a92d4de0b0262908f91cc3c19"
+    },
+    "features/sketch/dimension-arc-length/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 15,
+      "sha256": "8456ca1e446a6e12a7ef558bae51295e66dd4f280dda8f4ec6b2f11556623ed1"
+    },
+    "features/sketch/dimension-diameter/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 18,
+      "sha256": "8646329c44abffb3cf949093abbf7bc29099a52300123ac18b6240f65e924ea7"
+    },
+    "features/sketch/dimension-driven/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 14,
+      "sha256": "20fd3c22887d1b3ae626f88ac4423d766a3930d9559db3e8418b6f0f3e4cd40e"
+    },
+    "features/sketch/dimension-edit/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 49,
+      "sha256": "cc15ee5322c463b99c0666d45c1b1d9446222dc3b32a81535b21c5321dbaa26e"
+    },
+    "features/sketch/dimension-expression/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 15,
+      "sha256": "d05a4528030cc9c02a63f0ff290566359549a172f4ba4f3217c95bbf1714b982"
+    },
+    "features/sketch/dimension-linear/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 24,
+      "sha256": "910da5afe9e9363592e7e49c61cc32108920e300594c735403ff51888d97c1c0"
+    },
+    "features/sketch/dimension-radius/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 19,
+      "sha256": "4d025b348eab7a81503ded5c30c523e8c96087219c71ae8d28ebdc5786c948dc"
+    },
+    "features/sketch/dimension-settings/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 17,
+      "sha256": "f6fb0100531f111f2ce15e7d7791de4ac2790ab91dd4997dd9604db780d9aa3e"
+    },
+    "features/sketch/edit-coordinate-system/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 9,
+      "sha256": "82eeb591626dc0c7efd1f231ca74efea700c0398f2636d1691c321ed142b052a"
+    },
+    "features/sketch/ellipse/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 19,
+      "sha256": "e68b2682a78633d11ba0daffd08edfe654f99dfcb3219842c55c2762f62e07e3"
+    },
+    "features/sketch/equal/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 12,
+      "sha256": "824bc50c84e6b08f7134e9f6816a3859cbcf25575d08645956dc94e11eeed677"
+    },
+    "features/sketch/equation-curve/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 19,
+      "sha256": "c36cc47bf1f6ef6064ec313cb06f88d31e0996f61e714c2264be2df95f3f73ba"
+    },
+    "features/sketch/explode-block/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 5,
+      "sha256": "b7d2a1d9ec31640c4138b6fd1be769b449cb72b244c123fb0fb995fe752a13ae"
+    },
+    "features/sketch/extend/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 8,
+      "sha256": "8630f6b85a30533647187526b04d060158bdf5c203e42cc9ad54d360506c46ed"
+    },
+    "features/sketch/fillet/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 14,
+      "sha256": "90879ddc5aba1556454eccac58d30796c5bf1c0e02669f9b65ed3079d316e186"
+    },
+    "features/sketch/fix/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 11,
+      "sha256": "f06351728a1aa034d7ba9d8755a8ff0dde1e0ef86b94931fee20e8da8cb3b34b"
+    },
+    "features/sketch/geometry-format/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 20,
+      "sha256": "7d97d624d41d5849464ea1935017ec15d04b596b350c09033e5629ec31c42ae3"
+    },
+    "features/sketch/geometry-properties/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 10,
+      "sha256": "db1558dd661e3c85e35004d5d0875f664517aa7758cd32962d6f9bb7fd7e15f5"
+    },
+    "features/sketch/geometry-text/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 21,
+      "sha256": "09863eca1736f26cb8ae55c02408244b7ad1d6ef9b640484e24702b4ec27326f"
+    },
+    "features/sketch/horizontal/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 14,
+      "sha256": "afbecf8aa28019199c816eaef2dd473b7c4fb949cfe4fcadd6a4ad579d67990b"
+    },
+    "features/sketch/image/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 19,
+      "sha256": "bcee6674eede0d8bedb84c56faee444d2df4002c5d8d60fac5cd3e2c0a520c3f"
+    },
+    "features/sketch/insert-block/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 6,
+      "sha256": "1719e4af9334a5a817a2d2ef2c455e011944bd67ad6cd183a38ec0f522a6d87d"
+    },
+    "features/sketch/line-midpoint/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 6,
+      "sha256": "228dd6c32d85060e4ed8557fc9f0dc9ad32ed0cb34a595ea3fd234b8e876958b"
+    },
+    "features/sketch/line/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 28,
+      "sha256": "b02b56c835e5bdb8f57a7c31baffa70318ee299c047cb18e19ee2ae4b7782618"
+    },
+    "features/sketch/mirror/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 16,
+      "sha256": "3d0b12bf2e45921b0e6ee1dde2ab42d48cc57e19d0bcf2e046af1acd165223af"
+    },
+    "features/sketch/move/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 32,
+      "sha256": "808b5c2de7c389c110a7f57ff962699e692ed2349bcec01e3db0dedaf13ff4a0"
+    },
+    "features/sketch/new-sketch/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 10,
+      "sha256": "b89d2947fd7a3e596d47ff302fc301142e5d96981b675ea88d9bb01f5e4c4673"
+    },
+    "features/sketch/offset/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 12,
+      "sha256": "fa378c8675cf5b2b0252a2d3d71529dabddb4bcd3097e72354105b029452af0a"
+    },
+    "features/sketch/parallel/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 8,
+      "sha256": "c0e7677189424fb653ef8bc8a4b61fe0d5e551fb24595f43e485dcda72484251"
+    },
+    "features/sketch/pattern-circular/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 36,
+      "sha256": "02881c0fa4815f561aba010cfd9bdea81c08ebc5cdcc87afe7497891ea5cf83a"
+    },
+    "features/sketch/pattern-rectangular/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 55,
+      "sha256": "e135375829f3cc1aeb110e2d80fbf904ff977a3f7c3878beb0995f52990be276"
+    },
+    "features/sketch/perpendicular/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 8,
+      "sha256": "aae289ba1927fe5aad2b8cab1536655eaa205087cf9218838e6419f3c264d254"
+    },
+    "features/sketch/point/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 9,
+      "sha256": "8decb5d6d6e74a0462c4921fedec952023424cd4827bc25b74835ee9cdf71b9c"
+    },
+    "features/sketch/points-import/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 12,
+      "sha256": "c8fde67a8e62cf4df23a969f4e0f5b314f614772db2b7d901764070024ef79e6"
+    },
+    "features/sketch/polygon/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 28,
+      "sha256": "388272ba3484374198ce5b09fb7b1b08d6132168142d15f7002af86f4319425e"
+    },
+    "features/sketch/precise-input/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 7,
+      "sha256": "99fc4065808c7a3901c5007687ab6f9ed07121d8024b98e710b637620a5a0d2d"
+    },
+    "features/sketch/project-cut-edges/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 9,
+      "sha256": "f11948e0fbddc2b1af0d3646a81df2a31fa7348ccf6399df84c642cc306f05dc"
+    },
+    "features/sketch/project-dwg-geometry/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 4,
+      "sha256": "389cd32a1ff0e584ecfa3e2271ade3948196a70d6961c25f994ca93342049d15"
+    },
+    "features/sketch/project-flat-pattern/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 6,
+      "sha256": "4dd925a6b3000d160677b813f6ad8e97ecbf0ad38357cdcb127b385eee0ad664"
+    },
+    "features/sketch/project-geometry/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 17,
+      "sha256": "183eccf542d092a0b50fe4f29a07a2441e3fc25aeea9d6ccee8d10d4fd31c363"
+    },
+    "features/sketch/project-to-3d-sketch/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 7,
+      "sha256": "ac36738fa3184d3e239b22894612044071e1d88bca28ba60aa1bac7b0eadb3f9"
+    },
+    "features/sketch/rectangle-center/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 15,
+      "sha256": "94c613fd57b7e219a480d7b22749b3aee14774d86bb3e8c3a0e068e8d30a01bf"
+    },
+    "features/sketch/rectangle-three-point-center/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 14,
+      "sha256": "ac800d0321e645e565af4ab068e09e90c0bee1211760da15b5aeacef5e9c3de8"
+    },
+    "features/sketch/rectangle-three-point/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 11,
+      "sha256": "cc44cb138ba8845c3a25de1d5c97bb47ed76518bee86fef343e8a750150a43c9"
+    },
+    "features/sketch/rectangle-two-point/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 10,
+      "sha256": "f6282790873f545b8d3c98475acbfac0a29bc2423dbcddd9073b18547583eb6f"
+    },
+    "features/sketch/region-properties/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 8,
+      "sha256": "8eb94f1a2c2eb11ad67a213cca0cecb234ebf44dd740ad2a91a204c15da3b5e0"
+    },
+    "features/sketch/rotate/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 23,
+      "sha256": "afc3122064a19e902dfc3d15012f0e24c6a0f4ca53ae59a39627ab980fb81627"
+    },
+    "features/sketch/scale/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 33,
+      "sha256": "254636f50eb1aed5ce2b21309c6ec278928ba51c4170078047e4d6b2cce5c8ad"
+    },
+    "features/sketch/sketch-doctor/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 18,
+      "sha256": "202340195ba301f40a9297e13f730a261b0313abc3c46d0d9681e891bc98dcda"
+    },
+    "features/sketch/sketch-preferences/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 6,
+      "sha256": "1c7054bb770d7970473fd9d09395220272482b767e7130ff6e65ba8511051f08"
+    },
+    "features/sketch/sketch-visibility/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 2,
+      "sha256": "e4754ab3144a2b13e726c13400dbdcac9f697ce7d5c9ed8435f721d90a9ef9d4"
+    },
+    "features/sketch/slot-arc/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 24,
+      "sha256": "bb23a71636c3e0c42c167dbdcbe8a0ee4704525473e5da3717bfce450839af28"
+    },
+    "features/sketch/slot-center-point-arc/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 23,
+      "sha256": "086fa4df87f3630f3f9b2c0b0669cf16a8d1d3d846e24a96c812027a36a23b32"
+    },
+    "features/sketch/slot-center-point/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 14,
+      "sha256": "17849caa5e47d4ca4ad87282ef66bebd165fdb6baf0ab52538cae4ae974ab07a"
+    },
+    "features/sketch/slot-center-to-center/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 19,
+      "sha256": "07d3bbb22818eca2a8c82091875a43bd5d3f8ef378a02ef0eb5aab1a51aba6f0"
+    },
+    "features/sketch/slot-overall/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 19,
+      "sha256": "6e23137aaaedc71498f0431441412462b30c43ccb1ce0df0a9de007c88042767"
+    },
+    "features/sketch/smooth/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 10,
+      "sha256": "260d63bb744a63147ddc9364eeefe97f95df60af0a43b6de49ac54ad5cde2685"
+    },
+    "features/sketch/snap-to-grid/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 9,
+      "sha256": "426a64c08d7cfe81a1b210eb046081891aba5f997fdac4a3029d2b21f1385329"
+    },
+    "features/sketch/spline-control-vertex/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 39,
+      "sha256": "59f1287db2f31f117ac31081d72019f6f51055e6cfbee0d1e594b639da55bdff"
+    },
+    "features/sketch/spline-interpolation/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 43,
+      "sha256": "c2f9001e274f782d8f00067650c18a5a026a2621f8d91ee64b2429ba501d1f86"
+    },
+    "features/sketch/split/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 8,
+      "sha256": "0de0a14b499f7c044b52427392e8b36110456d0c986cbd83dffe2c4aeb3aa01b"
+    },
+    "features/sketch/stretch/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 58,
+      "sha256": "2ba81e08603acfb655c21c9f7cabc624c7fee5de25ca3452a4d3a15142709770"
+    },
+    "features/sketch/symmetric/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 12,
+      "sha256": "ad9c51faffb20d8c1fc96cbb64b852d3e39289e5ca59569be9e25a66687f6568"
+    },
+    "features/sketch/tangent/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 10,
+      "sha256": "025c625b508892d6ef0820d2608c2431482ef4ebce42596e45ccae9e4596cd6b"
+    },
+    "features/sketch/text/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 39,
+      "sha256": "0991b5e40450853851cf9227b0c892918f8982eea35aaea9f55a523de0933d33"
+    },
+    "features/sketch/trim/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 8,
+      "sha256": "384c25e67e7c3a2175d558ba22047d275eaa8ac273e11ad8bfb252d3846d0845"
+    },
+    "features/sketch/vertical/scenario.feature": {
+      "outlines": 0,
+      "scenario_declarations": 14,
+      "sha256": "6b9e39246583ef12d0921ad48a75f827ac4f3ca45bc0cdfff797acac7da9ba5f"
+    },
+    "features/solid-model/bend-part/bend-part.feature": {
+      "outlines": 0,
+      "scenario_declarations": 7,
+      "sha256": "63513aea1fe16310ff2379ab9bcbde406e40c195a8dc6b2d0d94d84e3de765cd"
+    },
+    "features/solid-model/boundary-patch/boundary-patch.feature": {
+      "outlines": 0,
+      "scenario_declarations": 6,
+      "sha256": "d001e6e2c59a2614f3c31c49aa4388da3215bd3788b6906fe0ef84e6b4314cd6"
+    },
+    "features/solid-model/chamfer/chamfer.feature": {
+      "outlines": 0,
+      "scenario_declarations": 9,
+      "sha256": "96508ed102b54dffe8325ee88091e1aaa88b8b79da7c00690ac97db12adda00d"
+    },
+    "features/solid-model/circular-pattern/circular-pattern.feature": {
+      "outlines": 0,
+      "scenario_declarations": 9,
+      "sha256": "05cdc6159fe9c07f789a3d0c4576fc05a4efc4e0254997507f14e5d1a2b59f22"
+    },
+    "features/solid-model/coil/coil.feature": {
+      "outlines": 0,
+      "scenario_declarations": 7,
+      "sha256": "b78f4d2ab4009ab79bc1b7b11a4d639f7b2514cf61db7b90057ba2ae83a02530"
+    },
+    "features/solid-model/combine/combine.feature": {
+      "outlines": 0,
+      "scenario_declarations": 8,
+      "sha256": "696627d2e4d37a0dc98f17beccf5f629e6ea2cbf51fbd9b4709b7d4de2967a01"
+    },
+    "features/solid-model/content-center-feature/content-center-feature.feature": {
+      "outlines": 0,
+      "scenario_declarations": 2,
+      "sha256": "ce7d832883bcd2839b2682d6bc37dea025733b5b120096ffe7a9896ca30d4e76"
+    },
+    "features/solid-model/copy-object/copy-object.feature": {
+      "outlines": 0,
+      "scenario_declarations": 6,
+      "sha256": "e303e32405b9638c82b251d176f7d86f4180b7e4344659c418ecbd1801a8c4e2"
+    },
+    "features/solid-model/create-ipart/create-ipart.feature": {
+      "outlines": 0,
+      "scenario_declarations": 8,
+      "sha256": "7d6a99f234ecdffa654e4a79f6b5cf3c3da15c8231e98517ec3f7fac17f52da4"
+    },
+    "features/solid-model/decal/decal.feature": {
+      "outlines": 0,
+      "scenario_declarations": 4,
+      "sha256": "92d87f51e72f44deb8e50b05105aa07f405249f39c08b21e1301824cd3447456"
+    },
+    "features/solid-model/delete-face/delete-face.feature": {
+      "outlines": 0,
+      "scenario_declarations": 5,
+      "sha256": "d99cdc7bea9f09950b4efad99f8fdfad96bb9cbd6c9b4334dad590b86c1f0a30"
+    },
+    "features/solid-model/derive/derive.feature": {
+      "outlines": 0,
+      "scenario_declarations": 5,
+      "sha256": "5fc74b5fd2cccbdceb08b9a18084e42e6dd529dd3150a4f9bd29a0bacc2b1b90"
+    },
+    "features/solid-model/direct-edit/direct-edit.feature": {
+      "outlines": 0,
+      "scenario_declarations": 8,
+      "sha256": "4ab4e6b5aaafd2ddf9e9a437d5bee0f45e08bb1d627e5d37a3dce777fb3d3563"
+    },
+    "features/solid-model/draft/draft.feature": {
+      "outlines": 0,
+      "scenario_declarations": 6,
+      "sha256": "5e79742306a424637c93c339dc0faa7c08cb40c8ef16e54047dd2946e9007dbb"
+    },
+    "features/solid-model/edit-factory-scope/edit-factory-scope.feature": {
+      "outlines": 0,
+      "scenario_declarations": 2,
+      "sha256": "59c6c6eafa9552c2b0012c16c08aa8497f32eb462f26fadf8ae11d2081c294a8"
+    },
+    "features/solid-model/emboss/emboss.feature": {
+      "outlines": 0,
+      "scenario_declarations": 7,
+      "sha256": "029838a36aaabc825a03dc3ead3a5170e45145d10db7f65f4e52f61341b48a20"
+    },
+    "features/solid-model/export-objects/export-objects.feature": {
+      "outlines": 0,
+      "scenario_declarations": 5,
+      "sha256": "411e61975d2f204bbfb991dd588608f934de9f13d6f3dbbd74364ccfb5cdd7dd"
+    },
+    "features/solid-model/extend-surface/extend-surface.feature": {
+      "outlines": 0,
+      "scenario_declarations": 6,
+      "sha256": "5045d07d1b47d60b11a7fb10eb899d475ea9e7f540880fc25960d39ff29fde57"
+    },
+    "features/solid-model/extract-ifeature/extract-ifeature.feature": {
+      "outlines": 0,
+      "scenario_declarations": 4,
+      "sha256": "3bdbc9f8b11081c693c7065577ac1344ee43d0c4ff7e683c2168e55974e589fd"
+    },
+    "features/solid-model/extrusion/extrusion.feature": {
+      "outlines": 0,
+      "scenario_declarations": 23,
+      "sha256": "e29fe9a04298d359a0e5937426c8a0075ae79c5c8c3ef3fc9becbecf042b83c7"
+    },
+    "features/solid-model/fillet/fillet.feature": {
+      "outlines": 0,
+      "scenario_declarations": 14,
+      "sha256": "8e10d99dccaba1b5abf627ca25cc1e3755712983f552813fb37236c27dac84f1"
+    },
+    "features/solid-model/finish/finish.feature": {
+      "outlines": 0,
+      "scenario_declarations": 5,
+      "sha256": "38086ce62c13645ba8fdcdc4a2ea99d466e0e9a324d874ca599bdb9deb401a05"
+    },
+    "features/solid-model/fit-mesh-face/fit-mesh-face.feature": {
+      "outlines": 0,
+      "scenario_declarations": 16,
+      "sha256": "2e41cbc04b88912131007f1faec36f9a1c4240f484d3e830ae401848ef780f69"
+    },
+    "features/solid-model/freeform-add-distance/freeform-add-distance.feature": {
+      "outlines": 0,
+      "scenario_declarations": 6,
+      "sha256": "8cfb3205fb12aa15be3107c8d079430f3f7a0a0b0d3a2993b99ed99daf8b4f37"
+    },
+    "features/solid-model/freeform-align-form/freeform-align-form.feature": {
+      "outlines": 0,
+      "scenario_declarations": 4,
+      "sha256": "25cef97b2f4b15bbe24cbf2e80f36c822f19dc97675d29a62604acf2fabade43"
+    },
+    "features/solid-model/freeform-box/freeform-box.feature": {
+      "outlines": 0,
+      "scenario_declarations": 4,
+      "sha256": "c8707104f0df5796641d74e5a7db59adfd941c67ec38596a292053adcd937b5a"
+    },
+    "features/solid-model/freeform-bridge/freeform-bridge.feature": {
+      "outlines": 0,
+      "scenario_declarations": 4,
+      "sha256": "a3a42b79996f677dcff460b2448036aa2dbb0c7e5e5cb4294d07d394b1758c6d"
+    },
+    "features/solid-model/freeform-convert/freeform-convert.feature": {
+      "outlines": 0,
+      "scenario_declarations": 6,
+      "sha256": "f02c97aa7476335471ea55013a815ebe7d356f02e0e42d41f02db2d71673c5ba"
+    },
+    "features/solid-model/freeform-crease-edges/freeform-crease-edges.feature": {
+      "outlines": 0,
+      "scenario_declarations": 3,
+      "sha256": "85f40b358617fb07335b91af5c061b47c1aff0afc71c588d193c1c183cbdf8f4"
+    },
+    "features/solid-model/freeform-cylinder/freeform-cylinder.feature": {
+      "outlines": 0,
+      "scenario_declarations": 4,
+      "sha256": "d6ae0239690c7c1278b972bc162ac9ffdba66545fa49aa694866a5d8983b144a"
+    },
+    "features/solid-model/freeform-edit-form/freeform-edit-form.feature": {
+      "outlines": 0,
+      "scenario_declarations": 5,
+      "sha256": "f6760fbf23094d98b9bf112b13775fbd24ce1490e12617a54af6431721b33e99"
+    },
+    "features/solid-model/freeform-face/freeform-face.feature": {
+      "outlines": 0,
+      "scenario_declarations": 3,
+      "sha256": "7d3ddb986635a9acfc18f3b12bc5c9c23a43586be635ad062fad51e0634cae8c"
+    },
+    "features/solid-model/freeform-flatten/freeform-flatten.feature": {
+      "outlines": 0,
+      "scenario_declarations": 4,
+      "sha256": "b745c4764a10ff0b8f27174983bd87fdcf8d2073bc702617c5f53624846e3a0b"
+    },
+    "features/solid-model/freeform-insert-edge/freeform-insert-edge.feature": {
+      "outlines": 0,
+      "scenario_declarations": 4,
+      "sha256": "cbc2bc2f1d777a1cfd2f2285c720e7fca9d46399350e8e957faef9c755d05f06"
+    },
+    "features/solid-model/freeform-make-uniform/freeform-make-uniform.feature": {
+      "outlines": 0,
+      "scenario_declarations": 3,
+      "sha256": "4940a318569b354cdcfbe550039337b47a34d93107bc4e282017c5c7bd7c3455"
+    },
+    "features/solid-model/freeform-match-edge/freeform-match-edge.feature": {
+      "outlines": 0,
+      "scenario_declarations": 6,
+      "sha256": "7b32ed28f8bd2a5e38675ead54ac82acf38fdca2ca2dc0e6751f101d819ba91a"
+    },
+    "features/solid-model/freeform-merge-edges/freeform-merge-edges.feature": {
+      "outlines": 0,
+      "scenario_declarations": 3,
+      "sha256": "e2cb8123e3ac25e3f9666e92244c26f92208eb26be9fad73062cfe9350f730e9"
+    },
+    "features/solid-model/freeform-mirror/freeform-mirror.feature": {
+      "outlines": 0,
+      "scenario_declarations": 4,
+      "sha256": "a092e3998a2779cbe69745a7a00b89ac7b3e26b156adb17e6dacfbb8cb6d60be"
+    },
+    "features/solid-model/freeform-plane/freeform-plane.feature": {
+      "outlines": 0,
+      "scenario_declarations": 4,
+      "sha256": "3b404b4dc3788d763ae5d5dae58b2d2ffc98d70e9bf1424e76ee0285bb186dc5"
+    },
+    "features/solid-model/freeform-quadball/freeform-quadball.feature": {
+      "outlines": 0,
+      "scenario_declarations": 5,
+      "sha256": "925806d0205eba0539125744677582a8abc170549f64b47fed840e6991054b21"
+    },
+    "features/solid-model/freeform-select-through/freeform-select-through.feature": {
+      "outlines": 0,
+      "scenario_declarations": 3,
+      "sha256": "2a51b982f0d0878f5c64b18ff0852c9aed717e651d33e9ef1c8d200aa633c16d"
+    },
+    "features/solid-model/freeform-sphere/freeform-sphere.feature": {
+      "outlines": 0,
+      "scenario_declarations": 4,
+      "sha256": "0867ebf240d6eb3f5677ee70524f5ee8a666298d3235d415f4722f2e1f4b7778"
+    },
+    "features/solid-model/freeform-subdivide/freeform-subdivide.feature": {
+      "outlines": 0,
+      "scenario_declarations": 4,
+      "sha256": "e2c75088f56ff8306440f6fcd930f25b47d8ef25fb810faf9b7d59e5cc6aded5"
+    },
+    "features/solid-model/freeform-symmetry/freeform-symmetry.feature": {
+      "outlines": 0,
+      "scenario_declarations": 4,
+      "sha256": "462551106ce85b788f14f00686ded463f9bf79be94648e65d63c029a015e7495"
+    },
+    "features/solid-model/freeform-thicken/freeform-thicken.feature": {
+      "outlines": 0,
+      "scenario_declarations": 4,
+      "sha256": "d8750b56636e5638d38e6f00c06d10d28fabcf6f41d8b33b22a394dcdffcf85b"
+    },
+    "features/solid-model/freeform-toggle-smooth/freeform-toggle-smooth.feature": {
+      "outlines": 0,
+      "scenario_declarations": 3,
+      "sha256": "f18774840586668888c587d9dbadf3ad162e26aa772e771d3eff32c6281cb535"
+    },
+    "features/solid-model/freeform-toggle-translucent/freeform-toggle-translucent.feature": {
+      "outlines": 0,
+      "scenario_declarations": 3,
+      "sha256": "73a0e421a2e875369f278eae5067185de208ad31a57dabe5f608dc599a652859"
+    },
+    "features/solid-model/freeform-torus/freeform-torus.feature": {
+      "outlines": 0,
+      "scenario_declarations": 4,
+      "sha256": "3c0075f9525a417807e3b7f0332cc544da91336e676d21f43e8c9348f6067086"
+    },
+    "features/solid-model/freeform-weld-vertices/freeform-weld-vertices.feature": {
+      "outlines": 0,
+      "scenario_declarations": 4,
+      "sha256": "158e6d4b1e438062618c3e6d1a40f2cf0df9f3cc8331f0abf416e4c25a9687d9"
+    },
+    "features/solid-model/hole/hole.feature": {
+      "outlines": 0,
+      "scenario_declarations": 11,
+      "sha256": "97a3cdec10ab9e9f0aa509d1f998a8f6a973e1ff264eeac7cfcb5ce7047a114a"
+    },
+    "features/solid-model/ifeature-boss-round/ifeature-boss-round.feature": {
+      "outlines": 0,
+      "scenario_declarations": 4,
+      "sha256": "98af25d47683208365b257e1d24fa8035702010127eca8ee5c86d63e6fbebca7"
+    },
+    "features/solid-model/imate/imate.feature": {
+      "outlines": 0,
+      "scenario_declarations": 9,
+      "sha256": "670fcc5cd08d7b94f3232a565b780f1c06d245335cbf52a0f67820dbf1e06d33"
+    },
+    "features/solid-model/import/import.feature": {
+      "outlines": 0,
+      "scenario_declarations": 12,
+      "sha256": "d9fba484d2b3abda68625d65b9838e730edcd03a5b196c6b7fd87a7709c7a849"
+    },
+    "features/solid-model/insert-ifeature/insert-ifeature.feature": {
+      "outlines": 0,
+      "scenario_declarations": 4,
+      "sha256": "767fe8fb13acfeb746f40bd6f1c5814eb7db49a89f8034c136881e2c0e650e02"
+    },
+    "features/solid-model/loft/loft.feature": {
+      "outlines": 0,
+      "scenario_declarations": 15,
+      "sha256": "9b4e48acd5cebed2ffd7b269a9a832952cbc10a7aae719d9977d4720bc5c5374"
+    },
+    "features/solid-model/mark/mark.feature": {
+      "outlines": 0,
+      "scenario_declarations": 5,
+      "sha256": "df26685aaff7054e516fc52ed9b5818fdd601a7dc274605441b1a9a1a64ee9e7"
+    },
+    "features/solid-model/mirror/mirror.feature": {
+      "outlines": 0,
+      "scenario_declarations": 7,
+      "sha256": "d39f2146ed7e931e7c81a178184bb2b019a477a502b70588a2cf0d195054388f"
+    },
+    "features/solid-model/move-bodies/move-bodies.feature": {
+      "outlines": 0,
+      "scenario_declarations": 9,
+      "sha256": "38d4a5298c49ec1ec5747c353b43fd6cfe32c72ba4d7be7df27fee5f0a0a29ed"
+    },
+    "features/solid-model/projection-fixtures/projection-fixtures.feature": {
+      "outlines": 0,
+      "scenario_declarations": 2,
+      "sha256": "43f8e20c04f910e1497c7d8cf84f3dde5f003bd37b8434cae65a0287d9c961b0"
+    },
+    "features/solid-model/rectangular-pattern/rectangular-pattern.feature": {
+      "outlines": 0,
+      "scenario_declarations": 8,
+      "sha256": "d30359206ca751704aed490ac1e26c17c3f2a8eef64d17aebc2b38a591b2bad6"
+    },
+    "features/solid-model/repair-bodies/repair-bodies.feature": {
+      "outlines": 0,
+      "scenario_declarations": 13,
+      "sha256": "e81676c570088b03100885b1bee020f0784029d074608aa55f4f923cf8e6a17e"
+    },
+    "features/solid-model/replace-face/replace-face.feature": {
+      "outlines": 0,
+      "scenario_declarations": 4,
+      "sha256": "2c17433d3347661f9379c658edb7ab5dcc352b00989dc67a9a52e8d083ebbd53"
+    },
+    "features/solid-model/revolve/revolve.feature": {
+      "outlines": 0,
+      "scenario_declarations": 27,
+      "sha256": "79b4c07c188d08a173cbecaaa77f2df699cc153c269b364289b97976f4badeeb"
+    },
+    "features/solid-model/rib/rib.feature": {
+      "outlines": 0,
+      "scenario_declarations": 5,
+      "sha256": "c71e62173f19f368c886ed2be84a7a33b081459b0edf47bf4de349f8769de402"
+    },
+    "features/solid-model/ruled-surface/ruled-surface.feature": {
+      "outlines": 0,
+      "scenario_declarations": 10,
+      "sha256": "7d19abb283176b7511b2f9974fbc7162cc7c3b49b38e2f13252df3371da4fa62"
+    },
+    "features/solid-model/sculpt/sculpt.feature": {
+      "outlines": 0,
+      "scenario_declarations": 5,
+      "sha256": "c166426a2dd5f7eeb0a8e43e922d5297cf73be4e5d81c4545fcb6d69fb5e776f"
+    },
+    "features/solid-model/shape-generator/shape-generator.feature": {
+      "outlines": 0,
+      "scenario_declarations": 30,
+      "sha256": "b8197a528f0ab3da99a7278f499b59ba7e32d3a4065df8113c6727c36fde9600"
+    },
+    "features/solid-model/shell/shell.feature": {
+      "outlines": 0,
+      "scenario_declarations": 7,
+      "sha256": "cd11f6dd376bae4fe6791996c22182ed5172ab5b8c072ddd6c4fedfd21bcb2b1"
+    },
+    "features/solid-model/simplify/simplify.feature": {
+      "outlines": 0,
+      "scenario_declarations": 17,
+      "sha256": "d72639e4c49de0f089ad2e60912b4b2de2cbe336d90fa687b9900e184d651e70"
+    },
+    "features/solid-model/sketch-driven-pattern/sketch-driven-pattern.feature": {
+      "outlines": 0,
+      "scenario_declarations": 8,
+      "sha256": "2340fd53ae1ad836b593e06bfcc0cf8f1678347d3d24dbf1b2f0c4c1b01ad3c1"
+    },
+    "features/solid-model/slot/slot.feature": {
+      "outlines": 0,
+      "scenario_declarations": 8,
+      "sha256": "d5240e07448d6d181ab2bdde0145aeeac922f9e76a14cd50ea8fde12c091e821"
+    },
+    "features/solid-model/split/split.feature": {
+      "outlines": 0,
+      "scenario_declarations": 7,
+      "sha256": "853093f81789ee9154e14b2074bce05b3fd0a3b1037dd044fd9a7b2effeb9af8"
+    },
+    "features/solid-model/stitch/stitch.feature": {
+      "outlines": 0,
+      "scenario_declarations": 5,
+      "sha256": "497382983ebebd533d0a436c2f6886b558ade0e5ebb855e82e632f3318da61e7"
+    },
+    "features/solid-model/surface-trim/surface-trim.feature": {
+      "outlines": 0,
+      "scenario_declarations": 5,
+      "sha256": "9a99fec316f470b566f49d62c54be086a7ca67e5aaccbba9bf2855edc6c1560b"
+    },
+    "features/solid-model/sweep/sweep.feature": {
+      "outlines": 0,
+      "scenario_declarations": 21,
+      "sha256": "adad9cab52c12d1f289198b0b220f4a1357c115e5dbd698354c79e88c96f4b3e"
+    },
+    "features/solid-model/thicken-offset/thicken-offset.feature": {
+      "outlines": 0,
+      "scenario_declarations": 9,
+      "sha256": "0de4e5dd10f298cf656ca9dd51bbdd52ed520cb7e38f860984055e1ee8ceceda"
+    },
+    "features/solid-model/thread/thread.feature": {
+      "outlines": 0,
+      "scenario_declarations": 10,
+      "sha256": "bc18eb9c1afd444a337a4e1eac4cc4e4ac441aac8b24d3db90ba198271bc5bbe"
+    },
+    "features/solid-model/unwrap/unwrap.feature": {
+      "outlines": 0,
+      "scenario_declarations": 5,
+      "sha256": "07fe04dfe0656621e5f5c79327e9d0d9f7a887147708c8aa06735b5b63055ace"
+    },
+    "features/solid-model/user-coordinate-system/user-coordinate-system.feature": {
+      "outlines": 0,
+      "scenario_declarations": 4,
+      "sha256": "ebb47050329da0a07d1c4ddc8b41de20d6f76ce5946dda03b7fbb3009a31a82b"
+    },
+    "features/solid-model/work-axis/work-axis.feature": {
+      "outlines": 0,
+      "scenario_declarations": 9,
+      "sha256": "489f8f38f5b841fd6dbd2f51cf8516bba1a90eee4822c20ee9bf750ac1ea4e21"
+    },
+    "features/solid-model/work-plane/work-plane.feature": {
+      "outlines": 0,
+      "scenario_declarations": 12,
+      "sha256": "5a974eab94591d52592098c4bcff611b21f5bade37473e0ac70fdf8893355a4b"
+    },
+    "features/solid-model/work-point/work-point.feature": {
+      "outlines": 0,
+      "scenario_declarations": 8,
+      "sha256": "7fddc90ce1828529a8d77c3ddc8a38f913d0ea6cc5ed05f172545905de4ce103"
+    }
+  },
+  "source": "/mnt/vininas-projects/MCAD-Scenarios",
+  "version": 1
+}

@@ -1,0 +1,91 @@
+# BDD workflow for the Rust port
+
+The live MCAD-Scenarios source is the behavior benchmark. The Go implementation
+in `../Oblikovati` is the architecture and implementation reference. Application
+features have priority; sketch work proceeds in parallel. Do not treat a source
+binding, a unit test, or an API-only test as proof of a native UI scenario.
+
+## Discover and triage changes
+
+Run this command at the start of a work session and before reporting results:
+
+```sh
+python3 tools/bdd/inventory.py "$OBK_BDD_ROOT" \
+  --baseline architecture/rust-port/bdd-source-inventory.json
+```
+
+Set `OBK_BDD_ROOT` to the absolute path of the live MCAD-Scenarios directory.
+The inventory compares file content hashes, not modification times. It reports
+added, changed, and removed files. Scenario counts are declarations, not
+executable test counts: an outline can produce multiple cases. The command does
+not execute tests and does not claim a pass or failure.
+
+Review every changed file, including edits that keep the same scenario name.
+Compare its requirements with the implementation and previous evidence. A
+change invalidates all previous results for that file until it is run again.
+If a file is renamed, treat the old path as removed and the new path as added.
+If a source correction conflicts with observed behavior or other scenarios,
+record the conflict in the work ledger and resolve it against the scenario
+maintainers; do not silently weaken an assertion.
+
+After triage, add the new or changed work to `bdd-work-ledger.md` and update the
+baseline with the same command and `--update`. Commit the ledger and baseline
+together. The baseline is a discovery checkpoint, not evidence that features
+are implemented. Check the live source again before committing: it can change
+while work is in progress.
+
+## Select and implement work
+
+Choose application work first, then sketch. Record the feature path, the
+scenario names or range, the problem, and the current state in the ledger.
+Keep one active row per coherent work item. Link its issue when one exists.
+Use the Go source as a design reference and implement through the shared Rust
+host operations. Add the appropriate model and host tests, then drive the native
+window with mouse and keyboard for UI behavior. Close test windows afterward.
+
+Use these states:
+
+- **Not started**: the requirement is known but not being implemented.
+- **In progress**: implementation or focused verification is underway.
+- **Blocked**: identify the concrete external dependency or scenario conflict.
+- **Verified**: native scenario evidence is recorded for the current inputs.
+- **Needs rerun**: source, application code, dependencies, or relevant runtime
+  changed after the recorded run.
+
+Do not mark a full feature verified from a subset of its scenarios. Record the
+exact filter and cases run. Unbound, skipped, filtered, or unexecuted cases are
+not passes. Use full area runs to report area totals; the default sketch gate
+only selects its accepted feature list, so it is not a full sketch run.
+
+## Record test evidence
+
+Give each run its own absolute `OBK_BDD_REPORTS` directory. The existing default
+report directory is overwritten on each run. Record in the ledger:
+
+1. Feature file path and SHA-256 before and after the run. If the hashes differ,
+   discard the run as current evidence and rerun against stable source.
+2. Rust application commit, relevant uncommitted changes, Martensite dependency,
+   operating system, display and renderer setup.
+3. Exact command, feature and scenario filters, date, pass/fail/skip counts,
+   and the saved Cucumber JSON and JUnit report locations.
+4. Remaining gaps, failures, or links to scenario and kernel defect records.
+
+For a focused native run, set `OBK_BDD_FEATURE` to the feature folder and, when
+needed, `OBK_BDD_SCENARIO` to a scenario-name substring. The latter is a filter,
+not an exact identifier; inspect the report to identify every executed case.
+For example, after configuring the local Vulkan runtime and an Xvfb display:
+
+```sh
+export OBK_BDD_ROOT=/path/to/MCAD-Scenarios
+export OBK_BDD_REPORTS=/absolute/path/to/unique-report-directory
+export OBK_BDD_FEATURE=pattern-rectangular
+cargo test --locked -p oblikovati-head --lib \
+  sketch_scenarios_use_the_native_window -- --nocapture
+```
+
+The report directory is local output, not a durable shared ledger. Preserve or
+publish the relevant reports using the team's normal artifact storage and put
+their accessible location in the ledger. If reports are lost, the run remains
+historical context, not auditable current acceptance evidence. Do not sum
+reports from different revisions, changed scenario files, or overlapping
+filters as a current total.
