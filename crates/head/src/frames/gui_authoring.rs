@@ -16,6 +16,9 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
             owner.set_document_units_from_gui(*document, request)
         }
         GuiShellAction::CreateDrawingBaseView(request) => owner.base_view_from_gui(request),
+        GuiShellAction::PlaceComponent { assembly, request } => {
+            owner.place_component_from_gui(*assembly, request)
+        }
         GuiShellAction::PreviewDrawingBaseView(request) => {
             owner.base_view_preview_from_gui(request.as_ref())
         }

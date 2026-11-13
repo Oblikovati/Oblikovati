@@ -16,6 +16,11 @@ pub enum GuiShellAction {
         request: oblikovati_api::wire::SetDocumentUnitsArgs,
     },
     CreateDrawingBaseView(GuiBaseViewRequest),
+    /// Place an open component in the active assembly.
+    PlaceComponent {
+        assembly: u64,
+        request: oblikovati_api::wire::PlaceOccurrenceArgs,
+    },
     PreviewDrawingBaseView(Option<GuiBaseViewRequest>),
     SetUiScale(oblikovati_model::ui_scale::UiScaleOptions),
     SetPromptFrequency {

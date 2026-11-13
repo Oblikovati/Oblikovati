@@ -8,6 +8,8 @@ use crate::{GuiCommandState, GuiShellAction};
 use imgui::{Condition, Ui};
 use oblikovati_api::types::{DOCUMENT_DRAWING, DOCUMENT_PRESENTATION};
 use std::rc::Rc;
+#[path = "assembly_place_dialog.rs"]
+mod assembly_place_dialog;
 #[path = "base_view_dialog.rs"]
 mod base_view_dialog;
 #[path = "drawing_lines.rs"]
@@ -35,6 +37,7 @@ pub(crate) struct WorkspaceArea {
 pub(crate) struct DocumentWorkspaces {
     insert: InsertDialog,
     base_view: base_view_dialog::BaseViewDialog,
+    assembly_place: assembly_place_dialog::AssemblyPlaceDialog,
     expecting_presentation: bool,
     last_document: Option<u64>,
 }
@@ -43,12 +46,16 @@ impl Default for DocumentWorkspaces {
         Self {
             insert: InsertDialog::new(),
             base_view: Default::default(),
+            assembly_place: Default::default(),
             expecting_presentation: false,
             last_document: None,
         }
     }
 }
 impl DocumentWorkspaces {
+    pub(crate) fn request_assembly_place(&mut self) {
+        self.assembly_place.request();
+    }
     pub(crate) fn request_base_view(&mut self) {
         self.base_view.request();
     }
@@ -67,7 +74,10 @@ impl DocumentWorkspaces {
         });
     }
     pub(crate) fn needs_frame(&self) -> bool {
-        self.expecting_presentation || self.insert.opening || self.base_view.needs_frame()
+        self.expecting_presentation
+            || self.insert.opening
+            || self.base_view.needs_frame()
+            || self.assembly_place.needs_frame()
     }
     /// Draw the active document's surroundings; example: `workspaces.panel(ui, &state, area)`.
     pub(crate) fn panel(
@@ -106,6 +116,7 @@ impl DocumentWorkspaces {
         }
         self.insert.panel(ui);
         self.base_view.panel(ui, state, actions);
+        self.assembly_place.panel(ui, state, actions);
     }
 }
 fn active_name(state: &GuiCommandState) -> &str {

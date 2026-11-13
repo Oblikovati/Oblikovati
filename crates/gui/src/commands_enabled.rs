@@ -85,6 +85,21 @@ impl GuiShellAction {
                     && !state.transaction_open
             }
             Self::PreviewDrawingBaseView(None) => true,
+            Self::PlaceComponent { assembly, request } => {
+                state.document == Some(*assembly)
+                    && state.document_type == Some(oblikovati_api::types::DOCUMENT_ASSEMBLY)
+                    && !state.transaction_open
+                    && request.document != *assembly
+                    && state.documents.iter().any(|row| {
+                        row.id == request.document
+                            && matches!(row.type_.as_str(), "part" | "assembly")
+                    })
+                    && state
+                        .document_storage
+                        .get(&request.document)
+                        .is_some_and(|file| file.path.is_some())
+                    && !request.name.trim().is_empty()
+            }
             Self::PreviewDrawingBaseView(Some(request)) => {
                 Self::CreateDrawingBaseView(request.clone()).enabled(state)
             }

@@ -21,6 +21,13 @@ macro_rules! forward_owner_view_work {
         ) -> Result<bool, String> {
             self.$owner.base_view_from_gui(request)
         }
+        fn place_component_from_gui(
+            &mut self,
+            assembly: u64,
+            request: &oblikovati_api::wire::PlaceOccurrenceArgs,
+        ) -> Result<bool, String> {
+            self.$owner.place_component_from_gui(assembly, request)
+        }
         fn extrude_from_gui(
             &mut self,
             document: u64,

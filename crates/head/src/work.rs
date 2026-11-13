@@ -96,6 +96,16 @@ pub trait HeadWork {
             "drawing view {request:?}: expected a drawing owner"
         ))
     }
+    /// Place an open component through the document owner; example: `work.place_component_from_gui(assembly, &request)?`.
+    fn place_component_from_gui(
+        &mut self,
+        assembly: u64,
+        request: &oblikovati_api::wire::PlaceOccurrenceArgs,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "assembly {assembly} placement {request:?}: expected an assembly owner"
+        ))
+    }
     /// Apply an Extrude dialog request through the document command owner.
     /// Example: `work.extrude_from_gui(document, sketch, 0, "10 mm")?`.
     fn extrude_from_gui(

@@ -76,6 +76,20 @@ impl<
     ) -> Result<bool, String> {
         self.create_drawing_base_view(request)
     }
+    fn place_component_from_gui(
+        &mut self,
+        assembly: u64,
+        request: &oblikovati_api::wire::PlaceOccurrenceArgs,
+    ) -> Result<bool, String> {
+        if self.files.workspace().active_document() != Some(assembly) {
+            return Err(format!("assembly {assembly}: expected the active assembly"));
+        }
+        oblikovati_api::client::Client::new(self.document_host())
+            .assembly()
+            .place(request)
+            .map_err(|cause| cause.to_string())?;
+        Ok(true)
+    }
     fn extrude_from_gui(
         &mut self,
         document: u64,

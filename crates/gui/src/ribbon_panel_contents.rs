@@ -131,7 +131,16 @@ pub(crate) fn draw_panel_content(
         RibbonPanel::Visibility => visibility_controls(ui, state, actions),
         RibbonPanel::Windows => windows_controls(ui, origin, state, owners, actions),
         RibbonPanel::Component => {
-            muted_commands(ui, origin, owners.icons, &["Place", "Create"], NOT_PORTED)
+            owners.icons.cursor(ui, origin, [0., 0.]);
+            let disabled = ui.begin_disabled(owners.home_active || state.transaction_open);
+            if crate::widget_abi::button(ui, "Place", owners.icons.cell([108., 26.])) {
+                owners.workspaces.request_assembly_place();
+            }
+            drop(disabled);
+            owners.icons.cursor(ui, origin, [0., 30.]);
+            let disabled = ui.begin_disabled(true);
+            crate::widget_abi::button(ui, "Create", owners.icons.cell([108., 26.]));
+            drop(disabled);
         }
         RibbonPanel::SheetMetalTools => {
             muted_commands(
