@@ -146,6 +146,11 @@ claim that each file has been individually triaged.
   through the Rust package reader and re-encoding. The generator is retained
   with the fixture. Typed open still refuses this populated package until the
   reference and rendering paths exist.
+- The package layer can prepare validated occurrence changes while preserving
+  the other Go package fields. It refuses changes to component references or
+  edits with unported dependent patterns or features; a document owner must
+  eventually perform those operations with the reference graph. This does not
+  enable populated assembly opening or claim an atomic save by itself.
 - The drawing browser now lists the authored sheets, borders, title blocks and
   views, and browser search uses those same rows. Unit tests cover multiple
   sheets, a missing border and searching for a view.
