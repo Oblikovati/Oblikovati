@@ -63,6 +63,9 @@ claim that each file has been individually triaged.
   script saves capture referenced views, and native file paths retain their OS
   bytes. A missing source prevents a drawing save. A host without the injected
   projection service still refuses to save a drawing with views.
+  The file workspace can now retrieve the validated last-saved view geometry
+  after save or reopen, even when the live drawing has since changed. The
+  deferred-open owner, rendering and command policy still need to consume it.
   Seven native drawing tests passed, including real projected-line storage and
   a mixed-success batch; the 416 session lifecycle and 726 API query tests passed.
 - The full Open feature, SHA-256

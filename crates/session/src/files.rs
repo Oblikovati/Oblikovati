@@ -190,6 +190,18 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         Ok(())
     }
 
+    /// Read the last saved drawing presentation; example: `files.saved_drawing_views(id)?`.
+    pub fn saved_drawing_views(
+        &self,
+        id: u64,
+    ) -> Result<Option<oblikovati_persistence::package::SavedDrawingViews>, FileWorkspaceError>
+    {
+        let file = self.retained_file(id)?;
+        file.package
+            .restore_saved_drawing_views()
+            .map_err(FileWorkspaceError::Package)
+    }
+
     /// Change focus without changing command ownership; example: `host.activate(id)?;`.
     pub fn activate(&mut self, id: u64) -> Result<(), WorkspaceError> {
         self.workspace.activate(id)

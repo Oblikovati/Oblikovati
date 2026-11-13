@@ -102,6 +102,7 @@ fn staged_view_geometry_is_saved_atomically_and_rejects_a_stale_recipe() {
         )
         .unwrap()
         .session_id;
+    assert_eq!(host.saved_drawing_views(drawing).unwrap(), None);
     author_view(&mut host, drawing);
     let views = SavedDrawingViews {
         version: SavedDrawingViews::VERSION,
@@ -126,6 +127,11 @@ fn staged_view_geometry_is_saved_atomically_and_rejects_a_stale_recipe() {
         package.restore_saved_drawing_views().unwrap(),
         Some(views.clone())
     );
+    assert_eq!(
+        host.saved_drawing_views(drawing).unwrap(),
+        Some(views.clone())
+    );
+    assert!(host.saved_drawing_views(u64::MAX).is_err());
     let copy = path("cached-copy.odd");
     host.save_copy(drawing, &copy, None, "alpha", &mut source)
         .unwrap();
@@ -147,6 +153,10 @@ fn staged_view_geometry_is_saved_atomically_and_rejects_a_stale_recipe() {
                 .set_model_reference("/project/other.opd")
         })
         .unwrap();
+    assert_eq!(
+        host.saved_drawing_views(drawing).unwrap(),
+        Some(views.clone())
+    );
     assert!(host.save(drawing, "alpha", &mut source).is_err());
     assert_eq!(host.files().contents.borrow()[&target], bytes);
     let mut updated = views;
@@ -160,6 +170,17 @@ fn staged_view_geometry_is_saved_atomically_and_rejects_a_stale_recipe() {
             .unwrap()
             .restore_saved_drawing_views()
             .unwrap(),
-        Some(updated)
+        Some(updated.clone())
     );
+    let reopened = host
+        .open(
+            &target,
+            ContentObserver,
+            "alpha",
+            &mut source,
+            OpenActivation::Activate,
+        )
+        .unwrap()
+        .session_id();
+    assert_eq!(host.saved_drawing_views(reopened).unwrap(), Some(updated));
 }
