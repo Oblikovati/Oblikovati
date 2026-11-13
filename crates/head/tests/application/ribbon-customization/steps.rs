@@ -72,6 +72,7 @@ fn transfer_to_target(world: &mut ApplicationWorld) {
     click_in_customize(world, ">");
 }
 #[then("\"2D Sketches\" appears in the custom panel list")]
+#[then("\"2D Sketches\" remains in the Part Tools custom panel list")]
 fn sketches_in_target(world: &mut ApplicationWorld) {
     let command = world.run_in_window("Customize", "2DSketches");
     let target = world.run_in_window("Customize", "Custompanel");
@@ -126,8 +127,29 @@ fn empty_tools_customization(world: &mut ApplicationWorld) {
 }
 #[when("the user stages \"2D Sketches\" in the custom panel")]
 #[when("the user adds \"2D Sketches\" to the custom panel without applying")]
+#[when("the user adds \"2D Sketches\" to the custom panel")]
 fn stage_sketch_command(world: &mut ApplicationWorld) {
     stage_sketch_visibility(world);
+}
+#[when("the user selects the \"Keyboard\" customization tab")]
+fn select_keyboard_customization(world: &mut ApplicationWorld) {
+    click_in_customize(world, "Keyboard");
+}
+#[then("the keyboard command list is displayed")]
+fn keyboard_command_list_is_visible(world: &mut ApplicationWorld) {
+    let content = world.window_text("Customize");
+    assert!(content.contains("CommandName"));
+    assert!(content.contains("Category"));
+}
+#[then("\"Apply\" and \"Cancel\" remain available")]
+fn customization_edits_remain_available(world: &mut ApplicationWorld) {
+    for action in ["Apply", "Cancel"] {
+        assert_eq!(world.run_in_window("Customize", action).alpha, u8::MAX);
+    }
+}
+#[when("the user returns to the \"Ribbon\" customization tab")]
+fn return_to_ribbon_customization(world: &mut ApplicationWorld) {
+    click_in_customize(world, "Ribbon");
 }
 #[then("the target indicates a pending change")]
 #[then("the target still indicates a pending change")]
