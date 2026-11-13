@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Kept the ribbon docking submenu closed after Escape until it is opened again.
+
 - Made the default ribbon display control toggle between full and tabs-only modes.
 
 - Made Precise Input show coordinates and the triad for the selected reference mode.

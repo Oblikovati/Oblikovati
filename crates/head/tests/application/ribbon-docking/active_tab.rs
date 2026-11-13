@@ -29,11 +29,35 @@ fn right_click_model(world: &mut ApplicationWorld) {
     world.right_click(super::super::diagnostics::pointer_pixels(center));
     world.pump(Vec::new());
 }
+#[when("I right-click the active 3D Model tab and open Docking Positions")]
+fn open_model_docking_positions(world: &mut ApplicationWorld) {
+    right_click_model(world);
+    open_docking_positions(world);
+}
+#[when("I right-click the active 3D Model tab and choose Left from Docking Positions")]
+fn dock_left_from_model_tab(world: &mut ApplicationWorld) {
+    open_model_docking_positions(world);
+    world.click_text("Left");
+    world.pump(Vec::new());
+}
 #[then("the 3D Model ribbon remains visible")]
 fn model_still_visible(world: &mut ApplicationWorld) {
     world.expect_no_text("Undock Ribbon");
     world.expect_text("Start 2D Sketch");
     world.expect_text("Modify");
+}
+#[then("the Docking Positions submenu closes and the context menu remains open")]
+fn docking_submenu_closed(world: &mut ApplicationWorld) {
+    world.expect_no_text("Left");
+    world.expect_no_text("Right");
+    world.expect_text("Undock Ribbon");
+}
+#[then("the context menu closes and the 3D Model ribbon remains docked at the top")]
+fn context_closed_at_top(world: &mut ApplicationWorld) {
+    world.expect_no_text("Undock Ribbon");
+    world.expect_text("Start 2D Sketch");
+    assert!(window_geometry(COLUMN).is_none());
+    assert!(window_geometry(FLOATING).is_none());
 }
 #[when("the user right-clicks the active Manage tab")]
 fn right_click_manage(world: &mut ApplicationWorld) {
@@ -137,5 +161,46 @@ fn hidden_captions_keep_narrow_collapsed_panels_named() {
     ]));
     world.pump(Vec::new());
     world.expect_text("Hole");
+    world.close();
+}
+
+#[test]
+fn docking_submenu_reopens_after_escape_and_moves_the_ribbon() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    right_click_model(&mut world);
+    let row = world.run("Docking Positions").center();
+    world.hover(super::super::diagnostics::pointer_pixels(row));
+    world.pump(Vec::new());
+    world.expect_text("Left");
+    world.escape();
+    world.pump(Vec::new());
+    docking_submenu_closed(&mut world);
+    world.click_text("Docking Positions");
+    world.pump(Vec::new());
+    world.expect_text("Left");
+    world.click_text("Left");
+    world.pump(Vec::new());
+    assert!(window_geometry(COLUMN).is_some());
+    world.expect_no_text("Undock Ribbon");
+    world.close();
+}
+
+#[test]
+fn docking_submenu_opens_and_closes_with_arrow_keys() {
+    use oblikovati_viewport::ViewportPhysicalKey;
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    right_click_model(&mut world);
+    for _ in 0..8 {
+        world.key(ViewportPhysicalKey::DownArrow, false);
+        world.key(ViewportPhysicalKey::RightArrow, false);
+        if world.shows("Left") {
+            break;
+        }
+    }
+    world.expect_text("Left");
+    world.key(ViewportPhysicalKey::LeftArrow, false);
+    docking_submenu_closed(&mut world);
     world.close();
 }

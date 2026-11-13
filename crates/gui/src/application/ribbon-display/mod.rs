@@ -4,6 +4,7 @@ use crate::ribbon::RibbonTab;
 use crate::ribbon_panels::RibbonPanel;
 use imgui::Ui;
 use std::collections::BTreeSet;
+mod docking_menu;
 mod panel_selector;
 pub(crate) use panel_selector::PANEL_SELECTOR_WIDTH;
 
@@ -93,6 +94,8 @@ pub(crate) struct RibbonDisplayState {
     pub placement: RibbonPlacement,
     pub side_anchor: Option<SideAnchor>,
     context_requested: bool,
+    docking_open: bool,
+    docking_hover_blocked: bool,
     customize_requested: bool,
     /// A choice in Show Panels ends the whole menu, as a choice in any other row does.
     close_context_menu: bool,
@@ -121,6 +124,8 @@ impl Default for RibbonDisplayState {
             placement: RibbonPlacement::default(),
             side_anchor: None,
             context_requested: false,
+            docking_open: false,
+            docking_hover_blocked: false,
             customize_requested: false,
             close_context_menu: false,
             selector_keyboard_started: false,
@@ -212,6 +217,8 @@ impl RibbonDisplayState {
             ui.open_popup(CONTEXT_MENU);
         }
         let Some(_menu) = ui.begin_popup(CONTEXT_MENU) else {
+            self.docking_open = false;
+            self.docking_hover_blocked = false;
             return;
         };
         muted_context_item(ui, "Ribbon Appearance");
@@ -223,9 +230,6 @@ impl RibbonDisplayState {
         {
             self.show_panel_titles = !self.show_panel_titles;
         }
-        if std::mem::take(&mut self.close_context_menu) {
-            ui.close_current_popup();
-        }
         if ui
             .menu_item_config("Customize User Commands")
             .enabled(customizable)
@@ -233,14 +237,10 @@ impl RibbonDisplayState {
         {
             self.customize_requested = true;
         }
-        ui.menu("Docking Positions", || {
-            for (label, placement) in DOCKING_POSITIONS {
-                let checked = self.placement == placement;
-                if ui.menu_item_config(label).selected(checked).build() {
-                    self.place(placement);
-                }
-            }
-        });
+        self.docking_menu(ui);
+        if std::mem::take(&mut self.close_context_menu) {
+            ui.close_current_popup();
+        }
         let floating = self.placement == RibbonPlacement::Floating;
         if ui
             .menu_item_config("Undock Ribbon")

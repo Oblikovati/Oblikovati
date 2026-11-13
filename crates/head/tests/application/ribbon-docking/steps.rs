@@ -94,10 +94,12 @@ fn context_menu(world: &mut ApplicationWorld) {
     open_context_menu(world);
 }
 #[when("I open Docking Positions")]
+#[when("opens Docking Positions")]
 fn docking_positions(world: &mut ApplicationWorld) {
     open_docking_positions(world);
 }
 #[then("the menu offers Top, Left and Right")]
+#[then("the submenu offers Top, Left and Right")]
 fn positions_offered(world: &mut ApplicationWorld) {
     for position in ["Top", "Left", "Right"] {
         world.expect_text(position);
@@ -123,6 +125,7 @@ fn right_checked(world: &mut ApplicationWorld) {
 }
 #[given("the model browser is docked on the left")]
 #[then("the model browser is visible on the left of the viewport")]
+#[then("the model browser remains visible to the left of the viewport")]
 fn browser_left_side(world: &mut ApplicationWorld) {
     let (position, _) = window_geometry("Model").expect("expected the browser");
     assert!(

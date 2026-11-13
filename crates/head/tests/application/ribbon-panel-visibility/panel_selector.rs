@@ -72,6 +72,7 @@ fn list_stays_open(world: &mut ApplicationWorld) {
     );
 }
 #[when("the user presses Escape")]
+#[when("the user presses Escape again")]
 fn escape_selector(world: &mut ApplicationWorld) {
     world.escape();
     world.pump(Vec::new());
