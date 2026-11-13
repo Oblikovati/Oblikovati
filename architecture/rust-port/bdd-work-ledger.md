@@ -15,6 +15,7 @@ claim that each file has been individually triaged.
 | 1 | `features/application/ribbon-appearance/ribbon-appearance.feature` | In progress | On the current recorded source, six of 18 scenarios pass; 11 stop at undefined steps and one fails on a missing Tools group. Reset Ribbon is implemented. Implement the standard Tools groups and Text Off, Small, Compact and Large across all commands and layouts. |
 | 1 | `features/application/ribbon-docking/ribbon-docking.feature` | In progress | Source changed after the inventory checkpoint. A full native run at commit `139b82a42` found 6 passes and 17 scenarios stopped by undefined steps. With corrected bindings, a second run found 8 passes, 14 undefined steps, and one ambiguous step. Resolve the remaining steps and implement missing command-group behavior. |
 | 1 | `features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature` | Needs rerun | Source changed since the inventory checkpoint. Review the corrections and rerun affected native scenarios. |
+| 1 | `features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature` | In progress | The unavailable Copy command can move between the Clipboard main and expanded panels and survives restart. Run the remaining scenarios on current source. |
 | 1 | `features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature` | Needs rerun | The source changed after the full run at `6e80b9bde`. Review the corrections and run the whole feature against a stable source; earlier counts are historical. |
 | 1 | `features/application/ribbon-panel-visibility` side selector | In progress | The left and right selector and group reflow scenarios pass on the recorded source. Rerun the full feature and cover the remaining selector interactions. |
 | 1 | `features/application/ribbon-panel-visibility` selector keyboard | In progress | Home and End retain the focused panel row; native verification and the current-source scenario are recorded below. Other keyboard scenarios need their named panel fixtures and a full feature rerun. |
@@ -651,3 +652,26 @@ revisions checked before they support a current pass claim.
 - Application: `1d7a12698` plus these bindings; unrelated README and AGENTS
   files were present. Linux, Xvfb at 1600 × 1000 and Lavapipe. The filtered
   native report is `/tmp/obk-model-browser-find-native-20261113`, a local path.
+
+### Built-in ribbon command relocation, 2026-11-13
+
+- Copy can move between the Clipboard main panel and its expanded panel. Its
+  unavailable state is preserved. The location is saved per document ribbon,
+  included in customization import/export, and cleared by Reset Ribbon. A
+  failed save retains the applied location and reports the error. Version 3
+  settings retain version 1 and 2 import support. This supersedes the earlier
+  Clipboard record that said relocation was unimplemented. Model copy itself
+  remains unavailable.
+- The native `Move an unavailable command to an expanded panel and back`
+  scenario passed all 15 steps on source SHA-256
+  `645576c3b62e89cdb6c668d5579123e6880a33f9e4a8020f922f1b08e0502ca2`,
+  unchanged during the run. Application: `03f61c1e7` plus this change, with
+  unrelated README and AGENTS files present. Linux, Xvfb at 1600 × 1000 and
+  Lavapipe. The local report and expanded-panel capture are in
+  `/tmp/obk-builtin-copy-bdd-guard-20261113`. Other scenarios were not run.
+- Two native Clipboard tests passed, including a restart, and two Reset Ribbon
+  tests passed. The GUI library passed 353 tests before the final command ID
+  isolation; the added identity test and the BDD scenario passed afterward.
+  The File dialog suite passed four tests, and GUI Clippy passed after the
+  final change. Unit tests cover old settings versions, import/export, invalid
+  IDs, save failure, reload, reset, and an unrelated pending customization.

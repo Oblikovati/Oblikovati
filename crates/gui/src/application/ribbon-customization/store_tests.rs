@@ -112,3 +112,30 @@ fn moving_a_command_saves_atomically_without_committing_other_drafts() {
     assert!(reopened.has_expanded(RibbonTab::Tools));
     assert_eq!(reopened.draft.applied(RibbonTab::Tools).len(), 1);
 }
+
+#[test]
+fn built_in_relocation_is_atomic_and_survives_reload_and_reset() {
+    let store = FakeRibbonStore::default();
+    let mut customization = RibbonCustomization::default();
+    customization.set_store(Box::new(store.clone())).unwrap();
+    let id = "part.tools.clipboard.copy";
+    customization.open(RibbonTab::Tools);
+    customization
+        .draft
+        .reset_source_selection(Command::Sketches);
+    customization.draft.add();
+    store.0.borrow_mut().fail_save = true;
+    assert!(customization.relocate_builtin(id, true).is_err());
+    assert!(!customization.builtin_expanded(id));
+    store.0.borrow_mut().fail_save = false;
+    customization.relocate_builtin(id, true).unwrap();
+    assert!(customization.draft.changed());
+    assert!(!customization.has_panel(RibbonTab::Tools));
+    let mut reopened = RibbonCustomization::default();
+    reopened.set_store(Box::new(store.clone())).unwrap();
+    assert!(reopened.builtin_expanded(id));
+    reopened.reset().unwrap();
+    let mut reset = RibbonCustomization::default();
+    reset.set_store(Box::new(store)).unwrap();
+    assert!(!reset.builtin_expanded(id));
+}

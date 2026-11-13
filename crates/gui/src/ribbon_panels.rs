@@ -603,6 +603,10 @@ fn draw_expanded(
         context.owners.icons.cursor(ui, origin, [0., 66.]);
         let expandable = context.additional_allowed
             && (additional::available(tab, panel)
+                || (panel == RibbonPanel::ToolClipboard
+                    && context.owners.customization.builtin_expanded(
+                        &crate::ribbon_panel_contents::clipboard_command_id(context.state),
+                    ))
                 || (panel == RibbonPanel::UserCommands
                     && context.owners.customization.has_expanded(tab)));
         if context.show_panel_titles {

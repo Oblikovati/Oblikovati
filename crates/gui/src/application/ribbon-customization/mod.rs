@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Ribbon command edits stay in a draft until Apply or OK.
+mod builtin;
 mod category;
 mod keyboard;
 mod keyboard_catalog;
@@ -26,6 +27,7 @@ enum ListFocus {
 pub(crate) struct RibbonCustomization {
     open: bool,
     draft: Draft,
+    builtins: builtin::BuiltinLayout,
     escape: crate::application::document_saving::folder_browser::DialogEscape,
     pub(crate) escape_consumed: bool,
     pub(crate) navigation_consumed: bool,
@@ -60,55 +62,9 @@ pub(crate) struct RibbonCustomization {
     ribbon_tab_active: bool,
 }
 impl RibbonCustomization {
-    pub(crate) fn set_store(
-        &mut self,
-        mut store: Box<dyn GuiRibbonSettingsStore>,
-    ) -> Result<(), String> {
-        if let Some(bytes) = store.load()? {
-            if bytes.len() > settings_xml::MAX_SETTINGS_BYTES {
-                return Err(format!(
-                    "ribbon settings {} bytes: expected at most {} bytes",
-                    bytes.len(),
-                    settings_xml::MAX_SETTINGS_BYTES
-                ));
-            }
-            self.draft.load_applied(settings_xml::decode(&bytes)?);
-        }
-        self.store = Some(store);
-        Ok(())
-    }
-    fn apply(&mut self) -> Result<(), String> {
-        Self::save_settings(&mut self.store, self.draft.snapshot())?;
-        self.draft.apply();
-        Ok(())
-    }
-    /// Persist the default ribbon before replacing its applied settings.
-    /// Example: `customization.reset()?`.
-    pub(crate) fn reset(&mut self) -> Result<(), String> {
-        let defaults = settings_xml::RibbonSettings::default();
-        Self::save_settings(&mut self.store, &defaults)?;
-        self.draft.load_applied(defaults);
-        Ok(())
-    }
-    fn save_settings(
-        store: &mut Option<Box<dyn GuiRibbonSettingsStore>>,
-        settings: &settings_xml::RibbonSettings,
-    ) -> Result<(), String> {
-        let Some(store) = store.as_mut() else {
-            return Ok(());
-        };
-        let bytes = settings_xml::encode(settings)?;
-        if bytes.len() > settings_xml::MAX_SETTINGS_BYTES {
-            return Err(format!(
-                "ribbon settings {} bytes: expected at most {} bytes",
-                bytes.len(),
-                settings_xml::MAX_SETTINGS_BYTES
-            ));
-        }
-        store.save(&bytes)
-    }
     pub(crate) fn open(&mut self, tab: RibbonTab) {
         self.draft.open(tab);
+        self.builtins.open();
         self.keyboard_draft = None;
         self.keyboard_base = None;
         self.keyboard_selected = None;
@@ -137,27 +93,6 @@ impl RibbonCustomization {
             .applied(tab)
             .iter()
             .any(|entry| entry.expanded && entry.command != Command::Separator)
-    }
-    fn relocate_command(
-        &mut self,
-        tab: RibbonTab,
-        command: Command,
-        expanded: bool,
-    ) -> Result<(), String> {
-        let mut settings = self.draft.applied_snapshot().clone();
-        let entry = settings
-            .get_mut(&tab)
-            .and_then(|rows| rows.iter_mut().find(|row| row.command == command))
-            .ok_or_else(|| {
-                format!(
-                    "ribbon command {:?}: expected an applied command",
-                    command.id()
-                )
-            })?;
-        entry.expanded = expanded;
-        Self::save_settings(&mut self.store, &settings)?;
-        self.draft.relocate(tab, command, expanded);
-        Ok(())
     }
     fn command_error_popup(&mut self, ui: &Ui) {
         let Some(error) = &self.command_error else {
@@ -226,8 +161,10 @@ impl RibbonCustomization {
                 }
             });
         self.open &= window_open;
-        if let Some(settings) = self.settings.panel(ui, self.draft.snapshot()) {
-            self.draft.import(settings);
+        let document = self.staged_document();
+        if let Some(settings) = self.settings.panel(ui, &document) {
+            self.draft.import(settings.commands);
+            self.builtins.import(settings.expanded_builtins);
         }
     }
     fn tabs(&mut self, ui: &Ui) {
@@ -442,7 +379,10 @@ impl RibbonCustomization {
     }
     fn buttons(&mut self, ui: &Ui, actions: &mut Vec<crate::GuiShellAction>) {
         ui.separator();
-        let changed = self.draft.changed() || self.keyboard_changed() || self.marking_changed();
+        let changed = self.draft.changed()
+            || self.builtins.changed()
+            || self.keyboard_changed()
+            || self.marking_changed();
         let conflict = self.keyboard_conflict || self.marking_conflict;
         let disabled = ui.begin_disabled(!changed || conflict);
         if ui.button("OK") {

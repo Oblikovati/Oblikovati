@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Import and export a draft through the shared file browser.
-use super::settings_xml::{self, RibbonSettings};
+use super::settings_xml::{self, SettingsDocument};
 use crate::application::document_saving::folder_browser::{
     DialogEnd, DialogEscape, FileFilter, FolderBrowser, center_dialog, dialog_buttons,
     file_name_field_focused, full_path,
@@ -122,7 +122,7 @@ impl SettingsDialog {
             escape: DialogEscape::default(),
         });
     }
-    pub fn panel(&mut self, ui: &Ui, snapshot: &RibbonSettings) -> Option<RibbonSettings> {
+    pub fn panel(&mut self, ui: &Ui, snapshot: &SettingsDocument) -> Option<SettingsDocument> {
         let draft = self.draft.as_mut()?;
         if std::mem::take(&mut draft.opening) {
             ui.open_popup(draft.mode.title());
@@ -205,8 +205,8 @@ fn perform(
     files: &dyn SettingsFiles,
     mode: Mode,
     path: &str,
-    snapshot: &RibbonSettings,
-) -> Result<Option<RibbonSettings>, SettingsError> {
+    snapshot: &SettingsDocument,
+) -> Result<Option<SettingsDocument>, SettingsError> {
     match mode {
         Mode::Import => Ok(Some(
             settings_xml::decode(&files.read(path)?).map_err(SettingsError::Other)?,
@@ -252,7 +252,10 @@ mod tests {
     #[test]
     fn export_and_import_use_the_same_staged_settings() {
         let files = MemorySettingsFiles::default();
-        let settings = RibbonSettings::new();
+        let mut settings = SettingsDocument::default();
+        settings
+            .expanded_builtins
+            .insert("part.tools.clipboard.copy".into());
         assert_eq!(
             perform(&files, Mode::Export, "settings.xml", &settings).unwrap(),
             None
@@ -261,8 +264,24 @@ mod tests {
             perform(&files, Mode::Import, "settings.xml", &settings).unwrap(),
             Some(settings)
         );
-        assert!(perform(&files, Mode::Export, "settings.xml", &RibbonSettings::new()).is_err());
-        assert!(perform(&files, Mode::Import, "missing.xml", &RibbonSettings::new()).is_err());
+        assert!(
+            perform(
+                &files,
+                Mode::Export,
+                "settings.xml",
+                &SettingsDocument::default()
+            )
+            .is_err()
+        );
+        assert!(
+            perform(
+                &files,
+                Mode::Import,
+                "missing.xml",
+                &SettingsDocument::default()
+            )
+            .is_err()
+        );
     }
     #[test]
     fn export_adds_an_extension_only_when_missing() {
@@ -280,14 +299,17 @@ mod tests {
             text: false,
             expanded: false,
         };
-        let settings = RibbonSettings::from([(RibbonTab::Tools, vec![entry; 30_000])]);
+        let settings = SettingsDocument {
+            commands: [(RibbonTab::Tools, vec![entry; 30_000])].into(),
+            ..Default::default()
+        };
         assert!(perform(&files, Mode::Export, "large.xml", &settings).is_err());
         assert!(files.0.borrow().is_empty());
     }
     #[test]
     fn missing_import_is_distinct_from_invalid_xml() {
         let files = MemorySettingsFiles::default();
-        let empty = RibbonSettings::new();
+        let empty = SettingsDocument::default();
         assert!(
             matches!(perform(&files, Mode::Import, "missing.xml", &empty), Err(SettingsError::Missing(path)) if path == "missing.xml")
         );

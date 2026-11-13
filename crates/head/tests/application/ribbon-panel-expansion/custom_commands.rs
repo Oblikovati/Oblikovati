@@ -91,4 +91,5 @@ fn move_to_main(world: &mut ApplicationWorld) {
 #[then("the expansion closes")]
 fn expansion_closed(_world: &mut ApplicationWorld) {
     assert!(diagnostics::window_geometry(EXPANSION).is_none());
+    assert!(diagnostics::window_geometry("##ribbon-additional-ToolClipboard").is_none());
 }
