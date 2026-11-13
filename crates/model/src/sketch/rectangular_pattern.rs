@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
+mod edit;
 use super::{
     Sketch2D, SketchCopyError, SketchEntityId, SketchError, SketchPatternOffsetTerm, SketchRecipe,
     SketchRectangularPatternLayout,
 };
 use crate::{identity::RecipeIdError, parameter::ParameterCollection};
+pub use edit::SketchRectangularPatternEdit;
 use std::collections::BTreeSet;
 type PatternOccurrence = ([u32; 2], Vec<SketchPatternOffsetTerm>);
 

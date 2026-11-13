@@ -134,3 +134,47 @@ fn add_shared_dimension(snapshot: &mut DocumentSnapshot) {
 
 #[path = "sketch_dimension_delete/dimension_edit.rs"]
 mod dimension_edit;
+
+#[test]
+fn deleting_a_dimension_keeps_its_model_parameter_when_a_pattern_uses_it() {
+    use oblikovati_model::identity::RecipeIdAllocator;
+    use std::collections::BTreeSet;
+    let mut snapshot = snapshot(MODEL_PARAM, "1 cm");
+    let mut geometry = snapshot
+        .sketches
+        .get(DocumentSketchId(1))
+        .unwrap()
+        .geometry()
+        .clone();
+    let definition = SketchRectangularPatternDefinition {
+        seed: vec![SketchEntityId(2)],
+        counts: [2, 1],
+        directions: [[1., 0.], [0., 1.]],
+        spacing: [1, 1],
+        fitted: false,
+        suppressed: BTreeSet::new(),
+    };
+    let mut ids = RecipeIdAllocator::restore(Some(100), &[]).unwrap();
+    geometry
+        .create_rectangular_pattern(
+            SketchEntityId(50),
+            definition,
+            &snapshot.parameters,
+            &mut || ids.allocate().map(SketchEntityId),
+        )
+        .unwrap();
+    snapshot
+        .sketches
+        .replace_geometry(DocumentSketchId(1), geometry)
+        .unwrap();
+    delete(&mut snapshot).unwrap();
+    assert!(snapshot.parameters.get(1).is_some());
+    let retained = snapshot
+        .sketches
+        .get(DocumentSketchId(1))
+        .unwrap()
+        .geometry();
+    assert_eq!(retained.rectangular_patterns().len(), 1);
+    assert!(retained.constraints().is_empty());
+    assert_eq!(retained.parameter_dependencies(), [1]);
+}

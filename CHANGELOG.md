@@ -32,6 +32,8 @@
 
 ### Added
 
+- Added previewable and undoable rectangular pattern edits that retain existing member identities.
+
 - Added saved rectangular sketch-pattern records with preview and undoable creation.
 
 - Added parameter-driven spacing for linked sketch copies and recompute.

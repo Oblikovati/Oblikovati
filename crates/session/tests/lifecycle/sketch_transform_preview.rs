@@ -609,3 +609,80 @@ fn rectangular_pattern_preview_commit_and_history_keep_record_identity() {
     session.redo().unwrap();
     assert!(after.same_evaluated_state(&session.snapshot().sketches));
 }
+
+#[test]
+fn rectangular_pattern_edit_preview_cancel_and_undo_redo_keep_member_identity() {
+    use oblikovati_model::sketch::SketchRectangularPatternDefinition;
+    use std::collections::BTreeSet;
+    let mut session = session_with_line();
+    let mut definition = SketchRectangularPatternDefinition {
+        seed: vec![SketchEntityId(3)],
+        counts: [3, 2],
+        directions: [[-1., 0.], [0., 1.]],
+        spacing: [1, 1],
+        fitted: false,
+        suppressed: BTreeSet::new(),
+    };
+    let original = session
+        .create_rectangular_pattern_projected(DocumentSketchId(1), definition.clone(), |result| {
+            result
+        })
+        .unwrap();
+    let before = session.snapshot().sketches.clone();
+    let generation = session.generation();
+    definition.counts = [4, 2];
+    let preview = session
+        .preview_rectangular_pattern_edit(DocumentSketchId(1), original.id, definition.clone())
+        .unwrap();
+    assert_eq!(preview.members.len(), 7);
+    assert_eq!(session.generation(), generation);
+    assert!(before.same_evaluated_state(&session.snapshot().sketches));
+    let edit = session
+        .edit_rectangular_pattern_projected(
+            DocumentSketchId(1),
+            original.id,
+            definition,
+            |result| result,
+        )
+        .unwrap();
+    assert_eq!(
+        preview.members,
+        edit.pattern
+            .members
+            .iter()
+            .flat_map(|member| member.entities.iter().copied())
+            .collect::<Vec<_>>()
+    );
+    for member in &original.members {
+        assert_eq!(
+            edit.pattern
+                .members
+                .iter()
+                .find(|item| item.index == member.index)
+                .unwrap(),
+            member
+        );
+    }
+    let after = session.snapshot().sketches.clone();
+    assert!(
+        preview
+            .geometry
+            .same_recipe(after.get(DocumentSketchId(1)).unwrap().geometry())
+    );
+    session.undo().unwrap();
+    assert!(before.same_evaluated_state(&session.snapshot().sketches));
+    session.redo().unwrap();
+    assert!(after.same_evaluated_state(&session.snapshot().sketches));
+    assert_eq!(
+        session
+            .snapshot()
+            .sketches
+            .get(DocumentSketchId(1))
+            .unwrap()
+            .geometry()
+            .rectangular_patterns()[0]
+            .definition
+            .counts,
+        [4, 2]
+    );
+}

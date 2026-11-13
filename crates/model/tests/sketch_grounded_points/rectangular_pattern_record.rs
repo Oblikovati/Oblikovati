@@ -136,3 +136,177 @@ fn singleton_pattern_has_a_persistent_identity_and_parameter_dependencies() {
     sketch.remove_rectangular_pattern(pattern.id).unwrap();
     assert_eq!(sketch.circles().len(), 1);
 }
+
+#[test]
+fn editing_counts_retains_occurrence_ids_and_reloads_the_new_grid() {
+    let mut sketch = circle();
+    let mut ids = RecipeIdAllocator::restore(Some(200), &[]).unwrap();
+    let old = sketch
+        .create_rectangular_pattern(
+            SketchEntityId(100),
+            definition(),
+            &parameters(),
+            &mut || ids.allocate().map(SketchEntityId),
+        )
+        .unwrap();
+    let mut changed = definition();
+    changed.counts = [4, 2];
+    let edit = sketch
+        .edit_rectangular_pattern(old.id, changed, &parameters(), &mut || {
+            ids.allocate().map(SketchEntityId)
+        })
+        .unwrap();
+    assert_eq!(edit.pattern.id, old.id);
+    assert_eq!(edit.pattern.members.len(), 7);
+    for member in &old.members {
+        assert_eq!(
+            edit.pattern
+                .members
+                .iter()
+                .find(|item| item.index == member.index)
+                .unwrap(),
+            member
+        );
+    }
+    assert!(edit.deletion.entities.is_empty());
+    let restored = Sketch2D::from_recipe(
+        &serde_json::from_slice::<SketchRecipe>(&serde_json::to_vec(&sketch.recipe()).unwrap())
+            .unwrap(),
+    )
+    .unwrap();
+    assert!(sketch.same_recipe(&restored));
+    assert_eq!(restored.rectangular_patterns()[0].definition.counts, [4, 2]);
+}
+#[test]
+fn fitted_and_suppressed_edits_remove_only_the_affected_occurrences() {
+    let mut sketch = circle();
+    let mut ids = RecipeIdAllocator::restore(Some(200), &[]).unwrap();
+    let old = sketch
+        .create_rectangular_pattern(
+            SketchEntityId(100),
+            definition(),
+            &parameters(),
+            &mut || ids.allocate().map(SketchEntityId),
+        )
+        .unwrap();
+    let mut changed = definition();
+    changed.fitted = true;
+    changed.suppressed.insert([1, 1]);
+    let edit = sketch
+        .edit_rectangular_pattern(old.id, changed, &parameters(), &mut || {
+            ids.allocate().map(SketchEntityId)
+        })
+        .unwrap();
+    let removed = old
+        .members
+        .iter()
+        .find(|item| item.index == [1, 1])
+        .unwrap()
+        .entities[0];
+    assert!(edit.deletion.entities.contains(&removed));
+    assert!(sketch.circle(removed).is_err());
+    assert_eq!(edit.pattern.members.len(), 4);
+    let solved = sketch
+        .solve_with_grounded_points(
+            &parameters(),
+            &[point(1, [0., 0.])],
+            SolveOptions::default(),
+            || false,
+        )
+        .unwrap();
+    let end = edit
+        .pattern
+        .members
+        .iter()
+        .find(|item| item.index == [2, 0])
+        .unwrap()
+        .entities[0];
+    let center = solved
+        .candidate()
+        .point(solved.candidate().circle(end).unwrap().center)
+        .unwrap()
+        .position;
+    assert!((center[0] + 3.).abs() < 1e-7 && center[1].abs() < 1e-7);
+    assert!(
+        Sketch2D::from_recipe(&sketch.recipe())
+            .unwrap()
+            .same_recipe(&sketch)
+    );
+}
+#[test]
+fn failed_pattern_edits_leave_the_original_unchanged() {
+    let mut sketch = circle();
+    let mut ids = RecipeIdAllocator::restore(Some(200), &[]).unwrap();
+    let old = sketch
+        .create_rectangular_pattern(
+            SketchEntityId(100),
+            definition(),
+            &parameters(),
+            &mut || ids.allocate().map(SketchEntityId),
+        )
+        .unwrap();
+    let before = sketch.clone();
+    let mark = ids.high_water();
+    let mut invalid = definition();
+    invalid.counts[0] = 0;
+    assert!(
+        sketch
+            .edit_rectangular_pattern(old.id, invalid, &parameters(), &mut || ids
+                .allocate()
+                .map(SketchEntityId))
+            .is_err()
+    );
+    let mut invalid = definition();
+    invalid.seed = vec![SketchEntityId(1)];
+    assert!(
+        sketch
+            .edit_rectangular_pattern(old.id, invalid, &parameters(), &mut || ids
+                .allocate()
+                .map(SketchEntityId))
+            .is_err()
+    );
+    assert!(sketch.same_recipe(&before));
+    assert_eq!(ids.high_water(), mark);
+}
+
+#[test]
+fn reducing_the_grid_reports_constraints_on_deleted_members() {
+    let mut sketch = circle();
+    let mut ids = RecipeIdAllocator::restore(Some(200), &[]).unwrap();
+    let pattern = sketch
+        .create_rectangular_pattern(
+            SketchEntityId(100),
+            definition(),
+            &parameters(),
+            &mut || ids.allocate().map(SketchEntityId),
+        )
+        .unwrap();
+    let removed = pattern
+        .members
+        .iter()
+        .find(|item| item.index == [2, 0])
+        .unwrap()
+        .entities[0];
+    let center = sketch.circle(removed).unwrap().center;
+    let position = sketch.point(center).unwrap().position;
+    sketch
+        .add_constraint(
+            SketchConstraintId(7),
+            PlanarConstraint::Fix {
+                point: center,
+                position,
+            },
+        )
+        .unwrap();
+    let mut changed = definition();
+    changed.counts = [2, 2];
+    let edit = sketch
+        .edit_rectangular_pattern(pattern.id, changed, &parameters(), &mut || {
+            ids.allocate().map(SketchEntityId)
+        })
+        .unwrap();
+    assert!(edit.deletion.entities.contains(&removed));
+    assert_eq!(edit.deletion.constraints.len(), 1);
+    assert_eq!(edit.deletion.constraints[0].id, SketchConstraintId(7));
+    assert!(sketch.constraints().is_empty());
+}

@@ -11,6 +11,59 @@ pub type SketchCopyProjectionInput = Result<SketchCopyReport, SketchCopyError>;
 /// Example: `let reply: SketchCopyBatchProjectionInput = Ok(reports);`.
 pub type SketchCopyBatchProjectionInput = Result<Vec<SketchCopyReport>, SketchCopyError>;
 impl<O: TransactionObserver> DocumentSession<O> {
+    /// Preview a rectangular pattern edit without changing the document.
+    /// Example: `session.preview_rectangular_pattern_edit(sketch, pattern, definition)?;`.
+    pub fn preview_rectangular_pattern_edit(
+        &self,
+        sketch: DocumentSketchId,
+        pattern: SketchEntityId,
+        definition: oblikovati_model::sketch::SketchRectangularPatternDefinition,
+    ) -> Result<crate::SketchTransformPreview, CommandError<SketchCopyError>> {
+        self.preview_projected(
+            |snapshot, reservations| {
+                snapshot.edit_rectangular_pattern(sketch, pattern, definition, reservations)
+            },
+            |snapshot, edit| {
+                Ok(crate::SketchTransformPreview {
+                    geometry: snapshot
+                        .sketches
+                        .get(sketch)
+                        .map_err(SketchCopyError::Sketch)?
+                        .geometry()
+                        .clone(),
+                    members: edit
+                        .pattern
+                        .members
+                        .into_iter()
+                        .flat_map(|member| member.entities)
+                        .collect(),
+                })
+            },
+        )
+    }
+    /// Publish a rectangular pattern edit as one undoable command.
+    /// Example: `session.edit_rectangular_pattern_projected(sketch, pattern, definition, |result| result)?;`.
+    pub fn edit_rectangular_pattern_projected<R, E>(
+        &mut self,
+        sketch: DocumentSketchId,
+        pattern: SketchEntityId,
+        definition: oblikovati_model::sketch::SketchRectangularPatternDefinition,
+        project: impl FnOnce(
+            Result<oblikovati_model::sketch::SketchRectangularPatternEdit, SketchCopyError>,
+        ) -> Result<R, E>,
+    ) -> Result<R, CommandError<E>> {
+        self.run(
+            "Edit rectangular sketch pattern",
+            |snapshot, reservations| {
+                project(snapshot.edit_rectangular_pattern(
+                    sketch,
+                    pattern,
+                    definition,
+                    reservations,
+                ))
+            },
+        )
+    }
     /// Preview a recorded rectangular pattern without reserving live identities.
     /// Example: `session.preview_rectangular_pattern(sketch, definition)?;`.
     pub fn preview_rectangular_pattern(

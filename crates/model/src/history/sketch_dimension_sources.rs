@@ -32,10 +32,18 @@ impl DocumentSnapshot {
     fn retains_dimension_source(&self, parameter: u64) -> bool {
         // Reference dimensions still own their source even though they do not drive solver rows.
         self.sketches.sketches().iter().any(|placed| {
-            placed
-                .geometry()
-                .dimensional_constraints()
-                .any(|(_, source)| source == parameter)
+            let geometry = placed.geometry();
+            geometry
+                .pattern_offsets()
+                .iter()
+                .any(|offset| offset.terms.iter().any(|term| term.parameter == parameter))
+                || geometry
+                    .rectangular_patterns()
+                    .iter()
+                    .any(|pattern| pattern.definition.spacing.contains(&parameter))
+                || geometry
+                    .dimensional_constraints()
+                    .any(|(_, source)| source == parameter)
         }) || self.work_geometry.features().iter().any(|feature| {
             feature
                 .owned_scalars()

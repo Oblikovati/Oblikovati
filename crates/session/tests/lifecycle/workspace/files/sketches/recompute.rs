@@ -82,3 +82,85 @@ fn assert_recompute_report(
     let result = report.reports[0].result.as_ref().unwrap();
     assert_eq!(result.numerical().structure.degrees_of_freedom, 0);
 }
+
+#[test]
+fn edited_rectangular_pattern_survives_undo_redo_save_and_reopen() {
+    use oblikovati_model::sketch::SketchRectangularPatternDefinition;
+    use std::collections::BTreeSet;
+    let (mut host, mut source, document, sketch) = saved_driven_sketch();
+    let line = host
+        .workspace()
+        .session(document)
+        .unwrap()
+        .snapshot()
+        .sketches
+        .get(sketch)
+        .unwrap()
+        .geometry()
+        .lines()[0]
+        .id;
+    let mut definition = SketchRectangularPatternDefinition {
+        seed: vec![line],
+        counts: [3, 2],
+        directions: [[1., 0.], [0., 1.]],
+        spacing: [1, 1],
+        fitted: false,
+        suppressed: BTreeSet::new(),
+    };
+    let original = host
+        .commands(document)
+        .unwrap()
+        .run("Create pattern", |snapshot, ids| {
+            snapshot.create_rectangular_pattern(sketch, definition.clone(), ids)
+        })
+        .unwrap();
+    definition.counts = [4, 2];
+    let edited = host
+        .commands(document)
+        .unwrap()
+        .run("Edit pattern", |snapshot, ids| {
+            snapshot.edit_rectangular_pattern(sketch, original.id, definition.clone(), ids)
+        })
+        .unwrap();
+    for member in &original.members {
+        assert_eq!(
+            edited
+                .pattern
+                .members
+                .iter()
+                .find(|item| item.index == member.index)
+                .unwrap(),
+            member
+        );
+    }
+    host.commands(document).unwrap().undo().unwrap();
+    assert_eq!(
+        host.workspace()
+            .session(document)
+            .unwrap()
+            .snapshot()
+            .sketches
+            .get(sketch)
+            .unwrap()
+            .geometry()
+            .rectangular_patterns()[0]
+            .definition
+            .counts,
+        [3, 2]
+    );
+    host.commands(document).unwrap().redo().unwrap();
+    host.save(document, "alpha", &mut source).unwrap();
+    host.close_discarding_changes(document).unwrap();
+    let reopened = open_file(&mut host, "a.obk", &mut source, OpenActivation::Activate);
+    let geometry = host
+        .workspace()
+        .session(reopened)
+        .unwrap()
+        .snapshot()
+        .sketches
+        .get(sketch)
+        .unwrap()
+        .geometry();
+    assert_eq!(geometry.rectangular_patterns(), &[edited.pattern]);
+    assert_eq!(geometry.rectangular_patterns()[0].definition.counts, [4, 2]);
+}

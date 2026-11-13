@@ -5,6 +5,45 @@ use crate::{
     sketch::{SketchCopyError, SketchCopyOperation, SketchCopyReport, SketchEntityId},
 };
 impl DocumentSnapshot {
+    /// Edit a recorded pattern and cascade removed geometry through the document.
+    /// Example: `snapshot.edit_rectangular_pattern(sketch, pattern, definition, reservations)?;`.
+    pub fn edit_rectangular_pattern(
+        &mut self,
+        sketch: DocumentSketchId,
+        pattern: SketchEntityId,
+        definition: crate::sketch::SketchRectangularPatternDefinition,
+        reservations: &mut RecipeReservations<'_>,
+    ) -> Result<crate::sketch::SketchRectangularPatternEdit, SketchCopyError> {
+        let placed = self.sketches.get(sketch).map_err(SketchCopyError::Sketch)?;
+        let sources = super::sketch_entity_delete::dimension_sources(placed.geometry());
+        let mut geometry = placed.geometry().clone();
+        let edit = geometry.edit_rectangular_pattern(
+            pattern,
+            definition,
+            &self.parameters,
+            &mut || reservations.allocate_sketch_entity(),
+        )?;
+        let bindings = placed
+            .point_projections()
+            .iter()
+            .copied()
+            .filter(|binding| !edit.deletion.entities.contains(&binding.anchor))
+            .collect();
+        let mut candidate = self.clone();
+        candidate
+            .sketches
+            .set_point_projections(sketch, bindings)
+            .map_err(SketchCopyError::Sketch)?;
+        candidate
+            .sketches
+            .replace_geometry(sketch, geometry)
+            .map_err(SketchCopyError::Sketch)?;
+        candidate
+            .remove_retired_dimension_sources(sources)
+            .map_err(SketchCopyError::Sketch)?;
+        *self = candidate;
+        Ok(edit)
+    }
     /// Create a recorded rectangular pattern with permanently reserved identities.
     /// Example: `snapshot.create_rectangular_pattern(sketch, definition, reservations)?;`.
     pub fn create_rectangular_pattern(

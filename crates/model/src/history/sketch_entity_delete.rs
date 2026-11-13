@@ -58,7 +58,7 @@ impl DocumentSnapshot {
     }
 }
 
-fn dimension_sources(geometry: &crate::sketch::Sketch2D) -> BTreeSet<u64> {
+pub(super) fn dimension_sources(geometry: &crate::sketch::Sketch2D) -> BTreeSet<u64> {
     geometry
         .dimensional_constraints()
         .map(|(_, parameter)| parameter)

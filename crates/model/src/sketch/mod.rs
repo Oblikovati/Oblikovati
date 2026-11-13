@@ -164,7 +164,8 @@ mod line_endpoint;
 pub use line_endpoint::{SketchLineEnd, SketchLineEndpointReport};
 mod rectangular_pattern;
 pub use rectangular_pattern::{
-    SketchRectangularPattern, SketchRectangularPatternDefinition, SketchRectangularPatternMember,
+    SketchRectangularPattern, SketchRectangularPatternDefinition, SketchRectangularPatternEdit,
+    SketchRectangularPatternMember,
 };
 mod rectangular_pattern_layout;
 pub use rectangular_pattern_layout::{SketchRectangularOccurrence, SketchRectangularPatternLayout};
