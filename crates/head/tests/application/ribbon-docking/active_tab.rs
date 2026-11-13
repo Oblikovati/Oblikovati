@@ -12,7 +12,28 @@ fn manage_ribbon_at_top(world: &mut ApplicationWorld) {
 }
 #[given("panel titles are shown")]
 fn titles_shown(world: &mut ApplicationWorld) {
-    world.expect_text("Parameters");
+    world.expect_text("Modify");
+}
+#[given("the full 3D Model ribbon is docked at the top")]
+fn model_ribbon_at_top(world: &mut ApplicationWorld) {
+    world.click_text("3D Model");
+    world.pump(Vec::new());
+    world.expect_text("Start 2D Sketch");
+    world.expect_text("Modify");
+    assert!(window_geometry(COLUMN).is_none());
+    assert!(window_geometry(FLOATING).is_none());
+}
+#[when("the user right-clicks the active 3D Model tab")]
+fn right_click_model(world: &mut ApplicationWorld) {
+    let center = world.run("3D Model").center();
+    world.right_click(super::super::diagnostics::pointer_pixels(center));
+    world.pump(Vec::new());
+}
+#[then("the 3D Model ribbon remains visible")]
+fn model_still_visible(world: &mut ApplicationWorld) {
+    world.expect_no_text("Undock Ribbon");
+    world.expect_text("Start 2D Sketch");
+    world.expect_text("Modify");
 }
 #[when("the user right-clicks the active Manage tab")]
 fn right_click_manage(world: &mut ApplicationWorld) {
@@ -76,7 +97,8 @@ fn panel_titles_toggle_from_active_tab_context_menu() {
     world.pump(Vec::new());
     world.click_text("3D Model");
     world.pump(Vec::new());
-    world.click_text("Ribbon Display");
+    super::super::ribbon_display::click_display_menu(&mut world);
+    world.click_text("Minimize to Panel Buttons");
     world.pump(Vec::new());
     world.expect_text("Create");
     world.expect_text("Modify");
@@ -99,7 +121,15 @@ fn hidden_captions_keep_narrow_collapsed_panels_named() {
     world.pump(Vec::new());
     world.click_text("3D Model");
     world.pump(Vec::new());
+    let create = world.run("Create").center();
+    world.click(super::super::diagnostics::pointer_pixels([
+        create[0],
+        create[1] - 35.,
+    ]));
+    world.pump(Vec::new());
     world.expect_text("Extrude");
+    world.escape();
+    world.pump(Vec::new());
     let modify = world.run("Modify").center();
     world.click(super::super::diagnostics::pointer_pixels([
         modify[0],
