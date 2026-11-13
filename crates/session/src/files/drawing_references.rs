@@ -11,10 +11,13 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         model: u64,
         background: bool,
     ) {
-        self.drawing_references.insert(drawing, (name, model));
+        let old = self.drawing_references.insert(drawing, (name, model));
         self.drawing_reference_errors.remove(&drawing);
         if background {
             self.drawing_background_models.insert(model);
+        }
+        if let Some((_, previous)) = old {
+            self.release_unused_drawing_model(previous);
         }
     }
     /// Find a drawing's resolved model only while its authored reference still matches.
@@ -41,6 +44,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
     }
     /// Record a failed model load; example: `files.reject_drawing_reference(drawing, name, cause)`.
     pub fn reject_drawing_reference(&mut self, drawing: u64, name: String, cause: String) {
+        self.clear_drawing_reference(drawing);
         self.drawing_reference_errors.insert(drawing, (name, cause));
     }
     /// Read the last failure for the same reference; example: `files.drawing_reference_error(id, name)`.
@@ -51,10 +55,17 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
             .map(|(_, cause)| cause.as_str())
     }
     pub(super) fn release_drawing_reference(&mut self, drawing: u64) {
+        self.clear_drawing_reference(drawing);
+    }
+    /// Release a drawing's old model; example: after its model reference changes.
+    pub fn clear_drawing_reference(&mut self, drawing: u64) {
         self.drawing_reference_errors.remove(&drawing);
         let Some((_, model)) = self.drawing_references.remove(&drawing) else {
             return;
         };
+        self.release_unused_drawing_model(model);
+    }
+    fn release_unused_drawing_model(&mut self, model: u64) {
         let shared = self.has_drawing_dependents(model);
         if shared || !self.drawing_background_models.contains(&model) {
             return;

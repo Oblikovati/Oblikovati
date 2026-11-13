@@ -11,7 +11,7 @@ claim that each file has been individually triaged.
 | 1 | Native parameter-driven cube journey | In progress | The native journey creates a constrained rectangle and extrude, edits the size, uses undo/redo, saves and reopens, and resolves a face. Maintain the live test and rerun it after relevant changes. |
 | 1 | `features/application/file-menu/file-menu.feature` | Verified | All eight scenarios passed on the recorded updated source. Weldment remains unavailable. |
 | 1 | `features/application/document-creation` | In progress | On the updated source, 8 of 39 native scenarios pass; 31 stop at undefined steps. Name and size sorting, horizontal icon tiles, and keyboard and secondary-button selection work for available templates. The remaining scenarios need bindings and additional named templates. |
-| 1 | `features/application/document-opening` | In progress | The last full native run passed 23 of 27 scenarios; four stopped at undefined steps. The saved-drawing scenario also passes with its referenced part initially closed. Reference changes and undo/redo need lifecycle work. |
+| 1 | `features/application/document-opening` | In progress | The last full native run passed 23 of 27 scenarios; four stopped at undefined steps. The saved-drawing scenario passes with its referenced part initially closed. Reference edits and history synchronization have focused native coverage. |
 | 1 | `features/application/document-saving` | Passing | The current-source native feature run passed 23 of 23 scenarios. The first-save preview is rendered from the part and stored in the saved file. See the save evidence below. |
 | 1 | `features/application/model-browser` | In progress | After action wording updates, a full native run passed 29 of 100 scenarios. Of the other 71, 62 stopped at undefined steps and nine at failed checks. Focused fixes passed later; rerun the full feature before reporting a current total. |
 | 1 | `features/application/quick-access-toolbar` | In progress | The previous full native feature run passed 11 of 12 scenarios. Projects now opens the project dialog; the focused customization choices scenario next fails because Update is missing. Later checks did not run. Material Browser editing, duplication, and the Physical tab remain open. |
@@ -54,8 +54,9 @@ claim that each file has been individually triaged.
   tests cover reopening, relative paths, two drawings sharing a source, Close
   All, reuse of an open part, and an unavailable source. The focused BDD case
   passes without preopening the referenced part. The document API query suite
-  passed 726 tests. Changing the reference in an already open drawing and
-  undo/redo of that change still need background ownership synchronization.
+  passed 726 tests. Reference changes now replace the background owner; a native
+  test checks keyboard undo and redo, a missing replacement, recovery with
+  API undo, and transaction abort. It checks the projection and retained paths.
   The closed-source screenshot was inspected at
   `/tmp/obk-drawing-closed-bdd/Open-a-saved-drawing-alongside-an-existing-part.png`.
 

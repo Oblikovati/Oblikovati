@@ -51,7 +51,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
         )
     }
 
-    fn open_drawing_reference(&mut self, drawing: u64) {
+    pub(super) fn open_drawing_reference(&mut self, drawing: u64) {
         let reference = self
             .files
             .workspace()
@@ -61,6 +61,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
             .filter(|drawing| drawing.sheets().iter().any(|sheet| !sheet.views.is_empty()))
             .map(|drawing| drawing.model_reference().to_owned());
         let Some(reference) = reference.filter(|name| !name.is_empty()) else {
+            self.files.clear_drawing_reference(drawing);
             return;
         };
         if self.files.drawing_reference(drawing, &reference).is_some() {
@@ -85,7 +86,14 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
         } else {
             match self.files.path(drawing).ok().and_then(Path::parent) {
                 Some(folder) => folder.join(path),
-                None => return,
+                None => {
+                    self.files.reject_drawing_reference(
+                        drawing,
+                        reference,
+                        "drawing has no saved folder for its relative model reference".into(),
+                    );
+                    return;
+                }
             }
         };
         let observers = &mut self.observers;

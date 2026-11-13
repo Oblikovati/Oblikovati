@@ -275,3 +275,107 @@ fn opening_a_drawing_reuses_and_preserves_a_visible_model() {
     );
     world.close();
 }
+
+fn assert_loaded_reference(world: &mut ApplicationWorld, expected: &Path, absent: &Path) {
+    let state = world.state();
+    let id = state.document.unwrap();
+    assert_eq!(
+        state.drawing_documents[&id].model_reference(),
+        expected.to_str().unwrap()
+    );
+    let paths: Vec<_> = state
+        .document_storage
+        .values()
+        .filter_map(|storage| storage.path.as_deref())
+        .collect();
+    assert!(
+        paths.contains(&expected.to_str().unwrap()),
+        "expected model {expected:?}"
+    );
+    assert!(
+        !paths.contains(&absent.to_str().unwrap()),
+        "obsolete model {absent:?} remained open"
+    );
+    let projection = &state.drawing_projections[&id];
+    assert!(
+        projection.error.is_none(),
+        "projection: {:?}",
+        projection.error
+    );
+    assert!(!projection.lines.is_empty(), "expected projected geometry");
+}
+
+#[test]
+fn changing_a_drawing_reference_reloads_models_on_undo_and_redo() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    let folder = models_folder(&mut world);
+    let first = folder.join("first.opd");
+    let second = folder.join("second.opd");
+    write_source_model(&first);
+    write_source_model(&second);
+    write_drawing(&folder.join(DRAWING_FILE), &first);
+    open_dialog(&mut world);
+    look_in(&mut world, &folder);
+    select_row(&mut world, DRAWING_FILE);
+    choose_open(&mut world);
+    assert_loaded_reference(&mut world, &first, &second);
+    Client::new(world.app().owner.document_host())
+        .drawing()
+        .set_model_reference(&oblikovati_api::wire::SetModelReferenceArgs {
+            full_document_name: second.to_string_lossy().into_owned(),
+        })
+        .unwrap();
+    assert_loaded_reference(&mut world, &second, &first);
+    settle(&mut world);
+    world.command_key(
+        ViewportPhysicalKey::Z,
+        oblikovati_viewport::ViewportKey::Undo,
+    );
+    assert_loaded_reference(&mut world, &first, &second);
+    world.command_key(
+        ViewportPhysicalKey::Y,
+        oblikovati_viewport::ViewportKey::Redo,
+    );
+    assert_loaded_reference(&mut world, &second, &first);
+    let missing = folder.join("missing.opd");
+    Client::new(world.app().owner.document_host())
+        .drawing()
+        .set_model_reference(&oblikovati_api::wire::SetModelReferenceArgs {
+            full_document_name: missing.to_string_lossy().into_owned(),
+        })
+        .unwrap();
+    let state = world.state();
+    let error = state.drawing_projections[&state.document.unwrap()]
+        .error
+        .as_deref()
+        .unwrap();
+    assert!(
+        error.contains("missing.opd"),
+        "expected missing model path: {error:?}"
+    );
+    Client::new(world.app().owner.document_host())
+        .transactions()
+        .undo()
+        .unwrap();
+    assert_loaded_reference(&mut world, &second, &first);
+    Client::new(world.app().owner.document_host())
+        .transactions()
+        .begin(&oblikovati_api::wire::TransactionBeginArgs {
+            label: "Try source".into(),
+        })
+        .unwrap();
+    Client::new(world.app().owner.document_host())
+        .drawing()
+        .set_model_reference(&oblikovati_api::wire::SetModelReferenceArgs {
+            full_document_name: first.to_string_lossy().into_owned(),
+        })
+        .unwrap();
+    assert_loaded_reference(&mut world, &first, &second);
+    Client::new(world.app().owner.document_host())
+        .transactions()
+        .abort()
+        .unwrap();
+    assert_loaded_reference(&mut world, &second, &first);
+    world.close();
+}

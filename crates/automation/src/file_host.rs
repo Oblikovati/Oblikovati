@@ -248,14 +248,18 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext<'_, O, W, F> {
     fn owned_command(&mut self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
         if method == oblikovati_api::wire::METHOD_DRAWING_SET_MODEL_REFERENCE {
-            return crate::drawing_reference::apply(self.files, decode(method, request)?);
+            let result = crate::drawing_reference::apply(self.files, decode(method, request)?)?;
+            self.synchronize_drawing_references();
+            return Ok(result);
         }
         if method == oblikovati_api::wire::METHOD_DRAWING_VIEWS_ADD_BASE {
-            return crate::drawing_views::add_base(
+            let result = crate::drawing_views::add_base(
                 self.files,
                 self.drawing_views,
                 decode(method, request)?,
-            );
+            )?;
+            self.synchronize_drawing_references();
+            return Ok(result);
         }
         if method == METHOD_FEATURES_ADD {
             return crate::extrusion::apply(self.files, self.extrusion, request);
@@ -297,7 +301,11 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
             return command_owner::edit(self.files, method, request);
         }
         if TRANSACTION_METHODS.contains(&method) {
-            return transactions::apply(self.files, method, request);
+            let result = transactions::apply(self.files, method, request)?;
+            if method != METHOD_TRANSACTION_BEGIN {
+                self.synchronize_drawing_references();
+            }
+            return Ok(result);
         }
         if DERIVED_COMMAND_METHODS.contains(&method) {
             return self.derived_command(method, request);
@@ -308,6 +316,13 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
         FileQueryHost::new(self.files)
             .with_sketch_edit(self.sketch_edit.clone())
             .call(method, request)
+    }
+}
+impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext<'_, O, W, F> {
+    fn synchronize_drawing_references(&mut self) {
+        for document in self.files.workspace().documents().to_vec() {
+            self.open_drawing_reference(document);
+        }
     }
 }
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext<'_, O, W, F> {
