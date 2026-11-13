@@ -2,6 +2,8 @@
 //! Native ribbon appearance scenarios from the live application benchmark.
 use super::{ApplicationWorld, diagnostics};
 use cucumber::{given, then, when};
+#[path = "reset.rs"]
+mod reset;
 
 fn open_tab_menu(world: &mut ApplicationWorld, tab: &str) {
     let position = diagnostics::pointer_pixels(world.run(tab).center());
@@ -213,13 +215,14 @@ fn appearance_menu_marks_normal_and_disables_unavailable_layouts() {
     world.click_text("Ribbon Appearance");
     world.pump(Vec::new());
     assert!(world.checked("Normal"), "expected the current appearance");
-    for label in ["Text Off", "Small", "Compact", "Large", "Reset Ribbon"] {
+    for label in ["Text Off", "Small", "Compact", "Large"] {
         world.expect_text(label);
         assert!(
             !world.run_is_enabled(label),
             "{label}: expected an unavailable control"
         );
     }
+    assert!(world.run_is_enabled("Reset Ribbon"));
     world.click_text("Normal");
     world.pump(Vec::new());
     world.expect_no_text("Show Panel Titles");

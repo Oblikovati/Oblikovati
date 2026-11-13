@@ -691,6 +691,9 @@ fn applied_ribbon_settings_survive_restart_without_unapplied_edits() {
     world.close();
 }
 
+#[path = "reset_native.rs"]
+mod reset_native;
+
 #[test]
 fn failed_ribbon_settings_save_keeps_the_draft_unapplied() {
     let mut world = ApplicationWorld::new();

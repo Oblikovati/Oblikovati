@@ -55,6 +55,30 @@ fn corrupt_saved_settings_are_rejected_without_a_partial_store() {
 }
 
 #[test]
+fn reset_saves_defaults_before_changing_applied_ribbon() {
+    let store = FakeRibbonStore::default();
+    let mut customization = RibbonCustomization::default();
+    customization.set_store(Box::new(store.clone())).unwrap();
+    customization.open(RibbonTab::Tools);
+    customization
+        .draft
+        .reset_source_selection(Command::Sketches);
+    customization.draft.add();
+    customization.apply().unwrap();
+    let saved = store.0.borrow().bytes.clone();
+    store.0.borrow_mut().fail_save = true;
+    assert!(customization.reset().is_err());
+    assert!(customization.has_panel(RibbonTab::Tools));
+    assert_eq!(store.0.borrow().bytes, saved);
+    store.0.borrow_mut().fail_save = false;
+    customization.reset().unwrap();
+    assert!(!customization.has_panel(RibbonTab::Tools));
+    let mut reopened = RibbonCustomization::default();
+    reopened.set_store(Box::new(store)).unwrap();
+    assert!(!reopened.has_panel(RibbonTab::Tools));
+}
+
+#[test]
 fn moving_a_command_saves_atomically_without_committing_other_drafts() {
     let store = FakeRibbonStore::default();
     let mut customization = RibbonCustomization::default();

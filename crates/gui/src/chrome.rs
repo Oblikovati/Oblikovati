@@ -80,6 +80,7 @@ pub(crate) fn ribbon_band(
         if owners.ribbon.display.take_customization_request() {
             owners.ribbon.customization.open(tab);
         }
+        owners.ribbon.reset_confirmation(ui, &request.commands);
     }
     side_ribbon(
         ui,

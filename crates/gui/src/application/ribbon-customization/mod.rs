@@ -82,6 +82,14 @@ impl RibbonCustomization {
         self.draft.apply();
         Ok(())
     }
+    /// Persist the default ribbon before replacing its applied settings.
+    /// Example: `customization.reset()?`.
+    pub(crate) fn reset(&mut self) -> Result<(), String> {
+        let defaults = settings_xml::RibbonSettings::default();
+        Self::save_settings(&mut self.store, &defaults)?;
+        self.draft.load_applied(defaults);
+        Ok(())
+    }
     fn save_settings(
         store: &mut Option<Box<dyn GuiRibbonSettingsStore>>,
         settings: &settings_xml::RibbonSettings,

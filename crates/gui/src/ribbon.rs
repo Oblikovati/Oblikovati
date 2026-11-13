@@ -5,6 +5,8 @@ use oblikovati_api::types::{
     DRAWING_RIBBON, PART_RIBBON, PRESENTATION_RIBBON, RibbonKey, SUB_TYPE_SHEET_METAL_PART,
     UNKNOWN_DOCUMENT_RIBBON, ZERO_DOC_RIBBON,
 };
+#[path = "ribbon_reset.rs"]
+mod reset;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum RibbonTab {
@@ -49,6 +51,8 @@ pub(crate) struct DocumentRibbon {
     settling_frames: u8,
     pending_tab: Option<RibbonTab>,
     pub double_click_tab: Option<RibbonTab>,
+    reset_error: Option<String>,
+    reset_open: bool,
 }
 pub(crate) struct RibbonFrame {
     pub tabs: Vec<RibbonTab>,

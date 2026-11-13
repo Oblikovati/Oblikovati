@@ -105,6 +105,7 @@ pub(crate) struct RibbonDisplayState {
     docking_open: bool,
     docking_hover_blocked: bool,
     customize_requested: bool,
+    reset_requested: bool,
     /// A choice in Show Panels ends the whole menu, as a choice in any other row does.
     close_context_menu: bool,
     selector_keyboard_started: bool,
@@ -142,6 +143,7 @@ impl Default for RibbonDisplayState {
             docking_open: false,
             docking_hover_blocked: false,
             customize_requested: false,
+            reset_requested: false,
             close_context_menu: false,
             selector_keyboard_started: false,
             selector_focused_panel: None,
@@ -287,6 +289,10 @@ impl RibbonDisplayState {
     }
     pub(crate) fn take_customization_request(&mut self) -> bool {
         std::mem::take(&mut self.customize_requested)
+    }
+    /// Consume a reset-menu request; example: `display.take_reset_request()`.
+    pub(crate) fn take_reset_request(&mut self) -> bool {
+        std::mem::take(&mut self.reset_requested)
     }
     /// Dock a floating ribbon from its title-bar menu.
     pub(crate) fn floating_title_menu(&mut self, ui: &Ui) {

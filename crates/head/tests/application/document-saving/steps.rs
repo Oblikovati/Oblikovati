@@ -82,6 +82,7 @@ fn dialog_contents(world: &mut ApplicationWorld) {
 #[when("I cancel the dialog")]
 #[when("I cancel the dialog again")]
 #[when("I cancel Save As")]
+#[when("the user cancels Save As")]
 fn cancel_dialog(world: &mut ApplicationWorld) {
     world.click_text("Cancel");
 }

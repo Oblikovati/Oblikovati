@@ -12,7 +12,7 @@ claim that each file has been individually triaged.
 | 1 | `features/application/file-menu/file-menu.feature` | Verified | All 8 scenarios passed after the secondary-button chooser changes. Weldment remains unavailable. |
 | 1 | `features/application/document-creation` | In progress | Name and size sorting, horizontal icon tiles, and keyboard and secondary-button selection work for available templates. The BDD scenarios still require additional named templates and native bindings. |
 | 1 | `features/application/ribbon-customization/ribbon-customization.feature` | Needs rerun | Source changed since the inventory checkpoint. Review the corrections and rerun affected native scenarios. |
-| 1 | `features/application/ribbon-appearance/ribbon-appearance.feature` | In progress | On the recorded source, five of 18 scenarios pass; the others stop at undefined steps. Panel titles can be hidden without losing expansion arrows. Implement Text Off, Small, Compact, Large and Reset Ribbon across all commands and layouts. |
+| 1 | `features/application/ribbon-appearance/ribbon-appearance.feature` | In progress | On the recorded source, five of 18 scenarios pass; the others stop at undefined steps. Panel titles can be hidden without losing expansion arrows. Reset Ribbon is implemented; its affirmative scenario is blocked by missing standard Tools groups. Implement Text Off, Small, Compact and Large across all commands and layouts. |
 | 1 | `features/application/ribbon-docking/ribbon-docking.feature` | In progress | Source changed after the inventory checkpoint. A full native run at commit `139b82a42` found 6 passes and 17 scenarios stopped by undefined steps. With corrected bindings, a second run found 8 passes, 14 undefined steps, and one ambiguous step. Resolve the remaining steps and implement missing command-group behavior. |
 | 1 | `features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature` | Needs rerun | Source changed since the inventory checkpoint. Review the corrections and rerun affected native scenarios. |
 | 1 | `features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature` | Needs rerun | The source changed after the full run at `6e80b9bde`. Review the corrections and run the whole feature against a stable source; earlier counts are historical. |
@@ -481,3 +481,23 @@ revisions checked before they support a current pass claim.
   --nocapture`. The report is in `/tmp/obk-side-selector-tabs-fixed-20261113`,
   a local path. A separate native test covers both docking sides. The GUI
   library passed 350 tests, the File dialog passed four, and GUI Clippy passed.
+
+### Reset Ribbon, 2026-11-13
+
+- Reset Ribbon asks for confirmation and saves default customization before it
+  changes the ribbon. A save failure keeps the applied ribbon and shows an
+  error. Reset also restores display settings and the contextual tab.
+- The native cancellation scenario passed all nine steps on appearance source
+  SHA-256 `5de53f4ed08ea45af82b8e9c2cf628f859c713d96118848bd32304fadcb0a4a0`.
+  The source stayed unchanged during the run. Native tests also cover reset,
+  cancellation, save failure, dialog placement, and persistence after restart.
+- The affirmative scenario reaches the restored Tools ribbon but fails because
+  the standard Measure group is missing. It is not counted as passing.
+- The Save As overwrite-cancellation scenario passed 12 steps on source
+  SHA-256 `ba4bbe1607526458ea6f038a3e45fcadd53ac7f1eac825a0164f50a474faae2f`.
+  Its source stayed unchanged during the run. The shared confirmation bindings
+  were checked because Reset Ribbon uses them too.
+- Application: `05e64216d` plus these changes. Linux, Xvfb at 1600 × 1000,
+  and Lavapipe were used. The GUI library passed 351 tests, the file-dialog
+  suite passed four, and GUI Clippy passed. Logs and captures under
+  `/tmp/obk-reset-*` are local artifacts.

@@ -18,8 +18,12 @@ impl RibbonDisplayState {
         if ui.menu_item_config("Normal").selected(true).build() {
             self.close_context_menu = true;
         }
-        for label in ["Text Off", "Small", "Compact", "Large", "Reset Ribbon"] {
+        for label in ["Text Off", "Small", "Compact", "Large"] {
             muted_context_item(ui, label);
+        }
+        if ui.menu_item("Reset Ribbon") {
+            self.reset_requested = true;
+            self.close_context_menu = true;
         }
     }
 }

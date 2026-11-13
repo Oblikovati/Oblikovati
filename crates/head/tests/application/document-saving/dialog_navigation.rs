@@ -292,10 +292,12 @@ fn name_remains(world: &mut ApplicationWorld) {
     world.expect_text(&name);
 }
 #[when("I select the existing part file")]
+#[when("the user selects the existing part file")]
 fn select_existing_part(world: &mut ApplicationWorld) {
     world.click_text(EXISTING_PART);
 }
 #[when("I choose Save")]
+#[when("the user chooses Save")]
 fn choose_save(world: &mut ApplicationWorld) {
     world.click_text("Save");
     world.pump(Vec::new());
@@ -308,10 +310,16 @@ fn replace_asked(world: &mut ApplicationWorld) {
 }
 #[then("the confirmation offers Yes and No")]
 fn replace_choices(world: &mut ApplicationWorld) {
-    world.expect_text("Yes");
-    world.expect_text("No");
+    for label in ["Yes", "No"] {
+        world.expect_text(label);
+        assert!(
+            world.run_is_enabled(label),
+            "{label}: expected an enabled choice"
+        );
+    }
 }
 #[when("I choose No")]
+#[when("the user chooses No")]
 fn choose_no(world: &mut ApplicationWorld) {
     world.click_text("No");
     world.pump(Vec::new());
@@ -319,6 +327,7 @@ fn choose_no(world: &mut ApplicationWorld) {
 #[then("the confirmation closes")]
 fn replace_closed(world: &mut ApplicationWorld) {
     world.expect_no_text("already exists");
+    assert!(super::super::diagnostics::window_geometry("Reset Ribbon").is_none());
 }
 #[then("Save As remains open with the existing file name displayed")]
 fn save_as_remains(world: &mut ApplicationWorld) {
