@@ -22,6 +22,7 @@ fn image_frame(owner: &mut GuiFrameEngine, key: GuiTextureKey) -> Result<GuiFram
                 size: [96., 58.],
                 icon: [32.; 2],
                 large: true,
+                show_caption: true,
             },
         );
     });

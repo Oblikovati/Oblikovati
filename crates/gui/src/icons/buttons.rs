@@ -43,6 +43,7 @@ impl GuiRibbonIcons {
             size: cell,
             icon,
             large,
+            show_caption: true,
         }
     }
     pub(crate) fn command_button(

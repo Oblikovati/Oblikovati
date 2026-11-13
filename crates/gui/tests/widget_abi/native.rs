@@ -152,18 +152,24 @@ fn collapsed_dialog_refits_its_full_size_before_it_is_expanded() {
 #[test]
 fn decorated_buttons_keep_the_normal_button_identity_and_hit_bounds() {
     let mut context = probe_context();
-    let plain = button_item_probe(&mut context, false);
-    let decorated = button_item_probe(&mut context, true);
+    let plain = button_item_probe(&mut context, false, true);
+    let decorated = button_item_probe(&mut context, true, true);
+    let icon_only = button_item_probe(&mut context, true, false);
+    assert_eq!(icon_only, plain);
     assert_eq!(decorated, plain);
     assert_eq!(decorated.0, [108., 58.]);
 }
-fn button_item_probe(context: &mut imgui::Context, decorated: bool) -> ([f32; 2], u32) {
+fn button_item_probe(
+    context: &mut imgui::Context,
+    decorated: bool,
+    show_caption: bool,
+) -> ([f32; 2], u32) {
     let ui = context.frame();
     window_geometry(ui, [0., 0.], [400., 300.], Condition::Always);
     let mut result = ([0.; 2], 0);
     ui.window("Icon identity").build(|| {
         cursor_position(ui, [31., 47.]);
-        draw_probe_button(ui, decorated);
+        draw_probe_button(ui, decorated, show_caption);
         // The sole live context owns LastItemData; no pointer survives this observation.
         let identity = unsafe { imgui::sys::igGetCurrentContext().as_ref() }
             .unwrap()
@@ -213,9 +219,11 @@ fn colored_caption_points(draws: &imgui::DrawData) -> Vec<[f32; 2]> {
         .map(|vertex| vertex.pos)
         .collect()
 }
-fn draw_probe_button(ui: &Ui, decorated: bool) {
+fn draw_probe_button(ui: &Ui, decorated: bool, show_caption: bool) {
     if decorated {
-        icon_button(ui, "Rectangle", caption_presentation(true));
+        let mut presentation = caption_presentation(true);
+        presentation.show_caption = show_caption;
+        icon_button(ui, "Rectangle", presentation);
     } else {
         button(ui, "Rectangle", [108., 58.]);
     }
@@ -226,6 +234,7 @@ fn caption_presentation(large: bool) -> IconButtonPresentation {
         size: if large { [108., 58.] } else { [108., 18.] },
         icon: if large { [40.; 2] } else { [18.; 2] },
         large,
+        show_caption: true,
     }
 }
 fn draw_colored_caption(context: &mut imgui::Context, large: bool) {
@@ -236,4 +245,28 @@ fn draw_colored_caption(context: &mut imgui::Context, large: bool) {
         let _color = ui.push_style_color(imgui::StyleColor::Text, [0.2, 0.4, 0.6, 1.]);
         icon_button(ui, "Rectangle", caption_presentation(large));
     });
+}
+
+#[test]
+fn caption_free_icon_keeps_its_image_without_text() {
+    for large in [true, false] {
+        let mut context = probe_context();
+        for _ in 0..2 {
+            let ui = context.frame();
+            window_geometry(ui, [0., 0.], [400., 300.], Condition::Always);
+            ui.window("Icon only").build(|| {
+                cursor_position(ui, [31., 47.]);
+                let _color = ui.push_style_color(imgui::StyleColor::Text, [0.2, 0.4, 0.6, 1.]);
+                let mut presentation = caption_presentation(large);
+                presentation.show_caption = false;
+                icon_button(ui, "Rectangle", presentation);
+            });
+            let draws = context.render();
+            assert!(colored_caption_points(draws).is_empty());
+        }
+        let draws = context.render();
+        assert!(draws.draw_lists().flat_map(|list| list.commands()).any(|command| {
+            matches!(command, imgui::DrawCmd::Elements { cmd_params, .. } if cmd_params.texture_id.id() == 2)
+        }), "expected the icon texture to remain in the draw data");
+    }
 }

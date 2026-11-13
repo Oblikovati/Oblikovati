@@ -9,6 +9,7 @@ unsafe extern "C" {
         icon_width: f32,
         icon_height: f32,
         large: bool,
+        show_caption: bool,
     ) -> bool;
     fn oblikovati_gui_fit_dialog(title: *const u8, x: f32, y: f32, width: f32, height: f32);
     fn oblikovati_gui_begin_scroll_region(identity: *const u8, width: f32, height: f32) -> bool;
@@ -224,6 +225,7 @@ pub(crate) struct IconButtonPresentation {
     pub size: [f32; 2],
     pub icon: [f32; 2],
     pub large: bool,
+    pub show_caption: bool,
 }
 /// Keep normal button identity and last-item state; example: `icon_button(ui, "Rectangle", presentation)`.
 pub(crate) fn icon_button(_: &Ui, label: &str, presentation: IconButtonPresentation) -> bool {
@@ -239,6 +241,7 @@ pub(crate) fn icon_button(_: &Ui, label: &str, presentation: IconButtonPresentat
             presentation.icon[0],
             presentation.icon[1],
             presentation.large,
+            presentation.show_caption,
         )
     }
 }
