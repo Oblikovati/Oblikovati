@@ -24,7 +24,7 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 | --- | --- | --- | --- |
 | 1 | A8: complete the behavior ledger and progress counts | In progress | Issue #3865; reporting and receipt checks exist, but classifications, outline evidence, and R0 fields remain. |
 | 2 | A9: map feature files to milestones | Ready | Issue #3861; validate mappings against the milestone exits. |
-| 3 | A10: replace prose evidence with durable receipts | Ready | Keep historical records distinct from verified evidence. |
+| 3 | A10: replace prose evidence with durable receipts | In progress | Historical prose is archived; scenarios without retained current reports still need reruns and receipts. |
 | 4 | A11: record R0–R3 exit evidence or named gaps | Ready | Depends on the inventory and milestone mappings. |
 | 5 | A12: split files over the line limit | Ready | Issue #3860; preserve behavior and run the required gate. |
 
@@ -35,6 +35,7 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 - A8: stale application or source evidence is downgraded without hiding damaged artifacts (#3869). Ledger-tool-only edits do not invalidate native UI tests.
 - A8: the ledger records 2,719 declarations, including 62 blocked by invalid Gherkin (#3866). Eight scenarios have current native receipts: six application, one sketch, and one solid-model; 2,695 remain unclassified. R7 has more unclassified work, so its assigned scenario count is not milestone completion. The strict gate reports these gaps. See `behavior-receipts.md` and issue #3865.
 - A8: `behavior_cli.py backlog` groups the 195 feature files by their assigned milestones and shows missing classifications and R0 evidence. All 2,719 rows still have incomplete R0 baseline fields; unassigned work is not given an inferred milestone.
+- A10: the former prose ledger is archived in `archive/bdd-work-ledger-2026-11-13-*.md`. Its old temporary paths and pass labels are historical, not current evidence. Only the linked receipts can support current verified claims.
 - R4 rectangle sizing: the first two-point rectangle scenario has a current native receipt; later rectangle scenarios remain unverified. See issue #3857.
 - R4 extrusion: `extrusion-01` has a current native receipt after the shared sketch-name fix (#3871). The full cube journey remains unverified (#3870).
 - R3 cube evidence: the headless certified replay and the native GUI-loop cube test passed on `77f03cf61`; see `receipts/2026-11-14-r3-cube-check/`. The native test uses injected events and an API model-state fixture. Foreground MCPBridge input and screenshot evidence, full R3 exit checks, and the gate remain open (#3857).

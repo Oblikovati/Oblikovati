@@ -43,20 +43,21 @@ Compare its requirements with the implementation and previous evidence. A
 change invalidates all previous results for that file until it is run again.
 If a file is renamed, treat the old path as removed and the new path as added.
 If a source correction conflicts with observed behavior or other scenarios,
-record the conflict in the work ledger and resolve it against the scenario
-maintainers; do not silently weaken an assertion.
+record the conflict in `scenario-defects/` and the relevant issue; do not
+silently weaken an assertion.
 
-After triage, add the new or changed work to `bdd-work-ledger.md` and update the
-baseline with the same command and `--update`. Commit the ledger and baseline
-together. The baseline is a discovery checkpoint, not evidence that features
-are implemented. Check the live source again before committing: it can change
-while work is in progress.
+After triage, update the pinned snapshot, source inventory, and reviewed
+classifications together. Preserve old receipts as historical evidence when a
+source hash changes. The discovery inventory is not evidence that features are
+implemented. Check the live source again before committing: it can change while
+work is in progress.
 
 ## Select and implement work
 
-Choose the next ready item in milestone order. Record the feature path, the
-scenario names or range, the problem, and the current state in the ledger.
-Keep one active row per coherent work item. Link its issue when one exists.
+Choose the next ready item in milestone order. Record its scope, problem, and
+dependencies in a GitHub issue. Assign each scenario in the classification
+file and link the issue. Use `behavior_cli.py backlog` to see the feature
+groups and their remaining unclassified scenarios.
 Use the Go source as a design reference and implement through the shared Rust
 host operations. Add the appropriate model and host tests, then drive the native
 window with mouse and keyboard for UI behavior. Close test windows afterward.
@@ -78,7 +79,8 @@ only selects its accepted feature list, so it is not a full sketch run.
 ## Record test evidence
 
 Give each run its own absolute `OBK_BDD_REPORTS` directory. The existing default
-report directory is overwritten on each run. Record in the ledger:
+report directory is overwritten on each run. Retain a checked receipt and its
+artifacts as described in [behavior receipts](behavior-receipts.md), including:
 
 1. Feature file path and SHA-256 before and after the run. If the hashes differ,
    discard the run as current evidence and rerun against stable source.
@@ -101,12 +103,11 @@ cargo test --locked -p oblikovati-head --lib \
   sketch_scenarios_use_the_native_window -- --nocapture
 ```
 
-The report directory is local output, not a durable shared ledger. Preserve or
-publish the relevant reports using the team's normal artifact storage and put
-their accessible location in the ledger. If reports are lost, the run remains
-historical context, not auditable current acceptance evidence. Do not sum
-reports from different revisions, changed scenario files, or overlapping
-filters as a current total.
+The report directory is local output, not durable evidence. Preserve its
+required artifacts in the repository and link them from the receipt. If reports
+are lost, the run remains historical context, not current acceptance evidence.
+Do not sum reports from different revisions, changed scenario files, or
+overlapping filters as a current total.
 
 ## Diagnose a feature
 
