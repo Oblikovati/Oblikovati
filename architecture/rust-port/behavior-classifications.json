@@ -14,8 +14,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-13-body-properties-current/receipt-290c0844328af2d2.json",
-        "sha256": "2bac5556c192dd1bed1f988913758fa1af1da45b477974edce06b49061f62c14"
+        "path": "architecture/rust-port/receipts/2026-11-13-body-properties-rerun/receipt-290c0844328af2d2.json",
+        "sha256": "6122539fdacda8985a4fcd2d1a3b9287bf8238de827847a7270d420c02249a02"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
@@ -33,8 +33,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-13-body-properties-current/receipt-f024b2250132b323.json",
-        "sha256": "231b78d258ff385e80a91e5088a62f920212c514db9accb7d3d0e2141415685e"
+        "path": "architecture/rust-port/receipts/2026-11-13-body-properties-rerun/receipt-f024b2250132b323.json",
+        "sha256": "beb85440fb0cf97fd9c6a2e4439f40a9700ce55056e6b802327fc0e3c9b9cb61"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
@@ -52,8 +52,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-13-body-properties-current/receipt-48efe943e9ecc0d7.json",
-        "sha256": "aa423bd7401209573e080b186af8724e5fbe94b66ef4fb2e8f8bf1b295a33ada"
+        "path": "architecture/rust-port/receipts/2026-11-13-body-properties-rerun/receipt-48efe943e9ecc0d7.json",
+        "sha256": "7a7978c106ea87f613ab95d11a5bf14b0f401e56dd9a929312971dc61ea9eff0"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
@@ -71,8 +71,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-13-body-properties-current/receipt-137ba03d06c38c43.json",
-        "sha256": "6f0ff314f7a0c50270867feacdba165cf7ef59e191a5d047fa0544221ca55ef2"
+        "path": "architecture/rust-port/receipts/2026-11-13-body-properties-rerun/receipt-137ba03d06c38c43.json",
+        "sha256": "affa6fb1b3cd1c584f58e56b1d20efd29712fd2172ac5f7418bbd15fb02b43b2"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
@@ -90,8 +90,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-13-body-properties-current/receipt-e22ccad1ec1386a7.json",
-        "sha256": "435d6223040ba3b2bd29504b018b48c4207f330159bc414acd32d67427ab726c"
+        "path": "architecture/rust-port/receipts/2026-11-13-body-properties-rerun/receipt-e22ccad1ec1386a7.json",
+        "sha256": "f17e4a87ac11b610daf2b347c633ab4115c2f63618e9a91d4dcc35624608d29f"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
@@ -109,8 +109,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-13-body-properties-current/receipt-fe23247614f79aca.json",
-        "sha256": "dd0348cd6c1b8dea93005fa25dfd775c285b380a78a7518b127c530aba752bd5"
+        "path": "architecture/rust-port/receipts/2026-11-13-body-properties-rerun/receipt-fe23247614f79aca.json",
+        "sha256": "13a3fb800697a2e6bd1fe827a3555b439ce0f89ae655ed323b3c71f7a145457a"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
@@ -196,8 +196,13 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3857"
       ],
-      "state": "inventoried",
-      "last_receipt": null
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-13-rectangle-current/receipt.json",
+        "sha256": "ffaf5db9806ec2b799823286afa2afa539962c539d7c7e440068a16269a1d2e8"
+      },
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:a661d2ccfbdfc85a763de8dd2eb91fc325e1a004e58059346306d9e69700b3c5",
