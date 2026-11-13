@@ -8,6 +8,12 @@ use imgui::Ui;
 pub struct GuiMeasurePanel {
     pub rows: Vec<String>,
 }
+/// The last sketch command that can be started again from its context menu.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GuiSketchRepeat {
+    Placement(crate::GuiSketchTool),
+    Constraint(crate::GuiSketchConstraint),
+}
 /// A choice in the sketch's inspection commands.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GuiInspectAction {
@@ -71,11 +77,21 @@ pub struct GuiSketchContext {
     pub candidates: Vec<String>,
 }
 fn repeat_row(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
-    let Some(tool) = state.repeat_tool else {
+    let Some(command) = state.repeat_command else {
         return;
     };
-    if ui.menu_item(format!("Repeat {}", tool.label())) {
-        actions.push(GuiShellAction::PlaceSketchTool(tool));
+    let (label, action) = match command {
+        GuiSketchRepeat::Placement(tool) => (tool.label(), GuiShellAction::PlaceSketchTool(tool)),
+        GuiSketchRepeat::Constraint(choice) => {
+            (choice.label(), GuiShellAction::ConstrainSketch(choice))
+        }
+    };
+    if ui
+        .menu_item_config(format!("Repeat {label}"))
+        .enabled(action.enabled(state))
+        .build()
+    {
+        actions.push(action);
     }
 }
 /// On a point it changes that point; on empty canvas, what new points will be.

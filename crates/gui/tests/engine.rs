@@ -39,7 +39,7 @@ fn request() -> GuiFrameRequest {
             takes_command_alias: false,
             center_point_format: false,
             sketch_context: None,
-            repeat_tool: None,
+            repeat_command: None,
             undo_labels: Vec::new(),
             line_command: None,
             sketch_options: None,
@@ -62,6 +62,7 @@ fn request() -> GuiFrameRequest {
             document_type: Some(oblikovati_api::types::DOCUMENT_PART),
             document: Some(1),
             parameters: Vec::new(),
+            ..Default::default()
         },
         delta_seconds: 1. / 60.,
         framebuffer_scale: [1.; 2],

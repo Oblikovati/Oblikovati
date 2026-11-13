@@ -14,6 +14,8 @@
 
 ### Added
 
+- Added repeat of sketch constraints to the sketch context menu. (#3856)
+
 - Added selection-aware Delete to the sketch context menu. (#3856)
 
 - Added sketch marking-menu overflow command editing. (#3856)

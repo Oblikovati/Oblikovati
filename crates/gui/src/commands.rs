@@ -356,7 +356,7 @@ pub struct GuiCommandState {
     /// What the pointer was on when the canvas menu was asked for.
     pub sketch_context: Option<crate::GuiSketchContext>,
     /// The command the canvas menu offers to run again.
-    pub repeat_tool: Option<crate::GuiSketchTool>,
+    pub repeat_command: Option<crate::GuiSketchRepeat>,
     pub line_command: Option<crate::GuiLineCommandMenu>,
     pub sketch_options: Option<oblikovati_model::application_options::SketchApplicationOptions>,
     /// A sketch is open with no command running: the canvas offers its own menu.

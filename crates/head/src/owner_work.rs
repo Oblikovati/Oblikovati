@@ -453,7 +453,12 @@ impl<
         &mut self,
         choice: oblikovati_gui::GuiSketchConstraint,
     ) -> Result<bool, String> {
-        self.start_geometric_tool(choice)
+        let started = self.start_geometric_tool(choice)?;
+        if started {
+            self.sketch_memory.repeat_command =
+                Some(oblikovati_gui::GuiSketchRepeat::Constraint(choice));
+        }
+        Ok(started)
     }
     fn place_sketch_tool_from_gui(
         &mut self,
@@ -472,7 +477,7 @@ impl<
             .units()
             .working_scale();
         self.start_sketch_placement(edit.document, edit.sketch, gui_placement_tool(tool, scale)?)?;
-        self.sketch_memory.repeat_tool = Some(tool);
+        self.sketch_memory.repeat_command = Some(oblikovati_gui::GuiSketchRepeat::Placement(tool));
         Ok(true)
     }
     fn edit_sketch_from_gui(&mut self, start: bool) -> Result<bool, String> {

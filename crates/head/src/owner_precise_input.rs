@@ -317,7 +317,7 @@ impl<
 pub(super) struct SketchCommandMemory {
     /// New points are center points, unless a person turned that off.
     pub center_point: bool,
-    pub repeat_tool: Option<oblikovati_gui::GuiSketchTool>,
+    pub repeat_command: Option<oblikovati_gui::GuiSketchRepeat>,
     /// Where relative values are measured from; none means the sketch origin.
     pub triad: Option<[f64; 2]>,
     pub triad_pick: Option<TriadPick>,
@@ -327,7 +327,7 @@ impl Default for SketchCommandMemory {
     fn default() -> Self {
         Self {
             center_point: true,
-            repeat_tool: None,
+            repeat_command: None,
             triad: None,
             triad_pick: None,
             context: None,

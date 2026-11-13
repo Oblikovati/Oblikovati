@@ -44,7 +44,7 @@ pub use application::workspace_layout::body_properties::{GuiAppearanceChoice, Gu
 pub use application::workspace_layout::browser_origin::GuiOriginAxis;
 pub use sketch::constraint_glyphs::GuiConstraintGlyph;
 pub use sketch::dimension_edit::{GuiDimensionEdit, GuiDimensionValue};
-pub use sketch::inspect::{GuiInspectAction, GuiMeasurePanel, GuiSketchContext};
+pub use sketch::inspect::{GuiInspectAction, GuiMeasurePanel, GuiSketchContext, GuiSketchRepeat};
 pub use sketch::line::{GuiLineCommand, GuiLineCommandMenu, GuiSketchHud, GuiSketchHudField};
 pub use sketch::precise_input::{
     GuiPreciseMode, GuiPrecisePoint, GuiPreciseTarget, GuiTriadCommand,

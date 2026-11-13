@@ -56,7 +56,7 @@ pub(super) fn without_tool_state(
     state.precise_target = None;
     state.sketch_hud = None;
     state.takes_command_alias = false;
-    state.repeat_tool = None;
+    state.repeat_command = None;
     state
 }
 #[test]

@@ -288,3 +288,38 @@ fn sketch_context_delete_requires_selection_and_undo_restores_the_line() {
     assert_eq!(world.edited_geometry().lines().len(), 1);
     world.close();
 }
+
+#[test]
+fn context_menu_repeats_the_latest_sketch_constraint() {
+    let mut world = ApplicationWorld::new();
+    world.start_empty_sketch();
+    world.click_text("Line");
+    world.sketch_click([620, 300]);
+    world.sketch_click([750, 350]);
+    world.escape();
+    world.click_text("Line");
+    world.sketch_click([850, 400]);
+    world.sketch_click([980, 480]);
+    world.escape();
+    world.click_text("Coincident");
+    world.sketch_click([750, 350]);
+    world.sketch_click([850, 400]);
+    assert_eq!(world.edited_geometry().constraints().len(), 1);
+    world.escape();
+    world.right_click([900, 550]);
+    world.pump(Vec::new());
+    let repeat = world
+        .frame
+        .runs
+        .iter()
+        .find(|run| {
+            run.text == "RepeatCoincident" && run.center()[0] > 700. && run.center()[1] > 250.
+        })
+        .expect("expected Repeat Coincident in the sketch context menu");
+    let position = repeat.center();
+    world.click(diagnostics::pointer_pixels(position));
+    assert!(!world.state().sketch_at_ready);
+    world.expect_status("Coincident:");
+    world.escape();
+    world.close();
+}

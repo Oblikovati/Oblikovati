@@ -124,7 +124,7 @@ impl<
             precise_target: self.gui_precise_target(),
             center_point_format: self.sketch_memory.center_point,
             sketch_context: self.gui_sketch_context(),
-            repeat_tool: self.sketch_memory.repeat_tool,
+            repeat_command: self.sketch_memory.repeat_command,
             line_command: self.gui_line_command_menu(),
         })
     }
