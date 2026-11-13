@@ -129,6 +129,22 @@ fn express_open_refuses_mouse_and_enter_until_full_mode_is_selected() {
     assert_ne!(world.active_id(), part);
     world.close();
 }
+
+#[test]
+fn populated_assembly_is_not_shown_as_an_empty_document() {
+    let mut world = ApplicationWorld::new();
+    let part = world.add_part();
+    let folder = models_folder(&mut world);
+    std::fs::write(folder.join(ASSEMBLY_FILE), b"schemaVersion: 2\ndocumentType: 2\nmodel: {occurrences: [{name: 'Part:1', component: part.opd}]}\n").unwrap();
+    open_dialog(&mut world);
+    look_in(&mut world, &folder);
+    select_row(&mut world, ASSEMBLY_FILE);
+    choose_open(&mut world);
+    assert_eq!(world.active_id(), part);
+    assert_eq!(world.state().documents.len(), 1);
+    assert!(world.text().contains("occurrences"), "{}", world.text());
+    world.close();
+}
 // Already open files
 #[given("a saved part is open in the MCAD Software")]
 fn part_open(world: &mut ApplicationWorld) {

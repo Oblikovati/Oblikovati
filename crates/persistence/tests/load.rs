@@ -57,6 +57,46 @@ fn reader(contents: &[u8]) -> FakePackageReader {
 }
 
 #[test]
+fn populated_assemblies_are_refused_before_identity_registration() {
+    use oblikovati_persistence::load::load_parameter_package;
+    for model in [
+        "occurrences: [{name: 'Part:1', component: part.opd}]",
+        "patterns: [{name: Pattern1}]",
+        "occurrences: {unexpected: value}",
+    ] {
+        let encoded = format!("schemaVersion: 2\ndocumentType: 2\nmodel: {{{model}}}\n");
+        let mut index = DocumentIdentityIndex::default();
+        let mut source = source();
+        let error = load_parameter_package(
+            Path::new("assembly.oad"),
+            1,
+            "alpha",
+            &mut index,
+            &mut source,
+            &mut reader(encoded.as_bytes()),
+        )
+        .unwrap_err();
+        assert!(error.to_string().contains("assembly model."), "{error}");
+        assert!(index.identity(1).is_none());
+        assert_eq!(source.next, 0);
+    }
+}
+#[test]
+fn an_empty_assembly_can_still_be_loaded() {
+    use oblikovati_persistence::load::load_parameter_package;
+    let encoded = b"schemaVersion: 2\ndocumentType: 2\nmodel: {occurrences: [], patterns: []}\n";
+    let result = load_parameter_package(
+        Path::new("empty.oad"),
+        1,
+        "alpha",
+        &mut DocumentIdentityIndex::default(),
+        &mut source(),
+        &mut reader(encoded),
+    );
+    assert!(result.is_ok(), "{result:?}");
+}
+
+#[test]
 fn loaded_identity_is_preserved_and_copied_file_collision_is_explicit() {
     let mut index = DocumentIdentityIndex::default();
     let mut source = source();

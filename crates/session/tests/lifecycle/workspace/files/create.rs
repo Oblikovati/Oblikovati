@@ -16,6 +16,19 @@ fn create_recipe(
 }
 
 #[test]
+fn populated_assembly_template_is_refused_before_creating_a_document() {
+    let mut host = host(RecordingWorkspace::default());
+    let mut source = SequenceGuids(1000);
+    let package = DocumentPackage::decode(b"schemaVersion: 2\ndocumentType: 2\nmodel: {occurrences: [{name: 'Part:1', component: part.opd}]}\n").unwrap();
+    let failure = host
+        .create_unbound(package, RecordingObserver::default(), "alpha", &mut source)
+        .unwrap_err();
+    assert!(failure.to_string().contains("assembly model.occurrences"));
+    assert!(host.workspace().documents().is_empty());
+    assert!(host.workspace().active_document().is_none());
+}
+
+#[test]
 fn creation_mints_unsaved_identity_and_emits_created_then_activation() {
     let mut host = host(RecordingWorkspace::default());
     let mut source = SequenceGuids(1000);

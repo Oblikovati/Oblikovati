@@ -5,6 +5,7 @@ use serde_yaml_ng::{Mapping, Value};
 use std::collections::BTreeMap;
 use std::{error::Error, fmt};
 
+mod assembly_support;
 mod attachments;
 pub use attachments::format_attachment_time;
 mod attributes;

@@ -46,6 +46,18 @@ fn native_drawing_save_refuses_a_missing_model_without_replacing_destination() {
     assert_eq!(std::fs::read(copy).unwrap(), b"existing destination");
 }
 #[test]
+fn populated_assembly_cannot_be_saved_as_an_empty_model() {
+    let directory = tempfile::tempdir().unwrap();
+    let source = directory.path().join("assembly.oad");
+    let destination = directory.path().join("existing.oad");
+    std::fs::write(&source, b"schemaVersion: 2\ndocumentType: 2\nmodel: {occurrences: [{name: 'Part:1', component: part.opd}]}\n").unwrap();
+    std::fs::write(&destination, b"existing destination").unwrap();
+    let result = command("save-as", &[source.as_os_str(), destination.as_os_str()]);
+    assert!(!result.status.success());
+    assert!(String::from_utf8_lossy(&result.stderr).contains("assembly model.occurrences"));
+    assert_eq!(std::fs::read(destination).unwrap(), b"existing destination");
+}
+#[test]
 fn native_new_open_save_as_reopen_preserves_kind_and_saved_identity() {
     let directory = tempfile::tempdir().unwrap();
     for (kind, extension) in [

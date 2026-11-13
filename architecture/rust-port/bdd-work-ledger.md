@@ -129,6 +129,11 @@ claim that each file has been individually triaged.
   is selected, instead of silently opening in full mode. Native input tests
   cover those routes and the drawing-option reset scenario still passes all
   11 steps. Go's `model/occurrence` is the reference for component instances.
+- Until occurrence reconstruction is implemented, typed loading and template
+  creation refuse Go assembly recipes with occurrences or occurrence patterns.
+  This prevents a populated assembly from being presented or saved as an empty
+  model. Envelope reading still retains the original data, and empty assemblies
+  remain supported. This is a named decline, not assembly implementation.
 - The drawing browser now lists the authored sheets, borders, title blocks and
   views, and browser search uses those same rows. Unit tests cover multiple
   sheets, a missing border and searching for a view.

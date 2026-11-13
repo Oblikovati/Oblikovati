@@ -36,6 +36,7 @@ impl DocumentPackage {
     }
     /// Restore validated recipes without cached frames; example: `package.restore_work_geometry()?`.
     pub fn restore_work_geometry(&self) -> Result<RestoredWorkGeometry, PackageCodecError> {
+        self.require_supported_assembly()?;
         require_legacy_features(self)?;
         // Keep this versioned key: old readers must reject mixed recipes, not silently drop axes (#3739).
         let section = self
