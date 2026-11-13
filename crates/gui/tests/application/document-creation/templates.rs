@@ -165,3 +165,21 @@ fn opening_the_chooser_does_not_create_a_document_and_escape_cancels() {
     }];
     assert!(engine.frame(&request).unwrap().actions.is_empty());
 }
+
+#[test]
+fn selecting_a_file_menu_kind_preserves_units_and_clears_drawing_preview() {
+    let mut chooser = TemplateChooser::default();
+    chooser.go_to(TemplateFolder::Units(GuiTemplateUnits::Inch));
+    chooser.drawing_layout = Some(DrawingLayout::Assembly);
+    chooser.request_kind(GuiTemplateKind::Drawing);
+    assert_eq!(
+        chooser.selected,
+        Some(GuiDocumentTemplate {
+            kind: GuiTemplateKind::Drawing,
+            units: GuiTemplateUnits::Inch,
+        })
+    );
+    assert!(chooser.requested);
+    assert_eq!(chooser.drawing_layout, None);
+    assert!(!chooser.can_create(&GuiCommandState::default()));
+}

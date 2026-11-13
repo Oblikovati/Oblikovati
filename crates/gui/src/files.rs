@@ -8,6 +8,8 @@ use crate::application::document_saving::{
 };
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::Ui;
+#[path = "files/new_menu.rs"]
+mod new_menu;
 
 const NOT_AVAILABLE: &str = "This command is not available in this build.";
 const SAVE_AS_COMMANDS: [(&str, &str); 3] = [
@@ -157,13 +159,7 @@ impl GuiDocumentFiles {
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
     ) {
-        if ui
-            .menu_item_config("New")
-            .enabled(!state.transaction_open)
-            .build()
-        {
-            self.templates.request();
-        }
+        self.new_menu_item(ui, state);
         self.open_menu_item(ui, state);
         file_save_item(ui, state, actions);
         self.save_as_menu_item(ui, state);

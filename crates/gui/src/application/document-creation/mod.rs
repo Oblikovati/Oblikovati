@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 #[path = "component_dialog.rs"]
 pub(crate) mod component_dialog;
+mod kind_selection;
 #[path = "templates.rs"]
 pub(crate) mod templates;
 #[path = "workspaces.rs"]

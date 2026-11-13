@@ -227,3 +227,122 @@ fn alt_f_chord_opens_file_menu_and_keeps_the_active_part() {
     assert_eq!(world.active_id(), part);
     world.close();
 }
+
+#[given("the pointer is positioned over the New command location")]
+fn pointer_over_new_location(world: &mut ApplicationWorld) {
+    let file = world.run("File");
+    let position = [file.minimum[0] + 15., file.maximum[1] + 12.];
+    world.hover(super::diagnostics::pointer_pixels(position));
+}
+#[then("the New submenu is displayed")]
+fn new_submenu_displayed(world: &mut ApplicationWorld) {
+    world.expect_text("Create a file from the available templates");
+}
+#[then("the submenu describes creating a file from the available templates")]
+fn new_description(world: &mut ApplicationWorld) {
+    new_submenu_displayed(world);
+}
+#[then("it lists Assembly, Weldment, Drawing, Part, Sheet Metal and Presentation")]
+fn new_document_types(world: &mut ApplicationWorld) {
+    let list = world.run("Weldment").list;
+    for label in [
+        "Assembly",
+        "Weldment",
+        "Drawing",
+        "Part",
+        "Sheet Metal",
+        "Presentation",
+    ] {
+        assert!(
+            world
+                .frame
+                .runs
+                .iter()
+                .any(|run| run.list == list && run.text == label.replace(' ', "")),
+            "expected {label:?} in the New submenu"
+        );
+    }
+    assert!(!world.run_is_enabled("Weldment"));
+}
+#[then("Drawing displays a disclosure indicator")]
+fn drawing_disclosure(world: &mut ApplicationWorld) {
+    let row = world.run("Drawing");
+    assert!(
+        world.frame.marks.iter().any(|mark| mark.list == row.list
+            && mark.position[0] > row.maximum[0]
+            && (mark.position[1] - row.center()[1]).abs() < 8.),
+        "expected a disclosure arrow beside Drawing"
+    );
+}
+#[then("the active part remains visible behind the menu")]
+fn part_behind_new_menu(world: &mut ApplicationWorld) {
+    let part = world.previous_document.expect("expected the original part");
+    world.expect_browser_of(part);
+}
+#[then("no document type has been activated")]
+fn new_menu_does_not_create_a_document(world: &mut ApplicationWorld) {
+    let part = world.previous_document.expect("expected the original part");
+    assert_eq!(world.active_id(), part);
+    assert_eq!(world.state().documents.len(), 1);
+    world.expect_no_text("Template folders");
+}
+
+#[test]
+fn new_submenu_part_opens_selected_template_and_creates_a_part() {
+    let mut world = ApplicationWorld::new();
+    let first = world.add_part();
+    pointer_over_new_location(&mut world);
+    press_alt_f(&mut world);
+    new_submenu_displayed(&mut world);
+    world.click_text("Part");
+    world.pump(Vec::new());
+    world.expect_text("Template folders");
+    world.expect_text("Standard metric part");
+    world.expect_text("Length: millimeters (mm)");
+    assert_eq!(world.state().documents.len(), 1);
+    world.click_text("Create");
+    world.pump(Vec::new());
+    assert_eq!(world.state().documents.len(), 2);
+    assert_ne!(world.active_id(), first);
+    assert_eq!(
+        world.state().document_type,
+        Some(oblikovati_api::types::DOCUMENT_PART)
+    );
+    world.close();
+}
+
+#[test]
+fn moving_from_new_to_save_as_switches_the_open_submenu() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    pointer_over_new_location(&mut world);
+    press_alt_f(&mut world);
+    new_submenu_displayed(&mut world);
+    let save_as = world.run("Save As").center();
+    world.hover(super::diagnostics::pointer_pixels(save_as));
+    world.pump(Vec::new());
+    world.expect_text("Save Copy As");
+    world.expect_no_text("Create a file from the available templates");
+    world.close();
+}
+
+#[test]
+fn new_drawing_submenu_requires_a_template_preview_before_creation() {
+    let mut world = ApplicationWorld::new();
+    let part = world.add_part();
+    pointer_over_new_location(&mut world);
+    press_alt_f(&mut world);
+    let drawing = world.run("Drawing").center();
+    world.hover(super::diagnostics::pointer_pixels(drawing));
+    world.pump(Vec::new());
+    world.click_text("Choose drawing template");
+    world.pump(Vec::new());
+    world.expect_text("Metric drawing with title block");
+    world.expect_text("Use Template");
+    assert!(!world.run_is_enabled("Create"));
+    world.click_text("Cancel");
+    world.pump(Vec::new());
+    assert_eq!(world.state().documents.len(), 1);
+    assert_eq!(world.active_id(), part);
+    world.close();
+}
