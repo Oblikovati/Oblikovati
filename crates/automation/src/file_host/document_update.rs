@@ -3,7 +3,8 @@
 use super::*;
 use oblikovati_api::json::EmptyObject;
 
-pub(super) const METHODS: [&str; 3] = [
+/// Canonical part update and freshness routes, subject to an injected evaluation owner.
+pub const DOCUMENT_UPDATE_METHODS: [&str; 3] = [
     METHOD_DOCUMENTS_UPDATE,
     METHOD_DOCUMENTS_REBUILD,
     METHOD_DOCUMENTS_REQUIRES_UPDATE,
@@ -11,16 +12,23 @@ pub(super) const METHODS: [&str; 3] = [
 
 pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
+    replay: &mut Option<&mut dyn crate::PartUpdateAccess<O, W, F>>,
     access: &mut Option<&mut dyn crate::PartTopologyAccess<O, W, F>>,
     method: &str,
     bytes: &[u8],
 ) -> Result<Vec<u8>, Error> {
     let document = crate::part_owner::active_part(files)?;
-    let owner = access.as_deref_mut().ok_or_else(|| {
-        Error(format!(
-            "document {document} update: expected a part evaluation owner"
-        ))
-    })?;
+    let owner: &mut dyn crate::PartUpdateAccess<O, W, F> = match replay.as_deref_mut() {
+        Some(owner) => owner,
+        None => access
+            .as_deref_mut()
+            .map(|owner| owner as &mut dyn crate::PartUpdateAccess<O, W, F>)
+            .ok_or_else(|| {
+                Error(format!(
+                    "document {document} update: expected a part evaluation owner"
+                ))
+            })?,
+    };
     if method == METHOD_DOCUMENTS_REQUIRES_UPDATE {
         if !bytes.is_empty() {
             let _: EmptyObject = decode(method, bytes)?;

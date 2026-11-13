@@ -15,6 +15,7 @@ mod assembly_references;
 mod attachments;
 mod document_update;
 pub use assembly_references::{AssemblyReferenceFailure, AssemblyReferenceReport};
+pub use document_update::DOCUMENT_UPDATE_METHODS;
 mod close;
 mod derived_links;
 mod drawing_snapshots;
@@ -65,12 +66,21 @@ struct FileContext<'a, O: TransactionObserver, W, F> {
     observers: Option<&'a mut dyn DocumentObserverFactory<Observer = O>>,
     sketch_construction: Option<SketchConstructionAccess<'a>>,
     part_topology: Option<&'a mut dyn crate::PartTopologyAccess<O, W, F>>,
+    part_update: Option<&'a mut dyn crate::PartUpdateAccess<O, W, F>>,
     extrusion: Option<&'a dyn crate::ExtrudeRegionAccess>,
     drawing_views: Option<&'a dyn crate::DrawingViewProjectionAccess>,
     sketch_preferences:
         Option<&'a mut dyn oblikovati_model::application_options::SketchPreferenceAccess>,
 }
 impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHost<'a, O, W, F> {
+    /// Inject part replay ownership; example: `host.with_part_update(&mut replay)`.
+    pub fn with_part_update(
+        mut self,
+        replay: &'a mut dyn crate::PartUpdateAccess<O, W, F>,
+    ) -> Self {
+        self.context.get_mut().part_update = Some(replay);
+        self
+    }
     /// Share the desktop's marking menus; example: `host.with_marking_menus(&mut menus)`.
     pub fn with_marking_menus(
         mut self,
@@ -168,6 +178,7 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHos
                 external: None,
                 sketch_preferences: None,
                 part_topology: None,
+                part_update: None,
                 extrusion: None,
                 drawing_views: None,
                 sketch_construction: None,
@@ -256,8 +267,14 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
 }
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext<'_, O, W, F> {
     fn owned_command(&mut self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
-        if document_update::METHODS.contains(&method) {
-            return document_update::apply(self.files, &mut self.part_topology, method, request);
+        if DOCUMENT_UPDATE_METHODS.contains(&method) {
+            return document_update::apply(
+                self.files,
+                &mut self.part_update,
+                &mut self.part_topology,
+                method,
+                request,
+            );
         }
         if method == METHOD_ASSEMBLY_PLACE {
             return assembly_placement::place(self.files, decode(method, request)?);

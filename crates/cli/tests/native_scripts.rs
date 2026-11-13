@@ -17,6 +17,68 @@ fn write_source(directory: &Path, source: &str) -> std::path::PathBuf {
     std::fs::write(&path, source).unwrap();
     path
 }
+
+#[test]
+fn script_updates_a_part_and_tracks_freshness_across_calls() {
+    let directory = tempfile::tempdir().unwrap();
+    let source = r#"
+local first=oblikovati.documents.create{type="part",name="Replay"}
+oblikovati.workPlanes.create{kind="fixed-frame",origin={0,0,1},xaxis={1,0,0},yaxis={0,1,0}}
+assert(oblikovati.documents.requiresUpdate().requiresUpdate)
+assert(not oblikovati.documents.update{}.requiresUpdate)
+assert(not oblikovati.documents.requiresUpdate().requiresUpdate)
+oblikovati.parameters.add{name="width",expression="10 mm"}
+assert(oblikovati.documents.requiresUpdate().requiresUpdate)
+assert(not oblikovati.documents.rebuild{}.requiresUpdate)
+assert(not oblikovati.documents.requiresUpdate().requiresUpdate)
+oblikovati.documents.create{type="part",name="Other"}
+oblikovati.workPlanes.create{kind="fixed-frame",origin={0,0,2},xaxis={1,0,0},yaxis={0,1,0}}
+assert(oblikovati.documents.requiresUpdate().requiresUpdate)
+assert(not oblikovati.documents.update{}.requiresUpdate)
+oblikovati.documents.activate{id=first.id}
+assert(not oblikovati.documents.requiresUpdate().requiresUpdate)
+print("replay-ok")
+"#;
+    let script = write_source(directory.path(), source);
+    let output = cli(&["script", "run", script.to_str().unwrap()]);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(String::from_utf8_lossy(&output.stdout).contains("replay-ok"));
+}
+
+#[test]
+fn script_update_reports_a_failed_feature_and_recovers() {
+    let directory = tempfile::tempdir().unwrap();
+    drawing_fixture::saved_drawing(directory.path());
+    let document = directory.path().join("model.opd");
+    let source = r#"
+oblikovati.parameters.set{name="depth",expression="0 cm"}
+assert(not pcall(oblikovati.documents.update,{}))
+local result=oblikovati.documents.update{acceptErrorsAndContinue=true}
+assert(not result.requiresUpdate and #result.errors==1)
+assert(result.errors[1].kind=="extrude" and result.errors[1].message~="")
+oblikovati.parameters.set{name="depth",expression="2 cm"}
+assert(not oblikovati.documents.update{}.requiresUpdate)
+print("recovered")
+"#;
+    let script = write_source(directory.path(), source);
+    let output = cli(&[
+        "script",
+        "run",
+        script.to_str().unwrap(),
+        "--doc",
+        document.to_str().unwrap(),
+    ]);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(String::from_utf8_lossy(&output.stdout).contains("recovered"));
+}
 #[test]
 fn script_save_captures_a_referenced_drawing_view() {
     let directory = tempfile::tempdir().unwrap();

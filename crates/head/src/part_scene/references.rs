@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use oblikovati_automation::{PartTopologyAccess, TopologyEntityKind};
+use oblikovati_automation::{PartTopologyAccess, PartUpdateAccess, TopologyEntityKind};
 use oblikovati_model::{feature::FeatureId, identity::ReferenceEnvelope};
-impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartTopologyAccess<O, W, F>
+impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateAccess<O, W, F>
     for DesktopPartScenes
 {
     fn update_part(
@@ -19,6 +19,10 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartTopolog
     ) -> Result<bool, String> {
         self.requires_update_for_api(files, document)
     }
+}
+impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartTopologyAccess<O, W, F>
+    for DesktopPartScenes
+{
     fn list_bodies(
         &mut self,
         files: &mut FileWorkspace<O, W, F>,

@@ -1,0 +1,172 @@
+// SPDX-License-Identifier: GPL-2.0-only
+//! Shared part replay and freshness ownership for desktop and headless hosts.
+use oblikovati_api::wire::FeatureError;
+use oblikovati_martensite::{
+    EvaluationFailure, NamedPrismEvaluator, NamedPrismSnapshot, PrismResolutionPolicy,
+};
+use oblikovati_model::{
+    feature::{
+        FeatureEvaluationStatus, FeatureHealthRecord,
+        part::{PartFeatureDefinition, PartFeatureFailure},
+    },
+    history::DocumentSnapshot,
+};
+use oblikovati_persistence::file_access::DocumentFiles;
+use oblikovati_session::{
+    TransactionObserver,
+    files::FileWorkspace,
+    part_evaluation::{CompletedPartEvaluation, PartEvaluationSlot},
+    workspace::WorkspaceObserver,
+};
+use std::collections::BTreeMap;
+
+/// Part replay capability independent of viewport and topology queries.
+pub trait PartUpdateAccess<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> {
+    /// Replay a part and report failures; example: `owner.update_part(files, id)?`.
+    fn update_part(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<Vec<FeatureError>, String>;
+    /// Check the current replay generation; example: `owner.part_requires_update(files, id)?`.
+    fn part_requires_update(
+        &mut self,
+        files: &FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<bool, String>;
+}
+
+/// A headless owner of generation-checked Martensite replay results.
+#[derive(Default)]
+pub struct PartReplayService {
+    slots: BTreeMap<u64, PartEvaluationSlot<NamedPrismSnapshot, EvaluationFailure>>,
+}
+impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateAccess<O, W, F>
+    for PartReplayService
+{
+    fn update_part(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<Vec<FeatureError>, String> {
+        self.slots
+            .retain(|id, _| files.workspace().documents().contains(id));
+        let completed = complete_part_replay(files, document, None)?;
+        let slot = self.slots.entry(document).or_default();
+        files
+            .commands(document)
+            .map_err(|error| error.to_string())?
+            .adopt_part_evaluation(completed, slot)
+            .map_err(|error| error.to_string())?;
+        let session = files
+            .workspace()
+            .session(document)
+            .map_err(|error| error.to_string())?;
+        part_feature_errors(
+            session.snapshot(),
+            slot.current(session)
+                .map_err(|error| error.to_string())?
+                .health(),
+        )
+    }
+    fn part_requires_update(
+        &mut self,
+        files: &FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<bool, String> {
+        let session = files
+            .workspace()
+            .session(document)
+            .map_err(|error| error.to_string())?;
+        Ok(part_replay_is_stale(session, self.slots.get(&document)))
+    }
+}
+
+/// Check whether a session's authored part needs a current replay.
+/// Example: `part_replay_is_stale(session, slot)` before updating.
+pub fn part_replay_is_stale<O: TransactionObserver>(
+    session: &oblikovati_session::DocumentSession<O>,
+    slot: Option<&PartEvaluationSlot<NamedPrismSnapshot, EvaluationFailure>>,
+) -> bool {
+    !session.snapshot().work_geometry.features().is_empty()
+        && slot.is_none_or(|result| result.current(session).is_err())
+}
+
+/// Replay against the current history with the selected tolerance policy.
+/// Example: `complete_part_replay(files, id, None)?` before generation-checked adoption.
+pub fn complete_part_replay<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &FileWorkspace<O, W, F>,
+    document: u64,
+    resolution: Option<PrismResolutionPolicy>,
+) -> Result<CompletedPartEvaluation<NamedPrismSnapshot, EvaluationFailure>, String> {
+    let workspace = files.workspace();
+    let guid = workspace
+        .identity(document)
+        .map_err(|error| error.to_string())?
+        .internal_name;
+    let session = workspace
+        .session(document)
+        .map_err(|error| error.to_string())?;
+    let request = session.prepare_part_evaluation();
+    match resolution {
+        Some(policy) => request.evaluate(
+            &mut oblikovati_martensite::CertifiedNamedPrismEvaluator::with_policy(
+                session.history(),
+                guid,
+                policy,
+            ),
+        ),
+        None => request.evaluate(&mut NamedPrismEvaluator::new(session.history(), guid)),
+    }
+    .map_err(|error| error.to_string())
+}
+
+/// Convert ordered replay health to canonical feature errors.
+/// Example: `part_feature_errors(snapshot, evaluation.health())?` after replay.
+pub fn part_feature_errors(
+    snapshot: &DocumentSnapshot,
+    health: &[FeatureHealthRecord<PartFeatureFailure<EvaluationFailure>>],
+) -> Result<Vec<FeatureError>, String> {
+    health
+        .iter()
+        .filter_map(|record| feature_error(snapshot, record).transpose())
+        .collect()
+}
+fn feature_error(
+    snapshot: &DocumentSnapshot,
+    record: &FeatureHealthRecord<PartFeatureFailure<EvaluationFailure>>,
+) -> Result<Option<FeatureError>, String> {
+    let message = match &record.status {
+        FeatureEvaluationStatus::Healthy | FeatureEvaluationStatus::Suppressed => return Ok(None),
+        status => format!("{status:?}"),
+    };
+    let feature = snapshot
+        .work_geometry
+        .get(record.feature)
+        .map_err(|error| error.to_string())?;
+    Ok(Some(FeatureError {
+        id: record.feature.0,
+        name: feature.name().into(),
+        kind: feature_kind(feature.definition()).into(),
+        message,
+    }))
+}
+fn feature_kind(definition: &PartFeatureDefinition) -> &'static str {
+    use PartFeatureDefinition::*;
+    match definition {
+        SketchPrism(_) => "extrude",
+        DeleteBody(_) => "delete-body",
+        Fixed(_) => "fixed-frame",
+        Offset { .. } => "plane-offset",
+        ParallelThroughPoint(_) => "plane-point",
+        ThroughThreePoints(_) => "three-points",
+        LineThroughPoint(_) => "line-point",
+        NormalToAxis(_) => "normal-to-curve",
+        AtAngleAboutAxis(_) => "line-plane-angle",
+        ThroughTwoAxes(_) => "two-lines",
+        Axis(_) => "line",
+        Point(_) => "position",
+        PointAtReference(_) => "point-reference",
+        AxisThroughPoints(_) => "two-points",
+    }
+}

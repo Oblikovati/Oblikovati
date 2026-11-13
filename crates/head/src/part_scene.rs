@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use oblikovati_martensite::{NamedPrismEvaluator, NamedPrismSnapshot, PrismMeshOptions};
+use oblikovati_martensite::{NamedPrismSnapshot, PrismMeshOptions};
 use oblikovati_model::feature::{
     FeatureEvaluationStatus, FeatureHealthRecord, part::PartFeatureFailure,
 };
@@ -137,7 +137,8 @@ impl DesktopPartScenes {
         files: &mut FileWorkspace<O, W, F>,
         document: u64,
     ) -> Result<(), String> {
-        let completed = complete_desktop_replay(files, document, self.resolution)?;
+        let completed =
+            oblikovati_automation::complete_part_replay(files, document, self.resolution)?;
         files
             .commands(document)
             .map_err(|cause| cause.to_string())?
@@ -273,39 +274,6 @@ impl DesktopPartScenes {
         self.source = None;
         self.scene_failure = None;
     }
-}
-
-fn complete_desktop_replay<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
-    files: &FileWorkspace<O, W, F>,
-    document: u64,
-    resolution: Option<oblikovati_martensite::PrismResolutionPolicy>,
-) -> Result<
-    oblikovati_session::part_evaluation::CompletedPartEvaluation<
-        NamedPrismSnapshot,
-        oblikovati_martensite::EvaluationFailure,
-    >,
-    String,
-> {
-    let workspace = files.workspace();
-    let guid = workspace
-        .identity(document)
-        .map_err(|cause| cause.to_string())?
-        .internal_name;
-    let session = workspace
-        .session(document)
-        .map_err(|cause| cause.to_string())?;
-    let request = session.prepare_part_evaluation();
-    match resolution {
-        Some(resolution) => request.evaluate(
-            &mut oblikovati_martensite::CertifiedNamedPrismEvaluator::with_policy(
-                session.history(),
-                guid,
-                resolution,
-            ),
-        ),
-        None => request.evaluate(&mut NamedPrismEvaluator::new(session.history(), guid)),
-    }
-    .map_err(|cause| cause.to_string())
 }
 
 /// How finely a body is meshed for display, in working units and radians.

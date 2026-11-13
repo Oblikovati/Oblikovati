@@ -18,7 +18,8 @@ pub use extrusion::{ExtrudeRegionAccess, PreparedExtrusion, prepare_extrusion};
 mod interests;
 pub use file_host::{
     ASSEMBLY_COMMAND_METHODS, AssemblyReferenceFailure, AssemblyReferenceReport,
-    DERIVED_COMMAND_METHODS, DocumentObserverFactory, FILE_COMMAND_METHODS, FileHost,
+    DERIVED_COMMAND_METHODS, DOCUMENT_UPDATE_METHODS, DocumentObserverFactory,
+    FILE_COMMAND_METHODS, FileHost,
 };
 pub mod dispatch;
 mod file_queries;
@@ -263,6 +264,11 @@ mod asset_assignments;
 pub use asset_assignments::ASSET_ASSIGNMENT_METHODS;
 mod part_topology;
 pub use part_topology::{BODY_QUERY_METHODS, PartTopologyAccess, TopologyEntityKind};
+mod part_update;
+pub use part_update::{
+    PartReplayService, PartUpdateAccess, complete_part_replay, part_feature_errors,
+    part_replay_is_stale,
+};
 
 mod body_commands;
 pub use body_commands::BODY_COMMAND_METHODS;
