@@ -5,6 +5,7 @@ mod keyboard;
 mod keyboard_catalog;
 mod locations;
 mod marking_menu;
+mod marking_overflow;
 mod panel;
 mod settings_dialog;
 mod settings_xml;

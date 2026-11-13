@@ -10,6 +10,8 @@
 
 ### Added
 
+- Added sketch marking-menu overflow command editing. (#3856)
+
 - Added saved sketch marking-menu layouts and slot customization. (#3856)
 
 - Added sketch-ready aliases for Undo, Redo, Save, Home, and Previous View. (#3856)

@@ -57,18 +57,22 @@ impl RibbonCustomization {
         };
         ui.text("Environment: 2D Sketch");
         ui.text("Sub-Environment: None Selected");
-        for (slot, label) in [
-            (0, "North"),
-            (1, "North East"),
-            (2, "East"),
-            (3, "South East"),
-            (4, "South"),
-            (5, "South West"),
-            (6, "West"),
-            (7, "North West"),
-        ] {
-            slot_editor(ui, menu, slot, label);
-        }
+        ui.group(|| {
+            for (slot, label) in [
+                (0, "North"),
+                (1, "North East"),
+                (2, "East"),
+                (3, "South East"),
+                (4, "South"),
+                (5, "South West"),
+                (6, "West"),
+                (7, "North West"),
+            ] {
+                slot_editor(ui, menu, slot, label);
+            }
+        });
+        ui.same_line();
+        ui.group(|| super::marking_overflow::editor(ui, menu));
         if ui.button("Restore Default") {
             *menu = oblikovati_model::marking_menu::MarkingMenus::default()
                 .get(types::SKETCH_ENVIRONMENT);
