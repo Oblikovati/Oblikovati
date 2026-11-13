@@ -9,7 +9,7 @@ claim that each file has been individually triaged.
 | --- | --- | --- | --- |
 | 1 | `features/application` | In progress | The native application runner exists. A complete, current area result has not been recorded. Run and retain the full area report; triage failures against the current source. |
 | 1 | `features/application/file-menu/file-menu.feature` | Verified | All 8 scenarios passed again with the shared chooser sorting changes in this ledger's commit. Weldment remains unavailable. |
-| 1 | `features/application/document-creation` | In progress | Name and size sorting are implemented for available templates. The name-order scenario also requires additional template variants and native BDD bindings. |
+| 1 | `features/application/document-creation` | In progress | Name and size sorting and keyboard selection within available template groups are implemented. The name-order and navigation scenarios also require additional template variants, icon layout, and native BDD bindings. |
 | 1 | `features/application/ribbon-appearance/ribbon-appearance.feature` | In progress | Source changed. Revalidate every scenario against the revised file. Panel title visibility and the appearance menu exist. The menu marks Normal as active and disables the other modes. A caption-free native icon primitive is available but is not connected to the ribbon. The 3D Model ribbon now uses the Go icons for Revolve, Hole, Fillet and Chamfer; these commands remain unavailable. Implement Text Off, Small, Compact, Large and Reset Ribbon across all commands and layouts; then enable and verify them. |
 | 1 | `features/application/ribbon-docking/ribbon-docking.feature` | In progress | Source changed after the inventory checkpoint. A full native run at commit `139b82a42` found 6 passes and 17 scenarios stopped by undefined steps. With corrected bindings, a second run found 8 passes, 14 undefined steps, and one ambiguous step. Resolve the remaining steps and implement missing command-group behavior. |
 | 1 | `features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature` | Needs rerun | Source changed since the inventory checkpoint. Review the corrections and rerun affected native scenarios. |
@@ -176,3 +176,23 @@ revisions checked before they support a current pass claim.
 - The name-sort BDD scenario still needs the distinct DIN/JIS template
   definitions. The Go reference does not provide those templates, so the
   application must not claim placeholder files as real templates.
+
+### Template keyboard selection, 2026-11-13
+
+- Source: `features/application/document-creation/document-creation.feature`,
+  SHA-256 `003a02efcb9c8f0629eeb8cabd4c52945533a1387d3918c417b7eac09a0d7522`,
+  unchanged across the run. Application: commit `753cf3b33` plus this ledger's
+  navigation and test changes; unrelated README and AGENTS files were present.
+- Native keyboard testing covers Left, Right, Home, End, group endpoints,
+  selection details, and a nested Display menu. The Linux/Xvfb GUI suite passed
+  347 tests; four File dialog tests and Clippy also passed.
+- The current `Navigate backward and forward through template folders` BDD
+  scenario passed all ten steps. JSON, JUnit, and screenshots are in
+  `/tmp/obk-template-folder-navigation-20261113`, a local location. It ran
+  with the live source, `OBK_BDD_FEATURE=document-creation` and the scenario
+  name filter, using `xvfb-run -a -s '-screen 0 1600x1000x24' cargo test
+  --locked -p oblikovati-head --lib application_scenarios_use_the_native_window
+  -- --nocapture`.
+- The recorded adjacent-template and group-boundary scenarios still require
+  the named DIN/JIS templates and a horizontal icon gallery. This test uses
+  the existing metric templates and does not establish those full scenarios.

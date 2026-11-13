@@ -2,6 +2,7 @@
 #[path = "component_dialog.rs"]
 pub(crate) mod component_dialog;
 mod kind_selection;
+mod template_navigation;
 mod template_sort;
 #[path = "templates.rs"]
 pub(crate) mod templates;
@@ -51,6 +52,7 @@ pub(crate) struct TemplateChooser {
     view: TemplateView,
     ungrouped: bool,
     sort: TemplateSort,
+    gallery_keyboard: bool,
     /// A double click on a tile asks for what Create does.
     create_requested: bool,
     projects: crate::application::project_dialog::ProjectsDialog,
@@ -127,6 +129,7 @@ impl TemplateChooser {
         DetailsLayout::new(widths, style.indent_spacing, style.item_spacing[0])
     }
     pub(crate) fn request(&mut self) {
+        self.gallery_keyboard = false;
         self.requested = true;
     }
     pub(crate) fn panel(
@@ -247,6 +250,7 @@ impl TemplateChooser {
         }
     }
     fn gallery(&mut self, ui: &Ui, state: &GuiCommandState, layout: DetailsLayout) {
+        self.navigate_gallery(ui, state);
         if self.view == TemplateView::Details {
             self.details_header(ui, layout);
         }
@@ -317,6 +321,7 @@ impl TemplateChooser {
         if self.tile_row(ui, state, template, layout) {
             self.selected = Some(template);
             self.drawing_layout = None;
+            self.gallery_keyboard = true;
         }
     }
     fn tile_row(

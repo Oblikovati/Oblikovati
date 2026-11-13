@@ -317,3 +317,51 @@ fn selected_folder_contains_templates(world: &mut ApplicationWorld) {
     world.expect_text(METRIC_PART);
     world.expect_text(METRIC_ASSEMBLY);
 }
+
+fn expect_selected_template(world: &ApplicationWorld, title: &str) {
+    let details_x = world.run("Template details").minimum[0];
+    let expected = title.replace(' ', "");
+    assert!(
+        world
+            .frame
+            .runs
+            .iter()
+            .any(|run| run.minimum[0] >= details_x && run.text == expected),
+        "expected {title:?} in the details pane: {}",
+        world.text()
+    );
+}
+#[test]
+fn arrow_and_endpoint_keys_navigate_the_selected_template_group() {
+    let mut world = ApplicationWorld::new();
+    let part = world.add_part();
+    world.key(ViewportPhysicalKey::N, true);
+    choose_template_view(&mut world, "Medium Icons");
+    world.click_text(METRIC_SHEET_METAL);
+    expect_selected_template(&world, METRIC_SHEET_METAL);
+    world.key(ViewportPhysicalKey::RightArrow, false);
+    expect_selected_template(&world, METRIC_PART);
+    world.key(ViewportPhysicalKey::LeftArrow, false);
+    expect_selected_template(&world, METRIC_SHEET_METAL);
+    world.key(ViewportPhysicalKey::End, false);
+    expect_selected_template(&world, METRIC_PART);
+    world.key(ViewportPhysicalKey::Home, false);
+    expect_selected_template(&world, METRIC_SHEET_METAL);
+    world.key(ViewportPhysicalKey::LeftArrow, false);
+    expect_selected_template(&world, METRIC_SHEET_METAL);
+    world.click_text("Display");
+    world.key(ViewportPhysicalKey::End, false);
+    expect_selected_template(&world, METRIC_SHEET_METAL);
+    world.key(ViewportPhysicalKey::Escape, false);
+    world.key(ViewportPhysicalKey::Escape, false);
+    assert_eq!(world.active_id(), part);
+    world.close();
+}
+
+#[given("the selected template folder is not the English folder")]
+fn selected_folder_is_not_english(world: &mut ApplicationWorld) {
+    assert!(
+        world.row_accented_beside("Metric", "English"),
+        "expected Metric selected"
+    );
+}
