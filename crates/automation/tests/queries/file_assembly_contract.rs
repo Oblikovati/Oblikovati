@@ -38,7 +38,7 @@ fn file_placement_keeps_focus_and_releases_refused_background_documents() {
             1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1.,
         ],
     };
-    let mut invalid = matrix.clone();
+    let mut invalid = matrix;
     invalid.cells[0] = 0.;
     let path = Path::new("/fixtures/background.opd");
     assert!(
@@ -224,7 +224,7 @@ fn canonical_placement_survives_history_save_and_reopen() {
         let args = PlaceOccurrenceArgs {
             document: part,
             name: "Part:1".into(),
-            transform: identity.clone(),
+            transform: identity,
         };
         let placed = client.assembly().place(&args).unwrap().occurrence;
         assert_eq!((placed.id, placed.name.as_str()), (1, "Part:1"));
