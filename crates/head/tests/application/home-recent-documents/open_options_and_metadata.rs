@@ -34,6 +34,7 @@ fn last_active(world: &mut ApplicationWorld) {
     world.expect_text("Design View: Last Active");
 }
 #[when("I open the Design View list")]
+#[when("the user opens the Design View list")]
 fn open_view_list(world: &mut ApplicationWorld) {
     world.click_text("Design View");
     world.pump(Vec::new());

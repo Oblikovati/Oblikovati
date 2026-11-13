@@ -314,6 +314,7 @@ fn view_last_active(world: &mut ApplicationWorld) {
     world.expect_text("Design View: Last Active");
 }
 #[then("Last Active and the part's named design views are displayed")]
+#[then("Last Active, the primary view, and the part's named design views are displayed")]
 fn view_rows(world: &mut ApplicationWorld) {
     for row in ["Last Active", "Primary", VIEW_NAME] {
         world.expect_text(row);

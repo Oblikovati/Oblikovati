@@ -71,6 +71,7 @@ fn click_size_heading(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
 }
 #[when("I click the Size column header")]
+#[when("the user clicks the Size column header")]
 #[when("I click the Size column header again")]
 fn click_size(world: &mut ApplicationWorld) {
     click_size_heading(world);

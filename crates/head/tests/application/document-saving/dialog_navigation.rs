@@ -131,6 +131,7 @@ fn proposal_remains(world: &mut ApplicationWorld) {
     world.expect_text(&name);
 }
 #[when("I choose Back")]
+#[when("the user chooses Back")]
 fn choose_back(world: &mut ApplicationWorld) {
     world.click_text("Back");
 }
