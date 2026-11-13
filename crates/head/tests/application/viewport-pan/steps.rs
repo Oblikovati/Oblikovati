@@ -37,6 +37,7 @@ fn bar_visible(_: &mut ApplicationWorld) {
     diagnostics::window_geometry(NAVIGATION).expect("expected the navigation bar");
 }
 #[when("I select Pan on the navigation bar")]
+#[when("the user selects Pan on the navigation bar")]
 fn select_pan(world: &mut ApplicationWorld) {
     start_pan(world);
 }
@@ -52,6 +53,9 @@ fn pan_active(world: &mut ApplicationWorld) {
 }
 #[then(
     "the status area prompts me to pan the current view and indicates cancellation is available"
+)]
+#[then(
+    "the status area prompts the user to pan the current view and indicates cancellation is available"
 )]
 fn pan_prompt(world: &mut ApplicationWorld) {
     world.expect_status("pan the current view");
@@ -69,6 +73,7 @@ fn status_ready(world: &mut ApplicationWorld) {
     world.expect_ready();
 }
 #[when("I click an empty area of the viewport without dragging")]
+#[when("the user clicks an empty area of the viewport without dragging")]
 fn click_empty(world: &mut ApplicationWorld) {
     world.click(EMPTY_VIEW);
     world.pump(Vec::new());
@@ -87,6 +92,7 @@ fn previous_view(world: &mut ApplicationWorld) {
     assert_eq!(camera(world), earlier, "view");
 }
 #[when("I right-click an empty area of the viewport")]
+#[when("the user right-clicks an empty area of the viewport")]
 fn right_click_empty(world: &mut ApplicationWorld) {
     world.right_click(EMPTY_VIEW);
     world.pump(Vec::new());
@@ -104,6 +110,7 @@ fn menu_closes_ready(world: &mut ApplicationWorld) {
     world.expect_ready();
 }
 #[when("I choose Zoom from the contextual menu")]
+#[when("the user chooses Zoom from the contextual menu")]
 fn zoom_from_menu(world: &mut ApplicationWorld) {
     world.click_text("Zoom");
     world.pump(Vec::new());
@@ -137,4 +144,27 @@ fn pan_lit(world: &mut ApplicationWorld) {
         bar_button_lit(world, "P", "W"),
         "expected the Pan button lit"
     );
+}
+
+#[test]
+fn native_pan_drag_moves_the_view_and_keeps_pan_active() {
+    let mut world = ApplicationWorld::new();
+    open_block(&mut world);
+    start_pan(&mut world);
+    let before = camera(&mut world);
+    world.drag(EMPTY_VIEW, [EMPTY_VIEW[0] + 80, EMPTY_VIEW[1] + 40]);
+    let after = camera(&mut world);
+    assert_ne!(after.target, before.target, "pan must move the target");
+    assert_ne!(after.eye, before.eye, "pan must move the camera");
+    for axis in 0..3 {
+        let translation = after.eye[axis] - before.eye[axis];
+        let target_translation = after.target[axis] - before.target[axis];
+        assert!((translation - target_translation).abs() < 1e-9);
+    }
+    assert_eq!(after.up, before.up, "pan must retain orientation");
+    assert_eq!(after.scale, before.scale, "pan must retain scale");
+    world.expect_status("Pan:");
+    world.escape();
+    world.expect_ready();
+    world.close();
 }

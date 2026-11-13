@@ -14,6 +14,7 @@ claim that each file has been individually triaged.
 | 1 | `features/application/document-opening` | In progress | A full run passed 16 of 27 native scenarios. A later focused saved-part scenario also passed after its fixture was corrected; rerun the whole feature for a current total. The remaining scenarios need bindings and saved-document fixtures. |
 | 1 | `features/application/model-browser` | In progress | After action wording updates, a full native run passed 29 of 100 scenarios. Of the other 71, 62 stopped at undefined steps and nine at failed checks. Focused fixes passed later; rerun the full feature before reporting a current total. |
 | 1 | `features/application/quick-access-toolbar` | In progress | The previous full native feature run passed 11 of 12 scenarios. Projects now opens the project dialog; the focused customization choices scenario next fails because Update is missing. Later checks did not run. Material Browser editing, duplication, and the Physical tab remain open. |
+| 1 | `features/application/viewport-pan/viewport-pan.feature` | Verified | All four current scenarios passed in the native window after the step wording was updated; see the Pan evidence below. |
 | 1 | `features/application/ribbon-customization/ribbon-customization.feature` | Needs rerun | Source changed since the inventory checkpoint. Review the corrections and rerun affected native scenarios. |
 | 1 | `features/application/ribbon-appearance/ribbon-appearance.feature` | In progress | On the current recorded source, six of 18 scenarios pass; 11 stop at undefined steps and one fails on a missing Tools group. Reset Ribbon is implemented. Implement the standard Tools groups and Text Off, Small, Compact and Large across all commands and layouts. |
 | 1 | `features/application/ribbon-docking/ribbon-docking.feature` | In progress | Source changed after the inventory checkpoint. A full native run at commit `139b82a42` found 6 passes and 17 scenarios stopped by undefined steps. With corrected bindings, a second run found 8 passes, 14 undefined steps, and one ambiguous step. Resolve the remaining steps and implement missing command-group behavior. |
@@ -29,6 +30,25 @@ claim that each file has been individually triaged.
 | 3 | `features/solid-model` | In progress | Implementations exist, but this area has not been assessed against the current complete source. Assess each feature after the application and sketch priorities; no total execution result is recorded. |
 
 ## Evidence records
+
+### Viewport Pan, 2026-11-13
+
+- Source: `features/application/viewport-pan/viewport-pan.feature`, SHA-256
+  `4303c8a64b9262841dba3b8b48a74e51581a6a0ef9d98798286d514c53155647`,
+  unchanged before and after the run. Application: `af00f6ca7` plus updated
+  scenario bindings; Martensite uses the workspace lockfile.
+- Linux, Xvfb at 1600 × 1000, configured Vulkan runtime, `XMODIFIERS` unset so
+  the X server supplies its local input method. All four scenarios and 32
+  steps passed, with no skipped steps. The cases use mouse and keyboard events.
+- The separate native `native_pan_drag_moves_the_view_and_keeps_pan_active`
+  test also passed. It drags the view, checks camera and target translation,
+  orientation and scale, and exits Pan with Escape.
+- Run: `xvfb-run -a -s '-screen 0 1600x1000x24' cargo test --locked -p
+  oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture`,
+  with `OBK_BDD_ROOT` pointing to the live scenario source,
+  `OBK_BDD_FEATURE=viewport-pan`, and
+  `OBK_BDD_REPORTS=/tmp/obk-pan-local-xim-20261113`. The local reports are
+  not durable shared artifacts. This result covers this feature only.
 
 There is no current full-suite native report in this ledger. The most recent
 default report seen during setup contains one passing application scenario;
@@ -807,8 +827,9 @@ revisions checked before they support a current pass claim.
   `/tmp/obk-application-snapshot-20261113`, verifying the live source before
   and after the copy. The manifest is `application.sha256` in that folder.
   A full native application run was started with no feature or scenario filter;
-  its report is `/tmp/obk-application-full-20261113`. It was still running
-  when this record was written. Home recent-documents did not parse because
+  its report is `/tmp/obk-application-full-20261113`. It completed with 105
+  of 718 executed scenarios passing across 23 parsed features; the runner
+  reported one parsing error. Home recent-documents did not parse because
   the source contains lowercase malformed lines such as `and opens Selected`;
   its scenarios are excluded from that run. Check the live source against the
   manifest before treating the finished report as current. Viewport

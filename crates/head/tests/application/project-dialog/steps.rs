@@ -177,6 +177,7 @@ fn mark_remains(world: &mut ApplicationWorld) {
     expect_project_marked(world);
 }
 #[when("I choose Done")]
+#[when("the user chooses Done")]
 fn choose_done_button(world: &mut ApplicationWorld) {
     choose_button(world, "Done");
     world.pump(Vec::new());
