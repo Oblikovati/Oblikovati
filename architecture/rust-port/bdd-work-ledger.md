@@ -408,3 +408,36 @@ revisions checked before they support a current pass claim.
   and stops at the next undefined step. The help behavior and remaining steps
   are not verified. The source changed again after this run, so the result is
   historical. Its local report is `/tmp/obk-selector-help-current-20261113`.
+
+### Side context menu checkmark, 2026-11-13
+
+- The `Hide and restore a panel from the left-docked ribbon context menu`
+  scenario passed its first 12 steps on source SHA-256
+  `770a7a833576e7a75b4c3c7f21d537b6f9c3c9c40d415f9a915b5646ecb7e485`,
+  then failed `Modify is checked` because selecting the menu item closes the
+  context menu. The source's functional notes say to reopen the menu to read
+  the checkmark; the scenario has no such step after restoring the panel.
+  Resolve this difference with the scenario source before claiming a pass.
+  The source file changed after the run; this result is historical.
+- A separate native mouse regression on both dock sides verifies that choosing
+  Modify closes the menus, moves the remaining groups, restores their exact
+  positions, and shows the checked state after reopening Show Panels. It ran on
+  Linux, Xvfb 1600 × 1000 and Lavapipe. Its local log is
+  `/tmp/obk-side-context-both-final.log`. Ribbon work is tracked in
+  [#3856](https://github.com/Oblikovati/Oblikovati/issues/3856).
+
+### Switching side ribbon tabs with the selector open, 2026-11-13
+
+- Clicking another side ribbon tab now closes the selector and activates that
+  tab on the same click. This preserves the direct selector's panel choices.
+- The native `Retain independent panel visibility across ribbon tabs` scenario
+  passed all 13 steps on source SHA-256
+  `3ed8b4aed2ec9ff418053a23399d1b4968043a3c6a18e57340e348209199888b`,
+  unchanged during that run. Application: `857eb5996` plus this commit's
+  changes; unrelated README and AGENTS files were present. Linux, Xvfb at
+  1600 × 1000 and Lavapipe were used. The filtered run used
+  `OBK_BDD_FEATURE=ribbon-panel-visibility` and `cargo test --locked -p
+  oblikovati-head --lib application_scenarios_use_the_native_window --
+  --nocapture`. The report is in `/tmp/obk-side-selector-tabs-fixed-20261113`,
+  a local path. A separate native test covers both docking sides. The GUI
+  library passed 350 tests, the File dialog passed four, and GUI Clippy passed.

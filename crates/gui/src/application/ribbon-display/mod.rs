@@ -346,7 +346,12 @@ impl RibbonDisplayState {
     }
     /// The selector dismisses on press, so the item beneath it must receive that press too.
     pub(crate) fn selector_pointer_press(&self, ui: &Ui) -> bool {
-        if !self.selector_open || !ui.is_mouse_clicked(imgui::MouseButton::Left) {
+        Self::selector_pointer_press_when(ui, self.selector_open)
+    }
+    /// Check the prior selector state before ImGui closes it on this press.
+    /// Example: `RibbonDisplayState::selector_pointer_press_when(ui, was_open)`.
+    pub(crate) fn selector_pointer_press_when(ui: &Ui, selector_open: bool) -> bool {
+        if !selector_open || !ui.is_mouse_clicked(imgui::MouseButton::Left) {
             return false;
         }
         let [left, top] = ui.item_rect_min();

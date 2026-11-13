@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use crate::application::ribbon_display::{RibbonDisplay, RibbonPlacement, TemporaryPanel};
+use crate::application::ribbon_display::{
+    RibbonDisplay, RibbonDisplayState, RibbonPlacement, TemporaryPanel,
+};
 use crate::ribbon::{DocumentRibbon, RibbonFrame};
 use crate::{GuiCommandState, GuiFrameRequest, GuiShellAction};
 use imgui::{Condition, TabItemFlags, Ui};
@@ -228,6 +230,7 @@ fn side_ribbon(
         request_context_menu_when_clicked(ui, owners.ribbon);
     }
     let cursor = ui.cursor_pos();
+    let selector_was_open = owners.ribbon.display.selector_open;
     let panels = crate::ribbon_panels::available_panels(
         owners.ribbon.active,
         &request.commands,
@@ -238,11 +241,11 @@ fn side_ribbon(
         .display
         .side_panel_selector(ui, owners.ribbon.active, &panels);
     crate::widget_abi::cursor_position(ui, cursor);
-    side_tabs(ui, owners.ribbon, frame);
+    side_tabs(ui, owners.ribbon, frame, selector_was_open);
     ui.same_line_with_pos(SIDE_TABS_WIDTH);
     side_groups(ui, request, owners, panel_x, actions);
 }
-fn side_tabs(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame) {
+fn side_tabs(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame, selector_was_open: bool) {
     ui.group(|| {
         let mut hovered = false;
         for tab in &frame.tabs {
@@ -252,6 +255,8 @@ fn side_tabs(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame) {
                 .size([SIDE_TABS_WIDTH - 16., 0.])
                 .build();
             let context_press = ribbon.display.context_tab_press(ui);
+            let selector_press =
+                RibbonDisplayState::selector_pointer_press_when(ui, selector_was_open);
             let tip = crate::ribbon_key_tips::tab_tip(*tab).to_string();
             if ribbon.tips.tabs() && ribbon.tips.matching(&tip) {
                 crate::ribbon_key_tips::badge(ui, &tip);
@@ -259,7 +264,7 @@ fn side_tabs(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame) {
             hovered |= ui.is_item_hovered();
             if chosen {
                 ribbon.active = *tab;
-            } else if context_press {
+            } else if context_press || selector_press {
                 ribbon.select_tab(*tab);
             }
         }

@@ -48,6 +48,7 @@ fn parameters_hidden(world: &mut ApplicationWorld) {
 #[when("I open Show Panels on the top ribbon")]
 #[when("I open the compact ribbon context menu and expand Show Panels")]
 #[when("I reopen Show Panels")]
+#[when("I reopen Show Panels from the ribbon context menu")]
 #[when("I open the View ribbon context menu and expand Show Panels")]
 #[when("I reopen Show Panels on the View ribbon")]
 fn show_panels(world: &mut ApplicationWorld) {

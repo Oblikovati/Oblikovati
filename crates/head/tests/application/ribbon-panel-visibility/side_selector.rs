@@ -36,6 +36,27 @@ fn toggle_side_modify(world: &mut ApplicationWorld) {
     world.click_text("Modify");
 }
 
+#[when("I hide Modify through the direct panel selector")]
+fn hide_modify_with_selector(world: &mut ApplicationWorld) {
+    open_side_selector(world);
+    toggle_side_modify(world);
+}
+
+#[when("I switch to the View ribbon")]
+fn switch_to_view(world: &mut ApplicationWorld) {
+    world.click_text("View");
+}
+
+#[when("I return to the 3D Model ribbon")]
+fn return_to_model(world: &mut ApplicationWorld) {
+    world.click_text("3D Model");
+}
+
+#[then("Navigate remains visible")]
+fn navigate_still_visible(world: &mut ApplicationWorld) {
+    side_group_y(world, "Navigate");
+}
+
 pub(super) fn side_group_y(world: &ApplicationWorld, label: &str) -> f32 {
     let (position, size) = window_geometry("##ribbon-column").expect("expected side ribbon");
     world
@@ -65,6 +86,7 @@ pub(super) fn side_group_y(world: &ApplicationWorld, label: &str) -> f32 {
 }
 
 #[then("the Modify group returns to the side-docked ribbon")]
+#[then("the Modify panel returns to the 3D Model ribbon")]
 fn side_modify_returns(world: &mut ApplicationWorld) {
     side_group_y(world, "Modify");
 }
@@ -77,6 +99,7 @@ fn checked_modify_visible(world: &mut ApplicationWorld) {
 }
 
 #[then("the Modify group disappears from the side-docked ribbon")]
+#[then("the Modify panel disappears from the 3D Model ribbon")]
 fn side_modify_hidden(world: &mut ApplicationWorld) {
     let (position, size) = window_geometry("##ribbon-column").expect("expected side ribbon");
     let visible = world.frame.runs.iter().any(|run| {
@@ -266,6 +289,59 @@ fn pinned_side_additional_commands_survive_outside_click_and_close_when_hidden()
     for side in ["Left", "Right"] {
         pinned_side_additional(side);
     }
+}
+
+#[test]
+fn side_context_menu_restores_group_and_checkmark() {
+    for side in ["Left", "Right"] {
+        context_menu_round_trip(side);
+    }
+}
+fn context_menu_round_trip(side: &str) {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    dock_side(&mut world, side);
+    let before = side_group_positions(&world);
+    expand_show_panels(&mut world);
+    assert!(world.checked("Modify"));
+    toggle_modify(&mut world);
+    assert_eq!(popup_depth(), 0, "expected context menus closed");
+    let hidden = side_group_positions(&world);
+    assert_eq!(hidden[0], before[0], "Create stays in place");
+    assert!(
+        hidden[1..]
+            .iter()
+            .zip(&before[1..])
+            .all(|(now, old)| now < old)
+    );
+    expand_show_panels(&mut world);
+    assert!(!world.checked("Modify"));
+    toggle_modify(&mut world);
+    assert_eq!(popup_depth(), 0, "expected context menus closed");
+    assert_eq!(side_group_positions(&world), before);
+    expand_show_panels(&mut world);
+    assert!(world.checked("Modify"));
+    world.escape();
+    world.close();
+}
+
+#[test]
+fn side_tab_click_dismisses_selector_and_selects_view() {
+    for side in ["Left", "Right"] {
+        let mut world = ApplicationWorld::new();
+        world.add_part();
+        dock_side(&mut world, side);
+        click_side_selector(&mut world);
+        assert!(popup_depth() > 0);
+        world.click_text("View");
+        assert_eq!(popup_depth(), 0, "{side}: expected selector closed");
+        side_group_y(&world, "Navigate");
+        world.close();
+    }
+}
+
+fn side_group_positions(world: &ApplicationWorld) -> [f32; 4] {
+    ["Create", "Work Features", "Pattern", "Simplification"].map(|name| side_group_y(world, name))
 }
 fn pinned_side_additional(side: &str) {
     let mut world = ApplicationWorld::new();
