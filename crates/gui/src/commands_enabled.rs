@@ -8,6 +8,15 @@ impl GuiShellAction {
                 state.sketch_at_ready && !state.transaction_open
             }
             Self::SketchMove(crate::GuiSketchMoveAction::Done) => state.sketch_move.is_some(),
+            Self::SketchMove(crate::GuiSketchMoveAction::SetOptimizeSingle(_)) => state
+                .sketch_move
+                .is_some_and(|status| status.stage == crate::GuiSketchMoveStage::Geometry),
+            Self::SketchMove(crate::GuiSketchMoveAction::ChooseBase) => {
+                state.sketch_move.is_some_and(|status| {
+                    status.stage == crate::GuiSketchMoveStage::Geometry
+                        && status.selection_count > 0
+                }) && !state.transaction_open
+            }
             Self::PlaceSketchBlock(name) => {
                 state.authoring == GuiAuthoringContext::Sketch
                     && !state.transaction_open

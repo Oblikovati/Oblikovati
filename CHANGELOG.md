@@ -16,6 +16,8 @@
 
 ### Added
 
+- Added multi-entity selection and single-selection optimization to sketch Move.
+
 - Added single-entity sketch Move with a solved preview, canvas points, and undo/redo.
 
 - Added undoable geometric relation removal from sketch curve context menus.

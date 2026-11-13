@@ -365,7 +365,7 @@ pub struct GuiCommandState {
     /// A sketch is open with no command running: the canvas offers its own menu.
     pub sketch_at_ready: bool,
     /// Current canvas move stage when the Move tool is open.
-    pub sketch_move: Option<crate::GuiSketchMoveStage>,
+    pub sketch_move: Option<crate::GuiSketchMoveStatus>,
     pub origin_planes: Vec<crate::GuiOriginPlane>,
     /// The chosen browser row's outline in the view, in pixels: a solid's edges or a sketch.
     pub feature_edges: Vec<[[i32; 2]; 2]>,

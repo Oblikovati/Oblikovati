@@ -55,7 +55,11 @@ fn zero_move_can_be_retried_without_changing_geometry_or_history() {
         ],
     );
     assert_eq!(
-        owner.gui_command_state().unwrap().sketch_move,
+        owner
+            .gui_command_state()
+            .unwrap()
+            .sketch_move
+            .map(|status| status.stage),
         Some(GuiSketchMoveStage::Target)
     );
     assert!(
@@ -75,7 +79,11 @@ fn zero_move_can_be_retried_without_changing_geometry_or_history() {
     assert_eq!(owner.gui_command_state().unwrap().undo_label, history);
     deliver(&mut owner, &[button([20, 30], true)]);
     assert_eq!(
-        owner.gui_command_state().unwrap().sketch_move,
+        owner
+            .gui_command_state()
+            .unwrap()
+            .sketch_move
+            .map(|status| status.stage),
         Some(GuiSketchMoveStage::Geometry)
     );
     let geometry = owner
@@ -203,4 +211,106 @@ fn transaction_opened_during_move_cannot_adopt_the_preview() {
         .transactions()
         .abort()
         .unwrap();
+}
+
+#[test]
+fn multi_selection_toggles_geometry_and_requires_a_pick_before_base() {
+    let (mut owner, document, _) = geometric_owner(&[[0., 0.], [100., 20.], [140., 120.]], true);
+    let before = owner
+        .documents()
+        .workspace()
+        .session(document)
+        .unwrap()
+        .snapshot()
+        .sketches
+        .clone();
+    owner
+        .sketch_move_from_gui(GuiSketchMoveAction::Start)
+        .unwrap();
+    owner
+        .sketch_move_from_gui(GuiSketchMoveAction::SetOptimizeSingle(false))
+        .unwrap();
+    assert!(
+        owner
+            .sketch_move_from_gui(GuiSketchMoveAction::ChooseBase)
+            .is_err()
+    );
+    deliver(
+        &mut owner,
+        &[button([50, 10], true), button([120, 70], true)],
+    );
+    assert_eq!(
+        owner
+            .gui_command_state()
+            .unwrap()
+            .sketch_move
+            .unwrap()
+            .selection_count,
+        2
+    );
+    assert_eq!(
+        Client::new(owner.document_host())
+            .model()
+            .selection()
+            .unwrap()
+            .count,
+        2
+    );
+    deliver(&mut owner, &[button([50, 10], true)]);
+    assert_eq!(
+        owner
+            .gui_command_state()
+            .unwrap()
+            .sketch_move
+            .unwrap()
+            .selection_count,
+        1
+    );
+    assert_eq!(
+        Client::new(owner.document_host())
+            .model()
+            .selection()
+            .unwrap()
+            .count,
+        1
+    );
+    owner
+        .sketch_move_from_gui(GuiSketchMoveAction::ChooseBase)
+        .unwrap();
+    assert_eq!(
+        owner
+            .gui_command_state()
+            .unwrap()
+            .sketch_move
+            .unwrap()
+            .stage,
+        GuiSketchMoveStage::Base
+    );
+    assert!(
+        owner
+            .sketch_move_from_gui(GuiSketchMoveAction::SetOptimizeSingle(true))
+            .is_err()
+    );
+    owner
+        .sketch_move_from_gui(GuiSketchMoveAction::Done)
+        .unwrap();
+    assert!(
+        before.same_evaluated_state(
+            &owner
+                .documents()
+                .workspace()
+                .session(document)
+                .unwrap()
+                .snapshot()
+                .sketches
+        )
+    );
+    assert_eq!(
+        Client::new(owner.document_host())
+            .model()
+            .selection()
+            .unwrap()
+            .count,
+        0
+    );
 }

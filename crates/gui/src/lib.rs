@@ -48,7 +48,7 @@ pub use sketch::inspect::{
     GuiInspectAction, GuiMeasurePanel, GuiSketchContext, GuiSketchRelation, GuiSketchRepeat,
 };
 pub use sketch::line::{GuiLineCommand, GuiLineCommandMenu, GuiSketchHud, GuiSketchHudField};
-pub use sketch::move_tool::{GuiSketchMoveAction, GuiSketchMoveStage};
+pub use sketch::move_tool::{GuiSketchMoveAction, GuiSketchMoveStage, GuiSketchMoveStatus};
 pub use sketch::precise_input::{
     GuiPreciseMode, GuiPrecisePoint, GuiPreciseTarget, GuiTriadCommand,
 };

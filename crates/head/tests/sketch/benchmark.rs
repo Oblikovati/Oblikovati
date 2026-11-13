@@ -11,6 +11,8 @@ mod circle_center_point;
 mod coincident_context;
 #[path = "coincident/move_relation.rs"]
 mod coincident_move_relation;
+#[path = "coincident/multi_move.rs"]
+mod coincident_multi_move;
 #[path = "coincident/points.rs"]
 mod coincident_points;
 #[path = "coincident/segments.rs"]

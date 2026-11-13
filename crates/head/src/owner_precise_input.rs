@@ -304,6 +304,7 @@ pub(super) struct SketchCommandMemory {
     /// New points are center points, unless a person turned that off.
     pub center_point: bool,
     pub repeat_command: Option<oblikovati_gui::GuiSketchRepeat>,
+    pub move_optimize_single: bool,
     /// Where relative values are measured from; none means the sketch origin.
     pub triad: Option<[f64; 2]>,
     pub triad_pick: Option<TriadPick>,
@@ -314,6 +315,7 @@ impl Default for SketchCommandMemory {
         Self {
             center_point: true,
             repeat_command: None,
+            move_optimize_single: true,
             triad: None,
             triad_pick: None,
             context: None,
