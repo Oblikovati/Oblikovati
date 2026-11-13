@@ -27,6 +27,7 @@ mod engine;
 mod files;
 mod frame_keys;
 mod input;
+mod material_browser;
 mod parameters;
 mod ribbon;
 mod ribbon_fit;

@@ -11,6 +11,7 @@ claim that each file has been individually triaged.
 | 1 | Native parameter-driven cube journey | In progress | The native journey creates a constrained rectangle and extrude, edits the size, uses undo/redo, saves and reopens, and resolves a face. Maintain the live test and rerun it after relevant changes. |
 | 1 | `features/application/file-menu/file-menu.feature` | Verified | All eight scenarios passed on the current recorded source. Weldment remains unavailable. |
 | 1 | `features/application/document-creation` | In progress | Name and size sorting, horizontal icon tiles, and keyboard and secondary-button selection work for available templates. The BDD scenarios still require additional named templates and native bindings. |
+| 1 | `features/application/quick-access-toolbar` Material Browser | In progress | The native open and close scenario passes on the recorded source. Material and appearance assignment work; browser editing, duplication, and the Physical tab remain open. Run the other toolbar scenarios on current source. |
 | 1 | `features/application/ribbon-customization/ribbon-customization.feature` | Needs rerun | Source changed since the inventory checkpoint. Review the corrections and rerun affected native scenarios. |
 | 1 | `features/application/ribbon-appearance/ribbon-appearance.feature` | In progress | On the current recorded source, six of 18 scenarios pass; 11 stop at undefined steps and one fails on a missing Tools group. Reset Ribbon is implemented. Implement the standard Tools groups and Text Off, Small, Compact and Large across all commands and layouts. |
 | 1 | `features/application/ribbon-docking/ribbon-docking.feature` | In progress | Source changed after the inventory checkpoint. A full native run at commit `139b82a42` found 6 passes and 17 scenarios stopped by undefined steps. With corrected bindings, a second run found 8 passes, 14 undefined steps, and one ambiguous step. Resolve the remaining steps and implement missing command-group behavior. |
@@ -756,3 +757,24 @@ revisions checked before they support a current pass claim.
   passed; the GUI library passed 356 tests and file dialogs passed four before
   the final selector refactor. The focused GUI and native asset tests and cube
   journey passed afterward. The full ribbon feature was not rerun.
+
+### Material Browser quick access, 2026-11-13
+
+- The quick access command opens a Material Browser for the active part. Its
+  Materials and Appearances tabs select catalog choices and assign them through
+  the existing part asset operation. Switching parts clears pending choices.
+  Property editing, duplication, and the Physical tab are not implemented.
+- The native `Open and close the Material Browser from quick access` scenario
+  passed all 10 steps on source SHA-256
+  `e7546a712fe3f42b2c6f9885e47292b69cb3ef0ebe3105a9ad9a26bbed40bbbd`,
+  unchanged during the run. The other scenarios were not run. Application:
+  `447ec4bc0` plus this change, with unrelated README and AGENTS files present.
+  Linux, Xvfb at 1600 × 1000 and Lavapipe. Local report:
+  `/tmp/obk-material-browser-final-bdd-20261113`.
+- Two native tests passed for selecting a catalog material, assignment and
+  undo, appearance assignment, and switching to a second part. The browser
+  capture is `/tmp/obk-material-browser-final-native-20261113/material-browser-assigned.png`.
+- Three existing native ribbon asset tests passed. The GUI library passed
+  358 tests, the File dialog passed four, and GUI/head Clippy passed. The new
+  toolbar command moved the Manage tab; the parameter journey's fixed test
+  click was updated and its shortcut checks passed on both widget platforms.

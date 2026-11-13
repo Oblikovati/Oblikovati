@@ -8,13 +8,14 @@ use oblikovati_api::types::DocumentType;
 use std::collections::BTreeMap;
 
 /// Commands the customization menu lists, in its order.
-const STANDARD: [StandardCommand; 7] = [
+const STANDARD: [StandardCommand; 8] = [
     StandardCommand::New,
     StandardCommand::Open,
     StandardCommand::Save,
     StandardCommand::Undo,
     StandardCommand::Redo,
     StandardCommand::Home,
+    StandardCommand::MaterialBrowser,
     StandardCommand::Print,
 ];
 const CUSTOMIZE_MENU: &str = "##quick-access-customize";
@@ -33,6 +34,7 @@ enum StandardCommand {
     Undo,
     Redo,
     Home,
+    MaterialBrowser,
     Print,
 }
 impl StandardCommand {
@@ -44,6 +46,7 @@ impl StandardCommand {
             Self::Undo => "Undo",
             Self::Redo => "Redo",
             Self::Home => "Home",
+            Self::MaterialBrowser => "Material Browser",
             Self::Print => "Print",
         }
     }
@@ -93,6 +96,7 @@ pub(crate) struct QuickAccessRequests {
     pub open_document: bool,
     pub choose_plane: bool,
     pub open_extrude: bool,
+    pub open_material_browser: bool,
 }
 /// The toolbar's choices for this session; a later scenario may ask for them to persist.
 #[derive(Default)]
@@ -166,6 +170,12 @@ impl QuickAccessToolbar {
             Some(StandardCommand::Undo) => GuiShellAction::Undo,
             Some(StandardCommand::Redo) => GuiShellAction::Redo,
             Some(StandardCommand::Home) => GuiShellAction::ShowHome,
+            Some(StandardCommand::MaterialBrowser)
+                if state.authoring == crate::GuiAuthoringContext::Part =>
+            {
+                self.requests.open_material_browser = true;
+                return;
+            }
             _ => return,
         };
         if action.enabled(state) {
@@ -215,6 +225,12 @@ impl QuickAccessToolbar {
                 [0.; 2],
                 actions,
             ),
+            StandardCommand::MaterialBrowser => {
+                let disabled =
+                    ui.begin_disabled(state.authoring != crate::GuiAuthoringContext::Part);
+                self.requests.open_material_browser |= ui.button(label);
+                drop(disabled);
+            }
             StandardCommand::Print => muted_button(ui, label),
         }
     }

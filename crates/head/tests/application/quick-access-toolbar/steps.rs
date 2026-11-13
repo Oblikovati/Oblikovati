@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{ApplicationWorld, diagnostics::window_geometry};
 use cucumber::{given, then, when};
+mod material_browser;
 
 const DEFAULT_ENTRIES: [&str; 6] = ["New", "Open", "Save", "Undo", "Redo", "Home"];
 const CONTROL: &str = "...";

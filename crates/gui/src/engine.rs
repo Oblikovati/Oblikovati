@@ -49,6 +49,7 @@ pub struct GuiFrameEngine {
     /// Keys a widget received the press of, so their release reaches it too.
     widget_keys: Vec<crate::GuiKey>,
     quick_access: crate::application::quick_access_toolbar::QuickAccessToolbar,
+    material_browser: crate::material_browser::MaterialBrowser,
     home: crate::application::home_recent_documents::HomeWorkspace,
     plane_selection: crate::application::quick_access_toolbar::plane_selection::PlaneSelection,
     parameter_editor: crate::parameters::GuiParameterEditor,
@@ -97,6 +98,7 @@ impl GuiFrameEngine {
             popup_was_open: false,
             widget_keys: Vec::new(),
             quick_access: Default::default(),
+            material_browser: Default::default(),
             home: Default::default(),
             plane_selection: Default::default(),
             parameter_editor: Default::default(),
@@ -279,6 +281,7 @@ impl GuiFrameEngine {
             &mut self.document_files,
             &mut self.plane_selection,
             &mut self.extrude_dialog,
+            &mut self.material_browser,
             &selected,
         );
         if !self.ribbon.tips.active() && !self.ribbon.tips.consumed {
@@ -365,6 +368,8 @@ impl GuiFrameEngine {
         );
         self.preferences
             .panel(ui, &request.commands, &mut selected, self.home.active);
+        self.material_browser
+            .panel(ui, &request.commands, &mut selected);
         self.extrude_dialog
             .panel(ui, &request.commands, &mut selected);
         self.ribbon
@@ -553,6 +558,7 @@ fn apply_quick_access(
     files: &mut crate::files::GuiDocumentFiles,
     planes: &mut crate::application::quick_access_toolbar::plane_selection::PlaneSelection,
     extrude: &mut crate::extrude_dialog::ExtrudeDialog,
+    material_browser: &mut crate::material_browser::MaterialBrowser,
     selected: &[GuiShellAction],
 ) {
     let requests = toolbar.take_requests();
@@ -561,6 +567,9 @@ fn apply_quick_access(
     }
     if requests.open_document {
         files.request_open();
+    }
+    if requests.open_material_browser {
+        material_browser.open();
     }
     planes.active |= requests.choose_plane || selected.contains(&GuiShellAction::ChooseSketchPlane);
     extrude.requested |= requests.open_extrude || selected.contains(&GuiShellAction::OpenExtrude);

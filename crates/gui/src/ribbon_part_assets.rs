@@ -27,16 +27,24 @@ fn asset_row(
     actions: &mut Vec<GuiShellAction>,
 ) {
     let (label, selected, choices) = row_choices(browser, kind);
+    if let Some(id) = asset_combo(ui, label, selected, choices) {
+        queue_asset(state, kind, &id, actions);
+    }
+}
+/// Choose one named asset; example: `asset_combo(ui, "Material", current, choices)`.
+pub(crate) fn asset_combo(
+    ui: &Ui,
+    label: &str,
+    selected: Option<&str>,
+    choices: &[crate::GuiAssetChoice],
+) -> Option<String> {
     let preview = asset_preview(choices, selected);
     ui.set_next_item_width(150.);
-    let Some(_list) = ui.begin_combo(label, preview) else {
-        return;
-    };
-    for asset in choices {
-        if select_asset(ui, asset, selected) {
-            queue_asset(state, kind, &asset.id, actions);
-        }
-    }
+    let _list = ui.begin_combo(label, preview)?;
+    choices
+        .iter()
+        .find(|asset| select_asset(ui, asset, selected))
+        .map(|asset| asset.id.clone())
 }
 fn row_choices(
     browser: &crate::GuiModelBrowser,
@@ -72,7 +80,8 @@ fn asset_preview<'a>(choices: &'a [crate::GuiAssetChoice], selected: Option<&'a 
             |asset| asset.name.as_str(),
         )
 }
-fn queue_asset(
+/// Queue an asset assignment; example: `queue_asset(state, kind, id, actions)`.
+pub(crate) fn queue_asset(
     state: &GuiCommandState,
     kind: GuiPartAssetKind,
     id: &str,
