@@ -367,6 +367,72 @@ fn assert_saved_view(path: &Path, visible: &[oblikovati_gui::GuiDrawingLine]) {
 }
 
 #[test]
+fn deferred_drawing_saves_frozen_views_without_the_source_model() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    drawing_available(&mut world);
+    open_drawing_picker(&mut world);
+    select_deferred_drawing(&mut world);
+    choose_open(&mut world);
+    acknowledge_deferred_message(&mut world);
+    let state = world.state();
+    let drawing = state.document.unwrap();
+    let visible = state.drawing_projections[&drawing].lines.clone();
+    let folder = models_folder(&mut world);
+    std::fs::remove_file(folder.join("source.opd")).unwrap();
+    world.press_save_shortcut();
+    settle(&mut world);
+    assert_saved_view(world.saved_path.as_ref().unwrap(), &visible);
+    let renamed = folder.join("deferred-renamed.odd");
+    let copy = folder.join("deferred-copy.odd");
+    let host = world.app().owner.document_host();
+    let client = Client::new(host);
+    client
+        .documents()
+        .save_as(&oblikovati_api::wire::SaveDocumentAsArgs {
+            document: drawing,
+            new_full_document_name: renamed.to_string_lossy().into_owned(),
+        })
+        .unwrap();
+    client
+        .documents()
+        .save_copy_as(&oblikovati_api::wire::SaveCopyAsArgs {
+            document: drawing,
+            target_file_name: copy.to_string_lossy().into_owned(),
+            metadata: None,
+        })
+        .unwrap();
+    assert_saved_view(&renamed, &visible);
+    assert_saved_view(&copy, &visible);
+    client
+        .drawing()
+        .set_model_reference(&oblikovati_api::wire::SetModelReferenceArgs {
+            full_document_name: "changed.opd".into(),
+        })
+        .unwrap();
+    let before = std::fs::read(&renamed).unwrap();
+    let failure = client
+        .documents()
+        .save(&oblikovati_api::wire::SaveDocumentArgs { document: drawing })
+        .unwrap_err();
+    assert!(
+        failure
+            .to_string()
+            .contains("expected the saved drawing recipe")
+    );
+    assert_eq!(std::fs::read(&renamed).unwrap(), before);
+    client
+        .documents()
+        .close(&oblikovati_api::wire::CloseDocumentArgs {
+            id: drawing,
+            force: true,
+        })
+        .unwrap();
+    drop(client);
+    world.close();
+}
+
+#[test]
 fn batch_save_reports_a_missing_model_and_saves_the_other_drawing() {
     let mut world = ApplicationWorld::new();
     world.add_part();

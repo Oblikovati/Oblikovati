@@ -30,6 +30,17 @@ fn capture<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
         .drawing
         .as_ref()
         .ok_or_else(|| format!("drawing {id}: expected drawing content"))?;
+    if let Some(frozen) = files
+        .deferred_drawing_views(id)
+        .map_err(|cause| cause.to_string())?
+    {
+        if drawing.recipe() != &frozen.drawing_recipe {
+            return Err(format!(
+                "deferred drawing {id}: expected the saved drawing recipe before saving frozen views"
+            ));
+        }
+        return Ok(frozen.clone());
+    }
     let mut saved = SavedDrawingViews {
         version: SavedDrawingViews::VERSION,
         drawing_recipe: drawing.recipe().clone(),

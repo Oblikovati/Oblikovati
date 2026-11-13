@@ -69,8 +69,9 @@ claim that each file has been individually triaged.
   distinct deferred drawing action and disables view creation. The focused
   native BDD scenario passes all 15 steps with a Martensite-generated saved
   projection. A drawing without a saved presentation is refused before its
-  document is registered. Changing defer status and deferred saves are not
-  established by this scenario and are not yet implemented. The full current
+  document is registered. Save, Save As and Save Copy preserve frozen views
+  without the model; a changed drawing recipe is refused instead of saving a
+  stale presentation. Changing defer status is not yet implemented. The full current
   application benchmark also reports a parse error in the separately updated
   home-recent-documents feature; the focused run used an unchanged copy of the
   document-opening feature. Report: `/tmp/obk-deferred-isolated.log`.
