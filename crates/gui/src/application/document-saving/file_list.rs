@@ -81,8 +81,9 @@ impl FolderBrowser {
             self.row_actions(ui, row, hit.chosen, hit.hovered, outcome);
             continue_the_grid(ui, self.view);
         }
-        self.row_menu(ui);
-        self.selection_rectangle(ui, over_a_row, &boxes);
+        let menu_bounds = self.row_menu_bounds;
+        self.row_menu_bounds = self.row_menu(ui);
+        self.selection_rectangle(ui, over_a_row, &boxes, menu_bounds);
     }
     fn row_actions(
         &mut self,
@@ -118,13 +119,11 @@ impl FolderBrowser {
             outcome.entered = Some(row.name.clone());
         }
     }
-    fn row_menu(&mut self, ui: &Ui) {
-        let Some(_menu) = ui.begin_popup(ROW_MENU) else {
-            return;
-        };
-        let Some(name) = self.menu_row.clone() else {
-            return;
-        };
+    fn row_menu(&mut self, ui: &Ui) -> Option<([f32; 2], [f32; 2])> {
+        let _menu = ui.begin_popup(ROW_MENU)?;
+        let name = self.menu_row.clone()?;
+        let origin = ui.window_pos();
+        let size = ui.window_size();
         if ui.menu_item("Open") {
             self.request = FileRequest::Open(name.clone());
         }
@@ -135,6 +134,7 @@ impl FolderBrowser {
         if ui.menu_item("Properties") {
             self.request = FileRequest::Properties(name);
         }
+        Some((origin, size))
     }
     /// A drag from empty list space chooses what it crosses; a click there chooses nothing.
     fn selection_rectangle(
@@ -142,9 +142,22 @@ impl FolderBrowser {
         ui: &Ui,
         over_a_row: bool,
         boxes: &[(String, [f32; 2], [f32; 2])],
+        menu_bounds: Option<([f32; 2], [f32; 2])>,
     ) {
         let pointer = ui.io().mouse_pos;
-        let in_list = ui.is_window_hovered();
+        let over_a_row = over_a_row
+            || boxes.iter().any(|(_, low, high)| {
+                (0..2).all(|axis| pointer[axis] >= low[axis] && pointer[axis] < high[axis])
+            });
+        // The popup closes after the press; its dismissal click must also reach empty list space.
+        let in_list = ui.is_window_hovered()
+            || (menu_bounds.is_some_and(|(origin, size)| {
+                (0..2).any(|axis| {
+                    pointer[axis] < origin[axis] || pointer[axis] >= origin[axis] + size[axis]
+                })
+            }) && ui.is_window_hovered_with_flags(
+                imgui::WindowHoveredFlags::ALLOW_WHEN_BLOCKED_BY_POPUP,
+            ));
         if in_list && !over_a_row && ui.is_mouse_clicked(MouseButton::Left) {
             self.rectangle_start = Some(pointer);
         }

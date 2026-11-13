@@ -158,6 +158,7 @@ fn drawing_selected(world: &mut ApplicationWorld) {
     select_row(world, DRAWING_FILE);
 }
 #[given("Load in Defer Mode is unchecked")]
+#[given("Load in Defer Mode is unchecked for the first drawing")]
 #[then("Load in Defer Mode is unchecked")]
 #[then("Load in Defer Mode is unchecked for the second drawing")]
 fn defer_off(world: &mut ApplicationWorld) {
@@ -300,10 +301,32 @@ fn click_empty_list(world: &mut ApplicationWorld) {
     world.click([tile.center()[0] as i32 + 120, tile.center()[1] as i32 + 90]);
     settle(world);
 }
+#[then("the selected-item count is cleared")]
+fn no_selected_items(world: &mut ApplicationWorld) {
+    assert!(
+        !holds_text(world, "1 item selected"),
+        "selection count remains"
+    );
+    assert!(
+        !row_lit(world, PART_FILE),
+        "part thumbnail remains selected"
+    );
+}
 #[then("the dialog remains open with the part name and preview displayed")]
 fn open_with_part(world: &mut ApplicationWorld) {
     world.expect_text("Look in");
     expect_name_and_preview(world, PART_FILE);
+}
+#[test]
+fn file_row_context_menu_properties_remains_clickable() {
+    let mut world = ApplicationWorld::new();
+    part_tile(&mut world);
+    part_tile_selected(&mut world);
+    right_click_tile(&mut world);
+    world.click_text("Properties");
+    settle(&mut world);
+    world.expect_text("File Properties");
+    world.close();
 }
 // Several drawings
 #[given("the Open dialog in the MCAD Software displays two adjacent saved drawings as thumbnails")]

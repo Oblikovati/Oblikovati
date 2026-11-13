@@ -43,6 +43,7 @@ pub(crate) struct FolderBrowser {
     pub(super) size_order_descending: Option<bool>,
     pub(super) request: super::file_list::FileRequest,
     pub(super) menu_row: Option<String>,
+    pub(super) row_menu_bounds: Option<([f32; 2], [f32; 2])>,
     pub(super) rectangle_start: Option<[f32; 2]>,
     /// Folders this dialog has shown, most recent first, for the recent-folder pane.
     recent: Vec<String>,
@@ -103,6 +104,7 @@ impl FolderBrowser {
             size_order_descending: None,
             request: Default::default(),
             menu_row: None,
+            row_menu_bounds: None,
             rectangle_start: None,
             recent: Vec::new(),
             navigation: NavigationPane::default(),
