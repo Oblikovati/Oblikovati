@@ -3,7 +3,12 @@
 use super::{Category, RibbonCustomization};
 use imgui::{Key, Ui};
 
-const CATEGORIES: [Category; 3] = [Category::All, Category::Macros, Category::Sketch];
+const CATEGORIES: [Category; 4] = [
+    Category::All,
+    Category::Macros,
+    Category::Sketch,
+    Category::View,
+];
 
 pub(super) fn category_index(category: Category) -> usize {
     CATEGORIES
@@ -48,5 +53,6 @@ mod tests {
         assert_eq!(category_index(Category::All), 0);
         assert_eq!(category_index(Category::Macros), 1);
         assert_eq!(category_index(Category::Sketch), 2);
+        assert_eq!(category_index(Category::View), 3);
     }
 }

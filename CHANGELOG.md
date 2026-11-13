@@ -10,6 +10,8 @@
 
 ### Added
 
+- Added the View Tab command category to ribbon customization. (#3856)
+
 - Added keyboard switching between ribbon customization targets. (#3856)
 
 - Added keyboard navigation and Escape handling to the ribbon command-category list. (#3856)

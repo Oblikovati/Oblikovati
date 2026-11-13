@@ -2,6 +2,24 @@
 use super::*;
 
 #[test]
+fn returned_command_reappears_in_its_selected_category() {
+    let mut draft = Draft::default();
+    draft.open(RibbonTab::Tools);
+    draft.reset_source_selection(Command::Sketches);
+    draft.add();
+    draft.set_category(Category::View);
+    assert!(!draft.available(Command::Sketches));
+    draft.remove();
+    assert_eq!(
+        draft.available_commands(),
+        vec![Command::Separator, Command::Sketches]
+    );
+    assert!(draft.target_changed());
+    draft.open(RibbonTab::Tools);
+    assert!(!draft.changed());
+}
+
+#[test]
 fn empty_macro_category_retains_separator_and_staged_changes() {
     let mut draft = Draft::default();
     draft.open(RibbonTab::Tools);

@@ -14,6 +14,8 @@ mod macros;
 mod missing_file;
 #[path = "target_steps.rs"]
 mod target_steps;
+#[path = "view_category.rs"]
+mod view_category;
 
 #[given("a part document is active in The MCAD Software")]
 fn active_part(world: &mut ApplicationWorld) {

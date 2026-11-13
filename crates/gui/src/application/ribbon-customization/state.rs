@@ -96,6 +96,7 @@ pub(super) enum Category {
     All,
     Macros,
     Sketch,
+    View,
 }
 impl Category {
     pub fn label(self) -> &'static str {
@@ -103,6 +104,7 @@ impl Category {
             Self::All => "All Commands",
             Self::Macros => "Macros",
             Self::Sketch => "Sketch Tab",
+            Self::View => "View Tab",
         }
     }
     fn contains(self, command: Command) -> bool {
@@ -113,6 +115,7 @@ impl Category {
                 command,
                 Command::Separator | Command::Tool(_) | Command::Constraint(_) | Command::Dimension
             ),
+            Self::View => matches!(command, Command::Separator | Command::Sketches),
         }
     }
 }
