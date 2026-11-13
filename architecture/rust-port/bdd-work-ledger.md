@@ -214,6 +214,10 @@ claim that each file has been individually triaged.
   occurrence after an edit. Tests cover duplicate names, clearing selection,
   stale paths and mouse selection of nested rows. Component commands and
   selection highlighting in the viewport remain open.
+- A selected occurrence now tints only its placement in the viewport; selecting
+  a subassembly tints its visible children. Scene tests check independent
+  placements and clearing, and a native mouse test checks the pixel colors of
+  two separated placements. Component commands and viewport picking remain open.
 - The drawing browser now lists the authored sheets, borders, title blocks and
   views, and browser search uses those same rows. Unit tests cover multiple
   sheets, a missing border and searching for a view.

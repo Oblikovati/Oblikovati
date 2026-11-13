@@ -111,6 +111,37 @@ fn assembly_repeats_components_and_refreshes_after_component_edits() {
 }
 
 #[test]
+fn occurrence_selection_tints_only_its_placement_and_clears() {
+    let (mut files, _, assembly, _) = workspace();
+    let generation = files.workspace().session(assembly).unwrap().generation();
+    let mut scenes = DesktopPartScenes::default();
+    let original = scenes.refresh(&mut files).unwrap().unwrap();
+    let half = original.scene.triangles.len() / 2;
+    assert!(half > 0);
+    scenes.set_occurrence_selection(Some(vec![(assembly, generation, 1)]));
+    let selected = scenes.refresh(&mut files).unwrap().unwrap();
+    assert!(
+        selected.scene.triangles[..half]
+            .iter()
+            .all(|triangle| triangle.color != CHOSEN_BODY_COLOR)
+    );
+    assert!(
+        selected.scene.triangles[half..]
+            .iter()
+            .all(|triangle| triangle.color == CHOSEN_BODY_COLOR)
+    );
+    scenes.set_occurrence_selection(None);
+    let cleared = scenes.refresh(&mut files).unwrap().unwrap();
+    assert!(
+        cleared
+            .scene
+            .triangles
+            .iter()
+            .all(|triangle| triangle.color != CHOSEN_BODY_COLOR)
+    );
+}
+
+#[test]
 fn assembly_reports_unresolved_components_instead_of_showing_an_empty_scene() {
     let (mut files, part, assembly, _) = workspace();
     files

@@ -69,6 +69,15 @@ impl<
         {
             self.clear_extrusion_preview();
         }
+        let selected = self
+            .selected_occurrence
+            .as_ref()
+            .and_then(|(document, path)| {
+                current
+                    .filter(|(active, _)| active == document)
+                    .map(|_| path.clone())
+            });
+        self.part_scenes.set_occurrence_selection(selected);
         let Some(mut update) = self.part_scenes.refresh(&mut self.files)? else {
             return Ok(None);
         };

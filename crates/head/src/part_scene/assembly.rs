@@ -135,7 +135,7 @@ impl DesktopPartScenes {
             .map_err(|error| error.to_string())?
             .generation();
         result.status.source = Some((document, generation));
-        self.append_assembly(files, document, &mut result, 0)?;
+        self.append_assembly(files, document, &mut result, &[])?;
         Ok(result)
     }
 
@@ -144,9 +144,9 @@ impl DesktopPartScenes {
         files: &mut FileWorkspace<O, W, F>,
         document: u64,
         result: &mut HeadSceneUpdate,
-        depth: usize,
+        parent: &[(u64, u64, usize)],
     ) -> Result<(), String> {
-        if depth > MAX_ASSEMBLY_DEPTH {
+        if parent.len() > MAX_ASSEMBLY_DEPTH {
             return Err(format!(
                 "assembly document {document}: expected at most 128 nested levels"
             ));
@@ -155,16 +155,20 @@ impl DesktopPartScenes {
             .workspace()
             .session(document)
             .map_err(|error| error.to_string())?;
+        let generation = session.generation();
         let occurrences = session
             .snapshot()
             .assembly
             .clone()
             .ok_or_else(|| format!("document {document}: expected an assembly"))?;
-        for occurrence in occurrences
+        for (ordinal, occurrence) in occurrences
             .iter()
-            .filter(|item| !item.suppressed && !item.virtual_)
+            .enumerate()
+            .filter(|(_, item)| !item.suppressed && !item.virtual_)
         {
-            if let Err(error) = self.append_occurrence(files, document, occurrence, result, depth) {
+            let mut path = parent.to_vec();
+            path.push((document, generation, ordinal));
+            if let Err(error) = self.append_occurrence(files, document, occurrence, result, &path) {
                 result
                     .status
                     .scene_errors
@@ -180,7 +184,7 @@ impl DesktopPartScenes {
         owner: u64,
         occurrence: &AssemblyOccurrenceRecipe,
         result: &mut HeadSceneUpdate,
-        depth: usize,
+        path: &[(u64, u64, usize)],
     ) -> Result<(), String> {
         let component = component_document(files, owner, occurrence)?;
         let nested = files
@@ -192,12 +196,17 @@ impl DesktopPartScenes {
             .is_some();
         let mut scene = if nested {
             let mut child = self.empty();
-            self.append_assembly(files, component, &mut child, depth + 1)?;
+            self.append_assembly(files, component, &mut child, path)?;
             child
         } else {
             self.evaluate(files, component)?
         };
         scene.scene = scene.scene.placed(&occurrence.placement()?)?;
+        if self.occurrence_selection.as_deref() == Some(path) {
+            for triangle in &mut scene.scene.triangles {
+                triangle.color = CHOSEN_BODY_COLOR;
+            }
+        }
         result.scene.triangles.extend(scene.scene.triangles);
         result.status.visible_bodies += scene.status.visible_bodies;
         result.status.health.extend(scene.status.health);

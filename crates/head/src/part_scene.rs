@@ -63,6 +63,7 @@ pub(crate) struct DesktopPartScenes {
     source: Option<assembly::SceneSource>,
     scene_failure: Option<(u64, u64, String)>,
     presentation_invalidated: bool,
+    occurrence_selection: Option<oblikovati_gui::GuiOccurrencePath>,
     resolution: Option<oblikovati_martensite::PrismResolutionPolicy>,
     slot: PartEvaluationSlot<NamedPrismSnapshot, oblikovati_martensite::EvaluationFailure>,
 }
@@ -255,6 +256,15 @@ impl DesktopPartScenes {
     }
     pub(crate) fn invalidate_presentation(&mut self) {
         self.presentation_invalidated = true;
+    }
+    pub(crate) fn set_occurrence_selection(
+        &mut self,
+        selected: Option<oblikovati_gui::GuiOccurrencePath>,
+    ) {
+        if self.occurrence_selection != selected {
+            self.occurrence_selection = selected;
+            self.invalidate_presentation();
+        }
     }
     pub fn clear(&mut self) {
         self.slot.clear();

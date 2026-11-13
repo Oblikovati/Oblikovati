@@ -172,7 +172,7 @@ fn opening_an_assembly_displays_its_referenced_part() {
     .unwrap();
     std::fs::write(folder.join("part.opd"), part.encode().unwrap()).unwrap();
     std::fs::write(folder.join("nested.oad"), b"schemaVersion: 2\ndocumentType: 2\nmodel: {occurrences: [{name: 'Part:2', component: part.opd}]}\n").unwrap();
-    std::fs::write(folder.join(ASSEMBLY_FILE), b"schemaVersion: 2\ndocumentType: 2\nmodel: {occurrences: [{name: 'Part:1', component: part.opd}, {name: 'Nested:1', component: nested.oad}, {name: 'Suppressed:1', component: part.opd, suppressed: true}]}\n").unwrap();
+    std::fs::write(folder.join(ASSEMBLY_FILE), b"schemaVersion: 2\ndocumentType: 2\nmodel: {occurrences: [{name: 'Part:1', component: part.opd}, {name: 'Nested:1', component: nested.oad, transform: [1, 0, 0, 5, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]}, {name: 'Suppressed:1', component: part.opd, suppressed: true}]}\n").unwrap();
     open_dialog(&mut world);
     look_in(&mut world, &folder);
     select_row(&mut world, ASSEMBLY_FILE);
@@ -200,6 +200,7 @@ fn opening_an_assembly_displays_its_referenced_part() {
         .clone()
         .unwrap();
     assert_eq!(selected.len(), 2);
+    assert_selected_and_unselected_solids(&mut world, true);
     world.click_text("Nested:1");
     let parent = world
         .state()
@@ -210,6 +211,7 @@ fn opening_an_assembly_displays_its_referenced_part() {
         .clone()
         .unwrap();
     assert_eq!(parent.len(), 1);
+    assert_selected_and_unselected_solids(&mut world, true);
     world.expect_text("Part:2");
     world.click_text("Part:1");
     let other = world
@@ -223,6 +225,7 @@ fn opening_an_assembly_displays_its_referenced_part() {
     assert_eq!(other.len(), 1);
     assert_ne!(selected, other);
     assert_ne!(parent, other);
+    assert_selected_and_unselected_solids(&mut world, false);
     world.save_capture("assembly-referenced-part");
     world.click_text("Search");
     world.pump(Vec::new());
@@ -231,6 +234,36 @@ fn opening_an_assembly_displays_its_referenced_part() {
     world.expect_text("Part:2");
     world.expect_no_text("Part:1");
     world.close();
+}
+fn assert_selected_and_unselected_solids(world: &mut ApplicationWorld, selected_right: bool) {
+    let capture = super::super::capture_framebuffer(&mut world.app().window.native);
+    let width = capture.extent[0] as usize;
+    let mut colors = [0usize; 2];
+    let mut x_totals = [0usize; 2];
+    for (index, pixel) in capture.rgba.chunks_exact(4).enumerate() {
+        if index % width < 320 || index / width < 200 {
+            continue;
+        }
+        if pixel[1] > pixel[0].saturating_add(30) && pixel[1] > pixel[2].saturating_add(30) {
+            colors[0] += 1;
+            x_totals[0] += index % width;
+        }
+        if pixel[2] > pixel[0].saturating_add(30) && pixel[2] > pixel[1].saturating_add(30) {
+            colors[1] += 1;
+            x_totals[1] += index % width;
+        }
+    }
+    assert!(
+        colors.iter().all(|count| *count > 100),
+        "expected green and blue solids, got {colors:?}"
+    );
+    let green_x = x_totals[0] / colors[0];
+    let blue_x = x_totals[1] / colors[1];
+    assert_eq!(
+        blue_x > green_x,
+        selected_right,
+        "blue at {blue_x}, green at {green_x}"
+    );
 }
 // Already open files
 #[given("a saved part is open in the MCAD Software")]
