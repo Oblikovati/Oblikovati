@@ -6,6 +6,7 @@ use cucumber::{given, then, when};
 const CONSTRAIN: &str = "##ribbon-additional-Constrain";
 
 #[given("the full Sketch ribbon is visible")]
+#[then("the full Sketch ribbon is visible")]
 fn full_sketch_ribbon(world: &mut ApplicationWorld) {
     world.expect_text("Constrain");
     assert_eq!(
@@ -49,6 +50,7 @@ fn docking_options(world: &mut ApplicationWorld) {
     world.expect_text("Right");
 }
 #[then("the title context menu and Constrain additional command area close")]
+#[then("the command context menu and Constrain additional command area close")]
 fn menu_and_constrain_close(world: &mut ApplicationWorld) {
     world.expect_no_text("Undock Ribbon");
     assert!(diagnostics::window_geometry(CONSTRAIN).is_none());
@@ -105,6 +107,7 @@ fn right_click_coordinate_command(world: &mut ApplicationWorld) {
 #[then(
     "the command context menu lists Ribbon Appearance, Add to Quick Access Toolbar, Move to Main Panel, Show Panels, Customize User Commands, Undock Ribbon and Docking Positions"
 )]
+#[then("the command context menu is visible")]
 fn coordinate_command_menu(world: &mut ApplicationWorld) {
     title_menu_choices(world);
     for label in ["Add to Quick Access Toolbar", "Move to Main Panel"] {
@@ -170,11 +173,27 @@ fn inference_scope_context_menu_closes_on_tab_switch() {
     world.click_text("Tools");
     world.pump(Vec::new());
     command_menu_closes(&mut world);
+    world.expect_text("Application Options");
     assert!(diagnostics::window_geometry(CONSTRAIN).is_none());
+    world.click_text("Sketch");
+    world.pump(Vec::new());
+    world.expect_text("Constrain");
     assert!(
         world
             .edited_geometry()
             .same_recipe(&world.observed_sketch.as_ref().unwrap().geometry)
     );
     world.close();
+}
+
+#[then("sketch edit remains active")]
+fn sketch_edit_active(world: &mut ApplicationWorld) {
+    assert_eq!(
+        world.state().authoring,
+        oblikovati_gui::GuiAuthoringContext::Sketch
+    );
+}
+#[then("the Constrain additional command area remains closed")]
+fn constrain_remains_closed(_: &mut ApplicationWorld) {
+    assert!(diagnostics::window_geometry(CONSTRAIN).is_none());
 }

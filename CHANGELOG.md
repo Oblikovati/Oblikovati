@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Selected a ribbon tab on the click that dismisses its context menu.
+
 - Closed unpinned ribbon expansions when Escape dismisses their title menu.
 
 - Kept expanded ribbon commands open while their docking menu is in use.

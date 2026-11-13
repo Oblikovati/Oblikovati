@@ -238,6 +238,7 @@ fn side_tabs(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame) {
                 .selected(ribbon.active == *tab)
                 .size([SIDE_TABS_WIDTH - 16., 0.])
                 .build();
+            let context_press = ribbon.display.context_tab_press(ui);
             let tip = crate::ribbon_key_tips::tab_tip(*tab).to_string();
             if ribbon.tips.tabs() && ribbon.tips.matching(&tip) {
                 crate::ribbon_key_tips::badge(ui, &tip);
@@ -245,6 +246,8 @@ fn side_tabs(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame) {
             hovered |= ui.is_item_hovered();
             if chosen {
                 ribbon.active = *tab;
+            } else if context_press {
+                ribbon.select_tab(*tab);
             }
         }
         if hovered {
@@ -413,12 +416,12 @@ fn ribbon_tabs(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame) {
             TabItemFlags::empty()
         };
         let item = ui.tab_item_with_flags(tab.label(), None, flags);
+        if ribbon.display.selector_pointer_press(ui) || ribbon.display.context_tab_press(ui) {
+            selector_tab = Some(*tab);
+        }
         let tip = crate::ribbon_key_tips::tab_tip(*tab).to_string();
         if ribbon.tips.tabs() && ribbon.tips.matching(&tip) {
             crate::ribbon_key_tips::badge(ui, &tip);
-        }
-        if ribbon.display.selector_pointer_press(ui) {
-            selector_tab = Some(*tab);
         }
         hovered |= ui.is_item_hovered();
         // On release: the press itself is a click outside any panel still open, and closes it.

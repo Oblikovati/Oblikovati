@@ -205,3 +205,23 @@ fn docking_submenu_opens_and_closes_with_arrow_keys() {
     docking_submenu_closed(&mut world);
     world.close();
 }
+
+#[test]
+fn side_ribbon_tab_click_dismisses_context_and_selects_the_tab() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    right_click_model(&mut world);
+    open_docking_positions(&mut world);
+    world.click_text("Left");
+    world.pump(Vec::new());
+    right_click_model(&mut world);
+    world.expect_text("Undock Ribbon");
+    world.click_text("Tools");
+    world.pump(Vec::new());
+    world.expect_no_text("Undock Ribbon");
+    world.expect_text("Options");
+    world.click_text("Options");
+    world.pump(Vec::new());
+    world.expect_text("Application Options");
+    world.close();
+}

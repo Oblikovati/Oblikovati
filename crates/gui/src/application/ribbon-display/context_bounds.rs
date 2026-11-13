@@ -47,6 +47,17 @@ impl RibbonDisplayState {
                 (0..2).all(|axis| point[axis] >= bounds[0][axis] && point[axis] < bounds[1][axis])
             })
     }
+    /// Forward a tab press that dismisses its context menu, if the menu does not cover the tab.
+    pub(crate) fn context_tab_press(&self, ui: &Ui) -> bool {
+        if self.context_bounds.is_none() || !ui.is_mouse_clicked(imgui::MouseButton::Left) {
+            return false;
+        }
+        let point = ui.io().mouse_pos;
+        let min = ui.item_rect_min();
+        let max = ui.item_rect_max();
+        !self.context_contains(point)
+            && (0..2).all(|axis| point[axis] >= min[axis] && point[axis] <= max[axis])
+    }
     pub(crate) fn take_docking_selection(&mut self) -> bool {
         std::mem::take(&mut self.docking_selected)
     }
