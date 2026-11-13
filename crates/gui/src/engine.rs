@@ -294,6 +294,7 @@ impl GuiFrameEngine {
             &mut self.plane_selection,
             &mut self.extrude_dialog,
             &mut self.material_browser,
+            (&mut self.parameter_editor, request.commands.document),
             &selected,
         );
         if !self.ribbon.tips.active() && !self.ribbon.tips.consumed {
@@ -572,6 +573,7 @@ fn apply_quick_access(
     planes: &mut crate::application::quick_access_toolbar::plane_selection::PlaneSelection,
     extrude: &mut crate::extrude_dialog::ExtrudeDialog,
     material_browser: &mut crate::material_browser::MaterialBrowser,
+    parameters: (&mut crate::parameters::GuiParameterEditor, Option<u64>),
     selected: &[GuiShellAction],
 ) {
     let requests = toolbar.take_requests();
@@ -586,6 +588,9 @@ fn apply_quick_access(
     }
     if requests.open_projects {
         files.request_projects();
+    }
+    if requests.open_parameters {
+        parameters.0.open(parameters.1);
     }
     planes.active |= requests.choose_plane || selected.contains(&GuiShellAction::ChooseSketchPlane);
     extrude.requested |= requests.open_extrude || selected.contains(&GuiShellAction::OpenExtrude);

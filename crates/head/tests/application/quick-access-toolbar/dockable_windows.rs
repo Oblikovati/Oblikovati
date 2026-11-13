@@ -9,6 +9,59 @@ fn close_title(world: &mut ApplicationWorld, title: &str) {
     world.pump(Vec::new());
 }
 
+fn enter_parameter_field(world: &mut ApplicationWorld, label: &str, value: &str) {
+    let run = world
+        .frame
+        .runs
+        .iter()
+        .filter(|run| run.text == label)
+        .min_by(|a, b| a.center()[1].total_cmp(&b.center()[1]))
+        .unwrap();
+    let point = [run.minimum[0] - 40., run.center()[1]];
+    world.click(super::super::diagnostics::pointer_pixels(point));
+    world.type_text(value);
+    world.key(oblikovati_viewport::ViewportPhysicalKey::Enter, false);
+}
+
+#[test]
+fn quick_access_parameters_opens_closes_and_can_be_removed() {
+    let mut world = ApplicationWorld::new();
+    part_active(&mut world);
+    assert!(on_row(&world, "Parameters"));
+    world.click(row_center(&world, "Parameters"));
+    assert!(window_geometry("Parameters").is_some());
+    enter_parameter_field(&mut world, "Name", "quick_size");
+    enter_parameter_field(&mut world, "Equation", "10 mm");
+    world.save_capture("quick-access-parameter-input");
+    world.click_text("Add");
+    world.pump(Vec::new());
+    assert!(
+        world
+            .state()
+            .parameters
+            .iter()
+            .any(|row| row.name == "quick_size"),
+        "visible text: {}",
+        world.text()
+    );
+    close_title(&mut world, "Parameters");
+    assert!(window_geometry("Parameters").is_none());
+    open_customization(&mut world);
+    let item = world
+        .frame
+        .runs
+        .iter()
+        .rev()
+        .find(|run| run.text == "Parameters")
+        .unwrap()
+        .center();
+    world.click(super::super::diagnostics::pointer_pixels(item));
+    world.pump(Vec::new());
+    assert!(!on_row(&world, "Parameters"));
+    part_stays(&mut world);
+    world.close();
+}
+
 #[test]
 fn dockable_material_browser_closes_and_reopens_from_the_title_bar() {
     let mut world = ApplicationWorld::new();

@@ -13,6 +13,10 @@ pub(crate) struct GuiParameterEditor {
 }
 impl DockableWindow for GuiParameterEditor {}
 impl GuiParameterEditor {
+    pub(crate) fn open(&mut self, document: Option<u64>) {
+        self.synchronize_document(document);
+        self.visible = document.is_some();
+    }
     pub(crate) fn toolbar(
         &mut self,
         ui: &Ui,
@@ -43,7 +47,7 @@ impl GuiParameterEditor {
         if !self.visible {
             return;
         }
-        Self::fit_dockable(ui, "Parameters", [320., 8.], [540., 360.]);
+        Self::fit_dockable(ui, "Parameters", [320., 190.], [540., 360.]);
         let mut open = self.visible;
         Self::dockable_window(ui, "Parameters", &mut open)
             .build(|| self.contents(ui, state, actions));
