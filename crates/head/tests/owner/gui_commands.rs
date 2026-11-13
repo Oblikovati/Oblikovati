@@ -107,7 +107,11 @@ fn verify_document_focus_state(owner: &mut TestOwner, awake: &Receiver<()>, firs
 }
 
 fn empty_owner_gui_state() -> GuiCommandState {
+    let keymap = oblikovati_model::keymap::Keymap::desktop_defaults();
     GuiCommandState {
+        marking_menus: Some(Default::default()),
+        keymap_bindings: keymap.catalog(),
+        keymap: Some(keymap),
         template_sizes: document_creation::gui_template_sizes(),
         sketch_options: Some(Default::default()),
         color_scheme: Some(

@@ -38,10 +38,11 @@ fn apply_curve_tool(owner: &mut TestOwner, choice: GuiSketchConstraint, pixels: 
     owner.constrain_sketch_from_gui(choice).unwrap();
     deliver(owner, &[button(pixels[0], true), button(pixels[1], true)]);
     assert!(
-        owner.sketch_tool.is_none(),
+        owner.sketch_tool.is_some(),
         "{choice:?}: {:?}",
         owner.command_notice
     );
+    deliver(owner, &[key(ViewportKey::Cancel, true)]);
 }
 fn assert_curve_kind(geometry: &Sketch2D, choice: GuiSketchConstraint) {
     let relation = &geometry.constraints().last().unwrap().relation;
@@ -223,7 +224,7 @@ fn equal_mixed_first_pair_waits_for_a_matching_curve_category() {
     assert!(owner.sketch_tool.is_some());
     assert_eq!(inspection(&mut owner).dof, before);
     deliver(&mut owner, &[button([350, 185], true)]);
-    assert!(owner.sketch_tool.is_none());
+    assert!(owner.sketch_tool.is_some());
     let relation = &relation_geometry(&owner, document, sketch)
         .constraints()
         .last()

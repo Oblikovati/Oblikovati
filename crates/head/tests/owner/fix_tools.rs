@@ -33,7 +33,11 @@ fn fix_point_and_line_pin_exact_positions_in_one_undo_step() {
         owner.constrain_sketch_from_gui(Fix).unwrap();
         let pixel = if connected { [51, 22] } else { [1, 2] };
         deliver(&mut owner, &[button(pixel, true)]);
-        assert!(owner.sketch_tool.is_none());
+        assert!(owner.sketch_tool.is_some());
+        deliver(
+            &mut owner,
+            &[key(oblikovati_viewport::ViewportKey::Cancel, true)],
+        );
         assert_eq!(inspection(&mut owner).dof, if connected { 0 } else { 2 });
         assert_eq!(
             owner
@@ -117,7 +121,7 @@ fn partial_fix_failure_restores_geometry_and_keeps_the_tool_usable() {
     assert_eq!(tool.generation, session.generation());
     owner.sketch_tool = Some(crate::sketch_tool::SketchToolState::Geometric(tool));
     deliver(&mut owner, &[button([51, 22], true)]);
-    assert!(owner.sketch_tool.is_none());
+    assert!(owner.sketch_tool.is_some());
     assert_eq!(inspection(&mut owner).dof, 0);
 }
 #[test]

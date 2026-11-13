@@ -11,6 +11,8 @@ mod circle_center_point;
 mod coincident_context;
 #[path = "coincident/points.rs"]
 mod coincident_points;
+#[path = "coincident/segments.rs"]
+mod coincident_segments;
 #[path = "dimension-expression/steps.rs"]
 mod dimension_expression;
 #[path = "ellipse/steps.rs"]

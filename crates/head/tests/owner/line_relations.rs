@@ -50,7 +50,8 @@ fn two_line_relations_require_distinct_lines_and_commit_one_history_step() {
         finish_second_pick(&mut owner);
         assert_eq!(inspection(&mut owner).dof, 5);
         assert_line_relation(&owner, document, sketch, choice);
-        assert!(owner.sketch_tool.is_none(), "{:?}", owner.command_notice);
+        assert!(owner.sketch_tool.is_some(), "{:?}", owner.command_notice);
+        deliver(&mut owner, &[key(ViewportKey::Cancel, true)]);
         assert_relation_history(&mut owner);
         assert_line_relation(&owner, document, sketch, choice);
     }

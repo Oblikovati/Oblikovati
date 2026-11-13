@@ -5,8 +5,7 @@ use cucumber::{given, then, when};
 use oblikovati_model::sketch::SketchPlane;
 use oblikovati_viewport::ViewportPhysicalKey;
 
-#[given("the joined line endpoints and visible constraints")]
-fn joined_lines(world: &mut ApplicationWorld) {
+pub(super) fn draw_oblique_lines(world: &mut ApplicationWorld) {
     world.start_empty_sketch();
     for (start, end) in [([620, 300], [750, 350]), ([850, 400], [980, 480])] {
         world.click_text("Line");
@@ -14,6 +13,10 @@ fn joined_lines(world: &mut ApplicationWorld) {
         world.sketch_click(end);
         world.escape();
     }
+}
+#[given("the joined line endpoints and visible constraints")]
+fn joined_lines(world: &mut ApplicationWorld) {
+    draw_oblique_lines(world);
     world.click_text("Coincident");
     world.sketch_click([750, 350]);
     world.sketch_click([850, 400]);
