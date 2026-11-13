@@ -4,6 +4,8 @@ use super::*;
 mod chooser_details;
 #[path = "gallery_icons.rs"]
 mod gallery_icons;
+#[path = "gallery_secondary.rs"]
+mod gallery_secondary;
 #[given("the metric template folder is selected")]
 fn metric_selected(world: &mut ApplicationWorld) {
     world.click_text("Metric");

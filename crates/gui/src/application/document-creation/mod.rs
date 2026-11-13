@@ -329,8 +329,10 @@ impl TemplateChooser {
             ui.set_keyboard_focus_here();
         }
         if self.tile_row(ui, state, template, layout, icons, width) {
-            self.selected = Some(template);
-            self.drawing_layout = None;
+            if self.selected != Some(template) {
+                self.selected = Some(template);
+                self.drawing_layout = None;
+            }
             self.gallery_keyboard = true;
         }
     }
@@ -356,6 +358,7 @@ impl TemplateChooser {
                 .size([0., 0.])
                 .build()
         };
+        let secondary = ui.is_item_clicked_with_button(imgui::MouseButton::Right);
         self.remember_selected_tile_y(ui, template);
         self.scroll_selected_tile(ui, template);
         self.create_requested |=
@@ -366,7 +369,7 @@ impl TemplateChooser {
             ui.same_line_with_pos(layout.type_column);
             ui.text_disabled(template.type_label());
         }
-        chosen
+        chosen || secondary
     }
     fn details(&mut self, ui: &Ui) {
         ui.text("Template details");

@@ -8,8 +8,8 @@ claim that each file has been individually triaged.
 | Priority | Feature and scope | State | Evidence and next action |
 | --- | --- | --- | --- |
 | 1 | `features/application` | In progress | The native application runner exists. A complete, current area result has not been recorded. Run and retain the full area report; triage failures against the current source. |
-| 1 | `features/application/file-menu/file-menu.feature` | Verified | All 8 scenarios passed again with the icon gallery changes in this ledger's commit. Weldment remains unavailable. |
-| 1 | `features/application/document-creation` | In progress | Name and size sorting, horizontal icon tiles, and keyboard selection are implemented for available templates. The name-order and navigation scenarios still require additional DIN/JIS template variants and native BDD bindings. |
+| 1 | `features/application/file-menu/file-menu.feature` | Verified | All 8 scenarios passed after the secondary-button chooser changes. Weldment remains unavailable. |
+| 1 | `features/application/document-creation` | In progress | Name and size sorting, horizontal icon tiles, and keyboard and secondary-button selection work for available templates. The BDD scenarios still require additional named templates and native bindings. |
 | 1 | `features/application/ribbon-customization/ribbon-customization.feature` | Needs rerun | Source changed since the inventory checkpoint. Review the corrections and rerun affected native scenarios. |
 | 1 | `features/application/ribbon-appearance/ribbon-appearance.feature` | In progress | Source changed. Revalidate every scenario against the revised file. Panel title visibility and the appearance menu exist. The menu marks Normal as active and disables the other modes. A caption-free native icon primitive is available but is not connected to the ribbon. The 3D Model ribbon now uses the Go icons for Revolve, Hole, Fillet and Chamfer; these commands remain unavailable. Implement Text Off, Small, Compact, Large and Reset Ribbon across all commands and layouts; then enable and verify them. |
 | 1 | `features/application/ribbon-docking/ribbon-docking.feature` | In progress | Source changed after the inventory checkpoint. A full native run at commit `139b82a42` found 6 passes and 17 scenarios stopped by undefined steps. With corrected bindings, a second run found 8 passes, 14 undefined steps, and one ambiguous step. Resolve the remaining steps and implement missing command-group behavior. |
@@ -221,3 +221,22 @@ revisions checked before they support a current pass claim.
   `/tmp/obk-file-area-icons-20261113`; they are not durable shared artifacts.
 - The DIN/JIS template variants remain unavailable. The related navigation
   scenarios are not claimed as passed.
+
+### Secondary-button template selection, 2026-11-13
+
+- Source: `features/application/document-creation/document-creation.feature`,
+  SHA-256 `003a02efcb9c8f0629eeb8cabd4c52945533a1387d3918c417b7eac09a0d7522`.
+  Application: commit `563929d48` plus the chooser and test changes in this
+  ledger's commit. Unrelated README and AGENTS files were present.
+- Three native tests passed on Linux with Xvfb at 1600 × 1000. They
+  cover secondary-button selection in the icon, list and details views, empty
+  space, popup state, visible selection and retention of a drawing preview.
+  A screenshot is in `/tmp/obk-template-right-highlight-20261113`; this local
+  location is not a durable shared artifact.
+- The GUI library passed 349 tests, the File dialog passed four, and Clippy
+  passed. The full File menu feature passed eight scenarios and 59 steps with
+  its source hash unchanged, using Xvfb and the configured Lavapipe Vulkan
+  driver. Reports are in `/tmp/obk-file-area-secondary-lvp-20261113`.
+- The source scenario names `Standard (in)` and `Sheet Metal (in)`. The
+  current catalog uses different names. The full BDD scenario is not claimed
+  as passed; reconcile the catalog and bindings with the current source.

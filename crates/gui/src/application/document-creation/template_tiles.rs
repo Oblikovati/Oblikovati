@@ -102,9 +102,10 @@ impl TemplateChooser {
         width: f32,
         selected: bool,
     ) -> bool {
-        let _selected = selected.then(|| {
-            ui.push_style_color(StyleColor::Button, ui.style_color(StyleColor::ButtonActive))
-        });
+        let color = ui.style_color(StyleColor::ButtonActive);
+        let _selected = selected.then(|| ui.push_style_color(StyleColor::Button, color));
+        let _selected_hover =
+            selected.then(|| ui.push_style_color(StyleColor::ButtonHovered, color));
         let presentation = self.icon_presentation(icons, template.kind, width);
         crate::widget_abi::icon_button(ui, &template.title(), presentation)
     }

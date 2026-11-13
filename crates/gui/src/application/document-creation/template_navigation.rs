@@ -22,7 +22,7 @@ impl TemplateChooser {
     }
     pub(super) fn navigate_gallery(&mut self, ui: &Ui, state: &GuiCommandState) {
         self.gallery_scroll_frames = self.gallery_scroll_frames.saturating_sub(1);
-        if ui.is_mouse_clicked(MouseButton::Left) {
+        if ui.is_mouse_clicked(MouseButton::Left) || ui.is_mouse_clicked(MouseButton::Right) {
             self.gallery_keyboard = false;
         }
         if !self.gallery_keyboard
