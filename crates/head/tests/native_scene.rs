@@ -108,13 +108,7 @@ fn verify_native_pixels(
 }
 /// Count the visible fixture body pixels; example: `solid_pixels(&capture)` after native presentation.
 pub(super) fn solid_pixels(capture: &ViewportCapture) -> usize {
-    capture
-        .rgba
-        .as_chunks::<4>()
-        .0
-        .iter()
-        .filter(|pixel| **pixel == [0, 255, 0, 255])
-        .count()
+    crate::fixture_color::count_fixture_color(capture, crate::fixture_color::default_fixture_rgb())
 }
 #[test]
 fn native_head_displays_owned_edits_undo_failures_and_close_without_old_geometry() {

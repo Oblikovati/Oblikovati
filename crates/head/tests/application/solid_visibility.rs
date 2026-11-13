@@ -3,23 +3,7 @@
 use oblikovati_viewport::ViewportCapture;
 const PATCH_SIDE: usize = 5;
 const HUE_MARGIN: u8 = 20;
-/// Shipped default appearance, converted from linear RGB to the framebuffer's sRGB.
-pub(super) fn default_fixture_rgb() -> [u8; 3] {
-    use oblikovati_api::contract::Appearance;
-    let catalog = oblikovati_persistence::assets::load_builtin_catalog().unwrap();
-    let color = catalog.appearances().get("default").unwrap().base().color;
-    framebuffer_rgb([color.r, color.g, color.b])
-}
-pub(super) fn framebuffer_rgb(color: [f32; 3]) -> [u8; 3] {
-    color.map(|value| {
-        let srgb = if value <= 0.0031308 {
-            value * 12.92
-        } else {
-            1.055 * value.powf(1. / 2.4) - 0.055
-        };
-        (srgb * 255.).round() as u8
-    })
-}
+pub(super) use crate::fixture_color::{default_fixture_rgb, framebuffer_rgb};
 pub(super) fn visible_fixture_bounds(
     capture: &ViewportCapture,
     windows: &[[f32; 4]],
