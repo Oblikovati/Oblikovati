@@ -15,6 +15,14 @@ match the generated ledger and all R0 classification and evidence fields to be
 present. The full gate runs this check. It is expected to fail while those
 fields remain incomplete.
 
+Use `python3 -B tools/bdd/behavior_cli.py backlog` for one entry per feature
+file, ordered by the earliest milestone assigned to one of its scenarios.
+Each entry counts verified, blocked, unclassified, stale, and incomplete R0
+baseline rows. Its milestone counts include an `unassigned` group. A mixed
+feature can span milestones; the sort order is not a feature-level assignment
+or proof that its dependencies are complete. Unassigned files sort last until
+their scenarios have reviewed classifications.
+
 A classification records the scenario ID, the source revision and feature
 hash, milestone, owner, target module, acceptance test, issue links, state, and
 last receipt. R0 also requires the Go reference and test premise, API revision,

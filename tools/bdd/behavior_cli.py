@@ -25,6 +25,7 @@ from behavior_ledger import (
     write_ledger,
 )
 from behavior_evidence import check_receipt_integrity
+from behavior_backlog import feature_backlog
 from verify_snapshot import SNAPSHOT_FOLDER
 
 
@@ -56,6 +57,9 @@ def execute(action: str, checkout: Path, output: Path | None) -> None:
         write_ledger(output, ledger)
         return
     rows = require_list(ledger["scenarios"], "ledger scenarios")
+    if action == "backlog":
+        print(json.dumps(feature_backlog(rows), indent=2))
+        return
     print(
         json.dumps(
             {
@@ -102,7 +106,7 @@ def restore_snapshot(destination: Path) -> None:
 def main() -> None:
     """Run the CLI; for example, `python3 -B tools/bdd/behavior_cli.py check`."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("report", "check", "generate"))
+    parser.add_argument("action", choices=("report", "check", "generate", "backlog"))
     parser.add_argument("checkout", type=Path, nargs="?")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()

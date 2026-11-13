@@ -30,10 +30,11 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 
 ## Open items
 
-- A2: the diagnostic gate started on `6c5c1014a` and failed with 36 head test failures. The source changed during the run, so it cannot certify the current HEAD. See issue #3860 and `receipts/2026-11-13-gate-diagnostic/`. The new gate preflight also reports 2,700 unclassified scenarios. A fresh passing gate is required before the first push.
+- A2: the diagnostic gate started on `6c5c1014a` and failed with 36 head test failures. The source changed during the run, so it cannot certify the current HEAD. See issue #3860 and `receipts/2026-11-13-gate-diagnostic/`. The gate preflight reports 2,695 unclassified scenarios. A fresh passing gate is required before the first push.
 - A3: stale worktrees and 24 ancestor branches removed. Two branches contain commits outside the working branch and remain for review; `unmerged-lanes-20261113.bundle` on the NAS backs up both. The `oblikovati-rust-backups` directory on the NAS holds the latest verified branch bundle.
 - A8: stale application or source evidence is downgraded without hiding damaged artifacts (#3869). Ledger-tool-only edits do not invalidate native UI tests.
-- A8: the ledger records 2,719 declarations, including 62 blocked by invalid Gherkin (#3866). Eight scenarios have current native receipts: six application, one sketch, and one solid-model; 2,700 remain unclassified. R7 has more unclassified work, so 6/6 assigned is not milestone completion. The strict gate reports these gaps. See `behavior-receipts.md` and issue #3865.
+- A8: the ledger records 2,719 declarations, including 62 blocked by invalid Gherkin (#3866). Eight scenarios have current native receipts: six application, one sketch, and one solid-model; 2,695 remain unclassified. R7 has more unclassified work, so its assigned scenario count is not milestone completion. The strict gate reports these gaps. See `behavior-receipts.md` and issue #3865.
+- A8: `behavior_cli.py backlog` groups the 195 feature files by their assigned milestones and shows missing classifications and R0 evidence. All 2,719 rows still have incomplete R0 baseline fields; unassigned work is not given an inferred milestone.
 - R4 rectangle sizing: the first two-point rectangle scenario has a current native receipt; later rectangle scenarios remain unverified. See issue #3857.
 - R4 extrusion: `extrusion-01` has a current native receipt after the shared sketch-name fix (#3871). The full cube journey remains unverified (#3870).
 - A7: the scenario bundle, file manifest, and verifier are tracked in `test-utilities/benchmarks/scenario-snapshots/` and `tools/bdd/`. See issue #3864.

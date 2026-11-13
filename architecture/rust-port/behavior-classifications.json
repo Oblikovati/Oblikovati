@@ -310,6 +310,81 @@
       ],
       "state": "inventoried",
       "last_receipt": null
+    },
+    {
+      "id": "scenario:d46c554381029cf43cc527f90d95974a544c5e83c23ead926db74cadd5f7afd3",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "e4011485e2cfe78197b73450bea0d26ba2b0dbc54f2307d3b27364ffe9d9a20d",
+      "milestone": "R5",
+      "owner": "desktop and modeling",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: new-sketch-07 Create an empty sketch on a planar solid face",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Attach a sketch to a modeled planar face and preserve the extrusion."
+    },
+    {
+      "id": "scenario:44dfe89fda9e10be24739ae86dcce9b9e2df26b6fc34aeb0fa17ec252d15cb9f",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "e4011485e2cfe78197b73450bea0d26ba2b0dbc54f2307d3b27364ffe9d9a20d",
+      "milestone": "R5",
+      "owner": "desktop and modeling",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: new-sketch-08 Create a sketch on a non-origin work plane",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Create and retain an offset work plane and its dependent sketch."
+    },
+    {
+      "id": "scenario:069877f38da85a95ada5c757ed2d348c06d5adb0b5d9f22480bf73a19cc17449",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "e4011485e2cfe78197b73450bea0d26ba2b0dbc54f2307d3b27364ffe9d9a20d",
+      "milestone": "R7",
+      "owner": "desktop and modeling",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: new-sketch-09 Observe each automatic startup plane and restore the baseline",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Apply and restore application startup sketch preferences."
+    },
+    {
+      "id": "scenario:9c74ec8b6acb18c168bc279595cc82d4d72549e7408b877e6138a205b5887e4a",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "e4011485e2cfe78197b73450bea0d26ba2b0dbc54f2307d3b27364ffe9d9a20d",
+      "milestone": "R7",
+      "owner": "desktop and modeling",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: new-sketch-10 Compare automatic normal view on creation and edit",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Apply the look-at preference while creating and editing a sketch."
+    },
+    {
+      "id": "scenario:0ab6764c1a811aa9bfaac06b274384f929d99343373b0e299f3005e8e52c76a9",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "e4011485e2cfe78197b73450bea0d26ba2b0dbc54f2307d3b27364ffe9d9a20d",
+      "milestone": "R5",
+      "owner": "desktop and modeling",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: new-sketch-06 Save close and reopen an accumulated sketch document",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Persist and reopen the accumulated sketch with pattern geometry."
     }
   ]
 }
