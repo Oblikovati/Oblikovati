@@ -4,7 +4,7 @@ use crate::application::model_browser::{
     feature_properties::FeatureProperties, find_dialog::FindDialog,
     geometry_properties::GeometryProperties, relationships::RelationshipsDialog,
 };
-use crate::browser::{DRAWING_TREE, GuiBrowserKind, GuiModelBrowser, ORIGIN_ROWS};
+use crate::browser::{GuiBrowserKind, GuiModelBrowser, ORIGIN_ROWS, drawing_tree};
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::Ui;
 
@@ -311,24 +311,34 @@ fn matching_rows(browser: &GuiModelBrowser, query: &str) -> Vec<ResultRow> {
     results
 }
 /// A drawing's rows under the branches that hold them; a branch with no match is left out.
-fn matching_branches(query: &str) -> Vec<(&'static str, Vec<&'static str>)> {
-    DRAWING_TREE
-        .iter()
+fn matching_branches(
+    drawing: Option<&oblikovati_model::drawing::DrawingDocument>,
+    query: &str,
+) -> Vec<drawing_tree::DrawingBranch> {
+    drawing_tree::drawing_tree(drawing)
+        .into_iter()
         .map(|(branch, rows)| {
             let matches = rows
-                .iter()
-                .copied()
+                .into_iter()
                 .filter(|row| match_start(row, query).is_some())
                 .collect();
-            (*branch, matches)
+            (branch, matches)
         })
-        .filter(|(_, rows): &(&str, Vec<&str>)| !rows.is_empty())
+        .filter(|(_, rows): &drawing_tree::DrawingBranch| !rows.is_empty())
         .collect()
 }
 /// Draw the rows a query leaves, each with its match marked; example: `search_results(ui, browser, "work")`.
-pub(crate) fn search_results(ui: &Ui, browser: &GuiModelBrowser, query: &str) {
+pub(crate) fn search_results(
+    ui: &Ui,
+    state: &GuiCommandState,
+    browser: &GuiModelBrowser,
+    query: &str,
+) {
     if browser.kind == GuiBrowserKind::Drawing {
-        drawing_results(ui, query);
+        let drawing = state
+            .document
+            .and_then(|id| state.drawing_documents.get(&id));
+        drawing_results(ui, drawing, query);
         return;
     }
     let rows = matching_rows(browser, query);
@@ -351,8 +361,12 @@ pub(crate) fn search_results(ui: &Ui, browser: &GuiModelBrowser, query: &str) {
         }
     }
 }
-fn drawing_results(ui: &Ui, query: &str) {
-    let branches = matching_branches(query);
+fn drawing_results(
+    ui: &Ui,
+    drawing: Option<&oblikovati_model::drawing::DrawingDocument>,
+    query: &str,
+) {
+    let branches = matching_branches(drawing, query);
     if branches.is_empty() {
         ui.text_disabled(NO_RESULTS);
         return;
@@ -361,7 +375,7 @@ fn drawing_results(ui: &Ui, query: &str) {
         ui.text(branch);
         ui.indent();
         for row in rows {
-            result_row(ui, row, query);
+            result_row(ui, &row, query);
         }
         ui.unindent();
     }

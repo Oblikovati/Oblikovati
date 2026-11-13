@@ -12,6 +12,8 @@ use oblikovati_gui::GuiTemplateKind;
 use oblikovati_viewport::ViewportPhysicalKey;
 use std::path::{Path, PathBuf};
 
+#[path = "drawing_fixture.rs"]
+mod drawing_fixture;
 #[path = "lists.rs"]
 mod lists;
 #[path = "selections.rs"]

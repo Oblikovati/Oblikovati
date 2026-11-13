@@ -82,18 +82,50 @@ fn an_expansion_applies_to_one_frame_only() {
 }
 #[test]
 fn a_drawing_search_keeps_each_match_under_its_branch() {
-    let branches = matching_branches("border");
+    let drawing = oblikovati_model::drawing::DrawingDocument::new();
+    let branches = matching_branches(Some(&drawing), "border");
     assert_eq!(
         branches,
         [
-            ("Drawing Resources", vec!["Default Border"]),
-            ("Sheet:1", vec!["Default Border"]),
+            ("Drawing Resources".into(), vec!["Default Border".into()]),
+            ("Sheet:1".into(), vec!["Default Border".into()]),
         ]
     );
 }
 #[test]
 fn a_branch_with_no_match_is_left_out() {
-    let branches = matching_branches("formats");
-    assert_eq!(branches, [("Drawing Resources", vec!["Sheet Formats"])]);
-    assert!(matching_branches("zzz").is_empty());
+    let drawing = oblikovati_model::drawing::DrawingDocument::new();
+    let branches = matching_branches(Some(&drawing), "formats");
+    assert_eq!(
+        branches,
+        [("Drawing Resources".into(), vec!["Sheet Formats".into()])]
+    );
+    assert!(matching_branches(Some(&drawing), "zzz").is_empty());
+}
+#[test]
+fn drawing_search_finds_a_view_in_its_authored_sheet() {
+    use oblikovati_model::drawing::{
+        DrawingBaseViewDefinition, DrawingDocument, DrawingSheetRecipe,
+    };
+    let mut drawing = DrawingDocument::new();
+    drawing.set_model_reference("source.opd").unwrap();
+    drawing
+        .add_sheet(DrawingSheetRecipe::a3_landscape("Details"))
+        .unwrap();
+    drawing
+        .add_base_view_definition(
+            1,
+            DrawingBaseViewDefinition::new(
+                "Front View",
+                oblikovati_api::types::BASE_VIEW_FRONT,
+                1.,
+                [20., 30.],
+            )
+            .unwrap(),
+        )
+        .unwrap();
+    assert_eq!(
+        matching_branches(Some(&drawing), "front"),
+        [("Details".into(), vec!["Front View".into()])]
+    );
 }

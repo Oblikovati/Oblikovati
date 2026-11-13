@@ -11,7 +11,7 @@ claim that each file has been individually triaged.
 | 1 | Native parameter-driven cube journey | In progress | The native journey creates a constrained rectangle and extrude, edits the size, uses undo/redo, saves and reopens, and resolves a face. Maintain the live test and rerun it after relevant changes. |
 | 1 | `features/application/file-menu/file-menu.feature` | Verified | All eight scenarios passed on the recorded updated source. Weldment remains unavailable. |
 | 1 | `features/application/document-creation` | In progress | On the updated source, 8 of 39 native scenarios pass; 31 stop at undefined steps. Name and size sorting, horizontal icon tiles, and keyboard and secondary-button selection work for available templates. The remaining scenarios need bindings and additional named templates. |
-| 1 | `features/application/document-opening` | In progress | The current-source native run passed 22 of 27 scenarios; five stopped at undefined steps. The remaining cases need drawing and assembly fixtures with visible geometry and updated checks. See the Open evidence below. |
+| 1 | `features/application/document-opening` | In progress | The current native run passed 23 of 27 scenarios; four stopped at undefined steps. The saved-drawing scenario passes with its referenced part open. Closed drawing references still need loading. |
 | 1 | `features/application/document-saving` | Passing | The current-source native feature run passed 23 of 23 scenarios. The first-save preview is rendered from the part and stored in the saved file. See the save evidence below. |
 | 1 | `features/application/model-browser` | In progress | After action wording updates, a full native run passed 29 of 100 scenarios. Of the other 71, 62 stopped at undefined steps and nine at failed checks. Focused fixes passed later; rerun the full feature before reporting a current total. |
 | 1 | `features/application/quick-access-toolbar` | In progress | The previous full native feature run passed 11 of 12 scenarios. Projects now opens the project dialog; the focused customization choices scenario next fails because Update is missing. Later checks did not run. Material Browser editing, duplication, and the Physical tab remain open. |
@@ -33,6 +33,26 @@ claim that each file has been individually triaged.
 | 3 | `features/solid-model` | In progress | Implementations exist, but this area has not been assessed against the current complete source. Assess each feature after the application and sketch priorities; no total execution result is recorded. |
 
 ## Evidence records
+
+### Drawing browser and saved views, 2026-11-13
+
+- The full Open feature, SHA-256
+  `d7965f270ecc21d99f2ed9a0837f17a1996203fccf4d4d1966e7876ebb01464c`,
+  passed 23 of 27 scenarios and 227 of 231 executed steps on Linux with Xvfb
+  and the configured Vulkan runtime. Four scenarios stopped at undefined
+  steps, so their later checks did not run. Local reports are in
+  `/tmp/obk-open-drawing-suite`.
+- The drawing browser now lists the authored sheets, borders, title blocks and
+  views, and browser search uses those same rows. Unit tests cover multiple
+  sheets, a missing border and searching for a view.
+- The focused Open scenario creates a saved part and a drawing that references
+  it, opens the drawing with keyboard and mouse, checks the rendered projection
+  and browser row, and retains the original part tab. The referenced part is
+  opened in the background for this fixture. The native screenshot was inspected
+  at `/tmp/obk-open-drawing-green/Open-a-saved-drawing-alongside-an-existing-part.png`.
+- A drawing whose referenced part is closed currently reports that it expects
+  an open part and does not display its geometry. Implement reference loading
+  and test reopen with the source closed; the focused pass does not cover it.
 
 ### Open dialog selection, 2026-11-13
 

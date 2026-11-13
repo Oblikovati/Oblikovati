@@ -3,6 +3,8 @@
 mod browser_blocks;
 #[path = "browser_model_state.rs"]
 pub(crate) mod browser_model_state;
+#[path = "browser_drawing_tree.rs"]
+pub(crate) mod drawing_tree;
 use crate::application::workspace_layout::browser_view::BrowserView;
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::{MouseButton, StyleColor, Ui};
@@ -261,7 +263,9 @@ pub(crate) fn browser_contents(
     let _document = ui.push_id(format!("document-{:?}", state.document));
     crate::application::model_browser::browser_root::root_row(ui, state, browser, view, actions);
     if let Some(query) = view.query() {
-        crate::application::workspace_layout::browser_view::search_results(ui, browser, query);
+        crate::application::workspace_layout::browser_view::search_results(
+            ui, state, browser, query,
+        );
         view.feature_expansion = None;
         return;
     }
@@ -331,13 +335,17 @@ impl BrowserTree<'_> {
         self.modeling("End of Assembly", view, actions);
     }
     fn drawing(&self, view: &mut BrowserView) {
-        for (branch, (label, rows)) in DRAWING_TREE.iter().enumerate() {
+        let drawing = self
+            .state
+            .document
+            .and_then(|id| self.state.drawing_documents.get(&id));
+        for (branch, (label, rows)) in drawing_tree::drawing_tree(drawing).iter().enumerate() {
             let Some(_node) = self.branch(label, true) else {
                 continue;
             };
             for (row, name) in rows.iter().enumerate() {
                 let selected = view.selected_row == Some((branch, row));
-                let chosen = if *name == SHEET_TITLE_BLOCK {
+                let chosen = if name == SHEET_TITLE_BLOCK {
                     self.title_block_row(selected)
                 } else {
                     self.ui.selectable_config(name).selected(selected).build()
@@ -519,14 +527,6 @@ impl BrowserTree<'_> {
 const SHEET_TITLE_BLOCK: &str = "Title Block";
 /// What a title block holds, one level under its row on the sheet.
 const TITLE_BLOCK_FIELD: &str = "Field Text";
-/// A drawing's browser tree: the built-in template's one sheet and the resources it draws from.
-pub(crate) const DRAWING_TREE: [(&str, &[&str]); 2] = [
-    (
-        "Drawing Resources",
-        &["Sheet Formats", "Default Border", "Default Title Block"],
-    ),
-    ("Sheet:1", &["Default Border", "Title Block"]),
-];
 pub(crate) const ORIGIN_ROWS: [&str; 7] = [
     "YZ Plane",
     "XZ Plane",
