@@ -3,6 +3,7 @@ use super::{ApplicationWorld, diagnostics::window_geometry};
 use cucumber::{given, then, when};
 mod material_browser;
 mod menu_choices;
+mod projects;
 mod redo;
 
 const DEFAULT_ENTRIES: [&str; 6] = ["New", "Open", "Save", "Undo", "Redo", "Home"];

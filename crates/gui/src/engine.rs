@@ -571,6 +571,9 @@ fn apply_quick_access(
     if requests.open_material_browser {
         material_browser.open();
     }
+    if requests.open_projects {
+        files.request_projects();
+    }
     planes.active |= requests.choose_plane || selected.contains(&GuiShellAction::ChooseSketchPlane);
     extrude.requested |= requests.open_extrude || selected.contains(&GuiShellAction::OpenExtrude);
 }

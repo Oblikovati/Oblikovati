@@ -8,13 +8,14 @@ use oblikovati_api::types::DocumentType;
 use std::collections::BTreeMap;
 
 /// Commands the customization menu lists, in its order.
-const STANDARD: [StandardCommand; 8] = [
+const STANDARD: [StandardCommand; 9] = [
     StandardCommand::New,
     StandardCommand::Open,
     StandardCommand::Save,
     StandardCommand::Undo,
     StandardCommand::Redo,
     StandardCommand::Home,
+    StandardCommand::Projects,
     StandardCommand::MaterialBrowser,
     StandardCommand::Print,
 ];
@@ -34,6 +35,7 @@ enum StandardCommand {
     Undo,
     Redo,
     Home,
+    Projects,
     MaterialBrowser,
     Print,
 }
@@ -46,6 +48,7 @@ impl StandardCommand {
             Self::Undo => "Undo",
             Self::Redo => "Redo",
             Self::Home => "Home",
+            Self::Projects => "Projects",
             Self::MaterialBrowser => "Material Browser",
             Self::Print => "Print",
         }
@@ -97,6 +100,7 @@ pub(crate) struct QuickAccessRequests {
     pub choose_plane: bool,
     pub open_extrude: bool,
     pub open_material_browser: bool,
+    pub open_projects: bool,
 }
 /// The toolbar's choices for this session; a later scenario may ask for them to persist.
 #[derive(Default)]
@@ -170,6 +174,10 @@ impl QuickAccessToolbar {
             Some(StandardCommand::Undo) => GuiShellAction::Undo,
             Some(StandardCommand::Redo) => GuiShellAction::Redo,
             Some(StandardCommand::Home) => GuiShellAction::ShowHome,
+            Some(StandardCommand::Projects) if !state.transaction_open => {
+                self.requests.open_projects = true;
+                return;
+            }
             Some(StandardCommand::MaterialBrowser)
                 if state.authoring == crate::GuiAuthoringContext::Part =>
             {
@@ -197,6 +205,11 @@ impl QuickAccessToolbar {
                 if ui.button(label) {
                     actions.push(GuiShellAction::ShowHome);
                 }
+            }
+            StandardCommand::Projects => {
+                let disabled = ui.begin_disabled(state.transaction_open);
+                self.requests.open_projects |= ui.button(label);
+                drop(disabled);
             }
             StandardCommand::Save => crate::chrome::command_button(
                 ui,

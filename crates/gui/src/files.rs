@@ -30,6 +30,7 @@ const FILE_MENU_WIDTH: f32 = 440.;
 #[derive(Default)]
 pub(crate) struct GuiDocumentFiles {
     templates: crate::application::document_creation::TemplateChooser,
+    projects: crate::application::project_dialog::ProjectsDialog,
     recent_menu: RecentMenu,
     open: OpenDialog,
     save_as: SaveAsDialog,
@@ -187,6 +188,10 @@ impl GuiDocumentFiles {
     pub(crate) fn request_new(&mut self) {
         self.templates.request();
     }
+    /// Open project settings; example: `files.request_projects()` from quick access.
+    pub(crate) fn request_projects(&mut self) {
+        self.projects.request();
+    }
     /// Open the Open dialog; example: from the Quick Access Toolbar.
     pub(crate) fn request_open(&mut self) {
         self.open.request();
@@ -241,6 +246,7 @@ impl GuiDocumentFiles {
     ) {
         self.templates.panel(ui, state, actions, icons);
         self.open.panel(ui, state, actions);
+        self.projects.panel(ui, state);
     }
     /// Route this frame's closes, then draw the prompts and Save As. Runs after every control has
     /// drawn, and answered closes join `actions` after the routing so no answer is asked twice.
@@ -284,6 +290,7 @@ impl GuiDocumentFiles {
             || self.save_as.is_opening()
             || self.open.is_opening()
             || self.templates.needs_frame()
+            || self.projects.needs_frame()
     }
 }
 fn document_name(state: &GuiCommandState, document: u64) -> &str {

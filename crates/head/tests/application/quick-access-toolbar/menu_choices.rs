@@ -39,7 +39,7 @@ fn below_offered(world: &mut ApplicationWorld) {
 }
 
 #[then("the customization menu closes")]
-fn menu_closed(world: &mut ApplicationWorld) {
+fn menu_closed(_world: &mut ApplicationWorld) {
     assert!(window_geometry("##quick-access-customize").is_none());
 }
 

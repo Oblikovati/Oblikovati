@@ -9,9 +9,9 @@ claim that each file has been individually triaged.
 | --- | --- | --- | --- |
 | 1 | `features/application` | In progress | The native application runner exists. A complete, current area result has not been recorded. Run and retain the full area report; triage failures against the current source. |
 | 1 | Native parameter-driven cube journey | In progress | The native journey creates a constrained rectangle and extrude, edits the size, uses undo/redo, saves and reopens, and resolves a face. Maintain the live test and rerun it after relevant changes. |
-| 1 | `features/application/file-menu/file-menu.feature` | Needs rerun | All eight scenarios passed on the previously recorded source, which has since changed. Rerun the full feature. Weldment remains unavailable. |
+| 1 | `features/application/file-menu/file-menu.feature` | Verified | All eight scenarios passed on the recorded updated source. Weldment remains unavailable. |
 | 1 | `features/application/document-creation` | In progress | Name and size sorting, horizontal icon tiles, and keyboard and secondary-button selection work for available templates. The BDD scenarios still require additional named templates and native bindings. |
-| 1 | `features/application/quick-access-toolbar` | In progress | The full native feature run passed 11 of 12 scenarios on the recorded source. The customization choices scenario fails because Projects is missing; subsequent checks did not run. Material Browser editing, duplication, and the Physical tab remain open. |
+| 1 | `features/application/quick-access-toolbar` | In progress | The previous full native feature run passed 11 of 12 scenarios. Projects now opens the project dialog; the focused customization choices scenario next fails because Update is missing. Later checks did not run. Material Browser editing, duplication, and the Physical tab remain open. |
 | 1 | `features/application/ribbon-customization/ribbon-customization.feature` | Needs rerun | Source changed since the inventory checkpoint. Review the corrections and rerun affected native scenarios. |
 | 1 | `features/application/ribbon-appearance/ribbon-appearance.feature` | In progress | On the current recorded source, six of 18 scenarios pass; 11 stop at undefined steps and one fails on a missing Tools group. Reset Ribbon is implemented. Implement the standard Tools groups and Text Off, Small, Compact and Large across all commands and layouts. |
 | 1 | `features/application/ribbon-docking/ribbon-docking.feature` | In progress | Source changed after the inventory checkpoint. A full native run at commit `139b82a42` found 6 passes and 17 scenarios stopped by undefined steps. With corrected bindings, a second run found 8 passes, 14 undefined steps, and one ambiguous step. Resolve the remaining steps and implement missing command-group behavior. |
@@ -795,3 +795,33 @@ revisions checked before they support a current pass claim.
 - The inventory reports many source files changed since the discovery baseline.
   This is not a current suite pass count. In particular, File menu changed
   after its recorded full pass and requires a new full run.
+
+### Updated application source assessment, 2026-11-13
+
+- The live inventory has 24 application feature files and 746 scenario
+  declarations. Twenty-three files differ from the discovery baseline.
+  These are declaration counts, not native test results.
+- Captured all 24 application feature files in
+  `/tmp/obk-application-snapshot-20261113`, verifying the live source before
+  and after the copy. The manifest is `application.sha256` in that folder.
+  A full native application run was started with no feature or scenario filter;
+  its report is `/tmp/obk-application-full-20261113`. It was still running
+  when this record was written. Home recent-documents did not parse because
+  the source contains lowercase malformed lines such as `and opens Selected`;
+  its scenarios are excluded from that run. Check the live source against the
+  manifest before treating the finished report as current. Viewport
+  orientation and viewport zoom changed after the snapshot was captured;
+  their results will require reruns on the new source.
+- A separate File menu run on the same snapshot passed all eight scenarios
+  and 59 steps. File SHA-256:
+  `fd33924caea15cf97ba75ad3600c7244cf17592b6bdf26bdc9882f7cae71fb91`.
+  Application: `685571cca` plus the quick access Projects changes in this
+  work, with unrelated README and AGENTS files present. Linux, Xvfb at
+  1600 × 1000 and Lavapipe. Local report:
+  `/tmp/obk-application-file-menu-current-20261113`.
+- Projects is now a default quick access command that opens the existing
+  Projects dialog. A native test loaded a project, opened the dialog from a
+  part, checked its name, and returned to the same part. The focused toolbar
+  choices scenario progressed past Projects and failed at the missing Update
+  choice. GUI library: 358 passed; File dialog: four passed; GUI/head Clippy
+  passed. The full toolbar feature needs a new run after the layout change.
