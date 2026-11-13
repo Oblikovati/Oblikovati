@@ -42,12 +42,80 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
         self.files
             .set_visible(id, request.visible)
             .map_err(|error| Error(error.to_string()))?;
+        self.open_drawing_reference(id);
         encode(
             &self
                 .files
                 .document_info(id)
                 .map_err(|error| Error(error.to_string()))?,
         )
+    }
+
+    fn open_drawing_reference(&mut self, drawing: u64) {
+        let reference = self
+            .files
+            .workspace()
+            .session(drawing)
+            .ok()
+            .and_then(|session| session.snapshot().drawing.as_ref())
+            .filter(|drawing| drawing.sheets().iter().any(|sheet| !sheet.views.is_empty()))
+            .map(|drawing| drawing.model_reference().to_owned());
+        let Some(reference) = reference.filter(|name| !name.is_empty()) else {
+            return;
+        };
+        if self.files.drawing_reference(drawing, &reference).is_some() {
+            return;
+        }
+        match self.files.resolve_parameter_source(&reference) {
+            Ok(Some(model)) => {
+                self.files
+                    .attach_drawing_reference(drawing, reference, model, false);
+                return;
+            }
+            Ok(None) => {}
+            Err(cause) => {
+                self.files
+                    .reject_drawing_reference(drawing, reference, cause.to_string());
+                return;
+            }
+        }
+        let path = Path::new(&reference);
+        let path = if path.is_absolute() {
+            path.to_path_buf()
+        } else {
+            match self.files.path(drawing).ok().and_then(Path::parent) {
+                Some(folder) => folder.join(path),
+                None => return,
+            }
+        };
+        let observers = &mut self.observers;
+        let outcome = self.files.open_with_factory(
+            &path,
+            || create_observer(observers),
+            self.version,
+            self.source,
+            OpenActivation::Background,
+        );
+        let outcome = match outcome {
+            Ok(outcome) => outcome,
+            Err(cause) => {
+                self.files
+                    .reject_drawing_reference(drawing, reference, cause.to_string());
+                return;
+            }
+        };
+        let model = outcome.session_id();
+        let background = matches!(
+            outcome,
+            oblikovati_session::files::FileOpenOutcome::Opened(_)
+        );
+        if background && let Err(cause) = self.files.set_visible(model, false) {
+            self.files
+                .reject_drawing_reference(drawing, reference, cause.to_string());
+            return;
+        }
+        self.files
+            .attach_drawing_reference(drawing, reference, model, background);
     }
 }
 

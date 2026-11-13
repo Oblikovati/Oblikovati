@@ -40,18 +40,17 @@ fn drawing_available(world: &mut ApplicationWorld) {
     let folder = models_folder(world);
     let source = folder.join("source.opd");
     write_source_model(&source);
-    Client::new(world.app().owner.document_host())
-        .documents()
-        .open(&oblikovati_api::wire::OpenDocumentArgs {
-            full_document_name: source.to_string_lossy().into_owned(),
-            ..Default::default()
-        })
-        .unwrap();
-    settle(world);
     let drawing = folder.join(DRAWING_FILE);
     write_drawing(&drawing, &source);
     world.saved_path = Some(drawing);
-    world.observed_counts = vec![world.state().documents.len()];
+    world.observed_counts = vec![
+        world
+            .state()
+            .documents
+            .iter()
+            .filter(|row| row.visible)
+            .count(),
+    ];
 }
 #[when("the user presses Control+O and selects the drawing")]
 fn choose_drawing(world: &mut ApplicationWorld) {
@@ -63,7 +62,10 @@ fn choose_drawing(world: &mut ApplicationWorld) {
 #[then("the drawing becomes active in a new document tab")]
 fn drawing_active(world: &mut ApplicationWorld) {
     let state = world.state();
-    assert_eq!(state.documents.len(), world.observed_counts[0] + 1);
+    assert_eq!(
+        state.documents.iter().filter(|row| row.visible).count(),
+        world.observed_counts[0] + 1
+    );
     let active = state.document.unwrap();
     assert_eq!(
         state.document_storage[&active].path.as_deref(),
@@ -121,4 +123,155 @@ fn part_tab_remains(world: &mut ApplicationWorld) {
     let part = world.previous_document.unwrap();
     let name = world.document_name(part);
     world.expect_tab(&name);
+}
+
+#[test]
+fn drawing_open_loads_a_closed_model_without_a_visible_part_tab() {
+    let mut world = ApplicationWorld::new();
+    let original = world.add_part();
+    let folder = models_folder(&mut world);
+    let source = folder.join("source.opd");
+    let drawing = folder.join(DRAWING_FILE);
+    write_source_model(&source);
+    write_drawing(&drawing, &source);
+    open_dialog(&mut world);
+    look_in(&mut world, &folder);
+    select_row(&mut world, DRAWING_FILE);
+    choose_open(&mut world);
+    assert_eq!(
+        world
+            .state()
+            .documents
+            .iter()
+            .filter(|row| row.visible)
+            .count(),
+        2,
+        "only the original part and drawing have tabs"
+    );
+    assert!(world.document_is_open(original));
+    sheet_and_border(&mut world);
+    browser_has_view(&mut world);
+    world.close_active_tab();
+    assert_eq!(
+        world.state().documents.len(),
+        1,
+        "closing the last drawing releases its background model"
+    );
+    open_dialog(&mut world);
+    look_in(&mut world, &folder);
+    select_row(&mut world, DRAWING_FILE);
+    choose_open(&mut world);
+    sheet_and_border(&mut world);
+    world.close();
+}
+
+#[test]
+fn drawing_with_a_missing_model_keeps_the_document_open_and_reports_the_path() {
+    let mut world = ApplicationWorld::new();
+    let original = world.add_part();
+    let folder = models_folder(&mut world);
+    let missing = folder.join("missing.opd");
+    write_drawing(&folder.join(DRAWING_FILE), &missing);
+    open_dialog(&mut world);
+    look_in(&mut world, &folder);
+    select_row(&mut world, DRAWING_FILE);
+    choose_open(&mut world);
+    let state = world.state();
+    let drawing = state.document.unwrap();
+    let error = state.drawing_projections[&drawing]
+        .error
+        .as_deref()
+        .unwrap();
+    assert!(error.contains("missing.opd"), "reference failure {error:?}");
+    assert!(world.document_is_open(original));
+    browser_has_view(&mut world);
+    world.close();
+}
+
+#[test]
+fn drawings_share_a_relative_background_model_until_the_last_one_closes() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    let folder = models_folder(&mut world);
+    write_source_model(&folder.join("source.opd"));
+    for file in [DRAWING_FILE, SECOND_DRAWING_FILE] {
+        write_drawing(&folder.join(file), Path::new("source.opd"));
+        open_dialog(&mut world);
+        look_in(&mut world, &folder);
+        select_row(&mut world, file);
+        choose_open(&mut world);
+        sheet_and_border(&mut world);
+    }
+    assert_eq!(
+        world.state().documents.len(),
+        4,
+        "one model shared by two drawings"
+    );
+    world.close_active_tab();
+    assert_eq!(
+        world.state().documents.len(),
+        3,
+        "the first drawing retains its model"
+    );
+    sheet_and_border(&mut world);
+    world.close_active_tab();
+    assert_eq!(
+        world.state().documents.len(),
+        1,
+        "the last drawing releases its model"
+    );
+    for file in [DRAWING_FILE, SECOND_DRAWING_FILE] {
+        open_dialog(&mut world);
+        look_in(&mut world, &folder);
+        select_row(&mut world, file);
+        choose_open(&mut world);
+    }
+    let closed = Client::new(world.app().owner.document_host())
+        .documents()
+        .close_all(&oblikovati_api::wire::CloseAllDocumentsArgs { force: true })
+        .unwrap();
+    assert_eq!(
+        closed.closed, 4,
+        "close all counts the shared background model once"
+    );
+    world.close();
+}
+
+#[test]
+fn opening_a_drawing_reuses_and_preserves_a_visible_model() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    let folder = models_folder(&mut world);
+    let source = folder.join("source.opd");
+    write_source_model(&source);
+    write_drawing(&folder.join(DRAWING_FILE), &source);
+    open_dialog(&mut world);
+    look_in(&mut world, &folder);
+    select_row(&mut world, "source.opd");
+    choose_open(&mut world);
+    let model = world.active_id();
+    open_dialog(&mut world);
+    look_in(&mut world, &folder);
+    select_row(&mut world, DRAWING_FILE);
+    choose_open(&mut world);
+    assert_eq!(
+        world.state().documents.len(),
+        3,
+        "the visible model is reused"
+    );
+    sheet_and_border(&mut world);
+    let close = Client::new(world.app().owner.document_host())
+        .documents()
+        .close(&oblikovati_api::wire::CloseDocumentArgs {
+            id: model,
+            force: true,
+        });
+    assert!(close.is_err(), "a referenced model must remain available");
+    sheet_and_border(&mut world);
+    world.close_active_tab();
+    assert!(
+        world.document_is_open(model),
+        "the user's model remains open"
+    );
+    world.close();
 }

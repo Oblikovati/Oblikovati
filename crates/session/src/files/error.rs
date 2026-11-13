@@ -43,6 +43,7 @@ pub enum FileWorkspaceError {
         owner: u64,
     },
     MissingFile(u64),
+    ReferencedModel(u64),
     UnboundDocument(u64),
     RelativeCanonical(PathBuf),
     NonUtf8ResponsePath(PathBuf),
@@ -131,6 +132,10 @@ impl fmt::Display for FileWorkspaceError {
             Self::MissingFile(id) => {
                 write!(output, "document {id}: expected an owned file binding")
             }
+            Self::ReferencedModel(id) => write!(
+                output,
+                "document {id}: expected dependent drawings to close before their model"
+            ),
             Self::RelativeCanonical(path) => write!(
                 output,
                 "resolved path {path:?}: expected an absolute canonical path"
@@ -177,6 +182,7 @@ impl Error for FileWorkspaceError {
             | Self::TemplateIdentity(_)
             | Self::UnboundDocument(_)
             | Self::MissingFile(_)
+            | Self::ReferencedModel(_)
             | Self::NonUtf8ResponsePath(_)
             | Self::RelativeCanonical(_)
             | Self::OpenVeto { .. }

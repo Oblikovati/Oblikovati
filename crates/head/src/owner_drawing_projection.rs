@@ -152,11 +152,21 @@ impl<
         drawing: &DrawingDocument,
     ) -> Result<GuiDrawingProjection, String> {
         let name = drawing.model_reference();
-        let source = self
-            .files
-            .resolve_parameter_source(name)
-            .map_err(|cause| cause.to_string())?
-            .ok_or_else(|| format!("drawing model {name:?}: expected an open part document"))?;
+        let source = match self.files.drawing_reference(drawing_id, name) {
+            Some(source) => Some(source),
+            None => self
+                .files
+                .resolve_parameter_source(name)
+                .map_err(|cause| cause.to_string())?,
+        }
+        .ok_or_else(|| {
+            self.files
+                .drawing_reference_error(drawing_id, name)
+                .map(str::to_owned)
+                .unwrap_or_else(|| {
+                    format!("drawing model {name:?}: expected an open part document")
+                })
+        })?;
         if self
             .files
             .document_type(source)

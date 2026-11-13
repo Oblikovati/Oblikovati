@@ -11,7 +11,8 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
 
     pub(super) fn close_all(&mut self, request: CloseAllDocumentsArgs) -> Result<Vec<u8>, Error> {
         // A close changes focus and removes ownership; iterate the original open order.
-        let documents = self.files.workspace().documents().to_vec();
+        let mut documents = self.files.workspace().documents().to_vec();
+        documents.sort_by_key(|id| self.files.has_drawing_dependents(*id));
         let closed = i64::try_from(documents.len()).map_err(|_| {
             Error(format!(
                 "documents.closeAll count {}: expected a signed 64-bit count",
@@ -20,6 +21,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
         })?;
         let response = encode(&CloseDocumentsResult { closed })?;
         for id in documents {
+            if !self.files.workspace().documents().contains(&id) {
+                continue;
+            }
             self.close_owned(id, request.force)
                 .map_err(|error| Error(format!("documents.closeAll: closing {id}: {error}")))?;
         }
