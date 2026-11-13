@@ -1,6 +1,6 @@
 # Rust port status
 
-Last checked: 2026-11-13. Update this file from current evidence at each checkpoint.
+Last checked: 2026-11-14. Update this file from current evidence at each checkpoint.
 
 ## Start here
 
@@ -33,15 +33,15 @@ Last checked: 2026-11-13. Update this file from current evidence at each checkpo
 - A2: the diagnostic gate started on `6c5c1014a` and failed with 36 head test failures. The source changed during the run, so it cannot certify the current HEAD. See issue #3860 and `receipts/2026-11-13-gate-diagnostic/`. The new gate preflight also reports 2,700 unclassified scenarios. A fresh passing gate is required before the first push.
 - A3: stale worktrees and 24 ancestor branches removed. Two branches contain commits outside the working branch and remain for review; `unmerged-lanes-20261113.bundle` on the NAS backs up both. The `oblikovati-rust-backups` directory on the NAS holds the latest verified branch bundle.
 - A8: stale application or source evidence is downgraded without hiding damaged artifacts (#3869). Ledger-tool-only edits do not invalidate native UI tests.
-- A8: the ledger records 2,719 declarations, including 62 blocked by invalid Gherkin (#3866). Six Body Properties rows are classified under R7 and 13 basic sketch and extrusion rows are classified under R4; seven earlier native receipts are stale after a runner change; 2,700 remain unclassified. R7 has more unclassified work, so 6/6 assigned is not milestone completion. The strict gate reports these gaps. See `behavior-receipts.md` and issue #3865.
-- R4 rectangle sizing: the first two-point rectangle scenario passed with current wording before the runner changed. Its receipt now needs a rerun; later rectangle scenarios remain unverified. See issue #3857.
-- R4 extrusion: the native UI passed `extrusion-01` locally after the shared sketch-name fix (#3871); it still needs a clean-commit receipt. The full cube journey remains unverified (#3870).
+- A8: the ledger records 2,719 declarations, including 62 blocked by invalid Gherkin (#3866). Eight scenarios have current native receipts: six application, one sketch, and one solid-model; 2,700 remain unclassified. R7 has more unclassified work, so 6/6 assigned is not milestone completion. The strict gate reports these gaps. See `behavior-receipts.md` and issue #3865.
+- R4 rectangle sizing: the first two-point rectangle scenario has a current native receipt; later rectangle scenarios remain unverified. See issue #3857.
+- R4 extrusion: `extrusion-01` has a current native receipt after the shared sketch-name fix (#3871). The full cube journey remains unverified (#3870).
 - A7: the scenario bundle, file manifest, and verifier are tracked in `test-utilities/benchmarks/scenario-snapshots/` and `tools/bdd/`. See issue #3864.
 - A6: diagnostic runner reports all steps and taints results after a failure. See issue #3863 and `receipts/2026-11-13-bdd-diagnostics/`. Fixture blockers require an explicit fixture signal.
 - A4: this status file is the initial manual queue. Generate it from the ledger when A8 is ready.
 - A5: applicable agent rules are tracked in `AGENTS.md` and its linked rule files. The branch and feature documentation policies match the port plan.
 - A1: appearance and material resolution committed at `718a5d545`; Body Properties passed 6/6 scenarios and 69/69 steps on the saved source snapshot. See `receipts/2026-11-13-body-properties/receipt.json` and issue #3859.
 - The stale green pixel oracle is replaced in the targeted native tests (#3867). A rotation test now reaches a separate constraint-policy question (#3868); the full gate has not been rerun.
-- Historical native evidence: six Body Properties scenarios and one rectangle scenario passed, but their receipts need a rerun after the native runner change. See `receipts/2026-11-13-body-properties-rerun/` and `receipts/2026-11-13-rectangle-current/`.
+- Current native evidence: see `receipts/2026-11-14-body/`, `receipts/2026-11-14-rectangle/`, and `receipts/2026-11-14-extrusion/`.
 - Per-face appearance presentation is not established by the body-color work. Verify it separately.
 - Do not mark R0–R3 closed without their exit checks and receipts.
