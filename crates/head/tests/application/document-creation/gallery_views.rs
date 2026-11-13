@@ -286,3 +286,28 @@ fn viewport_and_browser_shown(world: &mut ApplicationWorld) {
 fn no_new_tab(world: &mut ApplicationWorld) {
     assert_eq!(world.state().documents.len(), world.parts.len());
 }
+
+#[test]
+fn name_sort_reverses_group_order_without_changing_selected_template() {
+    let mut world = ApplicationWorld::new();
+    let part = world.add_part();
+    world.key(ViewportPhysicalKey::N, true);
+    world.click_text("English");
+    world.click_text("Standard inch part");
+    world.click_text("Metric");
+    choose_template_view(&mut world, "Details");
+    assert!(world.run(METRIC_SHEET_METAL).center()[1] < world.run(METRIC_PART).center()[1]);
+    world.expect_text("Standard inch part");
+    world.expect_text("Length: inches (in)");
+    world.click_text("Name");
+    world.pump(Vec::new());
+    assert!(world.run(METRIC_PART).center()[1] < world.run(METRIC_SHEET_METAL).center()[1]);
+    world.expect_text("Standard inch part");
+    world.expect_text("Length: inches (in)");
+    world.click_text("Name");
+    world.pump(Vec::new());
+    assert!(world.run(METRIC_SHEET_METAL).center()[1] < world.run(METRIC_PART).center()[1]);
+    world.click_text("Cancel");
+    assert_eq!(world.active_id(), part);
+    world.close();
+}

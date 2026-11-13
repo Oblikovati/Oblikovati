@@ -95,33 +95,41 @@ fn choosing_the_current_folder_adds_no_history() {
     assert!(chooser.folders_behind.is_empty());
 }
 #[test]
-fn the_size_column_starts_increasing_and_then_reverses() {
-    assert_eq!(next_size_order(None), SizeOrder::Increasing);
-    assert_eq!(
-        next_size_order(Some(SizeOrder::Increasing)),
-        SizeOrder::Decreasing
-    );
-    assert_eq!(
-        next_size_order(Some(SizeOrder::Decreasing)),
-        SizeOrder::Increasing
-    );
-}
-#[test]
-fn tiles_follow_the_size_order_and_keep_the_gallery_order_without_one() {
+fn template_sort_switches_columns_and_preserves_selection_order_for_ties() {
+    use super::template_sort::{SortOrder, TemplateSort, ordered_kinds};
     use GuiTemplateKind::{Part, SheetMetal};
     let state = GuiCommandState {
         template_sizes: vec![(Part, 10), (SheetMetal, 20)],
         ..Default::default()
     };
-    let kinds = [SheetMetal, Part];
-    assert_eq!(ordered_kinds(&kinds, None, &state), kinds);
+    let units = GuiTemplateUnits::Metric;
+    let kinds = [Part, SheetMetal];
+    let sort = TemplateSort::default();
     assert_eq!(
-        ordered_kinds(&kinds, Some(SizeOrder::Increasing), &state),
+        ordered_kinds(&kinds, sort, &state, units),
+        [SheetMetal, Part]
+    );
+    let sort = sort.toggle_name();
+    assert_eq!(
+        ordered_kinds(&kinds, sort, &state, units),
         [Part, SheetMetal]
     );
     assert_eq!(
-        ordered_kinds(&kinds, Some(SizeOrder::Decreasing), &state),
+        sort.toggle_name(),
+        TemplateSort::Name(SortOrder::Increasing)
+    );
+    let sort = sort.toggle_size();
+    assert_eq!(
+        ordered_kinds(&kinds, sort, &state, units),
+        [Part, SheetMetal]
+    );
+    assert_eq!(
+        ordered_kinds(&kinds, sort.toggle_size(), &state, units),
         [SheetMetal, Part]
+    );
+    assert_eq!(
+        ordered_kinds(&kinds, sort, &GuiCommandState::default(), units),
+        kinds
     );
 }
 #[test]

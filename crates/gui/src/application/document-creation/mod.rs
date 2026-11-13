@@ -2,12 +2,14 @@
 #[path = "component_dialog.rs"]
 pub(crate) mod component_dialog;
 mod kind_selection;
+mod template_sort;
 #[path = "templates.rs"]
 pub(crate) mod templates;
 #[path = "workspaces.rs"]
 pub(crate) mod workspaces;
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::{Condition, Ui};
+use template_sort::{TemplateSort, ordered_kinds, size_heading, template_size};
 use templates::{GuiDocumentTemplate, GuiTemplateKind, GuiTemplateUnits, TEMPLATE_GROUPS};
 
 /// A row of the folder tree; the root holds folders and no templates of its own.
@@ -48,7 +50,7 @@ pub(crate) struct TemplateChooser {
     component: component_dialog::ComponentDialog,
     view: TemplateView,
     ungrouped: bool,
-    size_sort: Option<SizeOrder>,
+    sort: TemplateSort,
     /// A double click on a tile asks for what Create does.
     create_requested: bool,
     projects: crate::application::project_dialog::ProjectsDialog,
@@ -61,52 +63,8 @@ enum DrawingLayout {
     /// A layout with a view: Create first asks which component it shows.
     Assembly,
 }
-/// The direction the Details view's Size column sorts in.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum SizeOrder {
-    Increasing,
-    Decreasing,
-}
-/// A click starts increasing, and each later click reverses it.
-fn next_size_order(current: Option<SizeOrder>) -> SizeOrder {
-    match current {
-        Some(SizeOrder::Increasing) => SizeOrder::Decreasing,
-        _ => SizeOrder::Increasing,
-    }
-}
-fn size_heading(order: Option<SizeOrder>) -> &'static str {
-    match order {
-        None => "Size##template-size",
-        Some(SizeOrder::Increasing) => "Size ^##template-size",
-        Some(SizeOrder::Decreasing) => "Size v##template-size",
-    }
-}
-fn template_size(state: &GuiCommandState, kind: GuiTemplateKind) -> Option<u64> {
-    state
-        .template_sizes
-        .iter()
-        .find(|(sized, _)| *sized == kind)
-        .map(|(_, bytes)| *bytes)
-}
 fn size_text(bytes: Option<u64>) -> String {
     bytes.map_or_else(|| "-".to_string(), |bytes| format!("{bytes} B"))
-}
-/// A group's tiles in the chosen order; without one, in the gallery's own order.
-fn ordered_kinds(
-    kinds: &[GuiTemplateKind],
-    order: Option<SizeOrder>,
-    state: &GuiCommandState,
-) -> Vec<GuiTemplateKind> {
-    let mut ordered = kinds.to_vec();
-    ordered.sort_by_key(|kind| template_size(state, *kind));
-    match order {
-        None => kinds.to_vec(),
-        Some(SizeOrder::Increasing) => ordered,
-        Some(SizeOrder::Decreasing) => {
-            ordered.reverse();
-            ordered
-        }
-    }
 }
 /// How the gallery shows its tiles; a size is a row height until tiles have icons.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -152,7 +110,7 @@ impl TemplateChooser {
             TemplateFolder::Root => GuiTemplateUnits::Metric,
         };
         let mut widths = [
-            ui.calc_text_size("Name")[0],
+            ui.calc_text_size("Name v")[0],
             ui.calc_text_size("Size v")[0],
             ui.calc_text_size("Type")[0],
         ];
@@ -308,15 +266,22 @@ impl TemplateChooser {
         }
     }
     fn details_header(&mut self, ui: &Ui, layout: DetailsLayout) {
-        ui.text("Name");
+        let name = ui
+            .selectable_config(self.sort.name_heading())
+            .flags(imgui::SelectableFlags::DONT_CLOSE_POPUPS)
+            .size([ui.calc_text_size("Name v")[0], 0.])
+            .build();
+        if name {
+            self.sort = self.sort.toggle_name();
+        }
         ui.same_line_with_pos(layout.size);
         let clicked = ui
-            .selectable_config(size_heading(self.size_sort))
+            .selectable_config(size_heading(self.sort))
             .flags(imgui::SelectableFlags::DONT_CLOSE_POPUPS)
             .size([ui.calc_text_size("Size v")[0], 0.])
             .build();
         if clicked {
-            self.size_sort = Some(next_size_order(self.size_sort));
+            self.sort = self.sort.toggle_size();
         }
         ui.same_line_with_pos(layout.type_column);
         ui.text("Type");
@@ -329,7 +294,11 @@ impl TemplateChooser {
         kinds: &[GuiTemplateKind],
         layout: DetailsLayout,
     ) {
-        for kind in ordered_kinds(kinds, self.size_sort, state) {
+        let units = match self.folder {
+            TemplateFolder::Units(units) => units,
+            TemplateFolder::Root => GuiTemplateUnits::default(),
+        };
+        for kind in ordered_kinds(kinds, self.sort, state, units) {
             self.tile(ui, state, kind, layout);
         }
     }
