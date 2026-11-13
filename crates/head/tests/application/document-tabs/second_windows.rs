@@ -207,14 +207,18 @@ fn no_number(world: &mut ApplicationWorld) {
 #[given("the first window displays an active sketch")]
 fn first_active_sketch(world: &mut ApplicationWorld) {
     click_window_tab(world, FIRST);
-    world.observed_view = Some(view_probe(world));
     world.expect_text("Finish Sketch");
+    world.draw_rectangle();
+    world.pump(Vec::new());
+    world.expect_drawn_region();
+    world.observed_view = Some(view_probe(world));
 }
 #[given("the second window is active")]
 fn second_is_active_window(world: &mut ApplicationWorld) {
     click_window_tab(world, SECOND);
 }
 #[when("I zoom in within the second window")]
+#[when("I scroll to zoom in within the second window")]
 fn zoom_second(world: &mut ApplicationWorld) {
     let before = view_probe(world);
     world.pump(vec![ViewportEvent::Input(ViewportInput::Motion {
@@ -226,8 +230,17 @@ fn zoom_second(world: &mut ApplicationWorld) {
         position: [900, 500],
     })]);
     let after = view_probe(world);
-    assert_ne!(before, after, "expected the wheel to change the view");
+    let length_squared = |v: [i32; 2]| i64::from(v[0]).pow(2) + i64::from(v[1]).pow(2);
+    assert!(
+        length_squared(after) > length_squared(before),
+        "wheel zoom {before:?} -> {after:?}: expected an increase"
+    );
     world.observed_second_view = Some(after);
+}
+#[then("its displayed geometry appears enlarged")]
+fn zoomed_geometry_visible(world: &mut ApplicationWorld) {
+    world.expect_drawn_region();
+    assert_eq!(Some(view_probe(world)), world.observed_second_view);
 }
 #[when("I select the first window from the View tab's Switch menu")]
 fn first_from_switch(world: &mut ApplicationWorld) {
