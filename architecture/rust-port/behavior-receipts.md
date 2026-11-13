@@ -46,10 +46,17 @@ are relative to the repository root; each hash is the SHA-256 of that file.
 ```
 
 The classification's `last_receipt` has the same `path` and `sha256` shape.
-The checker requires Python 3.11 or newer and a clean pinned checkout before and after the run, matching
-application inputs, a native runner, a PNG capture, a passing cleanup hook,
+The checker requires Python 3.11 or newer, a clean pinned checkout before and
+after the run, matching application inputs, a native runner, a PNG capture, a passing cleanup hook,
 and every source step in the Cucumber report. It verifies feature and rule
 backgrounds separately. It refuses outline verification until all example
 cases can be checked. It does not treat a PNG alone, a diagnostic report, or a
 source binding as acceptance. Visual inspection and the other milestone exit
 checks still apply.
+
+When application inputs change, the ledger marks the receipt stale and keeps
+its historical link. Missing or altered receipt artifacts are errors, including
+for stale evidence. Input comparison excludes the README, Rust-port ledger and
+receipt documents, and the BDD and build-driver tools. The native test runner,
+application crates, lockfile, and other repository inputs remain in scope. The
+current inventory and evidence checkers run again for every report.

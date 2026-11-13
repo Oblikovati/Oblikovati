@@ -189,14 +189,14 @@ class EvidenceBoundaryTests(unittest.TestCase):
 
 class LockedRevisionTests(unittest.TestCase):
     def test_wrong_or_ambiguous_dependency_revision_is_rejected(self) -> None:
-        from behavior_evidence import locked_revision
+        from behavior_evidence import StaleEvidence, locked_revision
 
         with tempfile.TemporaryDirectory() as folder:
             fixture = EvidenceFixture(Path(folder))
             artifact = fixture.receipt()
             lock = fixture.root / "Cargo.lock"
             lock.write_text(lock.read_text().replace("a" * 40, "c" * 40))
-            with self.assertRaisesRegex(ValueError, "api_revision"):
+            with self.assertRaisesRegex(StaleEvidence, "api_revision"):
                 verify_receipt(fixture.root, artifact, fixture.row, "source", "app")
             lock.write_text(
                 lock.read_text()
@@ -206,3 +206,31 @@ class LockedRevisionTests(unittest.TestCase):
             )
             with self.assertRaisesRegex(ValueError, "expected one record"):
                 locked_revision(fixture.root, "oblikovati-api")
+
+
+class HistoricalReceiptTests(unittest.TestCase):
+    def test_changed_inputs_are_stale_but_corruption_is_an_error(self) -> None:
+        from behavior_evidence import StaleEvidence
+
+        with tempfile.TemporaryDirectory() as folder:
+            fixture = EvidenceFixture(Path(folder))
+            artifact = fixture.receipt()
+            with self.assertRaisesRegex(StaleEvidence, "application inputs"):
+                verify_receipt(
+                    fixture.root,
+                    artifact,
+                    fixture.row,
+                    "source",
+                    "app",
+                    lambda root, old, current: False,
+                )
+            (fixture.root / "cucumber.json").write_text("corrupt")
+            with self.assertRaisesRegex(ValueError, "SHA-256"):
+                verify_receipt(
+                    fixture.root,
+                    artifact,
+                    fixture.row,
+                    "source",
+                    "app",
+                    lambda root, old, current: False,
+                )

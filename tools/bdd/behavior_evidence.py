@@ -10,6 +10,10 @@ from pathlib import Path
 from typing import Callable, Mapping
 
 
+class StaleEvidence(ValueError):
+    """A valid receipt no longer matches the current application inputs."""
+
+
 def local_file(root: Path, name: str) -> Path:
     """Resolve an artifact inside the repository; for example, local_file(root, 'receipt.json')."""
     path = (root / name).resolve()
@@ -214,6 +218,18 @@ def locked_revision(root: Path, package: str) -> str:
     return revision
 
 
+def check_receipt_integrity(
+    root: Path, artifact: object
+) -> tuple[Path, dict[str, object], Path]:
+    """Validate retained artifact hashes; for example, check_receipt_integrity(root, artifact)."""
+    path = check_artifact(root, artifact)
+    receipt = load_object(path)
+    check_artifact(root, receipt.get("source_report"))
+    check_capture(root, receipt.get("capture"))
+    report = check_artifact(root, receipt.get("cucumber"))
+    return path, receipt, report
+
+
 def verify_receipt(
     root: Path,
     artifact: object,
@@ -223,9 +239,8 @@ def verify_receipt(
     compatible: Callable[[Path, str, str], bool] | None = None,
 ) -> None:
     """Verify current native evidence; for example, verify_receipt(root, name, row, source, commit)."""
-    receipt_path = check_artifact(root, artifact)
+    receipt_path, receipt, report_path = check_receipt_integrity(root, artifact)
     name = str(receipt_path.relative_to(root.resolve()))
-    receipt = load_object(receipt_path)
     expected = {
         "kind": "native-acceptance",
         "scenario_id": row["id"],
@@ -234,13 +249,20 @@ def verify_receipt(
     }
     for key, value in expected.items():
         require_equal(f"receipt {name!r} {key}", receipt.get(key), value)
+    check_runner(receipt, row)
+    check_source_revision(root, receipt.get("source_report"), source_revision)
+    check_scenario(json.loads(report_path.read_text(encoding="utf-8")), row)
     for field, package in (
         ("api_revision", "oblikovati-api"),
         ("kernel_revision", "martensite-tkernel"),
     ):
-        revision = locked_revision(root, package)
-        require_equal(f"scenario {row['id']!r} {field}", row.get(field), revision)
-        require_equal(f"receipt {name!r} {field}", receipt.get(field), revision)
+        recorded = row.get(field)
+        require_equal(f"receipt {name!r} {field}", receipt.get(field), recorded)
+        current = locked_revision(root, package)
+        if recorded != current:
+            raise StaleEvidence(
+                f"scenario {row['id']!r} {field} {recorded!r}: expected current revision {current!r}"
+            )
     tested = receipt.get("application_commit")
     if not isinstance(tested, str):
         raise ValueError(
@@ -249,11 +271,6 @@ def verify_receipt(
     if compatible is None:
         require_equal(f"receipt {name!r} application_commit", tested, app_commit)
     elif not compatible(root, tested, app_commit):
-        raise ValueError(
+        raise StaleEvidence(
             f"receipt {name!r} application_commit {tested!r}: expected unchanged application inputs at {app_commit!r}"
         )
-    check_runner(receipt, row)
-    check_source_revision(root, receipt.get("source_report"), source_revision)
-    check_capture(root, receipt.get("capture"))
-    report_path = check_artifact(root, receipt.get("cucumber"))
-    check_scenario(json.loads(report_path.read_text(encoding="utf-8")), row)

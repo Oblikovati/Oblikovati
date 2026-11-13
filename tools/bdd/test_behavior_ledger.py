@@ -6,6 +6,7 @@ import unittest
 from pathlib import Path
 
 from behavior_ledger import reconcile, require_classified, summarize
+from behavior_evidence import StaleEvidence
 
 
 class FakeReceiptVerifier:
@@ -21,6 +22,12 @@ class FakeReceiptVerifier:
         commit: str,
     ) -> None:
         self.calls.append(str(row["id"]))
+        if artifact != {"path": "valid", "sha256": "digest"}:
+            raise ValueError(f"receipt {artifact!r}: expected valid evidence")
+
+
+class FakeReceiptIntegrity:
+    def __call__(self, root: Path, artifact: object) -> None:
         if artifact != {"path": "valid", "sha256": "digest"}:
             raise ValueError(f"receipt {artifact!r}: expected valid evidence")
 
@@ -86,6 +93,7 @@ class LedgerFixture:
             clean,
             Path("."),
             self.verifier,
+            FakeReceiptIntegrity(),
         )
 
 
@@ -108,8 +116,11 @@ class LedgerTests(unittest.TestCase):
         ledger = fixture.run([fixture.entry])
         self.assertEqual(ledger["scenarios"][0]["state"], "verified")
         self.assertEqual(fixture.verifier.calls, ["first"])
-        with self.assertRaisesRegex(ValueError, "clean application"):
-            fixture.run([fixture.entry], clean=False)
+        dirty = fixture.run([fixture.entry], clean=False)["scenarios"][0]
+        self.assertTrue(dirty["stale"])
+        self.assertEqual(dirty["state"], "inventoried")
+        self.assertEqual(dirty["historical_receipt"], fixture.entry["last_receipt"])
+        self.assertIsNone(dirty["last_receipt"])
         invalid = dict(fixture.entry, last_receipt=None)
         with self.assertRaisesRegex(ValueError, "expected valid evidence"):
             fixture.run([invalid])
@@ -123,6 +134,7 @@ class LedgerTests(unittest.TestCase):
         self.assertEqual(row["state"], "inventoried")
         self.assertEqual(row["milestone"], "R3")
         self.assertIsNone(row["last_receipt"])
+        self.assertEqual(row["historical_receipt"], fixture.entry["last_receipt"])
         self.assertEqual(fixture.verifier.calls, [])
         with self.assertRaisesRegex(ValueError, "1 stale"):
             require_classified(ledger)
@@ -160,6 +172,10 @@ class GitRepositoryFixture:
         (root / "crates/code.rs").write_text("original")
         (root / "architecture/rust-port").mkdir(parents=True)
         (root / "architecture/rust-port/ledger.json").write_text("original")
+        (root / "tools/bdd").mkdir(parents=True)
+        (root / "tools/bdd/checker.py").write_text("original")
+        (root / "tools/build").mkdir(parents=True)
+        (root / "tools/build/inventory.rs").write_text("original")
         self.git("add", ".")
         self.git("commit", "-qm", "initial")
 
@@ -190,6 +206,16 @@ class ApplicationInputsTests(unittest.TestCase):
             )
             self.assertFalse(
                 application_inputs_match(fixture.root, ledger_commit, initial)
+            )
+            (fixture.root / "tools/bdd/checker.py").write_text("updated checker")
+            (fixture.root / "tools/build/inventory.rs").write_text("updated inventory")
+            self.assertTrue(application_state(fixture.root)[1])
+            fixture.git("add", ".")
+            fixture.git("commit", "-qm", "update ledger tools")
+            tools_commit, clean = application_state(fixture.root)
+            self.assertTrue(clean)
+            self.assertTrue(
+                application_inputs_match(fixture.root, initial, tools_commit)
             )
             (fixture.root / "crates/code.rs").write_text("changed")
             self.assertFalse(application_state(fixture.root)[1])
@@ -242,3 +268,44 @@ class LedgerDriftTests(unittest.TestCase):
             check_generated(ledger, {"scenarios": []})
         with self.assertRaisesRegex(ValueError, "2 missing"):
             check_generated(ledger, ledger)
+
+
+class StaleReceiptVerifier:
+    def __call__(
+        self,
+        root: Path,
+        artifact: object,
+        row: dict[str, object],
+        source: str,
+        commit: str,
+    ) -> None:
+        raise StaleEvidence("application inputs changed")
+
+
+class StaleEvidenceTests(unittest.TestCase):
+    def test_changed_application_inputs_downgrade_the_claim_without_stopping_report(
+        self,
+    ) -> None:
+        fixture = LedgerFixture()
+        ledger = reconcile(
+            fixture.inventory,
+            {"version": 1, "scenarios": [fixture.entry]},
+            "app",
+            True,
+            Path("."),
+            StaleReceiptVerifier(),
+            FakeReceiptIntegrity(),
+        )
+        row = ledger["scenarios"][0]
+        self.assertEqual(row["state"], "inventoried")
+        self.assertTrue(row["stale"])
+        self.assertIn("application inputs changed", row["stale_reason"])
+        self.assertEqual(row["historical_receipt"], fixture.entry["last_receipt"])
+
+
+class HistoricalIntegrityTests(unittest.TestCase):
+    def test_stale_source_does_not_hide_a_missing_receipt(self) -> None:
+        fixture = LedgerFixture()
+        stale = dict(fixture.entry, source_sha256="old", last_receipt=None)
+        with self.assertRaisesRegex(ValueError, "expected valid evidence"):
+            fixture.run([stale])

@@ -11,7 +11,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Callable, Mapping
 
-from behavior_evidence import verify_receipt
+from behavior_evidence import StaleEvidence, verify_receipt
 from verify_snapshot import (
     SNAPSHOT_FOLDER,
     git_revision,
@@ -112,6 +112,7 @@ def reconcile_row(
     app_clean: bool,
     root: Path,
     receipt_check: Callable[[Path, object, Mapping[str, object], str, str], None],
+    integrity_check: Callable[[Path, object], object],
 ) -> dict[str, object]:
     """Reconcile one source row; for example, reconcile_row(source, None, revision, commit, True, root, verify_receipt)."""
     result = dict(source)
@@ -119,6 +120,8 @@ def reconcile_row(
         {
             "classified": False,
             "stale": False,
+            "stale_reason": None,
+            "historical_receipt": None,
             "source_revision": revision,
             "issues": [],
             "target_module": None,
@@ -138,6 +141,8 @@ def reconcile_row(
     if classification is None:
         return result
     validate_classification(classification)
+    if classification["state"] == "verified":
+        integrity_check(root, classification.get("last_receipt"))
     for field in (
         "milestone",
         "owner",
@@ -166,17 +171,32 @@ def reconcile_row(
         result["state"] = (
             "blocked" if source["source_error"] is not None else "inventoried"
         )
+        result["stale"] = stale or classification["state"] == "verified"
+        result["stale_reason"] = (
+            "source changed or is invalid" if result["stale"] else None
+        )
+        result["historical_receipt"] = classification.get("last_receipt")
         result["last_receipt"] = None
         return result
     result["state"] = classification["state"]
     result["reason"] = classification.get("reason")
     result["last_receipt"] = classification.get("last_receipt")
     if result["state"] == "verified":
-        if not app_clean:
-            raise ValueError(
-                f"scenario {source['id']!r}: expected clean application inputs for verified evidence"
+        try:
+            receipt_check(root, result["last_receipt"], result, revision, app_commit)
+            if not app_clean:
+                raise StaleEvidence("uncommitted application inputs")
+        except StaleEvidence:
+            result.update(
+                {
+                    "state": "inventoried",
+                    "stale": True,
+                    "stale_reason": "application inputs changed",
+                    "historical_receipt": result["last_receipt"],
+                    "last_receipt": None,
+                }
             )
-        receipt_check(root, result["last_receipt"], result, revision, app_commit)
+
     return result
 
 
@@ -187,6 +207,7 @@ def reconcile(
     app_clean: bool,
     root: Path,
     receipt_check: Callable[[Path, object, Mapping[str, object], str, str], None],
+    integrity_check: Callable[[Path, object], object],
 ) -> dict[str, object]:
     """Build a ledger without losing orphaned classifications; for example, reconcile(inventory, classes, commit, True, root, verify_receipt)."""
     source = require_object(inventory, "inventory")
@@ -207,6 +228,7 @@ def reconcile(
             app_clean,
             root,
             receipt_check,
+            integrity_check,
         )
         for key, row in inputs.items()
     ]
@@ -311,7 +333,13 @@ def verify_inputs(root: Path, checkout: Path, inventory: Mapping[str, object]) -
         )
 
 
-APPLICATION_PATHS = [".", ":(exclude)README.md", ":(exclude)architecture/rust-port/**"]
+APPLICATION_PATHS = [
+    ".",
+    ":(exclude)README.md",
+    ":(exclude)architecture/rust-port/**",
+    ":(exclude)tools/bdd/**",
+    ":(exclude)tools/build/**",
+]
 
 
 def application_state(root: Path) -> tuple[str, bool]:

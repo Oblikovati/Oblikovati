@@ -24,6 +24,7 @@ from behavior_ledger import (
     verify_inputs,
     write_ledger,
 )
+from behavior_evidence import check_receipt_integrity
 from verify_snapshot import SNAPSHOT_FOLDER
 
 
@@ -39,6 +40,7 @@ def execute(action: str, checkout: Path, output: Path | None) -> None:
         clean,
         ROOT,
         verify_current_receipt,
+        check_receipt_integrity,
     )
     if application_state(ROOT) != (commit, clean):
         raise ValueError(
