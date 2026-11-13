@@ -594,3 +594,15 @@ revisions checked before they support a current pass claim.
   unchanged discovery baseline, including model browser and five viewport
   features added to the earlier change list. The list is recorded in
   `/tmp/obk-bdd-discovery-filemenu.log`; each changed file needs review.
+
+### Tools Clipboard panel, 2026-11-13
+
+- The Tools ribbon now lists Clipboard in its normal panel order. Copy is
+  visible but disabled because model copy is not implemented. The panel uses
+  the shared Show Panels controls.
+- A native mouse test verified the disabled Copy control, hiding and restoring
+  Clipboard, and retaining the hidden state when switching tabs. Application:
+  `bbb000d11` plus this change; Linux, Xvfb at 1600 × 1000, and Lavapipe.
+  The local log is `/tmp/obk-tools-clipboard-native-20261113.log`.
+- Copy's move-to-expanded-panel interaction remains unimplemented, as do model
+  copy and the other missing Tools groups. No full BDD scenario is claimed.

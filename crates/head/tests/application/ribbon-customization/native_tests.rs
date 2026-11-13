@@ -691,6 +691,9 @@ fn applied_ribbon_settings_survive_restart_without_unapplied_edits() {
     world.close();
 }
 
+#[path = "clipboard_native.rs"]
+mod clipboard_native;
+
 #[path = "find_native.rs"]
 mod find_native;
 

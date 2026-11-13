@@ -102,6 +102,7 @@ pub(crate) fn draw_panel_content(
             }
             return application || document;
         }
+        RibbonPanel::ToolClipboard => muted_commands(ui, origin, &["Copy"], NOT_PORTED),
         RibbonPanel::ToolFind => {
             let disabled = ui.begin_disabled(
                 owners.home_active
