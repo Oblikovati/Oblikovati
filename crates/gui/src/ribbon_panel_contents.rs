@@ -102,6 +102,19 @@ pub(crate) fn draw_panel_content(
             }
             return application || document;
         }
+        RibbonPanel::ToolFind => {
+            let disabled = ui.begin_disabled(
+                owners.home_active
+                    || state
+                        .browser
+                        .as_ref()
+                        .is_none_or(|browser| browser.kind == crate::GuiBrowserKind::Drawing),
+            );
+            if crate::widget_abi::button(ui, "Find", [108., 58.]) {
+                owners.workspace.request_find();
+            }
+            drop(disabled);
+        }
         RibbonPanel::Appearance => return appearance_controls(ui, state, owners.editor, actions),
         RibbonPanel::Visibility => visibility_controls(ui, state, actions),
         RibbonPanel::Windows => windows_controls(ui, origin, state, owners, actions),

@@ -558,3 +558,20 @@ revisions checked before they support a current pass claim.
   Lavapipe. The filtered native runner report is in
   `/tmp/obk-appearance-escape-20261113`, a local path. The previous full
   feature count belongs to an earlier application revision.
+
+### Tools Find command, 2026-11-13
+
+- The Tools ribbon has a Find panel that opens the existing model-browser Find
+  dialog. The dialog is drawn even when the browser is hidden, without
+  changing browser visibility. Drawing documents do not offer this command.
+- Native mouse tests passed for the Tools command with the browser hidden and
+  for the existing browser-menu command. Both Reset Ribbon native tests and
+  GUI Clippy also passed. Application: `6bbfb7558` plus this change; Linux,
+  Xvfb at 1600 × 1000, and Lavapipe. Local logs are
+  `/tmp/obk-tools-find-native-final.log` and `/tmp/obk-tools-find-reset.log`.
+- The `Inspect the Find feature criteria` BDD run did not execute: the model
+  browser feature file failed to parse on source SHA-256
+  `42339c958b6c67613f2c93ef6732f6f22084742648327bff72cd94b146f0fdeb`,
+  unchanged during the attempt. Its local report is
+  `/tmp/obk-tools-find-browser-bdd-20261113`. Review the source and rerun it
+  when the parse error is corrected.

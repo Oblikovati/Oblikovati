@@ -153,7 +153,6 @@ impl BrowserView {
         browser: &GuiModelBrowser,
         actions: &mut Vec<GuiShellAction>,
     ) {
-        self.find.panel(ui, state, browser, actions);
         self.relationships.panel(ui, state, browser, actions);
         self.geometry.panel(ui, state, actions);
         self.feature_properties.panel(ui, state, browser, actions);

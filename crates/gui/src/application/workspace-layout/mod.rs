@@ -73,6 +73,15 @@ impl Default for WorkspaceLayout {
     }
 }
 impl WorkspaceLayout {
+    /// Open the shared browser search; example: `layout.request_find()`.
+    pub(crate) fn request_find(&mut self) {
+        self.view.find.request();
+    }
+    fn draw_find(&mut self, ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
+        if let Some(browser) = &state.browser {
+            self.view.find.panel(ui, state, browser, actions);
+        }
+    }
     pub(crate) fn browser_consumed_arrow(&self) -> bool {
         self.view.arrow_consumed
     }
@@ -94,6 +103,7 @@ impl WorkspaceLayout {
         self.view.document_area = Some(self.document_area(ui.io().display_size, band_height));
         if !self.panels.dock_visible() {
             self.empty_dock_control(ui, band_height);
+            self.draw_find(ui, state, actions);
             return;
         }
         self.place_browser(ui, height, band_height);
@@ -109,6 +119,7 @@ impl WorkspaceLayout {
         self.pending_layout |= self.panels.needs_frame();
         self.finish_drag(ui);
         self.boundary_handle(ui, height, band_height);
+        self.draw_find(ui, state, actions);
     }
     fn dock_contents(
         &mut self,
