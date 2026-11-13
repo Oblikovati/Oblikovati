@@ -1,0 +1,170 @@
+// SPDX-License-Identifier: GPL-2.0-only
+//! Compose referenced component scenes in occurrence order.
+use super::*;
+use oblikovati_model::assembly::AssemblyOccurrenceRecipe;
+const MAX_ASSEMBLY_DEPTH: usize = 128;
+
+#[derive(PartialEq, Eq)]
+pub(super) struct SceneSource {
+    pub document: u64,
+    pub is_assembly: bool,
+    revisions: Vec<(u64, u64, u64)>,
+}
+
+pub(super) fn active_scene_source<
+    O: TransactionObserver,
+    W: WorkspaceObserver,
+    F: DocumentFiles,
+>(
+    files: &FileWorkspace<O, W, F>,
+) -> Result<Option<SceneSource>, String> {
+    let Some(document) = files.workspace().active_document() else {
+        return Ok(None);
+    };
+    let session = files
+        .workspace()
+        .session(document)
+        .map_err(|error| error.to_string())?;
+    let mut source = SceneSource {
+        document,
+        is_assembly: session.snapshot().assembly.is_some(),
+        revisions: Vec::new(),
+    };
+    collect_revisions(files, document, &mut source.revisions, 0)?;
+    Ok(Some(source))
+}
+
+fn collect_revisions<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &FileWorkspace<O, W, F>,
+    document: u64,
+    revisions: &mut Vec<(u64, u64, u64)>,
+    depth: usize,
+) -> Result<(), String> {
+    if depth > MAX_ASSEMBLY_DEPTH {
+        return Err(format!(
+            "assembly document {document}: expected at most 128 nested levels"
+        ));
+    }
+    let session = files
+        .workspace()
+        .session(document)
+        .map_err(|error| error.to_string())?;
+    revisions.push((
+        document,
+        session.generation(),
+        session.body_visibility_revision(),
+    ));
+    if let Some(occurrences) = &session.snapshot().assembly {
+        for occurrence in occurrences
+            .iter()
+            .filter(|item| !item.suppressed && !item.virtual_)
+        {
+            let component = component_document(files, document, occurrence)?;
+            collect_revisions(files, component, revisions, depth + 1)?;
+        }
+    }
+    Ok(())
+}
+
+fn component_document<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &FileWorkspace<O, W, F>,
+    owner: u64,
+    occurrence: &AssemblyOccurrenceRecipe,
+) -> Result<u64, String> {
+    let name = &occurrence.component;
+    files.document_reference(owner, name).ok_or_else(|| {
+        let cause = files
+            .document_reference_error(owner, name)
+            .unwrap_or("reference is not resolved");
+        format!(
+            "assembly {owner} occurrence {:?} component {name:?}: {cause}",
+            occurrence.name
+        )
+    })
+}
+
+impl DesktopPartScenes {
+    pub(super) fn evaluate_assembly<
+        O: TransactionObserver,
+        W: WorkspaceObserver,
+        F: DocumentFiles,
+    >(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<HeadSceneUpdate, String> {
+        let mut result = self.empty();
+        let generation = files
+            .workspace()
+            .session(document)
+            .map_err(|error| error.to_string())?
+            .generation();
+        result.status.source = Some((document, generation));
+        self.append_assembly(files, document, &mut result, 0)?;
+        Ok(result)
+    }
+
+    fn append_assembly<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+        result: &mut HeadSceneUpdate,
+        depth: usize,
+    ) -> Result<(), String> {
+        if depth > MAX_ASSEMBLY_DEPTH {
+            return Err(format!(
+                "assembly document {document}: expected at most 128 nested levels"
+            ));
+        }
+        let session = files
+            .workspace()
+            .session(document)
+            .map_err(|error| error.to_string())?;
+        let occurrences = session
+            .snapshot()
+            .assembly
+            .clone()
+            .ok_or_else(|| format!("document {document}: expected an assembly"))?;
+        for occurrence in occurrences
+            .iter()
+            .filter(|item| !item.suppressed && !item.virtual_)
+        {
+            self.append_occurrence(files, document, occurrence, result, depth)?;
+        }
+        Ok(())
+    }
+
+    fn append_occurrence<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        owner: u64,
+        occurrence: &AssemblyOccurrenceRecipe,
+        result: &mut HeadSceneUpdate,
+        depth: usize,
+    ) -> Result<(), String> {
+        let component = component_document(files, owner, occurrence)?;
+        let nested = files
+            .workspace()
+            .session(component)
+            .map_err(|error| error.to_string())?
+            .snapshot()
+            .assembly
+            .is_some();
+        let mut scene = if nested {
+            let mut child = self.empty();
+            self.append_assembly(files, component, &mut child, depth + 1)?;
+            child
+        } else {
+            self.evaluate(files, component)?
+        };
+        scene.scene = scene.scene.placed(&occurrence.placement()?)?;
+        result.scene.triangles.extend(scene.scene.triangles);
+        result.status.visible_bodies += scene.status.visible_bodies;
+        result.status.health.extend(scene.status.health);
+        result
+            .status
+            .presentation_declines
+            .extend(scene.status.presentation_declines);
+        Ok(())
+    }
+}

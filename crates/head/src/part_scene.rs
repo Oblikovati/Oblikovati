@@ -9,6 +9,7 @@ use oblikovati_session::{
     workspace::WorkspaceObserver,
 };
 use oblikovati_viewport::{PartPresentationDecline, ViewportScene};
+mod assembly;
 pub(crate) mod extrusion;
 pub(crate) mod resolution_policy;
 /// Owned display state names its document and generation; kernel handles stay in result storage.
@@ -54,7 +55,7 @@ pub struct HeadSceneUpdate {
 }
 #[derive(Default)]
 pub(crate) struct DesktopPartScenes {
-    source: Option<(u64, u64, u64)>,
+    source: Option<assembly::SceneSource>,
     presentation_invalidated: bool,
     resolution: Option<oblikovati_martensite::PrismResolutionPolicy>,
     slot: PartEvaluationSlot<NamedPrismSnapshot, oblikovati_martensite::EvaluationFailure>,
@@ -71,12 +72,13 @@ impl DesktopPartScenes {
         &mut self,
         files: &mut FileWorkspace<O, W, F>,
     ) -> Result<Option<HeadSceneUpdate>, String> {
-        let source = active_scene_source(files)?;
+        let source = assembly::active_scene_source(files)?;
         if source == self.source && !self.presentation_invalidated {
             return Ok(None);
         }
-        let update = match source {
-            Some((id, _, _)) => self.evaluate(files, id)?,
+        let update = match &source {
+            Some(source) if source.is_assembly => self.evaluate_assembly(files, source.document)?,
+            Some(source) => self.evaluate(files, source.document)?,
             None => self.empty(),
         };
         self.source = source;
@@ -277,22 +279,6 @@ fn complete_desktop_replay<O: TransactionObserver, W: WorkspaceObserver, F: Docu
     .map_err(|cause| cause.to_string())
 }
 
-fn active_scene_source<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
-    files: &FileWorkspace<O, W, F>,
-) -> Result<Option<(u64, u64, u64)>, String> {
-    files
-        .workspace()
-        .active_document()
-        .map(|id| {
-            files
-                .workspace()
-                .session(id)
-                .map(|session| (id, session.generation(), session.body_visibility_revision()))
-        })
-        .transpose()
-        .map_err(|cause| cause.to_string())
-}
-
 /// How finely a body is meshed for display, in working units and radians.
 pub(crate) const DISPLAY_MESH: PrismMeshOptions = oblikovati_drawing::DISPLAY_MESH;
 /// The colour a body shows without an appearance of its own or of its part.
@@ -362,3 +348,7 @@ mod topology;
 #[cfg(test)]
 #[path = "../tests/part_scene_certified.rs"]
 mod certified_tests;
+
+#[cfg(test)]
+#[path = "../tests/part_scene_assembly.rs"]
+mod assembly_tests;

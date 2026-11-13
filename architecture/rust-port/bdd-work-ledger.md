@@ -183,8 +183,14 @@ claim that each file has been individually triaged.
   populated assembly opening, which remains guarded pending rendering support.
 - Viewport scenes can now be copied through a checked row-major occurrence
   placement. Tests cover a saved occurrence's rotation and translation, source
-  preservation, and invalid or overflowing placements. This display operation
-  is not yet connected to assembly scene composition or live opening.
+  preservation, and invalid or overflowing placements. Live opening remains
+  guarded.
+- The desktop scene owner can now compose resolved component scenes, including
+  nested placements and suppression, and refresh after a component edit. Tests
+  create an in-memory assembly owner and check placement, refresh and missing
+  references. Populated assembly files still cannot open: reference loading,
+  scene composition and the user-facing failure path need integration and a
+  native end-to-end test.
 - The drawing browser now lists the authored sheets, borders, title blocks and
   views, and browser search uses those same rows. Unit tests cover multiple
   sheets, a missing border and searching for a view.
