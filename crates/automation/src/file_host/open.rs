@@ -91,8 +91,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
         }
         match self.files.resolve_parameter_source(&reference) {
             Ok(Some(model)) => {
-                self.files
-                    .attach_drawing_reference(drawing, reference, model, false);
+                self.attach_drawing_reference(drawing, reference, model, false);
                 return;
             }
             Ok(None) => {}
@@ -136,8 +135,22 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
                 .reject_drawing_reference(drawing, reference, cause.to_string());
             return;
         }
-        self.files
-            .attach_drawing_reference(drawing, reference, model, background);
+        self.attach_drawing_reference(drawing, reference, model, background);
+    }
+    fn attach_drawing_reference(
+        &mut self,
+        drawing: u64,
+        reference: String,
+        model: u64,
+        background: bool,
+    ) {
+        if let Err(cause) =
+            self.files
+                .attach_drawing_reference(drawing, reference.clone(), model, background)
+        {
+            self.files
+                .reject_drawing_reference(drawing, reference, cause.to_string());
+        }
     }
 }
 

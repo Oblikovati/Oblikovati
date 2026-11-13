@@ -164,6 +164,12 @@ claim that each file has been individually triaged.
   a shared document-owner operation; the drawing loader uses the same operation.
   Tests cover duplicate references, path errors and the native lifecycle of two
   drawings sharing one relative model. Assembly reference loading is still open.
+- The file owner now tracks multiple authored references per document in one
+  cycle-checked graph shared by drawings and future assemblies. Shared models
+  stay open until their last owner closes, and Close All uses an owner-first
+  order for nested references. Tests cover cycles, nested order, invalid target
+  types, shared ownership and the existing native drawing lifecycle. Assembly
+  files are still guarded until their reference loader and renderer are ready.
 - The drawing browser now lists the authored sheets, borders, title blocks and
   views, and browser search uses those same rows. Unit tests cover multiple
   sheets, a missing border and searching for a view.

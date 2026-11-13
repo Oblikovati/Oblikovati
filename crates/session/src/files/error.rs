@@ -45,6 +45,7 @@ pub enum FileWorkspaceError {
     MissingFile(u64),
     DeferredDrawing(u64, String),
     DeferredOpen(PathBuf, String),
+    ReferenceGraph(String),
     ReferencedModel(u64),
     UnboundDocument(u64),
     ReferencePath {
@@ -149,9 +150,10 @@ impl fmt::Display for FileWorkspaceError {
             Self::DeferredOpen(path, reason) => {
                 write!(output, "deferred drawing {path:?}: {reason}")
             }
+            Self::ReferenceGraph(reason) => write!(output, "document reference graph: {reason}"),
             Self::ReferencedModel(id) => write!(
                 output,
-                "document {id}: expected dependent drawings to close before their model"
+                "document {id}: expected dependent documents to close before their model"
             ),
             Self::RelativeCanonical(path) => write!(
                 output,
@@ -206,7 +208,8 @@ impl Error for FileWorkspaceError {
             | Self::OpenVeto { .. }
             | Self::DestinationInUse { .. }
             | Self::DeferredDrawing(..)
-            | Self::DeferredOpen(..) => None,
+            | Self::DeferredOpen(..)
+            | Self::ReferenceGraph(_) => None,
         }
     }
 }

@@ -9,7 +9,7 @@ mod copy;
 mod create;
 mod derived_edit;
 mod discovery;
-mod drawing_references;
+mod document_references;
 mod error;
 mod history_restore;
 mod name;
@@ -95,9 +95,9 @@ pub struct FileWorkspace<O, W, F> {
     workspace: WorkspaceSession<O, W>,
     retained: BTreeMap<u64, RetainedFile>,
     paths: BTreeMap<PathBuf, u64>,
-    drawing_references: BTreeMap<u64, (String, u64)>,
+    document_references: BTreeMap<u64, BTreeMap<String, u64>>,
     drawing_reference_errors: BTreeMap<u64, (String, String)>,
-    drawing_background_models: std::collections::BTreeSet<u64>,
+    background_reference_models: std::collections::BTreeSet<u64>,
     files: F,
     projects: Vec<LoadedProject>,
     active_project: Option<usize>,
@@ -136,9 +136,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
             workspace: WorkspaceSession::new_with_sketch_options(observer, options),
             retained: BTreeMap::new(),
             paths: BTreeMap::new(),
-            drawing_references: BTreeMap::new(),
+            document_references: BTreeMap::new(),
             drawing_reference_errors: BTreeMap::new(),
-            drawing_background_models: std::collections::BTreeSet::new(),
+            background_reference_models: std::collections::BTreeSet::new(),
             files,
             projects: Vec::new(),
             active_project: None,
@@ -258,7 +258,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
     /// Release path and GUID claims only after close policy accepts.
     /// Example: `host.close_discarding_changes(id)?;` after the caller chooses discard.
     pub fn close_discarding_changes(&mut self, id: u64) -> Result<O, FileWorkspaceError> {
-        if self.has_drawing_dependents(id) {
+        if self.has_reference_dependents(id) {
             return Err(FileWorkspaceError::ReferencedModel(id));
         }
         let observer = self
@@ -276,7 +276,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         version: &str,
         source: &mut dyn GuidSource,
     ) -> Result<O, FileWorkspaceError> {
-        if self.has_drawing_dependents(id) {
+        if self.has_reference_dependents(id) {
             return Err(FileWorkspaceError::ReferencedModel(id));
         }
         let mut target = bound_target(&mut self.retained, &mut self.files, id)?;
@@ -295,8 +295,8 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
     }
 
     fn release_file(&mut self, id: u64) {
-        self.release_drawing_reference(id);
-        self.drawing_background_models.remove(&id);
+        self.release_document_references(id);
+        self.background_reference_models.remove(&id);
         let file = self.retained.remove(&id).expect("registered file binding");
         if let Some(path) = file.path {
             self.paths.remove(&path);
