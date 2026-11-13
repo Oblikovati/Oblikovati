@@ -5,6 +5,8 @@ use crate::work::HeadWork;
 use cucumber::{given, then, when};
 #[path = "reset.rs"]
 mod reset;
+#[path = "submenu.rs"]
+mod submenu;
 
 #[test]
 fn model_ribbon_shows_unavailable_work_and_pattern_commands() {
@@ -34,6 +36,27 @@ fn text_only_ribbon_commands_follow_the_icon_scale_grid() {
         "scaled row positions: {first:?}, {second:?}"
     );
     world.save_capture("scaled-text-command-grid");
+    world.close();
+}
+
+#[test]
+fn switching_ribbon_submenus_replaces_the_open_list() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    select_tab(&mut world, "Tools");
+    open_panel_appearance(&mut world, "Options");
+    assert!(world.checked("Normal"));
+    world.click_text("Show Panels");
+    world.pump(Vec::new());
+    world.expect_no_text("Normal");
+    assert!(world.checked("Measure"), "menu text: {:?}", world.text());
+    world.click_text("Ribbon Appearance");
+    world.pump(Vec::new());
+    assert!(!world.checked("Measure"));
+    assert!(world.checked("Normal"));
+    world.click([500, 500]);
+    world.pump(Vec::new());
+    world.expect_no_text("Show Panels");
     world.close();
 }
 

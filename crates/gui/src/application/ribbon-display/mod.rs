@@ -214,8 +214,14 @@ impl RibbonDisplayState {
     }
     /// Opened by a click, not by hovering: Escape closes this list alone, and a pointer still
     /// resting on the row must not reopen it on the next frame.
-    fn show_panels_menu(&mut self, ui: &Ui, tab: RibbonTab, panels: &[RibbonPanel]) {
-        if crate::widget_abi::dialog_selectable(ui, "Show Panels", false) {
+    fn show_panels_menu(
+        &mut self,
+        ui: &Ui,
+        tab: RibbonTab,
+        panels: &[RibbonPanel],
+        submenu_open: bool,
+    ) {
+        if submenu_row_pressed(ui, "Show Panels", submenu_open) {
             ui.open_popup(SHOW_PANELS);
         }
         let at = [ui.item_rect_max()[0], ui.item_rect_min()[1]];
@@ -253,13 +259,14 @@ impl RibbonDisplayState {
             self.docking_hover_blocked = false;
             return;
         };
+        let submenu_open = self.submenu_bounds.is_some();
         self.capture_context_bounds(ui);
-        self.appearance_menu(ui);
+        self.appearance_menu(ui, submenu_open);
         if self.context_command.is_some() {
             muted_context_item(ui, "Add to Quick Access Toolbar");
             muted_context_item(ui, "Move to Main Panel");
         }
-        self.show_panels_menu(ui, tab, panels);
+        self.show_panels_menu(ui, tab, panels, submenu_open);
         if ui
             .menu_item_config("Show Panel Titles")
             .selected(self.show_panel_titles)
@@ -454,6 +461,14 @@ impl RibbonDisplayState {
         .then_some(self.display_menu_cursor)
         .flatten()
     }
+}
+
+fn submenu_row_pressed(ui: &Ui, label: &str, submenu_open: bool) -> bool {
+    let selected = crate::widget_abi::dialog_selectable(ui, label, false);
+    // ImGui consumes the first click to dismiss a child popup before its parent row activates.
+    let hovered =
+        ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_BLOCKED_BY_POPUP);
+    selected || submenu_open && hovered && ui.is_mouse_clicked(imgui::MouseButton::Left)
 }
 #[cfg(test)]
 #[path = "../../../tests/application/ribbon-display/modes.rs"]

@@ -63,6 +63,15 @@ claim that each file has been individually triaged.
   was inspected.
   Focused scenario reports are in `/tmp/obk-ribbon-scaled-baseline-20261113`.
   This does not implement the appearance modes.
+- A later native regression showed that switching from an open Appearance
+  submenu to Show Panels needed two clicks. The first click dismissed the
+  child popup without activating the parent row. The parent now handles that
+  click while a child submenu is open. A native test passes in both directions
+  and verifies that clicking the viewport closes the parent menu. The Escape
+  and Reset Ribbon cancellation scenarios also pass. With the current source,
+  the focused submenu scenario now passes its first seven steps and stops at
+  the missing Team Web panel. Its report is in
+  `/tmp/obk-submenu-exact-20261113`; it is not durable shared evidence.
 
 ### Viewport Orbit, 2026-11-13
 

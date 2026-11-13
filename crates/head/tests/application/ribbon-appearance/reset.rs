@@ -15,6 +15,8 @@ fn options_context(world: &mut ApplicationWorld) {
     world.expect_text("Ribbon Appearance");
 }
 #[when("the user opens Ribbon Appearance")]
+#[when("the user opens the Ribbon Appearance submenu")]
+#[when("the user opens Ribbon Appearance again")]
 fn open_appearance(world: &mut ApplicationWorld) {
     world.click_text("Ribbon Appearance");
 }

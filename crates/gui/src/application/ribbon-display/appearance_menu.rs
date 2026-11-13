@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Appearance commands are disclosed without suggesting unfinished layouts work.
-use super::{RibbonDisplayState, muted_context_item};
+use super::{RibbonDisplayState, muted_context_item, submenu_row_pressed};
 use imgui::Ui;
 
 const APPEARANCE_MENU: &str = "##ribbon-appearance";
 impl RibbonDisplayState {
-    pub(super) fn appearance_menu(&mut self, ui: &Ui) {
-        if crate::widget_abi::dialog_selectable(ui, "Ribbon Appearance", false) {
+    pub(super) fn appearance_menu(&mut self, ui: &Ui, submenu_open: bool) {
+        if submenu_row_pressed(ui, "Ribbon Appearance", submenu_open) {
             ui.open_popup(APPEARANCE_MENU);
         }
         let at = [ui.item_rect_max()[0], ui.item_rect_min()[1]];

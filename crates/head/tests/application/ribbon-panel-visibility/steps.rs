@@ -389,7 +389,11 @@ fn checks_read(world: &mut ApplicationWorld) {
 #[then("the Show Panels submenu closes")]
 fn submenu_closed(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
-    assert!(!world.checked("Create"), "expected the list closed");
+    for label in ["Create", "Measure"] {
+        if world.shows(label) {
+            assert!(!world.checked(label), "expected the list closed: {label}");
+        }
+    }
 }
 #[then("the ribbon context menu remains open")]
 fn context_open(world: &mut ApplicationWorld) {
