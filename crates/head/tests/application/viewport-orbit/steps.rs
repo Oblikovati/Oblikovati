@@ -70,6 +70,7 @@ fn choose(world: &mut ApplicationWorld, row: &str) {
     world.pump(Vec::new());
 }
 #[when("I select the orbit control on the navigation bar")]
+#[when("the user selects the orbit control on the navigation bar")]
 fn select_orbit(world: &mut ApplicationWorld) {
     press_bar(world, "O");
 }
@@ -78,9 +79,12 @@ fn free_rotation(world: &mut ApplicationWorld) {
     world.expect_status("Free Rotation");
 }
 #[when("I move through the viewport using a drag gesture")]
+#[when("the user moves through the viewport using a drag gesture")]
 fn drag_view(world: &mut ApplicationWorld) {
+    let before = camera(world);
     world.drag(DRAG[0], DRAG[1]);
     world.pump(Vec::new());
+    assert_ne!(camera(world).eye, before.eye, "orbit must rotate the view");
 }
 #[then("a circular guide with a central cross and radial marks is visible over the viewport")]
 #[then("a circular rotation guide appears over the viewport")]
@@ -88,6 +92,7 @@ fn guide_visible(world: &mut ApplicationWorld) {
     expect_guide(world, true);
 }
 #[when("I open the context menu in the viewport")]
+#[when("the user opens the context menu in the viewport")]
 fn open_view_menu(world: &mut ApplicationWorld) {
     world.right_click(super::viewport_pan::EMPTY_VIEW);
     world.pump(Vec::new());
@@ -107,7 +112,9 @@ fn guide_gone(world: &mut ApplicationWorld) {
 }
 // Constrained orbit
 #[when("I open the orbit menu on the navigation bar")]
+#[when("the user opens the orbit menu on the navigation bar")]
 #[when("I reopen the orbit menu")]
+#[when("the user reopens the orbit menu")]
 fn orbit_menu(world: &mut ApplicationWorld) {
     open_orbit_menu(world);
 }
@@ -118,6 +125,7 @@ fn orbit_menu_rows(world: &mut ApplicationWorld) {
     }
 }
 #[when("I choose Constrained Orbit")]
+#[when("the user chooses Constrained Orbit")]
 fn choose_constrained(world: &mut ApplicationWorld) {
     choose(world, "Constrained Orbit");
 }
@@ -132,6 +140,7 @@ fn face_on_block(world: &mut ApplicationWorld) {
     world.observed_view_camera = Some(camera(world));
 }
 #[when("I choose Rotate at Angle from the orbit menu")]
+#[when("the user chooses Rotate at Angle from the orbit menu")]
 fn choose_rotate(world: &mut ApplicationWorld) {
     open_orbit_menu(world);
     choose(world, "Rotate at Angle");
@@ -168,7 +177,9 @@ fn increment_shown(world: &mut ApplicationWorld) {
     assert!(shown, "expected {INCREMENT_FIELD_VALUE} in the field");
 }
 #[when("I click the first direction button")]
+#[when("the user clicks the first direction button")]
 #[when("I click the first direction button again")]
+#[when("the user clicks the first direction button again")]
 fn first_direction(world: &mut ApplicationWorld) {
     choose(world, "X+");
 }
@@ -198,6 +209,7 @@ fn view_changes(world: &mut ApplicationWorld) {
     world.expect_text("Incremental View Rotate");
 }
 #[when("I click Reset")]
+#[when("the user clicks Reset")]
 fn click_reset(world: &mut ApplicationWorld) {
     choose(world, "Reset");
 }
@@ -235,6 +247,8 @@ fn click_cancel(world: &mut ApplicationWorld) {
     choose(world, "Cancel");
 }
 #[when("I click OK")]
+#[when("the user clicks OK")]
+#[when("the user chooses OK")]
 fn click_ok(world: &mut ApplicationWorld) {
     choose(world, "OK");
 }
@@ -268,6 +282,7 @@ fn rotate_open(world: &mut ApplicationWorld) {
     increment_shown(world);
 }
 #[when("I click the second direction button")]
+#[when("the user clicks the second direction button")]
 fn second_direction(world: &mut ApplicationWorld) {
     press_direction(world, 2);
 }
@@ -280,6 +295,7 @@ fn block_changes(world: &mut ApplicationWorld) {
     assert!(now.eye != earlier.eye || now.up != earlier.up, "view");
 }
 #[when("I click the first direction button once")]
+#[when("the user clicks the first direction button once")]
 fn first_once(world: &mut ApplicationWorld) {
     press_direction(world, 1);
 }
@@ -304,11 +320,13 @@ fn dialog_closed_ready(world: &mut ApplicationWorld) {
     world.expect_ready();
 }
 #[when(expr = "I click direction button {int} once")]
+#[when(expr = "the user clicks direction button {int} once")]
 fn numbered_direction(world: &mut ApplicationWorld, ordinal: usize) {
     press_direction(world, ordinal);
 }
 // Ways out of free orbit
 #[when("I select Orbit on the navigation bar")]
+#[when("the user selects Orbit on the navigation bar")]
 fn select_orbit_named(world: &mut ApplicationWorld) {
     press_bar(world, "O");
 }
@@ -319,6 +337,7 @@ fn orbit_active(world: &mut ApplicationWorld) {
     expect_guide(world, true);
 }
 #[when("I click Pan on the navigation bar")]
+#[when("the user clicks Pan on the navigation bar")]
 fn click_pan(world: &mut ApplicationWorld) {
     press_bar(world, "P");
 }
@@ -327,6 +346,7 @@ fn orbit_guide_gone(world: &mut ApplicationWorld) {
     expect_guide(world, false);
 }
 #[when("I open the orbit context menu")]
+#[when("the user opens the orbit context menu")]
 fn open_orbit_context(world: &mut ApplicationWorld) {
     open_view_menu(world);
 }

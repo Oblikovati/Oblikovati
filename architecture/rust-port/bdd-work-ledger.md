@@ -16,6 +16,7 @@ claim that each file has been individually triaged.
 | 1 | `features/application/quick-access-toolbar` | In progress | The previous full native feature run passed 11 of 12 scenarios. Projects now opens the project dialog; the focused customization choices scenario next fails because Update is missing. Later checks did not run. Material Browser editing, duplication, and the Physical tab remain open. |
 | 1 | `features/application/viewport-pan/viewport-pan.feature` | Verified | All four current scenarios passed in the native window after the step wording was updated; see the Pan evidence below. |
 | 1 | `features/application/viewport-zoom/viewport-zoom.feature` | Verified | All seven current scenarios passed in the native window after the step wording and fixture bounds measurement were corrected; see the Zoom evidence below. |
+| 1 | `features/application/viewport-orbit/viewport-orbit.feature` | Verified | All ten expanded cases passed in the native window after the step wording was updated; see the Orbit evidence below. |
 | 1 | `features/application/ribbon-customization/ribbon-customization.feature` | Needs rerun | Source changed since the inventory checkpoint. Review the corrections and rerun affected native scenarios. |
 | 1 | `features/application/ribbon-appearance/ribbon-appearance.feature` | In progress | On the current recorded source, six of 18 scenarios pass; 11 stop at undefined steps and one fails on a missing Tools group. Reset Ribbon is implemented. Implement the standard Tools groups and Text Off, Small, Compact and Large across all commands and layouts. |
 | 1 | `features/application/ribbon-docking/ribbon-docking.feature` | In progress | Source changed after the inventory checkpoint. A full native run at commit `139b82a42` found 6 passes and 17 scenarios stopped by undefined steps. With corrected bindings, a second run found 8 passes, 14 undefined steps, and one ambiguous step. Resolve the remaining steps and implement missing command-group behavior. |
@@ -31,6 +32,25 @@ claim that each file has been individually triaged.
 | 3 | `features/solid-model` | In progress | Implementations exist, but this area has not been assessed against the current complete source. Assess each feature after the application and sketch priorities; no total execution result is recorded. |
 
 ## Evidence records
+
+### Viewport Orbit, 2026-11-13
+
+- Source: `features/application/viewport-orbit/viewport-orbit.feature`,
+  SHA-256 `d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6`,
+  unchanged before and after the run. Application: `a0458d3d4` plus updated
+  scenario bindings; Martensite uses the workspace lockfile.
+- Linux, Xvfb at 1600 × 1000, configured Vulkan runtime, `XMODIFIERS` unset.
+  All ten expanded cases and 94 steps passed, with no skipped steps. A later
+  focused run of `Open and exit the free-rotation mode` passed all 13 steps
+  after its drag step gained an assertion that the camera actually rotates.
+  A separate native test confirmed that file-dialog Cancel still works.
+- Run: `xvfb-run -a -s '-screen 0 1600x1000x24' cargo test --locked -p
+  oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture`,
+  with `OBK_BDD_ROOT` pointing to the live source and
+  `OBK_BDD_FEATURE=viewport-orbit`. Full-run reports are in
+  `/tmp/obk-orbit-current-20261113`; focused reports are in
+  `/tmp/obk-orbit-drag-20261113`. These local reports are not durable shared
+  artifacts. This evidence covers this feature only.
 
 ### Viewport Zoom, 2026-11-13
 

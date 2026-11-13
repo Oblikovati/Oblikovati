@@ -210,6 +210,7 @@ fn cancel_customization(world: &mut ApplicationWorld) {
         "Export Customization Settings",
         "Geometry Properties",
         "Feature Properties",
+        "Incremental View Rotate",
     ] {
         if let Some((position, size)) = diagnostics::window_geometry(title) {
             let center = world
@@ -225,7 +226,7 @@ fn cancel_customization(world: &mut ApplicationWorld) {
                                 && point[axis] <= position[axis] + size[axis]
                         })
                 })
-                .expect("expected the file dialog's Cancel button")
+                .expect("expected the dialog's Cancel button")
                 .center();
             world.click(diagnostics::pointer_pixels(center));
             world.pump(Vec::new());
