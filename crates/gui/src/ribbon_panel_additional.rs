@@ -10,6 +10,7 @@ pub(super) struct PanelExpansions {
     open: BTreeMap<(RibbonTab, RibbonPanel), Expansion>,
     document: Option<u64>,
     mode: Option<RibbonDisplay>,
+    titles_visible: Option<bool>,
     last_ribbon_bottom: f32,
 }
 #[derive(Clone, Copy)]
@@ -35,6 +36,15 @@ impl PanelExpansions {
             self.clear();
             self.mode = Some(mode);
         }
+    }
+    pub(super) fn use_title_visibility(&mut self, visible: bool) {
+        if self
+            .titles_visible
+            .is_some_and(|previous| previous != visible)
+        {
+            self.open.retain(|_, expansion| expansion.pinned);
+        }
+        self.titles_visible = Some(visible);
     }
     pub(super) fn contains(&self, point: [f32; 2]) -> bool {
         self.open.values().any(|entry| inside(point, entry.bounds))

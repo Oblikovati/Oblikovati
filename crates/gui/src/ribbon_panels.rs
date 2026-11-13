@@ -214,6 +214,9 @@ pub(crate) fn draw_panels(
     layout.pending_layout = false;
     layout.additional.use_document(state.document);
     layout.additional.use_mode(display.mode);
+    layout
+        .additional
+        .use_title_visibility(display.show_panel_titles);
     if display.take_docking_selection() {
         layout.additional.clear();
     }
@@ -269,6 +272,9 @@ pub(crate) fn draw_side_groups(
     layout.pending_layout = false;
     layout.additional.use_document(state.document);
     layout.additional.use_mode(display.mode);
+    layout
+        .additional
+        .use_title_visibility(display.show_panel_titles);
     if display.take_docking_selection() || owners.home_active {
         layout.additional.clear();
     }
@@ -583,17 +589,20 @@ fn draw_expanded(
     ui.group(|| {
         local_action = context.content(panel, origin);
         context.owners.icons.cursor(ui, origin, [0., 66.]);
+        let expandable = context.additional_allowed
+            && (additional::available(tab, panel)
+                || (panel == RibbonPanel::UserCommands
+                    && context.owners.customization.has_expanded(tab)));
         if context.show_panel_titles {
             ui.text(panel.label());
             let title_clicked = ui.is_item_clicked();
-            let expandable = context.additional_allowed
-                && (additional::available(tab, panel)
-                    || (panel == RibbonPanel::UserCommands
-                        && context.owners.customization.has_expanded(tab)));
             local_action |= title_clicked && !expandable;
             if expandable {
                 additional::trigger(ui, tab, panel, anchor, title_clicked, layout);
             }
+        } else if expandable {
+            crate::widget_abi::dummy(ui, [0., ui.text_line_height()]);
+            additional::trigger(ui, tab, panel, anchor, false, layout);
         }
         if panel == RibbonPanel::Create {
             // Preserve the existing Create grid's trailing space and wide-window command positions.

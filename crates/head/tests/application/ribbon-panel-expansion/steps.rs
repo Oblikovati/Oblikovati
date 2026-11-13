@@ -117,6 +117,7 @@ pub(super) fn toggle_pin(world: &mut ApplicationWorld) {
 }
 #[then("the expanded Modify command area remains visible")]
 #[then("the Modify additional command area remains visible")]
+#[then("the Modify additional-command area opens")]
 #[then("the additional command area remains open")]
 fn pinned_visible(world: &mut ApplicationWorld) {
     assert!(diagnostics::window_geometry(WINDOW).is_some());
@@ -329,6 +330,7 @@ fn click_model_tab_again(world: &mut ApplicationWorld) {
     click_model_tab(world);
 }
 #[then("the additional area shows Move Bodies, Bend Part and Copy Object")]
+#[then("the area shows Move Bodies, Bend Part, and Copy Object")]
 fn temporary_commands(world: &mut ApplicationWorld) {
     extra_commands(world);
 }

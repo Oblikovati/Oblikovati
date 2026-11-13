@@ -12,13 +12,14 @@ claim that each file has been individually triaged.
 | 1 | `features/application/file-menu/file-menu.feature` | Verified | All 8 scenarios passed after the secondary-button chooser changes. Weldment remains unavailable. |
 | 1 | `features/application/document-creation` | In progress | Name and size sorting, horizontal icon tiles, and keyboard and secondary-button selection work for available templates. The BDD scenarios still require additional named templates and native bindings. |
 | 1 | `features/application/ribbon-customization/ribbon-customization.feature` | Needs rerun | Source changed since the inventory checkpoint. Review the corrections and rerun affected native scenarios. |
-| 1 | `features/application/ribbon-appearance/ribbon-appearance.feature` | In progress | Source changed. Revalidate every scenario against the revised file. Panel title visibility and the appearance menu exist. The menu marks Normal as active and disables the other modes. A caption-free native icon primitive is available but is not connected to the ribbon. The 3D Model ribbon now uses the Go icons for Revolve, Hole, Fillet and Chamfer; these commands remain unavailable. Implement Text Off, Small, Compact, Large and Reset Ribbon across all commands and layouts; then enable and verify them. |
+| 1 | `features/application/ribbon-appearance/ribbon-appearance.feature` | In progress | On the recorded source, two of 18 scenarios pass; the others stop at undefined steps. Panel titles can be hidden without losing expansion arrows. Implement Text Off, Small, Compact, Large and Reset Ribbon across all commands and layouts. |
 | 1 | `features/application/ribbon-docking/ribbon-docking.feature` | In progress | Source changed after the inventory checkpoint. A full native run at commit `139b82a42` found 6 passes and 17 scenarios stopped by undefined steps. With corrected bindings, a second run found 8 passes, 14 undefined steps, and one ambiguous step. Resolve the remaining steps and implement missing command-group behavior. |
 | 1 | `features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature` | Needs rerun | Source changed since the inventory checkpoint. Review the corrections and rerun affected native scenarios. |
 | 1 | `features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature` | Needs rerun | The source changed after the full run at `6e80b9bde`. Review the corrections and run the whole feature against a stable source; earlier counts are historical. |
 | 1 | `features/application/ribbon-panel-visibility` side selector | In progress | The left and right selector and group reflow scenarios pass on the recorded source. Rerun the full feature and cover the remaining selector interactions. |
 | 1 | `features/application/ribbon-panel-visibility` selector keyboard | In progress | Home and End retain the focused panel row; native verification and the current-source scenario are recorded below. Other keyboard scenarios need their named panel fixtures and a full feature rerun. |
 | 1 | `features/application/ribbon-display/ribbon-display.feature` | In progress | Source changed. Revalidate all scenarios against the revised file, including appearance and modeling-preview cases. |
+| 1 | `features/application/workspace-layout/workspace-layout.feature` | Needs rerun | Source changed since the inventory checkpoint. Review the correction and rerun affected native scenarios. |
 | 2 | `features/sketch/pattern-rectangular/scenario.feature` | In progress | Rectangular patterns can be created and edited in the native UI, but directions are fixed to the sketch axes. Implement line-reference selection and associativity, then run the affected native scenarios. |
 | 2 | Other `features/sketch` | In progress | The native sketch gate runs only selected folders. Inventory and run the remaining folders before reporting total coverage. |
 | 3 | `features/solid-model` | In progress | Implementations exist, but this area has not been assessed against the current complete source. Assess each feature after the application and sketch priorities; no total execution result is recorded. |
@@ -425,6 +426,28 @@ revisions checked before they support a current pass claim.
   Linux, Xvfb 1600 × 1000 and Lavapipe. Its local log is
   `/tmp/obk-side-context-both-final.log`. Ribbon work is tracked in
   [#3856](https://github.com/Oblikovati/Oblikovati/issues/3856).
+
+### Hidden panel titles and expansion arrows, 2026-11-13
+
+- Hiding panel titles retains the expansion arrows. Changing title visibility
+  closes unpinned additional areas and retains pinned areas.
+- The native `Hide panel titles while retaining access to additional commands`
+  scenario passed all 15 steps on source SHA-256
+  `5de53f4ed08ea45af82b8e9c2cf628f859c713d96118848bd32304fadcb0a4a0`,
+  unchanged during the run. Application: `c66c28228` plus this commit's
+  changes; unrelated README and AGENTS files were present. Linux, Xvfb at
+  1600 × 1000 and Lavapipe were used. The filtered command was `cargo test
+  --locked -p oblikovati-head --lib application_scenarios_use_the_native_window
+  -- --nocapture` with `OBK_BDD_FEATURE=ribbon-appearance` and the scenario
+  name filter. The local report is `/tmp/obk-hidden-title-arrow-bdd-final-20261113`.
+- A native test also verifies that pinned additional commands survive title
+  changes. The GUI library passed 350 tests, the File dialog passed four, and
+  GUI Clippy passed. A native capture is in
+  `/tmp/obk-hidden-title-arrow-capture-20261113`.
+- The full feature run on the same stable source and application changes
+  reported two of 18 scenarios passed. The other 16 stopped at undefined
+  steps; their later steps were not tested. Reports are in
+  `/tmp/obk-ribbon-appearance-full-20261113`. These paths are local artifacts.
 
 ### Switching side ribbon tabs with the selector open, 2026-11-13
 

@@ -21,6 +21,55 @@ fn select_title_setting(world: &mut ApplicationWorld) {
 fn model_titles_shown(world: &mut ApplicationWorld) {
     world.expect_text("Start 2D Sketch");
     world.expect_text("Modify");
+    let title = world.run("Modify");
+    world.modify_title_anchor = Some([title.minimum[0], title.center()[1]]);
+}
+#[when("the user opens the 3D Model tab context menu")]
+fn model_tab_menu(world: &mut ApplicationWorld) {
+    open_tab_menu(world, "3D Model");
+}
+#[when("the user clears Show Panel Titles")]
+#[when("the user selects Show Panel Titles")]
+fn change_title_setting(world: &mut ApplicationWorld) {
+    select_title_setting(world);
+}
+#[then("the ribbon panel titles are hidden")]
+fn model_titles_hidden(world: &mut ApplicationWorld) {
+    world.expect_no_text("Modify");
+}
+#[then("the main panel commands remain visible")]
+fn model_commands_visible(world: &mut ApplicationWorld) {
+    for command in ["Start 2D Sketch", "Extrude", "Hole"] {
+        world.expect_text(command);
+    }
+}
+fn hidden_modify_arrow(world: &ApplicationWorld) -> [i32; 2] {
+    let anchor = world
+        .modify_title_anchor
+        .expect("expected Modify title anchor");
+    let arrow = world
+        .frame
+        .runs
+        .iter()
+        .find(|run| {
+            run.text == "v"
+                && (run.minimum[0] - anchor[0]).abs() < 15.
+                && (run.center()[1] - anchor[1]).abs() < 8.
+        })
+        .expect("expected Modify expansion arrow with titles hidden");
+    diagnostics::pointer_pixels(arrow.center())
+}
+#[then("the Modify panel expansion arrow remains visible")]
+fn hidden_modify_arrow_visible(world: &mut ApplicationWorld) {
+    hidden_modify_arrow(world);
+}
+#[when("the user clicks the Modify panel expansion arrow")]
+fn click_hidden_modify_arrow(world: &mut ApplicationWorld) {
+    world.click(hidden_modify_arrow(world));
+}
+#[then("the panel titles return")]
+fn panel_titles_return(world: &mut ApplicationWorld) {
+    world.expect_text("Modify");
 }
 #[when("the user clears Show Panel Titles from the 3D Model tab context menu")]
 fn hide_titles(world: &mut ApplicationWorld) {
@@ -105,5 +154,37 @@ fn part_feature_icons_keep_unavailable_commands_disabled() {
         );
     }
     world.save_capture("part-feature-icons-disabled");
+    world.close();
+}
+
+#[test]
+fn hidden_panel_titles_keep_the_modify_expansion_accessible() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    model_titles_shown(&mut world);
+    hide_titles(&mut world);
+    click_hidden_modify_arrow(&mut world);
+    assert!(diagnostics::window_geometry("##ribbon-additional-PartModify").is_some());
+    world.expect_text("Move Bodies");
+    world.save_capture("hidden-title-modify-expansion");
+    world.close();
+}
+
+#[test]
+fn pinned_additional_commands_survive_panel_title_changes() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    let title = world.run("Modify").center();
+    world.click(diagnostics::pointer_pixels(title));
+    let pin = world.run("Pin");
+    world.click(diagnostics::pointer_pixels([
+        pin.minimum[0] + 6.,
+        pin.center()[1],
+    ]));
+    hide_titles(&mut world);
+    assert!(diagnostics::window_geometry("##ribbon-additional-PartModify").is_some());
+    open_tab_menu(&mut world, "3D Model");
+    select_title_setting(&mut world);
+    assert!(diagnostics::window_geometry("##ribbon-additional-PartModify").is_some());
     world.close();
 }
