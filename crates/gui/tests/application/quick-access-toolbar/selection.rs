@@ -3,6 +3,29 @@ use super::plane_selection::{area, inside, label_position};
 use super::*;
 
 #[test]
+fn appearance_browser_key_tip_requires_an_active_part() {
+    let mut toolbar = QuickAccessToolbar::default();
+    let mut state = GuiCommandState {
+        document: Some(1),
+        document_type: Some(oblikovati_api::types::DOCUMENT_PART),
+        authoring: crate::GuiAuthoringContext::Part,
+        ..Default::default()
+    };
+    for command in [
+        StandardCommand::New,
+        StandardCommand::Open,
+        StandardCommand::Save,
+    ] {
+        toolbar.selection(&state).toggle(command);
+    }
+    toolbar.activate_tip(8, &state, &mut Vec::new());
+    assert!(toolbar.take_requests().open_appearance_browser);
+    state.authoring = crate::GuiAuthoringContext::Sketch;
+    toolbar.activate_tip(8, &state, &mut Vec::new());
+    assert!(!toolbar.take_requests().open_appearance_browser);
+}
+
+#[test]
 fn material_key_tip_opens_only_for_an_idle_part() {
     let mut toolbar = QuickAccessToolbar::default();
     let mut state = GuiCommandState {

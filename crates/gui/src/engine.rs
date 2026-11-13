@@ -50,6 +50,7 @@ pub struct GuiFrameEngine {
     widget_keys: Vec<crate::GuiKey>,
     quick_access: crate::application::quick_access_toolbar::QuickAccessToolbar,
     material_browser: crate::material_browser::MaterialBrowser,
+    appearance_browser: crate::material_browser::MaterialBrowser,
     home: crate::application::home_recent_documents::HomeWorkspace,
     plane_selection: crate::application::quick_access_toolbar::plane_selection::PlaneSelection,
     parameter_editor: crate::parameters::GuiParameterEditor,
@@ -99,6 +100,7 @@ impl GuiFrameEngine {
             widget_keys: Vec::new(),
             quick_access: Default::default(),
             material_browser: Default::default(),
+            appearance_browser: crate::material_browser::MaterialBrowser::appearances(),
             home: Default::default(),
             plane_selection: Default::default(),
             parameter_editor: Default::default(),
@@ -293,7 +295,7 @@ impl GuiFrameEngine {
             &mut self.document_files,
             &mut self.plane_selection,
             &mut self.extrude_dialog,
-            &mut self.material_browser,
+            (&mut self.material_browser, &mut self.appearance_browser),
             (&mut self.parameter_editor, request.commands.document),
             &selected,
         );
@@ -382,6 +384,8 @@ impl GuiFrameEngine {
         self.preferences
             .panel(ui, &request.commands, &mut selected, self.home.active);
         self.material_browser
+            .panel(ui, &request.commands, &mut selected);
+        self.appearance_browser
             .panel(ui, &request.commands, &mut selected);
         self.extrude_dialog
             .panel(ui, &request.commands, &mut selected);
@@ -572,7 +576,10 @@ fn apply_quick_access(
     files: &mut crate::files::GuiDocumentFiles,
     planes: &mut crate::application::quick_access_toolbar::plane_selection::PlaneSelection,
     extrude: &mut crate::extrude_dialog::ExtrudeDialog,
-    material_browser: &mut crate::material_browser::MaterialBrowser,
+    browsers: (
+        &mut crate::material_browser::MaterialBrowser,
+        &mut crate::material_browser::MaterialBrowser,
+    ),
     parameters: (&mut crate::parameters::GuiParameterEditor, Option<u64>),
     selected: &[GuiShellAction],
 ) {
@@ -584,7 +591,10 @@ fn apply_quick_access(
         files.request_open();
     }
     if requests.open_material_browser {
-        material_browser.open();
+        browsers.0.open();
+    }
+    if requests.open_appearance_browser {
+        browsers.1.open();
     }
     if requests.open_projects {
         files.request_projects();

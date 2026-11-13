@@ -10,7 +10,7 @@ use oblikovati_api::types::DocumentType;
 use std::collections::BTreeMap;
 
 /// Commands the customization menu lists, in its order.
-const STANDARD: [StandardCommand; 13] = [
+const STANDARD: [StandardCommand; 14] = [
     StandardCommand::New,
     StandardCommand::Open,
     StandardCommand::Save,
@@ -22,6 +22,7 @@ const STANDARD: [StandardCommand; 13] = [
     StandardCommand::Select,
     StandardCommand::MaterialBrowser,
     StandardCommand::Materials,
+    StandardCommand::AppearanceBrowser,
     StandardCommand::Parameters,
     StandardCommand::Print,
 ];
@@ -46,6 +47,7 @@ enum StandardCommand {
     Select,
     MaterialBrowser,
     Materials,
+    AppearanceBrowser,
     Parameters,
     Print,
 }
@@ -63,6 +65,7 @@ impl StandardCommand {
             Self::Select => "Select",
             Self::MaterialBrowser => "Material Browser",
             Self::Materials => "Materials",
+            Self::AppearanceBrowser => "Appearance Browser",
             Self::Parameters => "Parameters",
             Self::Print => "Print",
         }
@@ -114,6 +117,7 @@ pub(crate) struct QuickAccessRequests {
     pub choose_plane: bool,
     pub open_extrude: bool,
     pub open_material_browser: bool,
+    pub open_appearance_browser: bool,
     pub open_projects: bool,
     pub open_parameters: bool,
 }
@@ -216,6 +220,12 @@ impl QuickAccessToolbar {
                 self.open_materials = true;
                 return;
             }
+            Some(StandardCommand::AppearanceBrowser)
+                if state.authoring == crate::GuiAuthoringContext::Part =>
+            {
+                self.requests.open_appearance_browser = true;
+                return;
+            }
             Some(StandardCommand::Parameters) if state.document.is_some() => {
                 self.requests.open_parameters = true;
                 return;
@@ -293,6 +303,12 @@ impl QuickAccessToolbar {
             }
             StandardCommand::Materials => {
                 materials::button(ui, state, actions, &mut self.open_materials)
+            }
+            StandardCommand::AppearanceBrowser => {
+                let disabled =
+                    ui.begin_disabled(state.authoring != crate::GuiAuthoringContext::Part);
+                self.requests.open_appearance_browser |= ui.button(label);
+                drop(disabled);
             }
             StandardCommand::Parameters => {
                 let disabled = ui.begin_disabled(state.document.is_none());

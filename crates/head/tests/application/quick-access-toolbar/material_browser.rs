@@ -3,6 +3,34 @@
 use super::*;
 
 #[test]
+fn appearance_browser_opens_its_own_window_and_assigns_an_appearance() {
+    let mut world = ApplicationWorld::new();
+    part_active(&mut world);
+    world.click(row_center(&world, "MaterialBrowser"));
+    world.click(row_center(&world, "AppearanceBrowser"));
+    world.pump(Vec::new());
+    assert!(window_geometry("Material Browser").is_some());
+    assert!(window_geometry("Appearance Browser").is_some());
+    let chosen = world.state().browser.unwrap().appearances[0].id.clone();
+    let button = world
+        .run_in_window("Appearance Browser", "Assigntopart")
+        .center();
+    world.click(super::super::diagnostics::pointer_pixels(button));
+    assert_eq!(
+        world.state().browser.unwrap().part_appearance.as_deref(),
+        Some(chosen.as_str())
+    );
+    let (position, size) = window_geometry("Appearance Browser").unwrap();
+    let close = [position[0] + size[0] - 13., position[1] + 10.];
+    world.click(super::super::diagnostics::pointer_pixels(close));
+    assert!(window_geometry("Appearance Browser").is_none());
+    assert!(window_geometry("Material Browser").is_some());
+    world.click(row_center(&world, "Undo"));
+    assert_eq!(world.state().browser.unwrap().part_appearance, None);
+    world.close();
+}
+
+#[test]
 fn quick_access_materials_assigns_a_material_and_undoes_it() {
     let mut world = ApplicationWorld::new();
     part_active(&mut world);
