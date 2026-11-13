@@ -19,7 +19,7 @@ fn curve_formats_dispatch_at_both_scales_and_refuse_caller_transactions() {
     for scale in [1., 2.] {
         let (mut engine, mut request) = format_ribbon_fixture(scale);
         for (format, y) in [(Construction, 68.), (Centerline, 88.)] {
-            let point = [1130. * scale, y * scale];
+            let point = [1014. * scale, y * scale];
             expect_ribbon(&mut engine, &mut request, point, Toggle(format));
             request.commands.transaction_open = true;
             assert!(click_ribbon(&mut engine, &mut request, point).is_empty());
@@ -31,7 +31,7 @@ fn curve_formats_dispatch_at_both_scales_and_refuse_caller_transactions() {
 fn format_capability_and_construction_point_admission_are_owner_derived() {
     let (mut engine, mut request) = format_ribbon_fixture(1.);
     request.commands.sketch_format_available = false;
-    assert!(click_ribbon(&mut engine, &mut request, [1130., 68.]).is_empty());
+    assert!(click_ribbon(&mut engine, &mut request, [1014., 68.]).is_empty());
     request.commands.sketch_formats.construction = true;
     assert!(click_ribbon(&mut engine, &mut request, [300., 68.]).is_empty());
     expect_ribbon(&mut engine, &mut request, [180., 68.], Place(Tool::Circle));
@@ -55,8 +55,8 @@ fn format_button_colors(
         .iter()
         .flat_map(|batch| &batch.vertices)
         .filter(|vertex| {
-            vertex.position[0] >= 1084.
-                && vertex.position[0] <= 1192.
+            vertex.position[0] >= 968.
+                && vertex.position[0] <= 1076.
                 && vertex.position[1] >= y
                 && vertex.position[1] <= y + 18.
         })

@@ -18,14 +18,14 @@ fn sketch_delete_ribbon_uses_owner_capability_and_transaction_guards_at_both_sca
         expect_ribbon(
             &mut engine,
             &mut request,
-            [1020. * scale, 85. * scale],
+            [904. * scale, 100. * scale],
             GuiShellAction::DeleteSketchSelection,
         );
         request.commands.sketch_delete_available = false;
-        assert!(click_ribbon(&mut engine, &mut request, [1020. * scale, 85. * scale]).is_empty());
+        assert!(click_ribbon(&mut engine, &mut request, [904. * scale, 100. * scale]).is_empty());
         request.commands.sketch_delete_available = true;
         request.commands.transaction_open = true;
-        assert!(click_ribbon(&mut engine, &mut request, [1020. * scale, 85. * scale]).is_empty());
+        assert!(click_ribbon(&mut engine, &mut request, [904. * scale, 100. * scale]).is_empty());
     }
 }
 #[test]

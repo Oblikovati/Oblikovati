@@ -221,7 +221,7 @@ fn exercise_gui_inputs(engine: &mut GuiFrameEngine) {
     input.extent[0] = 1440;
     for (x, expected) in [
         (110., GuiShellAction::ChooseSketchPlane),
-        (440., GuiShellAction::FinishSketch),
+        (1250., GuiShellAction::FinishSketch),
     ] {
         input.commands.authoring = if expected == GuiShellAction::ChooseSketchPlane {
             GuiAuthoringContext::Part

@@ -77,7 +77,8 @@ fn context_changes_select_the_supported_ribbon_commands() {
         [50., 90.],
         GuiShellAction::PlaceSketchTool(GuiSketchTool::Rectangle),
     );
-    expect_ribbon(&mut engine, &mut request, [440., 90.], FinishSketch);
+    assert!(click_ribbon(&mut engine, &mut request, [790., 88.]).is_empty());
+    expect_ribbon(&mut engine, &mut request, [798., 195.], FinishSketch);
 }
 #[test]
 fn manual_view_selection_survives_frames_until_sketch_exit() {
@@ -86,7 +87,7 @@ fn manual_view_selection_survives_frames_until_sketch_exit() {
     enter_part(&mut request);
     request.commands.authoring = GuiAuthoringContext::Sketch;
     settle_ribbon(&mut engine, &mut request);
-    assert!(click_ribbon(&mut engine, &mut request, [519., 44.]).is_empty());
+    assert!(click_ribbon(&mut engine, &mut request, [555., 44.]).is_empty());
     expect_ribbon(&mut engine, &mut request, [398., 90.], Home);
     expect_ribbon(&mut engine, &mut request, [398., 90.], Home);
     request.commands.authoring = GuiAuthoringContext::Part;
@@ -158,7 +159,7 @@ fn expanded_sketch_panels_dispatch_every_supported_tool_at_both_scales() {
         expect_ribbon(
             &mut engine,
             &mut request,
-            [440. * scale, 90. * scale],
+            [1250. * scale, 90. * scale],
             FinishSketch,
         );
     }
@@ -200,21 +201,21 @@ fn geometric_tools_dispatch_at_both_scales_and_refuse_open_transactions() {
             expect_ribbon(
                 &mut engine,
                 &mut request,
-                [550. * scale, y * scale],
+                [434. * scale, y * scale],
                 GuiShellAction::ConstrainSketch(choice),
             );
         }
         expect_ribbon(
             &mut engine,
             &mut request,
-            [670. * scale, 128. * scale],
+            [554. * scale, 128. * scale],
             GuiShellAction::ConstrainSketch(Fix),
         );
         for (choice, y) in [(Parallel, 68.), (Perpendicular, 88.), (Collinear, 108.)] {
             expect_ribbon(
                 &mut engine,
                 &mut request,
-                [790. * scale, y * scale],
+                [674. * scale, y * scale],
                 GuiShellAction::ConstrainSketch(choice),
             );
         }
@@ -222,14 +223,14 @@ fn geometric_tools_dispatch_at_both_scales_and_refuse_open_transactions() {
             expect_ribbon(
                 &mut engine,
                 &mut request,
-                [900. * scale, y * scale],
+                [784. * scale, y * scale],
                 GuiShellAction::ConstrainSketch(choice),
             );
         }
         request.commands.transaction_open = true;
         settle_ribbon(&mut engine, &mut request);
-        assert!(click_ribbon(&mut engine, &mut request, [550. * scale, 68. * scale]).is_empty());
-        assert!(click_ribbon(&mut engine, &mut request, [670. * scale, 128. * scale]).is_empty());
+        assert!(click_ribbon(&mut engine, &mut request, [434. * scale, 68. * scale]).is_empty());
+        assert!(click_ribbon(&mut engine, &mut request, [554. * scale, 128. * scale]).is_empty());
     }
 }
 
@@ -246,12 +247,12 @@ fn general_dimension_dispatches_at_both_scales_with_transaction_guards() {
         expect_ribbon(
             &mut engine,
             &mut request,
-            [670. * scale, 85. * scale],
+            [554. * scale, 85. * scale],
             GuiShellAction::Dimension(GuiDimensionAction::Start),
         );
         request.commands.transaction_open = true;
         settle_ribbon(&mut engine, &mut request);
-        assert!(click_ribbon(&mut engine, &mut request, [670. * scale, 85. * scale]).is_empty());
+        assert!(click_ribbon(&mut engine, &mut request, [554. * scale, 85. * scale]).is_empty());
     }
 }
 fn dimension_editor_key(
@@ -351,7 +352,7 @@ fn dimension_labels_follow_theme_colours_and_physical_projection_at_both_scales(
                     .iter()
                     .flat_map(|batch| &batch.vertices)
                     .any(|vertex| vertex.position[0] > 700. * scale
-                        && vertex.position[0] < 900. * scale
+                        && vertex.position[0] < 784. * scale
                         && (vertex.position[1] - y as f32 * scale).abs() < 20. * scale
                         && vertex.srgb == colour),
                 "{scale}: missing annotation colour {colour:?} at {y}"

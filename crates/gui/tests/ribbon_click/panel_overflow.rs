@@ -28,18 +28,18 @@ fn open_panel(
 fn a_collapsed_format_and_constrain_panel_dispatch_the_same_actions_at_both_scales() {
     for scale in [1., 2.] {
         let (mut engine, mut request) = narrow_fixture(1024, scale);
-        open_panel(&mut engine, &mut request, [790., 88.], scale);
+        open_panel(&mut engine, &mut request, [674., 88.], scale);
         expect_ribbon(
             &mut engine,
             &mut request,
-            [798. * scale, 175. * scale],
+            [682. * scale, 175. * scale],
             Format(Construction),
         );
-        open_panel(&mut engine, &mut request, [550., 88.], scale);
+        open_panel(&mut engine, &mut request, [434., 88.], scale);
         expect_ribbon(
             &mut engine,
             &mut request,
-            [566. * scale, 175. * scale],
+            [450. * scale, 175. * scale],
             Constrain(GuiSketchConstraint::Horizontal),
         );
     }
@@ -68,11 +68,11 @@ fn collapsed_create_keeps_all_primary_tools_reachable_at_both_scales() {
                 Place(tool),
             );
         }
-        open_panel(&mut engine, &mut request, [186., 88.], scale);
+        open_panel(&mut engine, &mut request, [530., 88.], scale);
         expect_ribbon(
             &mut engine,
             &mut request,
-            [194. * scale, 195. * scale],
+            [542. * scale, 195. * scale],
             FinishSketch,
         );
     }
@@ -80,9 +80,9 @@ fn collapsed_create_keeps_all_primary_tools_reachable_at_both_scales() {
 #[test]
 fn a_flyout_rechecks_owner_transaction_state_and_escape_restores_the_band() {
     let (mut engine, mut request) = narrow_fixture(1024, 1.);
-    open_panel(&mut engine, &mut request, [550., 88.], 1.);
+    open_panel(&mut engine, &mut request, [434., 88.], 1.);
     request.commands.transaction_open = true;
-    assert!(click_ribbon(&mut engine, &mut request, [566., 175.]).is_empty());
+    assert!(click_ribbon(&mut engine, &mut request, [450., 175.]).is_empty());
     for pressed in [true, false] {
         request.events = vec![GuiInputEvent::Key {
             key: GuiKey::Escape,
@@ -92,11 +92,11 @@ fn a_flyout_rechecks_owner_transaction_state_and_escape_restores_the_band() {
     }
     request.commands.transaction_open = false;
     settle_ribbon(&mut engine, &mut request);
-    open_panel(&mut engine, &mut request, [550., 88.], 1.);
+    open_panel(&mut engine, &mut request, [434., 88.], 1.);
     expect_ribbon(
         &mut engine,
         &mut request,
-        [566., 175.],
+        [450., 175.],
         Constrain(GuiSketchConstraint::Horizontal),
     );
 }
@@ -108,16 +108,16 @@ fn widening_restores_expanded_controls_and_narrowing_collapses_them_again() {
     expect_ribbon(
         &mut engine,
         &mut request,
-        [1130., 68.],
+        [1014., 68.],
         Format(Construction),
     );
     request.extent[0] = 1024;
     settle_ribbon(&mut engine, &mut request);
-    open_panel(&mut engine, &mut request, [790., 88.], 1.);
+    open_panel(&mut engine, &mut request, [674., 88.], 1.);
     expect_ribbon(
         &mut engine,
         &mut request,
-        [798., 175.],
+        [682., 175.],
         Format(Construction),
     );
 }
@@ -145,9 +145,9 @@ fn the_scroll_tier_keeps_the_last_panel_reachable_below_its_minimum_row_width() 
         expect_ribbon(
             &mut engine,
             &mut request,
-            // Format's second column (Precise Input) pushes the popup left against the window edge.
-            [120. * scale, 190. * scale],
-            Format(Construction),
+            // The Exit group is the last panel and its popup remains reachable after scrolling.
+            [258. * scale, 205. * scale],
+            FinishSketch,
         );
     }
 }
@@ -155,7 +155,7 @@ fn the_scroll_tier_keeps_the_last_panel_reachable_below_its_minimum_row_width() 
 fn a_panel_wider_than_the_window_keeps_its_last_command_reachable() {
     for scale in [1., 2.] {
         let (mut engine, mut request) = narrow_fixture(320, scale);
-        open_panel(&mut engine, &mut request, [280., 88.], scale);
+        open_panel(&mut engine, &mut request, [185., 88.], scale);
         scroll_right(&mut engine, &mut request, [200., 200.], scale);
         expect_ribbon(
             &mut engine,
@@ -168,7 +168,7 @@ fn a_panel_wider_than_the_window_keeps_its_last_command_reachable() {
 #[test]
 fn changing_context_cancels_a_panel_popup_before_the_next_command() {
     let (mut engine, mut request) = narrow_fixture(1024, 1.);
-    open_panel(&mut engine, &mut request, [790., 88.], 1.);
+    open_panel(&mut engine, &mut request, [674., 88.], 1.);
     request.commands.authoring = GuiAuthoringContext::Part;
     settle_ribbon(&mut engine, &mut request);
     expect_ribbon(&mut engine, &mut request, [50., 90.], ChooseSketchPlane);
@@ -176,13 +176,13 @@ fn changing_context_cancels_a_panel_popup_before_the_next_command() {
 #[test]
 fn widening_with_a_popup_open_restores_its_inline_command_immediately() {
     let (mut engine, mut request) = narrow_fixture(1024, 1.);
-    open_panel(&mut engine, &mut request, [790., 88.], 1.);
+    open_panel(&mut engine, &mut request, [674., 88.], 1.);
     request.extent[0] = 1440;
     settle_ribbon(&mut engine, &mut request);
     expect_ribbon(
         &mut engine,
         &mut request,
-        [1130., 68.],
+        [1014., 68.],
         Format(Construction),
     );
 }
