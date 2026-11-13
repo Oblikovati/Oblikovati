@@ -165,6 +165,7 @@ fn sketch_edit_inactive(world: &mut ApplicationWorld) {
 #[given("a part has an active editable sketch in the MCAD Software")]
 fn active_editable_sketch(world: &mut ApplicationWorld) {
     world.start_empty_sketch();
+    world.record_initial_sketch();
 }
 #[given("the Sketch Create panel's additional command area is open")]
 fn create_area_open(world: &mut ApplicationWorld) {

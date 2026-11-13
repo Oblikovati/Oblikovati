@@ -97,6 +97,13 @@ impl ApplicationWorld {
         world.pump(Vec::new());
         world
     }
+    pub fn record_initial_sketch(&mut self) {
+        self.observed_sketch = Some(ObservedSketch {
+            geometry: self.edited_geometry(),
+            history: Default::default(),
+            witnesses: Vec::new(),
+        });
+    }
     pub fn app(&mut self) -> &mut NativeApplication {
         self.app
             .as_mut()

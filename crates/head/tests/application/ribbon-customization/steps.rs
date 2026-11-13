@@ -523,3 +523,6 @@ mod native_tests;
 
 #[path = "marking_menu_tests.rs"]
 mod marking_menu_tests;
+
+#[path = "tab_retention.rs"]
+mod tab_retention;
