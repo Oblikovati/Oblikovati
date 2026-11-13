@@ -142,3 +142,21 @@ fn sketch_parameters_panel_opens_the_live_editor_without_finishing_the_sketch() 
     );
     world.close();
 }
+
+#[test]
+fn scaled_sketch_ribbon_exposes_the_rectangle_tool() {
+    use crate::HeadWork;
+    let mut world = ApplicationWorld::new();
+    world.start_empty_sketch();
+    let scale = oblikovati_model::ui_scale::UiScaleOptions::new(1.5, 1.).unwrap();
+    world.app().owner.set_ui_scale_from_gui(scale).unwrap();
+    world.pump(Vec::new());
+    world.save_capture("scaled-sketch-ribbon");
+    world.expect_text("Create");
+    let label = world.run("Create").center();
+    world.click(diagnostics::pointer_pixels([label[0], label[1] - 35.]));
+    world.expect_text("Rectangle");
+    world.click_text("Rectangle");
+    assert!(world.app().owner.placement_active());
+    world.close();
+}

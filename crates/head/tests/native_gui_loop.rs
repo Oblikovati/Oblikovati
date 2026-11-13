@@ -77,8 +77,10 @@ fn drive_pointer_clicks(
 }
 #[test]
 fn native_new_part_button_creates_and_selects_an_unsaved_document() {
-    let native = NativeHeadWindow::open().unwrap();
-    let mut owner = native_owner(native.wake.clone())
+    let preferences = tempfile::tempdir().unwrap();
+    let mut native = NativeHeadWindow::open().unwrap();
+    native.ribbon_settings_directory = Some(preferences.path().to_owned());
+    let mut owner = native_owner_at(native.wake.clone(), preferences.path())
         .unwrap()
         .with_themes(oblikovati_model::theme::ThemeLibrary::new(Vec::new(), "Dark").unwrap());
     let mut window = scripted_window(native);
@@ -100,7 +102,11 @@ fn native_new_part_button_creates_and_selects_an_unsaved_document() {
         application_bdd::rendered_label_center("XY Plane"),
     );
     assert!(owner.active_sketch_edit().is_some());
-    click_shell_position(&mut window, &mut owner, [40, 107]);
+    click_shell_position(
+        &mut window,
+        &mut owner,
+        application_bdd::rendered_label_center("Rectangle"),
+    );
     assert!(owner.placement_active());
     let edit = owner.active_sketch_edit().unwrap();
     {

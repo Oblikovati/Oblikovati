@@ -16,8 +16,16 @@ fn click_side_selector(world: &mut ApplicationWorld) {
 #[when("the user clicks the direct panel selector arrow")]
 #[when("the user opens the direct panel selector")]
 fn open_side_selector(world: &mut ApplicationWorld) {
-    click_side_selector(world);
-    assert!(popup_depth() > 0, "expected side selector popup");
+    if window_geometry("##ribbon-column").is_some() {
+        click_side_selector(world);
+    } else {
+        let (position, size) = window_geometry("##application-ribbon").unwrap();
+        world.click(pointer_pixels([
+            position[0] + size[0] - 22.,
+            position[1] + 45.,
+        ]));
+    }
+    assert!(popup_depth() > 0, "expected panel selector popup");
 }
 
 #[when("I select Modify in the panel selector")]

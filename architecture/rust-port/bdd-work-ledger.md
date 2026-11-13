@@ -8,6 +8,7 @@ claim that each file has been individually triaged.
 | Priority | Feature and scope | State | Evidence and next action |
 | --- | --- | --- | --- |
 | 1 | `features/application` | In progress | The native application runner exists. A complete, current area result has not been recorded. Run and retain the full area report; triage failures against the current source. |
+| 1 | Native parameter-driven cube journey | In progress | The native journey creates a constrained rectangle and extrude, edits the size, uses undo/redo, saves and reopens, and resolves a face. Maintain the live test and rerun it after relevant changes. |
 | 1 | `features/application/file-menu/file-menu.feature` | Verified | All 8 scenarios passed after the secondary-button chooser changes. Weldment remains unavailable. |
 | 1 | `features/application/document-creation` | In progress | Name and size sorting, horizontal icon tiles, and keyboard and secondary-button selection work for available templates. The BDD scenarios still require additional named templates and native bindings. |
 | 1 | `features/application/ribbon-customization/ribbon-customization.feature` | Needs rerun | Source changed since the inventory checkpoint. Review the corrections and rerun affected native scenarios. |
@@ -374,3 +375,36 @@ revisions checked before they support a current pass claim.
   not durable artifacts. The GUI library passed 350 tests, the File dialog
   passed four, and GUI Clippy passed. Other scenarios require a full rerun on
   this source.
+
+### Native cube journey and panel baseline, 2026-11-13
+
+- The native mouse and keyboard journey passed after isolating its preferences
+  and selecting Rectangle by its rendered label. It creates a part and an XY
+  rectangle driven by `size = 10 mm`, checks coincident, horizontal, vertical
+  and dimensional constraints and zero DOF, previews and creates an extrude,
+  changes `size` to `20 mm`, uses undo and redo, saves and reopens the file,
+  and checks solid properties and face keys. The test also resolves a face
+  through the public host. It used application commit `ab9a6b426` plus this
+  commit's test changes, Martensite revision `d051ff699982faba4ec2df3ee9a47e14f38dedbd`,
+  Linux, Xvfb 1600 × 1000 and Lavapipe. The command was `xvfb-run -a -s
+  '-screen 0 1600x1000x24' cargo test --locked -p oblikovati-head --lib
+  native_new_part_button_creates_and_selects_an_unsaved_document --
+  --test-threads=1 --nocapture`. The local log is
+  `/tmp/obk-native-cube-final-20261113.log`.
+- A separate native regression at 150% text scale opens the collapsed Create
+  panel and starts Rectangle with mouse input. Its local log is
+  `/tmp/obk-scaled-sketch-final.log`; this does not repeat the full cube at
+  that scale.
+- A full panel-visibility run at `ab9a6b426` on source SHA-256
+  `28915f5d5ef1f8360f7cb61481bdb48b6143c5a65c0167b25d4fdb16a30d2271`
+  reported 19 of 55 scenarios passing. Of the 36 stops, 35 were undefined
+  steps and one was a test binding that assumed the selector was side-docked.
+  That binding now supports the top ribbon. The source changed after the run,
+  so these counts are historical. The local report is
+  `/tmp/obk-panel-visibility-ab9-20261113`.
+- On source SHA-256
+  `794416142395a581738cead4d629b3836bb29f59359c1663e8fe9cb95f46cd00`, the
+  filtered selector-help scenario gets past opening the top-docked selector
+  and stops at the next undefined step. The help behavior and remaining steps
+  are not verified. The source changed again after this run, so the result is
+  historical. Its local report is `/tmp/obk-selector-help-current-20261113`.
