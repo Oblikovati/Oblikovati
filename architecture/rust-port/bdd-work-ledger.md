@@ -8,7 +8,8 @@ claim that each file has been individually triaged.
 | Priority | Feature and scope | State | Evidence and next action |
 | --- | --- | --- | --- |
 | 1 | `features/application` | In progress | The native application runner exists. A complete, current area result has not been recorded. Run and retain the full area report; triage failures against the current source. |
-| 1 | `features/application/ribbon-appearance/ribbon-appearance.feature` | In progress | Source changed. Revalidate every scenario against the revised file. Panel title visibility exists; the Ribbon Appearance submenu and command layout modes remain unavailable and need implementation. |
+| 1 | `features/application/ribbon-appearance/ribbon-appearance.feature` | In progress | Source changed. Revalidate every scenario against the revised file. Panel title visibility and the appearance menu exist. The menu marks Normal as active and disables the other modes. Implement Text Off, Small, Compact, Large and Reset Ribbon in the shared renderer; then enable and verify them. |
+| 1 | `features/application/ribbon-docking/ribbon-docking.feature` | Needs rerun | Source changed after the inventory checkpoint. Review the corrections and rerun affected native scenarios before updating the checkpoint. |
 | 1 | `features/application/ribbon-display/ribbon-display.feature` | In progress | Source changed. Revalidate all scenarios against the revised file, including appearance and modeling-preview cases. |
 | 2 | `features/sketch/pattern-rectangular/scenario.feature` | In progress | Rectangular patterns can be created and edited in the native UI, but directions are fixed to the sketch axes. Implement line-reference selection and associativity, then run the affected native scenarios. |
 | 2 | Other `features/sketch` | In progress | The native sketch gate runs only selected folders. Inventory and run the remaining folders before reporting total coverage. |

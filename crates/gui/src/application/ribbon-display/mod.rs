@@ -4,6 +4,7 @@ use crate::ribbon::RibbonTab;
 use crate::ribbon_panels::RibbonPanel;
 use imgui::Ui;
 use std::collections::BTreeSet;
+mod appearance_menu;
 mod context_bounds;
 mod docking_menu;
 mod panel_selector;
@@ -245,7 +246,7 @@ impl RibbonDisplayState {
             return;
         };
         self.capture_context_bounds(ui);
-        muted_context_item(ui, "Ribbon Appearance");
+        self.appearance_menu(ui);
         if self.context_command.is_some() {
             muted_context_item(ui, "Add to Quick Access Toolbar");
             muted_context_item(ui, "Move to Main Panel");

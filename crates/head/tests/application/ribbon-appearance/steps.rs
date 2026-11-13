@@ -69,3 +69,25 @@ fn model_titles_visible(world: &mut ApplicationWorld) {
     world.expect_text("Modify");
     world.expect_text("Start 2D Sketch");
 }
+
+#[test]
+fn appearance_menu_marks_normal_and_disables_unavailable_layouts() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    open_tab_menu(&mut world, "3D Model");
+    world.click_text("Ribbon Appearance");
+    world.pump(Vec::new());
+    assert!(world.checked("Normal"), "expected the current appearance");
+    for label in ["Text Off", "Small", "Compact", "Large", "Reset Ribbon"] {
+        world.expect_text(label);
+        assert!(
+            !world.run_is_enabled(label),
+            "{label}: expected an unavailable control"
+        );
+    }
+    world.click_text("Normal");
+    world.pump(Vec::new());
+    world.expect_no_text("Show Panel Titles");
+    world.expect_text("Start 2D Sketch");
+    world.close();
+}
