@@ -691,6 +691,9 @@ fn applied_ribbon_settings_survive_restart_without_unapplied_edits() {
     world.close();
 }
 
+#[path = "measure_native.rs"]
+mod measure_native;
+
 #[path = "reset_native.rs"]
 mod reset_native;
 

@@ -501,3 +501,16 @@ revisions checked before they support a current pass claim.
   and Lavapipe were used. The GUI library passed 351 tests, the file-dialog
   suite passed four, and GUI Clippy passed. Logs and captures under
   `/tmp/obk-reset-*` are local artifacts.
+
+### Tools Measure command, 2026-11-13
+
+- The Tools ribbon now has a Measure panel that calls the existing sketch
+  inspection action. It is enabled during sketch editing and disabled in part
+  mode, where measurement is not yet implemented. It does not satisfy the
+  part-mode Measure scenarios.
+- A native mouse test verified the disabled part-mode command, opened Measure
+  while editing a sketch, and closed its panel with Done. Application:
+  `c9e9e8c24` plus this change; Linux, Xvfb at 1600 × 1000, and Lavapipe.
+  The local log is `/tmp/obk-tools-measure-native-20261113-2.log`.
+- The remaining standard Tools panels and part-mode measurement are still
+  required before the Reset Ribbon and ribbon display scenarios can pass.
