@@ -247,11 +247,11 @@ upstream for reference. Do not merge `go-legacy` with
 `--allow-unrelated-histories`; that would restore the Go tree that this branch
 was created to replace.
 
-Current user policy: work on the single `rust-port` working branch. Integrate
-any authorized delegated work there and keep granular commits. Fetch and merge
-its upstream before publishing work. Create a PR only when the user requests
-one. Kernel changes follow the separate Martensite integration workflow; API
-changes follow the API workflow.
+Work on the single `feat/rust-consolidated` branch and keep granular commits.
+Integrate authorized work there. Fetch and merge upstream before each PR, and
+open a batch PR to `rust` after five to ten completed units. Run the full gate
+before the first push and before each batch PR. Kernel changes follow the
+separate Martensite workflow; API changes follow the API workflow.
 
 The [port epic #3563](https://github.com/Oblikovati/Oblikovati/issues/3563)
 tracks the full application port. R0 creates the remaining milestone issues.
