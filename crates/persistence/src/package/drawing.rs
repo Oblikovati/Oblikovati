@@ -47,7 +47,7 @@ impl DocumentPackage {
         Ok(has_sheet_recipe && self.restore_drawing()?.as_ref() == Some(drawing))
     }
     fn capture_drawing(&self, drawing: &DrawingDocument) -> Result<Self, PackageCodecError> {
-        let mut candidate = self.clone();
+        let mut candidate = self.without_stream(super::drawing_view_snapshot::SECTION);
         let mut model = candidate
             .root
             .get("model")

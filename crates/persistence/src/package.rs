@@ -12,6 +12,8 @@ mod binary_text;
 mod container;
 mod copy_metadata;
 mod drawing;
+mod drawing_view_snapshot;
+pub use drawing_view_snapshot::{SavedDrawingLine, SavedDrawingView, SavedDrawingViews};
 mod empty;
 mod interests;
 mod model_states;
