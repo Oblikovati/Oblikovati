@@ -49,6 +49,20 @@ fn zero_document_ribbon_submits_the_owned_new_part_icon_and_caption() {
 }
 
 #[test]
+fn modeling_and_sketch_ribbons_submit_the_go_extrude_and_move_icons() {
+    let mut owner = GuiFrameEngine::new().unwrap();
+    let mut request = ribbon_request();
+    request.commands.document = Some(7);
+    request.commands.document_type = Some(oblikovati_api::types::DOCUMENT_PART);
+    request.commands.authoring = crate::GuiAuthoringContext::Part;
+    let model = settled_frame(&mut owner, &request);
+    assert_named_icon(&owner, &model, IconGlyph::Extrude, IconSize::Small, 18.);
+    request.commands.authoring = crate::GuiAuthoringContext::Sketch;
+    let sketch = settled_frame(&mut owner, &request);
+    assert_named_icon(&owner, &sketch, IconGlyph::Move, IconSize::Small, 18.);
+}
+
+#[test]
 fn actual_icon_quads_follow_independent_scale_and_backing_density() {
     for (text, icon, backing, expected) in [
         (1., 1., 1., [40., 18.]),

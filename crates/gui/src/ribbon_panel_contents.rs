@@ -21,7 +21,9 @@ pub(crate) fn draw_panel_content(
         RibbonPanel::Modify => {
             let start = GuiShellAction::SketchMove(crate::GuiSketchMoveAction::Start);
             crate::chrome::command_control(ui, "Move", start, state, actions, || {
-                crate::widget_abi::button(ui, "Move", [108., 26.])
+                owners
+                    .icons
+                    .button(ui, "Move", crate::icons::IconGlyph::Move, [108., 26.])
             });
             owners.icons.cursor(ui, origin, [0., 30.]);
             let delete = GuiShellAction::DeleteSketchSelection;
@@ -196,7 +198,10 @@ fn part_create_controls(
     crate::widget_abi::cursor_position(ui, origin);
     {
         let _muted = ui.begin_disabled(!extrude_can_start(state));
-        if crate::widget_abi::button(ui, EXTRUDE, [108., 26.]) {
+        if owners
+            .icons
+            .button(ui, EXTRUDE, crate::icons::IconGlyph::Extrude, [108., 26.])
+        {
             actions.push(crate::extrude_dialog::start_action(state));
         }
         if owners.extrude_tip {

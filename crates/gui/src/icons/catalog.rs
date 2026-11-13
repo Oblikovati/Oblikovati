@@ -41,4 +41,6 @@ glyph_catalog! {
     Save => "save",
     Undo => "undo",
     Redo => "redo",
+    Extrude => "extrude",
+    Move => "move",
 }
