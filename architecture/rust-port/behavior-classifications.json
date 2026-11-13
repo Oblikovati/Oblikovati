@@ -114,6 +114,188 @@
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+    },
+    {
+      "id": "scenario:63f029b9f70340308eef7d4b4187b3f20f136ee9e8984de6b3c28d4c3b9b61e7",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "e4011485e2cfe78197b73450bea0d26ba2b0dbc54f2307d3b27364ffe9d9a20d",
+      "milestone": "R4",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: new-sketch-01 Create a sketch on a named origin plane",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3857"
+      ],
+      "state": "inventoried",
+      "last_receipt": null
+    },
+    {
+      "id": "scenario:4e511ca586195d67ed53eaedd9378d8bc9bab420ea3c606eda97feb3b4fb0b55",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "e4011485e2cfe78197b73450bea0d26ba2b0dbc54f2307d3b27364ffe9d9a20d",
+      "milestone": "R4",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: new-sketch-02 Cancel before selecting a plane",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3857"
+      ],
+      "state": "inventoried",
+      "last_receipt": null
+    },
+    {
+      "id": "scenario:adfaa180b248a09493b79b65698c97167d4d8d53f4c3a763453aecd7d8b420e2",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "e4011485e2cfe78197b73450bea0d26ba2b0dbc54f2307d3b27364ffe9d9a20d",
+      "milestone": "R4",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: new-sketch-03 Escape after accepting the support plane",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3857"
+      ],
+      "state": "inventoried",
+      "last_receipt": null
+    },
+    {
+      "id": "scenario:cd9561e7b2b4f47522f44782c6ecc97307e4b18dd114f958c8b625807a9af6bb",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "e4011485e2cfe78197b73450bea0d26ba2b0dbc54f2307d3b27364ffe9d9a20d",
+      "milestone": "R4",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: new-sketch-04 Creation and finishing have distinct history transactions",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3857"
+      ],
+      "state": "inventoried",
+      "last_receipt": null
+    },
+    {
+      "id": "scenario:4ba58b431dc847ae3a24f6b4c652dc6ce891a4b6150813100ab28b8c60d3b5f2",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "e4011485e2cfe78197b73450bea0d26ba2b0dbc54f2307d3b27364ffe9d9a20d",
+      "milestone": "R4",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: new-sketch-05 Start with a preselected support plane",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3857"
+      ],
+      "state": "inventoried",
+      "last_receipt": null
+    },
+    {
+      "id": "scenario:cb85314818ef73daa1093f520bc4f5fa70977685fb7b8716070ffe6314ba9a58",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "fbdae71cbf4f67f7d8165002799ba77b0727fa89cb7b620f1298fdb27725916c",
+      "milestone": "R4",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: rectangle-two-point-01 Create a rectangle from opposite corners",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3857"
+      ],
+      "state": "inventoried",
+      "last_receipt": null
+    },
+    {
+      "id": "scenario:a661d2ccfbdfc85a763de8dd2eb91fc325e1a004e58059346306d9e69700b3c5",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "fbdae71cbf4f67f7d8165002799ba77b0727fa89cb7b620f1298fdb27725916c",
+      "milestone": "R4",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: rectangle-two-point-06 Cancel before the opposite corner",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3857"
+      ],
+      "state": "inventoried",
+      "last_receipt": null
+    },
+    {
+      "id": "scenario:1e7472ca669ac6f4274e216b9e0f6dd9074d843189d749ea4a4ca6c0d7af7dd2",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "fbdae71cbf4f67f7d8165002799ba77b0727fa89cb7b620f1298fdb27725916c",
+      "milestone": "R4",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: rectangle-two-point-07 Keep selecting after identical corner clicks",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3857"
+      ],
+      "state": "inventoried",
+      "last_receipt": null
+    },
+    {
+      "id": "scenario:c7961c524b21f4e1124e3f4d865c19bde5f6dc740d654f9838726b63cccd0b84",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "fbdae71cbf4f67f7d8165002799ba77b0727fa89cb7b620f1298fdb27725916c",
+      "milestone": "R4",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: rectangle-two-point-08 Commit typed sizes and restore through history",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3857"
+      ],
+      "state": "inventoried",
+      "last_receipt": null
+    },
+    {
+      "id": "scenario:6d4a200f137644d4c6104d1e91aeb91aa8167a0ac26b27ae09cb219eb27fadd2",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "milestone": "R4",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session",
+      "acceptance_test": "solid-model native BDD runner and bindings required: extrusion-01 Empty part entry requests a sketch plane",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3857"
+      ],
+      "state": "inventoried",
+      "last_receipt": null
+    },
+    {
+      "id": "scenario:5c666abf06d3e4d293ac1364203a639772c5f754d85d32a48ddf497941590bbe",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "milestone": "R4",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session",
+      "acceptance_test": "solid-model native BDD runner and bindings required: extrusion-02 Finish profile returns to waiting extrusion",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3857"
+      ],
+      "state": "inventoried",
+      "last_receipt": null
+    },
+    {
+      "id": "scenario:c958310f71da6060fc96ec06b1a1f472e92cc4b966876db9962c792cb59f2f4f",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "milestone": "R4",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session",
+      "acceptance_test": "solid-model native BDD runner and bindings required: extrusion-04 Cancel preserves the source sketch",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3857"
+      ],
+      "state": "inventoried",
+      "last_receipt": null
+    },
+    {
+      "id": "scenario:2fc85f94acd6cc5fba2c6fa3583808dd1d99608f49b07700761c67e95a66b61a",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "milestone": "R4",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session",
+      "acceptance_test": "solid-model native BDD runner and bindings required: extrusion-05 Zero distance validation and recovery",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3857"
+      ],
+      "state": "inventoried",
+      "last_receipt": null
     }
   ]
 }
