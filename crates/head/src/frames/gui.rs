@@ -112,6 +112,7 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::PlaceComponent { .. }
         | GuiShellAction::PlaceComponentFile { .. }
         | GuiShellAction::PreviewComponent(_)
+        | GuiShellAction::PreviewComponentFile { .. }
         | GuiShellAction::PreviewDrawingBaseView(_)
         | GuiShellAction::SetSketchOptions(_)
         | GuiShellAction::LineCommand(_)

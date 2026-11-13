@@ -98,6 +98,7 @@ struct ComponentPreview {
     assembly: u64,
     generations: Vec<(u64, u64)>,
     scene: oblikovati_viewport::ViewportScene,
+    owned_source: Option<u64>,
 }
 /// Documents and queue admission share one owner. The worker transport contains no model.
 /// ```compile_fail

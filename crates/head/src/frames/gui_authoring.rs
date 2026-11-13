@@ -25,6 +25,9 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
             name,
         } => owner.place_component_file_from_gui(*assembly, path, name),
         GuiShellAction::PreviewComponent(request) => owner.preview_component_from_gui(*request),
+        GuiShellAction::PreviewComponentFile { assembly, path } => {
+            owner.preview_component_file_from_gui(*assembly, path)
+        }
         GuiShellAction::PreviewDrawingBaseView(request) => {
             owner.base_view_preview_from_gui(request.as_ref())
         }

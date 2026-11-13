@@ -112,6 +112,13 @@ impl<
     fn preview_component_from_gui(&mut self, request: Option<(u64, u64)>) -> Result<bool, String> {
         self.set_component_preview(request)
     }
+    fn preview_component_file_from_gui(
+        &mut self,
+        assembly: u64,
+        path: &str,
+    ) -> Result<bool, String> {
+        self.set_component_file_preview(assembly, path)
+    }
     fn extrude_from_gui(
         &mut self,
         document: u64,

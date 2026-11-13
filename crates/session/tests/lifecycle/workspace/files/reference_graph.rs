@@ -227,12 +227,14 @@ fn shared_models_are_retained_until_the_last_owner_closes() {
     host.set_visible(second, false).unwrap();
     let owner = assembly(&mut host, &mut source, &["a", "b"]);
     let other = assembly(&mut host, &mut source, &["a"]);
+    assert!(host.keep_referenced_background_model(first).is_err());
     assert!(
         host.attach_document_reference(owner, "".into(), first, false)
             .is_err()
     );
-    host.attach_document_reference(owner, "a".into(), first, true)
+    host.attach_document_reference(owner, "a".into(), first, false)
         .unwrap();
+    host.keep_referenced_background_model(first).unwrap();
     host.attach_document_reference(owner, "b".into(), second, true)
         .unwrap();
     host.attach_document_reference(other, "a".into(), first, false)

@@ -123,6 +123,16 @@ pub trait HeadWork {
             "component preview {request:?}: expected an assembly owner"
         ))
     }
+    /// Preview a file before placement; example: `work.preview_component_file_from_gui(assembly, path)?`.
+    fn preview_component_file_from_gui(
+        &mut self,
+        assembly: u64,
+        path: &str,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "assembly {assembly} preview file {path:?}: expected an assembly owner"
+        ))
+    }
     /// Apply an Extrude dialog request through the document command owner.
     /// Example: `work.extrude_from_gui(document, sketch, 0, "10 mm")?`.
     fn extrude_from_gui(

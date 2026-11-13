@@ -43,6 +43,13 @@ macro_rules! forward_owner_view_work {
         ) -> Result<bool, String> {
             self.$owner.preview_component_from_gui(request)
         }
+        fn preview_component_file_from_gui(
+            &mut self,
+            assembly: u64,
+            path: &str,
+        ) -> Result<bool, String> {
+            self.$owner.preview_component_file_from_gui(assembly, path)
+        }
         fn extrude_from_gui(
             &mut self,
             document: u64,

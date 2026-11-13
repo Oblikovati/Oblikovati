@@ -112,6 +112,11 @@ impl GuiShellAction {
                     && !name.trim().is_empty()
             }
             Self::PreviewComponent(None) => true,
+            Self::PreviewComponentFile { assembly, path } => {
+                state.document == Some(*assembly)
+                    && state.document_type == Some(oblikovati_api::types::DOCUMENT_ASSEMBLY)
+                    && !path.is_empty()
+            }
             Self::PreviewComponent(Some((assembly, source))) => {
                 state.document == Some(*assembly)
                     && state.document_type == Some(oblikovati_api::types::DOCUMENT_ASSEMBLY)

@@ -26,6 +26,7 @@ pub(super) struct AssemblyPlaceDialog {
     file_name: String,
     file_escape: DialogEscape,
     preview_source: Option<u64>,
+    preview_path: Option<String>,
 }
 impl Default for AssemblyPlaceDialog {
     fn default() -> Self {
@@ -39,6 +40,7 @@ impl Default for AssemblyPlaceDialog {
             file_name: String::new(),
             file_escape: DialogEscape::default(),
             preview_source: None,
+            preview_path: None,
         }
     }
 }
@@ -69,7 +71,7 @@ impl AssemblyPlaceDialog {
             self.clear_preview(actions);
             return;
         };
-        Self::fit_dockable(ui, "Place Component", [420., 200.], [380., 190.]);
+        Self::fit_dockable(ui, "Place Component", [320., 200.], [380., 190.]);
         let mut open = true;
         Self::dockable_window(ui, "Place Component", &mut open).build(|| {
             self.source_choice(ui, state, assembly);
@@ -80,11 +82,19 @@ impl AssemblyPlaceDialog {
                 ui.open_popup(FILE_CHOOSER);
             }
             self.file_chooser(ui);
-            if self.preview_source != self.source {
+            if self.preview_source != self.source || self.preview_path != self.selected_path {
                 self.preview_source = self.source;
-                actions.push(GuiShellAction::PreviewComponent(
-                    self.source.map(|source| (assembly, source)),
-                ));
+                self.preview_path = self.selected_path.clone();
+                if let Some(path) = &self.preview_path {
+                    actions.push(GuiShellAction::PreviewComponentFile {
+                        assembly,
+                        path: path.clone(),
+                    });
+                } else {
+                    actions.push(GuiShellAction::PreviewComponent(
+                        self.source.map(|source| (assembly, source)),
+                    ));
+                }
             }
             ui.input_text("Occurrence name", &mut self.name).build();
             let action = self.action(assembly);
@@ -111,7 +121,9 @@ impl AssemblyPlaceDialog {
         }
     }
     fn clear_preview(&mut self, actions: &mut Vec<GuiShellAction>) {
-        if self.preview_source.take().is_some() {
+        let source = self.preview_source.take();
+        let path = self.preview_path.take();
+        if source.is_some() || path.is_some() {
             actions.push(GuiShellAction::PreviewComponent(None));
         }
     }

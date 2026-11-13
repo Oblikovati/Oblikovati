@@ -5,6 +5,14 @@ use oblikovati_session::{files::FileOpenOutcome, workspace::OpenActivation};
 use std::path::Path;
 
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHost<'_, O, W, F> {
+    /// Open a component without focus for a preview; example: `host.open_component_preview(path)?`.
+    pub fn open_component_preview(&self, path: &Path) -> Result<(u64, bool), Error> {
+        let mut context = self
+            .context
+            .try_borrow_mut()
+            .map_err(|_| busy("open_component_preview"))?;
+        context.open_component_preview(path)
+    }
     /// Place a file without activating it; example: `host.place_component_file(path, "Part:1", matrix)?`.
     pub fn place_component_file(
         &self,
@@ -21,6 +29,52 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHost<'_
 }
 
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext<'_, O, W, F> {
+    fn open_component_preview(&mut self, path: &Path) -> Result<(u64, bool), Error> {
+        let observers = &mut self.observers;
+        let outcome = self
+            .files
+            .open_with_factory(
+                path,
+                || super::open::create_observer(observers),
+                self.version,
+                self.source,
+                OpenActivation::Background,
+            )
+            .map_err(|cause| Error(cause.to_string()))?;
+        let component = outcome.session_id();
+        let opened = matches!(outcome, FileOpenOutcome::Opened(_));
+        let result = self.prepare_preview_component(component, opened);
+        if let Err(cause) = result {
+            if opened {
+                self.files.close_discarding_changes(component).map_err(|cleanup| Error(format!("preview failed: {cause}; component {component} cleanup failed: {cleanup}")))?;
+            }
+            return Err(cause);
+        }
+        Ok((component, opened))
+    }
+    fn prepare_preview_component(&mut self, component: u64, opened: bool) -> Result<(), Error> {
+        let kind = self
+            .files
+            .document_type(component)
+            .map_err(|cause| Error(cause.to_string()))?;
+        if !matches!(
+            kind,
+            oblikovati_api::types::DOCUMENT_PART | oblikovati_api::types::DOCUMENT_ASSEMBLY
+        ) {
+            return Err(Error(format!(
+                "document {component} type {kind:?}: expected a part or assembly"
+            )));
+        }
+        if opened {
+            self.files
+                .set_visible(component, false)
+                .map_err(|cause| Error(cause.to_string()))?;
+        }
+        if kind == oblikovati_api::types::DOCUMENT_ASSEMBLY {
+            self.resolve_assembly_references(component)?;
+        }
+        Ok(())
+    }
     fn place_component_file(
         &mut self,
         path: &Path,

@@ -98,6 +98,20 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         self.background_reference_models.insert(model);
         Ok(())
     }
+    /// Transfer a referenced hidden model to the graph; example: `files.keep_referenced_background_model(model)?`.
+    pub fn keep_referenced_background_model(
+        &mut self,
+        model: u64,
+    ) -> Result<(), FileWorkspaceError> {
+        self.retained_file(model)?;
+        if !self.has_reference_dependents(model) {
+            return Err(FileWorkspaceError::ReferenceGraph(format!(
+                "background model {model}: expected an authored dependent"
+            )));
+        }
+        self.background_reference_models.insert(model);
+        Ok(())
+    }
     pub(super) fn owned_assembly_references(&self, owner: u64) -> BTreeSet<String> {
         self.document_references
             .get(&owner)

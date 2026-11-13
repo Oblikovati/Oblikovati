@@ -14,7 +14,7 @@ impl<
         &mut self,
         request: Option<(u64, u64)>,
     ) -> Result<bool, String> {
-        let changed = self.component_preview.take().is_some();
+        let changed = self.clear_component_preview()?;
         self.part_scenes.invalidate_presentation();
         let Some((assembly, source)) = request else {
             return Ok(changed);
@@ -45,7 +45,61 @@ impl<
             assembly,
             generations,
             scene,
+            owned_source: None,
         });
+        Ok(true)
+    }
+    pub(super) fn set_component_file_preview(
+        &mut self,
+        assembly: u64,
+        path: &str,
+    ) -> Result<bool, String> {
+        self.clear_component_preview()?;
+        self.part_scenes.invalidate_presentation();
+        if self.files.workspace().active_document() != Some(assembly) {
+            return Err(format!("assembly {assembly}: expected the active assembly"));
+        }
+        let (source, opened) = self
+            .document_host()
+            .open_component_preview(std::path::Path::new(path))
+            .map_err(|error| error.to_string())?;
+        if let Err(error) = self.set_component_preview(Some((assembly, source))) {
+            if opened {
+                self.files
+                    .close_discarding_changes(source)
+                    .map_err(|cleanup| {
+                        format!(
+                            "preview failed: {error}; component {source} cleanup failed: {cleanup}"
+                        )
+                    })?;
+            }
+            return Err(error);
+        }
+        if opened && let Some(preview) = &mut self.component_preview {
+            preview.owned_source = Some(source);
+        }
+        Ok(true)
+    }
+    fn clear_component_preview(&mut self) -> Result<bool, String> {
+        let Some(preview) = self.component_preview.take() else {
+            return Ok(false);
+        };
+        if let Some(source) = preview.owned_source {
+            let visible = self
+                .files
+                .document_info(source)
+                .map_err(|error| error.to_string())?
+                .visible;
+            if !visible && self.files.has_reference_dependents(source) {
+                self.files
+                    .keep_referenced_background_model(source)
+                    .map_err(|error| error.to_string())?;
+            } else if !visible {
+                self.files
+                    .close_discarding_changes(source)
+                    .map_err(|error| error.to_string())?;
+            }
+        }
         Ok(true)
     }
     fn component_preview_generations(&self) -> Vec<(u64, u64)> {

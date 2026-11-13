@@ -29,6 +29,11 @@ pub enum GuiShellAction {
     },
     /// Show or clear a transient open-component placement preview.
     PreviewComponent(Option<(u64, u64)>),
+    /// Show a transient preview of a component file.
+    PreviewComponentFile {
+        assembly: u64,
+        path: String,
+    },
     PreviewDrawingBaseView(Option<GuiBaseViewRequest>),
     SetUiScale(oblikovati_model::ui_scale::UiScaleOptions),
     SetPromptFrequency {

@@ -21,6 +21,18 @@ fn file_placement_keeps_focus_and_releases_refused_background_documents() {
         .with_observer_factory(&mut factory)
         .open_path(assembly, true)
         .unwrap();
+    let drawing = Path::new("/fixtures/not-a-component.odd");
+    files.files().packages.borrow_mut().insert(
+        drawing.into(),
+        b"schemaVersion: 2\ndocumentType: 3\n".to_vec(),
+    );
+    assert!(
+        FileHost::new(&mut files, &mut source, "test")
+            .with_observer_factory(&mut factory)
+            .open_component_preview(drawing)
+            .is_err()
+    );
+    assert_eq!(files.workspace().documents(), &[root]);
     let matrix = oblikovati_api::types::Matrix {
         cells: [
             1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1.,
