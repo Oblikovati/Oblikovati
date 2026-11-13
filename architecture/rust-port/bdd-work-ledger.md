@@ -623,3 +623,16 @@ revisions checked before they support a current pass claim.
   unchanged during the run. Application: `f97653057` plus this change; Linux,
   Xvfb at 1600 × 1000 and Lavapipe. Its local report is
   `/tmp/obk-bdd-parser-valid-20261113`.
+
+### Native cube journey rerun, 2026-11-13
+
+- The native mouse and keyboard cube journey passed on application commit
+  `34a4bbfe1155ffb28a338cdbdf9f233cf0887e82`, with unrelated README and
+  AGENTS files present. It covers the constrained parameter-driven rectangle,
+  extrusion, size edit, undo/redo, save/reopen and named-face resolution.
+- Martensite revision: `d051ff699982faba4ec2df3ee9a47e14f38dedbd`. Linux,
+  Xvfb at 1600 × 1000, and Lavapipe. The command was `xvfb-run -a -s
+  '-screen 0 1600x1000x24' cargo test --locked -p oblikovati-head --lib
+  native_new_part_button_creates_and_selects_an_unsaved_document --
+  --test-threads=1 --nocapture`. The local log is
+  `/tmp/obk-native-cube-34a4-20261113.log`.
