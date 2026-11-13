@@ -5,6 +5,20 @@ use oblikovati_model::{feature::FeatureId, identity::ReferenceEnvelope};
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartTopologyAccess<O, W, F>
     for DesktopPartScenes
 {
+    fn update_part(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<Vec<oblikovati_api::wire::FeatureError>, String> {
+        self.recompute_for_api(files, document)
+    }
+    fn part_requires_update(
+        &mut self,
+        files: &FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<bool, String> {
+        self.requires_update_for_api(files, document)
+    }
     fn list_bodies(
         &mut self,
         files: &mut FileWorkspace<O, W, F>,

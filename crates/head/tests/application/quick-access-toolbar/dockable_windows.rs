@@ -24,6 +24,19 @@ fn enter_parameter_field(world: &mut ApplicationWorld, label: &str, value: &str)
 }
 
 #[test]
+fn quick_access_update_recomputes_the_active_part_without_a_history_step() {
+    let mut world = ApplicationWorld::new();
+    part_active(&mut world);
+    assert!(on_row(&world, "Update"));
+    let history = world.state().undo_labels.clone();
+    world.click(row_center(&world, "Update"));
+    world.pump(Vec::new());
+    assert_eq!(world.state().undo_labels, history);
+    part_stays(&mut world);
+    world.close();
+}
+
+#[test]
 fn quick_access_parameters_opens_closes_and_can_be_removed() {
     let mut world = ApplicationWorld::new();
     part_active(&mut world);

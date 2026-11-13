@@ -8,7 +8,7 @@ use oblikovati_api::types::DocumentType;
 use std::collections::BTreeMap;
 
 /// Commands the customization menu lists, in its order.
-const STANDARD: [StandardCommand; 10] = [
+const STANDARD: [StandardCommand; 11] = [
     StandardCommand::New,
     StandardCommand::Open,
     StandardCommand::Save,
@@ -16,6 +16,7 @@ const STANDARD: [StandardCommand; 10] = [
     StandardCommand::Redo,
     StandardCommand::Home,
     StandardCommand::Projects,
+    StandardCommand::Update,
     StandardCommand::MaterialBrowser,
     StandardCommand::Parameters,
     StandardCommand::Print,
@@ -37,6 +38,7 @@ enum StandardCommand {
     Redo,
     Home,
     Projects,
+    Update,
     MaterialBrowser,
     Parameters,
     Print,
@@ -51,6 +53,7 @@ impl StandardCommand {
             Self::Redo => "Redo",
             Self::Home => "Home",
             Self::Projects => "Projects",
+            Self::Update => "Update",
             Self::MaterialBrowser => "Material Browser",
             Self::Parameters => "Parameters",
             Self::Print => "Print",
@@ -178,6 +181,7 @@ impl QuickAccessToolbar {
             Some(StandardCommand::Undo) => GuiShellAction::Undo,
             Some(StandardCommand::Redo) => GuiShellAction::Redo,
             Some(StandardCommand::Home) => GuiShellAction::ShowHome,
+            Some(StandardCommand::Update) => GuiShellAction::UpdatePart,
             Some(StandardCommand::Projects) if !state.transaction_open => {
                 self.requests.open_projects = true;
                 return;
@@ -223,6 +227,14 @@ impl QuickAccessToolbar {
                 ui,
                 label,
                 GuiShellAction::Save,
+                state,
+                [0.; 2],
+                actions,
+            ),
+            StandardCommand::Update => crate::chrome::command_button(
+                ui,
+                label,
+                GuiShellAction::UpdatePart,
                 state,
                 [0.; 2],
                 actions,

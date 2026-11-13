@@ -292,6 +292,10 @@ impl GuiShellAction {
             }
             .enabled(state),
             Self::Parameter { .. } => state.document.is_some(),
+            Self::UpdatePart => {
+                state.document_type == Some(oblikovati_api::types::DOCUMENT_PART)
+                    && !state.transaction_open
+            }
             Self::Undo => state.undo_label.is_some(),
             Self::Redo => state.redo_label.is_some(),
             Self::ChooseSketchPlane | Self::StartSketchOn(_) => {

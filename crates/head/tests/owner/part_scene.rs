@@ -61,6 +61,91 @@ fn set_parameter(owner: &mut TestOwner, name: &str, expression: &str) {
         })
         .unwrap();
 }
+
+#[test]
+fn document_update_reports_failures_and_recomputes_recovered_part() {
+    let (mut owner, _) = owner();
+    assert!(
+        Client::new(owner.document_host())
+            .documents()
+            .update(&UpdateDocumentArgs::default())
+            .is_err()
+    );
+    let document = open_prism(&mut owner, true);
+    let before = owner
+        .documents()
+        .workspace()
+        .session(document)
+        .unwrap()
+        .generation();
+    assert!(
+        Client::new(owner.document_host())
+            .documents()
+            .requires_update()
+            .unwrap()
+            .requires_update
+    );
+    let result = Client::new(owner.document_host())
+        .documents()
+        .update(&UpdateDocumentArgs::default())
+        .unwrap();
+    assert!(!result.requires_update && result.errors.is_none());
+    assert!(
+        !Client::new(owner.document_host())
+            .documents()
+            .requires_update()
+            .unwrap()
+            .requires_update
+    );
+    assert_eq!(
+        owner
+            .documents()
+            .workspace()
+            .session(document)
+            .unwrap()
+            .generation(),
+        before
+    );
+    set_parameter(&mut owner, "depth", "0 cm");
+    assert!(
+        Client::new(owner.document_host())
+            .documents()
+            .requires_update()
+            .unwrap()
+            .requires_update
+    );
+    let strict = Client::new(owner.document_host())
+        .documents()
+        .update(&UpdateDocumentArgs::default())
+        .unwrap_err();
+    assert!(strict.to_string().contains("failed after recompute"));
+    let report = Client::new(owner.document_host())
+        .documents()
+        .update(&UpdateDocumentArgs {
+            accept_errors_and_continue: true,
+        })
+        .unwrap();
+    let errors = report.errors.unwrap();
+    assert_eq!(errors.len(), 1);
+    assert_eq!((errors[0].id, errors[0].kind.as_str()), (1, "extrude"));
+    assert!(!errors[0].message.is_empty());
+    assert!(!report.requires_update);
+    set_parameter(&mut owner, "depth", "2 cm");
+    let result = Client::new(owner.document_host())
+        .documents()
+        .update(&UpdateDocumentArgs::default())
+        .unwrap();
+    assert!(result.errors.is_none());
+    let rebuilt = Client::new(owner.document_host())
+        .documents()
+        .rebuild(&UpdateDocumentArgs::default())
+        .unwrap();
+    assert!(rebuilt.errors.is_none() && !rebuilt.requires_update);
+    assert_eq!(
+        owner.take_scene().unwrap().unwrap().status.visible_bodies,
+        2
+    );
+}
 #[test]
 fn desktop_publishes_current_generations_and_clears_after_close() {
     let (mut owner, _) = owner();

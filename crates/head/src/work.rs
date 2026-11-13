@@ -2,6 +2,10 @@
 use crate::HeadWorkStatus;
 /// Owner-thread services borrow model state only while the window loop polls them.
 pub trait HeadWork {
+    /// Recompute the active part; example: `work.update_part_from_gui()?`.
+    fn update_part_from_gui(&mut self) -> Result<bool, String> {
+        Err("part update: expected a part evaluation owner".into())
+    }
     /// Apply a marking menu; example: `work.set_marking_menu_from_gui(&args)?`.
     fn set_marking_menu_from_gui(
         &mut self,

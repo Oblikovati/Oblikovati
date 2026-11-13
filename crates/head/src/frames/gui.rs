@@ -134,6 +134,7 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::SetColorScheme(_)
         | GuiShellAction::SetTheme(_)
         | GuiShellAction::Parameter { .. }
+        | GuiShellAction::UpdatePart
         | GuiShellAction::ActivateDocument(_)
         | GuiShellAction::OpenDocument(_)
         | GuiShellAction::OpenDeferredDrawing(_)

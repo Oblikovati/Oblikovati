@@ -9,6 +9,13 @@ impl<
     S: DispatchWakeup,
 > HeadWork for DesktopOwner<O, W, F, G, R, S>
 {
+    fn update_part_from_gui(&mut self) -> Result<bool, String> {
+        oblikovati_api::client::Client::new(self.document_host())
+            .documents()
+            .update(&oblikovati_api::wire::UpdateDocumentArgs::default())
+            .map_err(|error| error.to_string())?;
+        Ok(true)
+    }
     fn set_marking_menu_from_gui(
         &mut self,
         args: &oblikovati_api::wire::SetMarkingMenuArgs,

@@ -2,6 +2,9 @@
 // Keep authoring state on the same document owner when scripts or add-ins wrap frame work.
 macro_rules! forward_owner_view_work {
     ($owner:ident) => {
+        fn update_part_from_gui(&mut self) -> Result<bool, String> {
+            self.$owner.update_part_from_gui()
+        }
         fn set_document_units_from_gui(
             &mut self,
             document: u64,

@@ -212,6 +212,8 @@ pub enum GuiShellAction {
     ConstrainSketch(crate::GuiSketchConstraint),
     Dimension(crate::GuiDimensionAction),
     Save,
+    /// Recompute the active part and report failed features.
+    UpdatePart,
     Undo,
     Redo,
     Home,

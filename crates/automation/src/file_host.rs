@@ -13,6 +13,7 @@ mod assembly_occurrence_edits;
 mod assembly_placement;
 mod assembly_references;
 mod attachments;
+mod document_update;
 pub use assembly_references::{AssemblyReferenceFailure, AssemblyReferenceReport};
 mod close;
 mod derived_links;
@@ -255,6 +256,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
 }
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext<'_, O, W, F> {
     fn owned_command(&mut self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
+        if document_update::METHODS.contains(&method) {
+            return document_update::apply(self.files, &mut self.part_topology, method, request);
+        }
         if method == METHOD_ASSEMBLY_PLACE {
             return assembly_placement::place(self.files, decode(method, request)?);
         }

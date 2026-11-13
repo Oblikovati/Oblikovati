@@ -13,6 +13,7 @@ mod assembly;
 mod assembly_pick;
 pub(crate) mod extrusion;
 pub(crate) mod resolution_policy;
+mod update;
 /// Owned display state names its document and generation; kernel handles stay in result storage.
 #[derive(Clone, Debug)]
 pub struct HeadSceneStatus {

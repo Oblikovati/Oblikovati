@@ -43,6 +43,24 @@ fn created_files(refuse_write: bool) -> (DiscoveryWorkspace, u64, QueryGuids) {
 }
 
 #[test]
+fn update_refuses_a_host_without_a_part_evaluation_owner() {
+    let (mut files, id, mut source) = created_files(false);
+    let before = files.workspace().session(id).unwrap().generation();
+    let client = Client::new(FileHost::new(&mut files, &mut source, "test"));
+    let error = client
+        .documents()
+        .update(&UpdateDocumentArgs::default())
+        .unwrap_err();
+    assert!(
+        error
+            .to_string()
+            .contains("expected a part evaluation owner")
+    );
+    drop(client);
+    assert_eq!(files.workspace().session(id).unwrap().generation(), before);
+}
+
+#[test]
 fn file_host_edits_history_and_save_use_the_same_owned_document() {
     let (mut files, id, mut source) = created_files(false);
     {

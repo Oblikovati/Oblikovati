@@ -10,6 +10,18 @@ pub enum TopologyEntityKind {
 }
 /// Injected native ownership boundary; the automation crate never constructs geometry.
 pub trait PartTopologyAccess<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> {
+    /// Replay the part and report each unhealthy feature; example: `access.update_part(files, document)?`.
+    fn update_part(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<Vec<FeatureError>, String>;
+    /// Check whether the current part needs replay; example: `access.part_requires_update(files, document)?`.
+    fn part_requires_update(
+        &mut self,
+        files: &FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<bool, String>;
     /// Enumerate current native bodies; example: `access.list_bodies(files, document)?`.
     fn list_bodies(
         &mut self,

@@ -8,6 +8,7 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
         GuiShellAction::SetMarkingMenu(args) => owner.set_marking_menu_from_gui(args),
         GuiShellAction::SetKeymap(delta) => owner.set_keymap_from_gui(delta),
         GuiShellAction::PlaceSketchBlock(name) => owner.place_sketch_block_from_gui(name),
+        GuiShellAction::UpdatePart => owner.update_part_from_gui(),
         GuiShellAction::SelectBlockGeometry(active) => {
             owner.select_block_geometry_from_gui(*active)
         }
