@@ -8,6 +8,7 @@ claim that each file has been individually triaged.
 | Priority | Feature and scope | State | Evidence and next action |
 | --- | --- | --- | --- |
 | 1 | `features/application` | In progress | The native application runner exists. A complete, current area result has not been recorded. Run and retain the full area report; triage failures against the current source. |
+| 1 | `features/application/file-menu/file-menu.feature` | In progress | Alt+F opens the File menu and F appears in ribbon key tips. The New submenu and its scenario remain incomplete. |
 | 1 | `features/application/ribbon-appearance/ribbon-appearance.feature` | In progress | Source changed. Revalidate every scenario against the revised file. Panel title visibility and the appearance menu exist. The menu marks Normal as active and disables the other modes. A caption-free native icon primitive is available but is not connected to the ribbon. The 3D Model ribbon now uses the Go icons for Revolve, Hole, Fillet and Chamfer; these commands remain unavailable. Implement Text Off, Small, Compact, Large and Reset Ribbon across all commands and layouts; then enable and verify them. |
 | 1 | `features/application/ribbon-docking/ribbon-docking.feature` | In progress | Source changed after the inventory checkpoint. A full native run at commit `139b82a42` found 6 passes and 17 scenarios stopped by undefined steps. With corrected bindings, a second run found 8 passes, 14 undefined steps, and one ambiguous step. Resolve the remaining steps and implement missing command-group behavior. |
 | 1 | `features/application/ribbon-display/ribbon-display.feature` | In progress | Source changed. Revalidate all scenarios against the revised file, including appearance and modeling-preview cases. |
@@ -86,3 +87,20 @@ revisions checked before they support a current pass claim.
   Its local report is `/tmp/obk-docking-current-20261113`. The quoted selection
   ambiguity was then removed, and the affected title-bar scenario passed all
   seven steps in a focused run. Rerun to establish the new full-feature count.
+
+### File menu keyboard access, 2026-11-13
+
+- Source: `features/application/file-menu/file-menu.feature`, SHA-256
+  `19b41182a9710f6a5debb2e73e74b38c32a2d955583afe2e380ba01c850fa10f`.
+  Application: commit `8691d1e2c` plus the File shortcut and test changes in
+  this ledger's commit; the unrelated README and AGENTS files were present.
+- Linux, Xvfb at 1600 × 1000, configured Vulkan runtime. Native tests verified
+  Alt followed by F, a held Alt+F chord, the visible F key tip, Escape and the
+  unchanged active part. Four File dialog tests and nine key-tip tests passed.
+- The mouse-driven `Open the file menu while a part is active` scenario passed
+  all nine steps. The local report is `/tmp/obk-file-menu-20261113`; it is not
+  a durable shared artifact. This result does not cover the New submenu.
+- Command: `xvfb-run -a -s '-screen 0 1600x1000x24' cargo test --locked -p
+  oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture`,
+  with the live source, report directory, `file-menu` feature, and exact
+  scenario-name substring set via the `OBK_BDD_*` environment variables.

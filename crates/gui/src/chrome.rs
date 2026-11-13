@@ -122,6 +122,7 @@ fn apply_key_tip(
         }
         Some(KeyTipAction::CycleDisplay) => owners.ribbon.display.advance_from_tab(),
         Some(KeyTipAction::OpenDisplayMenu) => return true,
+        Some(KeyTipAction::OpenFileMenu) => owners.files.request_menu(),
         Some(KeyTipAction::OpenGroup(panel)) => {
             if !owners.home_active
                 && !owners
@@ -322,7 +323,9 @@ fn ribbon_contents(
     actions: &mut Vec<GuiShellAction>,
 ) {
     ui.menu_bar(|| {
-        owners.files.menu(ui, &request.commands, actions);
+        owners
+            .files
+            .menu(ui, &request.commands, actions, owners.ribbon.tips.tabs());
         owners
             .preferences
             .menu(ui, &request.commands, owners.home_active);

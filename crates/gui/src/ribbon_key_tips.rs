@@ -22,6 +22,7 @@ pub(crate) enum KeyTipAction {
     SelectTab(RibbonTab),
     CycleDisplay,
     OpenDisplayMenu,
+    OpenFileMenu,
     QuickAccess(usize),
     StartSketch,
     Extrude,
@@ -136,6 +137,10 @@ impl RibbonKeyTips {
                 self.dismiss();
             }
             return action;
+        }
+        if character == 'F' && self.prefix.is_empty() {
+            self.dismiss();
+            return Some(KeyTipAction::OpenFileMenu);
         }
         if character == 'X' {
             self.prefix.push(character);
@@ -287,6 +292,16 @@ mod tests {
         assert!(tips.matching("HO"));
         press(&mut tips, GuiKey::Escape);
         assert!(tips.tabs());
+    }
+    #[test]
+    fn file_key_opens_menu_and_closes_ribbon_tips() {
+        let mut tips = RibbonKeyTips::default();
+        press(&mut tips, GuiKey::LeftAlt);
+        assert_eq!(
+            press(&mut tips, GuiKey::F),
+            Some(KeyTipAction::OpenFileMenu)
+        );
+        assert!(!tips.active());
     }
     #[test]
     fn display_and_quick_access_actions_close_tips() {

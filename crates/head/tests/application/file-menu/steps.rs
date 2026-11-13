@@ -162,3 +162,68 @@ fn recent_rows_with_controls(world: &mut ApplicationWorld) {
     row_left(world);
     row_pin(world);
 }
+
+#[test]
+fn alt_then_f_opens_file_menu_without_changing_the_document() {
+    use oblikovati_viewport::ViewportPhysicalKey;
+    let mut world = ApplicationWorld::new();
+    let part = world.add_part();
+    world.key(ViewportPhysicalKey::LeftAlt, false);
+    assert!(
+        world.frame.runs.iter().any(|run| run.text == "F"),
+        "expected the File key tip"
+    );
+    world.key(ViewportPhysicalKey::F, false);
+    world.pump(Vec::new());
+    world.expect_text("Recent documents");
+    world.expect_text("Save As");
+    world.escape();
+    world.expect_no_text("Recent documents");
+    assert_eq!(world.active_id(), part);
+    world.close();
+}
+
+fn press_alt_f(world: &mut ApplicationWorld) {
+    use oblikovati_viewport::{
+        ViewportEvent, ViewportInput, ViewportModifiers, ViewportPhysicalKey,
+    };
+    let alt = ViewportModifiers {
+        alt: true,
+        ..Default::default()
+    };
+    let key = |key, pressed, modifiers| {
+        ViewportEvent::Input(ViewportInput::PhysicalKey {
+            key,
+            layout_key: key,
+            pressed,
+            command: None,
+            modifiers,
+        })
+    };
+    world.pump(vec![key(ViewportPhysicalKey::LeftAlt, true, alt)]);
+    world.pump(vec![
+        key(ViewportPhysicalKey::F, true, alt),
+        key(ViewportPhysicalKey::F, false, alt),
+    ]);
+    world.pump(vec![key(
+        ViewportPhysicalKey::LeftAlt,
+        false,
+        Default::default(),
+    )]);
+}
+#[when("I press Alt+F to open the File menu")]
+fn open_file_with_alt_f(world: &mut ApplicationWorld) {
+    press_alt_f(world);
+}
+#[test]
+fn alt_f_chord_opens_file_menu_and_keeps_the_active_part() {
+    let mut world = ApplicationWorld::new();
+    let part = world.add_part();
+    press_alt_f(&mut world);
+    world.expect_text("Recent documents");
+    world.expect_text("Save As");
+    world.escape();
+    world.expect_no_text("Recent documents");
+    assert_eq!(world.active_id(), part);
+    world.close();
+}

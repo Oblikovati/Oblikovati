@@ -10,7 +10,6 @@ use crate::{GuiCommandState, GuiShellAction};
 use imgui::Ui;
 
 const NOT_AVAILABLE: &str = "This command is not available in this build.";
-const FILE_COMMANDS_WIDTH: f32 = 190.;
 const SAVE_AS_COMMANDS: [(&str, &str); 3] = [
     (
         "Save Copy As",
@@ -34,6 +33,7 @@ pub(crate) struct GuiDocumentFiles {
     save_as: SaveAsDialog,
     close_prompt: ClosePrompt,
     first_saves: FirstSaves,
+    menu_requested: bool,
     options_requested: bool,
     properties_requested: bool,
     /// Home covers the active document, so commands about that document have nothing to act on.
@@ -126,10 +126,14 @@ impl GuiDocumentFiles {
         ui: &Ui,
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
+        show_key_tip: bool,
     ) {
+        if std::mem::take(&mut self.menu_requested) {
+            ui.open_popup("File");
+        }
         ui.menu("File", || {
+            // Matching widths keep the first popup frame and its column clips aligned.
             ui.columns(2, "file-menu-layout", false);
-            ui.set_column_width(0, FILE_COMMANDS_WIDTH);
             self.file_commands(ui, state, actions);
             ui.next_column();
             ui.text_disabled("Recent documents");
@@ -143,6 +147,9 @@ impl GuiDocumentFiles {
             // Columns take their width from the menu, so the menu needs its own.
             crate::widget_abi::dummy(ui, [FILE_MENU_WIDTH, 0.]);
         });
+        if show_key_tip {
+            crate::ribbon_key_tips::badge(ui, "F");
+        }
     }
     fn file_commands(
         &mut self,
@@ -175,6 +182,10 @@ impl GuiDocumentFiles {
     }
     fn options_item(&mut self, ui: &Ui) {
         self.options_requested |= ui.menu_item("Options...");
+    }
+    /// Request the File menu from a keyboard shortcut; example: `files.request_menu()`.
+    pub(crate) fn request_menu(&mut self) {
+        self.menu_requested = true;
     }
     /// Open the new-document chooser; example: from the Quick Access Toolbar.
     pub(crate) fn request_new(&mut self) {
