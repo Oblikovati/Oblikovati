@@ -92,6 +92,7 @@ fn editor_previews_custom_colours_emits_save_and_keeps_builtin_controls_read_onl
     let mut engine = GuiFrameEngine::new().unwrap();
     engine.frame(&request).unwrap();
     engine.frame(&request).unwrap();
+    assert!(click(&mut engine, &mut request, [376., 45.]).is_empty());
     assert!(click(&mut engine, &mut request, [440., 91.]).is_empty());
     let opened = settle(&mut engine, &mut request);
     assert_eq!(
@@ -111,6 +112,8 @@ fn editor_previews_custom_colours_emits_save_and_keeps_builtin_controls_read_onl
     assert!(click(&mut engine, &mut request, [590., 196.]).is_empty());
     assert_eq!(modal_dim_alpha(&settle(&mut engine, &mut request)), 0);
     set_document_presence(&mut request, true);
+    settle(&mut engine, &mut request);
+    assert!(click(&mut engine, &mut request, [376., 45.]).is_empty());
     verify_builtin_read_only(&mut engine, &mut request, &mut library);
     verify_lifecycle_controls(&mut engine, &mut request, &mut library);
     verify_editor_retires_with_its_theme_owner(&mut engine, &mut request);

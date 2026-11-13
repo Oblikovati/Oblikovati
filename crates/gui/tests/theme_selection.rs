@@ -40,6 +40,9 @@ fn view_theme_picker_emits_owner_action_and_next_snapshot_restyles_draws() {
     let mut request = theme_request(&library);
     let mut engine = GuiFrameEngine::new().unwrap();
     engine.frame(&request).unwrap();
+    engine.frame(&request).unwrap();
+    assert!(click_theme_control(&mut engine, &mut request, [376., 45.]).is_empty());
+    request.events.clear();
     let dark = engine.frame(&request).unwrap().draws;
     assert!(click_theme_control(&mut engine, &mut request, [180., 68.]).is_empty());
     let actions = click_theme_control(&mut engine, &mut request, [160., 109.]);
