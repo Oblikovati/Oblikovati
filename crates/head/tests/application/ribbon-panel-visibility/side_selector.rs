@@ -205,3 +205,27 @@ fn hiding_an_open_side_group_closes_its_commands() {
     assert!(popup_depth() > 0, "expected selector popup to remain open");
     world.close();
 }
+
+#[test]
+fn side_selector_home_and_end_keep_keyboard_focus() {
+    use oblikovati_viewport::ViewportPhysicalKey as Key;
+    for side in ["Left", "Right"] {
+        let mut world = ApplicationWorld::new();
+        world.add_part();
+        dock_side(&mut world, side);
+        click_side_selector(&mut world);
+        world.key(Key::DownArrow, false);
+        world.key(Key::DownArrow, false);
+        for key in [Key::Home, Key::End] {
+            world.key(key, false);
+            world.key(Key::Space, false);
+            assert!(
+                !world.checked("Create"),
+                "{side} {key:?}: expected Create toggle"
+            );
+            world.key(Key::Space, false);
+            assert!(world.checked("Create"));
+        }
+        world.close();
+    }
+}

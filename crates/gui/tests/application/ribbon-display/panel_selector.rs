@@ -102,6 +102,31 @@ fn keyboard_moves_and_toggles_a_panel_without_closing_the_selector() {
         keyboard_panel_round_trip(activate);
     }
 }
+#[test]
+fn home_and_end_keep_the_focused_panel_row() {
+    for key in [GuiKey::Home, GuiKey::End] {
+        let mut owner = GuiFrameEngine::new().unwrap();
+        let mut request = part_request();
+        settle(&mut owner, &mut request);
+        click(&mut owner, &mut request, [1418., 45.]);
+        press_key(&mut owner, &mut request, GuiKey::DownArrow);
+        press_key(&mut owner, &mut request, GuiKey::DownArrow);
+        press_key(&mut owner, &mut request, key);
+        press_key(&mut owner, &mut request, GuiKey::Space);
+        assert!(
+            owner
+                .ribbon
+                .display
+                .hidden_panels
+                .contains(&(RibbonTab::Model, RibbonPanel::PartCreate)),
+            "{key:?}: expected Create to remain focused"
+        );
+        assert!(
+            owner.popup_was_open,
+            "{key:?}: expected selector to remain open"
+        );
+    }
+}
 fn keyboard_panel_round_trip(activate: GuiKey) {
     let mut owner = GuiFrameEngine::new().unwrap();
     let mut request = part_request();

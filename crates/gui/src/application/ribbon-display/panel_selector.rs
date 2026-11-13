@@ -14,6 +14,7 @@ impl RibbonDisplayState {
             || self.placement != RibbonPlacement::Top
         {
             self.selector_keyboard_started = false;
+            self.selector_focused_panel = None;
             self.selector_open = false;
             self.selector_pointer_inside = false;
             self.selector_trigger = None;
@@ -53,6 +54,7 @@ impl RibbonDisplayState {
     fn selector_choices(&mut self, ui: &Ui, tab: RibbonTab, panels: &[RibbonPanel]) {
         let Some(_list) = ui.begin_popup(SELECTOR_POPUP) else {
             self.selector_keyboard_started = false;
+            self.selector_focused_panel = None;
             self.selector_open = false;
             self.selector_pointer_inside = false;
             return;
@@ -61,15 +63,22 @@ impl RibbonDisplayState {
         self.selector_pointer_inside = ui.is_window_hovered();
         let first_down =
             !self.selector_keyboard_started && ui.is_key_pressed_no_repeat(imgui::Key::DownArrow);
+        let preserve = (ui.is_key_pressed_no_repeat(imgui::Key::Home)
+            || ui.is_key_pressed_no_repeat(imgui::Key::End))
+        .then_some(self.selector_focused_panel)
+        .flatten();
         self.selector_keyboard_started |= first_down
             || ui.is_key_pressed_no_repeat(imgui::Key::UpArrow)
             || ui.is_key_pressed_no_repeat(imgui::Key::Tab);
         for (index, panel) in panels.iter().copied().enumerate() {
-            if first_down && index == 0 {
+            if (first_down && index == 0) || preserve == Some(panel) {
                 ui.set_keyboard_focus_here();
             }
             let mut shown = !self.hidden_panels.contains(&(tab, panel));
             let clicked = ui.checkbox(panel.label(), &mut shown);
+            if preserve.is_none() && ui.is_item_focused() {
+                self.selector_focused_panel = Some(panel);
+            }
             let enter = ui.is_item_focused()
                 && (ui.is_key_pressed_no_repeat(imgui::Key::Enter)
                     || ui.is_key_pressed_no_repeat(imgui::Key::KeypadEnter));

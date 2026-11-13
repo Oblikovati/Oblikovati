@@ -432,6 +432,8 @@ fn parameters_is_hidden(world: &mut ApplicationWorld) {
 
 #[path = "panel_selector.rs"]
 mod panel_selector;
+#[path = "selector_keyboard.rs"]
+mod selector_keyboard;
 #[path = "side_selector.rs"]
 mod side_selector;
 

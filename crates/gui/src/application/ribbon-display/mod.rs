@@ -108,6 +108,7 @@ pub(crate) struct RibbonDisplayState {
     /// A choice in Show Panels ends the whole menu, as a choice in any other row does.
     close_context_menu: bool,
     selector_keyboard_started: bool,
+    selector_focused_panel: Option<RibbonPanel>,
     display_menu_cursor: Option<usize>,
     pub(crate) selector_open: bool,
     pub(crate) selector_pointer_inside: bool,
@@ -143,6 +144,7 @@ impl Default for RibbonDisplayState {
             customize_requested: false,
             close_context_menu: false,
             selector_keyboard_started: false,
+            selector_focused_panel: None,
             display_menu_cursor: None,
             selector_open: false,
             selector_pointer_inside: false,

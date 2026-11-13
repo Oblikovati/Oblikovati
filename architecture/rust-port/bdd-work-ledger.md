@@ -16,6 +16,7 @@ claim that each file has been individually triaged.
 | 1 | `features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature` | Needs rerun | Source changed since the inventory checkpoint. Review the corrections and rerun affected native scenarios. |
 | 1 | `features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature` | In progress | Full run at `6e80b9bde`: 15 of 54 scenarios passed, 38 stopped at undefined steps, and one failed an icon assertion on a collapsed panel. Later steps in stopped scenarios were not tested. The Parameters scenario now passes with its expanded-panel fixture; rerun the full feature. |
 | 1 | `features/application/ribbon-panel-visibility` side selector | In progress | The left and right selector and group reflow scenarios pass on the recorded source. Rerun the full feature and cover the remaining selector interactions. |
+| 1 | `features/application/ribbon-panel-visibility` selector keyboard | In progress | Home and End retain the focused panel row; native verification and the current-source scenario are recorded below. Other keyboard scenarios need their named panel fixtures and a full feature rerun. |
 | 1 | `features/application/ribbon-display/ribbon-display.feature` | In progress | Source changed. Revalidate all scenarios against the revised file, including appearance and modeling-preview cases. |
 | 2 | `features/sketch/pattern-rectangular/scenario.feature` | In progress | Rectangular patterns can be created and edited in the native UI, but directions are fixed to the sketch axes. Implement line-reference selection and associativity, then run the affected native scenarios. |
 | 2 | Other `features/sketch` | In progress | The native sketch gate runs only selected folders. Inventory and run the remaining folders before reporting total coverage. |
@@ -339,3 +340,19 @@ revisions checked before they support a current pass claim.
 - The Layout scenario now reaches the panel-order step after seven passing
   steps. Its required Sketch Insert panel is absent from the Rust ribbon, and
   its order step is not yet bound. Do not count this scenario as passed.
+
+### Panel selector Home and End, 2026-11-13
+
+- The selector now restores the focused panel after Home or End. Arrow keys,
+  Space and Enter retain their existing navigation and activation behavior.
+- Source: `features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature`,
+  SHA-256 `92f73c0f2a3167708cf0d04ffa2d6fde640b52a35c685637de13aadb2e224e24`.
+  The filtered `Home and End leave the focused panel row unchanged` scenario
+  passed all 11 steps on Linux, Xvfb at 1600 × 1000, and Lavapipe. Its native
+  checks verify the focused widget identity as well as checkbox state. The
+  report is in `/tmp/obk-selector-home-end-bdd-final-20261113`, a local path.
+- The side selector also has native keyboard coverage for both docking sides.
+  Seven focused GUI tests and that side test passed after the final change.
+  A prior GUI run passed 350 library and four File dialog tests; the final
+  change additionally clears stored focus when the selector is unavailable.
+  GUI Clippy passed. The complete feature remains unverified after this change.
