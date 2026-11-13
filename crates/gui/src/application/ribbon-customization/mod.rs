@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Ribbon command edits stay in a draft until Apply or OK.
+mod category;
 mod keyboard;
 mod panel;
 mod settings_dialog;
@@ -26,6 +27,8 @@ pub(crate) struct RibbonCustomization {
     list_focus: Option<ListFocus>,
     source_focused: bool,
     target_focused: bool,
+    category_open: bool,
+    category_cursor: usize,
     visible_source: Vec<Command>,
     scroll_source_to_selection: bool,
     settings: settings_dialog::SettingsDialog,
@@ -78,6 +81,7 @@ impl RibbonCustomization {
         self.draft.open(tab);
         self.escape = Default::default();
         self.list_focus = None;
+        self.category_open = false;
         self.scroll_source_to_selection = false;
         self.save_error = None;
         self.open = true;
@@ -141,6 +145,7 @@ impl RibbonCustomization {
         }
         crate::widget_abi::fit_dialog(ui, "Customize", [340., 185.], [760., 440.]);
         let mut window_open = self.open;
+        let category_was_open = self.category_open;
         ui.window("Customize")
             .opened(&mut window_open)
             .collapsible(false)
@@ -155,7 +160,9 @@ impl RibbonCustomization {
                     imgui::WindowFocusedFlags::ROOT_AND_CHILD_WINDOWS,
                 );
                 self.list_keyboard(ui, focused);
-                if self.escape.pressed(ui) && focused {
+                let close_dialog = self.escape.pressed(ui)
+                    || (category_was_open && ui.is_key_pressed_no_repeat(imgui::Key::Escape));
+                if close_dialog && (focused || category_was_open) {
                     self.open = false;
                     self.escape_consumed = true;
                 }
@@ -188,12 +195,13 @@ impl RibbonCustomization {
     fn source_list(&mut self, ui: &Ui) {
         ui.text("Available commands");
         ui.set_next_item_width(230.);
-        if let Some(_category) = ui.begin_combo("##command-category", self.draft.category.label()) {
-            for category in [Category::All, Category::Macros, Category::Sketch] {
-                if ui.selectable(category.label()) {
-                    self.draft.set_category(category);
-                }
-            }
+        let category = ui.begin_combo("##command-category", self.draft.category.label());
+        if category.is_some() && !self.category_open {
+            self.category_cursor = category::category_index(self.draft.category);
+        }
+        self.category_open = category.is_some();
+        if let Some(_category) = category {
+            self.category_menu(ui);
         }
         if ui.small_button("Name##available-sort") {
             self.draft.reverse_source_order();

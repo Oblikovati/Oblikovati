@@ -3,6 +3,42 @@
 use super::*;
 
 #[test]
+fn escape_from_command_category_discards_the_pending_draft() {
+    use oblikovati_viewport::ViewportPhysicalKey;
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    open_tools_customization(&mut world);
+    stage_sketch_visibility(&mut world);
+    click_in_customize(&mut world, "AllCommands");
+    world.expect_text("Macros");
+    world.key(ViewportPhysicalKey::DownArrow, false);
+    world.key(ViewportPhysicalKey::Escape, false);
+    assert!(diagnostics::window_geometry("Customize").is_none());
+    world.expect_no_text("User Commands");
+    open_tools_customization(&mut world);
+    assert!(world.window_text("Customize").contains("AllCommands"));
+    assert!(!world.window_text("Customize").contains("Part|Tools*"));
+    sketches_in_available_commands(&mut world);
+    click_in_customize(&mut world, "Close");
+    world.close();
+}
+
+#[test]
+fn command_category_can_be_selected_with_keyboard() {
+    use oblikovati_viewport::ViewportPhysicalKey;
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    open_tools_customization(&mut world);
+    click_in_customize(&mut world, "AllCommands");
+    world.key(ViewportPhysicalKey::DownArrow, false);
+    world.key(ViewportPhysicalKey::Enter, false);
+    assert!(world.window_text("Customize").contains("Macros"));
+    assert!(!world.window_text("Customize").contains("2DSketches"));
+    click_in_customize(&mut world, "Close");
+    world.close();
+}
+
+#[test]
 fn available_commands_support_keyboard_navigation_and_scrolling() {
     use oblikovati_viewport::ViewportPhysicalKey;
     let mut world = ApplicationWorld::new();

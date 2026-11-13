@@ -2,6 +2,8 @@
 //! Native tests for staged user commands and their applied ribbon actions.
 use super::{ApplicationWorld, diagnostics};
 use cucumber::{given, then, when};
+#[path = "category_steps.rs"]
+mod category_steps;
 #[path = "custom_panel_title.rs"]
 mod custom_panel_title;
 #[path = "file_exchange.rs"]
@@ -108,6 +110,7 @@ fn part_with_tools(world: &mut ApplicationWorld) {
     world.click_text("Tools");
 }
 #[given("the Ribbon customization dialog has an initially empty Part Tools custom panel")]
+#[given("the Ribbon customization dialog shows All Commands and an empty Part Tools target")]
 #[given("the ribbon customization dialog has an empty Part Tools custom panel")]
 #[given("the Ribbon customization dialog shows an empty Part Tools custom panel")]
 #[given("ribbon customization shows an initially empty Part Tools target")]
@@ -142,6 +145,7 @@ fn reopen_tools_customization(world: &mut ApplicationWorld) {
     open_tools_customization(world);
 }
 #[then("the Part Tools custom panel list is empty")]
+#[then("the Part Tools target list is empty")]
 #[then("the custom panel list is empty")]
 fn empty_tools_target(world: &mut ApplicationWorld) {
     let command = world.run_in_window("Customize", "2DSketches");
@@ -236,6 +240,7 @@ fn customization_remains_open(_world: &mut ApplicationWorld) {
 }
 #[then("the target no longer indicates a pending change")]
 #[then("the target is not marked as changed")]
+#[then("the target has no pending-change marker")]
 fn tools_not_pending(world: &mut ApplicationWorld) {
     assert!(world.window_text("Customize").contains("Part|Tools"));
     assert!(!world.window_text("Customize").contains("Part|Tools*"));
