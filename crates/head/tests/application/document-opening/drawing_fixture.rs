@@ -74,6 +74,74 @@ fn drawing_available(world: &mut ApplicationWorld) {
             .count(),
     ];
 }
+
+#[given("the MCAD Software has an existing document open")]
+fn existing_document(world: &mut ApplicationWorld) {
+    world.previous_document = Some(world.add_part());
+}
+#[given(
+    "two saved drawings with available references and visible saved view geometry are not already open"
+)]
+fn two_closed_drawings(world: &mut ApplicationWorld) {
+    let folder = models_folder(world);
+    let source = folder.parent().unwrap().join("source.opd");
+    write_source_model(&source);
+    for name in [DRAWING_FILE, SECOND_DRAWING_FILE] {
+        write_drawing(&folder.join(name), &source);
+    }
+}
+#[given("the Open dialog displays both drawings as thumbnails")]
+fn two_drawing_thumbnails(world: &mut ApplicationWorld) {
+    let folder = models_folder(world);
+    open_dialog(world);
+    look_in(world, &folder);
+    super::selections::switch_to_tiles(world);
+}
+#[then("both drawings are available in separate document tabs")]
+fn both_drawing_tabs(world: &mut ApplicationWorld) {
+    let state = world.state();
+    for name in [DRAWING_FILE, SECOND_DRAWING_FILE] {
+        let row = state
+            .document_storage
+            .iter()
+            .find(|(_, item)| {
+                item.path
+                    .as_deref()
+                    .is_some_and(|path| path.ends_with(name))
+            })
+            .unwrap();
+        let title = world.document_name(*row.0);
+        world.expect_tab(&title);
+    }
+}
+#[then("one of the drawings is active with its sheet and saved geometry displayed")]
+fn one_drawing_with_geometry(world: &mut ApplicationWorld) {
+    sheet_and_border(world);
+}
+#[then("the existing document tab remains available")]
+fn existing_tab_remains(world: &mut ApplicationWorld) {
+    let name = world.document_name(world.previous_document.unwrap());
+    world.expect_tab(&name);
+}
+#[when("the user selects the other drawing tab")]
+fn select_other_drawing_tab(world: &mut ApplicationWorld) {
+    let state = world.state();
+    let current = state.document.unwrap();
+    let other = state
+        .drawing_documents
+        .keys()
+        .copied()
+        .find(|id| *id != current)
+        .unwrap();
+    world.other_document = Some(other);
+    world.click_tab(other);
+    settle(world);
+}
+#[then("that drawing becomes active and its sheet is displayed")]
+fn other_drawing_active(world: &mut ApplicationWorld) {
+    assert_eq!(world.state().document, world.other_document);
+    sheet_and_border(world);
+}
 #[given("the deferred-update information message is enabled")]
 fn deferred_message_enabled(world: &mut ApplicationWorld) {
     // ApplicationWorld gives each scenario a new preferences directory and dialog state.

@@ -18,7 +18,7 @@ fn close_active(world: &mut ApplicationWorld) {
     world.close_active_tab();
     settle(world);
 }
-fn switch_to_tiles(world: &mut ApplicationWorld) {
+pub(super) fn switch_to_tiles(world: &mut ApplicationWorld) {
     world.click_text("Tiles");
     settle(world);
 }
@@ -36,7 +36,7 @@ fn drawings_in_tiles(world: &mut ApplicationWorld) -> PathBuf {
     switch_to_tiles(world);
     folder
 }
-fn rectangle_over_drawings(world: &mut ApplicationWorld) {
+pub(super) fn rectangle_over_drawings(world: &mut ApplicationWorld) {
     let first = world.run(DRAWING_FILE).clone();
     let second = world.run(SECOND_DRAWING_FILE).clone();
     let top = first.center()[1].min(second.center()[1]) as i32;
@@ -346,6 +346,7 @@ fn each_preview(world: &mut ApplicationWorld) {
 #[when("the user selects both drawing thumbnails with a selection rectangle")]
 fn drag_rectangle(world: &mut ApplicationWorld) {
     rectangle_over_drawings(world);
+    both_lit(world);
 }
 #[then("both drawing thumbnails are selected")]
 fn both_lit(world: &mut ApplicationWorld) {

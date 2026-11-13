@@ -83,6 +83,11 @@ claim that each file has been individually triaged.
   and the configured Vulkan runtime. Four scenarios stopped at undefined
   steps, so their later checks did not run. Local reports are in
   `/tmp/obk-open-drawing-suite`.
+- The focused “Open two selected drawings together” scenario now has native
+  fixtures with two closed drawings, real saved projections and an available
+  shared source. It checks the thumbnail selection, both drawing tabs and
+  rendered sheets, and preservation of the original tab. On the same feature
+  SHA, all 11 steps pass under Xvfb; report: `/tmp/obk-two-drawings.log`.
 - The drawing browser now lists the authored sheets, borders, title blocks and
   views, and browser search uses those same rows. Unit tests cover multiple
   sheets, a missing border and searching for a view.
