@@ -245,6 +245,25 @@ fn acknowledge_deferred_message(world: &mut ApplicationWorld) {
     world.click_text("OK");
     settle(world);
 }
+#[test]
+fn double_click_preserves_deferred_drawing_mode() {
+    let mut world = ApplicationWorld::new();
+    let part = world.add_part();
+    drawing_available(&mut world);
+    std::fs::remove_file(models_folder(&mut world).join("source.opd")).unwrap();
+    open_drawing_picker(&mut world);
+    select_deferred_drawing(&mut world);
+    let position = world.run(DRAWING_FILE).center().map(|value| value as i32);
+    world.pump(super::super::pointer_click_events(position, 2));
+    settle(&mut world);
+    deferred_message(&mut world);
+    assert_eq!(world.active_id(), part);
+    acknowledge_deferred_message(&mut world);
+    assert!(world.state().drawing_updates_deferred);
+    deferred_sheet(&mut world);
+    deferred_commands_off(&mut world);
+    world.close();
+}
 #[then("the drawing opens in a new active document tab")]
 fn deferred_drawing_active(world: &mut ApplicationWorld) {
     drawing_active(world);

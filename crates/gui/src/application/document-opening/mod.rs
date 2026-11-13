@@ -372,9 +372,7 @@ fn accept(
         if draft.choices.express_unavailable(&name) {
             return None;
         }
-        let action = open_action(&full_path(&browser.folder, &name), false);
-        actions.push(action);
-        return Some(DialogOutcome::Opened { name, defer: None });
+        return Some(open_one(browser, draft, name, actions));
     }
     let express_unavailable = several.is_empty() && draft.choices.express_unavailable(&draft.name);
     if express_unavailable {
@@ -402,21 +400,7 @@ fn opened(
         return None;
     }
     if several.is_empty() {
-        let action = open_action(
-            &full_path(&browser.folder, &draft.name),
-            draft.choices.defers(),
-        );
-        if draft.choices.defers() {
-            return Some(DialogOutcome::Opened {
-                name: draft.name.clone(),
-                defer: Some(action),
-            });
-        }
-        actions.push(action);
-        return Some(DialogOutcome::Opened {
-            name: draft.name.clone(),
-            defer: None,
-        });
+        return Some(open_one(browser, draft, draft.name.clone(), actions));
     }
     for path in in_opening_order(browser, several, state) {
         actions.push(open_action(&path, false));
@@ -425,6 +409,23 @@ fn opened(
         name: several[0].clone(),
         defer: None,
     })
+}
+fn open_one(
+    browser: &FolderBrowser,
+    draft: &OpenDraft,
+    name: String,
+    actions: &mut Vec<GuiShellAction>,
+) -> DialogOutcome {
+    let deferred = draft.choices.defers() && FileKind::of(&name) == FileKind::Drawing;
+    let action = open_action(&full_path(&browser.folder, &name), deferred);
+    if deferred {
+        return DialogOutcome::Opened {
+            name,
+            defer: Some(action),
+        };
+    }
+    actions.push(action);
+    DialogOutcome::Opened { name, defer: None }
 }
 /// What is open already comes first, so a newly opened file ends up in front.
 fn in_opening_order(

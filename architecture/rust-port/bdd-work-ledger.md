@@ -62,6 +62,10 @@ claim that each file has been individually triaged.
   checks ran. The benchmark returned failure as designed. The run used an
   unchanged copy of this feature to isolate the unrelated Home parse error.
   Log: `/tmp/obk-open-full-current.log`.
+- A native regression now checks that double-clicking a selected deferred
+  drawing shows the deferred message and displays the saved view without its
+  source model. The normal double-click and deferred-open scenarios also pass
+  after this fix: 9 and 15 steps respectively.
 
 - Historical deferred-open assessment on the same feature source: the focused native
   scenario reaches the information message and passes ten steps, then fails
