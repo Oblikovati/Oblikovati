@@ -14,12 +14,7 @@ pub(super) fn category_index(category: Category) -> usize {
 
 impl RibbonCustomization {
     pub(super) fn category_menu(&mut self, ui: &Ui) {
-        if ui.is_key_pressed_no_repeat(Key::DownArrow) {
-            self.category_cursor = (self.category_cursor + 1).min(CATEGORIES.len() - 1);
-        }
-        if ui.is_key_pressed_no_repeat(Key::UpArrow) {
-            self.category_cursor = self.category_cursor.saturating_sub(1);
-        }
+        self.category_cursor = move_cursor(ui, self.category_cursor, CATEGORIES.len());
         let enter = ui.is_key_pressed_no_repeat(Key::Enter);
         for (index, category) in CATEGORIES.into_iter().enumerate() {
             let clicked = ui
@@ -32,6 +27,16 @@ impl RibbonCustomization {
             }
         }
     }
+}
+
+pub(super) fn move_cursor(ui: &Ui, current: usize, count: usize) -> usize {
+    if ui.is_key_pressed_no_repeat(Key::DownArrow) {
+        return (current + 1).min(count.saturating_sub(1));
+    }
+    if ui.is_key_pressed_no_repeat(Key::UpArrow) {
+        return current.saturating_sub(1);
+    }
+    current
 }
 
 #[cfg(test)]

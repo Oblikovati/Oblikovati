@@ -3,6 +3,27 @@
 use super::*;
 
 #[test]
+fn keyboard_switches_targets_without_losing_staged_commands() {
+    use oblikovati_viewport::ViewportPhysicalKey;
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    open_tools_customization(&mut world);
+    stage_sketch_visibility(&mut world);
+    click_in_customize(&mut world, "Part|Tools*");
+    world.key(ViewportPhysicalKey::DownArrow, false);
+    world.key(ViewportPhysicalKey::Enter, false);
+    assert!(world.window_text("Customize").contains("Part|Manage"));
+    sketches_in_available_commands(&mut world);
+    click_in_customize(&mut world, "Part|Manage");
+    world.key(ViewportPhysicalKey::UpArrow, false);
+    world.key(ViewportPhysicalKey::Enter, false);
+    assert!(world.window_text("Customize").contains("Part|Tools*"));
+    sketches_in_target(&mut world);
+    click_in_customize(&mut world, "Cancel");
+    world.close();
+}
+
+#[test]
 fn escape_from_command_category_discards_the_pending_draft() {
     use oblikovati_viewport::ViewportPhysicalKey;
     let mut world = ApplicationWorld::new();

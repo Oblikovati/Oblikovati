@@ -8,6 +8,8 @@
 
 ### Added
 
+- Added keyboard switching between ribbon customization targets. (#3856)
+
 - Added keyboard navigation and Escape handling to the ribbon command-category list. (#3856)
 
 - Added the Macros category to ribbon customization for sessions with no macros. (#3856)

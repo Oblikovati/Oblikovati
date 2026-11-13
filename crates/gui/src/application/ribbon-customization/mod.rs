@@ -7,6 +7,7 @@ mod settings_dialog;
 mod settings_xml;
 mod state;
 mod store;
+mod target_selector;
 use crate::ribbon::RibbonTab;
 use imgui::Ui;
 use state::{Category, Command, Draft};
@@ -29,6 +30,8 @@ pub(crate) struct RibbonCustomization {
     target_focused: bool,
     category_open: bool,
     category_cursor: usize,
+    target_selector_open: bool,
+    target_cursor: usize,
     visible_source: Vec<Command>,
     scroll_source_to_selection: bool,
     settings: settings_dialog::SettingsDialog,
@@ -82,6 +85,7 @@ impl RibbonCustomization {
         self.escape = Default::default();
         self.list_focus = None;
         self.category_open = false;
+        self.target_selector_open = false;
         self.scroll_source_to_selection = false;
         self.save_error = None;
         self.open = true;
@@ -265,19 +269,13 @@ impl RibbonCustomization {
         };
         let target = format!("Part | {}{suffix}", self.draft.target.label());
         ui.set_next_item_width(245.);
-        if let Some(_targets) = ui.begin_combo("##custom-target", &target) {
-            for tab in [
-                RibbonTab::Model,
-                RibbonTab::Sketch,
-                RibbonTab::Annotate,
-                RibbonTab::Tools,
-                RibbonTab::Manage,
-                RibbonTab::View,
-            ] {
-                if ui.selectable(format!("Part | {}", tab.label())) {
-                    self.draft.switch(tab);
-                }
-            }
+        let targets = ui.begin_combo("##custom-target", &target);
+        if targets.is_some() && !self.target_selector_open {
+            self.target_cursor = target_selector::target_index(self.draft.target);
+        }
+        self.target_selector_open = targets.is_some();
+        if let Some(_targets) = targets {
+            self.target_menu(ui);
         }
         ui.text("Name");
         ui.same_line_with_spacing(0., 110.);

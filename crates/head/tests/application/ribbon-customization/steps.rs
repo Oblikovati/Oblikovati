@@ -12,6 +12,8 @@ mod file_exchange;
 mod macros;
 #[path = "missing_file.rs"]
 mod missing_file;
+#[path = "target_steps.rs"]
+mod target_steps;
 
 #[given("a part document is active in The MCAD Software")]
 fn active_part(world: &mut ApplicationWorld) {
@@ -160,6 +162,7 @@ fn sketches_in_available_commands(world: &mut ApplicationWorld) {
     assert!(world.window_text("Customize").contains("AllCommands"));
 }
 #[when("the user double-clicks \"2D Sketches\" in the source list")]
+#[when("the user double-clicks \"2D Sketches\" in the available list")]
 #[when("the user double-clicks \"2D Sketches\" in the custom panel list")]
 fn double_click_sketches(world: &mut ApplicationWorld) {
     let center = world.run_in_window("Customize", "2DSketches").center();
