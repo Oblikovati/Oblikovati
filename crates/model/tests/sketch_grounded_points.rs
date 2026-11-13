@@ -148,3 +148,6 @@ mod guards;
 
 #[path = "sketch_grounded_points/inspection.rs"]
 mod inspection;
+
+#[path = "sketch_grounded_points/pattern_links.rs"]
+mod pattern_links;

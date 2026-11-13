@@ -3,7 +3,17 @@ use super::{PlanarConstraint, Sketch2D, SketchConstraint, SketchPoint2D};
 impl Sketch2D {
     /// Compare authored recipe bits for history and storage; example: `old.same_recipe(&candidate)`.
     pub fn same_recipe(&self, other: &Self) -> bool {
-        self.same_dimension_settings(other)
+        self.pattern_point_links.len() == other.pattern_point_links.len()
+            && self
+                .pattern_point_links
+                .iter()
+                .zip(&other.pattern_point_links)
+                .all(|(a, b)| {
+                    a.source == b.source
+                        && a.member == b.member
+                        && same_components(a.offset, b.offset)
+                })
+            && self.same_dimension_settings(other)
             && self.same_dimension_placements(other)
             && self.centerlines == other.centerlines
             && self.center_points == other.center_points

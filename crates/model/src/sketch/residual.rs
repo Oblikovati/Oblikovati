@@ -36,6 +36,7 @@ pub(super) enum PlanarEquation {
         quarter_turn: bool,
     },
     ArcCircularity,
+    PatternPointLink([f64; 2]),
     ArcMidpoint(bool),
     Coincident,
     Coordinate(usize),
@@ -92,6 +93,7 @@ impl PreparedConstraint {
             PlanarEquation::AxisCollinear { .. }
             | PlanarEquation::ArcMidpoint(_)
             | PlanarEquation::Coincident
+            | PlanarEquation::PatternPointLink(_)
             | PlanarEquation::Fix(_)
             | PlanarEquation::Midpoint => 2,
             PlanarEquation::Lines {
@@ -220,6 +222,10 @@ impl ResidualSource for PreparedConstraint {
                 super::ellipse_axis::alignment_residual(&variables[0], quarter_turn)
             }
             PlanarEquation::ArcCircularity => arc_residual::circularity(variables),
+            PlanarEquation::PatternPointLink(offset) => Ok(vec![
+                variables[2].minus(&variables[0])?.shifted(-offset[0])?,
+                variables[3].minus(&variables[1])?.shifted(-offset[1])?,
+            ]),
             PlanarEquation::Coincident => Ok(point(variables, 0)?
                 .minus(&point(variables, 2)?)?
                 .components()

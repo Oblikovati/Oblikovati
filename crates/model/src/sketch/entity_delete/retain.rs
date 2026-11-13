@@ -3,6 +3,8 @@ use crate::sketch::{Sketch2D, SketchEntityId};
 use std::collections::BTreeSet;
 impl Sketch2D {
     pub(super) fn retain_surviving_geometry(&mut self, retired: &BTreeSet<SketchEntityId>) {
+        self.pattern_point_links
+            .retain(|link| !retired.contains(&link.source) && !retired.contains(&link.member));
         self.points.retain(|point| !retired.contains(&point.id));
         self.lines.retain(|line| !retired.contains(&line.id));
         self.circles.retain(|circle| !retired.contains(&circle.id));

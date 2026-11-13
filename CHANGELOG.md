@@ -32,6 +32,8 @@
 
 ### Added
 
+- Added saved structural point links for associative sketch-pattern solving.
+
 - Added rectangular sketch-pattern layouts with fitted spans and suppressed instances.
 
 - Added atomic sketch-copy batches and previews as a foundation for patterns.

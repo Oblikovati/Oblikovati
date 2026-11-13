@@ -26,6 +26,7 @@ pub(super) fn prepare(
         parameter_dependencies: sketch.parameter_dependencies(),
     };
     append_arc_sources(sketch, &mut prepared)?;
+    append_pattern_point_sources(sketch, &mut prepared)?;
     Ok(prepared)
 }
 impl Sketch2D {
@@ -76,6 +77,28 @@ fn append_arc_sources(sketch: &Sketch2D, prepared: &mut PreparedSketch) -> Resul
         prepared
             .origins
             .push(SketchRelationId::ArcCircularity(arc.id));
+    }
+    Ok(())
+}
+
+fn append_pattern_point_sources(
+    sketch: &Sketch2D,
+    prepared: &mut PreparedSketch,
+) -> Result<(), SketchError> {
+    for link in &sketch.pattern_point_links {
+        let variables = sketch
+            .point_variables(&[link.source, link.member])
+            .into_iter()
+            .map(|variable| sketch.variable_column(variable))
+            .collect::<Result<_, _>>()?;
+        prepared.sources.push(PreparedConstraint {
+            equation: PlanarEquation::PatternPointLink(link.offset),
+            projection: None,
+            variables,
+        });
+        prepared
+            .origins
+            .push(SketchRelationId::PatternPointLink(link.member));
     }
     Ok(())
 }

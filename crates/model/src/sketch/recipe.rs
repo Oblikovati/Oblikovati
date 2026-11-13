@@ -3,8 +3,8 @@ use super::{
     Sketch2D, SketchArc2D, SketchCircle2D, SketchConstraint, SketchError, SketchLine2D,
     SketchPoint2D,
 };
-/// Latest planar schema: v2 records order, v3 construction roles, v4 line axis roles, v5 dimension placements, v6 drive settings, v7 analytic ellipses, v8 ground anchors, v9 ellipse minor-radius dimensions, v10 parent and offset splines, v11 offset dimensions, v12 defining-point ownership, v13 point direction dimensions.
-pub const SKETCH_RECIPE_VERSION: u32 = 13;
+/// Latest planar schema: v2 records order, v3 construction roles, v4 line axis roles, v5 dimension placements, v6 drive settings, v7 analytic ellipses, v8 ground anchors, v9 ellipse minor-radius dimensions, v10 parent and offset splines, v11 offset dimensions, v12 defining-point ownership, v13 point direction dimensions, v14 structural pattern point links.
+pub const SKETCH_RECIPE_VERSION: u32 = 14;
 /// Owned authored values; no numerical workspace, derived topology or system equations.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -23,6 +23,8 @@ pub struct SketchRecipe {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub defining_points: Option<Vec<super::SketchEntityId>>,
     pub constraints: Vec<SketchConstraint>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pattern_point_links: Option<Vec<super::SketchPatternPointLink>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub entity_order: Option<Vec<super::SketchEntityId>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -50,6 +52,7 @@ impl Sketch2D {
         self.capture_spline_schema(&mut recipe);
         self.capture_point_ownership_schema(&mut recipe);
         self.capture_point_angle_schema(&mut recipe);
+        self.capture_pattern_point_links(&mut recipe);
         recipe
     }
     fn capture_point_angle_schema(&self, recipe: &mut SketchRecipe) {
@@ -71,6 +74,7 @@ impl Sketch2D {
             offset_splines: None,
             defining_points: None,
             constraints: self.constraints.clone(),
+            pattern_point_links: None,
             entity_order: self.saved_entity_order(),
             construction_curves: self.saved_construction_curves(),
             center_points: self.saved_center_points(),
@@ -127,6 +131,7 @@ impl Sketch2D {
         for constraint in &recipe.constraints {
             sketch.add_constraint(constraint.id, constraint.relation.clone())?;
         }
+        sketch.restore_pattern_point_links(recipe)?;
         sketch.restore_dimension_placements(recipe)?;
         sketch.restore_dimension_settings(recipe)?;
         Ok(sketch)
