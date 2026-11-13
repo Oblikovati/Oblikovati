@@ -606,3 +606,20 @@ revisions checked before they support a current pass claim.
   The local log is `/tmp/obk-tools-clipboard-native-20261113.log`.
 - Copy's move-to-expanded-panel interaction remains unimplemented, as do model
   copy and the other missing Tools groups. No full BDD scenario is claimed.
+
+### Gherkin parse diagnostics, 2026-11-13
+
+- On a failed native benchmark, the runner now reports the parser's underlying
+  diagnostic, including the source path and line and column when provided.
+  A unit test checks that the underlying read error is retained.
+- The current model-browser source, SHA-256
+  `42339c958b6c67613f2c93ef6732f6f22084742648327bff72cd94b146f0fdeb`,
+  failed parsing at line 587 because the step keyword is lowercase `and`.
+  The source stayed unchanged during the run. The feature needs correction
+  before its scenarios can run. The local diagnostic report is
+  `/tmp/obk-bdd-model-browser-parse-detail-20261113`.
+- A valid File menu scenario passed all five steps through the same runner on
+  SHA-256 `fd33924caea15cf97ba75ad3600c7244cf17592b6bdf26bdc9882f7cae71fb91`,
+  unchanged during the run. Application: `f97653057` plus this change; Linux,
+  Xvfb at 1600 × 1000 and Lavapipe. Its local report is
+  `/tmp/obk-bdd-parser-valid-20261113`.

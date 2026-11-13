@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use cucumber::{
-    World as _, WriterExt as _,
+    Parser as _, World as _, WriterExt as _,
     writer::{self, Stats as _},
 };
+use futures::StreamExt as _;
 use std::{fmt, fs, path::PathBuf};
 mod binding_inventory;
 mod diagnostics;
@@ -162,10 +163,13 @@ fn run_scenarios(root: PathBuf, keep_feature: fn(&cucumber::gherkin::Feature) ->
                     }
                 })
             })
-            .filter_run(root, move |feature, _, scenario| {
+            .filter_run(root.clone(), move |feature, _, scenario| {
                 keep_feature(feature) && scenario_selected(&scenario.name)
             }),
     );
+    if result.execution_has_failed() {
+        report_parser_errors(&root);
+    }
     assert!(
         !result.execution_has_failed(),
         "scenario benchmark: expected no failed, undefined, or skipped steps"
@@ -174,6 +178,27 @@ fn run_scenarios(root: PathBuf, keep_feature: fn(&cucumber::gherkin::Feature) ->
         result.passed_steps() > 0,
         "scenario benchmark: expected at least one executed scenario"
     );
+}
+fn report_parser_errors(root: &std::path::Path) {
+    let parsed = cucumber::parser::Basic::default().parse(root, Default::default());
+    let errors = futures::executor::block_on(parsed.collect::<Vec<_>>());
+    for error in errors.into_iter().filter_map(Result::err) {
+        eprintln!("{}", parser_diagnostic(&error));
+    }
+}
+fn parser_diagnostic(error: &cucumber::parser::Error) -> String {
+    format!("scenario source error: {error:#?}")
+}
+#[test]
+fn parser_diagnostic_includes_the_underlying_read_error() {
+    let cause = std::io::Error::new(std::io::ErrorKind::NotFound, "fixture absent");
+    let error = cucumber::parser::Error::from(cucumber::gherkin::ParseFileError::Reading {
+        path: "broken.feature".into(),
+        source: cause,
+    });
+    let message = parser_diagnostic(&error);
+    assert!(message.contains("broken.feature"));
+    assert!(message.contains("fixture absent"));
 }
 fn scenario_selected(name: &str) -> bool {
     std::env::var("OBK_BDD_SCENARIO").map_or(true, |wanted| name.contains(&wanted))
