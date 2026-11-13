@@ -183,9 +183,11 @@ fn choose_pane(world: &mut ApplicationWorld, label: &str) {
 // Inspect a part file before opening it
 #[given("a folder contains a saved part with a preview and recorded metadata")]
 fn part_in_folder(world: &mut ApplicationWorld) {
+    let active = world.active_id();
     let folder = models_folder(world);
     let id = saved_part(world, &folder);
     world.opened_value = Some(id.to_string());
+    world.click_tab(active);
 }
 #[when("I press Control+O and navigate to that folder")]
 #[when("the user presses Control+O and navigates to that folder")]
@@ -193,6 +195,10 @@ fn control_o_to_folder(world: &mut ApplicationWorld) {
     let folder = models_folder(world);
     open_dialog(world);
     look_in(world, &folder);
+}
+#[when("the user selects the saved part")]
+fn select_saved_part(world: &mut ApplicationWorld) {
+    select_row(world, PART_FILE);
 }
 #[then("the part row is selected and the file name field identifies it")]
 fn part_row_selected(world: &mut ApplicationWorld) {
@@ -233,10 +239,7 @@ fn cancel_open(world: &mut ApplicationWorld) {
 #[then("the previously active part document remains displayed")]
 fn part_still_shown(world: &mut ApplicationWorld) {
     world.expect_no_text("Look in");
-    assert!(
-        world.state().document.is_some(),
-        "expected a document active"
-    );
+    world.expect_active(world.previous_document.expect("expected the original part"));
 }
 // Inspect a drawing after selecting a part
 #[given("the Open dialog is displaying a folder containing a saved part and drawing with previews")]
