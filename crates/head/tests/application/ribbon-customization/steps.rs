@@ -14,6 +14,8 @@ mod location_steps;
 mod macros;
 #[path = "missing_file.rs"]
 mod missing_file;
+#[path = "sketch_target_steps.rs"]
+mod sketch_target_steps;
 #[path = "target_steps.rs"]
 mod target_steps;
 #[path = "view_category.rs"]
@@ -290,6 +292,7 @@ fn close_customization_title(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
 }
 #[when("the user clicks Close")]
+#[when("the user clicks \"Close\"")]
 fn close_customization_button(world: &mut ApplicationWorld) {
     click_in_customize(world, "Close");
 }
