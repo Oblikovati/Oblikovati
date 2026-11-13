@@ -675,3 +675,20 @@ revisions checked before they support a current pass claim.
   The File dialog suite passed four tests, and GUI Clippy passed after the
   final change. Unit tests cover old settings versions, import/export, invalid
   IDs, save failure, reload, reset, and an unrelated pending customization.
+
+### Ribbon settings import verification, 2026-11-13
+
+- Corrected three lowercase Gherkin `and` keywords at lines 161, 178 and
+  196 in the live ribbon-customization feature file. The remaining phrase
+  `cancels and Apply` needs semantic review by the scenario author. The source
+  is outside the Rust repository and is not part of this commit.
+- The native `Stage an import of freshly exported customization settings`
+  scenario passed all 13 steps on corrected source SHA-256
+  `c338bc2ca7723cbc58a28c13b97869e61ad0697ed3290c67843149e1e608a73e`,
+  unchanged during the run. The rest of the feature was not run.
+- Native tests also passed for exporting and importing a user-command draft
+  and for staging, applying, and restoring an exported built-in command
+  location. Application: `1653a0368` plus these test bindings and checks;
+  unrelated README and AGENTS files were present. Linux, Xvfb at 1600 × 1000
+  and Lavapipe. The local report is `/tmp/obk-ribbon-import-v3-final-20261113`;
+  the built-in import log is `/tmp/obk-builtin-import-native-20261113.log`.

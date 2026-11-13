@@ -233,6 +233,7 @@ fn cancel_customization(world: &mut ApplicationWorld) {
     click_in_customize(world, "Cancel");
 }
 #[given("the ribbon customization dialog is open in The MCAD Software")]
+#[given("the ribbon customization dialog is open in the MCAD Software")]
 fn customization_open_for_file(world: &mut ApplicationWorld) {
     empty_model_customization(world);
 }

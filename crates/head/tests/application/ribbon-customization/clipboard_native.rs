@@ -49,3 +49,38 @@ fn right_click_copy(world: &mut ApplicationWorld) {
     let position = diagnostics::pointer_pixels(world.run("Copy").center());
     world.right_click(position);
 }
+
+#[test]
+fn exported_builtin_location_is_staged_then_applied_on_import() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    world.click_text("Tools");
+    right_click_copy(&mut world);
+    world.click_text("Move to Expanded Panel");
+    let path = world.scratch_folder().join("builtin-ribbon.xml");
+    export_builtin_location(&mut world, &path);
+    world.click_text("Clipboard");
+    right_click_copy(&mut world);
+    world.click_text("Move to Main Panel");
+    import_builtin_location(&mut world, &path);
+    world.expect_no_text("Copy");
+    world.click_text("Clipboard");
+    assert!(!world.run_is_enabled("Copy"));
+    world.close();
+}
+
+fn export_builtin_location(world: &mut ApplicationWorld, path: &std::path::Path) {
+    open_tools_customization(world);
+    click_in_customize(world, "Export");
+    settings_file_choice(world, "Export Customization Settings", path, "Save");
+    click_in_customize(world, "Close");
+}
+
+fn import_builtin_location(world: &mut ApplicationWorld, path: &std::path::Path) {
+    open_tools_customization(world);
+    click_in_customize(world, "Import");
+    settings_file_choice(world, "Import Customization Settings", path, "Open");
+    assert!(!world.run_is_enabled("Copy"));
+    click_in_customize(world, "Apply");
+    click_in_customize(world, "Close");
+}
