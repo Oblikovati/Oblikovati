@@ -16,6 +16,8 @@
 
 ### Added
 
+- Added precise coordinates and triad controls to sketch Move.
+
 - Added multi-entity selection and single-selection optimization to sketch Move.
 
 - Added single-entity sketch Move with a solved preview, canvas points, and undo/redo.

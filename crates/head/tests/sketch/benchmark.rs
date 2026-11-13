@@ -25,6 +25,8 @@ mod ellipse;
 pub(super) mod fixtures;
 #[path = "line/steps.rs"]
 mod line;
+#[path = "move/precise.rs"]
+mod move_precise;
 #[path = "point/steps.rs"]
 mod point;
 #[path = "precise-input/steps.rs"]

@@ -24,13 +24,28 @@ impl<
     /// Place the running command's next point at typed coordinates, in the document's units.
     /// Example: `owner.precise_point_from_gui(&point)` with X "5" and Y "6".
     pub fn precise_point_from_gui(&mut self, point: &GuiPrecisePoint) -> Result<bool, String> {
-        let Some(SketchToolState::Placement(mut tool)) = self.sketch_tool.take() else {
+        let Some(tool) = self.sketch_tool.take() else {
             return Err(format!(
                 "precise point {point:?}: expected a running sketch command"
             ));
         };
-        let result = self.place_precise_point(&mut tool, point);
-        self.sketch_tool = Some(SketchToolState::Placement(tool));
+        let (tool, result) = match tool {
+            SketchToolState::Placement(mut tool) => {
+                let result = self.place_precise_point(&mut tool, point);
+                (SketchToolState::Placement(tool), result)
+            }
+            SketchToolState::Move(mut tool) => {
+                let result = self.precise_move_point(&mut tool, point);
+                (SketchToolState::Move(tool), result)
+            }
+            other => (
+                other,
+                Err(format!(
+                    "precise point {point:?}: expected a point-taking command"
+                )),
+            ),
+        };
+        self.sketch_tool = Some(tool);
         result.map(|()| true)
     }
     fn place_precise_point(
@@ -45,7 +60,11 @@ impl<
             _ => self.place_exact_point(tool, position),
         }
     }
-    fn precise_position(&self, document: u64, point: &GuiPrecisePoint) -> Result<[f64; 2], String> {
+    pub(super) fn precise_position(
+        &self,
+        document: u64,
+        point: &GuiPrecisePoint,
+    ) -> Result<[f64; 2], String> {
         use oblikovati_gui::GuiPreciseMode::{DistanceAndAngle, XAndAngle, XAndY, YAndAngle};
         let first_is_length = self.typed_value(document, &point.first, Dimension::Length)?;
         let second_dimension = match point.mode {
@@ -124,15 +143,21 @@ impl<
     }
     /// What the toolbar acts on: any placement command's next point.
     pub(super) fn gui_precise_target(&self) -> Option<oblikovati_gui::GuiPreciseTarget> {
-        let tool = self.placement_state()?;
+        if let Some(tool) = self.placement_state() {
+            return Some(oblikovati_gui::GuiPreciseTarget {
+                pointer: self.precise_pointer_at(tool.document, tool.pointer_position()),
+                triad: None,
+            });
+        }
+        let (edit, pointer) = self.move_precise_target()?;
         Some(oblikovati_gui::GuiPreciseTarget {
-            pointer: self.precise_pointer(tool),
+            pointer: self.precise_pointer_at(edit.document, pointer),
             triad: None,
         })
     }
-    fn precise_pointer(&self, tool: &SketchPlacementState) -> Option<[String; 2]> {
-        let at = tool.pointer_position()?;
-        let session = self.files.workspace().session(tool.document).ok()?;
+    fn precise_pointer_at(&self, document: u64, at: Option<[f64; 2]>) -> Option<[String; 2]> {
+        let at = at?;
+        let session = self.files.workspace().session(document).ok()?;
         let units = session.snapshot().parameters.units();
         let shown = at.map(|value| {
             let quantity = oblikovati_model::quantity::Quantity::new(value, Dimension::Length);
@@ -147,8 +172,12 @@ impl<
     }
     /// Where the triad sits on the running command's plane; example: for the frame to project.
     pub fn precise_triad_position(&self) -> Option<(SketchPlane, [f64; 2])> {
-        let tool = self.placement_state()?;
-        Some((tool.plane, self.sketch_memory.triad.unwrap_or_default()))
+        let plane = if let Some(tool) = self.placement_state() {
+            tool.plane
+        } else {
+            self.move_precise_target()?.0.plane
+        };
+        Some((plane, self.sketch_memory.triad.unwrap_or_default()))
     }
     /// Move the triad by two picks, or put it back; example: from the toolbar's buttons.
     pub fn precise_triad_from_gui(&mut self, command: GuiTriadCommand) -> Result<bool, String> {

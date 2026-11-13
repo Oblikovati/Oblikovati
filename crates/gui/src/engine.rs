@@ -364,7 +364,12 @@ impl GuiFrameEngine {
         crate::sketch::inspect::canvas_menu(ui, &request.commands, &mut selected);
         self.dimension_value_editor
             .panel(ui, request, &mut selected);
-        crate::sketch::move_tool::panel(ui, &request.commands, &mut selected);
+        crate::sketch::move_tool::panel(
+            ui,
+            &request.commands,
+            &mut self.precise_input,
+            &mut selected,
+        );
         crate::sketch::inspect::measure_panel(ui, &request.commands, &mut selected);
         crate::sketch::region_properties::panel(ui, &request.commands, &mut selected);
         crate::sketch_delete::append_keyboard_delete(ui, &request.commands, &mut selected);

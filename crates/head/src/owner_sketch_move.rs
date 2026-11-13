@@ -3,11 +3,14 @@
 use super::*;
 use crate::{HeadSketchEdit, HeadWindow, sketch_tool::SketchToolState};
 use oblikovati_api::{client::Client, wire::TransformSketchArgs};
-use oblikovati_gui::{GuiSketchMoveAction, GuiSketchMoveStage, GuiSketchMoveStatus};
+use oblikovati_gui::{
+    GuiPrecisePoint, GuiSketchMoveAction, GuiSketchMoveStage, GuiSketchMoveStatus,
+};
 use oblikovati_model::sketch::{SketchEntityId, SketchSelectionTransform};
 use oblikovati_session::selection::SelectionClickMode;
 use oblikovati_viewport::{
-    ViewportButton, ViewportEvent, ViewportInput, ViewportKey, ViewportSketchPreview,
+    ViewportButton, ViewportEvent, ViewportInput, ViewportKey, ViewportPhysicalKey,
+    ViewportSketchPreview,
 };
 
 #[derive(Clone, Copy)]
@@ -21,6 +24,7 @@ pub(crate) struct SketchMoveState {
     pub generation: u64,
     stage: MoveStage,
     entities: Vec<SketchEntityId>,
+    pointer: Option<[f64; 2]>,
     pub preview: Option<ViewportSketchPreview>,
 }
 impl<
@@ -55,11 +59,13 @@ impl<
         self.require_move_transaction_clear(edit.document)?;
         self.retire_sketch_tool()?;
         self.clear_geometric_picks(edit)?;
+        self.sketch_memory.triad_pick = None;
         self.sketch_tool = Some(SketchToolState::Move(Box::new(SketchMoveState {
             edit,
             generation,
             stage: MoveStage::Geometry,
             entities: Vec::new(),
+            pointer: None,
             preview: None,
         })));
         self.sketch_memory.repeat_command = Some(oblikovati_gui::GuiSketchRepeat::Move);
@@ -132,6 +138,14 @@ impl<
         event: ViewportEvent,
         window: &dyn HeadWindow,
     ) -> bool {
+        if self.sketch_memory.triad_pick.is_some() {
+            let result = self.move_triad_event(&tool, event, window);
+            if let Err(cause) = result {
+                self.command_notice = Some(DesktopCommandNotice::AuthoringFailed { cause });
+            }
+            self.sketch_tool = Some(SketchToolState::Move(tool));
+            return true;
+        }
         if is_cancel(event) {
             return self.cancel_sketch_move(tool.edit);
         }
@@ -164,7 +178,7 @@ impl<
         };
         match tool.stage {
             MoveStage::Geometry if click => self.move_select(tool, position, window),
-            MoveStage::Base if click => self.move_base(tool, position, window),
+            MoveStage::Base => self.move_base(tool, position, click, window),
             MoveStage::Target(base) => self.move_target(tool, base, position, click, window),
             _ => Ok(false),
         }
@@ -207,14 +221,23 @@ impl<
         &mut self,
         tool: &mut SketchMoveState,
         pixel: [i32; 2],
+        click: bool,
         window: &dyn HeadWindow,
     ) -> Result<bool, String> {
         let Some(base) = window.sketch_point(pixel, tool.edit.plane)? else {
             return Ok(false);
         };
-        tool.stage = MoveStage::Target(base);
-        self.placement_notice("Move: Select end point".into());
+        tool.pointer = Some(base);
+        if !click {
+            return Ok(true);
+        }
+        self.set_move_base(tool, base);
         Ok(true)
+    }
+    fn set_move_base(&mut self, tool: &mut SketchMoveState, base: [f64; 2]) {
+        tool.stage = MoveStage::Target(base);
+        self.sketch_memory.triad = Some(base);
+        self.placement_notice("Move: Select end point".into());
     }
     fn move_target(
         &mut self,
@@ -228,6 +251,17 @@ impl<
         let Some(point) = window.sketch_point(pixel, tool.edit.plane)? else {
             return Ok(true);
         };
+        tool.pointer = Some(point);
+        self.move_to_point(tool, base, point, click)
+    }
+    fn move_to_point(
+        &mut self,
+        tool: &mut SketchMoveState,
+        base: [f64; 2],
+        point: [f64; 2],
+        click: bool,
+    ) -> Result<bool, String> {
+        tool.preview = None;
         let vector = std::array::from_fn(|axis| point[axis] - base[axis]);
         if vector == [0., 0.] {
             if click {
@@ -240,6 +274,70 @@ impl<
             self.commit_sketch_move(tool, vector)?;
         }
         Ok(true)
+    }
+    pub(super) fn move_precise_target(&self) -> Option<(HeadSketchEdit, Option<[f64; 2]>)> {
+        let Some(SketchToolState::Move(tool)) = &self.sketch_tool else {
+            return None;
+        };
+        if matches!(tool.stage, MoveStage::Geometry)
+            || !self.sketch_context_valid(tool.edit.document, tool.edit.sketch, tool.generation)
+        {
+            return None;
+        }
+        Some((tool.edit, tool.pointer))
+    }
+    pub(super) fn precise_move_point(
+        &mut self,
+        tool: &mut SketchMoveState,
+        point: &GuiPrecisePoint,
+    ) -> Result<(), String> {
+        if !self.sketch_context_valid(tool.edit.document, tool.edit.sketch, tool.generation) {
+            return Err(format!(
+                "precise move {point:?}: expected an unchanged sketch"
+            ));
+        }
+        let position = self.precise_position(tool.edit.document, point)?;
+        match tool.stage {
+            MoveStage::Base => self.set_move_base(tool, position),
+            MoveStage::Target(base) => {
+                self.move_to_point(tool, base, position, true)?;
+            }
+            MoveStage::Geometry => {
+                return Err(format!(
+                    "precise move {point:?}: expected a base or end point"
+                ));
+            }
+        }
+        Ok(())
+    }
+    fn move_triad_event(
+        &mut self,
+        tool: &SketchMoveState,
+        event: ViewportEvent,
+        window: &dyn HeadWindow,
+    ) -> Result<(), String> {
+        use super::owner_precise_input::TriadPick;
+        if is_cancel(event) {
+            self.sketch_memory.triad_pick = None;
+        } else if let Some((pixel, true)) = move_pointer(event) {
+            self.sketch_memory.triad_pick = match self.sketch_memory.triad_pick {
+                Some(TriadPick::Source) => Some(TriadPick::Target),
+                Some(TriadPick::Target) => {
+                    self.sketch_memory.triad = window.sketch_point(pixel, tool.edit.plane)?;
+                    None
+                }
+                None => None,
+            };
+        }
+        let prompt = match (self.sketch_memory.triad_pick, tool.stage) {
+            (Some(TriadPick::Source), _) => "Select the triad's origin",
+            (Some(TriadPick::Target), _) => "Select the triad's new position",
+            (None, MoveStage::Geometry) => "Move: Select geometry",
+            (None, MoveStage::Base) => "Move: Select base point",
+            (None, MoveStage::Target(_)) => "Move: Select end point",
+        };
+        self.placement_notice(prompt.into());
+        Ok(())
     }
     fn preview_sketch_move(
         &self,
@@ -303,6 +401,7 @@ impl<
         tool.stage = MoveStage::Geometry;
         tool.entities.clear();
         tool.preview = None;
+        tool.pointer = None;
         self.placement_notice("Move: Select geometry".into());
         Ok(())
     }
@@ -314,6 +413,10 @@ fn is_cancel(event: ViewportEvent) -> bool {
         ViewportEvent::Input(ViewportInput::Key {
             key: ViewportKey::Cancel,
             pressed: true
+        }) | ViewportEvent::Input(ViewportInput::PhysicalKey {
+            key: ViewportPhysicalKey::Escape,
+            pressed: true,
+            ..
         })
     )
 }

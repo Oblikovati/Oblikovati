@@ -26,11 +26,16 @@ pub enum GuiSketchMoveAction {
     ChooseBase,
 }
 
-pub(crate) fn panel(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
+pub(crate) fn panel(
+    ui: &Ui,
+    state: &GuiCommandState,
+    precise: &mut crate::sketch::precise_input::PreciseInputBar,
+    actions: &mut Vec<GuiShellAction>,
+) {
     let Some(status) = state.sketch_move else {
         return;
     };
-    crate::widget_abi::fit_dialog(ui, "Move", [1100., 250.], [330., 150.]);
+    crate::widget_abi::fit_dialog(ui, "Move", [1100., 250.], [330., 180.]);
     ui.window("Move").collapsible(false).build(|| {
         ui.text(match status.stage {
             GuiSketchMoveStage::Geometry => "Select geometry",
@@ -45,6 +50,7 @@ pub(crate) fn panel(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShell
             ));
         }
         drop(disabled);
+        ui.checkbox("Precise Input", &mut precise.open);
         let base = GuiShellAction::SketchMove(GuiSketchMoveAction::ChooseBase);
         let disabled = ui.begin_disabled(!base.enabled(state));
         if ui.button("Base Point") {
