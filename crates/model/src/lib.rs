@@ -4,6 +4,7 @@
 
 pub mod application_options;
 pub mod application_recent;
+pub mod assembly;
 pub mod assets;
 pub mod attachment;
 pub mod attribute;

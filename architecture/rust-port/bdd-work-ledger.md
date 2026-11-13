@@ -134,6 +134,13 @@ claim that each file has been individually triaged.
   This prevents a populated assembly from being presented or saved as an empty
   model. Envelope reading still retains the original data, and empty assemblies
   remain supported. This is a named decline, not assembly implementation.
+- The package layer can now inspect Go-shaped occurrence recipes without
+  opening component files. It preserves instance flags, component references,
+  virtual component fields and child transforms; it validates finite 16-cell
+  matrices and resolves an omitted placement to identity. Tests cover shared
+  references, virtual data, YAML round-trip and malformed transforms. This
+  reader does not yet attach occurrences to document history, resolve their
+  references or render them, so the populated-assembly open guard remains.
 - The drawing browser now lists the authored sheets, borders, title blocks and
   views, and browser search uses those same rows. Unit tests cover multiple
   sheets, a missing border and searching for a view.
