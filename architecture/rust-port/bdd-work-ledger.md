@@ -197,6 +197,13 @@ claim that each file has been individually triaged.
   The same failure is not published every frame, and a resolved reference
   triggers a new scene. Tests cover the failure and recovery path; populated
   assembly file opening remains guarded.
+- Subsequent integration enables opening saved assemblies with supported rigid
+  occurrences. It resolves nested component files in the background and shows
+  missing references in scene status. A native mouse-driven open displayed a
+  referenced part, and a separate test checked a missing part. The captured
+  frame shows that the model browser does not yet list occurrences. Assembly
+  features, patterns, adaptive, flexible and substitute occurrences remain
+  refused on open. The earlier open-guard notes describe the prior state.
 - The drawing browser now lists the authored sheets, borders, title blocks and
   views, and browser search uses those same rows. Unit tests cover multiple
   sheets, a missing border and searching for a view.

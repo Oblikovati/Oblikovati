@@ -169,3 +169,59 @@ fn wrong_component_kind_is_reported_and_new_background_document_is_closed() {
             .is_some()
     );
 }
+
+#[test]
+fn opening_an_assembly_resolves_nested_components_without_activating_them() {
+    let mut files = DiscoveryWorkspace::new(QueryObserver::default(), DiscoveryFiles::default());
+    let mut source = QueryGuids(0);
+    save_component_fixture(&mut files, &mut source, "part.opd");
+    for (name, bytes) in [
+        ("nested.oad", &b"schemaVersion: 2\ndocumentType: 2\nmodel: {occurrences: [{name: 'Part:1', component: part.opd}]}\n"[..]),
+        ("root.oad", &b"schemaVersion: 2\ndocumentType: 2\nmodel: {occurrences: [{name: 'Nested:1', component: nested.oad}, {name: 'Missing:1', component: missing.opd}]}\n"[..]),
+    ] {
+        files.files().packages.borrow_mut().insert(PathBuf::from(format!("/fixtures/{name}")), bytes.to_vec());
+    }
+    let mut factory = QueryObserverFactory {
+        created: 0,
+        limit: 8,
+    };
+    let root = FileHost::new(&mut files, &mut source, "test")
+        .with_observer_factory(&mut factory)
+        .open_path(Path::new("/fixtures/root.oad"), true)
+        .unwrap();
+    let nested = files.document_reference(root, "nested.oad").unwrap();
+    let part = files.document_reference(nested, "part.opd").unwrap();
+    assert!(!files.document_info(nested).unwrap().visible);
+    assert!(!files.document_info(part).unwrap().visible);
+    assert_eq!(files.workspace().active_document(), Some(root));
+    assert!(
+        files
+            .document_reference_error(root, "missing.opd")
+            .is_some()
+    );
+    let client = Client::new(FileHost::new(&mut files, &mut source, "test"));
+    client
+        .transactions()
+        .begin(&TransactionBeginArgs {
+            label: "No change".into(),
+        })
+        .unwrap();
+    client.transactions().end().unwrap();
+    assert_eq!(files.document_reference(root, "nested.oad"), Some(nested));
+    assert_eq!(files.document_reference(nested, "part.opd"), Some(part));
+    files.save(root, "test", &mut source).unwrap();
+    files.close_discarding_changes(root).unwrap();
+    assert!(files.workspace().documents().is_empty());
+    let reopened = FileHost::new(&mut files, &mut source, "test")
+        .with_observer_factory(&mut factory)
+        .open_path(Path::new("/fixtures/root.oad"), true)
+        .unwrap();
+    let nested = files.document_reference(reopened, "nested.oad").unwrap();
+    assert!(files.document_reference(nested, "part.opd").is_some());
+    assert!(
+        files
+            .document_reference_error(reopened, "missing.opd")
+            .is_some()
+    );
+    files.close_discarding_changes(reopened).unwrap();
+}

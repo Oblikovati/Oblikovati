@@ -36,10 +36,37 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHost<'_
 }
 
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext<'_, O, W, F> {
-    fn resolve_assembly_references(
+    pub(super) fn resolve_assembly_references(
         &mut self,
         owner: u64,
     ) -> Result<AssemblyReferenceReport, Error> {
+        let mut visited = std::collections::BTreeSet::new();
+        let mut pending = std::collections::VecDeque::from([owner]);
+        let mut result = AssemblyReferenceReport::default();
+        while let Some(document) = pending.pop_front() {
+            if !visited.insert(document) {
+                continue;
+            }
+            let report = self.resolve_one_assembly(document)?;
+            for (_, target) in &report.resolved {
+                if self
+                    .files
+                    .workspace()
+                    .session(*target)
+                    .map_err(|cause| Error(cause.to_string()))?
+                    .snapshot()
+                    .assembly
+                    .is_some()
+                {
+                    pending.push_back(*target);
+                }
+            }
+            result.resolved.extend(report.resolved);
+            result.failures.extend(report.failures);
+        }
+        Ok(result)
+    }
+    fn resolve_one_assembly(&mut self, owner: u64) -> Result<AssemblyReferenceReport, Error> {
         let session = self
             .files
             .workspace()

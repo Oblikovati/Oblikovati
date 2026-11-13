@@ -98,6 +98,34 @@ impl DocumentPackage {
         }
         Ok(())
     }
+    /// Check whether saved assembly content can be reconstructed on open.
+    /// Example: `package.require_loadable_assembly()?` before registration.
+    pub fn require_loadable_assembly(&self) -> Result<(), PackageCodecError> {
+        let Some(records) = self.assembly_occurrences()? else {
+            return Ok(());
+        };
+        for name in ["patterns", "features"] {
+            let Some(value) = self.root.get("model").and_then(|model| model.get(name)) else {
+                continue;
+            };
+            if !value.is_null() && !value.as_sequence().is_some_and(Vec::is_empty) {
+                return Err(unsupported_assembly_content(name, value));
+            }
+        }
+        for record in records {
+            if record.adaptive
+                || record.flexible
+                || record.substitute
+                || !record.child_transforms.is_empty()
+            {
+                return Err(PackageCodecError(format!(
+                    "assembly occurrence {:?}: expected no adaptive, flexible, substitute, or child transform state",
+                    record.name
+                )));
+            }
+        }
+        Ok(())
+    }
 }
 fn component_references(records: &[AssemblyOccurrenceRecipe]) -> std::collections::BTreeSet<&str> {
     oblikovati_model::assembly::component_references(records)

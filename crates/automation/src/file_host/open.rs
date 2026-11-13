@@ -70,10 +70,30 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
             .set_visible(id, visible)
             .map_err(|error| Error(error.to_string()))?;
         self.open_drawing_reference(id);
+        if self
+            .files
+            .workspace()
+            .session(id)
+            .map_err(|error| Error(error.to_string()))?
+            .snapshot()
+            .assembly
+            .is_some()
+        {
+            self.resolve_assembly_references(id)?;
+        }
         Ok(id)
     }
 
     pub(super) fn open_drawing_reference(&mut self, drawing: u64) {
+        let is_drawing = self
+            .files
+            .workspace()
+            .session(drawing)
+            .ok()
+            .is_some_and(|session| session.snapshot().drawing.is_some());
+        if !is_drawing {
+            return;
+        }
         let reference = self
             .files
             .workspace()

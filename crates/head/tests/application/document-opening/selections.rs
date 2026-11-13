@@ -131,7 +131,7 @@ fn express_open_refuses_mouse_and_enter_until_full_mode_is_selected() {
 }
 
 #[test]
-fn populated_assembly_is_not_shown_as_an_empty_document() {
+fn populated_assembly_reports_a_missing_component() {
     let mut world = ApplicationWorld::new();
     let part = world.add_part();
     let folder = models_folder(&mut world);
@@ -140,9 +140,45 @@ fn populated_assembly_is_not_shown_as_an_empty_document() {
     look_in(&mut world, &folder);
     select_row(&mut world, ASSEMBLY_FILE);
     choose_open(&mut world);
-    assert_eq!(world.active_id(), part);
-    assert_eq!(world.state().documents.len(), 1);
-    assert!(world.text().contains("occurrences"), "{}", world.text());
+    assert_ne!(world.active_id(), part);
+    let status = world.app().window.native.scene_status().unwrap();
+    assert!(
+        status
+            .scene_errors
+            .iter()
+            .any(|error| error.contains("part.opd"))
+    );
+    assert_eq!(status.visible_bodies, 0);
+    world.close();
+}
+
+#[test]
+fn opening_an_assembly_displays_its_referenced_part() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    let folder = models_folder(&mut world);
+    let fixture = crate::scene_fixture::selected_prism_document();
+    let part = oblikovati_persistence::package::DocumentPackage::decode(
+        b"schemaVersion: 2\ndocumentType: 1\n",
+    )
+    .unwrap()
+    .with_parameters(&fixture.parameters, Default::default())
+    .unwrap()
+    .with_sketches(&fixture.sketches, 1, 104)
+    .unwrap()
+    .with_work_geometry(&fixture.work_geometry, 1)
+    .unwrap();
+    std::fs::write(folder.join("part.opd"), part.encode().unwrap()).unwrap();
+    std::fs::write(folder.join(ASSEMBLY_FILE), b"schemaVersion: 2\ndocumentType: 2\nmodel: {occurrences: [{name: 'Part:1', component: part.opd}]}\n").unwrap();
+    open_dialog(&mut world);
+    look_in(&mut world, &folder);
+    select_row(&mut world, ASSEMBLY_FILE);
+    choose_open(&mut world);
+    settle(&mut world);
+    let status = world.app().window.native.scene_status().unwrap();
+    assert_eq!(status.visible_bodies, 1);
+    assert!(status.scene_errors.is_empty(), "{:?}", status.scene_errors);
+    world.save_capture("assembly-referenced-part");
     world.close();
 }
 // Already open files

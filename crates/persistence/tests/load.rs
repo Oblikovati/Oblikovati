@@ -57,12 +57,13 @@ fn reader(contents: &[u8]) -> FakePackageReader {
 }
 
 #[test]
-fn populated_assemblies_are_refused_before_identity_registration() {
+fn unsupported_assembly_content_is_refused_before_identity_registration() {
     use oblikovati_persistence::load::load_parameter_package;
     for model in [
-        "occurrences: [{name: 'Part:1', component: part.opd}]",
         "patterns: [{name: Pattern1}]",
+        "features: [{name: Cut}]",
         "occurrences: {unexpected: value}",
+        "occurrences: [{name: 'Part:1', component: part.opd, flexible: true}]",
     ] {
         let encoded = format!("schemaVersion: 2\ndocumentType: 2\nmodel: {{{model}}}\n");
         let mut index = DocumentIdentityIndex::default();
@@ -76,18 +77,18 @@ fn populated_assemblies_are_refused_before_identity_registration() {
             &mut reader(encoded.as_bytes()),
         )
         .unwrap_err();
-        assert!(error.to_string().contains("assembly model."), "{error}");
+        assert!(error.to_string().contains("assembly"), "{error}");
         assert!(index.identity(1).is_none());
         assert_eq!(source.next, 0);
     }
 }
 #[test]
-fn a_go_written_assembly_is_not_opened_as_an_empty_model() {
+fn a_go_written_assembly_retains_its_occurrences_on_load() {
     use oblikovati_persistence::load::load_parameter_package;
     let bytes = include_bytes!("fixtures/go-assembly-occurrences.yaml");
     let mut index = DocumentIdentityIndex::default();
     let mut guids = source();
-    let error = load_parameter_package(
+    let loaded = load_parameter_package(
         Path::new("assembly.oad"),
         1,
         "alpha",
@@ -95,10 +96,11 @@ fn a_go_written_assembly_is_not_opened_as_an_empty_model() {
         &mut guids,
         &mut reader(bytes),
     )
-    .unwrap_err();
-    assert!(error.to_string().contains("assembly model.occurrences"));
-    assert!(index.identity(1).is_none());
-    assert_eq!(guids.next, 0);
+    .unwrap();
+    let occurrences = loaded.assembly.unwrap();
+    assert_eq!(occurrences.len(), 2);
+    assert_eq!(occurrences[0].component, "parts/widget.opd");
+    assert!(occurrences[1].suppressed);
 }
 #[test]
 fn an_empty_assembly_can_still_be_loaded() {

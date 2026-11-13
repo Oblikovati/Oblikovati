@@ -96,7 +96,7 @@ pub fn read_parameter_package(
 ) -> Result<PreparedParameterPackage, PackageLoadError> {
     let package = read_package(path, reader)?;
     package
-        .require_supported_assembly()
+        .require_loadable_assembly()
         .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;
     let model_states = package
         .restore_model_states()
