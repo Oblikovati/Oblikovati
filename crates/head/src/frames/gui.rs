@@ -110,6 +110,7 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::SetDocumentUnits { .. }
         | GuiShellAction::CreateDrawingBaseView(_)
         | GuiShellAction::PlaceComponent { .. }
+        | GuiShellAction::PlaceComponentFile { .. }
         | GuiShellAction::PreviewDrawingBaseView(_)
         | GuiShellAction::SetSketchOptions(_)
         | GuiShellAction::LineCommand(_)

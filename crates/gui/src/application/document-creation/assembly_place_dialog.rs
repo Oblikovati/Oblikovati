@@ -1,5 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Choose an open component for an assembly placement.
+use crate::application::document_saving::folder_browser::{
+    DialogEnd, DialogEscape, FileTypeList, FolderBrowser, center_dialog, dialog_buttons,
+    file_name_field, full_path,
+};
+use crate::application::file_system::NativeFolders;
 use crate::dockable_window::DockableWindow;
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::{Key, Ui};
@@ -7,13 +12,33 @@ use oblikovati_api::{
     types::{DOCUMENT_ASSEMBLY, Matrix},
     wire::PlaceOccurrenceArgs,
 };
+use std::rc::Rc;
 
-#[derive(Default)]
+const FILE_CHOOSER: &str = "Choose Component File";
+
 pub(super) struct AssemblyPlaceDialog {
     requested: bool,
     assembly: Option<u64>,
     source: Option<u64>,
     name: String,
+    selected_path: Option<String>,
+    browser: FolderBrowser,
+    file_name: String,
+    file_escape: DialogEscape,
+}
+impl Default for AssemblyPlaceDialog {
+    fn default() -> Self {
+        Self {
+            requested: false,
+            assembly: None,
+            source: None,
+            name: String::new(),
+            selected_path: None,
+            browser: FolderBrowser::new(Rc::new(NativeFolders)),
+            file_name: String::new(),
+            file_escape: DialogEscape::default(),
+        }
+    }
 }
 impl DockableWindow for AssemblyPlaceDialog {}
 impl AssemblyPlaceDialog {
@@ -32,6 +57,7 @@ impl AssemblyPlaceDialog {
         if std::mem::take(&mut self.requested) {
             self.assembly = state.document;
             self.source = None;
+            self.selected_path = None;
             self.name.clear();
         }
         if self.assembly != state.document || state.document_type != Some(DOCUMENT_ASSEMBLY) {
@@ -44,6 +70,13 @@ impl AssemblyPlaceDialog {
         let mut open = true;
         Self::dockable_window(ui, "Place Component", &mut open).build(|| {
             self.source_choice(ui, state, assembly);
+            ui.same_line();
+            if crate::widget_abi::button(ui, "Browse...", [0., 0.]) {
+                self.browser.refresh();
+                self.file_name.clear();
+                ui.open_popup(FILE_CHOOSER);
+            }
+            self.file_chooser(ui);
             ui.input_text("Occurrence name", &mut self.name).build();
             let action = self.action(assembly);
             let disabled =
@@ -66,11 +99,13 @@ impl AssemblyPlaceDialog {
         }
     }
     fn source_choice(&mut self, ui: &Ui, state: &GuiCommandState, assembly: u64) {
-        let shown = state
-            .documents
-            .iter()
-            .find(|row| Some(row.id) == self.source)
-            .map_or("Choose an open saved component", |row| row.name.as_str());
+        let shown = self.selected_path.as_deref().unwrap_or_else(|| {
+            state
+                .documents
+                .iter()
+                .find(|row| Some(row.id) == self.source)
+                .map_or("Choose an open saved component", |row| row.name.as_str())
+        });
         let Some(_combo) = ui.begin_combo("Component", shown) else {
             return;
         };
@@ -88,11 +123,45 @@ impl AssemblyPlaceDialog {
                 .build()
             {
                 self.source = Some(row.id);
+                self.selected_path = None;
                 self.name = format!("{}:1", row.name);
             }
         }
     }
+    fn file_chooser(&mut self, ui: &Ui) {
+        center_dialog(ui, [800., 380.]);
+        let Some(_chooser) = ui.begin_modal_popup(FILE_CHOOSER) else {
+            return;
+        };
+        let types = FileTypeList::any();
+        if let Some(name) = self.browser.controls(ui, "Look in", types.filter(0)) {
+            self.file_name = name;
+        }
+        let entered = file_name_field(ui, &mut self.file_name);
+        let end = dialog_buttons(
+            ui,
+            "Open",
+            !self.file_name.is_empty(),
+            entered,
+            &mut self.file_escape,
+        );
+        if end == Some(DialogEnd::Accepted) {
+            self.selected_path = Some(full_path(&self.browser.folder, &self.file_name));
+            self.source = None;
+            self.name = format!("{}:1", self.file_name);
+        }
+        if end.is_some() {
+            ui.close_current_popup();
+        }
+    }
     fn action(&self, assembly: u64) -> Option<GuiShellAction> {
+        if let Some(path) = &self.selected_path {
+            return Some(GuiShellAction::PlaceComponentFile {
+                assembly,
+                path: path.clone(),
+                name: self.name.clone(),
+            });
+        }
         Some(GuiShellAction::PlaceComponent {
             assembly,
             request: PlaceOccurrenceArgs {

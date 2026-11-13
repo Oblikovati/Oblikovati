@@ -28,6 +28,15 @@ macro_rules! forward_owner_view_work {
         ) -> Result<bool, String> {
             self.$owner.place_component_from_gui(assembly, request)
         }
+        fn place_component_file_from_gui(
+            &mut self,
+            assembly: u64,
+            path: &str,
+            name: &str,
+        ) -> Result<bool, String> {
+            self.$owner
+                .place_component_file_from_gui(assembly, path, name)
+        }
         fn extrude_from_gui(
             &mut self,
             document: u64,

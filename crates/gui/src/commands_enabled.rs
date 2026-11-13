@@ -100,6 +100,17 @@ impl GuiShellAction {
                         .is_some_and(|file| file.path.is_some())
                     && !request.name.trim().is_empty()
             }
+            Self::PlaceComponentFile {
+                assembly,
+                path,
+                name,
+            } => {
+                state.document == Some(*assembly)
+                    && state.document_type == Some(oblikovati_api::types::DOCUMENT_ASSEMBLY)
+                    && !state.transaction_open
+                    && !path.trim().is_empty()
+                    && !name.trim().is_empty()
+            }
             Self::PreviewDrawingBaseView(Some(request)) => {
                 Self::CreateDrawingBaseView(request.clone()).enabled(state)
             }

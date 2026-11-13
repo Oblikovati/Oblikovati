@@ -21,6 +21,12 @@ pub enum GuiShellAction {
         assembly: u64,
         request: oblikovati_api::wire::PlaceOccurrenceArgs,
     },
+    /// Open a component file in the background and place it.
+    PlaceComponentFile {
+        assembly: u64,
+        path: String,
+        name: String,
+    },
     PreviewDrawingBaseView(Option<GuiBaseViewRequest>),
     SetUiScale(oblikovati_model::ui_scale::UiScaleOptions),
     SetPromptFrequency {

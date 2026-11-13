@@ -106,6 +106,17 @@ pub trait HeadWork {
             "assembly {assembly} placement {request:?}: expected an assembly owner"
         ))
     }
+    /// Place a component from disk; example: `work.place_component_file_from_gui(assembly, path, name)?`.
+    fn place_component_file_from_gui(
+        &mut self,
+        assembly: u64,
+        path: &str,
+        name: &str,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "assembly {assembly} file {path:?} occurrence {name:?}: expected an assembly owner"
+        ))
+    }
     /// Apply an Extrude dialog request through the document command owner.
     /// Example: `work.extrude_from_gui(document, sketch, 0, "10 mm")?`.
     fn extrude_from_gui(

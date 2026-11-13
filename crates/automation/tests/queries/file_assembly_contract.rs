@@ -4,6 +4,53 @@ use super::*;
 use oblikovati_model::assembly::AssemblyOccurrenceRecipe;
 
 #[test]
+fn file_placement_keeps_focus_and_releases_refused_background_documents() {
+    let mut files = DiscoveryWorkspace::new(QueryObserver::default(), DiscoveryFiles::default());
+    let mut source = QueryGuids(0);
+    save_component_fixture(&mut files, &mut source, "background.opd");
+    let assembly = Path::new("/fixtures/background.oad");
+    files.files().packages.borrow_mut().insert(
+        assembly.into(),
+        b"schemaVersion: 2\ndocumentType: 2\n".to_vec(),
+    );
+    let mut factory = QueryObserverFactory {
+        created: 0,
+        limit: 8,
+    };
+    let root = FileHost::new(&mut files, &mut source, "test")
+        .with_observer_factory(&mut factory)
+        .open_path(assembly, true)
+        .unwrap();
+    let matrix = oblikovati_api::types::Matrix {
+        cells: [
+            1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1.,
+        ],
+    };
+    let mut invalid = matrix.clone();
+    invalid.cells[0] = 0.;
+    let path = Path::new("/fixtures/background.opd");
+    assert!(
+        FileHost::new(&mut files, &mut source, "test")
+            .with_observer_factory(&mut factory)
+            .place_component_file(path, "Part:1", invalid)
+            .is_err()
+    );
+    assert_eq!(files.workspace().documents(), &[root]);
+    assert_eq!(files.workspace().active_document(), Some(root));
+    FileHost::new(&mut files, &mut source, "test")
+        .with_observer_factory(&mut factory)
+        .place_component_file(path, "Part:1", matrix)
+        .unwrap();
+    let target = files
+        .document_reference(root, path.to_str().unwrap())
+        .unwrap();
+    assert!(!files.document_info(target).unwrap().visible);
+    assert_eq!(files.workspace().active_document(), Some(root));
+    files.close_discarding_changes(root).unwrap();
+    assert!(!files.workspace().documents().contains(&target));
+}
+
+#[test]
 fn placement_respects_disabled_first_component_grounding() {
     let mut files = DiscoveryWorkspace::new(QueryObserver::default(), DiscoveryFiles::default());
     let mut source = QueryGuids(0);

@@ -8,6 +8,10 @@ use syn::{Expr, ExprCall, ExprMethodCall, ItemFn, ItemImpl, ItemMod, Lit, Meta};
 // Fixed chrome and transient modal file pickers, wizards, and confirmations
 // have a separate owner. Every entry is exact, so another window fails the guard.
 const INFRASTRUCTURE: &[(&str, &str)] = &[
+    (
+        "application/document-creation/assembly_place_dialog.rs",
+        "modal:FILE_CHOOSER",
+    ),
     ("application/document-creation/workspaces.rs", "title"),
     (
         "application/document-tabs/mod.rs",

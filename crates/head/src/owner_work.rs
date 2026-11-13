@@ -90,6 +90,25 @@ impl<
             .map_err(|cause| cause.to_string())?;
         Ok(true)
     }
+    fn place_component_file_from_gui(
+        &mut self,
+        assembly: u64,
+        path: &str,
+        name: &str,
+    ) -> Result<bool, String> {
+        if self.files.workspace().active_document() != Some(assembly) {
+            return Err(format!("assembly {assembly}: expected the active assembly"));
+        }
+        let transform = oblikovati_api::types::Matrix {
+            cells: [
+                1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1.,
+            ],
+        };
+        self.document_host()
+            .place_component_file(std::path::Path::new(path), name, transform)
+            .map_err(|cause| cause.to_string())?;
+        Ok(true)
+    }
     fn extrude_from_gui(
         &mut self,
         document: u64,

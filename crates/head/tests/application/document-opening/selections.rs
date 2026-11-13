@@ -7,6 +7,52 @@ const DEFER: &str = "Load in Defer Mode";
 const SKIP: &str = "Skip all unresolved files";
 
 #[test]
+fn assembly_ribbon_places_a_component_from_a_file() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    let folder = models_folder(&mut world);
+    let fixture = crate::scene_fixture::selected_prism_document();
+    let part = oblikovati_persistence::package::DocumentPackage::decode(
+        b"schemaVersion: 2\ndocumentType: 1\n",
+    )
+    .unwrap()
+    .with_parameters(&fixture.parameters, Default::default())
+    .unwrap()
+    .with_sketches(&fixture.sketches, 1, 104)
+    .unwrap()
+    .with_work_geometry(&fixture.work_geometry, 1)
+    .unwrap();
+    std::fs::write(folder.join("file-part.opd"), part.encode().unwrap()).unwrap();
+    let assembly = saved_document(
+        &mut world,
+        GuiTemplateKind::Assembly,
+        &folder,
+        "file-root.oad",
+    );
+    world.click_text("Place");
+    world.click_text("Browse");
+    look_in(&mut world, &folder);
+    select_row(&mut world, "file-part.opd");
+    choose_open(&mut world);
+    let button = world
+        .frame
+        .runs
+        .iter()
+        .filter(|run| run.text == "Place")
+        .max_by(|a, b| a.center()[1].total_cmp(&b.center()[1]))
+        .unwrap()
+        .center();
+    world.click(super::super::diagnostics::pointer_pixels(button));
+    settle(&mut world);
+    assert_eq!(world.active_id(), assembly);
+    let status = world.app().window.native.scene_status().unwrap();
+    assert_eq!(status.visible_bodies, 1);
+    assert!(status.scene_errors.is_empty(), "{:?}", status.scene_errors);
+    world.expect_text("file-part.opd:1");
+    world.close();
+}
+
+#[test]
 fn assembly_ribbon_places_an_open_component_and_replays_it() {
     let mut world = ApplicationWorld::new();
     world.add_part();

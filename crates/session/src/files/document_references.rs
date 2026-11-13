@@ -82,6 +82,22 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
             .flatten()
             .filter(|model| self.retained.contains_key(model))
     }
+    /// Retain a newly opened background component while it has owners.
+    /// Example: `files.keep_background_reference(owner, name, component)?` after placement.
+    pub fn keep_background_reference(
+        &mut self,
+        owner: u64,
+        name: &str,
+        model: u64,
+    ) -> Result<(), FileWorkspaceError> {
+        if self.document_reference(owner, name) != Some(model) {
+            return Err(FileWorkspaceError::ReferenceGraph(format!(
+                "document {owner} reference {name:?} target {model}: expected an owned reference"
+            )));
+        }
+        self.background_reference_models.insert(model);
+        Ok(())
+    }
     pub(super) fn owned_assembly_references(&self, owner: u64) -> BTreeSet<String> {
         self.document_references
             .get(&owner)
