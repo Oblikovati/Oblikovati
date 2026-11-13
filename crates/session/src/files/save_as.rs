@@ -58,7 +58,8 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         let name = name::saved_name(file, &destination);
         let mut target =
             ParameterPackageTarget::new(&mut file.package, &destination, &mut self.files)
-                .with_display_name(name);
+                .with_display_name(name)
+                .with_drawing_views(file.drawing_views.clone());
         self.workspace
             .save(id, version, source, &mut target)
             .map_err(FileWorkspaceError::Save)?;

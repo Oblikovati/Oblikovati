@@ -87,3 +87,79 @@ fn verify_reopened_drawing(
     );
     assert!(!host.workspace().needs_save(reopened).unwrap());
 }
+
+#[test]
+fn staged_view_geometry_is_saved_atomically_and_rejects_a_stale_recipe() {
+    use oblikovati_persistence::package::{SavedDrawingLine, SavedDrawingView, SavedDrawingViews};
+    let mut host = FileWorkspace::new(RecordingWorkspace::default(), WorkspaceFiles::default());
+    let mut source = SequenceGuids(1000);
+    let drawing = host
+        .create_unbound(
+            DocumentPackage::empty(DOCUMENT_DRAWING, "Drawing1"),
+            ContentObserver,
+            "alpha",
+            &mut source,
+        )
+        .unwrap()
+        .session_id;
+    author_view(&mut host, drawing);
+    let views = SavedDrawingViews {
+        version: SavedDrawingViews::VERSION,
+        drawing_recipe: drawing_state(&host, drawing).recipe().clone(),
+        views: vec![SavedDrawingView {
+            sheet: "Second".into(),
+            view: "Front".into(),
+            lines: vec![SavedDrawingLine {
+                points: vec![[1., 2.], [3., 4.]],
+                hidden: false,
+            }],
+        }],
+    };
+    assert!(host.keep_drawing_views(u64::MAX, views.clone()).is_err());
+    host.keep_drawing_views(drawing, views.clone()).unwrap();
+    let target = path("cached-drawing.odd");
+    host.save_as(drawing, &target, "alpha", &mut source)
+        .unwrap();
+    let bytes = host.files().contents.borrow()[&target].clone();
+    let package = DocumentPackage::decode(&bytes).unwrap();
+    assert_eq!(
+        package.restore_saved_drawing_views().unwrap(),
+        Some(views.clone())
+    );
+    let copy = path("cached-copy.odd");
+    host.save_copy(drawing, &copy, None, "alpha", &mut source)
+        .unwrap();
+    let copy_bytes = host.files().contents.borrow()[&copy].clone();
+    assert_eq!(
+        DocumentPackage::decode(&copy_bytes)
+            .unwrap()
+            .restore_saved_drawing_views()
+            .unwrap(),
+        Some(views.clone())
+    );
+    host.commands(drawing)
+        .unwrap()
+        .run("Change reference", |snapshot, _| {
+            snapshot
+                .drawing
+                .as_mut()
+                .unwrap()
+                .set_model_reference("/project/other.opd")
+        })
+        .unwrap();
+    assert!(host.save(drawing, "alpha", &mut source).is_err());
+    assert_eq!(host.files().contents.borrow()[&target], bytes);
+    let mut updated = views;
+    updated.drawing_recipe = drawing_state(&host, drawing).recipe().clone();
+    host.keep_drawing_views(drawing, updated.clone()).unwrap();
+    host.close_saving_changes(drawing, "alpha", &mut source)
+        .unwrap();
+    let saved = host.files().contents.borrow()[&target].clone();
+    assert_eq!(
+        DocumentPackage::decode(&saved)
+            .unwrap()
+            .restore_saved_drawing_views()
+            .unwrap(),
+        Some(updated)
+    );
+}

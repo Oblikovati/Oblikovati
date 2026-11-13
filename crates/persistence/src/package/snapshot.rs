@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-use super::{DocumentPackage, PackageCodecError, PackageSaveError, PackageSaveTarget};
+use super::{
+    DocumentPackage, PackageCodecError, PackageSaveError, PackageSaveTarget, SavedDrawingViews,
+};
 use crate::atomic::AtomicFiles;
 use oblikovati_model::{
     history::{DocumentSnapshot, DocumentSnapshotTarget},
@@ -15,6 +17,7 @@ pub struct ParameterPackageTarget<'a, Files> {
     files: &'a mut Files,
     prepared: Option<DocumentPackage>,
     display_name: Option<String>,
+    drawing_views: Option<SavedDrawingViews>,
 }
 
 /// A snapshot could not be captured or atomically persisted.
@@ -39,7 +42,14 @@ impl<'a, Files: AtomicFiles> ParameterPackageTarget<'a, Files> {
             files,
             prepared: None,
             display_name: None,
+            drawing_views: None,
         }
+    }
+    /// Add saved drawing presentation to the same atomic candidate; example: `target.with_drawing_views(views)`.
+    pub fn with_drawing_views(mut self, views: Option<SavedDrawingViews>) -> Self {
+        self.drawing_views = views;
+        self.prepared = None;
+        self
     }
     /// Stage the current title without mutating the retained package; example: `target.with_display_name("Bracket".into())` before preparation.
     pub fn with_display_name(mut self, name: String) -> Self {
@@ -74,6 +84,12 @@ impl<Files: AtomicFiles> DocumentSnapshotTarget for ParameterPackageTarget<'_, F
             feature_high_water,
         )?;
         let candidate = self.named_candidate(candidate);
+        let candidate = match &self.drawing_views {
+            Some(views) => candidate
+                .with_saved_drawing_views(views)
+                .map_err(SnapshotPackageError::Codec)?,
+            None => candidate,
+        };
         require_current_properties(&candidate, snapshot)?;
         let digest = candidate
             .recipe_digest()

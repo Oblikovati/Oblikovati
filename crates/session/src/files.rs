@@ -51,6 +51,7 @@ struct RetainedFile {
     package: DocumentPackage,
     /// What the next save stores as the file's picture; nothing asked leaves it as it is.
     picture: Option<FilePicture>,
+    drawing_views: Option<oblikovati_persistence::package::SavedDrawingViews>,
 }
 /// A picture for the next save of a file, or none in it.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -175,6 +176,19 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
             file.picture = Some(picture);
         }
     }
+    /// Supply a drawing presentation for its next save; example: `files.keep_drawing_views(id, views)?`.
+    pub fn keep_drawing_views(
+        &mut self,
+        id: u64,
+        views: oblikovati_persistence::package::SavedDrawingViews,
+    ) -> Result<(), FileWorkspaceError> {
+        let file = self
+            .retained
+            .get_mut(&id)
+            .ok_or(FileWorkspaceError::MissingFile(id))?;
+        file.drawing_views = Some(views);
+        Ok(())
+    }
 
     /// Change focus without changing command ownership; example: `host.activate(id)?;`.
     pub fn activate(&mut self, id: u64) -> Result<(), WorkspaceError> {
@@ -282,7 +296,9 @@ fn bound_target<'a, F: DocumentFiles>(
         .as_deref()
         .ok_or(FileWorkspaceError::UnboundDocument(id))?;
     let name = name::saved_name(file, path);
-    Ok(ParameterPackageTarget::new(&mut file.package, path, files).with_display_name(name))
+    Ok(ParameterPackageTarget::new(&mut file.package, path, files)
+        .with_display_name(name)
+        .with_drawing_views(file.drawing_views.clone()))
 }
 
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspace<O, W, F> {

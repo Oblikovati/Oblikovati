@@ -140,6 +140,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
                 package,
                 display_override,
                 picture: None,
+                drawing_views: None,
             },
         );
         self.refresh_display_name(registration.session_id);
