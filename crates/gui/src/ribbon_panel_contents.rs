@@ -134,7 +134,7 @@ pub(crate) fn draw_panel_content(
         }
         RibbonPanel::PartCreate => part_create_controls(ui, origin, state, owners, actions),
         RibbonPanel::PartModify => {
-            part_modify_controls(ui, origin, owners.hole_tip);
+            part_modify_controls(ui, origin, owners.icons, owners.hole_tip);
         }
         RibbonPanel::PartPattern => {
             muted_commands(ui, origin, &["Rectangular", "Circular"], NOT_PORTED);
@@ -161,38 +161,59 @@ pub(crate) fn draw_panel_content(
 /// Commands a document kind will offer: shown muted with the reason, never as a working button.
 const NOT_PORTED: &str = "This command is not available in this build.";
 fn muted_commands(ui: &Ui, origin: [f32; 2], labels: &[&str], reason: &str) {
-    muted_commands_with_hole_tip(ui, origin, labels, reason, false);
+    for (index, label) in labels.iter().enumerate() {
+        muted_command_position(ui, origin, index);
+        muted_command(ui, label, reason, None, false);
+    }
 }
-fn part_modify_controls(ui: &Ui, origin: [f32; 2], hole_tip: bool) {
-    muted_commands_with_hole_tip(
-        ui,
-        origin,
-        &["Hole", "Fillet", "Chamfer"],
-        NOT_PORTED,
-        hole_tip,
-    );
-}
-fn muted_commands_with_hole_tip(
+fn part_modify_controls(
     ui: &Ui,
     origin: [f32; 2],
-    labels: &[&str],
-    reason: &str,
+    icons: &crate::icons::GuiRibbonIcons,
     hole_tip: bool,
 ) {
-    for (index, label) in labels.iter().enumerate() {
-        let column = (index / 2) as f32 * 116.;
-        let row = (index % 2) as f32 * 30.;
-        crate::widget_abi::cursor_position(ui, [origin[0] + column, origin[1] + row]);
-        {
-            let _muted = ui.begin_disabled(true);
-            crate::widget_abi::button(ui, label, [108., 26.]);
-        }
-        if hole_tip && *label == "Hole" {
-            crate::ribbon_key_tips::badge(ui, "HO");
-        }
-        if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
-            ui.tooltip_text(reason);
-        }
+    use crate::icons::IconGlyph;
+    for (index, (label, glyph)) in [
+        ("Hole", IconGlyph::Hole),
+        ("Fillet", IconGlyph::Fillet),
+        ("Chamfer", IconGlyph::Chamfer),
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        muted_command_position(ui, origin, index);
+        muted_command(
+            ui,
+            label,
+            NOT_PORTED,
+            Some((icons, glyph)),
+            hole_tip && label == "Hole",
+        );
+    }
+}
+fn muted_command_position(ui: &Ui, origin: [f32; 2], index: usize) {
+    let column = (index / 2) as f32 * 116.;
+    let row = (index % 2) as f32 * 30.;
+    crate::widget_abi::cursor_position(ui, [origin[0] + column, origin[1] + row]);
+}
+fn muted_command(
+    ui: &Ui,
+    label: &str,
+    reason: &str,
+    icon: Option<(&crate::icons::GuiRibbonIcons, crate::icons::IconGlyph)>,
+    hole_tip: bool,
+) {
+    let disabled = ui.begin_disabled(true);
+    match icon {
+        Some((icons, glyph)) => icons.button(ui, label, glyph, [108., 26.]),
+        None => crate::widget_abi::button(ui, label, [108., 26.]),
+    };
+    drop(disabled);
+    if hole_tip {
+        crate::ribbon_key_tips::badge(ui, "HO");
+    }
+    if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
+        ui.tooltip_text(reason);
     }
 }
 /// Extrude starts a sketch when needed, or opens the profile dialog.
@@ -226,7 +247,9 @@ fn part_create_controls(
     crate::widget_abi::cursor_position(ui, [origin[0], origin[1] + 30.]);
     {
         let _muted = ui.begin_disabled(true);
-        crate::widget_abi::button(ui, "Revolve", [108., 26.]);
+        owners
+            .icons
+            .button(ui, "Revolve", crate::icons::IconGlyph::Revolve, [108., 26.]);
     }
     if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
         ui.tooltip_text(NOT_PORTED);

@@ -91,3 +91,19 @@ fn appearance_menu_marks_normal_and_disables_unavailable_layouts() {
     world.expect_text("Start 2D Sketch");
     world.close();
 }
+
+#[test]
+fn part_feature_icons_keep_unavailable_commands_disabled() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    world.pump(Vec::new());
+    for label in ["Revolve", "Hole", "Fillet", "Chamfer"] {
+        world.expect_text(label);
+        assert!(
+            !world.run_is_enabled(label),
+            "{label}: expected an unavailable command"
+        );
+    }
+    world.save_capture("part-feature-icons-disabled");
+    world.close();
+}

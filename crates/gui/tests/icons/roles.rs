@@ -92,7 +92,12 @@ fn inherited_named_and_short_hex_paints_keep_the_same_roles() {
 
 #[test]
 fn all_shipped_command_icons_rasterize_at_go_small_and_large_sizes() {
-    assert_eq!(catalog::SOURCES.len(), 29);
+    for expected in ["revolve", "hole", "fillet", "chamfer"] {
+        assert!(
+            catalog::SOURCES.iter().any(|(name, _)| *name == expected),
+            "missing {expected} icon"
+        );
+    }
     for (name, source) in catalog::SOURCES {
         for edge in [18, 40] {
             let masks = rasterize_roles(source, edge)
