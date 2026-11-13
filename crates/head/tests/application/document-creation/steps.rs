@@ -251,6 +251,8 @@ fn part_group_expanded(world: &mut ApplicationWorld) {
 }
 #[when("I collapse the part template group")]
 #[when("I expand the part template group")]
+#[when("the user collapses the part template group")]
+#[when("the user expands the part template group")]
 fn toggle_part_group(world: &mut ApplicationWorld) {
     world.click_text("Part");
 }
@@ -312,6 +314,7 @@ fn insert_opens(world: &mut ApplicationWorld) {
     world.expect_text("Look in");
 }
 #[when("I cancel the Insert dialog")]
+#[when("the user cancels the Insert dialog")]
 fn cancel_insert(world: &mut ApplicationWorld) {
     world.click_text("Cancel");
     world.expect_no_text("Look in");

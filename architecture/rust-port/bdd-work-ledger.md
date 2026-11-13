@@ -46,6 +46,11 @@ claim that each file has been individually triaged.
   focused results; the complete creation feature needs a new run before its
   pass count can be updated. Logs: `/tmp/obk-create-drawing-current.log` and
   `/tmp/obk-create-gallery-0.log`, `/tmp/obk-create-gallery-1.log`.
+- The presentation creation and template-group collapse scenarios each pass
+  all 10 steps through the native UI on that source. The presentation check
+  includes the Insert dialog, its cancellation and reopening, the scene browser,
+  and both workspace panels. Logs: `/tmp/obk-create-presentation.log` and
+  `/tmp/obk-create-collapse.log`.
 
 ### Drawing browser and saved views, 2026-11-13
 
