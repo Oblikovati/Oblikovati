@@ -118,6 +118,21 @@ impl<
         generation: u64,
         drawing: &DrawingDocument,
     ) -> GuiDrawingProjection {
+        match self.files.deferred_drawing_views(drawing_id) {
+            Ok(Some(views)) => {
+                return saved_sheet_projection(
+                    views,
+                    &drawing.sheets()[drawing.active_sheet()].name,
+                );
+            }
+            Ok(None) => {}
+            Err(cause) => {
+                return GuiDrawingProjection {
+                    lines: Vec::new(),
+                    error: Some(cause.to_string()),
+                };
+            }
+        }
         if drawing.sheets()[drawing.active_sheet()].views.is_empty() {
             return GuiDrawingProjection::default();
         }
@@ -216,6 +231,60 @@ impl<
             )?;
         }
         Ok(output)
+    }
+}
+fn saved_sheet_projection(
+    views: &oblikovati_persistence::package::SavedDrawingViews,
+    sheet: &str,
+) -> GuiDrawingProjection {
+    let lines = views
+        .views
+        .iter()
+        .filter(|view| view.sheet == sheet)
+        .flat_map(|view| view.lines.iter())
+        .map(|line| GuiDrawingLine {
+            points: line.points.clone(),
+            hidden: line.hidden,
+            preview: false,
+        })
+        .collect();
+    GuiDrawingProjection { lines, error: None }
+}
+
+#[cfg(test)]
+mod saved_sheet_tests {
+    use super::*;
+    use oblikovati_persistence::package::{SavedDrawingLine, SavedDrawingView, SavedDrawingViews};
+
+    #[test]
+    fn deferred_projection_uses_only_the_active_sheet_and_preserves_line_style() {
+        let line = SavedDrawingLine {
+            points: vec![[1., 2.], [3., 4.]],
+            hidden: true,
+        };
+        let views = SavedDrawingViews {
+            version: SavedDrawingViews::VERSION,
+            drawing_recipe: DrawingDocument::new().recipe().clone(),
+            views: vec![
+                SavedDrawingView {
+                    sheet: "Other".into(),
+                    view: "Side".into(),
+                    lines: vec![line.clone()],
+                },
+                SavedDrawingView {
+                    sheet: "Sheet".into(),
+                    view: "Front".into(),
+                    lines: vec![line],
+                },
+            ],
+        };
+        let output = saved_sheet_projection(&views, "Sheet");
+        assert_eq!(output.lines.len(), 1);
+        assert_eq!(output.lines[0].points, vec![[1., 2.], [3., 4.]]);
+        assert!(output.lines[0].hidden);
+        assert!(!output.lines[0].preview);
+        assert_eq!(output.error, None);
+        assert!(saved_sheet_projection(&views, "Missing").lines.is_empty());
     }
 }
 fn append_curves(

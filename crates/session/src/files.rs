@@ -52,6 +52,7 @@ struct RetainedFile {
     /// What the next save stores as the file's picture; nothing asked leaves it as it is.
     picture: Option<FilePicture>,
     drawing_views: Option<oblikovati_persistence::package::SavedDrawingViews>,
+    deferred_views: Option<oblikovati_persistence::package::SavedDrawingViews>,
 }
 /// A picture for the next save of a file, or none in it.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -200,6 +201,40 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         file.package
             .restore_saved_drawing_views()
             .map_err(FileWorkspaceError::Package)
+    }
+
+    /// Freeze saved drawing geometry for this open session; example: `files.defer_drawing_updates(id)?`.
+    pub fn defer_drawing_updates(&mut self, id: u64) -> Result<(), FileWorkspaceError> {
+        let views = self.saved_drawing_views(id)?.ok_or_else(|| {
+            FileWorkspaceError::DeferredDrawing(id, "expected saved view geometry".into())
+        })?;
+        let session = self
+            .workspace
+            .session(id)
+            .map_err(FileWorkspaceError::Workspace)?;
+        let current = session.snapshot().drawing.as_ref().ok_or_else(|| {
+            FileWorkspaceError::DeferredDrawing(id, "expected a drawing document".into())
+        })?;
+        if current.recipe() != &views.drawing_recipe {
+            return Err(FileWorkspaceError::DeferredDrawing(
+                id,
+                "expected the saved drawing recipe".into(),
+            ));
+        }
+        self.retained
+            .get_mut(&id)
+            .ok_or(FileWorkspaceError::MissingFile(id))?
+            .deferred_views = Some(views);
+        Ok(())
+    }
+
+    /// Read the frozen presentation, if updates are deferred; example: `files.deferred_drawing_views(id)?`.
+    pub fn deferred_drawing_views(
+        &self,
+        id: u64,
+    ) -> Result<Option<&oblikovati_persistence::package::SavedDrawingViews>, FileWorkspaceError>
+    {
+        Ok(self.retained_file(id)?.deferred_views.as_ref())
     }
 
     /// Change focus without changing command ownership; example: `host.activate(id)?;`.

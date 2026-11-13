@@ -46,6 +46,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
                 package,
                 picture: None,
                 drawing_views: None,
+                deferred_views: None,
             },
         );
         self.refresh_display_name(registration.session_id);

@@ -103,6 +103,7 @@ fn staged_view_geometry_is_saved_atomically_and_rejects_a_stale_recipe() {
         .unwrap()
         .session_id;
     assert_eq!(host.saved_drawing_views(drawing).unwrap(), None);
+    assert!(host.defer_drawing_updates(drawing).is_err());
     author_view(&mut host, drawing);
     let views = SavedDrawingViews {
         version: SavedDrawingViews::VERSION,
@@ -131,6 +132,7 @@ fn staged_view_geometry_is_saved_atomically_and_rejects_a_stale_recipe() {
         host.saved_drawing_views(drawing).unwrap(),
         Some(views.clone())
     );
+    assert_eq!(host.deferred_drawing_views(drawing).unwrap(), None);
     assert!(host.saved_drawing_views(u64::MAX).is_err());
     let copy = path("cached-copy.odd");
     host.save_copy(drawing, &copy, None, "alpha", &mut source)
@@ -157,6 +159,7 @@ fn staged_view_geometry_is_saved_atomically_and_rejects_a_stale_recipe() {
         host.saved_drawing_views(drawing).unwrap(),
         Some(views.clone())
     );
+    assert!(host.defer_drawing_updates(drawing).is_err());
     assert!(host.save(drawing, "alpha", &mut source).is_err());
     assert_eq!(host.files().contents.borrow()[&target], bytes);
     let mut updated = views;
@@ -182,5 +185,29 @@ fn staged_view_geometry_is_saved_atomically_and_rejects_a_stale_recipe() {
         )
         .unwrap()
         .session_id();
-    assert_eq!(host.saved_drawing_views(reopened).unwrap(), Some(updated));
+    assert_eq!(
+        host.saved_drawing_views(reopened).unwrap(),
+        Some(updated.clone())
+    );
+    host.defer_drawing_updates(reopened).unwrap();
+    assert_eq!(
+        host.deferred_drawing_views(reopened).unwrap(),
+        Some(&updated)
+    );
+    host.commands(reopened)
+        .unwrap()
+        .run("Change drawing", |snapshot, _| {
+            snapshot
+                .drawing
+                .as_mut()
+                .unwrap()
+                .set_model_reference("/project/new.opd")
+        })
+        .unwrap();
+    assert_eq!(
+        host.deferred_drawing_views(reopened).unwrap(),
+        Some(&updated)
+    );
+    host.close_discarding_changes(reopened).unwrap();
+    assert!(host.deferred_drawing_views(reopened).is_err());
 }
