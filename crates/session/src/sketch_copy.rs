@@ -16,14 +16,19 @@ impl<O: TransactionObserver> DocumentSession<O> {
         entities: &[SketchEntityId],
         vector: [f64; 2],
     ) -> Result<crate::SketchTransformPreview, CommandError<SketchCopyError>> {
+        self.preview_selected_sketch_copy(sketch, entities, SketchCopyOperation::Translate(vector))
+    }
+    /// Preview any supported copy transform without changing history or reserving live identities.
+    /// Example: `session.preview_selected_sketch_copy(sketch, &[line], SketchCopyOperation::Rotate { center: [0.0; 2], radians: 1.0 })?;`.
+    pub fn preview_selected_sketch_copy(
+        &self,
+        sketch: DocumentSketchId,
+        entities: &[SketchEntityId],
+        operation: SketchCopyOperation,
+    ) -> Result<crate::SketchTransformPreview, CommandError<SketchCopyError>> {
         self.preview_projected(
             |snapshot, reservations| {
-                snapshot.copy_selected_sketch_entities(
-                    sketch,
-                    entities,
-                    SketchCopyOperation::Translate(vector),
-                    reservations,
-                )
+                snapshot.copy_selected_sketch_entities(sketch, entities, operation, reservations)
             },
             |snapshot, report| {
                 Ok(crate::SketchTransformPreview {

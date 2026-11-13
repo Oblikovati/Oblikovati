@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{Sketch2D, SketchEntityId, SketchError};
 use crate::sketch::SketchSelectionTransform;
-/// A fresh selection translated by a vector or reflected in an owned line.
+/// A fresh selection transformed without modifying its source geometry.
 #[derive(Clone, Copy, Debug)]
 pub enum SketchCopyOperation {
     Translate([f64; 2]),
+    Rotate { center: [f64; 2], radians: f64 },
     Mirror(SketchEntityId),
 }
 impl SketchCopyOperation {
@@ -12,6 +13,7 @@ impl SketchCopyOperation {
     pub fn label(self) -> &'static str {
         match self {
             Self::Translate(_) => "Copy sketch entities",
+            Self::Rotate { .. } => "Rotate copied sketch entities",
             Self::Mirror(_) => "Mirror sketch entities",
         }
     }
@@ -21,6 +23,9 @@ impl SketchCopyOperation {
     ) -> Result<SketchSelectionTransform, SketchError> {
         match self {
             Self::Translate(vector) => Ok(SketchSelectionTransform::Move(vector)),
+            Self::Rotate { center, radians } => {
+                Ok(SketchSelectionTransform::Rotate { center, radians })
+            }
             Self::Mirror(id) => mirror_transform(source, id),
         }
     }

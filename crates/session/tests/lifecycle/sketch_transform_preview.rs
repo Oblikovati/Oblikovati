@@ -252,3 +252,73 @@ fn moving_a_fixed_line_refuses_the_candidate_and_preserves_history() {
     assert!(before.same_evaluated_state(&session.snapshot().sketches));
     assert_eq!(history, session.undo_labels());
 }
+
+#[test]
+fn rotated_copy_is_one_undoable_history_step() {
+    use oblikovati_model::sketch::SketchCopyOperation;
+    let mut session = session_with_line();
+    let before = session.snapshot().sketches.clone();
+    let operation = SketchCopyOperation::Rotate {
+        center: [0.; 2],
+        radians: std::f64::consts::FRAC_PI_2,
+    };
+    let generation = session.generation();
+    let preview = session
+        .preview_selected_sketch_copy(DocumentSketchId(1), &[SketchEntityId(3)], operation)
+        .unwrap();
+    assert_eq!(session.generation(), generation);
+    assert!(session.undo_labels().is_empty());
+    assert!(before.same_evaluated_state(&session.snapshot().sketches));
+    let report = session
+        .copy_selected_sketch_entities_projected(
+            DocumentSketchId(1),
+            &[SketchEntityId(3)],
+            operation,
+            |result| result,
+        )
+        .unwrap();
+    let geometry = session
+        .snapshot()
+        .sketches
+        .get(DocumentSketchId(1))
+        .unwrap()
+        .geometry();
+    assert_eq!(preview.members, report.copies);
+    assert!(preview.geometry.same_recipe(geometry));
+    let line = geometry.line(report.copies[0]).unwrap();
+    let end = geometry.point(line.endpoints[1]).unwrap().position;
+    assert!(end[0].abs() < 1e-12 && (end[1] - 4.).abs() < 1e-12);
+    let after = session.snapshot().sketches.clone();
+    assert_eq!(session.undo_labels(), ["Rotate copied sketch entities"]);
+    session.undo().unwrap();
+    assert!(before.same_evaluated_state(&session.snapshot().sketches));
+    session.redo().unwrap();
+    assert!(after.same_evaluated_state(&session.snapshot().sketches));
+}
+
+#[test]
+fn invalid_rotated_copy_leaves_history_and_geometry_unchanged() {
+    use oblikovati_model::sketch::SketchCopyOperation;
+    let mut session = session_with_line();
+    let before = session.snapshot().sketches.clone();
+    let operation = SketchCopyOperation::Rotate {
+        center: [0.; 2],
+        radians: f64::NAN,
+    };
+    let generation = session.generation();
+    assert!(
+        session
+            .preview_selected_sketch_copy(DocumentSketchId(1), &[SketchEntityId(3)], operation)
+            .is_err()
+    );
+    let result = session.copy_selected_sketch_entities_projected(
+        DocumentSketchId(1),
+        &[SketchEntityId(3)],
+        operation,
+        |result| result,
+    );
+    assert_eq!(session.generation(), generation);
+    assert!(result.is_err());
+    assert!(session.undo_labels().is_empty());
+    assert!(before.same_evaluated_state(&session.snapshot().sketches));
+}

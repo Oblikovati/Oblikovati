@@ -254,6 +254,8 @@ mod translation;
 
 #[path = "sketch_entity_order/defining_transforms.rs"]
 mod defining_transforms;
+#[path = "sketch_entity_order/rotated_copy.rs"]
+mod rotated_copy;
 #[path = "sketch_entity_order/rotation.rs"]
 mod rotation;
 

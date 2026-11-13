@@ -32,6 +32,8 @@
 
 ### Added
 
+- Added rotated sketch-copy previews and undoable copy operations.
+
 - Kept Finish Sketch available on document ribbon tabs while a sketch is being edited.
 
 - Added context menus for unavailable commands in expanded ribbon panels.
