@@ -154,16 +154,44 @@ pub(crate) fn draw_panel_content(
             part_modify_controls(ui, origin, owners.icons, owners.hole_tip);
         }
         RibbonPanel::PartPattern => {
-            muted_commands(ui, origin, &["Rectangular", "Circular"], NOT_PORTED);
+            use crate::icons::IconGlyph;
+            muted_icon_commands(
+                ui,
+                origin,
+                owners.icons,
+                &[
+                    ("Rectangular", Some(IconGlyph::RectangularPattern)),
+                    ("Circular", Some(IconGlyph::CircularPattern)),
+                ],
+                false,
+            );
         }
         RibbonPanel::PartSimplification => {
-            muted_commands(ui, origin, &["Simplify"], NOT_PORTED);
+            muted_icon_commands(
+                ui,
+                origin,
+                owners.icons,
+                &[("Simplify", Some(crate::icons::IconGlyph::Simplify))],
+                false,
+            );
         }
         RibbonPanel::PartNotes => {
             muted_commands(ui, origin, &["General Note", "Leader Note"], NOT_PORTED);
         }
         RibbonPanel::PartWorkFeatures => {
-            muted_commands(ui, origin, &["Plane", "Axis", "Point", "UCS"], NOT_PORTED);
+            use crate::icons::IconGlyph;
+            muted_icon_commands(
+                ui,
+                origin,
+                owners.icons,
+                &[
+                    ("Plane", Some(IconGlyph::WorkPlane)),
+                    ("Axis", Some(IconGlyph::WorkAxis)),
+                    ("Point", Some(IconGlyph::WorkPoint)),
+                    ("UCS", None),
+                ],
+                false,
+            );
         }
         RibbonPanel::PresentationModel => {
             if crate::widget_abi::button(ui, "Insert Model", [108., 58.]) {
@@ -190,21 +218,37 @@ fn part_modify_controls(
     hole_tip: bool,
 ) {
     use crate::icons::IconGlyph;
-    for (index, (label, glyph)) in [
-        ("Hole", IconGlyph::Hole),
-        ("Fillet", IconGlyph::Fillet),
-        ("Chamfer", IconGlyph::Chamfer),
-    ]
-    .into_iter()
-    .enumerate()
-    {
-        muted_command_position(ui, origin, index);
+    muted_icon_commands(
+        ui,
+        origin,
+        icons,
+        &[
+            ("Hole", Some(IconGlyph::Hole)),
+            ("Fillet", Some(IconGlyph::Fillet)),
+            ("Chamfer", Some(IconGlyph::Chamfer)),
+        ],
+        hole_tip,
+    );
+}
+fn muted_icon_commands(
+    ui: &Ui,
+    origin: [f32; 2],
+    icons: &crate::icons::GuiRibbonIcons,
+    commands: &[(&str, Option<crate::icons::IconGlyph>)],
+    hole_tip: bool,
+) {
+    for (index, (label, glyph)) in commands.iter().enumerate() {
+        icons.cursor(
+            ui,
+            origin,
+            [(index / 2) as f32 * 116., (index % 2) as f32 * 30.],
+        );
         muted_command(
             ui,
             label,
             NOT_PORTED,
-            Some((icons, glyph)),
-            hole_tip && label == "Hole",
+            glyph.map(|glyph| (icons, glyph)),
+            hole_tip && *label == "Hole",
         );
     }
 }

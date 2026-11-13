@@ -5,6 +5,18 @@ use cucumber::{given, then, when};
 #[path = "reset.rs"]
 mod reset;
 
+#[test]
+fn model_ribbon_shows_unavailable_work_and_pattern_commands() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    for label in ["Plane", "Axis", "Rectangular", "Circular", "Simplify"] {
+        world.expect_text(label);
+        assert!(!world.run_is_enabled(label), "expected {label} unavailable");
+    }
+    world.save_capture("model-ribbon-work-and-pattern-icons");
+    world.close();
+}
+
 fn open_tab_menu(world: &mut ApplicationWorld, tab: &str) {
     let position = diagnostics::pointer_pixels(world.run(tab).center());
     world.right_click(position);

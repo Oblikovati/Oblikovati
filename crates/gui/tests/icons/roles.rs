@@ -92,7 +92,18 @@ fn inherited_named_and_short_hex_paints_keep_the_same_roles() {
 
 #[test]
 fn all_shipped_command_icons_rasterize_at_go_small_and_large_sizes() {
-    for expected in ["revolve", "hole", "fillet", "chamfer"] {
+    for expected in [
+        "revolve",
+        "hole",
+        "fillet",
+        "chamfer",
+        "rectangular-pattern",
+        "circular-pattern",
+        "simplify",
+        "work-plane-offset",
+        "work-axis",
+        "work-point",
+    ] {
         assert!(
             catalog::SOURCES.iter().any(|(name, _)| *name == expected),
             "missing {expected} icon"

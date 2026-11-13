@@ -63,6 +63,27 @@ fn modeling_and_sketch_ribbons_submit_the_go_extrude_and_move_icons() {
 }
 
 #[test]
+fn model_ribbon_submits_go_icons_for_work_features_and_patterns() {
+    let mut owner = GuiFrameEngine::new().unwrap();
+    let mut request = ribbon_request();
+    request.extent = [2880, 1800];
+    request.commands.document = Some(7);
+    request.commands.document_type = Some(oblikovati_api::types::DOCUMENT_PART);
+    request.commands.authoring = crate::GuiAuthoringContext::Part;
+    let frame = settled_frame(&mut owner, &request);
+    for glyph in [
+        IconGlyph::WorkPlane,
+        IconGlyph::WorkAxis,
+        IconGlyph::WorkPoint,
+        IconGlyph::RectangularPattern,
+        IconGlyph::CircularPattern,
+        IconGlyph::Simplify,
+    ] {
+        assert_named_icon(&owner, &frame, glyph, IconSize::Small, 18.);
+    }
+}
+
+#[test]
 fn actual_icon_quads_follow_independent_scale_and_backing_density() {
     for (text, icon, backing, expected) in [
         (1., 1., 1., [40., 18.]),
