@@ -8,7 +8,7 @@ use std::{
     time::Duration,
 };
 #[path = "owner/files.rs"]
-mod files;
+pub(crate) mod files;
 use files::{MemoryDocumentFiles, OwnerThreadGuids};
 #[derive(Clone)]
 struct RecordedWake(Sender<()>);

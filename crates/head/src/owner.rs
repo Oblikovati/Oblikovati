@@ -439,7 +439,7 @@ mod placement;
 mod point_preview;
 #[cfg(test)]
 #[path = "../tests/owner.rs"]
-mod tests;
+pub(crate) mod tests;
 
 #[path = "owner_placement_input.rs"]
 mod placement_input;

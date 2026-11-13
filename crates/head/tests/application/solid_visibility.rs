@@ -1,8 +1,25 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Visibility of the green fixture or its blue selection tint outside GUI windows.
+//! Visibility of the neutral fixture or its blue selection tint outside GUI windows.
 use oblikovati_viewport::ViewportCapture;
 const PATCH_SIDE: usize = 5;
 const HUE_MARGIN: u8 = 20;
+/// Shipped default appearance, converted from linear RGB to the framebuffer's sRGB.
+pub(super) fn default_fixture_rgb() -> [u8; 3] {
+    use oblikovati_api::contract::Appearance;
+    let catalog = oblikovati_persistence::assets::load_builtin_catalog().unwrap();
+    let color = catalog.appearances().get("default").unwrap().base().color;
+    framebuffer_rgb([color.r, color.g, color.b])
+}
+pub(super) fn framebuffer_rgb(color: [f32; 3]) -> [u8; 3] {
+    color.map(|value| {
+        let srgb = if value <= 0.0031308 {
+            value * 12.92
+        } else {
+            1.055 * value.powf(1. / 2.4) - 0.055
+        };
+        (srgb * 255.).round() as u8
+    })
+}
 pub(super) fn visible_fixture_bounds(
     capture: &ViewportCapture,
     windows: &[[f32; 4]],
@@ -10,7 +27,7 @@ pub(super) fn visible_fixture_bounds(
     let width = capture.extent[0] as usize;
     let (mut low, mut high) = ([usize::MAX; 2], [0; 2]);
     for (index, pixel) in capture.rgba.as_chunks::<4>().0.iter().enumerate() {
-        if green_fixture_hue(pixel) {
+        if neutral_fixture_hue(pixel) {
             let point = [index % width, index / width];
             if windows.iter().any(|window| point_in_window(point, *window)) {
                 continue;
@@ -22,6 +39,22 @@ pub(super) fn visible_fixture_bounds(
         }
     }
     (low[0] != usize::MAX).then_some((low, high))
+}
+pub(super) fn fixture_pixel_count(capture: &ViewportCapture, windows: &[[f32; 4]]) -> usize {
+    let width = capture.extent[0] as usize;
+    capture
+        .rgba
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .enumerate()
+        .filter(|(index, pixel)| {
+            neutral_fixture_hue(*pixel)
+                && !windows
+                    .iter()
+                    .any(|window| point_in_window([index % width, index / width], *window))
+        })
+        .count()
 }
 fn point_in_window(point: [usize; 2], window: [f32; 4]) -> bool {
     let [x, y] = point.map(|coordinate| coordinate as f32);
@@ -41,7 +74,7 @@ pub(super) fn visible_fixture_point(
     for y in 0..=height - PATCH_SIDE {
         for x in 0..=width - PATCH_SIDE {
             if !windows.iter().any(|window| patch_overlaps(x, y, *window))
-                && filled_patch(capture, x, y, &green_fixture_hue)
+                && filled_patch(capture, x, y, &neutral_fixture_hue)
             {
                 return Some([(x + PATCH_SIDE / 2) as i32, (y + PATCH_SIDE / 2) as i32]);
             }
@@ -95,14 +128,19 @@ fn filled_patch(
         })
     })
 }
-fn green_fixture_hue(pixel: &[u8]) -> bool {
-    pixel[1] > pixel[0].saturating_add(HUE_MARGIN) && pixel[1] > pixel[2].saturating_add(HUE_MARGIN)
+pub(super) fn neutral_fixture_hue(pixel: &[u8]) -> bool {
+    pixel[0] > 80
+        && pixel[0] < 250
+        && pixel[0] <= pixel[1]
+        && pixel[1] <= pixel[2]
+        && pixel[2] - pixel[0] >= 2
+        && pixel[2] - pixel[0] < HUE_MARGIN
 }
 fn fixture_hue(pixel: &[u8]) -> bool {
-    let green = green_fixture_hue(pixel);
+    let neutral = neutral_fixture_hue(pixel);
     let blue = pixel[2] > pixel[0].saturating_add(HUE_MARGIN)
         && pixel[2] > pixel[1].saturating_add(HUE_MARGIN);
-    green || blue
+    neutral || blue
 }
 #[cfg(test)]
 #[path = "solid_visibility_tests.rs"]

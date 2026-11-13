@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! `features/application/body-properties`: a solid's values on request and its appearance.
 use super::workspace_layout::browser_feature::{
-    SOLID_COLOR, choose_menu_row, click_branch_arrow, colored_pixels, expect_rows,
-    open_visible_extruded_part, right_click_row,
+    choose_menu_row, click_branch_arrow, expect_rows, open_visible_extruded_part, right_click_row,
 };
 use super::{ApplicationWorld, diagnostics};
 use cucumber::{given, then, when};
@@ -139,10 +138,12 @@ fn given_open(world: &mut ApplicationWorld) {
     open_dialog(world);
 }
 #[when("I right-click the body in the model browser")]
+#[when("the user right-clicks the body in the model browser")]
 fn right_click_body(world: &mut ApplicationWorld) {
     right_click_row(world, BODY);
 }
 #[when("I choose Properties")]
+#[when("the user chooses Properties")]
 fn choose_properties(world: &mut ApplicationWorld) {
     choose_menu_row(world, "Properties");
     world.pump(Vec::new());
@@ -168,6 +169,7 @@ fn selector_and_buttons(world: &mut ApplicationWorld) {
     );
 }
 #[when("I choose Update")]
+#[when("the user chooses Update")]
 fn choose_update(world: &mut ApplicationWorld) {
     world.click_text("Update");
     world.pump(Vec::new());
@@ -186,10 +188,14 @@ fn highlighted_behind(world: &mut ApplicationWorld) {
 #[when("I reopen Body Properties for the same body in the same session")]
 #[when("I reopen Body Properties for the same body")]
 #[when("I open Body Properties for the body from the model browser")]
+#[when("the user reopens Body Properties for the same body in the same session")]
+#[when("the user reopens Body Properties for the same body")]
+#[when("the user opens Body Properties for the body from the model browser")]
 fn reopen(world: &mut ApplicationWorld) {
     open_dialog(world);
 }
 #[when("I open the Body Appearance list")]
+#[when("the user opens the Body Appearance list")]
 fn open_list(world: &mut ApplicationWorld) {
     open_appearance_list(world);
 }
@@ -199,6 +205,7 @@ fn named_list(world: &mut ApplicationWorld) {
     world.expect_text(AS_PART);
 }
 #[when("I choose Black")]
+#[when("the user chooses Black")]
 fn choose_black(world: &mut ApplicationWorld) {
     world.click_text(BLACK);
     world.pump(Vec::new());
@@ -213,10 +220,12 @@ fn displays_as_part(world: &mut ApplicationWorld) {
     expect_selector_reads(world, AS_PART);
 }
 #[when("I select Black in Body Appearance")]
+#[when("the user selects Black in Body Appearance")]
 fn select_black(world: &mut ApplicationWorld) {
     select_appearance(world, BLACK);
 }
 #[when("I select As Part in Body Appearance")]
+#[when("the user selects As Part in Body Appearance")]
 fn select_as_part(world: &mut ApplicationWorld) {
     select_appearance(world, AS_PART);
 }
@@ -228,13 +237,16 @@ fn choose_ok(world: &mut ApplicationWorld) {
 }
 #[then("the solid is displayed with the Black appearance")]
 fn solid_black(world: &mut ApplicationWorld) {
-    assert_eq!(
-        colored_pixels(world, SOLID_COLOR),
-        0,
-        "expected no part colour left"
-    );
     let capture = super::capture_framebuffer(&mut world.app().window.native);
     let windows = diagnostics::window_occlusions();
+    assert!(
+        !super::solid_visibility::visible_appearance_fill(
+            &capture,
+            &windows,
+            super::solid_visibility::default_fixture_rgb()
+        ),
+        "expected no default appearance left"
+    );
     assert!(
         super::solid_visibility::visible_appearance_fill(&capture, &windows, BLACK_COLOR),
         "expected the model's Black appearance outside the GUI windows"
@@ -242,9 +254,15 @@ fn solid_black(world: &mut ApplicationWorld) {
 }
 #[then("the solid is displayed with the part appearance")]
 fn solid_part(world: &mut ApplicationWorld) {
+    let capture = super::capture_framebuffer(&mut world.app().window.native);
+    let windows = diagnostics::window_occlusions();
     assert!(
-        colored_pixels(world, SOLID_COLOR) > 0,
-        "expected the part's colour"
+        super::solid_visibility::visible_appearance_fill(
+            &capture,
+            &windows,
+            super::solid_visibility::default_fixture_rgb()
+        ),
+        "expected the part's appearance"
     );
 }
 #[then("the body row remains selected in the model browser")]
@@ -255,6 +273,7 @@ fn row_selected(world: &mut ApplicationWorld) {
     );
 }
 #[when("I close the dialog using its title-bar close control")]
+#[when("the user closes the dialog using its title-bar close control")]
 fn close_control(world: &mut ApplicationWorld) {
     let (position, size) = diagnostics::window_geometry(TITLE).expect("expected the dialog");
     world.click([
@@ -263,6 +282,21 @@ fn close_control(world: &mut ApplicationWorld) {
     ]);
     world.pump(Vec::new());
     world.pump(Vec::new());
+}
+
+#[test]
+fn body_appearance_applies_and_restores_the_part_color() {
+    let mut world = ApplicationWorld::new();
+    part_with_body(&mut world);
+    open_dialog(&mut world);
+    select_appearance(&mut world, BLACK);
+    choose_ok(&mut world);
+    solid_black(&mut world);
+    open_dialog(&mut world);
+    select_appearance(&mut world, AS_PART);
+    choose_ok(&mut world);
+    solid_part(&mut world);
+    world.close();
 }
 
 #[test]

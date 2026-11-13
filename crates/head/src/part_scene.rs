@@ -185,7 +185,7 @@ impl DesktopPartScenes {
             if session.selected_browser_body().map(|(chosen, _)| chosen) == Some(key.as_str()) {
                 return Ok(Some(CHOSEN_BODY_COLOR));
             }
-            Ok(Some(body_color(files, session.snapshot(), &key)))
+            Ok(Some(body_color(files, session.snapshot(), &key)?))
         })
     }
     fn empty(&mut self) -> HeadSceneUpdate {
@@ -278,39 +278,52 @@ impl DesktopPartScenes {
 
 /// How finely a body is meshed for display, in working units and radians.
 pub(crate) const DISPLAY_MESH: PrismMeshOptions = oblikovati_drawing::DISPLAY_MESH;
-/// The colour a body shows without an appearance of its own or of its part.
-const PART_COLOR: [f32; 4] = [0., 1., 0., 1.];
 /// A body whose browser row is chosen: scene colours are linear, so this draws as the accent
 /// the browser's rows use.
 const CHOSEN_BODY_COLOR: [f32; 4] = [0.05, 0.32, 1., 1.];
-/// A body's own appearance, or its part's, by its base colour; an unknown id reads as no choice.
+/// Resolve the body's effective appearance through the document, project, and catalog.
 fn body_color<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &FileWorkspace<O, W, F>,
     snapshot: &oblikovati_model::history::DocumentSnapshot,
     key: &str,
-) -> [f32; 4] {
+) -> Result<[f32; 4], String> {
+    use oblikovati_model::assets::{AssignmentReference, ProjectAssetLibrary};
+    let reference = AssignmentReference::new(key, vec![])?;
+    let empty_project = ProjectAssetLibrary::default();
+    let project = files
+        .active_project()
+        .map_or(&empty_project, |project| &project.assets);
+    resolved_body_color(
+        &snapshot.assets,
+        project,
+        files.builtin_catalog()?,
+        &reference,
+    )
+}
+fn resolved_body_color(
+    assets: &oblikovati_model::assets::DocumentAssets,
+    project: &oblikovati_model::assets::ProjectAssetLibrary,
+    catalog: &oblikovati_model::assets::BuiltinAssetCatalog,
+    reference: &oblikovati_model::assets::AssignmentReference,
+) -> Result<[f32; 4], String> {
     use oblikovati_api::contract::Appearance;
-    let reference = oblikovati_model::assets::AssignmentReference::new(key, vec![]);
-    let id = reference.ok().and_then(|reference| {
-        snapshot
-            .assets
-            .assignments
-            .effective_appearance_id(&reference)
-            .map(str::to_owned)
-    });
-    let Some(id) = id else {
-        return PART_COLOR;
+    use oblikovati_model::assets::ScopedAssets;
+    let appearances = ScopedAssets {
+        document: assets.appearances(),
+        project: project.appearances(),
+        builtin: catalog.appearances(),
     };
-    let appearance = snapshot
-        .assets
-        .appearances()
-        .get(&id)
-        .or_else(|| files.active_project()?.assets.appearances().get(&id))
-        .or_else(|| files.builtin_catalog().ok()?.appearances().get(&id));
-    appearance.map_or(PART_COLOR, |asset| {
-        let color = asset.base().color;
-        [color.r, color.g, color.b, 1.]
-    })
+    let materials = ScopedAssets {
+        document: assets.materials(),
+        project: project.materials(),
+        builtin: catalog.materials(),
+    };
+    let color = assets
+        .assignments
+        .resolve_appearance(&appearances, &materials, reference, None)?
+        .base()
+        .color;
+    Ok([color.r, color.g, color.b, 1.])
 }
 pub(crate) fn render_part_scene(
     evaluated: &oblikovati_model::feature::part::PartFeatureEvaluation<

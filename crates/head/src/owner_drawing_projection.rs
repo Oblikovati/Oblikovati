@@ -251,6 +251,24 @@ fn saved_sheet_projection(
     GuiDrawingProjection { lines, error: None }
 }
 
+fn append_curves(
+    output: &mut GuiDrawingProjection,
+    view: &oblikovati_martensite::DrawingBaseProjection,
+    style: oblikovati_api::types::DrawingViewStyle,
+    history: &oblikovati_model::history::DocumentEditHistory,
+    document: oblikovati_model::identity::DocumentGuid,
+) -> Result<(), String> {
+    let lines = oblikovati_drawing::sample_projection(view, style, history, document)?;
+    output
+        .lines
+        .extend(lines.into_iter().map(|line| GuiDrawingLine {
+            points: line.points,
+            hidden: line.hidden,
+            preview: false,
+        }));
+    Ok(())
+}
+
 #[cfg(test)]
 mod saved_sheet_tests {
     use super::*;
@@ -286,21 +304,4 @@ mod saved_sheet_tests {
         assert_eq!(output.error, None);
         assert!(saved_sheet_projection(&views, "Missing").lines.is_empty());
     }
-}
-fn append_curves(
-    output: &mut GuiDrawingProjection,
-    view: &oblikovati_martensite::DrawingBaseProjection,
-    style: oblikovati_api::types::DrawingViewStyle,
-    history: &oblikovati_model::history::DocumentEditHistory,
-    document: oblikovati_model::identity::DocumentGuid,
-) -> Result<(), String> {
-    let lines = oblikovati_drawing::sample_projection(view, style, history, document)?;
-    output
-        .lines
-        .extend(lines.into_iter().map(|line| GuiDrawingLine {
-            points: line.points,
-            hidden: line.hidden,
-            preview: false,
-        }));
-    Ok(())
 }

@@ -89,8 +89,8 @@ fn preview_is_shaded(world: &mut ApplicationWorld) {
                 capture.rgba[offset + 2] / 8,
             ]);
             let pixel = &capture.rgba[offset..offset + 4];
-            if pixel[1] > pixel[0].saturating_add(30) && pixel[1] > pixel[2].saturating_add(30) {
-                solid_shades.insert(pixel[1] / 8);
+            if super::super::solid_visibility::neutral_fixture_hue(pixel) {
+                solid_shades.insert(pixel[0] / 8);
             }
         }
     }

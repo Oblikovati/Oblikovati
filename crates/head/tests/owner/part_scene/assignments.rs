@@ -4,6 +4,76 @@ use oblikovati_model::{
     assets::{AssignmentReference, DocumentAssets},
     identity::SemanticReferenceName,
 };
+
+#[test]
+fn missing_body_material_reports_a_local_presentation_decline() {
+    let (mut owner, _) = owner();
+    let document = open_prism(&mut owner, true);
+    let key = AssignmentReference::new(&entity_key(&owner, document, 1, "body"), vec![]).unwrap();
+    owner
+        .files
+        .commands(document)
+        .unwrap()
+        .run("Missing material fixture", |snapshot, _| {
+            snapshot
+                .assets
+                .assignments
+                .set_body_material(&key, "missing")
+        })
+        .unwrap();
+    let scene = owner.take_scene().unwrap().unwrap();
+    assert_eq!(scene.status.visible_bodies, 1);
+    assert!(!scene.scene.triangles.is_empty());
+    assert_eq!(scene.status.presentation_declines.len(), 1);
+    assert_eq!(scene.status.presentation_declines[0].feature, FeatureId(1));
+    assert!(
+        scene.status.presentation_declines[0]
+            .cause
+            .contains("missing")
+    );
+}
+
+#[test]
+fn visible_body_uses_material_appearance_and_restores_it_after_undo() {
+    use oblikovati_api::contract::{Appearance, Material};
+    let (mut owner, _) = owner();
+    let document = open_prism(&mut owner, false);
+    let catalog = owner.files.builtin_catalog().unwrap();
+    let material = catalog.materials().get("beryllium").unwrap();
+    let appearance = catalog
+        .appearances()
+        .get(&material.appearance_id())
+        .unwrap();
+    let color = appearance.base().color;
+    let expected = [color.r, color.g, color.b, 1.];
+    let original = owner.take_scene().unwrap().unwrap().scene.triangles[0].color;
+    Client::new(owner.document_host())
+        .materials()
+        .assign(&AssignMaterialArgs {
+            body_key: String::new(),
+            material_id: "beryllium".into(),
+        })
+        .unwrap();
+    let assigned = owner.take_scene().unwrap().unwrap();
+    assert!(!assigned.scene.triangles.is_empty());
+    assert!(
+        assigned
+            .scene
+            .triangles
+            .iter()
+            .all(|triangle| triangle.color == expected)
+    );
+    owner.files.commands(document).unwrap().undo().unwrap();
+    let undone = owner.take_scene().unwrap().unwrap();
+    assert!(!undone.scene.triangles.is_empty());
+    assert!(
+        undone
+            .scene
+            .triangles
+            .iter()
+            .all(|triangle| triangle.color == original)
+    );
+}
 fn entity_key(owner: &TestOwner, document: u64, feature: u64, role: &str) -> String {
     let guid = owner
         .documents()

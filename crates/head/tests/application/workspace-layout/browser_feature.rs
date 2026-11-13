@@ -17,8 +17,7 @@ pub(in super::super) const FEATURE: &str = "Extrude1";
 /// 20 mm in working units.
 const DEPTH: f64 = 2.;
 const EMPTY_VIEWPORT: [i32; 2] = [1300, 800];
-/// The body's flat display colour and the outline's accent, as drawn.
-pub(in super::super) const SOLID_COLOR: [u8; 3] = [0, 255, 0];
+/// The outline's accent, as drawn.
 const EDGE_COLOR: [u8; 3] = [64, 153, 255];
 const COLOR_REACH: i32 = 40;
 const DIMENSION_LABEL_STEP: f64 = 1.5;

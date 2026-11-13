@@ -81,16 +81,8 @@ pub(super) fn choose_mode(world: &mut ApplicationWorld, mode: &str) {
 }
 fn solid_pixels(world: &mut ApplicationWorld) -> usize {
     let capture = super::super::capture_framebuffer(&mut world.app().window.native);
-    capture
-        .rgba
-        .as_chunks::<4>()
-        .0
-        .iter()
-        .filter(|pixel| {
-            pixel[1] > pixel[0].saturating_add(GREEN_MARGIN)
-                && pixel[1] > pixel[2].saturating_add(GREEN_MARGIN)
-        })
-        .count()
+    let windows = super::super::diagnostics::window_occlusions();
+    super::super::solid_visibility::fixture_pixel_count(&capture, &windows)
 }
 #[given("the block is displayed obliquely in Orthographic projection")]
 #[given("it is displayed obliquely in Orthographic projection")]
@@ -102,6 +94,8 @@ fn oblique_orthographic(world: &mut ApplicationWorld) {
 #[when("I open the orientation control context menu")]
 #[when("I reopen the orientation control context menu")]
 #[when("I reopen the orientation control menu")]
+#[when("the user opens the orientation control context menu")]
+#[when("the user reopens the orientation control context menu")]
 fn open_control_menu(world: &mut ApplicationWorld) {
     open_menu(world);
 }
@@ -118,6 +112,7 @@ fn offers_perspective(world: &mut ApplicationWorld) {
     world.expect_text("Perspective with Ortho Faces");
 }
 #[when("I choose Perspective")]
+#[when("the user chooses Perspective")]
 fn choose_perspective(world: &mut ApplicationWorld) {
     choose_mode(world, "Perspective");
 }
@@ -136,6 +131,7 @@ fn marks_perspective(world: &mut ApplicationWorld) {
     assert!(world.checked("Perspective"), "expected Perspective marked");
 }
 #[when("I choose Orthographic")]
+#[when("the user chooses Orthographic")]
 fn choose_orthographic(world: &mut ApplicationWorld) {
     choose_mode(world, "Orthographic");
 }

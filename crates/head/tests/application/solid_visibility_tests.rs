@@ -21,7 +21,7 @@ fn capture_with_patch(color: [u8; 4], fill: bool) -> ViewportCapture {
 }
 #[test]
 fn visibility_accepts_solid_fill_in_plain_selected_and_dimmed_colors() {
-    for color in [[0, 255, 0, 255], [63, 153, 255, 255], [22, 54, 90, 255]] {
+    for color in [[210, 212, 214, 255], [63, 153, 255, 255], [22, 54, 90, 255]] {
         assert!(
             visible_solid_fill(&capture_with_patch(color, true), &[]),
             "expected visible fixture color {color:?}"
@@ -42,6 +42,10 @@ fn a_blue_outline_or_gui_fill_does_not_prove_a_visible_solid() {
         &capture_with_patch([40, 40, 40, 255], true),
         &[]
     ));
+    assert!(!visible_solid_fill(
+        &capture_with_patch([255, 255, 255, 255], true),
+        &[]
+    ));
 }
 
 #[test]
@@ -60,12 +64,12 @@ fn black_appearance_requires_model_pixels_outside_all_ui_panels() {
     ));
 }
 #[test]
-fn fixture_point_excludes_ui_and_requires_filled_green() {
-    let green = capture_with_patch([0, 255, 0, 255], true);
-    assert_eq!(visible_fixture_point(&green, &[]), Some([12, 12]));
-    assert_eq!(visible_fixture_point(&green, &[[8., 8., 24., 24.]]), None);
+fn fixture_point_excludes_ui_and_requires_filled_neutral() {
+    let neutral = capture_with_patch([210, 212, 214, 255], true);
+    assert_eq!(visible_fixture_point(&neutral, &[]), Some([12, 12]));
+    assert_eq!(visible_fixture_point(&neutral, &[[8., 8., 24., 24.]]), None);
     assert_eq!(
-        visible_fixture_point(&capture_with_patch([0, 255, 0, 255], false), &[]),
+        visible_fixture_point(&capture_with_patch([210, 212, 214, 255], false), &[]),
         None
     );
     assert_eq!(
@@ -75,11 +79,12 @@ fn fixture_point_excludes_ui_and_requires_filled_green() {
 }
 
 #[test]
-fn fixture_bounds_exclude_green_pixels_in_application_chrome() {
-    let mut capture = capture_with_patch([0, 255, 0, 255], true);
-    capture.rgba[(2 * 32 + 2) * 4..(2 * 32 + 2) * 4 + 4].copy_from_slice(&[0, 255, 0, 255]);
+fn fixture_bounds_exclude_neutral_pixels_in_application_chrome() {
+    let mut capture = capture_with_patch([210, 212, 214, 255], true);
+    capture.rgba[(2 * 32 + 2) * 4..(2 * 32 + 2) * 4 + 4].copy_from_slice(&[210, 212, 214, 255]);
     assert_eq!(
         visible_fixture_bounds(&capture, &[[0., 0., 8., 8.]]),
         Some(([10, 10], [21, 21]))
     );
+    assert_eq!(fixture_pixel_count(&capture, &[[0., 0., 8., 8.]]), 144);
 }

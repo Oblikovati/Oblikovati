@@ -73,12 +73,20 @@ fn applying_a_body_appearance_reveals_it_without_selection_tint() {
     );
     let scene = owner.take_scene().unwrap().unwrap();
     assert!(!scene.scene.triangles.is_empty());
+    let default = owner
+        .files
+        .builtin_catalog()
+        .unwrap()
+        .appearances()
+        .get("default")
+        .unwrap();
+    let color = oblikovati_api::contract::Appearance::base(default).color;
     assert!(
         scene
             .scene
             .triangles
             .iter()
-            .all(|triangle| triangle.color == [0., 1., 0., 1.])
+            .all(|triangle| triangle.color == [color.r, color.g, color.b, 1.])
     );
 }
 

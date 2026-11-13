@@ -104,8 +104,13 @@ impl ViewportScene {
             let Some(body) = evaluation.body(record.feature) else {
                 continue;
             };
-            if let Some(color) = style(body)? {
-                result.append_body(record.feature, body, options, color);
+            match style(body) {
+                Ok(Some(color)) => result.append_body(record.feature, body, options, color),
+                Ok(None) => {}
+                Err(cause) => result.declines.push(PartPresentationDecline {
+                    feature: record.feature,
+                    cause,
+                }),
             }
         }
         Ok(result)

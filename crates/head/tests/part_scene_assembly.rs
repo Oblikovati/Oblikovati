@@ -4,9 +4,7 @@ use oblikovati_api::types::DOCUMENT_ASSEMBLY;
 use oblikovati_model::assembly::AssemblyOccurrenceRecipe;
 use oblikovati_persistence::package::DocumentPackage;
 
-#[path = "owner/files.rs"]
-mod files;
-use files::{MemoryDocumentFiles, OwnerThreadGuids};
+use crate::owner::tests::files::{MemoryDocumentFiles, OwnerThreadGuids};
 
 type TestFiles =
     FileWorkspace<crate::DesktopObservations, crate::DesktopObservations, MemoryDocumentFiles>;

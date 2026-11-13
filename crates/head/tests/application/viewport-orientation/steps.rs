@@ -22,7 +22,6 @@ const OPTIONS_TITLE: &str = "Orientation Options";
 /// Letters a compass adds around the control; no face's label holds them.
 const COMPASS_LETTERS: [&str; 4] = ["N", "E", "S", "W"];
 const PIXEL_ROUNDING: usize = 2;
-const GREEN_MARGIN: u8 = 40;
 const AWAY: [i32; 2] = [420, 300];
 /// A press on a face's middle, away from where its rim picks an edge or a corner.
 const IN_THE_CORNER: f32 = 0.85;
@@ -98,11 +97,9 @@ fn label_is_upright(world: &ApplicationWorld) -> bool {
 /// The solid's extent on screen, read from its colour.
 /// Zero while nothing shaded is in the view.
 pub(super) fn solid_extent_or_zero(world: &mut ApplicationWorld) -> [usize; 2] {
-    let shaded = super::workspace_layout::browser_feature::colored_pixels(
-        world,
-        super::workspace_layout::browser_feature::SOLID_COLOR,
-    );
-    if shaded == 0 {
+    let capture = super::capture_framebuffer(&mut world.app().window.native);
+    let windows = super::diagnostics::window_occlusions();
+    if super::solid_visibility::visible_fixture_bounds(&capture, &windows).is_none() {
         return [0, 0];
     }
     solid_extent(world)

@@ -91,6 +91,44 @@ fn reopen_part(world: &mut ApplicationWorld, path: &std::path::Path) {
 }
 
 #[test]
+fn assigning_material_updates_the_visible_solid_to_its_catalog_appearance() {
+    use oblikovati_api::contract::{Appearance, Material};
+    let mut world = ApplicationWorld::new();
+    super::super::super::workspace_layout::browser_feature::open_visible_extruded_part(&mut world);
+    let capture = super::super::super::capture_framebuffer(&mut world.app().window.native);
+    let windows = diagnostics::window_occlusions();
+    let point =
+        super::super::super::solid_visibility::visible_fixture_point(&capture, &windows).unwrap();
+    world.click_text("Tools");
+    let material = choose_first_material(&mut world);
+    let catalog = oblikovati_persistence::assets::load_builtin_catalog().unwrap();
+    let asset = catalog.materials().get(&material).unwrap();
+    let color = catalog
+        .appearances()
+        .get(&asset.appearance_id())
+        .unwrap()
+        .base()
+        .color;
+    let expected =
+        super::super::super::solid_visibility::framebuffer_rgb([color.r, color.g, color.b]);
+    world.pump(Vec::new());
+    let actual = world.pixel_at([point[0] as usize, point[1] as usize]);
+    assert!(
+        (0..3).all(|i| actual[i].abs_diff(expected[i]) <= 3),
+        "material {material:?}: expected {expected:?}, got {actual:?}"
+    );
+    world.save_capture("material-appearance-solid");
+    world.click_text("Undo");
+    let actual = world.pixel_at([point[0] as usize, point[1] as usize]);
+    let original = super::super::super::solid_visibility::default_fixture_rgb();
+    assert!(
+        (0..3).all(|i| actual[i].abs_diff(original[i]) <= 3),
+        "expected {original:?} after undo, got {actual:?}"
+    );
+    world.close();
+}
+
+#[test]
 fn assigning_part_appearance_refreshes_the_visible_solid() {
     let mut world = ApplicationWorld::new();
     super::super::super::workspace_layout::browser_feature::open_visible_extruded_part(&mut world);
@@ -99,6 +137,11 @@ fn assigning_part_appearance_refreshes_the_visible_solid() {
     let point = super::super::super::solid_visibility::visible_fixture_point(&capture, &windows)
         .expect("expected a visible solid before changing appearance");
     let before = world.pixel_at([point[0] as usize, point[1] as usize]);
+    let expected = super::super::super::solid_visibility::default_fixture_rgb();
+    assert!(
+        (0..3).all(|i| before[i].abs_diff(expected[i]) <= 3),
+        "expected default {expected:?}, got {before:?}"
+    );
     world.click_text("Tools");
     let appearance = choose_first_appearance(&mut world);
     world.pump(Vec::new());

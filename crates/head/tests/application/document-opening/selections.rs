@@ -446,7 +446,7 @@ fn opening_an_assembly_displays_its_referenced_part() {
         &capture,
         &super::super::diagnostics::window_occlusions(),
     )
-    .expect("expected the unselected green occurrence");
+    .expect("expected the unselected neutral occurrence");
     let point = std::array::from_fn(|axis| ((minimum[axis] + maximum[axis]) / 2) as i32);
     let select_button = world
         .frame
@@ -482,7 +482,7 @@ fn opening_an_assembly_displays_its_referenced_part() {
             .selected_occurrence
             .is_none()
     );
-    let before = green_assembly_bounds(&mut world);
+    let before = neutral_assembly_bounds(&mut world);
     occurrence_menu(&mut world, "Part:1", "Suppress");
     assert_eq!(
         world
@@ -494,7 +494,7 @@ fn opening_an_assembly_displays_its_referenced_part() {
             .visible_bodies,
         1
     );
-    let after = green_assembly_bounds(&mut world);
+    let after = neutral_assembly_bounds(&mut world);
     assert!(
         after.0[0] > before.0[0],
         "expected the left placement to disappear"
@@ -562,7 +562,7 @@ fn occurrence_menu(world: &mut ApplicationWorld, name: &str, command: &str) {
     world.right_click(super::super::diagnostics::pointer_pixels(center));
     world.click_text(command);
 }
-fn green_assembly_bounds(world: &mut ApplicationWorld) -> ([usize; 2], [usize; 2]) {
+fn neutral_assembly_bounds(world: &mut ApplicationWorld) -> ([usize; 2], [usize; 2]) {
     let capture = super::super::capture_framebuffer(&mut world.app().window.native);
     super::super::solid_visibility::visible_fixture_bounds(
         &capture,
@@ -575,11 +575,11 @@ fn assert_selected_and_unselected_solids(world: &mut ApplicationWorld, selected_
     let width = capture.extent[0] as usize;
     let mut colors = [0usize; 2];
     let mut x_totals = [0usize; 2];
-    for (index, pixel) in capture.rgba.chunks_exact(4).enumerate() {
+    for (index, pixel) in capture.rgba.as_chunks::<4>().0.iter().enumerate() {
         if index % width < 320 || index / width < 200 {
             continue;
         }
-        if pixel[1] > pixel[0].saturating_add(30) && pixel[1] > pixel[2].saturating_add(30) {
+        if super::super::solid_visibility::neutral_fixture_hue(pixel) {
             colors[0] += 1;
             x_totals[0] += index % width;
         }
@@ -590,14 +590,14 @@ fn assert_selected_and_unselected_solids(world: &mut ApplicationWorld, selected_
     }
     assert!(
         colors.iter().all(|count| *count > 100),
-        "expected green and blue solids, got {colors:?}"
+        "expected neutral and blue solids, got {colors:?}"
     );
-    let green_x = x_totals[0] / colors[0];
+    let neutral_x = x_totals[0] / colors[0];
     let blue_x = x_totals[1] / colors[1];
     assert_eq!(
-        blue_x > green_x,
+        blue_x > neutral_x,
         selected_right,
-        "blue at {blue_x}, green at {green_x}"
+        "blue at {blue_x}, neutral at {neutral_x}"
     );
 }
 // Already open files
