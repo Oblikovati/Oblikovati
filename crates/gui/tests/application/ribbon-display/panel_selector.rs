@@ -203,3 +203,45 @@ fn dismiss_selector(owner: &mut GuiFrameEngine, request: &mut GuiFrameRequest) {
     }
     settle(owner, request);
 }
+
+#[test]
+fn finish_panel_follows_the_sketch_context_on_each_part_tab() {
+    let mut state = GuiCommandState {
+        document: Some(7),
+        document_type: Some(oblikovati_api::types::DOCUMENT_PART),
+        authoring: GuiAuthoringContext::Sketch,
+        ..Default::default()
+    };
+    for tab in [
+        RibbonTab::Model,
+        RibbonTab::Sketch,
+        RibbonTab::Tools,
+        RibbonTab::Manage,
+        RibbonTab::View,
+        RibbonTab::Annotate,
+    ] {
+        let panels = crate::ribbon_panels::panels_for(tab, &state);
+        assert_eq!(
+            panels
+                .iter()
+                .filter(|panel| **panel == RibbonPanel::Exit)
+                .count(),
+            1,
+            "{tab:?}"
+        );
+        assert_eq!(panels.last(), Some(&RibbonPanel::Exit));
+    }
+    state.authoring = GuiAuthoringContext::Part;
+    for tab in [
+        RibbonTab::Model,
+        RibbonTab::Tools,
+        RibbonTab::Manage,
+        RibbonTab::View,
+        RibbonTab::Annotate,
+    ] {
+        assert!(
+            !crate::ribbon_panels::panels_for(tab, &state).contains(&RibbonPanel::Exit),
+            "{tab:?}"
+        );
+    }
+}

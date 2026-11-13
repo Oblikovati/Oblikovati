@@ -32,6 +32,8 @@
 
 ### Added
 
+- Kept Finish Sketch available on document ribbon tabs while a sketch is being edited.
+
 - Added context menus for unavailable commands in expanded ribbon panels.
 
 - Added the optional Parameters panel to the Sketch ribbon.

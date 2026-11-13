@@ -81,7 +81,7 @@ fn context_changes_select_the_supported_ribbon_commands() {
     expect_ribbon(&mut engine, &mut request, [798., 195.], FinishSketch);
 }
 #[test]
-fn manual_view_selection_survives_frames_until_sketch_exit() {
+fn manual_view_selection_survives_sketch_exit() {
     let mut engine = GuiFrameEngine::new().unwrap();
     let mut request = ribbon_request();
     enter_part(&mut request);
@@ -92,7 +92,7 @@ fn manual_view_selection_survives_frames_until_sketch_exit() {
     expect_ribbon(&mut engine, &mut request, [398., 90.], Home);
     request.commands.authoring = GuiAuthoringContext::Part;
     settle_ribbon(&mut engine, &mut request);
-    expect_ribbon(&mut engine, &mut request, [50., 90.], ChooseSketchPlane);
+    expect_ribbon(&mut engine, &mut request, [398., 90.], Home);
     request.commands = Default::default();
     settle_ribbon(&mut engine, &mut request);
     expect_ribbon(&mut engine, &mut request, [50., 90.], NewPart);

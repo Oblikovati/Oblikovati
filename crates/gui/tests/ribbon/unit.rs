@@ -61,7 +61,7 @@ fn manual_selection_is_preserved_between_environment_changes() {
     assert_eq!(ribbon.prepare(&state).select, None);
     assert_eq!(ribbon.active, RibbonTab::Manage);
     state.authoring = GuiAuthoringContext::Part;
-    assert_eq!(ribbon.prepare(&state).select, Some(RibbonTab::Model));
+    assert_eq!(ribbon.prepare(&state).select, Some(RibbonTab::Manage));
 }
 #[test]
 fn changing_document_identity_keeps_the_tab_but_changing_kind_selects_its_base() {
@@ -128,5 +128,31 @@ fn each_document_kind_opens_on_its_own_tab() {
     ] {
         let tabs = document_tabs(&key, false, sheet_metal);
         assert_eq!(contextual_tab(&tabs, false), expected);
+    }
+}
+
+#[test]
+fn finishing_sketch_keeps_a_manually_selected_tab_or_returns_from_sketch() {
+    for selected in [
+        RibbonTab::Model,
+        RibbonTab::Tools,
+        RibbonTab::Manage,
+        RibbonTab::View,
+        RibbonTab::Annotate,
+        RibbonTab::Sketch,
+    ] {
+        let mut ribbon = DocumentRibbon::default();
+        let mut state = part_state();
+        ribbon.prepare(&state);
+        state.authoring = GuiAuthoringContext::Sketch;
+        ribbon.prepare(&state);
+        ribbon.active = selected;
+        state.authoring = GuiAuthoringContext::Part;
+        let expected = if selected == RibbonTab::Sketch {
+            RibbonTab::Model
+        } else {
+            selected
+        };
+        assert_eq!(ribbon.prepare(&state).select, Some(expected));
     }
 }

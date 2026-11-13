@@ -74,7 +74,9 @@ impl DocumentRibbon {
         if changed {
             // Dear ImGui lays a new tab out in its second frame, and GUI frames wait for an event.
             self.settling_frames = TAB_SETTLING_FRAMES;
-            self.active = contextual_tab(&tabs, sketch);
+            if !self.keep_tab_after_sketch(&identity, &tabs) {
+                self.active = contextual_tab(&tabs, sketch);
+            }
             self.previous = Some(identity);
             self.pending_tab = None;
         }
@@ -86,6 +88,19 @@ impl DocumentRibbon {
                 self.pending_tab.take()
             },
         }
+    }
+    fn keep_tab_after_sketch(
+        &self,
+        identity: &(RibbonKey, bool, bool),
+        tabs: &[RibbonTab],
+    ) -> bool {
+        self.previous
+            .as_ref()
+            .is_some_and(|(old_key, old_sketch, old_sheet)| {
+                old_key == &identity.0 && *old_sketch && !identity.1 && *old_sheet == identity.2
+            })
+            && self.active != RibbonTab::Sketch
+            && tabs.contains(&self.active)
     }
     pub(crate) fn scroll_tabs(&mut self, tabs: &[RibbonTab], wheel: f32) {
         let Some(index) = tabs.iter().position(|tab| *tab == self.active) else {
@@ -161,7 +176,7 @@ fn document_tabs(key: &RibbonKey, sketch: bool, sheet_metal: bool) -> Vec<Ribbon
     tabs
 }
 fn contextual_tab(tabs: &[RibbonTab], sketch: bool) -> RibbonTab {
-    // Go chrome_ribbon.go: switch on entry/exit only, preserving manual tab choices afterwards.
+    // Enter sketch on its contextual tab; otherwise use the document's first tab.
     if sketch && tabs.contains(&RibbonTab::Sketch) {
         return RibbonTab::Sketch;
     }

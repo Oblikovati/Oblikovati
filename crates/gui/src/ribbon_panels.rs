@@ -471,14 +471,18 @@ pub(crate) fn available_panels(
     if state.document_type == Some(oblikovati_api::types::DOCUMENT_PART)
         && customization.has_panel(tab)
     {
-        panels.push(RibbonPanel::UserCommands);
+        let before_exit = panels
+            .iter()
+            .position(|panel| *panel == RibbonPanel::Exit)
+            .unwrap_or(panels.len());
+        panels.insert(before_exit, RibbonPanel::UserCommands);
     }
     panels
 }
 /// Every panel a tab offers, hidden ones included.
 pub(crate) fn panels_for(tab: RibbonTab, state: &GuiCommandState) -> Vec<RibbonPanel> {
     use RibbonPanel::*;
-    match tab {
+    let mut panels = match tab {
         RibbonTab::GetStarted => vec![Launch],
         RibbonTab::Model => vec![
             Sketch,
@@ -506,7 +510,11 @@ pub(crate) fn panels_for(tab: RibbonTab, state: &GuiCommandState) -> Vec<RibbonP
             vec![Visibility, Appearance, Windows, Navigate]
         }
         RibbonTab::View => vec![Visibility, Windows, Navigate],
+    };
+    if state.authoring == crate::GuiAuthoringContext::Sketch && !panels.contains(&Exit) {
+        panels.push(Exit);
     }
+    panels
 }
 fn draw_row(
     context: &mut PanelDrawContext<'_>,
