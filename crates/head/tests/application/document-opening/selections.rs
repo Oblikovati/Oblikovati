@@ -190,6 +190,39 @@ fn opening_an_assembly_displays_its_referenced_part() {
     let active = brightness(world.run("Part:1"));
     let suppressed = brightness(world.run("Suppressed:1"));
     assert!(suppressed < active);
+    world.click_text("Part:2");
+    let selected = world
+        .state()
+        .browser
+        .as_ref()
+        .unwrap()
+        .selected_occurrence
+        .clone()
+        .unwrap();
+    assert_eq!(selected.len(), 2);
+    world.click_text("Nested:1");
+    let parent = world
+        .state()
+        .browser
+        .as_ref()
+        .unwrap()
+        .selected_occurrence
+        .clone()
+        .unwrap();
+    assert_eq!(parent.len(), 1);
+    world.expect_text("Part:2");
+    world.click_text("Part:1");
+    let other = world
+        .state()
+        .browser
+        .as_ref()
+        .unwrap()
+        .selected_occurrence
+        .clone()
+        .unwrap();
+    assert_eq!(other.len(), 1);
+    assert_ne!(selected, other);
+    assert_ne!(parent, other);
     world.save_capture("assembly-referenced-part");
     world.click_text("Search");
     world.pump(Vec::new());

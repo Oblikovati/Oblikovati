@@ -4,6 +4,14 @@ use super::*;
 use oblikovati_gui::GuiBrowserOccurrence;
 use oblikovati_model::assembly::AssemblyOccurrenceRecipe;
 
+pub(in super::super) fn contains_occurrence(
+    rows: &[GuiBrowserOccurrence],
+    path: &[(u64, u64, usize)],
+) -> bool {
+    rows.iter()
+        .any(|row| row.path == path || contains_occurrence(&row.children, path))
+}
+
 pub(super) fn browser_occurrences<
     O: TransactionObserver,
     W: WorkspaceObserver,
@@ -12,15 +20,15 @@ pub(super) fn browser_occurrences<
     files: &FileWorkspace<O, W, F>,
     document: u64,
 ) -> Result<Vec<GuiBrowserOccurrence>, String> {
-    occurrence_rows(files, document, 0)
+    occurrence_rows(files, document, &[])
 }
 
 fn occurrence_rows<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &FileWorkspace<O, W, F>,
     document: u64,
-    depth: usize,
+    parent: &[(u64, u64, usize)],
 ) -> Result<Vec<GuiBrowserOccurrence>, String> {
-    if depth > 128 {
+    if parent.len() > 128 {
         return Err(format!(
             "assembly document {document}: expected at most 128 nested levels"
         ));
@@ -34,7 +42,16 @@ fn occurrence_rows<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFile
     };
     occurrences
         .iter()
-        .map(|occurrence| occurrence_row(files, document, occurrence, depth))
+        .enumerate()
+        .map(|(index, occurrence)| {
+            occurrence_row(
+                files,
+                document,
+                occurrence,
+                parent,
+                (session.generation(), index),
+            )
+        })
         .collect()
 }
 
@@ -42,8 +59,11 @@ fn occurrence_row<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles
     files: &FileWorkspace<O, W, F>,
     owner: u64,
     occurrence: &AssemblyOccurrenceRecipe,
-    depth: usize,
+    parent: &[(u64, u64, usize)],
+    identity: (u64, usize),
 ) -> Result<GuiBrowserOccurrence, String> {
+    let mut path = parent.to_vec();
+    path.push((owner, identity.0, identity.1));
     let reference = (!occurrence.virtual_).then_some(occurrence.component.as_str());
     let target = reference.and_then(|name| files.document_reference(owner, name));
     let error = reference.filter(|_| target.is_none()).map(|name| {
@@ -53,10 +73,11 @@ fn occurrence_row<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles
             .to_owned()
     });
     let children = match target {
-        Some(id) => occurrence_rows(files, id, depth + 1)?,
+        Some(id) => occurrence_rows(files, id, &path)?,
         None => Vec::new(),
     };
     Ok(GuiBrowserOccurrence {
+        path,
         name: occurrence.name.clone(),
         component: occurrence.component.clone(),
         suppressed: occurrence.suppressed,

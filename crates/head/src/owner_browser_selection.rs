@@ -29,6 +29,7 @@ impl<
             .map(|count| count.is_some())
             .map_err(|cause| cause.to_string())?;
         self.model_face = None;
+        self.selected_occurrence = None;
         Ok(changed)
     }
     pub(super) fn select_browser_feature(
@@ -43,6 +44,7 @@ impl<
             .set_browser_feature_selection(feature)
             .map_err(|cause| cause.to_string())?;
         self.model_face = None;
+        self.selected_occurrence = None;
         Ok(true)
     }
     /// A click on the view: the face on the line of sight is chosen, and every browser row is
@@ -53,6 +55,7 @@ impl<
         line: [[f64; 3]; 2],
     ) -> Result<bool, String> {
         self.require_browser_document(document)?;
+        self.selected_occurrence = None;
         self.files
             .commands(document)
             .map_err(|cause| cause.to_string())?
@@ -154,10 +157,26 @@ impl<
     ) -> Result<bool, String> {
         use oblikovati_gui::GuiBrowserChoice::{
             ActivateModelState, Body, BodyVisible, CopyModelState, CreateModelState, Nothing,
-            RenameModelState, Root, ShowFeatureDimensions, SketchDimensionsShown,
+            Occurrence, RenameModelState, Root, ShowFeatureDimensions, SketchDimensionsShown,
             ToggleModelStateEditScope,
         };
         self.require_browser_document(document)?;
+        if let Occurrence(path) = choice {
+            let browser = self.gui_browser_snapshot(document)?;
+            if !super::model_browser::occurrences::contains_occurrence(&browser.occurrences, path) {
+                return Err(format!(
+                    "occurrence path {path:?}: expected a current assembly occurrence"
+                ));
+            }
+            self.files
+                .commands(document)
+                .map_err(|cause| cause.to_string())?
+                .set_browser_sketch_selection(None, SelectionClickMode::Replace, false)
+                .map_err(|cause| cause.to_string())?;
+            self.selected_occurrence = Some((document, path.clone()));
+            self.model_face = None;
+            return Ok(true);
+        }
         if let RenameModelState { id, name } = choice {
             return self.rename_model_state(*id, name);
         }
@@ -195,7 +214,8 @@ impl<
             | ActivateModelState(_)
             | ToggleModelStateEditScope
             | ShowFeatureDimensions(_)
-            | SketchDimensionsShown { .. } => {}
+            | SketchDimensionsShown { .. }
+            | Occurrence(_) => {}
             Nothing => {
                 commands
                     .set_browser_sketch_selection(None, SelectionClickMode::Replace, false)
@@ -209,6 +229,7 @@ impl<
         }
         if matches!(choice, Nothing | Root | Body { .. }) {
             self.model_face = None;
+            self.selected_occurrence = None;
         }
         Ok(true)
     }

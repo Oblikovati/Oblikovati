@@ -154,6 +154,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     block_created: Option<String>,
     opened_hidden_sketch: Option<oblikovati_model::document_sketch::DocumentSketchId>,
     model_face: Option<browser_selection::ChosenModelFace>,
+    selected_occurrence: Option<(u64, oblikovati_gui::GuiOccurrencePath)>,
     part_measure: Option<part_measure::PartMeasure>,
     inspected_file: Option<oblikovati_gui::GuiInspectedFile>,
     /// The feature whose dimensions a row's Show Dimensions put in the view.
@@ -230,6 +231,7 @@ impl<
             block_created: None,
             opened_hidden_sketch: None,
             model_face: None,
+            selected_occurrence: None,
             part_measure: None,
             inspected_file: None,
             shown_feature_dimensions: None,

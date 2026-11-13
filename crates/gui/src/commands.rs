@@ -273,6 +273,8 @@ pub enum GuiBrowserChoice {
         shown: bool,
     },
     Root,
+    /// Choose a placed component by its generation-scoped owner path.
+    Occurrence(crate::GuiOccurrencePath),
     Body {
         key: String,
         feature: oblikovati_model::feature::FeatureId,

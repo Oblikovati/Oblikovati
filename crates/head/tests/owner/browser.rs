@@ -3,6 +3,92 @@ use super::*;
 use oblikovati_model::{document_sketch::DocumentSketchId, sketch::SketchPlane};
 
 #[test]
+fn occurrence_selection_rejects_stale_paths_without_editing_history() {
+    let (mut owner, _) = owner();
+    let path = std::path::PathBuf::from("/fixtures/browser-assembly.oad");
+    owner.documents().files().saved.borrow_mut().insert(path.clone(),
+        b"schemaVersion: 2\ndocumentType: 2\nmodel: {occurrences: [{name: Same, virtual: true}, {name: Same, virtual: true, virtualPartNumber: '2'}]}\n".to_vec());
+    let document = Client::new(owner.document_host())
+        .documents()
+        .open(&OpenDocumentArgs {
+            full_document_name: path.to_string_lossy().into_owned(),
+            ..Default::default()
+        })
+        .unwrap()
+        .id;
+    let browser = owner.gui_browser_snapshot(document).unwrap();
+    let first = browser.occurrences[0].path.clone();
+    let second = browser.occurrences[1].path.clone();
+    assert_ne!(first, second);
+    let history = owner
+        .documents()
+        .workspace()
+        .session(document)
+        .unwrap()
+        .history_entries();
+    owner
+        .browser_choice(
+            document,
+            &oblikovati_gui::GuiBrowserChoice::Occurrence(second.clone()),
+        )
+        .unwrap();
+    assert_eq!(
+        owner
+            .gui_browser_snapshot(document)
+            .unwrap()
+            .selected_occurrence,
+        Some(second.clone())
+    );
+    owner
+        .browser_choice(document, &oblikovati_gui::GuiBrowserChoice::Root)
+        .unwrap();
+    assert_eq!(
+        owner
+            .gui_browser_snapshot(document)
+            .unwrap()
+            .selected_occurrence,
+        None
+    );
+    owner
+        .browser_choice(
+            document,
+            &oblikovati_gui::GuiBrowserChoice::Occurrence(second.clone()),
+        )
+        .unwrap();
+    assert_eq!(
+        owner
+            .documents()
+            .workspace()
+            .session(document)
+            .unwrap()
+            .history_entries(),
+        history
+    );
+    owner
+        .document_commands(document)
+        .run("Swap occurrences", |snapshot, _| -> Result<(), ()> {
+            snapshot.assembly.as_mut().unwrap().swap(0, 1);
+            Ok(())
+        })
+        .unwrap();
+    assert_eq!(
+        owner
+            .gui_browser_snapshot(document)
+            .unwrap()
+            .selected_occurrence,
+        None
+    );
+    assert!(
+        owner
+            .browser_choice(
+                document,
+                &oblikovati_gui::GuiBrowserChoice::Occurrence(second)
+            )
+            .is_err()
+    );
+}
+
+#[test]
 fn browser_reads_current_document_and_owned_sketch_edit_state() {
     let (mut owner, awake) = owner();
     assert!(owner.gui_browser_snapshot(999).is_err());

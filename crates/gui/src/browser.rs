@@ -37,6 +37,8 @@ pub struct GuiModelBrowser {
     pub features: Vec<GuiBrowserFeature>,
     /// Placed components in assembly order, including their reference status.
     pub occurrences: Vec<GuiBrowserOccurrence>,
+    /// The selected occurrence path, scoped to the current document generations.
+    pub selected_occurrence: Option<GuiOccurrencePath>,
     pub selected_sketches: Vec<DocumentSketchId>,
     /// The feature row a press chose.
     pub selected_feature: Option<FeatureId>,
@@ -56,9 +58,12 @@ pub struct GuiModelBrowser {
 }
 /// A material available to a selector.
 pub type GuiMaterialChoice = crate::GuiAssetChoice;
+/// A generation-scoped route through assembly owners and occurrence ordinals.
+pub type GuiOccurrencePath = Vec<(u64, u64, usize)>;
 /// A placed assembly component and the occurrences under its referenced assembly.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GuiBrowserOccurrence {
+    pub path: GuiOccurrencePath,
     pub name: String,
     pub component: String,
     pub suppressed: bool,
@@ -332,7 +337,7 @@ impl BrowserTree<'_> {
         self.sketches(view, actions);
         self.features(view, actions);
         if self.browser.kind == GuiBrowserKind::Assembly {
-            self.occurrences(&self.browser.occurrences);
+            self.occurrences(&self.browser.occurrences, actions);
         }
         // The marker closes a modelled document's history; a document without an origin has none.
         if self.browser.has_origin {
@@ -349,7 +354,7 @@ impl BrowserTree<'_> {
         self.ui.text("Relationships");
         self.modeling("End of Assembly", view, actions);
     }
-    fn occurrences(&self, rows: &[GuiBrowserOccurrence]) {
+    fn occurrences(&self, rows: &[GuiBrowserOccurrence], actions: &mut Vec<GuiShellAction>) {
         for (index, row) in rows.iter().enumerate() {
             let _id = self.ui.push_id(format!("occurrence-{index}"));
             let _muted = row.suppressed.then(|| {
@@ -359,17 +364,21 @@ impl BrowserTree<'_> {
                 )
             });
             if row.children.is_empty() {
-                self.occurrence_label(row);
-            } else if let Some(_node) = self.branch(&row.name, true) {
-                self.occurrences(&row.children);
+                self.occurrence_label(row, actions);
+            } else {
+                self.occurrence_branch(row, actions);
             }
         }
     }
-    fn occurrence_label(&self, row: &GuiBrowserOccurrence) {
-        if row.suppressed {
-            self.ui.text_disabled(&row.name);
-        } else {
-            self.ui.text(&row.name);
+    fn occurrence_label(&self, row: &GuiBrowserOccurrence, actions: &mut Vec<GuiShellAction>) {
+        let selected = self.browser.selected_occurrence.as_ref() == Some(&row.path);
+        if self
+            .ui
+            .selectable_config(&row.name)
+            .selected(selected)
+            .build()
+        {
+            self.select_occurrence(row, actions);
         }
         if let Some(error) = &row.error {
             self.ui.same_line();
@@ -378,6 +387,28 @@ impl BrowserTree<'_> {
                 self.ui.tooltip_text(error);
             }
         }
+    }
+    fn occurrence_branch(&self, row: &GuiBrowserOccurrence, actions: &mut Vec<GuiShellAction>) {
+        let selected = self.browser.selected_occurrence.as_ref() == Some(&row.path);
+        let token = self
+            .ui
+            .tree_node_config(&row.name)
+            .open_on_arrow(true)
+            .default_open(true)
+            .selected(selected)
+            .push();
+        if self.ui.is_item_clicked() && !self.ui.is_item_toggled_open() {
+            self.select_occurrence(row, actions);
+        }
+        if let Some(_node) = token {
+            self.occurrences(&row.children, actions);
+        }
+    }
+    fn select_occurrence(&self, row: &GuiBrowserOccurrence, actions: &mut Vec<GuiShellAction>) {
+        actions.push(GuiShellAction::BrowserChoice {
+            document: self.state.document.unwrap_or(0),
+            choice: crate::GuiBrowserChoice::Occurrence(row.path.clone()),
+        });
     }
     fn drawing(&self, view: &mut BrowserView) {
         let drawing = self

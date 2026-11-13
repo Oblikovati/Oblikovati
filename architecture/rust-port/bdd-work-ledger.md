@@ -209,6 +209,11 @@ claim that each file has been individually triaged.
   Browser search keeps the parent of a matching nested occurrence. Native tests
   cover opening and searching the tree; selection and component commands are
   not yet implemented for those rows.
+- Occurrence rows can now be selected with the mouse. The owner checks a path
+  scoped to each assembly generation, so a stale row cannot select a different
+  occurrence after an edit. Tests cover duplicate names, clearing selection,
+  stale paths and mouse selection of nested rows. Component commands and
+  selection highlighting in the viewport remain open.
 - The drawing browser now lists the authored sheets, borders, title blocks and
   views, and browser search uses those same rows. Unit tests cover multiple
   sheets, a missing border and searching for a view.

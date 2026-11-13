@@ -12,7 +12,7 @@ mod browser;
 pub use browser::{
     GuiBrowserBlockInstance, GuiBrowserBody, GuiBrowserFeature, GuiBrowserKind,
     GuiBrowserOccurrence, GuiBrowserRectangularPattern, GuiBrowserSketch, GuiMaterialChoice,
-    GuiModelBrowser,
+    GuiModelBrowser, GuiOccurrencePath,
 };
 mod clipboard;
 pub use activity::GuiFrameActivity;

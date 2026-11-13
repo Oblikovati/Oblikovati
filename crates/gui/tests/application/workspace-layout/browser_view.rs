@@ -51,6 +51,7 @@ fn a_query_with_no_match_leaves_no_rows() {
 #[test]
 fn occurrence_search_keeps_nested_ancestors() {
     let occurrence = |name: &str, children| crate::GuiBrowserOccurrence {
+        path: vec![],
         name: name.into(),
         component: String::new(),
         suppressed: false,

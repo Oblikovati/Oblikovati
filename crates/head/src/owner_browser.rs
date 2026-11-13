@@ -10,7 +10,7 @@ use oblikovati_api::{
 };
 use oblikovati_gui::{GuiBrowserFeature, GuiBrowserSketch, GuiModelBrowser};
 #[path = "owner_browser/occurrences.rs"]
-mod occurrences;
+pub(super) mod occurrences;
 impl<
     O: TransactionObserver,
     W: WorkspaceObserver,
@@ -35,6 +35,11 @@ impl<
             .with_sketch_edit(self.sketch_inspection_edit());
         populate_browser(&mut browser, snapshot, &Client::new(query))?;
         browser.occurrences = occurrences::browser_occurrences(&self.files, document)?;
+        browser.selected_occurrence =
+            self.selected_occurrence.as_ref().and_then(|(owner, path)| {
+                (*owner == document && occurrences::contains_occurrence(&browser.occurrences, path))
+                    .then(|| path.clone())
+            });
         browser.selected_sketches = self.selected_browser_sketches(document);
         browser.bodies = self.gui_browser_bodies(document);
         if matches!(
