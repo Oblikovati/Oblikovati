@@ -594,7 +594,10 @@ fn rectangular_pattern_preview_commit_and_history_keep_record_identity() {
         .unwrap()
         .geometry();
     assert!(preview.geometry.same_recipe(geometry));
-    assert_eq!(geometry.rectangular_patterns(), &[pattern.clone()]);
+    assert_eq!(
+        geometry.rectangular_patterns(),
+        std::slice::from_ref(&pattern)
+    );
     assert!(
         session
             .snapshot()

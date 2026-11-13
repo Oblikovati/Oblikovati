@@ -44,7 +44,7 @@ fn placement_keeps_reference_and_history_atomic_on_refusal_and_replay() {
         owner,
         part,
         "Part:1",
-        identity.clone(),
+        identity,
         accept_identity_placement,
         |_, _| Err::<u64, _>("projection refused".into()),
     );
@@ -56,7 +56,7 @@ fn placement_keeps_reference_and_history_atomic_on_refusal_and_replay() {
             owner,
             part,
             "Part:1",
-            identity.clone(),
+            identity,
             accept_identity_placement,
             |_, id| Ok(id),
         )

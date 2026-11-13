@@ -118,11 +118,13 @@ mod tests {
     #[test]
     fn movement_uses_the_visible_sort_and_does_not_cross_groups() {
         use super::super::{GuiDocumentTemplate, GuiTemplateUnits};
-        let mut chooser = TemplateChooser::default();
-        chooser.selected = Some(GuiDocumentTemplate {
-            kind: GuiTemplateKind::SheetMetal,
-            units: GuiTemplateUnits::Metric,
-        });
+        let mut chooser = TemplateChooser {
+            selected: Some(GuiDocumentTemplate {
+                kind: GuiTemplateKind::SheetMetal,
+                units: GuiTemplateUnits::Metric,
+            }),
+            ..Default::default()
+        };
         let state = GuiCommandState::default();
         chooser.move_selection(&state, GalleryMove::Next);
         assert_eq!(chooser.selected.unwrap().kind, GuiTemplateKind::Part);
@@ -138,22 +140,26 @@ mod tests {
     #[test]
     fn ungrouped_endpoints_follow_the_full_sorted_catalog() {
         use super::super::{GuiDocumentTemplate, GuiTemplateUnits};
-        let mut chooser = TemplateChooser::default();
-        chooser.ungrouped = true;
-        chooser.selected = Some(GuiDocumentTemplate {
-            kind: GuiTemplateKind::Presentation,
-            units: GuiTemplateUnits::Metric,
-        });
+        let mut chooser = TemplateChooser {
+            ungrouped: true,
+            selected: Some(GuiDocumentTemplate {
+                kind: GuiTemplateKind::Presentation,
+                units: GuiTemplateUnits::Metric,
+            }),
+            ..Default::default()
+        };
         chooser.move_selection(&GuiCommandState::default(), GalleryMove::First);
         assert_eq!(chooser.selected.unwrap().kind, GuiTemplateKind::Drawing);
     }
     #[test]
     fn closing_the_gallery_clears_pending_navigation_and_redraw() {
-        let mut chooser = TemplateChooser::default();
-        chooser.gallery_keyboard = true;
-        chooser.gallery_scroll_target = Some(1.);
-        chooser.gallery_scroll_frames = 2;
-        chooser.gallery_scroll_y = Some(42.);
+        let mut chooser = TemplateChooser {
+            gallery_keyboard: true,
+            gallery_scroll_target: Some(1.),
+            gallery_scroll_frames: 2,
+            gallery_scroll_y: Some(42.),
+            ..Default::default()
+        };
         chooser.clear_gallery_navigation();
         assert!(!chooser.gallery_keyboard);
         assert_eq!(chooser.gallery_scroll_target, None);
