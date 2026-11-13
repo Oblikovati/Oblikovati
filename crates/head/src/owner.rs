@@ -63,6 +63,8 @@ mod sketch_geometric;
 mod sketch_interaction;
 #[path = "owner_sketch_move.rs"]
 pub(crate) mod sketch_move;
+#[path = "owner_sketch_pattern.rs"]
+mod sketch_pattern;
 #[path = "owner_sketch_picking.rs"]
 mod sketch_picking;
 #[path = "owner_sketch_relation_context.rs"]
@@ -135,6 +137,12 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
         oblikovati_session::workspace::WorkspaceFocusIdentity,
     )>,
     sketch_tool: Option<crate::sketch_tool::SketchToolState>,
+    pattern_preview: Option<(
+        crate::HeadSketchEdit,
+        u64,
+        oblikovati_viewport::ViewportSketchPreview,
+    )>,
+    pattern_result: Option<(u64, bool)>,
     dimension_serial: u64,
     sketch_formats: oblikovati_api::types::SketchFormatModes,
     sketch_memory: owner_precise_input::SketchCommandMemory,
@@ -230,6 +238,8 @@ impl<
             sketch_options: Default::default(),
             sketch_store: None,
             sketch_tool: None,
+            pattern_preview: None,
+            pattern_result: None,
             dimension_serial: 0,
             parked_sketch_edits: Default::default(),
             sketch_edit: None,

@@ -73,6 +73,8 @@ impl<
                 .map(|definition| definition.name().to_owned())
                 .collect(),
             sketch_block_created: self.block_created.clone(),
+            sketch_pattern_created: self.pattern_result,
+            sketch_pattern_available: true,
             documents: self.gui_document_rows()?,
             document_model_states: self.gui_document_model_states()?,
             document_storage: self.gui_document_storage()?,

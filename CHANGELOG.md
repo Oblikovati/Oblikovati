@@ -32,6 +32,8 @@
 
 ### Added
 
+- Added a rectangular sketch-pattern dialog with live preview and cancel.
+
 - Added rectangular sketch-pattern creation through the typed API.
 
 - Added previewable and undoable rectangular pattern edits that retain existing member identities.

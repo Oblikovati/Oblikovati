@@ -41,6 +41,7 @@ pub struct GuiFrameEngine {
     dimension_value_editor: crate::sketch::dimension_edit::GuiDimensionValueEditor,
     precise_input: crate::sketch::precise_input::PreciseInputBar,
     create_block: crate::sketch::create_block::CreateBlockDialog,
+    sketch_pattern: crate::sketch::rectangular_pattern::RectangularPatternDialog,
     command_alias: crate::sketch::command_alias::CommandAliasBox,
     /// A popup was open last frame: Escape closes it, and the frame that opens is already too
     /// late to ask, since Dear ImGui acts on the key as the frame begins.
@@ -91,6 +92,7 @@ impl GuiFrameEngine {
             dimension_value_editor: Default::default(),
             precise_input: Default::default(),
             create_block: Default::default(),
+            sketch_pattern: Default::default(),
             command_alias: Default::default(),
             popup_was_open: false,
             widget_keys: Vec::new(),
@@ -264,6 +266,7 @@ impl GuiFrameEngine {
                 preferences: &mut self.preferences,
                 precise_input: &mut self.precise_input,
                 create_block: &mut self.create_block,
+                sketch_pattern: &mut self.sketch_pattern,
                 workspace: &mut self.workspace,
                 workspaces: &mut self.workspaces,
                 quick_access: &mut self.quick_access,
@@ -357,6 +360,8 @@ impl GuiFrameEngine {
             .customization
             .panel(ui, &request.commands, &mut selected);
         self.create_block
+            .panel(ui, &request.commands, &mut selected);
+        self.sketch_pattern
             .panel(ui, &request.commands, &mut selected);
         crate::sketch::line::command_menu(ui, &request.commands, &mut selected);
         self.precise_input

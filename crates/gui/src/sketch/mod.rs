@@ -12,6 +12,7 @@ pub(crate) mod line;
 pub(crate) mod marking_menu;
 #[path = "precise-input/mod.rs"]
 pub(crate) mod precise_input;
+pub(crate) mod rectangular_pattern;
 #[path = "region-properties/mod.rs"]
 pub(crate) mod region_properties;
 

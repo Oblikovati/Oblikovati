@@ -515,3 +515,6 @@ mod browser;
 #[allow(unsafe_code)]
 #[path = "application/benchmark.rs"]
 mod application_bdd;
+
+#[path = "native_gui_loop/pattern.rs"]
+mod pattern;

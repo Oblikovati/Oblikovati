@@ -4,6 +4,11 @@ impl GuiShellAction {
     /// Preserve Go empty-stack enablement; example: `GuiShellAction::Undo.enabled(&state)`.
     pub fn enabled(&self, state: &GuiCommandState) -> bool {
         match self {
+            Self::PreviewSketchPattern(None) => true,
+            Self::PreviewSketchPattern(Some(_)) | Self::CreateSketchPattern(_) => {
+                state.sketch_pattern_available && state.sketch_at_ready && !state.transaction_open
+            }
+
             Self::SketchMove(crate::GuiSketchMoveAction::Start) => {
                 state.sketch_at_ready && !state.transaction_open
             }

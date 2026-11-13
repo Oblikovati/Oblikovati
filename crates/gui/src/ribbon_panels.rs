@@ -18,6 +18,7 @@ pub(crate) enum RibbonPanel {
     Layout,
     UserCommands,
     Modify,
+    SketchPattern,
     Format,
     Parameters,
     ToolOptions,
@@ -53,6 +54,7 @@ impl RibbonPanel {
             Self::Layout => "Layout",
             Self::UserCommands => "User Commands",
             Self::Modify => "Modify",
+            Self::SketchPattern => "Pattern",
             Self::Format => "Format",
             Self::Parameters => "Parameters",
             Self::ToolOptions => "Options",
@@ -83,7 +85,8 @@ impl RibbonPanel {
             Self::Exit => ("Finish Sketch", GuiShellAction::FinishSketch),
             Self::Modify => ("Delete", GuiShellAction::DeleteSketchSelection),
             Self::Navigate => ("Home", GuiShellAction::Home),
-            Self::Create
+            Self::SketchPattern
+            | Self::Create
             | Self::Constrain
             | Self::Layout
             | Self::UserCommands
@@ -162,6 +165,7 @@ pub(crate) struct RibbonPanelOwners<'a> {
     pub workspaces: &'a mut crate::application::document_creation::workspaces::DocumentWorkspaces,
     pub quick_access: &'a mut crate::application::quick_access_toolbar::QuickAccessToolbar,
     pub precise_input: &'a mut crate::sketch::precise_input::PreciseInputBar,
+    pub sketch_pattern: &'a mut crate::sketch::rectangular_pattern::RectangularPatternDialog,
     pub create_block: &'a mut crate::sketch::create_block::CreateBlockDialog,
     pub customization: &'a mut crate::application::ribbon_customization::RibbonCustomization,
     pub active_tab: RibbonTab,
@@ -503,7 +507,13 @@ pub(crate) fn panels_for(tab: RibbonTab, state: &GuiCommandState) -> Vec<RibbonP
         }
         RibbonTab::Annotate => vec![AnnotateDimension, AnnotateText, AnnotateSymbols],
         RibbonTab::Presentation => vec![PresentationModel],
-        RibbonTab::Sketch => vec![Create, Constrain, Layout, Modify, Format, Parameters, Exit],
+        RibbonTab::Sketch => {
+            let mut panels = vec![Create, Constrain, Layout, Modify, Format, Parameters, Exit];
+            if state.sketch_pattern_available {
+                panels.insert(4, SketchPattern);
+            }
+            panels
+        }
         RibbonTab::Manage => vec![Parameters],
         RibbonTab::Tools => vec![ToolOptions],
         RibbonTab::View if state.theme.is_some() || state.color_scheme.is_some() => {

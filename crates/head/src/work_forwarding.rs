@@ -200,6 +200,18 @@ macro_rules! forward_owner_view_work {
         fn delete_sketch_relation_from_gui(&mut self, id: u64) -> Result<bool, String> {
             self.$owner.delete_sketch_relation_from_gui(id)
         }
+        fn preview_sketch_pattern_from_gui(
+            &mut self,
+            request: Option<oblikovati_model::history::SketchRectangularPatternRequest>,
+        ) -> Result<bool, String> {
+            self.$owner.preview_sketch_pattern_from_gui(request)
+        }
+        fn create_sketch_pattern_from_gui(
+            &mut self,
+            request: oblikovati_model::history::SketchRectangularPatternRequest,
+        ) -> Result<bool, String> {
+            self.$owner.create_sketch_pattern_from_gui(request)
+        }
         fn sketch_move_from_gui(
             &mut self,
             action: oblikovati_gui::GuiSketchMoveAction,

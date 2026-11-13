@@ -31,6 +31,15 @@ pub(crate) fn draw_panel_content(
                 crate::widget_abi::button(ui, "Delete", [108., 26.])
             });
         }
+        RibbonPanel::SketchPattern => {
+            let opened =
+                crate::sketch::rectangular_pattern::ribbon_button(ui, state, owners.sketch_pattern);
+            owners.icons.cursor(ui, origin, [0., 30.]);
+            let unavailable = ui.begin_disabled(true);
+            crate::widget_abi::button(ui, "Circular", [108., 26.]);
+            drop(unavailable);
+            return opened;
+        }
         RibbonPanel::Create => sketch_create_controls(ui, origin, state, owners.icons, actions),
         RibbonPanel::Constrain => {
             sketch_constraint_controls(ui, origin, state, owners.icons, actions)

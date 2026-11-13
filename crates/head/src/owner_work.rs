@@ -443,6 +443,18 @@ impl<
     fn place_sketch_block_from_gui(&mut self, name: &str) -> Result<bool, String> {
         self.start_block_placement(name)
     }
+    fn preview_sketch_pattern_from_gui(
+        &mut self,
+        request: Option<oblikovati_model::history::SketchRectangularPatternRequest>,
+    ) -> Result<bool, String> {
+        self.preview_gui_pattern(request)
+    }
+    fn create_sketch_pattern_from_gui(
+        &mut self,
+        request: oblikovati_model::history::SketchRectangularPatternRequest,
+    ) -> Result<bool, String> {
+        self.create_gui_pattern(request)
+    }
     fn sketch_move_from_gui(
         &mut self,
         action: oblikovati_gui::GuiSketchMoveAction,
@@ -512,6 +524,13 @@ impl<
         self.active_sketch_edit()
     }
     fn sketch_preview(&self) -> Option<oblikovati_viewport::ViewportSketchPreview> {
+        if let Some((edit, generation, preview)) = &self.pattern_preview
+            && self.sketch_tool.is_none()
+            && self.sketch_context_valid(edit.document, edit.sketch, *generation)
+        {
+            return Some(preview.clone());
+        }
+
         if let Some(crate::sketch_tool::SketchToolState::Move(tool)) = &self.sketch_tool {
             let available =
                 self.sketch_context_valid(tool.edit.document, tool.edit.sketch, tool.generation)

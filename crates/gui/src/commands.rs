@@ -24,6 +24,8 @@ pub enum GuiShellAction {
     },
     SetSketchOptions(oblikovati_model::application_options::SketchApplicationOptions),
     SketchMove(crate::GuiSketchMoveAction),
+    PreviewSketchPattern(Option<oblikovati_model::history::SketchRectangularPatternRequest>),
+    CreateSketchPattern(oblikovati_model::history::SketchRectangularPatternRequest),
     LineCommand(crate::GuiLineCommand),
     PrecisePoint(crate::GuiPrecisePoint),
     PreciseTriad(crate::GuiTriadCommand),
@@ -314,6 +316,9 @@ pub struct GuiCommandState {
     pub sketch_block_names: Vec<String>,
     /// Last block creation acknowledged by the document owner during this dialog.
     pub sketch_block_created: Option<String>,
+    pub sketch_pattern_created: Option<(u64, bool)>,
+    /// The host provides the rectangular sketch-pattern command.
+    pub sketch_pattern_available: bool,
     pub color_scheme: Option<crate::GuiColorSchemeState>,
     pub theme: Option<crate::GuiThemeState>,
     pub browser: Option<crate::GuiModelBrowser>,

@@ -541,3 +541,6 @@ mod document_creation_benchmark;
 
 #[path = "owner/point_preview.rs"]
 mod point_preview;
+
+#[path = "owner/sketch_pattern.rs"]
+mod sketch_pattern;
