@@ -210,6 +210,9 @@ pub(crate) fn draw_panels(
     layout.pending_layout = false;
     layout.additional.use_document(state.document);
     layout.additional.use_mode(display.mode);
+    if display.take_docking_selection() {
+        layout.additional.clear();
+    }
     if owners.home_active {
         layout.additional.clear();
     }

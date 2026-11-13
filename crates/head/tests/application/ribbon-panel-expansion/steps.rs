@@ -83,9 +83,10 @@ fn solid_and_browser(world: &mut ApplicationWorld) {
 }
 #[given("the 3D Model Modify panel is expanded with its pin control unselected")]
 #[given("the unpinned Modify additional command area is open")]
+#[given("the Modify additional command area is open and unpinned")]
 #[given("the 3D Model Modify panel is expanded and unpinned")]
 #[given("the 3D Model Modify additional command area is open")]
-fn opened_unpinned(world: &mut ApplicationWorld) {
+pub(super) fn opened_unpinned(world: &mut ApplicationWorld) {
     open_modify(world);
     world.expect_text("Pin");
 }
@@ -100,7 +101,7 @@ fn opened_pinned(world: &mut ApplicationWorld) {
 #[when("the user unpins the Modify additional command area")]
 #[when("the user unpins the additional area")]
 #[when("the user clicks its pin control")]
-fn toggle_pin(world: &mut ApplicationWorld) {
+pub(super) fn toggle_pin(world: &mut ApplicationWorld) {
     let label = world.run("Pin");
     let position = [label.minimum[0] + 6., label.center()[1]];
     world.click(diagnostics::pointer_pixels(position));
@@ -122,6 +123,8 @@ fn pin_highlight(world: &mut ApplicationWorld) {
     toggle_pin(world);
 }
 #[then("the additional command area closes")]
+#[then("the additional command area is no longer open")]
+#[then("the Modify additional command area remains closed")]
 #[then("the Modify additional command area is no longer visible")]
 #[then("the Modify additional command area is not automatically displayed")]
 fn area_closed(_: &mut ApplicationWorld) {

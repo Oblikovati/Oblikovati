@@ -100,7 +100,7 @@ pub(super) fn draw(
     context: &mut PanelDrawContext<'_>,
     tab: RibbonTab,
     layout: &mut RibbonPanelLayout,
-    display: &RibbonDisplayState,
+    display: &mut RibbonDisplayState,
 ) -> bool {
     let mut closed = false;
     layout.additional.open.retain(|(owner, panel), _| {
@@ -130,7 +130,7 @@ fn draw_window(
     panel: RibbonPanel,
     area: crate::application::document_creation::workspaces::WorkspaceArea,
     expansion: &mut Expansion,
-    display: &RibbonDisplayState,
+    display: &mut RibbonDisplayState,
 ) -> bool {
     let ui = context.ui;
     let scale = context.owners.icons.layout_factor();
@@ -188,13 +188,18 @@ fn draw_window(
             }
             drop(active);
             ui.same_line();
-            if ui.small_button(panel.label()) && !expansion.pinned {
+            let title_clicked = ui.small_button(panel.label());
+            if ui.is_item_hovered() && ui.is_mouse_clicked(imgui::MouseButton::Right) {
+                display.request_context_menu();
+            }
+            if title_clicked && !expansion.pinned {
                 close = true;
             }
             if !expansion.pinned
                 && ui.is_mouse_clicked(imgui::MouseButton::Left)
                 && !inside_window(ui)
                 && !inside(ui.io().mouse_pos, expansion.trigger)
+                && !display.context_contains(ui.io().mouse_pos)
                 && !display.selector_open
                 && !display
                     .selector_trigger

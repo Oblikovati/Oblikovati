@@ -95,6 +95,7 @@ fn context_menu(world: &mut ApplicationWorld) {
 }
 #[when("I open Docking Positions")]
 #[when("opens Docking Positions")]
+#[when("the user opens \"Docking Positions\"")]
 fn docking_positions(world: &mut ApplicationWorld) {
     open_docking_positions(world);
 }
@@ -116,6 +117,7 @@ fn top_checked(world: &mut ApplicationWorld) {
     expect_checked(world, "Top");
 }
 #[then("Left is checked")]
+#[then("\"Left\" is checked")]
 fn left_checked(world: &mut ApplicationWorld) {
     expect_checked(world, "Left");
 }
@@ -439,6 +441,9 @@ pub(super) fn dock_ribbon_top(world: &mut ApplicationWorld) {
 
 #[path = "active_tab.rs"]
 mod active_tab;
+
+#[path = "expanded_title.rs"]
+mod expanded_title;
 
 #[path = "right_docked.rs"]
 mod right_docked;

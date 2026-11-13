@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Kept expanded ribbon commands open while their docking menu is in use.
+
 - Kept the ribbon docking submenu closed after Escape until it is opened again.
 
 - Made the default ribbon display control toggle between full and tabs-only modes.

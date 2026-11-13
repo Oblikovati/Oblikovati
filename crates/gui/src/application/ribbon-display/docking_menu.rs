@@ -39,6 +39,7 @@ impl RibbonDisplayState {
         let Some(_menu) = ui.begin_popup(DOCKING_MENU) else {
             return false;
         };
+        self.capture_submenu_bounds(ui);
         if ui.is_key_pressed_no_repeat(Key::LeftArrow) {
             self.docking_hover_blocked = true;
             ui.close_current_popup();

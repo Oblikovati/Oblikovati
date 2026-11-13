@@ -4,6 +4,7 @@ use crate::ribbon::RibbonTab;
 use crate::ribbon_panels::RibbonPanel;
 use imgui::Ui;
 use std::collections::BTreeSet;
+mod context_bounds;
 mod docking_menu;
 mod panel_selector;
 pub(crate) use panel_selector::PANEL_SELECTOR_WIDTH;
@@ -94,6 +95,9 @@ pub(crate) struct RibbonDisplayState {
     pub placement: RibbonPlacement,
     pub side_anchor: Option<SideAnchor>,
     context_requested: bool,
+    context_bounds: Option<[[f32; 2]; 2]>,
+    submenu_bounds: Option<[[f32; 2]; 2]>,
+    docking_selected: bool,
     docking_open: bool,
     docking_hover_blocked: bool,
     customize_requested: bool,
@@ -124,6 +128,9 @@ impl Default for RibbonDisplayState {
             placement: RibbonPlacement::default(),
             side_anchor: None,
             context_requested: false,
+            context_bounds: None,
+            submenu_bounds: None,
+            docking_selected: false,
             docking_open: false,
             docking_hover_blocked: false,
             customize_requested: false,
@@ -178,6 +185,7 @@ impl RibbonDisplayState {
     /// Move the ribbon; a temporary panel opened for the old place closes.
     pub(crate) fn place(&mut self, placement: RibbonPlacement) {
         self.placement = placement;
+        self.docking_selected = true;
         self.temporary = None;
         self.side_anchor = None;
     }
@@ -197,6 +205,7 @@ impl RibbonDisplayState {
         let Some(_list) = ui.begin_popup(SHOW_PANELS) else {
             return;
         };
+        self.capture_submenu_bounds(ui);
         for panel in panels {
             let shown = !self.hidden_panels.contains(&(tab, *panel));
             if ui.menu_item_config(panel.label()).selected(shown).build() {
@@ -217,10 +226,13 @@ impl RibbonDisplayState {
             ui.open_popup(CONTEXT_MENU);
         }
         let Some(_menu) = ui.begin_popup(CONTEXT_MENU) else {
+            self.context_bounds = None;
+            self.submenu_bounds = None;
             self.docking_open = false;
             self.docking_hover_blocked = false;
             return;
         };
+        self.capture_context_bounds(ui);
         muted_context_item(ui, "Ribbon Appearance");
         self.show_panels_menu(ui, tab, panels);
         if ui
