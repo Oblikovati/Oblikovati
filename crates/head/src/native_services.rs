@@ -127,6 +127,12 @@ impl<'a, D: ScriptDocumentOwner, W: DispatchWakeup + 'static> NativeAddInDesktop
 impl<D: ScriptDocumentOwner, W: DispatchWakeup + 'static> HeadWork
     for NativeAddInDesktop<'_, D, W>
 {
+    fn set_marking_menu_from_gui(
+        &mut self,
+        args: &oblikovati_api::wire::SetMarkingMenuArgs,
+    ) -> Result<bool, String> {
+        self.owner.set_marking_menu_from_gui(args)
+    }
     fn accept_sketch_alias(
         &mut self,
         event: oblikovati_viewport::ViewportEvent,

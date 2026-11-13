@@ -520,3 +520,6 @@ fn row_option_checked(world: &ApplicationWorld, row: &str, option: &str) -> bool
 }
 #[path = "native_tests.rs"]
 mod native_tests;
+
+#[path = "marking_menu_tests.rs"]
+mod marking_menu_tests;

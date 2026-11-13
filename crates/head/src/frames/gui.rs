@@ -100,7 +100,8 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::PlaceSketchBlock(_) => {
             return None;
         }
-        GuiShellAction::SetKeymap(_)
+        GuiShellAction::SetMarkingMenu(_)
+        | GuiShellAction::SetKeymap(_)
         | GuiShellAction::SetUiScale(_)
         | GuiShellAction::SetDocumentUnits { .. }
         | GuiShellAction::CreateDrawingBaseView(_)

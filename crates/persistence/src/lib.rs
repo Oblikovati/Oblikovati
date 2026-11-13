@@ -3,10 +3,11 @@
 //! Storage boundaries for complete document snapshots.
 
 pub mod application_options;
-pub mod keymap_preferences;
 pub mod assets;
 pub mod atomic;
+pub mod keymap_preferences;
 pub mod load;
+pub mod marking_menu_preferences;
 pub mod metadata;
 pub mod package;
 

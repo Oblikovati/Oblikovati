@@ -23,6 +23,7 @@ pub mod units;
 
 pub mod interest;
 pub mod keymap;
+pub mod marking_menu;
 pub mod model_state;
 
 pub mod document_sketch;

@@ -17,6 +17,7 @@ impl<
         )?);
         let Some(document) = self.files.workspace().active_document() else {
             return Ok(oblikovati_gui::GuiCommandState {
+                marking_menus: Some(self.marking_menus.clone()),
                 keymap: Some(self.keymap.clone()),
                 keymap_bindings: self.keymap.catalog(),
                 ui_scale: self.gui_ui_scale(),
@@ -35,6 +36,12 @@ impl<
             .session(document)
             .map_err(|cause| cause.to_string())?;
         Ok(oblikovati_gui::GuiCommandState {
+            marking_menus: Some(self.marking_menus.clone()),
+            sketch_marking_menu: Some(
+                self.marking_menus
+                    .get(oblikovati_api::types::SKETCH_ENVIRONMENT),
+            ),
+            sketch_classic_menu: self.classic_marking_menu,
             keymap: Some(self.keymap.clone()),
             keymap_bindings: self.keymap.catalog(),
             document_units: Some(

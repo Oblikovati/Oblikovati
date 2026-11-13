@@ -26,10 +26,6 @@ impl RibbonCustomization {
                 .is_some_and(|draft| draft.export() == current.export())
         {
             self.keyboard_base = Some(current.export());
-            if self.keyboard_close_pending {
-                self.open = false;
-            }
-            self.keyboard_close_pending = false;
             self.keyboard_conflict = false;
             return;
         }
@@ -131,7 +127,7 @@ impl RibbonCustomization {
             if let Some(id) = self.keyboard_selected.clone() {
                 self.refresh_keyboard_fields(&id);
             }
-            self.keyboard_close_pending = false;
+            self.close_after_apply = false;
         }
         ui.same_line();
         if ui.button("Copy to Clipboard") {
@@ -159,7 +155,7 @@ impl RibbonCustomization {
         if ui.button("Set binding") {
             let result = self.stage_binding(&id);
             self.keyboard_error = result.err();
-            self.keyboard_close_pending = false;
+            self.close_after_apply = false;
         }
         ui.same_line();
         if ui.button("Reset binding") {
@@ -170,7 +166,7 @@ impl RibbonCustomization {
             if self.keyboard_error.is_none() {
                 self.refresh_keyboard_fields(&id);
             }
-            self.keyboard_close_pending = false;
+            self.close_after_apply = false;
         }
         if let Some(error) = &self.keyboard_error {
             ui.text_wrapped(error);
@@ -312,8 +308,9 @@ mod tests {
         let mut applied = original;
         applied.restore_saved(delta).unwrap();
         state.keymap = Some(applied);
-        dialog.keyboard_close_pending = true;
+        dialog.close_after_apply = true;
         dialog.sync_keyboard(&state);
+        dialog.finish_apply();
         assert!(!dialog.keyboard_changed());
         assert!(!dialog.open);
     }

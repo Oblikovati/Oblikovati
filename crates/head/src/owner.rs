@@ -90,6 +90,9 @@ impl Default for DesktopDispatchOptions {
 /// require_send::<DesktopOwner<(), (), (), (), (), PollingDispatchWakeup>>();
 /// ```
 pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
+    marking_menus: oblikovati_model::marking_menu::MarkingMenus,
+    classic_marking_menu: bool,
+    marking_store: Option<Box<dyn oblikovati_model::marking_menu::MarkingMenuPreferenceAccess>>,
     keymap: oblikovati_model::keymap::Keymap,
     keymap_store: Option<Box<dyn oblikovati_model::keymap::KeymapPreferenceAccess>>,
     shortcut_keys: owner_shortcuts::ShortcutKeys,
@@ -171,6 +174,9 @@ impl<
     ) -> Self {
         let (dispatch, caller) = owner_dispatch(options.capacity, options.timeout, wake);
         Self {
+            marking_menus: Default::default(),
+            classic_marking_menu: false,
+            marking_store: None,
             keymap: oblikovati_model::keymap::Keymap::desktop_defaults(),
             keymap_store: None,
             shortcut_keys: Default::default(),
@@ -281,8 +287,13 @@ impl<
         )
         .with_drawing_views(&self.drawing_projection_access)
         .with_sketch_edit(editing)
+        .with_marking_menus(&mut self.marking_menus)
         .with_keymap(&mut self.keymap)
         .with_color_schemes(&mut self.color_schemes);
+        let host = match self.marking_store.as_mut() {
+            Some(store) => host.with_marking_store(store.as_mut()),
+            None => host,
+        };
         let host = match self.keymap_store.as_mut() {
             Some(store) => host.with_keymap_store(store.as_mut()),
             None => host,
@@ -309,8 +320,13 @@ impl<
         )
         .with_drawing_views(&self.drawing_projection_access)
         .with_sketch_edit(editing)
+        .with_marking_menus(&mut self.marking_menus)
         .with_keymap(&mut self.keymap)
         .with_color_schemes(&mut self.color_schemes);
+        let host = match self.marking_store.as_mut() {
+            Some(store) => host.with_marking_store(store.as_mut()),
+            None => host,
+        };
         let host = match self.keymap_store.as_mut() {
             Some(store) => host.with_keymap_store(store.as_mut()),
             None => host,
@@ -377,6 +393,8 @@ fn borrowed_host<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFi
         None => host,
     }
 }
+#[path = "owner_marking_menu.rs"]
+mod marking_menu;
 #[path = "owner_shortcuts.rs"]
 mod owner_shortcuts;
 #[path = "owner_placement.rs"]

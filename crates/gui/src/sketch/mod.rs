@@ -9,6 +9,7 @@ pub(crate) mod dimension_edit;
 pub(crate) mod inspect;
 #[path = "line/mod.rs"]
 pub(crate) mod line;
+pub(crate) mod marking_menu;
 #[path = "precise-input/mod.rs"]
 pub(crate) mod precise_input;
 #[path = "region-properties/mod.rs"]

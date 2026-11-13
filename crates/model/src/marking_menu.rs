@@ -1,0 +1,151 @@
+// SPDX-License-Identifier: GPL-2.0-only
+//! Validated radial menus shared by the desktop and public API.
+use oblikovati_api::{
+    types::{self, Environment, ScreenQuadrant},
+    wire::{MarkingMenuItem, MarkingMenuView},
+};
+use std::collections::{BTreeMap, BTreeSet};
+
+/// Storage for a user's marking-menu assignments.
+pub trait MarkingMenuPreferenceAccess {
+    /// Read the classic context-menu choice; example: `store.classic()`.
+    fn classic(&self) -> bool;
+    /// Read the saved menus; example: `store.menus()`.
+    fn menus(&self) -> Vec<MarkingMenuView>;
+    /// Save validated menus; example: `store.save(&menus)?`.
+    fn save(&mut self, menus: &MarkingMenus) -> Result<(), String>;
+}
+
+/// Per-environment radial command assignments.
+#[derive(Clone, Debug, PartialEq)]
+pub struct MarkingMenus {
+    menus: BTreeMap<u8, MarkingMenuView>,
+}
+impl Default for MarkingMenus {
+    fn default() -> Self {
+        let menus = [base_menu(), sketch_menu()]
+            .into_iter()
+            .map(|menu| (menu.environment.0, menu))
+            .collect();
+        Self { menus }
+    }
+}
+impl MarkingMenus {
+    /// Copy configured environments in stable order; example: `menus.all()`.
+    pub fn all(&self) -> Vec<MarkingMenuView> {
+        self.menus.values().cloned().collect()
+    }
+    /// Read one environment, including empty unconfigured environments.
+    /// Example: `menus.get(types::SKETCH_ENVIRONMENT)`.
+    pub fn get(&self, environment: Environment) -> MarkingMenuView {
+        self.menus
+            .get(&environment.0)
+            .cloned()
+            .unwrap_or(MarkingMenuView {
+                environment,
+                ..Default::default()
+            })
+    }
+    /// Replace one menu after validating every radial slot.
+    /// Example: `menus.set(view)?`.
+    pub fn set(&mut self, menu: MarkingMenuView) -> Result<(), String> {
+        validate(&menu)?;
+        self.menus.insert(menu.environment.0, menu);
+        Ok(())
+    }
+}
+fn validate(menu: &MarkingMenuView) -> Result<(), String> {
+    let mut seen = BTreeSet::new();
+    for item in menu.quadrants.iter().flatten() {
+        if item.quadrant.0 > types::QUADRANT_NORTH_WEST.0 || !seen.insert(item.quadrant.0) {
+            return Err(format!(
+                "marking menu quadrant {}: expected a unique value in 0..=7",
+                item.quadrant.0
+            ));
+        }
+    }
+    Ok(())
+}
+fn menu(environment: Environment, slots: &[(ScreenQuadrant, &str)]) -> MarkingMenuView {
+    MarkingMenuView {
+        environment,
+        quadrants: Some(
+            slots
+                .iter()
+                .map(|(quadrant, id)| MarkingMenuItem {
+                    quadrant: *quadrant,
+                    command_id: (*id).into(),
+                })
+                .collect(),
+        ),
+        overflow: None,
+    }
+}
+fn base_menu() -> MarkingMenuView {
+    menu(
+        types::BASE_ENVIRONMENT,
+        &[
+            (types::QUADRANT_NORTH, "Sketch.Create2D"),
+            (types::QUADRANT_NORTH_EAST, "Modify.Fillet"),
+            (types::QUADRANT_EAST, "Create.Extrude"),
+            (types::QUADRANT_SOUTH_EAST, "Modify.Chamfer"),
+            (types::QUADRANT_SOUTH, "Modify.Hole"),
+            (types::QUADRANT_SOUTH_WEST, "WorkPlane.Offset"),
+            (types::QUADRANT_WEST, "Create.Revolve"),
+        ],
+    )
+}
+fn sketch_menu() -> MarkingMenuView {
+    menu(
+        types::SKETCH_ENVIRONMENT,
+        &[
+            (types::QUADRANT_NORTH, "Sketch.Line"),
+            (types::QUADRANT_NORTH_EAST, "Sketch.Dimension"),
+            (types::QUADRANT_EAST, "Sketch.Circle"),
+            (types::QUADRANT_SOUTH, "Sketch.Rectangle"),
+            (types::QUADRANT_WEST, "Sketch.Arc"),
+            (types::QUADRANT_NORTH_WEST, "Sketch.Finish"),
+        ],
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn go_sketch_defaults_and_unknown_environment_are_distinct() {
+        let menus = MarkingMenus::default();
+        let sketch = menus.get(types::SKETCH_ENVIRONMENT);
+        assert!(
+            sketch
+                .quadrants
+                .unwrap()
+                .iter()
+                .any(|slot| slot.quadrant == types::QUADRANT_SOUTH
+                    && slot.command_id == "Sketch.Rectangle")
+        );
+        assert!(menus.get(Environment(99)).quadrants.is_none());
+    }
+    #[test]
+    fn invalid_replacement_leaves_previous_menu_intact() {
+        let mut menus = MarkingMenus::default();
+        let before = menus.get(types::SKETCH_ENVIRONMENT);
+        for slots in [vec![(0, "one"), (0, "two")], vec![(8, "bad")]] {
+            let invalid = menu(
+                types::SKETCH_ENVIRONMENT,
+                &slots
+                    .into_iter()
+                    .map(|(slot, id)| (ScreenQuadrant(slot), id))
+                    .collect::<Vec<_>>(),
+            );
+            assert!(menus.set(invalid).is_err());
+            assert_eq!(menus.get(types::SKETCH_ENVIRONMENT), before);
+        }
+        let replacement = menu(
+            types::SKETCH_ENVIRONMENT,
+            &[(types::QUADRANT_WEST, "future.command")],
+        );
+        menus.set(replacement.clone()).unwrap();
+        assert_eq!(menus.get(types::SKETCH_ENVIRONMENT), replacement);
+    }
+}

@@ -2,6 +2,15 @@
 use crate::HeadWorkStatus;
 /// Owner-thread services borrow model state only while the window loop polls them.
 pub trait HeadWork {
+    /// Apply a marking menu; example: `work.set_marking_menu_from_gui(&args)?`.
+    fn set_marking_menu_from_gui(
+        &mut self,
+        args: &oblikovati_api::wire::SetMarkingMenuArgs,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "marking menu {args:?}: expected a desktop menu owner"
+        ))
+    }
     /// Consume an alias input after the GUI releases it; example: `work.accept_sketch_alias(event)`.
     fn accept_sketch_alias(
         &mut self,

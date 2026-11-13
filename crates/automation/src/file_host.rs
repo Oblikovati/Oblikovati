@@ -41,6 +41,8 @@ pub struct FileHost<'a, O: TransactionObserver, W, F> {
     context: RefCell<FileContext<'a, O, W, F>>,
 }
 struct FileContext<'a, O: TransactionObserver, W, F> {
+    marking_menus: Option<&'a mut oblikovati_model::marking_menu::MarkingMenus>,
+    marking_store: Option<&'a mut dyn oblikovati_model::marking_menu::MarkingMenuPreferenceAccess>,
     keymap: Option<&'a mut oblikovati_model::keymap::Keymap>,
     keymap_store: Option<&'a mut dyn oblikovati_model::keymap::KeymapPreferenceAccess>,
     color_schemes: Option<&'a mut oblikovati_model::color_scheme::ColorSchemeRegistry>,
@@ -60,6 +62,22 @@ struct FileContext<'a, O: TransactionObserver, W, F> {
         Option<&'a mut dyn oblikovati_model::application_options::SketchPreferenceAccess>,
 }
 impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHost<'a, O, W, F> {
+    /// Share the desktop's marking menus; example: `host.with_marking_menus(&mut menus)`.
+    pub fn with_marking_menus(
+        mut self,
+        menus: &'a mut oblikovati_model::marking_menu::MarkingMenus,
+    ) -> Self {
+        self.context.get_mut().marking_menus = Some(menus);
+        self
+    }
+    /// Share marking-menu storage; example: `host.with_marking_store(&mut store)`.
+    pub fn with_marking_store(
+        mut self,
+        store: &'a mut dyn oblikovati_model::marking_menu::MarkingMenuPreferenceAccess,
+    ) -> Self {
+        self.context.get_mut().marking_store = Some(store);
+        self
+    }
     /// Share the application keymap; example: `host.with_keymap(&mut keymap)`.
     pub fn with_keymap(mut self, keymap: &'a mut oblikovati_model::keymap::Keymap) -> Self {
         self.context.get_mut().keymap = Some(keymap);
@@ -126,6 +144,8 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHos
     ) -> Self {
         Self {
             context: RefCell::new(FileContext {
+                marking_menus: None,
+                marking_store: None,
                 keymap: None,
                 keymap_store: None,
                 color_schemes: None,
@@ -151,6 +171,27 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
 {
     fn call(&self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
         let mut context = self.context.try_borrow_mut().map_err(|_| busy(method))?;
+        if crate::marking_menu::METHODS.contains(&method) {
+            let FileContext {
+                marking_menus,
+                marking_store,
+                ..
+            } = &mut *context;
+            let menus = marking_menus.as_deref_mut().ok_or_else(|| {
+                Error(format!(
+                    "marking menu call {method:?}: expected an injected menu owner"
+                ))
+            })?;
+            let mut candidate = menus.clone();
+            let reply = crate::marking_menu::apply(&mut candidate, method, request)?;
+            if method == METHOD_UI_SET_MARKING_MENU {
+                if let Some(store) = marking_store.as_deref_mut() {
+                    store.save(&candidate).map_err(Error)?;
+                }
+                *menus = candidate;
+            }
+            return Ok(reply);
+        }
         if crate::keymap::METHODS.contains(&method) {
             let FileContext {
                 keymap,

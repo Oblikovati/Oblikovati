@@ -9,6 +9,21 @@ use oblikovati_persistence::{
 use std::path::{Path, PathBuf};
 type NativeThemePreferences = ThemeFilePreferences<NativeThemePreferenceFiles>;
 
+pub(super) fn load_native_marking_menu(
+    directory: &Path,
+) -> Result<
+    oblikovati_persistence::marking_menu_preferences::MarkingMenuPreferenceFile<
+        NativeThemePreferenceFiles,
+    >,
+    String,
+> {
+    oblikovati_persistence::marking_menu_preferences::MarkingMenuPreferenceFile::load(
+        &directory.join("markingmenu.yaml"),
+        NativeThemePreferenceFiles,
+    )
+    .map_err(|cause| cause.to_string())
+}
+
 pub(super) fn load_native_keymap(
     directory: &Path,
 ) -> Result<

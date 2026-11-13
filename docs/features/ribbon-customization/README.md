@@ -32,5 +32,10 @@ The Keyboard tab lists the supported commands and lets users change shortcuts.
 It saves applied changes in `keymap.yaml`. Sketch commands and the Undo, Redo,
 Save, Home, and Previous View actions accept aliases when a sketch is ready.
 A keyboard draft is not applied if another client changes
-the keymap while the dialog is open. Marking-menu customization, aliases for
-other built-in actions, and the full command catalog remain open work.
+the keymap while the dialog is open.
+
+The Marking Menu tab lets users assign supported sketch tools and constraints
+to the eight sketch menu slots. Apply saves the layout in `markingmenu.yaml`.
+The sketch canvas also reads saved overflow commands and the classic-menu
+preference. Other environments, the classic-menu editor, aliases for other
+built-in actions, and the full command catalog remain open work.

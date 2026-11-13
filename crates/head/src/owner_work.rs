@@ -9,6 +9,16 @@ impl<
     S: DispatchWakeup,
 > HeadWork for DesktopOwner<O, W, F, G, R, S>
 {
+    fn set_marking_menu_from_gui(
+        &mut self,
+        args: &oblikovati_api::wire::SetMarkingMenuArgs,
+    ) -> Result<bool, String> {
+        oblikovati_api::client::Client::new(self.document_host())
+            .ui()
+            .set_marking_menu(args)
+            .map_err(|cause| cause.to_string())?;
+        Ok(true)
+    }
     fn accept_sketch_alias(
         &mut self,
         event: oblikovati_viewport::ViewportEvent,

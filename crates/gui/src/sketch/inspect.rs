@@ -125,6 +125,13 @@ pub(crate) fn canvas_menu(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<Gu
     let Some(_popup) = ui.begin_popup(CANVAS_MENU) else {
         return;
     };
+    if let Some(menu) = &state.sketch_marking_menu {
+        if state.sketch_classic_menu {
+            super::marking_menu::draw_classic(ui, menu, actions);
+        } else {
+            super::marking_menu::draw(ui, menu, actions);
+        }
+    }
     repeat_row(ui, state, actions);
     center_point_row(ui, state, actions);
     select_other_row(ui, state);

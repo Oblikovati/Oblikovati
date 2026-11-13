@@ -4,6 +4,7 @@ mod category;
 mod keyboard;
 mod keyboard_catalog;
 mod locations;
+mod marking_menu;
 mod panel;
 mod settings_dialog;
 mod settings_xml;
@@ -50,8 +51,11 @@ pub(crate) struct RibbonCustomization {
     keyboard_chord: String,
     keyboard_alias: String,
     keyboard_error: Option<String>,
-    keyboard_close_pending: bool,
+    close_after_apply: bool,
     keyboard_conflict: bool,
+    marking_draft: Option<oblikovati_api::wire::MarkingMenuView>,
+    marking_base: Option<oblikovati_api::wire::MarkingMenuView>,
+    marking_conflict: bool,
     ribbon_tab_active: bool,
 }
 impl RibbonCustomization {
@@ -100,8 +104,11 @@ impl RibbonCustomization {
         self.keyboard_base = None;
         self.keyboard_selected = None;
         self.keyboard_error = None;
-        self.keyboard_close_pending = false;
+        self.close_after_apply = false;
         self.keyboard_conflict = false;
+        self.marking_draft = None;
+        self.marking_base = None;
+        self.marking_conflict = false;
         self.escape = Default::default();
         self.list_focus = None;
         self.category_open = false;
@@ -173,6 +180,8 @@ impl RibbonCustomization {
             return;
         }
         self.sync_keyboard(commands);
+        self.sync_marking(commands);
+        self.finish_apply();
         if !self.open {
             return;
         }
@@ -191,6 +200,7 @@ impl RibbonCustomization {
                 if self.keyboard_conflict {
                     ui.text_wrapped("Keyboard settings changed outside this dialog. Close and reopen Customize to edit the current settings.");
                 }
+                if self.marking_conflict { ui.text_wrapped("Marking menu changed outside this dialog. Close and reopen Customize to edit the current menu."); }
                 self.buttons(ui, actions);
                 let focused = ui.is_window_focused_with_flags(
                     imgui::WindowFocusedFlags::ROOT_AND_CHILD_WINDOWS,
@@ -222,9 +232,9 @@ impl RibbonCustomization {
             if let Some(_keyboard) = ui.tab_item("Keyboard") {
                 self.keyboard_catalog(ui);
             }
-            let disabled = ui.begin_disabled(true);
-            ui.tab_item("Marking Menu");
-            drop(disabled);
+            if let Some(_marking) = ui.tab_item("Marking Menu") {
+                self.marking_editor(ui);
+            }
         }
     }
     fn lists(&mut self, ui: &Ui) {
@@ -423,14 +433,17 @@ impl RibbonCustomization {
     }
     fn buttons(&mut self, ui: &Ui, actions: &mut Vec<crate::GuiShellAction>) {
         ui.separator();
-        let changed = self.draft.changed() || self.keyboard_changed();
-        let disabled = ui.begin_disabled(!changed || self.keyboard_conflict);
+        let changed = self.draft.changed() || self.keyboard_changed() || self.marking_changed();
+        let conflict = self.keyboard_conflict || self.marking_conflict;
+        let disabled = ui.begin_disabled(!changed || conflict);
         if ui.button("OK") {
             match self.apply() {
                 Ok(()) => {
                     self.save_error = None;
-                    if self.submit_keyboard(actions) {
-                        self.keyboard_close_pending = true;
+                    let keyboard = self.submit_keyboard(actions);
+                    let marking = self.submit_marking(actions);
+                    if keyboard || marking {
+                        self.close_after_apply = true;
                     } else {
                         self.open = false;
                     }
@@ -446,11 +459,12 @@ impl RibbonCustomization {
         }
         drop(cancel_disabled);
         ui.same_line();
-        let disabled = ui.begin_disabled(!changed || self.keyboard_conflict);
+        let disabled = ui.begin_disabled(!changed || conflict);
         if ui.button("Apply") {
             self.save_error = self.apply().err();
             if self.save_error.is_none() {
                 self.submit_keyboard(actions);
+                self.submit_marking(actions);
             }
         }
         drop(disabled);

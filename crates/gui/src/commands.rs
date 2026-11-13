@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 #[derive(Clone, Debug, PartialEq)]
 pub enum GuiShellAction {
+    /// Apply one staged marking menu.
+    SetMarkingMenu(oblikovati_api::wire::SetMarkingMenuArgs),
     /// Apply a staged keyboard customization.
     SetKeymap(oblikovati_api::wire::KeymapExport),
     /// Place instances of a sketch block definition.
@@ -290,6 +292,12 @@ pub struct GuiDrawingLine {
 /// Command availability derived from the active document owner.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct GuiCommandState {
+    /// Per-environment marking-menu settings owned by the desktop.
+    pub marking_menus: Option<oblikovati_model::marking_menu::MarkingMenus>,
+    /// Marking menu for the current sketch environment.
+    pub sketch_marking_menu: Option<oblikovati_api::wire::MarkingMenuView>,
+    /// Render sketch marking commands as a classic linear menu.
+    pub sketch_classic_menu: bool,
     /// The owner's effective shortcut state for a customization draft.
     pub keymap: Option<oblikovati_model::keymap::Keymap>,
     /// Bindable commands currently provided by the desktop owner.

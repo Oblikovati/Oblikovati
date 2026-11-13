@@ -10,6 +10,8 @@
 
 ### Added
 
+- Added saved sketch marking-menu layouts and slot customization. (#3856)
+
 - Added sketch-ready aliases for Undo, Redo, Save, Home, and Previous View. (#3856)
 
 - Added saved keyboard shortcuts and sketch command aliases to the Customize dialog. (#3856)

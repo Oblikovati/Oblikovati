@@ -61,6 +61,12 @@ impl<D: ScriptDocumentOwner> DesktopScripts<D> {
     }
 }
 impl<D: ScriptDocumentOwner> HeadWork for DesktopScripts<D> {
+    fn set_marking_menu_from_gui(
+        &mut self,
+        args: &oblikovati_api::wire::SetMarkingMenuArgs,
+    ) -> Result<bool, String> {
+        self.owner.set_marking_menu_from_gui(args)
+    }
     fn accept_sketch_alias(
         &mut self,
         event: oblikovati_viewport::ViewportEvent,
