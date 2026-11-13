@@ -110,7 +110,7 @@ impl Default for RibbonDisplayState {
     fn default() -> Self {
         Self {
             mode: RibbonDisplay::Full,
-            minimized: None,
+            minimized: Some(RibbonDisplay::Tabs),
             temporary: None,
             temporary_focus: false,
             pending_keyboard_group: None,

@@ -17,15 +17,25 @@ fn double_click_inactive_tools(world: &mut ApplicationWorld) {
 
 #[then("the full Tools ribbon is visible")]
 #[then("the full Tools ribbon is visible again")]
+#[then("the full Tools command groups are visible again")]
 fn full_tools_visible(world: &mut ApplicationWorld) {
     world.expect_text("Application Options");
     world.expect_text("Document Settings");
 }
 
 #[when("the user double-clicks the active Tools tab")]
+#[when("the user double-clicks the active Tools tab again")]
 fn double_click_active_tools(world: &mut ApplicationWorld) {
     std::thread::sleep(std::time::Duration::from_millis(500));
     double_click_tab(world, "Tools");
+}
+
+#[then("the ribbon shows its tabs without permanent command groups")]
+fn tools_tabs_without_commands(world: &mut ApplicationWorld) {
+    world.expect_text("Tools");
+    world.expect_no_text("Application Options");
+    world.expect_no_text("Document Settings");
+    assert!(window_geometry("##ribbon-temporary-panel").is_none());
 }
 
 #[then("the Tools ribbon displays panel buttons")]

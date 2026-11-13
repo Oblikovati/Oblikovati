@@ -3,6 +3,7 @@ use super::*;
 #[test]
 fn the_control_cycles_through_every_mode_and_returns_to_full() {
     let mut state = RibbonDisplayState::default();
+    state.cycle_through_all();
     for expected in [
         RibbonDisplay::PanelButtons,
         RibbonDisplay::PanelTitles,
@@ -12,6 +13,17 @@ fn the_control_cycles_through_every_mode_and_returns_to_full() {
         state.advance();
         assert_eq!(state.mode, expected);
     }
+}
+#[test]
+fn the_default_policy_toggles_between_full_and_tabs() {
+    let mut state = RibbonDisplayState::default();
+    assert_eq!(state.mode, RibbonDisplay::Full);
+    assert_eq!(state.minimized, Some(RibbonDisplay::Tabs));
+    state.advance_from_tab();
+    assert_eq!(state.mode, RibbonDisplay::Tabs);
+    assert!(!state.take_tab_release());
+    state.advance_from_tab();
+    assert_eq!(state.mode, RibbonDisplay::Full);
 }
 #[test]
 fn a_chosen_minimization_alternates_with_the_full_ribbon() {

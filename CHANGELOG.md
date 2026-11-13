@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Made the default ribbon display control toggle between full and tabs-only modes.
+
 - Made Precise Input show coordinates and the triad for the selected reference mode.
 
 - Resolved API dimension Drive expressions once, as in the Go host, while keeping desktop formulas live.

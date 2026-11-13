@@ -148,7 +148,8 @@ fn navigate_back(world: &mut ApplicationWorld) {
 }
 #[given("the 3D Model ribbon shows compact group buttons")]
 fn model_compact(world: &mut ApplicationWorld) {
-    world.click_text("Ribbon Display");
+    super::ribbon_display::click_display_menu(world);
+    world.click_text("Minimize to Panel Buttons");
     world.pump(Vec::new());
     world.expect_no_text("Start 2D Sketch");
 }

@@ -57,11 +57,11 @@ pub(super) fn click_display_menu(world: &mut ApplicationWorld) {
 #[given("the ribbon display control is set to cycle through all modes")]
 fn cycling(world: &mut ApplicationWorld) {
     click_display_menu(world);
-    assert!(
-        world.checked("Cycle through All"),
-        "expected the cycling default"
-    );
-    world.key(oblikovati_viewport::ViewportPhysicalKey::Escape, false);
+    if !world.checked("Cycle through All") {
+        world.click_text("Cycle through All");
+    } else {
+        world.key(oblikovati_viewport::ViewportPhysicalKey::Escape, false);
+    }
 }
 #[then("the full View command groups remain visible")]
 fn view_groups_remain(world: &mut ApplicationWorld) {
@@ -275,7 +275,8 @@ fn drawing_and_part(world: &mut ApplicationWorld) {
 #[given("the drawing is active with its ribbon in compact group-button mode")]
 #[given("the Place Views ribbon shows compact group buttons")]
 fn compact_mode(world: &mut ApplicationWorld) {
-    activate_display_control(world);
+    click_display_menu(world);
+    world.click_text("Minimize to Panel Buttons");
     expect_compact_drawing(world);
 }
 #[when("I activate the part document")]
