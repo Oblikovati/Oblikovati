@@ -1,0 +1,7 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.07s
+     Running tests/sketch_prism.rs (target/debug/deps/sketch_prism-b61e536cb2508733)
+
+running 1 test
+test named::rebuild::one_size_parameter_drives_certified_cube_replay_and_saved_names ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 46 filtered out; finished in 2.38s

@@ -37,6 +37,7 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 - A8: `behavior_cli.py backlog` groups the 195 feature files by their assigned milestones and shows missing classifications and R0 evidence. All 2,719 rows still have incomplete R0 baseline fields; unassigned work is not given an inferred milestone.
 - R4 rectangle sizing: the first two-point rectangle scenario has a current native receipt; later rectangle scenarios remain unverified. See issue #3857.
 - R4 extrusion: `extrusion-01` has a current native receipt after the shared sketch-name fix (#3871). The full cube journey remains unverified (#3870).
+- R3 cube evidence: the headless certified replay and the native GUI-loop cube test passed on `77f03cf61`; see `receipts/2026-11-14-r3-cube-check/`. The native test uses injected events and an API model-state fixture. Foreground MCPBridge input and screenshot evidence, full R3 exit checks, and the gate remain open (#3857).
 - A7: the scenario bundle, file manifest, and verifier are tracked in `test-utilities/benchmarks/scenario-snapshots/` and `tools/bdd/`. See issue #3864.
 - A6: diagnostic runner reports all steps and taints results after a failure. See issue #3863 and `receipts/2026-11-13-bdd-diagnostics/`. Fixture blockers require an explicit fixture signal.
 - A4: this status file is the initial manual queue. Generate it from the ledger when A8 is ready.
