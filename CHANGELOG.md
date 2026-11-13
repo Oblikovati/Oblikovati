@@ -32,6 +32,8 @@
 
 ### Added
 
+- Added rectangular sketch-pattern creation through the typed API.
+
 - Added previewable and undoable rectangular pattern edits that retain existing member identities.
 
 - Added saved rectangular sketch-pattern records with preview and undoable creation.

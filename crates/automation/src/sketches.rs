@@ -18,6 +18,7 @@ mod indices;
 pub(crate) mod inspection;
 mod move_dimension;
 mod owner;
+mod pattern;
 mod properties;
 mod references;
 mod transform;
@@ -37,7 +38,7 @@ use oblikovati_solve::{
 };
 
 /// Geometry commands require a part or assembly; inference preferences use the workspace owner.
-pub const SKETCH_COMMAND_METHODS: [&str; 16] = [
+pub const SKETCH_COMMAND_METHODS: [&str; 17] = [
     METHOD_SKETCH_ADD_BLOCK_INSTANCE,
     METHOD_SKETCH_BLOCK_DEFINITION_CREATE,
     METHOD_SKETCH_BLOCK_DEFINITION_DELETE,
@@ -47,6 +48,7 @@ pub const SKETCH_COMMAND_METHODS: [&str; 16] = [
     METHOD_SKETCH_SOLVE,
     METHOD_SKETCH_DELETE,
     METHOD_SKETCH_TRANSFORM,
+    METHOD_SKETCH_ADD_PATTERN,
     METHOD_SKETCH_ADD_ENTITY,
     METHOD_SKETCH_ADD_CONSTRAINT,
     METHOD_SKETCH_DELETE_CONSTRAINT,
@@ -135,6 +137,7 @@ fn apply_geometry_command<O: TransactionObserver, W: WorkspaceObserver, F: Docum
 ) -> Result<Vec<u8>, Error> {
     match method {
         METHOD_SKETCH_TRANSFORM => transform::apply(files, crate::decode(method, request)?),
+        METHOD_SKETCH_ADD_PATTERN => pattern::apply(files, crate::decode(method, request)?),
         METHOD_SKETCH_ADD_ENTITY => add_entity::apply(files, crate::decode(method, request)?, None),
         METHOD_SKETCH_ADD_CONSTRAINT => {
             add_constraint::apply(files, crate::decode(method, request)?)

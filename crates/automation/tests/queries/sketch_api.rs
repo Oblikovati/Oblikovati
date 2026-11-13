@@ -464,3 +464,6 @@ mod visibility;
 
 #[path = "sketch_api/read_contract.rs"]
 mod read_contract;
+
+#[path = "sketch_api/pattern.rs"]
+mod pattern;
