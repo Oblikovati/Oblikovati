@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! The shared value editor for placed and previously authored dimensions.
+use crate::dockable_window::DockableWindow;
 use crate::{GuiCommandState, GuiFrameRequest, GuiShellAction};
 use imgui::{Key, Ui};
 
@@ -44,6 +45,7 @@ const SIZE: [f32; 2] = [240., 110.];
 const REFUSAL_SIZE: [f32; 2] = [440., 200.];
 const INVALID_TEXT: [f32; 4] = [0.95, 0.2, 0.2, 1.];
 
+impl DockableWindow for GuiDimensionValueEditor {}
 impl GuiDimensionValueEditor {
     pub(crate) fn reject(&mut self, value: &GuiDimensionValue, cause: &str) {
         let Some(edit) = self.submitted.take() else {
@@ -84,8 +86,9 @@ impl GuiDimensionValueEditor {
         let title = if edit.driven { DRIVEN_TITLE } else { TITLE };
         let mut close = false;
         let size = if self.unplaced { REFUSAL_SIZE } else { SIZE };
-        crate::widget_abi::fit_dialog(ui, title, self.position, size);
-        ui.window(title).collapsible(false).build(|| {
+        Self::fit_dockable(ui, title, self.position, size);
+        let mut window_open = true;
+        Self::dockable_window(ui, title, &mut window_open).build(|| {
             ui.text(&edit.name);
             if !self.unplaced {
                 ui.same_line();
@@ -154,6 +157,14 @@ impl GuiDimensionValueEditor {
                 ));
             }
         });
+        if !window_open {
+            if let Some(id) = self.owner_draft {
+                actions.push(GuiShellAction::Dimension(
+                    crate::GuiDimensionAction::Cancel { id },
+                ));
+            }
+            close = true;
+        }
         if close {
             self.open = None;
             self.closed_this_frame = true;

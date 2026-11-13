@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Draft base-view settings until the user applies or cancels them.
+use crate::dockable_window::DockableWindow;
 use crate::{GuiBaseViewRequest, GuiCommandState, GuiShellAction};
 use imgui::{Key, Ui};
 
@@ -22,6 +23,7 @@ pub(super) struct BaseViewDialog {
     center: [f32; 2],
     previewed: bool,
 }
+impl DockableWindow for BaseViewDialog {}
 impl BaseViewDialog {
     pub(super) fn request(&mut self) {
         self.requested = true;
@@ -53,7 +55,8 @@ impl BaseViewDialog {
         }
         let Some(drawing) = self.drawing else { return };
         crate::widget_abi::fit_dialog(ui, "Base View", [20., 180.], [360., 210.]);
-        ui.window("Base View").build(|| {
+        let mut open = true;
+        Self::dockable_window(ui, "Base View", &mut open).build(|| {
             let mut edited = self.source_choice(ui, state);
             let labels = ORIENTATIONS.map(|(label, _)| label);
             edited |= ui.combo_simple_string("Orientation", &mut self.orientation, &labels);
@@ -65,6 +68,13 @@ impl BaseViewDialog {
             }
             self.controls(ui, state, drawing, actions);
         });
+        if !open {
+            if self.previewed {
+                actions.push(GuiShellAction::PreviewDrawingBaseView(None));
+                self.previewed = false;
+            }
+            self.drawing = None;
+        }
     }
     fn open(&mut self, state: &GuiCommandState) {
         self.drawing = state.document;

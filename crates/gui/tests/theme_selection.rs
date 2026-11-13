@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use oblikovati_gui::*;
+#[path = "support/view_tab.rs"]
+mod view_tab;
 use oblikovati_model::theme::ThemeLibrary;
 fn theme_request(library: &ThemeLibrary) -> GuiFrameRequest {
     GuiFrameRequest {
@@ -41,7 +43,7 @@ fn view_theme_picker_emits_owner_action_and_next_snapshot_restyles_draws() {
     let mut engine = GuiFrameEngine::new().unwrap();
     engine.frame(&request).unwrap();
     engine.frame(&request).unwrap();
-    assert!(click_theme_control(&mut engine, &mut request, [376., 45.]).is_empty());
+    view_tab::select_view_tab(&mut engine, &mut request);
     request.events.clear();
     let dark = engine.frame(&request).unwrap().draws;
     assert!(click_theme_control(&mut engine, &mut request, [180., 68.]).is_empty());

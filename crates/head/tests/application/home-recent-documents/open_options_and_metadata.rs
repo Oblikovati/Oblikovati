@@ -21,6 +21,23 @@ fn choose_open_options(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
     world.pump(Vec::new());
 }
+
+#[test]
+fn recent_file_options_title_close_keeps_home_open() {
+    let mut world = ApplicationWorld::new();
+    home_active(&mut world);
+    open_actions_of(&mut world, SEARCHED);
+    choose_open_options(&mut world);
+    let (position, size) = window_geometry("File Open Options").unwrap();
+    let close = super::super::super::diagnostics::pointer_pixels([
+        position[0] + size[0] - 13.,
+        position[1] + 10.,
+    ]);
+    world.click(close);
+    assert!(window_geometry("File Open Options").is_none());
+    assert!(home_shows(&world, SEARCHED));
+    world.close();
+}
 #[then("a File Open Options dialog is displayed")]
 fn options_shown(world: &mut ApplicationWorld) {
     world.expect_text("File Open Options");

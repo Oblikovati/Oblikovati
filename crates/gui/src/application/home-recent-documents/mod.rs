@@ -95,6 +95,7 @@ impl HomeWorkspace {
         actions: &mut Vec<GuiShellAction>,
     ) {
         if !self.active {
+            self.open_options.close();
             return;
         }
         crate::widget_abi::window_geometry(

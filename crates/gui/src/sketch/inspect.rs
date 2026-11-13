@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Measure, its panel, and the sketch canvas menu that opens the inspection commands.
+use crate::dockable_window::DockableWindow;
 use crate::{GuiAuthoringContext, GuiCommandState, GuiShellAction};
 use imgui::Ui;
 
@@ -8,6 +9,7 @@ use imgui::Ui;
 pub struct GuiMeasurePanel {
     pub rows: Vec<String>,
 }
+impl DockableWindow for GuiMeasurePanel {}
 /// The last sketch command that can be started again from its context menu.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GuiSketchRepeat {
@@ -33,14 +35,15 @@ pub(crate) fn measure_panel(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<
         return;
     };
     let [width, _] = ui.io().display_size;
-    crate::widget_abi::fit_dialog(
+    GuiMeasurePanel::fit_dockable(
         ui,
         "Measure",
         [width - MEASURE_SIZE[0] - 24., 220.],
         MEASURE_SIZE,
     );
     let minimum_width = measure_width(ui, panel);
-    ui.window("Measure")
+    let mut open = true;
+    GuiMeasurePanel::dockable_window(ui, "Measure", &mut open)
         .size_constraints([minimum_width, 1.], [width.max(minimum_width), f32::MAX])
         .collapsible(false)
         .build(|| {
@@ -55,6 +58,9 @@ pub(crate) fn measure_panel(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<
                 actions.push(GuiShellAction::Inspect(GuiInspectAction::FinishMeasure));
             }
         });
+    if !open {
+        actions.push(GuiShellAction::Inspect(GuiInspectAction::FinishMeasure));
+    }
 }
 fn measure_width(ui: &Ui, panel: &GuiMeasurePanel) -> f32 {
     let padding = ui.clone_style().window_padding[0] * 2.;

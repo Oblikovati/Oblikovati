@@ -258,6 +258,30 @@ fn close_properties(world: &mut ApplicationWorld) {
     world.click_text("Close");
     world.expect_no_text("General");
 }
+
+#[test]
+fn document_properties_title_close_preserves_the_active_part() {
+    let mut world = ApplicationWorld::new();
+    let first = world.add_part();
+    let second = world.add_part();
+    world.parts = vec![first, second];
+    second_saved(&mut world);
+    open_second_menu(&mut world);
+    choose_properties(&mut world);
+    properties_title(&mut world);
+    let title = format!(
+        "{} Properties###document-properties",
+        world.document_name(second)
+    );
+    let (position, size) = window_geometry(&title).unwrap();
+    let close =
+        super::diagnostics::pointer_pixels([position[0] + size[0] - 13., position[1] + 10.]);
+    world.click(close);
+    assert!(window_geometry(&title).is_none());
+    world.expect_active(first);
+    assert!(world.document_is_open(second));
+    world.close();
+}
 #[then("the second part remains open")]
 fn second_open(world: &mut ApplicationWorld) {
     assert!(world.document_is_open(second(world)));

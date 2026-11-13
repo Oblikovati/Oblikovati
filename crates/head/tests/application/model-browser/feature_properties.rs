@@ -19,6 +19,23 @@ fn cancel(world: &mut ApplicationWorld) {
     world.click_text("Cancel");
     settle(world);
 }
+
+#[test]
+fn feature_properties_title_close_discards_pending_suppression() {
+    let mut world = ApplicationWorld::new();
+    open_block(&mut world);
+    open_properties(&mut world);
+    toggle(&mut world, ALWAYS);
+    expect_marks(&world, true, false);
+    let (position, size) = diagnostics::window_geometry(TITLE).unwrap();
+    let close = diagnostics::pointer_pixels([position[0] + size[0] - 13., position[1] + 10.]);
+    world.click(close);
+    assert!(diagnostics::window_geometry(TITLE).is_none());
+    open_properties(&mut world);
+    expect_marks(&world, false, false);
+    cancel(&mut world);
+    world.close();
+}
 fn toggle(world: &mut ApplicationWorld, label: &str) {
     world.click_text(label);
     settle(world);

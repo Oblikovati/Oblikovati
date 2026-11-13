@@ -4,6 +4,21 @@ use super::ApplicationWorld;
 use cucumber::{given, then, when};
 
 const PROJECT_NAME: &str = "Gearbox";
+
+#[test]
+fn projects_window_closes_to_the_document_chooser() {
+    let mut world = ApplicationWorld::new();
+    project_active(&mut world);
+    world.add_part();
+    world.key(oblikovati_viewport::ViewportPhysicalKey::N, true);
+    world.expect_text("Template folders");
+    choose_projects(&mut world);
+    projects_above(&mut world);
+    choose_done(&mut world);
+    projects_closed(&mut world);
+    chooser_again(&mut world);
+    world.close();
+}
 #[given("a project is active")]
 fn project_active(world: &mut ApplicationWorld) {
     let path = world.scratch_folder().join("gearbox.opj");

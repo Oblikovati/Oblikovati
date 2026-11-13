@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Geometry Properties: how a sketch's lines are drawn, set from its browser row.
 use super::color_dialog::{ColorAnswer, ColorDialog, TITLE as COLOR_TITLE};
-use crate::application::document_saving::folder_browser::center_dialog;
+use crate::dockable_window::DockableWindow;
 use crate::{GuiCommandState, GuiShellAction, GuiSketchLineStyle};
 use imgui::{ComboBoxFlags, Ui};
 use oblikovati_model::document_sketch::DocumentSketchId;
@@ -66,7 +66,9 @@ pub(crate) struct GeometryProperties {
     opening: bool,
     color_opening: bool,
     colors: ColorDialog,
+    document: Option<u64>,
 }
+impl DockableWindow for GeometryProperties {}
 impl GeometryProperties {
     /// Open on a sketch's present style; example: from its row's Properties.
     pub(crate) fn request(&mut self, sketch: DocumentSketchId, style: GuiSketchLineStyle) {
@@ -89,26 +91,39 @@ impl GeometryProperties {
         actions: &mut Vec<GuiShellAction>,
     ) {
         if std::mem::take(&mut self.opening) {
-            ui.open_popup(TITLE);
+            self.document = state.document;
         }
-        center_dialog(ui, SIZE);
-        let Some(_dialog) = ui.begin_modal_popup(TITLE) else {
-            return;
-        };
-        let Some(editing) = &mut self.editing else {
-            ui.close_current_popup();
-            return;
-        };
-        self.color_opening |= color_row(ui, editing);
-        type_row(ui, editing);
-        weight_row(ui, editing);
-        scale_row(ui, editing);
-        ui.separator();
-        let closed = answer_row(ui, state, editing, actions);
-        self.color_popup(ui);
-        if closed {
+        if self.document.is_none() || self.document != state.document {
             self.editing = None;
-            ui.close_current_popup();
+            self.document = None;
+            self.color_opening = false;
+        }
+        if self.editing.is_none() {
+            return;
+        }
+        Self::center_dockable(ui, TITLE, SIZE);
+        let mut open = true;
+        let mut closed = false;
+        Self::dockable_window(ui, TITLE, &mut open).build(|| {
+            let editing = self
+                .editing
+                .as_mut()
+                .expect("expected geometry properties draft");
+            self.color_opening |= color_row(ui, editing);
+            type_row(ui, editing);
+            weight_row(ui, editing);
+            scale_row(ui, editing);
+            ui.separator();
+            closed = answer_row(ui, state, editing, actions)
+                || (!crate::widget_abi::any_popup_open(ui)
+                    && ui.is_window_focused()
+                    && ui.is_key_pressed_no_repeat(imgui::Key::Escape));
+            self.color_popup(ui);
+        });
+        if closed || !open {
+            self.editing = None;
+            self.color_opening = false;
+            self.document = None;
         }
     }
     fn color_popup(&mut self, ui: &Ui) {

@@ -13,6 +13,7 @@ mod settings_xml;
 mod state;
 mod store;
 mod target_selector;
+use crate::dockable_window::DockableWindow;
 use crate::ribbon::RibbonTab;
 use imgui::Ui;
 use state::{Category, Command, Draft};
@@ -61,6 +62,7 @@ pub(crate) struct RibbonCustomization {
     marking_conflict: bool,
     ribbon_tab_active: bool,
 }
+impl DockableWindow for RibbonCustomization {}
 impl RibbonCustomization {
     pub(crate) fn open(&mut self, tab: RibbonTab) {
         self.draft.open(tab);
@@ -133,9 +135,7 @@ impl RibbonCustomization {
         let mut window_open = self.open;
         let category_was_open = self.category_open;
         let target_was_open = self.target_selector_open;
-        ui.window("Customize")
-            .opened(&mut window_open)
-            .collapsible(false)
+        Self::dockable_window(ui, "Customize", &mut window_open)
             .build(|| {
                 self.tabs(ui);
                 if let Some(error) = &self.save_error {

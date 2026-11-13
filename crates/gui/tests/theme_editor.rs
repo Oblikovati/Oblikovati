@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use oblikovati_gui::*;
+#[path = "support/view_tab.rs"]
+mod view_tab;
 use oblikovati_model::theme::ThemeLibrary;
 fn editor_request(library: &ThemeLibrary) -> GuiFrameRequest {
     GuiFrameRequest {
@@ -49,6 +51,11 @@ fn click(
     actions
 }
 fn settle(engine: &mut GuiFrameEngine, request: &mut GuiFrameRequest) -> GuiFrameOutput {
+    deliver(
+        engine,
+        request,
+        vec![GuiInputEvent::PointerMoved([1300., 800.])],
+    );
     for _ in 0..40 {
         let output = deliver(engine, request, Vec::new());
         if !output.activity.needs_frame() {
@@ -84,6 +91,7 @@ fn control_click(engine: &mut GuiFrameEngine, request: &mut GuiFrameRequest, y: 
         vec![GuiInputEvent::Modifiers(Default::default())],
     );
 }
+
 #[test]
 fn editor_previews_custom_colours_emits_save_and_keeps_builtin_controls_read_only() {
     let mut library = ThemeLibrary::new(Vec::new(), "Dark").unwrap();
@@ -92,13 +100,13 @@ fn editor_previews_custom_colours_emits_save_and_keeps_builtin_controls_read_onl
     let mut engine = GuiFrameEngine::new().unwrap();
     engine.frame(&request).unwrap();
     engine.frame(&request).unwrap();
-    assert!(click(&mut engine, &mut request, [376., 45.]).is_empty());
+    view_tab::select_view_tab(&mut engine, &mut request);
     assert!(click(&mut engine, &mut request, [440., 91.]).is_empty());
     let opened = settle(&mut engine, &mut request);
     assert_eq!(
         modal_dim_alpha(&opened),
-        89,
-        "expected the modal fade to complete before idling"
+        0,
+        "expected the dockable editor to leave the workspace undimmed"
     );
     verify_custom_edit(&mut engine, &mut request, &mut library);
     set_document_presence(&mut request, false);
@@ -113,7 +121,7 @@ fn editor_previews_custom_colours_emits_save_and_keeps_builtin_controls_read_onl
     assert_eq!(modal_dim_alpha(&settle(&mut engine, &mut request)), 0);
     set_document_presence(&mut request, true);
     settle(&mut engine, &mut request);
-    assert!(click(&mut engine, &mut request, [376., 45.]).is_empty());
+    view_tab::select_view_tab(&mut engine, &mut request);
     verify_builtin_read_only(&mut engine, &mut request, &mut library);
     verify_lifecycle_controls(&mut engine, &mut request, &mut library);
     verify_editor_retires_with_its_theme_owner(&mut engine, &mut request);

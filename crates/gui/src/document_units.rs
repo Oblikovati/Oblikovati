@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Document unit controls send partial updates through the public units contract.
+use crate::dockable_window::DockableWindow;
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::{Key, Ui};
 use oblikovati_api::wire::{DocumentUnitsInfo, SetDocumentUnitsArgs};
@@ -8,6 +9,7 @@ use oblikovati_api::wire::{DocumentUnitsInfo, SetDocumentUnitsArgs};
 pub(crate) struct GuiDocumentUnits {
     document: Option<u64>,
 }
+impl DockableWindow for GuiDocumentUnits {}
 impl GuiDocumentUnits {
     pub(crate) fn request(&mut self, document: u64) {
         self.document = Some(document);
@@ -25,23 +27,20 @@ impl GuiDocumentUnits {
         let (Some(document), Some(units)) = (self.document, state.document_units.as_ref()) else {
             return;
         };
-        crate::widget_abi::fit_dialog(ui, "Document Settings", [400., 170.], [390., 350.]);
+        Self::fit_dockable(ui, "Document Settings", [400., 170.], [390., 350.]);
         let mut open = true;
         let mut done = false;
-        ui.window("Document Settings")
-            .opened(&mut open)
-            .collapsible(false)
-            .build(|| {
-                ui.text("Units");
-                let disabled = ui.begin_disabled(state.transaction_open);
-                unit_controls(ui, document, units, actions);
-                precision_controls(ui, document, units, actions);
-                drop(disabled);
-                ui.text_disabled("Angle as DMS: unavailable");
-                ui.separator();
-                done = crate::widget_abi::button(ui, "Done", [0.; 2])
-                    || ui.is_window_focused() && ui.is_key_pressed_no_repeat(Key::Escape);
-            });
+        Self::dockable_window(ui, "Document Settings", &mut open).build(|| {
+            ui.text("Units");
+            let disabled = ui.begin_disabled(state.transaction_open);
+            unit_controls(ui, document, units, actions);
+            precision_controls(ui, document, units, actions);
+            drop(disabled);
+            ui.text_disabled("Angle as DMS: unavailable");
+            ui.separator();
+            done = crate::widget_abi::button(ui, "Done", [0.; 2])
+                || ui.is_window_focused() && ui.is_key_pressed_no_repeat(Key::Escape);
+        });
         if !open || done {
             self.document = None;
         }

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
+use crate::dockable_window::DockableWindow;
 use crate::{GuiCommandState, GuiParameterMutation, GuiShellAction};
 use imgui::Ui;
 use oblikovati_api::wire::ParameterSetArgs;
@@ -10,6 +11,7 @@ pub(crate) struct GuiParameterEditor {
     name: String,
     expression: String,
 }
+impl DockableWindow for GuiParameterEditor {}
 impl GuiParameterEditor {
     pub(crate) fn toolbar(
         &mut self,
@@ -41,9 +43,11 @@ impl GuiParameterEditor {
         if !self.visible {
             return;
         }
-        crate::widget_abi::fit_dialog(ui, "Parameters", [320., 8.], [540., 360.]);
-        ui.window("Parameters")
+        Self::fit_dockable(ui, "Parameters", [320., 8.], [540., 360.]);
+        let mut open = self.visible;
+        Self::dockable_window(ui, "Parameters", &mut open)
             .build(|| self.contents(ui, state, actions));
+        self.visible &= open;
     }
     fn synchronize_document(&mut self, document: Option<u64>) {
         if self.document == document {

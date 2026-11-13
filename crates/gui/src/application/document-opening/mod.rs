@@ -180,6 +180,7 @@ impl OpenDialog {
         let Some(end) = opened else {
             return;
         };
+        self.properties.close();
         match end {
             DialogOutcome::Cancelled => {}
             DialogOutcome::Opened { name, defer } => {

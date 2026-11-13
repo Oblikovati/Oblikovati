@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
+use crate::dockable_window::DockableWindow;
 use crate::{GuiAuthoringContext, GuiCommandState, GuiShellAction};
 use imgui::{Key, Ui};
 use oblikovati_model::history::SketchRectangularPatternRequest;
@@ -31,6 +32,7 @@ pub(crate) struct RectangularPatternDialog {
     last_preview: Option<SketchRectangularPatternRequest>,
     pending: Option<Option<(u64, bool)>>,
 }
+impl DockableWindow for RectangularPatternDialog {}
 impl RectangularPatternDialog {
     fn open(&mut self, state: &GuiCommandState) {
         self.document = state.document;
@@ -103,53 +105,55 @@ impl RectangularPatternDialog {
         if self.document.is_none() {
             return;
         }
-        crate::widget_abi::fit_dialog(ui, "Rectangular Pattern", [620., 220.], [390., 365.]);
-        ui.window("Rectangular Pattern")
-            .collapsible(false)
-            .build(|| {
-                ui.text(if self.edit.is_some() {
-                    "Edit the saved pattern"
-                } else {
-                    "Select seed geometry in the sketch"
-                });
-                ui.text("Direction 1 count");
-                ui.input_int("##pattern-count-1", &mut self.counts[0])
-                    .build();
-                ui.text("Direction 1 spacing");
-                ui.input_text("##pattern-spacing-1", &mut self.spacing[0])
-                    .build();
-                ui.checkbox("Reverse Direction 1", &mut self.reverse[0]);
-                ui.text("Direction 2 count");
-                ui.input_int("##pattern-count-2", &mut self.counts[1])
-                    .build();
-                ui.text("Direction 2 spacing");
-                ui.input_text("##pattern-spacing-2", &mut self.spacing[1])
-                    .build();
-                ui.checkbox("Reverse Direction 2", &mut self.reverse[1]);
-                ui.checkbox("Fitted", &mut self.fitted);
-                self.update_preview(state, actions);
-                let request = self.request(state);
-                let disabled = ui.begin_disabled(request.is_none() || self.pending.is_some());
-                if ui.button("OK")
-                    && let Some(request) = request
-                {
-                    self.pending = Some(state.sketch_pattern_created);
-                    actions.push(match &self.edit {
-                        Some(row) => GuiShellAction::EditSketchPattern {
-                            pattern: row.pattern.id,
-                            request,
-                        },
-                        None => GuiShellAction::CreateSketchPattern(request),
-                    });
-                }
-                drop(disabled);
-                ui.same_line();
-                if ui.button("Cancel")
-                    || ui.is_window_focused() && ui.is_key_pressed_no_repeat(Key::Escape)
-                {
-                    self.close(actions);
-                }
+        Self::fit_dockable(ui, "Rectangular Pattern", [620., 220.], [390., 365.]);
+        let mut open = true;
+        Self::dockable_window(ui, "Rectangular Pattern", &mut open).build(|| {
+            ui.text(if self.edit.is_some() {
+                "Edit the saved pattern"
+            } else {
+                "Select seed geometry in the sketch"
             });
+            ui.text("Direction 1 count");
+            ui.input_int("##pattern-count-1", &mut self.counts[0])
+                .build();
+            ui.text("Direction 1 spacing");
+            ui.input_text("##pattern-spacing-1", &mut self.spacing[0])
+                .build();
+            ui.checkbox("Reverse Direction 1", &mut self.reverse[0]);
+            ui.text("Direction 2 count");
+            ui.input_int("##pattern-count-2", &mut self.counts[1])
+                .build();
+            ui.text("Direction 2 spacing");
+            ui.input_text("##pattern-spacing-2", &mut self.spacing[1])
+                .build();
+            ui.checkbox("Reverse Direction 2", &mut self.reverse[1]);
+            ui.checkbox("Fitted", &mut self.fitted);
+            self.update_preview(state, actions);
+            let request = self.request(state);
+            let disabled = ui.begin_disabled(request.is_none() || self.pending.is_some());
+            if ui.button("OK")
+                && let Some(request) = request
+            {
+                self.pending = Some(state.sketch_pattern_created);
+                actions.push(match &self.edit {
+                    Some(row) => GuiShellAction::EditSketchPattern {
+                        pattern: row.pattern.id,
+                        request,
+                    },
+                    None => GuiShellAction::CreateSketchPattern(request),
+                });
+            }
+            drop(disabled);
+            ui.same_line();
+            if ui.button("Cancel")
+                || ui.is_window_focused() && ui.is_key_pressed_no_repeat(Key::Escape)
+            {
+                self.close(actions);
+            }
+        });
+        if !open {
+            self.close(actions);
+        }
     }
     fn request(&self, state: &GuiCommandState) -> Option<SketchRectangularPatternRequest> {
         let counts = [

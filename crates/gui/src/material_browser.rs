@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Browse part assets and assign a selected material or appearance.
+use crate::dockable_window::DockableWindow;
 use crate::{GuiAssetChoice, GuiCommandState, GuiPartAssetKind, GuiShellAction};
 use imgui::Ui;
 
@@ -10,6 +11,7 @@ pub(crate) struct MaterialBrowser {
     material: Option<String>,
     appearance: Option<String>,
 }
+impl DockableWindow for MaterialBrowser {}
 impl MaterialBrowser {
     /// Open the browser; example: `browser.open()` from the quick access toolbar.
     pub(crate) fn open(&mut self) {
@@ -29,14 +31,13 @@ impl MaterialBrowser {
         self.sync_document(state);
         let mut open = self.open;
         let mut close_requested = false;
-        crate::widget_abi::fit_dialog(
+        Self::fit_dockable(
             ui,
             "Material Browser",
             [ui.io().display_size[0] - 460., 200.],
             [440., 200.],
         );
-        ui.window("Material Browser")
-            .opened(&mut open)
+        Self::dockable_window(ui, "Material Browser", &mut open)
             .build(|| close_requested = self.content(ui, state, actions));
         self.open = open && !close_requested;
     }

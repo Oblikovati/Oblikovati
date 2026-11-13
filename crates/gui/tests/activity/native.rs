@@ -70,3 +70,14 @@ fn only_active_windows_with_pending_layout_request_another_frame() {
     fixture.window.Active = false;
     assert!(!window_needs_layout(&fixture.window));
 }
+
+#[test]
+fn pending_dock_requests_require_a_follow_up_frame() {
+    let mut fixture = FakeActivityWindows::default();
+    assert!(!pending_docking(&fixture.context));
+    fixture.context.DockContext.Requests.Size = 1;
+    assert!(pending_docking(&fixture.context));
+    fixture.context.DockContext.Requests.Size = 0;
+    fixture.context.DockContext.WantFullRebuild = true;
+    assert!(pending_docking(&fixture.context));
+}

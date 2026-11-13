@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Rotate at Angle: each press turns the view at once, and only OK keeps the turn.
 use super::*;
+use crate::dockable_window::DockableWindow;
 
 const ROTATE_TITLE: &str = "Incremental View Rotate";
 const ROTATE_SIZE: [f32; 2] = [300., 170.];
@@ -14,28 +15,48 @@ const ROTATE_BUTTONS: [(&str, [f64; 3]); 6] = [
     ("Z+", [0., 0., 1.]),
     ("Z-", [0., 0., -1.]),
 ];
+struct RotateWindow;
+impl DockableWindow for RotateWindow {}
 impl NavigationBar {
     /// The rotate dialog: each press turns the view at once, and only OK keeps the turn.
-    pub(in super::super) fn rotate_dialog(&mut self, ui: &Ui, actions: &mut Vec<GuiShellAction>) {
+    pub(in super::super) fn rotate_dialog(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
         if std::mem::take(&mut self.rotate_opening) {
-            ui.open_popup(ROTATE_TITLE);
+            self.rotate_document = state.document;
         }
-        crate::application::document_saving::folder_browser::center_dialog(ui, ROTATE_SIZE);
-        let Some(_dialog) = ui.begin_modal_popup(ROTATE_TITLE) else {
+        if self.rotate_document.is_none() || self.rotate_document != state.document {
+            self.rotate_document = None;
             return;
-        };
-        let increment = self.increment.get_or_insert(DEFAULT_INCREMENT);
-        ui.input_float("Increment", increment).build();
-        let radians = f64::from(*increment).to_radians();
-        for (index, (label, [yaw, pitch, roll])) in ROTATE_BUTTONS.into_iter().enumerate() {
-            if index % 2 == 1 {
-                ui.same_line();
-            }
-            if crate::widget_abi::button(ui, label, [44., 0.]) {
-                actions.extend(turn_commands([yaw, pitch, roll].map(|part| part * radians)));
-            }
         }
-        rotate_ending_buttons(ui, actions);
+        RotateWindow::center_dockable(ui, ROTATE_TITLE, ROTATE_SIZE);
+        let mut open = true;
+        let mut closed = false;
+        RotateWindow::dockable_window(ui, ROTATE_TITLE, &mut open).build(|| {
+            let increment = self.increment.get_or_insert(DEFAULT_INCREMENT);
+            ui.input_float("Increment", increment).build();
+            let radians = f64::from(*increment).to_radians();
+            for (index, (label, [yaw, pitch, roll])) in ROTATE_BUTTONS.into_iter().enumerate() {
+                if index % 2 == 1 {
+                    ui.same_line();
+                }
+                if crate::widget_abi::button(ui, label, [44., 0.]) {
+                    actions.extend(turn_commands([yaw, pitch, roll].map(|part| part * radians)));
+                }
+            }
+            closed = rotate_ending_buttons(ui, actions);
+        });
+        if !open {
+            actions.push(GuiShellAction::ViewCommand(
+                GuiViewCommand::RestoreMarkedView,
+            ));
+        }
+        if !open || closed {
+            self.rotate_document = None;
+        }
     }
 }
 fn turn_commands([yaw, pitch, roll]: [f64; 3]) -> Vec<GuiShellAction> {
@@ -46,19 +67,21 @@ fn turn_commands([yaw, pitch, roll]: [f64; 3]) -> Vec<GuiShellAction> {
     };
     vec![GuiShellAction::ViewCommand(command)]
 }
-fn rotate_ending_buttons(ui: &Ui, actions: &mut Vec<GuiShellAction>) {
+fn rotate_ending_buttons(ui: &Ui, actions: &mut Vec<GuiShellAction>) -> bool {
     let restore = GuiShellAction::ViewCommand(GuiViewCommand::RestoreMarkedView);
     if crate::widget_abi::button(ui, "Reset", [0.; 2]) {
         actions.push(restore.clone());
     }
     ui.same_line();
     if crate::widget_abi::button(ui, "OK", [0.; 2]) {
-        ui.close_current_popup();
+        return true;
     }
     ui.same_line();
-    if crate::widget_abi::button(ui, "Cancel", [0.; 2]) || ui.is_key_pressed_no_repeat(Key::Escape)
+    if crate::widget_abi::button(ui, "Cancel", [0.; 2])
+        || ui.is_window_focused() && ui.is_key_pressed_no_repeat(Key::Escape)
     {
         actions.push(restore);
-        ui.close_current_popup();
+        return true;
     }
+    false
 }

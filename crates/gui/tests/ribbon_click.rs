@@ -2,6 +2,8 @@
 use GuiShellAction::{ChooseSketchPlane, FinishSketch, Home, NewPart};
 use oblikovati_api::types::DOCUMENT_PART;
 use oblikovati_gui::*;
+#[path = "support/view_tab.rs"]
+mod view_tab;
 
 fn ribbon_request() -> GuiFrameRequest {
     GuiFrameRequest {
@@ -51,6 +53,7 @@ fn enter_part(request: &mut GuiFrameRequest) {
     request.commands.document_type = Some(DOCUMENT_PART);
     request.commands.authoring = GuiAuthoringContext::Part;
 }
+
 fn expect_ribbon(
     engine: &mut GuiFrameEngine,
     request: &mut GuiFrameRequest,
@@ -87,7 +90,7 @@ fn manual_view_selection_survives_sketch_exit() {
     enter_part(&mut request);
     request.commands.authoring = GuiAuthoringContext::Sketch;
     settle_ribbon(&mut engine, &mut request);
-    assert!(click_ribbon(&mut engine, &mut request, [555., 44.]).is_empty());
+    view_tab::select_view_tab(&mut engine, &mut request);
     expect_ribbon(&mut engine, &mut request, [398., 90.], Home);
     expect_ribbon(&mut engine, &mut request, [398., 90.], Home);
     request.commands.authoring = GuiAuthoringContext::Part;

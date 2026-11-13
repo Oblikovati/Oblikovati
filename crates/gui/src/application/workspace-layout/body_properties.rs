@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! The Body Properties dialog: a body's physical values on request, and its appearance override.
+use crate::dockable_window::DockableWindow;
 use crate::{GuiBrowserBody, GuiCommandState, GuiModelBrowser, GuiShellAction};
 use imgui::{Key, Ui};
 use oblikovati_model::feature::FeatureId;
@@ -28,7 +29,9 @@ pub(crate) struct BodyPropertiesDialog {
     body: Option<FeatureId>,
     /// A choice OK has not applied yet; closing any other way forgets it.
     pending: Option<String>,
+    document: Option<u64>,
 }
+impl DockableWindow for BodyPropertiesDialog {}
 impl BodyPropertiesDialog {
     /// Open for one body; example: from its browser row's menu.
     pub(crate) fn request(&mut self, body: FeatureId) {
@@ -49,34 +52,45 @@ impl BodyPropertiesDialog {
         actions: &mut Vec<GuiShellAction>,
     ) {
         if std::mem::take(&mut self.opening) {
-            ui.open_popup(TITLE);
+            self.document = state.document;
         }
-        // To one side: the chosen solid stays in view behind it, near the middle of the window.
-        let [width, _] = ui.io().display_size;
-        crate::widget_abi::window_geometry(
-            ui,
-            [(width - SIZE[0] - SIDE_MARGIN).max(0.), TOP_MARGIN],
-            SIZE,
-            imgui::Condition::Appearing,
-        );
-        let mut open = true;
-        let Some(_dialog) = ui.modal_popup_config(TITLE).opened(&mut open).begin_popup() else {
+        if self.document.is_none() || self.document != state.document {
+            self.body = None;
+            self.pending = None;
+            self.document = None;
             return;
-        };
+        }
         let body = self
             .body
             .and_then(|id| browser.bodies.iter().find(|body| body.feature == id));
         let Some(body) = body else {
-            ui.close_current_popup();
+            self.document = None;
             return;
         };
+        // To one side: the chosen solid stays in view behind it, near the middle of the window.
+        let [width, _] = ui.io().display_size;
+        Self::fit_dockable(
+            ui,
+            TITLE,
+            [(width - SIZE[0] - SIDE_MARGIN).max(0.), TOP_MARGIN],
+            SIZE,
+        );
+        let mut open = true;
         let document = state.document.unwrap_or(0);
-        self.identity_row(ui, body, document, actions);
-        physical_rows(ui, body);
-        self.appearance_row(ui, body, browser);
-        muted_checkbox(ui);
-        ui.separator();
-        self.end_buttons(ui, body, document, actions);
+        let mut closed = false;
+        Self::dockable_window(ui, TITLE, &mut open).build(|| {
+            self.identity_row(ui, body, document, actions);
+            physical_rows(ui, body);
+            self.appearance_row(ui, body, browser);
+            muted_checkbox(ui);
+            ui.separator();
+            closed = self.end_buttons(ui, body, document, actions);
+        });
+        if closed || !open {
+            self.body = None;
+            self.pending = None;
+            self.document = None;
+        }
     }
     fn identity_row(
         &self,
@@ -132,7 +146,7 @@ impl BodyPropertiesDialog {
         body: &GuiBrowserBody,
         document: u64,
         actions: &mut Vec<GuiShellAction>,
-    ) {
+    ) -> bool {
         if crate::widget_abi::button(ui, "OK", [80., 0.]) {
             if let Some(appearance) = self.pending.take() {
                 actions.push(GuiShellAction::SetBodyAppearance {
@@ -141,14 +155,11 @@ impl BodyPropertiesDialog {
                     appearance,
                 });
             }
-            ui.close_current_popup();
+            return true;
         }
         ui.same_line();
-        let cancelled = crate::widget_abi::button(ui, "Cancel", [80., 0.])
-            || ui.is_key_pressed_no_repeat(Key::Escape);
-        if cancelled {
-            ui.close_current_popup();
-        }
+        crate::widget_abi::button(ui, "Cancel", [80., 0.])
+            || ui.is_window_focused() && ui.is_key_pressed_no_repeat(Key::Escape)
     }
 }
 fn physical_rows(ui: &Ui, body: &GuiBrowserBody) {

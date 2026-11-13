@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::GuiCommandState;
 use crate::application::file_system::{FileFacts, GuiFolders, NativeFolders, timestamp_text};
+use crate::dockable_window::DockableWindow;
 use imgui::Ui;
 use oblikovati_api::wire::DocumentInfo;
 use std::{path::Path, rc::Rc, time::SystemTime};
@@ -21,6 +22,7 @@ pub(crate) struct DocumentProperties {
     target: Option<PropertiesTarget>,
     opening: bool,
 }
+impl DockableWindow for DocumentProperties {}
 impl Default for DocumentProperties {
     fn default() -> Self {
         Self::with_folders(Rc::new(NativeFolders))
@@ -69,6 +71,10 @@ impl DocumentProperties {
             return;
         };
         let row = state.documents.iter().find(|row| row.id == target.id);
+        if target.file.is_none() && row.is_none() {
+            self.target = None;
+            return;
+        }
         let stem = target
             .file
             .as_deref()
@@ -78,22 +84,21 @@ impl DocumentProperties {
             .as_deref()
             .or(row.map(|row| row.name.as_str()))
             .unwrap_or("Document");
-        if std::mem::take(&mut self.opening) {
-            ui.open_popup(POPUP);
-        }
+        self.opening = false;
         let title = format!("{name} Properties{POPUP}");
-        let Some(_dialog) = ui.begin_modal_popup(&title) else {
-            return;
-        };
-        if let Some(_pages) = ui.tab_bar("##property-pages")
-            && let Some(_general) = ui.tab_item("General")
-        {
-            general_page(ui, state, target, row);
-        }
-        let closed = crate::widget_abi::button(ui, "Close", [80., 0.])
-            || ui.is_key_pressed(imgui::Key::Escape);
-        if closed {
-            ui.close_current_popup();
+        let mut open = true;
+        let mut closed = false;
+        Self::dockable_window(ui, &title, &mut open).build(|| {
+            if let Some(_pages) = ui.tab_bar("##property-pages")
+                && let Some(_general) = ui.tab_item("General")
+            {
+                general_page(ui, state, target, row);
+            }
+            closed = crate::widget_abi::button(ui, "Close", [80., 0.])
+                || ui.is_window_focused() && ui.is_key_pressed(imgui::Key::Escape);
+        });
+        if closed || !open {
+            self.target = None;
         }
     }
 }

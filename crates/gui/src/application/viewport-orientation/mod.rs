@@ -304,7 +304,7 @@ impl OrientationControl {
         let center = [(area.left + area.right) / 2., (area.top + area.bottom) / 2.];
         let reach = (area.right - area.left).min(area.bottom - area.top);
         self.navigation.draw_guide(ui, center, reach);
-        self.navigation.rotate_dialog(ui, actions);
+        self.navigation.rotate_dialog(ui, state, actions);
         self.navigation.wheel_panel(ui, state, actions);
         self.options.panel(ui);
     }

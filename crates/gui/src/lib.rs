@@ -21,6 +21,7 @@ mod color_scheme_state;
 mod commands;
 #[allow(unsafe_code)]
 mod context_owner;
+mod dockable_window;
 mod document_tabs;
 mod document_units;
 mod engine;

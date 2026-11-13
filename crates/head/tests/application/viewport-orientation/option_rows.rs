@@ -78,6 +78,24 @@ fn options_closed(world: &mut ApplicationWorld) {
     world.expect_no_text(OPTIONS_TITLE);
     control_geometry();
 }
+
+#[test]
+fn orientation_options_title_close_discards_pending_scope() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    open_options(&mut world);
+    current_selected(&mut world);
+    select_all(&mut world);
+    all_selected(&mut world);
+    let (position, size) = diagnostics::window_geometry(OPTIONS_TITLE).unwrap();
+    let close = diagnostics::pointer_pixels([position[0] + size[0] - 13., position[1] + 10.]);
+    world.click(close);
+    assert!(diagnostics::window_geometry(OPTIONS_TITLE).is_none());
+    open_options(&mut world);
+    current_selected(&mut world);
+    cancel_options(&mut world);
+    world.close();
+}
 // View planes
 fn expect_plane(world: &ApplicationWorld, row: &str, plane: &str) {
     let label = world.run(row).clone();

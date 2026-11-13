@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Feature Properties: a feature's name, when it is suppressed, and how it looks.
-use crate::application::document_saving::folder_browser::center_dialog;
+use crate::dockable_window::DockableWindow;
 use crate::{GuiBrowserFeature, GuiCommandState, GuiModelBrowser, GuiShellAction};
 use imgui::Ui;
 use oblikovati_model::feature::FeatureId;
@@ -86,7 +86,9 @@ impl Editing {
 pub(crate) struct FeatureProperties {
     editing: Option<Editing>,
     opening: bool,
+    document: Option<u64>,
 }
+impl DockableWindow for FeatureProperties {}
 impl FeatureProperties {
     /// Open on a feature as it stands; example: from its row's Properties.
     pub(crate) fn request(&mut self, feature: &GuiBrowserFeature) {
@@ -104,29 +106,39 @@ impl FeatureProperties {
         actions: &mut Vec<GuiShellAction>,
     ) {
         if std::mem::take(&mut self.opening) {
-            ui.open_popup(TITLE);
+            self.document = state.document;
         }
-        center_dialog(ui, SIZE);
-        let Some(_dialog) = ui.begin_modal_popup(TITLE) else {
-            return;
-        };
-        let Some(editing) = &mut self.editing else {
-            ui.close_current_popup();
-            return;
-        };
-        let parameters: Vec<String> = state
-            .parameters
-            .iter()
-            .map(|row| row.name.clone())
-            .collect();
-        ui.input_text("Name", &mut editing.name).build();
-        suppress_group(ui, editing, &parameters);
-        adaptive_group(ui, editing);
-        appearance_row(ui, editing, browser);
-        ui.separator();
-        if answer_row(ui, state, editing, &parameters, actions) {
+        if self.document.is_none() || self.document != state.document {
             self.editing = None;
-            ui.close_current_popup();
+            self.document = None;
+        }
+        if self.editing.is_none() {
+            return;
+        }
+        Self::center_dockable(ui, TITLE, SIZE);
+        let mut open = true;
+        let mut closed = false;
+        Self::dockable_window(ui, TITLE, &mut open).build(|| {
+            let editing = self
+                .editing
+                .as_mut()
+                .expect("expected feature properties draft");
+            let parameters: Vec<String> = state
+                .parameters
+                .iter()
+                .map(|row| row.name.clone())
+                .collect();
+            ui.input_text("Name", &mut editing.name).build();
+            suppress_group(ui, editing, &parameters);
+            adaptive_group(ui, editing);
+            appearance_row(ui, editing, browser);
+            ui.separator();
+            closed = answer_row(ui, state, editing, &parameters, actions)
+                || ui.is_window_focused() && ui.is_key_pressed_no_repeat(imgui::Key::Escape);
+        });
+        if closed || !open {
+            self.editing = None;
+            self.document = None;
         }
     }
 }

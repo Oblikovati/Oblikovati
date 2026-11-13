@@ -68,6 +68,23 @@ fn cancel_reopen(world: &mut ApplicationWorld) {
     world.expect_no_text(TITLE);
     open_properties(world);
 }
+
+#[test]
+fn geometry_properties_title_close_discards_pending_line_style() {
+    let mut world = ApplicationWorld::new();
+    open_block(&mut world);
+    open_properties(&mut world);
+    choose_dashed(&mut world);
+    type_dashed(&mut world);
+    let (position, size) = diagnostics::window_geometry(TITLE).unwrap();
+    let close = diagnostics::pointer_pixels([position[0] + size[0] - 13., position[1] + 10.]);
+    world.click(close);
+    assert!(diagnostics::window_geometry(TITLE).is_none());
+    open_properties(&mut world);
+    type_default(&mut world);
+    cancel(&mut world);
+    world.close();
+}
 #[then("the properties dialog closes")]
 #[then("the geometry properties dialog closes")]
 fn dialog_closed(world: &mut ApplicationWorld) {

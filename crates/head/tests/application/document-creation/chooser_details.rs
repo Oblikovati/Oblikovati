@@ -477,6 +477,17 @@ fn drawing_sheet_displays_the_referenced_part_projection() {
     assert!(state.drawing_projections[&drawing].lines.is_empty());
     world.click_text("Base View");
     world.expect_text("Orientation");
+    world.click_text("Preview");
+    let (position, size) = super::super::super::diagnostics::window_geometry("Base View").unwrap();
+    let close = super::super::super::diagnostics::pointer_pixels([
+        position[0] + size[0] - 13.,
+        position[1] + 10.,
+    ]);
+    world.click(close);
+    let state = world.app().owner.gui_command_state().unwrap();
+    assert!(state.drawing_projections[&drawing].lines.is_empty());
+    world.click_text("Base View");
+    world.expect_text("Orientation");
     world.click_text("Apply");
     world.pump(Vec::new());
     let after = super::super::super::super::capture_framebuffer(&mut world.app().window.native);

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
+use crate::dockable_window::DockableWindow;
 use crate::{GuiAtlas, GuiCommandState, GuiFrameRequest, GuiShellAction};
 use imgui::{Context, FontConfig, FontSource, TextureId, Ui};
 use oblikovati_model::ui_scale::UiScaleOptions;
@@ -39,6 +40,7 @@ pub(crate) struct GuiScalePreferences {
     open: bool,
     document_units: crate::document_units::GuiDocumentUnits,
 }
+impl DockableWindow for GuiScalePreferences {}
 impl GuiScalePreferences {
     /// Open the scale panel; example: the File menu's Options entry.
     pub(crate) fn request(&mut self) {
@@ -78,10 +80,7 @@ impl GuiScalePreferences {
             return;
         };
         preference_geometry(ui);
-        let escape = ui
-            .window("Application Options")
-            .opened(&mut self.open)
-            .collapsible(false)
+        let escape = Self::dockable_window(ui, "Application Options", &mut self.open)
             .build(|| {
                 ui.text("UI");
                 ui.separator();
@@ -102,7 +101,7 @@ fn preference_geometry(ui: &Ui) {
         (width - 32.).clamp(1., 420.),
         (height - 32.).clamp(1., 340.),
     ];
-    crate::widget_abi::fit_dialog(
+    GuiScalePreferences::fit_dockable(
         ui,
         "Application Options",
         [(width - size[0]) * 0.5, (height - size[1]) * 0.5],

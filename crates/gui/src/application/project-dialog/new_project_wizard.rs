@@ -47,6 +47,12 @@ impl Default for NewProjectWizard {
     }
 }
 impl NewProjectWizard {
+    /// Discard a pending wizard; example: `wizard.cancel()` when its parent closes.
+    pub(super) fn cancel(&mut self) {
+        self.open = false;
+        self.opening = false;
+        self.browser_opening = false;
+    }
     /// Start from the first page, with a name and folder to change; example: on New.
     pub(super) fn request(&mut self) {
         self.opening = true;

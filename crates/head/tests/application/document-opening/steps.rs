@@ -405,6 +405,22 @@ fn cancel_properties(world: &mut ApplicationWorld) {
     world.click_text("Cancel");
     settle(world);
 }
+
+#[test]
+fn file_properties_title_close_preserves_the_open_dialog_selection() {
+    let mut world = ApplicationWorld::new();
+    dialog_open(&mut world);
+    saved_part_selected(&mut world);
+    choose_properties(&mut world);
+    let (position, size) = super::diagnostics::window_geometry("File Properties").unwrap();
+    let close =
+        super::diagnostics::pointer_pixels([position[0] + size[0] - 13., position[1] + 10.]);
+    world.click(close);
+    open_again(&mut world);
+    part_stays_selected(&mut world);
+    cancel_dialog(&mut world);
+    world.close();
+}
 #[then("the Open dialog is displayed again")]
 fn open_again(world: &mut ApplicationWorld) {
     world.expect_no_text("File Properties");

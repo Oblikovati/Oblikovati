@@ -238,6 +238,20 @@ pub(super) fn window_geometry(title: &str) -> Option<([f32; 2], [f32; 2])> {
         .Active
         .then_some(([window.Pos.x, window.Pos.y], [window.Size.x, window.Size.y]))
 }
+/// Read a window's dock node; example: compare two visible tool windows after a drag.
+pub(super) fn window_dock_id(title: &str) -> Option<u32> {
+    let title = CString::new(title).ok()?;
+    let window = unsafe { sys::igFindWindowByName(title.as_ptr()).as_ref() }?;
+    window.Active.then_some(window.DockId)
+}
+/// Read a docked tab's bounds; example: click its close control without closing the group.
+pub(super) fn window_dock_tab_bounds(title: &str) -> Option<([f32; 2], [f32; 2])> {
+    let title = CString::new(title).ok()?;
+    let window = unsafe { sys::igFindWindowByName(title.as_ptr()).as_ref() }?;
+    let rect = window.DockTabItemRect;
+    (window.Active && window.DockId != 0)
+        .then_some(([rect.Min.x, rect.Min.y], [rect.Max.x, rect.Max.y]))
+}
 /// Framebuffer bounds for a named GUI window, including display density.
 /// Example: `window_pixel_bounds("##navigation-bar")` for screenshot exclusion.
 pub(super) fn window_pixel_bounds(title: &str) -> Option<[f32; 4]> {

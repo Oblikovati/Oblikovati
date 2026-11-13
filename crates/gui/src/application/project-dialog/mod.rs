@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! The Projects dialog the template chooser opens: what is loaded, and which project is active.
-use crate::application::document_saving::folder_browser::center_dialog;
+use crate::dockable_window::DockableWindow;
 use crate::{GuiCommandState, GuiProject, GuiProjectGroup};
 use imgui::{Condition, Key, TreeNodeFlags, Ui};
 
@@ -14,6 +14,7 @@ const NOT_AVAILABLE: &str = "This command is not available in this build.";
 #[derive(Default)]
 pub(crate) struct ProjectsDialog {
     opening: bool,
+    open: bool,
     /// The row a click chose to inspect; choosing one does not activate it.
     inspected: Option<String>,
     /// The settings group the arrow keys open and close.
@@ -21,10 +22,17 @@ pub(crate) struct ProjectsDialog {
     open_groups: Vec<String>,
     wizard: new_project_wizard::NewProjectWizard,
 }
+impl DockableWindow for ProjectsDialog {}
 impl ProjectsDialog {
     pub(crate) fn request(&mut self) {
         self.opening = true;
         self.inspected = None;
+    }
+    /// Close with its parent; example: `projects.close()` when the chooser closes.
+    pub(crate) fn close(&mut self) {
+        self.open = false;
+        self.opening = false;
+        self.wizard.cancel();
     }
     /// A frame must follow so the dialog opens without waiting for an event.
     pub(crate) fn needs_frame(&self) -> bool {
@@ -33,28 +41,36 @@ impl ProjectsDialog {
     /// Draw inside the chooser, so it stacks above it; example: `dialog.panel(ui, &state)`.
     pub(crate) fn panel(&mut self, ui: &Ui, state: &GuiCommandState) {
         if std::mem::take(&mut self.opening) {
-            ui.open_popup(TITLE);
+            self.open = true;
         }
-        center_dialog(ui, SIZE);
-        let Some(_dialog) = ui.begin_modal_popup(TITLE) else {
+        if !self.open {
             return;
-        };
-        self.project_rows(ui, &state.projects);
-        ui.separator();
-        self.settings_tree(ui, &state.projects);
-        ui.separator();
-        if crate::widget_abi::button(ui, "New", [0.; 2]) {
-            self.wizard.request();
         }
-        ui.same_line();
-        for label in ["Browse", "Save", "Apply"] {
-            muted_button(ui, label);
+        Self::center_dockable(ui, TITLE, SIZE);
+        let mut open = true;
+        let mut done = false;
+        Self::dockable_window(ui, TITLE, &mut open).build(|| {
+            self.project_rows(ui, &state.projects);
+            ui.separator();
+            self.settings_tree(ui, &state.projects);
+            ui.separator();
+            if crate::widget_abi::button(ui, "New", [0.; 2]) {
+                self.wizard.request();
+            }
             ui.same_line();
+            for label in ["Browse", "Save", "Apply"] {
+                muted_button(ui, label);
+                ui.same_line();
+            }
+            done = crate::widget_abi::button(ui, "Done", [80., 0.])
+                || !crate::widget_abi::any_popup_open(ui)
+                    && ui.is_window_focused()
+                    && ui.is_key_pressed_no_repeat(Key::Escape);
+            self.wizard.panel(ui);
+        });
+        if !open || done {
+            self.close();
         }
-        if crate::widget_abi::button(ui, "Done", [80., 0.]) {
-            ui.close_current_popup();
-        }
-        self.wizard.panel(ui);
     }
     fn project_rows(&mut self, ui: &Ui, projects: &[GuiProject]) {
         if projects.is_empty() {

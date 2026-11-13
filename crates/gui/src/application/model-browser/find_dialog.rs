@@ -8,8 +8,9 @@ use super::find_prompts::{
     GROUP_TITLE, NO_MATCH_TITLE, OPEN_TITLE, PickerAnswer, SAVE_TITLE, SavedSearch, group_prompt,
     no_match_message, open_picker, save_prompt,
 };
+use crate::dockable_window::DockableWindow;
 use crate::{GuiCommandState, GuiModelBrowser, GuiShellAction};
-use imgui::{Condition, Ui};
+use imgui::Ui;
 
 const SIZE: [f32; 2] = [620., 390.];
 const CONTROL_WIDTH: f32 = 150.;
@@ -77,6 +78,7 @@ pub(crate) struct FindDialog {
     save_name: String,
     picked: usize,
 }
+impl DockableWindow for FindDialog {}
 impl FindDialog {
     /// Open it, with whatever it held; example: the browser menu's Find.
     pub(crate) fn request(&mut self) {
@@ -98,19 +100,19 @@ impl FindDialog {
         }
         let title = format!("Find: {}###find-dialog", self.object.label());
         let mut still_open = true;
-        ui.window(&title)
-            .size(SIZE, Condition::Appearing)
-            // Beside the model, since what it finds is chosen behind it.
-            .position(
-                [ui.io().display_size[0] - SIZE[0] - EDGE_MARGIN, TOP],
-                Condition::Appearing,
-            )
-            .collapsible(false)
-            .build(|| {
-                self.contents(ui, state, browser, &mut still_open, actions);
-                self.prompts(ui);
-            });
-        self.open = still_open;
+        let mut window_open = true;
+        // Beside the model, since what it finds is chosen behind it.
+        Self::fit_dockable(
+            ui,
+            &title,
+            [ui.io().display_size[0] - SIZE[0] - EDGE_MARGIN, TOP],
+            SIZE,
+        );
+        Self::dockable_window(ui, &title, &mut window_open).build(|| {
+            self.contents(ui, state, browser, &mut still_open, actions);
+            self.prompts(ui);
+        });
+        self.open = still_open && window_open;
     }
     fn contents(
         &mut self,

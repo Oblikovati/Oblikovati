@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! The Move tool's current selection and canvas-pick stage.
+use crate::dockable_window::DockableWindow;
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::Ui;
 
@@ -18,6 +19,7 @@ pub struct GuiSketchMoveStatus {
     pub optimize_single: bool,
     pub copy: bool,
 }
+impl DockableWindow for GuiSketchMoveStatus {}
 /// Control the current Move command.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GuiSketchMoveAction {
@@ -37,8 +39,9 @@ pub(crate) fn panel(
     let Some(status) = state.sketch_move else {
         return;
     };
-    crate::widget_abi::fit_dialog(ui, "Move", [1100., 250.], [330., 205.]);
-    ui.window("Move").collapsible(false).build(|| {
+    GuiSketchMoveStatus::fit_dockable(ui, "Move", [1100., 250.], [330., 205.]);
+    let mut open = true;
+    GuiSketchMoveStatus::dockable_window(ui, "Move", &mut open).build(|| {
         ui.text(match status.stage {
             GuiSketchMoveStage::Geometry => "Select geometry",
             GuiSketchMoveStage::Base => "Select base point",
@@ -70,4 +73,7 @@ pub(crate) fn panel(
             actions.push(GuiShellAction::SketchMove(GuiSketchMoveAction::Done));
         }
     });
+    if !open {
+        actions.push(GuiShellAction::SketchMove(GuiSketchMoveAction::Done));
+    }
 }

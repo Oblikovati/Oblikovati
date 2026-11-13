@@ -92,6 +92,20 @@ fn native_rectangular_pattern_dialog_previews_cancels_and_creates() {
         application_bdd::rendered_label_center("Rectangular"),
     );
     assert!(owner.sketch_preview().is_some());
+    let (position, size) = application_bdd::window_geometry("Rectangular Pattern").unwrap();
+    let close = application_bdd::pointer_pixels([position[0] + size[0] - 13., position[1] + 10.]);
+    click_shell_position(&mut window, &mut owner, close);
+    assert!(
+        owner.sketch_preview().is_none(),
+        "closing must clear the pattern preview"
+    );
+    open_pattern_group(&mut window, &mut owner);
+    click_shell_position(
+        &mut window,
+        &mut owner,
+        application_bdd::rendered_label_center("Rectangular"),
+    );
+    assert!(owner.sketch_preview().is_some());
     let (position, _) = application_bdd::window_geometry("Rectangular Pattern").unwrap();
     let field = application_bdd::pointer_pixels([position[0] + 80., position[1] + 65.]);
     click_shell_position(&mut window, &mut owner, field);

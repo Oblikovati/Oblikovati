@@ -2,7 +2,7 @@
 //! `features/application/viewport-orbit`: free and constrained rotation, and turns by an angle.
 use super::viewport_orientation::{open_block, solid_extent};
 use super::viewport_pan::{camera, press_bar};
-use super::{ApplicationWorld, capture_framebuffer};
+use super::{ApplicationWorld, capture_framebuffer, diagnostics};
 use cucumber::{given, then, when};
 
 /// The guide's colour, as it blends over the view; the control's faces are darker.
@@ -171,6 +171,23 @@ fn increment_shown(world: &mut ApplicationWorld) {
 #[when("I click the first direction button again")]
 fn first_direction(world: &mut ApplicationWorld) {
     choose(world, "X+");
+}
+
+#[test]
+fn rotate_title_close_restores_the_marked_view() {
+    let mut world = ApplicationWorld::new();
+    face_on_block(&mut world);
+    choose_rotate(&mut world);
+    first_direction(&mut world);
+    view_changes(&mut world);
+    let (position, size) = diagnostics::window_geometry("Incremental View Rotate").unwrap();
+    let close = diagnostics::pointer_pixels([position[0] + size[0] - 13., position[1] + 10.]);
+    world.click(close);
+    world.pump(Vec::new());
+    let before = world.observed_view_camera.unwrap();
+    assert_eq!(camera(&mut world).eye, before.eye);
+    assert!(diagnostics::window_geometry("Incremental View Rotate").is_none());
+    world.close();
 }
 #[then("the visible view changes while the dialog remains open")]
 fn view_changes(world: &mut ApplicationWorld) {

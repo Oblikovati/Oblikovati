@@ -21,6 +21,7 @@ imgui-sys = { version = "=0.12.0", features = ["docking"] }
 oblikovati-viewport = { path = "../viewport" }
 
 [dev-dependencies]
+syn = { version = "=2.0.119", features = ["full", "visit"] }
 tempfile = "=3.27.0"
 
 [target.'cfg(target_os = "linux")'.dev-dependencies]

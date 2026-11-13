@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! The Precise Input toolbar: exact coordinates for the running command's next point.
+use crate::dockable_window::DockableWindow;
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::{StyleColor, Ui, WindowFlags};
 
@@ -107,6 +108,7 @@ pub(crate) struct PreciseInputBar {
     mode: GuiPreciseMode,
     relative: bool,
 }
+impl DockableWindow for PreciseInputBar {}
 impl PreciseInputBar {
     /// The ribbon's way in; example: `bar.toggle(ui)` inside the Format panel.
     pub(crate) fn toggle(&mut self, ui: &Ui) {
@@ -131,7 +133,8 @@ impl PreciseInputBar {
         }
         draw_triad(ui, target, self.relative);
         let [width, _] = ui.io().display_size;
-        ui.window("Precise Input")
+        let mut open = self.open;
+        Self::dockable_window(ui, "Precise Input", &mut open)
             .position([width * 0.5, 200.], imgui::Condition::FirstUseEver)
             .flags(
                 WindowFlags::ALWAYS_AUTO_RESIZE
@@ -154,6 +157,7 @@ impl PreciseInputBar {
                 };
                 ui.text_disabled(format!("{} / {}", target.units[0], second_unit));
             });
+        self.open &= open;
     }
     fn fields(
         &mut self,

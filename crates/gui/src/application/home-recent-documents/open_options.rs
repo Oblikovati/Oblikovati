@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! The File Open Options dialog: how one recent file would open.
 use super::GuiRecentDocument;
+use crate::dockable_window::DockableWindow;
 use crate::{GuiShellAction, GuiTemplateKind};
 use imgui::Ui;
 
@@ -15,6 +16,7 @@ pub(super) struct FileOpenOptions {
     target: Option<OpenTarget>,
     opening: bool,
 }
+impl DockableWindow for FileOpenOptions {}
 struct OpenTarget {
     path: String,
     name: String,
@@ -55,6 +57,11 @@ fn modes_of(kind: GuiTemplateKind) -> Vec<&'static str> {
     }
 }
 impl FileOpenOptions {
+    /// Discard a draft; example: `options.close()` when Home closes.
+    pub(super) fn close(&mut self) {
+        self.target = None;
+        self.opening = false;
+    }
     /// Ask for the dialog; example: from a recent row's Open with options.
     pub(super) fn request(&mut self, row: &GuiRecentDocument) {
         self.target = Some(OpenTarget::of(row));
@@ -62,20 +69,23 @@ impl FileOpenOptions {
     }
     /// Draw the dialog; OK opens with the file's own state in Full mode.
     pub(super) fn panel(&mut self, ui: &Ui, actions: &mut Vec<GuiShellAction>) {
-        if std::mem::take(&mut self.opening) {
-            ui.open_popup(TITLE);
+        self.opening = false;
+        if self.target.is_none() {
+            return;
         }
-        let Some(_dialog) = ui.begin_modal_popup(TITLE) else {
-            return;
-        };
-        let Some(target) = &mut self.target else {
-            ui.close_current_popup();
-            return;
-        };
-        ui.text(&target.name);
-        option_rows(ui, target);
-        if option_buttons(ui, target, actions) {
-            ui.close_current_popup();
+        let mut open = true;
+        let mut closed = false;
+        Self::dockable_window(ui, TITLE, &mut open).build(|| {
+            let target = self
+                .target
+                .as_mut()
+                .expect("expected file open options draft");
+            ui.text(&target.name);
+            option_rows(ui, target);
+            closed = option_buttons(ui, target, actions);
+        });
+        if closed || !open {
+            self.close();
         }
     }
 }
@@ -133,5 +143,5 @@ fn option_buttons(ui: &Ui, target: &OpenTarget, actions: &mut Vec<GuiShellAction
     }
     ui.same_line();
     closing |= crate::widget_abi::button(ui, "Cancel", [80., 0.]);
-    closing || ui.is_key_pressed_no_repeat(imgui::Key::Escape)
+    closing || ui.is_window_focused() && ui.is_key_pressed_no_repeat(imgui::Key::Escape)
 }

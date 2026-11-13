@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Desktop extrusion draft. The document changes only when the owner accepts Apply.
+use crate::dockable_window::DockableWindow;
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::{Key, Ui};
 use oblikovati_model::document_sketch::DocumentSketchId;
@@ -24,6 +25,7 @@ pub(crate) fn start_action(state: &GuiCommandState) -> GuiShellAction {
         GuiShellAction::OpenExtrude
     }
 }
+impl DockableWindow for ExtrudeDialog {}
 impl ExtrudeDialog {
     fn synchronize(&mut self, state: &GuiCommandState) {
         if self.requested {
@@ -64,8 +66,9 @@ impl ExtrudeDialog {
         let Some(document) = self.document else {
             return;
         };
-        crate::widget_abi::fit_dialog(ui, "Extrude", [640., 280.], [420., 200.]);
-        ui.window("Extrude").build(|| {
+        Self::fit_dockable(ui, "Extrude", [640., 280.], [420., 200.]);
+        let mut open = true;
+        Self::dockable_window(ui, "Extrude", &mut open).build(|| {
             let mut edited = self.sketch_choice(ui, state);
             edited |= ui.input_int("Profile", &mut self.profile).build();
             edited |= ui.input_text("Distance", &mut self.distance).build();
@@ -75,6 +78,13 @@ impl ExtrudeDialog {
             }
             self.controls(ui, state, document, actions);
         });
+        if !open {
+            if self.previewed {
+                actions.push(GuiShellAction::PreviewExtrude(None));
+                self.previewed = false;
+            }
+            self.document = None;
+        }
     }
     fn sketch_choice(&mut self, ui: &Ui, state: &GuiCommandState) -> bool {
         let Some(browser) = state.browser.as_ref() else {

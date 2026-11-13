@@ -101,6 +101,7 @@ pub(super) struct NavigationBar {
     zoom_action: ZoomAction,
     orbit_action: OrbitAction,
     rotate_opening: bool,
+    rotate_document: Option<u64>,
     increment: Option<f32>,
     /// Where the current press began, and whether it has travelled far enough to be a drag.
     press: Option<([f32; 2], bool)>,

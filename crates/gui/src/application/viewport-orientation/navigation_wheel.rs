@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! The navigation wheel: a floating ring of view tools, opened from the navigation bar.
 use super::navigation_bar::{GuiNavigationMode, GuiViewCommand, drag_command};
+use crate::dockable_window::DockableWindow;
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::{Key, MouseButton, StyleColor, Ui, WindowFlags};
 
@@ -122,6 +123,7 @@ struct WheelOptions {
     walk_on_plane: bool,
     walk_speed: f32,
 }
+impl DockableWindow for WheelOptions {}
 impl Default for WheelOptions {
     fn default() -> Self {
         Self {
@@ -148,6 +150,7 @@ pub(super) struct NavigationWheel {
     options: WheelOptions,
     editing: WheelOptions,
     options_opening: bool,
+    options_visible: bool,
     dragging: Option<GuiNavigationMode>,
 }
 impl NavigationWheel {
@@ -155,6 +158,8 @@ impl NavigationWheel {
         self.open = true;
         self.used = true;
         self.placed = None;
+        self.options_visible = false;
+        self.options_opening = false;
     }
     /// It has been up since the part opened, so the view's menu can bring it back.
     pub(super) fn can_repeat(&self) -> bool {
@@ -198,8 +203,11 @@ impl NavigationWheel {
             .size([side, side], imgui::Condition::Always)
             .flags(flags)
             .build(|| self.contents(ui, state, center, side, actions));
+        let options_were_open = self.options_visible || self.options_opening;
         self.options_dialog(ui);
-        self.close_on_escape(ui);
+        if !options_were_open {
+            self.close_on_escape(ui);
+        }
     }
     fn side(&self) -> f32 {
         let scale = if self.layout.is_mini() {
@@ -341,40 +349,47 @@ impl NavigationWheel {
     }
     fn options_dialog(&mut self, ui: &Ui) {
         if std::mem::take(&mut self.options_opening) {
-            ui.open_popup(OPTIONS_TITLE);
+            self.options_visible = true;
         }
-        crate::application::document_saving::folder_browser::center_dialog(ui, OPTIONS_SIZE);
-        let Some(_dialog) = ui.begin_modal_popup(OPTIONS_TITLE) else {
+        if !self.options_visible {
             return;
-        };
-        ui.checkbox("Show Tool Messages", &mut self.editing.tool_messages);
-        ui.checkbox("Show Tool Tips", &mut self.editing.tool_tips);
-        choice_list(
-            ui,
-            "Mini Wheel Size",
-            &MINI_SIZES,
-            &mut self.editing.mini_size,
-        );
-        choice_list(ui, "Big Wheel Size", &BIG_SIZES, &mut self.editing.big_size);
-        choice_list(ui, "Wheel Opacity", &OPACITIES, &mut self.editing.opacity);
-        ui.checkbox(
-            "Invert vertical axis for Look",
-            &mut self.editing.invert_look,
-        );
-        ui.checkbox("Zoom to the pointer", &mut self.editing.zoom_to_pointer);
-        ui.checkbox(
-            "Keep scene upright while orbiting",
-            &mut self.editing.keep_up_while_orbiting,
-        );
-        ui.checkbox(
-            "Constrain Walk to the ground plane",
-            &mut self.editing.walk_on_plane,
-        );
-        ui.slider("Walk Speed Factor", 0.1, 10., &mut self.editing.walk_speed);
-        ui.separator();
-        self.options_buttons(ui);
+        }
+        WheelOptions::center_dockable(ui, OPTIONS_TITLE, OPTIONS_SIZE);
+        let mut open = true;
+        let mut close = false;
+        WheelOptions::dockable_window(ui, OPTIONS_TITLE, &mut open).build(|| {
+            ui.checkbox("Show Tool Messages", &mut self.editing.tool_messages);
+            ui.checkbox("Show Tool Tips", &mut self.editing.tool_tips);
+            choice_list(
+                ui,
+                "Mini Wheel Size",
+                &MINI_SIZES,
+                &mut self.editing.mini_size,
+            );
+            choice_list(ui, "Big Wheel Size", &BIG_SIZES, &mut self.editing.big_size);
+            choice_list(ui, "Wheel Opacity", &OPACITIES, &mut self.editing.opacity);
+            ui.checkbox(
+                "Invert vertical axis for Look",
+                &mut self.editing.invert_look,
+            );
+            ui.checkbox("Zoom to the pointer", &mut self.editing.zoom_to_pointer);
+            ui.checkbox(
+                "Keep scene upright while orbiting",
+                &mut self.editing.keep_up_while_orbiting,
+            );
+            ui.checkbox(
+                "Constrain Walk to the ground plane",
+                &mut self.editing.walk_on_plane,
+            );
+            ui.slider("Walk Speed Factor", 0.1, 10., &mut self.editing.walk_speed);
+            ui.separator();
+            close = self.options_buttons(ui)
+                || ui.is_window_focused() && ui.is_key_pressed_no_repeat(Key::Escape);
+        });
+        self.options_visible = open && !close;
     }
-    fn options_buttons(&mut self, ui: &Ui) {
+    fn options_buttons(&mut self, ui: &Ui) -> bool {
+        let mut close = false;
         if crate::widget_abi::button(ui, "Restore Defaults", [0.; 2]) {
             self.editing = WheelOptions::default();
         }
@@ -383,13 +398,11 @@ impl NavigationWheel {
             let _muted = ui.begin_disabled(self.editing == self.options);
             if crate::widget_abi::button(ui, "OK##wheel-options", [80., 0.]) {
                 self.options = self.editing;
-                ui.close_current_popup();
+                close = true;
             }
         }
         ui.same_line();
-        if crate::widget_abi::button(ui, "Cancel##wheel-options", [80., 0.]) {
-            ui.close_current_popup();
-        }
+        close || crate::widget_abi::button(ui, "Cancel##wheel-options", [80., 0.])
     }
 }
 fn wheel_flags() -> WindowFlags {

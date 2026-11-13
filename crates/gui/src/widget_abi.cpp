@@ -38,6 +38,9 @@ bool oblikovati_gui_icon_button(const unsigned char* bytes, std::uint32_t textur
 
 void oblikovati_gui_fit_dialog(const unsigned char* title, float x, float y, float width, float height) {
     const ImGuiWindow* previous = ImGui::FindWindowByName(reinterpret_cast<const char*>(title));
+    // Dock nodes own their members' bounds; fitting an individual member would undo that layout.
+    if (previous && previous->DockId != 0)
+        return;
     const ImVec2 position = previous ? previous->Pos : ImVec2(x, y);
     const ImVec2 size = previous ? previous->SizeFull : ImVec2(width, height);
     const ImVec2 display = ImGui::GetIO().DisplaySize;

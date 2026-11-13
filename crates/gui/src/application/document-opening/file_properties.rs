@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! A closed file's properties: the Details pane, and the separate window its link opens.
 use super::file_choices::FileKind;
-use crate::application::document_saving::folder_browser::{FolderBrowser, center_dialog};
+use crate::application::document_saving::folder_browser::FolderBrowser;
 use crate::application::document_saving::save_as::draw_preview_image;
 use crate::application::file_system::{FileFacts, GuiFolders, timestamp_text};
+use crate::dockable_window::DockableWindow;
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::Ui;
 use std::{collections::BTreeMap, path::Path, rc::Rc};
@@ -38,6 +39,7 @@ pub(super) struct FileProperties {
     facts: Result<FileFacts, String>,
     opening: bool,
 }
+impl DockableWindow for FileProperties {}
 impl FileProperties {
     /// The file its window is showing, whose stored properties it must have read.
     pub(super) fn shown_path(&self) -> Option<String> {
@@ -63,41 +65,47 @@ impl FileProperties {
     pub(super) fn is_opening(&self) -> bool {
         self.opening
     }
+    /// Close with its parent; example: `properties.close()` after Open is dismissed.
+    pub(super) fn close(&mut self) {
+        self.path = None;
+        self.opening = false;
+    }
     pub(super) fn panel(&mut self, ui: &Ui, inspections: &FileInspections) {
-        if std::mem::take(&mut self.opening) {
-            ui.open_popup(TITLE);
-        }
-        center_dialog(ui, SIZE);
-        let Some(_window) = ui.begin_modal_popup(TITLE) else {
-            return;
-        };
+        self.opening = false;
         let Some(path) = self.path.clone() else {
-            ui.close_current_popup();
             return;
         };
+        Self::center_dockable(ui, TITLE, SIZE);
         let inspected = inspections.of(&path);
-        if let Some(_pages) = ui.tab_bar("##file-property-pages") {
-            if let Some(_general) = ui.tab_item("General") {
-                general_rows(ui, &path, &self.facts);
-            }
-            if let Some(_summary) = ui.tab_item("Summary") {
-                field_rows(ui, &SUMMARY_FIELDS, inspected);
-            }
-            if let Some(_project) = ui.tab_item("Project") {
-                field_rows(ui, &PROJECT_FIELDS, inspected);
-            }
-            if let Some(_thumbnail) = ui.tab_item("Thumbnail") {
-                match inspections.picture_of(&path) {
-                    Some(image) => draw_preview_image(ui, image),
-                    None => ui.text_disabled(NO_THUMBNAIL),
+        let mut open = true;
+        let mut closed = false;
+        Self::dockable_window(ui, TITLE, &mut open).build(|| {
+            if let Some(_pages) = ui.tab_bar("##file-property-pages") {
+                if let Some(_general) = ui.tab_item("General") {
+                    general_rows(ui, &path, &self.facts);
+                }
+                if let Some(_summary) = ui.tab_item("Summary") {
+                    field_rows(ui, &SUMMARY_FIELDS, inspected);
+                }
+                if let Some(_project) = ui.tab_item("Project") {
+                    field_rows(ui, &PROJECT_FIELDS, inspected);
+                }
+                if let Some(_thumbnail) = ui.tab_item("Thumbnail") {
+                    match inspections.picture_of(&path) {
+                        Some(image) => draw_preview_image(ui, image),
+                        None => ui.text_disabled(NO_THUMBNAIL),
+                    }
                 }
             }
+            ui.separator();
+            closed = end_buttons(ui);
+        });
+        if closed || !open {
+            self.close();
         }
-        ui.separator();
-        end_buttons(ui);
     }
 }
-fn end_buttons(ui: &Ui) {
+fn end_buttons(ui: &Ui) -> bool {
     let closed = crate::widget_abi::button(ui, "OK", [80., 0.])
         || crate::widget_abi::button(ui, "Cancel", [80., 0.]);
     ui.same_line();
@@ -106,9 +114,7 @@ fn end_buttons(ui: &Ui) {
         let _muted = ui.begin_disabled(true);
         crate::widget_abi::button(ui, "Apply", [80., 0.]);
     }
-    if closed {
-        ui.close_current_popup();
-    }
+    closed || ui.is_window_focused() && ui.is_key_pressed_no_repeat(imgui::Key::Escape)
 }
 fn general_rows(ui: &Ui, path: &str, facts: &Result<FileFacts, String>) {
     ui.text(format!("Type: {}", file_type(path)));

@@ -146,6 +146,7 @@ impl TemplateChooser {
             self.buttons(ui, state, actions);
             self.projects.panel(ui, state);
         } else {
+            self.projects.close();
             self.clear_gallery_navigation();
         }
         self.component.panel(ui);

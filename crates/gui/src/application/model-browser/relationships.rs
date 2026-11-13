@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! The Relationships dialog: what a browser row is built from, and what is built from it.
 use crate::browser::ORIGIN_ROWS;
+use crate::dockable_window::DockableWindow;
 use crate::{GuiCommandState, GuiModelBrowser, GuiShellAction};
-use imgui::{Condition, Ui};
+use imgui::Ui;
 use oblikovati_model::{document_sketch::DocumentSketchId, feature::FeatureId};
 
 const TITLE: &str = "Relationships";
@@ -127,6 +128,7 @@ pub(crate) struct RelationshipsDialog {
     /// The origin row the browser should show as chosen, taken once.
     chosen_origin: Option<usize>,
 }
+impl DockableWindow for RelationshipsDialog {}
 impl RelationshipsDialog {
     /// Open on one row; example: from its menu's Relationships.
     pub(crate) fn request(&mut self, row: RelatedRow) {
@@ -148,24 +150,24 @@ impl RelationshipsDialog {
         };
         let mut request = None;
         let mut done = false;
-        ui.window(TITLE)
-            .size(SIZE, Condition::Appearing)
-            // Beside the model, since what it chooses shows behind it.
-            .position(
-                [ui.io().display_size[0] - SIZE[0] - 10., 170.],
-                Condition::Appearing,
-            )
-            .collapsible(false)
-            .build(|| {
-                ui.text(format!("Selected: {}", row_name(browser, shown)));
-                let (parents, children) = relations_of(browser, shown);
-                self.list(ui, browser, "Parents", &parents, &mut request);
-                self.list(ui, browser, "Children", &children, &mut request);
-                ui.separator();
-                done = crate::widget_abi::button(ui, "Done", [80., 0.]);
-            });
+        let mut open = true;
+        // Beside the model, since what it chooses shows behind it.
+        Self::fit_dockable(
+            ui,
+            TITLE,
+            [ui.io().display_size[0] - SIZE[0] - 10., 170.],
+            SIZE,
+        );
+        Self::dockable_window(ui, TITLE, &mut open).build(|| {
+            ui.text(format!("Selected: {}", row_name(browser, shown)));
+            let (parents, children) = relations_of(browser, shown);
+            self.list(ui, browser, "Parents", &parents, &mut request);
+            self.list(ui, browser, "Children", &children, &mut request);
+            ui.separator();
+            done = crate::widget_abi::button(ui, "Done", [80., 0.]);
+        });
         self.follow(request, state, actions);
-        if done {
+        if done || !open {
             self.shown = None;
         }
     }

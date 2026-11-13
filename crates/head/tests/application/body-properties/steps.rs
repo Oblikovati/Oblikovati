@@ -2,7 +2,7 @@
 //! `features/application/body-properties`: a solid's values on request and its appearance.
 use super::workspace_layout::browser_feature::{
     SOLID_COLOR, choose_menu_row, click_branch_arrow, colored_pixels, expect_rows,
-    open_extruded_part, right_click_row,
+    open_visible_extruded_part, right_click_row,
 };
 use super::{ApplicationWorld, diagnostics};
 use cucumber::{given, then, when};
@@ -43,7 +43,7 @@ fn load_library_project(world: &mut ApplicationWorld) {
 }
 fn part_with_body(world: &mut ApplicationWorld) {
     load_library_project(world);
-    open_extruded_part(world);
+    open_visible_extruded_part(world);
     Client::new(world.app().owner.document_host())
         .appearances()
         .create(&CreateAppearanceArgs {
@@ -263,4 +263,35 @@ fn close_control(world: &mut ApplicationWorld) {
     ]);
     world.pump(Vec::new());
     world.pump(Vec::new());
+}
+
+#[test]
+fn body_properties_title_close_discards_the_pending_appearance() {
+    let mut world = ApplicationWorld::new();
+    part_with_body(&mut world);
+    open_dialog(&mut world);
+    select_appearance(&mut world, BLACK);
+    displays_black(&mut world);
+    close_control(&mut world);
+    assert!(diagnostics::window_geometry(TITLE).is_none());
+    open_dialog(&mut world);
+    displays_as_part(&mut world);
+    close_control(&mut world);
+    world.close();
+}
+
+#[test]
+fn body_properties_closes_when_the_active_document_changes() {
+    let mut world = ApplicationWorld::new();
+    part_with_body(&mut world);
+    let original = world.active_id();
+    open_dialog(&mut world);
+    select_appearance(&mut world, BLACK);
+    world.add_part();
+    assert!(diagnostics::window_geometry(TITLE).is_none());
+    world.click_tab(original);
+    open_dialog(&mut world);
+    displays_as_part(&mut world);
+    close_control(&mut world);
+    world.close();
 }

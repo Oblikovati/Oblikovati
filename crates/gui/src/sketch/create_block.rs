@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! The Create Block draft belongs to the GUI until the user accepts it.
+use crate::dockable_window::DockableWindow;
 use crate::{GuiAuthoringContext, GuiCommandState, GuiShellAction};
 use imgui::{Key, Ui};
 
@@ -26,6 +27,7 @@ pub(crate) struct CreateBlockDialog {
     visible: bool,
     pending: Option<(String, bool)>,
 }
+impl DockableWindow for CreateBlockDialog {}
 impl CreateBlockDialog {
     pub(crate) fn open(&mut self, state: &GuiCommandState) {
         self.document = state.document;
@@ -50,11 +52,15 @@ impl CreateBlockDialog {
         if self.document.is_none() {
             return;
         }
-        crate::widget_abi::fit_dialog(ui, "Create Block", [620., 260.], [390., 245.]);
-        ui.window("Create Block").collapsible(false).build(|| {
+        Self::fit_dockable(ui, "Create Block", [620., 260.], [390., 245.]);
+        let mut open = true;
+        Self::dockable_window(ui, "Create Block", &mut open).build(|| {
             self.fields(ui);
             self.buttons(ui, state, actions);
         });
+        if !open && self.document.take().is_some() {
+            actions.push(GuiShellAction::SelectBlockGeometry(false));
+        }
     }
     fn fields(&mut self, ui: &Ui) {
         ui.text("Geometry");

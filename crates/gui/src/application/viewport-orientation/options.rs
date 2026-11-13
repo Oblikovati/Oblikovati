@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! The control's options: where it sits and how big it is. Cancel forgets what was changed.
-use crate::application::document_saving::folder_browser::center_dialog;
+use crate::dockable_window::DockableWindow;
 use imgui::Ui;
 
 const TITLE: &str = "Orientation Options";
@@ -139,7 +139,9 @@ pub(super) struct OrientationOptions {
     applied: OptionValues,
     editing: OptionValues,
     opening: bool,
+    open: bool,
 }
+impl DockableWindow for OrientationOptions {}
 impl OrientationOptions {
     pub(super) fn request(&mut self) {
         self.opening = true;
@@ -169,28 +171,30 @@ impl OrientationOptions {
     }
     pub(super) fn panel(&mut self, ui: &Ui) {
         if std::mem::take(&mut self.opening) {
-            ui.open_popup(TITLE);
+            self.open = true;
         }
-        center_dialog(ui, SIZE);
-        let Some(_dialog) = ui.begin_modal_popup(TITLE) else {
+        if !self.open {
             return;
-        };
-        self.visibility_rows(ui);
-        self.placement_rows(ui);
-        self.behavior_rows(ui);
-        self.view_plane_rows(ui);
-        self.compass_rows(ui);
-        ui.separator();
-        if crate::widget_abi::button(ui, "OK", [80., 0.]) {
-            self.applied = self.editing;
-            ui.close_current_popup();
         }
-        ui.same_line();
-        let cancelled = crate::widget_abi::button(ui, "Cancel", [80., 0.])
-            || ui.is_key_pressed_no_repeat(imgui::Key::Escape);
-        if cancelled {
-            ui.close_current_popup();
-        }
+        Self::center_dockable(ui, TITLE, SIZE);
+        let mut open = true;
+        let mut close = false;
+        Self::dockable_window(ui, TITLE, &mut open).build(|| {
+            self.visibility_rows(ui);
+            self.placement_rows(ui);
+            self.behavior_rows(ui);
+            self.view_plane_rows(ui);
+            self.compass_rows(ui);
+            ui.separator();
+            if crate::widget_abi::button(ui, "OK", [80., 0.]) {
+                self.applied = self.editing;
+                close = true;
+            }
+            ui.same_line();
+            close |= crate::widget_abi::button(ui, "Cancel", [80., 0.])
+                || ui.is_window_focused() && ui.is_key_pressed_no_repeat(imgui::Key::Escape);
+        });
+        self.open = open && !close;
     }
     fn visibility_rows(&mut self, ui: &Ui) {
         ui.checkbox(

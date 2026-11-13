@@ -1652,6 +1652,7 @@ dependencies = [
  "oblikovati-viewport",
  "resvg",
  "rustix",
+ "syn 2.0.119",
  "tempfile",
  "xml",
 ]

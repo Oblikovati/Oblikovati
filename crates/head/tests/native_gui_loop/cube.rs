@@ -28,6 +28,20 @@ pub(super) fn create_from_ribbon(
         "cancelled preview must not create a body"
     );
     preview_from_ribbon(window, owner, document);
+    let (position, size) = application_bdd::window_geometry("Extrude").unwrap();
+    let close = application_bdd::pointer_pixels([position[0] + size[0] - 13., position[1] + 10.]);
+    click_shell_position(window, owner, close);
+    assert!(
+        window
+            .gui_actions
+            .iter()
+            .any(|action| matches!(action, oblikovati_gui::GuiShellAction::PreviewExtrude(None)))
+    );
+    assert!(
+        body_list(owner).is_empty(),
+        "closing a preview must not create a body"
+    );
+    preview_from_ribbon(window, owner, document);
     press_shell_key(
         window,
         owner,

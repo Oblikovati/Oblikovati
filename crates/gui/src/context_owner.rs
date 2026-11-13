@@ -28,7 +28,7 @@ pub(crate) fn frame_activity() -> Result<crate::GuiFrameActivity, String> {
         .ok_or("GUI activity: expected a live exclusive context after Render")?;
     Ok(crate::GuiFrameActivity {
         queued_input: context.InputEventsQueue.Size > 0,
-        pending_layout: pending_window_layout(context)?,
+        pending_layout: pending_window_layout(context)? || pending_docking(context),
         pending_navigation: context.NavMoveSubmitted
             || context.NavInitRequest
             || context.NavInitResultId != 0
@@ -36,6 +36,9 @@ pub(crate) fn frame_activity() -> Result<crate::GuiFrameActivity, String> {
         pending_animation: pending_dimming(context),
         interaction: interactive_context(context),
     })
+}
+fn pending_docking(context: &imgui::sys::ImGuiContext) -> bool {
+    context.DockContext.Requests.Size > 0 || context.DockContext.WantFullRebuild
 }
 fn pending_dimming(context: &imgui::sys::ImGuiContext) -> bool {
     // ImGui 1.89 imgui.cpp:4698 advances dimming in NewFrame. An endpoint can
