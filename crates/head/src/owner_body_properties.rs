@@ -151,30 +151,28 @@ impl<
         Ok(true)
     }
     /// Every appearance a selector can offer: the document's, the project's, then the shipped.
-    pub(super) fn gui_appearance_choices(&self, document: u64) -> Vec<GuiAppearanceChoice> {
-        let mut choices: Vec<GuiAppearanceChoice> = Vec::new();
-        let mut add = |asset: &AppearanceAsset| {
-            if !choices.iter().any(|known| known.id == asset.id()) {
-                choices.push(GuiAppearanceChoice {
-                    id: asset.id(),
-                    name: asset.display_name(),
-                });
-            }
-        };
-        if let Ok(session) = self.files.workspace().session(document) {
-            session
-                .snapshot()
-                .assets
-                .appearances()
-                .ordered()
-                .for_each(&mut add);
-        }
-        if let Some(project) = self.files.active_project() {
-            project.assets.appearances().ordered().for_each(&mut add);
-        }
-        if let Ok(catalog) = self.files.builtin_catalog() {
-            catalog.appearances().ordered().for_each(&mut add);
-        }
-        choices
+    pub(super) fn gui_appearance_choices(
+        &self,
+        document: u64,
+    ) -> Result<Vec<GuiAppearanceChoice>, String> {
+        let session = self
+            .files
+            .workspace()
+            .session(document)
+            .map_err(|cause| cause.to_string())?;
+        let project = self
+            .files
+            .active_project()
+            .into_iter()
+            .flat_map(|project| project.assets.appearances().ordered());
+        let catalog = self.files.builtin_catalog()?.appearances().ordered();
+        let document = session.snapshot().assets.appearances().ordered();
+        Ok(super::part_assets::collect_choices(
+            document.chain(project).chain(catalog),
+            |asset: &AppearanceAsset| GuiAppearanceChoice {
+                id: asset.id(),
+                name: asset.display_name(),
+            },
+        ))
     }
 }

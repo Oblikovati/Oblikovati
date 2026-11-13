@@ -104,6 +104,9 @@ fn sketch(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, Str
         GuiShellAction::UpdateBodyProperties { document, body } => {
             owner.update_body_properties_from_gui(*document, *body)
         }
+        GuiShellAction::AssignPartAsset { document, kind, id } => {
+            owner.assign_part_asset_from_gui(*document, *kind, id)
+        }
         GuiShellAction::SetBodyAppearance {
             document,
             key,

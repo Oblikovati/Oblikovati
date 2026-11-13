@@ -98,6 +98,12 @@ pub enum GuiShellAction {
         document: u64,
         body: i64,
     },
+    /// Assign a catalog asset to the active part.
+    AssignPartAsset {
+        document: u64,
+        kind: GuiPartAssetKind,
+        id: String,
+    },
     /// Give a solid its own appearance; an empty id clears it.
     SetBodyAppearance {
         document: u64,
@@ -209,6 +215,12 @@ pub enum GuiParameterMutation {
     Set,
 }
 /// A bounded owner snapshot; the GUI holds no document history or transaction token.
+/// The part-level asset a ribbon selection changes.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GuiPartAssetKind {
+    Material,
+    Appearance,
+}
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum GuiAuthoringContext {
     #[default]

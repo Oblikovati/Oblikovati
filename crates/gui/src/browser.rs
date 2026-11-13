@@ -45,7 +45,13 @@ pub struct GuiModelBrowser {
     /// The part's solids, each made by a feature of the program.
     pub bodies: Vec<GuiBrowserBody>,
     pub appearances: Vec<crate::GuiAppearanceChoice>,
+    /// Available part materials and the assigned part asset identities.
+    pub materials: Vec<GuiMaterialChoice>,
+    pub part_material: Option<String>,
+    pub part_appearance: Option<String>,
 }
+/// A material available to a selector.
+pub type GuiMaterialChoice = crate::GuiAssetChoice;
 /// Pattern identity, authored settings and spacing source text for the browser editor.
 #[derive(Clone, Debug, PartialEq)]
 pub struct GuiBrowserRectangularPattern {

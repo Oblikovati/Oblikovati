@@ -102,6 +102,7 @@ pub(crate) fn draw_panel_content(
             }
             return application || document;
         }
+        RibbonPanel::ToolAssets => crate::ribbon_part_assets::draw(ui, origin, state, actions),
         RibbonPanel::ToolClipboard | RibbonPanel::ToolMeasure => {
             crate::ribbon_panels::builtin::draw(ui, panel, state, owners, actions, false);
         }

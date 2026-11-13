@@ -171,6 +171,11 @@ impl GuiShellAction {
             Self::ClickModel { document, .. } | Self::UpdateBodyProperties { document, .. } => {
                 state.document == Some(*document)
             }
+            Self::AssignPartAsset { document, .. } => {
+                state.document == Some(*document)
+                    && state.authoring == GuiAuthoringContext::Part
+                    && !state.transaction_open
+            }
             Self::SetBodyAppearance { document, .. } => {
                 state.document == Some(*document) && !state.transaction_open
             }

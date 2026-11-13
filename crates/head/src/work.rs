@@ -353,6 +353,17 @@ pub trait HeadWork {
             "body {body}, document {document}: expected a properties owner"
         ))
     }
+    /// Assign a part asset; example: `work.assign_part_asset_from_gui(document, kind, id)?`.
+    fn assign_part_asset_from_gui(
+        &mut self,
+        document: u64,
+        kind: oblikovati_gui::GuiPartAssetKind,
+        id: &str,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "part {document}, asset {kind:?} {id:?}: expected an asset owner"
+        ))
+    }
     /// Give a solid its own appearance; example: `work.set_body_appearance_from_gui(document, key, id)?`.
     fn set_body_appearance_from_gui(
         &mut self,

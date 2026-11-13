@@ -143,6 +143,7 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::SetViewProjection(_)
         | GuiShellAction::ViewCommand(_)
         | GuiShellAction::UpdateBodyProperties { .. }
+        | GuiShellAction::AssignPartAsset { .. }
         | GuiShellAction::SetBodyAppearance { .. }
         | GuiShellAction::EditSketch { .. }
         | GuiShellAction::Dimension(_)

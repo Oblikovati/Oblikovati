@@ -697,6 +697,9 @@ mod clipboard_native;
 #[path = "find_native.rs"]
 mod find_native;
 
+#[path = "part_assets_native.rs"]
+mod part_assets_native;
+
 #[path = "measure_native.rs"]
 mod measure_native;
 

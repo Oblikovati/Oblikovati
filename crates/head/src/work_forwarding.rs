@@ -94,6 +94,14 @@ macro_rules! forward_owner_view_work {
         ) -> Result<bool, String> {
             self.$owner.update_body_properties_from_gui(document, body)
         }
+        fn assign_part_asset_from_gui(
+            &mut self,
+            document: u64,
+            kind: oblikovati_gui::GuiPartAssetKind,
+            id: &str,
+        ) -> Result<bool, String> {
+            self.$owner.assign_part_asset_from_gui(document, kind, id)
+        }
         fn set_body_appearance_from_gui(
             &mut self,
             document: u64,

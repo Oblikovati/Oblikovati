@@ -45,6 +45,8 @@ mod model_browser;
 pub(crate) mod owner_precise_input;
 #[path = "owner_parameters.rs"]
 mod parameters_gui;
+#[path = "owner_part_assets.rs"]
+mod part_assets;
 #[path = "owner_part_measure.rs"]
 mod part_measure;
 #[path = "owner_recent.rs"]

@@ -20,12 +20,8 @@ pub struct GuiBodyPhysical {
     pub volume: String,
     pub center: [String; 3],
 }
-/// One appearance the selector offers.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct GuiAppearanceChoice {
-    pub id: String,
-    pub name: String,
-}
+/// One appearance available to a selector.
+pub type GuiAppearanceChoice = crate::GuiAssetChoice;
 #[derive(Default, Debug)]
 pub(crate) struct BodyPropertiesDialog {
     opening: bool,

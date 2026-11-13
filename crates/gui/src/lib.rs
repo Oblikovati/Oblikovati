@@ -6,10 +6,12 @@ pub use application::document_creation::templates::{
     GuiDocumentTemplate, GuiTemplateKind, GuiTemplateUnits,
 };
 mod appearance_choice;
+mod asset_choice;
+pub use asset_choice::GuiAssetChoice;
 mod browser;
 pub use browser::{
     GuiBrowserBlockInstance, GuiBrowserBody, GuiBrowserFeature, GuiBrowserKind,
-    GuiBrowserRectangularPattern, GuiBrowserSketch, GuiModelBrowser,
+    GuiBrowserRectangularPattern, GuiBrowserSketch, GuiMaterialChoice, GuiModelBrowser,
 };
 mod clipboard;
 pub use activity::GuiFrameActivity;
@@ -31,6 +33,7 @@ mod ribbon_fit;
 mod ribbon_key_tips;
 mod ribbon_panel_contents;
 mod ribbon_panels;
+mod ribbon_part_assets;
 mod sketch;
 pub use application::document_opening::GuiInspectedFile;
 pub use application::document_tabs::windows::{GuiDocumentWindow, active_window_name};
@@ -69,8 +72,8 @@ pub use application::ribbon_customization::GuiRibbonSettingsStore;
 pub use commands::{
     GuiAuthoringContext, GuiBaseViewRequest, GuiBrowserChoice, GuiCommandState, GuiDocumentStorage,
     GuiDrawingLine, GuiDrawingProjection, GuiExtrudePreview, GuiFeatureCondition, GuiFeatureEdit,
-    GuiParameterMutation, GuiPreviewImage, GuiProject, GuiProjectGroup, GuiShellAction,
-    GuiSketchLineStyle,
+    GuiParameterMutation, GuiPartAssetKind, GuiPreviewImage, GuiProject, GuiProjectGroup,
+    GuiShellAction, GuiSketchLineStyle,
 };
 pub use engine::{GuiFrameEngine, GuiFrameOutput, GuiFrameRequest};
 pub use input::{GuiInputCapture, GuiInputEvent, GuiKey, GuiModifiers, GuiPointerButton};

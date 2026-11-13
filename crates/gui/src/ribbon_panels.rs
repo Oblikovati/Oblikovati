@@ -24,6 +24,7 @@ pub(crate) enum RibbonPanel {
     Format,
     Parameters,
     ToolOptions,
+    ToolAssets,
     ToolMeasure,
     ToolFind,
     ToolClipboard,
@@ -63,6 +64,7 @@ impl RibbonPanel {
             Self::Format => "Format",
             Self::Parameters => "Parameters",
             Self::ToolOptions => "Options",
+            Self::ToolAssets => "Material and Appearance",
             Self::ToolMeasure => "Measure",
             Self::ToolFind => "Find",
             Self::ToolClipboard => "Clipboard",
@@ -105,6 +107,7 @@ impl RibbonPanel {
             | Self::Format
             | Self::Parameters
             | Self::ToolOptions
+            | Self::ToolAssets
             | Self::ToolFind
             | Self::ToolClipboard
             | Self::Appearance
@@ -545,7 +548,13 @@ pub(crate) fn panels_for(tab: RibbonTab, state: &GuiCommandState) -> Vec<RibbonP
             panels
         }
         RibbonTab::Manage => vec![Parameters],
-        RibbonTab::Tools => vec![ToolMeasure, ToolOptions, ToolClipboard, ToolFind],
+        RibbonTab::Tools => vec![
+            ToolMeasure,
+            ToolAssets,
+            ToolOptions,
+            ToolClipboard,
+            ToolFind,
+        ],
         RibbonTab::View if state.theme.is_some() || state.color_scheme.is_some() => {
             vec![Visibility, Appearance, Windows, Navigate]
         }

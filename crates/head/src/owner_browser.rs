@@ -34,8 +34,24 @@ impl<
         populate_browser(&mut browser, snapshot, &Client::new(query))?;
         browser.selected_sketches = self.selected_browser_sketches(document);
         browser.bodies = self.gui_browser_bodies(document);
-        if !browser.bodies.is_empty() {
-            browser.appearances = self.gui_appearance_choices(document);
+        if matches!(
+            browser.kind,
+            oblikovati_gui::GuiBrowserKind::Part | oblikovati_gui::GuiBrowserKind::SheetMetal
+        ) {
+            browser.appearances = self.gui_appearance_choices(document)?;
+            browser.materials = self.gui_material_choices(document)?;
+            browser.part_material = snapshot
+                .assets
+                .assignments
+                .part_material_id()
+                .map(str::to_owned);
+            browser.part_appearance = snapshot
+                .assets
+                .assignments
+                .part_appearance_id()
+                .map(str::to_owned);
+        } else if !browser.bodies.is_empty() {
+            browser.appearances = self.gui_appearance_choices(document)?;
         }
         browser.selected_feature = self
             .files

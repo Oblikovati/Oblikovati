@@ -733,3 +733,26 @@ revisions checked before they support a current pass claim.
   viewport-picking change. The final prompt change was checked with the native
   Measure tests, the BDD scenario and head Clippy. Earlier records stating that
   part-mode Measure was unavailable are historical.
+
+### Part material and appearance selectors, 2026-11-13
+
+- The Tools ribbon offers part material and appearance selectors. They use
+  document, project, and shipped catalog choices in that priority order and
+  call the existing typed assignment API. Unknown assigned IDs remain visible
+  in the selector. The Go-style Material Browser and asset editing controls
+  are not yet implemented.
+- Native tests selected material and appearance through the UI, used undo
+  and redo, reset the ribbon, and saved and reopened the part. A second test
+  verified that an appearance assignment refreshes a visible solid; its local
+  capture is `/tmp/obk-part-assets-capture-final-20261113/part-appearance-solid.png`.
+  A third test checked refusal of stale documents and unknown asset IDs.
+- The focused Reset Ribbon BDD run passed 10 steps and failed its final Tools
+  group check because Team Web is missing. Material and Appearance was visible.
+  Source SHA-256 `846aff6433de2b69e222aa0580140c53adb7fdbe3aeba04ccab2a69ddc8c9438`
+  was unchanged during the run. Local report:
+  `/tmp/obk-part-assets-reset-bdd-final-20261113`.
+- Application: `a7effffd3` plus this change; unrelated README and AGENTS files
+  were present. Linux, Xvfb at 1600 × 1000, Lavapipe. GUI and head Clippy
+  passed; the GUI library passed 356 tests and file dialogs passed four before
+  the final selector refactor. The focused GUI and native asset tests and cube
+  journey passed afterward. The full ribbon feature was not rerun.
