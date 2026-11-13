@@ -53,6 +53,9 @@ fn dispatch(arguments: &[&str], root: &Path, runner: &dyn Runner) -> BuildResult
         ["gui"] => quality::gui(root, runner),
         ["matrix"] => print_matrix(),
         ["scenarios", path] => scenarios::print_inventory(Path::new(path)),
+        ["scenario-ledger", path, revision] => {
+            scenarios::print_ledger(Path::new(path), revision, runner)
+        }
         ["native-validation", directory, environment] => {
             native_validation::prepare(root, runner, Path::new(directory), Path::new(environment))
         }

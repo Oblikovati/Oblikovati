@@ -120,3 +120,21 @@ that a fixture is missing; investigate fixture failures before classifying them.
 
 Diagnostic results are for sizing work. Run the normal command without
 `OBK_BDD_DIAGNOSTIC` to collect acceptance evidence.
+
+## Inventory scenario declarations
+
+After restoring and verifying the pinned checkout, generate the source inventory:
+
+```sh
+cargo xtask scenario-ledger "$OBK_BDD_ROOT" \
+  35f4a77b1519e2f29005be009c35fb7c5bdf4e89 > /absolute/path/to/source-inventory.json
+```
+
+The command requires a clean checkout at the requested commit and reads its
+features twice. IDs use the feature path and scenario name; a rename creates a
+new ID and requires review. Each outline counts once as a declaration, not as
+its expanded executable cases. Invalid Gherkin files retain provisional
+scenario declarations marked blocked with their parser error. The checked-in
+`behavior-source-inventory.json` is a source inventory: its null milestone,
+owner, and receipt fields do not establish implementation or acceptance.
+Do not overwrite future behavior classifications with this raw inventory.

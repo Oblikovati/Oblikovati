@@ -10,6 +10,7 @@ license.workspace = true
 publish.workspace = true
 
 [dependencies]
+gherkin = "=0.16.0"
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 regex = "1"
 serde = { version = "1", features = ["derive"] }

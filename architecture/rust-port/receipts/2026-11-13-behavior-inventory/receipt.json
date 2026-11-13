@@ -1,0 +1,35 @@
+{
+  "date": "2026-11-13",
+  "issue": "https://github.com/Oblikovati/Oblikovati/issues/3865",
+  "base_commit": "992c68ba82f844acaa321726c491f4664c235e84",
+  "scenario_commit": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+  "inventory_sha256": "53b7f8f9fae698ec8c0857baf446408eb731ce505aefe342b99b049613d231c4",
+  "tested_file_sha256": {
+    "tools/build/src/scenarios/ledger.rs": "92e31f30b70407613c2adb02b6ca1fefa9fca807ec523f5a978d560d01f57496",
+    "tools/build/tests/scenarios/ledger.rs": "ad9b114e9ab7b931f24fbf440bd60ac9b178194bd7142ec77a461014ab485905",
+    "tools/build/src/scenarios/mod.rs": "20def3c2772be9b7c1548e6591ecdc9ef9603d5fffedeeecfde5260435703e06",
+    "tools/build/src/lib.rs": "8d51ccdf65e1b39add5dbfbaadedf938360be6a0c7b193354b91ec2a1de4abf7",
+    "tools/build/Cargo.toml": "31232d126b5f61fa40d842daea6ad239e589eb55d3a1d1d32e6b2813f22b892f",
+    "Cargo.lock": "a9ccdc0f2e6024c95b3e009b85548dbaf6c352ad01493d5242ab25434850f786"
+  },
+  "feature_files": 195,
+  "declarations": 2719,
+  "areas": {
+    "application": 746,
+    "sketch": 1372,
+    "solid-model": 601
+  },
+  "states": {
+    "inventoried": 2657,
+    "blocked": 62
+  },
+  "outline_declarations": 6,
+  "checks": [
+    "five ledger unit tests passed",
+    "build-tool all-target Clippy passed",
+    "regeneration matched the checked-in inventory byte for byte",
+    "wrong-revision and dirty-checkout CLI tests rejected without output",
+    "all row source hashes matched the pinned checkout"
+  ],
+  "scope": "Source inventory only. Milestones, owners, reconciliation, receipt validation, and verified coverage remain open."
+}

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Monitor benchmark inputs without treating discovery as scenario acceptance.
+mod ledger;
 mod source;
 use crate::process::BuildResult;
 use serde::Serialize;
@@ -16,6 +17,27 @@ struct ScenarioFeatureSource {
 #[derive(Debug, Serialize, PartialEq, Eq)]
 struct ScenarioInventory {
     features: Vec<ScenarioFeatureSource>,
+}
+pub(crate) fn print_ledger(
+    root: &Path,
+    revision: &str,
+    runner: &dyn crate::process::Runner,
+) -> BuildResult<()> {
+    ledger::verify_checkout(root, revision, runner)?;
+    let ledger = ledger::inventory(root, revision, &mut NativeScenarioSource)?;
+    let second = ledger::inventory(root, revision, &mut NativeScenarioSource)?;
+    ledger::verify_checkout(root, revision, runner)?;
+    if ledger != second {
+        return Err(format!(
+            "scenario root {root:?}: expected unchanged files during inventory"
+        ));
+    }
+    println!(
+        "{}",
+        serde_json::to_string(&ledger)
+            .map_err(|error| format!("scenario ledger: expected JSON: {error}"))?
+    );
+    Ok(())
 }
 pub(crate) fn print_inventory(root: &Path) -> BuildResult<()> {
     let inventory = scan(root, &mut NativeScenarioSource)?;

@@ -1,0 +1,15 @@
+{
+  "date": "2026-11-13",
+  "started_at_commit": "6c5c1014a",
+  "scope": "diagnostic only; source changed after the run started, so this does not certify a commit",
+  "command": "xvfb-run -a -s \"-screen 0 1920x1080x24\" make gate",
+  "result": "failed during head coverage tests: 718 passed, 36 failed; later gate stages did not run",
+  "observations": [
+    "Some pixel assertions require the former green body color.",
+    "The default benchmark checkout lacked features/sketch.",
+    "Application binding inventory reported 13 unresolved steps.",
+    "Other failures include ribbon input, native command behavior, and kernel error classification; root causes need separate verification."
+  ],
+  "log": "gate.log.gz",
+  "log_sha256": "023aa3019e9de429cc4abf89884f50ea84257e37d2708d9b268ca1c03f571f09"
+}
