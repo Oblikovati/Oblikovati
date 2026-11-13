@@ -52,6 +52,8 @@ fn toggle_grouping(world: &mut ApplicationWorld) {
 }
 #[when("I clear Grouped by Type in the template display menu")]
 #[when("I select Grouped by Type in the template display menu")]
+#[when("the user clears Grouped by Type in the template display menu")]
+#[when("the user selects Grouped by Type in the template display menu")]
 fn change_grouping(world: &mut ApplicationWorld) {
     toggle_grouping(world);
 }
@@ -102,6 +104,7 @@ fn tile_spacing(world: &ApplicationWorld) -> f32 {
     (world.run(METRIC_SHEET_METAL).center()[1] - world.run(METRIC_PART).center()[1]).abs()
 }
 #[when("I choose List in the template display menu")]
+#[when("the user chooses List in the template display menu")]
 fn choose_list_view(world: &mut ApplicationWorld) {
     choose_template_view(world, "List");
 }
@@ -115,6 +118,7 @@ fn compact_entries(world: &mut ApplicationWorld) {
     );
 }
 #[when("I select the standard metric assembly template in the list")]
+#[when("the user selects the standard metric assembly template in the list")]
 fn select_assembly_in_list(world: &mut ApplicationWorld) {
     world.click_text(METRIC_ASSEMBLY);
 }
@@ -128,6 +132,7 @@ fn details_identify_assembly(world: &mut ApplicationWorld) {
     expect_assembly_details(world);
 }
 #[when("I choose Medium icons in the template display menu")]
+#[when("the user chooses Medium icons in the template display menu")]
 fn choose_medium_view(world: &mut ApplicationWorld) {
     choose_template_view(world, "Medium Icons");
 }

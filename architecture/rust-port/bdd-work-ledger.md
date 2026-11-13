@@ -34,6 +34,19 @@ claim that each file has been individually triaged.
 
 ## Evidence records
 
+### Document creation focused scenarios, 2026-11-13
+
+- On source SHA-256
+  `e9a93d4c096090667952b8080a0cad01c48f480022a4b8ac72ae210607ca138d`,
+  the native drawing-template creation scenario passes all 10 steps. The
+  check verifies the sheet, title block, browser, tab and enabled Base View
+  command. The previous binding incorrectly treated Base View as unavailable.
+- On the same source, the template grouping and assembly list-view scenarios
+  pass all 10 and 11 steps respectively with native pointer input. These are
+  focused results; the complete creation feature needs a new run before its
+  pass count can be updated. Logs: `/tmp/obk-create-drawing-current.log` and
+  `/tmp/obk-create-gallery-0.log`, `/tmp/obk-create-gallery-1.log`.
+
 ### Drawing browser and saved views, 2026-11-13
 
 - The full Open feature at source SHA-256

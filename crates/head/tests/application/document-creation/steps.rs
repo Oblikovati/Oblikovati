@@ -190,10 +190,12 @@ fn drawing_available(world: &mut ApplicationWorld) {
     world.expect_text(METRIC_DRAWING);
 }
 #[when("I select the drawing template")]
+#[when("the user selects the drawing template")]
 fn select_drawing(world: &mut ApplicationWorld) {
     world.click_text(METRIC_DRAWING);
 }
 #[when("I choose its Use Template preview")]
+#[when("the user chooses its Use Template preview")]
 fn use_template(world: &mut ApplicationWorld) {
     world.click_text("Use Template");
 }
@@ -226,8 +228,9 @@ fn drawing_browser(world: &mut ApplicationWorld) {
 }
 #[then("the ribbon offers drawing view commands")]
 fn drawing_ribbon(world: &mut ApplicationWorld) {
-    expect_muted_command(world, "Base View");
-    expect_muted_command(world, "Projected View");
+    world.expect_text("Base View");
+    world.expect_text("Projected View");
+    assert!(world.run_is_enabled("Base View"));
 }
 #[then("the browser shows a folded model and its origin")]
 fn folded_browser(world: &mut ApplicationWorld) {
