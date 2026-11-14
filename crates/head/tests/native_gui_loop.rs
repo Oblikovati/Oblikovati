@@ -421,3 +421,6 @@ mod legacy_parameters;
 
 #[path = "native_gui_loop/sketch_preferences.rs"]
 mod sketch_preferences;
+
+#[path = "native_gui_loop/selection_preferences.rs"]
+mod selection_preferences;

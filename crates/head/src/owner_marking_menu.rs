@@ -13,3 +13,24 @@ impl<O, W, F, G, R, S: super::DispatchWakeup> super::DesktopOwner<O, W, F, G, R,
         Ok(self)
     }
 }
+
+impl<
+    O: super::TransactionObserver,
+    W: super::WorkspaceObserver,
+    F: super::DocumentFiles,
+    G: super::GuidSource,
+    R: super::DocumentObserverFactory<Observer = O> + super::HeadInvalidation,
+    S: super::DispatchWakeup,
+> super::DesktopOwner<O, W, F, G, R, S>
+{
+    pub(super) fn set_marking_menu_action(
+        &mut self,
+        args: &oblikovati_api::wire::SetMarkingMenuArgs,
+    ) -> Result<bool, String> {
+        oblikovati_api::client::Client::new(self.document_host())
+            .ui()
+            .set_marking_menu(args)
+            .map_err(|cause| cause.to_string())?;
+        Ok(true)
+    }
+}

@@ -81,6 +81,9 @@ fn draw_filter(ui: &Ui, filter: Option<&GuiSelectionFilter>, actions: &mut Vec<G
         ui.text("No active document");
         return;
     };
+    if ui.button("Reset") {
+        actions.push(GuiShellAction::ResetSelectionFilter);
+    }
     for (index, entry) in filter.entries.iter().enumerate() {
         draw_entry(ui, entry, index, filter.entries.len(), actions);
     }
@@ -184,7 +187,7 @@ mod tests {
         let mut fixture = SelectionPanelFixture::new();
         fixture.frame(&[]);
         use crate::{GuiInputEvent, GuiPointerButton};
-        fixture.frame(&[GuiInputEvent::PointerMoved([80., 130.])]);
+        fixture.frame(&[GuiInputEvent::PointerMoved([80., 150.])]);
         fixture.frame(&[GuiInputEvent::PointerButton {
             button: GuiPointerButton::Left,
             pressed: true,
@@ -200,6 +203,22 @@ mod tests {
                 enabled: false
             }]
         );
+    }
+    #[test]
+    fn reset_button_emits_a_single_reset_action() {
+        let mut fixture = SelectionPanelFixture::new();
+        fixture.frame(&[]);
+        use crate::{GuiInputEvent, GuiPointerButton};
+        fixture.frame(&[GuiInputEvent::PointerMoved([80., 130.])]);
+        fixture.frame(&[GuiInputEvent::PointerButton {
+            button: GuiPointerButton::Left,
+            pressed: true,
+        }]);
+        let actions = fixture.frame(&[GuiInputEvent::PointerButton {
+            button: GuiPointerButton::Left,
+            pressed: false,
+        }]);
+        assert_eq!(actions, vec![GuiShellAction::ResetSelectionFilter]);
     }
     #[test]
     fn the_title_bar_close_button_closes_the_filter() {

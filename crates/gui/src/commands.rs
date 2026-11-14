@@ -243,12 +243,14 @@ pub enum GuiShellAction {
         from: usize,
         to: usize,
     },
+    /// Restore the default ambient selection order and enabled categories.
+    ResetSelectionFilter,
     Undo,
     Redo,
     Home,
 }
 /// The selection categories supported by the viewport's current pickers.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum GuiSelectionMode {
     #[default]
     All,

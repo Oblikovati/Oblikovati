@@ -13,91 +13,32 @@ impl<
         &mut self,
         mode: oblikovati_gui::GuiSelectionMode,
     ) -> Result<bool, String> {
-        use oblikovati_gui::GuiSelectionMode;
-        use oblikovati_session::selection::SelectionPriority;
-        let state = self.gui_command_snapshot()?;
-        if !oblikovati_gui::GuiShellAction::SetSelectionMode(mode).enabled(&state) {
-            return Err(format!(
-                "selection mode {mode:?}: expected an idle part or assembly"
-            ));
-        }
-        let priority = match mode {
-            GuiSelectionMode::All => SelectionPriority::General,
-            GuiSelectionMode::Faces => SelectionPriority::Face,
-            GuiSelectionMode::Components => SelectionPriority::Part,
-            GuiSelectionMode::Custom => {
-                return Err("selection mode Custom: expected a concrete preset".into());
-            }
-        };
-        self.ambient_selection.apply_priority(priority);
-        let changed = self.selection_mode != mode;
-        self.selection_mode = mode;
-        Ok(changed)
+        self.set_selection_mode(mode)
     }
     fn set_selection_enabled_from_gui(
         &mut self,
         kind: oblikovati_gui::GuiSelectionKind,
         enabled: bool,
     ) -> Result<bool, String> {
-        let state = self.gui_command_snapshot()?;
-        if !(oblikovati_gui::GuiShellAction::SetSelectionEnabled { kind, enabled }).enabled(&state)
-        {
-            return Err(format!(
-                "selection category {kind:?}: expected an idle part or assembly"
-            ));
-        }
-        let kind = super::selection_filter::session_kind(kind);
-        let changed = self.ambient_selection.enabled(kind) != enabled;
-        self.ambient_selection.set_enabled(kind, enabled);
-        if changed {
-            self.selection_mode = oblikovati_gui::GuiSelectionMode::Custom;
-        }
-        Ok(changed)
+        self.set_selection_enabled(kind, enabled)
     }
     fn move_selection_kind_from_gui(&mut self, from: usize, to: usize) -> Result<bool, String> {
-        let state = self.gui_command_snapshot()?;
-        if !(oblikovati_gui::GuiShellAction::MoveSelectionKind { from, to }).enabled(&state) {
-            return Err(format!(
-                "selection priority {from}->{to}: expected an idle part or assembly"
-            ));
-        }
-        let count = self.ambient_selection.order().len();
-        if from >= count || to >= count {
-            return Err(format!(
-                "selection priority {from}->{to}: expected indices below {count}"
-            ));
-        }
-        self.ambient_selection.move_kind(from, to);
-        Ok(from != to)
+        self.move_selection_kind(from, to)
+    }
+    fn reset_selection_filter_from_gui(&mut self) -> Result<bool, String> {
+        self.reset_selection_filter()
     }
     fn jump_history_from_gui(&mut self, document: u64, position: i64) -> Result<bool, String> {
-        let client = oblikovati_api::client::Client::new(self.document_host());
-        let current = client
-            .transactions()
-            .history(&oblikovati_api::wire::TransactionHistoryArgs { document })
-            .map_err(|cause| cause.to_string())?;
-        client
-            .transactions()
-            .jump_to(&oblikovati_api::wire::TransactionJumpToArgs { document, position })
-            .map_err(|cause| cause.to_string())?;
-        Ok(current.position != position)
+        self.jump_history_action(document, position)
     }
     fn update_part_from_gui(&mut self) -> Result<bool, String> {
-        oblikovati_api::client::Client::new(self.document_host())
-            .documents()
-            .update(&oblikovati_api::wire::UpdateDocumentArgs::default())
-            .map_err(|error| error.to_string())?;
-        Ok(true)
+        self.update_part_action()
     }
     fn set_marking_menu_from_gui(
         &mut self,
         args: &oblikovati_api::wire::SetMarkingMenuArgs,
     ) -> Result<bool, String> {
-        oblikovati_api::client::Client::new(self.document_host())
-            .ui()
-            .set_marking_menu(args)
-            .map_err(|cause| cause.to_string())?;
-        Ok(true)
+        self.set_marking_menu_action(args)
     }
     fn take_shortcut_action(&mut self) -> Option<oblikovati_gui::GuiShellAction> {
         let action = self.shortcut_keys.take_action();
@@ -110,11 +51,7 @@ impl<
         &mut self,
         delta: &oblikovati_api::wire::KeymapExport,
     ) -> Result<bool, String> {
-        oblikovati_api::client::Client::new(self.document_host())
-            .keymap()
-            .import(delta)
-            .map_err(|cause| cause.to_string())?;
-        Ok(true)
+        self.set_keymap_action(delta)
     }
     fn resolve_shortcut(
         &mut self,

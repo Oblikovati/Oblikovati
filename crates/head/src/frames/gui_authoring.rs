@@ -12,6 +12,7 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
         GuiShellAction::MoveSelectionKind { from, to } => {
             owner.move_selection_kind_from_gui(*from, *to)
         }
+        GuiShellAction::ResetSelectionFilter => owner.reset_selection_filter_from_gui(),
         GuiShellAction::OpenSelectionFilter | GuiShellAction::OpenHistoryBrowser => Ok(false),
         GuiShellAction::JumpHistoryTo { document, position } => {
             owner.jump_history_from_gui(*document, *position)

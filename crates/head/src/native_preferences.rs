@@ -9,6 +9,16 @@ use oblikovati_persistence::{
 use std::path::{Path, PathBuf};
 type NativeThemePreferences = ThemeFilePreferences<NativeThemePreferenceFiles>;
 
+pub(super) fn load_native_selection_filter(
+    directory: &Path,
+) -> Result<crate::selection_preferences::SelectionPreferenceFile<NativeThemePreferenceFiles>, String>
+{
+    crate::selection_preferences::SelectionPreferenceFile::load(
+        &directory.join("selection-filter.json"),
+        NativeThemePreferenceFiles,
+    )
+}
+
 pub(super) fn load_native_marking_menu(
     directory: &Path,
 ) -> Result<

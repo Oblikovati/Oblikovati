@@ -228,3 +228,37 @@ fn document_command(input: &ViewportEvent) -> Option<NativeDocumentCommand> {
         _ => None,
     }
 }
+
+impl<
+    O: super::TransactionObserver,
+    W: super::WorkspaceObserver,
+    F: super::DocumentFiles,
+    G: super::GuidSource,
+    R: super::DocumentObserverFactory<Observer = O> + super::HeadInvalidation,
+    S: super::DispatchWakeup,
+> super::DesktopOwner<O, W, F, G, R, S>
+{
+    pub(super) fn jump_history_action(
+        &mut self,
+        document: u64,
+        position: i64,
+    ) -> Result<bool, String> {
+        let client = oblikovati_api::client::Client::new(self.document_host());
+        let current = client
+            .transactions()
+            .history(&oblikovati_api::wire::TransactionHistoryArgs { document })
+            .map_err(|cause| cause.to_string())?;
+        client
+            .transactions()
+            .jump_to(&oblikovati_api::wire::TransactionJumpToArgs { document, position })
+            .map_err(|cause| cause.to_string())?;
+        Ok(current.position != position)
+    }
+    pub(super) fn update_part_action(&mut self) -> Result<bool, String> {
+        oblikovati_api::client::Client::new(self.document_host())
+            .documents()
+            .update(&oblikovati_api::wire::UpdateDocumentArgs::default())
+            .map_err(|error| error.to_string())?;
+        Ok(true)
+    }
+}

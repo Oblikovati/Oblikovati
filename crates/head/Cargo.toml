@@ -30,6 +30,7 @@ oblikovati-session = { path = "../session" }
 oblikovati-persistence = { path = "../persistence" }
 oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "f0943c724a6e07ec49533769c9e680137bb3d55c", version = "=0.159.0" }
 serde_json = "1"
+serde = { version = "1", features = ["derive"] }
 
 [[bin]]
 name = "oblikovati"
@@ -48,7 +49,6 @@ xml = "=1.4.0"
 futures = "=0.3.32"
 imgui = { version = "=0.12.0", features = ["docking"] }
 oblikovati-solve = { path = "../solve" }
-serde = { version = "1", features = ["derive"] }
 tempfile = "=3.27.0"
 
 [[test]]

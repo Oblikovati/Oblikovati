@@ -58,6 +58,10 @@ pub use work_status::{HeadInvalidation, HeadWorkStatus};
 #[cfg(target_os = "linux")]
 mod owner;
 #[cfg(target_os = "linux")]
+mod selection_preferences;
+#[cfg(target_os = "linux")]
+pub use selection_preferences::SelectionPreferenceAccess;
+#[cfg(target_os = "linux")]
 mod part_scene;
 #[cfg(target_os = "linux")]
 pub use owner::{DesktopCommandNotice, DesktopDispatchOptions, DesktopHistoryAction, DesktopOwner};
