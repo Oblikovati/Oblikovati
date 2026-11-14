@@ -8,7 +8,7 @@ use oblikovati_model::{
 fn viewport_click_uses_priority_for_a_body_and_its_face() {
     let directory = tempfile::tempdir().unwrap();
     let native = NativeHeadWindow::open().unwrap();
-    let mut owner = native_owner(native.wake.clone()).unwrap();
+    let mut owner = native_owner_at(native.wake.clone(), directory.path()).unwrap();
     let document = open_native_part(&mut owner, &directory.path().join("priority.opd"));
     let mut window = scripted_window(native);
     crate::frames::run_frames(&mut window, HeadOptions { frames: Some(3) }, &mut owner).unwrap();
@@ -39,7 +39,7 @@ fn viewport_click_uses_priority_for_a_body_and_its_face() {
 fn native_face_sketch_and_measure_choose_a_face_when_body_has_priority() {
     let directory = tempfile::tempdir().unwrap();
     let native = NativeHeadWindow::open().unwrap();
-    let mut owner = native_owner(native.wake.clone()).unwrap();
+    let mut owner = native_owner_at(native.wake.clone(), directory.path()).unwrap();
     let document = open_native_part(&mut owner, &directory.path().join("face-tools.opd"));
     let mut window = scripted_window(native);
     crate::frames::run_frames(&mut window, HeadOptions { frames: Some(3) }, &mut owner).unwrap();

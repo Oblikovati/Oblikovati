@@ -1647,6 +1647,7 @@ dependencies = [
  "oblikovati-viewport",
  "resvg",
  "rustix",
+ "serde",
  "syn 2.0.119",
  "tempfile",
  "xml",
@@ -1750,6 +1751,7 @@ dependencies = [
  "oblikovati-model",
  "oblikovati-persistence",
  "oblikovati-solve",
+ "serde",
  "tempfile",
 ]
 

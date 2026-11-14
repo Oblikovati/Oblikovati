@@ -181,6 +181,7 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::JumpHistoryTo { .. }
         | GuiShellAction::SetSelectionEnabled { .. }
         | GuiShellAction::MoveSelectionKind { .. }
+        | GuiShellAction::ResetSelectionFilter
         | GuiShellAction::ActivateDocument(_)
         | GuiShellAction::OpenDocument(_)
         | GuiShellAction::OpenDeferredDrawing(_)

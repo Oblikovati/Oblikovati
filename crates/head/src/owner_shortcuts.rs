@@ -230,6 +230,27 @@ fn constraint_action(id: &str) -> Option<oblikovati_gui::GuiSketchConstraint> {
     })
 }
 
+impl<
+    O: super::TransactionObserver,
+    W: super::WorkspaceObserver,
+    F: super::DocumentFiles,
+    G: super::GuidSource,
+    R: super::DocumentObserverFactory<Observer = O> + super::HeadInvalidation,
+    S: super::DispatchWakeup,
+> super::DesktopOwner<O, W, F, G, R, S>
+{
+    pub(super) fn set_keymap_action(
+        &mut self,
+        delta: &oblikovati_api::wire::KeymapExport,
+    ) -> Result<bool, String> {
+        oblikovati_api::client::Client::new(self.document_host())
+            .keymap()
+            .import(delta)
+            .map_err(|cause| cause.to_string())?;
+        Ok(true)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

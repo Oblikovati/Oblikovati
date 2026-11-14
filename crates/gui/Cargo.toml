@@ -11,6 +11,7 @@ unsafe_code = "deny"
 [lints.clippy]
 all = "warn"
 [dependencies]
+serde = { version = "1", features = ["derive"] }
 oblikovati-model = { path = "../model" }
 oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "f0943c724a6e07ec49533769c9e680137bb3d55c", version = "=0.159.0" }
 image = { version = "=0.25.6", default-features = false }

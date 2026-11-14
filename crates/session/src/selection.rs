@@ -14,7 +14,9 @@ pub use set::{Selectable, SelectionSet};
 pub use sketch::{SketchPick, SketchPickTarget};
 
 /// Internal desktop categories, not the public API's wire entity kinds.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize,
+)]
 pub enum SelectionKind {
     Face,
     Edge,

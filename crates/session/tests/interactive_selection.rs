@@ -219,3 +219,23 @@ fn assert_priority_matrix(
         );
     }
 }
+
+#[test]
+fn restored_selection_entries_preserve_order_and_reject_missing_or_duplicate_kinds() {
+    let mut filter = AmbientSelectionFilter::default();
+    filter.move_kind(filter.rank(SelectionKind::Face), 0);
+    filter.set_enabled(SelectionKind::Body, false);
+    let entries: Vec<_> = filter
+        .order()
+        .iter()
+        .map(|kind| (*kind, filter.enabled(*kind)))
+        .collect();
+    assert_eq!(
+        AmbientSelectionFilter::from_entries(&entries).unwrap(),
+        filter
+    );
+    assert!(AmbientSelectionFilter::from_entries(&entries[1..]).is_err());
+    let mut duplicate = entries.clone();
+    duplicate[1] = duplicate[0];
+    assert!(AmbientSelectionFilter::from_entries(&duplicate).is_err());
+}

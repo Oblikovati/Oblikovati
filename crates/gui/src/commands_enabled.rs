@@ -310,7 +310,8 @@ impl GuiShellAction {
             Self::SetSelectionMode(_)
             | Self::OpenSelectionFilter
             | Self::SetSelectionEnabled { .. }
-            | Self::MoveSelectionKind { .. } => {
+            | Self::MoveSelectionKind { .. }
+            | Self::ResetSelectionFilter => {
                 state.document.is_some()
                     && !state.transaction_open
                     && state.authoring != crate::GuiAuthoringContext::Sketch

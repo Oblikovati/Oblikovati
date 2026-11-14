@@ -18,6 +18,9 @@ macro_rules! forward_owner_view_work {
         fn move_selection_kind_from_gui(&mut self, from: usize, to: usize) -> Result<bool, String> {
             self.$owner.move_selection_kind_from_gui(from, to)
         }
+        fn reset_selection_filter_from_gui(&mut self) -> Result<bool, String> {
+            self.$owner.reset_selection_filter_from_gui()
+        }
         fn jump_history_from_gui(&mut self, document: u64, position: i64) -> Result<bool, String> {
             self.$owner.jump_history_from_gui(document, position)
         }

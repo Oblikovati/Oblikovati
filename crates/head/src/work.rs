@@ -29,6 +29,10 @@ pub trait HeadWork: HeadSketchWork {
             "selection priority {from}->{to}: expected a desktop selection owner"
         ))
     }
+    /// Restore the default selection filter; example: `work.reset_selection_filter_from_gui()?`.
+    fn reset_selection_filter_from_gui(&mut self) -> Result<bool, String> {
+        Err("selection filter reset: expected a desktop selection owner".into())
+    }
     /// Move a document's transaction cursor.
     /// Example: `work.jump_history_from_gui(document, 0)?`.
     fn jump_history_from_gui(&mut self, document: u64, position: i64) -> Result<bool, String> {

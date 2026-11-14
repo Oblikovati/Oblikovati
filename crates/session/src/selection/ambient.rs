@@ -27,7 +27,7 @@ pub enum SelectionPriority {
     Edge,
 }
 /// User-owned enabled categories and priority order; tools retain their own restriction.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AmbientSelectionFilter {
     enabled: BTreeSet<SelectionKind>,
     order: Vec<SelectionKind>,
@@ -41,6 +41,23 @@ impl Default for AmbientSelectionFilter {
     }
 }
 impl AmbientSelectionFilter {
+    /// Restore an exact category order and enabled set; example: `AmbientSelectionFilter::from_entries(&entries)?`.
+    pub fn from_entries(entries: &[(SelectionKind, bool)]) -> Result<Self, String> {
+        let expected: BTreeSet<_> = DEFAULT_PICK_ORDER.into_iter().collect();
+        let actual: BTreeSet<_> = entries.iter().map(|(kind, _)| *kind).collect();
+        if entries.len() != expected.len() || actual != expected {
+            return Err(format!(
+                "selection entries {entries:?}: expected each filterable category exactly once"
+            ));
+        }
+        Ok(Self {
+            order: entries.iter().map(|(kind, _)| *kind).collect(),
+            enabled: entries
+                .iter()
+                .filter_map(|(kind, enabled)| enabled.then_some(*kind))
+                .collect(),
+        })
+    }
     /// Inspect category enablement; example: `ambient.enabled(SelectionKind::Face)`.
     pub fn enabled(&self, kind: SelectionKind) -> bool {
         self.enabled.contains(&kind)
