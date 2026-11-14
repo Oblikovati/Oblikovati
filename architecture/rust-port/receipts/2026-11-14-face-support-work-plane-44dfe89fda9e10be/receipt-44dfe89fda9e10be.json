@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:44dfe89fda9e10be24739ae86dcce9b9e2df26b6fc34aeb0fa17ec252d15cb9f",
+  "scenario_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+  "source_sha256": "e4011485e2cfe78197b73450bea0d26ba2b0dbc54f2307d3b27364ffe9d9a20d",
+  "application_commit": "1c05f39599ed1b14b90442247179768dfa86560a",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-face-support-work-plane-44dfe89fda9e10be/cucumber.json",
+    "sha256": "05e926cfbe23b90c7295236ecbc8fc995f4229d85c9bb4f0e8b548363fa3d5d3"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-face-support-work-plane-44dfe89fda9e10be/source-revision.json",
+    "sha256": "94434d6381af07ce30310181e7a3ae050dfc0bcdc0b6441a1f11c02c4075d5e2"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-face-support-work-plane-44dfe89fda9e10be/new-sketch-08-Create-a-sketch-on-a-non-origin-work-plane.png",
+    "sha256": "88c2e2ba43e28d33d9226f7ff93962d58a6f70154491fb519dafaa362221c87c"
+  }
+}
