@@ -1,0 +1,19 @@
+   Compiling oblikovati-head v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/template-material/crates/head)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8.79s
+     Running unittests src/lib.rs (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/target/debug/deps/oblikovati_head-a66146db9cfbd922)
+
+running 1 test
+
+thread 'native::gui_loop_tests::application_bdd::document_creation::gallery_views::gallery_secondary::selected_metric_part_template_shows_its_material_in_details' (1233039) panicked at crates/head/src/../tests/application/world.rs:172:9:
+expected "Material: Generic" in rendered text "Ready\nFile\nTools\nNew\nOpen\nSave\nUndo\nRedo\nHome\nProjects\nUpdate\nSelect\nMaterialBrowser\nMaterials\nAppearanceBrowser\nParameters\n...\nGetStarted\nTools\nRibbonDisplay\nv\nv\nNewPart\nLaunch\nModel\n+\nModel\n(nodocument)\nNewdocument\nTemplatefolders\nTemplates\nMetric\nEnglish\nBack\nForward\nHome\nDisplay\nTemplatedetails\nStandardmetricpart\nDocumenttype:Part\nLength:millimeters(mm)\nCreate\nCancel\nProjects\nPart\nMetricsheet-metalpart\nStandardmetricpart\nAssembly\nStandardmetricassembly\nDrawing\nMetricdrawingwithtitleblock\nPresentation\nStandardmetricpresentation"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test native::gui_loop_tests::application_bdd::document_creation::gallery_views::gallery_secondary::selected_metric_part_template_shows_its_material_in_details ... FAILED
+
+failures:
+
+failures:
+    native::gui_loop_tests::application_bdd::document_creation::gallery_views::gallery_secondary::selected_metric_part_template_shows_its_material_in_details
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 895 filtered out; finished in 1.96s
+
+error: test failed, to rerun pass `-p oblikovati-head --lib`
