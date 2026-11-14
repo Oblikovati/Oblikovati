@@ -371,7 +371,9 @@ fn extrusion_preview_is_transient_and_commit_reuses_the_same_feature_identity() 
         profile: 0,
         distance: "width".into(),
     };
+    assert!(!owner.gui_command_state().unwrap().extrude_preview_active);
     assert!(owner.extrusion_preview_from_gui(Some(&preview)).unwrap());
+    assert!(owner.gui_command_state().unwrap().extrude_preview_active);
     let shown = owner.take_scene().unwrap().unwrap();
     assert!(!shown.scene.triangles.is_empty());
     assert_eq!(shown.status.visible_bodies, 0);
@@ -387,6 +389,7 @@ fn extrusion_preview_is_transient_and_commit_reuses_the_same_feature_identity() 
             .visible()
     );
     assert!(owner.extrusion_preview_from_gui(None).unwrap());
+    assert!(!owner.gui_command_state().unwrap().extrude_preview_active);
     assert!(
         owner
             .take_scene()

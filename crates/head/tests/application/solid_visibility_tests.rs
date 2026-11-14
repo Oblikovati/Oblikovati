@@ -1,5 +1,22 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+#[test]
+fn preview_requires_orange_fill_outside_the_gui() {
+    let orange = [189, 156, 64, 255];
+    assert!(visible_preview_fill(&capture_with_patch(orange, true), &[]));
+    assert!(!visible_preview_fill(
+        &capture_with_patch(orange, false),
+        &[]
+    ));
+    assert!(!visible_preview_fill(
+        &capture_with_patch(orange, true),
+        &[[8., 8., 24., 24.]]
+    ));
+    assert!(!visible_preview_fill(
+        &capture_with_patch([210, 212, 214, 255], true),
+        &[]
+    ));
+}
 fn capture_with_patch(color: [u8; 4], fill: bool) -> ViewportCapture {
     let mut rgba = vec![40_u8; 32 * 32 * 4];
     for y in 10..22 {

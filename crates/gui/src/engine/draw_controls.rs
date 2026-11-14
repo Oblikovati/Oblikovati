@@ -157,8 +157,12 @@ impl GuiFrameEngine {
             .panel(ui, &request.commands, &mut selected);
         self.appearance_browser
             .panel(ui, &request.commands, &mut selected);
-        self.extrude_dialog
-            .panel(ui, &request.commands, &mut selected);
+        self.extrude_dialog.panel(
+            ui,
+            &request.commands,
+            self.plane_selection.active,
+            &mut selected,
+        );
         self.ribbon
             .customization
             .panel(ui, &request.commands, &mut selected);
