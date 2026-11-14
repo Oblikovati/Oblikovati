@@ -2166,7 +2166,15 @@
           "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-0db0d6b60a17036c/receipt-0db0d6b60a17036c.json",
           "sha256": "a0b0e4866582ddc6c12f26ef32e97d783726695e8253d6103542840c456f5ea0"
         }
-      ]
+      ],
+      "go_reference": "../Oblikovati/head/ui/chrome_ribbon.go; ../Oblikovati/head/ui/ribbon_collapse_test.go",
+      "go_test_premise": "Go aa8297d1b renders a fixed top ribbon; panel-fit tests pass but do not test side docking. See receipts/2026-11-14-go-ribbon-baseline/README.md.",
+      "kernel_capabilities": "No geometry operation is required to move the ribbon around an active Part.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The native desktop repositions ribbon and browser around the viewport without a kernel operation.",
+      "rust_tests": "application_scenarios_use_the_native_window: Move the ribbon from the top to both sides and back",
+      "oracle": "Pinned native scenario checks left, right, and top layout states, menu checks, and retained document; final capture reviewed.",
+      "expected_result": "Docking Left and Right positions the ribbon vertically and preserves the browser; Top restores the horizontal ribbon and retains the active Part."
     },
     {
       "id": "scenario:be2c25b2f39d7ae721a7f08cce5fe95730a8e4db2995dc1513e24b25f9d2f8e0",
