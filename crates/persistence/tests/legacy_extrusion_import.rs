@@ -243,3 +243,92 @@ fn face_offset_cannot_share_a_creation_sequence_with_an_extrusion() {
         .unwrap_err();
     assert!(error.to_string().contains("creation sequence 2"), "{error}");
 }
+
+#[test]
+fn face_key_identifies_the_go_extrusion_and_side_ordinal() {
+    use oblikovati_persistence::package::LegacyExtrusionFaceRole;
+    let bytes = include_bytes!(
+        "../../../architecture/rust-port/receipts/2026-11-14-go-dependent-face/cube-with-face-plane.obk"
+    );
+    let package = DocumentPackage::decode(bytes).unwrap();
+    let candidate = package
+        .prepare_legacy_part_candidate(&GoCubeProfile)
+        .unwrap();
+    let key = &candidate.face_offsets[0].face_key;
+    let producer = candidate.extrusion_face_producer(key).unwrap();
+    assert_eq!(producer.creation_sequence, 2);
+    assert_eq!(producer.role, LegacyExtrusionFaceRole::Side(1));
+}
+
+#[test]
+fn face_key_rejects_malformed_wrong_kind_and_unknown_producers() {
+    let package = DocumentPackage::decode(GO_CUBE).unwrap();
+    let candidate = package
+        .prepare_legacy_part_candidate(&GoCubeProfile)
+        .unwrap();
+    for key in [
+        &b"\x02Extrusion1:side#1"[..],
+        &b"\x03Other:side#1"[..],
+        &b"\x03Extrusion1:side#01"[..],
+        &b"\x03Extrusion1:side#-1"[..],
+        &b"\x03Extrusion1:start-cap#1"[..],
+        &b"\x03Extrusion1:side#1/extra"[..],
+    ] {
+        assert!(candidate.extrusion_face_producer(key).is_err(), "{key:?}");
+    }
+}
+
+#[test]
+fn face_key_recognizes_go_caps_and_rejects_duplicate_producers() {
+    use oblikovati_persistence::package::{LegacyExtrusionCandidate, LegacyExtrusionFaceRole};
+    let package = DocumentPackage::decode(GO_CUBE).unwrap();
+    let mut candidate = package
+        .prepare_legacy_part_candidate(&GoCubeProfile)
+        .unwrap();
+    for (key, role) in [
+        (
+            &b"\x03Extrusion1:start-cap#0"[..],
+            LegacyExtrusionFaceRole::StartCap,
+        ),
+        (
+            &b"\x03Extrusion1:end-cap#0"[..],
+            LegacyExtrusionFaceRole::EndCap,
+        ),
+    ] {
+        assert_eq!(candidate.extrusion_face_producer(key).unwrap().role, role);
+    }
+    let first = &candidate.extrusions[0];
+    candidate.extrusions.push(LegacyExtrusionCandidate {
+        name: first.name.clone(),
+        creation_sequence: 5,
+        suppressed: false,
+        definition: first.definition.clone(),
+    });
+    let error = candidate
+        .extrusion_face_producer(b"\x03Extrusion1:side#1")
+        .unwrap_err();
+    assert!(error.to_string().contains("unambiguous"), "{error}");
+}
+
+#[test]
+fn face_offset_rejects_a_missing_or_later_extrusion_producer() {
+    let bytes = include_bytes!(
+        "../../../architecture/rust-port/receipts/2026-11-14-go-dependent-face/cube-with-face-plane.obk"
+    );
+    let source = std::str::from_utf8(bytes).unwrap();
+    for invalid in [
+        source.replacen("name: Extrusion1", "name: Other", 1),
+        source.replacen(
+            "name: Extrusion1\n          seq: 2",
+            "name: Extrusion1\n          seq: 4",
+            1,
+        ),
+    ] {
+        let package = DocumentPackage::decode(invalid.as_bytes()).unwrap();
+        assert!(
+            package
+                .prepare_legacy_part_candidate(&GoCubeProfile)
+                .is_err()
+        );
+    }
+}
