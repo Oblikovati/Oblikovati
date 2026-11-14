@@ -228,11 +228,14 @@ fn control_tab(world: &mut ApplicationWorld) {
 #[given("the second part is saved and has no unsaved changes")]
 fn second_saved(world: &mut ApplicationWorld) {
     let id = second(world);
-    world.save_part_to_file(id, "second part.opd");
+    let path = world.save_part_to_file(id, "second part.opd");
+    world.bytes_before_save = Some(std::fs::read(&path).unwrap());
+    world.saved_path = Some(path);
     world.activate_through_tab(first(world));
     assert!(!world.state().document_storage[&id].unsaved_edits);
 }
 #[when("I open the second part's document tab context menu")]
+#[when("the user opens the second part's document tab context menu")]
 fn open_second_menu(world: &mut ApplicationWorld) {
     world.open_tab_menu(second(world));
 }

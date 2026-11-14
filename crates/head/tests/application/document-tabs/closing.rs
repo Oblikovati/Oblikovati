@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 #[when("I click the close button on the second part's document tab")]
+#[when("the user clicks the close button on the second part's document tab")]
 fn close_second_mark(world: &mut ApplicationWorld) {
     world.click_close_mark(second(world));
 }
@@ -15,6 +16,16 @@ fn expect_second_gone_without_prompt(world: &mut ApplicationWorld) {
 #[then("the second part's tab disappears")]
 fn second_tab_gone(world: &mut ApplicationWorld) {
     expect_second_gone_without_prompt(world);
+    let path = world
+        .saved_path
+        .as_ref()
+        .expect("expected the saved part path");
+    let current = std::fs::read(path).expect("expected the saved part file");
+    assert_eq!(
+        Some(current),
+        world.bytes_before_save,
+        "closing changed the saved file"
+    );
 }
 #[then("no save prompt is displayed")]
 fn no_prompt(world: &mut ApplicationWorld) {
@@ -201,6 +212,7 @@ fn new_tab_gone(world: &mut ApplicationWorld) {
     );
 }
 #[when("I choose Close")]
+#[when("the user chooses Close")]
 fn choose_close(world: &mut ApplicationWorld) {
     world.click_text("Close");
 }
