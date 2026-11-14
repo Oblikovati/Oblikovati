@@ -17,6 +17,8 @@ mod drawing_view_snapshot;
 pub use drawing_view_snapshot::{SavedDrawingLine, SavedDrawingView, SavedDrawingViews};
 mod empty;
 mod interests;
+mod legacy_face_offset;
+pub use legacy_face_offset::LegacyFaceOffsetCandidate;
 mod legacy_part;
 pub use legacy_part::{LegacyExtrusionCandidate, LegacyPartCandidate, LegacyProfileResolver};
 mod legacy_sketch;
