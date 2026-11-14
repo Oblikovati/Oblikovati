@@ -117,16 +117,27 @@ fn restore_point(
     Ok(WorkPlaneDefinition::Point(coordinates))
 }
 impl WorkPlaneDefinitionRecipe {
+    fn base_reference(&self) -> Option<&WorkPlaneReference> {
+        match self {
+            Self::Offset { base, .. } => Some(base),
+            Self::ParallelThroughPoint(source) => Some(&source.base),
+            Self::AtAngleAboutAxis(source) => Some(&source.base),
+            _ => None,
+        }
+    }
+    fn has_go_face_reference(&self) -> bool {
+        matches!(
+            self.base_reference(),
+            Some(WorkPlaneReference::GoPrismFace(_))
+        )
+    }
     fn has_face_reference(&self) -> bool {
-        let base = match self {
-            Self::Offset { base, .. } => base,
-            Self::ParallelThroughPoint(source) => &source.base,
-            Self::AtAngleAboutAxis(source) => &source.base,
-            _ => return false,
-        };
-        matches!(base, WorkPlaneReference::Face(_))
+        matches!(self.base_reference(), Some(WorkPlaneReference::Face(_)))
     }
     pub(super) fn source_version(&self) -> u32 {
+        if self.has_go_face_reference() {
+            return 14;
+        }
         if self.has_face_reference() {
             return 13;
         }
@@ -146,6 +157,9 @@ impl WorkPlaneDefinitionRecipe {
         }
     }
     pub(super) fn minimum_program_version(&self) -> u32 {
+        if self.has_go_face_reference() {
+            return 19;
+        }
         if self.has_face_reference() {
             return 18;
         }

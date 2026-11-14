@@ -4,6 +4,7 @@
 mod collection;
 mod construction;
 mod face_reference;
+mod go_prism_frame;
 pub use face_reference::WorkPlaneFaceReference;
 mod recipe;
 pub use super::work_geometry::WorkGeometryError as WorkPlaneError;
@@ -27,6 +28,8 @@ pub enum WorkPlaneReference {
     Origin(WorkPlaneOrigin),
     Feature(FeatureId),
     Face(WorkPlaneFaceReference),
+    /// A migrated Go prism face using the Go surface frame convention (#3882).
+    GoPrismFace(WorkPlaneFaceReference),
 }
 
 /// Source-compatible length used by plane offsets and datum point coordinates.
@@ -136,6 +139,9 @@ impl WorkPlaneReference {
             Self::Origin(origin) => Ok(origin.plane()),
             Self::Feature(id) => resolver.plane(id),
             Self::Face(reference) => resolver.face(&reference),
+            Self::GoPrismFace(reference) => {
+                go_prism_frame::go_prism_frame(resolver.face(&reference)?)
+            }
         }
     }
 }
