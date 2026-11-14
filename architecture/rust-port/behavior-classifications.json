@@ -4347,8 +4347,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-15-cancel-closing/receipt-52a88b77aefd086f.json",
-        "sha256": "ff68ea117f8c819e405fedf198b6d1c493064ad8e00a278336a2eee3a362b948"
+        "path": "architecture/rust-port/receipts/2026-11-15-preview-cancel-verified/receipt-52a88b77aefd086f.json",
+        "sha256": "61b3aa56f094a5ad7c439628e9ea78a6c54d49cadb8a250ea04d02a716a275c2"
       },
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Native document save, close, or reopen lifecycle.",
@@ -4376,8 +4376,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-15-cancel-closing/receipt-93af71b702f4432a.json",
-        "sha256": "2bfd89a3e46b8b7fd6c843c9ee18ee80b3fbb2734850ecb5da263fc40dc3bc5c"
+        "path": "architecture/rust-port/receipts/2026-11-15-preview-cancel-verified/receipt-93af71b702f4432a.json",
+        "sha256": "39530bd9fc0be9b28696210adfccb6493980579ce300c8a71b6a42335557cfe0"
       },
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Native document save, close, or reopen lifecycle.",
@@ -4524,10 +4524,15 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-preview-cancel-verified/receipt-81bcb1cf994edbed.json",
+        "sha256": "d68e1ea89f3878348d7df6c86b63097a8cbd6c300c48d95ed4ccae6653425841"
+      },
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
-      "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences."
+      "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:1fa03adac5a3aba3b0ece0321208be69ab2d13aade9146bf20e93485fc345632",
@@ -4541,10 +4546,15 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-preview-cancel-verified/receipt-1fa03adac5a3aba3.json",
+        "sha256": "fc1880ffe1004611f37d08709693204805a2747525de53c31ff275e3164b40aa"
+      },
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
-      "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences."
+      "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:1f1809c95300ef4ec0b23cc8100bb7fd24e08707ece63856a1ced77df2d04545",
