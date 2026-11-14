@@ -3509,7 +3509,15 @@
           "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-9a6cb2d0318b1fcb/receipt-9a6cb2d0318b1fcb.json",
           "sha256": "bf9d741d84d9eaf0eb511487bc5582780693ac50059786419e7c3e1b1dc6ff87"
         }
-      ]
+      ],
+      "go_reference": "../Oblikovati/app/browser.go; ../Oblikovati/head/ui/browser_view.go; ../Oblikovati/app/browser_timeline_test.go",
+      "go_test_premise": "Go aa8297d1b browser tests check tree ordering, nested sketches and selectable nodes; they do not check rendered highlight, toolbar or clearing by a viewport click. See receipts/2026-11-14-go-browser-baseline/README.md.",
+      "kernel_capabilities": "The fixture contains a previously extruded block; this selection interaction performs no new geometry operation.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The desktop displays the owner-provided solid and selects its feature through the browser.",
+      "rust_tests": "application_scenarios_use_the_native_window: Select a solid feature in the browser",
+      "oracle": "Pinned native scenario checks the selected row, blue block edges, contextual toolbar, and clearing; final capture shows the cleared state.",
+      "expected_result": "Selecting the extrusion highlights its row and block edges and shows a toolbar; clicking empty viewport clears both while keeping the block visible."
     },
     {
       "id": "scenario:c1547ececd82265193e7e655fe1153003d790dd6dabaeb60577d3b1c62dbb047",
