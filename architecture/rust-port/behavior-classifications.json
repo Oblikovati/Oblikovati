@@ -1606,18 +1606,21 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-wheel-6fbff7e6230279f3-current/receipt-6fbff7e6230279f3.json",
+        "sha256": "197f3978839fc9e2c6914937bf1a5519b3666007352910ccaab87f37f9643fec"
+      },
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
       "go_reference": "Go aa8297d1b: app/set_pivot_test.go and head/ui/steering_wheel_test.go; see receipts/2026-11-14-go-wheel-baseline/README.md.",
       "go_test_premise": "Go wheel toggle, cancel, tool dispatch and wedge-position tests passed. They do not establish the scenario layouts or native menu behavior.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "kernel_capabilities": "A visible solid fixture is required; opening and switching wheel layouts does not modify the B-rep.",
-      "platforms": "Go reference: Linux. Native scenario and other platforms not established.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; Windows and macOS not checked.",
       "kernel_integration": "The native viewport renders a host-prepared solid fixture while the navigation wheel controls view commands.",
-      "rust_tests": "Bindings in crates/head/tests/application/viewport-navigation-wheel/steps.rs; the required initial-layout fixture is under review in #3942.",
-      "oracle": "Pinned scenario steps, observed wheel controls and menu states, camera equality and reviewed native captures; Go is a partial reference.",
+      "rust_tests": "Native wheel scenario bindings and layout/size fixture regressions under crates/head/tests/application/viewport-navigation-wheel/.",
+      "oracle": "Pinned scenario steps, observed wheel controls and preference states, size and camera checks, and reviewed native capture; Go is a partial reference.",
       "expected_result": "The full wheel and its menu expose the listed controls; Close Wheel removes them and preserves the view."
     },
     {
@@ -1631,18 +1634,21 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-wheel-6623c6765d27d979-current/receipt-6623c6765d27d979.json",
+        "sha256": "0ac5709970df9f4d9d4e4eb2c6ac0e30a154af065eba2bce0a0b3f141158b9ff"
+      },
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
       "go_reference": "Go aa8297d1b: app/set_pivot_test.go and head/ui/steering_wheel_test.go; see receipts/2026-11-14-go-wheel-baseline/README.md.",
       "go_test_premise": "Go wheel toggle, cancel, tool dispatch and wedge-position tests passed. They do not establish the scenario layouts or native menu behavior.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "kernel_capabilities": "A visible solid fixture is required; opening and switching wheel layouts does not modify the B-rep.",
-      "platforms": "Go reference: Linux. Native scenario and other platforms not established.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; Windows and macOS not checked.",
       "kernel_integration": "The native viewport renders a host-prepared solid fixture while the navigation wheel controls view commands.",
-      "rust_tests": "Bindings in crates/head/tests/application/viewport-navigation-wheel/steps.rs; the required initial-layout fixture is under review in #3942.",
-      "oracle": "Pinned scenario steps, observed wheel controls and menu states, camera equality and reviewed native captures; Go is a partial reference.",
+      "rust_tests": "Native wheel scenario bindings and layout/size fixture regressions under crates/head/tests/application/viewport-navigation-wheel/.",
+      "oracle": "Pinned scenario steps, observed wheel controls and preference states, size and camera checks, and reviewed native capture; Go is a partial reference.",
       "expected_result": "Basic View Object and Basic Tour Building layouts show their respective controls and selected menu states; Escape closes the wheel."
     },
     {
@@ -1656,18 +1662,21 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-wheel-791fb7e67d5bcbf4-current/receipt-791fb7e67d5bcbf4.json",
+        "sha256": "63d762c9f09c710830cbbe93b56d9deca3fc05ac07e3ab8beb21952c09926bb8"
+      },
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
       "go_reference": "Go aa8297d1b: app/set_pivot_test.go and head/ui/steering_wheel_test.go; see receipts/2026-11-14-go-wheel-baseline/README.md.",
       "go_test_premise": "Go wheel toggle, cancel, tool dispatch and wedge-position tests passed. They do not establish the scenario layouts or native menu behavior.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "kernel_capabilities": "A visible solid fixture is required; opening and switching wheel layouts does not modify the B-rep.",
-      "platforms": "Go reference: Linux. Native scenario and other platforms not established.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; Windows and macOS not checked.",
       "kernel_integration": "The native viewport renders a host-prepared solid fixture while the navigation wheel controls view commands.",
-      "rust_tests": "Bindings in crates/head/tests/application/viewport-navigation-wheel/steps.rs; the required initial-layout fixture is under review in #3942.",
-      "oracle": "Pinned scenario steps, observed wheel controls and menu states, camera equality and reviewed native captures; Go is a partial reference.",
+      "rust_tests": "Native wheel scenario bindings and layout/size fixture regressions under crates/head/tests/application/viewport-navigation-wheel/.",
+      "oracle": "Pinned scenario steps, observed wheel controls and preference states, size and camera checks, and reviewed native capture; Go is a partial reference.",
       "expected_result": "The three mini layouts are selectable and show their corresponding segment counts and menu states; Escape closes the wheel."
     },
     {
@@ -1681,9 +1690,22 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-wheel-6dc8186623498078-current/receipt-6dc8186623498078.json",
+        "sha256": "b9fc0f5777d0e41948b750bd228681847affda699ef8ad7245012f7b6a8e7ba7"
+      },
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; Windows and macOS not checked.",
+      "rust_tests": "Native wheel scenario bindings and layout/size fixture regressions under crates/head/tests/application/viewport-navigation-wheel/.",
+      "oracle": "Pinned scenario steps, observed wheel controls and preference states, size and camera checks, and reviewed native capture; Go is a partial reference.",
+      "go_reference": "Go aa8297d1b: app/set_pivot_test.go and head/ui/steering_wheel_test.go; see receipts/2026-11-14-go-wheel-baseline/README.md.",
+      "go_test_premise": "Go wheel toggle, cancel, tool dispatch and wedge-position tests passed. They do not cover the scenario size preferences.",
+      "kernel_capabilities": "A visible solid fixture is required; wheel preferences do not modify the B-rep.",
+      "kernel_integration": "The native viewport renders a host-prepared solid fixture while the wheel preference UI changes display settings.",
+      "expected_result": "Cancelling Extra Large leaves the saved mini size Normal; the dialog and wheel close."
     },
     {
       "id": "scenario:ca635292d14110becf47417a6c00ccd3544eaef2a9085eb3f035a2a45e19a7c7",
@@ -1711,9 +1733,22 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-wheel-f24d65dc5c1dc95d-current/receipt-f24d65dc5c1dc95d.json",
+        "sha256": "d30b3c0a5d1ead4228908d68f0938a733630b0655e5ad332a05ce69a2500e07f"
+      },
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; Windows and macOS not checked.",
+      "rust_tests": "Native wheel scenario bindings and layout/size fixture regressions under crates/head/tests/application/viewport-navigation-wheel/.",
+      "oracle": "Pinned scenario steps, observed wheel controls and preference states, size and camera checks, and reviewed native capture; Go is a partial reference.",
+      "go_reference": "Go aa8297d1b: app/set_pivot_test.go and head/ui/steering_wheel_test.go; see receipts/2026-11-14-go-wheel-baseline/README.md.",
+      "go_test_premise": "Go wheel toggle, cancel, tool dispatch and wedge-position tests passed. They do not cover the scenario size preferences.",
+      "kernel_capabilities": "A visible solid fixture is required; wheel preferences do not modify the B-rep.",
+      "kernel_integration": "The native viewport renders a host-prepared solid fixture while the wheel preference UI changes display settings.",
+      "expected_result": "Large enlarges the full wheel and persists in Options; restoring Normal returns its earlier size."
     },
     {
       "id": "scenario:b3e5f626846f7248a0933b3b0285d4aa5db1995f42e9142c75e1a44714125205",
@@ -1783,9 +1818,22 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-wheel-95896644bfae4afe-current/receipt-95896644bfae4afe.json",
+        "sha256": "6bfebb0e0148b6541ff55a7248e961862f747374b4fcf0b06357402cbbdbb006"
+      },
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; Windows and macOS not checked.",
+      "rust_tests": "Native wheel scenario bindings and layout/size fixture regressions under crates/head/tests/application/viewport-navigation-wheel/.",
+      "oracle": "Pinned scenario steps, observed wheel controls and preference states, size and camera checks, and reviewed native capture; Go is a partial reference.",
+      "go_reference": "Go aa8297d1b: app/set_pivot_test.go and head/ui/steering_wheel_test.go; see receipts/2026-11-14-go-wheel-baseline/README.md.",
+      "go_test_premise": "Go wheel toggle, cancel, tool dispatch and wedge-position tests passed. They do not cover the scenario size preferences.",
+      "kernel_capabilities": "A visible solid fixture is required; wheel preferences do not modify the B-rep.",
+      "kernel_integration": "The native viewport renders a host-prepared solid fixture while the wheel preference UI changes display settings.",
+      "expected_result": "Extra Large enlarges the mini wheel and persists in Options; restoring Normal returns its earlier size."
     },
     {
       "id": "scenario:217228a1571bcb54c2a17f8a4be2435104c39ab7bc3f37048fdb18615f51a101",
