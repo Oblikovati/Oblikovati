@@ -623,7 +623,7 @@
     },
     {
       "id": "scenario:59bbc7159c8ea4f06a7778692656e22f14242938f0a79f1cd0ce64c305d9dac4",
-      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
       "source_sha256": "d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6",
       "milestone": "R7",
       "owner": "desktop",
@@ -635,12 +635,19 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-command-rerun-59bbc7159c8ea4f0/receipt-59bbc7159c8ea4f0.json",
-        "sha256": "336bdab5fd09d52fce9b43b7a0119fd2d9a5139baaf93647c51f1f9d2ef318be"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-orbit-59bbc715/receipt-59bbc7159c8ea4f0.json",
+        "sha256": "1b4091cb8d167a25e49d981a0493ab2fd693bcfce310a803e7af4d3a2bdd6025"
       },
       "mapping_reason": "Viewport navigation belongs to the full desktop shell.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "historical_receipts": [
+        {
+          "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+          "path": "architecture/rust-port/receipts/2026-11-14-command-rerun-59bbc7159c8ea4f0/receipt-59bbc7159c8ea4f0.json",
+          "sha256": "336bdab5fd09d52fce9b43b7a0119fd2d9a5139baaf93647c51f1f9d2ef318be"
+        }
+      ]
     },
     {
       "id": "scenario:152ae6bfde300d9b28f59b8d0c51fa6077176ebf1a2c4b0e5bb1b850690a6e39",
@@ -2318,11 +2325,18 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-corrected-coincident-07/receipt-67ae50d1d3318571.json",
-        "sha256": "d1677358031720c9bac576ab2ff3480e2ea6f88da3a7783aa76a8e6f9be15bf1"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-coincident-67ae50d1/receipt-67ae50d1d3318571.json",
+        "sha256": "6ce8fedfe1c97ceff2fec2fd1d73149c58f1b3faa618fd1ce22984419513c27c"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "historical_receipts": [
+        {
+          "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+          "path": "architecture/rust-port/receipts/2026-11-14-corrected-coincident-07/receipt-67ae50d1d3318571.json",
+          "sha256": "d1677358031720c9bac576ab2ff3480e2ea6f88da3a7783aa76a8e6f9be15bf1"
+        }
+      ]
     },
     {
       "id": "scenario:237922f6f9ed999d47e613e9829c337a1a0797dd774e80cc6471e8a71b4dc3ad",
