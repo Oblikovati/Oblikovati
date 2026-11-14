@@ -174,3 +174,5 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 - R4 line and point: four pinned line scenarios and four point scenarios passed on the merged shortcut code, including cancellation and history. Final captures were reviewed; see `receipts/2026-11-14-gate-linepoint-*/`. The live feature files matched the pin after the runs (#3857).
 
 - R4 coincident, precise input, and extrusion: the five remaining stale scenarios passed on the merged shortcut code. Final captures were reviewed; see `receipts/2026-11-14-gate-last-*/`. The live feature files matched the pin after the runs. Four other Precise Input scenarios remain blocked on source fixtures (#3916, #3929, #3930).
+
+- Gate check on `320f14d8b`: `make gate` reached the behavior ledger and stopped because 2,642 scenarios lack required R0 baseline fields. No native receipts were stale. Workspace tests and later gate checks did not run.
