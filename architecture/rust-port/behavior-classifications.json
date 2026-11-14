@@ -14355,10 +14355,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3899",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/head/ui/file_dialog.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-gallery-new-8819d8fa/receipt-8819d8faec49cf15.json",
+        "sha256": "9525526076adbc5a7d3438341d2443981e019bca7e77d7ef63248fae20265b50"
+      },
+      "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/app/session.go",
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b tests direct Part and Assembly activation, not the template chooser or its gallery; see receipts/2026-11-14-go-creation-baseline/README.md.",
+      "kernel_capabilities": "No geometric kernel operation is required for template gallery inspection.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The native desktop and document owner handle the chooser without a geometry operation.",
+      "rust_tests": "application_scenarios_use_the_native_window: Collapse and expand a template group",
+      "oracle": "Pinned native scenario steps check visible gallery controls and selection state; final capture reviewed.",
+      "expected_result": "Collapsing and expanding the Part group preserves the selected template details and restores its tiles."
     },
     {
       "id": "scenario:1a18a307ca2c1cc07ae1678890b0a57df4cbedfafa3ff942fc12146e1cdfc509",
@@ -14372,10 +14384,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3899",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/head/ui/file_dialog.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-gallery-new-1a18a307/receipt-1a18a307ca2c1cc0.json",
+        "sha256": "b1d85b76e1cc491ea7c1c417ebd3e7824e8ed6e83f1bcd192eccdcc0db4017c1"
+      },
+      "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/app/session.go",
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b tests direct Part and Assembly activation, not the template chooser or its gallery; see receipts/2026-11-14-go-creation-baseline/README.md.",
+      "kernel_capabilities": "No geometric kernel operation is required for template gallery inspection.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The native desktop and document owner handle the chooser without a geometry operation.",
+      "rust_tests": "application_scenarios_use_the_native_window: Change template folders before selecting a new template",
+      "oracle": "Pinned native scenario steps check visible gallery controls and selection state; final capture reviewed.",
+      "expected_result": "Changing folders retains the previous selection details until an inch template is selected."
     },
     {
       "id": "scenario:42a172e53f54b638a3370b2f49716ed11284ba4df0920f5a5487e0731f0f602e",
@@ -14406,10 +14430,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3899",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/head/ui/file_dialog.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-gallery-new-c65d42b2/receipt-c65d42b2389c15b0.json",
+        "sha256": "6a7d125e63d094a2ff0c2631242ceb662b1180e89be27d4379d1e833ba334e8c"
+      },
+      "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/app/session.go",
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b tests direct Part and Assembly activation, not the template chooser or its gallery; see receipts/2026-11-14-go-creation-baseline/README.md.",
+      "kernel_capabilities": "No geometric kernel operation is required for template gallery inspection.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The native desktop and document owner handle the chooser without a geometry operation.",
+      "rust_tests": "application_scenarios_use_the_native_window: Display templates as details",
+      "oracle": "Pinned native scenario steps check visible gallery controls and selection state; final capture reviewed.",
+      "expected_result": "Details view displays the template names, sizes, and document types."
     },
     {
       "id": "scenario:f9f6639f0fce0c6a6b22b1177a93941f933df9ca6710c55f8265e8e62a3bb597",
@@ -14423,10 +14459,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3899",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/head/ui/file_dialog.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-gallery-new-f9f6639f/receipt-f9f6639f0fce0c6a.json",
+        "sha256": "60297297f4117fc44bf4a3937bf56a3a1a989f6124c59d9f4e19aba2c82a89e0"
+      },
+      "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/app/session.go",
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b tests direct Part and Assembly activation, not the template chooser or its gallery; see receipts/2026-11-14-go-creation-baseline/README.md.",
+      "kernel_capabilities": "No geometric kernel operation is required for template gallery inspection.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The native desktop and document owner handle the chooser without a geometry operation.",
+      "rust_tests": "application_scenarios_use_the_native_window: Toggle template grouping by document type",
+      "oracle": "Pinned native scenario steps check visible gallery controls and selection state; final capture reviewed.",
+      "expected_result": "The grouping control changes the gallery organization and restores grouping by document type."
     },
     {
       "id": "scenario:e312e398ad835f6a0cc0e4a410a03755358398a6051010a8da10a030500cc1ad",
