@@ -7,56 +7,77 @@ use oblikovati_model::assets::{AssetCollection, DocumentAssets, MaterialAsset, S
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 
+type CachedRecipes = Vec<(GuiDocumentTemplate, Result<DocumentAssets, String>)>;
+
 pub(crate) fn gui_template_materials<
     O: TransactionObserver,
     W: WorkspaceObserver,
     F: DocumentFiles,
 >(
     files: &FileWorkspace<O, W, F>,
-) -> Result<Vec<GuiTemplateMaterialEntry>, String> {
+) -> Vec<GuiTemplateMaterialEntry> {
+    static RECIPES: std::sync::OnceLock<CachedRecipes> = std::sync::OnceLock::new();
+    material_entries(files, RECIPES.get_or_init(load_builtin_recipes))
+}
+fn material_entries<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &FileWorkspace<O, W, F>,
+    recipes: &[(GuiDocumentTemplate, Result<DocumentAssets, String>)],
+) -> Vec<GuiTemplateMaterialEntry> {
+    recipes
+        .iter()
+        .map(|(template, assets)| {
+            let material = match assets {
+                Ok(assets) => workspace_material(files, assets),
+                Err(cause) => GuiTemplateMaterial::Unavailable {
+                    cause: cause.clone(),
+                },
+            };
+            GuiTemplateMaterialEntry {
+                template: *template,
+                material,
+            }
+        })
+        .collect()
+}
+fn load_builtin_recipes() -> CachedRecipes {
     let mut entries = Vec::new();
     for kind in [GuiTemplateKind::Part, GuiTemplateKind::SheetMetal] {
         for units in [GuiTemplateUnits::Metric, GuiTemplateUnits::Inch] {
             let template = GuiDocumentTemplate { kind, units };
-            entries.push(material_entry(files, template)?);
+            entries.push((template, template_assets(template)));
         }
     }
-    Ok(entries)
+    entries
 }
-fn material_entry<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
-    files: &FileWorkspace<O, W, F>,
-    template: GuiDocumentTemplate,
-) -> Result<GuiTemplateMaterialEntry, String> {
+fn template_assets(template: GuiDocumentTemplate) -> Result<DocumentAssets, String> {
     let request = template_request(template, template.name_prefix());
-    let package =
-        oblikovati_automation::creation_package(&request).map_err(|cause| cause.to_string())?;
-    let assets = package
+    let package = oblikovati_automation::creation_package(&request)
+        .map_err(|cause| format!("template {template:?}: {cause}"))?;
+    package
         .restore_assets()
-        .map_err(|cause| cause.to_string())?;
-    let material = workspace_material(files, &assets)?;
-    Ok(GuiTemplateMaterialEntry { template, material })
+        .map_err(|cause| format!("template {template:?}: {cause}"))
 }
-
 fn workspace_material<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &FileWorkspace<O, W, F>,
     assets: &DocumentAssets,
-) -> Result<GuiTemplateMaterial, String> {
-    if assets.assignments.part_material_id().is_none() {
-        return Ok(GuiTemplateMaterial::Unassigned);
-    }
+) -> GuiTemplateMaterial {
+    let Some(id) = assets.assignments.part_material_id() else {
+        return GuiTemplateMaterial::Unassigned;
+    };
     let empty = AssetCollection::default();
     let project = files
         .active_project()
         .map_or(&empty, |project| project.assets.materials());
     let local = recipe_material(assets, project, &empty);
     if !matches!(local, GuiTemplateMaterial::Unresolved { .. }) {
-        return Ok(local);
+        return local;
     }
-    Ok(recipe_material(
-        assets,
-        project,
-        files.builtin_catalog()?.materials(),
-    ))
+    match files.builtin_catalog() {
+        Ok(catalog) => recipe_material(assets, project, catalog.materials()),
+        Err(cause) => GuiTemplateMaterial::Unavailable {
+            cause: format!("material {id:?}: {cause}"),
+        },
+    }
 }
 fn recipe_material(
     assets: &DocumentAssets,

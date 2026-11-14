@@ -27,6 +27,8 @@ struct ScriptedGuiWindow {
     scene_colors: Vec<[f32; 4]>,
     scene_triangles: Vec<oblikovati_viewport::ViewportTriangle>,
     presentation_delay: Duration,
+    template_material_override: Option<oblikovati_gui::GuiTemplateMaterialEntry>,
+    template_size_issue_override: Option<String>,
 }
 fn scripted_window(native: NativeHeadWindow) -> ScriptedGuiWindow {
     ScriptedGuiWindow {
@@ -37,6 +39,8 @@ fn scripted_window(native: NativeHeadWindow) -> ScriptedGuiWindow {
         scene_colors: Vec::new(),
         scene_triangles: Vec::new(),
         presentation_delay: Duration::ZERO,
+        template_material_override: None,
+        template_size_issue_override: None,
     }
 }
 const STATUS_LINE_ROWS: usize = 22;

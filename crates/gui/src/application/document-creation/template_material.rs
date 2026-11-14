@@ -4,7 +4,7 @@ use imgui::Ui;
 
 pub(super) fn material_detail(ui: &Ui, state: &GuiCommandState, selected: GuiDocumentTemplate) {
     if let Some(label) = material_label(state, selected) {
-        ui.text(label);
+        ui.text_wrapped(label);
     }
 }
 fn material_label(state: &GuiCommandState, selected: GuiDocumentTemplate) -> Option<String> {
@@ -23,6 +23,9 @@ fn material_label(state: &GuiCommandState, selected: GuiDocumentTemplate) -> Opt
         Some(crate::GuiTemplateMaterial::Assigned { name, .. }) => format!("Material: {name}"),
         Some(crate::GuiTemplateMaterial::Unresolved { id }) => {
             format!("Material unavailable: {id}")
+        }
+        Some(crate::GuiTemplateMaterial::Unavailable { cause }) => {
+            format!("Material unavailable: {cause}")
         }
         None => "Material: unavailable".into(),
     };

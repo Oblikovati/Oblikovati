@@ -72,3 +72,10 @@ fn every_template_has_a_measured_size_and_a_flavor_adds_to_it() {
     let size_of = |kind| sizes.iter().find(|(sized, _)| *sized == kind).unwrap().1;
     assert!(size_of(GuiTemplateKind::SheetMetal) > size_of(GuiTemplateKind::Part));
 }
+
+#[test]
+fn failed_template_size_is_retained_for_the_chooser() {
+    let (sizes, cause) = template_size_result(Err("fixture size failure".into()));
+    assert!(sizes.is_empty());
+    assert_eq!(cause.as_deref(), Some("fixture size failure"));
+}

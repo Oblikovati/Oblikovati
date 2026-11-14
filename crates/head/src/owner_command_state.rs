@@ -15,6 +15,8 @@ impl<
         let color_scheme = Some(oblikovati_gui::GuiColorSchemeState::from_registry(
             &self.color_schemes,
         )?);
+        let (template_sizes, template_size_issue) = document_creation::template_size_snapshot();
+        let template_materials = document_creation::gui_template_materials(&self.files);
         let Some(document) = self.files.workspace().active_document() else {
             return Ok(oblikovati_gui::GuiCommandState {
                 marking_menus: Some(self.marking_menus.clone()),
@@ -26,8 +28,9 @@ impl<
                 theme,
                 color_scheme,
                 projects: self.gui_projects(),
-                template_sizes: document_creation::gui_template_sizes()?,
-                template_materials: document_creation::gui_template_materials(&self.files)?,
+                template_sizes,
+                template_size_issue,
+                template_materials,
                 ..Default::default()
             });
         };
@@ -96,8 +99,9 @@ impl<
                 .map_err(|cause| cause.to_string())?
                 .is_some(),
             projects: self.gui_projects(),
-            template_sizes: document_creation::gui_template_sizes()?,
-            template_materials: document_creation::gui_template_materials(&self.files)?,
+            template_sizes,
+            template_size_issue,
+            template_materials,
             prompts: self.prompt_frequencies,
             browser: Some(self.gui_browser_snapshot(document)?),
             document: Some(document),

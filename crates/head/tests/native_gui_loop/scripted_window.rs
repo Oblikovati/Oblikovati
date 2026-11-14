@@ -93,7 +93,17 @@ impl HeadWindow for ScriptedGuiWindow {
         event: Option<&ViewportEvent>,
         commands: &GuiCommandState,
     ) -> Result<HeadGuiUpdate, String> {
-        let result = self.native.gui_frame(event, commands)?;
+        let mut current = commands.clone();
+        if let Some(entry) = &self.template_material_override {
+            current
+                .template_materials
+                .retain(|item| item.template != entry.template);
+            current.template_materials.push(entry.clone());
+        }
+        if let Some(cause) = &self.template_size_issue_override {
+            current.template_size_issue = Some(cause.clone());
+        }
+        let result = self.native.gui_frame(event, &current)?;
         self.gui_actions.extend(result.actions.iter().cloned());
         Ok(result)
     }

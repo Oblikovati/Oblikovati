@@ -31,6 +31,13 @@ fn chooser_distinguishes_material_assignment_absence_and_resolution_failure() {
         material_label(&state, template).as_deref(),
         Some("Material unavailable: lost")
     );
+    state.template_materials[0].material = GuiTemplateMaterial::Unavailable {
+        cause: "material \"fixture-steel\": fixture catalog unavailable".into(),
+    };
+    assert_eq!(
+        material_label(&state, template).as_deref(),
+        Some("Material unavailable: material \"fixture-steel\": fixture catalog unavailable")
+    );
     let drawing = GuiDocumentTemplate {
         kind: GuiTemplateKind::Drawing,
         ..template

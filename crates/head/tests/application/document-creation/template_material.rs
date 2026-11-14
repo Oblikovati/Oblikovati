@@ -96,3 +96,56 @@ fn recipe_material_resolves_project_then_builtin_definitions() {
         }
     );
 }
+
+struct UnavailableMaterialCatalog;
+impl oblikovati_session::files::WorkspaceAssetCatalogSource for UnavailableMaterialCatalog {
+    fn load_catalog(&self) -> Result<oblikovati_model::assets::BuiltinAssetCatalog, String> {
+        Err("fixture catalog unavailable".into())
+    }
+}
+#[test]
+fn assigned_recipe_reports_catalog_failure_without_losing_the_material_identity() {
+    use crate::DesktopObservations;
+    use crate::owner::tests::files::MemoryDocumentFiles;
+    let files: FileWorkspace<DesktopObservations, DesktopObservations, MemoryDocumentFiles> =
+        FileWorkspace::new_with_asset_catalog_source(
+            DesktopObservations::default(),
+            MemoryDocumentFiles::default(),
+            Default::default(),
+            Box::new(UnavailableMaterialCatalog),
+        );
+    let mut assets = DocumentAssets::default();
+    assets
+        .assignments
+        .set_part_material("fixture-steel")
+        .unwrap();
+    let restored = part_package(&assets).restore_assets().unwrap();
+    let template = GuiDocumentTemplate::default();
+    let entries = material_entries(&files, &[(template, Ok(restored))]);
+    assert_eq!(
+        entries[0].material,
+        GuiTemplateMaterial::Unavailable {
+            cause: "material \"fixture-steel\": fixture catalog unavailable".into(),
+        }
+    );
+}
+
+#[test]
+fn recipe_inspection_failure_is_retained_in_the_template_entry() {
+    use crate::DesktopObservations;
+    use crate::owner::tests::files::MemoryDocumentFiles;
+    let files: FileWorkspace<DesktopObservations, DesktopObservations, MemoryDocumentFiles> =
+        FileWorkspace::new(
+            DesktopObservations::default(),
+            MemoryDocumentFiles::default(),
+        );
+    let template = GuiDocumentTemplate::default();
+    let recipes = [(template, Err("fixture recipe invalid".into()))];
+    let entries = material_entries(&files, &recipes);
+    assert_eq!(
+        entries[0].material,
+        GuiTemplateMaterial::Unavailable {
+            cause: "fixture recipe invalid".into(),
+        }
+    );
+}

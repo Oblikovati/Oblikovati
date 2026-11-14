@@ -435,7 +435,7 @@ fn unassigned_template_metadata_does_not_require_a_catalog() {
             Default::default(),
             Box::new(UnavailableTemplateCatalog),
         );
-    let rows = document_creation::gui_template_materials(&files).unwrap();
+    let rows = document_creation::gui_template_materials(&files);
     assert_eq!(rows.len(), 4);
     assert!(
         rows.iter()

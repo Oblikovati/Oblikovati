@@ -375,6 +375,9 @@ impl TemplateChooser {
     }
     fn details(&mut self, ui: &Ui, state: &GuiCommandState) {
         ui.text("Template details");
+        if let Some(cause) = &state.template_size_issue {
+            ui.text_wrapped(format!("Template sizes unavailable: {cause}"));
+        }
         let Some(selected) = self.selected else {
             ui.text_wrapped("Select a template.");
             return;

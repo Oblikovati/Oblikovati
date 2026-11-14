@@ -5,7 +5,11 @@ used by `documents.create`. An unassigned recipe shows `Material: Unassigned`.
 An assigned identity shows its resolved display name, with document definitions
 before project definitions and the built-in catalog. An identity that cannot be
 resolved shows `Material unavailable` and its identity. A catalog load failure
-is returned to the owner instead of being presented as an unassigned material.
+is retained with the material identity and shown in the chooser instead of being
+presented as an unassigned material. Recipe and size inspection failures are
+also retained for the chooser; they do not prevent other GUI frames. Built-in
+recipe inspection is cached, while project and catalog resolution uses the
+current workspace.
 
 The built-in Part and sheet-metal recipes do not assign a material. The current
 chooser does not yet load the configured `Standard (mm).ipt` fixture described

@@ -150,3 +150,32 @@ fn selected_builtin_part_shows_its_unassigned_material() {
     world.save_capture("template-unassigned-material");
     world.close();
 }
+
+#[test]
+fn material_source_failure_is_visible_only_in_the_chooser() {
+    use oblikovati_gui::{GuiDocumentTemplate, GuiTemplateMaterial, GuiTemplateMaterialEntry};
+    let mut world = ApplicationWorld::new();
+    world.app().window.template_material_override = Some(GuiTemplateMaterialEntry {
+        template: GuiDocumentTemplate::default(),
+        material: GuiTemplateMaterial::Unavailable {
+            cause: "material \"fixture-steel\": fixture catalog unavailable".into(),
+        },
+    });
+    world.app().window.template_size_issue_override = Some("fixture size failure".into());
+    world.pump(Vec::new());
+    world.expect_no_text("fixture catalog unavailable");
+    world.expect_no_text("fixture size failure");
+    world.key(ViewportPhysicalKey::N, true);
+    world.click_text(METRIC_PART);
+    let visible: String = world
+        .text()
+        .chars()
+        .filter(|ch| !ch.is_whitespace())
+        .collect();
+    assert!(
+        visible.contains("Materialunavailable:material\"fixture-steel\":fixturecatalogunavailable")
+    );
+    assert!(visible.contains("Templatesizesunavailable:fixturesizefailure"));
+    world.save_capture("template-material-failure");
+    world.close();
+}

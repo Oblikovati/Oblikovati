@@ -46,6 +46,8 @@ pub enum GuiTemplateMaterial {
     Assigned { id: String, name: String },
     /// The recipe assigns an identity that cannot be resolved.
     Unresolved { id: String },
+    /// The source needed to inspect the assigned material failed.
+    Unavailable { cause: String },
 }
 /// One template and its owner-resolved material.
 #[derive(Clone, Debug, PartialEq, Eq)]

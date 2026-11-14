@@ -52,6 +52,17 @@ pub(crate) fn gui_template_sizes() -> Result<Vec<(GuiTemplateKind, u64)>, String
         })
         .clone()
 }
+pub(super) fn template_size_snapshot() -> (Vec<(GuiTemplateKind, u64)>, Option<String>) {
+    template_size_result(gui_template_sizes())
+}
+fn template_size_result(
+    result: Result<Vec<(GuiTemplateKind, u64)>, String>,
+) -> (Vec<(GuiTemplateKind, u64)>, Option<String>) {
+    match result {
+        Ok(sizes) => (sizes, None),
+        Err(cause) => (Vec::new(), Some(cause)),
+    }
+}
 const TEMPLATE_KINDS: [GuiTemplateKind; 5] = [
     GuiTemplateKind::Part,
     GuiTemplateKind::SheetMetal,
