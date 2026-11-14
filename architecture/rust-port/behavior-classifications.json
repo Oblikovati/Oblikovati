@@ -737,8 +737,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-ui-59bbc715/receipt-59bbc7159c8ea4f0.json",
-        "sha256": "1b6cd1d34b3af7ff6e5ddad93b0fe5ea40bbd2cb2499f39eac1023096a81fc95"
+        "path": "architecture/rust-port/receipts/2026-11-14-orbit-outline-current/receipt-59bbc7159c8ea4f0.json",
+        "sha256": "307009becad5cd3a6780fedc87c6fc17ce91be3388bffa25041e3d85a31f7b55"
       },
       "mapping_reason": "Viewport navigation belongs to the full desktop shell.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
@@ -749,7 +749,15 @@
           "path": "architecture/rust-port/receipts/2026-11-14-command-rerun-59bbc7159c8ea4f0/receipt-59bbc7159c8ea4f0.json",
           "sha256": "336bdab5fd09d52fce9b43b7a0119fd2d9a5139baaf93647c51f1f9d2ef318be"
         }
-      ]
+      ],
+      "go_reference": "Go aa8297d1b: head/ui/navigate.go and head/ui/navigate_test.go; see receipts/2026-11-14-go-orbit-baseline/README.md.",
+      "go_test_premise": "Go orbit-zone and camera rotation tests pass; they do not cover the incremental-rotation dialog or paired button scenarios.",
+      "kernel_capabilities": "A visible solid fixture is required; view rotation changes the camera and does not modify the B-rep.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; Windows and macOS not checked.",
+      "kernel_integration": "A host-prepared solid is rendered while incremental view rotation changes the camera.",
+      "rust_tests": "Native scenario bindings in crates/head/tests/application/viewport-orbit/steps.rs; both example rows and captures reviewed.",
+      "oracle": "Both pinned example rows, camera/view assertions and separate reviewed native captures; Go is a partial navigation reference.",
+      "expected_result": "For both remaining adjacent button pairs, the second rotation reverses the first and Cancel returns Ready."
     },
     {
       "id": "scenario:152ae6bfde300d9b28f59b8d0c51fa6077176ebf1a2c4b0e5bb1b850690a6e39",
