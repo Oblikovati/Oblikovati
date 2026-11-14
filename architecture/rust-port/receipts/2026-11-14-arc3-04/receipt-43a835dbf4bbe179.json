@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:43a835dbf4bbe1790ccd2a9792c907362e6d647f54aceb5fcea8b8848a3918f8",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "68f40e74e5d62f64072ce4cd9dd4277304810848c41acf0c4bfd7a5d5fb375c2",
+  "application_commit": "5206b6ea5e28e5f6652bade66d93ee11a8ca1334",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-arc3-04/cucumber.json",
+    "sha256": "b1be6f5c6f072e3ce5cfb2fed6723a8bb5ed7fc0115bd86ed101bc60ec62f676"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-arc3-04/source-revision.json",
+    "sha256": "3a52d783f42109a0868953f6366e2b935c62a45692edfaa43ef993c69f7da6c4"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-arc3-04/arc-three-point-04-Undo-and-redo-a-committed-change.png",
+    "sha256": "9ab3ba16dacd37a863a0ae8008f7304178a532193b4ff98552ac4fc5240759dd"
+  }
+}
