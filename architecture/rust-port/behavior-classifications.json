@@ -379,7 +379,7 @@
     },
     {
       "id": "scenario:cb85314818ef73daa1093f520bc4f5fa70977685fb7b8716070ffe6314ba9a58",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "130621bae0d8b2196d399a885f76d6f3bb4c5050a41257459a9f02cd0ec4de17",
       "milestone": "R4",
       "owner": "desktop",
@@ -390,8 +390,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-rectangle-cb853148/receipt-cb85314818ef73da.json",
-        "sha256": "8e8643b2385f7f9d23795e187941cb877e93217c7829dd36d72d67df5c5ddff3"
+        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-current-cb853148/receipt-cb85314818ef73da.json",
+        "sha256": "fe42c87c9cbc19c3d044a8278339e60b4f08270df3462ae68df579151e876587"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -405,7 +405,7 @@
     },
     {
       "id": "scenario:a661d2ccfbdfc85a763de8dd2eb91fc325e1a004e58059346306d9e69700b3c5",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "130621bae0d8b2196d399a885f76d6f3bb4c5050a41257459a9f02cd0ec4de17",
       "milestone": "R4",
       "owner": "desktop",
@@ -416,8 +416,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-rectangle-a661d2cc/receipt-a661d2ccfbdfc85a.json",
-        "sha256": "2e45d706fed4d2c7c4458c93922b14514fcd4b4e9f815f6c4c8576e299ba777d"
+        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-current-a661d2cc/receipt-a661d2ccfbdfc85a.json",
+        "sha256": "add90f7ef7d8db00b81cbab1e299cf381e9f8d00d592118b941b0006c7422377"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -431,7 +431,7 @@
     },
     {
       "id": "scenario:1e7472ca669ac6f4274e216b9e0f6dd9074d843189d749ea4a4ca6c0d7af7dd2",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "130621bae0d8b2196d399a885f76d6f3bb4c5050a41257459a9f02cd0ec4de17",
       "milestone": "R4",
       "owner": "desktop",
@@ -442,8 +442,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-rectangle-1e7472ca/receipt-1e7472ca669ac6f4.json",
-        "sha256": "2deb2e52eceb8a4ce07b26a7456087f4c7c539ca904a0d313f012d78ca6df93e"
+        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-current-1e7472ca/receipt-1e7472ca669ac6f4.json",
+        "sha256": "7c47e9210fce219f5980b873388fb6f923cab7d6d637ce0ec1bb75116a765ead"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -457,7 +457,7 @@
     },
     {
       "id": "scenario:c7961c524b21f4e1124e3f4d865c19bde5f6dc740d654f9838726b63cccd0b84",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "130621bae0d8b2196d399a885f76d6f3bb4c5050a41257459a9f02cd0ec4de17",
       "milestone": "R4",
       "owner": "desktop",
@@ -468,8 +468,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-rectangle-c7961c52/receipt-c7961c524b21f4e1.json",
-        "sha256": "61fccd84dc4949e49d20b70d0c150a2d8e21f41ad0690c8e0bbdfe7844f5de57"
+        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-current-c7961c52/receipt-c7961c524b21f4e1.json",
+        "sha256": "a8789bcd175b83590aeff9567a861a59a05688c91680d83f14577f00423c9f23"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -692,7 +692,7 @@
     },
     {
       "id": "scenario:152ae6bfde300d9b28f59b8d0c51fa6077176ebf1a2c4b0e5bb1b850690a6e39",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "130621bae0d8b2196d399a885f76d6f3bb4c5050a41257459a9f02cd0ec4de17",
       "milestone": "R5",
       "owner": "desktop",
@@ -703,8 +703,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-rectangle-152ae6bf/receipt-152ae6bfde300d9b.json",
-        "sha256": "30791b1656710a6feaab4c942eb7929e50e8611cd9f1a93130df5f8f54f49dd9"
+        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-current-152ae6bf/receipt-152ae6bfde300d9b.json",
+        "sha256": "3bac647d05bbb24b4010364cca077bb7dcf2d1732d73e77ce280443be371d097"
       },
       "go_reference": "../Oblikovati/model/sketch/recipe_rectangle.go; ../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/measure_tool.go; ../Oblikovati/head/ui/measure_dialog.go",
       "mapping_reason": "Measure the rectangle edges through the analytic sketch-query path.",
@@ -737,7 +737,7 @@
     },
     {
       "id": "scenario:be5c680262911cc108a8e69afe91ddb4a39ba915d4cdd36a6318c2b3e6ed960c",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "130621bae0d8b2196d399a885f76d6f3bb4c5050a41257459a9f02cd0ec4de17",
       "milestone": "R4",
       "owner": "desktop",
@@ -748,8 +748,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-rectangle-be5c6802/receipt-be5c680262911cc1.json",
-        "sha256": "3bee88b08664ce96710d5ff9cfa5d64fbd23be26e2b6c5cbe4f323825b6d262f"
+        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-current-be5c6802/receipt-be5c680262911cc1.json",
+        "sha256": "b7388fc2e050039859c7677ee8a46edffd04e8d6da722a9e272505600061d36e"
       },
       "go_reference": "../Oblikovati/model/sketch/recipe_rectangle.go; ../Oblikovati/app/sketch_tools.go",
       "mapping_reason": "Numeric two-point rectangle creation belongs to the initial desktop sketch workflow.",
@@ -765,7 +765,7 @@
     },
     {
       "id": "scenario:4e818f2994acb248e4b9581fff1b726df90bb658342df0b92244dd318f6e745c",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "130621bae0d8b2196d399a885f76d6f3bb4c5050a41257459a9f02cd0ec4de17",
       "milestone": "R5",
       "owner": "desktop",
@@ -776,8 +776,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-rectangle-4e818f29/receipt-4e818f2994acb248.json",
-        "sha256": "69a34908fb9dc3be44b62e458f83758bfcf5359192d7554e49749144b3429326"
+        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-current-4e818f29/receipt-4e818f2994acb248.json",
+        "sha256": "8b6ab88e6a1161a415b442350387b85b9696e98eeb7959edc2f478ecbb2ed6ba"
       },
       "go_reference": "../Oblikovati/model/sketch/recipe_rectangle.go; ../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_dimension_edit.go",
       "mapping_reason": "Cancel a proposed edit to an existing sketch dimension.",
@@ -793,7 +793,7 @@
     },
     {
       "id": "scenario:ecfb4103b54e7240f86118a4493a82fa9918a03162bfd26bcd7b4594a9791f99",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "130621bae0d8b2196d399a885f76d6f3bb4c5050a41257459a9f02cd0ec4de17",
       "milestone": "R5",
       "owner": "desktop",
@@ -805,8 +805,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-sketch-ecfb4103/receipt-ecfb4103b54e7240.json",
-        "sha256": "fad042f7b9e31282d6f11c375035ad0891bb5913ee3089dd4dceecd605cf0d61"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-rectangle-ecfb4103/receipt-ecfb4103b54e7240.json",
+        "sha256": "2ffcffbc2b176c3b65132057e665af024d18e09f3448ef36e81bfb8b92e748ed"
       },
       "go_reference": "../Oblikovati/model/sketch/recipe_rectangle.go; ../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_dimension_edit.go",
       "mapping_reason": "Edit and measure a sketch dimension through history.",
@@ -822,7 +822,7 @@
     },
     {
       "id": "scenario:841bc6eecc0f22624f0096f9d14e6fae6d64b60d913f2fea0ed3de284acf8ae2",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "130621bae0d8b2196d399a885f76d6f3bb4c5050a41257459a9f02cd0ec4de17",
       "milestone": "R4",
       "owner": "desktop",
@@ -833,8 +833,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-rectangle-841bc6ee/receipt-841bc6eecc0f2262.json",
-        "sha256": "44857f4e99cdbb017e533a19badb01ee4d808827eab31cbeaf46d45fe6b49f12"
+        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-current-841bc6ee/receipt-841bc6eecc0f2262.json",
+        "sha256": "ccd3510f09f4737539f7d4184f6fdc48d4f653b855f3adcb6bb31856c3841a0a"
       },
       "go_reference": "../Oblikovati/model/sketch/recipe_rectangle.go; ../Oblikovati/app/sketch_tools.go",
       "mapping_reason": "The second size field and command state are part of the initial desktop sketch workflow.",
