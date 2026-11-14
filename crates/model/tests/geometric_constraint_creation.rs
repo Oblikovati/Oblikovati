@@ -12,6 +12,8 @@ use oblikovati_model::{
 };
 use oblikovati_solve::nonlinear::SolveOptions;
 use std::error::Error;
+#[path = "geometric_constraint_creation/unbiased_coincident.rs"]
+mod unbiased_coincident;
 fn entity(id: u64) -> SketchEntityId {
     SketchEntityId(id)
 }
