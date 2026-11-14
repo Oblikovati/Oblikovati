@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Circle center point: tmp/obk-bdd-circle-9zIBhWE3/checkout/features/sketch/circle-center-point/scenario.feature" package="testsuite/Feature: Circle center point: tmp/obk-bdd-circle-9zIBhWE3/checkout/features/sketch/circle-center-point/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T16:08:09.648928676Z" time="7.013772906"><testcase name="Scenario: circle-center-point-06 Cancel after choosing only the center: tmp/obk-bdd-circle-9zIBhWE3/checkout/features/sketch/circle-center-point/scenario.feature:42:3" time="7.013772906"><system-out><![CDATA[  Scenario: circle-center-point-06 Cancel after choosing only the center
+   ✔  Given an editable sketch is Ready
+   ✔  When the user select Center Point Circle from the dropdown
+   ✔  And the user select a center
+   ✔  Then the prompt requests a point on the circle
+   ✔  When the user press Escape
+   ✔  Then the MCAD Software returns to Ready without a new circle
+]]></system-out></testcase></testsuite></testsuites>

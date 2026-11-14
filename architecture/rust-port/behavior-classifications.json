@@ -29836,10 +29836,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-center-circle-e621962f/receipt-e621962f3e021cf8.json",
+        "sha256": "7ddebc843e791d5fc7d3e49c483b4229fca46a73df3bbd446c075c09cf987e3d"
+      },
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "First native sketch geometry input, cancellation, and history."
+      "mapping_reason": "First native sketch geometry input, cancellation, and history.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b: synthetic circle construction and preview tests pass; they do not verify native dropdown input, zero-radius rejection or history. See receipts/2026-11-14-go-center-circle-baseline/README.md.",
+      "kernel_capabilities": "Planar circle sketch geometry is exercised; these scenarios do not create a solid.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The desktop owner applies circle sketch actions and presents the sketch scene.",
+      "rust_tests": "sketch_scenarios_use_the_native_window: circle-center-point-01 Commit the intended result",
+      "oracle": "Pinned native scenario assertions of circle geometry, state and sampled viewport with reviewed final capture.",
+      "expected_result": "the user select Center Point Circle, click a center, then a distinct circumference point; one circle has the selected center and passes through the circumference point; the command returns to Select center of circle"
     },
     {
       "id": "scenario:395dac3c1025c59bf47b89933f4eb31f68cd785f04dda3f96fedf1aa99454839",
@@ -29853,10 +29865,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-center-circle-395dac3c/receipt-395dac3c1025c59b.json",
+        "sha256": "1a5db76b8dc5af043417e78b2b2a8e2489e54253b31afae127c4b6d65830a6e2"
+      },
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "First native sketch geometry input, cancellation, and history."
+      "mapping_reason": "First native sketch geometry input, cancellation, and history.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b: synthetic circle construction and preview tests pass; they do not verify native dropdown input, zero-radius rejection or history. See receipts/2026-11-14-go-center-circle-baseline/README.md.",
+      "kernel_capabilities": "Planar circle sketch geometry is exercised; these scenarios do not create a solid.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The desktop owner applies circle sketch actions and presents the sketch scene.",
+      "rust_tests": "sketch_scenarios_use_the_native_window: circle-center-point-06 Cancel after choosing only the center",
+      "oracle": "Pinned native scenario assertions of circle geometry, state and sampled viewport with reviewed final capture.",
+      "expected_result": "the prompt requests a point on the circle; the user press Escape; the MCAD Software returns to Ready without a new circle"
     },
     {
       "id": "scenario:877561f2df911547aed48aee9dafe905a3131735731b366457b47a0ff91bba2a",
@@ -29870,10 +29894,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-center-circle-877561f2/receipt-877561f2df911547.json",
+        "sha256": "d4099d7e69c8b14e104159565b57bd47cff9de9da859f2b7fa0a2480ecbecae8"
+      },
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "First native sketch geometry input, cancellation, and history."
+      "mapping_reason": "First native sketch geometry input, cancellation, and history.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b: synthetic circle construction and preview tests pass; they do not verify native dropdown input, zero-radius rejection or history. See receipts/2026-11-14-go-center-circle-baseline/README.md.",
+      "kernel_capabilities": "Planar circle sketch geometry is exercised; these scenarios do not create a solid.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The desktop owner applies circle sketch actions and presents the sketch scene.",
+      "rust_tests": "sketch_scenarios_use_the_native_window: circle-center-point-07 Create a free circle and undo and redo it",
+      "oracle": "Pinned native scenario assertions of circle geometry, state and sampled viewport with reviewed final capture.",
+      "expected_result": "the circle is removed; the user redo; the circle returns"
     },
     {
       "id": "scenario:b29cffa6e958d8a6744fb9820ab5fcb2186b6e1cbf872def27c58d862ae93070",
@@ -29904,10 +29940,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-center-circle-43f992f8/receipt-43f992f8d5a14b8d.json",
+        "sha256": "fef828ede38e4f4e5e2fb2f40cf70d0844cb540ebaa9ebfbfc06b53677804252"
+      },
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "First native sketch geometry input, cancellation, and history."
+      "mapping_reason": "First native sketch geometry input, cancellation, and history.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b: synthetic circle construction and preview tests pass; they do not verify native dropdown input, zero-radius rejection or history. See receipts/2026-11-14-go-center-circle-baseline/README.md.",
+      "kernel_capabilities": "Planar circle sketch geometry is exercised; these scenarios do not create a solid.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The desktop owner applies circle sketch actions and presents the sketch scene.",
+      "rust_tests": "sketch_scenarios_use_the_native_window: circle-center-point-09 Keep selecting circumference after a same-position click",
+      "oracle": "Pinned native scenario assertions of circle geometry, state and sampled viewport with reviewed final capture.",
+      "expected_result": "no error dialog or new circle appears; the user press Escape; the MCAD Software returns to Ready"
     },
     {
       "id": "scenario:3e5419094ddeb88a63e9fb649754a200be13e482999d304ed5c8ca243e9152bf",

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Circle center point: tmp/obk-bdd-circle-9zIBhWE3/checkout/features/sketch/circle-center-point/scenario.feature" package="testsuite/Feature: Circle center point: tmp/obk-bdd-circle-9zIBhWE3/checkout/features/sketch/circle-center-point/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T16:08:01.98859714Z" time="6.081128392"><testcase name="Scenario: circle-center-point-01 Commit the intended result: tmp/obk-bdd-circle-9zIBhWE3/checkout/features/sketch/circle-center-point/scenario.feature:34:3" time="6.081128392"><system-out><![CDATA[  Scenario: circle-center-point-01 Commit the intended result
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch is active
+   ✔  When the user select Center Point Circle, click a center, then a distinct circumference point
+   ✔  Then one circle has the selected center and passes through the circumference point
+   ✔  And the command returns to Select center of circle
+]]></system-out></testcase></testsuite></testsuites>

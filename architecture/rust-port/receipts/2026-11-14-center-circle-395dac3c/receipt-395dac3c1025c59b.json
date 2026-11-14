@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:395dac3c1025c59bf47b89933f4eb31f68cd785f04dda3f96fedf1aa99454839",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "a18dcad10755d0ceb8b49b1d907b3800b1c6847c8b3548eb5d2535487b2be445",
+  "application_commit": "40d9736d73faf49c806f0a4d8ec775a099f7fc6b",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-center-circle-395dac3c/cucumber.json",
+    "sha256": "2bd1ecbe6a392c77c4691df45f9184816fee48052391cecc7cc1f40429adeca3"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-center-circle-395dac3c/source-revision.json",
+    "sha256": "6ed3af2b00bb68f91a5ade364870d7a5d3b74dc2bd42753b9f8182c0b4042d70"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-center-circle-395dac3c/circle-center-point-06-Cancel-after-choosing-only-the-center.png",
+    "sha256": "0c0f814f3659bb591f5491db162ff807ea73735f76d3d92cb700c0f365b2d0cb"
+  }
+}

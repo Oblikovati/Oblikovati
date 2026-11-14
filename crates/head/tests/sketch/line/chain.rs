@@ -91,6 +91,7 @@ fn segment_back(world: &mut ApplicationWorld) {
     world.expect_segment_drawn(START, END);
 }
 #[when("I redo")]
+#[when("the user redo")]
 fn redo(world: &mut ApplicationWorld) {
     world.redo();
 }
