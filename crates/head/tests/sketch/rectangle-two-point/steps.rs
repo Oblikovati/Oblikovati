@@ -184,6 +184,9 @@ fn ten_six(world: &mut ApplicationWorld) {
 }
 fn assert_typed_rectangle_lengths(geometry: &oblikovati_model::sketch::Sketch2D, sizes: [f64; 2]) {
     assert!(topology::is_axis_aligned_closed(geometry));
+    assert_rectangle_edge_lengths(geometry, sizes);
+}
+fn assert_rectangle_edge_lengths(geometry: &oblikovati_model::sketch::Sketch2D, sizes: [f64; 2]) {
     let mut lengths: Vec<f64> = geometry
         .lines()
         .iter()
@@ -195,6 +198,11 @@ fn assert_typed_rectangle_lengths(geometry: &oblikovati_model::sketch::Sketch2D,
         })
         .collect();
     lengths.sort_by(f64::total_cmp);
+    assert_eq!(
+        lengths.len(),
+        RECTANGLE_SIDES,
+        "expected four rectangle edges"
+    );
     // The default sketch working unit is one centimetre.
     for (actual, expected) in lengths
         .into_iter()

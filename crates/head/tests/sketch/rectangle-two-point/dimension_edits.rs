@@ -65,6 +65,7 @@ fn accept_open_height(world: &mut ApplicationWorld) {
 fn height_eight_width_four(world: &mut ApplicationWorld) {
     world.expect_annotation("8");
     world.expect_annotation("4");
+    assert_rectangle_edge_lengths(&world.edited_geometry(), [0.4, 0.8]);
 }
 #[then("the rectangle extends downward while its top edge stays in place in the recorded view")]
 fn height_extends_down(world: &mut ApplicationWorld) {
@@ -117,6 +118,7 @@ fn close_and_undo(world: &mut ApplicationWorld) {
 #[then("the visible height annotation returns to 6")]
 fn height_six(world: &mut ApplicationWorld) {
     world.expect_annotation("6");
+    assert_rectangle_edge_lengths(&world.edited_geometry(), [0.4, 0.6]);
 }
 #[when("I redo the height edit")]
 #[when("the user redo the height edit")]
@@ -127,6 +129,7 @@ fn redo_height(world: &mut ApplicationWorld) {
 #[then("the visible height annotation returns to 8")]
 fn height_eight(world: &mut ApplicationWorld) {
     world.expect_annotation("8");
+    assert_rectangle_edge_lengths(&world.edited_geometry(), [0.4, 0.8]);
 }
 #[then("width annotation 4 remains")]
 #[then("the width annotation remains 4")]
