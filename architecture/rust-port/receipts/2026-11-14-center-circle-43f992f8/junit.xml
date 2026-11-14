@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Circle center point: tmp/obk-bdd-circle-9zIBhWE3/checkout/features/sketch/circle-center-point/scenario.feature" package="testsuite/Feature: Circle center point: tmp/obk-bdd-circle-9zIBhWE3/checkout/features/sketch/circle-center-point/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T16:08:29.328851037Z" time="6.664748198"><testcase name="Scenario: circle-center-point-09 Keep selecting circumference after a same-position click: tmp/obk-bdd-circle-9zIBhWE3/checkout/features/sketch/circle-center-point/scenario.feature:71:3" time="6.664748198"><system-out><![CDATA[  Scenario: circle-center-point-09 Keep selecting circumference after a same-position click
+   ✔  Given an editable sketch is Ready
+   ✔  When the user invoke Center Point Circle
+   ✔  And the user select a center
+   ✔  And the user click the same screen position for its circumference
+   ✔  Then Select point on circle remains active
+   ✔  And the displayed radius is 0.000 mm
+   ✔  And no error dialog or new circle appears
+   ✔  When the user press Escape
+   ✔  Then the MCAD Software returns to Ready
+]]></system-out></testcase></testsuite></testsuites>
