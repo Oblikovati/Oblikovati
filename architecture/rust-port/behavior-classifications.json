@@ -390,8 +390,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-current-cb853148/receipt-cb85314818ef73da.json",
-        "sha256": "fe42c87c9cbc19c3d044a8278339e60b4f08270df3462ae68df579151e876587"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-rect-cb853148/receipt-cb85314818ef73da.json",
+        "sha256": "6b7c1d392779a5c17fdb60d758363c8e09056f9d38e80051230a3740fcfb239a"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -424,8 +424,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-current-a661d2cc/receipt-a661d2ccfbdfc85a.json",
-        "sha256": "add90f7ef7d8db00b81cbab1e299cf381e9f8d00d592118b941b0006c7422377"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-rect-a661d2cc/receipt-a661d2ccfbdfc85a.json",
+        "sha256": "8df0fb4499b62f1a46e1ce5f1f102e1ac7c491d3eb297ba37a63a544a1dd5110"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -458,8 +458,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-current-1e7472ca/receipt-1e7472ca669ac6f4.json",
-        "sha256": "7c47e9210fce219f5980b873388fb6f923cab7d6d637ce0ec1bb75116a765ead"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-rect-1e7472ca/receipt-1e7472ca669ac6f4.json",
+        "sha256": "c147572d0038adaa89b2c02495fdeba6e09d4d48c5bf5c8ab05738e8e62097aa"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -492,8 +492,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-current-c7961c52/receipt-c7961c524b21f4e1.json",
-        "sha256": "a8789bcd175b83590aeff9567a861a59a05688c91680d83f14577f00423c9f23"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-rect-c7961c52/receipt-c7961c524b21f4e1.json",
+        "sha256": "2b0e99ccaf69c50a18307d8faf5a94a0298659e63b68961ae095172866bf38a2"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -764,8 +764,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-current-152ae6bf/receipt-152ae6bfde300d9b.json",
-        "sha256": "3bac647d05bbb24b4010364cca077bb7dcf2d1732d73e77ce280443be371d097"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-rect-152ae6bf/receipt-152ae6bfde300d9b.json",
+        "sha256": "c4a21a74212a98e4cdb62ad4ac668fc63bb8f21633115a0de29eeb5044084ae4"
       },
       "go_reference": "Go aa8297d1b: app/sketch_tools_test.go and model/sketch/recipe_rectangle_test.go cover two-corner construction and sketch degrees of freedom.",
       "mapping_reason": "Measure the rectangle edges through the analytic sketch-query path.",
@@ -816,8 +816,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-current-be5c6802/receipt-be5c680262911cc1.json",
-        "sha256": "b7388fc2e050039859c7677ee8a46edffd04e8d6da722a9e272505600061d36e"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-rect-be5c6802/receipt-be5c680262911cc1.json",
+        "sha256": "4cb74142fb3f161574f56638933e894cb34c2c43d4252c4518938ae0ffff24e7"
       },
       "go_reference": "Go aa8297d1b: app/sketch_tools_test.go and model/sketch/recipe_rectangle_test.go cover two-corner construction and sketch degrees of freedom.",
       "mapping_reason": "Numeric two-point rectangle creation belongs to the initial desktop sketch workflow.",
@@ -851,8 +851,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-current-4e818f29/receipt-4e818f2994acb248.json",
-        "sha256": "8b6ab88e6a1161a415b442350387b85b9696e98eeb7959edc2f478ecbb2ed6ba"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-rect-4e818f29/receipt-4e818f2994acb248.json",
+        "sha256": "c355677af3022fa03c8077ad72488a9ece29c540d0f7c209c95fd8379d099b28"
       },
       "go_reference": "Go aa8297d1b: app/sketch_tools_test.go and model/sketch/recipe_rectangle_test.go cover two-corner construction and sketch degrees of freedom.",
       "mapping_reason": "Cancel a proposed edit to an existing sketch dimension.",
@@ -887,8 +887,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-history-geometry/receipt-ecfb4103b54e7240.json",
-        "sha256": "19c8b02f88e28c691208193eb4f9f802a162e9f10db9aca4938ac6d99d3dfdf6"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-rect-ecfb4103/receipt-ecfb4103b54e7240.json",
+        "sha256": "93caabce7c2708fbdcbc8ade59f0387be575b756c871ab91d9b382736c524eba"
       },
       "go_reference": "Go aa8297d1b: app/sketch_tools_test.go and model/sketch/recipe_rectangle_test.go cover two-corner construction and sketch degrees of freedom.",
       "mapping_reason": "Edit and measure a sketch dimension through history.",
@@ -922,8 +922,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-current-841bc6ee/receipt-841bc6eecc0f2262.json",
-        "sha256": "ccd3510f09f4737539f7d4184f6fdc48d4f653b855f3adcb6bb31856c3841a0a"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-rect-841bc6ee/receipt-841bc6eecc0f2262.json",
+        "sha256": "1394fe1d4bfcac2763e5b7755c70d34720cf621bfcf0dc6a8802264fc4046275"
       },
       "go_reference": "Go aa8297d1b: app/sketch_tools_test.go and model/sketch/recipe_rectangle_test.go cover two-corner construction and sketch degrees of freedom.",
       "mapping_reason": "The second size field and command state are part of the initial desktop sketch workflow.",
