@@ -30,7 +30,7 @@ pub(super) fn run(
     state.constants = constants;
     let termination = iterate(&mut state, blocks, options, cancelled)?;
     restore_unaccepted_seed(&mut state, values, blocks, termination)?;
-    finish(state, options, termination)
+    finish(state, options, termination, blocks)
 }
 
 fn restore_unaccepted_seed(
@@ -220,11 +220,13 @@ fn finish(
     state: Iterate,
     options: SolveOptions,
     termination: SolveTermination,
+    blocks: &[ResidualBlock<'_>],
 ) -> Result<NonlinearResult, SolveError> {
     let structure = analyze_structure(&state.evaluation, options.rank_tolerance)?;
     let residuals = &state.scaled.residuals;
     let conflicts = metrics::conflicts(&state.evaluation, residuals, options.relative_tolerance);
     let residual_evidence = metrics::residual_evidence(&state.evaluation, &state.scaled.domains);
+    let residual_units = metrics::equation_units(&state.evaluation, blocks);
     Ok(NonlinearResult {
         values: state.values,
         evaluation: state.evaluation,
@@ -235,6 +237,7 @@ fn finish(
         relative_residual: metrics::infinity_norm(residuals),
         residual_evidence,
         residual_domains: state.scaled.domains,
+        residual_units,
         conflicts,
         rejected_trial: state.rejected,
     })

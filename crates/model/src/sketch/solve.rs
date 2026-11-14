@@ -28,6 +28,8 @@ pub struct SketchResidualRow {
     pub equation: usize,
     pub value: f64,
     pub convergence_domain: oblikovati_solve::residual::ResidualTolerance,
+    /// Physical unit of the raw value; unknown rows cannot be qualified by unit.
+    pub unit: oblikovati_solve::residual::ResidualValueUnit,
 }
 impl SketchSolveOutcome {
     /// Retain raw source-ordered evidence; example: `outcome.residual_rows()`.
@@ -47,6 +49,7 @@ impl SketchSolveOutcome {
                         equation,
                         value: numerical.evaluation.values()[index],
                         convergence_domain: numerical.residual_domains[index],
+                        unit: numerical.residual_units[index],
                     })
             })
             .collect()
