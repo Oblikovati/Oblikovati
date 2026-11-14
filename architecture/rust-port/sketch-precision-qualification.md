@@ -24,3 +24,19 @@ operands, ill-conditioned and degenerate inputs, free and fully constrained
 sketches, mixed-unit rows, projected inputs, edits and replay. Independent analytic
 oracles must check the reported bounds. Only after that gate passes can the general
 zero-DOF restriction be reconsidered for #3927.
+
+## Integration boundary
+
+The constraint evidence must remain bound to the accepted solve and resolved
+projection inputs. The owner must provide one versioned, provenance-aware
+policy to both region discovery and the ordered prism evaluator; preview,
+creation, edit, and replay must make the same decision. A bound on the
+exact difference of stored coordinate operands is only one input: it does not
+bound uncertainty in the solved coordinates or qualify the whole sketch.
+
+The current feature status cannot report incomplete evidence while retaining a
+body: `Failed` blocks dependents, and `Healthy` would hide the gap. A stable
+typed incomplete reason or structured evidence requires contract-first work in
+Oblikovati.API and explicit host and UI mapping. The wire's existing warning
+string alone does not define that contract. Existing results need a migration
+policy that does not label unqualified evidence as certified. See #3928.
