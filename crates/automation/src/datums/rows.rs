@@ -156,18 +156,25 @@ pub(super) fn creation_reply(
     id: FeatureId,
     collection: DatumCollection,
 ) -> Result<Vec<u8>, Error> {
+    creation_reply_with_evaluation(snapshot, id, collection, &evaluate(snapshot)?)
+}
+pub(super) fn creation_reply_with_evaluation(
+    snapshot: &DocumentSnapshot,
+    id: FeatureId,
+    collection: DatumCollection,
+    evaluation: &WorkGeometryEvaluation,
+) -> Result<Vec<u8>, Error> {
     let feature = snapshot.work_geometry.get(id).map_err(api_error)?;
     let position = entries(snapshot, collection)
         .take_while(|feature| feature.id() != id)
         .count();
     let index = wire_index(position, collection.origin_count())?;
-    let evaluation = evaluate(snapshot)?;
     match collection {
         DatumCollection::Planes => {
-            super::planes::creation_reply(snapshot, feature, index, &evaluation)
+            super::planes::creation_reply(snapshot, feature, index, evaluation)
         }
-        DatumCollection::Axes => axis_reply(axis_info(snapshot, feature, index, &evaluation)?),
-        DatumCollection::Points => point_reply(point_info(snapshot, feature, index, &evaluation)?),
+        DatumCollection::Axes => axis_reply(axis_info(snapshot, feature, index, evaluation)?),
+        DatumCollection::Points => point_reply(point_info(snapshot, feature, index, evaluation)?),
     }
 }
 fn axis_reply(info: WorkAxisInfo) -> Result<Vec<u8>, Error> {

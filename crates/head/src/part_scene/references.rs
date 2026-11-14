@@ -40,6 +40,14 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
             .map_err(|error| error.to_string())?;
         Ok(self.current(session)?.datum_evaluation())
     }
+    fn preview_datums(
+        &mut self,
+        files: &FileWorkspace<O, W, F>,
+        document: u64,
+        candidate: &oblikovati_model::history::DocumentSnapshot,
+    ) -> Result<oblikovati_model::feature::work_geometry::WorkGeometryEvaluation, String> {
+        oblikovati_automation::preview_part_datums(files, document, candidate, self.resolution)
+    }
 }
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartTopologyAccess<O, W, F>
     for DesktopPartScenes

@@ -257,6 +257,19 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
             return context.list_attachments(decode(method, request)?);
         }
         if crate::DATUM_COMMAND_METHODS.contains(&method) {
+            if method == METHOD_WORK_PLANES_CREATE {
+                let FileContext {
+                    files,
+                    part_update,
+                    part_topology,
+                    ..
+                } = &mut *context;
+                if let Some(reply) =
+                    crate::datums::face_offset::apply(files, part_update, part_topology, request)?
+                {
+                    return Ok(reply);
+                }
+            }
             return crate::datums::apply(context.files, method, request);
         }
         if crate::SKETCH_COMMAND_METHODS.contains(&method) {

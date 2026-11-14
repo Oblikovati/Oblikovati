@@ -10,6 +10,7 @@ use oblikovati_model::{
 };
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
+pub(crate) mod face_offset;
 mod flip;
 mod health;
 mod input;
@@ -42,14 +43,14 @@ pub(super) enum DatumCollection {
     Points,
     Planes,
 }
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub(super) struct PreparedDatum {
     definition: PreparedGeometry,
     construction: bool,
     visible: bool,
     collection: DatumCollection,
 }
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub(super) enum PreparedGeometry {
     LineAngle {
         line: oblikovati_model::feature::work_axis::WorkAxisReference,
@@ -95,12 +96,21 @@ fn insert(
     ids: &mut RecipeReservations<'_>,
     prepared: PreparedDatum,
 ) -> Result<Vec<u8>, Error> {
+    let collection = prepared.collection;
+    let id = insert_feature(snapshot, ids, prepared)?;
+    rows::creation_reply(snapshot, id, collection)
+}
+fn insert_feature(
+    snapshot: &mut DocumentSnapshot,
+    ids: &mut RecipeReservations<'_>,
+    prepared: PreparedDatum,
+) -> Result<FeatureId, Error> {
     let id = ids.allocate_feature().map_err(api_error)?;
     let feature =
         scalars::authored_feature(snapshot, ids, id, prepared.collection, prepared.definition)?;
     snapshot.work_geometry.append(feature).map_err(api_error)?;
     assign_metadata(snapshot, id, prepared.construction, prepared.visible)?;
-    rows::creation_reply(snapshot, id, prepared.collection)
+    Ok(id)
 }
 pub(super) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &FileWorkspace<O, W, F>,

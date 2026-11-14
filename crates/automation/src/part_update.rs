@@ -47,6 +47,13 @@ pub trait PartUpdateAccess<O: TransactionObserver, W: WorkspaceObserver, F: Docu
         files: &mut FileWorkspace<O, W, F>,
         document: u64,
     ) -> Result<oblikovati_model::feature::work_geometry::WorkGeometryEvaluation, String>;
+    /// Replay a private candidate with the owner's policy; example: `owner.preview_datums(files, id, candidate)?`.
+    fn preview_datums(
+        &mut self,
+        files: &FileWorkspace<O, W, F>,
+        document: u64,
+        candidate: &DocumentSnapshot,
+    ) -> Result<oblikovati_model::feature::work_geometry::WorkGeometryEvaluation, String>;
 }
 
 /// A headless owner of generation-checked Martensite replay results.
@@ -139,6 +146,45 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
             .map_err(|error| error.to_string())?
             .datum_evaluation())
     }
+    fn preview_datums(
+        &mut self,
+        files: &FileWorkspace<O, W, F>,
+        document: u64,
+        candidate: &DocumentSnapshot,
+    ) -> Result<oblikovati_model::feature::work_geometry::WorkGeometryEvaluation, String> {
+        preview_part_datums(files, document, candidate, None)
+    }
+}
+
+/// Evaluate a private candidate; example: `preview_part_datums(files, id, candidate, None)?`.
+pub fn preview_part_datums<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &FileWorkspace<O, W, F>,
+    document: u64,
+    candidate: &DocumentSnapshot,
+    resolution: Option<PrismResolutionPolicy>,
+) -> Result<oblikovati_model::feature::work_geometry::WorkGeometryEvaluation, String> {
+    let workspace = files.workspace();
+    let session = workspace
+        .session(document)
+        .map_err(|error| error.to_string())?;
+    let guid = workspace
+        .identity(document)
+        .map_err(|error| error.to_string())?
+        .internal_name;
+    let result = match resolution {
+        Some(policy) => candidate.evaluate_part_features(
+            &mut oblikovati_martensite::CertifiedNamedPrismEvaluator::with_policy(
+                session.history(),
+                guid,
+                policy,
+            ),
+        ),
+        None => {
+            candidate.evaluate_part_features(&mut NamedPrismEvaluator::new(session.history(), guid))
+        }
+    }
+    .map_err(|error| error.to_string())?;
+    Ok(result.datum_evaluation())
 }
 
 /// Bind a named face through an adopted result; example: `resolve_slot_face(files, id, slot, &face)?`.
