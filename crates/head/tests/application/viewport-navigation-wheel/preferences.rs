@@ -62,6 +62,7 @@ fn tips_enabled(world: &mut ApplicationWorld) {
     settle(world);
 }
 #[when("I open wheel options and clear Show Tool Tips")]
+#[when("the user opens wheel options and clear Show Tool Tips")]
 fn clear_tips(world: &mut ApplicationWorld) {
     open_options(world);
     world.click_text(SHOW_TOOL_TIPS);
@@ -75,11 +76,15 @@ fn tips_unchecked(world: &mut ApplicationWorld) {
     );
 }
 #[when("I select Show Tool Tips and click OK")]
+#[when("the user selects Show Tool Tips and clicks OK")]
 fn select_tips(world: &mut ApplicationWorld) {
     world.click_text(SHOW_TOOL_TIPS);
     settle(world);
     world.click_text("OK");
     settle(world);
+    open_options(world);
+    assert!(world.checked(SHOW_TOOL_TIPS), "expected tool tips restored");
+    choose_row(world, "Cancel");
 }
 // Repeating the command
 #[given("the full navigation wheel was the last command used")]
