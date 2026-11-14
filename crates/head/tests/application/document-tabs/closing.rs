@@ -58,6 +58,7 @@ fn new_part_active(world: &mut ApplicationWorld) {
 #[when("I click the close button on the new part's tab without editing it")]
 #[when("the user clicks the close button on the new part's tab without editing it")]
 #[when("I click the close button on the new part's document tab")]
+#[when("the user clicks the close button on the new part's document tab")]
 #[when("I click the close button on the part's document tab")]
 #[when("the user clicks the close button on the part's document tab")]
 fn close_active_mark(world: &mut ApplicationWorld) {
@@ -184,6 +185,7 @@ fn suggested_name(world: &mut ApplicationWorld) {
     );
 }
 #[when("I cancel the Save As dialog")]
+#[when("the user cancels the Save As dialog")]
 fn cancel_save_as(world: &mut ApplicationWorld) {
     world.click_text("Cancel");
 }
@@ -195,13 +197,13 @@ fn open_and_active(world: &mut ApplicationWorld) {
 }
 #[given("another part was active before the new part was created")]
 fn previous_part(world: &mut ApplicationWorld) {
-    // Given order puts the new part first; a second open part keeps both facts true.
-    let new_part = world.active_id();
     let other = world.add_part();
-    world.activate_through_tab(new_part);
+    world.add_part();
+    world.add_finished_sketch();
     world.previous_document = Some(other);
 }
 #[when("I accept the suggested file name in the Save As dialog")]
+#[when("the user accepts the suggested file name in the Save As dialog")]
 fn accept_suggested(world: &mut ApplicationWorld) {
     world.accept_save_as();
 }

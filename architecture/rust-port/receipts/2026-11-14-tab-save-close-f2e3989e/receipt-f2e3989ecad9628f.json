@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:f2e3989ecad9628f74927889e4a0a261d6ea1e2c7b24416df00fcf4e07c8a09f",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "72d8f66e2919b71f4e56b6a4a0e106e882b79a9a073d25badb26c786bd7722fb",
+  "application_commit": "d90b4d1971e4b087c38f56bf584c30c24b9d55ce",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "application_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-tab-save-close-f2e3989e/cucumber.json",
+    "sha256": "44021bb99030e02b245c28a0832d8c59dd91d9596bb421cdcd20a7d9e1a7d47d"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-tab-save-close-f2e3989e/source-revision.json",
+    "sha256": "68028a3f6fe7118ecba60878fefc74deac963d45a9f648acc8ed2bf9f82aa24d"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-tab-save-close-f2e3989e/Cancel-the-first-save-while-closing-an-unsaved-part.png",
+    "sha256": "610c7d4221bdb350449b2e85e78ae67471e4b2379d75a4620bdfb42c79fea9b8"
+  }
+}

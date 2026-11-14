@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: tmp/obk-bdd-tabsave-vJrMD2Ag/checkout/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: tmp/obk-bdd-tabsave-vJrMD2Ag/checkout/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T16:03:22.015218286Z" time="12.141074032"><testcase name="Scenario: Save a new part while closing its tab: tmp/obk-bdd-tabsave-vJrMD2Ag/checkout/features/application/document-tabs/document-tabs.feature:133:3" time="12.141074032"><system-out><![CDATA[  Scenario: Save a new part while closing its tab
+   ✔  Given a new part with an unsaved sketch is active in the MCAD Software
+   ✔  And another part was active before the new part was created
+   ✔  And save-change prompts are configured to always show
+   ✔  And the suggested file name does not exist in the selected folder
+   ✔  When the user clicks the close button on the new part's document tab
+   ✔  And the user chooses Yes in the save-changes prompt
+   ✔  And the user accepts the suggested file name in the Save As dialog
+   ✔  Then the part file exists at the selected location
+   ✔  And the new part's tab disappears
+   ✔  And the previously active part is displayed
+   ✔  When the user reopens the saved part file
+   ✔  Then the reopened part is active
+   ✔  And its sketch is listed in the model browser
+]]></system-out></testcase></testsuite></testsuites>
