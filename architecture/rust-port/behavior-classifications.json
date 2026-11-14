@@ -1987,6 +1987,510 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
       "state": "inventoried"
+    },
+    {
+      "id": "scenario:b5b837eabb4d68e50d4579523ef8d0c66f9a0b487a8f97b91c3ea7f820091ddc",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ac20742090021ae43759018a91a941ecd272697de89cc71f6eddd7abf29a7e74",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: coincident-06 Cancel then constrain a fresh point to a line",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3885",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:20b7f74f8951f1518a891cbebfabc80ecd5fd510e252505f07aed40dcf5dad2e",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ac20742090021ae43759018a91a941ecd272697de89cc71f6eddd7abf29a7e74",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: Compare a constrained point with the measured overlapping line span",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3885",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:67ae50d1d3318571497883bf40ba4e53cee4b787738b9c3e9b48c50a24f9dfe0",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ac20742090021ae43759018a91a941ecd272697de89cc71f6eddd7abf29a7e74",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: coincident-07 Constrain two standalone points and inspect history",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3885",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:237922f6f9ed999d47e613e9829c337a1a0797dd774e80cc6471e8a71b4dc3ad",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ac20742090021ae43759018a91a941ecd272697de89cc71f6eddd7abf29a7e74",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: coincident-08 Reject coincidence between separately fixed points",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3885",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:df5a462ab0eaa41b7cab1a0dd4c4a87f1ea28446817d633b708ebebe05258659",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ac20742090021ae43759018a91a941ecd272697de89cc71f6eddd7abf29a7e74",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: coincident-09 Join endpoints of separate oblique segments",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3885",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:404cea74584978b1d18b8187580d2ca8070aac689699d4a0fce2241e92a304b6",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ac20742090021ae43759018a91a941ecd272697de89cc71f6eddd7abf29a7e74",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: coincident-10 Inspect the shared point context without removing geometry",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3885",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:769fe6b9a1740004c49ee1a3248b9d1e85374125773c3368039f8eecd0062fd9",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ac20742090021ae43759018a91a941ecd272697de89cc71f6eddd7abf29a7e74",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: coincident-11 Remove a segment endpoint relation and inspect history",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3885",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:60acc7b56de1fbf4fe343939c5ce1380deb364240d7d986a0183789bbfea130a",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ac20742090021ae43759018a91a941ecd272697de89cc71f6eddd7abf29a7e74",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: Move a free point to a fixed circle center",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3885",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:6183ae4cef467f9baff2d34d3efd1d5e908f5504f758439e244722deb295cc3f",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "aa4a08451398b553813a5241b806ce9ffffb1f0c562b3f65c6c2f8abe960d226",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: horizontal-01 Apply Horizontal to an oblique rectangle edge",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3885",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:61d46adaba26e49365f847b2d5e27772e0ef089ab458bfd586ced18be3212c17",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "aa4a08451398b553813a5241b806ce9ffffb1f0c562b3f65c6c2f8abe960d226",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: horizontal-02 Reject a fixed line",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3885",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:9988fa33aaa9fe63ea748082a94e343c29610e4c2d2e317a27a64a2293e2a738",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "aa4a08451398b553813a5241b806ce9ffffb1f0c562b3f65c6c2f8abe960d226",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: horizontal-03 Cancel before committing a change",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3885",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:7cdcec07750e68d8c233d1829e56518bffc308ab5ffd9b5675b595ff6c6f1841",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "aa4a08451398b553813a5241b806ce9ffffb1f0c562b3f65c6c2f8abe960d226",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: horizontal-04 Observe measured point-pair Undo and Redo",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3885",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:cf8bbc0e3d95065e328634b5cff467e6285d087710df40e0bd9b9957d1bb93c2",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "aa4a08451398b553813a5241b806ce9ffffb1f0c562b3f65c6c2f8abe960d226",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: horizontal-05 Measure the committed Horizontal point pair",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3885",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:d57db623956609d40c829aa58eebd9ede62c72686931128e0eb818f6b7d14ef4",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "aa4a08451398b553813a5241b806ce9ffffb1f0c562b3f65c6c2f8abe960d226",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: horizontal-06 Align two separate points and restore their measured states",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3885",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:e304e239ec770faf373b776807f65100880a63c7cf4789b82491de1ddc7e5089",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "aa4a08451398b553813a5241b806ce9ffffb1f0c562b3f65c6c2f8abe960d226",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: horizontal-09 Distinguish midpoint input from fixed-edge rejection",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3885",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:e397e8393f6955c6526d327b0ea7ccc3a78e58fbcf222ba49cddd7444cf596ad",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "aa4a08451398b553813a5241b806ce9ffffb1f0c562b3f65c6c2f8abe960d226",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: horizontal-10 Orient the ellipse major axis and inspect history",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3885",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:9e695babac4e075557b8dfd95e8e8249146038022536397206667685bd79c825",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "aa4a08451398b553813a5241b806ce9ffffb1f0c562b3f65c6c2f8abe960d226",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: horizontal-11 Align the independent line and inspect duplicate feedback",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3885",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:9be2163fb6b612a7fd3516fce1052ac3707a2908d75b2c304bcc4660434c6177",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "aa4a08451398b553813a5241b806ce9ffffb1f0c562b3f65c6c2f8abe960d226",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: horizontal-12 Remove the identified line relation and inspect history",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3885",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:6614887d267145ddb9a3d9061b152260752381dcc548b02033b40135381179ce",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "aa4a08451398b553813a5241b806ce9ffffb1f0c562b3f65c6c2f8abe960d226",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: horizontal-13 Apply separate constraints to two FRONT-view lines",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3885",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:ab074a2561f82b2fc522ea55e7155ad4b0a6c2d6e10a3bcea1cde9d554743ca5",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "aa4a08451398b553813a5241b806ce9ffffb1f0c562b3f65c6c2f8abe960d226",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: horizontal-14 Retain the relation through save close and reopen",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3885",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:685bee0d9ce4e0722baab3683913ab495806b76e87dd6865f402177e391dee4a",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "aa4a08451398b553813a5241b806ce9ffffb1f0c562b3f65c6c2f8abe960d226",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: horizontal-07 Invoke Horizontal through its installed shortcut",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3885",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:eec1b01fb7d38fe7d88edca1624a8a11cff06c519425dc60ca20acfcaba52b5d",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "aa4a08451398b553813a5241b806ce9ffffb1f0c562b3f65c6c2f8abe960d226",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: horizontal-08 Record Shift press-and-release without a held selection",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3885",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:ed7651d42854451cee943d30159e57231c1785dff20bc3aa4380c750cc2ac817",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "662dd235f803483916bdb0d04c8424ca6a1daa0736d4e4004845cfff84bfdba1",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: vertical-01 Apply Vertical to a rectangle edge",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3885",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:221154f2e70791a3876ea3d97d51a9f0493b6b401112e16d1404e569f03dc735",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "662dd235f803483916bdb0d04c8424ca6a1daa0736d4e4004845cfff84bfdba1",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: vertical-02 Observe fixed-line rejection and preserve the valid state",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3885",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:95267989131163c17fef5f5476c712e11cfcb73cd51af6e07fece95c65ee4ccd",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "662dd235f803483916bdb0d04c8424ca6a1daa0736d4e4004845cfff84bfdba1",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: vertical-03 Cancel before committing a change",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3885",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:998c5df351f328c0d5e19e71bf11f592cab7ee42eddb7b140b6fc53837dbfc5f",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "662dd235f803483916bdb0d04c8424ca6a1daa0736d4e4004845cfff84bfdba1",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: vertical-04 Observe measured Vertical point-pair history",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3885",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:df42d0f61fb8e4356f314e3ef136aee2e1fd3f0d4269a37220b4fa1448e13c17",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "662dd235f803483916bdb0d04c8424ca6a1daa0736d4e4004845cfff84bfdba1",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: vertical-05 Measure the committed Vertical point pair",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3885",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:fce44fd230c30db44f25dca664ba43e94303c0beacac8e36e2955b7a4a9dd540",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "662dd235f803483916bdb0d04c8424ca6a1daa0736d4e4004845cfff84bfdba1",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: vertical-06 Align two separate points",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3885",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:7872d0208e7cd706d9030e052a215721717887a4aad562ab446b3a2cbd3a34bb",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "662dd235f803483916bdb0d04c8424ca6a1daa0736d4e4004845cfff84bfdba1",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: vertical-07 Apply Vertical to independent lines successively and inspect history",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3885",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:00772bced9bcf565eba6e68e5fa42c99696e0d352bc7dfe2381702335133916f",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "662dd235f803483916bdb0d04c8424ca6a1daa0736d4e4004845cfff84bfdba1",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: vertical-08 Inspect duplicate Vertical feedback and recover",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3885",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:3267a0d7376b014765a58e8d3e5561f53532808f0e32f842a6cb5bfebc110f7e",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "662dd235f803483916bdb0d04c8424ca6a1daa0736d4e4004845cfff84bfdba1",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: vertical-09 Remove the identified lower-line Vertical relation",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3885",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:d985e75304c3b4daecdd6eb15805c6bb16586de600671949b74e626b1d50c7b5",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "662dd235f803483916bdb0d04c8424ca6a1daa0736d4e4004845cfff84bfdba1",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: vertical-10 Orient the independent ellipse major axis",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3885",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:1f8165140a8ffe69d478f877665542ddd65c2b515af9b6949dd3d60abf246a1e",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "662dd235f803483916bdb0d04c8424ca6a1daa0736d4e4004845cfff84bfdba1",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: vertical-11 Reject the fixed oblique line",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3885",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:4c94fd731fda176fc6b607ec0cdc96d8dc9c2d8b879219e941b53916eb1cd36c",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "662dd235f803483916bdb0d04c8424ca6a1daa0736d4e4004845cfff84bfdba1",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: vertical-12 Orient an independent FRONT-view line and inspect history",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3885",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:a9fc556ccb8a48fa407bf91ad0b5836449e341154c8b2877bff635d2e8740313",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "662dd235f803483916bdb0d04c8424ca6a1daa0736d4e4004845cfff84bfdba1",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: vertical-13 Reject Vertical on a Horizontal-constrained line",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3885",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:2bed9b6ac28c775237ffa017f36fd0eb6c006a5fbcd58a4efd9acdc0621017ae",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "662dd235f803483916bdb0d04c8424ca6a1daa0736d4e4004845cfff84bfdba1",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: vertical-14 Retain Vertical through save close and reopen",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3885",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
     }
   ]
 }
