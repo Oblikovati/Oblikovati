@@ -77,7 +77,7 @@ fn extrusion_requested_constrained_sketch_shows_and_cancels_preview() {
     world.close();
 }
 
-fn constrain_rectangle(world: &mut ApplicationWorld, document: u64) {
+pub(super) fn constrain_rectangle(world: &mut ApplicationWorld, document: u64) {
     use oblikovati_api::{
         client::Client,
         wire::{AddConstraintArgs, AddDimensionArgs},

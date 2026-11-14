@@ -82,3 +82,57 @@ fn waiting_extrusion_shows_default_preview(world: &mut ApplicationWorld) {
         "expected a shaded extrusion preview outside the panels"
     );
 }
+
+#[given("Default direction with a selected profile")]
+fn selected_rectangle_preview(world: &mut ApplicationWorld) {
+    rectangle_for_waiting_extrusion(world);
+    let document = world.active_id();
+    super::extrude_resume_native::constrain_rectangle(world, document);
+    finish_requested_profile(world);
+    world.pump(Vec::new());
+    waiting_extrusion_shows_profile(world);
+    waiting_extrusion_shows_default_preview(world);
+}
+
+fn replace_extrusion_distance(world: &mut ApplicationWorld, value: &str) {
+    let label = world.run_in_window("Extrude", "DistanceA").clone();
+    world.click([label.minimum[0] as i32 - 30, label.center()[1] as i32]);
+    world.key(ViewportPhysicalKey::A, true);
+    world.type_text(value);
+    world.pump(Vec::new());
+    let label = world.run_in_window("Extrude", "DistanceA").clone();
+    assert!(
+        world.frame.runs.iter().any(|run| {
+            run.text == value
+                && (run.center()[1] - label.center()[1]).abs() < 4.
+                && run.maximum[0] <= label.minimum[0]
+        }),
+        "Distance A: expected {value:?} in the input field"
+    );
+}
+
+#[when("Distance A is replaced with 0")]
+fn replace_with_zero(world: &mut ApplicationWorld) {
+    replace_extrusion_distance(world, "0");
+}
+
+#[when("the value is replaced with 8")]
+fn replace_with_eight(world: &mut ApplicationWorld) {
+    replace_extrusion_distance(world, "8");
+}
+
+#[then("a red error indicator appears and OK is disabled")]
+fn zero_is_rejected(world: &mut ApplicationWorld) {
+    let color = world.run("Invalid distance:").color;
+    assert!(
+        color[0] > color[1] && color[0] > color[2],
+        "expected a red error, got {color:?}"
+    );
+    assert!(!world.run_is_enabled("OK"), "expected OK disabled");
+}
+
+#[then("the error clears and OK becomes available")]
+fn positive_distance_is_accepted(world: &mut ApplicationWorld) {
+    world.expect_no_text("Invalid distance:");
+    assert!(world.run_is_enabled("OK"), "expected OK enabled");
+}
