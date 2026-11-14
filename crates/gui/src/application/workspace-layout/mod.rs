@@ -45,6 +45,7 @@ pub(crate) struct WorkspaceLayout {
     pub switcher: crate::application::document_tabs::WindowSwitcher,
     browser_width_override: Option<f32>,
     view: browser_view::BrowserView,
+    origin_selection_document: Option<u64>,
     /// Where a press on the Model tab began.
     tab_press: Option<[f32; 2]>,
     /// A navigation command owns the next click on the view, not the browser's selection.
@@ -65,6 +66,7 @@ impl Default for WorkspaceLayout {
             switcher: Default::default(),
             browser_width_override: None,
             view: Default::default(),
+            origin_selection_document: None,
             tab_press: None,
             view_clicks_taken: false,
             ribbon_left: 0.,
@@ -73,6 +75,28 @@ impl Default for WorkspaceLayout {
     }
 }
 impl WorkspaceLayout {
+    /// Clear a browser origin selection when its document changes; example: `layout.sync_origin_document(Some(1))`.
+    pub(crate) fn sync_origin_document(&mut self, document: Option<u64>) {
+        if self.origin_selection_document != document {
+            self.view.selected_origin_row = None;
+            self.view.origin_folder_chosen = false;
+            self.origin_selection_document = document;
+        }
+    }
+    /// Consume a selected origin plane; example: `layout.take_selected_origin_plane()`.
+    pub(crate) fn take_selected_origin_plane(&mut self) -> Option<crate::GuiOriginPlaneKind> {
+        let row = self.view.selected_origin_row?;
+        let label = *crate::browser::ORIGIN_ROWS.get(row)?;
+        let plane = [
+            crate::GuiOriginPlaneKind::Xy,
+            crate::GuiOriginPlaneKind::Xz,
+            crate::GuiOriginPlaneKind::Yz,
+        ]
+        .into_iter()
+        .find(|plane| plane.label() == label)?;
+        self.view.selected_origin_row = None;
+        Some(plane)
+    }
     /// Open the shared browser search; example: `layout.request_find()`.
     pub(crate) fn request_find(&mut self) {
         self.view.find.request();

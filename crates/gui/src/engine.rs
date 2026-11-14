@@ -312,15 +312,19 @@ fn home_follows_actions(
 fn apply_quick_access(
     toolbar: &mut crate::application::quick_access_toolbar::QuickAccessToolbar,
     files: &mut crate::files::GuiDocumentFiles,
-    planes: &mut crate::application::quick_access_toolbar::plane_selection::PlaneSelection,
+    sketch_support: (
+        &mut crate::application::quick_access_toolbar::plane_selection::PlaneSelection,
+        &mut crate::application::workspace_layout::WorkspaceLayout,
+    ),
     extrude: &mut crate::extrude_dialog::ExtrudeDialog,
     browsers: (
         &mut crate::material_browser::MaterialBrowser,
         &mut crate::material_browser::MaterialBrowser,
     ),
     parameters: (&mut crate::parameters::GuiParameterEditor, Option<u64>),
-    selected: &[GuiShellAction],
+    selected: &mut Vec<GuiShellAction>,
 ) {
+    let (planes, workspace) = sketch_support;
     let requests = toolbar.take_requests();
     if requests.new_document {
         files.request_new();
@@ -340,7 +344,14 @@ fn apply_quick_access(
     if requests.open_parameters {
         parameters.0.open(parameters.1);
     }
-    planes.active |= requests.choose_plane || selected.contains(&GuiShellAction::ChooseSketchPlane);
+    if requests.choose_plane || selected.contains(&GuiShellAction::ChooseSketchPlane) {
+        if let Some(plane) = workspace.take_selected_origin_plane() {
+            planes.active = false;
+            selected.push(GuiShellAction::StartSketchOn(plane));
+        } else {
+            planes.active = true;
+        }
+    }
     extrude.requested |= requests.open_extrude || selected.contains(&GuiShellAction::OpenExtrude);
 }
 #[cfg(test)]

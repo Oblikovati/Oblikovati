@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Started a sketch directly on a preselected origin plane. (#3879)
+
 - Kept the ViewCube visible and interactive while editing a 2D sketch. (#3877)
 
 - Enabled analytic area measurements for named solid faces through the Analysis API. (#3876)

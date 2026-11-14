@@ -78,3 +78,60 @@ fn second_empty_sketch(world: &mut ApplicationWorld) {
 fn still_editing_second_sketch(world: &mut ApplicationWorld) {
     second_sketch_active(world);
 }
+
+#[given("the model browser exposes YZ Plane")]
+fn two_existing_sketches(world: &mut ApplicationWorld) {
+    world.add_part();
+    world.add_finished_sketch();
+    world.add_finished_sketch();
+    viewport_orientation::press_part(world, |layout| layout.home);
+    assert_eq!(world.browser_sketch_count(), 2);
+    world.expect_text("YZ Plane");
+}
+#[when("the user select YZ Plane before invoking Start 2D Sketch")]
+fn start_with_selected_plane(world: &mut ApplicationWorld) {
+    world.click_text("YZ Plane");
+    world.click_text("Start 2D Sketch");
+    world.pump(Vec::new());
+}
+#[then("Sketch3 is created without another support-selection click")]
+fn third_sketch_started(world: &mut ApplicationWorld) {
+    assert_eq!(world.browser_sketch_count(), 3);
+    let state = world.state();
+    assert_eq!(state.authoring, GuiAuthoringContext::Sketch);
+    let sketch = &state.browser.unwrap().sketches[2];
+    assert_eq!(sketch.inspection.as_ref().unwrap().plane, "YZ");
+    assert_eq!(state.active_sketch, Some(sketch.id));
+    assert!(diagnostics::window_geometry("##plane-selection").is_none());
+}
+#[then("the ViewCube reads RIGHT")]
+fn cube_reads_right(world: &mut ApplicationWorld) {
+    assert_eq!(viewport_orientation::control_letters(world), "Rghit");
+}
+
+#[test]
+fn origin_preselection_is_consumed_and_does_not_cross_documents() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    world.click_text("XZ Plane");
+    world.click_text("Start 2D Sketch");
+    assert_eq!(world.browser_sketch_count(), 1);
+    assert_eq!(
+        world.state().browser.unwrap().sketches[0]
+            .inspection
+            .as_ref()
+            .unwrap()
+            .plane,
+        "XZ"
+    );
+    world.finish_sketch();
+    world.click_text("Start 2D Sketch");
+    assert!(diagnostics::window_geometry("##plane-selection").is_some());
+    world.escape();
+    world.click_text("XY Plane");
+    world.add_part();
+    world.click_text("Start 2D Sketch");
+    assert_eq!(world.browser_sketch_count(), 0);
+    assert!(diagnostics::window_geometry("##plane-selection").is_some());
+    world.close();
+}

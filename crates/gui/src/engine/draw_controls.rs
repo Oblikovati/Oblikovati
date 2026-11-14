@@ -15,6 +15,8 @@ impl GuiFrameEngine {
             &mut self.widget_keys,
         );
         let ui = self.context.frame();
+        self.workspace
+            .sync_origin_document(request.commands.document);
         crate::dimension_labels::draw_dimension_labels(ui, request);
         crate::sketch::constraint_glyphs::draw_constraint_glyphs(ui, request);
         crate::application::workspace_layout::browser_feature::draw_feature_edges(ui, request);
@@ -45,11 +47,11 @@ impl GuiFrameEngine {
         apply_quick_access(
             &mut self.quick_access,
             &mut self.document_files,
-            &mut self.plane_selection,
+            (&mut self.plane_selection, &mut self.workspace),
             &mut self.extrude_dialog,
             (&mut self.material_browser, &mut self.appearance_browser),
             (&mut self.parameter_editor, request.commands.document),
-            &selected,
+            &mut selected,
         );
         if !self.ribbon.tips.active() && !self.ribbon.tips.consumed {
             self.command_alias.panel(ui, &request.commands, &keys.typed);

@@ -50,3 +50,32 @@ fn a_docked_ribbon_narrows_the_document_area_from_its_own_side() {
     layout.reserve_for_ribbon(0., 196.);
     assert_eq!(layout.tab_span(1000.), (start, span - 196.));
 }
+
+#[test]
+fn selected_origin_plane_is_consumed_and_does_not_cross_documents() {
+    let mut layout = WorkspaceLayout::default();
+    layout.sync_origin_document(Some(1));
+    layout.view.selected_origin_row = Some(0);
+    assert_eq!(
+        layout.take_selected_origin_plane(),
+        Some(crate::GuiOriginPlaneKind::Yz)
+    );
+    assert_eq!(layout.take_selected_origin_plane(), None);
+    layout.view.selected_origin_row = Some(1);
+    layout.sync_origin_document(Some(1));
+    assert_eq!(
+        layout.take_selected_origin_plane(),
+        Some(crate::GuiOriginPlaneKind::Xz)
+    );
+    layout.view.selected_origin_row = Some(2);
+    assert_eq!(
+        layout.take_selected_origin_plane(),
+        Some(crate::GuiOriginPlaneKind::Xy)
+    );
+    layout.view.selected_origin_row = Some(2);
+    layout.sync_origin_document(Some(2));
+    assert_eq!(layout.take_selected_origin_plane(), None);
+    layout.view.selected_origin_row = Some(3);
+    assert_eq!(layout.take_selected_origin_plane(), None);
+    assert_eq!(layout.view.selected_origin_row, Some(3));
+}
