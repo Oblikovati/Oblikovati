@@ -17,6 +17,8 @@ mod drawing_view_snapshot;
 pub use drawing_view_snapshot::{SavedDrawingLine, SavedDrawingView, SavedDrawingViews};
 mod empty;
 mod interests;
+mod legacy_sketch;
+pub use legacy_sketch::LegacySketchCandidate;
 mod model_states;
 mod parameters;
 mod properties;
