@@ -1,6 +1,6 @@
 # Arc center point 09: inconsistent recorded measurements
 
-**Source corrected:** the 2026-11-14 snapshot removes the inconsistent sweep assertion. The independent fixture input remains unresolved; see the live feature folder's `BLOCKERS.md`. The result below is historical.
+**Source corrected:** the 2026-11-14 snapshot removes the inconsistent sweep assertion. The scenario author has since added recorded pointer positions and window size to the live source. That later change awaits the next source sync and independent fixture review. The result below is historical.
 
 ## Source
 

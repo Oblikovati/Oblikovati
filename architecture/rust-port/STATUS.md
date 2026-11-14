@@ -16,7 +16,7 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 - Scenario pin: `c56a6f6678dbb9a7bdb96fe37561bb63d6413127`, a locally created snapshot of the unversioned live source, not an upstream commit. Restore and verify it as described in `bdd-workflow.md`.
 - Source sync: weekly, in a separate batch. Store small JSON receipts in this repository.
 - The 2026-11-14 source sync includes reviewed corrections in `home-recent-documents`, `arc-center-point`, `move`, `coincident`, and `rectangle-two-point`. All 2,719 declarations parse; the previous pin's native receipts are stale until rerun. Coincident 07 now checks a shared point without choosing which point moves. Rectangle 13 checks the recorded fixture and measured result without requiring a stationary edge.
-- Arc 09's current Rust fixture derives its arc angle from the expected measured length. That setup cannot independently verify the recorded length. The scenario folder asks for the recorded input positions or an equivalent saved fixture; do not count that scenario as verified until the premise is checked.
+- Arc 09's current Rust fixture derives its arc angle from the expected measured length. That setup cannot independently verify the recorded length. The scenario author has since recorded pointer positions and the captured window size in the live source; this later change awaits the next source sync and fixture review. Do not count the scenario as verified until its premise is checked.
 - Kernel gaps: file and track validated gaps in `Oblikovati/Martensite`; application work belongs in `Oblikovati/Oblikovati`.
 - Branch policy: one working branch, with batch PRs to `rust`; push after each unit once the required pre-push gate passes.
 
