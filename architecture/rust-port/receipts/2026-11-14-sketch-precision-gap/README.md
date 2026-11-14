@@ -7,3 +7,13 @@ On Linux at Rust commit `b5a5bd9f0`, the attached observational patch uses the e
 This observation does not prove that a dimensional error should be compared to weld tolerance, or that it is a certified spatial bound. It shows that the preview path admits the configured resolution without consuming qualified solver precision. `ResidualEvidence` retains mixed-domain raw residuals and does not certify spatial or angular error. The right comparison must account for constraint conditioning and operand provenance. The kernel's own certification remains in place.
 
 To repeat this historical observation, keep `observation.patch.gz` outside a disposable clean checkout at `b5a5bd9f0`. From that checkout, run `gzip -dc /absolute/path/to/observation.patch.gz | git apply`, then run `cargo test --offline -p oblikovati-head --lib observe_certified_preview_with_measured_dimension_residual -- --nocapture`. This is a diagnostic, not a conformance test. It expects the current acceptance and must not be used as a specification after the issue is fixed.
+
+On Rust commit `630db0f36`, `observation-current.patch.gz` updates the same
+probe for the preview generation field. The same command reports a maximum
+measured dimension residual of `9.817036072945484e-12 cm`, configured weld and
+sew of `1e-13 cm`, and `Ok(true)` for the preview. It is an observation of the
+current behavior, not a certified spatial bound or an acceptance requirement.
+
+To reproduce, use a disposable checkout at `630db0f36`, run
+`gzip -dc /absolute/path/to/observation-current.patch.gz | git apply`, then run
+`cargo test --offline -p oblikovati-head --lib observe_certified_preview_with_measured_dimension_residual -- --nocapture`.
