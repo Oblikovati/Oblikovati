@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Arc three point: tmp/obk-arcs-48987af/features/sketch/arc-three-point/scenario.feature" package="testsuite/Feature: Arc three point: tmp/obk-arcs-48987af/features/sketch/arc-three-point/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T21:21:19.121512856Z" time="11.911871878"><testcase name="Scenario: arc-three-point-04 Undo and redo a committed change: tmp/obk-arcs-48987af/features/sketch/arc-three-point/scenario.feature:28:3" time="11.911871878"><system-out><![CDATA[  Scenario: arc-three-point-04 Undo and redo a committed change
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch
+   ✔  Given the user has committed one valid arc through this feature
+   ✔  And the user has exited the creation or edit command
+   ✔  When the user press Ctrl+Z once
+   ✔  Then the last feature transaction is undone
+   ✔  When the user press Ctrl+Y once
+   ✔  Then that transaction is restored
+   ✔  And the arc and surrounding geometry are visible again
+]]></system-out></testcase></testsuite></testsuites>
