@@ -3749,6 +3749,465 @@
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences."
+    },
+    {
+      "id": "scenario:65bbddad815509a362f8498b68cd3337ebda9d9485212150714f410d7a855ca7",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "d7965f270ecc21d99f2ed9a0837f17a1996203fccf4d4d1966e7876ebb01464c",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence, crates/drawing",
+      "acceptance_test": "application_scenarios_use_the_native_window: Inspect a part file before opening it",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3889",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Inspect or navigate the Open dialog without opening document content."
+    },
+    {
+      "id": "scenario:3b03a5dcea868e3854f41e48f75e0557f51f8df3b25a6ac9d86e9deaf91bbba8",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "d7965f270ecc21d99f2ed9a0837f17a1996203fccf4d4d1966e7876ebb01464c",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence, crates/drawing",
+      "acceptance_test": "application_scenarios_use_the_native_window: Inspect a drawing after selecting a part",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3889",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Inspect or navigate the Open dialog without opening document content."
+    },
+    {
+      "id": "scenario:20e6a90885dc1edd2c54bf294626b7b0aed733b54bcf47fe6ab45093c5ebe12d",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "d7965f270ecc21d99f2ed9a0837f17a1996203fccf4d4d1966e7876ebb01464c",
+      "milestone": "R6",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence, crates/drawing",
+      "acceptance_test": "application_scenarios_use_the_native_window: Open a saved drawing alongside an existing part",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3889",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Open drawing or assembly content and preserve document identity."
+    },
+    {
+      "id": "scenario:0d5b70a0b2a7cbdc804f1485a6b3ded22713f3d8c6ddfee12f291e2e79617f8c",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "d7965f270ecc21d99f2ed9a0837f17a1996203fccf4d4d1966e7876ebb01464c",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence, crates/drawing",
+      "acceptance_test": "application_scenarios_use_the_native_window: Toggle express loading for an assembly before opening",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3889",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Inspect or navigate the Open dialog without opening document content."
+    },
+    {
+      "id": "scenario:d3258f4dcee014b46e7e175647e40577368b62168d25dc8001e69ffecf1a0a1d",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "d7965f270ecc21d99f2ed9a0837f17a1996203fccf4d4d1966e7876ebb01464c",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence, crates/drawing",
+      "acceptance_test": "application_scenarios_use_the_native_window: Switch navigation panes without changing the selected file",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3889",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Inspect or navigate the Open dialog without opening document content."
+    },
+    {
+      "id": "scenario:12e9626a934440acd9bb9e8bc7d146afd9b75300b04a62d453ba7d92bfcaf8ae",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "d7965f270ecc21d99f2ed9a0837f17a1996203fccf4d4d1966e7876ebb01464c",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence, crates/drawing",
+      "acceptance_test": "application_scenarios_use_the_native_window: Switch between details and thumbnail file views",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3889",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Inspect or navigate the Open dialog without opening document content."
+    },
+    {
+      "id": "scenario:8d91b2f837f268bc313089cb08a1b394f963916136cf957542883e2c90a5d16d",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "d7965f270ecc21d99f2ed9a0837f17a1996203fccf4d4d1966e7876ebb01464c",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence, crates/drawing",
+      "acceptance_test": "application_scenarios_use_the_native_window: Reverse the size sort without losing the selected file",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3889",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Inspect or navigate the Open dialog without opening document content."
+    },
+    {
+      "id": "scenario:8560e9d91ced2c04acab063a01d171a03cf5b9a08604f5adc2a0f1c730644695",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "d7965f270ecc21d99f2ed9a0837f17a1996203fccf4d4d1966e7876ebb01464c",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence, crates/drawing",
+      "acceptance_test": "application_scenarios_use_the_native_window: Inspect and dismisses available design views for a part",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3889",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Inspect or navigate the Open dialog without opening document content."
+    },
+    {
+      "id": "scenario:68ac81cf0547557e2c4358c434c5bfea81bf424c09a9866cdb8779bc37b60b8c",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "d7965f270ecc21d99f2ed9a0837f17a1996203fccf4d4d1966e7876ebb01464c",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence, crates/drawing",
+      "acceptance_test": "application_scenarios_use_the_native_window: Inspect selected part properties without opening the part",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3889",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Inspect or navigate the Open dialog without opening document content."
+    },
+    {
+      "id": "scenario:233169e6ac19c7ddb757045b4193b135178c2e3e5089bebbc1fc574f8784e861",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "d7965f270ecc21d99f2ed9a0837f17a1996203fccf4d4d1966e7876ebb01464c",
+      "milestone": "R4",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence, crates/drawing",
+      "acceptance_test": "application_scenarios_use_the_native_window: Activate an already open part through the Open dialog",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3889",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Activate an existing part without creating a duplicate."
+    },
+    {
+      "id": "scenario:59162ec325e7796e63268366914195a25056bc4db02bba09c772d154c62dc4b3",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "d7965f270ecc21d99f2ed9a0837f17a1996203fccf4d4d1966e7876ebb01464c",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence, crates/drawing",
+      "acceptance_test": "application_scenarios_use_the_native_window: Deferred drawing loading clears and disables unresolved-file skipping",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3889",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Inspect or navigate the Open dialog without opening document content."
+    },
+    {
+      "id": "scenario:d85b997253a03df336af1ce3977c03597ea821cf8923ea370addb1908a13650d",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "d7965f270ecc21d99f2ed9a0837f17a1996203fccf4d4d1966e7876ebb01464c",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence, crates/drawing",
+      "acceptance_test": "application_scenarios_use_the_native_window: Reset drawing options when switching selected files",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3889",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Inspect or navigate the Open dialog without opening document content."
+    },
+    {
+      "id": "scenario:32797b290241515b802f2177c38a0871fd9a8dd9d084a1af0460f6da02902387",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "d7965f270ecc21d99f2ed9a0837f17a1996203fccf4d4d1966e7876ebb01464c",
+      "milestone": "R6",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence, crates/drawing",
+      "acceptance_test": "application_scenarios_use_the_native_window: Open a drawing with updates deferred",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3889",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Open drawing or assembly content and preserve document identity."
+    },
+    {
+      "id": "scenario:4aa3e4504397400f2e76aa28d15e12bb4ce07339c37137eeca96aa269a54b4f3",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "d7965f270ecc21d99f2ed9a0837f17a1996203fccf4d4d1966e7876ebb01464c",
+      "milestone": "R6",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence, crates/drawing",
+      "acceptance_test": "application_scenarios_use_the_native_window: Open an assembly in express mode and load it fully",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3889",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Open drawing or assembly content and preserve document identity."
+    },
+    {
+      "id": "scenario:8f217cd26f220ce643150ed69f6da3f59dc454d9eadce1918d2e64b56e31111e",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "d7965f270ecc21d99f2ed9a0837f17a1996203fccf4d4d1966e7876ebb01464c",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence, crates/drawing",
+      "acceptance_test": "application_scenarios_use_the_native_window: Navigate between a file's folder and its parent",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3889",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Inspect or navigate the Open dialog without opening document content."
+    },
+    {
+      "id": "scenario:01f028f80da394ed2573e34c41335315ff8888662b7978aa22f862c378d40677",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "d7965f270ecc21d99f2ed9a0837f17a1996203fccf4d4d1966e7876ebb01464c",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence, crates/drawing",
+      "acceptance_test": "application_scenarios_use_the_native_window: Open a selected folder while a file name is retained",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3889",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Inspect or navigate the Open dialog without opening document content."
+    },
+    {
+      "id": "scenario:b492891d04fae4fd101c3f2104c6d34e3f689703ae8a7609a9049b0890d8a518",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "d7965f270ecc21d99f2ed9a0837f17a1996203fccf4d4d1966e7876ebb01464c",
+      "milestone": "R6",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence, crates/drawing",
+      "acceptance_test": "application_scenarios_use_the_native_window: Open a different drawing by double-clicking its row",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3889",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Open drawing or assembly content and preserve document identity."
+    },
+    {
+      "id": "scenario:0ce22b07791e47e60ebab676bee97feb0ec31a9464d16485437aec7290243274",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "d7965f270ecc21d99f2ed9a0837f17a1996203fccf4d4d1966e7876ebb01464c",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence, crates/drawing",
+      "acceptance_test": "application_scenarios_use_the_native_window: Reopen the dialog after cancelling a folder change",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3889",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Inspect or navigate the Open dialog without opening document content."
+    },
+    {
+      "id": "scenario:46138cdfdeda7570f9e4dedfe0d0c8a5fe6210365faea95a6a36771ed35c0963",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "d7965f270ecc21d99f2ed9a0837f17a1996203fccf4d4d1966e7876ebb01464c",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence, crates/drawing",
+      "acceptance_test": "application_scenarios_use_the_native_window: Maximize and restores the Open dialog",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3889",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Inspect or navigate the Open dialog without opening document content."
+    },
+    {
+      "id": "scenario:4dffbdbefed8edbc3bdafb97a2f81e03c6a46f16d70159209b30d16f8ff25378",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "d7965f270ecc21d99f2ed9a0837f17a1996203fccf4d4d1966e7876ebb01464c",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence, crates/drawing",
+      "acceptance_test": "application_scenarios_use_the_native_window: Inspect and dismisses file-type choices",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3889",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Inspect or navigate the Open dialog without opening document content."
+    },
+    {
+      "id": "scenario:b8ed3fcb7f6f6c9121a2d105c251f0163e489b01114254b1da2b0c2f175f55b7",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "d7965f270ecc21d99f2ed9a0837f17a1996203fccf4d4d1966e7876ebb01464c",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence, crates/drawing",
+      "acceptance_test": "application_scenarios_use_the_native_window: Inspect and dismisses the file display menu",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3889",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Inspect or navigate the Open dialog without opening document content."
+    },
+    {
+      "id": "scenario:7f521768875235caf46f593d1562596abcf1adb2a8c9dd625508a1d32cce2e67",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "d7965f270ecc21d99f2ed9a0837f17a1996203fccf4d4d1966e7876ebb01464c",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence, crates/drawing",
+      "acceptance_test": "application_scenarios_use_the_native_window: Change the selected document in thumbnail view",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3889",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Inspect or navigate the Open dialog without opening document content."
+    },
+    {
+      "id": "scenario:8a8a8a18b2d2c7d20ffed2b580e6b01849263aba4d91a63175d9dc97fa64a1e8",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "d7965f270ecc21d99f2ed9a0837f17a1996203fccf4d4d1966e7876ebb01464c",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence, crates/drawing",
+      "acceptance_test": "application_scenarios_use_the_native_window: Inspect a file context menu without opening the document",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3889",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Inspect or navigate the Open dialog without opening document content."
+    },
+    {
+      "id": "scenario:d57b45a85c7f47c60ee91d2dd204108f01a0e2adc4dc199599b6b2a995749f9a",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "d7965f270ecc21d99f2ed9a0837f17a1996203fccf4d4d1966e7876ebb01464c",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence, crates/drawing",
+      "acceptance_test": "application_scenarios_use_the_native_window: Select multiple drawing files and return to one",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3889",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Inspect or navigate the Open dialog without opening document content."
+    },
+    {
+      "id": "scenario:884d9494712ea754cdd2e26efd0fc10d7afaf7b0943c12571b17480adb953f94",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "d7965f270ecc21d99f2ed9a0837f17a1996203fccf4d4d1966e7876ebb01464c",
+      "milestone": "R6",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence, crates/drawing",
+      "acceptance_test": "application_scenarios_use_the_native_window: Open two selected drawings together",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3889",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Open drawing or assembly content and preserve document identity."
+    },
+    {
+      "id": "scenario:682dc8aa76b0b99f46f7c5db5650b169229c194624fe84a6dd14a0dc0454fc0b",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "d7965f270ecc21d99f2ed9a0837f17a1996203fccf4d4d1966e7876ebb01464c",
+      "milestone": "R6",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence, crates/drawing",
+      "acceptance_test": "application_scenarios_use_the_native_window: Reopen a selection of drawings already in the session",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3889",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Open drawing or assembly content and preserve document identity."
+    },
+    {
+      "id": "scenario:406e5dafb701ac62ffd8f31dc91682ab1c6cc081e598044871943053e73d5a1c",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "d7965f270ecc21d99f2ed9a0837f17a1996203fccf4d4d1966e7876ebb01464c",
+      "milestone": "R6",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence, crates/drawing",
+      "acceptance_test": "application_scenarios_use_the_native_window: Open a selection containing an open and a closed drawing",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3889",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Open drawing or assembly content and preserve document identity."
     }
   ]
 }

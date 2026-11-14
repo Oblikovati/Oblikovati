@@ -609,8 +609,9 @@ fn part_open(world: &mut ApplicationWorld) {
 }
 #[given("a different drawing document is active")]
 fn drawing_on_top(world: &mut ApplicationWorld) {
-    world.add_template(GuiTemplateKind::Drawing);
+    world.other_document = Some(world.add_template(GuiTemplateKind::Drawing));
     world.observed_counts = vec![documents(world)];
+    world.observed_document_windows = world.state().document_windows;
 }
 #[given("the open part's exact file location is known")]
 fn location_known(world: &mut ApplicationWorld) {
@@ -644,10 +645,17 @@ fn part_tab_active(world: &mut ApplicationWorld) {
 #[then("no additional document tab is created")]
 fn no_extra_tab(world: &mut ApplicationWorld) {
     assert_eq!(documents(world), world.observed_counts[0], "documents");
+    assert_eq!(
+        world.state().document_windows,
+        world.observed_document_windows,
+        "document windows"
+    );
 }
 #[then("the drawing tab remains available")]
 fn drawing_tab_kept(world: &mut ApplicationWorld) {
-    assert!(documents(world) >= 2, "expected the drawing still open");
+    let drawing = world.other_document.expect("expected the original drawing");
+    let name = world.document_name(drawing);
+    world.expect_tab(&name);
 }
 // Drawing options
 #[given("a saved drawing is selected with its Options pane displayed")]

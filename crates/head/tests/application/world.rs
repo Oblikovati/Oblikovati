@@ -28,6 +28,7 @@ pub(super) struct ApplicationWorld {
     /// The edited sketch's view with nothing drawn, for what a scenario later added or removed.
     pub sketch_baseline: Option<oblikovati_viewport::ViewportCapture>,
     pub observed_counts: Vec<usize>,
+    pub observed_document_windows: Vec<oblikovati_gui::GuiDocumentWindow>,
     pub observed_sketch: Option<ObservedSketch>,
     pub observed_row_gap: Option<f32>,
     pub observed_row_plain: Option<[u8; 4]>,
@@ -87,6 +88,7 @@ impl ApplicationWorld {
             dragged_tab_x: None,
             sketch_baseline: None,
             observed_counts: Vec::new(),
+            observed_document_windows: Vec::new(),
             observed_sketch: None,
             observed_row_gap: None,
             observed_row_plain: None,
