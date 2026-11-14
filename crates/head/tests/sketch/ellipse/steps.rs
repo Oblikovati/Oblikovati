@@ -29,6 +29,7 @@ fn expect_oval_visible(world: &mut ApplicationWorld) {
     }
 }
 #[when("I select Ellipse and specify a center, first-axis point, and point on the ellipse")]
+#[when("the user select Ellipse and specify a center, first-axis point, and point on the ellipse")]
 fn create_ellipse(world: &mut ApplicationWorld) {
     choose_ellipse(world);
     for position in [CENTER, FIRST_AXIS, MINOR_AXIS] {
@@ -52,6 +53,7 @@ fn ellipse_active(world: &mut ApplicationWorld) {
     choose_ellipse(world);
 }
 #[when("I select only a center and press Escape")]
+#[when("the user select only a center and press Escape")]
 fn cancel_after_center(world: &mut ApplicationWorld) {
     world.sketch_click(CENTER);
     world.escape();
@@ -65,6 +67,7 @@ fn cancelled_ellipse(world: &mut ApplicationWorld) {
     expect_no_oval_visible(world);
 }
 #[when("I invoke Ellipse again, select a center and rotated first axis, and press Escape")]
+#[when("the user invoke Ellipse again, select a center and rotated first axis, and press Escape")]
 fn cancel_after_axis(world: &mut ApplicationWorld) {
     choose_ellipse(world);
     world.sketch_click(CENTER);
@@ -72,12 +75,15 @@ fn cancel_after_axis(world: &mut ApplicationWorld) {
     world.escape();
 }
 #[when("I choose Ellipse from the Circle dropdown")]
+#[when("the user choose Ellipse from the Circle dropdown")]
 #[when("I invoke Ellipse")]
+#[when("the user invoke Ellipse")]
 #[when("I open Circle dropdown and choose Ellipse")]
 fn invoke_ellipse(world: &mut ApplicationWorld) {
     choose_ellipse(world);
 }
 #[when("I select the fixture center")]
+#[when("the user select the fixture center")]
 fn select_center(world: &mut ApplicationWorld) {
     world.sketch_click(CENTER);
 }
@@ -86,7 +92,9 @@ fn asks_first_axis(world: &mut ApplicationWorld) {
     world.expect_status("Select first axis point");
 }
 #[when("I select the fixture first-axis point")]
+#[when("the user select the fixture first-axis point")]
 #[when("I select a distinct first-axis point")]
+#[when("the user select a distinct first-axis point")]
 fn select_first_axis(world: &mut ApplicationWorld) {
     world.sketch_click(FIRST_AXIS);
 }
@@ -100,6 +108,7 @@ fn empty_sketch(world: &mut ApplicationWorld) {
     world.start_empty_sketch();
 }
 #[when("I select the fixture point on the ellipse")]
+#[when("the user select the fixture point on the ellipse")]
 fn select_perimeter(world: &mut ApplicationWorld) {
     world.sketch_click(MINOR_AXIS);
     world.hover(CLEAR_POINTER);
@@ -123,11 +132,13 @@ fn oval_restored(world: &mut ApplicationWorld) {
     expect_oval_visible(world);
 }
 #[when("I invoke Ellipse and select the fixture center")]
+#[when("the user invoke Ellipse and select the fixture center")]
 fn invoke_and_center(world: &mut ApplicationWorld) {
     choose_ellipse(world);
     world.sketch_click(CENTER);
 }
 #[when("I select the same location again as its first-axis point")]
+#[when("the user select the same location again as its first-axis point")]
 fn coincident_first_axis(world: &mut ApplicationWorld) {
     world.sketch_click(CENTER);
 }

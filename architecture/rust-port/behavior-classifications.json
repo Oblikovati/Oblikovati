@@ -30173,10 +30173,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-ellipse-native-aa18a4be/receipt-aa18a4bee57ddd81.json",
+        "sha256": "d4572617d46585a2b7ff8ced8ef8e353f48b3ba43e25d727d9e99920f955c928"
+      },
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "First native sketch geometry input, cancellation, and history."
+      "mapping_reason": "First native sketch geometry input, cancellation, and history.",
+      "go_test_premise": "Go aa8297d1b: ellipse creation and positive radii pass; cancellation, history, rotation and native rendering are not covered. See receipts/2026-11-14-go-ellipse-baseline/README.md.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "Planar sketch ellipse geometry is exercised; these scenarios do not create a solid.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The desktop owner applies ellipse sketch actions and presents the sketch scene.",
+      "rust_tests": "sketch_scenarios_use_the_native_window: ellipse-01 Create an ellipse from three defining points",
+      "oracle": "Pinned native scenario assertions of sketch state and sampled viewport, with reviewed final capture.",
+      "expected_result": "a closed oval appears and the command requests another ellipse center; the user press Escape; the oval remains and the sketch returns to Ready"
     },
     {
       "id": "scenario:f1e62c36b06222650ff1474075b58aff9519310506d12cc3d3d748017a9fcf81",
@@ -30190,10 +30202,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-ellipse-native-f1e62c36/receipt-f1e62c36b0622265.json",
+        "sha256": "31af25f342ae4ec96a8816adcddb48671d0f858c07c9f6c0afd2e56a9891af29"
+      },
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "First native sketch geometry input, cancellation, and history."
+      "mapping_reason": "First native sketch geometry input, cancellation, and history.",
+      "go_test_premise": "Go aa8297d1b: ellipse creation and positive radii pass; cancellation, history, rotation and native rendering are not covered. See receipts/2026-11-14-go-ellipse-baseline/README.md.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "Planar sketch ellipse geometry is exercised; these scenarios do not create a solid.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The desktop owner applies ellipse sketch actions and presents the sketch scene.",
+      "rust_tests": "sketch_scenarios_use_the_native_window: ellipse-03 Cancel at the defining stages",
+      "oracle": "Pinned native scenario assertions of sketch state and sampled viewport, with reviewed final capture.",
+      "expected_result": "Ready returns without an additional ellipse; the user invoke Ellipse again, select a center and rotated first axis, and press Escape; Ready returns with no new ellipse"
     },
     {
       "id": "scenario:62b46d0e74ecec3ff8635b421702b6f9bd7f29e639a8f41ea2caa1b33af9f339",
@@ -30224,10 +30248,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-ellipse-native-cca2542b/receipt-cca2542b3419b7b6.json",
+        "sha256": "5978d8370c9bfbbacdf9b29bad796b5fd6277a851383f53155cbde7aaf71f2bd"
+      },
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "First native sketch geometry input, cancellation, and history."
+      "mapping_reason": "First native sketch geometry input, cancellation, and history.",
+      "go_test_premise": "Go aa8297d1b: ellipse creation and positive radii pass; cancellation, history, rotation and native rendering are not covered. See receipts/2026-11-14-go-ellipse-baseline/README.md.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "Planar sketch ellipse geometry is exercised; these scenarios do not create a solid.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The desktop owner applies ellipse sketch actions and presents the sketch scene.",
+      "rust_tests": "sketch_scenarios_use_the_native_window: ellipse-06 Cancel after defining a rotated first axis",
+      "oracle": "Pinned native scenario assertions of sketch state and sampled viewport, with reviewed final capture.",
+      "expected_result": "the prompt requests a point on the ellipse; the user press Escape; the MCAD Software returns to Ready with no new ellipse visible"
     },
     {
       "id": "scenario:0db449064178e8fff73cc27334492eb3ff1130e8b038897cab37e08f6a807ec4",
@@ -30241,10 +30277,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-ellipse-native-0db44906/receipt-0db449064178e8ff.json",
+        "sha256": "7dd548cc8c6f2c3c1c891088da71b5b84e83ff36bdc6011f7dc19e94557c3754"
+      },
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "First native sketch geometry input, cancellation, and history."
+      "mapping_reason": "First native sketch geometry input, cancellation, and history.",
+      "go_test_premise": "Go aa8297d1b: ellipse creation and positive radii pass; cancellation, history, rotation and native rendering are not covered. See receipts/2026-11-14-go-ellipse-baseline/README.md.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "Planar sketch ellipse geometry is exercised; these scenarios do not create a solid.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The desktop owner applies ellipse sketch actions and presents the sketch scene.",
+      "rust_tests": "sketch_scenarios_use_the_native_window: ellipse-07 Create and undo a rotated ellipse",
+      "oracle": "Pinned native scenario assertions of sketch state and sampled viewport, with reviewed final capture.",
+      "expected_result": "the oval disappears; the user press Ctrl+Y; the rotated oval returns"
     },
     {
       "id": "scenario:dda08a157e458b91fc69702fa0d37ffbdfb831df2b70b28d5fae33b18969aad7",
@@ -30258,10 +30306,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-ellipse-native-dda08a15/receipt-dda08a157e458b91.json",
+        "sha256": "139b8e34ac35bc85609a8dc7f863e39056135ca6fab140d5f2040d4db1de0381"
+      },
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "First native sketch geometry input, cancellation, and history."
+      "mapping_reason": "First native sketch geometry input, cancellation, and history.",
+      "go_test_premise": "Go aa8297d1b: ellipse creation and positive radii pass; cancellation, history, rotation and native rendering are not covered. See receipts/2026-11-14-go-ellipse-baseline/README.md.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "Planar sketch ellipse geometry is exercised; these scenarios do not create a solid.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The desktop owner applies ellipse sketch actions and presents the sketch scene.",
+      "rust_tests": "sketch_scenarios_use_the_native_window: ellipse-08 Remain at first-axis selection after a coincident click",
+      "oracle": "Pinned native scenario assertions of sketch state and sampled viewport, with reviewed final capture.",
+      "expected_result": "the prompt advances to Select point on ellipse; the user press Escape; the MCAD Software is Ready with no additional ellipse visible"
     },
     {
       "id": "scenario:257e6c3568756a98bf20d243e52003e56d922ecb3ff19160f41b6eb9a0287bd3",
