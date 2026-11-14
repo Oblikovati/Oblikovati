@@ -66,6 +66,8 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 
 ## Open items
 
+- R7 viewport Orbit: four native scenarios passed with a host-prepared solid; captures are in `receipts/2026-11-14-orbit-*-current/` (#3881).
+
 - R7 viewport Zoom: seven native scenarios passed with host-prepared solid and camera fixtures. The preselected-face fixture now selects Faces explicitly (#3940); default selection priority remains under #3890. See `receipts/2026-11-14-zoom-*-corrected/` and the partial Go baseline (#3881).
 
 - R7 viewport Pan: four native scenarios and a drag test passed; solid setup uses the host. See `receipts/2026-11-14-pan-*-head/` and the partial Go baseline (#3881).
