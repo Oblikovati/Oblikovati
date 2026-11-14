@@ -4,7 +4,7 @@ use crate::{
     document_sketch::{
         DocumentSketchId, SketchOrientationDefinition, SketchPlacement, SketchPointProjection,
     },
-    feature::work_geometry::WorkPointReference,
+    feature::work_geometry::{WorkGeometryEvaluation, WorkPointReference},
     identity::RecipeIdError,
     sketch::{Sketch2D, SketchError},
 };
@@ -33,6 +33,24 @@ impl DocumentSnapshot {
         request: &DocumentSketchCreation,
         reservations: &mut RecipeReservations<'_>,
     ) -> Result<DocumentSketchId, DocumentSketchCreationError> {
+        self.create_sketch_from_current_inputs(request, reservations, None)
+    }
+    /// Create a sketch using the supplied current part datums.
+    /// Example: `snapshot.create_document_sketch_with_datums(&request, ids, &datums)?`.
+    pub fn create_document_sketch_with_datums(
+        &mut self,
+        request: &DocumentSketchCreation,
+        reservations: &mut RecipeReservations<'_>,
+        datums: &WorkGeometryEvaluation,
+    ) -> Result<DocumentSketchId, DocumentSketchCreationError> {
+        self.create_sketch_from_current_inputs(request, reservations, Some(datums))
+    }
+    fn create_sketch_from_current_inputs(
+        &mut self,
+        request: &DocumentSketchCreation,
+        reservations: &mut RecipeReservations<'_>,
+        datums: Option<&WorkGeometryEvaluation>,
+    ) -> Result<DocumentSketchId, DocumentSketchCreationError> {
         let sketch = reservations
             .allocate_sketch()
             .map_err(DocumentSketchCreationError::Identity)?;
@@ -40,11 +58,13 @@ impl DocumentSnapshot {
         candidate
             .insert_created_sketch(sketch, request)
             .map_err(DocumentSketchCreationError::Sketch)?;
-        candidate
-            .resolve_sketch_plane(sketch)
-            .map_err(placement_failure)?;
+        match datums {
+            Some(datums) => candidate.resolve_sketch_plane_with_datums(sketch, datums),
+            None => candidate.resolve_sketch_plane(sketch),
+        }
+        .map_err(placement_failure)?;
         if request.project_origin {
-            candidate.add_created_origin(sketch, reservations)?;
+            candidate.add_created_origin(sketch, reservations, datums)?;
         }
         *self = candidate;
         Ok(sketch)
@@ -70,11 +90,16 @@ impl DocumentSnapshot {
         &mut self,
         sketch: DocumentSketchId,
         reservations: &mut RecipeReservations<'_>,
+        datums: Option<&WorkGeometryEvaluation>,
     ) -> Result<(), DocumentSketchCreationError> {
         let reference = WorkPointReference::Origin;
-        let projection = self
-            .project_datum_point_into_sketch(sketch, reference)
-            .map_err(placement_failure)?;
+        let projection = match datums {
+            Some(datums) => {
+                self.project_datum_point_into_sketch_with_datums(sketch, reference, datums)
+            }
+            None => self.project_datum_point_into_sketch(sketch, reference),
+        }
+        .map_err(placement_failure)?;
         let anchor = reservations
             .allocate_sketch_entity()
             .map_err(DocumentSketchCreationError::Identity)?;

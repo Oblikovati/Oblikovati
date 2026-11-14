@@ -39,8 +39,13 @@ impl SketchProjectionInputs for CurrentSketchProjectionInputs {
         .points(placed)
     }
 }
-struct BorrowedSketchProjectionInputs<'a> {
+pub(super) struct BorrowedSketchProjectionInputs<'a> {
     datums: Result<&'a WorkGeometryEvaluation, &'a FeatureReplayError>,
+}
+impl<'a> BorrowedSketchProjectionInputs<'a> {
+    pub(super) fn from_datums(datums: &'a WorkGeometryEvaluation) -> Self {
+        Self { datums: Ok(datums) }
+    }
 }
 impl SketchProjectionInputs for BorrowedSketchProjectionInputs<'_> {
     fn points(&self, placed: &PlacedSketch) -> Result<Vec<SketchPoint2D>, SketchError> {
@@ -66,6 +71,42 @@ impl BorrowedSketchProjectionInputs<'_> {
 }
 
 impl DocumentSnapshot {
+    /// Inspect sketch health with projection inputs from one part replay.
+    /// Example: `snapshot.document_sketch_health_with_datums(id, &datums)?`.
+    pub fn document_sketch_health_with_datums(
+        &self,
+        id: DocumentSketchId,
+        datums: &WorkGeometryEvaluation,
+    ) -> Result<crate::document_sketch::PlacedSketchHealth<'_>, SketchError> {
+        let placed = self.sketches.get(id)?;
+        let projections = self.resolve_sketch_projected_points_with_datums(id, datums);
+        Ok(placed.health_with_projection_inputs(&self.parameters, &projections))
+    }
+    /// Resolve projection inputs from one ordered part replay.
+    /// Example: `snapshot.resolve_sketch_projected_points_with_datums(id, &datums)?`.
+    pub fn resolve_sketch_projected_points_with_datums(
+        &self,
+        id: DocumentSketchId,
+        datums: &WorkGeometryEvaluation,
+    ) -> Result<Vec<SketchPoint2D>, SketchError> {
+        self.sketches
+            .get(id)?
+            .projection_inputs(&BorrowedSketchProjectionInputs::from_datums(datums))
+    }
+    /// Project a datum through the same part replay as the sketch placement.
+    /// Example: `snapshot.project_datum_point_into_sketch_with_datums(id, source, &datums)?`.
+    pub fn project_datum_point_into_sketch_with_datums(
+        &self,
+        sketch: DocumentSketchId,
+        reference: WorkPointReference,
+        datums: &WorkGeometryEvaluation,
+    ) -> Result<ResolvedSketchPointProjection, DocumentSketchPlacementError> {
+        let placed = self
+            .sketches
+            .get(sketch)
+            .map_err(DocumentSketchPlacementError::Sketch)?;
+        project_current_point(placed, datums, reference)
+    }
     /// Inspect retained solve evidence against current parameters and projected anchors.
     /// Example: `snapshot.document_sketch_health(id)?` before displaying a health badge.
     pub fn document_sketch_health(
@@ -91,16 +132,12 @@ impl DocumentSnapshot {
         sketch: DocumentSketchId,
         reference: WorkPointReference,
     ) -> Result<ResolvedSketchPointProjection, DocumentSketchPlacementError> {
-        let placed = self
-            .sketches
-            .get(sketch)
-            .map_err(DocumentSketchPlacementError::Sketch)?;
         // #3760: source, host plane and orientation must consume the same immutable replay.
         let datums = self
             .effective_work_geometry()
             .evaluate_work_geometry(&self.parameters)
             .map_err(DocumentSketchPlacementError::Replay)?;
-        project_current_point(placed, &datums, reference)
+        self.project_datum_point_into_sketch_with_datums(sketch, reference, &datums)
     }
 }
 

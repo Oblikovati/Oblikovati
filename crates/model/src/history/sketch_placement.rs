@@ -37,6 +37,21 @@ pub enum DocumentSketchPlacementError {
     Verification(SketchReadinessError),
 }
 impl DocumentSnapshot {
+    /// Resolve a sketch against one ordered part replay.
+    /// Example: `snapshot.resolve_sketch_plane_with_datums(id, &datums)?`.
+    pub fn resolve_sketch_plane_with_datums(
+        &self,
+        id: DocumentSketchId,
+        datums: &WorkPlaneEvaluation,
+    ) -> Result<SketchPlane, DocumentSketchPlacementError> {
+        let placed = self
+            .sketches
+            .get(id)
+            .map_err(DocumentSketchPlacementError::Sketch)?;
+        placed
+            .plane_with_axes(Some(datums), datums)
+            .map_err(|cause| DocumentSketchPlacementError::Plane { sketch: id, cause })
+    }
     /// Resolve current placement from this immutable owner; example: `snapshot.resolve_sketch_plane(id)?`.
     pub fn resolve_sketch_plane(
         &self,
@@ -110,13 +125,7 @@ impl DocumentSnapshot {
         id: DocumentSketchId,
         datums: &WorkPlaneEvaluation,
     ) -> Result<ResolvedDocumentSketch<'_>, DocumentSketchPlacementError> {
-        let placed = self
-            .sketches
-            .get(id)
-            .map_err(DocumentSketchPlacementError::Sketch)?;
-        let plane = placed
-            .plane_with_axes(Some(datums), datums)
-            .map_err(|cause| DocumentSketchPlacementError::Plane { sketch: id, cause })?;
+        let plane = self.resolve_sketch_plane_with_datums(id, datums)?;
         let points = self
             .projected_points_with_datums(id, datums)
             .map_err(DocumentSketchPlacementError::Sketch)?;

@@ -14,6 +14,51 @@ pub use request::{CompletedPartEvaluation, PartEvaluationRequest};
 pub struct PartEvaluationSlot<Body, Failure> {
     published: Option<CompletedPartEvaluation<Body, Failure>>,
 }
+/// Owned datum results sealed to one document history and generation.
+pub struct CurrentPartDatums {
+    document: u64,
+    scope: oblikovati_model::history::EvaluationScope,
+    datums: oblikovati_model::feature::work_geometry::WorkGeometryEvaluation,
+}
+impl CurrentPartDatums {
+    /// Require the same current session; example: `datums.current(&session)?` before use.
+    /// ```compile_fail
+    /// use oblikovati_session::{DocumentSession, TransactionObserver, part_evaluation::CurrentPartDatums};
+    /// fn query_then_edit<O: TransactionObserver>(datums: &CurrentPartDatums, session: &mut DocumentSession<O>) {
+    ///     let current = datums.current(session).unwrap();
+    ///     session.undo().unwrap();
+    ///     let _ = &current.health;
+    /// }
+    /// ```
+    pub fn current<'a, O: TransactionObserver>(
+        &'a self,
+        session: &'a DocumentSession<O>,
+    ) -> Result<
+        &'a oblikovati_model::feature::work_geometry::WorkGeometryEvaluation,
+        PartEvaluationError,
+    > {
+        if self.document != session.document {
+            return Err(PartEvaluationError::ForeignDocument {
+                supplied: self.document,
+                expected: session.document,
+            });
+        }
+        if !self.scope.belongs_to(&session.history) {
+            return Err(PartEvaluationError::ForeignHistory {
+                document: self.document,
+                generation: self.scope.generation(),
+            });
+        }
+        if !self.scope.is_current(&session.history) {
+            return Err(PartEvaluationError::Superseded {
+                document: self.document,
+                supplied: self.scope.generation(),
+                expected: session.generation(),
+            });
+        }
+        Ok(&self.datums)
+    }
+}
 impl<Body, Failure> Default for PartEvaluationSlot<Body, Failure> {
     fn default() -> Self {
         Self { published: None }
@@ -27,6 +72,19 @@ pub struct PartEvaluationView<'a, Body, Failure> {
     pub evaluation: &'a PartFeatureEvaluation<Body, Failure>,
 }
 impl<Body, Failure> PartEvaluationSlot<Body, Failure> {
+    /// Seal the current part datums for a later session command.
+    /// Example: `let datums = slot.current_datums(&session)?`.
+    pub fn current_datums<O: TransactionObserver>(
+        &self,
+        session: &DocumentSession<O>,
+    ) -> Result<CurrentPartDatums, PartEvaluationError> {
+        let datums = self.current(session)?.datum_evaluation();
+        Ok(CurrentPartDatums {
+            document: session.document,
+            scope: session.history.evaluation_scope(),
+            datums,
+        })
+    }
     /// Resolve a face in the current body set; example: `slot.resolve_planar_face(session, backend, reference)?`.
     pub fn resolve_planar_face<O, B>(
         &self,

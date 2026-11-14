@@ -359,3 +359,98 @@ fn headless_face_offset_uses_its_replay_owner() {
     .unwrap();
     assert_eq!(rows.len(), 4);
 }
+
+#[test]
+#[ignore = "#3884: sketch creation and recompute need current part datums"]
+fn sketch_on_face_plane_tracks_the_part_and_history() {
+    let (owner, _) = owner();
+    let mut owner = owner
+        .with_extrusion_policy(crate::part_scene::resolution_policy::desktop_policy())
+        .unwrap();
+    let document = open_prism(&mut owner, false);
+    let bodies = Client::new(owner.document_host())
+        .model()
+        .reference_keys()
+        .unwrap()
+        .bodies
+        .unwrap();
+    let face = bodies[0]
+        .faces
+        .as_ref()
+        .unwrap()
+        .iter()
+        .find(|face| (face.point.as_ref().unwrap()[2] - 2.).abs() < 1e-9)
+        .unwrap();
+    let plane = Client::new(owner.document_host())
+        .work_planes()
+        .create(&CreateWorkPlaneArgs {
+            kind: "plane-offset".into(),
+            refs: Some(vec![face.key.clone()]),
+            offset: "5 mm".into(),
+            ..Default::default()
+        })
+        .unwrap();
+    let sketch = Client::new(owner.document_host())
+        .sketch()
+        .create(&CreateSketchArgs {
+            work_plane_index: Some(Box::new(plane.index)),
+            ..Default::default()
+        })
+        .unwrap();
+    assert_eq!(sketch.sketch_index, 1);
+    let scene = owner.take_sketch_scene().unwrap().unwrap();
+    assert!(
+        scene.plane_declines.is_empty(),
+        "{:?}",
+        scene.plane_declines
+    );
+    assert_eq!(scene.sketches.len(), 2);
+    let placed = &scene.sketches[1];
+    assert!((placed.plane.recipe().origin[2] - 2.5).abs() < 1e-9);
+    let sketch_id = placed.sketch;
+    set_parameter(&mut owner, "depth", "3 cm");
+    let updated = owner.take_sketch_scene().unwrap().unwrap();
+    assert!(
+        updated.plane_declines.is_empty(),
+        "{:?}",
+        updated.plane_declines
+    );
+    let plane = &updated
+        .sketches
+        .iter()
+        .find(|item| item.sketch == sketch_id)
+        .unwrap()
+        .plane;
+    assert!((plane.recipe().origin[2] - 3.5).abs() < 1e-9);
+    use oblikovati_automation::PartUpdateAccess;
+    let datums = owner
+        .part_scenes
+        .datum_evaluation(&mut owner.files, document)
+        .unwrap();
+    let health = owner
+        .files
+        .workspace()
+        .session(document)
+        .unwrap()
+        .snapshot()
+        .document_sketch_health_with_datums(sketch_id, &datums)
+        .unwrap();
+    assert!(
+        matches!(
+            health,
+            oblikovati_model::document_sketch::PlacedSketchHealth::Current(
+                oblikovati_model::document_sketch::SketchEvaluation::Numerical(_)
+            )
+        ),
+        "{health:?}"
+    );
+    owner.files.commands(document).unwrap().undo().unwrap();
+    assert!(
+        owner
+            .take_sketch_scene()
+            .unwrap()
+            .unwrap()
+            .plane_declines
+            .is_empty()
+    );
+}

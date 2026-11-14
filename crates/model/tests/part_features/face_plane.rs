@@ -267,3 +267,117 @@ fn datum_view_uses_the_same_part_replay_geometry_and_health() {
         matches!(&datums.health.iter().find(|record| record.feature == FeatureId(3)).unwrap().status, FeatureEvaluationStatus::Failed(error) if error.to_string().contains("expected current face"))
     );
 }
+
+#[test]
+fn sketch_placement_and_projected_origin_use_the_same_part_datums() {
+    use oblikovati_model::{
+        document_sketch::DocumentSketchId, feature::work_geometry::WorkPointReference,
+        sketch::Sketch2D,
+    };
+    let mut snapshot = face_document();
+    let sketch = DocumentSketchId(44);
+    snapshot
+        .sketches
+        .add_on_work_plane(sketch, "On face", FeatureId(3), Sketch2D::default())
+        .unwrap();
+    assert!(snapshot.resolve_sketch_plane(sketch).is_err());
+    let datums = snapshot
+        .evaluate_part_features(&mut FaceEvaluator::default())
+        .unwrap()
+        .datum_evaluation();
+    let plane = snapshot
+        .resolve_sketch_plane_with_datums(sketch, &datums)
+        .unwrap();
+    assert_eq!(plane.recipe().origin, [1.5, 0., 0.]);
+    let projection = snapshot
+        .project_datum_point_into_sketch_with_datums(sketch, WorkPointReference::Origin, &datums)
+        .unwrap();
+    assert_eq!(projection.local_position, [0., 0.]);
+    let failed = snapshot
+        .evaluate_part_features(&mut FaceEvaluator {
+            fail_body: true,
+            fail_face: false,
+        })
+        .unwrap()
+        .datum_evaluation();
+    assert!(
+        snapshot
+            .resolve_sketch_plane_with_datums(sketch, &failed)
+            .is_err()
+    );
+    assert!(
+        snapshot
+            .project_datum_point_into_sketch_with_datums(
+                sketch,
+                WorkPointReference::Origin,
+                &failed
+            )
+            .is_err()
+    );
+}
+
+#[test]
+fn sketch_creation_validates_and_projects_origin_with_part_datums() {
+    use oblikovati_model::{document_sketch::SketchPlacement, history::DocumentSketchCreation};
+    let snapshot = face_document();
+    let datums = snapshot
+        .evaluate_part_features(&mut FaceEvaluator::default())
+        .unwrap()
+        .datum_evaluation();
+    let ids = RecipeIdAllocator::restore(None, snapshot.parameters.ids()).unwrap();
+    let history = DocumentEditHistory::new(snapshot, ids).unwrap();
+    let request = DocumentSketchCreation {
+        name: "Face sketch".into(),
+        placement: SketchPlacement::WorkPlane(FeatureId(3)),
+        orientation: None,
+        project_origin: true,
+    };
+    history
+        .preview(|candidate, ids| {
+            let sketch = candidate.create_document_sketch_with_datums(&request, ids, &datums)?;
+            let placed = candidate.sketches.get(sketch).unwrap();
+            assert_eq!(placed.point_projections().len(), 1);
+            let solved = candidate.solve_pending_document_sketches_with_datums(
+                Default::default(),
+                || false,
+                &datums,
+            );
+            let result = solved
+                .report
+                .reports
+                .iter()
+                .find(|report| report.sketch == sketch)
+                .unwrap();
+            assert!(result.result.is_ok());
+            assert_eq!(
+                candidate
+                    .resolve_sketch_plane_with_datums(sketch, &datums)
+                    .unwrap()
+                    .recipe()
+                    .origin,
+                [1.5, 0., 0.]
+            );
+            Ok::<_, oblikovati_model::history::DocumentSketchCreationError>(())
+        })
+        .unwrap();
+    let failed = history
+        .snapshot()
+        .evaluate_part_features(&mut FaceEvaluator {
+            fail_body: true,
+            fail_face: false,
+        })
+        .unwrap()
+        .datum_evaluation();
+    history
+        .preview(|candidate, ids| {
+            let count = candidate.sketches.sketches().len();
+            assert!(
+                candidate
+                    .create_document_sketch_with_datums(&request, ids, &failed)
+                    .is_err()
+            );
+            assert_eq!(candidate.sketches.sketches().len(), count);
+            Ok::<_, oblikovati_model::history::DocumentSketchCreationError>(())
+        })
+        .unwrap();
+}

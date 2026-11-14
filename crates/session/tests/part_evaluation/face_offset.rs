@@ -159,3 +159,25 @@ fn face_binding_requires_a_current_result_and_a_resolvable_planar_face() {
         [4., 0., 0.]
     );
 }
+
+#[test]
+fn part_datum_snapshot_rejects_stale_and_foreign_sessions() {
+    let mut session = face_session();
+    let mut slot = PartSlot::default();
+    publish_face(&mut session, &mut slot, 2.5);
+    let datums = slot.current_datums(&session).unwrap();
+    assert_eq!(
+        datums
+            .current(&session)
+            .unwrap()
+            .plane(FeatureId(2))
+            .unwrap()
+            .recipe()
+            .origin,
+        [2.5, 0., 0.]
+    );
+    let other = face_session();
+    assert!(datums.current(&other).is_err());
+    edit_depth(&mut session, "4 cm");
+    assert!(datums.current(&session).is_err());
+}

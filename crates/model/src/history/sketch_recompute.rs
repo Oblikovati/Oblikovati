@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::{DocumentSnapshot, sketch_projection::CurrentSketchProjectionInputs};
+use super::{
+    DocumentSnapshot,
+    sketch_projection::{BorrowedSketchProjectionInputs, CurrentSketchProjectionInputs},
+};
 use crate::{
     document_sketch::{DocumentSketchId, DocumentSketchSolveOutcome, SketchSolveScope},
     sketch::SketchError,
@@ -7,6 +10,22 @@ use crate::{
 use oblikovati_solve::{diagnostics::ConstraintStructure, nonlinear::SolveOptions};
 
 impl DocumentSnapshot {
+    /// Solve pending sketches using the current ordered part datums.
+    /// Example: `snapshot.solve_pending_document_sketches_with_datums(options, || false, &datums)`.
+    pub fn solve_pending_document_sketches_with_datums(
+        &self,
+        options: SolveOptions,
+        cancelled: impl FnMut() -> bool,
+        datums: &crate::feature::work_geometry::WorkGeometryEvaluation,
+    ) -> DocumentSketchSolveOutcome {
+        self.sketches.solve_scope(
+            &self.parameters,
+            options,
+            cancelled,
+            SketchSolveScope::Pending,
+            &BorrowedSketchProjectionInputs::from_datums(datums),
+        )
+    }
     /// Solve one sketch with current source coordinates; example: `snapshot.solve_one_document_sketch(id, options, || false)?`.
     pub fn solve_one_document_sketch(
         &self,
