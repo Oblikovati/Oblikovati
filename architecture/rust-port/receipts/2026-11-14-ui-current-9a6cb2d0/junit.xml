@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/obk-bdd-ui-dcdIZZms/checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/obk-bdd-ui-dcdIZZms/checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T15:03:05.959035949Z" time="4.457714718"><testcase name="Scenario: Select a solid feature in the browser: tmp/obk-bdd-ui-dcdIZZms/checkout/features/application/model-browser/model-browser.feature:18:3" time="4.457714718"><system-out><![CDATA[  Scenario: Select a solid feature in the browser
+   ✔  Given an active part in the MCAD Software contains a single block created by an extrusion
+   ✔  And the model browser shows the extrusion and its nested sketch
+   ✔  When the user selects the extrusion row in the model browser
+   ✔  Then the extrusion row is highlighted
+   ✔  And the visible block edges are highlighted in blue
+   ✔  And a contextual toolbar appears over the model
+   ✔  When the user clicks an empty area of the viewport
+   ✔  Then the blue edge highlighting and contextual toolbar disappear
+   ✔  And the block remains visible
+]]></system-out></testcase></testsuite></testsuites>
