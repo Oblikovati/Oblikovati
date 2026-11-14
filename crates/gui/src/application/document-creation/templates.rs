@@ -37,6 +37,24 @@ pub struct GuiDocumentTemplate {
     pub kind: GuiTemplateKind,
     pub units: GuiTemplateUnits,
 }
+/// Physical material described by a template recipe.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum GuiTemplateMaterial {
+    /// The recipe does not assign a material.
+    Unassigned,
+    /// The assigned identity resolved to this display name.
+    Assigned { id: String, name: String },
+    /// The recipe assigns an identity that cannot be resolved.
+    Unresolved { id: String },
+    /// The source needed to inspect the assigned material failed.
+    Unavailable { cause: String },
+}
+/// One template and its owner-resolved material.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GuiTemplateMaterialEntry {
+    pub template: GuiDocumentTemplate,
+    pub material: GuiTemplateMaterial,
+}
 impl GuiDocumentTemplate {
     /// The canonical length unit; example: a metric template answers `mm`.
     pub fn length_unit(self) -> &'static str {

@@ -22,6 +22,7 @@ mod drawing_snapshots;
 mod selection;
 pub use derived_links::DERIVED_COMMAND_METHODS;
 mod create;
+pub use create::creation_package;
 mod lifecycle;
 mod native_files;
 mod open;

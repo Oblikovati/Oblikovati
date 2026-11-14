@@ -5,6 +5,8 @@ use oblikovati_api::{
     wire::{ActivateDocumentArgs, CloseDocumentArgs, CreateDocumentArgs, SetDocumentUnitsArgs},
 };
 use oblikovati_gui::{GuiDocumentTemplate, GuiTemplateKind};
+mod template_material;
+pub(crate) use template_material::gui_template_materials;
 impl<
     O: TransactionObserver,
     W: WorkspaceObserver,
@@ -38,8 +40,9 @@ impl<
 }
 /// Measure what each template creates by encoding it: built-in templates have no file on disk.
 /// Example: `gui_template_sizes()` for the chooser's Details view.
-pub(crate) fn gui_template_sizes() -> Vec<(GuiTemplateKind, u64)> {
-    static SIZES: std::sync::OnceLock<Vec<(GuiTemplateKind, u64)>> = std::sync::OnceLock::new();
+pub(crate) fn gui_template_sizes() -> Result<Vec<(GuiTemplateKind, u64)>, String> {
+    static SIZES: std::sync::OnceLock<Result<Vec<(GuiTemplateKind, u64)>, String>> =
+        std::sync::OnceLock::new();
     SIZES
         .get_or_init(|| {
             TEMPLATE_KINDS
@@ -49,6 +52,17 @@ pub(crate) fn gui_template_sizes() -> Vec<(GuiTemplateKind, u64)> {
         })
         .clone()
 }
+pub(super) fn template_size_snapshot() -> (Vec<(GuiTemplateKind, u64)>, Option<String>) {
+    template_size_result(gui_template_sizes())
+}
+fn template_size_result(
+    result: Result<Vec<(GuiTemplateKind, u64)>, String>,
+) -> (Vec<(GuiTemplateKind, u64)>, Option<String>) {
+    match result {
+        Ok(sizes) => (sizes, None),
+        Err(cause) => (Vec::new(), Some(cause)),
+    }
+}
 const TEMPLATE_KINDS: [GuiTemplateKind; 5] = [
     GuiTemplateKind::Part,
     GuiTemplateKind::SheetMetal,
@@ -56,26 +70,16 @@ const TEMPLATE_KINDS: [GuiTemplateKind; 5] = [
     GuiTemplateKind::Drawing,
     GuiTemplateKind::Presentation,
 ];
-fn encoded_template_size(kind: GuiTemplateKind) -> (GuiTemplateKind, u64) {
+fn encoded_template_size(kind: GuiTemplateKind) -> Result<(GuiTemplateKind, u64), String> {
     let template = GuiDocumentTemplate {
         kind,
         ..Default::default()
     };
-    let kind_id = match template.type_name() {
-        "assembly" => oblikovati_api::types::DOCUMENT_ASSEMBLY,
-        "drawing" => oblikovati_api::types::DOCUMENT_DRAWING,
-        "presentation" => oblikovati_api::types::DOCUMENT_PRESENTATION,
-        _ => oblikovati_api::types::DOCUMENT_PART,
-    };
+    let request = template_request(template, template.name_prefix());
     let package =
-        oblikovati_persistence::package::DocumentPackage::empty(kind_id, template.name_prefix());
-    let package = if template.sub_type().is_empty() {
-        package
-    } else {
-        package.with_sub_type(template.sub_type())
-    };
-    let bytes = package.encode().map_or(0, |encoded| encoded.len() as u64);
-    (kind, bytes)
+        oblikovati_automation::creation_package(&request).map_err(|cause| cause.to_string())?;
+    let bytes = package.encode().map_err(|cause| cause.to_string())?.len() as u64;
+    Ok((kind, bytes))
 }
 fn create_template<T: Caller>(
     client: &Client<T>,
@@ -85,11 +89,7 @@ fn create_template<T: Caller>(
 ) -> Result<(), String> {
     let created = client
         .documents()
-        .create(&CreateDocumentArgs {
-            type_: template.type_name().into(),
-            name: name.into(),
-            sub_type: template.sub_type().into(),
-        })
+        .create(&template_request(template, name))
         .map_err(|cause| {
             format!("document template {template:?}: expected a new document: {cause}")
         })?;
@@ -105,6 +105,13 @@ fn create_template<T: Caller>(
         ));
     }
     Ok(())
+}
+fn template_request(template: GuiDocumentTemplate, name: &str) -> CreateDocumentArgs {
+    CreateDocumentArgs {
+        type_: template.type_name().into(),
+        name: name.into(),
+        sub_type: template.sub_type().into(),
+    }
 }
 fn rollback_template<T: Caller>(
     client: &Client<T>,

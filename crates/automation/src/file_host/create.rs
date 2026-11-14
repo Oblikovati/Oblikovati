@@ -20,7 +20,8 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
     }
 }
 
-fn creation_package(request: &CreateDocumentArgs) -> Result<DocumentPackage, Error> {
+/// Prepare the document recipe used by creation; example: `creation_package(&request)?`.
+pub fn creation_package(request: &CreateDocumentArgs) -> Result<DocumentPackage, Error> {
     if request.name.is_empty() {
         return Err(Error(
             "documents.create name \"\": expected a nonempty document name".into(),

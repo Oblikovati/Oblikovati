@@ -112,7 +112,23 @@ fn empty_owner_gui_state() -> GuiCommandState {
         marking_menus: Some(Default::default()),
         keymap_bindings: keymap.catalog(),
         keymap: Some(keymap),
-        template_sizes: document_creation::gui_template_sizes(),
+        template_sizes: document_creation::gui_template_sizes().unwrap(),
+        template_materials: [
+            oblikovati_gui::GuiTemplateKind::Part,
+            oblikovati_gui::GuiTemplateKind::SheetMetal,
+        ]
+        .into_iter()
+        .flat_map(|kind| {
+            [
+                oblikovati_gui::GuiTemplateUnits::Metric,
+                oblikovati_gui::GuiTemplateUnits::Inch,
+            ]
+            .map(move |units| oblikovati_gui::GuiTemplateMaterialEntry {
+                template: oblikovati_gui::GuiDocumentTemplate { kind, units },
+                material: oblikovati_gui::GuiTemplateMaterial::Unassigned,
+            })
+        })
+        .collect(),
         sketch_options: Some(Default::default()),
         color_scheme: Some(
             oblikovati_gui::GuiColorSchemeState::from_registry(

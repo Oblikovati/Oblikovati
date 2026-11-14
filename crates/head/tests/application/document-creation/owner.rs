@@ -395,3 +395,50 @@ fn drawing_base_view_api_validates_current_geometry_and_replays() {
 
 #[path = "owner/drawing_view.rs"]
 mod drawing_view;
+
+#[test]
+fn builtin_part_recipe_material_matches_the_created_document() {
+    use oblikovati_gui::{GuiDocumentTemplate, GuiTemplateMaterial};
+    let (mut owner, _) = owner();
+    let template = GuiDocumentTemplate::default();
+    let state = owner.gui_command_state().unwrap();
+    let entry = state
+        .template_materials
+        .iter()
+        .find(|row| row.template == template)
+        .unwrap();
+    assert_eq!(entry.material, GuiTemplateMaterial::Unassigned);
+    owner.create_document_template(template).unwrap();
+    assert_eq!(
+        owner
+            .gui_command_state()
+            .unwrap()
+            .browser
+            .unwrap()
+            .part_material,
+        None
+    );
+}
+
+struct UnavailableTemplateCatalog;
+impl oblikovati_session::files::WorkspaceAssetCatalogSource for UnavailableTemplateCatalog {
+    fn load_catalog(&self) -> Result<oblikovati_model::assets::BuiltinAssetCatalog, String> {
+        Err("fixture catalog unavailable".into())
+    }
+}
+#[test]
+fn unassigned_template_metadata_does_not_require_a_catalog() {
+    let files: FileWorkspace<DesktopObservations, DesktopObservations, MemoryDocumentFiles> =
+        FileWorkspace::new_with_asset_catalog_source(
+            DesktopObservations::default(),
+            MemoryDocumentFiles::default(),
+            Default::default(),
+            Box::new(UnavailableTemplateCatalog),
+        );
+    let rows = document_creation::gui_template_materials(&files);
+    assert_eq!(rows.len(), 4);
+    assert!(
+        rows.iter()
+            .all(|row| row.material == oblikovati_gui::GuiTemplateMaterial::Unassigned)
+    );
+}

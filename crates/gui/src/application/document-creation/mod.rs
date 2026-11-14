@@ -2,6 +2,7 @@
 #[path = "component_dialog.rs"]
 pub(crate) mod component_dialog;
 mod kind_selection;
+mod template_material;
 mod template_navigation;
 mod template_sort;
 mod template_tiles;
@@ -173,7 +174,7 @@ impl TemplateChooser {
             .content_size([self.gallery_width(ui, icons, layout), 0.])
             .build(|| self.gallery(ui, state, layout, icons));
         ui.next_column();
-        self.details(ui);
+        self.details(ui, state);
         ui.columns(1, "template-layout-end", false);
     }
     fn folders(&mut self, ui: &Ui) {
@@ -372,8 +373,11 @@ impl TemplateChooser {
         }
         chosen || secondary
     }
-    fn details(&mut self, ui: &Ui) {
+    fn details(&mut self, ui: &Ui, state: &GuiCommandState) {
         ui.text("Template details");
+        if let Some(cause) = &state.template_size_issue {
+            ui.text_wrapped(format!("Template sizes unavailable: {cause}"));
+        }
         let Some(selected) = self.selected else {
             ui.text_wrapped("Select a template.");
             return;
@@ -381,6 +385,7 @@ impl TemplateChooser {
         ui.text_wrapped(selected.title());
         ui.text(format!("Document type: {}", selected.type_label()));
         ui.text(selected.unit_label());
+        template_material::material_detail(ui, state, selected);
         if selected.kind == GuiTemplateKind::Drawing {
             self.drawing_previews(ui);
         }
