@@ -43,6 +43,7 @@ pub struct GuiFrameEngine {
     raster_scale: f32,
     preferences: crate::ui_scale::GuiScalePreferences,
     extrude_dialog: crate::extrude_dialog::ExtrudeDialog,
+    pending_extrusion_shortcut: bool,
     dimension_value_editor: crate::sketch::dimension_edit::GuiDimensionValueEditor,
     precise_input: crate::sketch::precise_input::PreciseInputBar,
     create_block: crate::sketch::create_block::CreateBlockDialog,
@@ -75,6 +76,10 @@ pub struct GuiFrameEngine {
     theme_editor: crate::theme_editor::GuiThemeEditor,
 }
 impl GuiFrameEngine {
+    /// Open an extrusion draft for the active part. Example: `engine.request_extrusion()`.
+    pub fn request_extrusion(&mut self) {
+        self.pending_extrusion_shortcut = true;
+    }
     /// Load and save applied ribbon settings through a host store.
     /// Example: `engine.set_ribbon_settings_store(store)?`.
     pub fn set_ribbon_settings_store(
@@ -98,6 +103,7 @@ impl GuiFrameEngine {
             raster_scale: 1.,
             preferences: Default::default(),
             extrude_dialog: Default::default(),
+            pending_extrusion_shortcut: false,
             dimension_value_editor: Default::default(),
             precise_input: Default::default(),
             create_block: Default::default(),

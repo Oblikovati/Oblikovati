@@ -46,6 +46,9 @@ impl GuiFrameEngine {
             },
             &mut selected,
         );
+        if std::mem::take(&mut self.pending_extrusion_shortcut) {
+            selected.push(crate::extrude_dialog::start_action(&request.commands));
+        }
         apply_quick_access(
             &mut self.quick_access,
             &mut self.document_files,

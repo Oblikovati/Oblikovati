@@ -492,5 +492,7 @@ mod cube_ui;
 #[path = "owner/sketch_pattern.rs"]
 mod sketch_pattern;
 
+#[path = "owner/saved_extrude_shortcut.rs"]
+mod saved_extrude_shortcut;
 #[path = "owner/selection_preferences.rs"]
 mod selection_preferences;
