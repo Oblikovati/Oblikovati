@@ -15087,8 +15087,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-tabs-c65b58f2/receipt-c65b58f2636efdba.json",
-        "sha256": "3223665e8fc184711f24f901d8345353d446419d200277cc303473fff29942bd"
+        "path": "architecture/rust-port/receipts/2026-11-14-material-tabs-c65b58f2/receipt-c65b58f2636efdba.json",
+        "sha256": "d667880a956614d167126f0aa550be021753170d27d92b787b72d36ce1dd231c"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
@@ -15201,8 +15201,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-tabs-50f02a10/receipt-50f02a102ce48562.json",
-        "sha256": "c4b65e46a4e18a01ae9d216d7b9097824e9221e3b1e4efe1400e58eb1546f5f9"
+        "path": "architecture/rust-port/receipts/2026-11-14-material-tabs-50f02a10/receipt-50f02a102ce48562.json",
+        "sha256": "527509ee0e972eda07c93476d901e6008a16fa329bd8963a6c570a199a82bbda"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
@@ -15230,8 +15230,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-tabs-8d403d73/receipt-8d403d738cd32144.json",
-        "sha256": "2aa9b0f5f1dedbe33c6f73b5f8bf0f38465d234affd6e6ee8e021801976609e8"
+        "path": "architecture/rust-port/receipts/2026-11-14-material-tabs-8d403d73/receipt-8d403d738cd32144.json",
+        "sha256": "a7196a9dc385970438012892013b1b3cc2bf210e049dd48eb25d7e240545e5aa"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
@@ -15259,8 +15259,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-tabs-244278b4/receipt-244278b44b0bbbfb.json",
-        "sha256": "44e03e77109f2e2080342accbf55193081ba3d09412e0310e682ad19c61f7a19"
+        "path": "architecture/rust-port/receipts/2026-11-14-material-tabs-244278b4/receipt-244278b44b0bbbfb.json",
+        "sha256": "5d640f50649772ce76b622f1c61bb838c314caf89043dc23057b141f4efb1134"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
@@ -15288,8 +15288,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-tabs-d6614d03/receipt-d6614d03f57eca8a.json",
-        "sha256": "b261126a3a3f9ffb23b2e181d3fe89e254af99dc1e9bcdc26d04bf2d225d5cb7"
+        "path": "architecture/rust-port/receipts/2026-11-14-material-tabs-d6614d03/receipt-d6614d03f57eca8a.json",
+        "sha256": "10c1443754c5a11091bbd21d75ed0ca32725d8a02bf1acf056eb219bf0bce603"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
@@ -15317,8 +15317,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-tabs-f2e3989e/receipt-f2e3989ecad9628f.json",
-        "sha256": "85927e978344efd8aa3891d4951872c2d174bbf27dd0a55b87e70fd4dc779093"
+        "path": "architecture/rust-port/receipts/2026-11-14-material-tabs-f2e3989e/receipt-f2e3989ecad9628f.json",
+        "sha256": "425a2f1a33d7a939651968b0c0378d534ff5ab469d199e164c784dd8ff830cfc"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
@@ -15346,8 +15346,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-tabs-d6f09550/receipt-d6f09550bb0cdb93.json",
-        "sha256": "3d2b3b633bd7293947cd4bdc743f12a7038805ed196de2e4ea17e565698dee9f"
+        "path": "architecture/rust-port/receipts/2026-11-14-material-tabs-d6f09550/receipt-d6f09550bb0cdb93.json",
+        "sha256": "9181614a6f1c13df417cdd3f3a6f8d12442d4b8383e3fa403c5c2b34dc51cc63"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
@@ -15375,8 +15375,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-tabs-8f2c33b3/receipt-8f2c33b398b731b4.json",
-        "sha256": "0b8587ec2e573ce5dbaca8bae96c73c81470b74aeb3c2536ea9ac1556bd8e0c0"
+        "path": "architecture/rust-port/receipts/2026-11-14-material-tabs-8f2c33b3/receipt-8f2c33b398b731b4.json",
+        "sha256": "e1f4387e97bb243b8918fa0fda6d315de65ed71496bc2a02a036ae5c5a685f96"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
