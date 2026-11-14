@@ -628,8 +628,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-newsk-d46c5543/receipt-d46c554381029cf4.json",
-        "sha256": "fff6a8e65a2a5f0bf1c43f4c4b3dd2fb2b7711048bf4439ec41bf047e0a77399"
+        "path": "architecture/rust-port/receipts/2026-11-14-sketch-r5-d46c554381029cf4-79c5066a/receipt-d46c554381029cf4.json",
+        "sha256": "fc7d3df9d1e79c6a85546e3eacb7faa8e9548a53f7eb5157cb1301a6e5800ae9"
       },
       "mapping_reason": "Attach a sketch to a modeled planar face and preserve the extrusion.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
@@ -664,8 +664,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-newsk-44dfe89f/receipt-44dfe89fda9e10be.json",
-        "sha256": "644b708d1e62fa72cbf96b7b43ab91c88db115115e2aa8ff4ecec4dba0a7fab3"
+        "path": "architecture/rust-port/receipts/2026-11-14-sketch-r5-44dfe89fda9e10be-79c5066a/receipt-44dfe89fda9e10be.json",
+        "sha256": "f62cfdd81aa327015f6287c222668b183c0f3a3a1abc5620de5a08cc82b5628b"
       },
       "mapping_reason": "Create and retain an offset work plane and its dependent sketch.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
@@ -764,8 +764,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-rect-152ae6bf/receipt-152ae6bfde300d9b.json",
-        "sha256": "c4a21a74212a98e4cdb62ad4ac668fc63bb8f21633115a0de29eeb5044084ae4"
+        "path": "architecture/rust-port/receipts/2026-11-14-sketch-r5-152ae6bfde300d9b-79c5066a/receipt-152ae6bfde300d9b.json",
+        "sha256": "86faa66af8a41897498f6048487e640383161b79ffd1a739a7bb034aa70c72e8"
       },
       "go_reference": "Go aa8297d1b: app/sketch_tools_test.go and model/sketch/recipe_rectangle_test.go cover two-corner construction and sketch degrees of freedom.",
       "mapping_reason": "Measure the rectangle edges through the analytic sketch-query path.",
@@ -851,8 +851,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-rect-4e818f29/receipt-4e818f2994acb248.json",
-        "sha256": "c355677af3022fa03c8077ad72488a9ece29c540d0f7c209c95fd8379d099b28"
+        "path": "architecture/rust-port/receipts/2026-11-14-sketch-r5-4e818f2994acb248-79c5066a/receipt-4e818f2994acb248.json",
+        "sha256": "c7238fe87a309ac77eaecd86279df9c400af529011d0e736650c11aef47d1799"
       },
       "go_reference": "Go aa8297d1b: app/sketch_tools_test.go and model/sketch/recipe_rectangle_test.go cover two-corner construction and sketch degrees of freedom.",
       "mapping_reason": "Cancel a proposed edit to an existing sketch dimension.",
@@ -887,8 +887,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-rect-ecfb4103/receipt-ecfb4103b54e7240.json",
-        "sha256": "93caabce7c2708fbdcbc8ade59f0387be575b756c871ab91d9b382736c524eba"
+        "path": "architecture/rust-port/receipts/2026-11-14-sketch-r5-ecfb4103b54e7240-79c5066a/receipt-ecfb4103b54e7240.json",
+        "sha256": "dbc6bd571d120dca8f3a8a0d9f733e9a4395bc3c0bed73c3aeb7f20a4f89a5c1"
       },
       "go_reference": "Go aa8297d1b: app/sketch_tools_test.go and model/sketch/recipe_rectangle_test.go cover two-corner construction and sketch degrees of freedom.",
       "mapping_reason": "Edit and measure a sketch dimension through history.",
@@ -2470,8 +2470,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-last-67ae50d1/receipt-67ae50d1d3318571.json",
-        "sha256": "3919e72fa07563b53687fabe39ed81f4f63122631bbf1d823b4bbae1863179b2"
+        "path": "architecture/rust-port/receipts/2026-11-14-sketch-r5-67ae50d1d3318571-79c5066a/receipt-67ae50d1d3318571.json",
+        "sha256": "f1a228c0072bf8ceb29c756b72d7c9cfeaad505e3ecc8858eb928bdb24d5e3bb"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
