@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport pan: tmp/obk-pan-48987af/features/application/viewport-pan/viewport-pan.feature" package="testsuite/Feature: Viewport pan: tmp/obk-pan-48987af/features/application/viewport-pan/viewport-pan.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T21:40:29.544242978Z" time="4.761753661"><testcase name="Scenario: Activate and cancel viewport pan: tmp/obk-pan-48987af/features/application/viewport-pan/viewport-pan.feature:5:3" time="4.761753661"><system-out><![CDATA[  Scenario: Activate and cancel viewport pan
+   ✔  Given a part containing a visible solid is active in the MCAD Software
+   ✔  And the viewport navigation bar is visible
+   ✔  When the user selects Pan on the navigation bar
+   ✔  Then Pan is active
+   ✔  And the Pan control is highlighted
+   ✔  And the status area prompts the user to pan the current view and indicates cancellation is available
+   ✔  And the active part and solid remain visible
+   ✔  When the user presses Escape
+   ✔  Then the status area returns to Ready
+   ✔  And the active part and solid remain visible
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport pan: tmp/obk-pan-48987af/features/application/viewport-pan/viewport-pan.feature" package="testsuite/Feature: Viewport pan: tmp/obk-pan-48987af/features/application/viewport-pan/viewport-pan.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T21:40:49.656061918Z" time="6.739141386"><testcase name="Scenario: Switch from Pan to Zoom using the contextual menu: tmp/obk-pan-48987af/features/application/viewport-pan/viewport-pan.feature:37:3" time="6.739141386"><system-out><![CDATA[  Scenario: Switch from Pan to Zoom using the contextual menu
+   ✔  Given a part containing a visible solid is active in the MCAD Software
+   ✔  And Pan is active from the viewport navigation bar
+   ✔  When the user right-clicks an empty area of the viewport
+   ✔  And the user chooses Zoom from the contextual menu
+   ✔  Then the contextual menu closes
+   ✔  And the status area prompts for zooming and indicates cancellation is available
+   ✔  And the same part and solid remain visible
+   ✔  When the user presses Escape
+   ✔  Then the status area returns to Ready
+]]></system-out></testcase></testsuite></testsuites>
