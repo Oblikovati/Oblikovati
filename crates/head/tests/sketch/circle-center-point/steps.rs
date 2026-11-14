@@ -187,6 +187,7 @@ fn baseline_restored(world: &mut ApplicationWorld) {
 }
 // circle-center-point-01
 #[when("I select Center Point Circle, click a center, then a distinct circumference point")]
+#[when("the user select Center Point Circle, click a center, then a distinct circumference point")]
 fn pointer_circle(world: &mut ApplicationWorld) {
     select_circle(world);
     world.sketch_click(CENTER);
@@ -221,6 +222,7 @@ fn asks_for_center(world: &mut ApplicationWorld) {
 }
 // circle-center-point-06
 #[when("I select Center Point Circle from the dropdown")]
+#[when("the user select Center Point Circle from the dropdown")]
 fn from_dropdown(world: &mut ApplicationWorld) {
     let caption = world.run("Circle").clone();
     let arrow = world
@@ -241,6 +243,7 @@ fn from_dropdown(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
 }
 #[when("I select a center")]
+#[when("the user select a center")]
 fn select_center(world: &mut ApplicationWorld) {
     world.sketch_click(CENTER);
 }
@@ -258,10 +261,12 @@ fn ready_without_circle(world: &mut ApplicationWorld) {
 }
 // circle-center-point-07
 #[when("I invoke Center Point Circle")]
+#[when("the user invoke Center Point Circle")]
 fn invoke_circle(world: &mut ApplicationWorld) {
     select_circle(world);
 }
 #[when("I select a center and a distinct circumference point")]
+#[when("the user select a center and a distinct circumference point")]
 fn center_and_edge(world: &mut ApplicationWorld) {
     world.sketch_click(CENTER);
     world.sketch_click(THROUGH);
@@ -280,6 +285,7 @@ fn circle_retained(world: &mut ApplicationWorld) {
     world.expect_segment_drawn([CENTER[0], CENTER[1] - 80], [CENTER[0], CENTER[1] - 80]);
 }
 #[when("I undo")]
+#[when("the user undo")]
 #[when("the user presses Undo")]
 fn undo(world: &mut ApplicationWorld) {
     world.undo();
@@ -328,6 +334,7 @@ fn upper_center(world: &mut ApplicationWorld) {
 }
 // circle-center-point-09
 #[when("I click the same position for its circumference")]
+#[when("the user click the same screen position for its circumference")]
 fn same_position(world: &mut ApplicationWorld) {
     world.sketch_click(CENTER);
 }
