@@ -1,0 +1,9 @@
+# Sketch precision observation
+
+Issue [#3928](https://github.com/Oblikovati/Oblikovati/issues/3928) tracks the missing qualification of sketch solve evidence before profile extrusion. The `extrusion-02` free-sketch scenario remains open under [#3927](https://github.com/Oblikovati/Oblikovati/issues/3927).
+
+On Linux at Rust commit `b5a5bd9f0`, the attached observational patch uses the existing head owner `open_sketch` fixture: a solved zero-DOF square with both dimensions set to 10 mm. It changes weld and sew to `1e-13 cm`, requests the existing profile-0 preview, and prints the maximum difference between the measured dimensions and their 1 cm targets. The solve reported `Converged`, rank 8 and zero DOF. The dimensions measured `1.0000000000022213 cm` and `1.000000000009817 cm`; the preview returned `Ok(true)`. The raw residual evidence contained eight model-relative rows and no model-length or unitless maxima.
+
+This observation does not prove that a dimensional error should be compared to weld tolerance, or that it is a certified spatial bound. It shows that the preview path admits the configured resolution without consuming qualified solver precision. `ResidualEvidence` retains mixed-domain raw residuals and does not certify spatial or angular error. The right comparison must account for constraint conditioning and operand provenance. The kernel's own certification remains in place.
+
+To repeat this historical observation in a disposable clean checkout at `b5a5bd9f0`, run `gzip -dc observation.patch.gz | git apply`, then run `cargo test --offline -p oblikovati-head --lib observe_certified_preview_with_measured_dimension_residual -- --nocapture`. This is a diagnostic, not a conformance test. It expects the current acceptance and must not be used as a specification after the issue is fixed.
