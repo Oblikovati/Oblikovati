@@ -216,6 +216,7 @@ fn select_window_list(world: &mut ApplicationWorld) {
     );
 }
 #[then("the dialog offers OK and Cancel")]
+#[then("the dialog offers OK and cancels")]
 fn ok_and_cancel(world: &mut ApplicationWorld) {
     world.expect_text("OK");
     world.expect_text("Cancel");

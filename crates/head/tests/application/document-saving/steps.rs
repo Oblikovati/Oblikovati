@@ -372,6 +372,7 @@ fn prompt_buttons(world: &mut ApplicationWorld) {
 #[when("I cancel the save-changes prompt")]
 #[when("the user cancels the save-changes prompt")]
 #[when("I choose Cancel at the save-changes prompt")]
+#[when("the user chooses Cancel at the save-changes prompt")]
 fn prompt_cancel(world: &mut ApplicationWorld) {
     world.click_text("Cancel");
 }
