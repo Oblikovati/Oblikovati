@@ -4311,10 +4311,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-preview-image-chooser/receipt-952a5a79e0b3266f.json",
+        "sha256": "0f0fb10888755d1e21de82c17d43be34863b3f69faeb72941eb7013cd374a28b"
+      },
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
-      "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences."
+      "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b: save and file-dialog state tests pass, but matching preview image chooser controls were not found. See receipts/2026-11-15-go-save-preview/README.md.",
+      "kernel_capabilities": "No solid modeling operation is required to browse for a preview image and cancel.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "A part viewport is initialized; this scenario does not request a solid modeling operation.",
+      "rust_tests": "application_scenarios_use_the_native_window: Browse for a preview image and cancel the image chooser",
+      "oracle": "Pinned native scenario assertions and reviewed final capture; Go preview chooser parity is not established.",
+      "expected_result": "The image chooser closes without closing Save As or losing the selected preview source, and cancelling Save As leaves the part active."
     },
     {
       "id": "scenario:72ef5d70eb6c0a73857190d527276bf9a406e7ba2fd6a106706065afc9c8eff9",
