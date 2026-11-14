@@ -1,0 +1,22 @@
+{
+  "kind": "selection-preferences-verification",
+  "application_commit": "975474958432ede5e241682ad7157237bfc3b013",
+  "issue": "https://github.com/Oblikovati/Oblikovati/issues/3890",
+  "environment": "Linux Xvfb 1920x1200 Vulkan Lavapipe",
+  "results": {
+    "owner_persistence_and_rollback": "4 passed",
+    "stored_preference_validation": "1 passed",
+    "gui_selection_filter": "5 passed",
+    "session_entry_validation": "1 passed",
+    "native_restart_and_reset": "1 passed",
+    "native_panel_click_restart": "1 passed",
+    "native_body_face_priority": "1 passed",
+    "native_cube_journey": "1 passed",
+    "clippy": "head, gui and session all targets passed with -D warnings"
+  },
+  "limitations": [
+    "Panel click interaction was tested at default Xvfb scale only.",
+    "Assembly faces, work planes, other snap candidates, and perspective-depth-specific policy remain open.",
+    "The full workspace gate and cross-platform matrix have not passed."
+  ]
+}
