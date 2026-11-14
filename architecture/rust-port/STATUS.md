@@ -41,7 +41,8 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 - A9: all ten two-point rectangle scenarios have reviewed milestone assignments. The measurement and dimension-edit cases belong to R5; the remaining input cases belong to R4 (#3855, #3857).
 - R4 extrusion: `extrusion-01` has a current native receipt. The full cube journey remains unverified (#3870).
 - A9: eight additional extrusion scenarios have reviewed R4, R5, or R7 assignments. They remain inventoried until native acceptance passes (#3857, #3870).
-- R3 cube evidence: the headless certified replay passed on `77f03cf61`; see `receipts/2026-11-14-r3-cube-check/`. The native GUI-loop cube test passed on `be2d5caf9`; see `receipts/2026-11-14-keyboard-cube-check/`. It uses injected events and an API model-state fixture. Foreground MCPBridge input and screenshot evidence, full R3 exit checks, and the gate remain open (#3857).
+- R3 cube evidence: the headless certified replay passed on `77f03cf61`; see `receipts/2026-11-14-r3-cube-check/`. The native GUI-loop cube test passed on `be2d5caf9`; see `receipts/2026-11-14-keyboard-cube-check/`. A foreground X11 mouse/keyboard journey on `0e0500c33` creates, edits, saves and reopens the cube, then resolves a saved face key through MCPBridge. See `receipts/2026-11-14-foreground-cube/`. The full R3 exit checks and gate remain open (#3857).
+- MCPBridge face-area measurement is refused by the Rust host even though the saved face key resolves through face appearance assignment (#3876).
 - A7: the scenario bundle, file manifest, and verifier are tracked in `test-utilities/benchmarks/scenario-snapshots/` and `tools/bdd/`. See issue #3864.
 - A6: diagnostic runner reports all steps and taints results after a failure. See issue #3863 and `receipts/2026-11-13-bdd-diagnostics/`. Fixture blockers require an explicit fixture signal.
 - A4: this status file is the initial manual queue. Generate it from the ledger when A8 is ready.
