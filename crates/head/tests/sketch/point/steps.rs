@@ -56,12 +56,14 @@ fn point_active(world: &mut ApplicationWorld) {
     world.expect_status("Select center point");
 }
 #[when("I press Escape twice without clicking the canvas")]
+#[when("the user press Escape twice without clicking the canvas")]
 fn escape_twice(world: &mut ApplicationWorld) {
     world.escape();
     world.escape();
     world.pump(Vec::new());
 }
 #[when("I right-click empty canvas to inspect state")]
+#[when("the user right-click empty canvas to inspect state")]
 fn right_click_empty(world: &mut ApplicationWorld) {
     open_context_menu(world, EMPTY);
 }
