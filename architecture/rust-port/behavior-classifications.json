@@ -3338,6 +3338,397 @@
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
       "mapping_reason": "Expose the Precise Input entry in the Create panel."
+    },
+    {
+      "id": "scenario:d0dc7b66959fc4df19efd5d8ab6d2537215ebd05bf9e5e4b6c25906beb719df1",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2",
+      "milestone": "R4",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence",
+      "acceptance_test": "application_scenarios_use_the_native_window: Open and cancel the first save",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3888",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Native document save, close, or reopen lifecycle."
+    },
+    {
+      "id": "scenario:14f48e698bd03b3faf10660cc4dddccfa827d553243c2c8f76d8a0089380b700",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2",
+      "milestone": "R4",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence",
+      "acceptance_test": "application_scenarios_use_the_native_window: Save and reopen a newly created empty part",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3888",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Native document save, close, or reopen lifecycle."
+    },
+    {
+      "id": "scenario:cb5f795341d33e8781b661f83c644b2437997cfcbb69421d51fa51155c7ce1ed",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2",
+      "milestone": "R4",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence",
+      "acceptance_test": "application_scenarios_use_the_native_window: Save changes to an existing part and reopen its sketch",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3888",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Native document save, close, or reopen lifecycle."
+    },
+    {
+      "id": "scenario:ec6362e3e986c02ef4690b3c134b9d166b8eeae0242613a788b7d246c671e067",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence",
+      "acceptance_test": "application_scenarios_use_the_native_window: Toggle the preview picture controls before saving",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3888",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences."
+    },
+    {
+      "id": "scenario:952a5a79e0b3266f11ed9168c99515eb45d96a2e5bf7d78b03b771e8b9031372",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence",
+      "acceptance_test": "application_scenarios_use_the_native_window: Browse for a preview image and cancel the image chooser",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3888",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences."
+    },
+    {
+      "id": "scenario:72ef5d70eb6c0a73857190d527276bf9a406e7ba2fd6a106706065afc9c8eff9",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence",
+      "acceptance_test": "application_scenarios_use_the_native_window: Inspect file type choices when saving a part",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3888",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences."
+    },
+    {
+      "id": "scenario:52a88b77aefd086f7782feb68b7421f2f95dcd54958176983fc77f5b2e1a1b66",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2",
+      "milestone": "R4",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence",
+      "acceptance_test": "application_scenarios_use_the_native_window: Cancel closing a modified unsaved part",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3888",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Native document save, close, or reopen lifecycle."
+    },
+    {
+      "id": "scenario:93af71b702f4432ad324512d976b8c68d1cbc9c11e2f0bf5514abe81fedbdb3e",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2",
+      "milestone": "R4",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence",
+      "acceptance_test": "application_scenarios_use_the_native_window: Cancel the first save requested while closing a part",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3888",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Native document save, close, or reopen lifecycle."
+    },
+    {
+      "id": "scenario:688d756622cc25dc4d9bdef3efe4aba56339ba73f01748fc67987a5b1327c3bf",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence",
+      "acceptance_test": "application_scenarios_use_the_native_window: Inspect save-change prompt frequency choices",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3888",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences."
+    },
+    {
+      "id": "scenario:f9b64673e9d0caa73b8c69814bde87fbec67e340d1d4877052120439c06e62b2",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2",
+      "milestone": "R4",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence",
+      "acceptance_test": "application_scenarios_use_the_native_window: Save a new modified part while closing it",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3888",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Native document save, close, or reopen lifecycle."
+    },
+    {
+      "id": "scenario:408b526faa48672c210f18a75a125074944da21cbd1a60dc5880e411c43b4442",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence",
+      "acceptance_test": "application_scenarios_use_the_native_window: Capture an active window preview before saving",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3888",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences."
+    },
+    {
+      "id": "scenario:b8df3b7d3827c6b5eef28ca3485f0132a1a9a2b98886d81071d8de163ff63386",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence",
+      "acceptance_test": "application_scenarios_use_the_native_window: Select an existing part in the first-save dialog",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3888",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences."
+    },
+    {
+      "id": "scenario:61af1d42795bae99c383bdb47b3c753bd88a690cf1ec4186a48d6f762c8cfeb3",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence",
+      "acceptance_test": "application_scenarios_use_the_native_window: Navigate to a subfolder and back while choosing a save location",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3888",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences."
+    },
+    {
+      "id": "scenario:61741ca27d5d4f42ba36a8379bfd9cdec2b363020d5425ff8740c544a8254c9c",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence",
+      "acceptance_test": "application_scenarios_use_the_native_window: Reopen first save after cancelling in a subfolder",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3888",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences."
+    },
+    {
+      "id": "scenario:81bcb1cf994edbed548c28c61bba7cbd6311599bde8c877519cca41ab206d2d9",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence",
+      "acceptance_test": "application_scenarios_use_the_native_window: Cancel disabling the preview picture",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3888",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences."
+    },
+    {
+      "id": "scenario:1fa03adac5a3aba3b0ece0321208be69ab2d13aade9146bf20e93485fc345632",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence",
+      "acceptance_test": "application_scenarios_use_the_native_window: Cancel a change to the preview source",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3888",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences."
+    },
+    {
+      "id": "scenario:1f1809c95300ef4ec0b23cc8100bb7fd24e08707ece63856a1ced77df2d04545",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence",
+      "acceptance_test": "application_scenarios_use_the_native_window: Switch save-dialog navigation modes",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3888",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences."
+    },
+    {
+      "id": "scenario:a52579372cdcf9f1a01a067e4555cdd2a16eb96900bc037d37f77837b7921351",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence",
+      "acceptance_test": "application_scenarios_use_the_native_window: Reopen Save As after switching navigation mode",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3888",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences."
+    },
+    {
+      "id": "scenario:2a9bcd9ecc1879a46159f5c0b870b445cc5a36f5934cfaaa257316809fb044c5",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence",
+      "acceptance_test": "application_scenarios_use_the_native_window: Change the file-list presentation in Save As",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3888",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences."
+    },
+    {
+      "id": "scenario:9eede5804b59d06f5535a48596c3a86031cc80da50203c62cc669fdc794babf2",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2",
+      "milestone": "R4",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence",
+      "acceptance_test": "application_scenarios_use_the_native_window: Decline replacing an existing part during first save",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3888",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Native document save, close, or reopen lifecycle."
+    },
+    {
+      "id": "scenario:29faf9bb78c1fe481e8278f78bf88fded3506448069ee2778bb73ba656f93fd8",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence",
+      "acceptance_test": "application_scenarios_use_the_native_window: Inspect Save As commands for a saved part",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3888",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences."
+    },
+    {
+      "id": "scenario:c8730b6f8f038570e4a94d87aa0f353589a50a48b73c2d7c9eb5266386097d43",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence",
+      "acceptance_test": "application_scenarios_use_the_native_window: Inspect the first-save preview of a solid part",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3888",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences."
+    },
+    {
+      "id": "scenario:db253e66928b18bbd758beb1036bb3bb5dcc585afcb87b5a25a0c14b54786209",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/persistence",
+      "acceptance_test": "application_scenarios_use_the_native_window: Retain a selected file name after changing the file-list selection",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3888",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences."
     }
   ]
 }
