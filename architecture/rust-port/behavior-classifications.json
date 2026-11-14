@@ -232,8 +232,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-command-rerun-cb85314818ef73da/receipt-cb85314818ef73da.json",
-        "sha256": "15787a6da3ac50c5e52164f99e8ec7c867f952b8686d93db72cda5cd94677f2a"
+        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-01/receipt-cb85314818ef73da.json",
+        "sha256": "a881ee323b14a24a5c85aabddf65dd8df1d26fd41ec9b91f6a9ff82aa0b38596"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
@@ -249,8 +249,13 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3857"
       ],
-      "state": "inventoried",
-      "last_receipt": null
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-06/receipt-a661d2ccfbdfc85a.json",
+        "sha256": "32b820095510010bd0517eab49b0421090937bf9f414e1427057cc1018303311"
+      },
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:1e7472ca669ac6f4274e216b9e0f6dd9074d843189d749ea4a4ca6c0d7af7dd2",
@@ -263,8 +268,13 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3857"
       ],
-      "state": "inventoried",
-      "last_receipt": null
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-07/receipt-1e7472ca669ac6f4.json",
+        "sha256": "5fca2ed9fd5c49614f761bbb6ed6d0f731f41de467157ca2dbb68f1dde756bde"
+      },
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:c7961c524b21f4e1124e3f4d865c19bde5f6dc740d654f9838726b63cccd0b84",
@@ -277,8 +287,13 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3857"
       ],
-      "state": "inventoried",
-      "last_receipt": null
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-08/receipt-c7961c524b21f4e1.json",
+        "sha256": "f9794e2e5d490c44a77da11ed46dd27c423a14d0611925ddef26d6f9195cc362"
+      },
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:6d4a200f137644d4c6104d1e91aeb91aa8167a0ac26b27ae09cb219eb27fadd2",
@@ -453,10 +468,15 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3857"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-09/receipt-152ae6bfde300d9b.json",
+        "sha256": "27ec18cee2180276132afaa96d70bf5a34334f962686c44d484d8046ccd9c8f7"
+      },
       "go_reference": "../Oblikovati/model/sketch/recipe_rectangle.go; ../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/measure_tool.go; ../Oblikovati/head/ui/measure_dialog.go",
-      "mapping_reason": "Measure the rectangle edges through the analytic sketch-query path."
+      "mapping_reason": "Measure the rectangle edges through the analytic sketch-query path.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:4598b4de9868b11667330de37cc2e67c65b468129c6a78abd277ad8518101e05",

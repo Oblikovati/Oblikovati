@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Rectangle two point: tmp/oblikovati-rect-source/features/sketch/rectangle-two-point/scenario.feature" package="testsuite/Feature: Rectangle two point: tmp/oblikovati-rect-source/features/sketch/rectangle-two-point/scenario.feature" tests="10" errors="0" failures="5" hostname="localhost" timestamp="2026-11-14T04:58:37.547474421Z" time="86.359591448"><testcase name="Scenario: rectangle-two-point-01 Create a rectangle from opposite corners: tmp/oblikovati-rect-source/features/sketch/rectangle-two-point/scenario.feature:5:3" time="7.153722717"><system-out><![CDATA[  Scenario: rectangle-two-point-01 Create a rectangle from opposite corners
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch
+   ✔  When the user select Two Point Rectangle and click diagonally opposite corners
+   ✔  Then four connected sides form an axis-aligned closed rectangle
+   ✔  When the user press Escape
+   ✔  Then the rectangle remains and the sketch is Ready
+]]></system-out></testcase><testcase name="Scenario: rectangle-two-point-06 Cancel before the opposite corner: tmp/oblikovati-rect-source/features/sketch/rectangle-two-point/scenario.feature:18:3" time="5.877001236"><system-out><![CDATA[  Scenario: rectangle-two-point-06 Cancel before the opposite corner
+   ✔  Given an editable sketch is Ready
+   ✔  When the user choose Rectangle Two Point and click the fixture first corner
+   ✔  Then the prompt requests the opposite corner
+   ✔  When the user press Escape
+   ✔  Then the MCAD Software returns to Ready without a new rectangle
+]]></system-out></testcase><testcase name="Scenario: rectangle-two-point-07 Keep selecting after identical corner clicks: tmp/oblikovati-rect-source/features/sketch/rectangle-two-point/scenario.feature:26:3" time="6.384535962"><system-out><![CDATA[  Scenario: rectangle-two-point-07 Keep selecting after identical corner clicks
+   ✔  Given an editable sketch is Ready
+   ✔  When the user invoke Two Point Rectangle
+   ✔  And the user click the same fixture position for both corners
+   ✔  Then Select opposite corner remains active
+   ✔  And both dynamic size fields display 0,000 mm
+   ✔  And no error dialog or rectangle appears
+   ✔  When the user press Escape
+   ✔  Then the MCAD Software returns to Ready
+]]></system-out></testcase><testcase name="Scenario: rectangle-two-point-08 Commit typed sizes and restore through history: tmp/oblikovati-rect-source/features/sketch/rectangle-two-point/scenario.feature:37:3" time="10.951503894"><system-out><![CDATA[  Scenario: rectangle-two-point-08 Commit typed sizes and restore through history
+   ✔  Given an editable sketch in RIGHT view with the required fixture
+   ✔  When the user start Two Point Rectangle and select a first corner
+   ✔  And the user press 1 and then 0
+   ✔  And the user press Tab
+   ✔  And the user press 6 and then Enter
+   ✔  Then a rectangle with size annotations 10 and 6 is committed
+   ✔  And the command returns to Select first corner
+   ✔  When the user press Escape and then Ctrl+Z
+   ✔  Then the rectangle and its two size annotations disappear
+   ✔  When the user press Ctrl+Y
+   ✔  Then the rectangle and both annotations return
+]]></system-out></testcase><testcase name="Scenario: rectangle-two-point-09 Verify the numeric rectangle edge lengths: tmp/oblikovati-rect-source/features/sketch/rectangle-two-point/scenario.feature:51:3" time="12.992288603"><system-out><![CDATA[  Scenario: rectangle-two-point-09 Verify the numeric rectangle edge lengths
+   ✔  Given the recorded numeric rectangle in RIGHT view has been restored
+   ✔  When the user open Measure and select its vertical edge away from endpoints
+   ✔  Then Selection 1 is a Curve with Length 10.000 mm
+   ✔  When the user click empty canvas and select its horizontal edge away from endpoints
+   ✔  Then Selection 1 is a Curve with Length 6.000 mm
+   ✔  When the user click Done
+   ✔  Then Measure closes and the rectangle remains
+]]></system-out></testcase><testcase name="Scenario: rectangle-two-point-10 Observe a zero first size: tmp/oblikovati-rect-source/features/sketch/rectangle-two-point/scenario.feature:61:3" time="4.528100272"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: rectangle-two-point-10 Observe a zero first size
+   ✔  Given the recorded fixture sketch is Ready with 22 dimensions needed
+   ✘  When the user choose Two Point Rectangle and the fixture first corner
+      Step failed:
+      Defined: tmp/oblikovati-rect-source/features/sketch/rectangle-two-point/scenario.feature:63:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: rectangle-two-point-11 Retain a numeric rectangle: tmp/oblikovati-rect-source/features/sketch/rectangle-two-point/scenario.feature:73:3" time="8.631433176"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: rectangle-two-point-11 Retain a numeric rectangle
+   ✔  Given a fresh Two Point Rectangle command in the recorded sketch view
+   ✔  And the existing ellipse from the recorded fixture is visible
+   ✘  When the user select the fixture first corner, enter 6, press Tab, enter 4 and press Return
+      Step failed:
+      Defined: tmp/oblikovati-rect-source/features/sketch/rectangle-two-point/scenario.feature:76:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: rectangle-two-point-12 Cancel a rectangle height proposal: tmp/oblikovati-rect-source/features/sketch/rectangle-two-point/scenario.feature:84:3" time="13.188142445"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: rectangle-two-point-12 Cancel a rectangle height proposal
+   ✔  Given the rectangle height editor is open with 6 mm selected
+   ✘  When the user enter 8 and press Escape
+      Step failed:
+      Defined: tmp/oblikovati-rect-source/features/sketch/rectangle-two-point/scenario.feature:86:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: rectangle-two-point-13 Accept and undo a rectangle height edit: tmp/oblikovati-rect-source/features/sketch/rectangle-two-point/scenario.feature:91:3" time="8.328502066"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: rectangle-two-point-13 Accept and undo a rectangle height edit
+   ✔  Given the numeric rectangle retains height 6 and width 4 annotations
+   ✘  When the user accept height 8 mm and exit General Dimension
+      Step failed:
+      Defined: tmp/oblikovati-rect-source/features/sketch/rectangle-two-point/scenario.feature:93:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: rectangle-two-point-14 Observe a zero second size: tmp/oblikovati-rect-source/features/sketch/rectangle-two-point/scenario.feature:105:3" time="8.324361077"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: rectangle-two-point-14 Observe a zero second size
+   ✔  Given the recorded sketch is Ready with the 4-by-8 rectangle retained
+   ✘  When the user start Two Point Rectangle and click the fixture first corner
+      Step failed:
+      Defined: tmp/oblikovati-rect-source/features/sketch/rectangle-two-point/scenario.feature:107:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

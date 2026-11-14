@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:a661d2ccfbdfc85a763de8dd2eb91fc325e1a004e58059346306d9e69700b3c5",
+  "scenario_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+  "source_sha256": "fbdae71cbf4f67f7d8165002799ba77b0727fa89cb7b620f1298fdb27725916c",
+  "application_commit": "d58c0eb820bed81a125ce0933812815dc4b69ce6",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-rectangle-06/cucumber.json",
+    "sha256": "2f510c74ca0ebf28c8f81bf8cd7982e8d056ae5562185b583680fa09f9fa0646"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-rectangle-06/source-revision.json",
+    "sha256": "aca9a1a8312f7ef57ea157a01596b90c738cca4ea7625c58ceedca79d148fc08"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-rectangle-06/rectangle-two-point-06-Cancel-before-the-opposite-corner.png",
+    "sha256": "0c0f814f3659bb591f5491db162ff807ea73735f76d3d92cb700c0f365b2d0cb"
+  }
+}
