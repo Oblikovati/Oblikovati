@@ -339,21 +339,42 @@ fn verify_typed_native_failure(status: &crate::HeadSceneStatus) {
     assert!(status.title().contains("1 unavailable features"));
 }
 #[test]
-fn native_rotation_recomputes_constraints_and_keeps_the_visible_prism() {
+fn native_rotation_refuses_to_move_the_fixed_profile_and_keeps_the_prism() {
     let directory = tempfile::tempdir().unwrap();
     let mut window = NativeHeadWindow::open().unwrap();
     let mut owner = native_owner(window.wake.clone()).unwrap();
-    open_native_part(&mut owner, &directory.path().join("rotate.opd"));
+    let document = open_native_part(&mut owner, &directory.path().join("rotate.opd"));
     let before = publish_native_scene(&mut owner, &mut window);
     assert!(solid_pixels(&before) > 0);
-    rotate_native_profile(&mut owner);
-    let after = publish_native_scene(&mut owner, &mut window);
+    let session = owner.documents().workspace().session(document).unwrap();
+    let sketches = session.snapshot().sketches.clone();
+    let generation = session.generation();
+    let rotated_origin = [
+        1. - 15_f64.to_radians().cos() + 15_f64.to_radians().sin(),
+        1. - 15_f64.to_radians().sin() - 15_f64.to_radians().cos(),
+    ];
+    assert_ne!(
+        rotated_origin, [0.; 2],
+        "the requested rotation moves the fixed corner"
+    );
+    let error = rotate_native_profile(&mut owner).unwrap_err();
+    assert!(
+        error.to_string().contains("expected a converged move"),
+        "{error}"
+    );
+    let session = owner.documents().workspace().session(document).unwrap();
+    assert_eq!(session.generation(), generation);
+    assert_eq!(session.snapshot().sketches, sketches);
+    assert!(owner.take_scene().unwrap().is_none());
+    let after = capture_native_scene(&mut window);
     assert_eq!(after.rgba, before.rgba);
     owner.finish().unwrap();
     window.finish().unwrap();
 }
-fn rotate_native_profile(owner: &mut NativeDesktopOwner) {
-    let result = Client::new(owner.document_host())
+fn rotate_native_profile(
+    owner: &mut NativeDesktopOwner,
+) -> Result<TransformSketchResult, oblikovati_api::Error> {
+    Client::new(owner.document_host())
         .sketch()
         .transform(&TransformSketchArgs {
             op: "rotate".into(),
@@ -362,8 +383,6 @@ fn rotate_native_profile(owner: &mut NativeDesktopOwner) {
             angle: "15 deg".into(),
             ..Default::default()
         })
-        .unwrap();
-    assert!(result.created.is_none());
 }
 #[path = "native_scene/certified.rs"]
 mod certified_tests;

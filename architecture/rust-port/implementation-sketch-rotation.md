@@ -54,14 +54,16 @@ categories, history and storage, response rejection, veto, read-only hosts, and
 part/assembly grounded recompute. Existing translation tests remain active.
 The baseline Go move/shared-point and ninety-degree rotation tests pass.
 
-A native window test opens the stored parameter-driven prism and rotates its
-profile seed by 15 degrees through the typed API. Recompute restores the fully
-constrained profile. The presented RGBA buffer remains byte-identical, and the
-existing X11 pixel check verifies the visible result. This uses isolated Xvfb at
-1920×1080×24, software Vulkan, and validation layer 1.4.321. It does not establish
-hardware presentation, general profile-region acceptance, or a completed R3.
+A native window test requests a 15-degree rotation of the stored, fully
+constrained prism profile. The rotation would move its fixed corner, so the
+command rejects it without changing the sketch or history generation. The
+presented RGBA buffer remains byte-identical. The earlier expectation that
+recompute silently restores the profile is superseded by this explicit refusal
+(#3868). This test uses isolated Xvfb and software Vulkan. It does not establish
+hardware presentation, interactive rotation, or a completed R3.
 
-The full local `make gate` passes over all 13 crates in the discovered workspace:
+At the time of the original implementation, the full local `make gate` passed
+over all 13 crates in the discovered workspace:
 all targets/features, lint, format, instrumented tests, native window checks,
 doc tests, Markdown/link/SPDX checks, workflow lint, and duplication checks.
 Model coverage is 98.80%, session 99.03%, and automation 96.25%; every crate
