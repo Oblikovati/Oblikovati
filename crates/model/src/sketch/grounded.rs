@@ -40,6 +40,12 @@ impl GroundedSketch {
     pub fn restore(&self, values: &[f64]) -> Result<Vec<f64>, SketchError> {
         self.layout.restore(values)
     }
+    pub fn preference_slot(&self, column: usize, target: f64) -> (Option<usize>, bool) {
+        match self.layout.slot(column) {
+            GroundedSlot::Active(index) => (Some(index), false),
+            GroundedSlot::Constant(value) => (None, value != target),
+        }
+    }
 }
 pub(super) fn prepare(
     sketch: &Sketch2D,

@@ -50,6 +50,9 @@ impl GroundedLayout {
     pub fn local_slots(&self, columns: &[usize]) -> Vec<GroundedSlot> {
         columns.iter().map(|column| self.slots[*column]).collect()
     }
+    pub fn slot(&self, column: usize) -> GroundedSlot {
+        self.slots[column]
+    }
     pub fn restore(&self, values: &[f64]) -> Result<Vec<f64>, SketchError> {
         self.require_active_count(values.len(), "grounded candidate")?;
         Ok(self

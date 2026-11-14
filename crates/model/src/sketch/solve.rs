@@ -6,7 +6,10 @@ use super::{
 use crate::parameter::ParameterCollection;
 use oblikovati_solve::{
     diagnostics::{ConstraintStructure, analyze_structure, redundant_sources},
-    nonlinear::{NonlinearResult, SolveError, SolveOptions, solve_constraints_with_constants},
+    nonlinear::{
+        NonlinearResult, PreferenceTermination, SolveError, SolveOptions,
+        solve_constraints_with_constants, solve_with_preference,
+    },
     residual::evaluate_residuals,
 };
 
@@ -76,6 +79,76 @@ impl SketchSolveOutcome {
     }
 }
 impl Sketch2D {
+    /// Solve with temporary point targets while preserving authored constraints and actual DOF.
+    /// Example: `sketch.solve_with_point_preferences(&parameters, &anchors, &targets, options, || false)?`.
+    pub fn solve_with_point_preferences(
+        &self,
+        parameters: &ParameterCollection<u64>,
+        anchors: &[SketchPoint2D],
+        targets: &[SketchPoint2D],
+        options: SolveOptions,
+        cancelled: impl FnMut() -> bool,
+    ) -> Result<(SketchSolveOutcome, PreferenceTermination), SketchError> {
+        let prepared = grounded::prepare(self, parameters, anchors)?;
+        let (preferences, blocked) = self.preferred_coordinates(&prepared, targets)?;
+        let result = solve_with_preference(
+            &prepared.warm_start_values(self),
+            &prepared.blocks(),
+            &prepared.constants,
+            &preferences,
+            options,
+            cancelled,
+        )
+        .map_err(|cause| source_failure(&prepared.origins, cause))?;
+        let candidate = self.candidate_values(&prepared.restore(&result.solution.values)?)?;
+        let outcome = SketchSolveOutcome {
+            origins: prepared.origins,
+            candidate,
+            numerical: result.solution,
+            parameter_dependencies: prepared.parameter_dependencies,
+        };
+        let status = if blocked && result.preference == PreferenceTermination::Converged {
+            PreferenceTermination::Unavailable
+        } else {
+            result.preference
+        };
+        Ok((outcome, status))
+    }
+
+    fn preferred_coordinates(
+        &self,
+        prepared: &grounded::GroundedSketch,
+        targets: &[SketchPoint2D],
+    ) -> Result<(Vec<(usize, f64)>, bool), SketchError> {
+        let mut seen = std::collections::BTreeSet::new();
+        let mut result = Vec::new();
+        let mut blocked = false;
+        for target in targets {
+            if !seen.insert(target.id) || !target.position.iter().all(|value| value.is_finite()) {
+                return Err(SketchError::Definition(format!(
+                    "preferred point {target:?}: expected a unique point with finite coordinates"
+                )));
+            }
+            let index = self
+                .points()
+                .iter()
+                .position(|point| point.id == target.id)
+                .ok_or_else(|| {
+                    SketchError::Definition(format!(
+                        "preferred point {:?}: expected an owned point",
+                        target.id
+                    ))
+                })?;
+            for (axis, value) in target.position.into_iter().enumerate() {
+                let (slot, conflict) = prepared.preference_slot(index * 2 + axis, value);
+                if let Some(slot) = slot {
+                    result.push((slot, value));
+                }
+                blocked |= conflict;
+            }
+        }
+        Ok((result, blocked))
+    }
     /// Solve on owned values with healthy parameter targets; example: `sketch.solve(&parameters, SolveOptions::default(), || false)?`.
     pub fn solve(
         &self,
