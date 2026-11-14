@@ -214,6 +214,7 @@ fn cancel_customization(world: &mut ApplicationWorld) {
         "Geometry Properties",
         "Feature Properties",
         "Incremental View Rotate",
+        "Navigation Wheel Options",
     ] {
         if let Some((position, size)) = diagnostics::window_geometry(title) {
             let center = world

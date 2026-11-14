@@ -10,8 +10,13 @@ const PLACED_AT: [i32; 2] = [760, 480];
 const OPTIONS_TITLE: &str = "Navigation Wheel Options";
 const MINI_SIDE: f32 = 80.;
 const FULL_WHEEL_SIDE: f32 = 160.;
+#[path = "big_size.rs"]
+mod big_size;
 #[path = "preferences.rs"]
 mod preferences;
+#[cfg(test)]
+#[path = "size_regression.rs"]
+mod size_regression;
 /// How much further away the "small" block's view stands.
 const SMALL: f64 = 5.;
 const LAYOUTS: [&str; 6] = [
@@ -236,9 +241,13 @@ fn mini_full_marked(world: &mut ApplicationWorld) {
 }
 // Options
 #[given("the saved mini wheel size is Normal")]
-fn mini_normal(_: &mut ApplicationWorld) {}
+fn mini_normal(world: &mut ApplicationWorld) {
+    set_saved_size(world, "Mini Wheel Size", "Normal");
+}
 #[when("I open Options from the wheel context menu")]
+#[when("the user opens Options from the wheel context menu")]
 #[when("I reopen Options from the wheel context menu")]
+#[when("the user reopens Options from the wheel context menu")]
 fn options_from_menu(world: &mut ApplicationWorld) {
     open_options(world);
 }
@@ -261,6 +270,7 @@ fn navigation_rows(world: &mut ApplicationWorld) {
     );
 }
 #[when("I open the mini wheel size list")]
+#[when("the user opens the mini wheel size list")]
 fn open_mini_list(world: &mut ApplicationWorld) {
     open_list(world, "Mini Wheel Size");
 }
@@ -269,8 +279,19 @@ fn mini_sizes(world: &mut ApplicationWorld) {
     expect_rows(world, &["Small", "Normal", "Large", "Extra Large"]);
 }
 #[when("I choose Extra Large")]
+#[when("the user chooses Extra Large")]
 fn choose_extra_large(world: &mut ApplicationWorld) {
     choose_row(world, "Extra Large");
+}
+fn set_saved_size(world: &mut ApplicationWorld, field: &str, size: &str) {
+    open_options(world);
+    open_list(world, field);
+    choose_row(world, size);
+    expect_field_reads(world, field, size);
+    choose_row(world, "OK");
+    open_options(world);
+    expect_field_reads(world, field, size);
+    choose_row(world, "Cancel");
 }
 fn expect_field_reads(world: &ApplicationWorld, label: &str, value: &str) {
     let field = world.run(label).clone();
@@ -294,6 +315,7 @@ fn field_normal(world: &mut ApplicationWorld) {
     expect_field_reads(world, "Mini Wheel Size", "Normal");
 }
 #[when("I click Cancel and press Escape")]
+#[when("the user clicks Cancel and presses Escape")]
 fn cancel_and_escape(world: &mut ApplicationWorld) {
     choose_row(world, "Cancel");
     world.escape();
@@ -341,56 +363,6 @@ fn dialog_closed_wheel_up(world: &mut ApplicationWorld) {
 // Big wheel size
 fn remember_side(world: &mut ApplicationWorld) {
     world.observed_counts = vec![wheel_side() as usize];
-}
-fn set_big_size(world: &mut ApplicationWorld, size: &str) {
-    open_list(world, "Big Wheel Size");
-    choose_row(world, size);
-}
-#[given("the full navigation wheel is visible in the MCAD Software")]
-fn wheel_visible_given(world: &mut ApplicationWorld) {
-    open_wheel_on_block(world);
-}
-#[given("its big wheel size preference is Normal")]
-fn big_normal(world: &mut ApplicationWorld) {
-    remember_side(world);
-}
-#[when("I open the wheel options and choose Large for big wheel size")]
-fn choose_large(world: &mut ApplicationWorld) {
-    open_options(world);
-    set_big_size(world, "Large");
-}
-#[then("the options dialog closes")]
-fn options_closed(world: &mut ApplicationWorld) {
-    world.expect_no_text(OPTIONS_TITLE);
-}
-#[then("the full wheel appears larger than before")]
-fn wheel_larger(world: &mut ApplicationWorld) {
-    assert!(
-        wheel_side() as usize > world.observed_counts[0],
-        "side {}",
-        wheel_side()
-    );
-}
-#[when("I reopen wheel options")]
-fn reopen_options(world: &mut ApplicationWorld) {
-    open_options(world);
-}
-#[then("the big wheel size field displays Large")]
-fn field_large(world: &mut ApplicationWorld) {
-    expect_field_reads(world, "Big Wheel Size", "Large");
-}
-#[when("I choose Normal for big wheel size and click OK")]
-fn choose_normal(world: &mut ApplicationWorld) {
-    set_big_size(world, "Normal");
-    choose_row(world, "OK");
-}
-#[then("the full wheel returns to its previous apparent size")]
-fn wheel_restored(world: &mut ApplicationWorld) {
-    assert_eq!(wheel_side() as usize, world.observed_counts[0], "side");
-}
-#[then("the wheel closes")]
-fn wheel_closes(world: &mut ApplicationWorld) {
-    world.expect_no_text("Rewind");
 }
 // Fit and Home from the wheel's menu
 #[given("a single rectangular block appears small in an active part in the MCAD Software")]
