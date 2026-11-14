@@ -95,3 +95,47 @@ fn secondary_click_on_selected_drawing_retains_its_preview() {
     );
     world.close();
 }
+
+#[given("the Part group contains Standard (in) and Sheet Metal (in)")]
+fn inch_part_tiles(world: &mut ApplicationWorld) {
+    world.previous_document = Some(world.active_id());
+    world.expect_text("Standard inch part");
+    world.expect_text(INCH_SHEET_METAL);
+    assert_eq!(popup_depth(), 1, "expected only the chooser popup");
+}
+#[when("the user right-clicks the Standard (in) part template")]
+fn secondary_standard(world: &mut ApplicationWorld) {
+    right_click_template(world, "Standard inch part");
+}
+#[then("Standard (in) is selected and its details show inch units")]
+fn standard_inch_details(world: &mut ApplicationWorld) {
+    expect_selected_template(world, "Standard inch part");
+    world.expect_text("Length: inches (in)");
+}
+#[then("no context menu is visible")]
+fn no_secondary_menu(_world: &mut ApplicationWorld) {
+    assert_eq!(popup_depth(), 1, "expected only the chooser popup");
+}
+#[when("the user right-clicks the Sheet Metal (in) part template")]
+fn secondary_sheet_metal(world: &mut ApplicationWorld) {
+    right_click_template(world, INCH_SHEET_METAL);
+}
+#[then("Sheet Metal (in) is selected and its details show inch units")]
+#[then("Sheet Metal (in) remains selected and its details remain displayed")]
+fn sheet_metal_inch_details(world: &mut ApplicationWorld) {
+    expect_selected_template(world, INCH_SHEET_METAL);
+    world.expect_text("Length: inches (in)");
+}
+#[when("the user right-clicks empty space in the Part gallery")]
+fn secondary_empty_gallery(world: &mut ApplicationWorld) {
+    let right = world.run("Template details").minimum[0];
+    let bottom = world.run("Create").minimum[1];
+    let point = super::super::super::diagnostics::pointer_pixels([right - 25., bottom - 25.]);
+    world.right_click(point);
+    world.pump(Vec::new());
+}
+#[then("the chooser closes and the original part remains active")]
+fn original_part_after_chooser(world: &mut ApplicationWorld) {
+    world.expect_no_text("Template folders");
+    assert_eq!(Some(world.active_id()), world.previous_document);
+}
