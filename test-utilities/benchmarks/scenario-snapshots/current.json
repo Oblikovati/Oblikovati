@@ -1,11 +1,11 @@
 {
-  "snapshot_commit": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+  "snapshot_commit": "48987af7b5cbb06515bc6f30385f508382f34064",
   "branch": "snapshot",
-  "bundle": "mcad-scenarios-2026-11-14-c56a6f6.bundle",
-  "bundle_sha256": "982a2e55920311d95769ac512b180edd72ab5845e2aec803b131de61ff96d7be",
-  "manifest": "mcad-scenarios-2026-11-14-c56a6f6.sha256.json",
-  "manifest_sha256": "e91927271000b30f9a2e6371f04b1fe719ef031d30022715651a54757b979404",
+  "bundle": "mcad-scenarios-2026-11-14-48987af.bundle",
+  "bundle_sha256": "d57642846ee052be6d36d3229a9da85cd115e721db70d9f38a321746974ae8eb",
+  "manifest": "mcad-scenarios-2026-11-14-48987af.sha256.json",
+  "manifest_sha256": "f4065f98108eb5eec50c5f73865ce5cfb00ee356e1620a8c26db2f36ae7001d5",
   "file_count": 1287,
   "captured_utc_date": "2026-11-14",
-  "provenance": "Local snapshot of the unversioned MCAD-Scenarios source; five changed feature files were reviewed and their hashes matched the live source before and after copying. This is not an upstream commit."
+  "provenance": "Local snapshot of the unversioned MCAD-Scenarios source; the arc and UCS feature changes were reviewed and their hashes matched live source before and after copying. This is not an upstream commit."
 }
