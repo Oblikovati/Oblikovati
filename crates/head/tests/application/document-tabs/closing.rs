@@ -40,6 +40,7 @@ fn others_open(world: &mut ApplicationWorld) {
     world.previous_document = Some(active);
 }
 #[when("I create a new empty part from a standard metric template")]
+#[when("the user creates a new empty part from a standard metric template")]
 fn create_from_template(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::N, true);
     world.click_text("Metric");
@@ -55,8 +56,10 @@ fn new_part_active(world: &mut ApplicationWorld) {
     world.expect_tab(&name);
 }
 #[when("I click the close button on the new part's tab without editing it")]
+#[when("the user clicks the close button on the new part's tab without editing it")]
 #[when("I click the close button on the new part's document tab")]
 #[when("I click the close button on the part's document tab")]
+#[when("the user clicks the close button on the part's document tab")]
 fn close_active_mark(world: &mut ApplicationWorld) {
     world.closed_document = Some(world.active_id());
     world.close_active_tab();
@@ -83,7 +86,9 @@ fn new_part_open(world: &mut ApplicationWorld) {
     world.add_part();
 }
 #[given("I am editing a sketch in the part")]
+#[given("the user is editing a sketch in the part")]
 #[given("I am editing that sketch")]
+#[given("the user is editing that sketch")]
 fn editing_sketch(world: &mut ApplicationWorld) {
     if world.state().authoring != GuiAuthoringContext::Sketch {
         world.start_sketch();
@@ -132,6 +137,7 @@ fn part_with_open_sketch(world: &mut ApplicationWorld) {
     world.start_sketch();
 }
 #[when("I choose OK to exit the sketch environment and continue")]
+#[when("the user chooses OK to exit the sketch environment and continue")]
 fn exit_ok(world: &mut ApplicationWorld) {
     world.click_text("OK");
 }
@@ -142,6 +148,7 @@ fn prompt_names_part(world: &mut ApplicationWorld) {
     world.expect_text(&format!("Save changes to {name}"));
 }
 #[then("the prompt offers Yes, No and Cancel")]
+#[then("the prompt offers Yes, No and cancels")]
 fn yes_no_cancel(world: &mut ApplicationWorld) {
     for label in ["Yes", "No", "Cancel"] {
         world.expect_text(label);

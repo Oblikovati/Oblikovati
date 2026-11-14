@@ -15025,10 +15025,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-active-tab-close-8d403d73/receipt-8d403d738cd32144.json",
+        "sha256": "2c54e184f6309525ea9c3ac54ac9b4555eb05ac8f5936226bfdd61e3d3d8d9a2"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "First part creation, document activation, or save/close path through the desktop."
+      "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b: session close cleanup and dirty-document prompt guard tests pass; they do not cover these native tab-cancellation journeys. See receipts/2026-11-14-go-tab-baseline/README.md.",
+      "kernel_capabilities": "The scenarios use empty parts or sketches; no solid modeling operation is required.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The desktop owner controls document activation, sketch environment and close prompts.",
+      "rust_tests": "application_scenarios_use_the_native_window: Close a newly created empty active part",
+      "oracle": "Pinned native scenario assertions and reviewed final capture; Go dialog parity is not established.",
+      "expected_result": "the new part's tab disappears without a save prompt; the previously active part is displayed again; its model browser and viewport are restored"
     },
     {
       "id": "scenario:244278b44b0bbbfb43fe5022599facac564f99fa33ff9179ae0fa739bf4a29be",
@@ -15042,10 +15054,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-active-tab-close-244278b4/receipt-244278b44b0bbbfb.json",
+        "sha256": "478bc4306a5108d1654252bc55a7d24c2fd2ef2340b6d1633838ad0cf7423555"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "First part creation, document activation, or save/close path through the desktop."
+      "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b: session close cleanup and dirty-document prompt guard tests pass; they do not cover these native tab-cancellation journeys. See receipts/2026-11-14-go-tab-baseline/README.md.",
+      "kernel_capabilities": "The scenarios use empty parts or sketches; no solid modeling operation is required.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The desktop owner controls document activation, sketch environment and close prompts.",
+      "rust_tests": "application_scenarios_use_the_native_window: Cancel closing a part while editing its sketch",
+      "oracle": "Pinned native scenario assertions and reviewed final capture; Go dialog parity is not established.",
+      "expected_result": "the user chooses Cancel; the part remains open; the sketch editing environment remains active"
     },
     {
       "id": "scenario:d6614d03f57eca8a9235ca75f1928bcfe4cab64cfd94ef9c7475e3f7a7b17aa7",
@@ -15059,10 +15083,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-active-tab-close-d6614d03/receipt-d6614d03f57eca8a.json",
+        "sha256": "cf62f3139f52ee2045a0ad33c37935604c2526b073cde950cc9d7f3b0fb40c08"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "First part creation, document activation, or save/close path through the desktop."
+      "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b: session close cleanup and dirty-document prompt guard tests pass; they do not cover these native tab-cancellation journeys. See receipts/2026-11-14-go-tab-baseline/README.md.",
+      "kernel_capabilities": "The scenarios use empty parts or sketches; no solid modeling operation is required.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The desktop owner controls document activation, sketch environment and close prompts.",
+      "rust_tests": "application_scenarios_use_the_native_window: Cancel the save prompt after leaving sketch editing to close",
+      "oracle": "Pinned native scenario assertions and reviewed final capture; Go dialog parity is not established.",
+      "expected_result": "the part remains open; its sketch remains listed in the model browser; the part modeling environment is active"
     },
     {
       "id": "scenario:f2e3989ecad9628f74927889e4a0a261d6ea1e2c7b24416df00fcf4e07c8a09f",
