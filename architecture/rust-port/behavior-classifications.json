@@ -4499,7 +4499,8 @@
       "kernel_integration": "Native viewport is present; this menu scenario makes no geometry request.",
       "rust_tests": "application_scenarios_use_the_native_window: Open the file menu while a part is active",
       "oracle": "Pinned scenario steps and inspected native capture; this does not establish visual parity with Go.",
-      "expected_result": "The File menu shows its commands, recent-document region, disclosure indicators, options, and exit while the part workspace remains visible."
+      "expected_result": "The File menu shows its commands, recent-document region, disclosure indicators, options, and exit while the part workspace remains visible.",
+      "go_test_premise": "Go aa8297d1b: no exact File menu presentation or dismissal test found; native drawFileMenu uses a different layout. head/ui/qat_test.go TestQATDispatchDisabled passes for quick-access dispatch only; it does not validate this menu scenario. See receipts/2026-11-14-go-file-menu-baseline/README.md."
     },
     {
       "id": "scenario:a94ed06a75a5dbb3cd0b18e6f3acc3aaeac44c4fcb78b38a6ba95505278d6516",
@@ -4527,7 +4528,8 @@
       "kernel_integration": "Native viewport and document owner are present; this menu scenario makes no geometry request.",
       "rust_tests": "application_scenarios_use_the_native_window: Dismiss the file menu with Escape",
       "oracle": "Pinned scenario assertions and inspected final native capture; Go visual parity is not established.",
-      "expected_result": "All recorded steps pass, ending with: the same part document remains active"
+      "expected_result": "All recorded steps pass, ending with: the same part document remains active",
+      "go_test_premise": "Go aa8297d1b: no exact File menu presentation or dismissal test found; native drawFileMenu uses a different layout. head/ui/qat_test.go TestQATDispatchDisabled passes for quick-access dispatch only; it does not validate this menu scenario. See receipts/2026-11-14-go-file-menu-baseline/README.md."
     },
     {
       "id": "scenario:dac29e7f09893d1df715332e0b2f9a58173d701cc962db26f626644246b5869a",
@@ -4555,7 +4557,8 @@
       "kernel_integration": "Native viewport and document owner are present; this menu scenario makes no geometry request.",
       "rust_tests": "application_scenarios_use_the_native_window: Dismiss the file menu by clicking outside",
       "oracle": "Pinned scenario assertions and inspected final native capture; Go visual parity is not established.",
-      "expected_result": "All recorded steps pass, ending with: the same part document remains active"
+      "expected_result": "All recorded steps pass, ending with: the same part document remains active",
+      "go_test_premise": "Go aa8297d1b: no exact File menu presentation or dismissal test found; native drawFileMenu uses a different layout. head/ui/qat_test.go TestQATDispatchDisabled passes for quick-access dispatch only; it does not validate this menu scenario. See receipts/2026-11-14-go-file-menu-baseline/README.md."
     },
     {
       "id": "scenario:d5bc3120a72a620b38cfce7f292e55f13491a9f04841e4238c56b4e215534fc2",
@@ -4583,7 +4586,8 @@
       "kernel_integration": "Native viewport and document owner are present; this menu scenario makes no geometry request.",
       "rust_tests": "application_scenarios_use_the_native_window: Open and dismiss the file menu in a drawing",
       "oracle": "Pinned scenario assertions and inspected final native capture; Go visual parity is not established.",
-      "expected_result": "All recorded steps pass, ending with: the same drawing document remains active"
+      "expected_result": "All recorded steps pass, ending with: the same drawing document remains active",
+      "go_test_premise": "Go aa8297d1b: no exact File menu presentation or dismissal test found; native drawFileMenu uses a different layout. head/ui/qat_test.go TestQATDispatchDisabled passes for quick-access dispatch only; it does not validate this menu scenario. See receipts/2026-11-14-go-file-menu-baseline/README.md."
     },
     {
       "id": "scenario:210565d68ab3712af8e53f19972c4a22e3a6fb8ca78e4c0c9c923fb948b2fae4",
@@ -4611,7 +4615,8 @@
       "kernel_integration": "Native viewport and document owner are present; this menu scenario makes no geometry request.",
       "rust_tests": "application_scenarios_use_the_native_window: Inspect controls in the recent-documents region",
       "oracle": "Pinned scenario assertions and inspected final native capture; Go visual parity is not established.",
-      "expected_result": "All recorded steps pass, ending with: the menu closes and the same part remains active"
+      "expected_result": "All recorded steps pass, ending with: the menu closes and the same part remains active",
+      "go_test_premise": "Go aa8297d1b: no exact File menu presentation or dismissal test found; native drawFileMenu uses a different layout. app/file_ui_hooks_test.go TestOpenDocumentFromMRUHonorsVetoAndRecords passes with a fake store; it validates MRU state and veto, not the recent-documents UI. See receipts/2026-11-14-go-file-menu-baseline/README.md."
     },
     {
       "id": "scenario:e69248355099bdc95eb4c23727750ccba37f7f3cb04b9fd3a70b6baf9da7f9eb",
@@ -4639,7 +4644,8 @@
       "kernel_integration": "Native viewport and document owner are present; this menu scenario makes no geometry request.",
       "rust_tests": "application_scenarios_use_the_native_window: Inspect the Save As submenu for a saved part",
       "oracle": "Pinned scenario assertions and inspected final native capture; Go visual parity is not established.",
-      "expected_result": "All recorded steps pass, ending with: the Save Copy As description says the original file remains open"
+      "expected_result": "All recorded steps pass, ending with: the Save Copy As description says the original file remains open",
+      "go_test_premise": "Go aa8297d1b: no exact File menu presentation or dismissal test found; native drawFileMenu uses a different layout. head/ui/file_dialog_test.go TestFileDialogConfirmReturnsActionForMode passes on dialog state only; it does not test the Save As submenu. See receipts/2026-11-14-go-file-menu-baseline/README.md."
     },
     {
       "id": "scenario:d703958d1cb7a6f8afc29bd7c8f1329cfddd6c762f405ed19855363a4866bbf8",
@@ -4667,7 +4673,8 @@
       "kernel_integration": "Native viewport and document owner are present; this menu scenario makes no geometry request.",
       "rust_tests": "application_scenarios_use_the_native_window: Open the New submenu from the File menu",
       "oracle": "Pinned scenario assertions and inspected final native capture; Go visual parity is not established.",
-      "expected_result": "All recorded steps pass, ending with: no document type has been activated"
+      "expected_result": "All recorded steps pass, ending with: no document type has been activated",
+      "go_test_premise": "Go aa8297d1b: no exact File menu presentation or dismissal test found; native drawFileMenu uses a different layout. head/ui/qat_test.go TestQATDispatchDisabled passes for quick-access dispatch only; it does not validate this menu scenario. See receipts/2026-11-14-go-file-menu-baseline/README.md."
     },
     {
       "id": "scenario:5c5237cc9af7f0342c3472f734bbcd8a6970cbc2a66d7aee9e875d7f5e8a1a52",
@@ -4695,7 +4702,8 @@
       "kernel_integration": "Native viewport and document owner are present; this menu scenario makes no geometry request.",
       "rust_tests": "application_scenarios_use_the_native_window: Inspect the File menu from Home",
       "oracle": "Pinned scenario assertions and inspected final native capture; Go visual parity is not established.",
-      "expected_result": "All recorded steps pass, ending with: the Home recent-documents view remains visible around the menu"
+      "expected_result": "All recorded steps pass, ending with: the Home recent-documents view remains visible around the menu",
+      "go_test_premise": "Go aa8297d1b: no exact File menu presentation or dismissal test found; native drawFileMenu uses a different layout. head/ui/qat_test.go TestQATDispatchDisabled passes for quick-access dispatch only; it does not validate this menu scenario. See receipts/2026-11-14-go-file-menu-baseline/README.md."
     },
     {
       "id": "scenario:b389189024e3e0b0186faa06d389bfbd8b7f090e5b865ffe9d0cdc1265650c90",
