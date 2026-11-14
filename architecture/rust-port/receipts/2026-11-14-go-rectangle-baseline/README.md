@@ -15,3 +15,5 @@ height-edit cancellation, or the Rust visual result. The nine historical Rust
 native receipts checked those recorded scenario steps but are stale after native
 test inputs changed. They do not establish the remaining rectangle scenarios or
 an extrusion.
+
+The Go command `go test ./app -run '^(TestFullModelingFlowViaUI|TestParameterDrivesARectanglesLockedDimension)$' -count=1 -v` also passed. The modeling-flow test uses synthetic session clicks and a stub profile picker, then checks one solid, six faces and its extrusion height. It is not a native-window test, a parameter-driven cube test, or a save/reopen and named-face test.
