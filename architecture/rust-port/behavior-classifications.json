@@ -3615,10 +3615,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3887",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-point-center-545eaee5/receipt-545eaee5fec75147.json",
+        "sha256": "f128497e622521b8b36bca5561097313f3a504cf1e11b2701e2a9889788ee7a1"
+      },
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
-      "mapping_reason": "Create a center point using the format mode."
+      "mapping_reason": "Create a center point using the format mode.",
+      "go_test_premise": "Go aa8297d1b: center-point mode and point creation tests pass; rendering and retention of another regular point are not covered. The point-tool lifecycle differs. See receipts/2026-11-14-go-point-center-baseline/README.md.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "Point placement in a planar sketch is exercised; this scenario does not create a solid.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The desktop owner applies point sketch actions and presents the sketch scene.",
+      "rust_tests": "sketch_scenarios_use_the_native_window: point-08 Create a center point using the Format toggle",
+      "oracle": "Pinned native scenario checks the marker pixels and model point roles at each selected location; final capture reviewed.",
+      "expected_result": "A new center point appears at the clicked location and the existing regular point remains a regular dot."
     },
     {
       "id": "scenario:5c307c15c244bdd9c410a9f4b50259158f153aba04d9e03718836bfcb7a45577",
