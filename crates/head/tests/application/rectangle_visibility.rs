@@ -1,10 +1,16 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Check the saved rectangle's four expected edges in the viewport capture.
+//! Check a rectangle's four expected edges in the viewport capture.
+use super::ApplicationWorld;
 use oblikovati_viewport::ViewportCapture;
 
 const EDGE_SEARCH: i32 = 2;
 const BACKGROUND_OFFSET: i32 = 6;
 const MIN_CHANNEL_DIFFERENCE: u8 = 24;
+
+pub(super) fn current_rectangle_visible(world: &mut ApplicationWorld) -> bool {
+    let capture = super::capture_framebuffer(&mut world.app().window.native);
+    rectangle_edges_visible(&capture, super::documents::RECTANGLE)
+}
 
 pub(super) fn rectangle_edges_visible(capture: &ViewportCapture, corners: [[i32; 2]; 2]) -> bool {
     let [[left, top], [right, bottom]] = corners;

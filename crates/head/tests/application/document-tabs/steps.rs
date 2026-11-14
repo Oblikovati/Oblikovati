@@ -53,10 +53,12 @@ fn first_active(world: &mut ApplicationWorld) {
     world.activate_through_tab(first(world));
 }
 #[when("I select the second part's document tab")]
+#[when("the user selects the second part's document tab")]
 fn select_second(world: &mut ApplicationWorld) {
     world.click_tab(second(world));
 }
 #[when("I select the first part's document tab")]
+#[when("the user selects the first part's document tab")]
 fn select_first(world: &mut ApplicationWorld) {
     world.click_tab(first(world));
 }
@@ -66,7 +68,10 @@ fn second_is_active(world: &mut ApplicationWorld) {
 }
 #[then("its rectangular profile appears in the viewport")]
 fn rectangle_appears(world: &mut ApplicationWorld) {
-    world.expect_drawn_region();
+    assert!(
+        super::rectangle_visibility::current_rectangle_visible(world),
+        "expected four rectangle edges in the second part viewport"
+    );
 }
 #[then("the model browser shows the second part")]
 fn browser_second(world: &mut ApplicationWorld) {
@@ -76,6 +81,11 @@ fn browser_second(world: &mut ApplicationWorld) {
 #[then("the first part becomes active")]
 fn first_is_active(world: &mut ApplicationWorld) {
     world.expect_active(first(world));
+    world.expect_browser_sketch();
+    assert!(
+        !super::rectangle_visibility::current_rectangle_visible(world),
+        "the first part viewport must not show the second part rectangle"
+    );
 }
 #[then("its model browser and viewport are displayed")]
 fn browser_and_viewport(world: &mut ApplicationWorld) {
