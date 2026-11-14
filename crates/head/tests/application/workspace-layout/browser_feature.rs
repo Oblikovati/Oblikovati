@@ -50,12 +50,16 @@ fn place_dimension_labels(snapshot: &mut oblikovati_model::history::DocumentSnap
         .unwrap();
 }
 /// The fixture profile, stored with one 20 mm extrusion; this build has no command that makes one.
-fn extruded_part_bytes(name: &str) -> Vec<u8> {
+fn extruded_part_bytes(name: &str, source_name: &str) -> Vec<u8> {
     let mut recipe = fixture::selected_prism_definition().recipe();
     recipe.displacement[2] = DatumLength::Constant(DEPTH);
     let definition = SketchPrismDefinition::from_recipe(&recipe).unwrap();
     let mut snapshot = fixture::selected_sketch_document();
     place_dimension_labels(&mut snapshot);
+    let mut sketch_recipe = snapshot.sketches.recipe();
+    sketch_recipe.sketches[0].name = source_name.into();
+    snapshot.sketches =
+        oblikovati_model::document_sketch::DocumentSketches::from_recipe(&sketch_recipe).unwrap();
     let feature = AuthoredFeature::sketch_prism(FeatureId(1), name, definition, &snapshot);
     snapshot.work_geometry.append(feature.unwrap()).unwrap();
     // Making the feature takes its sketch out of view; only its browser row calls it back.
@@ -83,9 +87,20 @@ pub(in super::super) fn open_extruded_part_named(world: &mut ApplicationWorld, n
 pub(in super::super) fn open_visible_extruded_part(world: &mut ApplicationWorld) {
     open_extruded_part_with_visibility(world, FEATURE, true);
 }
+pub(in super::super) fn open_extruded_part_for_second_sketch(world: &mut ApplicationWorld) {
+    open_extruded_part_with_source(world, FEATURE, true, "Sketch1");
+}
 fn open_extruded_part_with_visibility(world: &mut ApplicationWorld, name: &str, visible: bool) {
+    open_extruded_part_with_source(world, name, visible, SKETCH);
+}
+fn open_extruded_part_with_source(
+    world: &mut ApplicationWorld,
+    name: &str,
+    visible: bool,
+    source_name: &str,
+) {
     let path = world.scratch_folder().join("extruded.opd");
-    std::fs::write(&path, extruded_part_bytes(name)).unwrap();
+    std::fs::write(&path, extruded_part_bytes(name, source_name)).unwrap();
     Client::new(world.app().owner.document_host())
         .documents()
         .open(&OpenDocumentArgs {

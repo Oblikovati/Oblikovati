@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use oblikovati_model::document_sketch::{PlacedSketch, PlacedSketchHealth, SketchEvaluation};
+use oblikovati_model::feature::work_geometry::WorkGeometryEvaluation;
 
 pub(crate) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &FileWorkspace<O, W, F>,
@@ -8,15 +9,31 @@ pub(crate) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     request: &[u8],
     editing: Option<(u64, DocumentSketchId)>,
 ) -> Result<Vec<u8>, Error> {
+    query_with_datums(files, method, request, editing, None)
+}
+pub(crate) fn query_with_datums<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &FileWorkspace<O, W, F>,
+    method: &str,
+    request: &[u8],
+    editing: Option<(u64, DocumentSketchId)>,
+    datums: Option<&WorkGeometryEvaluation>,
+) -> Result<Vec<u8>, Error> {
     let document = owner::active_sketch_host(files)?;
     let session = files.workspace().session(document).map_err(api_error)?;
     if method == METHOD_SKETCH_GET {
         let args: SketchArgs = crate::decode(method, request)?;
         let id = sketch_at(session.snapshot(), args.sketch_index)?;
-        return encode(&inspect(session, document, args.sketch_index, id, editing)?);
+        return encode(&inspect(
+            session,
+            document,
+            args.sketch_index,
+            id,
+            editing,
+            datums,
+        )?);
     }
     encode(&ListSketchesResult {
-        sketches: Some(list_sketches(session, document, editing)?),
+        sketches: Some(list_sketches(session, document, editing, datums)?),
     })
 }
 
@@ -24,6 +41,7 @@ fn list_sketches<O: TransactionObserver>(
     session: &oblikovati_session::DocumentSession<O>,
     document: u64,
     editing: Option<(u64, DocumentSketchId)>,
+    datums: Option<&WorkGeometryEvaluation>,
 ) -> Result<Vec<SketchInfo>, Error> {
     session
         .snapshot()
@@ -31,7 +49,16 @@ fn list_sketches<O: TransactionObserver>(
         .sketches()
         .iter()
         .enumerate()
-        .map(|(index, sketch)| inspect(session, document, wire_count(index)?, sketch.id(), editing))
+        .map(|(index, sketch)| {
+            inspect(
+                session,
+                document,
+                wire_count(index)?,
+                sketch.id(),
+                editing,
+                datums,
+            )
+        })
         .collect()
 }
 
@@ -41,14 +68,16 @@ fn inspect<O: TransactionObserver>(
     index: i64,
     id: DocumentSketchId,
     editing: Option<(u64, DocumentSketchId)>,
+    datums: Option<&WorkGeometryEvaluation>,
 ) -> Result<SketchInfo, Error> {
-    inspect_snapshot(
+    inspect_snapshot_with_datums(
         session.snapshot(),
         document,
         index,
         id,
         editing,
         session.sketch_solve_options().rank_tolerance,
+        datums,
     )
 }
 
@@ -60,14 +89,27 @@ pub(super) fn inspect_snapshot(
     editing: Option<(u64, DocumentSketchId)>,
     rank_tolerance: f64,
 ) -> Result<SketchInfo, Error> {
+    inspect_snapshot_with_datums(snapshot, document, index, id, editing, rank_tolerance, None)
+}
+fn inspect_snapshot_with_datums(
+    snapshot: &DocumentSnapshot,
+    document: u64,
+    index: i64,
+    id: DocumentSketchId,
+    editing: Option<(u64, DocumentSketchId)>,
+    rank_tolerance: f64,
+    datums: Option<&WorkGeometryEvaluation>,
+) -> Result<SketchInfo, Error> {
     let sketch = snapshot.sketches.get(id).map_err(api_error)?;
-    let structure = snapshot
-        .analyze_document_sketch(id, rank_tolerance)
-        .map_err(api_error)?;
-    let mut summary = sketch_summary(snapshot, sketch, index)?;
+    let structure = match datums {
+        Some(datums) => snapshot.analyze_document_sketch_with_datums(id, rank_tolerance, datums),
+        None => snapshot.analyze_document_sketch(id, rank_tolerance),
+    }
+    .map_err(api_error)?;
+    let mut summary = sketch_summary(snapshot, sketch, index, datums)?;
     summary.dof = wire_count(structure.degrees_of_freedom)?;
     summary.editing = editing == Some((document, id));
-    summary.healthy = current_health(snapshot, id)?;
+    summary.healthy = current_health(snapshot, id, datums)?;
     Ok(summary)
 }
 
@@ -75,10 +117,13 @@ fn sketch_summary(
     snapshot: &DocumentSnapshot,
     sketch: &PlacedSketch,
     index: i64,
+    datums: Option<&WorkGeometryEvaluation>,
 ) -> Result<SketchInfo, Error> {
-    let plane = snapshot
-        .resolve_sketch_plane(sketch.id())
-        .map_err(api_error)?;
+    let plane = match datums {
+        Some(datums) => snapshot.resolve_sketch_plane_with_datums(sketch.id(), datums),
+        None => snapshot.resolve_sketch_plane(sketch.id()),
+    }
+    .map_err(api_error)?;
     let owned_by = consuming_feature(snapshot, sketch.id());
     Ok(SketchInfo {
         index,
@@ -101,8 +146,16 @@ fn consuming_feature(snapshot: &DocumentSnapshot, sketch: DocumentSketchId) -> O
         .map(|feature| feature.name())
 }
 
-fn current_health(snapshot: &DocumentSnapshot, id: DocumentSketchId) -> Result<bool, Error> {
-    let health = snapshot.document_sketch_health(id).map_err(api_error)?;
+fn current_health(
+    snapshot: &DocumentSnapshot,
+    id: DocumentSketchId,
+    datums: Option<&WorkGeometryEvaluation>,
+) -> Result<bool, Error> {
+    let health = match datums {
+        Some(datums) => snapshot.document_sketch_health_with_datums(id, datums),
+        None => snapshot.document_sketch_health(id),
+    }
+    .map_err(api_error)?;
     Ok(
         matches!(health, PlacedSketchHealth::Current(SketchEvaluation::Numerical(report))
         if report.termination == SolveTermination::Converged && report.structure.status != ConstraintStatus::OverConstrained),

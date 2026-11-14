@@ -48,6 +48,20 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
     ) -> Result<oblikovati_model::feature::work_geometry::WorkGeometryEvaluation, String> {
         oblikovati_automation::preview_part_datums(files, document, candidate, self.resolution)
     }
+    fn current_part_datums(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<oblikovati_session::part_evaluation::CurrentPartDatums, String> {
+        self.ensure_current(files, document)?;
+        let session = files
+            .workspace()
+            .session(document)
+            .map_err(|error| error.to_string())?;
+        self.slot
+            .current_datums(session)
+            .map_err(|error| error.to_string())
+    }
 }
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartTopologyAccess<O, W, F>
     for DesktopPartScenes

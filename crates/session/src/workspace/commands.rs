@@ -9,6 +9,28 @@ pub struct SessionCommands<'a, O> {
 }
 
 impl<O: TransactionObserver> SessionCommands<'_, O> {
+    /// Create a sketch with current part datums and project its reply.
+    /// Example: `commands.create_sketch_with_part_datums(&request, &datums, project)?`.
+    pub fn create_sketch_with_part_datums<R, E>(
+        &mut self,
+        request: &oblikovati_model::history::DocumentSketchCreation,
+        datums: &crate::part_evaluation::CurrentPartDatums,
+        project: impl FnOnce(crate::SketchCreationProjectionInput) -> Result<R, E>,
+    ) -> Result<R, crate::PartSketchCreateError<E>> {
+        self.session
+            .create_automatic_sketch_with_part_datums_projected(request, datums, project)
+    }
+    /// Create a named sketch using current part datums.
+    /// Example: `commands.create_named_sketch_with_part_datums(&request, &datums, project)?`.
+    pub fn create_named_sketch_with_part_datums<R, E>(
+        &mut self,
+        request: &oblikovati_model::history::DocumentSketchCreation,
+        datums: &crate::part_evaluation::CurrentPartDatums,
+        project: impl FnOnce(crate::SketchCreationProjectionInput) -> Result<R, E>,
+    ) -> Result<R, crate::PartSketchCreateError<E>> {
+        self.session
+            .create_sketch_with_part_datums_projected(request, datums, project)
+    }
     /// Mark the latest desktop sketch creation as entering edit mode; example: `commands.tag_sketch_creation(id)?`.
     pub fn tag_sketch_creation(
         &mut self,
@@ -22,6 +44,16 @@ impl<O: TransactionObserver> SessionCommands<'_, O> {
         sketch: oblikovati_model::document_sketch::DocumentSketchId,
     ) -> Result<(), SessionError> {
         self.session.finish_sketch_history(sketch)
+    }
+    /// Finish an editor using generation-checked part datums.
+    /// Example: `commands.finish_sketch_history_with_datums(id, &datums)?`.
+    pub fn finish_sketch_history_with_datums(
+        &mut self,
+        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+        datums: &crate::part_evaluation::CurrentPartDatums,
+    ) -> Result<(), SessionError> {
+        self.session
+            .finish_sketch_history_with_datums(sketch, datums)
     }
     /// Consume the last editor target after history navigation; example: `commands.take_sketch_navigation()`.
     pub fn take_sketch_navigation(&mut self) -> Option<crate::SketchEditNavigation> {

@@ -194,6 +194,8 @@ pub enum GuiShellAction {
     /// Show the origin planes; the sketch starts when one is chosen.
     ChooseSketchPlane,
     StartSketchOn(crate::GuiOriginPlaneKind),
+    /// Start on a selected authored work plane.
+    StartSketchOnWorkPlane(oblikovati_model::feature::FeatureId),
     FinishSketch,
     /// Open the Extrude dialog for the active part.
     OpenExtrude,

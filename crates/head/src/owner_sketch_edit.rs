@@ -86,21 +86,53 @@ impl<
         self.require_sketch_edit_entry(document)?;
         let mut request = request.clone();
         request.project_origin &= self.sketch_document_kind(document)? == DOCUMENT_PART;
+        let part_datums = self.sketch_creation_datums(document, &request)?;
         let mut commands = self
             .files
             .commands(document)
             .map_err(|cause| cause.to_string())?;
-        let sketch = if automatic {
-            commands.create_automatic_sketch(&request)
-        } else {
-            commands.create_sketch(&request)
-        }
-        .map_err(|cause| cause.to_string())?;
+        let sketch = match (automatic, part_datums.as_ref()) {
+            (true, Some(datums)) => commands
+                .create_sketch_with_part_datums(&request, datums, |result| result)
+                .map_err(|error| error.to_string())?,
+            (false, Some(datums)) => commands
+                .create_named_sketch_with_part_datums(&request, datums, |result| result)
+                .map_err(|error| error.to_string())?,
+            (true, None) => commands
+                .create_automatic_sketch(&request)
+                .map_err(|error| error.to_string())?,
+            (false, None) => commands
+                .create_sketch(&request)
+                .map_err(|error| error.to_string())?,
+        };
         commands
             .tag_sketch_creation(sketch)
             .map_err(|cause| cause.to_string())?;
         self.watch_sketch_edit(document, sketch)?;
         Ok(sketch)
+    }
+    fn sketch_creation_datums(
+        &mut self,
+        document: u64,
+        request: &DocumentSketchCreation,
+    ) -> Result<Option<oblikovati_session::part_evaluation::CurrentPartDatums>, String> {
+        use oblikovati_automation::PartUpdateAccess;
+        let needs_placement = matches!(
+            request.placement,
+            oblikovati_model::document_sketch::SketchPlacement::WorkPlane(_)
+        ) || request.orientation.is_some();
+        let snapshot = self
+            .files
+            .workspace()
+            .session(document)
+            .map_err(|error| error.to_string())?
+            .snapshot();
+        if !needs_placement || !oblikovati_automation::requires_part_replay(snapshot) {
+            return Ok(None);
+        }
+        self.part_scenes
+            .current_part_datums(&mut self.files, document)
+            .map(Some)
     }
     /// Leave the edit and discard unfinished placement; committed commands keep their own undo entries.
     /// Example: `owner.finish_sketch_edit()?` before selecting another sketch.
@@ -113,17 +145,43 @@ impl<
             )
         })?;
         self.require_edit_document(edit.document)?;
-        self.files
-            .commands(edit.document)
-            .map_err(|cause| cause.to_string())?
-            .finish_sketch_history(edit.sketch)
-            .map_err(|cause| cause.to_string())?;
+        self.finish_sketch_history_current(edit.document, edit.sketch)?;
         self.retire_sketch_tool()?;
         self.sketch_edit = None;
         self.command_notice = Some(DesktopCommandNotice::PlacementPrompt {
             message: "Sketch finished.".into(),
         });
         Ok(())
+    }
+    fn finish_sketch_history_current(
+        &mut self,
+        document: u64,
+        sketch: DocumentSketchId,
+    ) -> Result<(), String> {
+        use oblikovati_automation::PartUpdateAccess;
+        let snapshot = self
+            .files
+            .workspace()
+            .session(document)
+            .map_err(|error| error.to_string())?
+            .snapshot();
+        let part_datums = if oblikovati_automation::requires_part_replay(snapshot) {
+            Some(
+                self.part_scenes
+                    .current_part_datums(&mut self.files, document)?,
+            )
+        } else {
+            None
+        };
+        let mut commands = self
+            .files
+            .commands(document)
+            .map_err(|error| error.to_string())?;
+        match part_datums {
+            Some(datums) => commands.finish_sketch_history_with_datums(sketch, &datums),
+            None => commands.finish_sketch_history(sketch),
+        }
+        .map_err(|error| error.to_string())
     }
     /// Re-resolve identity after edits and history restore; example: `owner.active_sketch_edit()` for command enablement.
     pub fn active_sketch_edit(&self) -> Option<HeadSketchEdit> {

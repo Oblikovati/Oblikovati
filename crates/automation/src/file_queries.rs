@@ -29,6 +29,10 @@ pub(crate) mod derived;
 pub struct FileQueryHost<'a, O, W, F> {
     files: &'a FileWorkspace<O, W, F>,
     sketch_edit: Option<crate::SketchInspectionEdit>,
+    part_sketch_continuity: Option<crate::PartSketchContinuity>,
+    sketch_datums: std::cell::OnceCell<
+        Result<oblikovati_model::feature::work_geometry::WorkGeometryEvaluation, String>,
+    >,
 }
 impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>
     FileQueryHost<'a, O, W, F>
@@ -38,11 +42,18 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>
         Self {
             files,
             sketch_edit: None,
+            part_sketch_continuity: None,
+            sketch_datums: std::cell::OnceCell::new(),
         }
     }
     /// Supply the live desktop edit guards; example: `host.with_sketch_edit(Some(edit.clone()))`.
     pub fn with_sketch_edit(mut self, edit: Option<crate::SketchInspectionEdit>) -> Self {
         self.sketch_edit = edit;
+        self
+    }
+    /// Replay the current part for sketch queries; example: `host.with_part_sketch_continuity(resolver)`.
+    pub fn with_part_sketch_continuity(mut self, resolver: crate::PartSketchContinuity) -> Self {
+        self.part_sketch_continuity = Some(resolver);
         self
     }
 }
@@ -70,6 +81,28 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
                 .as_ref()
                 .and_then(|edit| edit.focused_identity(self.files.workspace()));
             let editing = pending_sketch_edit(self.files.workspace(), editing, focused);
+            if [METHOD_SKETCH_LIST, METHOD_SKETCH_GET].contains(&method)
+                && let Some(resolver) = &self.part_sketch_continuity
+            {
+                let document = crate::sketches::owner::active_sketch_host(self.files)?;
+                let session = self
+                    .files
+                    .workspace()
+                    .session(document)
+                    .map_err(|error| Error(error.to_string()))?;
+                let datums = self
+                    .sketch_datums
+                    .get_or_init(|| resolver.datums(session.history()))
+                    .as_ref()
+                    .map_err(|error| Error(error.clone()))?;
+                return crate::sketches::inspection::query_with_datums(
+                    self.files,
+                    method,
+                    request,
+                    editing,
+                    Some(datums),
+                );
+            }
             return crate::sketches::query(self.files, method, request, editing);
         }
         if method == METHOD_PARAMETERS_DERIVED_TABLES_LIST {
@@ -83,7 +116,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
         })
     }
 }
-fn pending_sketch_edit<O: TransactionObserver, W: WorkspaceObserver>(
+pub(crate) fn pending_sketch_edit<O: TransactionObserver, W: WorkspaceObserver>(
     workspace: &oblikovati_session::workspace::WorkspaceSession<O, W>,
     editing: Option<(u64, oblikovati_model::document_sketch::DocumentSketchId)>,
     focused: Option<(u64, oblikovati_model::document_sketch::DocumentSketchId)>,

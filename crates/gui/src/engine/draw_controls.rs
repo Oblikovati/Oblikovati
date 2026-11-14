@@ -50,7 +50,7 @@ impl GuiFrameEngine {
             (&mut self.plane_selection, &mut self.workspace),
             &mut self.extrude_dialog,
             (&mut self.material_browser, &mut self.appearance_browser),
-            (&mut self.parameter_editor, request.commands.document),
+            (&mut self.parameter_editor, &request.commands),
             &mut selected,
         );
         if !self.ribbon.tips.active() && !self.ribbon.tips.consumed {

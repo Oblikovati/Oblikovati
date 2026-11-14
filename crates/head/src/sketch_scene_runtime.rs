@@ -14,7 +14,8 @@ pub(crate) struct DesktopSketchScenes {
 impl DesktopSketchScenes {
     pub(crate) fn refresh<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
         &mut self,
-        files: &FileWorkspace<O, W, F>,
+        files: &mut FileWorkspace<O, W, F>,
+        parts: &mut crate::part_scene::DesktopPartScenes,
         opened_hidden: Option<DocumentSketchId>,
     ) -> Result<Option<HeadSketchSceneUpdate>, String> {
         let source = active_sketch_source(files)?;
@@ -22,7 +23,10 @@ impl DesktopSketchScenes {
         if source == self.source && called_up == self.called_up {
             return Ok(None);
         }
-        let update = prepare_sketch_scene(files, source, &called_up)?;
+        let datums = scene_datums(files, parts, source)?;
+        let source = active_sketch_source(files)?;
+        let called_up = called_up_sketches(files, source, opened_hidden);
+        let update = prepare_sketch_scene(files, source, &called_up, datums.as_ref())?;
         self.source = source;
         self.called_up = called_up;
         Ok(Some(update))
@@ -30,6 +34,25 @@ impl DesktopSketchScenes {
     pub(crate) fn clear(&mut self) {
         self.source = None;
     }
+}
+fn scene_datums<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &mut FileWorkspace<O, W, F>,
+    parts: &mut crate::part_scene::DesktopPartScenes,
+    source: Option<(u64, u64)>,
+) -> Result<Option<oblikovati_model::feature::work_geometry::WorkGeometryEvaluation>, String> {
+    use oblikovati_automation::PartUpdateAccess;
+    let Some((id, _)) = source else {
+        return Ok(None);
+    };
+    let snapshot = files
+        .workspace()
+        .session(id)
+        .map_err(|error| error.to_string())?
+        .snapshot();
+    if !oblikovati_automation::requires_part_replay(snapshot) {
+        return Ok(None);
+    }
+    parts.datum_evaluation(files, id).map(Some)
 }
 fn active_sketch_source<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &FileWorkspace<O, W, F>,
@@ -74,6 +97,7 @@ fn prepare_sketch_scene<O: TransactionObserver, W: WorkspaceObserver, F: Documen
     files: &FileWorkspace<O, W, F>,
     source: Option<(u64, u64)>,
     called_up: &[DocumentSketchId],
+    datums: Option<&oblikovati_model::feature::work_geometry::WorkGeometryEvaluation>,
 ) -> Result<HeadSketchSceneUpdate, String> {
     let mut update = HeadSketchSceneUpdate {
         source,
@@ -86,7 +110,7 @@ fn prepare_sketch_scene<O: TransactionObserver, W: WorkspaceObserver, F: Documen
             .workspace()
             .session(id)
             .map_err(|cause| cause.to_string())?;
-        collect_sketches(session.snapshot(), called_up, &mut update);
+        collect_sketches(session.snapshot(), called_up, datums, &mut update);
     }
     Ok(update)
 }
@@ -97,6 +121,7 @@ fn line_color([red, green, blue]: [u8; 3]) -> oblikovati_model::theme::Rgba {
 fn collect_sketches(
     snapshot: &DocumentSnapshot,
     called_up: &[DocumentSketchId],
+    datums: Option<&oblikovati_model::feature::work_geometry::WorkGeometryEvaluation>,
     update: &mut HeadSketchSceneUpdate,
 ) {
     for sketch in snapshot
@@ -105,7 +130,11 @@ fn collect_sketches(
         .iter()
         .filter(|sketch| super::sketch_shows(sketch, called_up))
     {
-        match snapshot.resolve_sketch_plane(sketch.id()) {
+        let plane = match datums {
+            Some(datums) => snapshot.resolve_sketch_plane_with_datums(sketch.id(), datums),
+            None => snapshot.resolve_sketch_plane(sketch.id()),
+        };
+        match plane {
             Ok(plane) => {
                 let blocks = scene_blocks(snapshot, sketch, update);
                 update.sketches.push(ViewportSketchDisplay {

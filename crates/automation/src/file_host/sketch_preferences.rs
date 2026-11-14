@@ -40,7 +40,50 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
                 oblikovati_model::application_options::SketchApplicationOptions::default()
                     .auto_project_origin
             });
-        crate::sketches::create::apply(self.files, crate::decode(method, request)?, project_origin)
+        let args: CreateSketchArgs = crate::decode(method, request)?;
+        let part_datums = self.sketch_creation_datums(&args)?;
+        crate::sketches::create::apply(self.files, args, project_origin, part_datums.as_ref())
+    }
+    fn sketch_creation_datums(
+        &mut self,
+        args: &CreateSketchArgs,
+    ) -> Result<Option<oblikovati_session::part_evaluation::CurrentPartDatums>, Error> {
+        if args.work_plane_index.is_none() && args.orientation.is_none() {
+            return Ok(None);
+        }
+        let document = crate::sketches::owner::active_sketch_host(self.files)?;
+        let snapshot = self
+            .files
+            .workspace()
+            .session(document)
+            .map_err(|error| Error(error.to_string()))?
+            .snapshot();
+        if !crate::requires_part_replay(snapshot) {
+            return Ok(None);
+        }
+        if let Some(index) = args.work_plane_index.as_deref() {
+            let (placement, _) = crate::datums::sketch_plane_at_index(snapshot, *index)?;
+            if matches!(
+                placement,
+                oblikovati_model::document_sketch::SketchPlacement::Fixed(_)
+            ) && args.orientation.is_none()
+            {
+                return Ok(None);
+            }
+        }
+        let owner: &mut dyn crate::PartUpdateAccess<O, W, F> = match self.part_update.as_deref_mut()
+        {
+            Some(owner) => owner,
+            None => self.part_topology.as_deref_mut().ok_or_else(|| {
+                Error(format!(
+                    "document {document} sketch creation: expected a part replay owner"
+                ))
+            })?,
+        };
+        owner
+            .current_part_datums(self.files, document)
+            .map(Some)
+            .map_err(Error)
     }
     pub(super) fn sketch_option_command(
         &mut self,

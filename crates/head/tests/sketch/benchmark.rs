@@ -29,6 +29,8 @@ mod line;
 mod move_precise;
 #[path = "new-sketch/steps.rs"]
 mod new_sketch;
+#[path = "new-sketch/work_plane.rs"]
+mod new_sketch_work_plane;
 #[path = "point/steps.rs"]
 mod point;
 #[path = "precise-input/steps.rs"]

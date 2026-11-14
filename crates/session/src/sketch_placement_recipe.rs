@@ -14,6 +14,67 @@ pub struct SketchPlacementPreview {
     pub members: Vec<oblikovati_model::sketch::SketchEntityId>,
 }
 impl<O: TransactionObserver> DocumentSession<O> {
+    /// Preview a placement against a generation-checked part replay.
+    /// Example: `session.preview_sketch_placement_with_datums(id, recipe, locks, backend, datums)?`.
+    pub fn preview_sketch_placement_with_datums(
+        &self,
+        sketch: DocumentSketchId,
+        recipe: &SketchPlacementRecipe,
+        locks: &[Option<SketchPlacementFieldLock>],
+        construction: &dyn SketchCircleConstruction,
+        datums: &crate::part_evaluation::CurrentPartDatums,
+    ) -> Result<SketchPlacementPreview, crate::PartSketchCreateError<SketchPlacementCreationError>>
+    {
+        let current = datums
+            .current(self)
+            .map_err(crate::PartSketchCreateError::Evaluation)?;
+        let options = self.sketch_options;
+        self.history
+            .preview(|snapshot, ids| {
+                crate::sketch_recompute::apply_recipe_edit(
+                    snapshot,
+                    ids,
+                    |snapshot, ids| {
+                        create_with_datums(snapshot, ids, sketch, recipe, locks, options, current)
+                    },
+                    None,
+                    |snapshot, report| {
+                        collect_placement_preview(snapshot, report, recipe, construction)
+                    },
+                )
+            })
+            .map_err(|error| crate::PartSketchCreateError::Command(CommandError::Edit(error)))
+    }
+    /// Commit a placement against the same current part inputs as its preview.
+    /// Example: `session.create_sketch_placement_with_datums(id, recipe, locks, backend, datums)?`.
+    pub fn create_sketch_placement_with_datums(
+        &mut self,
+        sketch: DocumentSketchId,
+        recipe: &SketchPlacementRecipe,
+        locks: &[Option<SketchPlacementFieldLock>],
+        construction: &dyn SketchCircleConstruction,
+        datums: &crate::part_evaluation::CurrentPartDatums,
+    ) -> Result<
+        SketchPlacementCreationReport,
+        crate::PartSketchCreateError<SketchPlacementCreationError>,
+    > {
+        let current = datums
+            .current(self)
+            .map_err(crate::PartSketchCreateError::Evaluation)?
+            .clone();
+        let options = self.sketch_options;
+        self.run_with_recompute(
+            "Create constrained sketch recipe",
+            |snapshot, ids| {
+                let report =
+                    create_with_datums(snapshot, ids, sketch, recipe, locks, options, &current)?;
+                verify_placement(snapshot, &report, recipe, Some(construction))?;
+                Ok(report)
+            },
+            crate::sketch_recompute::SketchUpdateMode::Explicit,
+        )
+        .map_err(crate::PartSketchCreateError::Command)
+    }
     /// Solve the commit operation on a private history owner without reserving live IDs.
     /// Example: `session.preview_sketch_placement(sketch, recipe, locks, backend)?`.
     pub fn preview_sketch_placement(
@@ -77,6 +138,33 @@ impl<O: TransactionObserver> DocumentSession<O> {
             },
         )
     }
+}
+fn create_with_datums(
+    snapshot: &mut oblikovati_model::history::DocumentSnapshot,
+    ids: &mut oblikovati_model::history::RecipeReservations<'_>,
+    sketch: DocumentSketchId,
+    recipe: &SketchPlacementRecipe,
+    locks: &[Option<SketchPlacementFieldLock>],
+    options: oblikovati_solve::nonlinear::SolveOptions,
+    datums: &oblikovati_model::feature::work_geometry::WorkGeometryEvaluation,
+) -> Result<SketchPlacementCreationReport, SketchPlacementCreationError> {
+    let report = snapshot
+        .create_sketch_placement_with_datums(sketch, recipe, locks, options, ids, datums)?;
+    let solved =
+        snapshot.solve_one_document_sketch_with_datums(sketch, options, || false, datums)?;
+    let result = solved
+        .report
+        .reports
+        .iter()
+        .find(|entry| entry.sketch == sketch)
+        .ok_or_else(|| {
+            oblikovati_model::sketch::SketchError::Definition(format!(
+                "sketch {sketch:?} placement solve: expected a current report"
+            ))
+        })?;
+    result.result.as_ref().map_err(Clone::clone)?;
+    snapshot.sketches = solved.candidate;
+    Ok(report)
 }
 fn collect_placement_preview(
     snapshot: &oblikovati_model::history::DocumentSnapshot,

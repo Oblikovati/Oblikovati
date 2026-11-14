@@ -206,6 +206,15 @@ pub trait HeadWork {
             plane.label()
         ))
     }
+    /// Start on an authored work plane; example: `work.start_sketch_on_work_plane_from_gui(id)`.
+    fn start_sketch_on_work_plane_from_gui(
+        &mut self,
+        plane: oblikovati_model::feature::FeatureId,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "work plane {plane:?}: expected a document owner with sketches"
+        ))
+    }
     /// Change the stored recent list; example: `work.recent_from_gui(&action)`.
     fn recent_from_gui(
         &mut self,

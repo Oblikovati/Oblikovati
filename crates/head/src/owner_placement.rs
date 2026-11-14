@@ -18,7 +18,7 @@ impl<
 > DesktopOwner<O, W, F, G, R, S>
 {
     pub(super) fn resolved_placement_preview(
-        &self,
+        &mut self,
         tool: &crate::placement_input::SketchPlacementState,
     ) -> Result<Option<oblikovati_viewport::ViewportSketchPreview>, String> {
         if tool.tool == crate::SketchPlacementTool::Line {
@@ -38,19 +38,32 @@ impl<
         let Some(recipe) = seeded.as_ref().or(tool.preview.as_ref()) else {
             return Ok(None);
         };
+        let datums = self.placement_part_datums(tool.document)?;
         let session = self
             .files
             .workspace()
             .session(tool.document)
             .map_err(|cause| cause.to_string())?;
-        let preview = session
-            .preview_sketch_placement(
-                tool.sketch,
-                recipe,
-                &tool.locks_for(recipe)?,
-                &self.sketch_construction,
-            )
-            .map_err(|cause| format!("placement preview {}: {cause}", tool.field_prompt()))?;
+        let preview = match datums.as_ref() {
+            Some(datums) => session
+                .preview_sketch_placement_with_datums(
+                    tool.sketch,
+                    recipe,
+                    &tool.locks_for(recipe)?,
+                    &self.sketch_construction,
+                    datums,
+                )
+                .map_err(|cause| cause.to_string()),
+            None => session
+                .preview_sketch_placement(
+                    tool.sketch,
+                    recipe,
+                    &tool.locks_for(recipe)?,
+                    &self.sketch_construction,
+                )
+                .map_err(|cause| cause.to_string()),
+        }
+        .map_err(|cause| format!("placement preview {}: {cause}", tool.field_prompt()))?;
         Ok(Some(placement_preview_packet(tool.plane, preview)))
     }
     /// Commit the displayed recipe through the document owner; example: `owner.commit_sketch_placement(document,sketch,&recipe,&locks)?;`.
@@ -61,21 +74,53 @@ impl<
         recipe: &SketchPlacementRecipe,
         locks: &[Option<SketchPlacementFieldLock>],
     ) -> Result<SketchPlacementCreationReport, String> {
-        self.files
+        let datums = self.placement_part_datums(document)?;
+        let mut commands = self
+            .files
             .commands(document)
-            .map_err(|cause| format!("placement document {document}: {cause}"))?
-            .create_sketch_placement_with_construction(
-                sketch,
-                recipe,
-                locks,
-                &self.sketch_construction,
-            )
-            .map_err(|cause| {
-                format!(
-                    "placement document {document}, sketch {}: {cause}",
-                    sketch.0
+            .map_err(|cause| format!("placement document {document}: {cause}"))?;
+        let result = match datums.as_ref() {
+            Some(datums) => commands
+                .create_sketch_placement_with_datums(
+                    sketch,
+                    recipe,
+                    locks,
+                    &self.sketch_construction,
+                    datums,
                 )
-            })
+                .map_err(|cause| cause.to_string()),
+            None => commands
+                .create_sketch_placement_with_construction(
+                    sketch,
+                    recipe,
+                    locks,
+                    &self.sketch_construction,
+                )
+                .map_err(|cause| cause.to_string()),
+        };
+        result.map_err(|cause| {
+            format!(
+                "placement document {document}, sketch {}: {cause}",
+                sketch.0
+            )
+        })
+    }
+    fn placement_part_datums(
+        &mut self,
+        document: u64,
+    ) -> Result<Option<oblikovati_session::part_evaluation::CurrentPartDatums>, String> {
+        use oblikovati_automation::PartUpdateAccess;
+        let session = self
+            .files
+            .workspace()
+            .session(document)
+            .map_err(|cause| cause.to_string())?;
+        if !oblikovati_automation::requires_part_replay(session.snapshot()) {
+            return Ok(None);
+        }
+        self.part_scenes
+            .current_part_datums(&mut self.files, document)
+            .map(Some)
     }
     /// Prepare current-document inference without publishing geometry or reserving permanent IDs.
     /// Example: `window.set_sketch_preview(Some(&owner.preview_sketch_line_chain(document, sketch, &input)?))?;`.

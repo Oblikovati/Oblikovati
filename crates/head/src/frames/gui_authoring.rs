@@ -143,6 +143,9 @@ fn sketch(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, Str
         GuiShellAction::CloseDocumentWindow(id) => owner.document_window_from_gui(*id, true),
         GuiShellAction::NewDocumentWindow => owner.new_document_window_from_gui(),
         GuiShellAction::StartSketchOn(plane) => owner.start_sketch_on_plane_from_gui(*plane),
+        GuiShellAction::StartSketchOnWorkPlane(plane) => {
+            owner.start_sketch_on_work_plane_from_gui(*plane)
+        }
         GuiShellAction::FinishSketch => owner.edit_sketch_from_gui(false),
         GuiShellAction::OpenExtrude => Ok(false),
         GuiShellAction::PreviewExtrude(request) => {

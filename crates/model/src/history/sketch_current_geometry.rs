@@ -11,8 +11,16 @@ impl DocumentSnapshot {
         sketch: DocumentSketchId,
         options: SolveOptions,
     ) -> Result<Sketch2D, SketchError> {
+        self.current_sketch_authoring_geometry_from(sketch, options, None)
+    }
+    pub(super) fn current_sketch_authoring_geometry_from(
+        &self,
+        sketch: DocumentSketchId,
+        options: SolveOptions,
+        datums: Option<&crate::feature::work_geometry::WorkGeometryEvaluation>,
+    ) -> Result<Sketch2D, SketchError> {
         let geometry = self.sketches.get(sketch)?.geometry();
-        let anchors = self.resolve_sketch_projected_points(sketch)?;
+        let anchors = self.sketch_authoring_anchors(sketch, datums)?;
         let solved =
             geometry.solve_with_grounded_points(&self.parameters, &anchors, options, || false)?;
         let termination = solved.numerical().termination;
@@ -23,5 +31,15 @@ impl DocumentSnapshot {
             )));
         }
         Ok(solved.into_candidate())
+    }
+    pub(super) fn sketch_authoring_anchors(
+        &self,
+        sketch: DocumentSketchId,
+        datums: Option<&crate::feature::work_geometry::WorkGeometryEvaluation>,
+    ) -> Result<Vec<crate::sketch::SketchPoint2D>, SketchError> {
+        match datums {
+            Some(datums) => self.resolve_sketch_projected_points_with_datums(sketch, datums),
+            None => self.resolve_sketch_projected_points(sketch),
+        }
     }
 }

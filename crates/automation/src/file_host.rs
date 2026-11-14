@@ -26,6 +26,7 @@ mod lifecycle;
 mod native_files;
 mod open;
 mod sketch_construction;
+mod sketch_inspection;
 mod sketch_preferences;
 pub use open::DocumentObserverFactory;
 pub(crate) use sketch_construction::SketchConstructionAccess;
@@ -280,6 +281,11 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
 }
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext<'_, O, W, F> {
     fn owned_command(&mut self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
+        if [METHOD_SKETCH_LIST, METHOD_SKETCH_GET].contains(&method)
+            && let Some(reply) = self.part_sketch_inspection(method, request)?
+        {
+            return Ok(reply);
+        }
         if crate::DATUM_QUERY_METHODS.contains(&method)
             && (self.part_update.is_some() || self.part_topology.is_some())
         {

@@ -36,6 +36,18 @@ impl PartSketchContinuity {
         sketch: DocumentSketchId,
     ) -> Result<oblikovati_model::sketch::SketchPlane, String> {
         let snapshot = history.snapshot();
+        let datums = self.datums(history)?;
+        snapshot
+            .resolve_sketch_plane_with_datums(sketch, &datums)
+            .map_err(|error| error.to_string())
+    }
+    /// Replay the current history for read-only sketch inspection.
+    /// Example: `resolver.datums(history)?` before reading sketch health.
+    pub fn datums(
+        &self,
+        history: &DocumentEditHistory,
+    ) -> Result<oblikovati_model::feature::work_geometry::WorkGeometryEvaluation, String> {
+        let snapshot = history.snapshot();
         let (result, _) = match self.resolution {
             Some(policy) => snapshot.recompute_part_with_sketches(
                 &mut CertifiedNamedPrismEvaluator::with_policy(history, self.document, policy),
@@ -47,9 +59,7 @@ impl PartSketchContinuity {
             ),
         }
         .map_err(|error| error.to_string())?;
-        snapshot
-            .resolve_sketch_plane_with_datums(sketch, &result.datum_evaluation())
-            .map_err(|error| error.to_string())
+        Ok(result.datum_evaluation())
     }
 }
 impl SketchContinuityResolver for PartSketchContinuity {

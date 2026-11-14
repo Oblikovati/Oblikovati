@@ -9,6 +9,27 @@ use oblikovati_model::{
     sketch::{SketchCircleConstruction, SketchPlacementRecipe},
 };
 impl<O: TransactionObserver> SessionCommands<'_, O> {
+    /// Commit a placement with current part datums.
+    /// Example: `commands.create_sketch_placement_with_datums(id, recipe, locks, backend, datums)?`.
+    pub fn create_sketch_placement_with_datums(
+        &mut self,
+        sketch: DocumentSketchId,
+        recipe: &SketchPlacementRecipe,
+        locks: &[Option<SketchPlacementFieldLock>],
+        construction: &dyn SketchCircleConstruction,
+        datums: &crate::part_evaluation::CurrentPartDatums,
+    ) -> Result<
+        SketchPlacementCreationReport,
+        crate::PartSketchCreateError<SketchPlacementCreationError>,
+    > {
+        self.session.create_sketch_placement_with_datums(
+            sketch,
+            recipe,
+            locks,
+            construction,
+            datums,
+        )
+    }
     /// Use the document owner to commit one placement; example: `commands.create_sketch_placement(sketch,&recipe,&locks)?;`.
     pub fn create_sketch_placement(
         &mut self,

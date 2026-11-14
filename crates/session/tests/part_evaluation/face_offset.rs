@@ -437,3 +437,6 @@ fn face_sketch_continuity_tracks_published_source_failure() {
     let restored = session.watch_sketch_continuity(sketch).unwrap();
     assert!(restored.is_live());
 }
+
+#[path = "face_offset/creation.rs"]
+mod creation;

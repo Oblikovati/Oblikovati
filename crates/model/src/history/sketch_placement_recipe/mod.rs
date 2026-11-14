@@ -39,10 +39,42 @@ impl DocumentSnapshot {
         options: SolveOptions,
         ids: &mut RecipeReservations<'_>,
     ) -> Result<SketchPlacementCreationReport, SketchPlacementCreationError> {
+        self.create_sketch_placement_from(sketch, recipe, locks, options, ids, None)
+    }
+    /// Create a placement using one current part replay.
+    /// Example: `snapshot.create_sketch_placement_with_datums(sketch, recipe, locks, options, ids, datums)?`.
+    pub fn create_sketch_placement_with_datums(
+        &mut self,
+        sketch: DocumentSketchId,
+        recipe: &SketchPlacementRecipe,
+        locks: &[Option<SketchPlacementFieldLock>],
+        options: SolveOptions,
+        ids: &mut RecipeReservations<'_>,
+        datums: &crate::feature::work_geometry::WorkGeometryEvaluation,
+    ) -> Result<SketchPlacementCreationReport, SketchPlacementCreationError> {
+        self.create_sketch_placement_from(sketch, recipe, locks, options, ids, Some(datums))
+    }
+    fn create_sketch_placement_from(
+        &mut self,
+        sketch: DocumentSketchId,
+        recipe: &SketchPlacementRecipe,
+        locks: &[Option<SketchPlacementFieldLock>],
+        options: SolveOptions,
+        ids: &mut RecipeReservations<'_>,
+        datums: Option<&crate::feature::work_geometry::WorkGeometryEvaluation>,
+    ) -> Result<SketchPlacementCreationReport, SketchPlacementCreationError> {
         recipe.validate()?;
         let mut candidate = self.clone();
-        let mut report = candidate.append_placement(sketch, recipe, options, ids)?;
-        fields::append(&mut candidate, recipe, locks, &mut report, options, ids)?;
+        let mut report = candidate.append_placement(sketch, recipe, options, ids, datums)?;
+        fields::append(
+            &mut candidate,
+            recipe,
+            locks,
+            &mut report,
+            options,
+            ids,
+            datums,
+        )?;
         self.parameters = candidate.parameters;
         self.sketches = candidate.sketches;
         Ok(report)
@@ -53,8 +85,9 @@ impl DocumentSnapshot {
         recipe: &SketchPlacementRecipe,
         options: SolveOptions,
         ids: &mut RecipeReservations<'_>,
+        datums: Option<&crate::feature::work_geometry::WorkGeometryEvaluation>,
     ) -> Result<SketchPlacementCreationReport, SketchPlacementCreationError> {
-        let mut geometry = self.current_sketch_authoring_geometry(sketch, options)?;
+        let mut geometry = self.current_sketch_authoring_geometry_from(sketch, options, datums)?;
         let points = append_defining_positions(&mut geometry, &recipe.points, ids)
             .map_err(SketchPlacementCreationError::Primitive)?;
         // Primitives can add auxiliary points; infer before those can become fresh targets.

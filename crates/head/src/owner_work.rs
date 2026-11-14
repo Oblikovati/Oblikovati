@@ -264,6 +264,26 @@ impl<
         )?;
         Ok(true)
     }
+    fn start_sketch_on_work_plane_from_gui(
+        &mut self,
+        plane: oblikovati_model::feature::FeatureId,
+    ) -> Result<bool, String> {
+        let document = self
+            .files
+            .workspace()
+            .active_document()
+            .ok_or_else(|| format!("work plane {plane:?}: expected an active part document"))?;
+        self.create_automatic_sketch_for_edit(
+            document,
+            &oblikovati_model::history::DocumentSketchCreation {
+                name: String::new(),
+                placement: oblikovati_model::document_sketch::SketchPlacement::WorkPlane(plane),
+                orientation: None,
+                project_origin: true,
+            },
+        )?;
+        Ok(true)
+    }
     fn recent_from_gui(
         &mut self,
         action: &oblikovati_gui::GuiRecentAction,
@@ -695,7 +715,8 @@ impl<
     }
     fn take_sketch_scene(&mut self) -> Result<Option<crate::HeadSketchSceneUpdate>, String> {
         let opened_hidden = self.sketch_opened_while_hidden();
-        self.sketch_scenes.refresh(&self.files, opened_hidden)
+        self.sketch_scenes
+            .refresh(&mut self.files, &mut self.part_scenes, opened_hidden)
     }
     fn take_scene(&mut self) -> Result<Option<crate::HeadSceneUpdate>, String> {
         self.take_scene_with_extrusion_preview()

@@ -51,6 +51,13 @@ pub trait PartUpdateAccess<O: TransactionObserver, W: WorkspaceObserver, F: Docu
         files: &mut FileWorkspace<O, W, F>,
         document: u64,
     ) -> Result<oblikovati_model::feature::work_geometry::WorkGeometryEvaluation, String>;
+    /// Seal the current part datums to their history generation.
+    /// Example: `owner.current_part_datums(files, id)?` before sketch creation.
+    fn current_part_datums(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<oblikovati_session::part_evaluation::CurrentPartDatums, String>;
     /// Replay a private candidate with the owner's policy; example: `owner.preview_datums(files, id, candidate)?`.
     fn preview_datums(
         &mut self,
@@ -158,6 +165,19 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
         candidate: &DocumentSnapshot,
     ) -> Result<oblikovati_model::feature::work_geometry::WorkGeometryEvaluation, String> {
         preview_part_datums(files, document, candidate, None)
+    }
+    fn current_part_datums(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<oblikovati_session::part_evaluation::CurrentPartDatums, String> {
+        let slot = self.current_slot(files, document)?;
+        let session = files
+            .workspace()
+            .session(document)
+            .map_err(|error| error.to_string())?;
+        slot.current_datums(session)
+            .map_err(|error| error.to_string())
     }
 }
 

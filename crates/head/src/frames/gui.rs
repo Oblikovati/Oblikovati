@@ -178,6 +178,7 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::NewDocumentWindow
         | GuiShellAction::CloseDocumentWindow(_)
         | GuiShellAction::StartSketchOn(_)
+        | GuiShellAction::StartSketchOnWorkPlane(_)
         | GuiShellAction::FinishSketch
         | GuiShellAction::OpenExtrude
         | GuiShellAction::PreviewExtrude(_)

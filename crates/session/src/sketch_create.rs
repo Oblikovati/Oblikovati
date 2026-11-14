@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
+mod part;
 use crate::{CommandError, DocumentSession, TransactionObserver};
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
     history::{DocumentSketchCreation, DocumentSketchCreationError},
 };
+pub use part::PartSketchCreateError;
 /// Creation success or a typed decline before adoption; example: `let reply: SketchCreationProjectionInput = Ok(sketch);`.
 pub type SketchCreationProjectionInput = Result<DocumentSketchId, DocumentSketchCreationError>;
 impl<O: TransactionObserver> DocumentSession<O> {

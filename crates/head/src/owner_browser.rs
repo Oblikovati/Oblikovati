@@ -31,8 +31,14 @@ impl<
             .session(document)
             .map_err(|cause| cause.to_string())?
             .snapshot();
-        let query = oblikovati_automation::FileQueryHost::new(&self.files)
+        let mut query = oblikovati_automation::FileQueryHost::new(&self.files)
             .with_sketch_edit(self.sketch_inspection_edit());
+        if oblikovati_automation::requires_part_replay(snapshot) {
+            let resolver = self
+                .part_scenes
+                .sketch_continuity_resolver(&self.files, document)?;
+            query = query.with_part_sketch_continuity(resolver);
+        }
         populate_browser(&mut browser, snapshot, &Client::new(query))?;
         browser.occurrences = occurrences::browser_occurrences(&self.files, document)?;
         browser.selected_occurrence =
@@ -199,6 +205,14 @@ fn feature_kind_name(
     match definition {
         SketchPrism(_) => "Extrusion",
         DeleteBody(_) => "Delete Body",
+        oblikovati_model::feature::part::PartFeatureDefinition::Fixed(_)
+        | oblikovati_model::feature::part::PartFeatureDefinition::Offset { .. }
+        | oblikovati_model::feature::part::PartFeatureDefinition::ParallelThroughPoint(_)
+        | oblikovati_model::feature::part::PartFeatureDefinition::ThroughThreePoints(_)
+        | oblikovati_model::feature::part::PartFeatureDefinition::LineThroughPoint(_)
+        | oblikovati_model::feature::part::PartFeatureDefinition::NormalToAxis(_)
+        | oblikovati_model::feature::part::PartFeatureDefinition::AtAngleAboutAxis(_)
+        | oblikovati_model::feature::part::PartFeatureDefinition::ThroughTwoAxes(_) => "Work Plane",
         _ => "Work Feature",
     }
 }

@@ -11,6 +11,7 @@ pub(super) fn append(
     report: &mut SketchPlacementCreationReport,
     options: SolveOptions,
     ids: &mut RecipeReservations<'_>,
+    datums: Option<&crate::feature::work_geometry::WorkGeometryEvaluation>,
 ) -> Result<(), SketchPlacementCreationError> {
     for (index, field) in recipe.fields.iter().enumerate() {
         let failure = |cause| SketchPlacementCreationError::Field {
@@ -31,8 +32,16 @@ pub(super) fn append(
         let Some(operands) = operands else {
             continue;
         };
-        let created =
-            append_field(snapshot, operands, lock, report.sketch, options, ids).map_err(failure)?;
+        let created = append_field(
+            snapshot,
+            operands,
+            lock,
+            report.sketch,
+            options,
+            ids,
+            datums,
+        )
+        .map_err(failure)?;
         report.dimensions.push((index, created));
     }
     Ok(())
@@ -44,6 +53,7 @@ fn append_field(
     sketch: DocumentSketchId,
     options: SolveOptions,
     ids: &mut RecipeReservations<'_>,
+    datums: Option<&crate::feature::work_geometry::WorkGeometryEvaluation>,
 ) -> Result<SketchDimensionCreationReport, SketchDimensionCreationError> {
     let input = SketchDimensionCreation {
         operands,
@@ -51,7 +61,7 @@ fn append_field(
         reference: false,
         text_point: lock.text_point,
     };
-    let created = snapshot.create_placement_dimension(sketch, &input, options, ids)?;
+    let created = snapshot.create_placement_dimension(sketch, &input, options, ids, datums)?;
     // A locked placement input must be evaluable even when redundant dimensions remain driving.
     if let Some(cause) = created.unavailable_targets.first() {
         return Err(cause.clone().into());

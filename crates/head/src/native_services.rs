@@ -212,6 +212,12 @@ impl<D: ScriptDocumentOwner, W: DispatchWakeup + 'static> HeadWork
     ) -> Result<bool, String> {
         self.owner.start_sketch_on_plane_from_gui(plane)
     }
+    fn start_sketch_on_work_plane_from_gui(
+        &mut self,
+        plane: oblikovati_model::feature::FeatureId,
+    ) -> Result<bool, String> {
+        self.owner.start_sketch_on_work_plane_from_gui(plane)
+    }
     fn recent_from_gui(
         &mut self,
         action: &oblikovati_gui::GuiRecentAction,

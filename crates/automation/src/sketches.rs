@@ -17,7 +17,7 @@ mod entities;
 mod indices;
 pub(crate) mod inspection;
 mod move_dimension;
-mod owner;
+pub(crate) mod owner;
 mod pattern;
 mod properties;
 mod references;

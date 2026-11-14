@@ -321,7 +321,10 @@ fn apply_quick_access(
         &mut crate::material_browser::MaterialBrowser,
         &mut crate::material_browser::MaterialBrowser,
     ),
-    parameters: (&mut crate::parameters::GuiParameterEditor, Option<u64>),
+    parameters: (
+        &mut crate::parameters::GuiParameterEditor,
+        &crate::GuiCommandState,
+    ),
     selected: &mut Vec<GuiShellAction>,
 ) {
     let (planes, workspace) = sketch_support;
@@ -342,17 +345,31 @@ fn apply_quick_access(
         files.request_projects();
     }
     if requests.open_parameters {
-        parameters.0.open(parameters.1);
+        parameters.0.open(parameters.1.document);
     }
     if requests.choose_plane || selected.contains(&GuiShellAction::ChooseSketchPlane) {
         if let Some(plane) = workspace.take_selected_origin_plane() {
             planes.active = false;
             selected.push(GuiShellAction::StartSketchOn(plane));
+        } else if let Some(plane) = selected_work_plane(parameters.1) {
+            planes.active = false;
+            selected.push(GuiShellAction::StartSketchOnWorkPlane(plane));
         } else {
             planes.active = true;
         }
     }
     extrude.requested |= requests.open_extrude || selected.contains(&GuiShellAction::OpenExtrude);
+}
+fn selected_work_plane(
+    state: &crate::GuiCommandState,
+) -> Option<oblikovati_model::feature::FeatureId> {
+    let browser = state.browser.as_ref()?;
+    let selected = browser.selected_feature?;
+    browser
+        .features
+        .iter()
+        .find(|feature| feature.id == selected && feature.kind == "Work Plane")
+        .map(|feature| feature.id)
 }
 #[cfg(test)]
 #[path = "../tests/parameter_journey/platform.rs"]
@@ -360,3 +377,7 @@ mod parameter_shortcuts;
 
 #[path = "engine_resources.rs"]
 mod resources;
+
+#[cfg(test)]
+#[path = "../tests/engine/work_plane.rs"]
+mod selected_work_plane_tests;

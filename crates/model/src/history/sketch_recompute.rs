@@ -10,7 +10,23 @@ use crate::{
 use oblikovati_solve::{diagnostics::ConstraintStructure, nonlinear::SolveOptions};
 
 impl DocumentSnapshot {
-    pub(crate) fn solve_one_document_sketch_with_datums(
+    /// Inspect sketch structure using projection inputs from a current part replay.
+    /// Example: `snapshot.analyze_document_sketch_with_datums(id, tolerance, &datums)?`.
+    pub fn analyze_document_sketch_with_datums(
+        &self,
+        id: DocumentSketchId,
+        rank_tolerance: f64,
+        datums: &crate::feature::work_geometry::WorkGeometryEvaluation,
+    ) -> Result<ConstraintStructure, SketchError> {
+        let placed = self.sketches.get(id)?;
+        let anchors = self.resolve_sketch_projected_points_with_datums(id, datums)?;
+        placed
+            .geometry()
+            .analyze_with_grounded_points(&self.parameters, &anchors, rank_tolerance)
+    }
+    /// Solve one sketch from a current part replay.
+    /// Example: `snapshot.solve_one_document_sketch_with_datums(id, options, || false, datums)?`.
+    pub fn solve_one_document_sketch_with_datums(
         &self,
         id: DocumentSketchId,
         options: SolveOptions,
@@ -113,13 +129,20 @@ impl DocumentSnapshot {
         &self,
         sketch: DocumentSketchId,
     ) -> Result<&crate::sketch::Sketch2D, crate::document_sketch::SketchReadinessError> {
+        self.require_converged_sketch_from(sketch, None)
+    }
+    pub(super) fn require_converged_sketch_from(
+        &self,
+        sketch: DocumentSketchId,
+        datums: Option<&crate::feature::work_geometry::WorkGeometryEvaluation>,
+    ) -> Result<&crate::sketch::Sketch2D, crate::document_sketch::SketchReadinessError> {
         let placed = self.sketches.get(sketch).map_err(|cause| {
             crate::document_sketch::SketchReadinessError {
                 sketch,
                 cause: crate::document_sketch::SketchReadinessCause::Failed(cause),
             }
         })?;
-        let projections = self.resolve_sketch_projected_points(sketch);
+        let projections = self.sketch_authoring_anchors(sketch, datums);
         placed.require_converged_with_projection_inputs(&self.parameters, &projections)?;
         Ok(placed.geometry())
     }

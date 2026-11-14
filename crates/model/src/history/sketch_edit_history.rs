@@ -33,9 +33,31 @@ impl DocumentEditHistory {
     }
     /// Validate a mode-only finish; example: `history.validate_sketch_finish(id)?` before observer notification.
     pub fn validate_sketch_finish(&self, sketch: DocumentSketchId) -> Result<(), HistoryError> {
+        self.validate_sketch_finish_using(sketch, None)
+    }
+    /// Validate a finish against current part datums.
+    /// Example: `history.validate_sketch_finish_with_datums(id, &datums)?`.
+    pub fn validate_sketch_finish_with_datums(
+        &self,
+        sketch: DocumentSketchId,
+        datums: &crate::feature::work_geometry::WorkGeometryEvaluation,
+    ) -> Result<(), HistoryError> {
+        self.validate_sketch_finish_using(sketch, Some(datums))
+    }
+    fn validate_sketch_finish_using(
+        &self,
+        sketch: DocumentSketchId,
+        datums: Option<&crate::feature::work_geometry::WorkGeometryEvaluation>,
+    ) -> Result<(), HistoryError> {
         self.require_closed()?;
         self.next_generation()?;
-        self.current.resolve_sketch_plane(sketch).map_err(|cause| {
+        let result = match datums {
+            Some(datums) => self
+                .current
+                .resolve_sketch_plane_with_datums(sketch, datums),
+            None => self.current.resolve_sketch_plane(sketch),
+        };
+        result.map_err(|cause| {
             HistoryError::SketchEditTransition(format!(
                 "sketch finish {sketch:?}: expected a current sketch plane: {cause}"
             ))
@@ -45,6 +67,21 @@ impl DocumentEditHistory {
     /// Record a finish without altering the saved recipe; example: `history.record_sketch_finish(id)?`.
     pub fn record_sketch_finish(&mut self, sketch: DocumentSketchId) -> Result<(), HistoryError> {
         self.validate_sketch_finish(sketch)?;
+        self.record_validated_sketch_finish(sketch);
+        Ok(())
+    }
+    /// Record a finish using the checked current part datums.
+    /// Example: `history.record_sketch_finish_with_datums(id, &datums)?`.
+    pub fn record_sketch_finish_with_datums(
+        &mut self,
+        sketch: DocumentSketchId,
+        datums: &crate::feature::work_geometry::WorkGeometryEvaluation,
+    ) -> Result<(), HistoryError> {
+        self.validate_sketch_finish_with_datums(sketch, datums)?;
+        self.record_validated_sketch_finish(sketch);
+        Ok(())
+    }
+    fn record_validated_sketch_finish(&mut self, sketch: DocumentSketchId) {
         self.done.push(HistoryStep {
             label: "Finish Sketch".into(),
             saved: false,
@@ -56,7 +93,6 @@ impl DocumentEditHistory {
             }),
         });
         self.undone.clear();
-        Ok(())
     }
     /// Read the transition a validated undo will cross; example: `history.undo_sketch_transition()`.
     pub fn undo_sketch_transition(&self) -> Option<SketchEditTransition> {

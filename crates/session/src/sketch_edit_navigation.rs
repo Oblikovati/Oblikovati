@@ -37,14 +37,42 @@ impl<O: TransactionObserver> DocumentSession<O> {
         &mut self,
         sketch: DocumentSketchId,
     ) -> Result<(), SessionError> {
-        self.history.validate_sketch_finish(sketch)?;
+        self.finish_sketch_history_using(sketch, None)
+    }
+    pub(crate) fn finish_sketch_history_with_datums(
+        &mut self,
+        sketch: DocumentSketchId,
+        datums: &crate::part_evaluation::CurrentPartDatums,
+    ) -> Result<(), SessionError> {
+        let current = datums
+            .current(self)
+            .map_err(SessionError::PartEvaluation)?
+            .clone();
+        self.finish_sketch_history_using(sketch, Some(&current))
+    }
+    fn finish_sketch_history_using(
+        &mut self,
+        sketch: DocumentSketchId,
+        datums: Option<&oblikovati_model::feature::work_geometry::WorkGeometryEvaluation>,
+    ) -> Result<(), SessionError> {
+        match datums {
+            Some(datums) => self
+                .history
+                .validate_sketch_finish_with_datums(sketch, datums)?,
+            None => self.history.validate_sketch_finish(sketch)?,
+        }
         let event = self.payload(
             EVENT_TRANSACTION_COMMITTED,
             "Finish Sketch",
             TRANSACTION_POINT_CURRENT,
         );
         self.notify_before(&event)?;
-        self.history.record_sketch_finish(sketch)?;
+        match datums {
+            Some(datums) => self
+                .history
+                .record_sketch_finish_with_datums(sketch, datums)?,
+            None => self.history.record_sketch_finish(sketch)?,
+        }
         self.notify_after(&event);
         Ok(())
     }

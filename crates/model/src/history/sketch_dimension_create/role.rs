@@ -23,8 +23,16 @@ impl DocumentSnapshot {
         input: &SketchDimensionCreation,
         options: SolveOptions,
         ids: &mut RecipeReservations<'_>,
+        datums: AuthoringDatums<'_>,
     ) -> Result<SketchDimensionCreationReport, SketchDimensionCreationError> {
-        self.create_dimension_with_role(sketch, input, options, ids, DimensionRolePolicy::Placement)
+        self.create_dimension_with_role(
+            sketch,
+            input,
+            options,
+            ids,
+            DimensionRolePolicy::Placement,
+            datums,
+        )
     }
     pub(super) fn prepare_dimension_role(
         &self,
@@ -33,6 +41,7 @@ impl DocumentSnapshot {
         input: &SketchDimensionCreation,
         policy: DimensionRolePolicy,
         options: SolveOptions,
+        datums: AuthoringDatums<'_>,
     ) -> Result<DimensionRoleProbe, SketchError> {
         if matches!(policy, DimensionRolePolicy::Explicit)
             || input.reference
@@ -41,7 +50,7 @@ impl DocumentSnapshot {
         {
             return Ok(DimensionRoleProbe::Explicit);
         }
-        let anchors = self.resolve_sketch_projected_points(sketch)?;
+        let anchors = self.sketch_authoring_anchors(sketch, datums)?;
         let prior = geometry
             .analyze_with_grounded_points(&self.parameters, &anchors, options.rank_tolerance)?
             .redundant_equations;

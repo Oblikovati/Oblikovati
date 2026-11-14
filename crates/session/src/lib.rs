@@ -44,7 +44,7 @@ pub use sketch_line::SketchLineProjectionInput;
 mod sketch_translation;
 pub use sketch_construction::SketchConstructionProjectionInput;
 pub use sketch_copy::{SketchCopyBatchProjectionInput, SketchCopyProjectionInput};
-pub use sketch_create::SketchCreationProjectionInput;
+pub use sketch_create::{PartSketchCreateError, SketchCreationProjectionInput};
 pub use sketch_primitive::SketchPrimitiveProjectionInput;
 pub use sketch_translation::{SketchTransformPreview, SketchTransformProjectionInput};
 mod sketch_delete;

@@ -18,7 +18,7 @@ fn invalid_plane_is_named_without_removing_other_sketches() {
         plane_declines: vec![],
         block_declines: vec![],
     };
-    collect_sketches(&snapshot, &[], &mut update);
+    collect_sketches(&snapshot, &[], None, &mut update);
     assert_eq!(update.sketches.len(), 1);
     assert_eq!(update.plane_declines.len(), 1);
     assert_eq!(update.plane_declines[0].0, DocumentSketchId(2));
@@ -46,14 +46,14 @@ fn hidden_sketches_leave_the_scene_before_plane_resolution() {
         plane_declines: vec![],
         block_declines: vec![],
     };
-    collect_sketches(&snapshot, &[], &mut update);
+    collect_sketches(&snapshot, &[], None, &mut update);
     assert!(update.sketches.is_empty());
     assert!(update.plane_declines.is_empty());
     snapshot
         .sketches
         .set_visible(DocumentSketchId(1), true)
         .unwrap();
-    collect_sketches(&snapshot, &[], &mut update);
+    collect_sketches(&snapshot, &[], None, &mut update);
     assert_eq!(update.sketches.len(), 1);
 }
 #[test]
@@ -92,7 +92,7 @@ fn block_instance_is_sent_to_the_sketch_scene() {
         plane_declines: vec![],
         block_declines: vec![],
     };
-    collect_sketches(&snapshot, &[], &mut update);
+    collect_sketches(&snapshot, &[], None, &mut update);
     assert_eq!(update.sketches.len(), 1);
     assert!(update.block_declines.is_empty());
     assert_eq!(update.sketches[0].blocks.len(), 1);

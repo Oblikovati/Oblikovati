@@ -10,6 +10,7 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     files: &mut FileWorkspace<O, W, F>,
     request: CreateSketchArgs,
     project_origin: bool,
+    part_datums: Option<&oblikovati_session::part_evaluation::CurrentPartDatums>,
 ) -> Result<Vec<u8>, Error> {
     let document = super::owner::active_sketch_host(files)?;
     let snapshot = files
@@ -21,13 +22,19 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         project_origin && files.document_type(document).map_err(api_error)? == DOCUMENT_PART;
     let (definition, label) = creation_inputs(snapshot, request, project_origin)?;
     let index = wire_count(snapshot.sketches.sketches().len())?;
-    files
-        .commands(document)
-        .map_err(api_error)?
-        .create_automatic_sketch_projected(&definition, |result| {
-            creation_reply(result, index, label)
-        })
-        .map_err(api_error)
+    let mut commands = files.commands(document).map_err(api_error)?;
+    match part_datums {
+        Some(datums) => commands
+            .create_sketch_with_part_datums(&definition, datums, |result| {
+                creation_reply(result, index, label)
+            })
+            .map_err(api_error),
+        None => commands
+            .create_automatic_sketch_projected(&definition, |result| {
+                creation_reply(result, index, label)
+            })
+            .map_err(api_error),
+    }
 }
 fn creation_inputs(
     snapshot: &DocumentSnapshot,

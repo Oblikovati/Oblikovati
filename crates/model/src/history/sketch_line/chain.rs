@@ -90,7 +90,7 @@ impl DocumentSnapshot {
                 text_point: lock.text_point,
             };
             let created = self
-                .create_placement_dimension(sketch, &creation, options, ids)
+                .create_placement_dimension(sketch, &creation, options, ids, None)
                 .map_err(SketchLineCreationError::Dimension)?;
             dimensions.push(created);
         }

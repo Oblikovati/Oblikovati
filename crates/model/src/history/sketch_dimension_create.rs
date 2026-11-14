@@ -12,6 +12,7 @@ mod error;
 mod role;
 pub use error::SketchDimensionCreationError;
 use role::DimensionRolePolicy;
+type AuthoringDatums<'a> = Option<&'a crate::feature::work_geometry::WorkGeometryEvaluation>;
 /// One authored dimension with a fresh owned Model formula and optional creation metadata.
 #[derive(Clone, Debug, PartialEq)]
 pub struct SketchDimensionCreation {
@@ -46,7 +47,14 @@ impl DocumentSnapshot {
         options: SolveOptions,
         ids: &mut RecipeReservations<'_>,
     ) -> Result<SketchDimensionCreationReport, SketchDimensionCreationError> {
-        self.create_dimension_with_role(sketch, input, options, ids, DimensionRolePolicy::Explicit)
+        self.create_dimension_with_role(
+            sketch,
+            input,
+            options,
+            ids,
+            DimensionRolePolicy::Explicit,
+            None,
+        )
     }
     fn create_dimension_with_role(
         &mut self,
@@ -55,15 +63,17 @@ impl DocumentSnapshot {
         options: SolveOptions,
         ids: &mut RecipeReservations<'_>,
         policy: DimensionRolePolicy,
+        datums: AuthoringDatums<'_>,
     ) -> Result<SketchDimensionCreationReport, SketchDimensionCreationError> {
-        let geometry = self.prepare_dimension_creation(sketch, input, options)?;
-        let probe = self.prepare_dimension_role(sketch, &geometry, input, policy, options)?;
+        let geometry = self.prepare_dimension_creation(sketch, input, options, datums)?;
+        let probe =
+            self.prepare_dimension_role(sketch, &geometry, input, policy, options, datums)?;
         let reserved = self.reserve_dimension_creation(sketch, ids)?;
         let mut candidate = self.clone();
         candidate.append_owned_dimension(sketch, input, geometry, &reserved)?;
         candidate.classify_dimension_role(sketch, reserved.constraint, probe, options)?;
-        let report = candidate.evaluate_created_dimension(sketch, &reserved, options)?;
-        candidate.confirm_dimension_creation(sketch, &report)?;
+        let report = candidate.evaluate_created_dimension(sketch, &reserved, options, datums)?;
+        candidate.confirm_dimension_creation(sketch, &report, datums)?;
         self.parameters = candidate.parameters;
         self.sketches = candidate.sketches;
         Ok(report)
@@ -72,10 +82,11 @@ impl DocumentSnapshot {
         &self,
         sketch: DocumentSketchId,
         report: &SketchDimensionCreationReport,
+        datums: AuthoringDatums<'_>,
     ) -> Result<(), SketchDimensionCreationError> {
         // #3824: DOF cannot certify a numerical result with available targets.
         if report.unavailable_targets.is_empty() {
-            self.require_converged_sketch(sketch)
+            self.require_converged_sketch_from(sketch, datums)
                 .map_err(SketchDimensionCreationError::Readiness)?;
         }
         Ok(())
@@ -85,6 +96,7 @@ impl DocumentSnapshot {
         sketch: DocumentSketchId,
         input: &SketchDimensionCreation,
         options: SolveOptions,
+        datums: AuthoringDatums<'_>,
     ) -> Result<Sketch2D, SketchError> {
         let geometry = self.sketches.get(sketch)?.geometry();
         input.operands.validate(geometry)?;
@@ -92,7 +104,7 @@ impl DocumentSnapshot {
             crate::sketch::require_position(position)?;
         }
         if input.operands.requires_current_seed() {
-            return self.current_sketch_authoring_geometry(sketch, options);
+            return self.current_sketch_authoring_geometry_from(sketch, options, datums);
         }
         Ok(geometry.clone())
     }
@@ -138,10 +150,16 @@ impl DocumentSnapshot {
         sketch: DocumentSketchId,
         reserved: &ReservedDimension,
         options: SolveOptions,
+        datums: AuthoringDatums<'_>,
     ) -> Result<SketchDimensionCreationReport, SketchError> {
-        let solved = self.solve_one_document_sketch(sketch, options, || false)?;
+        let solved = match datums {
+            Some(datums) => {
+                self.solve_one_document_sketch_with_datums(sketch, options, || false, datums)?
+            }
+            None => self.solve_one_document_sketch(sketch, options, || false)?,
+        };
         let (degrees_of_freedom, unavailable_targets) =
-            self.creation_dimension_structure(sketch, &solved, options)?;
+            self.creation_dimension_structure(sketch, &solved, options, datums)?;
         self.sketches = solved.candidate;
         let geometry = self.sketches.get(sketch)?.geometry();
         Ok(SketchDimensionCreationReport {
@@ -159,11 +177,12 @@ impl DocumentSnapshot {
         sketch: DocumentSketchId,
         solved: &DocumentSketchSolveOutcome,
         options: SolveOptions,
+        datums: AuthoringDatums<'_>,
     ) -> Result<(usize, Vec<SketchError>), SketchError> {
         match solved_sketch_numerical(solved, sketch) {
             Ok(numerical) => self.available_dimension_structure(numerical),
             Err(SketchError::Parameter { .. }) => {
-                self.unavailable_dimension_structure(sketch, options)
+                self.unavailable_dimension_structure(sketch, options, datums)
             }
             Err(cause) => Err(cause),
         }
@@ -191,8 +210,9 @@ impl DocumentSnapshot {
         &self,
         sketch: DocumentSketchId,
         options: SolveOptions,
+        datums: AuthoringDatums<'_>,
     ) -> Result<(usize, Vec<SketchError>), SketchError> {
-        let anchors = self.resolve_sketch_projected_points(sketch)?;
+        let anchors = self.sketch_authoring_anchors(sketch, datums)?;
         let analysis = self
             .sketches
             .get(sketch)?

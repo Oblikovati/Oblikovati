@@ -10,6 +10,7 @@ use std::{error::Error, fmt};
 #[derive(Debug, PartialEq)]
 pub enum SessionError {
     History(HistoryError),
+    PartEvaluation(crate::part_evaluation::PartEvaluationError),
     NoGroup,
     NavigationGroupOpen,
     HistoryPosition { supplied: i64, total: usize },
@@ -25,6 +26,7 @@ impl fmt::Display for SessionError {
     fn fmt(&self, output: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::History(error) => error.fmt(output),
+            Self::PartEvaluation(error) => error.fmt(output),
             Self::NavigationGroupOpen => write!(
                 output,
                 "history jump with an open group: expected all transactions closed"

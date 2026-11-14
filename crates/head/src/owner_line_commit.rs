@@ -222,7 +222,23 @@ impl<
             .active_sketch_edit()
             .filter(|edit| edit.document == document)?;
         let session = self.files.workspace().session(document).ok()?;
-        Some(session.analyze_sketch(edit.sketch).ok()?.degrees_of_freedom)
+        let snapshot = session.snapshot();
+        let structure = if oblikovati_automation::requires_part_replay(snapshot) {
+            let datums = self
+                .part_scenes
+                .sketch_continuity_resolver(&self.files, document)
+                .ok()?
+                .datums(session.history())
+                .ok()?;
+            snapshot.analyze_document_sketch_with_datums(
+                edit.sketch,
+                session.sketch_solve_options().rank_tolerance,
+                &datums,
+            )
+        } else {
+            session.analyze_sketch(edit.sketch)
+        };
+        Some(structure.ok()?.degrees_of_freedom)
     }
     pub(super) fn sketch_hud_enabled(&self) -> bool {
         self.sketch_options.heads_up_display
