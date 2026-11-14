@@ -1,8 +1,17 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::{DocumentSession, TransactionObserver};
 use oblikovati_model::{
-    document_sketch::DocumentSketchId, history::DocumentSnapshot, sketch::SketchError,
+    document_sketch::DocumentSketchId, history::DocumentEditHistory, sketch::SketchError,
 };
+/// Resolve a sketch for every published history state.
+pub trait SketchContinuityResolver: Send + Sync {
+    /// Validate the current placement; example: `resolver.resolve(history, sketch)?`.
+    fn resolve(
+        &self,
+        history: &DocumentEditHistory,
+        sketch: DocumentSketchId,
+    ) -> Result<(), String>;
+}
 use std::sync::{
     Arc, Weak,
     atomic::{AtomicBool, Ordering},
@@ -31,6 +40,7 @@ struct WatchedSketch {
 #[derive(Default)]
 pub(crate) struct SketchContinuityWatches {
     watches: Vec<WatchedSketch>,
+    resolver: Option<Box<dyn SketchContinuityResolver>>,
 }
 impl SketchContinuityWatches {
     fn observe(&mut self, sketch: DocumentSketchId) -> SketchContinuityWatch {
@@ -42,17 +52,44 @@ impl SketchContinuityWatches {
         });
         SketchContinuityWatch { sketch, live }
     }
-    pub(crate) fn refresh(&mut self, snapshot: &DocumentSnapshot) {
+    fn resolve(
+        &self,
+        history: &DocumentEditHistory,
+        sketch: DocumentSketchId,
+    ) -> Result<(), String> {
+        resolve_sketch(self.resolver.as_deref(), history, sketch)
+    }
+    pub(crate) fn refresh(&mut self, history: &DocumentEditHistory) {
+        let resolver = self.resolver.as_deref();
         self.watches.retain(|watch| {
             let Some(live) = watch.live.upgrade() else {
                 return false;
             };
-            if snapshot.resolve_sketch_plane(watch.sketch).is_err() {
+            if resolve_sketch(resolver, history, watch.sketch).is_err() {
                 live.store(false, Ordering::Release);
                 return false;
             }
             true
         });
+    }
+}
+fn resolve_sketch(
+    resolver: Option<&dyn SketchContinuityResolver>,
+    history: &DocumentEditHistory,
+    sketch: DocumentSketchId,
+) -> Result<(), String> {
+    history
+        .snapshot()
+        .sketches
+        .get(sketch)
+        .map_err(|error| error.to_string())?;
+    match resolver {
+        Some(resolver) => resolver.resolve(history, sketch),
+        None => history
+            .snapshot()
+            .resolve_sketch_plane(sketch)
+            .map(|_| ())
+            .map_err(|error| error.to_string()),
     }
 }
 impl Drop for SketchContinuityWatches {
@@ -65,14 +102,20 @@ impl Drop for SketchContinuityWatches {
     }
 }
 impl<O: TransactionObserver> DocumentSession<O> {
+    /// Install a placement resolver for published sketch continuity checks.
+    /// Example: `session.set_sketch_continuity_resolver(Box::new(resolver))`.
+    pub fn set_sketch_continuity_resolver(&mut self, resolver: Box<dyn SketchContinuityResolver>) {
+        self.sketch_continuity.resolver = Some(resolver);
+        self.sketch_continuity.refresh(&self.history);
+    }
     /// Observe sketch lifetime across every published history change, including batched undo/redo.
     /// Example: `let watch = session.watch_sketch_continuity(sketch)?;` for a transient editor.
     pub fn watch_sketch_continuity(
         &mut self,
         sketch: DocumentSketchId,
     ) -> Result<SketchContinuityWatch, SketchError> {
-        self.snapshot()
-            .resolve_sketch_plane(sketch)
+        self.sketch_continuity
+            .resolve(&self.history, sketch)
             .map_err(|cause| {
                 SketchError::Definition(format!(
                     "sketch continuity {sketch:?}: expected a current placed sketch: {cause}"

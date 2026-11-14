@@ -70,6 +70,30 @@ pub(crate) struct DesktopPartScenes {
     slot: PartEvaluationSlot<NamedPrismSnapshot, oblikovati_martensite::EvaluationFailure>,
 }
 impl DesktopPartScenes {
+    pub(crate) fn sketch_continuity_resolver<
+        O: TransactionObserver,
+        W: WorkspaceObserver,
+        F: DocumentFiles,
+    >(
+        &self,
+        files: &FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<oblikovati_automation::PartSketchContinuity, String> {
+        let workspace = files.workspace();
+        let guid = workspace
+            .identity(document)
+            .map_err(|error| error.to_string())?
+            .internal_name;
+        let options = workspace
+            .session(document)
+            .map_err(|error| error.to_string())?
+            .sketch_solve_options();
+        Ok(oblikovati_automation::PartSketchContinuity::new(
+            guid,
+            self.resolution,
+            options,
+        ))
+    }
     pub(crate) fn use_certified_resolution(
         &mut self,
         resolution: oblikovati_martensite::PrismResolutionPolicy,

@@ -399,3 +399,41 @@ fn moving_projected_point_refresh_does_not_create_an_undo_step() {
     session.end().unwrap();
     assert_eq!(session.undo_labels().len(), undo);
 }
+
+struct FakePartSketchContinuity;
+impl oblikovati_session::SketchContinuityResolver for FakePartSketchContinuity {
+    fn resolve(
+        &self,
+        history: &DocumentEditHistory,
+        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+    ) -> Result<(), String> {
+        let (part, _) = history
+            .snapshot()
+            .recompute_part_with_sketches(&mut NamedFaceEvaluator, Default::default())
+            .map_err(|error| error.to_string())?;
+        history
+            .snapshot()
+            .resolve_sketch_plane_with_datums(sketch, &part.datum_evaluation())
+            .map(|_| ())
+            .map_err(|error| error.to_string())
+    }
+}
+#[test]
+fn face_sketch_continuity_tracks_published_source_failure() {
+    let mut session = face_session();
+    let sketch = add_face_sketch(&mut session);
+    session.set_sketch_continuity_resolver(Box::new(FakePartSketchContinuity));
+    let watch = session.watch_sketch_continuity(sketch).unwrap();
+    edit_depth(&mut session, "4 cm");
+    assert!(watch.is_live());
+    session.undo().unwrap();
+    assert!(watch.is_live());
+    session.redo().unwrap();
+    assert!(watch.is_live());
+    edit_depth(&mut session, "0 cm");
+    assert!(!watch.is_live());
+    edit_depth(&mut session, "4 cm");
+    assert!(!watch.is_live());
+    let restored = session.watch_sketch_continuity(sketch).unwrap();
+    assert!(restored.is_live());
+}

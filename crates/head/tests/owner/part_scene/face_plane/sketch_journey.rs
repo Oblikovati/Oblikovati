@@ -164,6 +164,9 @@ fn part_update_repairs_face_sketch_inputs_inside_an_open_group() {
             snapshot.create_document_sketch_with_datums(&request, ids, &datums)
         })
         .unwrap();
+    owner.begin_sketch_edit(document, sketch).unwrap();
+    assert_eq!(owner.active_sketch_edit().unwrap().sketch, sketch);
+    let watch = owner.sketch_edit.as_ref().unwrap().1.clone();
     assert_eq!(plane.index, 3);
     let undo_count = owner
         .files
@@ -204,6 +207,7 @@ fn part_update_repairs_face_sketch_inputs_inside_an_open_group() {
         "{health:?}"
     );
     owner.files.commands(document).unwrap().end().unwrap();
+    assert_eq!(owner.active_sketch_edit().unwrap().sketch, sketch);
     assert_eq!(
         owner
             .files
@@ -228,7 +232,10 @@ fn part_update_repairs_face_sketch_inputs_inside_an_open_group() {
     assert_face_sketch_current(&mut owner, document, sketch, 4.5);
     owner.files.commands(document).unwrap().abort().unwrap();
     assert_face_sketch_current(&mut owner, document, sketch, 3.5);
+    assert!(watch.is_live());
     set_parameter(&mut owner, "depth", "0 cm");
+    assert!(!watch.is_live());
+    assert!(owner.active_sketch_edit().is_none());
     let failed_datums = owner
         .part_scenes
         .datum_evaluation(&mut owner.files, document)
@@ -245,6 +252,7 @@ fn part_update_repairs_face_sketch_inputs_inside_an_open_group() {
             .is_err()
     );
     set_parameter(&mut owner, "depth", "3 cm");
+    assert!(!watch.is_live());
     assert_face_sketch_current(&mut owner, document, sketch, 3.5);
     set_parameter(&mut owner, "depth", "5 cm");
     let mut headless = oblikovati_automation::PartReplayService::default();

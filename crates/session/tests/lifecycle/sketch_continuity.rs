@@ -98,3 +98,25 @@ fn missing_watch_is_refused_and_retired_readers_do_not_affect_live_readers() {
     session.abort().unwrap();
     assert!(live.is_live());
 }
+
+struct PermissiveSketchResolver;
+impl oblikovati_session::SketchContinuityResolver for PermissiveSketchResolver {
+    fn resolve(&self, _: &DocumentEditHistory, _: DocumentSketchId) -> Result<(), String> {
+        Ok(())
+    }
+}
+#[test]
+fn injected_resolver_cannot_keep_a_removed_sketch_live() {
+    let mut session = sketch_fixture::owned_sketch_session(None, "Observed", Sketch2D::default());
+    session.set_sketch_continuity_resolver(std::boxed::Box::new(PermissiveSketchResolver));
+    let watch = session
+        .watch_sketch_continuity(DocumentSketchId(1))
+        .unwrap();
+    session
+        .run("Remove", |snapshot, _| {
+            snapshot.sketches.remove(DocumentSketchId(1))
+        })
+        .unwrap();
+    session.undo().unwrap();
+    assert!(!watch.is_live());
+}

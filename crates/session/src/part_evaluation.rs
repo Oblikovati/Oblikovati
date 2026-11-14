@@ -178,7 +178,7 @@ impl<O: TransactionObserver> DocumentSession<O> {
             .map_err(crate::CommandError::Edit)
             .map_err(PartSketchAdoptionError::Refresh)?;
         if changed {
-            self.sketch_continuity.refresh(self.history.snapshot());
+            self.sketch_continuity.refresh(&self.history);
             self.observer.changed(self.document, self.generation());
         }
         Ok(changed)

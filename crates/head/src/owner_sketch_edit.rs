@@ -165,6 +165,21 @@ impl<
         .then(|| watch.sketch())
     }
     fn watch_sketch_edit(&mut self, document: u64, sketch: DocumentSketchId) -> Result<(), String> {
+        let snapshot = self
+            .files
+            .workspace()
+            .session(document)
+            .map_err(|error| error.to_string())?
+            .snapshot();
+        if oblikovati_automation::requires_part_replay(snapshot) {
+            let resolver = self
+                .part_scenes
+                .sketch_continuity_resolver(&self.files, document)?;
+            self.files
+                .commands(document)
+                .map_err(|error| error.to_string())?
+                .set_sketch_continuity_resolver(Box::new(resolver));
+        }
         let watch = self
             .files
             .commands(document)
@@ -184,10 +199,22 @@ impl<
             .workspace()
             .session(document)
             .map_err(|cause| cause.to_string())?;
-        let plane = session
-            .snapshot()
-            .resolve_sketch_plane(sketch)
-            .map_err(|cause| cause.to_string())?;
+        let snapshot = session.snapshot();
+        let plane = if oblikovati_automation::requires_part_replay(snapshot) {
+            match self.part_scenes.current(session) {
+                Ok(current) => snapshot
+                    .resolve_sketch_plane_with_datums(sketch, &current.datum_evaluation())
+                    .map_err(|error| error.to_string())?,
+                Err(_) => self
+                    .part_scenes
+                    .sketch_continuity_resolver(&self.files, document)?
+                    .plane(session.history(), sketch)?,
+            }
+        } else {
+            snapshot
+                .resolve_sketch_plane(sketch)
+                .map_err(|cause| cause.to_string())?
+        };
         Ok(HeadSketchEdit {
             document,
             sketch,

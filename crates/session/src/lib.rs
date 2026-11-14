@@ -194,7 +194,7 @@ mod sketch_placement_recipe;
 pub use sketch_placement_recipe::SketchPlacementPreview;
 
 mod sketch_continuity;
-pub use sketch_continuity::SketchContinuityWatch;
+pub use sketch_continuity::{SketchContinuityResolver, SketchContinuityWatch};
 
 mod sketch_line_chain;
 mod sketch_point_preview;

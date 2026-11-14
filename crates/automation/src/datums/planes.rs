@@ -14,7 +14,9 @@ pub(in crate::datums) mod two_axes;
 pub(super) use inputs::plane_reference;
 pub(super) use inputs::prepare;
 type PlaneEntry = AuthoredFeature<WorkGeometryDefinition>;
-pub(crate) fn requires_part_replay(snapshot: &DocumentSnapshot) -> bool {
+/// Identify datum programs that require named part geometry.
+/// Example: `requires_part_replay(snapshot)` before resolving sketch placement.
+pub fn requires_part_replay(snapshot: &DocumentSnapshot) -> bool {
     use oblikovati_model::feature::work_plane::WorkPlaneReference;
     snapshot.work_geometry.features().iter().any(|feature| {
         let base = match feature.definition() {

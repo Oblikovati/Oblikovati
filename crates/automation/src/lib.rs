@@ -4,7 +4,7 @@
 mod datums;
 mod part_owner;
 mod reference_bytes;
-pub use datums::{DATUM_COMMAND_METHODS, DATUM_QUERY_METHODS};
+pub use datums::{DATUM_COMMAND_METHODS, DATUM_QUERY_METHODS, requires_part_replay};
 mod clients;
 pub use clients::CLIENT_COMMAND_METHODS;
 mod attachments;
@@ -264,6 +264,8 @@ mod asset_assignments;
 pub use asset_assignments::ASSET_ASSIGNMENT_METHODS;
 mod part_topology;
 pub use part_topology::{BODY_QUERY_METHODS, PartTopologyAccess, TopologyEntityKind};
+mod part_sketch_continuity;
+pub use part_sketch_continuity::PartSketchContinuity;
 mod part_update;
 pub use part_update::{
     PartReplayService, PartUpdateAccess, complete_part_replay, part_feature_errors,
