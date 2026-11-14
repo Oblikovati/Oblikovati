@@ -41,7 +41,7 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
   the fix lands. A full desktop unit diagnostic was stopped after failures and
   later source changes made it stale; it cannot certify the merge.
   The selection filter and history browser have focused GUI and head integration
-  coverage. Selection priority is still not applied to competing picks (#3890).
+  coverage. Selection priority applies to part body and face picks; other categories remain incomplete (#3890).
   Remaining integration tests and the full gate still need validation. All 20
   PRs were closed after their heads were checked against the local merge. Nineteen
   remote branches remain; the closed npm Dependabot branch was removed automatically,
@@ -132,3 +132,5 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 - R3 cube journey: the native keyboard and pointer integration test passed after the forward-ray fix, including parameter edit, undo/redo, save/reopen, and named-face resolution. See `receipts/2026-11-14-forward-ray-cube/README.md`; this is not a BDD scenario receipt (#3870).
 
 - Live source watch, 2026-11-14: `arc-center-point` scenarios 08 and 09 now identify the recorded pointer coordinates and 1700 × 1012 window; the current pin includes that correction. `user-coordinate-system` adds scenario 05 for canceling Redefine Feature (#3917). The current pin includes all 2,720 declarations; the new scenario is inventoried, not verified.
+
+- R4 selection priority: native part-body and face hits now use enabled filters and user order within a camera-scaled depth window. Tool-specific face selection remains effective. Assembly faces, work planes, other snap candidates, persisted priority, and perspective-depth scaling remain open (#3890). See `receipts/2026-11-14-part-priority/receipt.json`.
