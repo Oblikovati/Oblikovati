@@ -4758,10 +4758,15 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3895",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-project-final-b3891890/receipt-b389189024e3e0b0.json",
+        "sha256": "7dac37511625af356a21fcf5432b1a072632c665ed9f117f97941b7aebf1eb80"
+      },
       "go_reference": "No matching project dialog found by search in ../Oblikovati/head/ui; baseline review remains open.",
-      "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services."
+      "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:b41e4db379935547b5e7e175c950cf083301b98c4b154c18d82dd007c11d61a3",
@@ -4777,8 +4782,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-folder-check-b41e4db3/receipt-b41e4db379935547.json",
-        "sha256": "9fcc31acb7e441aa69410738768545d0697c3a1088dc55bd3b862ac7cfe02f37"
+        "path": "architecture/rust-port/receipts/2026-11-14-project-final-b41e4db3/receipt-b41e4db379935547.json",
+        "sha256": "ecd41f614f1ff9652c4d1ca932fd9a38ff2bbaa4f0e384fd1a9e33359bd747b9"
       },
       "go_reference": "No matching project dialog found by search in ../Oblikovati/head/ui; baseline review remains open.",
       "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services.",
@@ -4799,6 +4804,11 @@
           "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
           "path": "architecture/rust-port/receipts/2026-11-14-wizard-check-b41e4db3/receipt-b41e4db379935547.json",
           "sha256": "d04f3be4e41314714d90cdcc0a3931475f88c32ee79dfa024fb38ad35f3a53dc"
+        },
+        {
+          "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+          "path": "architecture/rust-port/receipts/2026-11-14-folder-check-b41e4db3/receipt-b41e4db379935547.json",
+          "sha256": "9fcc31acb7e441aa69410738768545d0697c3a1088dc55bd3b862ac7cfe02f37"
         }
       ]
     },
@@ -4814,10 +4824,15 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3895",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-project-final-543cafe4/receipt-543cafe456aa7eca.json",
+        "sha256": "ac1f31166a57f1afab665d3a5da756f2fb58b952236818fc917f1e94d26d7d4f"
+      },
       "go_reference": "No matching project dialog found by search in ../Oblikovati/head/ui; baseline review remains open.",
-      "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services."
+      "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:5e1de9529939e057f970d9d61baba73669387cbc26e6e782afaa32c2c5b84e8d",
@@ -4833,8 +4848,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-folder-check-5e1de952/receipt-5e1de9529939e057.json",
-        "sha256": "1beede39c4146c155632955d95d1e4112e12c5e5eec6dd0197fc52467d628b70"
+        "path": "architecture/rust-port/receipts/2026-11-14-project-final-5e1de952/receipt-5e1de9529939e057.json",
+        "sha256": "6a1058abb91e5cbd00ba7ac424325c5ec5b779060f0749003c426e97850fab67"
       },
       "go_reference": "No matching project dialog found by search in ../Oblikovati/head/ui; baseline review remains open.",
       "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services.",
@@ -4845,6 +4860,11 @@
           "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
           "path": "architecture/rust-port/receipts/2026-11-14-wizard-check-5e1de952/receipt-5e1de9529939e057.json",
           "sha256": "a6b441f4b07d73351562dfc40c8f11db7093951bacd01628ce58aa9645bbb613"
+        },
+        {
+          "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+          "path": "architecture/rust-port/receipts/2026-11-14-folder-check-5e1de952/receipt-5e1de9529939e057.json",
+          "sha256": "1beede39c4146c155632955d95d1e4112e12c5e5eec6dd0197fc52467d628b70"
         }
       ]
     },
@@ -4862,13 +4882,20 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-folder-check-d4a00f9d/receipt-d4a00f9d11f032e7.json",
-        "sha256": "f826c8a8e6b4d2cfdef9c7ff4dc0d10aafadc3c157d58e95096a8bfe93c7a8ef"
+        "path": "architecture/rust-port/receipts/2026-11-14-project-final-d4a00f9d/receipt-d4a00f9d11f032e7.json",
+        "sha256": "1baea162bc4c153f9141c8f8e4f056c75577b8ed51382c8bbf3813628819e552"
       },
       "go_reference": "No matching project dialog found by search in ../Oblikovati/head/ui; baseline review remains open.",
       "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "historical_receipts": [
+        {
+          "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+          "path": "architecture/rust-port/receipts/2026-11-14-folder-check-d4a00f9d/receipt-d4a00f9d11f032e7.json",
+          "sha256": "f826c8a8e6b4d2cfdef9c7ff4dc0d10aafadc3c157d58e95096a8bfe93c7a8ef"
+        }
+      ]
     },
     {
       "id": "scenario:729a2f28119be985460f6c288528dcf64a1174a65a8404d483666cca998a1b0f",
@@ -4884,13 +4911,20 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-folder-check-729a2f28/receipt-729a2f28119be985.json",
-        "sha256": "088814d769c468b1ab0de4bb2fe7c46f42dc3c722eafd92a6e5b85b7c42b26b6"
+        "path": "architecture/rust-port/receipts/2026-11-14-project-final-729a2f28/receipt-729a2f28119be985.json",
+        "sha256": "087dc0eac074138e0a2dc4be74ad547af3fff70dca0b3d0695c59c2e45522bac"
       },
       "go_reference": "No matching project dialog found by search in ../Oblikovati/head/ui; baseline review remains open.",
       "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "historical_receipts": [
+        {
+          "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+          "path": "architecture/rust-port/receipts/2026-11-14-folder-check-729a2f28/receipt-729a2f28119be985.json",
+          "sha256": "088814d769c468b1ab0de4bb2fe7c46f42dc3c722eafd92a6e5b85b7c42b26b6"
+        }
+      ]
     },
     {
       "id": "scenario:b45b5713b0fbca389639d8bbcbda33f3807ae53c0b011abb73375cbc8ace935f",
@@ -4906,8 +4940,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-folder-check-b45b5713/receipt-b45b5713b0fbca38.json",
-        "sha256": "7b842f4f0c5cea5790f31c8963298cec381f7cdeea8c07271971f08f3fd8a14b"
+        "path": "architecture/rust-port/receipts/2026-11-14-project-final-b45b5713/receipt-b45b5713b0fbca38.json",
+        "sha256": "52a29776fe5784540e244da7d540fb2334329aef47f96a4d5f177b6c4d441f5e"
       },
       "go_reference": "No matching project dialog found by search in ../Oblikovati/head/ui; baseline review remains open.",
       "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services.",
@@ -4923,6 +4957,11 @@
           "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
           "path": "architecture/rust-port/receipts/2026-11-14-wizard-check-b45b5713/receipt-b45b5713b0fbca38.json",
           "sha256": "550a7a093e7f076d62c2e871eb7ca7c58d1c0e1d410fa0d18eb2ac76728b1059"
+        },
+        {
+          "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+          "path": "architecture/rust-port/receipts/2026-11-14-folder-check-b45b5713/receipt-b45b5713b0fbca38.json",
+          "sha256": "7b842f4f0c5cea5790f31c8963298cec381f7cdeea8c07271971f08f3fd8a14b"
         }
       ]
     },
@@ -4940,8 +4979,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-folder-check-ffc9cb9e/receipt-ffc9cb9e3eee8e36.json",
-        "sha256": "8b823c8573a3fbbfcf02b536ebf77717346651ead6e1d480ddf6045314c71a12"
+        "path": "architecture/rust-port/receipts/2026-11-14-project-final-ffc9cb9e/receipt-ffc9cb9e3eee8e36.json",
+        "sha256": "0be65e2bb53ff249cd3794fc95d40df9b6de39128827779ae6bae0d01eb8b676"
       },
       "go_reference": "No matching project dialog found by search in ../Oblikovati/head/ui; baseline review remains open.",
       "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services.",
@@ -4957,6 +4996,11 @@
           "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
           "path": "architecture/rust-port/receipts/2026-11-14-wizard-check-ffc9cb9e/receipt-ffc9cb9e3eee8e36.json",
           "sha256": "cb38310e0e9f61a061b6e97f4044b6b8ae4436ba2a5023b0d8083d4f29b04773"
+        },
+        {
+          "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+          "path": "architecture/rust-port/receipts/2026-11-14-folder-check-ffc9cb9e/receipt-ffc9cb9e3eee8e36.json",
+          "sha256": "8b823c8573a3fbbfcf02b536ebf77717346651ead6e1d480ddf6045314c71a12"
         }
       ]
     },

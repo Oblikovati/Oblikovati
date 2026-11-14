@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect the project dialog: tmp/obk-cancel-scenarios/features/application/project-dialog/project-dialog.feature" package="testsuite/Feature: Inspect the project dialog: tmp/obk-cancel-scenarios/features/application/project-dialog/project-dialog.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T13:36:26.41132862Z" time="6.802606196"><testcase name="Scenario: Cancel browsing for a project workspace folder: tmp/obk-cancel-scenarios/features/application/project-dialog/project-dialog.feature:74:3" time="6.802606196"><system-out><![CDATA[  Scenario: Cancel browsing for a project workspace folder
+   ✔  Given the new single-user project wizard is on its project-file page in the MCAD Software
+   ✔  And a workspace folder and project file location are displayed
+   ✔  When the user chooses the workspace folder browse control
+   ✔  Then a folder browser opens with a folder tree and a Folder field
+   ✔  And it offers Make New Folder, OK and cancels
+   ✔  When the user selects Documents in the folder tree
+   ✔  Then Documents is selected and its child folders are displayed
+   ✔  And the Folder field displays Documents
+   ✔  When the user chooses Cancel in the folder browser
+   ✔  Then the folder browser closes
+   ✔  And the wizard still displays the previous workspace folder and project file location
+   ✔  When the user cancels the project wizard
+   ✔  Then the Projects dialog is displayed
+]]></system-out></testcase></testsuite></testsuites>
