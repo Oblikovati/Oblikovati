@@ -66,6 +66,8 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 
 ## Open items
 
+- R7 navigation wheel: the remaining six menu, Home and preference scenarios passed with reviewed captures in `receipts/2026-11-14-wheel-remaining-*-final/` (#3944, #3945).
+
 - R7 navigation wheel: six layout and size scenarios passed with explicit Full and Normal fixtures; reviewed captures are in `receipts/2026-11-14-wheel-*-current/` (#3942, #3943).
 
 - R7 Orbit outline: both reversal examples passed with separately hashed, reviewed captures in `receipts/2026-11-14-orbit-outline-current/` (#3941).
