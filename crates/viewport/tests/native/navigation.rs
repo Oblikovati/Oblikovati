@@ -118,6 +118,126 @@ fn fit_restores_offscreen_geometry_and_home_sets_the_go_isometric_direction() {
     view.close();
     assert!(runtime.validation_errors().unwrap().is_empty());
 }
+#[test]
+fn home_fits_scene_inside_the_available_document_region() {
+    let runtime = ViewportRuntime::new(ViewportOptions::default()).unwrap();
+    let mut view = runtime
+        .open_window("Document region fit", [640, 480])
+        .unwrap();
+    view.submit(&scene()).unwrap();
+    let before = view.camera_state().unwrap();
+    let region = [180, 90, 620, 450];
+    assert!(
+        view.navigate_in_region(ViewportNavigation::Home { margin: 0.1 }, [0, 0, 641, 480])
+            .is_err()
+    );
+    assert!(
+        view.navigate_in_region(ViewportNavigation::Pan([1, 0]), region)
+            .is_err()
+    );
+    assert_eq!(view.camera_state().unwrap(), before);
+    view.navigate(ViewportNavigation::Home { margin: 0.1 })
+        .unwrap();
+    let full_frame_target = view.camera_state().unwrap().target;
+    view.navigate_in_region(ViewportNavigation::Home { margin: 0.1 }, region)
+        .unwrap();
+    assert_eq!(
+        view.camera_state().unwrap().target,
+        full_frame_target,
+        "fit must keep the orbit pivot at the model center"
+    );
+    assert_scene_in_region(&view, region);
+    let point = [0., 8., 0.];
+    let pixel = view.model_pixel(point).unwrap();
+    let [origin, direction] = view.view_line(pixel).unwrap();
+    let distance = -origin[2] / direction[2];
+    assert!((origin[0] + distance * direction[0] - point[0]).abs() < 0.1);
+    assert!((origin[1] + distance * direction[1] - point[1]).abs() < 0.1);
+    let fitted_camera = view.camera_state().unwrap();
+    view.set_camera(fitted_camera).unwrap();
+    assert_eq!(view.model_pixel(point).unwrap(), pixel);
+    view.navigate(ViewportNavigation::Orbit {
+        yaw: 0.1,
+        pitch: 0.,
+    })
+    .unwrap();
+    close_vector(view.camera_state().unwrap().target, full_frame_target);
+    verify_native(&mut view);
+    assert!(view.previous_view().unwrap());
+    assert_eq!(view.camera_state().unwrap().target, full_frame_target);
+    assert!(view.previous_view().unwrap());
+    assert_eq!(view.camera_state().unwrap(), before);
+    view.close();
+}
+#[test]
+fn previous_view_restores_a_changed_region_with_the_same_camera_state() {
+    let runtime = ViewportRuntime::new(ViewportOptions::default()).unwrap();
+    let mut view = runtime
+        .open_window("Fit region history", [640, 480])
+        .unwrap();
+    view.submit(&scene()).unwrap();
+    let home = ViewportNavigation::Home { margin: 0.1 };
+    assert!(view.navigate_in_region(home, [0, 0, 320, 240]).unwrap());
+    let first = view.model_pixel([0., 0., 0.]).unwrap();
+    assert!(view.navigate_in_region(home, [320, 240, 640, 480]).unwrap());
+    assert_ne!(view.model_pixel([0., 0., 0.]).unwrap(), first);
+    assert!(view.previous_view().unwrap());
+    assert_eq!(view.model_pixel([0., 0., 0.]).unwrap(), first);
+    view.close();
+}
+
+#[test]
+fn perspective_home_keeps_the_scene_inside_the_document_region() {
+    let runtime = ViewportRuntime::new(ViewportOptions::default()).unwrap();
+    let mut view = runtime
+        .open_window("Perspective fit region", [640, 480])
+        .unwrap();
+    view.submit(&scene()).unwrap();
+    let camera = ViewportCamera {
+        perspective: true,
+        ..ViewportCamera::default()
+    };
+    view.set_camera(camera).unwrap();
+    let region = [180, 90, 620, 450];
+    view.navigate_in_region(ViewportNavigation::Home { margin: 0.1 }, region)
+        .unwrap();
+    assert_scene_in_region(&view, region);
+    view.close();
+}
+
+#[test]
+fn fit_handles_left_right_and_narrow_document_regions() {
+    let runtime = ViewportRuntime::new(ViewportOptions::default()).unwrap();
+    let mut view = runtime
+        .open_window("Fit region layouts", [640, 480])
+        .unwrap();
+    view.submit(&scene()).unwrap();
+    for region in [
+        [0, 0, 640, 480],
+        [0, 80, 320, 470],
+        [320, 80, 640, 470],
+        [100, 100, 120, 300],
+    ] {
+        view.navigate_in_region(ViewportNavigation::Fit { margin: 0.1 }, region)
+            .unwrap();
+        assert_scene_in_region(&view, region);
+    }
+    view.close();
+}
+
+fn assert_scene_in_region(view: &Viewport, region: [u32; 4]) {
+    for point in [[-8., -8., 0.], [8., -8., 0.], [0., 8., 0.]] {
+        let [x, y] = view.model_pixel(point).unwrap();
+        assert!(
+            x >= region[0] as i32
+                && x < region[2] as i32
+                && y >= region[1] as i32
+                && y < region[3] as i32,
+            "projected {point:?} to [{x}, {y}] outside {region:?}"
+        );
+    }
+}
+
 fn verify_home_direction(view: &mut Viewport) {
     assert!(
         view.navigate(ViewportNavigation::Home { margin: 0.1 })

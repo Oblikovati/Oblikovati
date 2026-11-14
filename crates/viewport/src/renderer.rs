@@ -81,6 +81,7 @@ impl RenderView {
     pub fn camera(&mut self, input: ViewportCamera, extent: [u32; 2]) -> Result<(), String> {
         input.validate()?;
         let camera = Handle::new(Graphic3dCamera::default());
+        camera.set_tile(&self.view.camera().tile());
         configure_orientation(&camera, input)?;
         configure_projection(&camera, input, extent)?;
         self.view
@@ -110,6 +111,9 @@ impl RenderView {
             state: self.camera_state(),
             members: self.view.camera().copy_members(),
         }
+    }
+    pub(crate) fn camera_matches(&self, saved: &SavedViewCamera) -> bool {
+        self.camera_state() == saved.state && self.view.camera().tile() == saved.members.tile()
     }
     pub(crate) fn restore_camera(
         &self,

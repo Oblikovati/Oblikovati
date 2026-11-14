@@ -10,6 +10,25 @@ const AREA: WorkspaceArea = WorkspaceArea {
     bottom: 900.,
 };
 #[test]
+fn framebuffer_region_accounts_for_scale_rounding_and_empty_area() {
+    let area = WorkspaceArea {
+        left: 10.2,
+        top: 20.2,
+        right: 100.8,
+        bottom: 80.8,
+    };
+    assert_eq!(
+        area.framebuffer_region([2., 1.5], [200, 120]),
+        Some([21, 31, 200, 120])
+    );
+    let empty = WorkspaceArea {
+        left: 5.,
+        right: 5.,
+        ..area
+    };
+    assert_eq!(empty.framebuffer_region([1., 1.], [200, 120]), None);
+}
+#[test]
 fn the_sheet_keeps_its_ratio_and_stays_inside_the_area() {
     let (minimum, maximum) = sheet_rectangle(AREA, [420., 297.]);
     let (width, height) = (maximum[0] - minimum[0], maximum[1] - minimum[1]);

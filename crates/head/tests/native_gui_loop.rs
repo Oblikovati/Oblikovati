@@ -5,10 +5,13 @@ use oblikovati_gui::GuiCommandState;
 use oblikovati_viewport::{ViewportButton, ViewportInput};
 use scene_tests::{capture_framebuffer, native_set, open_native_part, submit_native_scene};
 use std::time::Duration;
+#[path = "native_gui_loop/camera.rs"]
+mod camera;
 #[path = "native_gui_loop/create.rs"]
 mod create;
 #[path = "native_gui_loop/cube.rs"]
 mod cube;
+use camera::{drive_wheel, press_camera_home, verify_gui_camera};
 #[path = "native_gui_loop/files.rs"]
 mod files;
 #[path = "native_gui_loop/model_state_journey.rs"]
@@ -344,14 +347,6 @@ fn verify_keyboard_save_navigation(
     verify_gui_save(path, &mut window.native);
     assert_eq!(window.native.view.camera_state().unwrap(), camera);
 }
-/// The camera's Home, as the View tab's Navigate panel sends it; the row's Home opens a workspace.
-fn press_camera_home(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOwner) {
-    window.scripted = vec![ViewportEvent::Input(ViewportInput::Key {
-        key: oblikovati_viewport::ViewportKey::Home,
-        pressed: true,
-    })];
-    crate::frames::run_frames(window, HeadOptions { frames: Some(3) }, owner).unwrap();
-}
 fn press_shell_key(
     window: &mut ScriptedGuiWindow,
     owner: &mut NativeDesktopOwner,
@@ -398,34 +393,6 @@ fn verify_gui_save(path: &std::path::Path, window: &mut NativeHeadWindow) {
     assert_eq!(restored.parameters.get(width).unwrap().source, "6 cm");
     assert!(window.view.native_title().unwrap().contains("Saved"));
 }
-fn verify_gui_camera(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOwner) {
-    window
-        .native
-        .view
-        .navigate(oblikovati_viewport::ViewportNavigation::Home { margin: 0.1 })
-        .unwrap();
-    let initial = window.native.view.camera_state().unwrap();
-    assert!(!drive_wheel(window, owner, [50, 50]));
-    assert_eq!(window.native.view.camera_state().unwrap(), initial);
-    assert!(drive_wheel(window, owner, [600, 400]));
-    assert_ne!(window.native.view.camera_state().unwrap(), initial);
-    press_camera_home(window, owner);
-    assert_eq!(window.native.view.camera_state().unwrap(), initial);
-}
-fn drive_wheel(
-    window: &mut ScriptedGuiWindow,
-    owner: &mut NativeDesktopOwner,
-    position: [i32; 2],
-) -> bool {
-    let wheel = ViewportEvent::Input(ViewportInput::Wheel {
-        notches: 2,
-        position,
-    });
-    window.scripted = vec![wheel];
-    window.passed.clear();
-    crate::frames::run_frames(window, HeadOptions { frames: Some(2) }, owner).unwrap();
-    window.passed.contains(&wheel)
-}
 
 #[test]
 fn native_model_wheel_after_gui_click_and_gui_wheel_reaches_camera() {
@@ -436,6 +403,7 @@ fn native_model_wheel_after_gui_click_and_gui_wheel_reaches_camera() {
     let mut window = scripted_window(native);
     publish_gui_framebuffer(&mut owner, &mut window.native);
     press_camera_home(&mut window, &mut owner);
+    camera::assert_model_point_in_document(&mut window);
     let before = window.native.view.camera_state().unwrap();
     assert!(!drive_wheel(&mut window, &mut owner, [50, 50]));
     assert_eq!(window.native.view.camera_state().unwrap(), before);

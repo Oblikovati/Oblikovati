@@ -7,6 +7,8 @@ mod input;
 pub use clipboard::ViewportClipboard;
 #[cfg(target_os = "linux")]
 pub use clipboard::{NativeClipboardEndpoint, NativeClipboardHandoff, NativeClipboardOptions};
+#[cfg(any(target_os = "linux", test))]
+mod fit_region;
 mod keyboard;
 pub use input::{
     ViewportButton, ViewportInput, ViewportKey, ViewportModifiers, ViewportNavigation,

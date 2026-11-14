@@ -222,7 +222,7 @@ impl HeadWindow for NativeHeadWindow {
         &mut self,
         command: oblikovati_viewport::ViewportNavigation,
     ) -> Result<bool, String> {
-        self.view.navigate(command)
+        self.navigate_view_in_document(command)
     }
 
     fn previous_view(&mut self) -> Result<bool, String> {

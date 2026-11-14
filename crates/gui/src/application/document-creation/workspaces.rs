@@ -34,6 +34,21 @@ pub(crate) struct WorkspaceArea {
     pub right: f32,
     pub bottom: f32,
 }
+impl WorkspaceArea {
+    /// Convert the available logical area to a contained physical framebuffer rectangle.
+    /// Example: `area.framebuffer_region([2., 2.], [1440, 900])` for fit navigation.
+    pub(crate) fn framebuffer_region(self, scale: [f32; 2], extent: [u32; 2]) -> Option<[u32; 4]> {
+        let x = |value: f32| (value * scale[0]).clamp(0., extent[0] as f32);
+        let y = |value: f32| (value * scale[1]).clamp(0., extent[1] as f32);
+        let region = [
+            x(self.left).ceil() as u32,
+            y(self.top).ceil() as u32,
+            x(self.right).floor() as u32,
+            y(self.bottom).floor() as u32,
+        ];
+        (region[0] < region[2] && region[1] < region[3]).then_some(region)
+    }
+}
 pub(crate) struct DocumentWorkspaces {
     insert: InsertDialog,
     base_view: base_view_dialog::BaseViewDialog,

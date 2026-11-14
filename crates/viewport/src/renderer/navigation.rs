@@ -17,14 +17,25 @@ impl RenderView {
             perspective: !camera.is_orthographic(),
         }
     }
-    pub(crate) fn navigate(&self, command: ViewportNavigation) -> Result<(), String> {
+    pub(crate) fn navigate(
+        &self,
+        command: ViewportNavigation,
+        framing: Option<crate::fit_region::FitFraming>,
+    ) -> Result<(), String> {
         let previous = self.view.camera();
         let candidate = Handle::new(previous.copy_members());
         self.view
             .set_camera(&candidate)
             .map_err(|cause| cause.to_string())?;
+        if matches!(
+            command,
+            ViewportNavigation::Fit { .. } | ViewportNavigation::Home { .. }
+        ) {
+            candidate.set_tile(&Default::default());
+        }
         let outcome = self
             .apply_navigation(command)
+            .and_then(|()| self.apply_fit_region(framing))
             .and_then(|()| self.camera_state().validate());
         if let Err(cause) = outcome {
             self.view.set_camera(&previous).map_err(|rollback| {
@@ -35,6 +46,28 @@ impl RenderView {
             ));
         }
         Ok(())
+    }
+    fn apply_fit_region(
+        &self,
+        framing: Option<crate::fit_region::FitFraming>,
+    ) -> Result<(), String> {
+        let Some(framing) = framing else {
+            return Ok(());
+        };
+        if self.structures.is_empty() && self.sketches.is_empty() {
+            return Ok(());
+        }
+        let camera = self.view.camera();
+        camera.set_scale(camera.scale() * framing.scale);
+        let [width, height] = framing.extent.map(|side| side as i32);
+        let [x, y] = framing.offset;
+        camera.set_tile(&martensite_tkservice::graphic3d::Graphic3dCameraTile {
+            total_size: martensite_tkernel::ncollection::Vec2::new(width, height),
+            tile_size: martensite_tkernel::ncollection::Vec2::new(width, height),
+            offset: martensite_tkernel::ncollection::Vec2::new(-x, y),
+            is_top_down: false,
+        });
+        self.view.z_fit_all(1.).map_err(|cause| cause.to_string())
     }
     fn apply_navigation(&self, command: ViewportNavigation) -> Result<(), String> {
         let result = match command {

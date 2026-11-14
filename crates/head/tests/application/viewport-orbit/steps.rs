@@ -4,6 +4,8 @@ use super::viewport_orientation::{open_block, solid_extent};
 use super::viewport_pan::{camera, press_bar};
 use super::{ApplicationWorld, capture_framebuffer, diagnostics};
 use cucumber::{given, then, when};
+#[path = "fit_region.rs"]
+mod fit_region;
 
 /// The guide's colour, as it blends over the view; the control's faces are darker.
 const GUIDE_COLOR: [i32; 3] = [200, 200, 212];
@@ -274,6 +276,7 @@ fn inclined_block(world: &mut ApplicationWorld) {
     )
     .unwrap();
     world.pump(Vec::new());
+    fit_region::assert_fixture_in_document_area(world);
     world.observed_view_camera = Some(camera(world));
 }
 #[given("the incremental view rotation dialog is open with increment 10")]

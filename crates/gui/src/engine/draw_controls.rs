@@ -1,0 +1,274 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use super::*;
+
+impl GuiFrameEngine {
+    pub(super) fn draw_controls(
+        &mut self,
+        request: &GuiFrameRequest,
+    ) -> Result<GuiFrameOutput, String> {
+        let keys = prepare_frame_inputs(
+            &mut self.context,
+            request,
+            &mut self.modifiers_held,
+            self.popup_was_open,
+            self.ribbon.tips.active(),
+            &mut self.widget_keys,
+        );
+        let ui = self.context.frame();
+        crate::dimension_labels::draw_dimension_labels(ui, request);
+        crate::sketch::constraint_glyphs::draw_constraint_glyphs(ui, request);
+        crate::application::workspace_layout::browser_feature::draw_feature_edges(ui, request);
+        self.workspace.draw_selected_origin(ui, request);
+        let mut selected = Vec::new();
+        self.document_files.home_in_front = self.home.active;
+        let band_height = crate::chrome::ribbon_band(
+            ui,
+            request,
+            crate::chrome::RibbonDrawOwners {
+                home_active: self.home.active,
+                icons: &self.icons.presentation,
+                ribbon: &mut self.ribbon,
+                parameters: &mut self.parameter_editor,
+                files: &mut self.document_files,
+                theme_editor: &mut self.theme_editor,
+                preferences: &mut self.preferences,
+                precise_input: &mut self.precise_input,
+                create_block: &mut self.create_block,
+                sketch_pattern: &mut self.sketch_pattern,
+                workspace: &mut self.workspace,
+                workspaces: &mut self.workspaces,
+                quick_access: &mut self.quick_access,
+                plane_selection_active: self.plane_selection.active,
+            },
+            &mut selected,
+        );
+        apply_quick_access(
+            &mut self.quick_access,
+            &mut self.document_files,
+            &mut self.plane_selection,
+            &mut self.extrude_dialog,
+            (&mut self.material_browser, &mut self.appearance_browser),
+            (&mut self.parameter_editor, request.commands.document),
+            &selected,
+        );
+        if !self.ribbon.tips.active() && !self.ribbon.tips.consumed {
+            self.command_alias.panel(ui, &request.commands, &keys.typed);
+        }
+        crate::application::workspace_layout::status_bar::status_bar(
+            ui,
+            request,
+            self.command_alias.text(),
+        );
+        let over_fields = crate::sketch::line::hud_panel(ui, request);
+        self.document_tabs.panel(
+            ui,
+            request,
+            band_height,
+            &self.workspace,
+            &mut self.home,
+            &mut selected,
+        );
+        self.parameter_editor
+            .panel(ui, &request.commands, &mut selected);
+        self.workspace
+            .panels
+            .record_status(request.status.as_deref());
+        self.workspace.view_clicks_taken = self.orientation.owns_view_clicks();
+        self.workspace.browser_panel(
+            ui,
+            &request.commands,
+            request.extent[1] as f32 / request.layout_scale()[1]
+                - crate::application::workspace_layout::status_bar::STATUS_BAR_HEIGHT,
+            band_height,
+            &mut selected,
+        );
+        for action in &selected {
+            if let GuiShellAction::OpenSketchPattern { sketch, pattern } = action {
+                self.sketch_pattern
+                    .open_edit(&request.commands, *sketch, *pattern);
+            }
+        }
+        selected.retain(|action| !matches!(action, GuiShellAction::OpenSketchPattern { .. }));
+        let logical =
+            std::array::from_fn(|axis| request.extent[axis] as f32 / request.layout_scale()[axis]);
+        let area = self.workspace.document_area(logical, band_height);
+        // Over Home there is no view for it to turn.
+        if !self.home.active {
+            self.orientation.panel(ui, request, area, &mut selected);
+        }
+        let detached = self.document_tabs.is_detached(request.commands.document);
+        self.workspaces
+            .panel(ui, &request.commands, area, detached, &mut selected);
+        self.plane_selection.panel(
+            ui,
+            &request.commands,
+            request.layout_scale(),
+            area,
+            &mut selected,
+        );
+        self.document_tabs.previews.showing = workspace_front(request, area, self.home.active);
+        self.document_tabs.previews.showing_document =
+            request.commands.document.filter(|_| !self.home.active);
+        if !self.home.active {
+            crate::application::workspace_layout::browser_feature::selection_toolbar(
+                ui,
+                request,
+                &mut selected,
+            );
+        }
+        self.home.panel(ui, &request.commands, area, &mut selected);
+        let home_requests = std::mem::take(&mut self.home.requests);
+        if home_requests.new_document {
+            self.document_files.request_new();
+        }
+        if home_requests.open_document {
+            self.document_files.request_open();
+        }
+        if let Some(path) = home_requests.file_properties {
+            self.document_tabs.menu.properties.request_file(&path);
+        }
+        self.document_files.panel(
+            ui,
+            &request.commands,
+            &mut selected,
+            &self.icons.presentation,
+        );
+        self.preferences
+            .panel(ui, &request.commands, &mut selected, self.home.active);
+        self.material_browser
+            .panel(ui, &request.commands, &mut selected);
+        self.appearance_browser
+            .panel(ui, &request.commands, &mut selected);
+        self.extrude_dialog
+            .panel(ui, &request.commands, &mut selected);
+        self.ribbon
+            .customization
+            .panel(ui, &request.commands, &mut selected);
+        self.create_block
+            .panel(ui, &request.commands, &mut selected);
+        self.sketch_pattern
+            .panel(ui, &request.commands, &mut selected);
+        crate::sketch::line::command_menu(ui, &request.commands, &mut selected);
+        self.precise_input
+            .panel(ui, &request.commands, &mut selected);
+        crate::sketch::inspect::canvas_menu(ui, &request.commands, &mut selected);
+        self.dimension_value_editor
+            .panel(ui, request, &mut selected);
+        crate::sketch::move_tool::panel(
+            ui,
+            &request.commands,
+            &mut self.precise_input,
+            &mut selected,
+        );
+        crate::sketch::inspect::measure_panel(ui, &request.commands, &mut selected);
+        crate::sketch::region_properties::panel(ui, &request.commands, &mut selected);
+        crate::sketch_delete::append_keyboard_delete(ui, &request.commands, &mut selected);
+        crate::application::document_tabs::document_keys(
+            ui,
+            keys.switch_document,
+            self.home.active,
+            &request.commands,
+            &mut selected,
+        );
+        self.workspace
+            .switcher
+            .panel(ui, &request.commands, &mut selected);
+        if self.document_files.take_options_request() {
+            self.preferences.request();
+        }
+        if self.document_files.take_properties_request()
+            && let Some(id) = request.commands.document
+        {
+            self.document_tabs
+                .menu
+                .properties
+                .request(&request.commands, id);
+        }
+        self.document_tabs
+            .menu
+            .properties
+            .panel(ui, &request.commands);
+        self.document_files
+            .closing_panel(ui, &request.commands, &mut selected);
+        let home_changed = home_follows_actions(&mut self.home, &selected);
+        self.known_documents.clone_from(&request.commands.documents);
+        self.known_document_type = request.commands.document_type;
+        self.workspaces.note_created(&selected);
+        // A popup that closed this frame still owned the key that closed it.
+        let popup_open = self.popup_was_open || crate::widget_abi::any_popup_open(ui);
+        self.popup_was_open = crate::widget_abi::any_popup_open(ui);
+        // A dialog over the workspace is not a picture of the document, nor of its tab.
+        if popup_open {
+            self.document_tabs.previews.showing = None;
+        }
+        selected.extend(self.document_tabs.previews.take_changed_picture().map(
+            |(document, picture)| GuiShellAction::KeepDocumentPicture {
+                document,
+                picture: Some(picture),
+            },
+        ));
+        let snapshot = capture_frame(self.context.render(), request.extent, &self.resources)?;
+        let mut capture = input_capture(self.context.io());
+        capture.keyboard &= !keys.tool_keyboard;
+        // Dear ImGui claims the keyboard for whichever window last had focus. A click on the
+        // ribbon must leave M and F8 to the sketch unless a widget is really using the keys.
+        // A popup always owns them, even on the frame Escape closes it and focus moves on.
+        capture.keyboard &= capture.text || self.context.io().nav_visible;
+        capture.keyboard |= popup_open
+            || self.ribbon.tips.consumed
+            || self.workspace.browser_consumed_arrow()
+            || self.ribbon.customization.navigation_consumed;
+        let arrow_press = request.events.iter().any(|event| {
+            matches!(
+                event,
+                GuiInputEvent::Key {
+                    key: crate::GuiKey::LeftArrow
+                        | crate::GuiKey::RightArrow
+                        | crate::GuiKey::UpArrow
+                        | crate::GuiKey::DownArrow,
+                    pressed: true
+                }
+            )
+        });
+        if arrow_press
+            && self.ribbon.tips.active()
+            && !capture.text
+            && !popup_open
+            && !self.workspace.browser_consumed_arrow()
+        {
+            capture.keyboard = false;
+        }
+        if arrow_press && self.workspace.feature_keyboard_focus() {
+            capture.keyboard = true;
+        }
+        capture.text |= self.ribbon.tips.consumed
+            || (self.ribbon.tips.active()
+                && request
+                    .events
+                    .iter()
+                    .any(|event| matches!(event, GuiInputEvent::Text(_))));
+        capture.popup = popup_open
+            || self.dimension_value_editor.had_keyboard()
+            || self.ribbon.tips.consumed
+            || self.ribbon.customization.escape_consumed
+            || self.ribbon.display.temporary_escape_consumed;
+        capture.pointer |= self.dimension_value_editor.over_label || over_fields;
+        let mut activity = frame_activity()?;
+        activity.pending_layout |= self.orientation.needs_frame();
+        activity.pending_layout |= self.ribbon.panels.pending_layout || self.ribbon.needs_frame();
+        activity.pending_layout |=
+            self.workspace.pending_layout || home_changed || self.home.hover_changed;
+        activity.pending_layout |= self.document_files.needs_frame()
+            || self.document_tabs.needs_frame()
+            || self.workspaces.needs_frame()
+            || self.workspace.switcher.needs_frame()
+            || self.document_tabs.menu.properties.needs_frame();
+        Ok(GuiFrameOutput {
+            draws: snapshot,
+            actions: selected,
+            capture,
+            activity,
+            document_area: area.framebuffer_region(request.layout_scale(), request.extent),
+        })
+    }
+}

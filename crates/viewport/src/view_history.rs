@@ -7,11 +7,12 @@ impl Viewport {
     pub(super) fn apply_camera_navigation(
         &mut self,
         command: ViewportNavigation,
+        framing: Option<crate::fit_region::FitFraming>,
     ) -> Result<bool, String> {
         let renderer = self.live()?;
         let previous = renderer.saved_camera();
-        renderer.navigate(command)?;
-        let changed = renderer.camera_state() != previous.state;
+        renderer.navigate(command, framing)?;
+        let changed = !renderer.camera_matches(&previous);
         if matches!(
             command,
             ViewportNavigation::Fit { .. } | ViewportNavigation::Home { .. }
@@ -34,7 +35,7 @@ impl Viewport {
         let Some(previous) = self.view_history.back() else {
             return Ok(false);
         };
-        if self.camera_state()? == previous.state {
+        if self.live()?.camera_matches(previous) {
             self.view_history.pop_back();
             return Ok(false);
         }

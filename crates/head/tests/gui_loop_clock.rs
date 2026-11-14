@@ -21,6 +21,17 @@ fn click_event(pressed: bool) -> ViewportEvent {
     })
 }
 #[test]
+fn fit_area_requires_a_current_nonempty_layout() {
+    let mut gui = NativeGui::new(None).unwrap();
+    assert!(gui.document_area([640, 480]).is_err());
+    gui_step(&mut gui, 0, None);
+    let [left, top, right, bottom] = gui.document_area([640, 480]).unwrap();
+    assert!(left < right && top < bottom);
+    assert!(gui.document_area([800, 600]).is_err());
+    gui.document_area = Some(([640, 480], None));
+    assert!(gui.document_area([640, 480]).is_err());
+}
+#[test]
 fn first_click_without_motion_is_captured_and_dispatched_once() {
     let mut gui = NativeGui::new(None).unwrap();
     gui_step(&mut gui, 0, None);

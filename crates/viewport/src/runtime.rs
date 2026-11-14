@@ -9,6 +9,7 @@ use crate::{
 use martensite_tkernel::standard::Handle;
 use martensite_vulkan::Graphic3dRenderDriver;
 use std::{cell::Cell, collections::VecDeque, rc::Rc};
+mod fit;
 #[path = "view_history.rs"]
 mod view_history;
 struct RuntimeState {
@@ -175,7 +176,7 @@ impl Viewport {
             return Ok(false);
         }
         let next = next_generation(self.camera)?;
-        if !self.apply_camera_navigation(command)? {
+        if !self.apply_camera_navigation(command, None)? {
             return Ok(false);
         }
         self.camera = next;

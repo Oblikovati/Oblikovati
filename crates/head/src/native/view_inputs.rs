@@ -2,6 +2,21 @@
 //! What a window does each frame on its own: follow the selection, and apply navigation input.
 use super::*;
 impl NativeHeadWindow {
+    pub(super) fn navigate_view_in_document(
+        &mut self,
+        command: oblikovati_viewport::ViewportNavigation,
+    ) -> Result<bool, String> {
+        if matches!(
+            command,
+            oblikovati_viewport::ViewportNavigation::Fit { .. }
+                | oblikovati_viewport::ViewportNavigation::Home { .. }
+        ) && let Some(gui) = &self.gui
+        {
+            let area = gui.document_area(self.view.drawable_extent()?)?;
+            return self.view.navigate_in_region(command, area);
+        }
+        self.view.navigate(command)
+    }
     pub(super) fn synchronize_sketch_highlights(
         &mut self,
         commands: &oblikovati_gui::GuiCommandState,
@@ -33,7 +48,7 @@ impl NativeHeadWindow {
                 continue;
             }
             if let Some(command) = command {
-                changed |= self.view.navigate(command)?;
+                changed |= self.navigate_view_in_document(command)?;
             }
         }
         Ok(changed)

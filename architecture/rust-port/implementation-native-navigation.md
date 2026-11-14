@@ -75,6 +75,18 @@ UI acceptance. Windows and macOS remain deferred.
 
 ## Home and fit continuation
 
+The desktop supplies the document area left by the docked browser, ribbon,
+tabs, and status bar to Home and Fit (#3872). The viewport first fits the
+scene, then scales and offsets the projection into that area. The projection
+offset keeps the camera target as the orbit pivot. Previous View retains the
+projection offset, and picking uses the same camera projection. The viewport
+also keeps its full-frame fit for callers without a desktop layout.
+
+Native tests cover an offset document area, camera history, picking, and
+orthographic and perspective examples. This does not establish all perspective
+navigation modes or complete the R1V/R4/R7 exits. Face shading is tracked
+separately in [#3873](https://github.com/Oblikovati/Oblikovati/issues/3873).
+
 `F6` now runs Home View on the native owner thread. It clears an active drag,
 restores the Go Y-up isometric direction (eye offset `+X,+Y,+Z`), and fits
 displayed geometry through released Martensite `V3dView`. Key release does
@@ -88,8 +100,8 @@ the clipping range with `ZFitAll`. This is a camera invariant, not a geometry
 repair: released revision `193572dc` sets fit distance to displayed box depth,
 which becomes zero for a flat shape viewed straight on. The regression first
 failed with coincident eye/target and now restores visible native pixels.
-No kernel source or document geometry is changed. Perspective fit remains
-open and cannot assume this orthographic distance rule.
+No kernel source or document geometry is changed. Broad perspective fit
+acceptance remains open and cannot assume this orthographic distance rule.
 
 Empty Fit preserves its completed capture. Empty Home changes orientation
 around the current target and retains scale and clipping range, as Go

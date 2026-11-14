@@ -77,6 +77,9 @@ fn real_imgui_frames_are_owned_and_context_survives_invalid_input() {
     let input = request();
     engine.frame(&input).unwrap();
     let output = engine.frame(&input).unwrap();
+    let [left, top, right, bottom] = output.document_area.unwrap();
+    assert!(left > 0 && top > 0 && right <= input.extent[0] && bottom <= input.extent[1]);
+    assert!(left < right && top < bottom);
     let snapshot = output.draws;
     let actions = output.actions;
     assert!(!snapshot.batches.is_empty());

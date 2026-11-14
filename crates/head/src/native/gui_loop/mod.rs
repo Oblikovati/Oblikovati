@@ -15,6 +15,7 @@ pub(super) struct NativeGui {
     compiler: GuiFrameCompiler,
     textures: oblikovati_gui::GuiTextureResources,
     draws: Option<GuiFrame>,
+    document_area: Option<([u32; 2], Option<[u32; 4]>)>,
     commands: Option<GuiCommandState>,
     notice: Option<String>,
     last_frame: Option<Duration>,
@@ -81,6 +82,7 @@ impl NativeGui {
             textures,
             compiler,
             draws: None,
+            document_area: None,
             commands: None,
             notice: None,
             last_frame: None,
@@ -113,6 +115,7 @@ impl NativeGui {
         self.refresh_gui_resources()?;
         self.dirty |= self.draws.as_ref() != Some(&output.draws);
         self.draws = Some(output.draws);
+        self.document_area = Some((extent, output.document_area));
         self.commands = Some(commands.clone());
         self.notice = notice.map(str::to_owned);
         self.last_frame = Some(now);
@@ -126,6 +129,19 @@ impl NativeGui {
             actions: output.actions,
             wake_after: self.wake_after(now),
             ..Default::default()
+        })
+    }
+    pub(super) fn document_area(&self, extent: [u32; 2]) -> Result<[u32; 4], String> {
+        let (observed, area) = self
+            .document_area
+            .ok_or("document area: expected a completed GUI layout")?;
+        if observed != extent {
+            return Err(format!(
+                "document area extent {observed:?}: expected current drawable {extent:?}"
+            ));
+        }
+        area.ok_or_else(|| {
+            format!("document area {area:?}: expected a nonempty rectangle in {extent:?}")
         })
     }
     fn frame_input(&mut self, request: &GuiFrameRequest) -> Result<GuiFrameOutput, String> {
