@@ -3915,10 +3915,15 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3889",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-open-existing-part/receipt-233169e6ac19c7dd.json",
+        "sha256": "60fc10883c8241f659fab1e9a4d9bf3e05a9efa6de2e5c0f8146240221f89e94"
+      },
       "go_reference": "../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
-      "mapping_reason": "Activate an existing part without creating a duplicate."
+      "mapping_reason": "Activate an existing part without creating a duplicate.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:59162ec325e7796e63268366914195a25056bc4db02bba09c772d154c62dc4b3",
