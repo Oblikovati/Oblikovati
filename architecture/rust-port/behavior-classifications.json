@@ -14996,10 +14996,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-inactive-close-50f02a10/receipt-50f02a102ce48562.json",
+        "sha256": "2d005c8ffba9694f69f53876b057e586064c5e51026487b9ac1ce30a1618ec40"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "First part creation, document activation, or save/close path through the desktop."
+      "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b: the background-close session test preserves the active sketch and tool; it does not test tab clicks or file bytes. See receipts/2026-11-14-go-tab-baseline/README.md.",
+      "kernel_capabilities": "No solid modeling operation is required for the saved empty-part close scenario.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The desktop owner closes the selected inactive document and retains the first active document.",
+      "rust_tests": "application_scenarios_use_the_native_window: Close a saved inactive document with its tab close button",
+      "oracle": "Pinned native steps, active-document state, saved-file byte comparison and reviewed final capture.",
+      "expected_result": "The inactive saved part closes without a prompt; the first part stays active and the saved file remains unchanged."
     },
     {
       "id": "scenario:8d403d738cd321445aca38ac0a89be55e8e04f9adaad81f2ce25984fdee63f70",
@@ -15098,10 +15110,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-inactive-close-8f2c33b3/receipt-8f2c33b398b731b4.json",
+        "sha256": "396e999220d97f041c42d59c1621f290cae7956ed496b342b5dd477b12e154c0"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "First part creation, document activation, or save/close path through the desktop."
+      "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b: the background-close session test preserves the active sketch and tool; it does not test tab clicks or file bytes. See receipts/2026-11-14-go-tab-baseline/README.md.",
+      "kernel_capabilities": "No solid modeling operation is required for the saved empty-part close scenario.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The desktop owner closes the selected inactive document and retains the first active document.",
+      "rust_tests": "application_scenarios_use_the_native_window: Close an inactive saved document from its tab menu",
+      "oracle": "Pinned native steps, active-document state, saved-file byte comparison and reviewed final capture.",
+      "expected_result": "The inactive saved part closes without a prompt; the first part stays active and the saved file remains unchanged."
     },
     {
       "id": "scenario:5013bf3ef372b4cd2c855cce963620205fbadf3431e771ee3b03b5f6240bbb03",

@@ -10,3 +10,5 @@ passed. The first checks isolated history after programmatic activation; the
 second checks unique tab labels for colliding names. Neither test verifies a
 mouse click, window title, browser contents, or rendered sketch edges. Those
 need separate native Rust scenario evidence.
+
+`go test ./app -run '^TestCloseBackgroundDocumentKeepsActiveEditState$' -count=1 -v` passed. It closes a background document through the session and checks that the active sketch and tool remain. It does not test the tab close button, tab context menu, or saved-file bytes.
