@@ -34,6 +34,10 @@ struct ScenarioReport {
 /// A fixture provider may raise this when a required external fixture is unavailable.
 #[derive(Debug)]
 pub(super) struct FixtureBlocked(pub(super) String);
+const FIXTURE_BLOCKED_PREFIX: &str = "BDD fixture blocked: ";
+pub(super) fn block_fixture(reason: &str) {
+    panic!("{FIXTURE_BLOCKED_PREFIX}{reason}");
+}
 #[derive(Serialize)]
 struct StepReport {
     line: usize,
@@ -234,9 +238,15 @@ fn execute_step<W>(
         Ok(()) => ("passed", None),
         Err(error) => match error.downcast_ref::<FixtureBlocked>() {
             Some(blocked) => ("fixture blocked", Some(blocked.0.clone())),
-            None => ("failed", Some(panic_message(error))),
+            None => classify_panic(panic_message(error)),
         },
     }
+}
+fn classify_panic(message: String) -> (&'static str, Option<String>) {
+    if let Some(reason) = message.strip_prefix(FIXTURE_BLOCKED_PREFIX) {
+        return ("fixture blocked", Some(reason.to_owned()));
+    }
+    ("failed", Some(message))
 }
 fn panic_message(error: Box<dyn Any + Send>) -> String {
     error
