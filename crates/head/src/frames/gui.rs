@@ -70,6 +70,20 @@ pub(super) fn dispatch_gui_action(
         GuiShellAction::ClickModel { document, pixel } => {
             return owner.click_model_from_gui(*document, window.view_line(*pixel)?);
         }
+        GuiShellAction::StartSketchAt {
+            document,
+            pixel,
+            origin_plane,
+        } => {
+            let result = owner
+                .start_sketch_on_face_from_gui(*document, window.view_line(*pixel)?)
+                .and_then(|found| match (found, origin_plane) {
+                    (false, Some(plane)) => owner.start_sketch_on_plane_from_gui(*plane),
+                    _ => Ok(found),
+                });
+            let changed = report_authoring_result(window, result)?;
+            return Ok(synchronize_sketch_view(window, owner)? || changed);
+        }
         _ => {}
     }
     if let Some(key) = action_key(action) {
@@ -179,6 +193,7 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::CloseDocumentWindow(_)
         | GuiShellAction::StartSketchOn(_)
         | GuiShellAction::StartSketchOnWorkPlane(_)
+        | GuiShellAction::StartSketchAt { .. }
         | GuiShellAction::FinishSketch
         | GuiShellAction::OpenExtrude
         | GuiShellAction::PreviewExtrude(_)

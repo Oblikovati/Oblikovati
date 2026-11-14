@@ -189,3 +189,47 @@ fn face_sketch_placement_previews_locks_and_rejects_stale_datums() {
         3
     );
 }
+
+#[test]
+fn direct_face_creation_requires_generation_checked_prospective_support() {
+    use oblikovati_model::{document_sketch::SketchPlacement, history::DocumentSketchCreation};
+    let mut session = face_session();
+    let mut slot = PartSlot::default();
+    publish_face(&mut session, &mut slot, 2.5);
+    let face = WorkPlaneFaceReference::new(face_key()).unwrap();
+    let token = slot
+        .current_datums_for_face(&session, &NamedFaceEvaluator, &face)
+        .unwrap();
+    let request = DocumentSketchCreation {
+        name: "Direct".into(),
+        placement: SketchPlacement::Face(face.clone()),
+        orientation: None,
+        project_origin: true,
+    };
+    let sketch = session
+        .create_sketch_with_part_datums_projected(&request, &token, |result| result)
+        .unwrap();
+    assert!(
+        session
+            .create_sketch_with_part_datums_projected(&request, &token, |result| result)
+            .is_err()
+    );
+    publish_face(&mut session, &mut slot, 2.5);
+    let current = slot.current_datums(&session).unwrap();
+    let frame = session
+        .snapshot()
+        .resolve_sketch_plane_with_datums(sketch, current.current(&session).unwrap())
+        .unwrap();
+    assert_eq!(frame.recipe().origin, [2., 0., 0.]);
+    session.undo().unwrap();
+    assert!(session.snapshot().sketches.get(sketch).is_err());
+    session.redo().unwrap();
+    publish_face(&mut session, &mut slot, 2.5);
+    let current = slot.current_datums(&session).unwrap();
+    assert!(
+        session
+            .snapshot()
+            .resolve_sketch_plane_with_datums(sketch, current.current(&session).unwrap())
+            .is_ok()
+    );
+}

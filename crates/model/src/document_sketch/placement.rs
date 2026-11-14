@@ -3,22 +3,24 @@ use super::{DocumentSketchId, DocumentSketches, PlacedSketch, PlacedSketchRecipe
 use crate::{
     feature::{
         FeatureId, FeatureReadFootprint, FeatureReadKey,
-        work_plane::{WorkPlaneError, WorkPlaneResolver},
+        work_plane::{WorkPlaneError, WorkPlaneFaceReference, WorkPlaneResolver},
     },
     sketch::{Sketch2D, SketchError, SketchPlane},
 };
 
 /// Authored placement; a feature reference stores no derived frame.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum SketchPlacement {
     Fixed(SketchPlane),
     WorkPlane(FeatureId),
+    Face(WorkPlaneFaceReference),
 }
 impl SketchPlacement {
-    pub(super) fn same_recipe(self, other: Self) -> bool {
+    pub(super) fn same_recipe(&self, other: &Self) -> bool {
         match (self, other) {
-            (Self::Fixed(first), Self::Fixed(second)) => first.same_recipe(second),
+            (Self::Fixed(first), Self::Fixed(second)) => first.same_recipe(*second),
             (Self::WorkPlane(first), Self::WorkPlane(second)) => first == second,
+            (Self::Face(first), Self::Face(second)) => first == second,
             _ => false,
         }
     }
@@ -26,15 +28,23 @@ impl SketchPlacement {
         recipe: &PlacedSketchRecipe,
         version: u32,
     ) -> Result<Self, SketchError> {
-        match (recipe.plane, recipe.plane_options, recipe.plane_feature) {
-            (Some(frame), Some(options), None) => {
+        match (
+            recipe.plane,
+            recipe.plane_options,
+            recipe.plane_feature,
+            &recipe.plane_face,
+        ) {
+            (Some(frame), Some(options), None, None) => {
                 SketchPlane::from_recipe(frame, options).map(Self::Fixed)
             }
-            (None, None, Some(feature)) if version >= 2 && feature.0 != 0 => {
+            (None, None, Some(feature), None) if version >= 2 && feature.0 != 0 => {
                 Ok(Self::WorkPlane(feature))
             }
+            (None, None, None, Some(reference)) if version >= 12 => {
+                Ok(Self::Face(reference.clone()))
+            }
             shape => Err(SketchError::Definition(format!(
-                "sketch {:?} placement {shape:?} in recipe version {version}: expected a fixed frame with options, or one nonzero feature ID in version 2 or later",
+                "sketch {:?} placement {shape:?} in recipe version {version}: expected one fixed frame, work-plane feature, or version 12 face reference",
                 recipe.id
             ))),
         }
@@ -43,7 +53,7 @@ impl SketchPlacement {
 impl PlacedSketch {
     /// Inspect the authored reference; example: `placed.placement()` for dependency queries.
     pub fn placement(&self) -> SketchPlacement {
-        self.placement
+        self.placement.clone()
     }
     /// Attribute local dimensions and the host feature; example: `placed.read_footprint()` for feature replay.
     pub fn read_footprint(&self) -> FeatureReadFootprint {
@@ -63,8 +73,12 @@ impl PlacedSketch {
     }
     pub(crate) fn placement_read_keys(&self) -> Vec<FeatureReadKey> {
         let mut keys = Vec::new();
-        if let SketchPlacement::WorkPlane(feature) = self.placement {
-            keys.push(FeatureReadKey::Feature(feature));
+        match &self.placement {
+            SketchPlacement::WorkPlane(feature) => keys.push(FeatureReadKey::Feature(*feature)),
+            SketchPlacement::Face(reference) => {
+                keys.push(FeatureReadKey::Feature(reference.source()))
+            }
+            SketchPlacement::Fixed(_) => {}
         }
         if let Some(orientation) = self.orientation {
             keys.extend(orientation.read_keys());
@@ -92,18 +106,31 @@ impl PlacedSketch {
         &self,
         planes: Option<&dyn WorkPlaneResolver>,
     ) -> Result<SketchPlane, WorkPlaneError> {
-        match self.placement {
-            SketchPlacement::Fixed(plane) => Ok(plane),
+        match &self.placement {
+            SketchPlacement::Fixed(plane) => Ok(*plane),
             SketchPlacement::WorkPlane(id) => planes
                 .ok_or(WorkPlaneError::Unavailable {
-                    feature: id,
+                    feature: *id,
                     expected: "plane",
                 })?
-                .plane(id),
+                .plane(*id),
+            SketchPlacement::Face(reference) => planes
+                .ok_or_else(|| crate::feature::work_plane::unavailable_face(reference))?
+                .face(reference),
         }
     }
 }
 impl DocumentSketches {
+    /// Create a sketch attached to a durable face name; example: `sketches.add_on_face(id, "Sketch", face, geometry)?`.
+    pub fn add_on_face(
+        &mut self,
+        id: DocumentSketchId,
+        name: &str,
+        face: WorkPlaneFaceReference,
+        geometry: Sketch2D,
+    ) -> Result<(), SketchError> {
+        self.insert_placed(id, name, SketchPlacement::Face(face), geometry)
+    }
     /// Attach without changing local geometry or retaining a frame; example: `sketches.attach_work_plane(sketch, feature)?`.
     pub fn attach_work_plane(
         &mut self,

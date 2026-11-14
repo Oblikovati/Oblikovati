@@ -362,3 +362,6 @@ fn headless_face_offset_uses_its_replay_owner() {
 
 #[path = "face_plane/sketch_journey.rs"]
 mod sketch_journey;
+
+#[path = "face_plane/direct_sketch.rs"]
+mod direct_sketch;

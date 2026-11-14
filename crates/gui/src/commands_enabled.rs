@@ -310,9 +310,10 @@ impl GuiShellAction {
             }
             Self::Undo => state.undo_label.is_some(),
             Self::Redo => state.redo_label.is_some(),
-            Self::ChooseSketchPlane | Self::StartSketchOn(_) | Self::StartSketchOnWorkPlane(_) => {
-                state.authoring == GuiAuthoringContext::Part
-            }
+            Self::ChooseSketchPlane
+            | Self::StartSketchOn(_)
+            | Self::StartSketchOnWorkPlane(_)
+            | Self::StartSketchAt { .. } => state.authoring == GuiAuthoringContext::Part,
             Self::DeleteSketchSelection => {
                 state.authoring == GuiAuthoringContext::Sketch
                     && state.sketch_delete_available

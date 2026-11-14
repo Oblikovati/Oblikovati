@@ -75,13 +75,17 @@ impl DocumentSnapshot {
         request: &DocumentSketchCreation,
     ) -> Result<(), SketchError> {
         let geometry = Sketch2D::default();
-        match request.placement {
+        match &request.placement {
             SketchPlacement::Fixed(plane) => {
-                self.sketches.add(sketch, &request.name, plane, geometry)?
+                self.sketches.add(sketch, &request.name, *plane, geometry)?
             }
             SketchPlacement::WorkPlane(feature) => {
                 self.sketches
-                    .add_on_work_plane(sketch, &request.name, feature, geometry)?
+                    .add_on_work_plane(sketch, &request.name, *feature, geometry)?
+            }
+            SketchPlacement::Face(reference) => {
+                self.sketches
+                    .add_on_face(sketch, &request.name, reference.clone(), geometry)?
             }
         }
         self.sketches.set_orientation(sketch, request.orientation)

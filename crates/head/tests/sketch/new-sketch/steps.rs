@@ -16,6 +16,14 @@ fn choose_xz(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
     world.click_text("XZ Plane");
     world.pump(Vec::new());
+    assert_eq!(
+        world.state().browser.unwrap().sketches[1]
+            .inspection
+            .as_ref()
+            .unwrap()
+            .plane,
+        "XZ"
+    );
 }
 #[given("Part2 has Sketch1 and the Origin browser is expanded")]
 #[given("Part2 has only Sketch1")]
@@ -33,7 +41,6 @@ fn second_sketch_active(world: &mut ApplicationWorld) {
     let state = world.state();
     assert_eq!(state.authoring, GuiAuthoringContext::Sketch);
     let sketch = &state.browser.unwrap().sketches[1];
-    assert_eq!(sketch.inspection.as_ref().unwrap().plane, "XZ");
     assert_eq!(state.active_sketch, Some(sketch.id));
     world.expect_text("Sketch2");
     world.expect_text("Finish Sketch");

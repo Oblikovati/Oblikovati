@@ -15,6 +15,8 @@ use oblikovati_solve::nonlinear::{SolveOptions, SolveTermination};
 mod block_definitions;
 #[path = "document_sketch/block_instances.rs"]
 mod block_instances;
+#[path = "document_sketch/face_support.rs"]
+mod face_support;
 fn geometry(offset: u64) -> Sketch2D {
     let mut sketch = Sketch2D::default();
     let id = |value| SketchEntityId(offset + value);

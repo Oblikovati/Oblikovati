@@ -97,6 +97,9 @@ pub struct PlacedSketchRecipe {
     pub plane_options: Option<SketchPlaneOptions>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub plane_feature: Option<crate::feature::FeatureId>,
+    /// Version 12 stores the stable face name rather than a derived plane.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub plane_face: Option<crate::feature::work_plane::WorkPlaneFaceReference>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub orientation: Option<SketchOrientationDefinition>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -149,9 +152,12 @@ impl PlacedSketch {
         &self.geometry
     }
     fn recipe(&self) -> PlacedSketchRecipe {
-        let (plane, plane_options, plane_feature) = match self.placement {
-            SketchPlacement::Fixed(frame) => (Some(frame.recipe()), Some(frame.options()), None),
-            SketchPlacement::WorkPlane(id) => (None, None, Some(id)),
+        let (plane, plane_options, plane_feature, plane_face) = match &self.placement {
+            SketchPlacement::Fixed(frame) => {
+                (Some(frame.recipe()), Some(frame.options()), None, None)
+            }
+            SketchPlacement::WorkPlane(id) => (None, None, Some(*id), None),
+            SketchPlacement::Face(reference) => (None, None, None, Some(reference.clone())),
         };
         PlacedSketchRecipe {
             id: self.id,
@@ -163,6 +169,7 @@ impl PlacedSketch {
             plane,
             plane_options,
             plane_feature,
+            plane_face,
             orientation: self.orientation,
             point_projections: self.point_projections.clone(),
             block_instances: self.block_instances.clone(),
@@ -170,6 +177,9 @@ impl PlacedSketch {
         }
     }
     fn recipe_version(&self) -> u32 {
+        if matches!(self.placement, SketchPlacement::Face(_)) {
+            return 12;
+        }
         if !self.block_instances.is_empty() {
             return 11;
         }
@@ -209,7 +219,7 @@ impl DocumentSketches {
                         && first.visible == second.visible
                         && first.constraints_shown == second.constraints_shown
                         && first.line_style == second.line_style
-                        && first.placement.same_recipe(second.placement)
+                        && first.placement.same_recipe(&second.placement)
                         && orientation::same_orientation(first.orientation, second.orientation)
                         && first.point_projections == second.point_projections
                         && block_instances::same_instances(
@@ -314,6 +324,13 @@ impl DocumentSketches {
         if self
             .sketches
             .iter()
+            .any(|sketch| matches!(sketch.placement, SketchPlacement::Face(_)))
+        {
+            return 12;
+        }
+        if self
+            .sketches
+            .iter()
             .any(|sketch| !sketch.block_instances.is_empty())
         {
             return 11;
@@ -336,9 +353,9 @@ impl DocumentSketches {
     }
     /// Restore a complete collection before replacing a document owner; example: `DocumentSketches::from_recipe(&recipe)?`.
     pub fn from_recipe(recipe: &DocumentSketchRecipe) -> Result<Self, SketchError> {
-        if !matches!(recipe.version, 1..=11) {
+        if !matches!(recipe.version, 1..=12) {
             return Err(SketchError::Definition(format!(
-                "document sketch recipe version {}: expected 1 through 11",
+                "document sketch recipe version {}: expected 1 through 12",
                 recipe.version
             )));
         }

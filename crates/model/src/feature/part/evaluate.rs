@@ -66,6 +66,18 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         datums.health = self.health.iter().filter_map(datum_health).collect();
         datums
     }
+    /// Resolve a prospective sketch support against this part result.
+    /// Example: `part.datum_evaluation_for_face(&backend, &reference)?` before sketch creation.
+    pub fn datum_evaluation_for_face<B: SketchPrismEvaluator<Body = Body, Failure = Failure>>(
+        &self,
+        backend: &B,
+        reference: &crate::feature::work_plane::WorkPlaneFaceReference,
+    ) -> Result<WorkGeometryEvaluation, WorkGeometryError> {
+        let plane = resolve_body_face(&self.bodies, backend, reference)?;
+        let mut datums = self.datum_evaluation();
+        datums.insert_sketch_face(reference, plane);
+        Ok(datums)
+    }
     fn empty() -> Self {
         Self {
             datums: WorkGeometryEvaluation::default(),
@@ -179,6 +191,7 @@ impl DocumentSnapshot {
         let mut evaluation = PartFeatureEvaluation::empty();
         let mut candidate = Cow::Borrowed(self);
         evaluation.replay(&mut candidate, backend, &mut controller, options, cancelled)?;
+        evaluation.refresh_sketch_faces(&candidate, backend);
         evaluation.health = controller
             .finish()
             .map_err(PartFeatureProgramError::Reads)?;
@@ -220,6 +233,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
                 return Ok(());
             };
             if let FeatureReplayStep::Evaluate(id) = step {
+                self.refresh_sketch_faces(snapshot, backend);
                 if let Some(options) = options {
                     self.solve_feature_sketch(
                         snapshot,
@@ -235,6 +249,22 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
                     .map_err(PartFeatureProgramError::Reads)?;
             }
         }
+    }
+    fn refresh_sketch_faces<B: SketchPrismEvaluator<Body = Body, Failure = Failure>>(
+        &mut self,
+        snapshot: &DocumentSnapshot,
+        backend: &B,
+    ) {
+        use crate::document_sketch::SketchPlacement;
+        let mut faces = BTreeMap::new();
+        for sketch in snapshot.sketches.sketches() {
+            if let SketchPlacement::Face(reference) = sketch.placement() {
+                faces
+                    .entry(reference.key().to_vec())
+                    .or_insert_with(|| resolve_body_face(&self.bodies, backend, &reference));
+            }
+        }
+        self.datums.replace_sketch_faces(faces);
     }
     fn solve_feature_sketch(
         &self,
@@ -369,6 +399,12 @@ impl<Body, Failure> crate::feature::work_plane::WorkPlaneResolver
     }
     fn plane(&self, feature: FeatureId) -> Result<crate::sketch::SketchPlane, WorkGeometryError> {
         crate::feature::work_plane::WorkPlaneResolver::plane(&self.datums, feature)
+    }
+    fn face(
+        &self,
+        reference: &crate::feature::work_plane::WorkPlaneFaceReference,
+    ) -> Result<crate::sketch::SketchPlane, WorkGeometryError> {
+        crate::feature::work_plane::WorkPlaneResolver::face(&self.datums, reference)
     }
     fn point(&self, feature: FeatureId) -> Result<[f64; 3], WorkGeometryError> {
         self.datums.point(feature)

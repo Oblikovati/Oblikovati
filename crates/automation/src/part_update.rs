@@ -58,6 +58,14 @@ pub trait PartUpdateAccess<O: TransactionObserver, W: WorkspaceObserver, F: Docu
         files: &mut FileWorkspace<O, W, F>,
         document: u64,
     ) -> Result<oblikovati_session::part_evaluation::CurrentPartDatums, String>;
+    /// Seal current part inputs for a new sketch on a named face.
+    /// Example: `owner.current_part_datums_for_face(files, id, &face)?`.
+    fn current_part_datums_for_face(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+        face: &oblikovati_model::feature::work_plane::WorkPlaneFaceReference,
+    ) -> Result<oblikovati_session::part_evaluation::CurrentPartDatums, String>;
     /// Replay a private candidate with the owner's policy; example: `owner.preview_datums(files, id, candidate)?`.
     fn preview_datums(
         &mut self,
@@ -179,6 +187,15 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
         slot.current_datums(session)
             .map_err(|error| error.to_string())
     }
+    fn current_part_datums_for_face(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+        face: &oblikovati_model::feature::work_plane::WorkPlaneFaceReference,
+    ) -> Result<oblikovati_session::part_evaluation::CurrentPartDatums, String> {
+        let slot = self.current_slot(files, document)?;
+        slot_datums_for_face(files, document, slot, face)
+    }
 }
 
 /// Refresh dependent sketches from ordered replay before publishing a part.
@@ -280,6 +297,29 @@ pub fn resolve_slot_face<O: TransactionObserver, W: WorkspaceObserver, F: Docume
         .map_err(|error| error.to_string())?
         .internal_name;
     slot.resolve_planar_face(
+        session,
+        &NamedPrismEvaluator::new(session.history(), guid),
+        face,
+    )
+}
+
+/// Seal a prospective support from the same adopted replay.
+/// Example: `slot_datums_for_face(files, document, slot, &face)?`.
+pub fn slot_datums_for_face<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &FileWorkspace<O, W, F>,
+    document: u64,
+    slot: &PartEvaluationSlot<NamedPrismSnapshot, EvaluationFailure>,
+    face: &oblikovati_model::feature::work_plane::WorkPlaneFaceReference,
+) -> Result<oblikovati_session::part_evaluation::CurrentPartDatums, String> {
+    let workspace = files.workspace();
+    let session = workspace
+        .session(document)
+        .map_err(|error| error.to_string())?;
+    let guid = workspace
+        .identity(document)
+        .map_err(|error| error.to_string())?
+        .internal_name;
+    slot.current_datums_for_face(
         session,
         &NamedPrismEvaluator::new(session.history(), guid),
         face,

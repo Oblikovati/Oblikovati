@@ -60,6 +60,23 @@ fn named_faces_follow_depth_edits_and_undo_without_reusing_old_handles() {
     let keys = first.reference_keys(&history, document()).unwrap();
     assert_eq!(keys.len(), 7);
     assert_eq!(
+        first
+            .face_key_for_role(&history, document(), PrismFaceRole::End)
+            .unwrap(),
+        key("end", &[1])
+    );
+    assert_eq!(
+        first
+            .face_key_for_role(&history, document(), PrismFaceRole::ProfileEdge(101))
+            .unwrap(),
+        key("side", &[1, 101])
+    );
+    assert!(
+        first
+            .face_key_for_role(&history, document(), PrismFaceRole::ProfileEdge(999))
+            .is_err()
+    );
+    assert_eq!(
         first.body_reference_key(&history, document()).unwrap(),
         key("body", &[1])
     );
@@ -72,6 +89,11 @@ fn named_faces_follow_depth_edits_and_undo_without_reusing_old_handles() {
         .unwrap();
     history.commit(&token, false).unwrap();
     assert!(first.reference_keys(&history, document()).is_err());
+    assert!(
+        first
+            .face_key_for_role(&history, document(), PrismFaceRole::End)
+            .is_err()
+    );
     assert!(first.body_reference_key(&history, document()).is_err());
     assert!(
         first

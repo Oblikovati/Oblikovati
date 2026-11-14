@@ -196,6 +196,12 @@ pub enum GuiShellAction {
     StartSketchOn(crate::GuiOriginPlaneKind),
     /// Start on a selected authored work plane.
     StartSketchOnWorkPlane(oblikovati_model::feature::FeatureId),
+    /// Choose a solid face under the pointer, with an origin-plane fallback.
+    StartSketchAt {
+        document: u64,
+        pixel: [i32; 2],
+        origin_plane: Option<crate::GuiOriginPlaneKind>,
+    },
     FinishSketch,
     /// Open the Extrude dialog for the active part.
     OpenExtrude,

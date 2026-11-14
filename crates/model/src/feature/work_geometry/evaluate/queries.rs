@@ -14,6 +14,15 @@ impl WorkPlaneResolver for WorkGeometryEvaluation {
     fn plane(&self, feature: FeatureId) -> Result<SketchPlane, WorkPlaneError> {
         self.resolve_kind(feature, "plane", project_plane)
     }
+    fn face(
+        &self,
+        reference: &crate::feature::work_plane::WorkPlaneFaceReference,
+    ) -> Result<SketchPlane, WorkPlaneError> {
+        self.sketch_faces
+            .get(reference.key())
+            .cloned()
+            .unwrap_or_else(|| Err(crate::feature::work_plane::unavailable_face(reference)))
+    }
 }
 impl WorkGeometryEvaluation {
     /// Resolve one current line by stable identity; example: `evaluation.axis(FeatureId(3))?`.

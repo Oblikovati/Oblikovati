@@ -50,7 +50,10 @@ impl PlaneSelection {
         if !self.active {
             return;
         }
-        if state.document.is_none() || state.origin_planes.is_empty() {
+        if state.document.is_none()
+            || state.origin_planes.is_empty()
+            || state.authoring == crate::GuiAuthoringContext::Sketch
+        {
             self.active = false;
             return;
         }
@@ -64,9 +67,12 @@ impl PlaneSelection {
             self.active = false;
             return;
         }
-        if let Some(kind) = plane_chosen_over_workspace(ui, &planes, area) {
-            actions.push(GuiShellAction::StartSketchOn(kind));
-            self.active = false;
+        if let Some((point, origin_plane)) = plane_chosen_over_workspace(ui, &planes, area) {
+            actions.push(GuiShellAction::StartSketchAt {
+                document: state.document.unwrap(),
+                pixel: [(point[0] * scale[0]) as i32, (point[1] * scale[1]) as i32],
+                origin_plane,
+            });
         }
     }
 }
@@ -75,7 +81,7 @@ fn plane_chosen_over_workspace(
     ui: &Ui,
     planes: &[([[f32; 2]; 4], GuiOriginPlaneKind)],
     area: WorkspaceArea,
-) -> Option<GuiOriginPlaneKind> {
+) -> Option<([f32; 2], Option<GuiOriginPlaneKind>)> {
     crate::widget_abi::window_geometry(
         ui,
         [area.left, area.top],
@@ -92,8 +98,7 @@ fn plane_chosen_over_workspace(
         )
         .build(|| {
             (ui.is_window_hovered() && ui.is_mouse_clicked(MouseButton::Left))
-                .then(|| chosen_plane(ui, planes, area))
-                .flatten()
+                .then(|| (ui.io().mouse_pos, chosen_plane(ui, planes, area)))
         })
         .flatten()
 }

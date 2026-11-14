@@ -72,6 +72,28 @@ pub struct PartEvaluationView<'a, Body, Failure> {
     pub evaluation: &'a PartFeatureEvaluation<Body, Failure>,
 }
 impl<Body, Failure> PartEvaluationSlot<Body, Failure> {
+    /// Seal current datums including one prospective face support.
+    /// Example: `slot.current_datums_for_face(&session, &backend, &face)?`.
+    pub fn current_datums_for_face<O, B>(
+        &self,
+        session: &DocumentSession<O>,
+        backend: &B,
+        reference: &WorkPlaneFaceReference,
+    ) -> Result<CurrentPartDatums, String>
+    where
+        O: TransactionObserver,
+        B: SketchPrismEvaluator<Body = Body, Failure = Failure>,
+    {
+        let part = self.current(session).map_err(|error| error.to_string())?;
+        let datums = part
+            .datum_evaluation_for_face(backend, reference)
+            .map_err(|error| error.to_string())?;
+        Ok(CurrentPartDatums {
+            document: session.document,
+            scope: session.history.evaluation_scope(),
+            datums,
+        })
+    }
     /// Seal the current part datums for a later session command.
     /// Example: `let datums = slot.current_datums(&session)?`.
     pub fn current_datums<O: TransactionObserver>(

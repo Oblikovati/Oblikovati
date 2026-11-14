@@ -284,6 +284,13 @@ impl<
         )?;
         Ok(true)
     }
+    fn start_sketch_on_face_from_gui(
+        &mut self,
+        document: u64,
+        line: [[f64; 3]; 2],
+    ) -> Result<bool, String> {
+        self.start_sketch_on_face_line(document, line)
+    }
     fn recent_from_gui(
         &mut self,
         action: &oblikovati_gui::GuiRecentAction,

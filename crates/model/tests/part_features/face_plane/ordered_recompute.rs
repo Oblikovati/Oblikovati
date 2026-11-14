@@ -57,17 +57,31 @@ fn ordered_part_replay_solves_face_sketch_after_its_source_plane() {
 
 #[test]
 fn ordered_recompute_builds_a_feature_from_a_face_hosted_sketch() {
+    verify_face_hosted_prism(false);
+    verify_face_hosted_prism(true);
+}
+fn verify_face_hosted_prism(direct: bool) {
     use oblikovati_model::{document_sketch::SketchPlacement, history::DocumentSketchCreation};
     let snapshot = face_document();
-    let datums = snapshot
+    let part = snapshot
         .evaluate_part_features(&mut FaceEvaluator::default())
-        .unwrap()
-        .datum_evaluation();
+        .unwrap();
+    let face = WorkPlaneFaceReference::new(face_key(1)).unwrap();
+    let datums = if direct {
+        part.datum_evaluation_for_face(&FaceEvaluator::default(), &face)
+            .unwrap()
+    } else {
+        part.datum_evaluation()
+    };
     let ids = RecipeIdAllocator::restore(None, snapshot.parameters.ids()).unwrap();
     let history = DocumentEditHistory::new(snapshot, ids).unwrap();
     let request = DocumentSketchCreation {
         name: "Face profile".into(),
-        placement: SketchPlacement::WorkPlane(FeatureId(3)),
+        placement: if direct {
+            SketchPlacement::Face(face)
+        } else {
+            SketchPlacement::WorkPlane(FeatureId(3))
+        },
         orientation: None,
         project_origin: false,
     };

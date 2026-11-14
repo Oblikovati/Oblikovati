@@ -215,6 +215,17 @@ pub trait HeadWork {
             "work plane {plane:?}: expected a document owner with sketches"
         ))
     }
+    /// Start on the face under a view ray, or return false when it hits nothing.
+    /// Example: `work.start_sketch_on_face_from_gui(document, window.view_line(pixel)?)?`.
+    fn start_sketch_on_face_from_gui(
+        &mut self,
+        document: u64,
+        line: [[f64; 3]; 2],
+    ) -> Result<bool, String> {
+        Err(format!(
+            "document {document}, face ray {line:?}: expected a sketch support owner"
+        ))
+    }
     /// Change the stored recent list; example: `work.recent_from_gui(&action)`.
     fn recent_from_gui(
         &mut self,

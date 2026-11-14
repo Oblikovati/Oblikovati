@@ -15,7 +15,7 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 - Work branch: `feat/rust-consolidated`; base is `origin/rust`.
 - Scenario pin: `35f4a77b1519e2f29005be009c35fb7c5bdf4e89`, a locally created snapshot of the unversioned live source, not an upstream commit. Restore and verify it as described in `bdd-workflow.md`.
 - Source sync: weekly, in a separate batch. Store small JSON receipts in this repository.
-- Live source has corrections in `home-recent-documents`, `arc-center-point`, and `move` after the pin. The syntax and measurement reports were removed from their live `BLOCKERS.md` files. Review and update the snapshot before treating those corrections as benchmark results.
+- Live source has corrections in `home-recent-documents`, `arc-center-point`, `move`, `coincident`, and `rectangle-two-point` after the pin. A temporary candidate with these changes matches the live feature files and parses all 2,719 declarations with no source errors; it is not the current pin. Review the changed step bindings during the separate source sync. In particular, Coincident 07 no longer asserts which point moves, and Rectangle 13 specifies its recorded fixture and measured result without requiring a stationary edge. Update the snapshot before treating the corrections as benchmark results.
 - Kernel gaps: file and track validated gaps in `Oblikovati/Martensite`; application work belongs in `Oblikovati/Oblikovati`.
 - Branch policy: one working branch, with batch PRs to `rust`; push after each unit once the required pre-push gate passes.
 

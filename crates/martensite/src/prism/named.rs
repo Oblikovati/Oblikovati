@@ -91,6 +91,29 @@ impl NamedPrismSnapshot {
     ) -> Result<Option<(PrismFaceRole, f64)>, String> {
         self.snapshot.face_on_line(line)
     }
+    /// Resolve a picked construction role to one durable face name.
+    /// Example: `body.face_key_for_role(history, document, role)?` after an exact face pick.
+    pub fn face_key_for_role(
+        &self,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        role: PrismFaceRole,
+    ) -> Result<Vec<u8>, String> {
+        let mut found = None;
+        for key in self.bindings.encoded_keys(history, document)? {
+            let envelope = oblikovati_model::identity::ReferenceEnvelope::decode(key)
+                .map_err(|error| error.to_string())?;
+            if envelope.kind != 1 || *self.bindings.bind(history, document, key, 1)? != Some(role) {
+                continue;
+            }
+            if found.replace(key.to_vec()).is_some() {
+                return Err(format!(
+                    "face role {role:?}: expected exactly one semantic name"
+                ));
+            }
+        }
+        found.ok_or_else(|| format!("face role {role:?}: expected exactly one semantic name"))
+    }
     /// Borrow the sole current body name; example: `named.body_reference_key(history, guid)?` for API enumeration.
     pub fn body_reference_key<'a>(
         &'a self,

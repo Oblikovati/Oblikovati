@@ -384,3 +384,51 @@ fn sketch_creation_validates_and_projects_origin_with_part_datums() {
 
 #[path = "face_plane/ordered_recompute.rs"]
 mod ordered_recompute;
+
+#[test]
+fn direct_face_sketch_uses_current_body_and_declines_a_missing_source() {
+    use oblikovati_model::{document_sketch::DocumentSketchId, sketch::Sketch2D};
+    let mut owner = part_owner();
+    append_prism(&mut owner);
+    let mut snapshot = owner.snapshot().clone();
+    let sketch = DocumentSketchId(2);
+    let reference = WorkPlaneFaceReference::new(face_key(1)).unwrap();
+    snapshot
+        .sketches
+        .add_on_face(sketch, "Face sketch", reference, Sketch2D::default())
+        .unwrap();
+    let (part, solved) = snapshot
+        .recompute_part_with_sketches(&mut FaceEvaluator::default(), Default::default())
+        .unwrap();
+    snapshot.sketches = solved;
+    assert_eq!(
+        snapshot
+            .resolve_sketch_plane_with_datums(sketch, &part.datum_evaluation())
+            .unwrap()
+            .recipe()
+            .origin,
+        [1., 0., 0.]
+    );
+    let (failed, _) = snapshot
+        .recompute_part_with_sketches(
+            &mut FaceEvaluator {
+                fail_body: true,
+                fail_face: false,
+            },
+            Default::default(),
+        )
+        .unwrap();
+    assert!(
+        snapshot
+            .resolve_sketch_plane_with_datums(sketch, &failed.datum_evaluation())
+            .is_err()
+    );
+    let (recovered, _) = snapshot
+        .recompute_part_with_sketches(&mut FaceEvaluator::default(), Default::default())
+        .unwrap();
+    assert!(
+        snapshot
+            .resolve_sketch_plane_with_datums(sketch, &recovered.datum_evaluation())
+            .is_ok()
+    );
+}

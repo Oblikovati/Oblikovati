@@ -79,7 +79,7 @@ fn sorted(text: &str) -> String {
     letters.sort_unstable();
     letters.into_iter().collect()
 }
-fn expect_control_shows(world: &ApplicationWorld, label: &str) {
+pub(super) fn expect_control_shows(world: &ApplicationWorld, label: &str) {
     assert_eq!(control_letters(world), sorted(label), "control's label");
 }
 /// A label reads across or down: its letters spread further one way than the other.

@@ -50,9 +50,9 @@ fn place_dimension_labels(snapshot: &mut oblikovati_model::history::DocumentSnap
         .unwrap();
 }
 /// The fixture profile, stored with one 20 mm extrusion; this build has no command that makes one.
-fn extruded_part_bytes(name: &str, source_name: &str) -> Vec<u8> {
+fn extruded_part_bytes(name: &str, source_name: &str, depth: f64) -> Vec<u8> {
     let mut recipe = fixture::selected_prism_definition().recipe();
-    recipe.displacement[2] = DatumLength::Constant(DEPTH);
+    recipe.displacement[2] = DatumLength::Constant(depth);
     let definition = SketchPrismDefinition::from_recipe(&recipe).unwrap();
     let mut snapshot = fixture::selected_sketch_document();
     place_dimension_labels(&mut snapshot);
@@ -88,19 +88,23 @@ pub(in super::super) fn open_visible_extruded_part(world: &mut ApplicationWorld)
     open_extruded_part_with_visibility(world, FEATURE, true);
 }
 pub(in super::super) fn open_extruded_part_for_second_sketch(world: &mut ApplicationWorld) {
-    open_extruded_part_with_source(world, FEATURE, true, "Sketch1");
+    open_extruded_part_with_source(world, FEATURE, true, "Sketch1", DEPTH);
+}
+pub(in super::super) fn open_extruded_part_for_face_sketch(world: &mut ApplicationWorld) {
+    open_extruded_part_with_source(world, "Extrusion1", true, "Sketch1", 1.);
 }
 fn open_extruded_part_with_visibility(world: &mut ApplicationWorld, name: &str, visible: bool) {
-    open_extruded_part_with_source(world, name, visible, SKETCH);
+    open_extruded_part_with_source(world, name, visible, SKETCH, DEPTH);
 }
 fn open_extruded_part_with_source(
     world: &mut ApplicationWorld,
     name: &str,
     visible: bool,
     source_name: &str,
+    depth: f64,
 ) {
     let path = world.scratch_folder().join("extruded.opd");
-    std::fs::write(&path, extruded_part_bytes(name, source_name)).unwrap();
+    std::fs::write(&path, extruded_part_bytes(name, source_name, depth)).unwrap();
     Client::new(world.app().owner.document_host())
         .documents()
         .open(&OpenDocumentArgs {

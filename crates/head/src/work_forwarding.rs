@@ -202,6 +202,13 @@ macro_rules! forward_owner_view_work {
         ) -> Result<bool, String> {
             self.$owner.click_model_from_gui(document, line)
         }
+        fn start_sketch_on_face_from_gui(
+            &mut self,
+            document: u64,
+            line: [[f64; 3]; 2],
+        ) -> Result<bool, String> {
+            self.$owner.start_sketch_on_face_from_gui(document, line)
+        }
         fn selected_browser_outline(&mut self) -> Vec<[[f64; 3]; 2]> {
             self.$owner.selected_browser_outline()
         }

@@ -68,6 +68,29 @@ impl<
     ) -> Result<DocumentSketchId, String> {
         self.create_sketch_edit_entry(document, request, false)
     }
+    pub(super) fn start_sketch_on_face_line(
+        &mut self,
+        document: u64,
+        line: [[f64; 3]; 2],
+    ) -> Result<bool, String> {
+        self.require_browser_document(document)?;
+        let Some(face) = self
+            .part_scenes
+            .sketch_support_face(&mut self.files, document, line)?
+        else {
+            return Ok(false);
+        };
+        self.create_automatic_sketch_for_edit(
+            document,
+            &DocumentSketchCreation {
+                name: String::new(),
+                placement: oblikovati_model::document_sketch::SketchPlacement::Face(face),
+                orientation: None,
+                project_origin: true,
+            },
+        )?;
+        Ok(true)
+    }
     /// Create and select a sketch with the next available default name.
     /// Example: `owner.create_automatic_sketch_for_edit(document, &request)?`.
     pub(super) fn create_automatic_sketch_for_edit(
@@ -117,6 +140,12 @@ impl<
         request: &DocumentSketchCreation,
     ) -> Result<Option<oblikovati_session::part_evaluation::CurrentPartDatums>, String> {
         use oblikovati_automation::PartUpdateAccess;
+        if let oblikovati_model::document_sketch::SketchPlacement::Face(face) = &request.placement {
+            return self
+                .part_scenes
+                .current_part_datums_for_face(&mut self.files, document, face)
+                .map(Some);
+        }
         let needs_placement = matches!(
             request.placement,
             oblikovati_model::document_sketch::SketchPlacement::WorkPlane(_)

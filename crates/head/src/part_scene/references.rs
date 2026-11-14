@@ -2,6 +2,37 @@
 use super::*;
 use oblikovati_automation::{PartTopologyAccess, PartUpdateAccess, TopologyEntityKind};
 use oblikovati_model::{feature::FeatureId, identity::ReferenceEnvelope};
+impl DesktopPartScenes {
+    pub(crate) fn sketch_support_face<
+        O: TransactionObserver,
+        W: WorkspaceObserver,
+        F: DocumentFiles,
+    >(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+        line: [[f64; 3]; 2],
+    ) -> Result<Option<oblikovati_model::feature::work_plane::WorkPlaneFaceReference>, String> {
+        self.ensure_current(files, document)?;
+        let Some((feature, role)) = self.face_on_line(files, document, line)? else {
+            return Ok(None);
+        };
+        let workspace = files.workspace();
+        let session = workspace
+            .session(document)
+            .map_err(|error| error.to_string())?;
+        let guid = workspace
+            .identity(document)
+            .map_err(|error| error.to_string())?
+            .internal_name;
+        let body = self
+            .current(session)?
+            .body(feature)
+            .ok_or_else(|| format!("picked feature {feature:?}: expected a current body"))?;
+        let key = body.face_key_for_role(session.history(), guid, role)?;
+        oblikovati_model::feature::work_plane::WorkPlaneFaceReference::new(key).map(Some)
+    }
+}
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateAccess<O, W, F>
     for DesktopPartScenes
 {
@@ -61,6 +92,15 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
         self.slot
             .current_datums(session)
             .map_err(|error| error.to_string())
+    }
+    fn current_part_datums_for_face(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+        face: &oblikovati_model::feature::work_plane::WorkPlaneFaceReference,
+    ) -> Result<oblikovati_session::part_evaluation::CurrentPartDatums, String> {
+        self.ensure_current(files, document)?;
+        oblikovati_automation::slot_datums_for_face(files, document, &self.slot, face)
     }
 }
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartTopologyAccess<O, W, F>
