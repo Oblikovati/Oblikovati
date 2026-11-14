@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Precise input: tmp/obk-precise-48987af/features/sketch/precise-input/scenario.feature" package="testsuite/Feature: Precise input: tmp/obk-precise-48987af/features/sketch/precise-input/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T21:24:45.507657443Z" time="10.134020951"><testcase name="Scenario: precise-input-03 Reject an alphabetic coordinate: tmp/obk-precise-48987af/features/sketch/precise-input/scenario.feature:39:3" time="10.134020951"><system-out><![CDATA[  Scenario: precise-input-03 Reject an alphabetic coordinate
+   ✔  Given X and Y coordinate mode is active with numeric fields
+   ✔  When the user focus X, select its value, and enter the single character a
+   ✔  Then a is displayed in Red
+   ✔  When the user press Return
+   ✔  Then the Red value remains and no visible point is committed
+   ✔  When the user press Escape and restart Point
+   ✔  Then Precise Input reopens with numeric fields
+]]></system-out></testcase></testsuite></testsuites>
