@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport zoom: tmp/obk-zoom-48987af/features/application/viewport-zoom/viewport-zoom.feature" package="testsuite/Feature: Viewport zoom: tmp/obk-zoom-48987af/features/application/viewport-zoom/viewport-zoom.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T21:52:27.040109239Z" time="4.357723954"><testcase name="Scenario: Change magnification with the mouse wheel: tmp/obk-zoom-48987af/features/application/viewport-zoom/viewport-zoom.feature:5:3" time="4.357723954"><system-out><![CDATA[  Scenario: Change magnification with the mouse wheel
+   ✔  Given a rectangular block is visible in an active part in the MCAD Software
+   ✔  And no navigation command is active
+   ✔  When the user scrolls the mouse wheel over the block in the direction that zooms out
+   ✔  Then the block appears smaller in the viewport
+   ✔  And the same part and orientation remain active
+   ✔  When the user scrolls the mouse wheel over the block in the opposite direction
+   ✔  Then the block appears larger than after zooming out
+   ✔  And the same part and orientation remain active
+]]></system-out></testcase></testsuite></testsuites>
