@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport orbit: tmp/obk-orbit-exit-48987af/features/application/viewport-orbit/viewport-orbit.feature" package="testsuite/Feature: Viewport orbit: tmp/obk-orbit-exit-48987af/features/application/viewport-orbit/viewport-orbit.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T22:01:40.760912339Z" time="5.112119482"><testcase name="Scenario: Leave free orbit using the Pan control: tmp/obk-orbit-exit-48987af/features/application/viewport-orbit/viewport-orbit.feature:104:3" time="5.112119482"><system-out><![CDATA[  Scenario: Leave free orbit using the Pan control
+   ✔  Given a rectangular block is visible in an active part in the MCAD Software
+   ✔  And Orbit is active with its circular guide visible
+   ✔  When the user clicks Pan on the navigation bar
+   ✔  Then the circular orbit guide disappears
+   ✔  And the status area displays Ready
+   ✔  And the block remains visible in the same apparent orientation
+]]></system-out></testcase></testsuite></testsuites>
