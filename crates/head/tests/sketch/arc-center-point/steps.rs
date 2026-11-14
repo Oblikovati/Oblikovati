@@ -15,10 +15,6 @@ const ABOVE: [i32; 2] = [860, 460];
 const EMPTY: [i32; 2] = [420, 300];
 /// On the arc from CENTER through START and BELOW: a quarter turn, its middle at 45 degrees.
 const ON_THE_SHORT_ARC: [i32; 2] = [931, 631];
-/// Recorded center of the pointer-created arc, in millimetres along model Y and Z.
-const RECORDED_POINTER_CENTER: [f64; 2] = [-7.023, -83.568];
-const RECORDED_RADIUS: f64 = 4.759;
-const RECORDED_LENGTH: f64 = 7.037;
 const RECORDED_NUMERIC_CENTER: [f64; 2] = [4.914, 17.623];
 
 fn select_tool(world: &mut ApplicationWorld) {
@@ -171,24 +167,8 @@ fn arc_gone(world: &mut ApplicationWorld) {
     world.expect_segment_absent(ON_THE_SHORT_ARC, ON_THE_SHORT_ARC);
 }
 // arc-center-point-09
-#[given("the recorded pointer-created center-point arc has been restored by Redo")]
-fn recorded_pointer_arc(world: &mut ApplicationWorld) {
-    world.start_sketch_on("YZ Plane");
-    select_tool(world);
-    world.open_precise_input();
-    let turn = RECORDED_LENGTH / RECORDED_RADIUS;
-    let [cy, cz] = RECORDED_POINTER_CENTER;
-    world.precise_point([cy, cz]);
-    world.precise_point([cy + RECORDED_RADIUS, cz]);
-    world.precise_point([
-        cy + RECORDED_RADIUS * turn.cos(),
-        cz + RECORDED_RADIUS * turn.sin(),
-    ]);
-    world.escape();
-    world.pump(Vec::new());
-    world.undo();
-    world.redo();
-}
+// The recorded pointer arc needs its captured view fixture; deriving it from the expected length
+// would make the measurement assertion circular. See #3910.
 #[when("I open Measure and select its middle point")]
 #[when("the user open Measure and select its middle point")]
 fn select_middle(world: &mut ApplicationWorld) {
