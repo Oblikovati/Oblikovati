@@ -1369,7 +1369,17 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "mapping_reason": "Viewport orbit controls and their interaction states belong to the full desktop shell (R7); a visible model is a fixture dependency."
+      "mapping_reason": "Viewport orbit controls and their interaction states belong to the full desktop shell (R7); a visible model is a fixture dependency.",
+      "go_reference": "Go aa8297d1b: head/ui/navigate.go and head/ui/navigate_test.go; see receipts/2026-11-14-go-orbit-baseline/README.md.",
+      "go_test_premise": "Go orbit-zone, camera rotation, constrained orbit and modal navigation tests passed. They do not cover the required native menus, guide or incremental dialog.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "A visible solid fixture is required; orbit changes the camera and does not modify the B-rep.",
+      "platforms": "Go reference: Linux. Native scenario and other platforms not established.",
+      "kernel_integration": "The native viewport renders a host-prepared solid fixture while navigation changes the camera.",
+      "rust_tests": "Scenario bindings: crates/head/tests/application/viewport-orbit/steps.rs; these four current native scenarios are not yet verified.",
+      "oracle": "Pinned scenario steps, camera/view checks and reviewed native captures; Go is a partial navigation reference.",
+      "expected_result": "Free rotation shows its guide and context menu; Done removes the guide and restores Ready."
     },
     {
       "id": "scenario:50b890580c8d9393b66713268e83c4e7345495f9602fb9422de8cdb4e789d505",
@@ -1385,7 +1395,17 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "mapping_reason": "Viewport orbit controls and their interaction states belong to the full desktop shell (R7); a visible model is a fixture dependency."
+      "mapping_reason": "Viewport orbit controls and their interaction states belong to the full desktop shell (R7); a visible model is a fixture dependency.",
+      "go_reference": "Go aa8297d1b: head/ui/navigate.go and head/ui/navigate_test.go; see receipts/2026-11-14-go-orbit-baseline/README.md.",
+      "go_test_premise": "Go orbit-zone, camera rotation, constrained orbit and modal navigation tests passed. They do not cover the required native menus, guide or incremental dialog.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "A visible solid fixture is required; orbit changes the camera and does not modify the B-rep.",
+      "platforms": "Go reference: Linux. Native scenario and other platforms not established.",
+      "kernel_integration": "The native viewport renders a host-prepared solid fixture while navigation changes the camera.",
+      "rust_tests": "Scenario bindings: crates/head/tests/application/viewport-orbit/steps.rs; these four current native scenarios are not yet verified.",
+      "oracle": "Pinned scenario steps, camera/view checks and reviewed native captures; Go is a partial navigation reference.",
+      "expected_result": "Constrained Orbit shows a guide; Escape removes it and leaves that action marked in the menu."
     },
     {
       "id": "scenario:22baf74f89240b1e2783a101efb7fd35e6386be6e32ebfcf8013f6c6fcfbfcd9",
@@ -1401,7 +1421,17 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "mapping_reason": "Viewport orbit controls and their interaction states belong to the full desktop shell (R7); a visible model is a fixture dependency."
+      "mapping_reason": "Viewport orbit controls and their interaction states belong to the full desktop shell (R7); a visible model is a fixture dependency.",
+      "go_reference": "Go aa8297d1b: head/ui/navigate.go and head/ui/navigate_test.go; see receipts/2026-11-14-go-orbit-baseline/README.md.",
+      "go_test_premise": "Go orbit-zone, camera rotation, constrained orbit and modal navigation tests passed. They do not cover the required native menus, guide or incremental dialog.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "A visible solid fixture is required; orbit changes the camera and does not modify the B-rep.",
+      "platforms": "Go reference: Linux. Native scenario and other platforms not established.",
+      "kernel_integration": "The native viewport renders a host-prepared solid fixture while navigation changes the camera.",
+      "rust_tests": "Scenario bindings: crates/head/tests/application/viewport-orbit/steps.rs; these four current native scenarios are not yet verified.",
+      "oracle": "Pinned scenario steps, camera/view checks and reviewed native captures; Go is a partial navigation reference.",
+      "expected_result": "Rotate at Angle previews a 10-degree step; Reset and Cancel restore the original view."
     },
     {
       "id": "scenario:60380109be5bc8ba385e715fe0cfa6f203be037196d11c348aaed8e122b34cb4",
@@ -1417,7 +1447,17 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "mapping_reason": "Viewport orbit controls and their interaction states belong to the full desktop shell (R7); a visible model is a fixture dependency."
+      "mapping_reason": "Viewport orbit controls and their interaction states belong to the full desktop shell (R7); a visible model is a fixture dependency.",
+      "go_reference": "Go aa8297d1b: head/ui/navigate.go and head/ui/navigate_test.go; see receipts/2026-11-14-go-orbit-baseline/README.md.",
+      "go_test_premise": "Go orbit-zone, camera rotation, constrained orbit and modal navigation tests passed. They do not cover the required native menus, guide or incremental dialog.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "A visible solid fixture is required; orbit changes the camera and does not modify the B-rep.",
+      "platforms": "Go reference: Linux. Native scenario and other platforms not established.",
+      "kernel_integration": "The native viewport renders a host-prepared solid fixture while navigation changes the camera.",
+      "rust_tests": "Scenario bindings: crates/head/tests/application/viewport-orbit/steps.rs; these four current native scenarios are not yet verified.",
+      "oracle": "Pinned scenario steps, camera/view checks and reviewed native captures; Go is a partial navigation reference.",
+      "expected_result": "Rotate at Angle applies a 10-degree step; OK retains the changed view and returns Ready."
     },
     {
       "id": "scenario:e3b0703080912b677da97db25de64b0d2bf54a6a0b30286d3592ea0af6020d6b",
