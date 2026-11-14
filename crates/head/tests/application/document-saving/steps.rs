@@ -143,6 +143,7 @@ fn close_tab(world: &mut ApplicationWorld) {
 #[when("the user reopens the newly saved part in the same session")]
 #[when("I reopen the saved part in the same session")]
 #[when("I reopen the saved part file")]
+#[when("the user reopens the saved part file")]
 fn reopen(world: &mut ApplicationWorld) {
     let path = world.saved_path.clone().expect("expected a saved file");
     if let Some(id) = world.closed_document {
@@ -388,6 +389,7 @@ fn part_remains(world: &mut ApplicationWorld) {
 #[when("I choose Yes in the save-changes prompt")]
 #[when("the user chooses Yes in the save-changes prompt")]
 #[when("I choose Yes to save changes")]
+#[when("the user chooses Yes to save changes")]
 fn prompt_yes(world: &mut ApplicationWorld) {
     world.click_text("Yes");
 }
