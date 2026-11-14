@@ -1951,7 +1951,17 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency. Face picking is a dependent behavior where model geometry is selected."
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency. Face picking is a dependent behavior where model geometry is selected.",
+      "go_reference": "Go aa8297d1b: app/view_test.go and head/ui/viewcube_test.go and viewcube_arrows_test.go; see receipts/2026-11-14-go-orientation-baseline/README.md.",
+      "go_test_premise": "Go default Home, face/corner hit testing, snap direction, roll and adjacent-view tests passed. They do not establish the complete native scenarios.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "A visible solid fixture is required; view orientation changes the camera and does not modify the B-rep.",
+      "platforms": "Go reference: Linux. Current native scenarios and other platforms not established.",
+      "kernel_integration": "The native viewport renders a host-prepared solid while the orientation control changes the camera.",
+      "rust_tests": "Scenario bindings in crates/head/tests/application/viewport-orientation/steps.rs; the complete current native scenarios require verification.",
+      "oracle": "Pinned scenario steps, camera and visible-solid assertions, orientation-control state and reviewed native captures; Go is a partial reference.",
+      "expected_result": "Top shows the block face-on; Home returns to an isometric view with the same part active."
     },
     {
       "id": "scenario:7bef0e59d8d04c35eebfc80cfe094bf50d73589c6c3caecd5a2d67c6a34864bb",
@@ -1966,7 +1976,17 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "go_reference": "Go aa8297d1b: app/view_test.go and head/ui/viewcube_test.go and viewcube_arrows_test.go; see receipts/2026-11-14-go-orientation-baseline/README.md.",
+      "go_test_premise": "Go default Home, face/corner hit testing, snap direction, roll and adjacent-view tests passed. They do not establish the complete native scenarios.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "A visible solid fixture is required; view orientation changes the camera and does not modify the B-rep.",
+      "platforms": "Go reference: Linux. Current native scenarios and other platforms not established.",
+      "kernel_integration": "The native viewport renders a host-prepared solid while the orientation control changes the camera.",
+      "rust_tests": "Scenario bindings in crates/head/tests/application/viewport-orientation/steps.rs; the complete current native scenarios require verification.",
+      "oracle": "Pinned scenario steps, camera and visible-solid assertions, orientation-control state and reviewed native captures; Go is a partial reference.",
+      "expected_result": "Adjacent arrows switch Front to Right and back while the same part remains active."
     },
     {
       "id": "scenario:aa29f8c72c9d56c6dec4065257a97859719597aa79646dedb4a3a735de6a63f1",
@@ -1981,7 +2001,17 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "go_reference": "Go aa8297d1b: app/view_test.go and head/ui/viewcube_test.go and viewcube_arrows_test.go; see receipts/2026-11-14-go-orientation-baseline/README.md.",
+      "go_test_premise": "Go default Home, face/corner hit testing, snap direction, roll and adjacent-view tests passed. They do not establish the complete native scenarios.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "A visible solid fixture is required; view orientation changes the camera and does not modify the B-rep.",
+      "platforms": "Go reference: Linux. Current native scenarios and other platforms not established.",
+      "kernel_integration": "The native viewport renders a host-prepared solid while the orientation control changes the camera.",
+      "rust_tests": "Scenario bindings in crates/head/tests/application/viewport-orientation/steps.rs; the complete current native scenarios require verification.",
+      "oracle": "Pinned scenario steps, camera and visible-solid assertions, orientation-control state and reviewed native captures; Go is a partial reference.",
+      "expected_result": "Curved arrows rotate and restore the Front label and apparent face orientation."
     },
     {
       "id": "scenario:95ba01a785c74c7d2f3d409d33e90d1d230ceee6ab55e201183fb8e2a249e484",
@@ -1996,7 +2026,17 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "go_reference": "Go aa8297d1b: app/view_test.go and head/ui/viewcube_test.go and viewcube_arrows_test.go; see receipts/2026-11-14-go-orientation-baseline/README.md.",
+      "go_test_premise": "Go default Home, face/corner hit testing, snap direction, roll and adjacent-view tests passed. They do not establish the complete native scenarios.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "A visible solid fixture is required; view orientation changes the camera and does not modify the B-rep.",
+      "platforms": "Go reference: Linux. Current native scenarios and other platforms not established.",
+      "kernel_integration": "The native viewport renders a host-prepared solid while the orientation control changes the camera.",
+      "rust_tests": "Scenario bindings in crates/head/tests/application/viewport-orientation/steps.rs; the complete current native scenarios require verification.",
+      "oracle": "Pinned scenario steps, camera and visible-solid assertions, orientation-control state and reviewed native captures; Go is a partial reference.",
+      "expected_result": "Selecting the upper-right corner shows an oblique Top, Front and Right view."
     },
     {
       "id": "scenario:086b5824dec6ba073f6ec32b3099e762f0582633834d0bc80c1daa21a6345f37",
