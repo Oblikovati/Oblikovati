@@ -4532,7 +4532,14 @@
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b: save and file-dialog state tests pass; no matching preview controls were found. See receipts/2026-11-15-go-save-preview/README.md. These tests do not prove preview cancellation.",
+      "kernel_capabilities": "No solid modeling operation is needed to change or cancel preview options.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "A part viewport is initialized; these cancellation scenarios do not request a solid modeling operation.",
+      "rust_tests": "application_scenarios_use_the_native_window: Cancel disabling the preview picture",
+      "oracle": "Pinned scenario assertions and reviewed final native capture; Go preview-control parity is not established.",
+      "expected_result": "Cancelling Save As discards the preview option change and reopening restores the prior selection."
     },
     {
       "id": "scenario:1fa03adac5a3aba3b0ece0321208be69ab2d13aade9146bf20e93485fc345632",
@@ -4554,7 +4561,14 @@
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b: save and file-dialog state tests pass; no matching preview controls were found. See receipts/2026-11-15-go-save-preview/README.md. These tests do not prove preview cancellation.",
+      "kernel_capabilities": "No solid modeling operation is needed to change or cancel preview options.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "A part viewport is initialized; these cancellation scenarios do not request a solid modeling operation.",
+      "rust_tests": "application_scenarios_use_the_native_window: Cancel a change to the preview source",
+      "oracle": "Pinned scenario assertions and reviewed final native capture; Go preview-control parity is not established.",
+      "expected_result": "Cancelling Save As discards the preview option change and reopening restores the prior selection."
     },
     {
       "id": "scenario:1f1809c95300ef4ec0b23cc8100bb7fd24e08707ece63856a1ced77df2d04545",
