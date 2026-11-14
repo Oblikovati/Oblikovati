@@ -66,6 +66,8 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 
 ## Open items
 
+- R7 document opening: a full diagnostic run passed 26 of 27 scenarios; the express assembly scenario has an unbound setup step and remains open (#3949). See `receipts/2026-11-15-document-opening-diagnostic/`.
+
 - R7 navigation wheel: the remaining six menu, Home and preference scenarios passed with reviewed captures in `receipts/2026-11-14-wheel-remaining-*-final/` (#3944, #3945).
 
 - R7 navigation wheel: six layout and size scenarios passed with explicit Full and Normal fixtures; reviewed captures are in `receipts/2026-11-14-wheel-*-current/` (#3942, #3943).

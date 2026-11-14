@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect files before opening a document: tmp/obk-open-full-pinned-20261115/features/application/document-opening/document-opening.feature" package="testsuite/Feature: Inspect files before opening a document: tmp/obk-open-full-pinned-20261115/features/application/document-opening/document-opening.feature" tests="27" errors="0" failures="1" hostname="localhost" timestamp="2026-11-14T23:44:01.258144022Z" time="332.904576182"><testcase name="Scenario: Inspect a part file before opening it: tmp/obk-open-full-pinned-20261115/features/application/document-opening/document-opening.feature:6:3" time="11.980684822"><system-out><![CDATA[  Scenario: Inspect a part file before opening it
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And a folder contains a saved part with a preview and recorded metadata
+   ✔  When the user presses Control+O and navigates to that folder
+   ✔  And the user selects the saved part
+   ✔  Then the part row is selected and the file name field identifies it
+   ✔  And the preview displays the part
+   ✔  And the Options pane displays Model State and Design View controls
+   ✔  When the user chooses Details
+   ✔  Then the preview remains visible
+   ✔  And the details include the file type, modification date, size, author and part number
+   ✔  When the user cancels the Open dialog
+   ✔  Then the previously active part document remains displayed
+]]></system-out></testcase><testcase name="Scenario: Inspect a drawing after selecting a part: tmp/obk-open-full-pinned-20261115/features/application/document-opening/document-opening.feature:21:3" time="13.310514861"><system-out><![CDATA[  Scenario: Inspect a drawing after selecting a part
+   ✔  Given the Open dialog is displaying a folder containing a saved part and drawing with previews
+   ✔  And the saved part is selected and its details are displayed
+   ✔  When the user selects the drawing
+   ✔  Then the file name field identifies the drawing
+   ✔  And the preview displays the drawing sheet
+   ✔  And the Details pane identifies the drawing and displays its metadata
+   ✔  When the user chooses Options
+   ✔  Then the drawing options include Load in Defer Mode and Skip all unresolved files
+   ✔  When the user cancels the Open dialog
+   ✔  Then the dialog closes without opening the selected drawing
+]]></system-out></testcase><testcase name="Scenario: Open a saved drawing alongside an existing part: tmp/obk-open-full-pinned-20261115/features/application/document-opening/document-opening.feature:34:3" time="7.80819752"><system-out><![CDATA[  Scenario: Open a saved drawing alongside an existing part
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And a saved drawing with a sheet, border and view is available and not already open
+   ✔  When the user presses Control+O and selects the drawing
+   ✔  And the user chooses Open
+   ✔  Then the Open dialog closes
+   ✔  And the drawing becomes active in a new document tab
+   ✔  And the drawing sheet and border are displayed
+   ✔  And the drawing browser lists the sheet and a view
+   ✔  And the part document tab remains available
+]]></system-out></testcase><testcase name="Scenario: Toggle express loading for an assembly before opening: tmp/obk-open-full-pinned-20261115/features/application/document-opening/document-opening.feature:46:3" time="11.746559491"><system-out><![CDATA[  Scenario: Toggle express loading for an assembly before opening
+   ✔  Given the Open dialog is open in the MCAD Software
+   ✔  And a saved assembly with a preview is selected
+   ✔  And the Options pane displays Load in Express Mode unchecked
+   ✔  And Model State, Design View and Position View controls are displayed
+   ✔  When the user selects Load in Express Mode
+   ✔  Then Design View and Position View become unavailable
+   ✔  And Model State remains available
+   ✔  When the user clears Load in Express Mode
+   ✔  Then Design View and Position View become available again
+   ✔  And the assembly preview remains displayed
+]]></system-out></testcase><testcase name="Scenario: Switch navigation panes without changing the selected file: tmp/obk-open-full-pinned-20261115/features/application/document-opening/document-opening.feature:59:3" time="15.924678205"><system-out><![CDATA[  Scenario: Switch navigation panes without changing the selected file
+   ✔  Given the Open dialog is open in the MCAD Software
+   ✔  And its project navigation pane shows libraries and recent folders
+   ✔  And a saved part is selected with its file name and preview displayed
+   ✔  When the user switches to the system folder navigation pane
+   ✔  Then common system locations are displayed in the navigation pane
+   ✔  And the selected part, file name and preview remain displayed
+   ✔  When the user switches back to the project navigation pane
+   ✔  Then libraries and recent folders are displayed again
+   ✔  And the selected part, file name and preview remain displayed
+]]></system-out></testcase><testcase name="Scenario: Switch between details and thumbnail file views: tmp/obk-open-full-pinned-20261115/features/application/document-opening/document-opening.feature:71:3" time="15.055069079"><system-out><![CDATA[  Scenario: Switch between details and thumbnail file views
+   ✔  Given the Open dialog is open in the MCAD Software
+   ✔  And a saved part with a preview is selected in the detailed file list
+   ✔  When the user chooses the thumbnail view control
+   ✔  Then files are displayed as thumbnail tiles
+   ✔  And the selected part remains selected with its file name and preview displayed
+   ✔  When the user chooses the details view control
+   ✔  Then files are displayed in rows with Name, Date modified, Type and Size columns
+   ✔  And the selected part remains selected with its file name and preview displayed
+]]></system-out></testcase><testcase name="Scenario: Reverse the size sort without losing the selected file: tmp/obk-open-full-pinned-20261115/features/application/document-opening/document-opening.feature:82:3" time="14.371359829"><system-out><![CDATA[  Scenario: Reverse the size sort without losing the selected file
+   ✔  Given the Open dialog is open in the MCAD Software
+   ✔  And the detailed file list contains files of different sizes
+   ✔  And a saved part is selected with its file name and preview displayed
+   ✔  And the file list is sorted by decreasing size
+   ✔  When the user clicks the Size column header
+   ✔  Then the file list is sorted by increasing size
+   ✔  And the selected part remains selected with its file name and preview displayed
+]]></system-out></testcase><testcase name="Scenario: Inspect and dismisses available design views for a part: tmp/obk-open-full-pinned-20261115/features/application/document-opening/document-opening.feature:92:3" time="15.487946449"><system-out><![CDATA[  Scenario: Inspect and dismisses available design views for a part
+   ✔  Given the Open dialog is open in the MCAD Software
+   ✔  And a saved part with named design views is selected
+   ✔  And its Design View field displays Last Active
+   ✔  When the user opens the Design View list
+   ✔  Then Last Active, the primary view, and the part's named design views are displayed
+   ✔  And the part preview remains visible
+   ✔  When the user presses Escape
+   ✔  Then the Design View list closes
+   ✔  And the Design View field still displays Last Active
+   ✔  And the Open dialog remains open
+]]></system-out></testcase><testcase name="Scenario: Inspect selected part properties without opening the part: tmp/obk-open-full-pinned-20261115/features/application/document-opening/document-opening.feature:105:3" time="20.428033524"><system-out><![CDATA[  Scenario: Inspect selected part properties without opening the part
+   ✔  Given the Open dialog is open in the MCAD Software
+   ✔  And a saved part with a preview and metadata is selected
+   ✔  When the user chooses the selected file's properties link
+   ✔  Then a separate properties window opens for that part
+   ✔  And its General tab shows file type, location, size and file dates
+   ✔  When the user chooses the Summary tab
+   ✔  Then fields including Title, Subject, Author, Category and Comments are displayed
+   ✔  When the user chooses the Project tab
+   ✔  Then fields including Part Number, Description, Revision Number and Designer are displayed
+   ✔  When the user chooses the Thumbnail tab
+   ✔  Then the saved part preview is displayed
+   ✔  When the user cancels the properties window without editing
+   ✔  Then the Open dialog is displayed again
+   ✔  And the same part remains selected with its file name and preview displayed
+]]></system-out></testcase><testcase name="Scenario: Activate an already open part through the Open dialog: tmp/obk-open-full-pinned-20261115/features/application/document-opening/document-opening.feature:122:3" time="7.586503654"><system-out><![CDATA[  Scenario: Activate an already open part through the Open dialog
+   ✔  Given a saved part is open in the MCAD Software
+   ✔  And a different drawing document is active
+   ✔  And the open part's exact file location is known
+   ✔  When the user presses Control+O and chooses the already open part at that location
+   ✔  And the user chooses Open
+   ✔  Then the Open dialog closes
+   ✔  And the existing part document tab becomes active
+   ✔  And no additional document tab is created
+   ✔  And the drawing tab remains available
+]]></system-out></testcase><testcase name="Scenario: Deferred drawing loading clears and disables unresolved-file skipping: tmp/obk-open-full-pinned-20261115/features/application/document-opening/document-opening.feature:134:3" time="12.30854837"><system-out><![CDATA[  Scenario: Deferred drawing loading clears and disables unresolved-file skipping
+   ✔  Given the Open dialog is open in the MCAD Software
+   ✔  And a saved drawing is selected with its Options pane displayed
+   ✔  And Load in Defer Mode is unchecked
+   ✔  And Skip all unresolved files is checked
+   ✔  When the user selects Load in Defer Mode
+   ✔  Then Skip all unresolved files is unavailable
+   ✔  When the user clears Load in Defer Mode
+   ✔  Then Skip all unresolved files is available and unchecked
+   ✔  And the selected drawing and its preview remain displayed
+]]></system-out></testcase><testcase name="Scenario: Reset drawing options when switching selected files: tmp/obk-open-full-pinned-20261115/features/application/document-opening/document-opening.feature:146:3" time="12.57067536"><system-out><![CDATA[  Scenario: Reset drawing options when switching selected files
+   ✔  Given the Open dialog is open in the MCAD Software
+   ✔  And two saved drawings are visible in the same folder
+   ✔  And the first drawing is selected in the Options pane
+   ✔  And Load in Defer Mode is unchecked for the first drawing
+   ✔  When the user selects Load in Defer Mode
+   ✔  And the user selects the second drawing
+   ✔  Then the second drawing is selected and its file name is displayed
+   ✔  And Load in Defer Mode is unchecked for the second drawing
+   ✔  When the user selects the first drawing again
+   ✔  Then Load in Defer Mode is unchecked
+   ✔  And the drawing remains selected without being opened
+]]></system-out></testcase><testcase name="Scenario: Open a drawing with updates deferred: tmp/obk-open-full-pinned-20261115/features/application/document-opening/document-opening.feature:160:3" time="8.950874583000001"><system-out><![CDATA[  Scenario: Open a drawing with updates deferred
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And a saved drawing with a sheet, border and views is available and not already open
+   ✔  And the deferred-update information message is enabled
+   ✔  When the user opens the drawing's file selection dialog
+   ✔  And the user selects the drawing and enable Load in Defer Mode
+   ✔  And the user chooses Open
+   ✔  Then an information message states that drawing updates are deferred
+   ✔  And it indicates that defer status must change to update views and associate added annotations
+   ✔  And the message offers a display preference and an OK control
+   ✔  When the user acknowledges the message
+   ✔  Then the drawing opens in a new active document tab
+   ✔  And the sheet, border and saved view geometry are displayed
+   ✔  And the drawing browser shows the sheet and a view
+   ✔  And drawing view creation commands in the ribbon are unavailable
+   ✔  And the original part tab remains available
+]]></system-out></testcase><testcase name="Scenario: Open an assembly in express mode and load it fully: tmp/obk-open-full-pinned-20261115/features/application/document-opening/document-opening.feature:178:3" time="1.9682473630000001"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Open an assembly in express mode and load it fully
+   ✔  Given a drawing document is active in the MCAD Software
+   ✘  And a saved assembly with visible components is available and not already open
+      Step failed:
+      Defined: tmp/obk-open-full-pinned-20261115/features/application/document-opening/document-opening.feature:180:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Navigate between a file&apos;s folder and its parent: tmp/obk-open-full-pinned-20261115/features/application/document-opening/document-opening.feature:195:3" time="16.60306847"><system-out><![CDATA[  Scenario: Navigate between a file's folder and its parent
+   ✔  Given the Open dialog is open in the MCAD Software
+   ✔  And a saved part with a preview is selected in a child folder
+   ✔  When the user chooses Up to the parent folder
+   ✔  Then the parent folder contents are displayed
+   ✔  And the child folder is highlighted in the list
+   ✔  And the file name field retains the part name
+   ✔  And the preview area shows a placeholder for the selected folder
+   ✔  When the user chooses Back
+   ✔  Then the child folder contents are displayed again
+   ✔  And the file name field and preview display the previously selected part
+   ✔  When the user chooses Forward
+   ✔  Then the parent folder contents are displayed again
+   ✔  And the child folder is highlighted
+]]></system-out></testcase><testcase name="Scenario: Open a selected folder while a file name is retained: tmp/obk-open-full-pinned-20261115/features/application/document-opening/document-opening.feature:211:3" time="18.490249816"><system-out><![CDATA[  Scenario: Open a selected folder while a file name is retained
+   ✔  Given the Open dialog is open in the MCAD Software
+   ✔  And the file name field retains the name of a part in a child folder
+   ✔  And the parent folder displays that child folder
+   ✔  When the user selects the child folder in the file list
+   ✔  And the user chooses Open
+   ✔  Then the dialog remains open and displays the child folder contents
+   ✔  And the file name field still contains the part name
+   ✔  And the part preview is displayed
+   ✔  And no new document tab is created
+]]></system-out></testcase><testcase name="Scenario: Open a different drawing by double-clicking its row: tmp/obk-open-full-pinned-20261115/features/application/document-opening/document-opening.feature:223:3" time="6.019667924"><system-out><![CDATA[  Scenario: Open a different drawing by double-clicking its row
+   ✔  Given an assembly document is active in the MCAD Software
+   ✔  And the Open dialog displays two saved drawings in a folder
+   ✔  And the first drawing is selected
+   ✔  And the second drawing has a sheet, border and saved views and is not already open
+   ✔  When the user double-clicks the second drawing's row
+   ✔  Then the Open dialog closes
+   ✔  And the second drawing opens in a new active document tab
+   ✔  And its sheet, border and saved views are displayed
+   ✔  And the assembly tab remains available
+]]></system-out></testcase><testcase name="Scenario: Reopen the dialog after cancelling a folder change: tmp/obk-open-full-pinned-20261115/features/application/document-opening/document-opening.feature:235:3" time="9.322898161"><system-out><![CDATA[  Scenario: Reopen the dialog after cancelling a folder change
+   ✔  Given a drawing was opened from a child folder in the MCAD Software
+   ✔  And that drawing remains active
+   ✔  And the Open dialog is showing the same child folder
+   ✔  When the user navigates up to its parent folder
+   ✔  And the user cancels the Open dialog
+   ✔  Then the drawing remains active
+   ✔  When the user reopens the Open dialog in the same session
+   ✔  Then it displays the original child folder
+   ✔  And the file name field identifies the previously opened drawing
+   ✔  And the drawing preview is displayed
+]]></system-out></testcase><testcase name="Scenario: Maximize and restores the Open dialog: tmp/obk-open-full-pinned-20261115/features/application/document-opening/document-opening.feature:248:3" time="15.282651641"><system-out><![CDATA[  Scenario: Maximize and restores the Open dialog
+   ✔  Given the Open dialog is open in the MCAD Software as a restored window
+   ✔  And a saved part with a preview is selected
+   ✔  When the user maximizes the Open dialog
+   ✔  Then the dialog expands to fill the available screen
+   ✔  And the file list, navigation pane, preview and bottom actions remain visible
+   ✔  And the selected part, file name and preview remain displayed
+   ✔  When the user restores the Open dialog
+   ✔  Then it returns to its previous window size and position
+   ✔  And the selected part, file name and preview remain displayed
+]]></system-out></testcase><testcase name="Scenario: Inspect and dismisses file-type choices: tmp/obk-open-full-pinned-20261115/features/application/document-opening/document-opening.feature:260:3" time="14.692714372"><system-out><![CDATA[  Scenario: Inspect and dismisses file-type choices
+   ✔  Given the Open dialog is open in the MCAD Software
+   ✔  And a saved part is selected with its name and preview displayed
+   ✔  When the user opens the file-type filter list
+   ✔  Then the list offers a combined native-document filter
+   ✔  And it includes separate filters for assemblies, drawings, parts and presentations
+   ✔  And additional file-format filters are visible
+   ✔  When the user dismisses the list without choosing a different filter
+   ✔  Then the previous file-type filter remains displayed
+   ✔  And the selected part name and preview remain displayed
+]]></system-out></testcase><testcase name="Scenario: Inspect and dismisses the file display menu: tmp/obk-open-full-pinned-20261115/features/application/document-opening/document-opening.feature:272:3" time="14.145423312"><system-out><![CDATA[  Scenario: Inspect and dismisses the file display menu
+   ✔  Given the Open dialog is open in the MCAD Software
+   ✔  And files are displayed in Details view
+   ✔  And a part name and preview are displayed
+   ✔  When the user opens the file display menu
+   ✔  Then the menu offers extra large, large, medium and small icon sizes
+   ✔  And it offers List, Details, Tiles and Content views
+   ✔  And Details is indicated as the current view
+   ✔  When the user dismisses the menu without choosing another view
+   ✔  Then the file list remains in Details view
+   ✔  And the part name and preview remain displayed
+]]></system-out></testcase><testcase name="Scenario: Change the selected document in thumbnail view: tmp/obk-open-full-pinned-20261115/features/application/document-opening/document-opening.feature:285:3" time="11.413702663"><system-out><![CDATA[  Scenario: Change the selected document in thumbnail view
+   ✔  Given the Open dialog in the MCAD Software displays a saved drawing and a saved part as thumbnails
+   ✔  And the drawing thumbnail is selected with its sheet preview displayed
+   ✔  And the Options pane shows the drawing loading choices
+   ✔  When the user selects the part thumbnail
+   ✔  Then the part thumbnail is highlighted
+   ✔  And the file name field identifies the part
+   ✔  And the separate preview displays the part geometry
+   ✔  And the Options pane displays Model State and Design View controls
+   ✔  And the dialog remains open
+]]></system-out></testcase><testcase name="Scenario: Inspect a file context menu without opening the document: tmp/obk-open-full-pinned-20261115/features/application/document-opening/document-opening.feature:297:3" time="12.123769608"><system-out><![CDATA[  Scenario: Inspect a file context menu without opening the document
+   ✔  Given the Open dialog in the MCAD Software displays a saved part as a thumbnail
+   ✔  And the part is selected with its file name and preview displayed
+   ✔  When the user right-clicks the part thumbnail
+   ✔  Then a context menu appears with Open, Copy, Rename and Properties choices
+   ✔  And the part name and preview remain displayed behind the menu
+   ✔  When the user clicks an empty area of the file list
+   ✔  Then the context menu closes
+   ✔  And the selected-item count is cleared
+   ✔  And the dialog remains open with the part name and preview displayed
+]]></system-out></testcase><testcase name="Scenario: Select multiple drawing files and return to one: tmp/obk-open-full-pinned-20261115/features/application/document-opening/document-opening.feature:309:3" time="13.985450795"><system-out><![CDATA[  Scenario: Select multiple drawing files and return to one
+   ✔  Given the Open dialog in the MCAD Software displays two adjacent saved drawings as thumbnails
+   ✔  And each drawing has a saved sheet preview
+   ✔  When the user drags a selection rectangle from empty list space across both thumbnails
+   ✔  Then both drawing thumbnails are selected
+   ✔  And the status area reports two selected items
+   ✔  And the file name field contains both drawing names in quotes
+   ✔  And the separate preview area displays a placeholder
+   ✔  And individual drawing loading options are not displayed
+   ✔  When the user selects one of the drawing thumbnails
+   ✔  Then only that drawing is selected
+   ✔  And the file name field identifies that drawing
+   ✔  And its sheet preview and drawing loading options are displayed
+   ✔  And the Open dialog remains open
+]]></system-out></testcase><testcase name="Scenario: Open two selected drawings together: tmp/obk-open-full-pinned-20261115/features/application/document-opening/document-opening.feature:325:3" time="11.851328061"><system-out><![CDATA[  Scenario: Open two selected drawings together
+   ✔  Given the MCAD Software has an existing document open
+   ✔  And two saved drawings with available references and visible saved view geometry are not already open
+   ✔  And the Open dialog displays both drawings as thumbnails
+   ✔  When the user selects both drawing thumbnails with a selection rectangle
+   ✔  And the user chooses Open
+   ✔  Then the Open dialog closes
+   ✔  And both drawings are available in separate document tabs
+   ✔  And one of the drawings is active with its sheet and saved geometry displayed
+   ✔  And the existing document tab remains available
+   ✔  When the user selects the other drawing tab
+   ✔  Then that drawing becomes active and its sheet is displayed
+]]></system-out></testcase><testcase name="Scenario: Reopen a selection of drawings already in the session: tmp/obk-open-full-pinned-20261115/features/application/document-opening/document-opening.feature:339:3" time="9.415602645"><system-out><![CDATA[  Scenario: Reopen a selection of drawings already in the session
+   ✔  Given two saved drawings are already open in separate tabs in the MCAD Software
+   ✔  And one of those drawings is active
+   ✔  And the Open dialog displays their exact saved files
+   ✔  When the user selects both drawings and chooses Open
+   ✔  Then the Open dialog closes
+   ✔  And both existing drawing tabs remain available
+   ✔  And one of those drawing tabs becomes active
+   ✔  And no duplicate tab is created for either drawing
+]]></system-out></testcase><testcase name="Scenario: Open a selection containing an open and a closed drawing: tmp/obk-open-full-pinned-20261115/features/application/document-opening/document-opening.feature:350:3" time="10.060155604"><system-out><![CDATA[  Scenario: Open a selection containing an open and a closed drawing
+   ✔  Given a saved drawing is already open in a tab in the MCAD Software
+   ✔  And a second saved drawing with available references is not open
+   ✔  And the Open dialog displays the exact files for both drawings
+   ✔  When the user selects both drawings and chooses Open
+   ✔  Then the Open dialog closes
+   ✔  And the previously open drawing retains its existing tab without a duplicate
+   ✔  And the second drawing opens in a new tab
+   ✔  And the second drawing is active with its sheet displayed
+]]></system-out></testcase></testsuite></testsuites>
