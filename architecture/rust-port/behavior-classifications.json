@@ -3842,10 +3842,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-close-cancel-52a88b77/receipt-52a88b77aefd086f.json",
+        "sha256": "d250682d73bb2ff54a33d2d12413c79630c5ab4c3274930a954ee1b4fa17f47f"
+      },
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
-      "mapping_reason": "Native document save, close, or reopen lifecycle."
+      "mapping_reason": "Native document save, close, or reopen lifecycle.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b: package-store tests cover save and reopen, not these native close-prompt interactions. See receipts/2026-11-14-go-save-open-baseline/README.md.",
+      "kernel_capabilities": "The scenario has a finished empty sketch; no solid modeling operation is required.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The desktop owner retains the part and sketch after the canceled close; no B-rep operation is asserted.",
+      "rust_tests": "application_scenarios_use_the_native_window: Cancel closing a modified unsaved part",
+      "oracle": "Pinned native scenario assertions and reviewed final capture; Go dialog parity is not established.",
+      "expected_result": "the user chooses Cancel; the part remains active; its sketch remains in the model browser"
     },
     {
       "id": "scenario:93af71b702f4432ad324512d976b8c68d1cbc9c11e2f0bf5514abe81fedbdb3e",
@@ -3859,10 +3871,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-close-cancel-93af71b7/receipt-93af71b702f4432a.json",
+        "sha256": "338dd62e7526d3acaf027b0a56fbc85bbc2f27f5c2c15567f3cea9e78c6ab7fd"
+      },
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
-      "mapping_reason": "Native document save, close, or reopen lifecycle."
+      "mapping_reason": "Native document save, close, or reopen lifecycle.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b: package-store tests cover save and reopen, not these native close-prompt interactions. See receipts/2026-11-14-go-save-open-baseline/README.md.",
+      "kernel_capabilities": "The scenario has a finished empty sketch; no solid modeling operation is required.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The desktop owner retains the part and sketch after the canceled close; no B-rep operation is asserted.",
+      "rust_tests": "application_scenarios_use_the_native_window: Cancel the first save requested while closing a part",
+      "oracle": "Pinned native scenario assertions and reviewed final capture; Go dialog parity is not established.",
+      "expected_result": "the user cancels Save As; the part remains active; its sketch remains in the model browser"
     },
     {
       "id": "scenario:688d756622cc25dc4d9bdef3efe4aba56339ba73f01748fc67987a5b1327c3bf",
