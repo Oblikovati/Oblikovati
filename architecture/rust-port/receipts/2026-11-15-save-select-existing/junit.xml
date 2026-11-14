@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Save and reopen part documents: tmp/obk-save-select-pinned-20261115/features/application/document-saving/document-saving.feature" package="testsuite/Feature: Save and reopen part documents: tmp/obk-save-select-pinned-20261115/features/application/document-saving/document-saving.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T23:30:49.252580115Z" time="5.3798492190000005"><testcase name="Scenario: Select an existing part in the first-save dialog: tmp/obk-save-select-pinned-20261115/features/application/document-saving/document-saving.feature:140:3" time="5.3798492190000005"><system-out><![CDATA[  Scenario: Select an existing part in the first-save dialog
+   ✔  Given the Save As dialog is open for a new part in the MCAD Software
+   ✔  And the current folder contains an existing part file
+   ✔  When the user selects that part file in the file list
+   ✔  Then the selected file row is highlighted
+   ✔  And the file name field displays the selected file's name
+   ✔  And the status area reports one selected item
+   ✔  When the user cancels the dialog
+   ✔  Then the unsaved part remains active
+]]></system-out></testcase></testsuite></testsuites>
