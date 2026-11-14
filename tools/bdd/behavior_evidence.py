@@ -156,6 +156,16 @@ def example_values(example: object) -> tuple[int, dict[str, str]]:
     return line, dict(zip(columns, values))
 
 
+def example_capture_name(row: Mapping[str, object], example: object) -> str:
+    """Name an example by feature path and row; for example, example_capture_name(row, example)."""
+    line, _ = example_values(example)
+    path = row.get("path")
+    if not isinstance(path, str) or not path.startswith("features/"):
+        raise ValueError(f"outline feature path {path!r}: expected a features/ relative path")
+    digest = hashlib.sha256(path.encode("utf-8")).hexdigest()
+    return f"example-{digest}-{line}.png"
+
+
 def expand_example(value: object, values: Mapping[str, str]) -> str:
     """Expand a Cucumber placeholder; for example, expand_example('select <x>', {'x': '1'})."""
     if not isinstance(value, str):
@@ -258,6 +268,40 @@ def check_capture(root: Path, artifact: object) -> None:
         raise ValueError(f"capture {path}: expected a PNG image")
 
 
+def check_outline_captures(
+    root: Path, receipt: Mapping[str, object], row: Mapping[str, object],
+    folder: Path | None = None,
+) -> None:
+    """Require one matching image per example; for example, check_outline_captures(root, receipt, row)."""
+    captures, examples = receipt.get("captures"), row.get("examples")
+    if not isinstance(captures, list) or not isinstance(examples, list) or not examples:
+        raise ValueError(f"outline captures {captures!r}: expected one per source example")
+    expected = {
+        example_values(example)[0]: example_capture_name(row, example)
+        for example in examples
+    }
+    if len(expected) != len(examples) or len(captures) != len(expected):
+        raise ValueError(f"outline captures {captures!r}: expected unique source lines")
+    actual = dict(capture_identity(root, capture, folder) for capture in captures)
+    if len(actual) != len(captures):
+        raise ValueError(f"outline captures {captures!r}: expected unique capture lines")
+    require_equal("outline capture identities", actual, expected)
+
+
+def capture_identity(root: Path, capture: object, folder: Path | None) -> tuple[int, str]:
+    """Check a capture's line and file; for example, capture_identity(root, entry, folder)."""
+    if not isinstance(capture, dict) or set(capture) != {"line", "artifact"}:
+        raise ValueError(f"outline capture {capture!r}: expected line and artifact")
+    line, artifact = capture["line"], capture["artifact"]
+    if type(line) is not int or line <= 0:
+        raise ValueError(f"outline capture line {line!r}: expected a positive integer")
+    path = check_artifact(root, artifact)
+    if folder is not None and path.parent != folder.resolve():
+        raise ValueError(f"outline capture {path}: expected inside receipt folder {folder}")
+    check_capture(root, artifact)
+    return line, path.name
+
+
 def check_runner(receipt: Mapping[str, object], row: Mapping[str, object]) -> None:
     """Require the area's native acceptance runner; for example, check_runner(receipt, row)."""
     runners = {
@@ -308,7 +352,18 @@ def check_receipt_integrity(
     path = check_artifact(root, artifact)
     receipt = load_object(path)
     check_artifact(root, receipt.get("source_report"))
-    check_capture(root, receipt.get("capture"))
+    if "captures" in receipt:
+        if "capture" in receipt:
+            raise ValueError("receipt captures: expected one capture representation")
+        captures = receipt["captures"]
+        if not isinstance(captures, list) or not captures:
+            raise ValueError(f"outline captures {captures!r}: expected a nonempty list")
+        for entry in captures:
+            if not isinstance(entry, dict):
+                raise ValueError(f"outline capture {entry!r}: expected an object")
+            check_capture(root, entry.get("artifact"))
+    else:
+        check_capture(root, receipt.get("capture"))
     report = check_artifact(root, receipt.get("cucumber"))
     return path, receipt, report
 
@@ -335,6 +390,10 @@ def verify_receipt(
     check_runner(receipt, row)
     check_source_revision(root, receipt.get("source_report"), source_revision)
     check_scenario(json.loads(report_path.read_text(encoding="utf-8")), row)
+    if row["outline"]:
+        check_outline_captures(root, receipt, row, receipt_path.parent)
+    elif "captures" in receipt:
+        raise ValueError("scenario captures: expected a single capture")
     for field, package in (
         ("api_revision", "oblikovati-api"),
         ("kernel_revision", "martensite-tkernel"),

@@ -44,6 +44,7 @@ name = "native"
 path = "tests/native.rs"
 
 [dev-dependencies]
+sha2 = "=0.10.9"
 cucumber = { version = "=0.23.0", features = ["output-json", "output-junit"] }
 xml = "=1.4.0"
 futures = "=0.3.32"

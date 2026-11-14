@@ -167,6 +167,27 @@ fn application_scenarios_use_the_native_window() {
         .join()
         .unwrap();
 }
+fn capture_name(
+    feature: &cucumber::gherkin::Feature,
+    scenario: &cucumber::gherkin::Scenario,
+) -> String {
+    if scenario.examples.is_empty() {
+        return scenario.name.clone();
+    }
+    use sha2::{Digest, Sha256};
+    let path = fs::canonicalize(feature.path.as_ref().expect("outline feature path"))
+        .expect("outline feature path must exist");
+    let root = fs::canonicalize(scenario_root()).expect("scenario root must exist");
+    let relative = path
+        .strip_prefix(root)
+        .expect("outline feature must be inside scenario root")
+        .components()
+        .map(|part| part.as_os_str().to_str().expect("UTF-8 feature path"))
+        .collect::<Vec<_>>()
+        .join("/");
+    let digest = Sha256::digest(relative.as_bytes());
+    format!("example-{digest:x}-{}", scenario.position.line)
+}
 fn selected_area(setting: Option<&str>) -> Result<&str, String> {
     match setting {
         None | Some("application") => Ok("application"),
@@ -224,8 +245,8 @@ fn run_scenarios(root: PathBuf, keep_feature: fn(&cucumber::gherkin::Feature) ->
             // After `with_writer`, which resets the CLI: libtest's arguments are not Cucumber's.
             .with_default_cli()
             .fail_on_skipped_with(|_, _, _| true)
-            .after(|_, _, scenario, _, world| {
-                let name = scenario.name.clone();
+            .after(|feature, _, scenario, _, world| {
+                let name = capture_name(feature, scenario);
                 Box::pin(async move {
                     if let Some(world) = world {
                         world.save_capture(&name);
@@ -285,16 +306,37 @@ fn parser_diagnostic_includes_the_underlying_read_error() {
     assert!(message.contains("fixture absent"));
 }
 fn scenario_selected(name: &str) -> bool {
-    std::env::var("OBK_BDD_SCENARIO").map_or(true, |wanted| name.contains(&wanted))
+    std::env::var("OBK_BDD_SCENARIO").map_or(true, |wanted| scenario_matches(name, &wanted))
 }
-fn feature_root(area: &str) -> PathBuf {
-    let root = std::env::var_os("OBK_BDD_ROOT").map_or_else(
+fn scenario_matches(name: &str, wanted: &str) -> bool {
+    let mut remainder = name;
+    for part in wanted.split('<') {
+        let literal = part.split_once('>').map_or(part, |(_, suffix)| suffix);
+        let Some((_, after)) = remainder.split_once(literal) else {
+            return false;
+        };
+        remainder = after;
+    }
+    true
+}
+#[test]
+fn scenario_filter_matches_expanded_outline_names() {
+    assert!(scenario_matches("Value one ends", "Value <x> ends"));
+    assert!(scenario_matches("Value two ends", "Value <x> ends"));
+    assert!(!scenario_matches("Value one stops", "Value <x> ends"));
+    assert!(scenario_matches("regular scenario", "regular"));
+}
+fn scenario_root() -> PathBuf {
+    std::env::var_os("OBK_BDD_ROOT").map_or_else(
         || {
             PathBuf::from(env!("CARGO_MANIFEST_DIR"))
                 .join("../../test-utilities/benchmarks/MCAD-Scenarios")
         },
         PathBuf::from,
-    );
+    )
+}
+fn feature_root(area: &str) -> PathBuf {
+    let root = scenario_root();
     assert!(
         root.is_absolute(),
         "scenario root {root:?}: expected an absolute path"

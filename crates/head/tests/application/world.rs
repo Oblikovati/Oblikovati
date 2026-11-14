@@ -266,7 +266,10 @@ impl ApplicationWorld {
                 }
             })
             .collect();
-        let _ = write_png(&reports_folder().join(format!("{name}.png")), &capture);
+        let folder = reports_folder();
+        std::fs::create_dir_all(&folder).expect("scenario capture directory must exist");
+        write_png(&folder.join(format!("{name}.png")), &capture)
+            .expect("scenario capture must be saved");
     }
     pub fn close(&mut self) {
         if let Some(mut app) = self.app.take() {

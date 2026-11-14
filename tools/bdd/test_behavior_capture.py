@@ -9,7 +9,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from behavior_capture import CaptureRequest, capture_receipt
-from behavior_evidence import verify_receipt
+from behavior_evidence import example_capture_name, verify_receipt
 from capture_cli import (
     find_scenario,
     native_command,
@@ -250,6 +250,7 @@ class CaptureTests(unittest.TestCase):
                 outline = OutlineFixture()
                 fixture.row.update(outline.row)
                 fixture.report = outline.report
+                runner.captures = [example_capture_name(fixture.row, example) for example in fixture.row["examples"]]
                 if missing:
                     fixture.report[0]["elements"].pop()
                     with self.assertRaises(ValueError):
@@ -260,3 +261,14 @@ class CaptureTests(unittest.TestCase):
                     verify_receipt(
                         request.root, result, fixture.row, "source", "a" * 40
                     )
+
+    def test_outline_missing_capture_cannot_publish(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            fixture, request, runner, state = self.fixture(folder)
+            outline = OutlineFixture()
+            fixture.row.update(outline.row)
+            fixture.report = outline.report
+            runner.captures = [example_capture_name(fixture.row, fixture.row["examples"][0])]
+            with self.assertRaisesRegex(ValueError, "capture"):
+                capture_receipt(request, runner, state)
+            self.assertFalse(request.destination.exists())

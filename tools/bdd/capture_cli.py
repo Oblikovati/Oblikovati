@@ -188,7 +188,7 @@ def main() -> None:
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--renderer", required=True)
     parser.add_argument(
-        "--capture", help="PNG filename when the run creates more than one capture"
+        "--capture", help="PNG filename for an ordinary scenario when the run creates multiple captures"
     )
     args = parser.parse_args()
     request = prepare_request(
