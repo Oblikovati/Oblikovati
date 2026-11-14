@@ -21,7 +21,7 @@ mod interests;
 pub use file_host::{
     APPLICATION_PREFERENCE_METHODS, ASSEMBLY_COMMAND_METHODS, AssemblyReferenceFailure,
     AssemblyReferenceReport, DERIVED_COMMAND_METHODS, DOCUMENT_UPDATE_METHODS,
-    DocumentObserverFactory, FILE_COMMAND_METHODS, FileHost,
+    DocumentObserverFactory, FILE_COMMAND_METHODS, FileHost, creation_package,
 };
 pub mod dispatch;
 mod file_queries;

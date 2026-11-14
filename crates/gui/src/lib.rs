@@ -3,7 +3,8 @@
 mod activity;
 mod application;
 pub use application::document_creation::templates::{
-    GuiDocumentTemplate, GuiTemplateKind, GuiTemplateUnits,
+    GuiDocumentTemplate, GuiTemplateKind, GuiTemplateMaterial, GuiTemplateMaterialEntry,
+    GuiTemplateUnits,
 };
 mod appearance_choice;
 mod asset_choice;

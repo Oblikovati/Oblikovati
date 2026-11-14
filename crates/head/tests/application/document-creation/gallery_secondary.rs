@@ -139,3 +139,14 @@ fn original_part_after_chooser(world: &mut ApplicationWorld) {
     world.expect_no_text("Template folders");
     assert_eq!(Some(world.active_id()), world.previous_document);
 }
+
+#[test]
+fn selected_builtin_part_shows_its_unassigned_material() {
+    let mut world = ApplicationWorld::new();
+    world.key(ViewportPhysicalKey::N, true);
+    world.click_text(METRIC_PART);
+    expect_selected_template(&world, METRIC_PART);
+    world.expect_text("Material: Unassigned");
+    world.save_capture("template-unassigned-material");
+    world.close();
+}

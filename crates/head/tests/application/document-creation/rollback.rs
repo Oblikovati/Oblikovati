@@ -66,7 +66,7 @@ fn the_rollback_runs_in_order_and_skips_activation_with_no_previous_document() {
 }
 #[test]
 fn every_template_has_a_measured_size_and_a_flavor_adds_to_it() {
-    let sizes = gui_template_sizes();
+    let sizes = gui_template_sizes().unwrap();
     assert_eq!(sizes.len(), TEMPLATE_KINDS.len());
     assert!(sizes.iter().all(|(_, bytes)| *bytes > 0));
     let size_of = |kind| sizes.iter().find(|(sized, _)| *sized == kind).unwrap().1;

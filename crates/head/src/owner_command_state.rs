@@ -26,7 +26,8 @@ impl<
                 theme,
                 color_scheme,
                 projects: self.gui_projects(),
-                template_sizes: document_creation::gui_template_sizes(),
+                template_sizes: document_creation::gui_template_sizes()?,
+                template_materials: document_creation::gui_template_materials(&self.files)?,
                 ..Default::default()
             });
         };
@@ -95,7 +96,8 @@ impl<
                 .map_err(|cause| cause.to_string())?
                 .is_some(),
             projects: self.gui_projects(),
-            template_sizes: document_creation::gui_template_sizes(),
+            template_sizes: document_creation::gui_template_sizes()?,
+            template_materials: document_creation::gui_template_materials(&self.files)?,
             prompts: self.prompt_frequencies,
             browser: Some(self.gui_browser_snapshot(document)?),
             document: Some(document),

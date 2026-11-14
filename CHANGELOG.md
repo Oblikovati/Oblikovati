@@ -12,6 +12,8 @@
 
 ### Fixed
 
+- Showed the actual Part template material state, including unassigned and unresolved identities, in the chooser. (#3932)
+
 - Reopened the Extrude tool with its configurable shortcut after cancelling a draft. (#3931)
 
 - Refreshed extrusion previews after valid draft or parameter changes without creating features. (#3930)

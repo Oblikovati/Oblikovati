@@ -48,6 +48,8 @@ pub struct GuiCommandState {
     pub projects: Vec<GuiProject>,
     /// What a new document from each template measures as a file, in bytes.
     pub template_sizes: Vec<(crate::GuiTemplateKind, u64)>,
+    /// Material information read from the creation recipe for each Part template.
+    pub template_materials: Vec<crate::GuiTemplateMaterialEntry>,
     pub document: Option<u64>,
     pub document_type: Option<oblikovati_api::types::DocumentType>,
     pub parameters: Vec<oblikovati_api::wire::ParameterInfo>,
