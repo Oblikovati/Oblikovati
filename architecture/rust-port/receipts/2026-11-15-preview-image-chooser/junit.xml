@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Save and reopen part documents: tmp/obk-image-cancel-pinned-20261115/features/application/document-saving/document-saving.feature" package="testsuite/Feature: Save and reopen part documents: tmp/obk-image-cancel-pinned-20261115/features/application/document-saving/document-saving.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T23:23:43.83167721Z" time="5.097607222"><testcase name="Scenario: Browse for a preview image and cancel the image chooser: tmp/obk-image-cancel-pinned-20261115/features/application/document-saving/document-saving.feature:62:3" time="5.097607222"><system-out><![CDATA[  Scenario: Browse for a preview image and cancel the image chooser
+   ✔  Given the Save As dialog is open for a new part in the MCAD Software
+   ✔  And Save Preview Picture is selected
+   ✔  When the user chooses Import From File as the preview source
+   ✔  Then a browse control appears beside that option
+   ✔  And the preview area displays a placeholder
+   ✔  When the user chooses the browse control
+   ✔  Then an image file chooser opens above the Save As dialog
+   ✔  When the user cancels the image file chooser
+   ✔  Then the Save As dialog remains open
+   ✔  And Import From File remains selected
+   ✔  And the preview area still displays a placeholder
+   ✔  When the user chooses Active Component Iso View on Save
+   ✔  And the user cancels Save As
+   ✔  Then the unsaved part remains active
+]]></system-out></testcase></testsuite></testsuites>
