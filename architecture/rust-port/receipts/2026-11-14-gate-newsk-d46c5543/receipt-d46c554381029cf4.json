@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:d46c554381029cf43cc527f90d95974a544c5e83c23ead926db74cadd5f7afd3",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "e4011485e2cfe78197b73450bea0d26ba2b0dbc54f2307d3b27364ffe9d9a20d",
+  "application_commit": "5ade6cde5a483d7f794c2ffa73fccaf12001764e",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-gate-newsk-d46c5543/cucumber.json",
+    "sha256": "e8f96f03e848cc7dc7344939f81384ef4acf8dca40e9b67524c3813fc6cb5334"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-gate-newsk-d46c5543/source-revision.json",
+    "sha256": "a251158b903d5c94150256bed6aa38ae8df8706a97a701b547440a58626cffc6"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-gate-newsk-d46c5543/new-sketch-07-Create-an-empty-sketch-on-a-planar-solid-face.png",
+    "sha256": "4fbd8c0ac9b71996a9fe5e6e601c58b9fdf778f4e761e746cdb2d595e4805a99"
+  }
+}

@@ -218,8 +218,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-new-sketch-63f029b9/receipt-63f029b9f7034030.json",
-        "sha256": "17bf43808dc31cce62f4a69b114a69fdb084941f23cba9d2c9cc444e95c68863"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-newsk-63f029b9/receipt-63f029b9f7034030.json",
+        "sha256": "759337df81396032372a4026dea1f21040cf4131aed2b94539df9ab8ef5d8115"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -252,8 +252,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-new-sketch-4e511ca5/receipt-4e511ca586195d67.json",
-        "sha256": "8cc1addb20e72b83dd9cee9c49de8809e0ad776e5c858d823b3056cff362b2f9"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-newsk-4e511ca5/receipt-4e511ca586195d67.json",
+        "sha256": "5ceb0547a6c89aad5e255e97376f61b1090e9a8d22159d92f44d0efa54dbcc06"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -286,8 +286,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-new-sketch-adfaa180/receipt-adfaa180b248a094.json",
-        "sha256": "2514823e7f3a93524050ea9604fc00498694d2d5f717454d01121cb6654882fd"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-newsk-adfaa180/receipt-adfaa180b248a094.json",
+        "sha256": "d07d7f8b67314f7154018bb2f5d29ec57c6689f90eba6afa211b69d7ed903d3b"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -321,8 +321,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-new-sketch-cd9561e7/receipt-cd9561e7b2b4f475.json",
-        "sha256": "c368e169811aa296b38ddc4e01cbc5f9f3c312902cde0e7e5ca75d2f0abd193f"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-newsk-cd9561e7/receipt-cd9561e7b2b4f475.json",
+        "sha256": "0af671e636d82002318406bc84cfafd408411441c4baa9f05397de060340b37c"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -356,8 +356,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-new-sketch-4ba58b43/receipt-4ba58b431dc847ae.json",
-        "sha256": "472a877c6c5b9c664e5e9ac9b246c8009266a9e496a44035eb3dcab80a25f4f5"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-newsk-4ba58b43/receipt-4ba58b431dc847ae.json",
+        "sha256": "3ef7dd10bcf8d83c27cea1f8d052b022da521cc9b12c65430f5989b970d723d9"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -628,8 +628,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-new-sketch-d46c5543/receipt-d46c554381029cf4.json",
-        "sha256": "590aacd2f59f1e546e1780e11e8a7d4d0e039f49f1e37d700203e6032241f781"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-newsk-d46c5543/receipt-d46c554381029cf4.json",
+        "sha256": "fff6a8e65a2a5f0bf1c43f4c4b3dd2fb2b7711048bf4439ec41bf047e0a77399"
       },
       "mapping_reason": "Attach a sketch to a modeled planar face and preserve the extrusion.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
@@ -664,8 +664,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-new-sketch-44dfe89f/receipt-44dfe89fda9e10be.json",
-        "sha256": "602a241624de9418d5a88bb1bb39b24e2a206ccd8cbf004ec40c8b5c7ac10482"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-newsk-44dfe89f/receipt-44dfe89fda9e10be.json",
+        "sha256": "644b708d1e62fa72cbf96b7b43ab91c88db115115e2aa8ff4ecec4dba0a7fab3"
       },
       "mapping_reason": "Create and retain an offset work plane and its dependent sketch.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
