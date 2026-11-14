@@ -2244,9 +2244,21 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency. Face picking is a dependent behavior where model geometry is selected."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-selection-lock/receipt-b85e1d1835926b35.json",
+        "sha256": "d545dae425738ea44dbd1270603650d7f051886977ca057abbec2dab5fed9773"
+      },
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency. Face picking is a dependent behavior where model geometry is selected.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b: TestSessionViewPreferences and TestViewCubeTogglesPersist pass for preference state; the tests do not drive the face-selection menu or prove pivot geometry.",
+      "kernel_capabilities": "The host resolves current named face and body bounds through Martensite analytic geometry.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The selected pivot uses named B-rep bounds; the fit operation uses displayed bounds only for presentation.",
+      "rust_tests": "application_scenarios_use_the_native_window: Toggle orientation lock for a selected face",
+      "oracle": "Pinned native scenario assertions and reviewed final capture; separate native regression tests cover selection pivot and fit.",
+      "expected_result": "Lock is available for a selected face, toggles its indicator and check mark, and becomes unavailable when selection is cleared."
     },
     {
       "id": "scenario:a4c3b2c129840d0d7e059a72934d14a0f90de9b3b1e8b59c872501f2ba3c7523",
