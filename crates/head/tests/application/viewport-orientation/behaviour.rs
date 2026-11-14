@@ -261,17 +261,62 @@ fn close_menu(world: &mut ApplicationWorld) {
     world.escape();
     world.pump(Vec::new());
 }
-fn click_block_face(world: &mut ApplicationWorld) {
-    let (low, high) = solid_bounds(world);
-    world.click([
-        ((low[0] + high[0]) / 2) as i32,
-        ((low[1] + high[1]) / 2) as i32,
-    ]);
-    world.pump(Vec::new());
+fn select_mode(world: &mut ApplicationWorld, label: &str) {
+    world.click_text("Select");
+    world.click_text(label);
     world.pump(Vec::new());
 }
+fn selection_mode_label(mode: oblikovati_gui::GuiSelectionMode) -> &'static str {
+    use oblikovati_gui::GuiSelectionMode;
+    match mode {
+        GuiSelectionMode::All => "All Types",
+        GuiSelectionMode::Faces => "Faces",
+        GuiSelectionMode::Components => "Components",
+        GuiSelectionMode::Custom => panic!("custom selection mode: expected a restorable preset"),
+    }
+}
+fn selection_order(
+    state: &oblikovati_gui::GuiCommandState,
+) -> Vec<oblikovati_gui::GuiSelectionKind> {
+    state
+        .selection_filter
+        .as_ref()
+        .expect("expected selection filter")
+        .entries
+        .iter()
+        .map(|entry| entry.kind)
+        .collect()
+}
+fn click_visible_face(world: &mut ApplicationWorld) {
+    let capture = super::super::capture_framebuffer(&mut world.app().window.native);
+    let windows = diagnostics::window_occlusions();
+    let point = super::super::solid_visibility::visible_fixture_point(&capture, &windows)
+        .expect("expected a visible face patch outside GUI windows");
+    world.click(point);
+    world.pump(Vec::new());
+    assert!(world.state().model_face_chosen, "expected a selected face");
+}
+fn click_block_face(world: &mut ApplicationWorld) {
+    let before = world.state();
+    let restore = selection_mode_label(before.selection_mode);
+    select_mode(world, "Faces");
+    click_visible_face(world);
+    select_mode(world, restore);
+    let after = world.state();
+    assert_eq!(after.selection_mode, before.selection_mode);
+    assert_eq!(selection_order(&after), selection_order(&before));
+    assert!(after.model_face_chosen, "expected face selection retained");
+}
 #[given("no model geometry is selected")]
-fn nothing_selected(_: &mut ApplicationWorld) {}
+fn nothing_selected(world: &mut ApplicationWorld) {
+    world.click(AWAY);
+    world.pump(Vec::new());
+    let state = world.state();
+    let browser = state.browser.expect("expected a model browser");
+    assert!(!state.model_face_chosen, "expected no face selection");
+    assert!(browser.selected_body.is_none() && browser.selected_occurrence.is_none());
+    assert!(browser.selected_sketches.is_empty() && browser.selected_feature.is_none());
+}
 #[then("Lock to Current Selection is unavailable")]
 fn lock_off(world: &mut ApplicationWorld) {
     assert!(
@@ -280,6 +325,7 @@ fn lock_off(world: &mut ApplicationWorld) {
     );
 }
 #[when("I close the menu and select a visible face of the block")]
+#[when("the user closes the menu and selects a visible face of the block")]
 fn select_a_face(world: &mut ApplicationWorld) {
     close_menu(world);
     click_block_face(world);
@@ -292,7 +338,9 @@ fn lock_on(world: &mut ApplicationWorld) {
     );
 }
 #[when("I choose Lock to Current Selection")]
+#[when("the user chooses Lock to Current Selection")]
 #[when("I choose Lock to Current Selection again")]
+#[when("the user chooses Lock to Current Selection again")]
 fn choose_lock(world: &mut ApplicationWorld) {
     choose_mode(world, LOCK_ROW);
 }
@@ -309,10 +357,9 @@ fn lock_gone(world: &mut ApplicationWorld) {
     world.expect_no_text("Locked");
 }
 #[when("I clear the face selection and reopen the orientation control context menu")]
+#[when("the user clears the face selection and reopens the orientation control context menu")]
 fn clear_face(world: &mut ApplicationWorld) {
-    world.click(AWAY);
-    world.pump(Vec::new());
-    world.pump(Vec::new());
+    nothing_selected(world);
     open_menu(world);
 }
 // Set Current View as
@@ -384,4 +431,16 @@ fn apparent_size(world: &mut ApplicationWorld) {
 #[then("the same part view remains visible")]
 fn same_view(world: &mut ApplicationWorld) {
     expect_same_part(world);
+}
+
+#[test]
+fn empty_selection_fixture_clears_a_real_face_and_can_reselect_it() {
+    let mut world = ApplicationWorld::new();
+    open_block(&mut world);
+    click_block_face(&mut world);
+    assert!(world.state().model_face_chosen);
+    nothing_selected(&mut world);
+    click_block_face(&mut world);
+    assert!(world.state().model_face_chosen);
+    world.close();
 }
