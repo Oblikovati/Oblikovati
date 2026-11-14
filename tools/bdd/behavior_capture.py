@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Mapping
 
-from behavior_evidence import verify_receipt
+from behavior_evidence import example_capture_name, verify_receipt
 
 
 @dataclass(frozen=True)
@@ -83,6 +83,23 @@ def selected_capture(reports: Path, name: str | None) -> Path:
     return images[0]
 
 
+def selected_captures(request: CaptureRequest, reports: Path) -> list[Path]:
+    """Select each outline case by source path and line; for example, selected_captures(request, reports)."""
+    if not request.row.get("outline"):
+        return [selected_capture(reports, request.capture_name)]
+    if request.capture_name is not None:
+        raise ValueError("outline capture override: expected one capture per example")
+    examples = request.row.get("examples")
+    if not isinstance(examples, list) or not examples:
+        raise ValueError(f"outline examples {examples!r}: expected a nonempty list")
+    names = [example_capture_name(request.row, example) for example in examples]
+    if len(set(names)) != len(names):
+        raise ValueError(
+            f"outline captures {names!r}: expected distinct example identities"
+        )
+    return [selected_capture(reports, name) for name in names]
+
+
 def artifact(root: Path, path: Path) -> dict[str, str]:
     """Record an inside-repository artifact and its digest; example: artifact(root, receipt)."""
     resolved = path.resolve()
@@ -107,15 +124,22 @@ def require_application_state(
 
 
 def receipt_document(
-    request: CaptureRequest, folder: Path, image: Path
+    request: CaptureRequest, folder: Path, images: list[Path]
 ) -> dict[str, object]:
-    """Make a verifier-compatible receipt; example: receipt_document(request, folder, image)."""
+    """Make a verifier-compatible receipt; example: receipt_document(request, folder, [image])."""
     identity = receipt_identity(request)
-    return identity | {
+    result = identity | {
         "cucumber": artifact(request.root, folder / "cucumber.json"),
         "source_report": artifact(request.root, folder / "source-revision.json"),
-        "capture": artifact(request.root, image),
     }
+    if request.row.get("outline"):
+        result["captures"] = [
+            {"line": example["line"], "artifact": artifact(request.root, image)}
+            for example, image in zip(request.row["examples"], images, strict=True)
+        ]
+    else:
+        result["capture"] = artifact(request.root, images[0])
+    return result
 
 
 def receipt_identity(request: CaptureRequest) -> dict[str, object]:
@@ -140,9 +164,9 @@ def receipt_identity(request: CaptureRequest) -> dict[str, object]:
     }
 
 
-def stage_artifacts(reports: Path, stage: Path, capture: Path) -> None:
-    """Copy the required run artifacts into staging; example: stage_artifacts(reports, stage, image)."""
-    for name in ("cucumber.json", "source-revision.json", "junit.xml", capture.name):
+def stage_artifacts(reports: Path, stage: Path, captures: list[Path]) -> None:
+    """Copy the required run artifacts into staging; example: stage_artifacts(reports, stage, [image])."""
+    for name in ("cucumber.json", "source-revision.json", "junit.xml", *(path.name for path in captures)):
         source = reports / name
         if source.is_symlink() or not source.is_file():
             raise ValueError(f"run artifact {source}: expected a regular file")
@@ -157,11 +181,14 @@ def stage_artifacts(reports: Path, stage: Path, capture: Path) -> None:
             output.write(log.read_bytes())
 
 
-def write_receipt(request: CaptureRequest, folder: Path, capture_name: str) -> Path:
-    """Write a receipt for the files in its folder; example: write_receipt(request, stage, 'scene.png')."""
+def write_receipt(request: CaptureRequest, folder: Path, capture_names: list[str]) -> Path:
+    """Write a receipt for the files in its folder; example: write_receipt(request, stage, ['scene.png'])."""
     receipt = receipt_path(request, folder)
     receipt.write_text(
-        json.dumps(receipt_document(request, folder, folder / capture_name), indent=2)
+        json.dumps(
+            receipt_document(request, folder, [folder / name for name in capture_names]),
+            indent=2,
+        )
         + "\n"
     )
     return receipt
@@ -170,16 +197,16 @@ def write_receipt(request: CaptureRequest, folder: Path, capture_name: str) -> P
 def publish_receipt(
     request: CaptureRequest,
     stage: Path,
-    capture_name: str,
+    capture_names: list[str],
     read_state: ApplicationState,
 ) -> dict[str, str]:
-    """Publish without replacing an existing directory; example: publish_receipt(request, stage, 'scene.png', application_state)."""
+    """Publish without replacing an existing directory; example: publish_receipt(request, stage, ['scene.png'], application_state)."""
     destination = request.destination.resolve()
     destination.mkdir()
     created: list[Path] = []
     try:
         return copy_and_verify(
-            request, stage, destination, capture_name, read_state, created
+            request, stage, destination, capture_names, read_state, created
         )
     except BaseException:
         rollback_publication(destination, created)
@@ -200,7 +227,7 @@ def copy_and_verify(
     request: CaptureRequest,
     stage: Path,
     destination: Path,
-    capture_name: str,
+    capture_names: list[str],
     read_state: ApplicationState,
     created: list[Path],
 ) -> dict[str, str]:
@@ -208,7 +235,7 @@ def copy_and_verify(
     copy_staged_files(request, stage, destination, created)
     receipt = receipt_path(request, destination)
     created.append(receipt)
-    write_receipt(request, destination, capture_name)
+    write_receipt(request, destination, capture_names)
     result = artifact(request.root, receipt)
     verify_stored_receipt(request, result)
     require_application_state(request, read_state)
@@ -280,16 +307,17 @@ def stage_and_publish(
 ) -> dict[str, str]:
     """Validate artifacts before publication; example: stage_and_publish(request, reports, destination, state)."""
     require_report_checkout(request, reports)
-    capture = selected_capture(reports, request.capture_name)
+    captures = selected_captures(request, reports)
+    capture_names = [capture.name for capture in captures]
     with tempfile.TemporaryDirectory(
         prefix=".receipt-staging-", dir=destination.parent
     ) as staged:
         stage = Path(staged)
-        stage_artifacts(reports, stage, capture)
-        receipt = write_receipt(request, stage, capture.name)
+        stage_artifacts(reports, stage, captures)
+        receipt = write_receipt(request, stage, capture_names)
         verify_stored_receipt(request, artifact(request.root, receipt))
         require_application_state(request, read_state)
-        return publish_receipt(request, stage, capture.name, read_state)
+        return publish_receipt(request, stage, capture_names, read_state)
 
 
 def require_report_checkout(request: CaptureRequest, reports: Path) -> None:

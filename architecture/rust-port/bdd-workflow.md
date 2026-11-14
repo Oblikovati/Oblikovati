@@ -24,6 +24,11 @@ Keep the checkout outside the live source directory. Each native run records
 the run. A source change during a run invalidates its results. If the source is
 not a Git checkout, the report records a null commit and dirty state.
 
+Outline receipts keep one image per example, named from the feature path and the
+example's source line. The checker requires and hashes every image; old outline
+receipts with a single capture need a new native run. Ordinary receipts keep the
+single-capture format. The `--capture` option applies only to ordinary scenarios.
+
 ## Discover and triage changes
 
 During the weekly source sync, compare the live directory with the inventory:
