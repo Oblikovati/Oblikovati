@@ -12,6 +12,8 @@
 
 ### Fixed
 
+- Refreshed extrusion previews after valid draft or parameter changes without creating features. (#3930)
+
 - Validated extrusion distance drafts with the document owner, and retained rejected drafts for correction. (#3929)
 
 - Resumed Extrude after its requested sketch finishes, with a 10 mm preview when the sketch is fully constrained. (#3927)

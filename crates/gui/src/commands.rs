@@ -277,6 +277,7 @@ pub struct GuiBaseViewRequest {
 /// Transient profile preview request owned by the current document.
 #[derive(Clone, Debug, PartialEq)]
 pub struct GuiExtrudePreview {
+    pub generation: Option<u64>,
     pub document: u64,
     pub sketch: oblikovati_model::document_sketch::DocumentSketchId,
     pub profile: i64,
@@ -285,6 +286,7 @@ pub struct GuiExtrudePreview {
 /// Owner validation for one extrusion expression and active document.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GuiExtrudeDistanceValidation {
+    pub generation: u64,
     pub document: u64,
     pub distance: String,
     pub error: Option<String>,

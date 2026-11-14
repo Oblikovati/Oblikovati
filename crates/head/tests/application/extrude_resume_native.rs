@@ -311,3 +311,83 @@ fn set_extrusion_profile(world: &mut ApplicationWorld, old: &str, value: &str) {
     world.type_text(value);
     world.pump(Vec::new());
 }
+
+#[test]
+fn extrusion_preview_tracks_distance_and_parameter_changes() {
+    let (mut world, document) = requested_extrusion_fixture();
+    let initial = preview_height(&mut world);
+    let stale = world
+        .app()
+        .window
+        .gui_actions
+        .iter()
+        .find_map(|action| match action {
+            oblikovati_gui::GuiShellAction::PreviewExtrude(Some(request)) => Some(request.clone()),
+            _ => None,
+        })
+        .expect("expected the initial preview request");
+    set_extrusion_distance(&mut world, "8 mm");
+    let eight = preview_height(&mut world);
+    assert!(
+        eight < initial,
+        "preview did not shrink: {initial} to {eight}"
+    );
+    set_extrusion_distance(&mut world, "0");
+    assert!(!world.state().extrude_preview_active);
+    assert!(world.app().window.scene_triangles.is_empty());
+    set_extrusion_distance(&mut world, "depth");
+    assert!((preview_height(&mut world) - eight).abs() < 0.0001);
+    edit_depth_in_parameter_window(&mut world);
+    let updated = preview_height(&mut world);
+    assert!(updated > eight * 1.9);
+    assert!(
+        !world
+            .app()
+            .owner
+            .extrusion_preview_from_gui(Some(&stale))
+            .unwrap()
+    );
+    world.pump(Vec::new());
+    assert_eq!(preview_height(&mut world), updated);
+    let generation = document_generation(&mut world, document);
+    world.click_text("Cancel");
+    world.pump(Vec::new());
+    assert!(!world.state().extrude_preview_active);
+    assert!(world.app().window.scene_triangles.is_empty());
+    assert_no_feature(&mut world, document, generation);
+    world.close();
+}
+fn preview_height(world: &mut ApplicationWorld) -> f32 {
+    assert!(world.state().extrude_preview_active);
+    world
+        .app()
+        .window
+        .scene_triangles
+        .iter()
+        .flat_map(|triangle| triangle.positions)
+        .map(|position| position[2])
+        .fold(0.0_f32, f32::max)
+}
+
+fn edit_depth_in_parameter_window(world: &mut ApplicationWorld) {
+    world.click_text("Parameters");
+    let (position, size) = super::diagnostics::window_geometry("Parameters").unwrap();
+    let name = super::rendered_label_in_rect(
+        "depth",
+        position,
+        [position[0] + 200., position[1] + size[1]],
+    );
+    let equation_x = super::diagnostics::pointer_pixels([position[0] + 290., position[1]])[0];
+    world.click([equation_x, name[1]]);
+    world.key(oblikovati_viewport::ViewportPhysicalKey::A, true);
+    world.type_text("16 mm");
+    world.click_text("Done");
+    world.pump(Vec::new());
+    assert!(
+        world
+            .state()
+            .parameters
+            .iter()
+            .any(|row| row.name == "depth" && row.expression == "16 mm")
+    );
+}
