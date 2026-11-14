@@ -2,6 +2,7 @@
 use crate::{HeadSketchWork, HeadWorkStatus};
 /// Owner-thread services borrow model state only while the window loop polls them.
 pub trait HeadWork: HeadSketchWork {
+    orientation_work_methods!();
     /// Set the viewport selection mode; example: `work.set_selection_mode_from_gui(mode)?`.
     fn set_selection_mode_from_gui(
         &mut self,

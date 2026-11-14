@@ -101,6 +101,10 @@ pub struct GuiCommandState {
     pub inspected_file: Option<crate::GuiInspectedFile>,
     /// A face of the model is chosen in the view.
     pub model_face_chosen: bool,
+    /// A selected model entity can define an orientation pivot.
+    pub orientation_selection_available: bool,
+    /// The saved orientation control selection pivot preference.
+    pub orientation_selection_locked: bool,
     /// How the view looks at the model, for the orientation control.
     pub view_axes: Option<crate::GuiViewAxes>,
     pub document_windows: Vec<crate::GuiDocumentWindow>,

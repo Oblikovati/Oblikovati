@@ -2,6 +2,12 @@
 use super::*;
 
 impl Viewport {
+    /// Read the displayed Fit bounds for camera framing only, not model decisions.
+    /// Example: `view.fit_visible_bounds()?` before centering a view on its selection.
+    pub fn fit_visible_bounds(&self) -> Result<[[f64; 3]; 2], String> {
+        self.live()?.fit_visible_bounds()
+    }
+
     /// Fit or orient displayed geometry inside an unobstructed framebuffer rectangle.
     /// Example: `view.navigate_in_region(ViewportNavigation::Home { margin: 0.1 }, [200, 100, 800, 600])?`.
     pub fn navigate_in_region(

@@ -266,3 +266,44 @@ fn lit_near(view: &Viewport, capture: &ViewportCapture, position: [f64; 2]) -> b
         })
     })
 }
+
+#[test]
+fn fit_bounds_follow_displayed_sketch_geometry_and_clear_with_it() {
+    let (runtime, mut view) = open_display("Sketch fit bounds");
+    assert!(
+        view.fit_visible_bounds().is_err(),
+        "empty display has no fit bounds"
+    );
+    view.set_sketch_display(&[packet()]).unwrap();
+    let bounds = view.fit_visible_bounds().unwrap();
+    assert!(
+        bounds[0][0] <= -5. && bounds[1][0] >= 5.,
+        "bounds {bounds:?}"
+    );
+    assert!(bounds[1][1] >= 3., "bounds {bounds:?}");
+    let preview = oblikovati_viewport::ViewportSketchPreview::Recipe {
+        solve_options: Default::default(),
+        plane: SketchPlane::xy(),
+        recipe: oblikovati_model::sketch::SketchPlacementRecipe::straight_slot(
+            [[6., 0.], [8., 0.]],
+            4.,
+        )
+        .unwrap(),
+    };
+    view.set_sketch_preview(Some(&preview)).unwrap();
+    let before = view.redraw().unwrap();
+    assert_eq!(
+        view.fit_visible_bounds().unwrap(),
+        bounds,
+        "preview must not affect Fit bounds"
+    );
+    let after = view.redraw().unwrap();
+    assert_eq!(after.rgba, before.rgba, "the preview must remain displayed");
+    view.set_sketch_preview(None).unwrap();
+    view.set_sketch_display(&[]).unwrap();
+    assert!(
+        view.fit_visible_bounds().is_err(),
+        "cleared display has no fit bounds"
+    );
+    close_display(&runtime, &mut view);
+}

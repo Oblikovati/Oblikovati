@@ -39,6 +39,7 @@ pub fn retain_named_sketch_prism(
     let decline = crate::stored_prism::stored_body_decline(&evaluation, feature);
     evaluation.into_body(feature).ok_or(decline)
 }
+mod bounds;
 mod evaluate;
 mod face_topology;
 mod subentities;

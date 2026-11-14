@@ -9,6 +9,7 @@ pub mod keymap_preferences;
 pub mod load;
 pub mod marking_menu_preferences;
 pub mod metadata;
+pub mod orientation_preferences;
 pub mod package;
 
 pub mod file_access;

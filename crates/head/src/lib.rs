@@ -19,7 +19,8 @@ mod viewport_automation;
 mod window_caller;
 #[cfg(target_os = "linux")]
 pub use frames::{
-    HeadGuiUpdate, HeadPresentation, HeadSummary, HeadWindow, run_window, run_window_with_owner,
+    HeadGuiUpdate, HeadOrientationFitFrame, HeadPresentation, HeadSummary, HeadWindow, run_window,
+    run_window_with_owner,
 };
 #[cfg(target_os = "linux")]
 mod native;
@@ -35,6 +36,10 @@ pub use startup::run_window_with_documents;
 mod capture_png;
 #[cfg(target_os = "linux")]
 mod window_capture;
+#[cfg(target_os = "linux")]
+#[macro_use]
+#[path = "work_orientation.rs"]
+mod orientation_work;
 #[cfg(target_os = "linux")]
 mod work;
 mod work_forwarding;

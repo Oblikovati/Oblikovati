@@ -19,6 +19,7 @@ impl<
         let template_materials = document_creation::gui_template_materials(&self.files);
         let Some(document) = self.files.workspace().active_document() else {
             return Ok(oblikovati_gui::GuiCommandState {
+                orientation_selection_locked: self.orientation_lock,
                 marking_menus: Some(self.marking_menus.clone()),
                 keymap: Some(self.keymap.clone()),
                 keymap_bindings: self.keymap.catalog(),
@@ -149,6 +150,9 @@ impl<
             view_axes: None,
             inspected_file: self.inspected_file.clone(),
             model_face_chosen: self.chosen_model_face(document).is_some(),
+            orientation_selection_available: self.chosen_model_face(document).is_some()
+                || session.selected_browser_body().is_some(),
+            orientation_selection_locked: self.orientation_lock,
             document_windows: self.document_windows.clone(),
             active_window: Some(self.active_view_slot()),
             measure: self.gui_measure_panel(),

@@ -1,6 +1,18 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 impl NativeHeadWindow {
+    /// Write the current composed image using the window's capture destination.
+    /// Example: `window.capture_window_png(path)?`.
+    pub fn capture_window_png(
+        &mut self,
+        path: &std::path::Path,
+    ) -> Result<oblikovati_viewport::ViewportCapture, String> {
+        let capture = self.view.capture()?;
+        self.capture_files.write_capture(path, &capture)?;
+        Ok(capture)
+    }
+}
+impl NativeHeadWindow {
     pub(super) fn publish_window_captures(
         &mut self,
         capture: &oblikovati_viewport::ViewportCapture,

@@ -127,6 +127,9 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     new_document_counts: std::collections::BTreeMap<&'static str, u32>,
     prompt_store: Option<Box<dyn oblikovati_model::application_prompts::PromptPreferenceAccess>>,
     prompt_frequencies: oblikovati_model::application_prompts::PromptPreferences,
+    orientation_lock: bool,
+    orientation_store:
+        Option<Box<dyn oblikovati_model::orientation_preferences::OrientationPreferenceAccess>>,
     theme_store: Option<Box<dyn oblikovati_model::theme::ThemeSelectionStore>>,
     themes: Option<oblikovati_model::theme::ThemeLibrary>,
     window_captures: Option<crate::DesktopWindowCaptures>,
@@ -224,6 +227,8 @@ impl<
             new_document_counts: Default::default(),
             prompt_store: None,
             prompt_frequencies: Default::default(),
+            orientation_lock: false,
+            orientation_store: None,
             theme_store: None,
             themes: None,
             window_captures: None,
@@ -459,6 +464,8 @@ mod sketch_environment;
 #[path = "owner_themes.rs"]
 mod application_themes;
 
+#[path = "owner_orientation_selection.rs"]
+mod orientation_selection;
 #[path = "owner_command_state.rs"]
 mod owner_command_state;
 #[path = "owner_prompts.rs"]

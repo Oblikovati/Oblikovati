@@ -47,6 +47,24 @@ impl RenderView {
         }
         Ok(())
     }
+    /// The same displayed bounds Fit uses, with the transient preview excluded.
+    pub(crate) fn fit_visible_bounds(&self) -> Result<[[f64; 3]; 2], String> {
+        let (count, values) = self
+            .preview
+            .without_preview(|| self.view.min_max_world())
+            .map_err(|cause| {
+                format!("display fit bounds: expected visible scene bounds: {cause}")
+            })?;
+        if count == 0 || values.iter().any(|value| !value.is_finite()) {
+            return Err(format!(
+                "display fit bounds {values:?}, structures {count}: expected nonempty finite bounds"
+            ));
+        }
+        Ok([
+            [values[0], values[1], values[2]],
+            [values[3], values[4], values[5]],
+        ])
+    }
     fn apply_fit_region(
         &self,
         framing: Option<crate::fit_region::FitFraming>,

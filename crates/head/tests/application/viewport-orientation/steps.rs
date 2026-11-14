@@ -15,6 +15,8 @@ mod compass_observation;
 pub(super) use behaviour::whole_block_visible;
 #[path = "option_rows.rs"]
 mod option_rows;
+#[path = "selection_pivot_regression.rs"]
+mod selection_pivot_regression;
 
 const CONTROL: &str = "##orientation-control";
 const NAVIGATION: &str = "##navigation-bar";

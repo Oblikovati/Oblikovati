@@ -122,3 +122,34 @@ fn a_new_part_has_no_work_to_lose_until_it_is_edited() {
     assert!(!storage[&id].unsaved_edits);
     assert!(owner.documents().workspace().needs_save(id).unwrap());
 }
+
+struct RefusedOrientationStore;
+impl oblikovati_model::orientation_preferences::OrientationPreferenceAccess
+    for RefusedOrientationStore
+{
+    fn orientation_lock(&self) -> bool {
+        true
+    }
+    fn set_orientation_lock(&mut self, _: bool) -> Result<(), String> {
+        Err("orientation preference: expected writable storage".into())
+    }
+}
+#[test]
+fn a_refused_orientation_preference_keeps_the_published_lock() {
+    let mut owner = owner()
+        .0
+        .with_orientation_preferences(Box::new(RefusedOrientationStore));
+    assert!(
+        owner
+            .gui_command_state()
+            .unwrap()
+            .orientation_selection_locked
+    );
+    assert!(owner.set_orientation_lock_from_gui(false).is_err());
+    assert!(
+        owner
+            .gui_command_state()
+            .unwrap()
+            .orientation_selection_locked
+    );
+}

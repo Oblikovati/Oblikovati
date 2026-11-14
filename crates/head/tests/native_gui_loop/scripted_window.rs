@@ -4,6 +4,9 @@ impl HeadWindow for ScriptedGuiWindow {
     fn window_capture_extent(&mut self) -> Result<Option<[u32; 2]>, String> {
         self.native.window_capture_extent()
     }
+    fn orientation_fit_frame(&mut self) -> Result<crate::HeadOrientationFitFrame, String> {
+        self.native.orientation_fit_frame()
+    }
     fn gui_parameters_open(&self) -> bool {
         self.native.gui_parameters_open()
     }

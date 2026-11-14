@@ -353,6 +353,11 @@ mod tests {
                 .unwrap()
         );
         assert!(action_called.get());
+        assert!(desktop.set_orientation_lock_from_gui(true).unwrap());
+        assert_eq!(
+            desktop.orientation_selection_pivot().unwrap(),
+            Some([1., 2., 3.])
+        );
     }
 
     struct WindowAwareOwner {
@@ -362,6 +367,12 @@ mod tests {
 
     impl crate::HeadSketchWork for WindowAwareOwner {}
     impl HeadWork for WindowAwareOwner {
+        fn set_orientation_lock_from_gui(&mut self, locked: bool) -> Result<bool, String> {
+            Ok(locked)
+        }
+        fn orientation_selection_pivot(&mut self) -> Result<Option<[f64; 3]>, String> {
+            Ok(Some([1., 2., 3.]))
+        }
         fn poll(&mut self, _: usize) -> Result<HeadWorkStatus, String> {
             Ok(Default::default())
         }

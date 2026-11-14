@@ -3,6 +3,9 @@
 use oblikovati_gui::{GuiCubeFace, GuiOrientCommand, GuiViewAxes, GuiViewProjection, GuiViewStep};
 use oblikovati_viewport::ViewportCamera;
 
+#[path = "view_orientation/selection_fit.rs"]
+pub(crate) mod selection_fit;
+
 type Vector = [f64; 3];
 /// How close to an axis the view direction counts as looking straight at a face.
 const FACE_ON: f64 = 0.999;
@@ -113,6 +116,28 @@ pub(crate) fn framed(
         ..*camera
     }
 }
+/// Reorient about a chosen selection while preserving the viewing distance.
+/// Example: `oriented_about(&camera, command, pivot)?` for a cube snap.
+pub(crate) fn oriented_about(
+    camera: &ViewportCamera,
+    command: GuiOrientCommand,
+    pivot: [f64; 3],
+) -> Result<ViewportCamera, String> {
+    if pivot.iter().any(|value| !value.is_finite()) {
+        return Err(format!(
+            "orientation pivot {pivot:?}: expected finite coordinates"
+        ));
+    }
+    if matches!(command, GuiOrientCommand::Roll { .. }) {
+        return Ok(oriented(camera, command));
+    }
+    let shifted = ViewportCamera {
+        eye: std::array::from_fn(|axis| camera.eye[axis] + pivot[axis] - camera.target[axis]),
+        target: pivot,
+        ..*camera
+    };
+    Ok(oriented(&shifted, command))
+}
 /// The camera a press on the control asks for; example: `oriented(&camera, command)`.
 /// Scale and distance stay, so only the viewpoint changes.
 pub(crate) fn oriented(camera: &ViewportCamera, command: GuiOrientCommand) -> ViewportCamera {
@@ -151,6 +176,31 @@ mod tests {
     }
     fn close(a: Vector, b: Vector) -> bool {
         (0..3).all(|axis| (a[axis] - b[axis]).abs() < 1e-9)
+    }
+    #[test]
+    fn selection_pivot_applies_to_face_and_step_but_not_roll() {
+        let camera = front();
+        let pivot = [2., 3., 4.];
+        let face =
+            oriented_about(&camera, GuiOrientCommand::Face(GuiCubeFace::Right), pivot).unwrap();
+        assert!(close(face.target, pivot));
+        assert!(close(face.eye, [22., 3., 4.]));
+        let stepped =
+            oriented_about(&camera, GuiOrientCommand::Step(GuiViewStep::Up), pivot).unwrap();
+        assert!(close(stepped.target, pivot));
+        assert!(close(stepped.eye, [2., 23., 4.]));
+        let rolled =
+            oriented_about(&camera, GuiOrientCommand::Roll { clockwise: true }, pivot).unwrap();
+        assert_eq!(rolled.target, camera.target);
+        assert_eq!(rolled.eye, camera.eye);
+        assert!(
+            oriented_about(
+                &camera,
+                GuiOrientCommand::Face(GuiCubeFace::Top),
+                [f64::NAN, 0., 0.]
+            )
+            .is_err()
+        );
     }
     #[test]
     fn stepping_right_then_left_returns_to_the_same_view() {

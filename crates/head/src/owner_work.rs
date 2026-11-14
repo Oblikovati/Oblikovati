@@ -12,6 +12,13 @@ impl<
     S: DispatchWakeup,
 > HeadWork for DesktopOwner<O, W, F, G, R, S>
 {
+    fn set_orientation_lock_from_gui(&mut self, locked: bool) -> Result<bool, String> {
+        self.change_orientation_lock(locked)
+    }
+    fn orientation_selection_pivot(&mut self) -> Result<Option<[f64; 3]>, String> {
+        self.orientation_pivot()
+    }
+
     fn set_selection_mode_from_gui(
         &mut self,
         mode: oblikovati_gui::GuiSelectionMode,

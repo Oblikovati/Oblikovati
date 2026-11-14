@@ -47,6 +47,72 @@ pub(super) fn advance_gui(
     }
     Ok(update)
 }
+fn orient_view(
+    window: &mut dyn HeadWindow,
+    owner: &mut dyn HeadWork,
+    command: oblikovati_gui::GuiOrientCommand,
+    fit: bool,
+) -> Result<bool, String> {
+    let current = window.view_camera()?;
+    let (camera, selection_pivot) = orientation_camera(owner, &current, command)?;
+    if fit && selection_pivot {
+        return fit_selection_view(window, current, camera);
+    }
+    let changed = window.set_view_camera(camera)?;
+    if fit {
+        window.navigate_view(FIT_THE_MODEL)
+    } else {
+        Ok(changed)
+    }
+}
+fn orientation_camera(
+    owner: &mut dyn HeadWork,
+    current: &oblikovati_viewport::ViewportCamera,
+    command: oblikovati_gui::GuiOrientCommand,
+) -> Result<(oblikovati_viewport::ViewportCamera, bool), String> {
+    let locked = owner.gui_command_state()?.orientation_selection_locked;
+    if !locked || matches!(command, oblikovati_gui::GuiOrientCommand::Roll { .. }) {
+        return Ok((crate::view_orientation::oriented(current, command), false));
+    }
+    let pivot = owner
+        .orientation_selection_pivot()?
+        .ok_or("orientation selection lock: expected a current selected model face or body")?;
+    Ok((
+        crate::view_orientation::oriented_about(current, command, pivot)?,
+        true,
+    ))
+}
+fn fit_selection_view(
+    window: &mut dyn HeadWindow,
+    current: oblikovati_viewport::ViewportCamera,
+    camera: oblikovati_viewport::ViewportCamera,
+) -> Result<bool, String> {
+    let frame = window.orientation_fit_frame()?;
+    let fitted = crate::view_orientation::selection_fit::fit_about_selection(
+        &camera,
+        &[frame.bounds],
+        frame.extent,
+        frame.area,
+    )?;
+    window.set_view_camera(camera)?;
+    let applied = apply_selection_fit(window, fitted);
+    match applied {
+        Ok(changed) => Ok(changed),
+        Err(cause) => match window.set_view_camera(current) {
+            Ok(_) => Err(cause),
+            Err(restore) => Err(format!(
+                "selection fit failed: {cause}; restoring the camera failed: {restore}"
+            )),
+        },
+    }
+}
+fn apply_selection_fit(
+    window: &mut dyn HeadWindow,
+    fitted: oblikovati_viewport::ViewportCamera,
+) -> Result<bool, String> {
+    window.navigate_view(FIT_THE_MODEL)?;
+    window.set_view_camera(fitted)
+}
 fn publish_parameter_view(
     window: &mut dyn HeadWindow,
     owner: &dyn HeadWork,
@@ -85,13 +151,12 @@ pub(super) fn dispatch_gui_action(
         }
         GuiShellAction::Exit => return window.request_close(),
         GuiShellAction::OrientView { command, fit } => {
-            let camera = crate::view_orientation::oriented(&window.view_camera()?, *command);
-            let changed = window.set_view_camera(camera)?;
-            return if *fit {
-                window.navigate_view(FIT_THE_MODEL)
-            } else {
-                Ok(changed)
-            };
+            let result = orient_view(window, owner, *command, *fit);
+            return report_authoring_result(window, result);
+        }
+        GuiShellAction::SetOrientationSelectionLock(locked) => {
+            let result = owner.set_orientation_lock_from_gui(*locked);
+            return report_authoring_result(window, result);
         }
         GuiShellAction::SetViewProjection(mode) => {
             window.set_view_projection(*mode);
@@ -232,6 +297,7 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::KeepDocumentPicture { .. }
         | GuiShellAction::OrientView { .. }
         | GuiShellAction::SetViewProjection(_)
+        | GuiShellAction::SetOrientationSelectionLock(_)
         | GuiShellAction::ViewCommand(_)
         | GuiShellAction::UpdateBodyProperties { .. }
         | GuiShellAction::AssignPartAsset { .. }

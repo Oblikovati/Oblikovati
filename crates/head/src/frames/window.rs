@@ -3,6 +3,15 @@
 use super::{HeadGuiUpdate, HeadPresentation};
 use oblikovati_viewport::ViewportEvent;
 
+/// The displayed scene and unobstructed area used only to fit an orientation view.
+/// These presentation bounds must not be used for model or topology decisions.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct HeadOrientationFitFrame {
+    pub extent: [u32; 2],
+    pub area: [u32; 4],
+    pub bounds: [[f64; 3]; 2],
+}
+
 /// The desktop owns this boundary; implementations contain all native I/O.
 pub trait HeadWindow {
     /// Observe the drawable used for capture metadata; example: `window.window_capture_extent()?`.
@@ -200,6 +209,11 @@ pub trait HeadWindow {
         Err(format!(
             "view navigation {command:?}: expected a window with a view"
         ))
+    }
+    /// Return the drawable extent and unobstructed document rectangle for a selection-centered fit.
+    /// Example: `window.orientation_fit_frame()?` after a GUI frame.
+    fn orientation_fit_frame(&mut self) -> Result<HeadOrientationFitFrame, String> {
+        Err("selection fit area: expected an active native document viewport".into())
     }
     /// Remember this view, for a dialog that may put it back; example: on opening the dialog.
     fn mark_view(&mut self) -> Result<(), String> {
