@@ -14240,12 +14240,14 @@
       "acceptance_test": "application_scenarios_use_the_native_window: Inspect the current session's initial template selection",
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3899",
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/3932"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/head/ui/file_dialog.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "reason": "The configured Standard (mm).ipt template and Generic material fixture assets are not supplied; see the scenario folder BLOCKERS.md."
     },
     {
       "id": "scenario:414a8cdb8182b258369735ab0aaa1bebf2a7968f607002055b4282dcbf29716f",
