@@ -148,6 +148,7 @@ fn measure_closed_five(world: &mut ApplicationWorld) {
     world.expect_annotation("5");
 }
 #[when("I press Ctrl+Z")]
+#[when("the user press Ctrl+Z")]
 fn ctrl_z(world: &mut ApplicationWorld) {
     world.undo();
 }

@@ -108,6 +108,7 @@ fn format_off(world: &mut ApplicationWorld) {
     );
 }
 #[when("I invoke Point")]
+#[when("the user invoke Point")]
 fn invoke_point(world: &mut ApplicationWorld) {
     world.select_point_tool();
 }
@@ -116,6 +117,7 @@ fn prompt_regular(world: &mut ApplicationWorld) {
     world.expect_status("Select Sketch Point");
 }
 #[when("I click two separate canvas positions")]
+#[when("the user click two separate canvas positions")]
 fn click_two(world: &mut ApplicationWorld) {
     world.sketch_click(FIRST);
     world.sketch_click(SECOND);
