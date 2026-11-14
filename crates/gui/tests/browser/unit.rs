@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+use oblikovati_model::feature::FeatureId;
 fn sample_row() -> GuiBrowserSketch {
     GuiBrowserSketch {
         id: DocumentSketchId(7),

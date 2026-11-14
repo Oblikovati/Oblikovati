@@ -51,6 +51,6 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 - The native GUI save/undo test stops at a missing command notice on both this work and clean base `e01e3a6e9` (#3874); see `receipts/2026-11-14-notice-baseline/`. Its later camera assertions remain unverified by that test.
 - Current native evidence: see `receipts/2026-11-14-lit-body/`, `receipts/2026-11-14-lit-rectangle/`, `receipts/2026-11-14-lit-extrusion/`, and `receipts/2026-11-14-lit-orbit/`. The 195 live feature files match the saved snapshot as of 2026-11-14.
 - The typed-prism health classification test fails on clean base `016ff28dc` as well as this work (#3875). The rotation failure is tracked in #3868.
-- A12: split the file host, assembly contract tests, and GUI frame engine (#3860). The next `docs-lint` failure is `crates/gui/src/browser.rs`.
+- A12: split the file host, assembly contract tests, GUI frame engine, and browser snapshot validation (#3860). The next `docs-lint` failure is `crates/gui/src/chrome.rs`.
 - Per-face appearance presentation is not established by the body-color work. Verify it separately.
 - Do not mark R0–R3 closed without their exit checks and receipts.
