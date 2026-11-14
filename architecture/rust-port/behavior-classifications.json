@@ -32,7 +32,8 @@
           "path": "architecture/rust-port/receipts/2026-11-14-command-rerun-290c0844328af2d2/receipt-290c0844328af2d2.json",
           "sha256": "9d7b4f986eff238e41d4184abc0a9b27d562c3127afb765b165905f15a47bf51"
         }
-      ]
+      ],
+      "go_test_premise": "Go aa8297d1b: TestAssignAppearanceBodyAndFaceScope checks synthetic-key assignment storage; TestPhysicalPropertiesNotice and TestPhysicalPropertiesWithoutPart check the part-level notice and no-part error. All passed; none tests the body-properties dialog or per-body numerical results. See receipts/2026-11-14-go-body-properties-baseline/README.md."
     },
     {
       "id": "scenario:f024b2250132b3239960cbba948d906a930fcb48716f2817e11ec492c5b22183",
@@ -58,7 +59,15 @@
           "path": "architecture/rust-port/receipts/2026-11-14-command-rerun-f024b2250132b323/receipt-f024b2250132b323.json",
           "sha256": "379386c8c5895a497a662b3246471167b5e30acd678b8ed19e6a1a6836fe5ff7"
         }
-      ]
+      ],
+      "go_test_premise": "Go aa8297d1b: TestAssignAppearanceBodyAndFaceScope checks synthetic-key assignment storage; TestPhysicalPropertiesNotice and TestPhysicalPropertiesWithoutPart check the part-level notice and no-part error. All passed; none tests the body-properties dialog or per-body numerical results. See receipts/2026-11-14-go-body-properties-baseline/README.md.",
+      "go_reference": "Go aa8297d1b: app/material_ops.go AssignAppearance stores part, body or face overrides; head/ui/materials_window.go displays part-level physical properties. No equivalent body-properties dialog found.",
+      "kernel_capabilities": "A visible certified prism supplies the body fixture; changing a presentation override does not change its geometry.",
+      "platforms": "Native receipt: Linux, Vulkan Lavapipe under Xvfb; Windows and macOS not established.",
+      "kernel_integration": "crates/head/src/owner_body_properties.rs exposes body presentation and crates/gui/src/application/workspace-layout/body_properties.rs controls pending edits; no kernel operation is required for the appearance edit.",
+      "rust_tests": "application_scenarios_use_the_native_window: Cancel a body appearance selection; native steps in crates/head/tests/application/body-properties/steps.rs.",
+      "oracle": "Pinned native scenario assertions and reviewed final capture; Go assignment storage is a partial reference, not a dialog or pixel oracle.",
+      "expected_result": "Cancel discards a pending Black selection; reopening shows As Part."
     },
     {
       "id": "scenario:48efe943e9ecc0d7d078db980ad1b05fe2fd5abeeab9ec6d0b23399eee5eaf48",
@@ -84,7 +93,15 @@
           "path": "architecture/rust-port/receipts/2026-11-14-command-rerun-48efe943e9ecc0d7/receipt-48efe943e9ecc0d7.json",
           "sha256": "4b357a41fe0dc8108259a78ed05e0c91d7503fb89557b01bccd94f9c4a82a16b"
         }
-      ]
+      ],
+      "go_test_premise": "Go aa8297d1b: TestAssignAppearanceBodyAndFaceScope checks synthetic-key assignment storage; TestPhysicalPropertiesNotice and TestPhysicalPropertiesWithoutPart check the part-level notice and no-part error. All passed; none tests the body-properties dialog or per-body numerical results. See receipts/2026-11-14-go-body-properties-baseline/README.md.",
+      "go_reference": "Go aa8297d1b: app/material_ops.go AssignAppearance stores part, body or face overrides; head/ui/materials_window.go displays part-level physical properties. No equivalent body-properties dialog found.",
+      "kernel_capabilities": "A visible certified prism supplies the body fixture; changing a presentation override does not change its geometry.",
+      "platforms": "Native receipt: Linux, Vulkan Lavapipe under Xvfb; Windows and macOS not established.",
+      "kernel_integration": "crates/head/src/owner_body_properties.rs exposes body presentation and crates/gui/src/application/workspace-layout/body_properties.rs controls pending edits; no kernel operation is required for the appearance edit.",
+      "rust_tests": "application_scenarios_use_the_native_window: Apply and restore a body appearance; native steps in crates/head/tests/application/body-properties/steps.rs.",
+      "oracle": "Pinned native scenario assertions and reviewed final capture; Go assignment storage is a partial reference, not a dialog or pixel oracle.",
+      "expected_result": "OK applies Black; reopening and selecting As Part restores the part appearance."
     },
     {
       "id": "scenario:137ba03d06c38c439efdffa8bd1c217086f374111802a3b24d86c40d67786a59",
@@ -110,7 +127,15 @@
           "path": "architecture/rust-port/receipts/2026-11-14-command-rerun-137ba03d06c38c43/receipt-137ba03d06c38c43.json",
           "sha256": "e89b140ba15187b9055a63e565138d7488ea702b8f4e98667ceb7770aa9d257c"
         }
-      ]
+      ],
+      "go_test_premise": "Go aa8297d1b: TestAssignAppearanceBodyAndFaceScope checks synthetic-key assignment storage; TestPhysicalPropertiesNotice and TestPhysicalPropertiesWithoutPart check the part-level notice and no-part error. All passed; none tests the body-properties dialog or per-body numerical results. See receipts/2026-11-14-go-body-properties-baseline/README.md.",
+      "go_reference": "Go aa8297d1b: app/material_ops.go AssignAppearance stores part, body or face overrides; head/ui/materials_window.go displays part-level physical properties. No equivalent body-properties dialog found.",
+      "kernel_capabilities": "A visible certified prism supplies the body fixture; changing a presentation override does not change its geometry.",
+      "platforms": "Native receipt: Linux, Vulkan Lavapipe under Xvfb; Windows and macOS not established.",
+      "kernel_integration": "crates/head/src/owner_body_properties.rs exposes body presentation and crates/gui/src/application/workspace-layout/body_properties.rs controls pending edits; no kernel operation is required for the appearance edit.",
+      "rust_tests": "application_scenarios_use_the_native_window: Dismiss body properties with Escape; native steps in crates/head/tests/application/body-properties/steps.rs.",
+      "oracle": "Pinned native scenario assertions and reviewed final capture; Go assignment storage is a partial reference, not a dialog or pixel oracle.",
+      "expected_result": "Escape closes the dialog while the body remains selected and highlighted."
     },
     {
       "id": "scenario:e22ccad1ec1386a7ad84cb79333cd58f0181509d54a4677a552cee1f48cbbd1f",
@@ -136,7 +161,15 @@
           "path": "architecture/rust-port/receipts/2026-11-14-command-rerun-e22ccad1ec1386a7/receipt-e22ccad1ec1386a7.json",
           "sha256": "d8e0a9fa6900a95ee60f8f7bfe2238956d4388b5f2d1b906d147569ec6f13b5b"
         }
-      ]
+      ],
+      "go_test_premise": "Go aa8297d1b: TestAssignAppearanceBodyAndFaceScope checks synthetic-key assignment storage; TestPhysicalPropertiesNotice and TestPhysicalPropertiesWithoutPart check the part-level notice and no-part error. All passed; none tests the body-properties dialog or per-body numerical results. See receipts/2026-11-14-go-body-properties-baseline/README.md.",
+      "go_reference": "Go aa8297d1b: app/material_ops.go AssignAppearance stores part, body or face overrides; head/ui/materials_window.go displays part-level physical properties. No equivalent body-properties dialog found.",
+      "kernel_capabilities": "A visible certified prism supplies the body fixture; changing a presentation override does not change its geometry.",
+      "platforms": "Native receipt: Linux, Vulkan Lavapipe under Xvfb; Windows and macOS not established.",
+      "kernel_integration": "crates/head/src/owner_body_properties.rs exposes body presentation and crates/gui/src/application/workspace-layout/body_properties.rs controls pending edits; no kernel operation is required for the appearance edit.",
+      "rust_tests": "application_scenarios_use_the_native_window: Discard a pending appearance with Escape; native steps in crates/head/tests/application/body-properties/steps.rs.",
+      "oracle": "Pinned native scenario assertions and reviewed final capture; Go assignment storage is a partial reference, not a dialog or pixel oracle.",
+      "expected_result": "Escape discards a pending Black selection; reopening shows As Part."
     },
     {
       "id": "scenario:fe23247614f79aca0704e532303b65fb17e0d762b899246236fee674a3ae7350",
@@ -162,7 +195,15 @@
           "path": "architecture/rust-port/receipts/2026-11-14-command-rerun-fe23247614f79aca/receipt-fe23247614f79aca.json",
           "sha256": "45f47a9589d381de6d9f53785ccd758c030e8fe7048ac5268af5d70edc7cfa47"
         }
-      ]
+      ],
+      "go_test_premise": "Go aa8297d1b: TestAssignAppearanceBodyAndFaceScope checks synthetic-key assignment storage; TestPhysicalPropertiesNotice and TestPhysicalPropertiesWithoutPart check the part-level notice and no-part error. All passed; none tests the body-properties dialog or per-body numerical results. See receipts/2026-11-14-go-body-properties-baseline/README.md.",
+      "go_reference": "Go aa8297d1b: app/material_ops.go AssignAppearance stores part, body or face overrides; head/ui/materials_window.go displays part-level physical properties. No equivalent body-properties dialog found.",
+      "kernel_capabilities": "A visible certified prism supplies the body fixture; changing a presentation override does not change its geometry.",
+      "platforms": "Native receipt: Linux, Vulkan Lavapipe under Xvfb; Windows and macOS not established.",
+      "kernel_integration": "crates/head/src/owner_body_properties.rs exposes body presentation and crates/gui/src/application/workspace-layout/body_properties.rs controls pending edits; no kernel operation is required for the appearance edit.",
+      "rust_tests": "application_scenarios_use_the_native_window: Discard a pending appearance using the title-bar close control; native steps in crates/head/tests/application/body-properties/steps.rs.",
+      "oracle": "Pinned native scenario assertions and reviewed final capture; Go assignment storage is a partial reference, not a dialog or pixel oracle.",
+      "expected_result": "The title-bar close control discards a pending Black selection; reopening shows As Part."
     },
     {
       "id": "scenario:63f029b9f70340308eef7d4b4187b3f20f136ee9e8984de6b3c28d4c3b9b61e7",
