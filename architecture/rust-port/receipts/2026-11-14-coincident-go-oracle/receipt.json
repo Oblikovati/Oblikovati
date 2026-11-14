@@ -1,0 +1,25 @@
+{
+  "kind": "differential diagnostic; not native acceptance",
+  "go_commit": "aa8297d1b0ac33c024f19e54821536d76e8a447a",
+  "rust_base_commit": "d9cca3717",
+  "rust_test_file_sha256": "b21a21c67ed75ebdafdc572498806c9d1b8a127d6232eed6f84e71aac32a919e",
+  "result": "Go and Rust split motion of two independent free points about the midpoint in an unbiased solve. The native scenario instead asks to retain the first pick; it remains failing.",
+  "commands": [
+    "go run ../oblikovati-rust/architecture/rust-port/receipts/2026-11-14-coincident-go-oracle/go-oracle.go",
+    "cargo test --locked -p oblikovati-model --test geometric_constraint_creation"
+  ],
+  "artifacts": [
+    {
+      "path": "architecture/rust-port/receipts/2026-11-14-coincident-go-oracle/go-oracle.go",
+      "sha256": "c24b0479c962632d3326e69cd2989fb7125158443988d7dc302dd90c354f32bd"
+    },
+    {
+      "path": "architecture/rust-port/receipts/2026-11-14-coincident-go-oracle/go-output.txt",
+      "sha256": "a54fc5bf6bdf61a21189b61b6baf0812b742674c4b72f59962a23f4000a56547"
+    },
+    {
+      "path": "architecture/rust-port/receipts/2026-11-14-coincident-go-oracle/model-tests.log",
+      "sha256": "e910d0c9b28ab1879dce325f3495d4e8fae592ec5cb72126babdf51f3dad7040"
+    }
+  ]
+}
