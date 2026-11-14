@@ -30496,10 +30496,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-line-native-cc0348ac/receipt-cc0348ac4e30bdb2.json",
+        "sha256": "166601d8eb2d783da24e7d82a46e6ded23ffff907a09f0d6effb4aaa6b43771d"
+      },
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "First native sketch geometry input, cancellation, and history."
+      "mapping_reason": "First native sketch geometry input, cancellation, and history.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b: line tool and line-chain transaction tests pass; native rendering and recorded numeric measurement are not covered. See receipts/2026-11-14-go-line-baseline/README.md.",
+      "kernel_capabilities": "Planar sketch line geometry is exercised; these scenarios do not create a solid.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The desktop owner applies line sketch actions and presents the sketch scene.",
+      "rust_tests": "sketch_scenarios_use_the_native_window: line-01 Commit the intended result",
+      "oracle": "Pinned native scenario assertions of sketch state and sampled viewport, with reviewed final capture.",
+      "expected_result": "one segment joins the points and the command offers a connected next segment; the user press Escape; the command ends and the visible segment remains"
     },
     {
       "id": "scenario:4eeef3c693075589abe8d9c80cfe2f8b380728633c78374e1fb1d498042a3c1c",
@@ -30530,10 +30542,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-line-native-f0687ede/receipt-f0687ede83393785.json",
+        "sha256": "edd2802d4a031dc4dfd0dfc2f6ce15ceb610b2af87e91035e63ef19c0009098c"
+      },
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "First native sketch geometry input, cancellation, and history."
+      "mapping_reason": "First native sketch geometry input, cancellation, and history.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b: line tool and line-chain transaction tests pass; native rendering and recorded numeric measurement are not covered. See receipts/2026-11-14-go-line-baseline/README.md.",
+      "kernel_capabilities": "Planar sketch line geometry is exercised; these scenarios do not create a solid.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The desktop owner applies line sketch actions and presents the sketch scene.",
+      "rust_tests": "sketch_scenarios_use_the_native_window: line-03 Cancel after only a start point",
+      "oracle": "Pinned native scenario assertions of sketch state and sampled viewport, with reviewed final capture.",
+      "expected_result": "press Escape before an endpoint; the dynamic input closes and Ready returns; no new segment is visible at the canceled location"
     },
     {
       "id": "scenario:e66c7e308267be0964f66b35902621ca3d95fd2ef34196471e0cf85e078e5577",
@@ -30547,10 +30571,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-line-native-e66c7e30/receipt-e66c7e308267be09.json",
+        "sha256": "bc218e4c36d78e4b989152ddf7e0423fbfa7a6149c085ae4fac0f5a72bf43ac0"
+      },
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "First native sketch geometry input, cancellation, and history."
+      "mapping_reason": "First native sketch geometry input, cancellation, and history.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b: line tool and line-chain transaction tests pass; native rendering and recorded numeric measurement are not covered. See receipts/2026-11-14-go-line-baseline/README.md.",
+      "kernel_capabilities": "Planar sketch line geometry is exercised; these scenarios do not create a solid.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The desktop owner applies line sketch actions and presents the sketch scene.",
+      "rust_tests": "sketch_scenarios_use_the_native_window: line-04 Undo and redo the recorded numeric creation",
+      "oracle": "Pinned native scenario assertions of sketch state and sampled viewport, with reviewed final capture.",
+      "expected_result": "the numeric annotations return; the user open Measure and select the segment; Measure reports its length as 10.000 mm"
     },
     {
       "id": "scenario:4bd61ac9a19d199ae1361d2a1da0c274896c67c600df092945e898f4bac075ab",
@@ -30564,10 +30600,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-line-native-4bd61ac9/receipt-4bd61ac9a19d199a.json",
+        "sha256": "2bcf1de659ccfb09f01f87df04b4dae442b3075ce340b80327521392ef6838af"
+      },
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "First native sketch geometry input, cancellation, and history."
+      "mapping_reason": "First native sketch geometry input, cancellation, and history.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b: line tool and line-chain transaction tests pass; native rendering and recorded numeric measurement are not covered. See receipts/2026-11-14-go-line-baseline/README.md.",
+      "kernel_capabilities": "Planar sketch line geometry is exercised; these scenarios do not create a solid.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The desktop owner applies line sketch actions and presents the sketch scene.",
+      "rust_tests": "sketch_scenarios_use_the_native_window: line-05 Continue endpoint selection after accepting a segment",
+      "oracle": "Pinned native scenario assertions of sketch state and sampled viewport, with reviewed final capture.",
+      "expected_result": "Line offers the next connected segment from that endpoint; the user press Escape; Ready returns and the accepted segment remains"
     },
     {
       "id": "scenario:bd578b515b58dccc5db60ab55550c235ff1346c7d2e9fe251a5495da47219e98",

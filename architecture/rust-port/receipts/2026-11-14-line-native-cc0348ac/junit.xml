@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Line: tmp/obk-bdd-line-2cdD0zy0/checkout/features/sketch/line/scenario.feature" package="testsuite/Feature: Line: tmp/obk-bdd-line-2cdD0zy0/checkout/features/sketch/line/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T16:13:49.276675533Z" time="6.487112421"><testcase name="Scenario: line-01 Commit the intended result: tmp/obk-bdd-line-2cdD0zy0/checkout/features/sketch/line/scenario.feature:5:3" time="6.487112421"><system-out><![CDATA[  Scenario: line-01 Commit the intended result
+   ✔  Given the MCAD Software is running
+   ✔  And an empty editable planar sketch is active
+   ✔  When the user select Line and click two distinct points
+   ✔  Then one segment joins the points and the command offers a connected next segment
+   ✔  When the user press Escape
+   ✔  Then the command ends and the visible segment remains
+]]></system-out></testcase></testsuite></testsuites>

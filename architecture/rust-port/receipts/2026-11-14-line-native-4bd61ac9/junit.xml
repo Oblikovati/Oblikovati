@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Line: tmp/obk-bdd-line-2cdD0zy0/checkout/features/sketch/line/scenario.feature" package="testsuite/Feature: Line: tmp/obk-bdd-line-2cdD0zy0/checkout/features/sketch/line/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T16:14:17.428538594Z" time="7.062809288"><testcase name="Scenario: line-05 Continue endpoint selection after accepting a segment: tmp/obk-bdd-line-2cdD0zy0/checkout/features/sketch/line/scenario.feature:41:3" time="7.062809288"><system-out><![CDATA[  Scenario: line-05 Continue endpoint selection after accepting a segment
+   ✔  Given Line is active and a start point has been selected
+   ✔  When the user select a distinct endpoint
+   ✔  Then Line offers the next connected segment from that endpoint
+   ✔  When the user press Escape
+   ✔  Then Ready returns and the accepted segment remains
+]]></system-out></testcase></testsuite></testsuites>

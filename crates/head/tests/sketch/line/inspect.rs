@@ -26,6 +26,7 @@ fn press_m_and_select_last_line(world: &mut ApplicationWorld) {
 }
 // line-04 and line-08
 #[when("I open Measure and select the segment")]
+#[when("the user open Measure and select the segment")]
 #[when("I measure the visible upper segment")]
 fn measure_upper(world: &mut ApplicationWorld) {
     press_m_and_select_last_line(world);

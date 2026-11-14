@@ -102,10 +102,12 @@ fn is_ready(world: &mut ApplicationWorld) {
     world.expect_ready();
 }
 #[when("I undo its creation")]
+#[when("the user undo its creation")]
 fn undo_creation(world: &mut ApplicationWorld) {
     world.undo();
 }
 #[when("I redo creation")]
+#[when("the user redo creation")]
 fn redo_creation(world: &mut ApplicationWorld) {
     world.redo();
 }
