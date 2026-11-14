@@ -260,10 +260,8 @@ impl GuiShellAction {
                 state.extrude_available
                     && state.authoring == GuiAuthoringContext::Part
                     && !state.transaction_open
-                    && state
-                        .browser
-                        .as_ref()
-                        .is_some_and(|browser| !browser.sketches.is_empty())
+                    && state.document.is_some()
+                    && state.browser.is_some()
             }
             Self::Extrude {
                 document,

@@ -90,6 +90,8 @@ pub trait HeadWindow {
     ) -> Result<HeadGuiUpdate, String> {
         Ok(HeadGuiUpdate::default())
     }
+    /// Open an extrusion draft; example: `window.request_extrusion()`.
+    fn request_extrusion(&mut self) {}
     /// Return a rejected draft and its reason; example: `window.reject_dimension_edit(&value, "invalid")`.
     fn reject_dimension_edit(&mut self, _value: &oblikovati_gui::GuiDimensionValue, _cause: &str) {}
     /// Return an extrusion draft rejected by its owner; example: `window.reject_extrusion(&request, "profile missing")`.

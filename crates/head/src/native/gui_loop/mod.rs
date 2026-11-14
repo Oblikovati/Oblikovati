@@ -29,6 +29,10 @@ pub(super) struct NativeGui {
     clipboard: Option<GuiClipboard>,
 }
 impl NativeGui {
+    pub(super) fn request_extrusion(&mut self) {
+        self.engine.request_extrusion();
+        self.deadline = Some(Duration::ZERO);
+    }
     pub(super) fn reject_dimension_edit(
         &mut self,
         value: &oblikovati_gui::GuiDimensionValue,
