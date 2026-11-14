@@ -29733,10 +29733,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "First native sketch geometry input, cancellation, and history."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-arc3-01/receipt-14b49f2f5ad6cea9.json",
+        "sha256": "9596c671694248240603a42c1e7f7e72941ffdc60e0b0bc8f9d5cdd5746ed326"
+      },
+      "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_arc_order_test.go",
+      "mapping_reason": "First native sketch geometry input, cancellation, and history.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b tests start, end, through-point order and arc-slot agreement, but not the Rust native ribbon. See receipts/2026-11-14-go-arc3-baseline/README.md.",
+      "kernel_capabilities": "The sketch tool constructs a circular arc through three noncollinear points; no solid operation is performed.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The native desktop sends the three pointer positions through sketch placement and owner operations.",
+      "rust_tests": "sketch_scenarios_use_the_native_window with OBK_BDD_FEATURE=arc-three-point and OBK_BDD_SCENARIO=arc-three-point-01.",
+      "oracle": "Native scenario checks one arc, both endpoint positions and the selected through-point in screen coordinates; final capture reviewed.",
+      "expected_result": "One arc passes through the selected start, end and third point; the tool requests the next start point."
     },
     {
       "id": "scenario:6941106a8f1f7da814471472f86415063d31b05c0ce80bdac803eab691d8933b",
