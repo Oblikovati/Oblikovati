@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:d21c1f8c789927b46db67abfe6f79e4e8774be0e990dddf6f6631b83c30b7ab8",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "f88b2e19cf22dae22f91dbd57e319e819d47e9f1daf9edc00b3da4c122111bf5",
+  "application_commit": "941dd9bf1534fbe69a4e1972cd8ea056ed3c3d02",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan Lavapipe on Xvfb, Linux"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-point-d21c1f8c789927b4-941dd9bf/cucumber.json",
+    "sha256": "a2e5af58641037fcc8a4382f4f1adf02ca23f668c249241e6959fe1aa1f1029d"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-point-d21c1f8c789927b4-941dd9bf/source-revision.json",
+    "sha256": "2860ff5a234678b2acf432e36146c6089526b27521797245cc0e8af528054c34"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-point-d21c1f8c789927b4-941dd9bf/point-04-Undo-and-redo-the-recorded-placement.png",
+    "sha256": "5171905e9fd8565bbe7d76672b64922933eefa36344a9d86b3e5ee29d259db64"
+  }
+}

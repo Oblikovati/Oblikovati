@@ -3541,8 +3541,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-linepoint-c1547ece/receipt-c1547ececd822651.json",
-        "sha256": "0b88df37f97c79b8f47c23e5c6d8a6e03286f7999570bd26aa03e4e158db87cb"
+        "path": "architecture/rust-port/receipts/2026-11-14-point-c1547ececd822651-941dd9bf/receipt-c1547ececd822651.json",
+        "sha256": "084bdab704ec60fd394ed632813d764ead319692adad10971dcdc84ee995d402"
       },
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
       "mapping_reason": "Cancel point creation and return to Ready.",
@@ -3570,8 +3570,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-linepoint-d21c1f8c/receipt-d21c1f8c789927b4.json",
-        "sha256": "c9e71fa31034476109967d90214cebe12afa3882d71e0ed8e0a068be5bc46ce7"
+        "path": "architecture/rust-port/receipts/2026-11-14-point-d21c1f8c789927b4-941dd9bf/receipt-d21c1f8c789927b4.json",
+        "sha256": "56c4e7f87dbfa80b7fca3d1a3ec5bffbf9604bb7ad465f23d5c72a263305c51e"
       },
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
       "mapping_reason": "Create a center point and restore it through history.",
@@ -3599,8 +3599,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-linepoint-436f15ab/receipt-436f15ab31b13b1d.json",
-        "sha256": "94ae9b5d66eebf934222aff4b66413c5e2e709e57d26ae92f9ad732c801d0a60"
+        "path": "architecture/rust-port/receipts/2026-11-14-point-436f15ab31b13b1d-941dd9bf/receipt-436f15ab31b13b1d.json",
+        "sha256": "53f3f71f8b0944ed214a1500b68f8b8879f9c2853b84db44cab1bfa79213d363"
       },
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
       "mapping_reason": "Place multiple regular points in one command.",
@@ -3662,8 +3662,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-linepoint-545eaee5/receipt-545eaee5fec75147.json",
-        "sha256": "40bcb75219927e150006b70b216009c4707bf63e24ebef83c244675267b869e1"
+        "path": "architecture/rust-port/receipts/2026-11-14-point-545eaee5fec75147-941dd9bf/receipt-545eaee5fec75147.json",
+        "sha256": "ddf030002ee184d0a1b2a161fda9c0308e231c468f6be3fa697c5716662688a8"
       },
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
       "mapping_reason": "Create a center point using the format mode.",

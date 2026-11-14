@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Point: tmp/obk-point-48987af/features/sketch/point/scenario.feature" package="testsuite/Feature: Point: tmp/obk-point-48987af/features/sketch/point/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T21:22:57.87228058Z" time="8.057160859"><testcase name="Scenario: point-05 Continue regular point placement without restarting Point: tmp/obk-point-48987af/features/sketch/point/scenario.feature:27:3" time="8.057160859"><system-out><![CDATA[  Scenario: point-05 Continue regular point placement without restarting Point
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch is active
+   ✔  And the Format Center Point toggle is off
+   ✔  When the user invoke Point
+   ✔  Then the prompt is Select Sketch Point
+   ✔  When the user click two separate canvas positions
+   ✔  Then both dot-style markers appear
+   ✔  And Point remains available after each placement
+   ✔  When the user press Escape
+   ✔  Then Ready is displayed with both point markers retained
+]]></system-out></testcase></testsuite></testsuites>
