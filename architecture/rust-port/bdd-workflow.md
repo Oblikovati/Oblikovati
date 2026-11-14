@@ -13,7 +13,7 @@ not an upstream revision. Restore and verify it before using it for a run:
 
 ```sh
 git clone -c core.autocrlf=false --branch snapshot \
-  "$PWD/test-utilities/benchmarks/scenario-snapshots/mcad-scenarios-2026-11-14-c56a6f6.bundle" \
+  "$PWD/test-utilities/benchmarks/scenario-snapshots/mcad-scenarios-2026-11-14-48987af.bundle" \
   /absolute/path/to/scenario-checkout
 python3 tools/bdd/verify_snapshot.py /absolute/path/to/scenario-checkout
 export OBK_BDD_ROOT=/absolute/path/to/scenario-checkout
@@ -145,7 +145,7 @@ After restoring and verifying the pinned checkout, generate the source inventory
 
 ```sh
 cargo xtask scenario-ledger "$OBK_BDD_ROOT" \
-  c56a6f6678dbb9a7bdb96fe37561bb63d6413127 > /absolute/path/to/source-inventory.json
+  48987af7b5cbb06515bc6f30385f508382f34064 > /absolute/path/to/source-inventory.json
 ```
 
 The command requires a clean checkout at the requested commit and reads its

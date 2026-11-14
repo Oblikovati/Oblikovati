@@ -128,7 +128,7 @@
     "features/sketch/arc-center-point/scenario.feature": {
       "outlines": 0,
       "scenario_declarations": 10,
-      "sha256": "2731baeadcb4d803d50d60fa6e768296e5b012b9cf68b3f00a322ef309b83aca"
+      "sha256": "395c6bb1eaeb785f3eb934a29ed2084ad46adcccb67e8d3ec0d1348de5384f50"
     },
     "features/sketch/arc-tangent/scenario.feature": {
       "outlines": 0,
@@ -957,8 +957,8 @@
     },
     "features/solid-model/user-coordinate-system/user-coordinate-system.feature": {
       "outlines": 0,
-      "scenario_declarations": 4,
-      "sha256": "ebac5bec1c6f564177d25b69472ae09f819c49c8a76b1fdbb3487631da6a711d"
+      "scenario_declarations": 5,
+      "sha256": "50cff3509170d176c23a7cc0d429f4df9257c8b8184034214ed837917651a2a3"
     },
     "features/solid-model/work-axis/work-axis.feature": {
       "outlines": 0,
