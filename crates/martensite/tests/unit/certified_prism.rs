@@ -117,6 +117,32 @@ fn certified_prism_declines_an_unmatched_saved_profile() {
 }
 
 #[test]
+fn short_profile_curve_preserves_the_kernel_admission_decline() {
+    use martensite_tkbo::profile_extrusion::{DeclineCause, OperationDecline, OperationStage};
+    use std::error::Error;
+    let (profile, selection) = square(1e-15);
+    let error = retain_certified_profile_prism(
+        &profile,
+        &selection,
+        [0., 0., 10.],
+        resolution(ToleranceCap::Refuse(1e-5)),
+    )
+    .err()
+    .unwrap();
+    assert_eq!(error.phase(), Phase::Profile);
+    assert_eq!(error.kind(), Kind::InvalidInput);
+    let decline = error
+        .source()
+        .unwrap()
+        .downcast_ref::<OperationDecline>()
+        .unwrap();
+    assert_eq!(decline.stage, OperationStage::Admission);
+    assert!(
+        matches!(decline.cause, DeclineCause::DegenerateCurve { curve: ProfileCurveId(11), size, weld } if size < weld)
+    );
+}
+
+#[test]
 fn kernel_decline_keeps_its_typed_cause() {
     use std::error::Error;
     let (profile, selection) = square(10.);

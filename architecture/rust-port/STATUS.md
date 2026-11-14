@@ -50,7 +50,7 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 - The stale green pixel oracle is replaced in the targeted native tests (#3867). A rotation test now reaches a separate constraint-policy question (#3868); the full gate has not been rerun.
 - The native GUI save/undo test used obsolete toolbar coordinates on clean base `e01e3a6e9` (#3874); see `receipts/2026-11-14-notice-baseline/`. It now targets rendered controls and passes through the camera assertions. A separate native test checks that the first toolbar navigation arrow stays out of the viewport.
 - Current native evidence: see `receipts/2026-11-14-keys-body/`, `receipts/2026-11-14-keys-rectangle/`, `receipts/2026-11-14-keys-extrusion/`, `receipts/2026-11-14-keys-orbit/`, and `receipts/2026-11-14-keys-keytips/`. The 195 live feature files match the saved snapshot as of 2026-11-14.
-- The typed-prism health classification test fails on clean base `016ff28dc` as well as this work (#3875). The rotation failure is tracked in #3868.
+- On clean base `016ff28dc`, the typed-prism test expected `InvalidGeometry` for a short curve. The current kernel reports `InvalidInput` at admission with a `DegenerateCurve` cause; the native test now checks that cause, API reporting, and recovery (#3875). The rotation failure is tracked in #3868.
 - A12: split the file host, assembly contract tests, GUI frame engine, and browser snapshot validation (#3860). The next `docs-lint` failure is `crates/gui/src/chrome.rs`.
 - Per-face appearance presentation is not established by the body-color work. Verify it separately.
 - Do not mark R0–R3 closed without their exit checks and receipts.

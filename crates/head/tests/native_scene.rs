@@ -264,13 +264,50 @@ fn native_typed_prism_failure_clears_pixels_and_recovers_exact_scene() {
     let failed = publish_native_scene(&mut owner, &mut window);
     assert_eq!(solid_pixels(&failed), 0);
     verify_typed_native_failure(window.scene_status().unwrap());
+    verify_prism_failure_through_public_api(&mut owner);
     native_set(&mut owner, "width", "4 cm");
     assert_eq!(
         publish_native_scene(&mut owner, &mut window).rgba,
         original.rgba
     );
+    let restored = Client::new(owner.document_host())
+        .documents()
+        .update(&UpdateDocumentArgs::default())
+        .unwrap();
+    assert!(restored.errors.is_none() && !restored.requires_update);
     owner.finish().unwrap();
     window.finish().unwrap();
+}
+fn verify_prism_failure_through_public_api(owner: &mut NativeDesktopOwner) {
+    let strict = Client::new(owner.document_host())
+        .documents()
+        .update(&UpdateDocumentArgs::default());
+    assert!(
+        strict
+            .unwrap_err()
+            .to_string()
+            .contains("failed after recompute")
+    );
+    let report = Client::new(owner.document_host())
+        .documents()
+        .update(&UpdateDocumentArgs {
+            accept_errors_and_continue: true,
+        })
+        .unwrap();
+    let errors = report.errors.unwrap();
+    assert_eq!(errors.len(), 1);
+    assert_eq!((errors[0].id, errors[0].kind.as_str()), (1, "extrude"));
+    assert!(
+        errors[0].message.contains("DegenerateCurve"),
+        "{:?}",
+        errors[0]
+    );
+    assert!(
+        errors[0].message.contains("ProfileCurveId(101)"),
+        "{:?}",
+        errors[0]
+    );
+    assert!(!report.requires_update);
 }
 fn verify_typed_native_failure(status: &crate::HeadSceneStatus) {
     use oblikovati_model::feature::{FeatureEvaluationStatus, part::PartFeatureFailure};
@@ -288,8 +325,12 @@ fn verify_typed_native_failure(status: &crate::HeadSceneStatus) {
     );
     assert_eq!(
         cause.kind(),
-        oblikovati_martensite::EvaluationFailureKind::InvalidGeometry
+        oblikovati_martensite::EvaluationFailureKind::InvalidInput
     );
+    let source = std::error::Error::source(cause).expect("expected the kernel decline");
+    let diagnostic = source.to_string();
+    assert!(diagnostic.contains("DegenerateCurve"), "{diagnostic}");
+    assert!(diagnostic.contains("ProfileCurveId(101)"), "{diagnostic}");
     assert_eq!(
         cause.feature(),
         Some(oblikovati_model::feature::FeatureId(1))
