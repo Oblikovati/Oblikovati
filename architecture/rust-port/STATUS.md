@@ -183,6 +183,6 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 
 - R7 template navigation: four additional pinned scenarios passed for list selection, Back and Forward, reopening after Cancel, and Home navigation. Final captures were reviewed; see `receipts/2026-11-14-gallery-nav-*/`. The live feature file matched the pin after the runs (#3899).
 
-- R7 document creation: the initial template-selection scenario uses the configured session described in the source `FIXTURES.md`; the chooser must also show the specified material in its details (#3899).
+- R7 document creation: the initial template-selection scenario uses the configured session described in the source `FIXTURES.md`; the template and Generic material assets are missing. A focused native check confirms that the current chooser does not show material. See the source `BLOCKERS.md` and #3932 (#3899).
 
 - R7 model browser: the Go baseline tests tree order, nested sketches, and selectable nodes, but not the rendered highlight and toolbar. The native scenario checks those interactions; see `receipts/2026-11-14-go-browser-baseline/` and `receipts/2026-11-14-gate-ui-9a6cb2d0/` (#3890).
