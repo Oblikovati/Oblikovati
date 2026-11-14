@@ -433,103 +433,12 @@ impl HeadWindow for NativeHeadWindow {
 }
 mod capture;
 mod clipboard;
-#[derive(Clone)]
-struct NativeOwnerWake(ViewportWake);
-impl oblikovati_automation::dispatch::DispatchWakeup for NativeOwnerWake {
-    fn wake(&self) -> Result<(), String> {
-        self.0.wake()
-    }
-}
-type NativeDesktopOwner = crate::DesktopOwner<
-    crate::DesktopObservations,
-    crate::DesktopObservations,
-    oblikovati_persistence::file_access::NativeDocumentFiles,
-    oblikovati_model::identity::SystemGuidSource,
-    crate::DesktopObservations,
-    NativeOwnerWake,
->;
+mod owner;
+use owner::{NativeDesktopOwner, NativeOwnerWake, native_owner_at, native_script_engine};
 #[cfg(test)]
-fn native_owner(wake: ViewportWake) -> Result<NativeDesktopOwner, String> {
-    native_owner_at(wake, &preferences::native_config_directory()?)
-}
-fn native_owner_at(
-    wake: ViewportWake,
-    directory: &std::path::Path,
-) -> Result<NativeDesktopOwner, String> {
-    let themes = preferences::load_native_themes(directory)?;
-    let observations = crate::DesktopObservations::default();
-    let files = oblikovati_session::files::FileWorkspace::new(
-        observations.clone(),
-        oblikovati_persistence::file_access::NativeDocumentFiles,
-    );
-    let version = oblikovati_cli::BuildIdentity::parse(oblikovati_cli::BUILD_MANIFEST)?.version;
-    Ok(crate::DesktopOwner::new(
-        files,
-        oblikovati_model::identity::SystemGuidSource,
-        observations,
-        version,
-        NativeOwnerWake(wake),
-        crate::DesktopDispatchOptions::default(),
-    )
-    .with_extrusion_policy(crate::part_scene::resolution_policy::desktop_policy())?
-    .with_keymap_preferences(Box::new(preferences::load_native_keymap(directory)?))?
-    .with_marking_menu_preferences(Box::new(preferences::load_native_marking_menu(directory)?))?
-    .with_ui_scale_preferences(Box::new(preferences::load_native_application_options(
-        directory,
-    )?))
-    .with_prompt_preferences(Box::new(preferences::load_native_application_options(
-        directory,
-    )?))
-    .with_sketch_preferences(Box::new(preferences::load_native_application_options(
-        directory,
-    )?))
-    .with_recent_documents(Box::new(preferences::load_native_application_options(
-        directory,
-    )?))
-    .with_theme_store(themes.library, Box::new(themes.preferences))
-    .with_theme_file_declines(themes.declines)
-    .with_window_captures(crate::DesktopWindowCaptures::new(
-        std::env::temp_dir(),
-        u64::from(std::process::id()),
-    )))
-}
-#[cfg(test)]
-type NativeScriptDesktop = crate::DesktopScripts<NativeDesktopOwner>;
-#[cfg(test)]
-fn native_script_owner(wake: ViewportWake) -> Result<NativeScriptDesktop, String> {
-    let owner = native_owner(wake)?;
-    Ok(crate::DesktopScripts::new(
-        owner,
-        native_script_engine()?,
-        oblikovati_script::ScriptLimits::gui(),
-    ))
-}
-fn native_script_engine() -> Result<oblikovati_script::IsolatedLuaEngine, String> {
-    let executable = std::env::current_exe()
-        .map_err(|cause| format!("desktop script worker: expected current executable: {cause}"))?;
-    Ok(oblikovati_script::IsolatedLuaEngine::new(
-        &executable,
-        vec![oblikovati_script::WORKER_ARGUMENT.into()],
-    ))
-}
-/// Open the Linux head on its owner thread; example: `run_native(HeadOptions { frames: Some(3) })?`.
-pub fn run_native(options: HeadOptions) -> Result<HeadSummary, String> {
-    run_native_documents(options, &[])
-}
-/// Open native documents before the first frame; example: `run_native_documents(options, &["part.opd".into()])?`.
-pub fn run_native_documents(
-    options: HeadOptions,
-    documents: &[std::path::PathBuf],
-) -> Result<HeadSummary, String> {
-    let directory = preferences::native_config_directory()?;
-    let mut window = NativeHeadWindow::open()?;
-    window.ribbon_settings_directory = Some(directory.clone());
-    let owner = match native_owner_at(window.wake.clone(), &directory) {
-        Ok(owner) => owner,
-        Err(cause) => return crate::frames::combine_retirement(Err(cause), window.finish()),
-    };
-    addin_launch::run_startup(&mut window, owner, options, documents)
-}
+use owner::{NativeScriptDesktop, native_owner, native_script_owner};
+mod run;
+pub use run::{run_native, run_native_documents};
 #[cfg(test)]
 #[path = "../tests/native_wait.rs"]
 mod tests;
