@@ -428,3 +428,6 @@ mod legacy_cap_witness;
 
 #[path = "legacy_cap_stage.rs"]
 mod legacy_cap_stage;
+
+#[path = "legacy_side_witness.rs"]
+mod legacy_side_witness;

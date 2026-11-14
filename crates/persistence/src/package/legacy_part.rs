@@ -4,6 +4,8 @@ mod cap_binding;
 pub use cap_binding::LegacyCapBindingVerifier;
 mod face_producer;
 pub use face_producer::{LegacyExtrusionFaceProducer, LegacyExtrusionFaceRole};
+mod side_binding;
+pub use side_binding::LegacySideLineageWitness;
 mod source;
 use super::{DocumentPackage, LegacyFaceOffsetCandidate, LegacySketchCandidate, PackageCodecError};
 use oblikovati_model::{

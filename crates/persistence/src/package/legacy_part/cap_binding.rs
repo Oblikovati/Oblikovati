@@ -46,21 +46,11 @@ impl LegacyPartCandidate {
         target: &AuthoredFeature<PartFeatureDefinition>,
         verifier: &dyn LegacyCapBindingVerifier,
     ) -> Result<WorkPlaneDefinition, PackageCodecError> {
-        let plane = self.unique_cap_offset(sequence)?;
-        let producer = self.extrusion_face_producer(&plane.face_key)?;
-        if producer.creation_sequence >= sequence || !plane.offset.is_finite() {
-            return Err(failure(format!(
-                "plane sequence {sequence}, producer {}, offset {}: expected an earlier producer and a finite offset",
-                producer.creation_sequence, plane.offset
-            )));
-        }
+        let plane = self.validated_face_offset(sequence)?;
         let face = self.migrate_cap_face(&plane.face_key, document, target, verifier)?;
-        Ok(WorkPlaneDefinition::Offset {
-            base: WorkPlaneReference::GoPrismFace(face),
-            distance: WorkPlaneDistance::Constant(plane.offset),
-        })
+        Ok(legacy_offset_definition(face, plane.offset))
     }
-    fn unique_cap_offset(
+    pub(super) fn validated_face_offset(
         &self,
         sequence: u64,
     ) -> Result<&super::LegacyFaceOffsetCandidate, PackageCodecError> {
@@ -78,9 +68,16 @@ impl LegacyPartCandidate {
                 "plane sequence {sequence}: expected a unique nonzero face-offset plane"
             )));
         }
+        let producer = self.extrusion_face_producer(&plane.face_key)?;
+        if producer.creation_sequence >= sequence || !plane.offset.is_finite() {
+            return Err(failure(format!(
+                "plane sequence {sequence}, producer {}, offset {}: expected an earlier producer and a finite offset",
+                producer.creation_sequence, plane.offset
+            )));
+        }
         Ok(plane)
     }
-    fn unique_extrusion_sequence(
+    pub(super) fn unique_extrusion_sequence(
         &self,
         sequence: u64,
     ) -> Result<&super::LegacyExtrusionCandidate, PackageCodecError> {
@@ -112,7 +109,7 @@ fn cap_role(role: LegacyExtrusionFaceRole) -> Result<SketchPrismReferenceRole, P
     }
 }
 
-fn matching_prism<'a>(
+pub(super) fn matching_prism<'a>(
     target: &'a AuthoredFeature<PartFeatureDefinition>,
     source: &super::LegacyExtrusionCandidate,
 ) -> Result<&'a oblikovati_model::feature::sketch_prism::SketchPrismDefinition, PackageCodecError> {
@@ -130,4 +127,14 @@ fn matching_prism<'a>(
         )));
     }
     Ok(definition)
+}
+
+pub(super) fn legacy_offset_definition(
+    face: WorkPlaneFaceReference,
+    offset: f64,
+) -> WorkPlaneDefinition {
+    WorkPlaneDefinition::Offset {
+        base: WorkPlaneReference::GoPrismFace(face),
+        distance: WorkPlaneDistance::Constant(offset),
+    }
 }
