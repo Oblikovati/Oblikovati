@@ -1,0 +1,89 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Built-in catalog: elemental metals industrially used, atomic number Z <= 83 (Bismuth).
+# Only elements with reliable mechanical, thermal AND electrical data are included; pure
+# reactive/liquid metals (Na, K, Ca, Hg) and metals without dependable structural data
+# (Mn, Ga, Tc, Tl) are intentionally omitted.
+#
+# Property sources (typical / annealed, room temperature):
+#   - Density, thermal conductivity, linear expansion, specific heat, electrical
+#     resistivity: CRC Handbook of Chemistry and Physics (97th ed.); ASM Metals
+#     Reference Book (3rd ed.); MatWeb element datasheets.
+#   - Young's modulus, Poisson's ratio, yield & ultimate tensile strength: ASM
+#     Metals Handbook Vol. 2; AZoM material profiles; MatWeb. Strength values are for
+#     commercially pure, annealed wrought form unless noted; brittle elements list an
+#     approximate tensile/flexural figure (no distinct yield) and are tagged "brittle".
+#
+# Appearance base colors (albedo) are physically-based metal F0 reflectance values in
+# sRGB, after the Lagarde/UE4/Filament metal reference chart; the Realistic shader
+# linearises them (mesh.frag: f0 = toLinear(albedo)). metallic = 1.0 for every pure
+# metal; roughness encodes a representative polished-to-satin finish.
+#
+# Units: density g/cm3 | youngsModulus GPa | yield & UTS MPa | conductivity W/(m*K)
+#        expansionCoeff 1/K | specificHeat J/(kg*K) | resistivity ohm*m | relativePermittivity -
+
+materials:
+    - id: platinum
+      name: Platinum
+      density: 21.45
+      mechanical:
+        youngsModulus: 168
+        poissonsRatio: 0.38
+        yieldStrength: 70
+        ultimateTensileStrength: 165
+      thermal:
+        conductivity: 71.6
+        expansionCoeff: 8.8e-06
+        specificHeat: 133
+      electrical:
+        resistivity: 1.06e-07
+        relativePermittivity: 1
+      appearance: platinum
+    - id: gold
+      name: Gold
+      density: 19.3
+      mechanical:
+        youngsModulus: 79
+        poissonsRatio: 0.44
+        yieldStrength: 30
+        ultimateTensileStrength: 120
+      thermal:
+        conductivity: 318
+        expansionCoeff: 1.42e-05
+        specificHeat: 129
+      electrical:
+        resistivity: 2.21e-08
+        relativePermittivity: 1
+      appearance: gold
+    - id: lead
+      name: Lead
+      density: 11.34
+      mechanical:
+        youngsModulus: 16
+        poissonsRatio: 0.44
+        yieldStrength: 12
+        ultimateTensileStrength: 18
+      thermal:
+        conductivity: 35.3
+        expansionCoeff: 2.89e-05
+        specificHeat: 129
+      electrical:
+        resistivity: 2.08e-07
+        relativePermittivity: 1
+      appearance: lead
+    - id: bismuth
+      name: Bismuth
+      density: 9.78
+      mechanical:
+        youngsModulus: 32
+        poissonsRatio: 0.33
+        yieldStrength: 70
+        ultimateTensileStrength: 70
+      thermal:
+        conductivity: 7.97
+        expansionCoeff: 1.34e-05
+        specificHeat: 122
+      electrical:
+        resistivity: 1.29e-06
+        relativePermittivity: 1
+      appearance: bismuth

@@ -1,0 +1,93 @@
+{
+  "kind": "diagnostic only; not acceptance",
+  "scenario_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+  "scenario_path": "features/sketch/point/scenario.feature",
+  "source_sha256": "f88b2e19cf22dae22f91dbd57e319e819d47e9f1daf9edc00b3da4c122111bf5",
+  "application_commit": "429c46deffe7dcaf5c86c471c0480c6812eea2b9",
+  "environment": "Linux, Vulkan Lavapipe, Xvfb 1440x900, XMODIFIERS=@im=none",
+  "source_unchanged": true,
+  "runner": "sketch_scenarios_use_the_native_window with OBK_BDD_FEATURE=point and OBK_BDD_DIAGNOSTIC=1",
+  "scenarios": [
+    {
+      "scenario": "point-03 Cancel before placing a point",
+      "classification": "unbound step",
+      "first_issue": {
+        "step": "the user press Escape twice without clicking the canvas",
+        "result": "unbound",
+        "detail": null
+      }
+    },
+    {
+      "scenario": "point-04 Undo and redo the recorded placement",
+      "classification": "unbound step",
+      "first_issue": {
+        "step": "the user press Ctrl+Z",
+        "result": "unbound",
+        "detail": null
+      }
+    },
+    {
+      "scenario": "point-05 Continue regular point placement without restarting Point",
+      "classification": "unbound step",
+      "first_issue": {
+        "step": "the user invoke Point",
+        "result": "unbound",
+        "detail": null
+      }
+    },
+    {
+      "scenario": "point-06 Convert a regular sketch point to a center point and back",
+      "classification": "unbound step",
+      "first_issue": {
+        "step": "the user right-click the first point and choose Center Point",
+        "result": "unbound",
+        "detail": null
+      }
+    },
+    {
+      "scenario": "point-07 Undo and redo point-type conversion",
+      "classification": "unbound step",
+      "first_issue": {
+        "step": "the user have converted a regular sketch point to Center Point",
+        "result": "unbound",
+        "detail": null
+      }
+    },
+    {
+      "scenario": "point-08 Create a center point using the Format toggle",
+      "classification": "unbound step",
+      "first_issue": {
+        "step": "the user invoke Point",
+        "result": "unbound",
+        "detail": null
+      }
+    },
+    {
+      "scenario": "point-10 Resolve repeated center-point placement at the same coordinates",
+      "classification": "unbound step",
+      "first_issue": {
+        "step": "the user click the same canvas location twice and press Escape",
+        "result": "unbound",
+        "detail": null
+      }
+    },
+    {
+      "scenario": "point-11 Cancel a center-point command with one Escape in the later fixture",
+      "classification": "unbound step",
+      "first_issue": {
+        "step": "Point is active with Select center point in the recorded sketch",
+        "result": "unbound",
+        "detail": null
+      }
+    },
+    {
+      "scenario": "point-12 Inspect Precise Input while Point is active",
+      "classification": "unbound step",
+      "first_issue": {
+        "step": "the user expand the Create panel",
+        "result": "unbound",
+        "detail": null
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "application_commit": "6c9122ecda435eeb3a9d3843f3444971f607ea92",
+  "scenario_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+  "scope": "Face-based offset plane creation through desktop and headless API owners.",
+  "verification": {
+    "head": "4 face-plane tests passed; includes edit, undo, redo, save/reopen, rejection and transaction abort",
+    "automation": "741 query tests passed",
+    "clippy": "automation and head all targets passed",
+    "check": "workspace all targets passed"
+  },
+  "limits": [
+    "The face is supplied by API key, not selected with native mouse or keyboard.",
+    "Go document migration and Go-to-Martensite frame mapping remain open.",
+    "Full make gate not run."
+  ]
+}

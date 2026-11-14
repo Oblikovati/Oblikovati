@@ -1,0 +1,167 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use crate::selection::{BrowserSketchPick, SelectionClickMode, SelectionSet};
+use crate::{DocumentSession, TransactionObserver};
+use oblikovati_model::{document_sketch::DocumentSketchId, sketch::SketchError};
+
+impl<O: TransactionObserver> DocumentSession<O> {
+    /// Resolve a browser row against its current document, independent of edit mode.
+    /// Example: `let pick = session.browser_sketch_pick(sketch)?;`.
+    pub fn browser_sketch_pick(
+        &self,
+        sketch: DocumentSketchId,
+    ) -> Result<BrowserSketchPick, SketchError> {
+        self.snapshot().sketches.get(sketch)?;
+        Ok(BrowserSketchPick {
+            document: self.document,
+            sketch,
+        })
+    }
+    /// Apply browser selection without editing the model or creating undo history.
+    /// Tools retain their clicks; example: `session.apply_browser_sketch_click(Some(pick), mode, false, &mut picks)?;`.
+    pub fn apply_browser_sketch_click(
+        &self,
+        picked: Option<BrowserSketchPick>,
+        mode: SelectionClickMode,
+        tool_active: bool,
+        picks: &mut SelectionSet<BrowserSketchPick>,
+    ) -> Result<Option<usize>, SketchError> {
+        if tool_active {
+            return Ok(None);
+        }
+        self.validate_browser_click(picked, mode, picks)?;
+        Ok(picks.apply_click(picked, mode, false))
+    }
+    /// Read live selected rows without publishing deleted identities.
+    /// Example: `session.selected_browser_sketches()` for the browser and API.
+    pub fn selected_browser_sketches(&self) -> Vec<DocumentSketchId> {
+        self.browser_selection
+            .items()
+            .iter()
+            .filter(|pick| self.snapshot().sketches.get(pick.sketch()).is_ok())
+            .map(|pick| pick.sketch())
+            .collect()
+    }
+    /// The body row chosen in the browser; example: to tint that body in the scene.
+    pub fn selected_browser_body(&self) -> Option<(&str, oblikovati_model::feature::FeatureId)> {
+        let (key, feature) = self.browser_body.as_ref()?;
+        Some((key.as_str(), *feature))
+    }
+    /// Choose a body row; its shading follows, so the display changes without a model edit.
+    /// Example: `session.set_browser_body_selection(key, feature);`.
+    pub fn set_browser_body_selection(
+        &mut self,
+        key: &str,
+        feature: oblikovati_model::feature::FeatureId,
+    ) {
+        self.browser_selection.clear();
+        self.browser_feature = None;
+        self.browser_root = false;
+        self.browser_body = Some((key.to_owned(), feature));
+        self.body_visibility.note_display_change();
+    }
+    /// The document's own row is chosen; example: for its row's accent.
+    pub fn browser_root_selected(&self) -> bool {
+        self.browser_root
+    }
+    /// Choose the document's own row, in place of every other row.
+    /// Example: `session.set_browser_root_selection();`.
+    pub fn set_browser_root_selection(&mut self) {
+        self.browser_selection.clear();
+        self.browser_feature = None;
+        self.let_go_of_whole_rows();
+        self.browser_root = true;
+    }
+    fn let_go_of_whole_rows(&mut self) {
+        self.browser_root = false;
+        if self.browser_body.take().is_some() {
+            self.body_visibility.note_display_change();
+        }
+    }
+    /// The feature row chosen in the browser, while that feature still exists.
+    /// Example: `session.selected_browser_feature()` for the row's accent.
+    pub fn selected_browser_feature(&self) -> Option<oblikovati_model::feature::FeatureId> {
+        let feature = self.browser_feature?;
+        self.snapshot()
+            .work_geometry
+            .features()
+            .iter()
+            .any(|known| known.id() == feature)
+            .then_some(feature)
+    }
+    /// Choose one feature row; a transient choice, so it makes no undo step.
+    /// Example: `session.set_browser_feature_selection(feature)?;`.
+    pub fn set_browser_feature_selection(
+        &mut self,
+        feature: oblikovati_model::feature::FeatureId,
+    ) -> Result<(), SketchError> {
+        let known = self.snapshot().work_geometry.features();
+        if !known.iter().any(|row| row.id() == feature) {
+            return Err(SketchError::Definition(format!(
+                "browser feature {feature:?}: expected a feature of the current program"
+            )));
+        }
+        self.browser_selection.clear();
+        self.let_go_of_whole_rows();
+        self.browser_feature = Some(feature);
+        Ok(())
+    }
+    /// Change transient session selection without creating an undo step.
+    /// Example: `session.set_browser_sketch_selection(Some(sketch), mode, false)?;`.
+    pub fn set_browser_sketch_selection(
+        &mut self,
+        sketch: Option<DocumentSketchId>,
+        mode: SelectionClickMode,
+        tool_active: bool,
+    ) -> Result<Option<usize>, SketchError> {
+        if tool_active {
+            return Ok(None);
+        }
+        let picked = sketch.map(|id| self.browser_sketch_pick(id)).transpose()?;
+        self.validate_browser_click(picked, mode, &self.browser_selection)?;
+        let retire_editor = (picked.is_some() || mode == SelectionClickMode::Replace)
+            && !self.editor_selection.items().is_empty();
+        self.let_go_of_whole_rows();
+        let count = self.browser_selection.apply_click(picked, mode, false);
+        self.browser_feature = None;
+        if retire_editor {
+            self.editor_selection.clear();
+            return Ok(Some(self.browser_selection.items().len()));
+        }
+        Ok(count)
+    }
+    fn validate_browser_click(
+        &self,
+        picked: Option<BrowserSketchPick>,
+        mode: SelectionClickMode,
+        picks: &SelectionSet<BrowserSketchPick>,
+    ) -> Result<(), SketchError> {
+        if let Some(pick) = picked {
+            self.validate_browser_sketch_pick(pick)?;
+            self.validate_browser_additions(mode, picks)?;
+        }
+        Ok(())
+    }
+    fn validate_browser_additions(
+        &self,
+        mode: SelectionClickMode,
+        picks: &SelectionSet<BrowserSketchPick>,
+    ) -> Result<(), SketchError> {
+        if mode != SelectionClickMode::Toggle {
+            return Ok(());
+        }
+        for existing in picks.items() {
+            self.validate_browser_sketch_pick(*existing)?;
+        }
+        Ok(())
+    }
+    fn validate_browser_sketch_pick(&self, pick: BrowserSketchPick) -> Result<(), SketchError> {
+        if pick.document != self.document {
+            return Err(SketchError::Definition(format!(
+                "browser sketch pick {pick:?}: expected document {}",
+                self.document
+            )));
+        }
+        self.snapshot().sketches.get(pick.sketch)?;
+        Ok(())
+    }
+}

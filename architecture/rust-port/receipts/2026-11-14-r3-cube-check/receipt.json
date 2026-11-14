@@ -1,0 +1,40 @@
+{
+  "kind": "milestone-evidence",
+  "milestone": "R3",
+  "checked_at": "2026-11-14T00:14:21.181276+01:00",
+  "application_commit": "77f03cf61124843175cf2a6e25487352523e3d98",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "platform": "Linux-7.2.6-76070206-generic-x86_64-with-glibc2.39",
+  "renderer": "Vulkan Lavapipe under Xvfb (native test)",
+  "checks": [
+    {
+      "name": "one_size_parameter_drives_certified_cube_replay_and_saved_names",
+      "command": "cargo test --locked -p oblikovati-martensite --test sketch_prism one_size_parameter_drives_certified_cube_replay_and_saved_names -- --nocapture",
+      "exit_code": 0,
+      "log": {
+        "path": "architecture/rust-port/receipts/2026-11-14-r3-cube-check/headless.log",
+        "sha256": "bc24b06029ddb3188dab127bebc763d1f6f625ca3e6a9d9169adb71c70e87380"
+      }
+    },
+    {
+      "name": "native_new_part_button_creates_and_selects_an_unsaved_document",
+      "command": "xvfb-run -a -s '-screen 0 1920x1080x24' cargo test --locked -p oblikovati-head --lib native_new_part_button_creates_and_selects_an_unsaved_document -- --nocapture",
+      "exit_code": 0,
+      "log": {
+        "path": "architecture/rust-port/receipts/2026-11-14-r3-cube-check/native.log",
+        "sha256": "d26193759695ba9d25a2d8a44a9b02d94527b9099a80cb099810c06135cb962d"
+      }
+    }
+  ],
+  "scope": [
+    "Headless test checks a parameter-driven sketch prism at 10 and 20 mm, topology, volume, per-face area, and face/edge/vertex reference keys across undo, redo, and serialization.",
+    "Native test creates a part and uses scripted pointer and keyboard events through the GUI loop to create and edit a parameter-driven cube, check model values, undo/redo, save/reopen, and resolve a face. Its model-state fixture is created through the typed API."
+  ],
+  "limitations": [
+    "This is not a complete R3 milestone exit audit or a BDD acceptance receipt.",
+    "The native test injects events into the application GUI loop. It is not an external OS mouse/keyboard or foreground MCPBridge test.",
+    "The native test checks a framebuffer in memory but this run did not save a screenshot.",
+    "These selected tests do not establish the full kernel and cross-platform gates."
+  ]
+}

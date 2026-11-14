@@ -1,0 +1,249 @@
+// SPDX-License-Identifier: GPL-2.0-only
+//! Build a temporary certified extrusion without changing the document.
+use super::*;
+impl<
+    O: TransactionObserver,
+    W: WorkspaceObserver,
+    F: DocumentFiles,
+    G: GuidSource,
+    R: DocumentObserverFactory<Observer = O> + HeadInvalidation,
+    S: DispatchWakeup,
+> DesktopOwner<O, W, F, G, R, S>
+{
+    pub(super) fn set_component_preview(
+        &mut self,
+        request: Option<(u64, u64)>,
+    ) -> Result<bool, String> {
+        let changed = self.clear_component_preview()?;
+        self.part_scenes.invalidate_presentation();
+        let Some((assembly, source)) = request else {
+            return Ok(changed);
+        };
+        if self.files.workspace().active_document() != Some(assembly) || assembly == source {
+            return Err(format!(
+                "assembly {assembly} component {source}: expected an active assembly and a different component"
+            ));
+        }
+        let root = self
+            .files
+            .workspace()
+            .session(assembly)
+            .map_err(|error| error.to_string())?;
+        if root.snapshot().assembly.is_none() {
+            return Err(format!("document {assembly}: expected an assembly"));
+        }
+        let generations = self.component_preview_generations();
+        let identity = oblikovati_api::types::Matrix {
+            cells: [
+                1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1.,
+            ],
+        };
+        let scene = self
+            .part_scenes
+            .component_preview(&mut self.files, source, &identity)?;
+        self.component_preview = Some(ComponentPreview {
+            assembly,
+            generations,
+            scene,
+            owned_source: None,
+        });
+        Ok(true)
+    }
+    pub(super) fn set_component_file_preview(
+        &mut self,
+        assembly: u64,
+        path: &str,
+    ) -> Result<bool, String> {
+        self.clear_component_preview()?;
+        self.part_scenes.invalidate_presentation();
+        if self.files.workspace().active_document() != Some(assembly) {
+            return Err(format!("assembly {assembly}: expected the active assembly"));
+        }
+        let (source, opened) = self
+            .document_host()
+            .open_component_preview(std::path::Path::new(path))
+            .map_err(|error| error.to_string())?;
+        if let Err(error) = self.set_component_preview(Some((assembly, source))) {
+            if opened {
+                self.files
+                    .close_discarding_changes(source)
+                    .map_err(|cleanup| {
+                        format!(
+                            "preview failed: {error}; component {source} cleanup failed: {cleanup}"
+                        )
+                    })?;
+            }
+            return Err(error);
+        }
+        if opened && let Some(preview) = &mut self.component_preview {
+            preview.owned_source = Some(source);
+        }
+        Ok(true)
+    }
+    fn clear_component_preview(&mut self) -> Result<bool, String> {
+        let Some(preview) = self.component_preview.take() else {
+            return Ok(false);
+        };
+        if let Some(source) = preview.owned_source {
+            let visible = self
+                .files
+                .document_info(source)
+                .map_err(|error| error.to_string())?
+                .visible;
+            if !visible && self.files.has_reference_dependents(source) {
+                self.files
+                    .keep_referenced_background_model(source)
+                    .map_err(|error| error.to_string())?;
+            } else if !visible {
+                self.files
+                    .close_discarding_changes(source)
+                    .map_err(|error| error.to_string())?;
+            }
+        }
+        Ok(true)
+    }
+    fn component_preview_generations(&self) -> Vec<(u64, u64)> {
+        self.files
+            .workspace()
+            .documents()
+            .iter()
+            .filter_map(|&id| {
+                self.files
+                    .workspace()
+                    .session(id)
+                    .ok()
+                    .map(|session| (id, session.generation()))
+            })
+            .collect()
+    }
+    pub(super) fn set_extrusion_preview(
+        &mut self,
+        document: u64,
+        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+        profile: i64,
+        distance: &str,
+    ) -> Result<bool, String> {
+        self.clear_extrusion_preview();
+        let sketch_index = self.extrusion_sketch_index(document, sketch)?;
+        let request = oblikovati_api::wire::featureargs::Extrude {
+            sketch_index,
+            profile_index: profile,
+            distance: distance.into(),
+            ..Default::default()
+        };
+        let presentation = self.preview_extrusion_from_gui(document, &request)?;
+        let scene = oblikovati_viewport::ViewportScene::from_prism(
+            &presentation,
+            [0., 0., 1.],
+            [1., 0.65, 0.1, 1.],
+        )?;
+        let generation = self
+            .files
+            .workspace()
+            .session(document)
+            .map_err(|cause| cause.to_string())?
+            .generation();
+        self.extrusion_preview = Some((document, generation, scene));
+        self.part_scenes.invalidate_presentation();
+        Ok(true)
+    }
+    pub(super) fn clear_extrusion_preview(&mut self) -> bool {
+        if self.extrusion_preview.take().is_none() {
+            return false;
+        }
+        self.part_scenes.invalidate_presentation();
+        true
+    }
+    pub(super) fn take_scene_with_extrusion_preview(
+        &mut self,
+    ) -> Result<Option<crate::HeadSceneUpdate>, String> {
+        let current = self
+            .files
+            .workspace()
+            .active_document()
+            .and_then(|document| {
+                self.files
+                    .workspace()
+                    .session(document)
+                    .ok()
+                    .map(|session| (document, session.generation()))
+            });
+        if self
+            .extrusion_preview
+            .as_ref()
+            .is_some_and(|(document, generation, _)| Some((*document, *generation)) != current)
+        {
+            self.clear_extrusion_preview();
+        }
+        let stale = self.component_preview.as_ref().is_some_and(|preview| {
+            current.map(|(document, _)| document) != Some(preview.assembly)
+                || preview.generations != self.component_preview_generations()
+        });
+        if stale {
+            self.set_component_preview(None)?;
+        }
+        let selected = self
+            .selected_occurrence
+            .as_ref()
+            .and_then(|(document, path)| {
+                current
+                    .filter(|(active, _)| active == document)
+                    .map(|_| path.clone())
+            });
+        self.part_scenes.set_occurrence_selection(selected);
+        let Some(mut update) = self.part_scenes.refresh(&mut self.files)? else {
+            return Ok(None);
+        };
+        if let Some((_, _, preview)) = &self.extrusion_preview {
+            update
+                .scene
+                .triangles
+                .extend(preview.triangles.iter().copied());
+        }
+        if let Some(preview) = &self.component_preview {
+            update
+                .scene
+                .triangles
+                .extend(preview.scene.triangles.iter().copied());
+        }
+        Ok(Some(update))
+    }
+    pub(super) fn preview_extrusion_from_gui(
+        &self,
+        document: u64,
+        request: &oblikovati_api::wire::featureargs::Extrude,
+    ) -> Result<oblikovati_martensite::PrismPresentation, String> {
+        let backend = self.extrusion_access.as_ref().ok_or_else(|| {
+            "extrusion preview: expected a certified geometry service".to_string()
+        })?;
+        let session = self
+            .files
+            .workspace()
+            .session(document)
+            .map_err(|cause| cause.to_string())?;
+        let prepared =
+            oblikovati_automation::prepare_extrusion(session.snapshot(), backend, request)
+                .map_err(|cause| cause.to_string())?;
+        session
+            .preview_projected(
+                |snapshot, ids| prepared.create(snapshot, ids),
+                |candidate, id| {
+                    let mut evaluator =
+                        oblikovati_martensite::CertifiedPrismEvaluator::with_policy(backend.0);
+                    let result = candidate
+                        .evaluate_part_features(&mut evaluator)
+                        .map_err(|cause| oblikovati_api::Error(cause.to_string()))?;
+                    let body = result.body(id).ok_or_else(|| {
+                        oblikovati_api::Error(format!(
+                            "preview feature {id:?}: expected a certified body; health {:?}",
+                            result.health()
+                        ))
+                    })?;
+                    body.body
+                        .presentation(crate::part_scene::DISPLAY_MESH)
+                        .map_err(oblikovati_api::Error)
+                },
+            )
+            .map_err(|cause| cause.to_string())
+    }
+}

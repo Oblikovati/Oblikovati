@@ -1,0 +1,101 @@
+{
+  "kind": "diagnostic only; not acceptance",
+  "source_files": {
+    "features/sketch/coincident/scenario.feature": "@sketch\r\nFeature: Coincident\r\n\r\n\r\n\r\n\r\n\r\n\r\n  @needs_fixture\r\n  Scenario: coincident-06 Cancel then constrain a fresh point to a line\r\n    Given the fixture contains a free point and two overlapping collinear line segments\r\n    When the user invoke Coincident and select only the point\r\n    Then the command requests a second curve or point\r\n    When the user press Escape\r\n    Then Ready returns without visible point movement\r\n    When the user invoke Coincident, select the point, then click once where the line interiors overlap\r\n    Then the point moves onto the supporting line and a coincidence marker appears\r\n    And the command requests the first curve or point again\r\n    When the user press Escape then Ctrl+Z\r\n    Then the original visible point position returns\r\n    When the user press Ctrl+Y\r\n    Then the constrained position returns\r\n    When the user measure the point and one of the overlapping lines\r\n    Then Measure identifies a Point and a Curve of length 17.120 mm\r\n    And the minimum distance is 0.000 mm at displayed precision\r\n    And the displayed point position is (0.000, -15.859, 37.529) mm\r\n    And the maximum distance is 23.939 mm\r\n\r\n  @needs_fixture\r\n  Scenario: Compare a constrained point with the measured overlapping line span\r\n    Given the recorded point-to-line coincidence is retained\r\n    And the constrained point's displayed position is (0.000, -15.859, 37.529) mm\r\n    When the user use Measure to select the two recorded point locations at the line span\r\n    Then their displayed Point positions are (0.000, -19.874, 32.017) and (0.000, -29.952, 18.178) mm\r\n    And their separation is 17.120 mm\r\n    And the earlier selected Curve also measured 17.120 mm\r\n    And interpreting those measured points as endpoints, a projection of the constrained point falls beyond the first end of the span\r\n\r\n  @needs_fixture\r\n  Scenario: coincident-07 Constrain two standalone points and inspect history\r\n    Given two separate standalone points\r\n    When the user invoke Coincident and select the upper-left point\r\n    Then the prompt requests a second curve or point\r\n    When the user select the lower-right point\r\n    Then it moves onto the first point and a coincidence marker appears there\r\n    And the prompt returns to the first curve or point\r\n    When the user press Escape\r\n    Then the placement remains\r\n    When the user undo the relation\r\n    Then both points appear separately again\r\n    When the user redo the relation\r\n    Then their shared visible position returns\r\n\r\n  @needs_fixture\r\n  Scenario: coincident-08 Reject coincidence between separately fixed points\r\n    Given an isolated pair of separated points\r\n    When the user invoke Fix and select each point\r\n    Then lock glyphs appear beside both points\r\n    When the user exit Fix and invoke Coincident\r\n    And the user select the first point followed by the second\r\n    Then Create Constraint reports Cannot constrain or dimension reference or fixed geometry\r\n    And both points remain separate\r\n    When the user click Cancel in the feedback window\r\n    Then Coincident returns to its first-selection prompt\r\n    When the user press Escape\r\n    Then the MCAD Software returns to Ready and the separate points remain\r\n\r\n  @needs_fixture\r\n  Scenario: coincident-09 Join endpoints of separate oblique segments\r\n    Given two separate oblique segments in the recorded endpoint-join fixture\r\n    When the user invoke Coincident\r\n    And the user select the first segment end followed by the second segment start\r\n    Then the endpoints meet at a new shared visible location\r\n    And both segments change their visible extent or placement\r\n    And the prompt returns to first curve or point\r\n    When the user press Escape\r\n    Then the joined geometry remains\r\n    When the user press F8\r\n    Then constraint markers are displayed including the marker at the joint\r\n\r\n  @needs_fixture\r\n  Scenario: coincident-10 Inspect the shared point context without removing geometry\r\n    Given the joined line endpoints and visible constraints\r\n    When the user right-click the joint\r\n    Then a Point context menu opens with Repeat Coincident and general point commands\r\n    And marking-menu Delete is disabled\r\n    When the user press Escape\r\n    Then the menu closes\r\n    When the user select the joint point and right-click it again\r\n    Then the point context menu appears without an identified constraint-removal command\r\n    When the user press Escape\r\n    Then the menu closes and both joined segments remain\r\n\r\n  @needs_fixture\r\n  Scenario: coincident-11 Remove a segment endpoint relation and inspect history\r\n    Given the joined line endpoints and visible constraints\r\n    When the user right-click the first segment interior\r\n    Then the menu includes Delete Coincident Constraint\r\n    When the user choose that command\r\n    Then the joint marker disappears and both lines retain their positions\r\n    When the user move only the first segment using its start as base point\r\n    Then it separates from the second segment which remains in place\r\n    And no constraint-relaxation or conflict dialog appears\r\n    When the user undo the movement\r\n    Then the endpoints overlap visually without the joint marker\r\n    When the user undo the deletion\r\n    Then the joint marker returns\r\n    When the user redo the deletion\r\n    Then the marker disappears without moving either line\r\n    When the user redo the movement\r\n    Then the first segment separates again\r\n\r\n  @needs_fixture\r\n  Scenario: Move a free point to a fixed circle center\r\n    Given a free sketch point and a fixed circle with a separate center\r\n    When the user invoke Coincident and select the free point\r\n    Then the command requests a second curve or point\r\n    When the user select the fixed circle center\r\n    Then the free point moves onto the center\r\n    And the command requests its first curve or point again\r\n    When the user press Escape\r\n    Then the first-selection prompt is still displayed in the recorded state\r\n    When the user press Escape again\r\n    Then the sketch returns to Ready\r\n    When the user undo the relation\r\n    Then the free point returns to its earlier position\r\n    When the user redo the relation\r\n    Then the free point returns to the fixed circle center\r\n\r\n\r\n"
+  },
+  "scenarios": [
+    {
+      "source": "features/sketch/coincident/scenario.feature",
+      "scenario": "coincident-07 Constrain two standalone points and inspect history",
+      "line": 40,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 41,
+          "step": "two separate standalone points",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 42,
+          "step": "the user invoke Coincident and select the upper-left point",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 43,
+          "step": "the prompt requests a second curve or point",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected \"Coincident: Select second curve or point\" in status \"Ready 4dimensionsneeded\""
+        },
+        {
+          "line": 44,
+          "step": "the user select the lower-right point",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 45,
+          "step": "it moves onto the first point and a coincidence marker appears there",
+          "result": "failed",
+          "tainted": true,
+          "detail": "assertion `left == right` failed\n  left: 0\n right: 1"
+        },
+        {
+          "line": 46,
+          "step": "the prompt returns to the first curve or point",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected \"Coincident: Select first curve or point\" in status \"Ready 4dimensionsneeded\""
+        },
+        {
+          "line": 47,
+          "step": "the user press Escape",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 48,
+          "step": "the placement remains",
+          "result": "failed",
+          "tainted": true,
+          "detail": "assertion `left == right` failed\n  left: 0\n right: 1"
+        },
+        {
+          "line": 49,
+          "step": "the user undo the relation",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 50,
+          "step": "both points appear separately again",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 51,
+          "step": "the user redo the relation",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 52,
+          "step": "their shared visible position returns",
+          "result": "failed",
+          "tainted": true,
+          "detail": "assertion `left == right` failed\n  left: 0\n right: 1"
+        }
+      ]
+    }
+  ]
+}

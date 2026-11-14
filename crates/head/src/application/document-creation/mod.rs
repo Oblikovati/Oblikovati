@@ -1,0 +1,135 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use super::*;
+use oblikovati_api::{
+    client::{Caller, Client},
+    wire::{ActivateDocumentArgs, CloseDocumentArgs, CreateDocumentArgs, SetDocumentUnitsArgs},
+};
+use oblikovati_gui::{GuiDocumentTemplate, GuiTemplateKind};
+impl<
+    O: TransactionObserver,
+    W: WorkspaceObserver,
+    F: DocumentFiles,
+    G: GuidSource,
+    R: DocumentObserverFactory<Observer = O> + HeadInvalidation,
+    S: DispatchWakeup,
+> DesktopOwner<O, W, F, G, R, S>
+{
+    pub(super) fn create_template_document(
+        &mut self,
+        template: GuiDocumentTemplate,
+    ) -> Result<bool, String> {
+        let state = self.gui_command_state()?;
+        if state.transaction_open || state.authoring == oblikovati_gui::GuiAuthoringContext::Sketch
+        {
+            return Err(format!(
+                "document template {template:?}: expected no active edit or transaction"
+            ));
+        }
+        let previous = self.files.workspace().active_document();
+        let name = self.next_new_document_name(template.name_prefix());
+        create_template(
+            &Client::new(self.document_host()),
+            template,
+            &name,
+            previous,
+        )?;
+        Ok(true)
+    }
+}
+/// Measure what each template creates by encoding it: built-in templates have no file on disk.
+/// Example: `gui_template_sizes()` for the chooser's Details view.
+pub(crate) fn gui_template_sizes() -> Vec<(GuiTemplateKind, u64)> {
+    static SIZES: std::sync::OnceLock<Vec<(GuiTemplateKind, u64)>> = std::sync::OnceLock::new();
+    SIZES
+        .get_or_init(|| {
+            TEMPLATE_KINDS
+                .into_iter()
+                .map(encoded_template_size)
+                .collect()
+        })
+        .clone()
+}
+const TEMPLATE_KINDS: [GuiTemplateKind; 5] = [
+    GuiTemplateKind::Part,
+    GuiTemplateKind::SheetMetal,
+    GuiTemplateKind::Assembly,
+    GuiTemplateKind::Drawing,
+    GuiTemplateKind::Presentation,
+];
+fn encoded_template_size(kind: GuiTemplateKind) -> (GuiTemplateKind, u64) {
+    let template = GuiDocumentTemplate {
+        kind,
+        ..Default::default()
+    };
+    let kind_id = match template.type_name() {
+        "assembly" => oblikovati_api::types::DOCUMENT_ASSEMBLY,
+        "drawing" => oblikovati_api::types::DOCUMENT_DRAWING,
+        "presentation" => oblikovati_api::types::DOCUMENT_PRESENTATION,
+        _ => oblikovati_api::types::DOCUMENT_PART,
+    };
+    let package =
+        oblikovati_persistence::package::DocumentPackage::empty(kind_id, template.name_prefix());
+    let package = if template.sub_type().is_empty() {
+        package
+    } else {
+        package.with_sub_type(template.sub_type())
+    };
+    let bytes = package.encode().map_or(0, |encoded| encoded.len() as u64);
+    (kind, bytes)
+}
+fn create_template<T: Caller>(
+    client: &Client<T>,
+    template: GuiDocumentTemplate,
+    name: &str,
+    previous: Option<u64>,
+) -> Result<(), String> {
+    let created = client
+        .documents()
+        .create(&CreateDocumentArgs {
+            type_: template.type_name().into(),
+            name: name.into(),
+            sub_type: template.sub_type().into(),
+        })
+        .map_err(|cause| {
+            format!("document template {template:?}: expected a new document: {cause}")
+        })?;
+    let result = client.documents().set_units(&SetDocumentUnitsArgs {
+        length_unit: Some(Box::new(template.length_unit().into())),
+        ..Default::default()
+    });
+    if let Err(cause) = result {
+        rollback_template(client, created.id, previous)?;
+        return Err(format!(
+            "document template {template:?}: expected length unit {:?}: {cause}",
+            template.length_unit()
+        ));
+    }
+    Ok(())
+}
+fn rollback_template<T: Caller>(
+    client: &Client<T>,
+    created: u64,
+    previous: Option<u64>,
+) -> Result<(), String> {
+    client
+        .documents()
+        .close(&CloseDocumentArgs {
+            id: created,
+            force: true,
+        })
+        .map_err(|cause| {
+            format!("failed template document {created}: expected rollback close: {cause}")
+        })?;
+    if let Some(id) = previous {
+        client
+            .documents()
+            .activate(&ActivateDocumentArgs { id })
+            .map_err(|cause| {
+                format!("previous document {id}: expected rollback activation: {cause}")
+            })?;
+    }
+    Ok(())
+}
+#[cfg(test)]
+#[path = "../../../tests/application/document-creation/rollback.rs"]
+mod rollback_tests;

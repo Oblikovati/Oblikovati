@@ -1,0 +1,43 @@
+{
+  "kind": "focused-implementation-evidence",
+  "application_commit": "e71c56ad0a84eb9991f864003b525ca313d69fda",
+  "go_application_commit": "aa8297d1b0ac33c024f19e54821536d76e8a447a",
+  "fixture": "architecture/rust-port/receipts/2026-11-14-go-cube-fixture/go-cube.obk",
+  "go_profile_program": {
+    "path": "architecture/rust-port/receipts/2026-11-14-legacy-part-candidate/go-profile-count.go",
+    "sha256": "0be27d0282b670ed6555aaa1e014d9f1cfa2b01f09e90fe01eb135993ecb8264"
+  },
+  "checks": [
+    {
+      "command": "cargo test --locked -p oblikovati-persistence",
+      "exit_code": 0,
+      "path": "architecture/rust-port/receipts/2026-11-14-legacy-part-candidate/persistence.log.gz",
+      "sha256": "747bf08f2a4bb0b64c3b8f403f0a9b3df386a435255457d099b3efeb94706855"
+    },
+    {
+      "command": "cargo test --locked -p oblikovati-martensite --test sketch_prism",
+      "exit_code": 0,
+      "path": "architecture/rust-port/receipts/2026-11-14-legacy-part-candidate/prism.log.gz",
+      "sha256": "4660e69fdb7f792498c7548dc2b378d28a26ad98c4784af8ca05f03f2d70284a"
+    },
+    {
+      "command": "cargo clippy --locked -p oblikovati-persistence -p oblikovati-martensite --all-targets -- -D warnings",
+      "exit_code": 0,
+      "path": "architecture/rust-port/receipts/2026-11-14-legacy-part-candidate/clippy.log.gz",
+      "sha256": "328210b79bbb330fdf00c707d6620c6fd9ba5d36887c9adc8e4581c793d3774a"
+    },
+    {
+      "command": "from ../Oblikovati: go run ../oblikovati-rust/architecture/rust-port/receipts/2026-11-14-legacy-part-candidate/go-profile-count.go ../oblikovati-rust/architecture/rust-port/receipts/2026-11-14-go-cube-fixture/go-cube.obk",
+      "exit_code": 0,
+      "path": "architecture/rust-port/receipts/2026-11-14-legacy-part-candidate/go-profile.log.gz",
+      "sha256": "53b4ecd2446157fb4f19e273b5a2be030c557a943a8be9b98013348b96bfa2b2"
+    }
+  ],
+  "scope": "The fixture has one Go profile. A fixture-specific resolver uses the one Martensite region; the staged prism passes topology and per-face area checks before and after changing size, while retaining the saved fixed extrusion distance.",
+  "limitations": [
+    "The resolver is a test fixture, not a production Go profile-index mapping.",
+    "The normal document open and save paths still refuse the legacy model.",
+    "The candidate does not migrate or resolve Go face-reference keys.",
+    "Only supported point/line sketch content and a new-body positive distance extrusion are admitted."
+  ]
+}

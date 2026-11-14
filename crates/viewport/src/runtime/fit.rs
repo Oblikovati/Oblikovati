@@ -1,0 +1,39 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use super::*;
+
+impl Viewport {
+    /// Fit or orient displayed geometry inside an unobstructed framebuffer rectangle.
+    /// Example: `view.navigate_in_region(ViewportNavigation::Home { margin: 0.1 }, [200, 100, 800, 600])?`.
+    pub fn navigate_in_region(
+        &mut self,
+        command: crate::ViewportNavigation,
+        region: [u32; 4],
+    ) -> Result<bool, String> {
+        let framing = self.prepare_fit_region(command, region)?;
+        let next = next_generation(self.camera)?;
+        if !self.apply_camera_navigation(command, Some(framing))? {
+            return Ok(false);
+        }
+        self.camera = next;
+        self.completed = None;
+        Ok(true)
+    }
+    fn prepare_fit_region(
+        &mut self,
+        command: crate::ViewportNavigation,
+        region: [u32; 4],
+    ) -> Result<crate::fit_region::FitFraming, String> {
+        self.live()?;
+        self.refresh_extent()?;
+        command.validate(self.extent)?;
+        if !matches!(
+            command,
+            crate::ViewportNavigation::Fit { .. } | crate::ViewportNavigation::Home { .. }
+        ) {
+            return Err(format!(
+                "navigation {command:?}: expected Fit or Home for region {region:?}"
+            ));
+        }
+        crate::fit_region::fit_region(self.extent, region)
+    }
+}

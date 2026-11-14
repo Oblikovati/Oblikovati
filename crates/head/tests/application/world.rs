@@ -1,0 +1,378 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use super::*;
+use crate::HeadWindow;
+#[derive(cucumber::World)]
+#[world(init = Self::new)]
+pub(super) struct ApplicationWorld {
+    pub app: Option<NativeApplication>,
+    _preferences: tempfile::TempDir,
+    pub frame: diagnostics::RenderedFrame,
+    pub previous_document: Option<u64>,
+    pub observed_view_camera: Option<oblikovati_viewport::ViewportCamera>,
+    pub ribbon_height: f32,
+    pub panel_selector_focus: Option<u32>,
+    pub modify_title_anchor: Option<[f32; 2]>,
+    pub saved_path: Option<std::path::PathBuf>,
+    pub bytes_before_save: Option<Vec<u8>>,
+    pub scratch: Option<tempfile::TempDir>,
+    pub parts: Vec<u64>,
+    pub other_document: Option<u64>,
+    pub closed_document: Option<u64>,
+    pub workspace_color: Option<[u8; 4]>,
+    pub compact_options_idle_color: Option<[u8; 4]>,
+    pub initial_breadcrumb: Option<String>,
+    pub proposed_name: Option<String>,
+    pub browser_width: Option<f32>,
+    pub strip_left: Option<f32>,
+    pub dragged_tab_x: Option<f32>,
+    /// The edited sketch's view with nothing drawn, for what a scenario later added or removed.
+    pub sketch_baseline: Option<oblikovati_viewport::ViewportCapture>,
+    pub observed_counts: Vec<usize>,
+    pub observed_document_windows: Vec<oblikovati_gui::GuiDocumentWindow>,
+    pub observed_sketch: Option<ObservedSketch>,
+    pub observed_row_gap: Option<f32>,
+    pub observed_row_plain: Option<[u8; 4]>,
+    pub observed_view: Option<[i32; 2]>,
+    pub last_capture: Option<oblikovati_viewport::ViewportCapture>,
+    pub observed_second_view: Option<[i32; 2]>,
+    pub observed_annotations: Option<bool>,
+    /// Text read before a later step changes what the window shows.
+    pub observed_rows: Option<String>,
+    /// The latest drag, for a step that checks the preview it left.
+    pub last_drag: Option<[[i32; 2]; 2]>,
+    /// The dimension value last opened, for a step that reopens "the annotation".
+    pub opened_value: Option<String>,
+}
+pub(super) struct NativeApplication {
+    pub window: ScriptedGuiWindow,
+    pub owner: NativeDesktopOwner,
+}
+impl fmt::Debug for ApplicationWorld {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("ApplicationWorld")
+            .field("text", &self.text())
+            .finish_non_exhaustive()
+    }
+}
+impl ApplicationWorld {
+    pub(super) fn new() -> Self {
+        let preferences = tempfile::tempdir().unwrap();
+        let mut native = NativeHeadWindow::open().unwrap();
+        native.ribbon_settings_directory = Some(preferences.path().to_owned());
+        let owner = native_owner_at(native.wake.clone(), preferences.path()).unwrap();
+        let mut world = Self {
+            app: Some(NativeApplication {
+                window: scripted_window(native),
+                owner,
+            }),
+            _preferences: preferences,
+            frame: Default::default(),
+            previous_document: None,
+            observed_view_camera: None,
+            ribbon_height: 0.,
+            panel_selector_focus: None,
+            modify_title_anchor: None,
+            saved_path: None,
+            bytes_before_save: None,
+            scratch: None,
+            parts: Vec::new(),
+            other_document: None,
+            closed_document: None,
+            workspace_color: None,
+            compact_options_idle_color: None,
+            initial_breadcrumb: None,
+            proposed_name: None,
+            browser_width: None,
+            strip_left: None,
+            dragged_tab_x: None,
+            sketch_baseline: None,
+            observed_counts: Vec::new(),
+            observed_document_windows: Vec::new(),
+            observed_sketch: None,
+            observed_row_gap: None,
+            observed_row_plain: None,
+            observed_view: None,
+            last_capture: None,
+            observed_second_view: None,
+            observed_annotations: None,
+            observed_rows: None,
+            last_drag: None,
+            opened_value: None,
+        };
+        world.pump(Vec::new());
+        world
+    }
+    pub fn record_initial_sketch(&mut self) {
+        self.observed_sketch = Some(ObservedSketch {
+            geometry: self.edited_geometry(),
+            history: Default::default(),
+            witnesses: Vec::new(),
+        });
+    }
+    pub fn app(&mut self) -> &mut NativeApplication {
+        self.app
+            .as_mut()
+            .expect("expected an active native scenario")
+    }
+    pub fn pump(&mut self, events: Vec<ViewportEvent>) {
+        let app = self.app();
+        app.window.scripted = events;
+        crate::frames::run_frames(
+            &mut app.window,
+            HeadOptions { frames: Some(3) },
+            &mut app.owner,
+        )
+        .unwrap();
+        self.frame = diagnostics::rendered_frame();
+    }
+    pub fn click(&mut self, position: [i32; 2]) {
+        self.pump(pointer_click_events(position, 1));
+    }
+    pub fn key(&mut self, key: oblikovati_viewport::ViewportPhysicalKey, control: bool) {
+        use oblikovati_viewport::ViewportInput;
+        let modifiers = oblikovati_viewport::ViewportModifiers {
+            control,
+            ..Default::default()
+        };
+        let event = |pressed, modifiers| {
+            ViewportEvent::Input(ViewportInput::PhysicalKey {
+                key,
+                layout_key: key,
+                pressed,
+                command: None,
+                modifiers,
+            })
+        };
+        // One pump, so the key is down for one frame: Dear ImGui repeats a key held across slow
+        // software-rendered frames, and a person's press is shorter than the repeat delay.
+        self.pump(vec![
+            event(true, modifiers),
+            event(false, Default::default()),
+        ]);
+    }
+    /// All visible text, one run per line, for assertions and failure messages.
+    pub fn text(&self) -> String {
+        let runs: Vec<&str> = self
+            .frame
+            .runs
+            .iter()
+            .map(|run| run.text.as_str())
+            .collect();
+        runs.join("\n")
+    }
+    pub fn shows(&self, text: &str) -> bool {
+        let wanted = squeezed(text);
+        self.frame
+            .runs
+            .iter()
+            .any(|run| squeezed(&run.text).contains(&wanted))
+    }
+    pub fn expect_text(&self, text: &str) {
+        assert!(
+            self.shows(text),
+            "expected {text:?} in rendered text {:?}",
+            self.text()
+        );
+    }
+    pub fn expect_no_text(&self, text: &str) {
+        assert!(
+            !self.shows(text),
+            "rendered text {:?}: expected no {text:?}",
+            self.text()
+        );
+    }
+    /// The topmost run reading exactly `text`, else the topmost run containing it.
+    pub fn run(&self, text: &str) -> &diagnostics::RenderedRun {
+        let wanted = squeezed(text);
+        let exact = self
+            .frame
+            .runs
+            .iter()
+            .rev()
+            .find(|r| squeezed(&r.text) == wanted);
+        exact
+            .or_else(|| {
+                self.frame
+                    .runs
+                    .iter()
+                    .rev()
+                    .find(|r| squeezed(&r.text).contains(&wanted))
+            })
+            .unwrap_or_else(|| panic!("expected {text:?} in rendered text {:?}", self.text()))
+    }
+    /// Press visible text with a real pointer event; a test never reaches for widget state.
+    pub fn click_text(&mut self, text: &str) {
+        let center = self.run(text).center();
+        self.click(diagnostics::pointer_pixels(center));
+    }
+    pub fn drag(&mut self, from: [i32; 2], to: [i32; 2]) {
+        self.pump(pointer_drag_press(from));
+        for step in 1..=4 {
+            let at = std::array::from_fn(|axis| from[axis] + (to[axis] - from[axis]) * step / 4);
+            self.pump(vec![pointer_motion(at)]);
+        }
+        self.pump(pointer_drag_release(to));
+    }
+    /// A check mark drawn on the same row as `label`; a cleared option has none.
+    pub fn checked(&self, label: &str) -> bool {
+        let run = self.run(label).clone();
+        self.frame.marks.iter().any(|mark| {
+            mark.bright
+                && mark.list == run.list
+                // Close to the label's own centre line: a neighbour's mark reaches past its row.
+                && (mark.position[1] - run.center()[1]).abs() < CHECK_MARK_REACH
+        })
+    }
+    /// The framebuffer colour just left of a label, inside the widget that holds it.
+    pub fn pixel_left_of(&mut self, label: &str) -> [u8; 4] {
+        let run = self.run(label).clone();
+        let capture = super::capture_framebuffer(&mut self.app().window.native);
+        let x = run.minimum[0] as usize - 3;
+        let at = (run.center()[1] as usize * capture.extent[0] as usize + x) * 4;
+        std::array::from_fn(|channel| capture.rgba[at + channel])
+    }
+    pub fn extent(&mut self) -> [u32; 2] {
+        self.app()
+            .window
+            .native
+            .window_capture_extent()
+            .unwrap()
+            .unwrap()
+    }
+    /// Assert the viewport shows in this rectangle: its background gradient has uniform rows.
+    pub fn expect_blank_region(&mut self, x: [usize; 2], y: [usize; 2]) {
+        let capture = super::capture_framebuffer(&mut self.app().window.native);
+        let controls: Vec<_> = ["##orientation-control", "##navigation-bar"]
+            .into_iter()
+            .filter_map(super::diagnostics::window_pixel_bounds)
+            .collect();
+        assert!(
+            super::viewport_background::gradient_region_visible(&capture, x, y, &controls),
+            "region x={x:?} y={y:?}: expected viewport gradient outside navigation controls"
+        );
+    }
+    /// Keep the final frame for visual review; a scenario's image names its scenario.
+    pub fn save_capture(&mut self, scenario: &str) {
+        let Some(app) = self.app.as_mut() else { return };
+        let capture = super::capture_framebuffer(&mut app.window.native);
+        let name: String = scenario
+            .chars()
+            .map(|letter| {
+                if letter.is_alphanumeric() {
+                    letter
+                } else {
+                    '-'
+                }
+            })
+            .collect();
+        let _ = write_png(&reports_folder().join(format!("{name}.png")), &capture);
+    }
+    pub fn close(&mut self) {
+        if let Some(mut app) = self.app.take() {
+            app.owner.finish().unwrap();
+            app.window.finish().unwrap();
+        }
+    }
+    pub fn reopen_application(&mut self) {
+        self.close();
+        let mut native = NativeHeadWindow::open().unwrap();
+        native.ribbon_settings_directory = Some(self._preferences.path().to_owned());
+        let owner = native_owner_at(native.wake.clone(), self._preferences.path()).unwrap();
+        self.app = Some(NativeApplication {
+            window: scripted_window(native),
+            owner,
+        });
+        self.pump(Vec::new());
+    }
+    pub fn preferences_directory(&self) -> &std::path::Path {
+        self._preferences.path()
+    }
+}
+impl Drop for ApplicationWorld {
+    fn drop(&mut self) {
+        self.close();
+    }
+}
+
+const CHECK_MARK_REACH: f32 = 6.;
+fn squeezed(text: &str) -> String {
+    text.chars()
+        .filter(|letter| !letter.is_whitespace())
+        .collect()
+}
+pub(super) fn reports_folder() -> std::path::PathBuf {
+    let folder = std::env::var_os("OBK_BDD_REPORTS").map_or_else(
+        || {
+            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("../../target/benchmarks/application")
+        },
+        std::path::PathBuf::from,
+    );
+    assert!(
+        folder.is_absolute(),
+        "BDD reports {folder:?}: expected an absolute output directory"
+    );
+    folder
+}
+fn write_png(
+    path: &std::path::Path,
+    capture: &oblikovati_viewport::ViewportCapture,
+) -> Result<(), png::EncodingError> {
+    let file = std::io::BufWriter::new(std::fs::File::create(path)?);
+    let mut encoder = png::Encoder::new(file, capture.extent[0], capture.extent[1]);
+    encoder.set_color(png::ColorType::Rgba);
+    encoder.set_depth(png::BitDepth::Eight);
+    encoder.write_header()?.write_image_data(&capture.rgba)
+}
+fn pointer_motion(position: [i32; 2]) -> ViewportEvent {
+    ViewportEvent::Input(oblikovati_viewport::ViewportInput::Motion {
+        position,
+        modifiers: Default::default(),
+    })
+}
+fn pointer_button(position: [i32; 2], pressed: bool) -> ViewportEvent {
+    ViewportEvent::Input(oblikovati_viewport::ViewportInput::Button {
+        button: oblikovati_viewport::ViewportButton::Left,
+        pressed,
+        position,
+        modifiers: Default::default(),
+    })
+}
+fn pointer_drag_press(position: [i32; 2]) -> Vec<ViewportEvent> {
+    vec![pointer_motion(position), pointer_button(position, true)]
+}
+fn pointer_drag_release(position: [i32; 2]) -> Vec<ViewportEvent> {
+    vec![pointer_motion(position), pointer_button(position, false)]
+}
+
+/// The fixture's actual geometry, committed history, and visible curve witnesses.
+pub(super) struct ObservedSketch {
+    pub geometry: oblikovati_model::sketch::Sketch2D,
+    pub history: [Vec<String>; 2],
+    pub witnesses: Vec<[i32; 2]>,
+}
+
+#[test]
+fn scenario_preferences_are_private_and_removed_after_close() {
+    std::thread::Builder::new()
+        .name("scenario-preference-isolation".into())
+        .stack_size(super::SCENARIO_STACK_BYTES)
+        .spawn(|| {
+            let mut first = ApplicationWorld::new();
+            let directory = first._preferences.path().to_path_buf();
+            let changed = oblikovati_model::application_options::SketchApplicationOptions {
+                grid_visible: false,
+                ..Default::default()
+            };
+            first.app().owner.change_sketch_options(changed).unwrap();
+            assert!(directory.join("options.yaml").exists());
+            drop(first);
+            assert!(!directory.exists());
+            let mut second = ApplicationWorld::new();
+            assert!(second.state().sketch_options.unwrap().grid_visible);
+        })
+        .unwrap()
+        .join()
+        .unwrap();
+}

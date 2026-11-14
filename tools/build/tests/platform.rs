@@ -28,3 +28,25 @@ fn legacy_matrix_is_complete_and_rust_artifacts_are_isolated() {
         assert!(artifact_names(version).is_err());
     }
 }
+
+#[test]
+fn macos_platforms_decline_the_retired_sonoma_runner() {
+    for entry in PLATFORMS
+        .iter()
+        .filter(|entry| entry.target.ends_with("apple-darwin"))
+    {
+        assert_ne!(
+            entry.runner, "macos-14",
+            "macOS platform {:?}: expected a supported GitHub runner after 2026-11-02",
+            entry
+        );
+    }
+}
+#[test]
+fn universal_package_declines_the_retired_sonoma_runner() {
+    let workflow = include_str!("../../../.github/workflows/build.yml");
+    assert!(
+        !workflow.contains("runs-on: macos-14"),
+        "universal package workflow: expected a supported GitHub runner after 2026-11-02"
+    );
+}

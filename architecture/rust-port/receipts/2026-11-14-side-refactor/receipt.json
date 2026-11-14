@@ -1,0 +1,70 @@
+{
+  "kind": "focused-implementation-evidence",
+  "application_commit": "892dbf6cce404bed8f4d3ba3c248d77da2234b79",
+  "checks": [
+    {
+      "command": "xvfb-run cargo test --locked -p oblikovati-gui --lib -- --test-threads=1",
+      "exit_code": 0,
+      "path": "architecture/rust-port/receipts/2026-11-14-side-refactor/gui.log.gz",
+      "sha256": "2720f072a89a51d695783413664cba4598a72ab0b1e6114043ae8ce894322b03"
+    },
+    {
+      "command": "cargo clippy --locked -p oblikovati-gui --all-targets -- -D warnings",
+      "exit_code": 0,
+      "path": "architecture/rust-port/receipts/2026-11-14-side-refactor/gui-clippy.log.gz",
+      "sha256": "b687ec86aff77db32ca760dda82d5b202125b2233b391a39c0231f3f218071c2"
+    },
+    {
+      "command": "cargo clippy --locked -p oblikovati-head --all-targets -- -D warnings",
+      "exit_code": 0,
+      "path": "architecture/rust-port/receipts/2026-11-14-side-refactor/head-clippy.log.gz",
+      "sha256": "9b0387daa98c2a14437f1db7b39987e8824de32890aefbac6c35f278bd6c90a2"
+    },
+    {
+      "command": "make docs-lint",
+      "exit_code": 2,
+      "path": "architecture/rust-port/receipts/2026-11-14-side-refactor/docs.log.gz",
+      "sha256": "e79ddd189121a30018af2a78fcf39af5bc89adc16c4799b63a1405704acae8b9"
+    },
+    {
+      "command": "make gate",
+      "exit_code": 2,
+      "path": "architecture/rust-port/receipts/2026-11-14-side-refactor/gate.log.gz",
+      "sha256": "48cfe718c35b1be36b15a441056c952a8fc52f52d7a94662ad78db735a3760df"
+    }
+  ],
+  "scope": "Side and floating ribbon drawing was moved to a separate module. GUI unit tests and the current top-left-right-top native scenario exercise the moved behavior.",
+  "limitations": [
+    "GUI tests and GUI clippy ran before the BDD-only wording aliases were added; the GUI source is unchanged from those runs.",
+    "Markdownlint passed but docs-lint stops on crates/gui/src/commands.rs at the file-size check.",
+    "The full gate and the remaining ribbon scenarios are not established.",
+    "The left and right visual captures use truncated diagnostic scenarios; the full docking scenario has a separate native acceptance receipt.",
+    "The gate stopped at ledger preflight with 2610 missing classifications; it did not run the full suite."
+  ],
+  "diagnostic_captures": [
+    {
+      "path": "architecture/rust-port/receipts/2026-11-14-side-refactor/left-Visual-left-ribbon.png",
+      "sha256": "ae76a42b139ea3697edd8eb5307ee1e21a28a4673522beeeeb6a80199a1c893d"
+    },
+    {
+      "path": "architecture/rust-port/receipts/2026-11-14-side-refactor/left-scenario.feature",
+      "sha256": "085723626d60c14ecac31f813b74f7d424c42edce37b86236eb0719536eae86f"
+    },
+    {
+      "path": "architecture/rust-port/receipts/2026-11-14-side-refactor/left-diagnostic.log.gz",
+      "sha256": "0c2792ebcc64084a61ff76d5eb7103a69ae6f1622a339bfd746d67fab8c029ba"
+    },
+    {
+      "path": "architecture/rust-port/receipts/2026-11-14-side-refactor/right-Visual-right-ribbon.png",
+      "sha256": "08a3e616162aae8c05093589ade4703f2b4a671e5b8248c89f0bd604b1bc251e"
+    },
+    {
+      "path": "architecture/rust-port/receipts/2026-11-14-side-refactor/right-scenario.feature",
+      "sha256": "afab017a14457682a0f0bb538bddb28dd1a0ab5bdc0d904c1e524938430e047a"
+    },
+    {
+      "path": "architecture/rust-port/receipts/2026-11-14-side-refactor/right-diagnostic.log.gz",
+      "sha256": "0df9fbd3bd67065166962cab546770afcd4c68466d39dceefd4b10288ae740cf"
+    }
+  ]
+}

@@ -1,0 +1,251 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use super::*;
+use martensite_tkbrep::topods::Shape;
+use oblikovati_model::{
+    feature::FeatureId,
+    history::{DocumentEditHistory, EvaluationScope},
+    identity::{DocumentGuid, ExactReferenceBindings, SemanticReferenceName},
+};
+
+/// Retained exact geometry and current semantic names; native handles remain private.
+pub struct NamedPrismSnapshot {
+    snapshot: PrismProbeSnapshot,
+    bindings: ExactReferenceBindings<Option<PrismFaceRole>>,
+    subentity_bindings: Option<ExactReferenceBindings<subentities::BoundSubentity>>,
+    certification: Option<CertifiedPrismEvidence>,
+}
+/// Measured tolerance and authored point identities retained with a certified replay.
+#[derive(Clone, Debug, PartialEq)]
+pub struct CertifiedPrismEvidence {
+    pub achieved_tolerance: PrismAchievedTolerance,
+    pub subentities: PrismSubentityHistory,
+    pub vertex_sources: std::collections::BTreeMap<u64, Vec<u64>>,
+}
+/// Evaluate an authored prism and certify its body/face names against construction history.
+/// Example: `retain_named_sketch_prism(&history, document_guid, FeatureId(1))?`.
+pub fn retain_named_sketch_prism(
+    history: &DocumentEditHistory,
+    document: DocumentGuid,
+    feature: FeatureId,
+) -> Result<NamedPrismSnapshot, String> {
+    let job = history.evaluation_snapshot();
+    let evaluation = job
+        .snapshot()
+        .evaluate_part_features(&mut NamedPrismEvaluator::new(history, document))
+        .map_err(|cause| cause.to_string())?;
+    let decline = crate::stored_prism::stored_body_decline(&evaluation, feature);
+    evaluation.into_body(feature).ok_or(decline)
+}
+mod evaluate;
+mod face_topology;
+mod subentities;
+pub use evaluate::{
+    CertifiedNamedPrismEvaluator, NamedPrismEvaluator, retain_certified_named_sketch_prism,
+};
+pub use face_topology::{PrismFaceTopology, PrismSurfaceKind};
+fn attach_names(
+    snapshot: PrismProbeSnapshot,
+    document: DocumentGuid,
+    feature: FeatureId,
+    sketch: u64,
+    scope: EvaluationScope,
+) -> Result<NamedPrismSnapshot, String> {
+    let mut entries = vec![(prism_key(document, feature, sketch, None)?, None)];
+    for (role, _) in &snapshot.faces {
+        entries.push((
+            prism_key(document, feature, sketch, Some(*role))?,
+            Some(*role),
+        ));
+    }
+    let bindings = ExactReferenceBindings::from_entries(document, scope, entries)?;
+    Ok(NamedPrismSnapshot {
+        snapshot,
+        bindings,
+        subentity_bindings: None,
+        certification: None,
+    })
+}
+fn prism_key(
+    document: DocumentGuid,
+    feature: FeatureId,
+    sketch: u64,
+    role: Option<PrismFaceRole>,
+) -> Result<Vec<u8>, String> {
+    let (kind, tag, sources) = match role {
+        None => (4, "body", vec![sketch]),
+        Some(PrismFaceRole::Start) => (1, "start", vec![sketch]),
+        Some(PrismFaceRole::End) => (1, "end", vec![sketch]),
+        Some(PrismFaceRole::ProfileEdge(edge)) => (1, "side", vec![sketch, edge]),
+    };
+    SemanticReferenceName::new(document, feature.0, kind, "sketch-prism", tag, &sources)?.encode()
+}
+impl NamedPrismSnapshot {
+    /// Read the kernel evidence if this body used certified replay; example: `named.certification()`.
+    pub fn certification(&self) -> Option<&CertifiedPrismEvidence> {
+        self.certification.as_ref()
+    }
+    /// The nearest face a line meets; example: `body.face_on_line(window_line)?`.
+    pub fn face_on_line(
+        &self,
+        line: [[f64; 3]; 2],
+    ) -> Result<Option<(PrismFaceRole, f64)>, String> {
+        self.snapshot.face_on_line(line)
+    }
+    /// Resolve a picked construction role to one durable face name.
+    /// Example: `body.face_key_for_role(history, document, role)?` after an exact face pick.
+    pub fn face_key_for_role(
+        &self,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        role: PrismFaceRole,
+    ) -> Result<Vec<u8>, String> {
+        let mut found = None;
+        for key in self.bindings.encoded_keys(history, document)? {
+            let envelope = oblikovati_model::identity::ReferenceEnvelope::decode(key)
+                .map_err(|error| error.to_string())?;
+            if envelope.kind != 1 || *self.bindings.bind(history, document, key, 1)? != Some(role) {
+                continue;
+            }
+            if found.replace(key.to_vec()).is_some() {
+                return Err(format!(
+                    "face role {role:?}: expected exactly one semantic name"
+                ));
+            }
+        }
+        found.ok_or_else(|| format!("face role {role:?}: expected exactly one semantic name"))
+    }
+    /// Borrow the sole current body name; example: `named.body_reference_key(history, guid)?` for API enumeration.
+    pub fn body_reference_key<'a>(
+        &'a self,
+        history: &'a DocumentEditHistory,
+        document: DocumentGuid,
+    ) -> Result<&'a [u8], String> {
+        let mut body_keys = self
+            .bindings
+            .encoded_keys(history, document)?
+            .filter(|key| {
+                oblikovati_model::identity::ReferenceEnvelope::decode(key)
+                    .is_ok_and(|envelope| envelope.kind == 4)
+            });
+        let key = body_keys
+            .next()
+            .ok_or_else(|| "prism body names 0: expected exactly one".to_string())?;
+        if body_keys.next().is_some() {
+            return Err("prism body names greater than 1: expected exactly one".into());
+        }
+        self.bindings.bind(history, document, key, 4)?;
+        Ok(key)
+    }
+    /// Integrate a verified current body without a mesh; example: `named.physical_properties(history, guid, key)?`.
+    pub fn physical_properties(
+        &self,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        key: &[u8],
+    ) -> Result<crate::AnalyticBodyProperties, String> {
+        self.bindings.bind(history, document, key, 4)?;
+        self.snapshot.physical_properties()
+    }
+    /// Read current body properties and face reports; example: `named.body_report(&history, doc, &body_key)?`.
+    pub fn body_report<'a>(
+        &'a self,
+        history: &'a DocumentEditHistory,
+        document: DocumentGuid,
+        key: &[u8],
+    ) -> Result<&'a PrismProbeReport, String> {
+        self.bindings.bind(history, document, key, 4)?;
+        Ok(self.snapshot.report())
+    }
+    /// Integrate the exact bound face, not a display triangle; example: `named.face_report(&history, doc, &face_key)?`.
+    pub fn face_report(
+        &self,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        key: &[u8],
+    ) -> Result<PrismFaceProbe, String> {
+        let role = self
+            .bindings
+            .bind(history, document, key, 1)?
+            .ok_or_else(|| "face reference: expected a face construction role".to_string())?;
+        report::face_report(role, unique_face(&self.snapshot, role)?)
+            .map_err(|cause| cause.to_string())
+    }
+    /// Enumerate canonical names in stable byte order; example: `named.reference_keys(&history, doc)?`.
+    pub fn reference_keys(
+        &self,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+    ) -> Result<Vec<Vec<u8>>, String> {
+        Ok(self
+            .bindings
+            .encoded_keys(history, document)?
+            .map(<[u8]>::to_vec)
+            .collect())
+    }
+    fn verify_written_names(
+        &self,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        feature: FeatureId,
+        sketch: u64,
+    ) -> Result<(), String> {
+        let key = prism_key(document, feature, sketch, None)?;
+        self.body_report(history, document, &key)?;
+        for (role, expected) in &self.snapshot.faces {
+            let key = prism_key(document, feature, sketch, Some(*role))?;
+            let bound = self.bindings.bind(history, document, &key, 1)?;
+            if *bound != Some(*role) || !unique_face(&self.snapshot, *role)?.is_same(expected) {
+                return Err(format!(
+                    "prism face {role:?}: expected exact write-time reference round trip"
+                ));
+            }
+        }
+        Ok(())
+    }
+}
+fn unique_face(snapshot: &PrismProbeSnapshot, role: PrismFaceRole) -> Result<&Shape, String> {
+    let mut matches = snapshot
+        .faces
+        .iter()
+        .filter(|(candidate, _)| *candidate == role);
+    let first = matches.next();
+    if first.is_none() || matches.next().is_some() {
+        return Err(format!(
+            "prism face {role:?}: expected exactly one retained construction role"
+        ));
+    }
+    Ok(&first.expect("one verified role").1)
+}
+
+impl super::PrismPresentationSource for NamedPrismSnapshot {
+    fn presentation(&self, options: PrismMeshOptions) -> Result<PrismPresentation, String> {
+        self.snapshot.presentation(options)
+    }
+}
+
+/// Integrate current named bodies as one unit-density system in caller order.
+/// Example: `named_part_properties(history, guid, evaluation.ordered_bodies())?`.
+pub fn named_part_properties<'a>(
+    history: &DocumentEditHistory,
+    document: DocumentGuid,
+    bodies: impl IntoIterator<Item = &'a NamedPrismSnapshot>,
+) -> Result<Option<crate::AnalyticBodyProperties>, String> {
+    let mut shapes = Vec::new();
+    for body in bodies {
+        body.body_reference_key(history, document)?;
+        shapes.push(&body.snapshot.shape);
+    }
+    crate::analytic_body::integrate_system(shapes)
+}
+
+#[path = "named/base_view.rs"]
+mod base_view;
+#[path = "named/discretize.rs"]
+mod discretize;
+#[path = "named/projection.rs"]
+mod projection;
+pub use base_view::{DrawingBaseProjection, drawing_base_view_bodies};
+pub use projection::{
+    DrawingProjectedCurve, DrawingProjection, DrawingProjectionCurveKind, DrawingProjectionFrame,
+    drawing_projection_bodies,
+};

@@ -1,0 +1,62 @@
+{
+  "kind": "focused-implementation-evidence",
+  "application_commit": "c8073c10c98d982a25c9aa58aaad941e4bbff2f2",
+  "go_witness": "architecture/rust-port/receipts/2026-11-14-go-face-lineage/receipt.json",
+  "checks": [
+    {
+      "command": "cargo test --locked -p oblikovati-model",
+      "exit_code": 0,
+      "path": "architecture/rust-port/receipts/2026-11-14-builtin-parameter/model.log.gz",
+      "sha256": "32b7589555d508aca07617cbc44b80d4879283b6409721a9086b1382512e9b14"
+    },
+    {
+      "command": "cargo test --locked -p oblikovati-model --test parameter_conversion",
+      "exit_code": 0,
+      "path": "architecture/rust-port/receipts/2026-11-14-builtin-parameter/model-current.log.gz",
+      "sha256": "607eac5db9474f46a53bbe60fc8495c93a5b5c988e8384908a4802198c9d36c4"
+    },
+    {
+      "command": "cargo test --locked -p oblikovati-persistence",
+      "exit_code": 0,
+      "path": "architecture/rust-port/receipts/2026-11-14-builtin-parameter/persistence.log.gz",
+      "sha256": "091fe6730b9303cdc20f5e9bd48ece7d39de186809e60c76c388bdb553a171af"
+    },
+    {
+      "command": "cargo test --locked -p oblikovati-session --test lifecycle",
+      "exit_code": 0,
+      "path": "architecture/rust-port/receipts/2026-11-14-builtin-parameter/session.log.gz",
+      "sha256": "6365dc9bd2322447661c6e521e39df68bf76625eafeedaff25873a0963af53cd"
+    },
+    {
+      "command": "cargo test --locked -p oblikovati-martensite --test sketch_prism",
+      "exit_code": 0,
+      "path": "architecture/rust-port/receipts/2026-11-14-builtin-parameter/prism.log.gz",
+      "sha256": "fedce1ad1346a149ba57890ef56a428efb3fc5392cc1c3de7f2574f6d62d9f94"
+    },
+    {
+      "command": "cargo clippy --locked -p oblikovati-model -p oblikovati-persistence -p oblikovati-session -p oblikovati-martensite --all-targets -- -D warnings",
+      "exit_code": 0,
+      "path": "architecture/rust-port/receipts/2026-11-14-builtin-parameter/clippy.log.gz",
+      "sha256": "2d6506396e6b1adaf28346fcd340f737924385fb74975a78ee062e63fc2b58ff"
+    },
+    {
+      "command": "make docs-lint",
+      "exit_code": 2,
+      "path": "architecture/rust-port/receipts/2026-11-14-builtin-parameter/docs-lint.log.gz",
+      "sha256": "f7b3e46e007648335d208873e7e6c2102fb5ee2caf4bccb5a29256d22ffd5657"
+    },
+    {
+      "command": "make gate",
+      "exit_code": 2,
+      "path": "architecture/rust-port/receipts/2026-11-14-builtin-parameter/gate.log.gz",
+      "sha256": "332efa6f4a4d107842103817311aa142956c7c42fdc18d7823d107e2fc30df6f"
+    }
+  ],
+  "scope": "Versioned built-in model-parameter guard survives package save/reopen, including failed dependency recovery. A fixture-specific Go lineage witness maps side keys to current source-named Rust faces through size edit, undo/redo, and Rust recipe replay.",
+  "limitations": [
+    "The full model suite ran before the last persistence diagnostic-message adjustment; the model source was unchanged and the model conversion test was repeated after commit.",
+    "Go face witnesses are external to the source documents. Production legacy profile-index and face-key migration and normal Go document open remain unimplemented.",
+    "The workspace gate and cross-platform checks remain open.",
+    "The full gate stops on 2,611 unclassified scenarios. Markdownlint passed, but docs-lint stops on the 500-line check for crates/gui/src/chrome.rs."
+  ]
+}

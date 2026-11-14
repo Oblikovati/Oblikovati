@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Rectangle two point: tmp/oblikovati-ribbon-split-source/features/sketch/rectangle-two-point/scenario.feature" package="testsuite/Feature: Rectangle two point: tmp/oblikovati-ribbon-split-source/features/sketch/rectangle-two-point/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T05:17:03.54779527Z" time="17.327966614"><testcase name="Scenario: rectangle-two-point-12 Cancel a rectangle height proposal: tmp/oblikovati-ribbon-split-source/features/sketch/rectangle-two-point/scenario.feature:84:3" time="17.327966614"><system-out><![CDATA[  Scenario: rectangle-two-point-12 Cancel a rectangle height proposal
+   ✔  Given the rectangle height editor is open with 6 mm selected
+   ✔  When the user enter 8 and press Escape
+   ✔  And the user reopen the height annotation
+   ✔  Then the height editor still contains 6 mm
+]]></system-out></testcase></testsuite></testsuites>

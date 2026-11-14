@@ -1,0 +1,137 @@
+schemaVersion: 2
+documentType: 1
+displayName: oblikovati-go-cube
+identity:
+    internalName: 904a0ae7-db65-4a7d-b9d0-1dcf1bbcfd02
+    revisionId: b7750e52-d1bf-402c-a5f2-749660286214
+    databaseRevisionId: 6b50fe74-a71f-48fe-894c-d59d89ecdc65
+    saveCounter: 2
+    versionCreated: dev
+    versionSaved: dev
+    modelDigest: b026bb3e0f9064de64a0cbbdea746f963e39fab4684c1435f5b0bd81d3146d17
+model:
+    units:
+        angle: deg
+        angleFormat: decimal
+        anglePrecision: "2"
+        area: mm^2
+        length: mm
+        lengthFormat: decimal
+        lengthPrecision: "3"
+        mass: kg
+        time: s
+        volume: mm^3
+    parameters:
+        - name: size
+          kind: user
+          expression: 10 mm
+        - name: d0
+          kind: model
+          expression: size
+        - name: d1
+          kind: model
+          expression: size
+        - name: d2
+          kind: model
+          expression: size
+        - name: d3
+          kind: model
+          expression: size
+    sketches:
+        - id: 1
+          name: Sketch1
+          seq: 1
+          plane:
+            origin:
+                - 0
+                - 0
+                - 0
+            xAxis:
+                - 1
+                - 0
+                - 0
+            yAxis:
+                - 0
+                - 1
+                - 0
+          points:
+            - id: 2
+              x: 0
+              "y": 0
+              standalone: true
+            - id: 3
+              x: 1
+              "y": 0
+              standalone: true
+            - id: 4
+              x: 1
+              "y": 1
+              standalone: true
+            - id: 5
+              x: 0
+              "y": 1
+              standalone: true
+          entities:
+            - id: 7
+              kind: line
+              points:
+                - 3
+                - 4
+            - id: 8
+              kind: line
+              points:
+                - 4
+                - 5
+            - id: 9
+              kind: line
+              points:
+                - 5
+                - 2
+            - id: 6
+              kind: line
+              points:
+                - 2
+                - 3
+          constraints:
+            - kind: fix
+              points:
+                - 2
+            - kind: horizontal
+              points:
+                - 2
+                - 3
+            - kind: vertical
+              points:
+                - 3
+                - 4
+            - kind: horizontal
+              points:
+                - 4
+                - 5
+            - kind: vertical
+              points:
+                - 5
+                - 2
+          dimensions:
+            - kind: distance
+              points:
+                - 2
+                - 3
+              expression: size
+            - kind: distance
+              points:
+                - 3
+                - 4
+              expression: size
+    features:
+        - kind: extrude
+          name: Extrusion1
+          seq: 2
+          extrude:
+            sketch: 0
+            profiles:
+                - 0
+            operation: newBody
+            extent: distance
+            direction: positive
+            distance: 1

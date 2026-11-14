@@ -1,0 +1,29 @@
+{
+  "date": "2026-11-13",
+  "issue": "https://github.com/Oblikovati/Oblikovati/issues/3857",
+  "application_commit": "3af2b5091dd6c0b4c5eeb3a0624876cf3e7de151",
+  "scenario_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+  "feature": "sketch/rectangle-two-point",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "environment": "Linux, Xvfb, Vulkan Lavapipe",
+  "result": {
+    "scenarios_passed": 1,
+    "scenarios_total": 1,
+    "steps_passed": 6,
+    "steps_total": 6
+  },
+  "notes": [
+    "The source checkout and application inputs were clean before and after the run.",
+    "The final-state capture was visually inspected and supplements the scenario assertions.",
+    "This is a selected-scenario result, not a milestone exit."
+  ],
+  "artifacts_sha256": {
+    "cucumber.json": "0472e489e82617f6675b665f0fbb407bc2d1840ff68635503df0eb6543fb05fc",
+    "junit.xml": "369200e05c8d08337f5426142f05dd1865e7a892216b74c51d33a9b5ed06c06f",
+    "native-test.log.gz": "f2e030f1767dd86333a1706d41a4f35d7816ba4c0118f88ecf3e2607e2ee506f",
+    "progress.json": "beddcf56e0ccbd1be7a9dca59a0ebb06ac25c7b7ac3e865605c57cc821dac29a",
+    "receipt.json": "ffaf5db9806ec2b799823286afa2afa539962c539d7c7e440068a16269a1d2e8",
+    "rectangle-two-point-01-Create-a-rectangle-from-opposite-corners.png": "fc30e4650f0c936f752d5a1aaf57d7136047ded69f34833fbdf80ba112691880",
+    "source-revision.json": "afdcde4b44bdbec6b08878f72ff7111f069221d84273b826035e73b15a5d3457"
+  }
+}

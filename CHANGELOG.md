@@ -1,0 +1,192 @@
+# Changelog
+
+## [Unreleased]
+
+### Changed
+
+- Split sketch frame operations into `HeadSketchWork`; custom `HeadWork` owners must implement that interface. (#3860)
+
+### Fixed
+
+- Cleared the save-path request after opening Save As, so cancellation leaves no stale error message. (#3888)
+
+- Preserved the conversion guard of built-in model parameters when saving and reopening. (#3883)
+
+- Made sketch creation and Finish Sketch separate undo and redo steps. (#3880)
+
+- Started a sketch directly on a preselected origin plane. (#3879)
+
+- Kept the ViewCube visible and interactive while editing a 2D sketch. (#3877)
+
+- Enabled analytic area measurements for named solid faces through the Analysis API. (#3876)
+
+- Kept toolbar arrow-key navigation from rotating the model on its first key press. (#3874)
+
+- Lit model faces in the viewport and isometric preview so their orientations are visible. (#3873)
+
+- Kept the model inside the document area when using Home or Fit with docked panels. (#3872)
+
+- Selected a ribbon tab on the click that dismisses its context menu.
+
+- Closed unpinned ribbon expansions when Escape dismisses their title menu.
+
+- Kept expanded ribbon commands open while their docking menu is in use.
+
+- Kept the ribbon docking submenu closed after Escape until it is opened again.
+
+- Made the default ribbon display control toggle between full and tabs-only modes.
+
+- Made Precise Input show coordinates and the triad for the selected reference mode.
+
+- Resolved API dimension Drive expressions once, as in the Go host, while keeping desktop formulas live.
+
+- Kept selected sketch geometry at the requested transform, and refused moves blocked by constraints.
+
+- Kept geometric constraint tools active for repeated selections and restored Coincident prompts.
+
+- Preserved sketch selection when opening a point context menu. (#3856)
+
+- Disabled sketch marking-menu commands while a transaction is open. (#3856)
+
+- Made Escape from the ribbon target selector discard the pending customization. (#3856)
+
+- Kept origin-plane labels inside the clickable workspace when starting a sketch. (#3857)
+
+- Included User Commands in the ribbon panel visibility controls. (#3856)
+
+- Added a missing-file warning and filename recovery to ribbon settings import. (#3856)
+
+- Fixed ribbon customization to keep display options per command and restore them after a staged removal. (#3856)
+
+- Kept reversed ribbon customization edits pending until Apply or Cancel. (#3856)
+
+- Fixed Escape in ribbon customization to discard pending edits without cancelling the active sketch. (#3856)
+
+- Show the model's reason when a sketch dimension value is refused. (#3855)
+
+- Reject driving dimension values that fail the sketch constraint's target
+  checks, including a zero radius, before saving the edit. (#3855)
+
+- Resolved viewport body colors from document and catalog appearances. (#3859)
+
+### Added
+
+- Added a native scenario receipt command that checks its artifacts before publication. (#3865)
+
+- Added a diagnostic mode to report native BDD step gaps after failures. (#3863)
+
+- Added browser rows and an editor for saved rectangular sketch patterns.
+
+- Added a rectangular sketch-pattern dialog with live preview and cancel.
+
+- Added rectangular sketch-pattern creation through the typed API.
+
+- Added previewable and undoable rectangular pattern edits that retain existing member identities.
+
+- Added saved rectangular sketch-pattern records with preview and undoable creation.
+
+- Added parameter-driven spacing for linked sketch copies and recompute.
+
+- Linked translated sketch copies to their seed points and circle radii through solve and history.
+
+- Added saved structural point links for associative sketch-pattern solving.
+
+- Added rectangular sketch-pattern layouts with fitted spans and suppressed instances.
+
+- Added atomic sketch-copy batches and previews as a foundation for patterns.
+
+- Added rotated sketch-copy previews and undoable copy operations.
+
+- Kept Finish Sketch available on document ribbon tabs while a sketch is being edited.
+
+- Added context menus for unavailable commands in expanded ribbon panels.
+
+- Added the optional Parameters panel to the Sketch ribbon.
+
+- Added document unit labels to Precise Input coordinates.
+
+- Added Copy mode to sketch Move, with preview and undo/redo.
+
+- Added precise coordinates and triad controls to sketch Move.
+
+- Added multi-entity selection and single-selection optimization to sketch Move.
+
+- Added single-entity sketch Move with a solved preview, canvas points, and undo/redo.
+
+- Added undoable geometric relation removal from sketch curve context menus.
+
+- Added repeat of sketch constraints to the sketch context menu. (#3856)
+
+- Added selection-aware Delete to the sketch context menu. (#3856)
+
+- Added sketch marking-menu overflow command editing. (#3856)
+
+- Added saved sketch marking-menu layouts and slot customization. (#3856)
+
+- Added sketch-ready aliases for Undo, Redo, Save, Home, and Previous View. (#3856)
+
+- Added saved keyboard shortcuts and sketch command aliases to the Customize dialog. (#3856)
+
+- Added ribbon location information for the sketch visibility command. (#3856)
+
+- Added the View Tab command category to ribbon customization. (#3856)
+
+- Added keyboard switching between ribbon customization targets. (#3856)
+
+- Added keyboard navigation and Escape handling to the ribbon command-category list. (#3856)
+
+- Added the Macros category to ribbon customization for sessions with no macros. (#3856)
+
+- Added keyboard navigation and scrolling for available ribbon commands. (#3856)
+
+- Added name sorting to the available ribbon commands while preserving selection. (#3856)
+
+- Added expanded-panel placement for custom ribbon commands. (#3856)
+
+- Saved applied part ribbon customization in user preferences across restarts. (#3856)
+
+- Added XML import and export for staged part ribbon customization. (#3856)
+
+- Added Ctrl+A selection and a title-bar close control to ribbon customization. (#3856)
+
+- Added keyboard selection and transfer of multiple ribbon commands. (#3856)
+
+- Added sketch tools and constraints to the ribbon customization command list. (#3856)
+
+- Added double-click transfer of ribbon user commands. (#3856)
+
+- Added session-local customization of part ribbon user commands. (#3856)
+
+- Added typed API placement of existing sketch block definitions with checked
+  position, rotation, scale, and undo/redo. (#3856)
+
+- Added viewport display for placed sketch block definitions, including their
+  rotation, scale, and instance selection color. (#3856)
+
+- Added saved sketch block instance identities and placements, with typed
+  instance listing and protection against deleting a definition in use. (#3856)
+
+- Added saved local geometry for sketch block definitions, including captured
+  shared points and curve roles. (#3856)
+
+- Added typed API operations to create, list, and delete empty sketch block
+  definitions, with undo and save/reopen support. (#3856)
+
+- Added the Sketch Create expansion with access to Precise Input while a sketch
+  command accepts points. (#3856)
+
+- Added the Sketch tab for part documents and its Constrain expansion. (#3856)
+
+- Added immediate placement and value editing for sketch dimensions. Cancel keeps
+  the measured dimension, and Undo treats placement and value edits as separate
+  steps. (#3855)
+
+- Added Left and Right navigation for feature branches in the model browser. (#3856)
+
+- Added Up and Down navigation for visible rows in the model browser’s Features branch. (#3856)
+
+- Added a Zoom Selected toolbar for selected model faces. (#3856)
+
+- Added arrow-key view rotation while ribbon key tips are visible. (#3856)
+
+- Added keyboard access to compact and side-docked ribbon groups for part documents. (#3856)

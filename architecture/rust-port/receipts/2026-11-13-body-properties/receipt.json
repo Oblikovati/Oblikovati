@@ -1,0 +1,31 @@
+{
+  "feature": "application/body-properties",
+  "source_revision": null,
+  "source_sha256": "0b20ae95482d755cafe546d0bae98db647acdaa2ebfb5353e3fcb3bc6af0cf50",
+  "source_revision_note": "The scenario source was not a Git checkout; the exact source bytes are retained in gzip form.",
+  "application_base": "a306d76ea054b670e194b964d3360ffb6b4d3061",
+  "application_changes": "Appearance resolution and body properties bindings in this commit.",
+  "environment": "Linux, Xvfb, Lavapipe",
+  "command": "xvfb-run -a -s '-screen 0 1600x1000x24' cargo test --locked -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture",
+  "environment_options": {
+    "OBK_BDD_ROOT": "/mnt/vininas-projects/MCAD-Scenarios",
+    "OBK_BDD_FEATURE": "body-properties"
+  },
+  "scenarios": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6
+  },
+  "steps": {
+    "passed": 69,
+    "failed": 0,
+    "total": 69
+  },
+  "artifacts": {
+    "cucumber.json": "c8d39a7b41f0197781f1e1803ec65833224cc58f04b50433f1f0144e8dd2e7fa",
+    "junit.xml": "94779529c6b78d1be11e7145447e91679cd64457ce9e2524a9820a3f39340601",
+    "material-appearance.png": "517b984410935101b379b9fe4f1a5d9da7349f33e9da760563df4c60042f53f7",
+    "source.feature.gz": "3c657a28f3adfa7c50f8e046c6be0e843874143b528400fd4b03e2a0b48e94b0"
+  },
+  "issue": "https://github.com/Oblikovati/Oblikovati/issues/3859"
+}

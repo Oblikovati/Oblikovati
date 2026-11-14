@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+<title id="title">File menu</title><desc id="desc">A folded page with a small command grid.</desc>
+<path d="M12 7h25l13 13v37H12z" fill="#f4f8fb" stroke="#31566c" stroke-width="3" stroke-linejoin="round"/>
+<path d="M37 7v13h13" fill="#c6e2f0" stroke="#31566c" stroke-width="3" stroke-linejoin="round"/>
+<path d="M18 27h16M18 33h11" fill="none" stroke="#6e9db4" stroke-width="3" stroke-linecap="round"/>
+<rect x="31" y="34" width="25" height="23" rx="4" fill="#e8bd49" stroke="#8a6b21" stroke-width="2"/>
+<g fill="#364f60"><rect x="36" y="39" width="5" height="5" rx="1"/><rect x="46" y="39" width="5" height="5" rx="1"/><rect x="36" y="48" width="5" height="5" rx="1"/><rect x="46" y="48" width="5" height="5" rx="1"/></g>
+</svg>

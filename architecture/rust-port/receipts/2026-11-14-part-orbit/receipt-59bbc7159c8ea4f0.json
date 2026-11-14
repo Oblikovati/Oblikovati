@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:59bbc7159c8ea4f06a7778692656e22f14242938f0a79f1cd0ce64c305d9dac4",
+  "scenario_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+  "source_sha256": "d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6",
+  "application_commit": "e71c56ad0a84eb9991f864003b525ca313d69fda",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "application_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-part-orbit/cucumber.json",
+    "sha256": "07b3f9cecb49e435d636a4f80c8e61862ed3636c5d523db61dca3f1d1a46b2d2"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-part-orbit/source-revision.json",
+    "sha256": "afdcde4b44bdbec6b08878f72ff7111f069221d84273b826035e73b15a5d3457"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-part-orbit/Reverse-a-rotation-using-the-remaining-adjacent-pairs.png",
+    "sha256": "b418d9aed5be78232cf95198595fe7a0f18f6d8c6b63712c2a54bfcc5e8fbd27"
+  }
+}

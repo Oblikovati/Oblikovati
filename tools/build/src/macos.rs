@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 // Native dependency relocation replaces the Go cgo packaging path from aa8297d1 (#3560).
 
+use crate::executable_names::GUI_BINARY;
 use crate::{
     packaging::{copy_file, copy_tree},
     process::{BuildResult, Runner, execute},
@@ -251,7 +252,7 @@ fn plist(version: &str, epoch: &str) -> BuildResult<String> {
         r#"<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-<key>CFBundleExecutable</key><string>oblikovati-head</string>
+<key>CFBundleExecutable</key><string>{GUI_BINARY}</string>
 <key>CFBundleIdentifier</key><string>org.oblikovati.rust</string>
 <key>CFBundleName</key><string>Oblikovati Rust</string>
 <key>CFBundleIconFile</key><string>icons/Oblikovati</string>

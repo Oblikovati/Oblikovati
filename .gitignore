@@ -11,6 +11,8 @@
 
 # Installed development tools and local test/coverage output.
 **/node_modules/
+**/__pycache__/
+*.py[cod]
 *.profraw
 *.profdata
 *.gcda
@@ -46,3 +48,6 @@ Desktop.ini
 *.swo
 /core
 /core.[0-9]*
+
+# Cache fallback for source archives without Git metadata.
+/.cache/

@@ -1,0 +1,13 @@
+{
+  "kind": "failure-diagnostic",
+  "application_commit": "e01e3a6e96f68861d062107b25018ce43ba2ce1d",
+  "checkout": "clean detached Git worktree, removed after run",
+  "command": "xvfb-run -a -s '-screen 0 1920x1080x24 -noreset' cargo test --locked -p oblikovati-head --lib native_gui_buttons_save_and_restore_model_pixels_without_camera_leakage -- --nocapture",
+  "exit_code": 101,
+  "failure": "assertion failed: window.command_notice.is_some()",
+  "issue": "https://github.com/Oblikovati/Oblikovati/issues/3874",
+  "log": {
+    "path": "architecture/rust-port/receipts/2026-11-14-notice-baseline/native-test.log.gz",
+    "sha256": "f1be9473ee6ab6cb42d96fe5dc64b74fa27551357d79dc2ad0bee4c7ce55b3c4"
+  }
+}

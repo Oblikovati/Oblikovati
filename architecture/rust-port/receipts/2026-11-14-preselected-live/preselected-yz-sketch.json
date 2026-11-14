@@ -1,0 +1,12 @@
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"index\":0,\"name\":\"Sketch1\",\"plane\":\"YZ\",\"visible\":true,\"entityCount\":1,\"dof\":0,\"editing\":true,\"healthy\":true}"
+      }
+    ]
+  }
+}

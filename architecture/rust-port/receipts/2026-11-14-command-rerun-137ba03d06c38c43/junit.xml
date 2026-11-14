@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Body properties dialog: tmp/oblikovati-rerun-source/features/application/body-properties/body-properties.feature" package="testsuite/Feature: Body properties dialog: tmp/oblikovati-rerun-source/features/application/body-properties/body-properties.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T04:02:36.054459389Z" time="8.312821041"><testcase name="Scenario: Dismiss body properties with Escape: tmp/oblikovati-rerun-source/features/application/body-properties/body-properties.feature:57:3" time="8.312821041"><system-out><![CDATA[  Scenario: Dismiss body properties with Escape
+   ✔  Given a part with a visible solid body is active in the MCAD Software
+   ✔  And Body Properties is open for the body
+   ✔  When the user presses Escape
+   ✔  Then the dialog closes
+   ✔  And the body row remains selected in the model browser
+   ✔  And the solid remains highlighted in the viewport
+]]></system-out></testcase></testsuite></testsuites>

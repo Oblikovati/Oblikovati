@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 use super::{
-    Expression, ExpressionError,
+    Expression, ExpressionError, ReferenceSpan,
     node::{BinaryOperator, Node},
     token::{Token, TokenKind, tokenize},
 };
-use crate::{quantity::Dimension, units::UnitsOfMeasure};
+use crate::{quantity::Dimension, quantity::Quantity, units::UnitsOfMeasure};
 use std::collections::BTreeMap;
 
 // Limit recursive syntax, not a left-associative formula's length. Evaluation
@@ -17,6 +17,7 @@ struct Parser<'a> {
     position: usize,
     nodes: Vec<Node>,
     references: Vec<String>,
+    spans: Vec<ReferenceSpan>,
     reference_indices: BTreeMap<String, usize>,
     units: &'a UnitsOfMeasure,
 }
@@ -27,6 +28,7 @@ pub(super) fn compile(source: &str, units: &UnitsOfMeasure) -> Result<Expression
         position: 0,
         nodes: Vec::new(),
         references: Vec::new(),
+        spans: Vec::new(),
         reference_indices: BTreeMap::new(),
         units,
     };
@@ -38,6 +40,7 @@ pub(super) fn compile(source: &str, units: &UnitsOfMeasure) -> Result<Expression
         source: source.into(),
         nodes: parser.nodes,
         references: parser.references,
+        spans: parser.spans,
         root,
     })
 }
@@ -98,12 +101,7 @@ impl Parser<'_> {
     fn number(&mut self) -> Result<usize, ExpressionError> {
         let token = self.tokens[self.position];
         self.advance();
-        let next = self.tokens[self.position];
-        let literal = format!("{} {}", token.text, next.text);
-        if next.kind == TokenKind::Name
-            && let Ok(quantity) = self.units.parse(&literal, Dimension::Unitless)
-        {
-            self.advance();
+        if let Some(quantity) = self.named_literal(token.text) {
             return Ok(self.append(Node::Literal(quantity)));
         }
         let quantity = self
@@ -113,13 +111,47 @@ impl Parser<'_> {
         Ok(self.append(Node::Literal(quantity)))
     }
 
+    fn named_literal(&mut self, number: &str) -> Option<Quantity> {
+        let unit = self.tokens[self.position];
+        if unit.kind != TokenKind::Name {
+            return None;
+        }
+        let (suffix, consumed) = self.unit_suffix(unit);
+        let quantity = self
+            .units
+            .parse(&format!("{number} {suffix}"), Dimension::Unitless)
+            .ok()?;
+        self.position += consumed;
+        Some(quantity)
+    }
+
+    fn unit_suffix(&self, unit: Token<'_>) -> (String, usize) {
+        let following = self.tokens.get(self.position + 1..self.position + 3);
+        if let Some([caret, exponent]) = following
+            && caret.kind == TokenKind::Caret
+            && exponent.kind == TokenKind::Number
+            && caret.position == unit.position + unit.text.len()
+            && exponent.position == caret.position + 1
+        {
+            return (format!("{}^{}", unit.text, exponent.text), 3);
+        }
+        (unit.text.into(), 1)
+    }
+
     fn identifier(&mut self, nesting: usize) -> Result<usize, ExpressionError> {
+        let start = self.peek().position;
         let name = self.advance().text.to_owned();
+        let end = start + name.len();
         if self.peek().kind == TokenKind::Open {
             let arguments = self.arguments(nesting + 1)?;
             return Ok(self.append(Node::Call(name, arguments)));
         }
         let reference = self.reference_index(name);
+        self.spans.push(ReferenceSpan {
+            start,
+            end,
+            reference,
+        });
         Ok(self.append(Node::Reference(reference)))
     }
 

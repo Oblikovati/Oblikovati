@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Rectangle two point: tmp/oblikovati-rect-source/features/sketch/rectangle-two-point/scenario.feature" package="testsuite/Feature: Rectangle two point: tmp/oblikovati-rect-source/features/sketch/rectangle-two-point/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T05:01:38.586838868Z" time="11.245767673"><testcase name="Scenario: rectangle-two-point-08 Commit typed sizes and restore through history: tmp/oblikovati-rect-source/features/sketch/rectangle-two-point/scenario.feature:37:3" time="11.245767673"><system-out><![CDATA[  Scenario: rectangle-two-point-08 Commit typed sizes and restore through history
+   ✔  Given an editable sketch in RIGHT view with the required fixture
+   ✔  When the user start Two Point Rectangle and select a first corner
+   ✔  And the user press 1 and then 0
+   ✔  And the user press Tab
+   ✔  And the user press 6 and then Enter
+   ✔  Then a rectangle with size annotations 10 and 6 is committed
+   ✔  And the command returns to Select first corner
+   ✔  When the user press Escape and then Ctrl+Z
+   ✔  Then the rectangle and its two size annotations disappear
+   ✔  When the user press Ctrl+Y
+   ✔  Then the rectangle and both annotations return
+]]></system-out></testcase></testsuite></testsuites>

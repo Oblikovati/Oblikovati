@@ -1,0 +1,19 @@
+{
+  "kind": "browser outline refactor verification",
+  "application_commit": "3bea8bfad",
+  "results": {
+    "owner_tests": "16 passed",
+    "native_browser": "9 steps passed before and after split",
+    "native_final_screenshot": "before and after sha256 f30ad95312c5a90741a1017e4ba612be1b2c4ad079f81296da2c1ce8bfc835cb",
+    "clippy": "passed, head all targets",
+    "docs_lint": "markdownlint passed; line-limit check fails on crates/head/src/owner_precise_input.rs"
+  },
+  "limits": "Native test uses injected input inside the GUI loop under Xvfb; the final screenshot follows clearing the selection. Full gate not run.",
+  "artifacts": {
+    "owner.log.gz": "611c8a91735e04a07226d17b8beb9d70083bba421810edaaa16f9c10b57a6c51",
+    "docs.log.gz": "6ceda2b711de3ab186541275dc3c8675ccd744fc1d7096e355469c168b8f08a9",
+    "before.log.gz": "5de1a5594fa54752a8a9d6062cb34497504c249e4bc44787eb9b94edcef2a6ba",
+    "clippy.log.gz": "fe975fa062b0c80427c9681011986815e84b563e16ff64472044cf4186e572b1",
+    "after.log.gz": "c3a55da8c16db9a54f202b76ad8ffb134bdde734ee2f2f8d343fc215dac3291d"
+  }
+}

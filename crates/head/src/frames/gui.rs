@@ -1,0 +1,255 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use super::{HeadWindow, HeadWork, ViewportEvent, synchronize_sketch_view};
+use oblikovati_gui::GuiShellAction;
+use oblikovati_viewport::{ViewportInput, ViewportKey};
+use std::time::Duration;
+#[path = "gui_authoring.rs"]
+mod authoring;
+#[path = "gui_dimension_labels.rs"]
+mod dimension_labels;
+/// GUI work joins the existing event and wake paths; lifecycle events remain owner-visible.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct HeadGuiUpdate {
+    pub changed: bool,
+    pub consumed_input: bool,
+    pub deferred: bool,
+    pub actions: Vec<GuiShellAction>,
+    pub wake_after: Option<Duration>,
+}
+pub(super) fn advance_gui(
+    window: &mut dyn HeadWindow,
+    owner: &mut dyn HeadWork,
+    event: Option<&ViewportEvent>,
+) -> Result<HeadGuiUpdate, String> {
+    let mut commands = owner.gui_command_state()?;
+    commands.dimension_labels = dimension_labels::projected_dimension_labels(window, owner)?;
+    commands.origin_planes = dimension_labels::origin_plane_outlines(window, &commands);
+    commands.feature_edges = dimension_labels::projected_browser_outline(window, owner);
+    commands.origin_axes = dimension_labels::origin_axis_lines(window, &commands);
+    follow_view_projection(window);
+    commands.view_axes = window
+        .view_camera()
+        .ok()
+        .map(|camera| crate::view_orientation::view_axes(&camera));
+    commands.constraint_glyphs = dimension_labels::projected_constraint_glyphs(window, owner);
+    dimension_labels::project_precise_triad(window, owner, &mut commands);
+    let mut update = window.gui_frame(event, &commands)?;
+    for action in &update.actions {
+        update.changed |= dispatch_gui_action(window, owner, action)?;
+    }
+    Ok(update)
+}
+pub(super) fn dispatch_gui_action(
+    window: &mut dyn HeadWindow,
+    owner: &mut dyn HeadWork,
+    action: &GuiShellAction,
+) -> Result<bool, String> {
+    match action {
+        GuiShellAction::CaptureWindowPreview => return window.capture_window_preview(),
+        GuiShellAction::CaptureIsometricPreview { document } => {
+            super::publish_owner_scene(window, owner)?;
+            return window.capture_isometric_preview(*document);
+        }
+        GuiShellAction::Exit => return window.request_close(),
+        GuiShellAction::OrientView { command, fit } => {
+            let camera = crate::view_orientation::oriented(&window.view_camera()?, *command);
+            let changed = window.set_view_camera(camera)?;
+            return if *fit {
+                window.navigate_view(FIT_THE_MODEL)
+            } else {
+                Ok(changed)
+            };
+        }
+        GuiShellAction::SetViewProjection(mode) => {
+            window.set_view_projection(*mode);
+            return Ok(true);
+        }
+        GuiShellAction::ViewCommand(command) => {
+            return authoring::view_command(window, owner, command);
+        }
+        GuiShellAction::ClickModel { document, pixel } => {
+            return owner.click_model_from_gui(*document, window.view_line(*pixel)?);
+        }
+        GuiShellAction::StartSketchAt {
+            document,
+            pixel,
+            origin_plane,
+        } => {
+            let result = owner
+                .start_sketch_on_face_from_gui(*document, window.view_line(*pixel)?)
+                .and_then(|found| match (found, origin_plane) {
+                    (false, Some(plane)) => owner.start_sketch_on_plane_from_gui(*plane),
+                    _ => Ok(found),
+                });
+            let changed = report_authoring_result(window, result)?;
+            return Ok(synchronize_sketch_view(window, owner)? || changed);
+        }
+        _ => {}
+    }
+    if let Some(key) = action_key(action) {
+        let event = ViewportEvent::Input(ViewportInput::Key { key, pressed: true });
+        return dispatch_frame_input(window, owner, &event);
+    }
+    let result = authoring::apply(owner, action);
+    if let Err(cause) = &result
+        && let GuiShellAction::EditDimensionValue(value) = action
+    {
+        window.reject_dimension_edit(value, cause);
+    }
+    let changed = report_authoring_result(window, result)?;
+    Ok(synchronize_sketch_view(window, owner)? || changed)
+}
+fn report_authoring_result(
+    window: &mut dyn HeadWindow,
+    result: Result<bool, String>,
+) -> Result<bool, String> {
+    match result {
+        Ok(changed) => Ok(changed),
+        Err(cause) => {
+            window.show_command_notice(crate::DesktopCommandNotice::AuthoringFailed { cause })?;
+            Ok(true)
+        }
+    }
+}
+fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
+    Some(match action {
+        GuiShellAction::SelectBlockGeometry(_)
+        | GuiShellAction::CreateSketchBlock(_)
+        | GuiShellAction::PlaceSketchBlock(_) => {
+            return None;
+        }
+        GuiShellAction::SetMarkingMenu(_)
+        | GuiShellAction::SetKeymap(_)
+        | GuiShellAction::SetUiScale(_)
+        | GuiShellAction::SetDocumentUnits { .. }
+        | GuiShellAction::CreateDrawingBaseView(_)
+        | GuiShellAction::PlaceComponent { .. }
+        | GuiShellAction::PlaceComponentFile { .. }
+        | GuiShellAction::PreviewComponent(_)
+        | GuiShellAction::PreviewComponentFile { .. }
+        | GuiShellAction::PreviewDrawingBaseView(_)
+        | GuiShellAction::SetSketchOptions(_)
+        | GuiShellAction::LineCommand(_)
+        | GuiShellAction::PrecisePoint(_)
+        | GuiShellAction::PreciseTriad(_)
+        | GuiShellAction::ToggleCenterPointFormat
+        | GuiShellAction::SetCenterPoint { .. }
+        | GuiShellAction::DeleteSketchRelation(_)
+        | GuiShellAction::Inspect(_)
+        | GuiShellAction::EditDimensionValue(_)
+        | GuiShellAction::SetPromptFrequency { .. }
+        | GuiShellAction::CaptureWindowPreview
+        | GuiShellAction::CaptureIsometricPreview { .. }
+        | GuiShellAction::Exit
+        | GuiShellAction::EditThemeColor { .. }
+        | GuiShellAction::DuplicateTheme { .. }
+        | GuiShellAction::DeleteTheme { .. }
+        | GuiShellAction::SaveTheme { .. }
+        | GuiShellAction::SetColorScheme(_)
+        | GuiShellAction::SetTheme(_)
+        | GuiShellAction::Parameter { .. }
+        | GuiShellAction::UpdatePart
+        | GuiShellAction::SetSelectionMode(_)
+        | GuiShellAction::ActivateDocument(_)
+        | GuiShellAction::OpenDocument(_)
+        | GuiShellAction::OpenDeferredDrawing(_)
+        | GuiShellAction::CloseDocument(_)
+        | GuiShellAction::SaveDocumentAs(_)
+        | GuiShellAction::SetSketchVisibility { .. }
+        | GuiShellAction::SelectBrowserSketch { .. }
+        | GuiShellAction::SelectBrowserBlock { .. }
+        | GuiShellAction::SelectBrowserFeature { .. }
+        | GuiShellAction::BrowserChoice { .. }
+        | GuiShellAction::SetSketchLineStyle { .. }
+        | GuiShellAction::EditFeature { .. }
+        | GuiShellAction::ClickModel { .. }
+        | GuiShellAction::InspectFile(_)
+        | GuiShellAction::KeepDocumentPicture { .. }
+        | GuiShellAction::OrientView { .. }
+        | GuiShellAction::SetViewProjection(_)
+        | GuiShellAction::ViewCommand(_)
+        | GuiShellAction::UpdateBodyProperties { .. }
+        | GuiShellAction::AssignPartAsset { .. }
+        | GuiShellAction::SetBodyAppearance { .. }
+        | GuiShellAction::EditSketch { .. }
+        | GuiShellAction::Dimension(_)
+        | GuiShellAction::PreviewSketchPattern(_)
+        | GuiShellAction::CreateSketchPattern(_)
+        | GuiShellAction::OpenSketchPattern { .. }
+        | GuiShellAction::PreviewSketchPatternEdit { .. }
+        | GuiShellAction::EditSketchPattern { .. }
+        | GuiShellAction::SketchMove(_)
+        | GuiShellAction::ConstrainSketch(_)
+        | GuiShellAction::PlaceSketchTool(_)
+        | GuiShellAction::ToggleSketchFormat(_)
+        | GuiShellAction::DeleteSketchSelection
+        | GuiShellAction::CreateDocument(_)
+        | GuiShellAction::NewPart
+        | GuiShellAction::ChooseSketchPlane
+        | GuiShellAction::ShowHome
+        | GuiShellAction::Recent(_)
+        | GuiShellAction::ActivateWindow(_)
+        | GuiShellAction::NewDocumentWindow
+        | GuiShellAction::CloseDocumentWindow(_)
+        | GuiShellAction::StartSketchOn(_)
+        | GuiShellAction::StartSketchOnWorkPlane(_)
+        | GuiShellAction::StartSketchAt { .. }
+        | GuiShellAction::FinishSketch
+        | GuiShellAction::OpenExtrude
+        | GuiShellAction::PreviewExtrude(_)
+        | GuiShellAction::Extrude { .. } => {
+            return None;
+        }
+        GuiShellAction::Save => ViewportKey::Save,
+        GuiShellAction::Undo => ViewportKey::Undo,
+        GuiShellAction::Redo => ViewportKey::Redo,
+        GuiShellAction::Home => ViewportKey::Home,
+    })
+}
+/// The whole model in view, with the margin Home leaves.
+const FIT_THE_MODEL: oblikovati_viewport::ViewportNavigation =
+    oblikovati_viewport::ViewportNavigation::Fit { margin: 0.1 };
+/// Keep the camera on the chosen projection as the viewpoint changes, by whatever means.
+fn follow_view_projection(window: &mut dyn HeadWindow) {
+    let Ok(camera) = window.view_camera() else {
+        return;
+    };
+    let mode = window.view_projection();
+    let perspective = crate::view_orientation::projects_in_perspective(&camera, mode);
+    if perspective != camera.perspective {
+        // A window that cannot take the camera keeps its view; nothing here depends on it.
+        let _ = window.set_view_camera(oblikovati_viewport::ViewportCamera {
+            perspective,
+            ..camera
+        });
+    }
+}
+pub(super) fn dispatch_frame_input(
+    window: &mut dyn HeadWindow,
+    owner: &mut dyn HeadWork,
+    event: &ViewportEvent,
+) -> Result<bool, String> {
+    let event = semantic_command_event(*event);
+    let event = &event;
+    let mut changed = window.process_view_input(event)?;
+    changed |= owner.process_window_inputs(&[*event], window)?;
+    changed |= synchronize_sketch_view(window, owner)?;
+    Ok(changed)
+}
+fn semantic_command_event(event: ViewportEvent) -> ViewportEvent {
+    let ViewportEvent::Input(ViewportInput::PhysicalKey {
+        command: Some(key),
+        pressed,
+        ..
+    }) = event
+    else {
+        return event;
+    };
+    ViewportEvent::Input(ViewportInput::Key { key, pressed })
+}
+pub(super) fn earliest_wake(left: Option<Duration>, right: Option<Duration>) -> Option<Duration> {
+    left.into_iter().chain(right).min()
+}
+#[cfg(test)]
+#[path = "../../tests/gui_frames.rs"]
+mod tests;

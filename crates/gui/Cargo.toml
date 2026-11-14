@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: GPL-2.0-only
+[package]
+name = "oblikovati-gui"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+[lints.rust]
+unsafe_code = "deny"
+[lints.clippy]
+all = "warn"
+[dependencies]
+oblikovati-model = { path = "../model" }
+oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "f0943c724a6e07ec49533769c9e680137bb3d55c", version = "=0.159.0" }
+image = { version = "=0.25.6", default-features = false }
+resvg = { version = "=0.49.0", default-features = false }
+xml = "=1.4.0"
+imgui = { version = "=0.12.0", features = ["docking"] }
+imgui-sys = { version = "=0.12.0", features = ["docking"] }
+oblikovati-viewport = { path = "../viewport" }
+
+[dev-dependencies]
+syn = { version = "=2.0.119", features = ["full", "visit"] }
+tempfile = "=3.27.0"
+
+[target.'cfg(target_os = "linux")'.dev-dependencies]
+rustix = { version = "=1.1.5", features = ["event"] }
+
+[build-dependencies]
+cc = "=1.7.0"

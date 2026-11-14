@@ -1,0 +1,28 @@
+{
+  "kind": "focused-implementation-evidence",
+  "application_commit": "149f49eff",
+  "checks": [
+    {
+      "command": "cargo test --locked -p oblikovati-solve -p oblikovati-model --test linalg --test nonlinear --test sketch_point_preference --test geometric_constraint_creation",
+      "exit_code": 0,
+      "path": "architecture/rust-port/receipts/2026-11-14-dependent-preference/focused.log.gz",
+      "sha256": "a0e58fbceeaf579cc27980dd8d25b3035aea472ae0f667c0f1ca18bac618c27c"
+    },
+    {
+      "command": "cargo test --locked -p oblikovati-solve --test linalg",
+      "exit_code": 0,
+      "path": "architecture/rust-port/receipts/2026-11-14-dependent-preference/linalg.log.gz",
+      "sha256": "83d34b807b5b24350ad4b8644d02235fc51b8e7bc7d3d2944e165ebd32ed3295"
+    },
+    {
+      "command": "cargo clippy --locked -p oblikovati-solve -p oblikovati-model --all-targets -- -D warnings",
+      "exit_code": 0,
+      "path": "architecture/rust-port/receipts/2026-11-14-dependent-preference/clippy.log.gz",
+      "sha256": "f2cc806b6129afc3e871c1b3ebbf4a34f6563aea706be60bf821149c1e1fad96"
+    }
+  ],
+  "limitations": [
+    "These checks do not establish full gate or native acceptance. The preferred constraint API candidate is not released.",
+    "The last additional change before commit added only a pivoted rank-deficient test; the complete linalg test ran after that addition."
+  ]
+}

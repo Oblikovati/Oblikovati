@@ -11,7 +11,8 @@ pub(super) struct NamedUnit {
 }
 
 // Factors retain the Go baseline's centimetre/radian/kg/second arithmetic order.
-const NAMED_UNITS: [(&str, Dimension, f64); 26] = [
+const NAMED_UNITS: [(&str, Dimension, f64); 27] = [
+    ("ul", Unitless, 1.0),
     ("pm", Length, 1e-10),
     ("nm", Length, 1e-7),
     ("um", Length, 1e-4),

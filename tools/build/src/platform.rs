@@ -44,6 +44,7 @@ pub(crate) const PLATFORMS: [Platform; 6] = [
     },
     Platform {
         target: "aarch64-apple-darwin",
+        // #3795: actions/runner-images#13518 retired Sonoma on 2026-11-02.
         runner: "macos-26",
         suffix: "macos-arm64",
         head: true,

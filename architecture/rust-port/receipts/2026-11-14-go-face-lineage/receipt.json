@@ -1,0 +1,28 @@
+{
+  "kind": "go-reference-lineage",
+  "checked_at": "2026-11-14T04:31:07.549122+01:00",
+  "go_application_commit": "aa8297d1b0ac33c024f19e54821536d76e8a447a",
+  "platform": "Linux-7.2.6-76070206-generic-x86_64-with-glibc2.39",
+  "source_fixture": "architecture/rust-port/receipts/2026-11-14-go-cube-fixture/go-cube.obk",
+  "artifacts": {
+    "go-face-lineage.go": "8025d9504d27d0f25400c2d817417d2dd2788bfa17993fee8233c65968ea1f1a",
+    "go-resave-fixture.go": "f5e4a720983062bdeff1e12871215e7a95727f48b6fa5e44312138293c647ed3",
+    "original.json": "aa4a9cb246bdfa48df650a567dbea518cc6bc4fa0ad422a222d785bf90624004",
+    "reorder.py": "bae9d6142be59364260b52dc9767205822aa00e6a7237fa4134d93ff680bdb84",
+    "reordered.json": "933ddefb965f85e90d3244fa33b325e313e7f835e0c46261d9a9677cb465d28c",
+    "reordered.obk": "57c3a0fa446cfe10eca08067a92032230c6852cb500e3db9e37fca1afd39809c"
+  },
+  "scope": [
+    "Go reopens each fixture, resolves the one closed profile, and verifies exact source endpoints against each profile edge. It records the associated side key and source line before and after changing size.",
+    "The rotated fixture was made by reordering the original YAML entity records, then reopening and saving it through the Go package store, which updated the model digest. It is a diagnostic edit, not a separate GUI-authored design."
+  ],
+  "observations": [
+    "The same side index 0 names source line 6 in the original fixture and source line 7 in the reordered fixture.",
+    "Within each fixture, the recorded side-to-source relation stays the same after a size edit."
+  ],
+  "limitations": [
+    "The files do not contain a dependent face reference; face keys are captured externally.",
+    "These two inputs do not prove Go-to-Martensite profile ordering for arbitrary sketches.",
+    "The diagnostic checks exact line endpoints in source order; it does not infer identities from geometric proximity."
+  ]
+}

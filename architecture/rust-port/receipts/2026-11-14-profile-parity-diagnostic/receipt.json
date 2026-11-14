@@ -1,0 +1,34 @@
+{
+  "kind": "profile-compatibility-diagnostic",
+  "checked_at": "2026-11-14T04:25:32.069096+01:00",
+  "application_commit": "dbca582834dd448e70f38062ff59b92b327d3471",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "go_application_commit": "aa8297d1b0ac33c024f19e54821536d76e8a447a",
+  "platform": "Linux-7.2.6-76070206-generic-x86_64-with-glibc2.39",
+  "artifacts": {
+    "go-profile-oracle.go": "00a1b1630fce5d0d079ddee66b4ec1f5c1f91b7abc0560fc79856d544c3f1705",
+    "go-profile.log.gz": "886397b5d61b7c8143a79fa228228311f3bfbf69a75ec41490c4b8f6a0f0c1ce",
+    "kernel-direct.log.gz": "1089f96d14344017c8d0d054a6f1ff563f1c8b9c6a43253fc44be9e099eb034e",
+    "kernel-main-probe-Cargo.lock": "b5e45cb71eb722da9d8bdafe7ee927df1007897836387cd0b7d88ab577fbd428",
+    "kernel-main-probe.rs.txt": "e7a1c6711154e269eebe280dc26007b01c645304e43c7dfa466a163d6418ecaf",
+    "kernel-main.log.gz": "2c7096625561907d566ed2fdcd90b770bc87e8254ec9ec5ac438e111ab2d6772",
+    "rust-profile-probe.rs.txt": "4a6e545b73e851c94e8059a64de0cf41f42a77a22247376bef78d7ced922d577",
+    "rust-profile.log.gz": "8c40732212bb6f67e7b7e44cd3d46a177a26778770957f7fc261e47f640ba195"
+  },
+  "observations": [
+    "For an origin-centred square with side 0.00002 cm, the Go reference reports zero profiles and the Rust adapter reports one certified region at the probe resolution.",
+    "For a 1 cm square translated to (100000000,100000000) cm, the direct pinned Martensite call declines with certified area 1 versus closed form 0.",
+    "For a 0.01 cm square at the same offset, the Go reference reports one closed profile and the Rust adapter declines with a certification mismatch.",
+    "The same direct call against local Martensite main at 4b76a823 also declines with certified area 1 versus closed form 0."
+  ],
+  "scope": "The Rust probe is a temporary diagnostic module, not a product acceptance test. The Go and Rust programs print results for the same five axis-aligned inputs. The direct kernel test reproduces the translated unit-square decline without the application adapter.",
+  "reproduction": "From the Go checkout, run go-profile-oracle.go. For Rust, copy rust-profile-probe.rs.txt into crates/martensite/tests/sketch_prism/profile_parity_probe.rs, add a matching test module to crates/martensite/tests/sketch_prism.rs, and run cargo test --locked -p oblikovati-martensite --test sketch_prism profile_parity_probe -- --nocapture. Remove the temporary module after the run.",
+  "limitations": [
+    "The diagnostic tests print observations and do not certify full profile parity.",
+    "Go tolerance and area-cutoff differences mean a single Martensite region alone cannot verify a legacy Go profile index.",
+    "The main checkout was tested locally at the recorded commit; this does not establish the current remote main after that commit."
+  ],
+  "kernel_issue": "https://github.com/Oblikovati/Martensite/issues/446",
+  "kernel_main_revision": "4b76a823959260a0bca4506be9a9c45b575aa878",
+  "kernel_main_reproduction": "Place kernel-main-probe.rs.txt in a temporary Cargo binary crate using martensite-tkbo from the recorded Martensite checkout, and run cargo run --offline. The lockfile used is retained alongside the source."
+}

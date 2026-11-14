@@ -1,0 +1,13 @@
+{
+  "after": {
+    "commit": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+    "dirty": false,
+    "root": "/tmp/obk-bdd-capture-1CiOe33y/checkout"
+  },
+  "before": {
+    "commit": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+    "dirty": false,
+    "root": "/tmp/obk-bdd-capture-1CiOe33y/checkout"
+  },
+  "source_changed": false
+}

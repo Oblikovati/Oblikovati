@@ -1,0 +1,10 @@
+=== RUN   TestPhysicalPropertiesNotice
+=== PAUSE TestPhysicalPropertiesNotice
+=== RUN   TestPhysicalPropertiesWithoutPart
+=== PAUSE TestPhysicalPropertiesWithoutPart
+=== CONT  TestPhysicalPropertiesNotice
+=== CONT  TestPhysicalPropertiesWithoutPart
+--- PASS: TestPhysicalPropertiesWithoutPart (0.00s)
+--- PASS: TestPhysicalPropertiesNotice (0.01s)
+PASS
+ok  	oblikovati.org/app	0.019s

@@ -1,0 +1,30 @@
+{
+  "application_commit": "935357037c9af786d937a130d31dc366df5bb183",
+  "scenario_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+  "scope": "Part-aware continuity for a manually constructed face-hosted sketch in the desktop owner.",
+  "verification": {
+    "session": {
+      "passed": 488,
+      "ignored": 0
+    },
+    "automation": {
+      "passed": 741,
+      "ignored": 0
+    },
+    "head": {
+      "passed": 61,
+      "ignored": 1
+    },
+    "history": {
+      "passed": 7,
+      "ignored": 0
+    },
+    "check": "passed",
+    "clippy": "passed"
+  },
+  "limits": [
+    "Public sketch creation and sketch inspection on face-backed planes are not connected.",
+    "Native mouse and keyboard scenario is not implemented or claimed.",
+    "Go migration and full make gate remain open."
+  ]
+}

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: New sketch: tmp/oblikovati-workplane-bdd-pSVAd2/scenarios/features/sketch/new-sketch/scenario.feature" package="testsuite/Feature: New sketch: tmp/oblikovati-workplane-bdd-pSVAd2/scenarios/features/sketch/new-sketch/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T08:13:03.519615382Z" time="16.789452539"><testcase name="Scenario: new-sketch-08 Create a sketch on a non-origin work plane: tmp/oblikovati-workplane-bdd-pSVAd2/scenarios/features/sketch/new-sketch/scenario.feature:54:3" time="16.789452539"><system-out><![CDATA[  Scenario: new-sketch-08 Create a sketch on a non-origin work plane
+   ✔  Given Work Plane1 was created 5 mm offset from the planar face
+   ✔  When the user preselect Work Plane1 and invoke Start 2D Sketch
+   ✔  Then empty Sketch3 is created without another support click
+   ✔  And Finish Sketch retains Sketch3 and Work Plane1
+]]></system-out></testcase></testsuite></testsuites>

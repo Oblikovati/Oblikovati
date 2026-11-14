@@ -1,0 +1,15 @@
+{
+  "kind": "environment diagnostic; not acceptance",
+  "application_commit": "2df8a99f1f2a65e2af865579917a6f56c0cfb1ad",
+  "result": "Two initial native runs failed because inherited XMODIFIERS=@im=ibus was unavailable under Xvfb; both passed on retry with XMODIFIERS=@im=none. Some other passing captures retain the warning.",
+  "artifacts": [
+    {
+      "path": "architecture/rust-port/receipts/2026-11-14-rerun-environment/59bbc7159c8ea4f0-initial.log.gz",
+      "sha256": "956a8e9df3258e60ac73a5d6a528991e5057303a0ddccacd0eba1be44595a501"
+    },
+    {
+      "path": "architecture/rust-port/receipts/2026-11-14-rerun-environment/cb85314818ef73da-initial.log.gz",
+      "sha256": "578adc6eea712532a6412be10d51a8ba51a3328fa2e556f7a73c06f43af4b623"
+    }
+  ]
+}

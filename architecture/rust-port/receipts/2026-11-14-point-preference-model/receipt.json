@@ -1,0 +1,21 @@
+{
+  "kind": "focused-implementation-evidence",
+  "application_commit": "2a0118ab9",
+  "checks": [
+    {
+      "command": "cargo test --locked -p oblikovati-model --test sketch_point_preference --test sketch_grounded_points --test geometric_constraint_creation",
+      "exit_code": 0,
+      "path": "architecture/rust-port/receipts/2026-11-14-point-preference-model/test.log.gz",
+      "sha256": "7ec756b537e1982b354807c34492958e9641c23a60ca86206e33586c7f9c792e"
+    },
+    {
+      "command": "cargo clippy --locked -p oblikovati-model --all-targets -- -D warnings",
+      "exit_code": 0,
+      "path": "architecture/rust-port/receipts/2026-11-14-point-preference-model/clippy.log.gz",
+      "sha256": "6b10cd928bfcc40ea72251ddf6236d30275d2e37ec9e87d7f24e74aa7f4057b5"
+    }
+  ],
+  "limitations": [
+    "The native command and public API do not yet carry a preference. The Coincident scenario remains failing; API and session integration require contract review."
+  ]
+}

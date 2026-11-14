@@ -1,0 +1,22 @@
+{
+  "kind": "diagnostic only; not acceptance",
+  "application_commit": "7d7138c2f33d84ca2e446402392cc62404c62174",
+  "scenario_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+  "result": "The point fixture passed. Four actions were unbound; subsequent assertion outcomes are tainted.",
+  "go_reference": "Oblikovati app/sketch_constraints_test.go TestCoincidentConstraintOnPoints",
+  "artifacts": [
+    {
+      "path": "architecture/rust-port/receipts/2026-11-14-coincident-diagnostic/gap-report.json",
+      "sha256": "075b6063fde3db68bf919913791f8cb7d2e3113524625cca2749edc0ffebaa60"
+    },
+    {
+      "path": "architecture/rust-port/receipts/2026-11-14-coincident-diagnostic/native-diagnostic.log.gz",
+      "sha256": "5db72e9d008324e546da72e7aa8cbfc9a2ec514750ac4f7106fd1f38c38629bf"
+    }
+  ],
+  "regression": {
+    "result": "Native scenario failed: first point moved from [560, 400] to [779, 474] after Coincident. The earlier pass checked only that the points met.",
+    "path": "architecture/rust-port/receipts/2026-11-14-coincident-diagnostic/position-regression.log.gz",
+    "sha256": "9af2e1f2ccb3e2b988b6ab1118b2cac13b32d589860e10da0c19b87d9bb9edea"
+  }
+}

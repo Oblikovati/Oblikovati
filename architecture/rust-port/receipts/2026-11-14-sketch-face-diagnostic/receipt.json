@@ -1,0 +1,17 @@
+{
+  "kind": "diagnostic only; not acceptance",
+  "scenario_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+  "application_commit": "abd960d2d",
+  "command": "VK_DRIVER_FILES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_FEATURE=new-sketch OBK_BDD_SCENARIO=new-sketch-07 OBK_BDD_DIAGNOSTIC=1 xvfb-run -a cargo test --locked -p oblikovati-head --lib sketch_scenarios_use_the_native_window -- --nocapture",
+  "result": "Five unbound steps; later failure tainted by missing fixture and action.",
+  "artifacts": [
+    {
+      "path": "architecture/rust-port/receipts/2026-11-14-sketch-face-diagnostic/gap-report.json",
+      "sha256": "939d75399d16d4eb215b5c8a181e7b7a22dfde3d4fd5add4291aa838f139b6bd"
+    },
+    {
+      "path": "architecture/rust-port/receipts/2026-11-14-sketch-face-diagnostic/native-diagnostic.log.gz",
+      "sha256": "0cde9910c5926b0640548cb4b2e4054135c6edf666daca54d390a4fe8d0ef2e9"
+    }
+  ]
+}

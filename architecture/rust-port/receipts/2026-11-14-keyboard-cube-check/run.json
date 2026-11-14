@@ -1,0 +1,15 @@
+{
+  "kind": "native-diagnostic",
+  "application_commit": "be2d5caf988602b00c336c1815d638b143267ec2",
+  "environment": "Linux, Xvfb 1920x1080x24, Vulkan Lavapipe",
+  "history": "Two native tests passed: rendered Undo, Redo and Save; toolbar arrow capture and viewport arrow rotation.",
+  "cube": "The native GUI-loop cube test passed, including edit, undo/redo, save/reopen and reference-key checks. It uses injected events and an API model-state fixture.",
+  "limitations": [
+    "This is not a foreground MCPBridge mouse/keyboard acceptance run.",
+    "The full gate remains blocked by unclassified scenarios."
+  ],
+  "artifacts_sha256": {
+    "history-test.log.gz": "aa3d430bb6c7df04388aad6e98d02d7fb51d9f7c1b8065f3285796e5df926f1e",
+    "cube-test.log.gz": "2f436f45a44a7c460692e71d8d8d15e1479d6f1b23dd59602833349ae43012b4"
+  }
+}

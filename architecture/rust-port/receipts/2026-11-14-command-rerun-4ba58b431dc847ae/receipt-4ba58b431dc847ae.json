@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:4ba58b431dc847ae3a24f6b4c652dc6ce891a4b6150813100ab28b8c60d3b5f2",
+  "scenario_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+  "source_sha256": "e4011485e2cfe78197b73450bea0d26ba2b0dbc54f2307d3b27364ffe9d9a20d",
+  "application_commit": "c3f51aaf27f3ce791feff1b921e8b3c338bdbd21",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-command-rerun-4ba58b431dc847ae/cucumber.json",
+    "sha256": "00e3dc5e38ba412b9c6fecb835902e927686bbba1d80f94c5801c80960206a56"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-command-rerun-4ba58b431dc847ae/source-revision.json",
+    "sha256": "636f778d222fc926a1bab26b812ed1a3d23656fb4141070875fe4b9c885f2f1f"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-command-rerun-4ba58b431dc847ae/new-sketch-05-Start-with-a-preselected-support-plane.png",
+    "sha256": "de84f45ef299497fb8a0d75b691cf3fdad90d476a0b1108592daa136d212299e"
+  }
+}

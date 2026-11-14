@@ -1,0 +1,359 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use crate::application::ribbon_display::{RibbonDisplay, RibbonPlacement, TemporaryPanel};
+use crate::ribbon::{DocumentRibbon, RibbonFrame};
+use crate::{GuiCommandState, GuiFrameRequest, GuiShellAction};
+use imgui::{Condition, TabItemFlags, Ui};
+
+mod side;
+use side::{reserve_ribbon_margins, side_ribbon};
+
+pub(crate) struct RibbonDrawOwners<'a> {
+    pub home_active: bool,
+    pub icons: &'a crate::icons::GuiRibbonIcons,
+    pub ribbon: &'a mut DocumentRibbon,
+    pub parameters: &'a mut crate::parameters::GuiParameterEditor,
+    pub files: &'a mut crate::files::GuiDocumentFiles,
+    pub theme_editor: &'a mut crate::theme_editor::GuiThemeEditor,
+    pub preferences: &'a mut crate::ui_scale::GuiScalePreferences,
+    pub precise_input: &'a mut crate::sketch::precise_input::PreciseInputBar,
+    pub sketch_pattern: &'a mut crate::sketch::rectangular_pattern::RectangularPatternDialog,
+    pub create_block: &'a mut crate::sketch::create_block::CreateBlockDialog,
+    pub workspace: &'a mut crate::application::workspace_layout::WorkspaceLayout,
+    pub workspaces: &'a mut crate::application::document_creation::workspaces::DocumentWorkspaces,
+    pub quick_access: &'a mut crate::application::quick_access_toolbar::QuickAccessToolbar,
+    pub plane_selection_active: bool,
+}
+pub(crate) fn ribbon_band(
+    ui: &Ui,
+    request: &GuiFrameRequest,
+    mut owners: RibbonDrawOwners<'_>,
+    actions: &mut Vec<GuiShellAction>,
+) -> f32 {
+    let width = request.extent[0] as f32 / request.layout_scale()[0];
+    let height_total = request.extent[1] as f32 / request.layout_scale()[1];
+    let scrollbar = owners.ribbon.panels.scrollbar_height(ui);
+    let placement = owners.ribbon.display.placement;
+    // A moved ribbon leaves only the menu, quick access and status in the top band.
+    let height = if placement == RibbonPlacement::Top {
+        owners.ribbon.display.mode.band_height(scrollbar)
+            + if owners.ribbon.display.mode == RibbonDisplay::Full {
+                80. * (owners.icons.layout_factor() - 1.)
+            } else {
+                0.
+            }
+    } else {
+        RibbonDisplay::Tabs.band_height(scrollbar)
+    };
+    owners.ribbon.display.temporary_escape_consumed = false;
+    let mut frame = owners.ribbon.prepare(&request.commands);
+    let blocked = ui.io().want_text_input
+        || ui.io().key_ctrl
+        || ui.io().key_super
+        || crate::widget_abi::any_popup_open(ui);
+    let grouped = owners.ribbon.display.placement != RibbonPlacement::Top
+        || matches!(
+            owners.ribbon.display.mode,
+            RibbonDisplay::PanelButtons | RibbonDisplay::PanelTitles
+        );
+    let action = owners
+        .ribbon
+        .tips
+        .process(&request.events, &frame.tabs, blocked, grouped);
+    let open_menu = apply_key_tip(action, &mut owners, &request.commands, &mut frame, actions);
+    owners.quick_access.command_took_right_click = false;
+    if let Some(_band) = begin_ribbon_band(ui, width, height) {
+        ribbon_contents(ui, request, &mut owners, &frame, open_menu, actions);
+        if !owners.quick_access.command_took_right_click {
+            request_context_menu_when_clicked(ui, owners.ribbon);
+        }
+        let tab = owners.ribbon.active;
+        let panels = crate::ribbon_panels::available_panels(
+            tab,
+            &request.commands,
+            &owners.ribbon.customization,
+        );
+        owners.ribbon.display.context_menu(
+            ui,
+            tab,
+            &panels,
+            request.commands.document_type == Some(oblikovati_api::types::DOCUMENT_PART),
+        );
+        if owners.ribbon.display.take_customization_request() {
+            owners.ribbon.customization.open(tab);
+        }
+        owners.ribbon.reset_confirmation(ui, &request.commands);
+    }
+    side_ribbon(
+        ui,
+        request,
+        &mut owners,
+        &frame,
+        [width, height_total, height],
+        actions,
+    );
+    reserve_ribbon_margins(&mut owners, width);
+    if !owners.quick_access.below_ribbon {
+        return height;
+    }
+    owners.quick_access.band_below(
+        ui,
+        [0., height],
+        width,
+        &request.commands,
+        actions,
+        &owners.ribbon.tips,
+    );
+    height + crate::application::quick_access_toolbar::BELOW_ROW_HEIGHT
+}
+fn apply_key_tip(
+    action: Option<crate::ribbon_key_tips::KeyTipAction>,
+    owners: &mut RibbonDrawOwners<'_>,
+    state: &GuiCommandState,
+    frame: &mut RibbonFrame,
+    actions: &mut Vec<GuiShellAction>,
+) -> bool {
+    use crate::ribbon_key_tips::KeyTipAction;
+    match action {
+        Some(KeyTipAction::SelectTab(tab)) => {
+            owners.ribbon.select_tab(tab);
+            frame.select = Some(tab);
+            if owners.ribbon.display.mode == RibbonDisplay::Tabs {
+                owners
+                    .ribbon
+                    .display
+                    .open_temporary(TemporaryPanel::WholeTab);
+            }
+        }
+        Some(KeyTipAction::CycleDisplay) => owners.ribbon.display.advance_from_tab(),
+        Some(KeyTipAction::OpenDisplayMenu) => return true,
+        Some(KeyTipAction::OpenFileMenu) => owners.files.request_menu(),
+        Some(KeyTipAction::OpenGroup(panel)) => {
+            if !owners.home_active
+                && !owners
+                    .ribbon
+                    .display
+                    .hidden_panels
+                    .contains(&(owners.ribbon.active, panel))
+                && crate::ribbon_panels::panels_for(owners.ribbon.active, state).contains(&panel)
+            {
+                owners.ribbon.display.request_keyboard_group(panel);
+            }
+        }
+        Some(KeyTipAction::QuickAccess(index)) => {
+            owners.quick_access.activate_tip(index, state, actions)
+        }
+        Some(KeyTipAction::StartSketch) => {
+            let action = GuiShellAction::ChooseSketchPlane;
+            if !owners.home_active && action.enabled(state) {
+                owners.ribbon.display.temporary = None;
+                actions.push(action);
+            }
+        }
+        Some(KeyTipAction::Extrude)
+            if !owners.home_active
+                && crate::application::quick_access_toolbar::extrude_can_start(state) =>
+        {
+            owners.ribbon.display.temporary = None;
+            actions.push(crate::extrude_dialog::start_action(state));
+        }
+        Some(KeyTipAction::Extrude) | None => {}
+    }
+    false
+}
+fn request_context_menu_when_clicked(ui: &Ui, ribbon: &mut DocumentRibbon) {
+    let hovered = ui.is_window_hovered_with_flags(imgui::WindowHoveredFlags::CHILD_WINDOWS);
+    if hovered && ui.is_mouse_clicked(imgui::MouseButton::Right) {
+        ribbon.display.request_context_menu();
+    }
+}
+fn begin_ribbon_band(ui: &Ui, width: f32, height: f32) -> Option<imgui::WindowToken<'_>> {
+    // #3798: chrome owns a fixed band; wheel input must never move its commands.
+    crate::widget_abi::window_geometry(ui, [0., 0.], [width, height], Condition::Always);
+    ui.window("##application-ribbon")
+        .title_bar(false)
+        .movable(false)
+        .resizable(false)
+        .collapsible(false)
+        .scroll_bar(false)
+        .scrollable(false)
+        .menu_bar(true)
+        .begin()
+}
+
+fn ribbon_contents(
+    ui: &Ui,
+    request: &GuiFrameRequest,
+    owners: &mut RibbonDrawOwners<'_>,
+    frame: &RibbonFrame,
+    open_display_menu: bool,
+    actions: &mut Vec<GuiShellAction>,
+) {
+    ui.menu_bar(|| {
+        owners
+            .files
+            .menu(ui, &request.commands, actions, owners.ribbon.tips.tabs());
+        owners
+            .preferences
+            .menu(ui, &request.commands, owners.home_active);
+    });
+    crate::widget_abi::cursor_position(ui, [16., 35.]);
+    let row_above = !owners.quick_access.below_ribbon;
+    if row_above {
+        owners
+            .quick_access
+            .row(ui, &request.commands, actions, &owners.ribbon.tips);
+    }
+    if owners.ribbon.display.placement == RibbonPlacement::Top {
+        if row_above {
+            ui.same_line();
+        }
+        ribbon_tabs(ui, owners.ribbon, frame);
+        let control = [
+            ui.window_size()[0] - 160. - crate::application::ribbon_display::PANEL_SELECTOR_WIDTH,
+            35.,
+        ];
+        owners
+            .ribbon
+            .display
+            .control(ui, control, &owners.ribbon.tips, open_display_menu);
+        // #3856: adopt selector changes before the row takes its visibility snapshot.
+        let panels = crate::ribbon_panels::available_panels(
+            owners.ribbon.active,
+            &request.commands,
+            &owners.ribbon.customization,
+        );
+        owners
+            .ribbon
+            .display
+            .panel_selector(ui, owners.ribbon.active, &panels);
+        ribbon_panel_row(ui, request, owners, actions);
+    }
+    crate::theme_editor::panel(
+        ui,
+        request.commands.theme.as_ref(),
+        owners.theme_editor,
+        actions,
+    );
+}
+fn ribbon_panel_row(
+    ui: &Ui,
+    request: &GuiFrameRequest,
+    owners: &mut RibbonDrawOwners<'_>,
+    actions: &mut Vec<GuiShellAction>,
+) {
+    crate::widget_abi::cursor_position(ui, [16., 59.]);
+    let ribbon = &mut *owners.ribbon;
+    crate::ribbon_panels::draw_panels(
+        ui,
+        ribbon.active,
+        &request.commands,
+        crate::ribbon_panels::RibbonPanelOwners {
+            home_active: owners.home_active,
+            icons: owners.icons,
+            parameters: owners.parameters,
+            preferences: owners.preferences,
+            editor: owners.theme_editor,
+            workspace: owners.workspace,
+            workspaces: owners.workspaces,
+            quick_access: owners.quick_access,
+            precise_input: owners.precise_input,
+            sketch_pattern: owners.sketch_pattern,
+            create_block: owners.create_block,
+            customization: &mut ribbon.customization,
+            active_tab: ribbon.active,
+            plane_selection_active: owners.plane_selection_active,
+            hole_tip: ribbon.tips.model_commands() && ribbon.tips.matching("HO"),
+            modify_group_tip: ribbon.tips.model_commands() && ribbon.tips.matching("Y"),
+            sketch_group_tip: ribbon.tips.model_commands() && ribbon.tips.matching("K"),
+            create_group_tip: ribbon.tips.model_commands() && ribbon.tips.matching("C"),
+            key_tips_active: ribbon.tips.active(),
+            sketch_tip: ribbon.tips.model_commands() && ribbon.tips.matching("SK"),
+            extrude_tip: ribbon.tips.model_commands() && ribbon.tips.matching("EX"),
+        },
+        &mut ribbon.panels,
+        &mut ribbon.display,
+        actions,
+    );
+}
+fn ribbon_tabs(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame) {
+    let Some(_tabs) = ui.tab_bar("##document-ribbon-tabs") else {
+        return;
+    };
+    let mut hovered = false;
+    let mut selector_tab = None;
+    for tab in &frame.tabs {
+        let flags = if frame.select == Some(*tab) {
+            TabItemFlags::SET_SELECTED
+        } else {
+            TabItemFlags::empty()
+        };
+        let item = ui.tab_item_with_flags(tab.label(), None, flags);
+        if ribbon.display.selector_pointer_press(ui) || ribbon.display.context_tab_press(ui) {
+            selector_tab = Some(*tab);
+        }
+        let tip = crate::ribbon_key_tips::tab_tip(*tab).to_string();
+        if ribbon.tips.tabs() && ribbon.tips.matching(&tip) {
+            crate::ribbon_key_tips::badge(ui, &tip);
+        }
+        hovered |= ui.is_item_hovered();
+        // On release: the press itself is a click outside any panel still open, and closes it.
+        let released = ui.is_item_hovered() && ui.is_mouse_released(imgui::MouseButton::Left);
+        let clicked = ui.is_item_hovered() && ui.is_mouse_clicked(imgui::MouseButton::Left);
+        let double_click = clicked && ui.is_mouse_double_clicked(imgui::MouseButton::Left);
+        let doubled = double_click && ribbon.double_click_tab == Some(*tab);
+        if clicked && !double_click {
+            ribbon.double_click_tab = (ribbon.active == *tab).then_some(*tab);
+        }
+        if double_click {
+            ribbon.double_click_tab = None;
+        }
+        if item.is_some() {
+            ribbon.active = *tab;
+        }
+        drop(item);
+        if doubled {
+            ribbon.display.advance_from_tab();
+        }
+        if released && ribbon.display.take_tab_release() {
+            ribbon.display.open_temporary(TemporaryPanel::WholeTab);
+        }
+    }
+    if let Some(tab) = selector_tab {
+        ribbon.select_tab(tab);
+    }
+    if hovered {
+        ribbon.scroll_tabs(&frame.tabs, ui.io().mouse_wheel);
+    }
+}
+pub(crate) fn command_button(
+    ui: &Ui,
+    label: &str,
+    action: GuiShellAction,
+    state: &GuiCommandState,
+    size: [f32; 2],
+    actions: &mut Vec<GuiShellAction>,
+) {
+    command_control(ui, label, action, state, actions, || {
+        crate::widget_abi::button(ui, label, size)
+    });
+}
+pub(crate) fn command_control(
+    ui: &Ui,
+    label: &str,
+    action: GuiShellAction,
+    state: &GuiCommandState,
+    actions: &mut Vec<GuiShellAction>,
+    draw: impl FnOnce() -> bool,
+) {
+    let disabled = ui.begin_disabled(!action.enabled(state));
+    let clicked = draw();
+    drop(disabled);
+    if ui.is_item_hovered()
+        && let Some(next) = action.next_label(state)
+    {
+        ui.tooltip_text(format!("{label} {next}"));
+    }
+    if clicked && action.dispatchable(state) {
+        actions.push(action);
+    }
+}

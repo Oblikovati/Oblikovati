@@ -1,0 +1,211 @@
+// SPDX-License-Identifier: GPL-2.0-only
+// Keep authoring state on the same document owner when scripts or add-ins wrap frame work.
+macro_rules! forward_owner_view_work {
+    ($owner:ident) => {
+        fn set_selection_mode_from_gui(
+            &mut self,
+            mode: oblikovati_gui::GuiSelectionMode,
+        ) -> Result<bool, String> {
+            self.$owner.set_selection_mode_from_gui(mode)
+        }
+        fn update_part_from_gui(&mut self) -> Result<bool, String> {
+            self.$owner.update_part_from_gui()
+        }
+        fn set_document_units_from_gui(
+            &mut self,
+            document: u64,
+            request: &oblikovati_api::wire::SetDocumentUnitsArgs,
+        ) -> Result<bool, String> {
+            self.$owner.set_document_units_from_gui(document, request)
+        }
+        fn base_view_preview_from_gui(
+            &mut self,
+            request: Option<&oblikovati_gui::GuiBaseViewRequest>,
+        ) -> Result<bool, String> {
+            self.$owner.base_view_preview_from_gui(request)
+        }
+        fn base_view_from_gui(
+            &mut self,
+            request: &oblikovati_gui::GuiBaseViewRequest,
+        ) -> Result<bool, String> {
+            self.$owner.base_view_from_gui(request)
+        }
+        fn place_component_from_gui(
+            &mut self,
+            assembly: u64,
+            request: &oblikovati_api::wire::PlaceOccurrenceArgs,
+        ) -> Result<bool, String> {
+            self.$owner.place_component_from_gui(assembly, request)
+        }
+        fn place_component_file_from_gui(
+            &mut self,
+            assembly: u64,
+            path: &str,
+            name: &str,
+        ) -> Result<bool, String> {
+            self.$owner
+                .place_component_file_from_gui(assembly, path, name)
+        }
+        fn preview_component_from_gui(
+            &mut self,
+            request: Option<(u64, u64)>,
+        ) -> Result<bool, String> {
+            self.$owner.preview_component_from_gui(request)
+        }
+        fn preview_component_file_from_gui(
+            &mut self,
+            assembly: u64,
+            path: &str,
+        ) -> Result<bool, String> {
+            self.$owner.preview_component_file_from_gui(assembly, path)
+        }
+        fn extrude_from_gui(
+            &mut self,
+            document: u64,
+            sketch: oblikovati_model::document_sketch::DocumentSketchId,
+            profile: i64,
+            distance: &str,
+        ) -> Result<bool, String> {
+            self.$owner
+                .extrude_from_gui(document, sketch, profile, distance)
+        }
+        fn extrusion_preview_from_gui(
+            &mut self,
+            request: Option<&oblikovati_gui::GuiExtrudePreview>,
+        ) -> Result<bool, String> {
+            self.$owner.extrusion_preview_from_gui(request)
+        }
+        fn activate_document_from_gui(
+            &mut self,
+            request: &oblikovati_api::wire::ActivateDocumentArgs,
+        ) -> Result<bool, String> {
+            self.$owner.activate_document_from_gui(request)
+        }
+
+        fn close_document_from_gui(
+            &mut self,
+            request: &oblikovati_api::wire::CloseDocumentArgs,
+        ) -> Result<bool, String> {
+            self.$owner.close_document_from_gui(request)
+        }
+        fn open_document_from_gui(
+            &mut self,
+            request: &oblikovati_api::wire::OpenDocumentArgs,
+        ) -> Result<bool, String> {
+            self.$owner.open_document_from_gui(request)
+        }
+        fn open_deferred_drawing_from_gui(&mut self, path: &str) -> Result<bool, String> {
+            self.$owner.open_deferred_drawing_from_gui(path)
+        }
+        // #3811: live browser actions must reach the same owner through every wrapper.
+        fn select_browser_block_from_gui(
+            &mut self,
+            document: u64,
+            sketch: oblikovati_model::document_sketch::DocumentSketchId,
+            instance: oblikovati_model::sketch::SketchEntityId,
+            toggle: bool,
+        ) -> Result<bool, String> {
+            self.$owner
+                .select_browser_block_from_gui(document, sketch, instance, toggle)
+        }
+        fn select_browser_feature_from_gui(
+            &mut self,
+            document: u64,
+            feature: oblikovati_model::feature::FeatureId,
+        ) -> Result<bool, String> {
+            self.$owner
+                .select_browser_feature_from_gui(document, feature)
+        }
+        fn update_body_properties_from_gui(
+            &mut self,
+            document: u64,
+            body: i64,
+        ) -> Result<bool, String> {
+            self.$owner.update_body_properties_from_gui(document, body)
+        }
+        fn assign_part_asset_from_gui(
+            &mut self,
+            document: u64,
+            kind: oblikovati_gui::GuiPartAssetKind,
+            id: &str,
+        ) -> Result<bool, String> {
+            self.$owner.assign_part_asset_from_gui(document, kind, id)
+        }
+        fn set_body_appearance_from_gui(
+            &mut self,
+            document: u64,
+            key: &str,
+            appearance: &str,
+        ) -> Result<bool, String> {
+            self.$owner
+                .set_body_appearance_from_gui(document, key, appearance)
+        }
+        fn edit_feature_from_gui(
+            &mut self,
+            document: u64,
+            edit: &oblikovati_gui::GuiFeatureEdit,
+        ) -> Result<bool, String> {
+            self.$owner.edit_feature_from_gui(document, edit)
+        }
+        fn browser_choice_from_gui(
+            &mut self,
+            document: u64,
+            choice: &oblikovati_gui::GuiBrowserChoice,
+        ) -> Result<bool, String> {
+            self.$owner.browser_choice_from_gui(document, choice)
+        }
+        fn keep_document_picture_from_gui(
+            &mut self,
+            document: u64,
+            picture: Option<&oblikovati_gui::GuiPreviewImage>,
+        ) -> Result<bool, String> {
+            self.$owner
+                .keep_document_picture_from_gui(document, picture)
+        }
+        fn inspect_file_from_gui(&mut self, path: &str) -> Result<bool, String> {
+            self.$owner.inspect_file_from_gui(path)
+        }
+        fn navigation_prompt_from_gui(&mut self, prompt: Option<&str>) -> Result<bool, String> {
+            self.$owner.navigation_prompt_from_gui(prompt)
+        }
+        fn face_edges_on_line(
+            &mut self,
+            line: [[f64; 3]; 2],
+        ) -> Result<Vec<[[f64; 3]; 2]>, String> {
+            self.$owner.face_edges_on_line(line)
+        }
+        fn click_model_from_gui(
+            &mut self,
+            document: u64,
+            line: [[f64; 3]; 2],
+        ) -> Result<bool, String> {
+            self.$owner.click_model_from_gui(document, line)
+        }
+        fn selected_browser_outline(&mut self) -> Vec<[[f64; 3]; 2]> {
+            self.$owner.selected_browser_outline()
+        }
+        fn observe_window_capture_extent(&mut self, extent: Option<[u32; 2]>) {
+            self.$owner.observe_window_capture_extent(extent);
+        }
+        fn take_window_capture_requests(&mut self) -> Vec<$crate::WindowCaptureJob> {
+            self.$owner.take_window_capture_requests()
+        }
+        // #3796: an add-in layer must retain the same UI authoring operations as the script layer.
+        fn create_part_document(&mut self) -> Result<bool, String> {
+            self.$owner.create_part_document()
+        }
+        fn create_document_template(
+            &mut self,
+            template: oblikovati_gui::GuiDocumentTemplate,
+        ) -> Result<bool, String> {
+            self.$owner.create_document_template(template)
+        }
+        fn select_block_geometry_from_gui(&mut self, active: bool) -> Result<bool, String> {
+            self.$owner.select_block_geometry_from_gui(active)
+        }
+        fn take_scene(&mut self) -> Result<Option<$crate::HeadSceneUpdate>, String> {
+            self.$owner.take_scene()
+        }
+    };
+}
+pub(crate) use forward_owner_view_work;

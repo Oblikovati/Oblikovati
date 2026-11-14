@@ -1,0 +1,28 @@
+{
+  "kind": "focused-implementation-evidence",
+  "application_commit": "2df8a99f1f2a65e2af865579917a6f56c0cfb1ad",
+  "checks": [
+    {
+      "command": "VK_DRIVER_FILES=/usr/share/vulkan/icd.d/lvp_icd.json xvfb-run -a cargo test --locked -p oblikovati-gui --lib -- --test-threads=1",
+      "exit_code": 0,
+      "path": "architecture/rust-port/receipts/2026-11-14-command-state-refactor/test.log.gz",
+      "sha256": "31b2beeb6842e31c338195d9369767a0804c18ae8b0c9a60324db811633a9cf8"
+    },
+    {
+      "command": "cargo clippy --locked -p oblikovati-gui --all-targets -- -D warnings",
+      "exit_code": 0,
+      "path": "architecture/rust-port/receipts/2026-11-14-command-state-refactor/clippy.log.gz",
+      "sha256": "8f4a3bbf81f33640df316dcc0933245f9bd441604bae39cf21d31fb8e698865c"
+    },
+    {
+      "command": "make docs-lint",
+      "exit_code": 2,
+      "path": "architecture/rust-port/receipts/2026-11-14-command-state-refactor/docs.log.gz",
+      "sha256": "3d5e1fbad54e97682fc00a1ac62d9e95c788c7acdcd8f107bfbfbe8b63d0e0b0"
+    }
+  ],
+  "limitations": [
+    "Markdown lint passed, but the file-size check stops at crates/gui/src/ribbon_panels.rs.",
+    "These checks do not establish the full gate or all native BDD scenarios."
+  ]
+}

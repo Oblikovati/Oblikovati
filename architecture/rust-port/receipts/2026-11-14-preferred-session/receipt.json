@@ -1,0 +1,21 @@
+{
+  "kind": "focused-implementation-evidence",
+  "application_commit": "4ae3da4e7",
+  "checks": [
+    {
+      "command": "cargo test --locked -p oblikovati-session",
+      "exit_code": 0,
+      "path": "architecture/rust-port/receipts/2026-11-14-preferred-session/test.log.gz",
+      "sha256": "dba1db0743eafd6309cb5ace319da21dbf57100448fec1185a501ac8ab1bfb07"
+    },
+    {
+      "command": "cargo clippy --locked -p oblikovati-session --all-targets -- -D warnings",
+      "exit_code": 0,
+      "path": "architecture/rust-port/receipts/2026-11-14-preferred-session/clippy.log.gz",
+      "sha256": "ea2ad17c9c2933d53d5a0a966152b54255fe36fb075890978182fd0e659dc4b0"
+    }
+  ],
+  "limitations": [
+    "API router and native UI integration remain open. The application gate is not established."
+  ]
+}

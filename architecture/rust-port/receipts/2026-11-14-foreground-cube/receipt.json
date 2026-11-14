@@ -1,0 +1,40 @@
+{
+  "kind": "foreground-ui-acceptance",
+  "application_commit": "0e0500c33637399e35bf1ea09d48991ac56988af",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "bridge_checkout_revision": "597a3d74477b96418c57b2e55f946ddc7129b7de",
+  "bridge_binary_sha256": "2942bdba7a756d20ea17f24fb18e9eb41f495e20b1d259caf9d28d77e237b20b",
+  "bridge_build_provenance": "Pre-existing shared library; source-to-binary correspondence was not verified.",
+  "environment": "Linux, Xvfb 1440x900, Vulkan Lavapipe, isolated OBK_CONFIG_DIR; real X11 XTest keyboard and mouse.",
+  "result": "passed",
+  "checks": [
+    "Create part and XY sketch, enter size = 10 mm, draw dimension-driven rectangle; MCPBridge reports healthy DOF zero.",
+    "Preview and apply extrude with size as distance; 6 faces, 12 edges, 8 vertices; volume 1000 mm3 and area 600 mm2.",
+    "Change size to 20 mm; volume 8000 mm3; undo 1000 mm3; redo 8000 mm3.",
+    "Save and reopen through UI; volume 8000 mm3; previously recorded face key is listed and accepted by face appearance assignment.",
+    "Images returned by MCPBridge match the saved PNG bytes; app and Xvfb exit after the run."
+  ],
+  "limitations": [
+    "Driver uses fixed coordinates for the isolated 1440x900, default UI configuration; it is retained as a historical run record, not a portable test.",
+    "Face assignment after reopening modifies the disposable in-memory document; the saved file was not overwritten.",
+    "The analysis.measure API declined the separate face-area query; tracked as #3876.",
+    "No per-face independent oracle, hardware GPU, platform coverage, Go reference document, or full milestone/gate completion is claimed."
+  ],
+  "sha256": {
+    "body_list.json": "0ce95aab7e7ccdb28ce75438351b1e21a95c7dd393182e0fec9d0e976bbdf499",
+    "body_physical_properties.json": "e22b8ae35ade1d428d73afd505f92bab5978a5e2ecbd694a9a8b86817276293c",
+    "cube-10mm.png": "7d3abfeea3e0d0eb112c08cbf0adb7bd17e318a695505db18dacb2c716d235ea",
+    "driver.py.gz": "71a3b026b5c5094158930f37789a0437b7437825c3fe6800d90264154e772a72",
+    "edited.png": "0e0c4e64682d8e4e54aa0bfb5bb04595db7b65094303331d6b8c65ed116b37d0",
+    "extrude-preview.png": "a7f1100d8753e4bc0a76b57fbb9229a5320bcbdb9c72e3021d1c6bec94f299fc",
+    "get_reference_keys.json": "5a931dfe34e2ccb4cc6efa793776fac44c2b1bdd1455d7e2f41a202b707cb918",
+    "rectangle-10mm-sketch.json": "8f9c80de84203c2c4525a50cb02bdeb391522d14b287133db607e05a945896b7",
+    "rectangle-10mm.png": "442ad3e7ba4e76cdd063db9910f2753a922aec66b98e8534aa6ec1877eaa924b",
+    "redo.png": "f3c62c00458b82e1ee861a278f8156dfeac16a39a13100c99130e8a1f8322040",
+    "reopened-face-resolve.json": "fa6ea92ec979490c3b3dc5d57095ee26d4a8b8f0acdb2cac90cccf3009f693b4",
+    "reopened.png": "fc46911e34b3e92bfd754d0fa7297a4b862ba5e53b97559cd149526cae3fddf4",
+    "run.log.gz": "86c0863c6e84290a88fd937e46e1c6d403a21505ee4cc9d007d8ed486cbf4c55",
+    "undo.png": "978244dd33059a72c08554e90ceab242663509c326e386a957c90e5717d854e6"
+  }
+}

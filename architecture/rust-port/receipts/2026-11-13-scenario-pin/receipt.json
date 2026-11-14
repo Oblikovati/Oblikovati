@@ -1,0 +1,34 @@
+{
+  "date": "2026-11-13",
+  "issue": "https://github.com/Oblikovati/Oblikovati/issues/3864",
+  "base_commit": "54d6a046158df41cc5757227c64eb30246f2598f",
+  "scenario_commit": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+  "scenario_commit_provenance": "Locally created snapshot of the unversioned live source; not an upstream commit.",
+  "scenario_bundle_sha256": "ec03850d07a2a0f0939b14b4fda1b797e9ba740b76cd0a46046c67bd30f4de69",
+  "tested_file_sha256": {
+    "crates/head/tests/application/benchmark.rs": "bcfabf4ff89a21470300546383c412450929054077115cacc3d326d878a520da",
+    "crates/head/tests/application/gap_runner.rs": "bc2e219097f86155bbaa4c30de5a77d929868f9b19129e0b6d4ebefeade2afea",
+    "crates/head/tests/application/scenario_revision.rs": "6b7742f26e68a93625afafe69b6836ff285c4566fbe90959ddfa2f240ebf7d16",
+    "crates/head/tests/application/scenario_revision_tests.rs": "494891f80b64cf728e264f3ac8ba8ffd0058be020cf6da4df59e50e88adeb94c",
+    "tools/bdd/verify_snapshot.py": "42ad2f1d48f6d22bb208bbb7e245b551d8587ab3fa1bbb4aad1181c1236cc644",
+    "tools/bdd/test_verify_snapshot.py": "d2a7682c447623560a1dc179cabece59ac3fdfd525dffffdf0b1d4e349bb33ea"
+  },
+  "renderer": "Xvfb and native Vulkan runtime",
+  "checks": [
+    "1287 files matched across source copy and restored bundle checkout",
+    "4 Python BDD utility tests passed",
+    "3 Rust source-revision tests passed",
+    "head all-target Clippy passed",
+    "diagnostic and normal native runs recorded the same clean scenario commit",
+    "normal Body Properties acceptance: one scenario, 13 steps passed"
+  ],
+  "scope": "Snapshot provenance and one selected native scenario; no claim about other scenarios.",
+  "artifacts_sha256": {
+    "acceptance/Cancel-a-body-appearance-selection.png": "a0437ac16c790a3c48ffad99b17ebd536584ada472eb2a4399115c84d47b35a5",
+    "acceptance/source-revision.json": "afdcde4b44bdbec6b08878f72ff7111f069221d84273b826035e73b15a5d3457",
+    "acceptance/junit.xml": "8bd45c891f9d0b9fb017fef416f74a5cb5678a12f27f0fcea59f0a7423d40521",
+    "acceptance/cucumber.json": "3b72bff755549a9dc918a3520ea5f11b1406de80d47d15fce523b145834f91c7",
+    "diagnostic/source-revision.json": "afdcde4b44bdbec6b08878f72ff7111f069221d84273b826035e73b15a5d3457",
+    "diagnostic/gap-report.json": "3bbd33cab66fba6c648a7fc4ffa49bb75989c22bbb3530d058daf9615f7faebb"
+  }
+}

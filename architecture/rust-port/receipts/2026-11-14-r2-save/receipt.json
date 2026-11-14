@@ -1,0 +1,36 @@
+{
+  "kind": "milestone-evidence",
+  "milestone": "R2",
+  "checked_at": "2026-11-14T03:55:27.454991+01:00",
+  "application_commit": "5b4a85ab66af6607f25bdddc8a80d9d94f171f57",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47f38dedbd",
+  "platform": "Linux-7.2.6-76070206-generic-x86_64-with-glibc2.39",
+  "checks": [
+    {
+      "command": "cargo test --locked -p oblikovati-persistence",
+      "exit_code": 0,
+      "log": {
+        "path": "architecture/rust-port/receipts/2026-11-14-r2-save/persistence.log.gz",
+        "sha256": "515a2db29d99e94e4ff24aea21046453fc4a0a50f35659adac45e8ee4f0fbea3"
+      }
+    },
+    {
+      "command": "cargo test --locked -p oblikovati-session --test lifecycle workspace::save",
+      "exit_code": 0,
+      "log": {
+        "path": "architecture/rust-port/receipts/2026-11-14-r2-save/session-save.log.gz",
+        "sha256": "f2f03237dfbd1f7fcf0ecd88625ee91c580f30baea210dc7cd81e8b1465e7b23"
+      }
+    }
+  ],
+  "scope": [
+    "395 persistence tests passed, including unit, integration, and documentation tests. Atomic filesystem tests cover phase ordering, injected phase failures, native creation and replacement, and temporary-file cleanup.",
+    "Nine session save tests passed, covering veto, failed final replacement, identity and package retention, dirty state, saved baseline, and undo/redo."
+  ],
+  "limitations": [
+    "These selected tests do not establish all R2 exit requirements or the full workspace gate.",
+    "Native filesystem tests ran on Linux only; cross-platform replacement behavior was not tested.",
+    "Directory metadata durability after power loss is outside the atomic replacement contract."
+  ]
+}
