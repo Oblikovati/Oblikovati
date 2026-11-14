@@ -113,7 +113,9 @@ pub use revolve::{
 };
 mod region_identity;
 mod sketch_prism;
-pub use region_identity::{RegionSelectionError, resolve_region_by_boundary};
+pub use region_identity::{
+    RegionSelectionError, equivalent_region_boundary, resolve_region_by_boundary,
+};
 mod stored_prism;
 pub use sketch_prism::{
     CertifiedPrismEvaluator, MartensitePrismEvaluator, SketchDirectedCurve, SketchPrismSelection,

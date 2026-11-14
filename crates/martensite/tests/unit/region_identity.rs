@@ -121,3 +121,21 @@ fn matching_requires_consistent_direction_for_every_edge() {
         Err(RegionSelectionError::Missing { .. })
     ));
 }
+
+#[test]
+fn boundary_equivalence_keeps_holes_and_curve_directions() {
+    let original = SketchPrismSelection {
+        outer: boundary(1),
+        holes: vec![boundary(101), boundary(201)],
+    };
+    let mut rotated = original.clone();
+    rotated.outer.rotate_left(1);
+    reverse(&mut rotated.outer);
+    rotated.holes.swap(0, 1);
+    rotated.holes[0].rotate_left(2);
+    assert!(equivalent_region_boundary(&original, &rotated));
+    rotated.holes[0][0].reversed ^= true;
+    assert!(!equivalent_region_boundary(&original, &rotated));
+    rotated.holes.clear();
+    assert!(!equivalent_region_boundary(&original, &rotated));
+}

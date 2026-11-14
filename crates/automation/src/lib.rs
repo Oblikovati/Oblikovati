@@ -2,6 +2,7 @@
 
 //! Typed owner-thread queries and transactional edits; native transport is a separate boundary.
 mod datums;
+pub mod legacy_profile;
 mod part_owner;
 mod reference_bytes;
 pub use datums::{DATUM_COMMAND_METHODS, DATUM_QUERY_METHODS, requires_part_replay};
@@ -304,3 +305,8 @@ mod color_schemes;
 mod keymap;
 mod marking_menu;
 pub use color_schemes::COLOR_SCHEME_METHODS;
+
+#[cfg(test)]
+#[allow(dead_code)]
+#[path = "../../../test-utilities/rust/selected_sketch_prism.rs"]
+mod prism_test_fixture;

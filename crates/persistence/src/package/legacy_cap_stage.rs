@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Stage ordered legacy prism and cap-plane definitions without mutating the source.
 use super::{
-    LegacyCapBindingVerifier, LegacyExtrusionFaceRole, LegacyPartCandidate, PackageCodecError,
+    LegacyCapBindingVerifier, LegacyExtrusionFaceRole, LegacyPartCandidate, LegacySketchCandidate,
+    PackageCodecError,
 };
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
@@ -69,7 +70,7 @@ impl LegacyPartCandidate {
         identities: &BTreeMap<u64, LegacyStagedFeatureIdentity>,
         verifier: &dyn LegacyCapStageVerifier,
     ) -> Result<DocumentSnapshot, PackageCodecError> {
-        validate_base(self, base)?;
+        validate_base(&self.sketches, base)?;
         let order = validate_identities(self, identities)?;
         let mut staged = base.clone();
         verifier.solve(&mut staged).map_err(failure)?;
@@ -170,17 +171,36 @@ impl LegacyPartCandidate {
     }
 }
 
+impl LegacySketchCandidate {
+    /// Solve and qualify one legacy sketch in an isolated snapshot.
+    /// Example: `candidate.prepare_qualified_profile(&base, sketch, verifier)?`.
+    pub fn prepare_qualified_profile(
+        &self,
+        base: &DocumentSnapshot,
+        sketch: DocumentSketchId,
+        verifier: &dyn LegacyCapStageVerifier,
+    ) -> Result<DocumentSnapshot, PackageCodecError> {
+        validate_base(self, base)?;
+        let mut solved = base.clone();
+        verifier.solve(&mut solved).map_err(failure)?;
+        validate_solved_sources(base, &solved)?;
+        solved.require_resolved_sketch(sketch).map_err(failure)?;
+        verifier.qualify_sketch(&solved, sketch).map_err(failure)?;
+        Ok(solved)
+    }
+}
+
 fn validate_base(
-    candidate: &LegacyPartCandidate,
+    candidate: &LegacySketchCandidate,
     base: &DocumentSnapshot,
 ) -> Result<(), PackageCodecError> {
     if !base
         .work_geometry
         .same_work_geometry_recipe(&Default::default())
-        || !base.sketches.same_recipe(&candidate.sketches.sketches)
+        || !base.sketches.same_recipe(&candidate.sketches)
         || !base
             .parameters
-            .same_recipe(&candidate.sketches.parameters.parameters)
+            .same_recipe(&candidate.parameters.parameters)
     {
         return Err(failure(
             "base snapshot: expected the source sketches and parameters with an empty feature program",
