@@ -139,3 +139,85 @@ fn go_side_index_depends_on_source_traversal_order() {
         reordered.before[0].source_line_id
     );
 }
+
+#[test]
+fn named_planar_face_frame_tracks_the_go_dependent_plane_witness() {
+    let mut history = imported_history(GO_CUBE);
+    let face_key = native_side_name(7);
+    check_cube_frames(&history, 1.0);
+    let prior = retain_certified_named_sketch_prism(
+        &history,
+        document_guid(),
+        FeatureId(1),
+        app_resolution(),
+    )
+    .unwrap();
+    let token = history.begin("size").unwrap();
+    history
+        .edit(&token, |snapshot, _| {
+            let id = snapshot.parameters.find("size").unwrap();
+            snapshot.parameters.set_expression(id, "20 mm")?;
+            solve_selected_sketches(snapshot);
+            Ok::<(), oblikovati_model::parameter::ParameterError<u64>>(())
+        })
+        .unwrap();
+    history.commit(&token, false).unwrap();
+    assert!(
+        prior
+            .face_plane(&history, document_guid(), &face_key)
+            .is_err()
+    );
+    check_cube_frames(&history, 2.0);
+    history.undo().unwrap();
+    check_cube_frames(&history, 1.0);
+    history.redo().unwrap();
+    check_cube_frames(&history, 2.0);
+    check_cube_frames(&reopened_history(&history), 2.0);
+}
+fn cap_name(tag: &str) -> Vec<u8> {
+    SemanticReferenceName::new(document_guid(), 1, 1, "sketch-prism", tag, &[1])
+        .unwrap()
+        .encode()
+        .unwrap()
+}
+fn check_cube_frames(history: &DocumentEditHistory, size: f64) {
+    let named = retain_certified_named_sketch_prism(
+        history,
+        document_guid(),
+        FeatureId(1),
+        app_resolution(),
+    )
+    .unwrap();
+    let cases = [
+        (cap_name("start"), [0., 0., 0.], [0., 0., -1.]),
+        (cap_name("end"), [0., 0., 1.], [0., 0., 1.]),
+        (native_side_name(6), [0., 0., 0.], [0., -1., 0.]),
+        (native_side_name(7), [size, 0., 0.], [1., 0., 0.]),
+        (native_side_name(8), [0., size, 0.], [0., 1., 0.]),
+        (native_side_name(9), [0., 0., 0.], [-1., 0., 0.]),
+    ];
+    for (key, origin, normal) in cases {
+        let plane = named.face_plane(history, document_guid(), &key).unwrap();
+        assert_frame_values(plane.recipe().origin, origin);
+        assert_frame_values(plane.normal(), normal);
+    }
+    assert!(
+        named
+            .face_plane(history, document_guid(), b"invalid")
+            .is_err()
+    );
+    let body_key = named.body_reference_key(history, document_guid()).unwrap();
+    assert!(
+        named
+            .face_plane(history, document_guid(), body_key)
+            .is_err()
+    );
+}
+fn assert_frame_values(actual: [f64; 3], expected: [f64; 3]) {
+    for (actual, expected) in actual.into_iter().zip(expected) {
+        assert!(
+            (actual - expected).abs() < 1e-8,
+            "value {actual}, expected {expected}"
+        );
+    }
+}
