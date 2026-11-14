@@ -42,7 +42,10 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
   later source changes made it stale; it cannot certify the merge.
   The selection filter and history browser have focused GUI and head integration
   coverage. Selection priority is still not applied to competing picks (#3890).
-  Remaining integration tests and the full gate still need validation. No PRs have been closed or pushed.
+  Remaining integration tests and the full gate still need validation. All 20
+  PRs were closed after their heads were checked against the local merge. Nineteen
+  remote branches remain; the closed npm Dependabot branch was removed automatically,
+  but its exact commit remains available via `refs/pull/3791/head` and in the merge.
   Preserve the user README edit and the three existing stashes.
 - Scenario pin: `c56a6f6678dbb9a7bdb96fe37561bb63d6413127`, a locally created snapshot of the unversioned live source, not an upstream commit. Restore and verify it as described in `bdd-workflow.md`.
 - Source sync: weekly, in a separate batch. Store small JSON receipts in this repository.
@@ -66,7 +69,7 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 - A2: the diagnostic gate started on `6c5c1014a` and failed with 36 head test failures. The source changed during the run, so it cannot certify the current HEAD. See issue #3860 and `receipts/2026-11-13-gate-diagnostic/`. The latest gate preflight reported 2,457 unclassified scenarios; the current ledger has 1,839 after all application declarations were mapped (#3856, #3894–#3900). A fresh passing gate is required before the first push.
 - A3: stale worktrees and merged local branches were removed after ancestry checks. Only `rust-work` and the unrelated `go-legacy` local branch remain. `unmerged-lanes-20261113.bundle` and the prior verified backup remain on the NAS.
 - A8: stale application or source evidence is downgraded without hiding damaged artifacts (#3869). Ledger-tool-only edits do not invalidate native UI tests.
-- A8: the ledger records 2,719 mapped declarations with no parser-blocked scenarios after the source correction (#3866). Thirty-seven earlier receipts are stale after source or application changes; rerun them before counting them as verified. Eight declarations have current verified receipts. Outline receipts require every expanded example and cleanup. See `behavior-receipts.md` and issue #3865.
+- A8: the ledger records 2,719 mapped declarations with no parser-blocked scenarios after the source correction (#3866). Twenty-four earlier receipts are stale after source or application changes; rerun them before counting them as verified. Twenty-one declarations have current verified receipts. The refreshed key-tip and browser-selection runs passed their steps, but their final screenshots do not establish the selected or key-tip state, so they remain diagnostic. Outline receipts require every expanded example and cleanup. See `behavior-receipts.md` and issue #3865.
 - R7 File menu: all eight pinned scenarios and 59 steps passed on the committed merge. Each scenario has an individual receipt and an inspected capture; the Go baseline still needs review. See `receipts/2026-11-14-file-menu-f0b61ad2/` and the other `2026-11-14-file-menu-*` receipt folders, and #3894.
 - R7 project dialog: the pinned diagnostic reported one passing declaration and seven with unbound steps; subsequent steps are tainted. See `receipts/2026-11-14-project-dialog-merge-diagnostic/` and #3895.
 - A8: `behavior_cli.py backlog` groups the 195 feature files by their assigned milestones and shows missing classifications, R0 rows, and counts for each missing baseline field. 2,713 rows still have incomplete R0 baseline fields; unassigned work is not given an inferred milestone.

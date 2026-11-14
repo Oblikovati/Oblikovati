@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:0db0d6b60a17036c6ec52d0756fe476071bb6d443fe662428dda048a95b5ae57",
+  "scenario_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+  "source_sha256": "35ca58e5b39b0e08d7b10b0f9d82654e8373d34cb72e6db92ea6875525a61eaf",
+  "application_commit": "5d31a179c5db7a0321dfab9c427c6f391ba0df89",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "application_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan Lavapipe on Xvfb 1920x1200"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-refresh-0db0d6b6/cucumber.json",
+    "sha256": "2fa20a98f56307f760778cb9dc782310ac8183d2079755cdb4065fea7b03a9ca"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-refresh-0db0d6b6/source-revision.json",
+    "sha256": "7cfb98aa43531b397763f61c8c8689d45c18d489daa0417699ca413e046289d4"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-refresh-0db0d6b6/Move-the-ribbon-from-the-top-to-both-sides-and-back.png",
+    "sha256": "5094e20b2ceda62edc9f4ac3b475e560f271766cc438d3bb40d2ecc8f5f46b16"
+  }
+}
