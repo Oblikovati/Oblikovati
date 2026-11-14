@@ -2,9 +2,12 @@
 use super::*;
 use martensite_tkbrep::topods::Shape;
 use oblikovati_model::{
+    document_sketch::DocumentSketchId,
     feature::FeatureId,
     history::{DocumentEditHistory, EvaluationScope},
-    identity::{DocumentGuid, ExactReferenceBindings, SemanticReferenceName},
+    identity::{
+        DocumentGuid, ExactReferenceBindings, SketchPrismReferenceRole, sketch_prism_reference_name,
+    },
 };
 
 /// Retained exact geometry and current semantic names; native handles remain private.
@@ -71,13 +74,13 @@ fn prism_key(
     sketch: u64,
     role: Option<PrismFaceRole>,
 ) -> Result<Vec<u8>, String> {
-    let (kind, tag, sources) = match role {
-        None => (4, "body", vec![sketch]),
-        Some(PrismFaceRole::Start) => (1, "start", vec![sketch]),
-        Some(PrismFaceRole::End) => (1, "end", vec![sketch]),
-        Some(PrismFaceRole::ProfileEdge(edge)) => (1, "side", vec![sketch, edge]),
+    let role = match role {
+        None => SketchPrismReferenceRole::Body,
+        Some(PrismFaceRole::Start) => SketchPrismReferenceRole::StartCap,
+        Some(PrismFaceRole::End) => SketchPrismReferenceRole::EndCap,
+        Some(PrismFaceRole::ProfileEdge(edge)) => SketchPrismReferenceRole::Side(edge),
     };
-    SemanticReferenceName::new(document, feature.0, kind, "sketch-prism", tag, &sources)?.encode()
+    sketch_prism_reference_name(document, feature, DocumentSketchId(sketch), role)
 }
 impl NamedPrismSnapshot {
     /// Read the kernel evidence if this body used certified replay; example: `named.certification()`.

@@ -7,8 +7,10 @@ use uuid::Uuid;
 
 mod allocation;
 mod bindings;
+mod prism_name;
 mod semantic;
 pub use bindings::ExactReferenceBindings;
+pub use prism_name::{SketchPrismReferenceRole, sketch_prism_reference_name};
 pub use semantic::SemanticReferenceName;
 mod envelope;
 mod file;

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Exact document-scoped names for copied extrusion edges and vertices.
 use super::*;
-use oblikovati_model::identity::ReferenceEnvelope;
+use oblikovati_model::identity::{ReferenceEnvelope, SemanticReferenceName};
 
 pub(super) struct BoundSubentity {
     provenance: PrismSubentityProvenance,

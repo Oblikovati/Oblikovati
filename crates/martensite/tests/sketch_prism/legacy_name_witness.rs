@@ -422,3 +422,6 @@ fn go_face_frame_tracks_fixture_through_edit_undo_redo_and_reopen() {
     assert_go_offset_frame(&history, 2.5);
     assert_go_offset_frame(&reopened_history(&history), 2.5);
 }
+
+#[path = "legacy_cap_witness.rs"]
+mod legacy_cap_witness;
