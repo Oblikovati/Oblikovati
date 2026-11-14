@@ -354,7 +354,8 @@
       "target_module": "crates/head, crates/gui, crates/session, crates/model",
       "acceptance_test": "sketch_scenarios_use_the_native_window: new-sketch-07 Create an empty sketch on a planar solid face",
       "issues": [
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/3884"
       ],
       "state": "inventoried",
       "last_receipt": null,
