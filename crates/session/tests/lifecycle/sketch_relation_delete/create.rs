@@ -112,3 +112,51 @@ fn assert_response_rejected(result: Result<(), CommandError<String>>) {
     let cause = result.unwrap_err().to_string();
     assert!(cause.contains("response rejected"), "{cause}");
 }
+
+#[test]
+fn preferred_creation_projects_before_commit_and_rolls_back_on_reply_error() {
+    let mut session = constrained_session();
+    let before = session.snapshot().sketches.clone();
+    let result: Result<(), CommandError<String>> = session
+        .create_sketch_geometric_constraint_preferred_projected(
+            DocumentSketchId(1),
+            &input(),
+            SketchEntityId(1),
+            |report| {
+                assert!(report.unwrap().preference.is_some());
+                Err("preferred reply rejected".into())
+            },
+        );
+    assert!(
+        result
+            .unwrap_err()
+            .to_string()
+            .contains("preferred reply rejected")
+    );
+    assert!(before.same_evaluated_state(&session.snapshot().sketches));
+    assert!(session.undo_labels().is_empty());
+}
+
+#[test]
+fn preferred_creation_undo_redo_restores_relation() {
+    let mut session = constrained_session();
+    let report = session
+        .create_sketch_geometric_constraint_preferred_projected(
+            DocumentSketchId(1),
+            &input(),
+            SketchEntityId(1),
+            |result| result,
+        )
+        .unwrap();
+    assert!(report.preference.is_some());
+    session.undo().unwrap();
+    assert_restored_relation(&session);
+    session.redo().unwrap();
+    assert_eq!(
+        session.snapshot().sketches.sketches()[0]
+            .geometry()
+            .constraints()
+            .len(),
+        2
+    );
+}
