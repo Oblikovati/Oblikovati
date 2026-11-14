@@ -4340,10 +4340,15 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-save-inspection/receipt-72ef5d70eb6c0a73.json",
+        "sha256": "cdd672f6a1ab8c20530f9230d6c19415ef818dd26c75bb5c94ff05edd61595cf"
+      },
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
-      "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences."
+      "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:52a88b77aefd086f7782feb68b7421f2f95dcd54958176983fc77f5b2e1a1b66",
@@ -4415,10 +4420,15 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-save-inspection/receipt-688d756622cc25dc.json",
+        "sha256": "6dffeb70017b2be8c3a94d7d3306ce0d554ba46c9245fecfb6cb330804ffeea6"
+      },
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
-      "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences."
+      "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:f9b64673e9d0caa73b8c69814bde87fbec67e340d1d4877052120439c06e62b2",
@@ -4674,10 +4684,15 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-save-inspection/receipt-29faf9bb78c1fe48.json",
+        "sha256": "9d9c69f4fbc9a30fe23786357fd57684f7a4a3406ec7180b2ee187815e3ea6df"
+      },
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
-      "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences."
+      "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:c8730b6f8f038570e4a94d87aa0f353589a50a48b73c2d7c9eb5266386097d43",
@@ -4691,10 +4706,15 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-save-inspection/receipt-c8730b6f8f038570.json",
+        "sha256": "7835f153ba70c102d51842195ec365498a5fb3017742dd2b763d1cd079d6bd2d"
+      },
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
-      "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences."
+      "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:db253e66928b18bbd758beb1036bb3bb5dcc585afcb87b5a25a0c14b54786209",
