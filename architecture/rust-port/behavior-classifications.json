@@ -406,6 +406,230 @@
       "mapping_reason": "Viewport navigation belongs to the full desktop shell.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+    },
+    {
+      "id": "scenario:152ae6bfde300d9b28f59b8d0c51fa6077176ebf1a2c4b0e5bb1b850690a6e39",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "fbdae71cbf4f67f7d8165002799ba77b0727fa89cb7b620f1298fdb27725916c",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/model, crates/head, crates/gui",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: rectangle-two-point-09 Verify the numeric rectangle edge lengths",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3857"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/model/sketch/recipe_rectangle.go; ../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/measure_tool.go; ../Oblikovati/head/ui/measure_dialog.go",
+      "mapping_reason": "Measure the rectangle edges through the analytic sketch-query path."
+    },
+    {
+      "id": "scenario:4598b4de9868b11667330de37cc2e67c65b468129c6a78abd277ad8518101e05",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "fbdae71cbf4f67f7d8165002799ba77b0727fa89cb7b620f1298fdb27725916c",
+      "milestone": "R4",
+      "owner": "desktop",
+      "target_module": "crates/model, crates/head, crates/gui",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: rectangle-two-point-10 Observe a zero first size",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3857"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/model/sketch/recipe_rectangle.go; ../Oblikovati/app/sketch_tools.go",
+      "mapping_reason": "The first size field and command state are part of the initial desktop sketch workflow."
+    },
+    {
+      "id": "scenario:be5c680262911cc108a8e69afe91ddb4a39ba915d4cdd36a6318c2b3e6ed960c",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "fbdae71cbf4f67f7d8165002799ba77b0727fa89cb7b620f1298fdb27725916c",
+      "milestone": "R4",
+      "owner": "desktop",
+      "target_module": "crates/model, crates/head, crates/gui",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: rectangle-two-point-11 Retain a numeric rectangle",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3857"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/model/sketch/recipe_rectangle.go; ../Oblikovati/app/sketch_tools.go",
+      "mapping_reason": "Numeric two-point rectangle creation belongs to the initial desktop sketch workflow."
+    },
+    {
+      "id": "scenario:4e818f2994acb248e4b9581fff1b726df90bb658342df0b92244dd318f6e745c",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "fbdae71cbf4f67f7d8165002799ba77b0727fa89cb7b620f1298fdb27725916c",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/model, crates/head, crates/gui",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: rectangle-two-point-12 Cancel a rectangle height proposal",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/model/sketch/recipe_rectangle.go; ../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_dimension_edit.go",
+      "mapping_reason": "Cancel a proposed edit to an existing sketch dimension."
+    },
+    {
+      "id": "scenario:ecfb4103b54e7240f86118a4493a82fa9918a03162bfd26bcd7b4594a9791f99",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "fbdae71cbf4f67f7d8165002799ba77b0727fa89cb7b620f1298fdb27725916c",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/model, crates/head, crates/gui",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: rectangle-two-point-13 Accept and undo a rectangle height edit",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/model/sketch/recipe_rectangle.go; ../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_dimension_edit.go",
+      "mapping_reason": "Edit and measure a sketch dimension through history."
+    },
+    {
+      "id": "scenario:841bc6eecc0f22624f0096f9d14e6fae6d64b60d913f2fea0ed3de284acf8ae2",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "fbdae71cbf4f67f7d8165002799ba77b0727fa89cb7b620f1298fdb27725916c",
+      "milestone": "R4",
+      "owner": "desktop",
+      "target_module": "crates/model, crates/head, crates/gui",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: rectangle-two-point-14 Observe a zero second size",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3857"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/model/sketch/recipe_rectangle.go; ../Oblikovati/app/sketch_tools.go",
+      "mapping_reason": "The second size field and command state are part of the initial desktop sketch workflow."
+    },
+    {
+      "id": "scenario:6687f2b9f0c80ee04273db1471cd659584217548980bb5880265a4820d31f8f8",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
+      "acceptance_test": "application_scenarios_use_the_native_window: extrusion-03 Select Flipped direction",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3870"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/model/feature/extrude_extent.go; ../Oblikovati/model/feature/extrude_modes_test.go; ../Oblikovati/head/ui/extrude_dialog.go",
+      "mapping_reason": "A flipped extrusion requires the remaining base-solid direction modes."
+    },
+    {
+      "id": "scenario:4a916367e941df71ce4cbcda10983fa95c54c9cbfaa8fe0b25b6f206a82cd865",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
+      "acceptance_test": "application_scenarios_use_the_native_window: extrusion-03a Select Symmetric direction",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3870"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/model/feature/extrude_extent.go; ../Oblikovati/model/feature/extrude_modes_test.go; ../Oblikovati/head/ui/extrude_dialog.go",
+      "mapping_reason": "A symmetric extrusion requires the remaining base-solid direction modes."
+    },
+    {
+      "id": "scenario:74855f10d2606e770609759f1c1fde0758ac2f8e83fdd7c8970b17245206919f",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
+      "acceptance_test": "application_scenarios_use_the_native_window: extrusion-03b Select Asymmetric direction",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3870"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/model/feature/extrude_extent.go; ../Oblikovati/model/feature/extrude_modes_test.go; ../Oblikovati/head/ui/extrude_dialog.go",
+      "mapping_reason": "An asymmetric extrusion requires two independent extents and tapers."
+    },
+    {
+      "id": "scenario:d24d560902737df6642bc78e0f45c668e45468cadee606ec49d59bbcdaec9aa0",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
+      "acceptance_test": "application_scenarios_use_the_native_window: extrusion-03c Choose named directions with the dropdown selector",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3870"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/model/feature/extrude_extent.go; ../Oblikovati/model/feature/extrude_modes_test.go; ../Oblikovati/head/ui/extrude_dialog.go",
+      "mapping_reason": "The icon and dropdown selector styles are full-shell presentation controls."
+    },
+    {
+      "id": "scenario:1a0edf159f537bfe28d917613d17b13757b5b2f09b9e57ecf51aeeddac878e82",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "milestone": "R4",
+      "owner": "desktop",
+      "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
+      "acceptance_test": "application_scenarios_use_the_native_window: extrusion-06 Accepted creation supports Undo and Redo",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3857"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/model/feature/extrude_extent.go; ../Oblikovati/model/feature/extrude_modes_test.go; ../Oblikovati/head/ui/extrude_dialog.go",
+      "mapping_reason": "Creation and undo/redo of the initial extrusion are part of the integrated desktop workflow."
+    },
+    {
+      "id": "scenario:1404f9981fb54fee10e3c77ed7fadf3b835e8550d09f1e1bd8543909d57e8e25",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
+      "acceptance_test": "application_scenarios_use_the_native_window: extrusion-07 Edit Feature accepts positive taper",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3870"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/model/feature/extrude_extent.go; ../Oblikovati/model/feature/extrude_modes_test.go; ../Oblikovati/head/ui/extrude_dialog.go",
+      "mapping_reason": "A tapered solid requires the remaining extrude geometry modes."
+    },
+    {
+      "id": "scenario:b84ae6cb0850b2186bd2f5bd0c974e37ff662f1085063ab3af3613b24bc48c4f",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
+      "acceptance_test": "application_scenarios_use_the_native_window: extrusion-08 Taper history retains accepted value",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3870"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/model/feature/extrude_extent.go; ../Oblikovati/model/feature/extrude_modes_test.go; ../Oblikovati/head/ui/extrude_dialog.go",
+      "mapping_reason": "History for a tapered solid depends on the tapered extrude mode."
+    },
+    {
+      "id": "scenario:4c78e263367780784697d1dda91e7ae5e8a6a3cd1b77232266f1d4c87c8607a4",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
+      "acceptance_test": "application_scenarios_use_the_native_window: extrusion-09 Cancel reversed taper edit",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3870"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/model/feature/extrude_extent.go; ../Oblikovati/model/feature/extrude_modes_test.go; ../Oblikovati/head/ui/extrude_dialog.go",
+      "mapping_reason": "Preview and cancellation of a signed taper depend on the tapered extrude mode."
     }
   ]
 }
