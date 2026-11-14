@@ -2,7 +2,13 @@
 //! Migrate only Go cap keys whose current Rust binding can be verified.
 use super::{LegacyExtrusionFaceRole, LegacyPartCandidate, PackageCodecError, failure};
 use oblikovati_model::{
-    feature::{AuthoredFeature, part::PartFeatureDefinition, work_plane::WorkPlaneFaceReference},
+    feature::{
+        AuthoredFeature,
+        part::PartFeatureDefinition,
+        work_plane::{
+            WorkPlaneDefinition, WorkPlaneDistance, WorkPlaneFaceReference, WorkPlaneReference,
+        },
+    },
     identity::{DocumentGuid, SketchPrismReferenceRole, sketch_prism_reference_name},
 };
 
@@ -30,6 +36,49 @@ impl LegacyPartCandidate {
             .map_err(failure)?;
         verifier.verify(&key, producer.role).map_err(failure)?;
         WorkPlaneFaceReference::new(key).map_err(failure)
+    }
+    /// Convert one saved cap-offset plane without changing the source package.
+    /// Example: `candidate.migrate_cap_offset(sequence, document, feature, verifier)?`.
+    pub fn migrate_cap_offset(
+        &self,
+        sequence: u64,
+        document: DocumentGuid,
+        target: &AuthoredFeature<PartFeatureDefinition>,
+        verifier: &dyn LegacyCapBindingVerifier,
+    ) -> Result<WorkPlaneDefinition, PackageCodecError> {
+        let plane = self.unique_cap_offset(sequence)?;
+        let producer = self.extrusion_face_producer(&plane.face_key)?;
+        if producer.creation_sequence >= sequence || !plane.offset.is_finite() {
+            return Err(failure(format!(
+                "plane sequence {sequence}, producer {}, offset {}: expected an earlier producer and a finite offset",
+                producer.creation_sequence, plane.offset
+            )));
+        }
+        let face = self.migrate_cap_face(&plane.face_key, document, target, verifier)?;
+        Ok(WorkPlaneDefinition::Offset {
+            base: WorkPlaneReference::GoPrismFace(face),
+            distance: WorkPlaneDistance::Constant(plane.offset),
+        })
+    }
+    fn unique_cap_offset(
+        &self,
+        sequence: u64,
+    ) -> Result<&super::LegacyFaceOffsetCandidate, PackageCodecError> {
+        let mut matches = self
+            .face_offsets
+            .iter()
+            .filter(|plane| plane.creation_sequence == sequence);
+        let plane = matches.next().ok_or_else(|| {
+            failure(format!(
+                "plane sequence {sequence}: expected one face-offset plane"
+            ))
+        })?;
+        if sequence == 0 || matches.next().is_some() {
+            return Err(failure(format!(
+                "plane sequence {sequence}: expected a unique nonzero face-offset plane"
+            )));
+        }
+        Ok(plane)
     }
     fn unique_extrusion_sequence(
         &self,
