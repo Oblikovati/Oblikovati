@@ -314,6 +314,7 @@ fn name_shown(world: &mut ApplicationWorld) {
     );
 }
 #[when("I choose the workspace folder browse control")]
+#[when("the user chooses the workspace folder browse control")]
 fn browse_folder(world: &mut ApplicationWorld) {
     choose_button(world, "...");
 }
@@ -323,13 +324,16 @@ fn folder_browser_open(world: &mut ApplicationWorld) {
     assert!(holds_text(world, "Folder:"), "expected the Folder field");
 }
 #[then("it offers Make New Folder, OK and Cancel")]
+#[then("it offers Make New Folder, OK and cancels")]
 fn folder_controls(world: &mut ApplicationWorld) {
     for row in ["Make New Folder", "OK", "Cancel"] {
         world.expect_text(row);
     }
 }
 #[when("I select Documents in the folder tree")]
+#[when("the user selects Documents in the folder tree")]
 #[when("I select the Documents folder")]
+#[when("the user selects the Documents folder")]
 fn select_documents(world: &mut ApplicationWorld) {
     choose_button(world, "Documents");
 }
@@ -346,6 +350,7 @@ fn folder_field(world: &mut ApplicationWorld) {
     world.expect_text("Folder: Documents");
 }
 #[when("I choose Cancel in the folder browser")]
+#[when("the user chooses Cancel in the folder browser")]
 fn cancel_browser(world: &mut ApplicationWorld) {
     choose_button(world, "Cancel");
 }
@@ -362,6 +367,7 @@ fn locations_kept(world: &mut ApplicationWorld) {
     assert_eq!(wizard_text(world), earlier);
 }
 #[when("I cancel the project wizard")]
+#[when("the user cancels the project wizard")]
 fn cancel_wizard(world: &mut ApplicationWorld) {
     choose_button(world, "Cancel");
 }
@@ -370,6 +376,7 @@ fn projects_shown(world: &mut ApplicationWorld) {
     expect_projects_dialog(world);
 }
 #[when("I choose OK in the folder browser")]
+#[when("the user chooses OK in the folder browser")]
 fn accept_folder(world: &mut ApplicationWorld) {
     choose_button(world, "OK");
 }
