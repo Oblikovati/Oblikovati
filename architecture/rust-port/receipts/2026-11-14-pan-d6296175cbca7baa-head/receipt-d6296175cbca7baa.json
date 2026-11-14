@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:d6296175cbca7baa1559a479c565a9f4f35af5e800a1fe8770b08201077f93f0",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "4303c8a64b9262841dba3b8b48a74e51581a6a0ef9d98798286d514c53155647",
+  "application_commit": "fe6eabb0efc612aa72ec8da5086cf656c6b5d759",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "application_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan Lavapipe on Xvfb, Linux"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-pan-d6296175cbca7baa-head/cucumber.json",
+    "sha256": "8b428b59633d7548717d17bcb5a9c7cb82b679f7fc5d5504e19ddcfbbbd1038a"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-pan-d6296175cbca7baa-head/source-revision.json",
+    "sha256": "b2710d87858549aa26eecdbfe7e26b4ec973ccf59fe8077c9aa1bd452415f4fc"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-pan-d6296175cbca7baa-head/Switch-from-Pan-to-Zoom-using-the-contextual-menu.png",
+    "sha256": "f30ad95312c5a90741a1017e4ba612be1b2c4ad079f81296da2c1ce8bfc835cb"
+  }
+}
