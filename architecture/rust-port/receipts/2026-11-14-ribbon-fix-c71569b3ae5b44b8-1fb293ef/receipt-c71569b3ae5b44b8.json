@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:c71569b3ae5b44b8058911fca8b680456cdd7fa8481fee7241ea6e9bb7011e6b",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "e9a93d4c096090667952b8080a0cad01c48f480022a4b8ac72ae210607ca138d",
+  "application_commit": "1fb293ef6ccd57df73747887e8a98b224c997d02",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "application_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan Lavapipe on Xvfb, Linux"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-ribbon-fix-c71569b3ae5b44b8-1fb293ef/cucumber.json",
+    "sha256": "84ac99f7b22722747c0c5a462132274b845855bbfa9663717d39db6018676cb2"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-ribbon-fix-c71569b3ae5b44b8-1fb293ef/source-revision.json",
+    "sha256": "2bb2d6adadfe7f4c1974e23c25b5606909b18d96cdc6ac7751d2dafb57e2ec7a"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-ribbon-fix-c71569b3ae5b44b8-1fb293ef/Create-a-metric-sheet-metal-part.png",
+    "sha256": "49139bd555a71f5bb87fbcbff306d400419ad2b11c19d62afd21c781bfd8670e"
+  }
+}
