@@ -527,8 +527,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-last-6d4a200f/receipt-6d4a200f137644d4.json",
-        "sha256": "2c8a095d87f5f45920a78b19cfad04fe9e890d01efc9733be99f06f4ecce9be9"
+        "path": "architecture/rust-port/receipts/2026-11-14-extrusion-6d4a200f137644d4-95b648eb/receipt-6d4a200f137644d4.json",
+        "sha256": "eae534f7f3c6e82ebe3f3d648e3075d63bdb148931e5d03e69c58c166b16db56"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -570,8 +570,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-extrude-cancel-c958310f/receipt-c958310f71da6060.json",
-        "sha256": "d9ad2df0dea73ea2627d6dc2d83d1b7788040fcdcd05f85de3c088cbcece6baf"
+        "path": "architecture/rust-port/receipts/2026-11-14-extrusion-c958310f71da6060-95b648eb/receipt-c958310f71da6060.json",
+        "sha256": "1dad29bd8ae17fe60517a704cfca01eeaf44c7588385179e929d066863ab98d4"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -600,8 +600,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-last-2fc85f94/receipt-2fc85f94acd6cc5f.json",
-        "sha256": "8844200d540015a93b49e25ee5d30802a005b72c126b0864a3b160e27ac9d822"
+        "path": "architecture/rust-port/receipts/2026-11-14-extrusion-2fc85f94acd6cc5f-95b648eb/receipt-2fc85f94acd6cc5f.json",
+        "sha256": "28c7865789e2d9704bb28dd8b32176462d7dc40889d1595c73fc0d344eb870d6"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
