@@ -166,7 +166,7 @@
     },
     {
       "id": "scenario:63f029b9f70340308eef7d4b4187b3f20f136ee9e8984de6b3c28d4c3b9b61e7",
-      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
       "source_sha256": "e4011485e2cfe78197b73450bea0d26ba2b0dbc54f2307d3b27364ffe9d9a20d",
       "milestone": "R4",
       "owner": "desktop",
@@ -177,8 +177,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-63f029b9f7034030/receipt-63f029b9f7034030.json",
-        "sha256": "860dac04572f961fec2067f48e78d49bd46414669629e7b3faa1e5669e7c1471"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-sketch-63f029b9/receipt-63f029b9f7034030.json",
+        "sha256": "de3e622843936e3811fc1aa8a1075d761e09912e1e3e44970cb23e655774df44"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -189,11 +189,18 @@
       "platforms": "Native receipt: Linux with Vulkan Lavapipe under Xvfb; Windows and macOS are not established.",
       "rust_tests": "Native scenario: crates/head/tests/sketch/new-sketch/steps.rs. Origin-plane creation: crates/session/tests/lifecycle/sketch_create.rs; finish history: crates/head/tests/owner/sketch_history.rs.",
       "oracle": "Pinned scenario expectations plus queried browser, editor and plane state and rendered status/cube text; Go tests provide a partial command reference. TOP label follows the cube face and may rotate with view roll.",
-      "expected_result": "A second empty XZ sketch opens, the cube identifies TOP, and zero free dimensions show Fully Constrained."
+      "expected_result": "A second empty XZ sketch opens, the cube identifies TOP, and zero free dimensions show Fully Constrained.",
+      "historical_receipts": [
+        {
+          "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+          "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-63f029b9f7034030/receipt-63f029b9f7034030.json",
+          "sha256": "860dac04572f961fec2067f48e78d49bd46414669629e7b3faa1e5669e7c1471"
+        }
+      ]
     },
     {
       "id": "scenario:4e511ca586195d67ed53eaedd9378d8bc9bab420ea3c606eda97feb3b4fb0b55",
-      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
       "source_sha256": "e4011485e2cfe78197b73450bea0d26ba2b0dbc54f2307d3b27364ffe9d9a20d",
       "milestone": "R4",
       "owner": "desktop",
@@ -204,8 +211,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-4e511ca586195d67/receipt-4e511ca586195d67.json",
-        "sha256": "7d20bd0ea4c645481fe76add0f778472949f908b5c4ee845e408e6cb1e39ef8f"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-sketch-4e511ca5/receipt-4e511ca586195d67.json",
+        "sha256": "966421d00b22a7685ec86bce61db4d0b2a66b4aaf5a184536bcd26b35acf1510"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -216,11 +223,18 @@
       "platforms": "Native receipt: Linux with Vulkan Lavapipe under Xvfb; Windows and macOS are not established.",
       "rust_tests": "Native scenario: crates/head/tests/sketch/new-sketch/steps.rs. Origin-plane creation: crates/session/tests/lifecycle/sketch_create.rs; finish history: crates/head/tests/owner/sketch_history.rs.",
       "oracle": "Pinned scenario expectations plus queried browser, editor and plane state and rendered status/cube text; Go tests provide a partial command reference. TOP label follows the cube face and may rotate with view roll.",
-      "expected_result": "Cancel plane selection; previews disappear and the original sketch remains."
+      "expected_result": "Cancel plane selection; previews disappear and the original sketch remains.",
+      "historical_receipts": [
+        {
+          "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+          "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-4e511ca586195d67/receipt-4e511ca586195d67.json",
+          "sha256": "7d20bd0ea4c645481fe76add0f778472949f908b5c4ee845e408e6cb1e39ef8f"
+        }
+      ]
     },
     {
       "id": "scenario:adfaa180b248a09493b79b65698c97167d4d8d53f4c3a763453aecd7d8b420e2",
-      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
       "source_sha256": "e4011485e2cfe78197b73450bea0d26ba2b0dbc54f2307d3b27364ffe9d9a20d",
       "milestone": "R4",
       "owner": "desktop",
@@ -231,8 +245,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-adfaa180b248a094/receipt-adfaa180b248a094.json",
-        "sha256": "2e6f099cb90d2102f6aafcf64fe446417e1763040fd7d5b443010d93de085773"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-sketch-adfaa180/receipt-adfaa180b248a094.json",
+        "sha256": "df6cf6cf8568b77605c89829491aa85d604fd8eb205589877339f61f3d0c266a"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -243,11 +257,18 @@
       "platforms": "Native receipt: Linux with Vulkan Lavapipe under Xvfb; Windows and macOS are not established.",
       "rust_tests": "Native scenario: crates/head/tests/sketch/new-sketch/steps.rs. Origin-plane creation: crates/session/tests/lifecycle/sketch_create.rs; finish history: crates/head/tests/owner/sketch_history.rs.",
       "oracle": "Pinned scenario expectations plus queried browser, editor and plane state and rendered status/cube text; Go tests provide a partial command reference. TOP label follows the cube face and may rotate with view roll.",
-      "expected_result": "Escape after accepting XZ leaves the second sketch active."
+      "expected_result": "Escape after accepting XZ leaves the second sketch active.",
+      "historical_receipts": [
+        {
+          "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+          "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-adfaa180b248a094/receipt-adfaa180b248a094.json",
+          "sha256": "2e6f099cb90d2102f6aafcf64fe446417e1763040fd7d5b443010d93de085773"
+        }
+      ]
     },
     {
       "id": "scenario:cd9561e7b2b4f47522f44782c6ecc97307e4b18dd114f958c8b625807a9af6bb",
-      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
       "source_sha256": "e4011485e2cfe78197b73450bea0d26ba2b0dbc54f2307d3b27364ffe9d9a20d",
       "milestone": "R4",
       "owner": "desktop",
@@ -259,8 +280,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-cd9561e7b2b4f475/receipt-cd9561e7b2b4f475.json",
-        "sha256": "574ec0eee2d5b273c96facf4f12d1bfa832883104adfabcb356778883fe94e70"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-sketch-cd9561e7/receipt-cd9561e7b2b4f475.json",
+        "sha256": "275d615414abaa5b96693600ed1d1c0c404ce6ae2c047b3b5608dfb92ebcc23a"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -271,11 +292,18 @@
       "platforms": "Native receipt: Linux with Vulkan Lavapipe under Xvfb; Windows and macOS are not established.",
       "rust_tests": "Native scenario: crates/head/tests/sketch/new-sketch/steps.rs. Origin-plane creation: crates/session/tests/lifecycle/sketch_create.rs; finish history: crates/head/tests/owner/sketch_history.rs.",
       "oracle": "Pinned scenario expectations plus queried browser, editor and plane state and rendered status/cube text; Go tests provide a partial command reference. TOP label follows the cube face and may rotate with view roll.",
-      "expected_result": "Undo Finish reopens the second sketch; undo creation removes it; redo restores creation and Finish in order."
+      "expected_result": "Undo Finish reopens the second sketch; undo creation removes it; redo restores creation and Finish in order.",
+      "historical_receipts": [
+        {
+          "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+          "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-cd9561e7b2b4f475/receipt-cd9561e7b2b4f475.json",
+          "sha256": "574ec0eee2d5b273c96facf4f12d1bfa832883104adfabcb356778883fe94e70"
+        }
+      ]
     },
     {
       "id": "scenario:4ba58b431dc847ae3a24f6b4c652dc6ce891a4b6150813100ab28b8c60d3b5f2",
-      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
       "source_sha256": "e4011485e2cfe78197b73450bea0d26ba2b0dbc54f2307d3b27364ffe9d9a20d",
       "milestone": "R4",
       "owner": "desktop",
@@ -287,8 +315,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-4ba58b431dc847ae/receipt-4ba58b431dc847ae.json",
-        "sha256": "8b7a02f21d9df000bb6e37667cba0701c9c9a4c552e216b06af0a17071a15ee8"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-sketch-4ba58b43/receipt-4ba58b431dc847ae.json",
+        "sha256": "13c54ab205173c1e2f0ddc565f2187fa9b2f9f94e9d991674c2a019133e7fd8f"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -299,12 +327,19 @@
       "platforms": "Native receipt: Linux with Vulkan Lavapipe under Xvfb; Windows and macOS are not established.",
       "rust_tests": "Native scenario: crates/head/tests/sketch/new-sketch/steps.rs. Origin-plane creation: crates/session/tests/lifecycle/sketch_create.rs; finish history: crates/head/tests/owner/sketch_history.rs.",
       "oracle": "Pinned scenario expectations plus queried browser, editor and plane state and rendered status/cube text; Go tests provide a partial command reference. TOP label follows the cube face and may rotate with view roll.",
-      "expected_result": "A preselected YZ plane starts the third sketch without a second pick; the cube identifies RIGHT and the empty sketch is fully constrained."
+      "expected_result": "A preselected YZ plane starts the third sketch without a second pick; the cube identifies RIGHT and the empty sketch is fully constrained.",
+      "historical_receipts": [
+        {
+          "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+          "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-4ba58b431dc847ae/receipt-4ba58b431dc847ae.json",
+          "sha256": "8b7a02f21d9df000bb6e37667cba0701c9c9a4c552e216b06af0a17071a15ee8"
+        }
+      ]
     },
     {
       "id": "scenario:cb85314818ef73daa1093f520bc4f5fa70977685fb7b8716070ffe6314ba9a58",
-      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
-      "source_sha256": "fbdae71cbf4f67f7d8165002799ba77b0727fa89cb7b620f1298fdb27725916c",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "130621bae0d8b2196d399a885f76d6f3bb4c5050a41257459a9f02cd0ec4de17",
       "milestone": "R4",
       "owner": "desktop",
       "target_module": "crates/head, crates/gui, crates/session",
@@ -314,16 +349,23 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-cb85314818ef73da/receipt-cb85314818ef73da.json",
-        "sha256": "3e5606955960618ebe14c3bbe98ef4464df32ce0cf838eee24a2ad61a8223f78"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-rectangle-cb853148/receipt-cb85314818ef73da.json",
+        "sha256": "8e8643b2385f7f9d23795e187941cb877e93217c7829dd36d72d67df5c5ddff3"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "historical_receipts": [
+        {
+          "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+          "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-cb85314818ef73da/receipt-cb85314818ef73da.json",
+          "sha256": "3e5606955960618ebe14c3bbe98ef4464df32ce0cf838eee24a2ad61a8223f78"
+        }
+      ]
     },
     {
       "id": "scenario:a661d2ccfbdfc85a763de8dd2eb91fc325e1a004e58059346306d9e69700b3c5",
-      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
-      "source_sha256": "fbdae71cbf4f67f7d8165002799ba77b0727fa89cb7b620f1298fdb27725916c",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "130621bae0d8b2196d399a885f76d6f3bb4c5050a41257459a9f02cd0ec4de17",
       "milestone": "R4",
       "owner": "desktop",
       "target_module": "crates/head, crates/gui, crates/session",
@@ -333,16 +375,23 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-a661d2ccfbdfc85a/receipt-a661d2ccfbdfc85a.json",
-        "sha256": "5872099028694c4f083f7fa7ac7e88cf3f2e428016ad7644f20b55c9d2e475f2"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-rectangle-a661d2cc/receipt-a661d2ccfbdfc85a.json",
+        "sha256": "2e45d706fed4d2c7c4458c93922b14514fcd4b4e9f815f6c4c8576e299ba777d"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "historical_receipts": [
+        {
+          "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+          "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-a661d2ccfbdfc85a/receipt-a661d2ccfbdfc85a.json",
+          "sha256": "5872099028694c4f083f7fa7ac7e88cf3f2e428016ad7644f20b55c9d2e475f2"
+        }
+      ]
     },
     {
       "id": "scenario:1e7472ca669ac6f4274e216b9e0f6dd9074d843189d749ea4a4ca6c0d7af7dd2",
-      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
-      "source_sha256": "fbdae71cbf4f67f7d8165002799ba77b0727fa89cb7b620f1298fdb27725916c",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "130621bae0d8b2196d399a885f76d6f3bb4c5050a41257459a9f02cd0ec4de17",
       "milestone": "R4",
       "owner": "desktop",
       "target_module": "crates/head, crates/gui, crates/session",
@@ -352,16 +401,23 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-1e7472ca669ac6f4/receipt-1e7472ca669ac6f4.json",
-        "sha256": "05a2ff9acec6696e8f89e024c20347f4f6eef46053a8cbbd26abead391bb589d"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-rectangle-1e7472ca/receipt-1e7472ca669ac6f4.json",
+        "sha256": "2deb2e52eceb8a4ce07b26a7456087f4c7c539ca904a0d313f012d78ca6df93e"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "historical_receipts": [
+        {
+          "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+          "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-1e7472ca669ac6f4/receipt-1e7472ca669ac6f4.json",
+          "sha256": "05a2ff9acec6696e8f89e024c20347f4f6eef46053a8cbbd26abead391bb589d"
+        }
+      ]
     },
     {
       "id": "scenario:c7961c524b21f4e1124e3f4d865c19bde5f6dc740d654f9838726b63cccd0b84",
-      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
-      "source_sha256": "fbdae71cbf4f67f7d8165002799ba77b0727fa89cb7b620f1298fdb27725916c",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "130621bae0d8b2196d399a885f76d6f3bb4c5050a41257459a9f02cd0ec4de17",
       "milestone": "R4",
       "owner": "desktop",
       "target_module": "crates/head, crates/gui, crates/session",
@@ -371,15 +427,22 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-c7961c524b21f4e1/receipt-c7961c524b21f4e1.json",
-        "sha256": "d21131c032d5ba36af4bddd3fd5f1333de19fe43ce2bc841af66bcf50bed841f"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-rectangle-c7961c52/receipt-c7961c524b21f4e1.json",
+        "sha256": "61fccd84dc4949e49d20b70d0c150a2d8e21f41ad0690c8e0bbdfe7844f5de57"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "historical_receipts": [
+        {
+          "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+          "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-c7961c524b21f4e1/receipt-c7961c524b21f4e1.json",
+          "sha256": "d21131c032d5ba36af4bddd3fd5f1333de19fe43ce2bc841af66bcf50bed841f"
+        }
+      ]
     },
     {
       "id": "scenario:6d4a200f137644d4c6104d1e91aeb91aa8167a0ac26b27ae09cb219eb27fadd2",
-      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
       "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
       "milestone": "R4",
       "owner": "desktop",
@@ -391,11 +454,18 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-command-rerun-6d4a200f137644d4/receipt-6d4a200f137644d4.json",
-        "sha256": "341cc343679da037061f490af8a0ecb647347e95bd65da1bba1da0b58ad079cc"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-sketch-6d4a200f/receipt-6d4a200f137644d4.json",
+        "sha256": "b54feb90b7d58db8011eacf66a79f6f91b83853f4fd13ff48bab81cc07fedaba"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "historical_receipts": [
+        {
+          "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+          "path": "architecture/rust-port/receipts/2026-11-14-command-rerun-6d4a200f137644d4/receipt-6d4a200f137644d4.json",
+          "sha256": "341cc343679da037061f490af8a0ecb647347e95bd65da1bba1da0b58ad079cc"
+        }
+      ]
     },
     {
       "id": "scenario:5c666abf06d3e4d293ac1364203a639772c5f754d85d32a48ddf497941590bbe",
@@ -444,7 +514,7 @@
     },
     {
       "id": "scenario:d46c554381029cf43cc527f90d95974a544c5e83c23ead926db74cadd5f7afd3",
-      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
       "source_sha256": "e4011485e2cfe78197b73450bea0d26ba2b0dbc54f2307d3b27364ffe9d9a20d",
       "milestone": "R5",
       "owner": "desktop and modeling",
@@ -456,8 +526,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-direct-face-d46c554381029cf4/receipt-d46c554381029cf4.json",
-        "sha256": "57523512c6a0181f7ffafa6a8b3484dad4caf323651e800bde6574f241b6793e"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-sketch-d46c5543/receipt-d46c554381029cf4.json",
+        "sha256": "541adca16f71589b6f86e7932b4db2224b2a88244085ee44afa743ae8815ef53"
       },
       "mapping_reason": "Attach a sketch to a modeled planar face and preserve the extrusion.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
@@ -469,11 +539,18 @@
       "kernel_integration": "crates/martensite/src/prism/named.rs and crates/model/src/feature/part/evaluate.rs resolve and replay the semantic face.",
       "rust_tests": "Native new-sketch-07 plus model face support, ordered dependent-prism replay and desktop save/reopen tests.",
       "oracle": "Native UI observations and independent exact support-plane and named-reference assertions; Go test source is a behavioral reference.",
-      "expected_result": "A click on the broad planar face opens empty Sketch2 in Front view with zero DOF; Finish retains it and Extrusion1."
+      "expected_result": "A click on the broad planar face opens empty Sketch2 in Front view with zero DOF; Finish retains it and Extrusion1.",
+      "historical_receipts": [
+        {
+          "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+          "path": "architecture/rust-port/receipts/2026-11-14-direct-face-d46c554381029cf4/receipt-d46c554381029cf4.json",
+          "sha256": "57523512c6a0181f7ffafa6a8b3484dad4caf323651e800bde6574f241b6793e"
+        }
+      ]
     },
     {
       "id": "scenario:44dfe89fda9e10be24739ae86dcce9b9e2df26b6fc34aeb0fa17ec252d15cb9f",
-      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
       "source_sha256": "e4011485e2cfe78197b73450bea0d26ba2b0dbc54f2307d3b27364ffe9d9a20d",
       "milestone": "R5",
       "owner": "desktop and modeling",
@@ -485,12 +562,19 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-face-support-work-plane-44dfe89fda9e10be/receipt-44dfe89fda9e10be.json",
-        "sha256": "be75da46013f0ed7cf39827ddaf0676aa889360c548a79dc761c36fbae682afc"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-sketch-44dfe89f/receipt-44dfe89fda9e10be.json",
+        "sha256": "4d5c7fc4cdad774c71a21ee597df91b6c99221d3c6a1632f9fe88b13eddf025e"
       },
       "mapping_reason": "Create and retain an offset work plane and its dependent sketch.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "historical_receipts": [
+        {
+          "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+          "path": "architecture/rust-port/receipts/2026-11-14-face-support-work-plane-44dfe89fda9e10be/receipt-44dfe89fda9e10be.json",
+          "sha256": "be75da46013f0ed7cf39827ddaf0676aa889360c548a79dc761c36fbae682afc"
+        }
+      ]
     },
     {
       "id": "scenario:069877f38da85a95ada5c757ed2d348c06d5adb0b5d9f22480bf73a19cc17449",
@@ -560,8 +644,8 @@
     },
     {
       "id": "scenario:152ae6bfde300d9b28f59b8d0c51fa6077176ebf1a2c4b0e5bb1b850690a6e39",
-      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
-      "source_sha256": "fbdae71cbf4f67f7d8165002799ba77b0727fa89cb7b620f1298fdb27725916c",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "130621bae0d8b2196d399a885f76d6f3bb4c5050a41257459a9f02cd0ec4de17",
       "milestone": "R5",
       "owner": "desktop",
       "target_module": "crates/model, crates/head, crates/gui",
@@ -571,13 +655,20 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-152ae6bfde300d9b/receipt-152ae6bfde300d9b.json",
-        "sha256": "a90e2e758f885fe95f93c71455c6ee5d08e5d19ba6bc74afcfbdc57de47b357e"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-rectangle-152ae6bf/receipt-152ae6bfde300d9b.json",
+        "sha256": "30791b1656710a6feaab4c942eb7929e50e8611cd9f1a93130df5f8f54f49dd9"
       },
       "go_reference": "../Oblikovati/model/sketch/recipe_rectangle.go; ../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/measure_tool.go; ../Oblikovati/head/ui/measure_dialog.go",
       "mapping_reason": "Measure the rectangle edges through the analytic sketch-query path.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "historical_receipts": [
+        {
+          "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+          "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-152ae6bfde300d9b/receipt-152ae6bfde300d9b.json",
+          "sha256": "a90e2e758f885fe95f93c71455c6ee5d08e5d19ba6bc74afcfbdc57de47b357e"
+        }
+      ]
     },
     {
       "id": "scenario:4598b4de9868b11667330de37cc2e67c65b468129c6a78abd277ad8518101e05",
@@ -598,8 +689,8 @@
     },
     {
       "id": "scenario:be5c680262911cc108a8e69afe91ddb4a39ba915d4cdd36a6318c2b3e6ed960c",
-      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
-      "source_sha256": "fbdae71cbf4f67f7d8165002799ba77b0727fa89cb7b620f1298fdb27725916c",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "130621bae0d8b2196d399a885f76d6f3bb4c5050a41257459a9f02cd0ec4de17",
       "milestone": "R4",
       "owner": "desktop",
       "target_module": "crates/model, crates/head, crates/gui",
@@ -609,18 +700,25 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-be5c680262911cc1/receipt-be5c680262911cc1.json",
-        "sha256": "f05a62f43722520642c5eb937d72564c30245c94ac4e28956ffb5e6b137d8f1a"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-rectangle-be5c6802/receipt-be5c680262911cc1.json",
+        "sha256": "3bee88b08664ce96710d5ff9cfa5d64fbd23be26e2b6c5cbe4f323825b6d262f"
       },
       "go_reference": "../Oblikovati/model/sketch/recipe_rectangle.go; ../Oblikovati/app/sketch_tools.go",
       "mapping_reason": "Numeric two-point rectangle creation belongs to the initial desktop sketch workflow.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "historical_receipts": [
+        {
+          "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+          "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-be5c680262911cc1/receipt-be5c680262911cc1.json",
+          "sha256": "f05a62f43722520642c5eb937d72564c30245c94ac4e28956ffb5e6b137d8f1a"
+        }
+      ]
     },
     {
       "id": "scenario:4e818f2994acb248e4b9581fff1b726df90bb658342df0b92244dd318f6e745c",
-      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
-      "source_sha256": "fbdae71cbf4f67f7d8165002799ba77b0727fa89cb7b620f1298fdb27725916c",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "130621bae0d8b2196d399a885f76d6f3bb4c5050a41257459a9f02cd0ec4de17",
       "milestone": "R5",
       "owner": "desktop",
       "target_module": "crates/model, crates/head, crates/gui",
@@ -630,13 +728,20 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-4e818f2994acb248/receipt-4e818f2994acb248.json",
-        "sha256": "56cb17a8bec98c12a8e86c1ad844ae8332a8faf7f2a530e170566cbcd9cd53f5"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-rectangle-4e818f29/receipt-4e818f2994acb248.json",
+        "sha256": "69a34908fb9dc3be44b62e458f83758bfcf5359192d7554e49749144b3429326"
       },
       "go_reference": "../Oblikovati/model/sketch/recipe_rectangle.go; ../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_dimension_edit.go",
       "mapping_reason": "Cancel a proposed edit to an existing sketch dimension.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "historical_receipts": [
+        {
+          "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+          "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-4e818f2994acb248/receipt-4e818f2994acb248.json",
+          "sha256": "56cb17a8bec98c12a8e86c1ad844ae8332a8faf7f2a530e170566cbcd9cd53f5"
+        }
+      ]
     },
     {
       "id": "scenario:ecfb4103b54e7240f86118a4493a82fa9918a03162bfd26bcd7b4594a9791f99",
@@ -652,18 +757,25 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-corrected-rectangle-13/receipt-ecfb4103b54e7240.json",
-        "sha256": "c37de5fe5c5caf99c73929852e4ec2639e1de3f9ee730fc93e0fa8847e27daab"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-sketch-ecfb4103/receipt-ecfb4103b54e7240.json",
+        "sha256": "fad042f7b9e31282d6f11c375035ad0891bb5913ee3089dd4dceecd605cf0d61"
       },
       "go_reference": "../Oblikovati/model/sketch/recipe_rectangle.go; ../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_dimension_edit.go",
       "mapping_reason": "Edit and measure a sketch dimension through history.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "historical_receipts": [
+        {
+          "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+          "path": "architecture/rust-port/receipts/2026-11-14-corrected-rectangle-13/receipt-ecfb4103b54e7240.json",
+          "sha256": "c37de5fe5c5caf99c73929852e4ec2639e1de3f9ee730fc93e0fa8847e27daab"
+        }
+      ]
     },
     {
       "id": "scenario:841bc6eecc0f22624f0096f9d14e6fae6d64b60d913f2fea0ed3de284acf8ae2",
-      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
-      "source_sha256": "fbdae71cbf4f67f7d8165002799ba77b0727fa89cb7b620f1298fdb27725916c",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "130621bae0d8b2196d399a885f76d6f3bb4c5050a41257459a9f02cd0ec4de17",
       "milestone": "R4",
       "owner": "desktop",
       "target_module": "crates/model, crates/head, crates/gui",
@@ -673,13 +785,20 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-841bc6eecc0f2262/receipt-841bc6eecc0f2262.json",
-        "sha256": "b3a980da76dcf9521cb9eb894a7a8b2c2af0d95c22af94516fafcf00dca8ad5a"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-rectangle-841bc6ee/receipt-841bc6eecc0f2262.json",
+        "sha256": "44857f4e99cdbb017e533a19badb01ee4d808827eab31cbeaf46d45fe6b49f12"
       },
       "go_reference": "../Oblikovati/model/sketch/recipe_rectangle.go; ../Oblikovati/app/sketch_tools.go",
       "mapping_reason": "The second size field and command state are part of the initial desktop sketch workflow.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "historical_receipts": [
+        {
+          "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+          "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-841bc6eecc0f2262/receipt-841bc6eecc0f2262.json",
+          "sha256": "b3a980da76dcf9521cb9eb894a7a8b2c2af0d95c22af94516fafcf00dca8ad5a"
+        }
+      ]
     },
     {
       "id": "scenario:6687f2b9f0c80ee04273db1471cd659584217548980bb5880265a4820d31f8f8",
@@ -811,7 +930,7 @@
     },
     {
       "id": "scenario:3e4b9e33e44dffb2c65edec2817081f095cd3ee4e2dd0a4018e976b135f897bb",
-      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
       "source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4",
       "milestone": "R7",
       "owner": "desktop",
@@ -823,12 +942,19 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-command-rerun-3e4b9e33e44dffb2/receipt-3e4b9e33e44dffb2.json",
-        "sha256": "885edd5afac0b08298d0566bd46d96a565c87149dd42cffe3e2bde3b9f6b5338"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-3e4b9e33/receipt-3e4b9e33e44dffb2.json",
+        "sha256": "2d21a3342edff7013d66ee69a7a1e259d96d4fe146aa070420b248044a94bdc0"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
-      "mapping_reason": "Ribbon key tips and view navigation belong to the full desktop shell."
+      "mapping_reason": "Ribbon key tips and view navigation belong to the full desktop shell.",
+      "historical_receipts": [
+        {
+          "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+          "path": "architecture/rust-port/receipts/2026-11-14-command-rerun-3e4b9e33e44dffb2/receipt-3e4b9e33e44dffb2.json",
+          "sha256": "885edd5afac0b08298d0566bd46d96a565c87149dd42cffe3e2bde3b9f6b5338"
+        }
+      ]
     },
     {
       "id": "scenario:30ebb762acf2f937d24549abe810d47281a058ddf23c2497658d616fc063a8c1",
@@ -3208,7 +3334,7 @@
     },
     {
       "id": "scenario:9a6cb2d0318b1fcb8760a6f74647414a928349ad959e48a7daa30f4c25969abc",
-      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
       "source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e",
       "milestone": "R7",
       "owner": "desktop",
@@ -3220,12 +3346,19 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-9a6cb2d0318b1fcb/receipt-9a6cb2d0318b1fcb.json",
-        "sha256": "bf9d741d84d9eaf0eb511487bc5582780693ac50059786419e7c3e1b1dc6ff87"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-9a6cb2d0/receipt-9a6cb2d0318b1fcb.json",
+        "sha256": "c9ab36c6ebfb32fb60e71fd371c5bda251809cbde20274c9a453736f6ff4a531"
       },
       "mapping_reason": "Select a feature row and present its model outline and contextual controls.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "historical_receipts": [
+        {
+          "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+          "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-9a6cb2d0318b1fcb/receipt-9a6cb2d0318b1fcb.json",
+          "sha256": "bf9d741d84d9eaf0eb511487bc5582780693ac50059786419e7c3e1b1dc6ff87"
+        }
+      ]
     },
     {
       "id": "scenario:c1547ececd82265193e7e655fe1153003d790dd6dabaeb60577d3b1c62dbb047",
@@ -3241,13 +3374,20 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-point-03/receipt-c1547ececd822651.json",
-        "sha256": "946d0c0b13016c3b603e2dbe644f52c010c37c0aee0e7ea68cf8126fca437e2c"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-sketch-c1547ece/receipt-c1547ececd822651.json",
+        "sha256": "46ca0a289c1cc0c4c15f08c49d9980157643d979eb25d56422e212248530df49"
       },
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
       "mapping_reason": "Cancel point creation and return to Ready.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "historical_receipts": [
+        {
+          "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+          "path": "architecture/rust-port/receipts/2026-11-14-point-03/receipt-c1547ececd822651.json",
+          "sha256": "946d0c0b13016c3b603e2dbe644f52c010c37c0aee0e7ea68cf8126fca437e2c"
+        }
+      ]
     },
     {
       "id": "scenario:d21c1f8c789927b46db67abfe6f79e4e8774be0e990dddf6f6631b83c30b7ab8",
@@ -3263,13 +3403,20 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-point-04/receipt-d21c1f8c789927b4.json",
-        "sha256": "0874f3a52d7eff409075fafb8a72c1963eaa7230e3e0e4661b342361d5b8716e"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-sketch-d21c1f8c/receipt-d21c1f8c789927b4.json",
+        "sha256": "ff8fc9486582b5737c31e4bc4b6f0f5e4191ed23c70897ddf6c03d6989a4c3a4"
       },
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
       "mapping_reason": "Create a center point and restore it through history.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "historical_receipts": [
+        {
+          "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+          "path": "architecture/rust-port/receipts/2026-11-14-point-04/receipt-d21c1f8c789927b4.json",
+          "sha256": "0874f3a52d7eff409075fafb8a72c1963eaa7230e3e0e4661b342361d5b8716e"
+        }
+      ]
     },
     {
       "id": "scenario:436f15ab31b13b1dfef8458be1b83d8a3be1c7438819c5c0929b93c9b46729ef",
@@ -3285,13 +3432,20 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-point-05/receipt-436f15ab31b13b1d.json",
-        "sha256": "cab505d3f5ad71f4034f8467d2d0d379a1dd300b7404daba102e9bdb049ac57c"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-sketch-436f15ab/receipt-436f15ab31b13b1d.json",
+        "sha256": "10fe847e33162844ce17bb4b805b0bac4ec8b1fea92cd6a128493ec79bd70265"
       },
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
       "mapping_reason": "Place multiple regular points in one command.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "historical_receipts": [
+        {
+          "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+          "path": "architecture/rust-port/receipts/2026-11-14-point-05/receipt-436f15ab31b13b1d.json",
+          "sha256": "cab505d3f5ad71f4034f8467d2d0d379a1dd300b7404daba102e9bdb049ac57c"
+        }
+      ]
     },
     {
       "id": "scenario:b808d9e7aa5c4536ff4c80934a19febf1c6819957d1b0c9175d5fee7b467b11d",
