@@ -9,6 +9,31 @@ impl ColumnPivotedQr {
         targets: &[f64],
         rank_tolerance: f64,
     ) -> Result<Vec<f64>, LinearAlgebraError> {
+        self.try_minimum_norm_free_motion(preference, targets, rank_tolerance)?
+            .ok_or_else(|| {
+                LinearAlgebraError(format!(
+                    "preference rank deficient: expected {} independent reachable targets",
+                    preference.columns()
+                ))
+            })
+    }
+
+    pub(crate) fn try_minimum_norm_free_motion(
+        &self,
+        preference: &DenseMatrix,
+        targets: &[f64],
+        rank_tolerance: f64,
+    ) -> Result<Option<Vec<f64>>, LinearAlgebraError> {
+        if targets.len() != preference.columns() {
+            return Err(LinearAlgebraError(format!(
+                "preference target count {}: expected {} columns",
+                targets.len(),
+                preference.columns()
+            )));
+        }
+        for &target in targets {
+            finite(target, "preference target")?;
+        }
         if preference.rows().len() != self.triangular.len() {
             return Err(LinearAlgebraError(format!(
                 "preference rows {}: expected {} variables",
@@ -23,7 +48,11 @@ impl ColumnPivotedQr {
         }
         let columns = self.project_preference_columns(preference, rank_tolerance)?;
         let projected = DenseMatrix::new(self.triangular.len(), columns)?.transpose();
-        ColumnPivotedQr::factor(&projected, rank_tolerance)?.minimum_norm_transpose(targets)
+        let factor = ColumnPivotedQr::factor(&projected, rank_tolerance)?;
+        if factor.rank() < preference.columns() {
+            return Ok(None);
+        }
+        factor.minimum_norm_transpose(targets).map(Some)
     }
 
     fn project_preference_columns(

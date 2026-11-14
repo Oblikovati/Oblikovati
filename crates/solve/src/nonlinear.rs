@@ -4,11 +4,13 @@
 mod constants;
 mod iteration;
 mod metrics;
+mod preference;
 mod step;
 use crate::residual::{ResidualBlock, ResidualEvaluation};
 use crate::{
     diagnostics::ConstraintStructure, linalg::LinearAlgebraError, residual::EvaluationError,
 };
+pub use preference::{PreferenceResult, PreferenceTermination, solve_with_preference};
 use std::{error::Error, fmt};
 
 /// Numerical policy, independent from the model's geometric tolerances.

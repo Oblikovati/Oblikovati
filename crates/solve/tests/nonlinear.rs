@@ -6,6 +6,8 @@ use oblikovati_solve::{
     residual::{ResidualBlock, ResidualError, ResidualSource, evaluate_residuals},
 };
 use std::cell::Cell;
+#[path = "nonlinear/preference.rs"]
+mod preference;
 
 struct Target {
     target: f64,
