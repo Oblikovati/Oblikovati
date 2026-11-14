@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:b45b5713b0fbca389639d8bbcbda33f3807ae53c0b011abb73375cbc8ace935f",
+  "scenario_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+  "source_sha256": "c38e881942205983e27a3924f950a5732d2cae0e2cb09ae40a16b88e9f581f3d",
+  "application_commit": "2ff7c74f684ea12605209aec54e7ad1f5b6759d7",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "application_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan Lavapipe on Xvfb 1920x1200"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-project-tree-b45b5713/cucumber.json",
+    "sha256": "1a72300cc5a8409de31d6d34903308f3dfe6ee41ca67972630d50eb045bec0ce"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-project-tree-b45b5713/source-revision.json",
+    "sha256": "265c5faba2bebc79ad718c0790f644714fd09d4bd7e5ba54ac12d2b070337c37"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-project-tree-b45b5713/Expand-and-collapse-project-settings-with-the-keyboard.png",
+    "sha256": "df46237a6f5e05e0848bc2959f9e3c7683d4b9ff1fd01f137b302e59ec17ed2a"
+  }
+}

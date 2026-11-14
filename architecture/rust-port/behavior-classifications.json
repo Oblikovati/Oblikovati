@@ -4777,13 +4777,20 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-project-inactive/receipt-b41e4db379935547.json",
-        "sha256": "70e660eea07a889948ce8f7f088eae281801bc183a26bb364673b89615cfe86b"
+        "path": "architecture/rust-port/receipts/2026-11-14-project-inactive-recheck/receipt-b41e4db379935547.json",
+        "sha256": "7419a284a9f8db74b7862067608c7ada317b0fe17780a5ad749fde237aa098fa"
       },
       "go_reference": "No matching project dialog found by search in ../Oblikovati/head/ui; baseline review remains open.",
       "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "historical_receipts": [
+        {
+          "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+          "path": "architecture/rust-port/receipts/2026-11-14-project-inactive/receipt-b41e4db379935547.json",
+          "sha256": "70e660eea07a889948ce8f7f088eae281801bc183a26bb364673b89615cfe86b"
+        }
+      ]
     },
     {
       "id": "scenario:543cafe456aa7eca5f10af48340a3b37ded3aebdd661bbe92cfeae903a2624a6",
@@ -4865,10 +4872,15 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3895",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-project-tree-b45b5713/receipt-b45b5713b0fbca38.json",
+        "sha256": "59af77d08ea88b177b9ca4538f3a0accdcfdfe1174b6bbbc70feb3358271e782"
+      },
       "go_reference": "No matching project dialog found by search in ../Oblikovati/head/ui; baseline review remains open.",
-      "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services."
+      "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:ffc9cb9e3eee8e369f8b39e15f50ed5a77e0e8ed66cc90fc0a7cb523ab177466",
@@ -4882,10 +4894,15 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3895",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-project-tree-ffc9cb9e/receipt-ffc9cb9e3eee8e36.json",
+        "sha256": "272108a0319ec164ee2f0f38ed4a1896ea4b52036154f7db492c73a684316a4b"
+      },
       "go_reference": "No matching project dialog found by search in ../Oblikovati/head/ui; baseline review remains open.",
-      "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services."
+      "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:c7ba450af37d734189db69babb196c916130b976697b5d8a8aaff4ef43eae240",
