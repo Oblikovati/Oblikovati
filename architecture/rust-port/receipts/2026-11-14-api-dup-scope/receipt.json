@@ -1,0 +1,14 @@
+{
+  "kind": "quality diagnostic; not a full-scope gate",
+  "api_candidate_commit": "a419c6e9a982814ee6298839e22afd5e24dda9f8",
+  "command": "jscpd 5.4.1 --reporters console --threshold 3 --ignore **/bindings_*.rs,**/*_test.go,**/scripts/** go rust/src",
+  "result": "The reduced scan reports 0.58% duplicated lines over 432 files. The full scan remains 6.2% and fails the required threshold.",
+  "limitations": [
+    "The reduced scan excludes generated binding files, Go test files, and scripts, and may include other generated files. It does not establish compliance with the full rule.",
+    "Identical generated struct field bodies account for 165 types and 708 source lines in a separate text comparison; this is not a duplication-remediation estimate."
+  ],
+  "log": {
+    "path": "architecture/rust-port/receipts/2026-11-14-api-dup-scope/reduced-scan.log.gz",
+    "sha256": "0d645471c5ab475ff2751a5f4b33f4161cde94daf664299bb42e8c9e04bf4c2c"
+  }
+}

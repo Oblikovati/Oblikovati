@@ -2491,6 +2491,552 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
       "state": "inventoried"
+    },
+    {
+      "id": "scenario:edc9c1c0a3cb5fce5e6244a31f86e93eed00d18984530c4c9cdde4d876fafecd",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "788f75e7f39163c99851fe6b21bb7ec65f986be3058347862078b829c40d1096",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-linear-08 Select Horizontal and measure its resulting component",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:a5276b884618328c9802e562d3e928b28b3e58c80d30462a3f49df800d06d356",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "788f75e7f39163c99851fe6b21bb7ec65f986be3058347862078b829c40d1096",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-linear-09 Restore the entered component value through history",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:398a266e06756b2f629d5f7daad7b7d1daf89cd8afc14fea09e3ab6934eceae9",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "788f75e7f39163c99851fe6b21bb7ec65f986be3058347862078b829c40d1096",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-linear-10 Measure both components after explicit Vertical selection",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:a5aba446d98d469fd930a7bee7c0fe3350f3448f874708276840c9ac1c409720",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "788f75e7f39163c99851fe6b21bb7ec65f986be3058347862078b829c40d1096",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-linear-11 Restore the second component value through history",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:58b9a51a6cea3df4bf14626b4980019e32323a11a16e399d11cf1dd480517cb3",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "788f75e7f39163c99851fe6b21bb7ec65f986be3058347862078b829c40d1096",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-linear-12 Cancel before geometry and after an endpoint click",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:dfc7a1b56ccc89ab044a53c53a7d61699d6a7a684ad024fb2e963edc5500ed80",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "788f75e7f39163c99851fe6b21bb7ec65f986be3058347862078b829c40d1096",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-linear-13 Cancel a visible component preview before placement",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:ed359aa2ab7e9bed1fcfc91f3526ccba88375248445182edc14440367716d811",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "788f75e7f39163c99851fe6b21bb7ec65f986be3058347862078b829c40d1096",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-linear-14 Reject an incomplete expression and cancel editing",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:bf8f75b22e705017f889ad2a4b21504be5f0395d7c5e42d86c32e081106cb054",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "788f75e7f39163c99851fe6b21bb7ec65f986be3058347862078b829c40d1096",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-linear-15 Delete an annotation and restore its deletion through history",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:585e7acc6f34d9de8b3a7b055b26e54c56087e89e84c56350fd9d007ef5772db",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "788f75e7f39163c99851fe6b21bb7ec65f986be3058347862078b829c40d1096",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-linear-16 Create a component after two endpoint-targeted clicks",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:bc89b0396b0a882dafdb63029c5c22a2c81d9c990709417175513261a011b242",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "788f75e7f39163c99851fe6b21bb7ec65f986be3058347862078b829c40d1096",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-linear-17 Measure the accepted point-pair component",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:888e518fd428ffa4042f786c9ead634539625681005fd902d546c46b2f2afab0",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "788f75e7f39163c99851fe6b21bb7ec65f986be3058347862078b829c40d1096",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-linear-18 Record an endpoint-to-line attempt that produces an angular preview",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:b06a3b0c15895b33d8ff9c33269878c3d10f76eee29dc162d8ca9b9fe5e20db3",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "788f75e7f39163c99851fe6b21bb7ec65f986be3058347862078b829c40d1096",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-linear-19 Accept and measure a standalone point-to-line distance",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:7880619ac4bfd4e8bd9da9bebf3988b712e6bb4bd8da45878668d0b6c0ce87f3",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "788f75e7f39163c99851fe6b21bb7ec65f986be3058347862078b829c40d1096",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-linear-20 Restore point-to-line value and visible point position through history",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:ac5ad04c6619f7d1704b0d2200d7f7ef235ec55acc03c380e439e1b4efe72914",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "788f75e7f39163c99851fe6b21bb7ec65f986be3058347862078b829c40d1096",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-linear-21 Dimension two standalone points",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:1c8e6663241d461ea8b37684ad0c4a1ed8951ef5f8ff0999c81ab078e153cad5",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "788f75e7f39163c99851fe6b21bb7ec65f986be3058347862078b829c40d1096",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-linear-22 Measure the standalone point-pair component",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:b656ea772ee49199ee7a7d72dce337169c8442bcb1a7b151f0b5c0c6303ed542",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "788f75e7f39163c99851fe6b21bb7ec65f986be3058347862078b829c40d1096",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-linear-23 Accept and measure the gap between parallel lines",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:c905183a71745bbc54c01b4cdfe456c00a15ad031debf492fd49c70e7da14de8",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "788f75e7f39163c99851fe6b21bb7ec65f986be3058347862078b829c40d1096",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-linear-24 Restore the line-gap value through history",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:03924ba5e042f79178d981a6cd9fc5b635d5b582c07dea0afa6c77ba91c435fa",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "788f75e7f39163c99851fe6b21bb7ec65f986be3058347862078b829c40d1096",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-linear-01 Accept the initial line dimension value",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:5d9efce89dacdf8b15984b91a8f20ef5edeccbd5d943825807ce98ef9b75fc1b",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "788f75e7f39163c99851fe6b21bb7ec65f986be3058347862078b829c40d1096",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-linear-02 Observe midpoint selection separately from curve selection",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:5810a10c3b6fc1db47c9b40256e10ea9713775394446bef139377069e77d43f4",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "788f75e7f39163c99851fe6b21bb7ec65f986be3058347862078b829c40d1096",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-linear-03 Capture distinct cancellation stages",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:76d08558a269abb651057365959d125ac7a94ab267909795d4996ac256c2b660",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "788f75e7f39163c99851fe6b21bb7ec65f986be3058347862078b829c40d1096",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-linear-04 Capture dimension value and placement history separately",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:01c3918e97329e6efc55adebf6dd14bc1002a5a54e4accc86c070f115f931813",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "788f75e7f39163c99851fe6b21bb7ec65f986be3058347862078b829c40d1096",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-linear-05 Use a separately created oblique line fixture",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:fb302a720b5e367fb0e98ef9c9cc06515fa95fedff184e1e504837848ee64e40",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "788f75e7f39163c99851fe6b21bb7ec65f986be3058347862078b829c40d1096",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-linear-06 Edit a component while preserving an aligned length",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:7085e696f917701099f02ef701fa08b3bf7121c1ecdfbf678435f16000e0b79c",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "788f75e7f39163c99851fe6b21bb7ec65f986be3058347862078b829c40d1096",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-linear-07 Reject a duplicate linear dimension",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:8d05189f155ed6bdd3d0a8e3bb4476ac96373d6fd2cf8fd935cb60709de43f65",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "6c6c325d1189667b261e770fcce865d6c27e25d5eec6c4afa81fce9966647110",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-expression-01 Accept and retain a multiplied parameter reference",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:d4031e9f56a4a64433b958c8fcda3f40724ff07c3060b5c5e3f9d754cab81aa3",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "6c6c325d1189667b261e770fcce865d6c27e25d5eec6c4afa81fce9966647110",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-expression-02 Reject direct self-reference at acceptance",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:a27b66b6ef244c3c2f64145b923adabc18b0824c2332391800d2025ba5b3d18f",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "6c6c325d1189667b261e770fcce865d6c27e25d5eec6c4afa81fce9966647110",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-expression-03 Cancel a changed valid expression",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:ad42eedf70544116b499e428bbc300cf604ffe9e7fa041ab5e7642148ed73c54",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "6c6c325d1189667b261e770fcce865d6c27e25d5eec6c4afa81fce9966647110",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-expression-04 Measure source-edit history with its dependent value",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:64f20cf9205f1af1f60e0862722d409f3acb4dc03342814100432cf23c8a8b1a",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "6c6c325d1189667b261e770fcce865d6c27e25d5eec6c4afa81fce9966647110",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-expression-05 Observe arithmetic on the earlier rectangle fixture",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:25895b06cac1cd3d55a27dd2f850b41e17cb9ad143a806256a852ef9f17dc0bb",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "6c6c325d1189667b261e770fcce865d6c27e25d5eec6c4afa81fce9966647110",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-expression-06 Reject an incomplete arithmetic expression and recover",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:937dfeec723c9192d4687ad3e6cdb0689824cc882a7d700152e83402338aff42",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "6c6c325d1189667b261e770fcce865d6c27e25d5eec6c4afa81fce9966647110",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-expression-07 Arithmetic expression persists and changes geometry",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:60a3a2862e6175c90bbfde98de87fb2b1a9e618c63577588e31f8102052bbdd9",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "6c6c325d1189667b261e770fcce865d6c27e25d5eec6c4afa81fce9966647110",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-expression-08 Escape discards a changed valid expression",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:34b50320811c910ca483cef314f5a1a3c37a8c3925d710dc5428ab5444df15fc",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "6c6c325d1189667b261e770fcce865d6c27e25d5eec6c4afa81fce9966647110",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-expression-09 Direct self-reference fails at acceptance",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:432299a01bf0c80b161d5f487b5a3045c52f1cb940df8a53e89523dd1a6aeaba",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "6c6c325d1189667b261e770fcce865d6c27e25d5eec6c4afa81fce9966647110",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-expression-10 Accept a multiplied parameter reference",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:910dc8b8c6ae35e7190e538f5b628dd14d29199f6f8e4e342243f7cebadc6319",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "6c6c325d1189667b261e770fcce865d6c27e25d5eec6c4afa81fce9966647110",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-expression-11 Propagate a changed source while retaining the expression",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:2be769227a80cf4a7e8ff8b02b46700f9c23f56985e75a44cfe903d82f99e7ba",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "6c6c325d1189667b261e770fcce865d6c27e25d5eec6c4afa81fce9966647110",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-expression-12 Independently measure propagated components and history",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:ba8c4cad799644f8e9e9c1dfa431388c8f639829235e2e26707e952ffd2bff7c",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "6c6c325d1189667b261e770fcce865d6c27e25d5eec6c4afa81fce9966647110",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-expression-13 Reject a source reference back to its dependent dimension",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:670dbe512f68cf72f15b4009cd3727c68f668d1aad68500cabf11cf343fdaf9a",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "6c6c325d1189667b261e770fcce865d6c27e25d5eec6c4afa81fce9966647110",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-expression-14 Retain an earlier parameter reference",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:7689ea966942487b03382c29ee9e1395a781cb7abea6a2d642a4cd812c1c6dc5",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "6c6c325d1189667b261e770fcce865d6c27e25d5eec6c4afa81fce9966647110",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: dimension-expression-15 Correct an overlapping dimension selection",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3823"
+      ],
+      "state": "inventoried"
     }
   ]
 }
