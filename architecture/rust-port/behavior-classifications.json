@@ -4939,8 +4939,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-project-current-b3891890/receipt-b389189024e3e0b0.json",
-        "sha256": "f2ee4ae4497123aadea4d211ac08b2dacdf9ec0962fb3ac95333e03f4711804d"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-project-b3891890/receipt-b389189024e3e0b0.json",
+        "sha256": "35c65c2e03aa588d4806727b76db414bbae85645532e5d7cc1ceb74987a29479"
       },
       "go_reference": "Go aa8297d1b: persistence/project_file.go stores project paths; no matching project dialog or wizard was found in head/ui.",
       "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services.",
@@ -4968,8 +4968,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-project-current-b41e4db3/receipt-b41e4db379935547.json",
-        "sha256": "b34caf0e310bf69e003f612e829ea2adc99bcb58b589b9b88a08aaa183a5c486"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-project-b41e4db3/receipt-b41e4db379935547.json",
+        "sha256": "169ef3d738526133929d9ff323ef5fca9978f8be5ecfafca40d49da570dd2e83"
       },
       "go_reference": "Go aa8297d1b: persistence/project_file.go stores project paths; no matching project dialog or wizard was found in head/ui.",
       "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services.",
@@ -5019,8 +5019,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-project-current-543cafe4/receipt-543cafe456aa7eca.json",
-        "sha256": "0e6d03e26e643112abe7f50877d99ef4870b93f42202d639ddb42a01b4d06e41"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-project-543cafe4/receipt-543cafe456aa7eca.json",
+        "sha256": "5a61ef12023e901b4d2240d3c648d0ad235ad2afdb2bd0c8cb6c98db40c42947"
       },
       "go_reference": "Go aa8297d1b: persistence/project_file.go stores project paths; no matching project dialog or wizard was found in head/ui.",
       "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services.",
@@ -5048,8 +5048,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-project-current-5e1de952/receipt-5e1de9529939e057.json",
-        "sha256": "496681a46ee38aaba6ae36ef58cf45d30da7db07e36cd22d8d14adad0abf499b"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-project-5e1de952/receipt-5e1de9529939e057.json",
+        "sha256": "240be1bf9fdbbef4e93b65251b0eafdd0a83554d8b7fde79099e7c57d3d5b172"
       },
       "go_reference": "Go aa8297d1b: persistence/project_file.go stores project paths; no matching project dialog or wizard was found in head/ui.",
       "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services.",
@@ -5089,8 +5089,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-project-current-d4a00f9d/receipt-d4a00f9d11f032e7.json",
-        "sha256": "dafdd604daa9bde6cd8b2ca5218b557e61923961f789b0c5157400ba4a836243"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-project-d4a00f9d/receipt-d4a00f9d11f032e7.json",
+        "sha256": "3ba6f8e7cc1ddd5b9457bb18284d66d8544fb70e1c3a01af0598033a45ea80b3"
       },
       "go_reference": "Go aa8297d1b: persistence/project_file.go stores project paths; no matching project dialog or wizard was found in head/ui.",
       "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services.",
@@ -5125,8 +5125,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-project-current-729a2f28/receipt-729a2f28119be985.json",
-        "sha256": "39815e5ed662a33d2d5bc61a97f306d26a5b8e594aef1c27667e4cca275c1ca8"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-project-729a2f28/receipt-729a2f28119be985.json",
+        "sha256": "6543aaa889ed6424e07a31a6bb5b91a472449cbcd7c6db96a84dc8bd9e28120d"
       },
       "go_reference": "Go aa8297d1b: persistence/project_file.go stores project paths; no matching project dialog or wizard was found in head/ui.",
       "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services.",
@@ -5161,8 +5161,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-project-current-b45b5713/receipt-b45b5713b0fbca38.json",
-        "sha256": "be232b3a2379d8535b891c64e668086ddb4975e07e8dfe6da2fc492163ac97d2"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-project-b45b5713/receipt-b45b5713b0fbca38.json",
+        "sha256": "d0bc2bd6ff2c33031ab8f7057da77e5aa0c532a6fdebb59ea4d0a6485795da3d"
       },
       "go_reference": "Go aa8297d1b: persistence/project_file.go stores project paths; no matching project dialog or wizard was found in head/ui.",
       "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services.",
@@ -5207,8 +5207,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-project-current-ffc9cb9e/receipt-ffc9cb9e3eee8e36.json",
-        "sha256": "5126dee398270a06a8e8ba700ae00af7ea2dd1b2ecda9cb6e28d2534e3643568"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-project-ffc9cb9e/receipt-ffc9cb9e3eee8e36.json",
+        "sha256": "7d20e646a2c6834845959e3de1ab263c5647b962fa80338d14634843bd01c046"
       },
       "go_reference": "Go aa8297d1b: persistence/project_file.go stores project paths; no matching project dialog or wizard was found in head/ui.",
       "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services.",
