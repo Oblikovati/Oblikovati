@@ -33,12 +33,12 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 - A2: the diagnostic gate started on `6c5c1014a` and failed with 36 head test failures. The source changed during the run, so it cannot certify the current HEAD. See issue #3860 and `receipts/2026-11-13-gate-diagnostic/`. The gate preflight reports 2,694 unclassified scenarios. A fresh passing gate is required before the first push.
 - A3: stale worktrees and 24 ancestor branches removed. Two branches contain commits outside the working branch and remain for review; `unmerged-lanes-20261113.bundle` on the NAS backs up both. The `oblikovati-rust-backups` directory on the NAS holds the latest verified branch bundle.
 - A8: stale application or source evidence is downgraded without hiding damaged artifacts (#3869). Ledger-tool-only edits do not invalidate native UI tests.
-- A8: the ledger records 2,719 declarations, including 62 blocked by invalid Gherkin (#3866). Eight earlier native receipts are stale after the viewport fit change; rerun them before counting current passes. Another 2,694 scenarios remain unclassified. Outline receipts require every expanded example and cleanup. See `behavior-receipts.md` and issue #3865.
+- A8: the ledger records 2,719 declarations, including 62 blocked by invalid Gherkin (#3866). Eight scenarios have current native receipts after the viewport fit change; 2,694 remain unclassified. Outline receipts require every expanded example and cleanup. See `behavior-receipts.md` and issue #3865.
 - A8: `behavior_cli.py backlog` groups the 195 feature files by their assigned milestones and shows missing classifications and R0 evidence. All 2,719 rows still have incomplete R0 baseline fields; unassigned work is not given an inferred milestone.
 - A10: the former prose ledger is archived in `archive/bdd-work-ledger-2026-11-13-*.md`. Its old temporary paths and pass labels are historical, not current evidence. Only the linked receipts can support current verified claims.
-- R7 orbit: Home now fits into the document area while preserving the orbit pivot (#3872). The final capture still shows a flat-colored shape with no visible face separation (#3873), so the scenario stays inventoried. See `receipts/2026-11-14-outline-diagnostic/` for the earlier run.
-- R4 rectangle sizing: the first two-point rectangle receipt is stale after the viewport fit change; later rectangle scenarios remain unverified. See issue #3857.
-- R4 extrusion: the `extrusion-01` receipt is stale after the viewport fit change. The full cube journey remains unverified (#3870).
+- R7 orbit: Home now fits into the document area while preserving the orbit pivot (#3872). The new native run passed both examples, but its capture still shows a flat-colored shape with no visible face separation (#3873), so the scenario stays inventoried. See `receipts/2026-11-14-fit-orbit/`.
+- R4 rectangle sizing: the first two-point rectangle has a current native receipt; later rectangle scenarios remain unverified. See issue #3857.
+- R4 extrusion: `extrusion-01` has a current native receipt. The full cube journey remains unverified (#3870).
 - R3 cube evidence: the headless certified replay and the native GUI-loop cube test passed on `77f03cf61`; see `receipts/2026-11-14-r3-cube-check/`. The native test uses injected events and an API model-state fixture. Foreground MCPBridge input and screenshot evidence, full R3 exit checks, and the gate remain open (#3857).
 - A7: the scenario bundle, file manifest, and verifier are tracked in `test-utilities/benchmarks/scenario-snapshots/` and `tools/bdd/`. See issue #3864.
 - A6: diagnostic runner reports all steps and taints results after a failure. See issue #3863 and `receipts/2026-11-13-bdd-diagnostics/`. Fixture blockers require an explicit fixture signal.
@@ -46,8 +46,8 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 - A5: applicable agent rules are tracked in `AGENTS.md` and its linked rule files. The branch and feature documentation policies match the port plan.
 - A1: appearance and material resolution committed at `718a5d545`; Body Properties passed 6/6 scenarios and 69/69 steps on the saved source snapshot. See `receipts/2026-11-13-body-properties/receipt.json` and issue #3859.
 - The stale green pixel oracle is replaced in the targeted native tests (#3867). A rotation test now reaches a separate constraint-policy question (#3868); the full gate has not been rerun.
-- The native GUI save/undo test stops at a missing command notice on both this work and clean base `e01e3a6e9` (#3874). Its later camera assertions remain unverified by that test.
-- Stale native evidence: see `receipts/2026-11-14-a12-body/`, `receipts/2026-11-14-a12-rectangle/`, and `receipts/2026-11-14-a12-extrusion/`; rerun after the viewport fit change.
-- A12: moved document lifecycle commands out of the 511-line file host and split the 509-line assembly contract tests (#3860). The next `docs-lint` failure is `crates/gui/src/browser.rs`.
+- The native GUI save/undo test stops at a missing command notice on both this work and clean base `e01e3a6e9` (#3874); see `receipts/2026-11-14-notice-baseline/`. Its later camera assertions remain unverified by that test.
+- Current native evidence: see `receipts/2026-11-14-fit-body/`, `receipts/2026-11-14-fit-rectangle/`, and `receipts/2026-11-14-fit-extrusion/`.
+- A12: split the file host, assembly contract tests, and GUI frame engine (#3860). The next `docs-lint` failure is `crates/gui/src/browser.rs`.
 - Per-face appearance presentation is not established by the body-color work. Verify it separately.
 - Do not mark R0–R3 closed without their exit checks and receipts.
