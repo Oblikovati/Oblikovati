@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:e621962f3e021cf8d8c1659658e9dc65835bb6a7adb5159650fae8ef4267939c",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "a18dcad10755d0ceb8b49b1d907b3800b1c6847c8b3548eb5d2535487b2be445",
+  "application_commit": "a2634aac6f3a87a4bd439fac0eee0d232100d8ee",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-gate-curves-e621962f/cucumber.json",
+    "sha256": "8eda7dca34f433cf67c902facfeee56caa5211f43d087169a03af23b1cb57fb4"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-gate-curves-e621962f/source-revision.json",
+    "sha256": "264db8fc730abf54300c33040069a40ca2f27678c544b4a802379ceec4d517f7"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-gate-curves-e621962f/circle-center-point-01-Commit-the-intended-result.png",
+    "sha256": "3b88ab54c8bca166b91d0563ec4249cc2d1658e9df58810cd390428dcd238f53"
+  }
+}

@@ -29879,8 +29879,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-center-circle-e621962f/receipt-e621962f3e021cf8.json",
-        "sha256": "7ddebc843e791d5fc7d3e49c483b4229fca46a73df3bbd446c075c09cf987e3d"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-curves-e621962f/receipt-e621962f3e021cf8.json",
+        "sha256": "380c0be7158c51acc56a4d4fa6282833996aaa631ee2c21835ed8b38d7f8b1b3"
       },
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
       "mapping_reason": "First native sketch geometry input, cancellation, and history.",
@@ -29908,8 +29908,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-center-circle-395dac3c/receipt-395dac3c1025c59b.json",
-        "sha256": "1a5db76b8dc5af043417e78b2b2a8e2489e54253b31afae127c4b6d65830a6e2"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-curves-395dac3c/receipt-395dac3c1025c59b.json",
+        "sha256": "a03d398ef038b7deaf0a8e870e274176742edddd22776a358c96925c413f6859"
       },
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
       "mapping_reason": "First native sketch geometry input, cancellation, and history.",
@@ -29937,8 +29937,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-center-circle-877561f2/receipt-877561f2df911547.json",
-        "sha256": "d4099d7e69c8b14e104159565b57bd47cff9de9da859f2b7fa0a2480ecbecae8"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-curves-877561f2/receipt-877561f2df911547.json",
+        "sha256": "37c1554b67a848a4417f2969f13be665c4413fac2eba7b68460ae64a09e3bd29"
       },
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
       "mapping_reason": "First native sketch geometry input, cancellation, and history.",
@@ -29983,8 +29983,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-center-circle-43f992f8/receipt-43f992f8d5a14b8d.json",
-        "sha256": "fef828ede38e4f4e5e2fb2f40cf70d0844cb540ebaa9ebfbfc06b53677804252"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-curves-43f992f8/receipt-43f992f8d5a14b8d.json",
+        "sha256": "2c44554138509abe67ed7e4983f904b746c458a1d53708257a53050ba9080ff0"
       },
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
       "mapping_reason": "First native sketch geometry input, cancellation, and history.",
@@ -30216,8 +30216,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-ellipse-native-aa18a4be/receipt-aa18a4bee57ddd81.json",
-        "sha256": "d4572617d46585a2b7ff8ced8ef8e353f48b3ba43e25d727d9e99920f955c928"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-curves-aa18a4be/receipt-aa18a4bee57ddd81.json",
+        "sha256": "5e3ad746d283f1e980123fce4b85466dbd8fc06b20c3c39f24357ceaee6dfac3"
       },
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
       "mapping_reason": "First native sketch geometry input, cancellation, and history.",
@@ -30245,8 +30245,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-ellipse-native-f1e62c36/receipt-f1e62c36b0622265.json",
-        "sha256": "31af25f342ae4ec96a8816adcddb48671d0f858c07c9f6c0afd2e56a9891af29"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-curves-f1e62c36/receipt-f1e62c36b0622265.json",
+        "sha256": "f1edb359ee6d93f6af71aefe8d901882460a3047f6ed77c1c3a173f75e791ad7"
       },
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
       "mapping_reason": "First native sketch geometry input, cancellation, and history.",
@@ -30291,8 +30291,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-ellipse-native-cca2542b/receipt-cca2542b3419b7b6.json",
-        "sha256": "5978d8370c9bfbbacdf9b29bad796b5fd6277a851383f53155cbde7aaf71f2bd"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-curves-cca2542b/receipt-cca2542b3419b7b6.json",
+        "sha256": "08b6a59a22ff3974925f106782b43f8e96a498c132d5e9363abde5da14fb7b7a"
       },
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
       "mapping_reason": "First native sketch geometry input, cancellation, and history.",
@@ -30320,8 +30320,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-ellipse-native-0db44906/receipt-0db449064178e8ff.json",
-        "sha256": "7dd548cc8c6f2c3c1c891088da71b5b84e83ff36bdc6011f7dc19e94557c3754"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-curves-0db44906/receipt-0db449064178e8ff.json",
+        "sha256": "801e382bed8cdc9ea927f8e2fb66e4d6cfb702917b856d95f32f9c2b123d7e9b"
       },
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
       "mapping_reason": "First native sketch geometry input, cancellation, and history.",
@@ -30349,8 +30349,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-ellipse-native-dda08a15/receipt-dda08a157e458b91.json",
-        "sha256": "139b8e34ac35bc85609a8dc7f863e39056135ca6fab140d5f2040d4db1de0381"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-curves-dda08a15/receipt-dda08a157e458b91.json",
+        "sha256": "8d445254a60132473b4470112908f9793710f45507bab6105c6a261b13258e0a"
       },
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
       "mapping_reason": "First native sketch geometry input, cancellation, and history.",

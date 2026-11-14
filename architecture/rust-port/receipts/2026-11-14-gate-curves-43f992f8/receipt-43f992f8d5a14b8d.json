@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:43f992f8d5a14b8dcc58c3bd130bc99156ac12752ffa90178917d95ef19447f6",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "a18dcad10755d0ceb8b49b1d907b3800b1c6847c8b3548eb5d2535487b2be445",
+  "application_commit": "a2634aac6f3a87a4bd439fac0eee0d232100d8ee",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-gate-curves-43f992f8/cucumber.json",
+    "sha256": "821b4d4c0a5f0184da993e4df24105ab36b0dc9ea63941b002def3b0893eb83d"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-gate-curves-43f992f8/source-revision.json",
+    "sha256": "264db8fc730abf54300c33040069a40ca2f27678c544b4a802379ceec4d517f7"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-gate-curves-43f992f8/circle-center-point-09-Keep-selecting-circumference-after-a-same-position-click.png",
+    "sha256": "0c0f814f3659bb591f5491db162ff807ea73735f76d3d92cb700c0f365b2d0cb"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:dda08a157e458b91fc69702fa0d37ffbdfb831df2b70b28d5fae33b18969aad7",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "af53af88f7a32b441d76154fd75aeb36e68d4e673c47d21ecefa5be14cef5a6f",
+  "application_commit": "a2634aac6f3a87a4bd439fac0eee0d232100d8ee",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-gate-curves-dda08a15/cucumber.json",
+    "sha256": "5dd0b1c6a8b6108e007ca44c28d987189664773c7ba9e100c9e8154e37e0709a"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-gate-curves-dda08a15/source-revision.json",
+    "sha256": "264db8fc730abf54300c33040069a40ca2f27678c544b4a802379ceec4d517f7"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-gate-curves-dda08a15/ellipse-08-Remain-at-first-axis-selection-after-a-coincident-click.png",
+    "sha256": "0c0f814f3659bb591f5491db162ff807ea73735f76d3d92cb700c0f365b2d0cb"
+  }
+}
