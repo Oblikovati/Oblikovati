@@ -4,6 +4,8 @@
 
 ### Changed
 
+- Added a shared resolver that matches witnessed Go profile boundaries to current certified regions, with precision qualification required. Automatic Go profile witnessing remains open. (#3882, #3928)
+
 - Added conservative physical-unit labels to raw sketch residual rows, with unknown units retained where the equation is ambiguous. These labels do not certify spatial or angular bounds. (#3928)
 
 - Exposed source-attributed raw sketch residual rows and their convergence domains in solver diagnostics; these values are not certified spatial bounds. (#3928)

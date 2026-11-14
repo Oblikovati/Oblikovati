@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-#[allow(dead_code)]
-#[path = "../../../../../test-utilities/rust/selected_sketch_prism.rs"]
-mod fixture;
+use crate::prism_test_fixture as fixture;
 fn mixed_part_snapshot() -> DocumentSnapshot {
     let mut snapshot = fixture::selected_sketch_document();
     add_point(&mut snapshot, 1);

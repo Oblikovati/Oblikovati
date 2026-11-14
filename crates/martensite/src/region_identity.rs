@@ -56,18 +56,40 @@ pub fn resolve_region_by_boundary<'a>(
 }
 
 fn matches_region(region: &PlanarRegion, selection: &SketchPrismSelection) -> bool {
-    if !same_loop(&region.outer().uses, &selection.outer)
-        || region.holes().len() != selection.holes.len()
-    {
+    let outer = source_uses(&region.outer().uses);
+    let holes = region
+        .holes()
+        .iter()
+        .map(|hole| source_uses(&hole.uses))
+        .collect();
+    equivalent_region_boundary(&SketchPrismSelection { outer, holes }, selection)
+}
+
+fn source_uses(uses: &[LoopUse]) -> Vec<SketchDirectedCurve> {
+    uses.iter()
+        .map(|item| SketchDirectedCurve {
+            curve: oblikovati_model::sketch::SketchEntityId(item.curve.0),
+            reversed: item.reversed,
+        })
+        .collect()
+}
+
+/// Compare complete source-boundary identity independent of cyclic start and traversal direction.
+/// Example: `equivalent_region_boundary(&saved, &current)` before binding a transient region.
+pub fn equivalent_region_boundary(
+    actual: &SketchPrismSelection,
+    expected: &SketchPrismSelection,
+) -> bool {
+    if !same_loop(&actual.outer, &expected.outer) || actual.holes.len() != expected.holes.len() {
         return false;
     }
-    let mut used = vec![false; selection.holes.len()];
-    for hole in region.holes() {
-        let Some(index) = selection
+    let mut used = vec![false; expected.holes.len()];
+    for hole in &actual.holes {
+        let Some(index) = expected
             .holes
             .iter()
             .enumerate()
-            .position(|(index, candidate)| !used[index] && same_loop(&hole.uses, candidate))
+            .position(|(index, candidate)| !used[index] && same_loop(hole, candidate))
         else {
             return false;
         };
@@ -76,7 +98,7 @@ fn matches_region(region: &PlanarRegion, selection: &SketchPrismSelection) -> bo
     true
 }
 
-fn same_loop(actual: &[LoopUse], expected: &[SketchDirectedCurve]) -> bool {
+fn same_loop(actual: &[SketchDirectedCurve], expected: &[SketchDirectedCurve]) -> bool {
     if actual.is_empty() || actual.len() != expected.len() {
         return false;
     }
@@ -87,7 +109,7 @@ fn same_loop(actual: &[LoopUse], expected: &[SketchDirectedCurve]) -> bool {
 }
 
 fn same_traversal(
-    actual: &[LoopUse],
+    actual: &[SketchDirectedCurve],
     expected: &[SketchDirectedCurve],
     start: usize,
     reverse: bool,
@@ -99,7 +121,7 @@ fn same_traversal(
             (start + offset) % actual.len()
         };
         let edge = actual[index];
-        edge.curve.0 == wanted.curve.0 && (edge.reversed ^ reverse) == wanted.reversed
+        edge.curve == wanted.curve && (edge.reversed ^ reverse) == wanted.reversed
     })
 }
 
