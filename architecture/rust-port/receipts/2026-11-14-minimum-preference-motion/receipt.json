@@ -1,0 +1,21 @@
+{
+  "kind": "focused-implementation-evidence",
+  "application_commit": "6744874a7",
+  "checks": [
+    {
+      "command": "cargo test --locked -p oblikovati-solve",
+      "exit_code": 0,
+      "path": "architecture/rust-port/receipts/2026-11-14-minimum-preference-motion/test.log.gz",
+      "sha256": "1a5e115797348e9eada7f7240dbc3ba3230925025ee937c4ac41750ca18156c0"
+    },
+    {
+      "command": "cargo clippy --locked -p oblikovati-solve --all-targets -- -D warnings",
+      "exit_code": 0,
+      "path": "architecture/rust-port/receipts/2026-11-14-minimum-preference-motion/clippy.log.gz",
+      "sha256": "f20c5f41ac8a278a7a6d503428e5f3d8c726219d39ad4609e19a2c5070a8c531"
+    }
+  ],
+  "limitations": [
+    "Tests cover linearized minimum motion only. Nonlinear iterations, unavailable preference policy, host integration and native acceptance remain open."
+  ]
+}
