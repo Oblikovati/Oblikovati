@@ -208,6 +208,7 @@ impl GuiFrameEngine {
             },
         ));
         let snapshot = capture_frame(self.context.render(), request.extent, &self.resources)?;
+        let mut activity = frame_activity()?;
         let mut capture = input_capture(self.context.io());
         capture.keyboard &= !keys.tool_keyboard;
         // Dear ImGui claims the keyboard for whichever window last had focus. A click on the
@@ -230,6 +231,10 @@ impl GuiFrameEngine {
                 }
             )
         });
+        // ImGui can queue the first navigation move before it exposes the focus highlight (#3874).
+        if arrow_press && activity.pending_navigation && !keys.tool_keyboard {
+            capture.keyboard = true;
+        }
         if arrow_press
             && self.ribbon.tips.active()
             && !capture.text
@@ -253,7 +258,6 @@ impl GuiFrameEngine {
             || self.ribbon.customization.escape_consumed
             || self.ribbon.display.temporary_escape_consumed;
         capture.pointer |= self.dimension_value_editor.over_label || over_fields;
-        let mut activity = frame_activity()?;
         activity.pending_layout |= self.orientation.needs_frame();
         activity.pending_layout |= self.ribbon.panels.pending_layout || self.ribbon.needs_frame();
         activity.pending_layout |=

@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Kept toolbar arrow-key navigation from rotating the model on its first key press. (#3874)
+
 - Lit model faces in the viewport and isometric preview so their orientations are visible. (#3873)
 
 - Kept the model inside the document area when using Home or Fit with docked panels. (#3872)

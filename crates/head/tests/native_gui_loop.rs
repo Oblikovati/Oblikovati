@@ -37,9 +37,6 @@ fn scripted_window(native: NativeHeadWindow) -> ScriptedGuiWindow {
 const STATUS_LINE_ROWS: usize = 22;
 #[path = "native_gui_loop/scripted_window.rs"]
 mod scripted_window;
-fn click_shell(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOwner, x: i32) {
-    click_shell_position(window, owner, [x, 45]);
-}
 fn click_shell_position(
     window: &mut ScriptedGuiWindow,
     owner: &mut NativeDesktopOwner,
@@ -289,64 +286,6 @@ fn type_native_text(
         .collect();
     crate::frames::run_frames(window, HeadOptions { frames: Some(3) }, owner).unwrap();
 }
-#[test]
-fn native_gui_buttons_save_and_restore_model_pixels_without_camera_leakage() {
-    let directory = tempfile::tempdir().unwrap();
-    let path = directory.path().join("gui commands.opd");
-    let native = NativeHeadWindow::open().unwrap();
-    let mut owner = native_owner(native.wake.clone()).unwrap();
-    open_native_part(&mut owner, &path);
-    let mut window = scripted_window(native);
-    let before = publish_gui_framebuffer(&mut owner, &mut window.native);
-    native_set(&mut owner, "width", "6 cm");
-    let edited = publish_gui_framebuffer(&mut owner, &mut window.native);
-    assert_ne!(before.rgba, edited.rgba);
-    click_shell(&mut window, &mut owner, 156);
-    assert_model_without_gui(&mut window.native, &before);
-    click_shell(&mut window, &mut owner, 201);
-    assert_model_without_gui(&mut window.native, &edited);
-    click_shell(&mut window, &mut owner, 111);
-    verify_gui_save(&path, &mut window.native);
-    verify_gui_camera(&mut window, &mut owner);
-    owner.finish().unwrap();
-    window.finish().unwrap();
-}
-#[test]
-fn physical_keyboard_navigation_activates_native_save_without_camera_input() {
-    let directory = tempfile::tempdir().unwrap();
-    let path = directory.path().join("keyboard commands.opd");
-    let native = NativeHeadWindow::open().unwrap();
-    let mut owner = native_owner(native.wake.clone()).unwrap();
-    open_native_part(&mut owner, &path);
-    let mut window = scripted_window(native);
-    publish_gui_framebuffer(&mut owner, &mut window.native);
-    // Saving leaves keyboard focus on the row's Save button; the edit then has something to save.
-    click_shell(&mut window, &mut owner, 111);
-    native_set(&mut owner, "width", "6 cm");
-    verify_keyboard_save_navigation(&mut window, &mut owner, &path);
-    owner.finish().unwrap();
-    window.finish().unwrap();
-}
-fn verify_keyboard_save_navigation(
-    window: &mut ScriptedGuiWindow,
-    owner: &mut NativeDesktopOwner,
-    path: &std::path::Path,
-) {
-    let camera = window.native.view.camera_state().unwrap();
-    for key in [
-        oblikovati_viewport::ViewportPhysicalKey::RightArrow,
-        oblikovati_viewport::ViewportPhysicalKey::LeftArrow,
-    ] {
-        press_shell_key(window, owner, key);
-    }
-    press_shell_key(
-        window,
-        owner,
-        oblikovati_viewport::ViewportPhysicalKey::Space,
-    );
-    verify_gui_save(path, &mut window.native);
-    assert_eq!(window.native.view.camera_state().unwrap(), camera);
-}
 fn press_shell_key(
     window: &mut ScriptedGuiWindow,
     owner: &mut NativeDesktopOwner,
@@ -373,27 +312,8 @@ fn publish_gui_framebuffer(
     submit_native_scene(owner, window);
     capture_framebuffer(window)
 }
-fn assert_model_without_gui(
-    window: &mut NativeHeadWindow,
-    expected: &oblikovati_viewport::ViewportCapture,
-) {
-    let composed = window.view.capture().unwrap();
-    assert_ne!(composed.rgba, expected.rgba);
-    assert!(window.command_notice.is_some());
-    window.clear_gui_frame().unwrap();
-    assert!(window.view.capture().is_err());
-    scene_tests::assert_same_native_pixels(&capture_framebuffer(window), expected);
-}
-fn verify_gui_save(path: &std::path::Path, window: &mut NativeHeadWindow) {
-    let package =
-        oblikovati_persistence::package::DocumentPackage::decode(&std::fs::read(path).unwrap())
-            .unwrap();
-    let restored = package.restore_document_parameters().unwrap();
-    let width = restored.parameters.find("width").unwrap();
-    assert_eq!(restored.parameters.get(width).unwrap().source, "6 cm");
-    assert!(window.view.native_title().unwrap().contains("Saved"));
-}
-
+#[path = "native_gui_loop/history_navigation.rs"]
+mod history_navigation;
 #[test]
 fn native_model_wheel_after_gui_click_and_gui_wheel_reaches_camera() {
     let directory = tempfile::tempdir().unwrap();

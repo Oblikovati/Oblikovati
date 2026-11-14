@@ -310,6 +310,10 @@ fn copy_keyboard_actions(
         if key == GuiKey::LeftArrow && pressed {
             assert!(output.activity.pending_navigation);
             assert!(output.activity.needs_frame());
+            assert!(
+                output.capture.keyboard,
+                "a queued GUI navigation must own its arrow"
+            );
         }
         actions.extend(output.actions);
     }

@@ -48,7 +48,7 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 - A5: applicable agent rules are tracked in `AGENTS.md` and its linked rule files. The branch and feature documentation policies match the port plan.
 - A1: appearance and material resolution committed at `718a5d545`; Body Properties passed 6/6 scenarios and 69/69 steps on the saved source snapshot. See `receipts/2026-11-13-body-properties/receipt.json` and issue #3859.
 - The stale green pixel oracle is replaced in the targeted native tests (#3867). A rotation test now reaches a separate constraint-policy question (#3868); the full gate has not been rerun.
-- The native GUI save/undo test stops at a missing command notice on both this work and clean base `e01e3a6e9` (#3874); see `receipts/2026-11-14-notice-baseline/`. Its later camera assertions remain unverified by that test.
+- The native GUI save/undo test used obsolete toolbar coordinates on clean base `e01e3a6e9` (#3874); see `receipts/2026-11-14-notice-baseline/`. It now targets rendered controls and passes through the camera assertions. A separate native test checks that the first toolbar navigation arrow stays out of the viewport.
 - Current native evidence: see `receipts/2026-11-14-browser-body/`, `receipts/2026-11-14-browser-rectangle/`, `receipts/2026-11-14-browser-extrusion/`, and `receipts/2026-11-14-browser-orbit/`. The 195 live feature files match the saved snapshot as of 2026-11-14.
 - The typed-prism health classification test fails on clean base `016ff28dc` as well as this work (#3875). The rotation failure is tracked in #3868.
 - A12: split the file host, assembly contract tests, GUI frame engine, and browser snapshot validation (#3860). The next `docs-lint` failure is `crates/gui/src/chrome.rs`.
