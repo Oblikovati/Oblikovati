@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:cabc86d68811640a059861efcd0d05ff88c2c70ad2552ca84279161e9e4d6d59",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "68f40e74e5d62f64072ce4cd9dd4277304810848c41acf0c4bfd7a5d5fb375c2",
+  "application_commit": "572d8bd9c8e3cd5bc0b85953e84f03ecaa5fde3f",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan Lavapipe on Xvfb, Linux"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-arcs-cabc86d68811640a-572d8bd9/cucumber.json",
+    "sha256": "f5b067d19d944a5e92c6c95ffbe920d72d70a5b8f0574d3d9e63d4c3d624cb8a"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-arcs-cabc86d68811640a-572d8bd9/source-revision.json",
+    "sha256": "59b8e46999347f209830c22c058e957d81aaa75eeaca7d78be7eb098d6abaaaf"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-arcs-cabc86d68811640a-572d8bd9/arc-three-point-03-Cancel-before-committing-a-change.png",
+    "sha256": "0c0f814f3659bb591f5491db162ff807ea73735f76d3d92cb700c0f365b2d0cb"
+  }
+}
