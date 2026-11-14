@@ -14882,10 +14882,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-switch-part-tabs/receipt-c65b58f2636efdba.json",
+        "sha256": "52cf936d251a5960c5af492866a9808c92012ee36efad0d3a78e72c44e16319b"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "First part creation, document activation, or save/close path through the desktop."
+      "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b: tab-label identity and per-document history tests pass; neither verifies mouse activation or rendered sketch edges. See receipts/2026-11-14-go-tab-baseline/README.md.",
+      "kernel_capabilities": "A planar rectangle sketch is displayed; no solid modeling operation is required.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe at the captured viewport size; other platforms were not checked.",
+      "kernel_integration": "The desktop owner switches document state and submits the selected sketch scene to the viewport.",
+      "rust_tests": "application_scenarios_use_the_native_window: Switch between open parts",
+      "oracle": "Pinned native input and document-state assertions; all four rectangle edges are sampled in the second viewport and absent after returning to the first.",
+      "expected_result": "Tab clicks activate each part, update the browser and title, show the second rectangle only in its viewport, and retain both tabs."
     },
     {
       "id": "scenario:06a79598b0a30395a860234d8084fca485a0a5345986c10f0faecf520a28908f",
