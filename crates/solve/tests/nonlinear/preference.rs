@@ -34,6 +34,46 @@ fn preference_moves_free_coincident_pair_without_changing_dof() {
 }
 
 #[test]
+fn dependent_compatible_preferences_move_together() {
+    let gap = Gap;
+    let result = solve_with_preference(
+        &[0.0, 5.0],
+        &[block(&gap, &[0, 1])],
+        &[],
+        &[(0, 0.0), (1, 2.0)],
+        SolveOptions::default(),
+        || false,
+    )
+    .unwrap();
+    assert_eq!(result.preference, PreferenceTermination::Converged);
+    assert_close(result.solution.values[0], 0.0, 1e-7);
+    assert_close(result.solution.values[1], 2.0, 1e-7);
+    assert_eq!(result.solution.structure.degrees_of_freedom, 1);
+}
+
+#[test]
+fn conflicting_preferences_remain_explicit_and_preserve_the_constraint() {
+    let gap = Gap;
+    let result = solve_with_preference(
+        &[0.0, 5.0],
+        &[block(&gap, &[0, 1])],
+        &[],
+        &[(0, 0.0), (1, 0.0)],
+        SolveOptions::default(),
+        || false,
+    )
+    .unwrap();
+    assert!(matches!(
+        result.preference,
+        PreferenceTermination::Unavailable | PreferenceTermination::Stalled
+    ));
+    assert_eq!(result.solution.termination, SolveTermination::Converged);
+    assert_close(result.solution.values[0], -1.0, 1e-7);
+    assert_close(result.solution.values[1], 1.0, 1e-7);
+    assert_eq!(result.solution.structure.degrees_of_freedom, 1);
+}
+
+#[test]
 fn unavailable_preference_does_not_change_the_satisfied_constraint() {
     let target = Target {
         target: 3.0,

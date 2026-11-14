@@ -1,7 +1,50 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::{ColumnPivotedQr, LinearAlgebraError, finite, reflector};
+use super::{ColumnPivotedQr, DenseMatrix, LinearAlgebraError, finite, reflector};
 
 impl ColumnPivotedQr {
+    /// Solve the transposed system in least squares with minimum motion at the retained rank.
+    /// Example: `let motion = qr.best_fit_transpose(&targets, 1e-9)?`.
+    pub fn best_fit_transpose(
+        &self,
+        rhs: &[f64],
+        rank_tolerance: f64,
+    ) -> Result<Vec<f64>, LinearAlgebraError> {
+        let targets = self.permuted_transpose_targets(rhs)?;
+        let reduced = self.transposed_rank_factor()?;
+        let coefficients =
+            ColumnPivotedQr::factor(&reduced, rank_tolerance)?.least_squares(&targets)?;
+        let mut result = vec![0.0; self.triangular.len()];
+        result[..self.rank()].copy_from_slice(&coefficients);
+        for (pivot, vector) in self.reflectors.iter().enumerate().rev() {
+            reflector::apply(&mut result[pivot..], vector)?;
+        }
+        Ok(result)
+    }
+
+    fn permuted_transpose_targets(&self, rhs: &[f64]) -> Result<Vec<f64>, LinearAlgebraError> {
+        if rhs.len() != self.permutation.len() {
+            return Err(LinearAlgebraError(format!(
+                "transpose right-hand side length {}: expected {} columns",
+                rhs.len(),
+                self.permutation.len()
+            )));
+        }
+        self.permutation
+            .iter()
+            .map(|&column| finite(rhs[column] / self.scale, "transpose target"))
+            .collect()
+    }
+
+    fn transposed_rank_factor(&self) -> Result<DenseMatrix, LinearAlgebraError> {
+        let rows = (0..self.permutation.len())
+            .map(|column| {
+                (0..self.rank())
+                    .map(|row| self.triangular[row][column])
+                    .collect()
+            })
+            .collect();
+        DenseMatrix::new(self.rank(), rows)
+    }
     /// Solve the transposed system with minimum Euclidean norm when columns are independent.
     /// Example: `let motion = qr.minimum_norm_transpose(&targets)?;`.
     pub fn minimum_norm_transpose(&self, rhs: &[f64]) -> Result<Vec<f64>, LinearAlgebraError> {

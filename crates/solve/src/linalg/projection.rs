@@ -24,16 +24,30 @@ impl ColumnPivotedQr {
         targets: &[f64],
         rank_tolerance: f64,
     ) -> Result<Option<Vec<f64>>, LinearAlgebraError> {
-        if targets.len() != preference.columns() {
-            return Err(LinearAlgebraError(format!(
-                "preference target count {}: expected {} columns",
-                targets.len(),
-                preference.columns()
-            )));
+        validate_targets(preference, targets)?;
+        let factor = self.projected_preference_factor(preference, rank_tolerance)?;
+        if factor.rank() < preference.columns() {
+            return Ok(None);
         }
-        for &target in targets {
-            finite(target, "preference target")?;
-        }
+        factor.minimum_norm_transpose(targets).map(Some)
+    }
+
+    pub(crate) fn best_fit_free_motion(
+        &self,
+        preference: &DenseMatrix,
+        targets: &[f64],
+        rank_tolerance: f64,
+    ) -> Result<Vec<f64>, LinearAlgebraError> {
+        validate_targets(preference, targets)?;
+        self.projected_preference_factor(preference, rank_tolerance)?
+            .best_fit_transpose(targets, rank_tolerance)
+    }
+
+    fn projected_preference_factor(
+        &self,
+        preference: &DenseMatrix,
+        rank_tolerance: f64,
+    ) -> Result<ColumnPivotedQr, LinearAlgebraError> {
         if preference.rows().len() != self.triangular.len() {
             return Err(LinearAlgebraError(format!(
                 "preference rows {}: expected {} variables",
@@ -48,11 +62,7 @@ impl ColumnPivotedQr {
         }
         let columns = self.project_preference_columns(preference, rank_tolerance)?;
         let projected = DenseMatrix::new(self.triangular.len(), columns)?.transpose();
-        let factor = ColumnPivotedQr::factor(&projected, rank_tolerance)?;
-        if factor.rank() < preference.columns() {
-            return Ok(None);
-        }
-        factor.minimum_norm_transpose(targets).map(Some)
+        ColumnPivotedQr::factor(&projected, rank_tolerance)
     }
 
     fn project_preference_columns(
@@ -116,6 +126,20 @@ impl ColumnPivotedQr {
             .fold(0.0_f64, |norm, entry| norm.hypot(*entry));
         finite(norm * norm, "coordinate projection squared residual")
     }
+}
+
+fn validate_targets(preference: &DenseMatrix, targets: &[f64]) -> Result<(), LinearAlgebraError> {
+    if targets.len() != preference.columns() {
+        return Err(LinearAlgebraError(format!(
+            "preference target count {}: expected {} columns",
+            targets.len(),
+            preference.columns()
+        )));
+    }
+    for &target in targets {
+        finite(target, "preference target")?;
+    }
+    Ok(())
 }
 
 fn vector_norm(values: &[f64]) -> Result<f64, LinearAlgebraError> {

@@ -133,12 +133,17 @@ fn pending_preferences(
 ) -> (Vec<(usize, f64)>, f64) {
     let mut pending = Vec::new();
     let mut distance = 0.0_f64;
+    let mut incomplete = false;
     for &(index, target) in preferences {
         let difference = target - values[index];
         distance = distance.hypot(difference);
         if difference.abs() > tolerance * target.abs().max(values[index].abs()).max(1.0) {
-            pending.push((index, difference));
+            incomplete = true;
         }
+        pending.push((index, difference));
+    }
+    if !incomplete {
+        pending.clear();
     }
     (pending, distance)
 }
@@ -167,14 +172,11 @@ fn preference_seed(
         rows[index][column] = 1.0;
     }
     let targets: Vec<f64> = pending.iter().map(|&(_, difference)| difference).collect();
-    let Some(motion) = qr.try_minimum_norm_free_motion(
-        &DenseMatrix::new(pending.len(), rows)?,
-        &targets,
-        tolerance,
-    )?
-    else {
+    let motion =
+        qr.best_fit_free_motion(&DenseMatrix::new(pending.len(), rows)?, &targets, tolerance)?;
+    if motion.iter().all(|&value| value == 0.0) {
         return Ok(None);
-    };
+    }
     let seed = solution
         .values
         .iter()
