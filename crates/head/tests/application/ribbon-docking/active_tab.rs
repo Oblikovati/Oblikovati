@@ -30,11 +30,13 @@ fn right_click_model(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
 }
 #[when("I right-click the active 3D Model tab and open Docking Positions")]
+#[when("the user right-clicks the active 3D Model tab and opens Docking Positions")]
 fn open_model_docking_positions(world: &mut ApplicationWorld) {
     right_click_model(world);
     open_docking_positions(world);
 }
 #[when("I right-click the active 3D Model tab and choose Left from Docking Positions")]
+#[when("the user right-clicks the active 3D Model tab and chooses Left from Docking Positions")]
 fn dock_left_from_model_tab(world: &mut ApplicationWorld) {
     open_model_docking_positions(world);
     world.click_text("Left");

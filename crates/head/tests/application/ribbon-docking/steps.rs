@@ -150,10 +150,12 @@ fn choose_left(world: &mut ApplicationWorld) {
     choose_position(world, "Left");
 }
 #[when("I choose Right from the ribbon Docking Positions menu")]
+#[when("the user chooses Right from the ribbon Docking Positions menu")]
 fn choose_right(world: &mut ApplicationWorld) {
     choose_position(world, "Right");
 }
 #[when("I choose Top from the ribbon Docking Positions menu")]
+#[when("the user chooses Top from the ribbon Docking Positions menu")]
 fn choose_top(world: &mut ApplicationWorld) {
     choose_position(world, "Top");
 }
