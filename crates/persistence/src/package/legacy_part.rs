@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Preparation only: feature adoption, reference-key migration, and package migration remain separate.
+mod face_producer;
+pub use face_producer::{LegacyExtrusionFaceProducer, LegacyExtrusionFaceRole};
 mod source;
 use super::{DocumentPackage, LegacyFaceOffsetCandidate, LegacySketchCandidate, PackageCodecError};
 use oblikovati_model::{
@@ -62,11 +64,13 @@ impl DocumentPackage {
             .collect::<Result<_, _>>()?;
         let face_offsets = self.prepare_legacy_face_offsets()?;
         validate_creation_sequences(&sketches, &extrusions, &face_offsets)?;
-        Ok(LegacyPartCandidate {
+        let candidate = LegacyPartCandidate {
             sketches,
             extrusions,
             face_offsets,
-        })
+        };
+        candidate.validate_face_producers()?;
+        Ok(candidate)
     }
 }
 fn validate_creation_sequences(
