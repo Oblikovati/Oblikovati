@@ -608,10 +608,15 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3855",
         "https://github.com/Oblikovati/Oblikovati/issues/3886"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-corrected-rectangle-13/receipt-ecfb4103b54e7240.json",
+        "sha256": "c37de5fe5c5caf99c73929852e4ec2639e1de3f9ee730fc93e0fa8847e27daab"
+      },
       "go_reference": "../Oblikovati/model/sketch/recipe_rectangle.go; ../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_dimension_edit.go",
-      "mapping_reason": "Edit and measure a sketch dimension through history."
+      "mapping_reason": "Edit and measure a sketch dimension through history.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:841bc6eecc0f22624f0096f9d14e6fae6d64b60d913f2fea0ed3de284acf8ae2",
@@ -2129,7 +2134,13 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3885",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried"
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-corrected-coincident-07/receipt-67ae50d1d3318571.json",
+        "sha256": "d1677358031720c9bac576ab2ff3480e2ea6f88da3a7783aa76a8e6f9be15bf1"
+      },
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:237922f6f9ed999d47e613e9829c337a1a0797dd774e80cc6471e8a71b4dc3ad",
