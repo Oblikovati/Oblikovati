@@ -39,10 +39,16 @@ adoption record for the released Martensite candidate's capabilities and limits.
 - The kernel's current priority is visualization and Vulkan before broad
   exchange-format work. The application schedule follows that order.
 
-Select the required toolkit dependencies in the application adapter. Keep
-their revisions identical. A later facade expansion belongs in Martensite;
+Select the required released Martensite toolkit dependencies in the application
+adapter. Keep their revisions identical. A facade expansion belongs in Martensite;
 it is not a prerequisite for every initial application test. Do not invent
 a dependency named `martensite` that the repository does not provide.
+
+Martensite v0.6.0 does not yet publish the `martensite-tkv3d`,
+`martensite-vulkan`, and `martensite-tkbo` packages. These are a P0 host
+blocker tracked by Martensite issue #365. Do not describe a host still pinned
+to RustyCADKernel as migrated until those packages are released and the host
+viewport and profile-region tests run against one Martensite revision.
 
 The Go model and API use centimetres and radians by default. Documents can
 also carry a working scale (`model/param/units_of_measure.go`). Preserve its
