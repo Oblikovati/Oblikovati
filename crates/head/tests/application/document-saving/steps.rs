@@ -5,6 +5,8 @@ use cucumber::{given, then, when};
 use oblikovati_model::application_prompts::{ApplicationPrompt, PromptFrequency};
 #[path = "dialog_navigation.rs"]
 mod dialog_navigation;
+#[path = "rectangle_visibility.rs"]
+mod rectangle_visibility;
 #[path = "solid_preview.rs"]
 mod solid_preview;
 const SAVE_IN: &str = "Save in";
@@ -218,7 +220,11 @@ fn browser_sketch(world: &mut ApplicationWorld) {
 }
 #[then("the rectangular sketch profile is visible in the viewport")]
 fn rectangle_visible(world: &mut ApplicationWorld) {
-    world.expect_drawn_region();
+    let capture = super::capture_framebuffer(&mut world.app().window.native);
+    assert!(
+        rectangle_visibility::rectangle_edges_visible(&capture, super::documents::RECTANGLE),
+        "viewport: expected all four saved rectangle edges"
+    );
 }
 #[given("the Save As dialog is open for a new part in the MCAD Software")]
 fn dialog_open(world: &mut ApplicationWorld) {
