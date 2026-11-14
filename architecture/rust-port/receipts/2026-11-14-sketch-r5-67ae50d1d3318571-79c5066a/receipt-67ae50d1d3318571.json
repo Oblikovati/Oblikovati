@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:67ae50d1d3318571497883bf40ba4e53cee4b787738b9c3e9b48c50a24f9dfe0",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "a2d31789402dfca6ebb083bc02002b722f8518266c822d8c04b4ae45b8251c7f",
+  "application_commit": "79c5066afe122d27d3b08d2f52e0eebf2016a013",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan Lavapipe on Xvfb, Linux"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-sketch-r5-67ae50d1d3318571-79c5066a/cucumber.json",
+    "sha256": "e9b1df2590535b32b470146bc949020a386db13fbba252b10e20b71a10ee1f7b"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-sketch-r5-67ae50d1d3318571-79c5066a/source-revision.json",
+    "sha256": "b136e306ef518a697e8a1467ab9dbc9479e27e9cae159ab7f9bfcb8cab98cf61"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-sketch-r5-67ae50d1d3318571-79c5066a/coincident-07-Constrain-two-standalone-points-and-inspect-history.png",
+    "sha256": "e6b2f0bfdbc295eb9df063e7dcf9b6bdd52281b3f9d060a5760fc035cf0d4da3"
+  }
+}
