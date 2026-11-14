@@ -1,0 +1,11 @@
+{
+  "kind": "diagnostic only; not acceptance",
+  "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "scenario": "arc-center-point-09 Measure the restored curve instead of its middle point",
+  "classification": "unbound step",
+  "unbound_steps": [
+    "the pointer-created arc made with center (1530, 600), start (1570, 600), and end direction (1530, 640) in the captured window coordinates has been restored by Redo"
+  ],
+  "tainted_failure_count": 6,
+  "limitation": "The source describes screen coordinates but does not provide the captured sketch and view state. No expected measurement was used to construct a replacement fixture."
+}
