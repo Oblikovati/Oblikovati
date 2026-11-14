@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Preparation only: feature adoption, reference-key migration, and package migration remain separate.
 mod source;
-use super::{DocumentPackage, LegacySketchCandidate, PackageCodecError};
+use super::{DocumentPackage, LegacyFaceOffsetCandidate, LegacySketchCandidate, PackageCodecError};
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
     feature::{
@@ -11,6 +11,7 @@ use oblikovati_model::{
     sketch::OwnedSketchGeometry,
 };
 use source::{LegacyExtrude, LegacyFeature};
+use std::collections::BTreeSet;
 
 /// Resolve a Go profile index to its exact authored boundaries, refusing ambiguity.
 pub trait LegacyProfileResolver {
@@ -36,6 +37,7 @@ pub struct LegacyExtrusionCandidate {
 pub struct LegacyPartCandidate {
     pub sketches: LegacySketchCandidate,
     pub extrusions: Vec<LegacyExtrusionCandidate>,
+    pub face_offsets: Vec<LegacyFaceOffsetCandidate>,
 }
 impl DocumentPackage {
     /// Prepare supported sketches and extrusions without adopting or modifying the package.
@@ -54,15 +56,42 @@ impl DocumentPackage {
             None | Some(serde_yaml_ng::Value::Null) => Vec::new(),
             Some(value) => serde_yaml_ng::from_value(value.clone()).map_err(failure)?,
         };
-        let extrusions = rows
+        let extrusions: Vec<LegacyExtrusionCandidate> = rows
             .into_iter()
             .map(|row| prepare_extrusion(&sketches, row, resolver))
             .collect::<Result<_, _>>()?;
+        let face_offsets = self.prepare_legacy_face_offsets()?;
+        validate_creation_sequences(&sketches, &extrusions, &face_offsets)?;
         Ok(LegacyPartCandidate {
             sketches,
             extrusions,
+            face_offsets,
         })
     }
+}
+fn validate_creation_sequences(
+    sketches: &LegacySketchCandidate,
+    extrusions: &[LegacyExtrusionCandidate],
+    planes: &[LegacyFaceOffsetCandidate],
+) -> Result<(), PackageCodecError> {
+    if planes.is_empty() {
+        return Ok(());
+    }
+    let sequences = sketches
+        .creation_sequences
+        .iter()
+        .map(|(_, seq)| *seq)
+        .chain(extrusions.iter().map(|row| row.creation_sequence))
+        .chain(planes.iter().map(|row| row.creation_sequence));
+    let mut seen = BTreeSet::new();
+    for sequence in sequences {
+        if sequence == 0 || !seen.insert(sequence) {
+            return Err(failure(format!(
+                "creation sequence {sequence}: expected a unique nonzero sequence across model records"
+            )));
+        }
+    }
+    Ok(())
 }
 fn require_supported_model(model: Option<&serde_yaml_ng::Value>) -> Result<(), PackageCodecError> {
     let Some(model) = model else {
@@ -77,7 +106,7 @@ fn require_supported_model(model: Option<&serde_yaml_ng::Value>) -> Result<(), P
     for key in fields.keys() {
         if !matches!(
             key.as_str(),
-            Some("units" | "parameters" | "sketches" | "features")
+            Some("units" | "parameters" | "sketches" | "features" | "workFeatures")
         ) {
             return Err(failure(format!(
                 "model section {key:?}: expected a section supported by this candidate"
