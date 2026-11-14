@@ -137,3 +137,28 @@ fn unknown_constraint_and_mixed_native_section_are_refused() {
         assert!(package.prepare_legacy_sketch_candidate().is_err());
     }
 }
+
+#[test]
+fn go_sketch_curve_order_survives_candidate_and_native_recipe_round_trip() {
+    use oblikovati_model::sketch::Sketch2D;
+    let reordered = include_bytes!(
+        "../../../architecture/rust-port/receipts/2026-11-14-go-face-lineage/reordered.obk"
+    );
+    for (bytes, expected) in [
+        (GO_CUBE, [6, 7, 8, 9]),
+        (reordered.as_slice(), [7, 8, 9, 6]),
+    ] {
+        let package = DocumentPackage::decode(bytes).unwrap();
+        let candidate = package.prepare_legacy_sketch_candidate().unwrap();
+        let sketch = candidate
+            .sketches
+            .get(DocumentSketchId(1))
+            .unwrap()
+            .geometry();
+        let restored = Sketch2D::from_recipe(&sketch.recipe()).unwrap();
+        for geometry in [sketch, &restored] {
+            let ids: Vec<_> = geometry.lines().iter().map(|line| line.id.0).collect();
+            assert_eq!(ids, expected);
+        }
+    }
+}
