@@ -36,8 +36,10 @@ verified. A successful receipt alone does not close a milestone.
 Use `python3 -B tools/bdd/behavior_cli.py backlog` for one entry per feature
 file, ordered by the earliest milestone assigned to one of its scenarios.
 Each entry counts verified, blocked, unclassified, stale, and incomplete R0
-baseline rows. Its milestone counts include an `unassigned` group. A mixed
-feature can span milestones; the sort order is not a feature-level assignment
+baseline rows. Its milestone counts include an `unassigned` group. Each feature
+also reports the number of rows missing each baseline field. These counts show
+absent text; they do not verify the quality of the evidence. A mixed feature can
+span milestones; the sort order is not a feature-level assignment
 or proof that its dependencies are complete. Unassigned files sort last until
 their scenarios have reviewed classifications.
 

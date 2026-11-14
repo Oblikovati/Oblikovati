@@ -30,6 +30,9 @@ def count_feature(rows: list[Mapping[str, object]]) -> dict[str, object]:
             f"feature {path!r} area: expected the same area for every scenario"
         )
     milestones = Counter(str(row.get("milestone") or "unassigned") for row in rows)
+    missing_fields = Counter(
+        field for row in rows for field in missing_baseline_fields(row)
+    )
     return {
         "path": path,
         "area": area,
@@ -39,6 +42,7 @@ def count_feature(rows: list[Mapping[str, object]]) -> dict[str, object]:
         "unclassified": sum(not row.get("classified") for row in rows),
         "stale": sum(bool(row.get("stale")) for row in rows),
         "missing_baseline": sum(bool(missing_baseline_fields(row)) for row in rows),
+        "missing_baseline_fields": dict(sorted(missing_fields.items())),
         "milestones": dict(
             sorted(milestones.items(), key=lambda item: milestone_order(item[0]))
         ),

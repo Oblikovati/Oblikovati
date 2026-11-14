@@ -51,6 +51,7 @@ class FeatureBacklogTests(unittest.TestCase):
                     "unclassified": 1,
                     "stale": 1,
                     "missing_baseline": 3,
+                    "missing_baseline_fields": {field: 3 for field in BASELINE_FIELDS},
                     "milestones": {"R4": 1, "R5": 1, "unassigned": 1},
                 }
             ],
@@ -90,6 +91,17 @@ class FeatureBacklogTests(unittest.TestCase):
         row = {field: "evidence" for field in BASELINE_FIELDS}
         row.update(path="part.feature", area="sketch", milestone="R3", classified=True)
         self.assertEqual(feature_backlog([row])[0]["missing_baseline"], 0)
+
+    def test_field_counts_include_only_scenarios_missing_each_field(self) -> None:
+        full = {field: "evidence" for field in BASELINE_FIELDS}
+        first = dict(full, path="part.feature", area="sketch", go_reference="")
+        second = dict(full, path="part.feature", area="sketch", oracle=None)
+        third = dict(full, path="part.feature", area="sketch", go_reference=None)
+        result = feature_backlog([first, second, third])[0]
+        self.assertEqual(result["missing_baseline"], 3)
+        self.assertEqual(
+            result["missing_baseline_fields"], {"go_reference": 2, "oracle": 1}
+        )
 
     def test_invalid_milestone_is_rejected(self) -> None:
         row = {"path": "part.feature", "area": "sketch", "milestone": "later"}
