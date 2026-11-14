@@ -46,6 +46,8 @@ mod work_sketch_forwarding;
 #[cfg(target_os = "linux")]
 mod work_status;
 #[cfg(target_os = "linux")]
+mod work_theme;
+#[cfg(target_os = "linux")]
 pub use capture_png::{NativeWindowCaptureFiles, WindowCaptureFiles};
 #[cfg(target_os = "linux")]
 pub use window_capture::{DesktopWindowCaptures, WindowCaptureJob};

@@ -133,6 +133,9 @@ fn doctests(runner: &dyn Runner, workspace: &Path) -> BuildResult<()> {
 }
 
 pub(crate) fn run(root: &Path, runner: &dyn Runner, task: &str) -> BuildResult<()> {
+    if task == "lint" {
+        docs::check_rust_sources(root)?;
+    }
     let workspaces = inventory(root, runner)?;
     check_display(
         &workspaces,
