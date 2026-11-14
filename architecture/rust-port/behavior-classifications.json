@@ -3,7 +3,7 @@
   "scenarios": [
     {
       "id": "scenario:290c0844328af2d23fb51f9930f988f5eff00430051c3f715469cdddc44fb612",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "0b20ae95482d755cafe546d0bae98db647acdaa2ebfb5353e3fcb3bc6af0cf50",
       "milestone": "R7",
       "owner": "desktop",
@@ -14,8 +14,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-290c0844/receipt-290c0844328af2d2.json",
-        "sha256": "45dc09460105eb111777d49c3dbd874867d9881bf960c4f08a86e2971ea4083b"
+        "path": "architecture/rust-port/receipts/2026-11-14-body-current-290c0844/receipt-290c0844328af2d2.json",
+        "sha256": "2ee4d622f56cd7ca31a8d7b36e1919b987631c2012f00c8b7e3c261b3cd8a68f"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -37,7 +37,7 @@
     },
     {
       "id": "scenario:f024b2250132b3239960cbba948d906a930fcb48716f2817e11ec492c5b22183",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "0b20ae95482d755cafe546d0bae98db647acdaa2ebfb5353e3fcb3bc6af0cf50",
       "milestone": "R7",
       "owner": "desktop",
@@ -48,8 +48,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-f024b225/receipt-f024b2250132b323.json",
-        "sha256": "3cc05bbb68e1e4f604ec0886478a9f6769d5e1368d9fb5ef2a659f2e54c2f618"
+        "path": "architecture/rust-port/receipts/2026-11-14-body-current-f024b225/receipt-f024b2250132b323.json",
+        "sha256": "0b85c46539a7b9fe298d79968c874ee660ef91513040cee2b5b015a7c2a2b60c"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -71,7 +71,7 @@
     },
     {
       "id": "scenario:48efe943e9ecc0d7d078db980ad1b05fe2fd5abeeab9ec6d0b23399eee5eaf48",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "0b20ae95482d755cafe546d0bae98db647acdaa2ebfb5353e3fcb3bc6af0cf50",
       "milestone": "R7",
       "owner": "desktop",
@@ -82,8 +82,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-48efe943/receipt-48efe943e9ecc0d7.json",
-        "sha256": "5c7192bb2ce588952869aa8592de7a78be79406897614905d3880380803f4ab4"
+        "path": "architecture/rust-port/receipts/2026-11-14-body-current-48efe943/receipt-48efe943e9ecc0d7.json",
+        "sha256": "d334b463201bf494eb3addaf376a8b90cc1ff0e18cd165d60e23b02ce22fe82f"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -105,7 +105,7 @@
     },
     {
       "id": "scenario:137ba03d06c38c439efdffa8bd1c217086f374111802a3b24d86c40d67786a59",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "0b20ae95482d755cafe546d0bae98db647acdaa2ebfb5353e3fcb3bc6af0cf50",
       "milestone": "R7",
       "owner": "desktop",
@@ -116,8 +116,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-137ba03d/receipt-137ba03d06c38c43.json",
-        "sha256": "a97c23ee582ad777342078c05ab96a4efd5a0c14e0b052aeec4ed460bbafb7c4"
+        "path": "architecture/rust-port/receipts/2026-11-14-body-current-137ba03d/receipt-137ba03d06c38c43.json",
+        "sha256": "ae536c1617247191cf75e51f3aad2b0680cddebd394fc260e6c18278da5f37bc"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -139,7 +139,7 @@
     },
     {
       "id": "scenario:e22ccad1ec1386a7ad84cb79333cd58f0181509d54a4677a552cee1f48cbbd1f",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "0b20ae95482d755cafe546d0bae98db647acdaa2ebfb5353e3fcb3bc6af0cf50",
       "milestone": "R7",
       "owner": "desktop",
@@ -150,8 +150,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-e22ccad1/receipt-e22ccad1ec1386a7.json",
-        "sha256": "133b2db38572efd70ed02885c91fade64a34c15046c73f58013263e7d8203d33"
+        "path": "architecture/rust-port/receipts/2026-11-14-body-current-e22ccad1/receipt-e22ccad1ec1386a7.json",
+        "sha256": "898932da5ca357ba3abd18ae770edbfb8b926586a9994bc0bd79e459cf676da9"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -173,7 +173,7 @@
     },
     {
       "id": "scenario:fe23247614f79aca0704e532303b65fb17e0d762b899246236fee674a3ae7350",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "0b20ae95482d755cafe546d0bae98db647acdaa2ebfb5353e3fcb3bc6af0cf50",
       "milestone": "R7",
       "owner": "desktop",
@@ -184,8 +184,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-fe232476/receipt-fe23247614f79aca.json",
-        "sha256": "15d14154d9161238bbbc52dbcb25627faa307fed4ac4f2cbc0b738824d81b122"
+        "path": "architecture/rust-port/receipts/2026-11-14-body-current-fe232476/receipt-fe23247614f79aca.json",
+        "sha256": "34cff35813a23d6874c09d3f9d03ffd90d9f73fde00b9aa1eb5466dcaf7c5c52"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
