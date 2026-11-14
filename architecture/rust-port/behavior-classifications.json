@@ -29342,10 +29342,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "First native sketch geometry input, cancellation, and history."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-centerarc-01/receipt-cf5c7a18c7c4f237.json",
+        "sha256": "aab2e089694e17eb76d3f80d7704df479ef80cdbe317730b31d990da4c4e9405"
+      },
+      "go_reference": "../Oblikovati/app/sketch_variant_tools.go; ../Oblikovati/app/sketch_variant_tools_test.go",
+      "mapping_reason": "First native sketch geometry input, cancellation, and history.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b tests that center, start and end clicks create one arc, but not orientation or the Rust native window. See receipts/2026-11-14-go-centerarc/README.md.",
+      "kernel_capabilities": "The sketch tool creates an arc from center, start and end direction; no solid operation is performed.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The native desktop sends pointer input through sketch placement and owner operations.",
+      "rust_tests": "sketch_scenarios_use_the_native_window with OBK_BDD_FEATURE=arc-center-point and OBK_BDD_SCENARIO=arc-center-point-01.",
+      "oracle": "Native scenario checks center, start, end and arc side in screen coordinates, the drawn arc, next prompt, and Ready state; final capture reviewed.",
+      "expected_result": "The selected center, start and end direction create a visible arc on the requested side; Escape leaves it in the sketch."
     },
     {
       "id": "scenario:ec97958adc98f9cb67f03921ae4a9dd454e03c604101c7714a5aecf1f35a91d0",
