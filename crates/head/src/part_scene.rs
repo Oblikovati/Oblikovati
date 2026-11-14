@@ -137,6 +137,7 @@ impl DesktopPartScenes {
         files: &mut FileWorkspace<O, W, F>,
         document: u64,
     ) -> Result<(), String> {
+        oblikovati_automation::refresh_part_sketches(files, document, self.resolution)?;
         let completed =
             oblikovati_automation::complete_part_replay(files, document, self.resolution)?;
         files

@@ -65,6 +65,7 @@ mod navigation;
 mod sketch_edit_history;
 pub use sketch_edit_history::SketchEditTransition;
 mod refresh;
+mod sketch_consequence;
 pub use error::{EditError, HistoryError};
 pub use refresh::PreparedRefresh;
 use std::sync::{
@@ -147,6 +148,7 @@ struct OpenTransaction {
     token: TransactionToken,
     label: String,
     before: DocumentSnapshot,
+    derived_baseline: Option<DocumentSnapshot>,
 }
 #[derive(Debug)]
 struct HistoryStep {
@@ -262,6 +264,7 @@ impl DocumentEditHistory {
             token: token.clone(),
             label: label.into(),
             before: self.current.clone(),
+            derived_baseline: None,
         });
         self.next_token = next;
         Ok(token)
@@ -324,6 +327,7 @@ impl DocumentEditHistory {
         self.require_top(token)?;
         let frame = self.open.pop().expect("validated frame");
         if !self.open.is_empty() {
+            self.inherit_derived_baseline(&frame);
             return Ok(());
         }
         if merge_previous
@@ -367,17 +371,13 @@ impl DocumentEditHistory {
     /// Example: `if history.discard_unchanged(&token)? { return Ok(()); }`.
     pub fn discard_unchanged(&mut self, token: &TransactionToken) -> Result<bool, HistoryError> {
         self.require_top(token)?;
-        let before = &self.open.last().expect("validated frame").before;
-        if !before
-            .work_geometry
-            .same_work_plane_recipe(&self.current.work_geometry)
-            || !before.sketches.same_recipe(&self.current.sketches)
-            || !before.parameters.same_recipe(&self.current.parameters)
-            || !before.same_metadata_recipe(&self.current)
-        {
+        let frame = self.open.last().expect("validated frame");
+        let baseline = frame.derived_baseline.as_ref().unwrap_or(&frame.before);
+        if !sketch_consequence::same_history_recipe(baseline, &self.current) {
             return Ok(false);
         }
-        self.open.pop();
+        let frame = self.open.pop().expect("validated frame");
+        self.inherit_derived_baseline(&frame);
         Ok(true)
     }
 

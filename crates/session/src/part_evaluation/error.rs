@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use oblikovati_model::feature::part::PartFeatureProgramError;
 use std::{error::Error, fmt};
-/// A recompute was stale or could not be adopted as a derived refresh.
+/// A recompute was stale or could not be adopted into its current history state.
 #[derive(Debug)]
 pub enum PartSketchAdoptionError {
     Evaluation(PartEvaluationError),

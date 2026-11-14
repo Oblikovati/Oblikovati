@@ -19,6 +19,10 @@ use oblikovati_session::{
     workspace::WorkspaceObserver,
 };
 use std::collections::BTreeMap;
+type NamedSketchRecompute = oblikovati_session::part_evaluation::CompletedPartSketchRecompute<
+    NamedPrismSnapshot,
+    EvaluationFailure,
+>;
 
 /// Part replay capability independent of viewport and topology queries.
 pub trait PartUpdateAccess<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> {
@@ -93,6 +97,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
     ) -> Result<Vec<FeatureError>, String> {
         self.slots
             .retain(|id, _| files.workspace().documents().contains(id));
+        refresh_part_sketches(files, document, None)?;
         let completed = complete_part_replay(files, document, None)?;
         let slot = self.slots.entry(document).or_default();
         files
@@ -154,6 +159,58 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
     ) -> Result<oblikovati_model::feature::work_geometry::WorkGeometryEvaluation, String> {
         preview_part_datums(files, document, candidate, None)
     }
+}
+
+/// Refresh dependent sketches from ordered replay before publishing a part.
+/// Example: `refresh_part_sketches(files, id, None)?` on the part owner thread.
+pub fn refresh_part_sketches<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &mut FileWorkspace<O, W, F>,
+    document: u64,
+    resolution: Option<PrismResolutionPolicy>,
+) -> Result<bool, String> {
+    let Some(completed) = prepare_part_sketches(files, document, resolution)? else {
+        return Ok(false);
+    };
+    files
+        .commands(document)
+        .map_err(|error| error.to_string())?
+        .adopt_recomputed_part_sketches(completed)
+        .map_err(|error| error.to_string())
+}
+fn prepare_part_sketches<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &FileWorkspace<O, W, F>,
+    document: u64,
+    resolution: Option<PrismResolutionPolicy>,
+) -> Result<Option<NamedSketchRecompute>, String> {
+    let workspace = files.workspace();
+    let session = workspace
+        .session(document)
+        .map_err(|error| error.to_string())?;
+    if !crate::datums::requires_part_replay(session.snapshot()) {
+        return Ok(None);
+    }
+    let options = session.sketch_solve_options();
+    let guid = workspace
+        .identity(document)
+        .map_err(|error| error.to_string())?
+        .internal_name;
+    let request = session.prepare_part_evaluation();
+    let completed = match resolution {
+        Some(policy) => request.recompute_sketches(
+            &mut oblikovati_martensite::CertifiedNamedPrismEvaluator::with_policy(
+                session.history(),
+                guid,
+                policy,
+            ),
+            options,
+        ),
+        None => request.recompute_sketches(
+            &mut NamedPrismEvaluator::new(session.history(), guid),
+            options,
+        ),
+    }
+    .map_err(|error| error.to_string())?;
+    Ok(Some(completed))
 }
 
 /// Evaluate a private candidate; example: `preview_part_datums(files, id, candidate, None)?`.

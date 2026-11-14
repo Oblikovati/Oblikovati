@@ -234,20 +234,168 @@ fn recomputed_part_sketches_adopt_only_for_the_current_generation() {
 }
 
 #[test]
-fn part_sketch_refresh_rejects_foreign_history_and_open_transactions() {
-    let mut session = face_session();
+fn part_sketch_refresh_rejects_foreign_history() {
+    let session = face_session();
     let completed = session
         .prepare_part_evaluation()
         .recompute_sketches(&mut NamedFaceEvaluator, Default::default())
         .unwrap();
     let mut other = face_session();
     assert!(other.adopt_recomputed_part_sketches(completed).is_err());
+}
+
+fn add_face_sketch(
+    session: &mut PartSession,
+) -> oblikovati_model::document_sketch::DocumentSketchId {
+    use oblikovati_model::{document_sketch::SketchPlacement, history::DocumentSketchCreation};
+    let mut slot = PartSlot::default();
+    publish_face(session, &mut slot, 2.5);
+    let datums = slot.current(session).unwrap().datum_evaluation();
+    let request = DocumentSketchCreation {
+        name: "Face sketch".into(),
+        placement: SketchPlacement::WorkPlane(FeatureId(2)),
+        orientation: None,
+        project_origin: true,
+    };
+    session
+        .run("Create sketch", |snapshot, ids| {
+            snapshot.create_document_sketch_with_datums(&request, ids, &datums)
+        })
+        .unwrap()
+}
+fn recompute_in_group(session: &mut PartSession) -> bool {
+    let result = session
+        .prepare_part_evaluation()
+        .recompute_sketches(&mut NamedFaceEvaluator, Default::default())
+        .unwrap();
+    session.adopt_recomputed_part_sketches(result).unwrap()
+}
+#[test]
+fn ordered_recompute_joins_transaction_and_abort_restores_state() {
+    let mut session = face_session();
+    let sketch = add_face_sketch(&mut session);
+    let undo = session.undo_labels().len();
+    let baseline = session.snapshot().sketches.clone();
+    session.begin("Change depth").unwrap();
+    edit_depth(&mut session, "4 cm");
+    assert!(recompute_in_group(&mut session));
+    let generation = session.generation();
+    assert!(!recompute_in_group(&mut session));
+    assert_eq!(session.generation(), generation);
+    assert_eq!(session.undo_labels().len(), undo);
+    session.abort().unwrap();
+    assert!(session.snapshot().sketches.same_evaluated_state(&baseline));
+    assert_eq!(session.undo_labels().len(), undo);
+    assert!(session.snapshot().sketches.get(sketch).is_ok());
+}
+#[test]
+fn ordered_recompute_joins_one_undo_step_and_rejects_stale_group_results() {
+    let mut session = face_session();
+    add_face_sketch(&mut session);
+    let undo = session.undo_labels().len();
+    session.begin("Change depth").unwrap();
+    edit_depth(&mut session, "4 cm");
+    let stale = session
+        .prepare_part_evaluation()
+        .recompute_sketches(&mut NamedFaceEvaluator, Default::default())
+        .unwrap();
+    edit_depth(&mut session, "5 cm");
+    assert!(session.adopt_recomputed_part_sketches(stale).is_err());
+    assert!(recompute_in_group(&mut session));
+    session.end().unwrap();
+    assert_eq!(session.undo_labels().len(), undo + 1);
+    let mut slot = PartSlot::default();
+    publish_face(&mut session, &mut slot, 5.5);
+    session.undo().unwrap();
+    publish_face(&mut session, &mut slot, 2.5);
+    session.redo().unwrap();
+    publish_face(&mut session, &mut slot, 5.5);
+}
+
+#[test]
+fn sketch_recompute_alone_does_not_create_an_undo_step() {
+    let mut session = face_session();
+    add_face_sketch(&mut session);
+    let undo = session.undo_labels().len();
+    session.begin("Refresh only").unwrap();
+    assert!(recompute_in_group(&mut session));
+    session.end().unwrap();
+    assert_eq!(session.undo_labels().len(), undo);
+}
+
+#[test]
+fn moving_projected_point_refresh_does_not_create_an_undo_step() {
+    use oblikovati_model::{
+        document_sketch::SketchPointProjection,
+        feature::work_geometry::{DatumLength, WorkPointReference},
+        sketch::Sketch2D,
+    };
+    let mut session = face_session();
+    let sketch = add_face_sketch(&mut session);
+    let point_feature = session
+        .run("Add source point", |snapshot, ids| {
+            let id = ids.allocate_feature().unwrap();
+            let point = WorkPlaneDefinition::Point([
+                DatumLength::Constant(0.),
+                DatumLength::Parameter(3),
+                DatumLength::Constant(0.),
+            ]);
+            snapshot
+                .work_geometry
+                .append(AuthoredFeature::datum(id, "Moving point", point))?;
+            Ok::<_, oblikovati_model::feature::FeatureSequenceError>(id)
+        })
+        .unwrap();
+    let mut slot = PartSlot::default();
+    publish_face(&mut session, &mut slot, 2.5);
+    let datums = slot.current(&session).unwrap().datum_evaluation();
+    let reference = WorkPointReference::Feature(point_feature);
+    session
+        .run("Project point", |snapshot, ids| {
+            let projection = snapshot
+                .project_datum_point_into_sketch_with_datums(sketch, reference, &datums)
+                .unwrap();
+            let anchor = ids.allocate_sketch_entity().unwrap();
+            let mut geometry: Sketch2D = snapshot.sketches.get(sketch).unwrap().geometry().clone();
+            geometry
+                .add_point(anchor, projection.local_position)
+                .unwrap();
+            snapshot
+                .sketches
+                .replace_geometry(sketch, geometry)
+                .unwrap();
+            let mut bindings = snapshot
+                .sketches
+                .get(sketch)
+                .unwrap()
+                .point_projections()
+                .to_vec();
+            bindings.push(SketchPointProjection { anchor, reference });
+            snapshot
+                .sketches
+                .set_point_projections(sketch, bindings)
+                .unwrap();
+            Ok::<_, std::convert::Infallible>(())
+        })
+        .unwrap();
     let completed = session
         .prepare_part_evaluation()
         .recompute_sketches(&mut NamedFaceEvaluator, Default::default())
         .unwrap();
-    session.begin("Open group").unwrap();
-    assert!(session.adopt_recomputed_part_sketches(completed).is_err());
+    session.adopt_recomputed_part_sketches(completed).unwrap();
+    edit_depth(&mut session, "4 cm");
+    let undo = session.undo_labels().len();
+    let before = session.snapshot().sketches.clone();
+    session.begin("Abort refresh").unwrap();
+    assert!(recompute_in_group(&mut session));
+    assert!(!session.snapshot().sketches.same_recipe(&before));
     session.abort().unwrap();
-    assert!(session.undo_labels().is_empty());
+    assert!(session.snapshot().sketches.same_evaluated_state(&before));
+    session.begin("Refresh only").unwrap();
+    session.begin("Nested refresh").unwrap();
+    assert!(recompute_in_group(&mut session));
+    assert!(!session.snapshot().sketches.same_recipe(&before));
+    session.end().unwrap();
+    session.end().unwrap();
+    assert_eq!(session.undo_labels().len(), undo);
 }

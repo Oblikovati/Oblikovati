@@ -143,7 +143,7 @@ impl<Body, Failure> PartEvaluationSlot<Body, Failure> {
     }
 }
 impl<O: TransactionObserver> DocumentSession<O> {
-    /// Adopt recomputed sketch consequences without adding an undo step.
+    /// Adopt recomputed sketch consequences into the open group or as a derived refresh.
     /// Example: `session.adopt_recomputed_part_sketches(completed)?` after a worker finishes.
     pub fn adopt_recomputed_part_sketches<Body, Failure>(
         &mut self,
@@ -153,6 +153,22 @@ impl<O: TransactionObserver> DocumentSession<O> {
             .part
             .validate(self)
             .map_err(PartSketchAdoptionError::Evaluation)?;
+        if completed
+            .sketches
+            .same_evaluated_state(&self.history.snapshot().sketches)
+        {
+            return Ok(false);
+        }
+        if let Some(group) = &self.group {
+            return self
+                .history
+                .edit_sketch_consequence::<crate::MutationError<std::convert::Infallible>>(
+                    &group.token,
+                    completed.sketches,
+                )
+                .map_err(crate::CommandError::Edit)
+                .map_err(PartSketchAdoptionError::Refresh);
+        }
         let changed = self
             .history
             .refresh(|snapshot| {
