@@ -30833,8 +30833,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-linepoint-cc0348ac/receipt-cc0348ac4e30bdb2.json",
-        "sha256": "c9cd80444a509575cd942217ceb04f6c607767df90c07cef0f40506fd1f5ca20"
+        "path": "architecture/rust-port/receipts/2026-11-14-line-cc0348ac4e30bdb2-f7fbb8a4/receipt-cc0348ac4e30bdb2.json",
+        "sha256": "bf841f63a33e81e861f7c9d455404f8bc28612e903a06b30a01c2822572d2da4"
       },
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
       "mapping_reason": "First native sketch geometry input, cancellation, and history.",
@@ -30881,8 +30881,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-linepoint-f0687ede/receipt-f0687ede83393785.json",
-        "sha256": "563a951f2c226048b39751feddc0144afead21c4e7743adb4d1dd210b24306d9"
+        "path": "architecture/rust-port/receipts/2026-11-14-line-f0687ede83393785-f7fbb8a4/receipt-f0687ede83393785.json",
+        "sha256": "a6feaf12fb882596e55a2286a2651ce148d4c93c61e5b0f067a63e98249d0521"
       },
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
       "mapping_reason": "First native sketch geometry input, cancellation, and history.",
@@ -30910,8 +30910,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-linepoint-e66c7e30/receipt-e66c7e308267be09.json",
-        "sha256": "e6d1549a1c509b82e2a03245188c1e8cab224ab65ba9715ae5d5c6e212f8b139"
+        "path": "architecture/rust-port/receipts/2026-11-14-line-e66c7e308267be09-f7fbb8a4/receipt-e66c7e308267be09.json",
+        "sha256": "347ad21dbd4fa007b8348f57daae480d10ebc53cfb5ba3ed21b1823df9a26c07"
       },
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
       "mapping_reason": "First native sketch geometry input, cancellation, and history.",
@@ -30939,8 +30939,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-linepoint-4bd61ac9/receipt-4bd61ac9a19d199a.json",
-        "sha256": "7726fd9cda61cb2b0054f2ec0600def05e9820eea6f04622bf590a79b4c728ce"
+        "path": "architecture/rust-port/receipts/2026-11-14-line-4bd61ac9a19d199a-f7fbb8a4/receipt-4bd61ac9a19d199a.json",
+        "sha256": "6db36836a45be22b2d56a5db20bb3c3ba953239716249c62f391e4ef21e2ec25"
       },
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
       "mapping_reason": "First native sketch geometry input, cancellation, and history.",
