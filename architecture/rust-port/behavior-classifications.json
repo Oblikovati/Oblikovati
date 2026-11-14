@@ -4444,8 +4444,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-open-save-f9b64673e9d0caa7-d52803d8/receipt-f9b64673e9d0caa7.json",
-        "sha256": "d73f8065649bfe294aca2091cbeda629e3578263d5192843c7be6834c431722c"
+        "path": "architecture/rust-port/receipts/2026-11-15-save-close-reopen/receipt-f9b64673e9d0caa7.json",
+        "sha256": "b56f866ad0a1b4fc56d3d4b2228afb690c3a31f1fb975a7f6bf28db449456cc2"
       },
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Native document save, close, or reopen lifecycle.",
