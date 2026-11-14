@@ -1,0 +1,46 @@
+{
+  "after": [
+    {
+      "side_index": 0,
+      "source_line_id": 7,
+      "face_key_hex": "03457874727573696f6e313a736964652330"
+    },
+    {
+      "side_index": 1,
+      "source_line_id": 8,
+      "face_key_hex": "03457874727573696f6e313a736964652331"
+    },
+    {
+      "side_index": 2,
+      "source_line_id": 9,
+      "face_key_hex": "03457874727573696f6e313a736964652332"
+    },
+    {
+      "side_index": 3,
+      "source_line_id": 6,
+      "face_key_hex": "03457874727573696f6e313a736964652333"
+    }
+  ],
+  "before": [
+    {
+      "side_index": 0,
+      "source_line_id": 7,
+      "face_key_hex": "03457874727573696f6e313a736964652330"
+    },
+    {
+      "side_index": 1,
+      "source_line_id": 8,
+      "face_key_hex": "03457874727573696f6e313a736964652331"
+    },
+    {
+      "side_index": 2,
+      "source_line_id": 9,
+      "face_key_hex": "03457874727573696f6e313a736964652332"
+    },
+    {
+      "side_index": 3,
+      "source_line_id": 6,
+      "face_key_hex": "03457874727573696f6e313a736964652333"
+    }
+  ]
+}

@@ -224,13 +224,6 @@ fn unrepresentable_state_refuses_export_and_failed_recipes_promote_without_mutat
             .with_parameters(&measured, UnitsOfMeasure::default())
             .is_ok()
     );
-    let mut builtin = ParameterCollection::new(UnitsOfMeasure::default());
-    builtin.insert_auto_model(1, "10 mm").unwrap();
-    assert!(
-        original
-            .with_parameters(&builtin, UnitsOfMeasure::default())
-            .is_err()
-    );
     assert_eq!(original, package());
 }
 

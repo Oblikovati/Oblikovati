@@ -19,6 +19,11 @@ pub(super) struct ParameterRecipe {
     kind: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(super) expression_context: Option<oblikovati_model::parameter::DimensionExpressionContext>,
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "restore_builtin_flag"
+    )]
+    pub(super) built_in: Option<bool>,
     value_type: String,
     expression: String,
     text: String,
@@ -42,6 +47,12 @@ pub(super) struct ParameterRecipe {
     pub(super) model_value_type: String,
 }
 
+fn restore_builtin_flag<'de, D: serde::Deserializer<'de>>(
+    source: D,
+) -> Result<Option<bool>, D::Error> {
+    bool::deserialize(source).map(Some)
+}
+
 impl ParameterRecipe {
     pub(super) fn restore(
         &self,
@@ -50,6 +61,11 @@ impl ParameterRecipe {
     ) -> Result<(), PackageCodecError> {
         self.validate_value_fields()?;
         self.restore_value(id, parameters)?;
+        if self.built_in == Some(true) {
+            parameters
+                .restore_builtin_model(id)
+                .map_err(parameter_error)?;
+        }
         self.restore_annotations(id, parameters)?;
         if let Some(property) = &self.custom_property {
             parameters
@@ -85,6 +101,18 @@ impl ParameterRecipe {
             "" => literals_clear && measured_clear,
             _ => false,
         };
+        if self.built_in == Some(false) {
+            return Err(PackageCodecError(format!(
+                "parameter {:?} builtIn false: expected true or an omitted field",
+                self.name
+            )));
+        }
+        if self.built_in == Some(true) && self.kind != "model" {
+            return Err(PackageCodecError(format!(
+                "parameter {:?} builtIn true with kind {:?}: expected a model parameter",
+                self.name, self.kind
+            )));
+        }
         if (self.expression_context.is_some()
             && (!self.value_type.is_empty()
                 || !matches!(self.kind.as_str(), "model" | "user" | "table")))
@@ -227,6 +255,7 @@ impl ParameterRecipe {
     ) -> Result<Self, PackageCodecError> {
         let mut record = Self {
             name: state.name.clone(),
+            built_in: state.built_in.then_some(true),
             expression_context: state.expression_context.clone(),
             kind: super::export::kind_name(state.kind)?.into(),
             comment: state.annotations.comment.clone(),

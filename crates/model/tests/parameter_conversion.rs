@@ -116,3 +116,21 @@ fn malformed_auto_insertion_does_not_consume_a_name_or_identity() {
     parameters.insert_auto_model(2, "4 cm").unwrap();
     assert_eq!(parameters.get(2).unwrap().name, "d0");
 }
+
+#[test]
+fn restoring_builtin_guard_requires_an_existing_model_parameter() {
+    let mut parameters = ParameterCollection::new(UnitsOfMeasure::default());
+    parameters
+        .insert_expression(1, "model", MODEL_PARAM, "1 cm")
+        .unwrap();
+    parameters
+        .insert_expression(2, "user", USER_PARAM, "1 cm")
+        .unwrap();
+    assert!(parameters.restore_builtin_model(3).is_err());
+    assert!(parameters.restore_builtin_model(2).is_err());
+    assert!(!parameters.get(2).unwrap().built_in);
+    parameters.restore_builtin_model(1).unwrap();
+    parameters.restore_builtin_model(1).unwrap();
+    assert!(parameters.get(1).unwrap().built_in);
+    assert!(parameters.convert_kind(1, USER_PARAM).is_err());
+}

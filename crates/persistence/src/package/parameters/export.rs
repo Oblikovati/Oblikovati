@@ -18,11 +18,12 @@ impl DocumentPackage {
             !matches!(
                 parameters.get(*id).expect("owned ID").health,
                 ParameterHealth::Healthy
-            ) || parameters
-                .get(*id)
-                .expect("owned ID")
-                .expression_context
-                .is_some()
+            ) || parameters.get(*id).expect("owned ID").built_in
+                || parameters
+                    .get(*id)
+                    .expect("owned ID")
+                    .expression_context
+                    .is_some()
         });
         if extended_records {
             candidate.manifest.schema_version = 3;

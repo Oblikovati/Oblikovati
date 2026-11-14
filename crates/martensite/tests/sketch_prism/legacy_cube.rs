@@ -120,3 +120,6 @@ fn go_cube_candidate_replays_as_a_certified_solid_and_keeps_fixed_depth() {
         assert_analytic_scalar(actual, expected);
     }
 }
+
+#[path = "legacy_name_witness.rs"]
+mod legacy_name_witness;

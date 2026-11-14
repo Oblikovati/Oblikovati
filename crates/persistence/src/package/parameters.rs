@@ -46,10 +46,10 @@ impl DocumentPackage {
         if self.manifest.schema_version < 3
             && records
                 .iter()
-                .any(|record| record.expression_context.is_some())
+                .any(|record| record.expression_context.is_some() || record.built_in.is_some())
         {
             return Err(PackageCodecError(format!(
-                "scalar expressionContext in document schema {}: expected document schema 3",
+                "scalar expressionContext or builtIn in document schema {}: expected document schema 3",
                 self.manifest.schema_version
             )));
         }

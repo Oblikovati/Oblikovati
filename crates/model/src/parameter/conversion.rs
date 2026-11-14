@@ -3,6 +3,24 @@
 use super::*;
 
 impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
+    /// Restore a feature-owned model parameter's conversion guard after decoding.
+    /// Example: `parameters.restore_builtin_model(id)?` after creating a model parameter.
+    pub fn restore_builtin_model(&mut self, id: Id) -> Result<(), ParameterError<Id>> {
+        let state = &self.require_record(id)?.state;
+        if state.kind != MODEL_PARAM {
+            return Err(ParameterError::Value {
+                id,
+                found: format!("kind={:?}", state.kind),
+                expected: "a Model parameter for a built-in dimension",
+            });
+        }
+        self.records
+            .get_mut(&id)
+            .expect("validated parameter")
+            .state
+            .built_in = true;
+        Ok(())
+    }
     /// Change kind without changing identity or dependencies; for example `parameters.convert_kind(id, REFERENCE_PARAM)`.
     pub fn convert_kind(
         &mut self,

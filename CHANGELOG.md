@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Preserved the conversion guard of built-in model parameters when saving and reopening. (#3883)
+
 - Made sketch creation and Finish Sketch separate undo and redo steps. (#3880)
 
 - Started a sketch directly on a preselected origin plane. (#3879)
