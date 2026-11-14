@@ -30113,8 +30113,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-curves-e621962f/receipt-e621962f3e021cf8.json",
-        "sha256": "380c0be7158c51acc56a4d4fa6282833996aaa631ee2c21835ed8b38d7f8b1b3"
+        "path": "architecture/rust-port/receipts/2026-11-14-circle-e621962f3e021cf8-c4a20fed/receipt-e621962f3e021cf8.json",
+        "sha256": "ab45ea85377407fe5404efbb6f277d37e9ff7babeb278e71abee9869e8e51bd4"
       },
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
       "mapping_reason": "First native sketch geometry input, cancellation, and history.",
@@ -30142,8 +30142,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-curves-395dac3c/receipt-395dac3c1025c59b.json",
-        "sha256": "a03d398ef038b7deaf0a8e870e274176742edddd22776a358c96925c413f6859"
+        "path": "architecture/rust-port/receipts/2026-11-14-circle-395dac3c1025c59b-c4a20fed/receipt-395dac3c1025c59b.json",
+        "sha256": "b0906daf98577a78f4b821933cd06276f53329be6f024060e8538ca493f9c4e9"
       },
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
       "mapping_reason": "First native sketch geometry input, cancellation, and history.",
@@ -30171,8 +30171,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-curves-877561f2/receipt-877561f2df911547.json",
-        "sha256": "37c1554b67a848a4417f2969f13be665c4413fac2eba7b68460ae64a09e3bd29"
+        "path": "architecture/rust-port/receipts/2026-11-14-circle-877561f2df911547-c4a20fed/receipt-877561f2df911547.json",
+        "sha256": "1831f3ee14e2e328224be802ceb3a4ff01575a33fbe30e25313dea44419c9580"
       },
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
       "mapping_reason": "First native sketch geometry input, cancellation, and history.",
@@ -30217,8 +30217,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-curves-43f992f8/receipt-43f992f8d5a14b8d.json",
-        "sha256": "2c44554138509abe67ed7e4983f904b746c458a1d53708257a53050ba9080ff0"
+        "path": "architecture/rust-port/receipts/2026-11-14-circle-43f992f8d5a14b8d-c4a20fed/receipt-43f992f8d5a14b8d.json",
+        "sha256": "657b4143281641239be5481d0cbebe9fb40de986ca523833897333892e8ac8f1"
       },
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
       "mapping_reason": "First native sketch geometry input, cancellation, and history.",

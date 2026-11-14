@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:877561f2df911547aed48aee9dafe905a3131735731b366457b47a0ff91bba2a",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "a18dcad10755d0ceb8b49b1d907b3800b1c6847c8b3548eb5d2535487b2be445",
+  "application_commit": "c4a20fed95a97c7a4efea0415169179a66b05e5a",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan Lavapipe on Xvfb, Linux"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-circle-877561f2df911547-c4a20fed/cucumber.json",
+    "sha256": "08e1e965f4ab6d9474253ec881c39ecf928448834cb9aad20a70c9fceb808cb8"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-circle-877561f2df911547-c4a20fed/source-revision.json",
+    "sha256": "94bdefcfc49310a56b965ae79b931ce74cada4cc07d05d0903f699dec8d75d54"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-circle-877561f2df911547-c4a20fed/circle-center-point-07-Create-a-free-circle-and-undo-and-redo-it.png",
+    "sha256": "ca0356048aa448650b76f3d245ab7e832eabf3f3e79d409c1dbec5fe6c072974"
+  }
+}
