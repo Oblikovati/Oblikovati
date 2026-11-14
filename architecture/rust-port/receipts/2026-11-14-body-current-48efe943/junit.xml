@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Body properties dialog: tmp/obk-bdd-body-wJFFXf4L/checkout/features/application/body-properties/body-properties.feature" package="testsuite/Feature: Body properties dialog: tmp/obk-bdd-body-wJFFXf4L/checkout/features/application/body-properties/body-properties.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T14:57:16.585053533Z" time="20.946892824"><testcase name="Scenario: Apply and restore a body appearance: tmp/obk-bdd-body-wJFFXf4L/checkout/features/application/body-properties/body-properties.feature:41:3" time="20.946892824"><system-out><![CDATA[  Scenario: Apply and restore a body appearance
+   ✔  Given a part with a visible solid body is active in the MCAD Software
+   ✔  And the body appearance is set to As Part
+   ✔  When the user opens Body Properties for the body from the model browser
+   ✔  And the user selects Black in Body Appearance
+   ✔  And the user chooses OK
+   ✔  Then the dialog closes
+   ✔  And the solid is displayed with the Black appearance
+   ✔  When the user reopens Body Properties for the same body
+   ✔  Then Body Appearance displays Black
+   ✔  When the user selects As Part in Body Appearance
+   ✔  And the user chooses OK
+   ✔  Then the dialog closes
+   ✔  And the solid is displayed with the part appearance
+]]></system-out></testcase></testsuite></testsuites>
