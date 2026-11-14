@@ -152,6 +152,7 @@ fn second_back(world: &mut ApplicationWorld) {
     world.expect_segment_drawn(END, HORIZONTAL_END);
 }
 #[when("I press Ctrl+Y")]
+#[when("the user press Ctrl+Y")]
 fn ctrl_y(world: &mut ApplicationWorld) {
     world.redo();
 }

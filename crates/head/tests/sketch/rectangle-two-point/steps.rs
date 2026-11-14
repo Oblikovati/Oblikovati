@@ -96,6 +96,8 @@ fn remains_ready(world: &mut ApplicationWorld) {
 #[when("I choose Two Point Rectangle and the fixture first corner")]
 #[when("I start Two Point Rectangle and click the fixture first corner")]
 #[when("I start Two Point Rectangle and select a first corner")]
+#[when("the user choose Rectangle Two Point and click the fixture first corner")]
+#[when("the user start Two Point Rectangle and select a first corner")]
 fn first_corner(world: &mut ApplicationWorld) {
     select_rectangle(world);
     world.sketch_click(FIRST);
@@ -111,10 +113,12 @@ fn ready_without(world: &mut ApplicationWorld) {
 }
 // rectangle-two-point-07
 #[when("I invoke Two Point Rectangle")]
+#[when("the user invoke Two Point Rectangle")]
 fn invoke_rectangle(world: &mut ApplicationWorld) {
     select_rectangle(world);
 }
 #[when("I click the same fixture position for both corners")]
+#[when("the user click the same fixture position for both corners")]
 fn same_corner(world: &mut ApplicationWorld) {
     world.sketch_click(FIRST);
     world.sketch_click(FIRST);
@@ -150,15 +154,18 @@ fn typed_ten_six(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
 }
 #[when("I press 1 and then 0")]
+#[when("the user press 1 and then 0")]
 fn type_ten(world: &mut ApplicationWorld) {
     world.type_text("1");
     world.type_text("0");
 }
 #[when("I press Tab")]
+#[when("the user press Tab")]
 fn type_tab(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::Tab, false);
 }
 #[when("I press 6 and then Enter")]
+#[when("the user press 6 and then Enter")]
 fn type_six_and_enter(world: &mut ApplicationWorld) {
     world.type_text("6");
     world.key(ViewportPhysicalKey::Enter, false);
@@ -168,14 +175,37 @@ fn type_six_and_enter(world: &mut ApplicationWorld) {
 #[then("the rectangle and both annotations return")]
 fn ten_six(world: &mut ApplicationWorld) {
     assert_eq!(sides(world), RECTANGLE_SIDES, "sides");
+    assert_typed_rectangle_lengths(&world.edited_geometry());
     world.expect_annotation("10");
     world.expect_annotation("6");
+}
+fn assert_typed_rectangle_lengths(geometry: &oblikovati_model::sketch::Sketch2D) {
+    assert!(topology::is_axis_aligned_closed(geometry));
+    let mut lengths: Vec<f64> = geometry
+        .lines()
+        .iter()
+        .map(|line| {
+            let [a, b] = line
+                .endpoints
+                .map(|id| geometry.point(id).unwrap().position);
+            (a[0] - b[0]).hypot(a[1] - b[1])
+        })
+        .collect();
+    lengths.sort_by(f64::total_cmp);
+    // The default sketch working unit is one centimetre; 6 mm and 10 mm are 0.6 and 1.0.
+    for (actual, expected) in lengths.into_iter().zip([0.6, 0.6, 1.0, 1.0]) {
+        assert!(
+            (actual - expected).abs() < 1e-6,
+            "edge length {actual}: expected {expected} cm"
+        );
+    }
 }
 #[then("the command returns to Select first corner")]
 fn asks_first(world: &mut ApplicationWorld) {
     world.expect_status("Select first corner");
 }
 #[when("I press Escape and then Ctrl+Z")]
+#[when("the user press Escape and then Ctrl+Z")]
 fn escape_and_undo(world: &mut ApplicationWorld) {
     world.escape();
     world.pump(Vec::new());
@@ -195,6 +225,7 @@ fn restored_rectangle(world: &mut ApplicationWorld) {
     world.redo();
 }
 #[when("I open Measure and select its vertical edge away from endpoints")]
+#[when("the user open Measure and select its vertical edge away from endpoints")]
 fn measure_vertical(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::M, false);
     measure_side(world, true);
@@ -205,6 +236,7 @@ fn ten_long(world: &mut ApplicationWorld) {
     world.expect_measure("Length 10.000 mm");
 }
 #[when("I click empty canvas and select its horizontal edge away from endpoints")]
+#[when("the user click empty canvas and select its horizontal edge away from endpoints")]
 fn then_horizontal(world: &mut ApplicationWorld) {
     world.sketch_click(EMPTY);
     measure_side(world, false);

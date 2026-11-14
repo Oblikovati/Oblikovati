@@ -55,6 +55,7 @@ fn identifies_four(world: &mut ApplicationWorld) {
     world.expect_measure("Length 4.000 mm");
 }
 #[when("I click Done")]
+#[when("the user click Done")]
 fn click_done(world: &mut ApplicationWorld) {
     world.click_text("Done");
 }
