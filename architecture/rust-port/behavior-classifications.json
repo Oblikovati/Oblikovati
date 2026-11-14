@@ -15148,8 +15148,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-create-enter-a55cf703/receipt-dc7e3e064afa2b62.json",
-        "sha256": "60b466de6330d07447c173d79982337b6afdb6dc5739eb8d53baa2e17acc10bf"
+        "path": "architecture/rust-port/receipts/2026-11-15-create-template/receipt-dc7e3e064afa2b62.json",
+        "sha256": "6a114a8ebfed1db23a0f7a806083474123b670c0c6680d33df1f3d3d95c95314"
       },
       "go_reference": "Go aa8297d1b: head/ui/chrome_menubar.go invokes app/session.go NewPart or NewAssembly directly; no equivalent chooser was found in head/ui.",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
