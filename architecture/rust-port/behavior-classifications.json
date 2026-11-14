@@ -678,6 +678,389 @@
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "mapping_reason": "Ribbon key tips and view navigation belong to the full desktop shell."
+    },
+    {
+      "id": "scenario:30ebb762acf2f937d24549abe810d47281a058ddf23c2497658d616fc063a8c1",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head",
+      "acceptance_test": "application_scenarios_use_the_native_window: Select the 3D Model tab with its key tip",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3856"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Ribbon key-tip interaction belongs to the full desktop shell (R7)."
+    },
+    {
+      "id": "scenario:25f10c45474f441d81afe6fb183510363ae8356ba46af2d42e0e8eddc8d800e3",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/model",
+      "acceptance_test": "application_scenarios_use_the_native_window: Open a command using a two-letter key tip",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3856"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Ribbon key-tip interaction belongs to the full desktop shell (R7). The Hole command and its model behavior are separate dependencies."
+    },
+    {
+      "id": "scenario:db266950dc95a2e427e4d3490f522ba58d8ad1c689ce5517f8aec14489af10a5",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/model",
+      "acceptance_test": "application_scenarios_use_the_native_window: Continue a two-letter key tip after an unmatched letter",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3856"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Ribbon key-tip interaction belongs to the full desktop shell (R7). The Hole command and its model behavior are separate dependencies."
+    },
+    {
+      "id": "scenario:b16e16445705d7ee6f02567ee1bdaa465cf4a61736791ceff95748dead182278",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head",
+      "acceptance_test": "application_scenarios_use_the_native_window: Change ribbon display using key tips and menu navigation",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3856"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Ribbon key-tip interaction belongs to the full desktop shell (R7)."
+    },
+    {
+      "id": "scenario:e0575ca52d9924e7ff217e888d1736f09695bc3e8f9c3b2b9588c856b71e0629",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head",
+      "acceptance_test": "application_scenarios_use_the_native_window: Continue after an unmatched top-level key tip",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3856"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Ribbon key-tip interaction belongs to the full desktop shell (R7)."
+    },
+    {
+      "id": "scenario:7837112e202ccca93204c1229e7aa44184464fbe1c24c52d933f7af9cda1631f",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head",
+      "acceptance_test": "application_scenarios_use_the_native_window: Return to tab key tips after a partial command key tip",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3856"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Ribbon key-tip interaction belongs to the full desktop shell (R7)."
+    },
+    {
+      "id": "scenario:553fe226c91a2861caf1f0bccdd599c08b3ac28a406e9f7c940b903cdd7af43d",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head",
+      "acceptance_test": "application_scenarios_use_the_native_window: Switch ribbon tabs with the mouse while top-level key tips are visible",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3856"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Ribbon key-tip interaction belongs to the full desktop shell (R7)."
+    },
+    {
+      "id": "scenario:3d5efac75f370bb350af287d25311f1ff61741515db54bd862f45b1eca94a3bc",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head",
+      "acceptance_test": "application_scenarios_use_the_native_window: Dismiss top-level key tips after an unmatched letter on View",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3856"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Ribbon key-tip interaction belongs to the full desktop shell (R7)."
+    },
+    {
+      "id": "scenario:e80fbb796cacf9866652814fb53a5f00fb76c0ce38aa7af97ab1ca23a801d9bf",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head",
+      "acceptance_test": "application_scenarios_use_the_native_window: Open the panel selector while top-level key tips are visible",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3856"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Ribbon key-tip interaction belongs to the full desktop shell (R7)."
+    },
+    {
+      "id": "scenario:08f33e2ff6769ecc44a3d8111aa19c396d18d6c174cc22cb11171f931b043ae1",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head",
+      "acceptance_test": "application_scenarios_use_the_native_window: Open temporary ribbon commands using a tab key tip",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3856"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Ribbon key-tip interaction belongs to the full desktop shell (R7)."
+    },
+    {
+      "id": "scenario:570f04b3b1ee4643cf1c2fa32aea28861026373cb09eee3b4bf8eb4e2e954214",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/model",
+      "acceptance_test": "application_scenarios_use_the_native_window: Launch a command by key tip from the minimized ribbon",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3856"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Ribbon key-tip interaction belongs to the full desktop shell (R7). The Hole command and its model behavior are separate dependencies."
+    },
+    {
+      "id": "scenario:fcac3715b8c6025a8ebe65ba5a94743958bf0fe40cef052877de68fd4b7bc200",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/model",
+      "acceptance_test": "application_scenarios_use_the_native_window: Launch a command through a left-docked compact group key tip",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3856"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Ribbon key-tip interaction belongs to the full desktop shell (R7). The Hole command and its model behavior are separate dependencies."
+    },
+    {
+      "id": "scenario:e2b09b6179579bedae0f9cf73f808b0cf700619b0384c503abca92f5cd845437",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head",
+      "acceptance_test": "application_scenarios_use_the_native_window: Dismiss a left-docked group after its nested key tips",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3856"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Ribbon key-tip interaction belongs to the full desktop shell (R7)."
+    },
+    {
+      "id": "scenario:25f7abeb5b9553ec69e287b20a80fed2b892003c850fbd5b09a69ad37e0dac47",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Select a solid face while command key tips are visible",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3856"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Ribbon key-tip interaction belongs to the full desktop shell (R7). Face picking and the contextual toolbar are dependent behaviors."
+    },
+    {
+      "id": "scenario:c308da166dae298486f02d94923a4036719785dbf22ccb84837a600fc00fdbdd",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head",
+      "acceptance_test": "application_scenarios_use_the_native_window: Navigate an expanded model browser while ribbon key tips are visible",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3856"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Ribbon key-tip interaction belongs to the full desktop shell (R7). Browser selection and sketch highlighting are dependent behaviors."
+    },
+    {
+      "id": "scenario:7a7ce5ab3b61770a31e9ed97f63db640670117ac2e8d2263b495cf3d319d2980",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Keep Tools key tips visible after Escape with a face selected",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3856"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Ribbon key-tip interaction belongs to the full desktop shell (R7). Face picking and the contextual toolbar are dependent behaviors."
+    },
+    {
+      "id": "scenario:7652a644e3e4abd430fe6c4cda133ea4d88518175d447f6835cf337d2b903fa1",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head",
+      "acceptance_test": "application_scenarios_use_the_native_window: Dismiss top-level key tips after Escape on Tools without a selection",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3856"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Ribbon key-tip interaction belongs to the full desktop shell (R7)."
+    },
+    {
+      "id": "scenario:696c1c624ce655a92f7dbf059e4b9d1920fe82394e2258d4e3defca752948814",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Open and exit the free-rotation mode",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3872",
+        "https://github.com/Oblikovati/Oblikovati/issues/3873"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport orbit controls and their interaction states belong to the full desktop shell (R7); a visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:50b890580c8d9393b66713268e83c4e7345495f9602fb9422de8cdb4e789d505",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Select and exit constrained orbit",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3872",
+        "https://github.com/Oblikovati/Oblikovati/issues/3873"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport orbit controls and their interaction states belong to the full desktop shell (R7); a visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:22baf74f89240b1e2783a101efb7fd35e6386be6e32ebfcf8013f6c6fcfbfcd9",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Preview and reset an incremental view rotation",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3872",
+        "https://github.com/Oblikovati/Oblikovati/issues/3873"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport orbit controls and their interaction states belong to the full desktop shell (R7); a visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:60380109be5bc8ba385e715fe0cfa6f203be037196d11c348aaed8e122b34cb4",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Accept an incremental view rotation",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3872",
+        "https://github.com/Oblikovati/Oblikovati/issues/3873"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport orbit controls and their interaction states belong to the full desktop shell (R7); a visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:e3b0703080912b677da97db25de64b0d2bf54a6a0b30286d3592ea0af6020d6b",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Reverse an incremental rotation with the adjacent control",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3872",
+        "https://github.com/Oblikovati/Oblikovati/issues/3873"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport orbit controls and their interaction states belong to the full desktop shell (R7); a visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:1fcd89bdfec26b4baf4a18f2ff9162498db98b0c8f12d1ee8500a7eca3458b8a",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Exit free orbit with Escape",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3872",
+        "https://github.com/Oblikovati/Oblikovati/issues/3873"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport orbit controls and their interaction states belong to the full desktop shell (R7); a visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:c6efd34023daf5106f806588d47a0bcc19d5c1410946e7b8ef27405d7e011ac9",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Leave free orbit using the Pan control",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3872",
+        "https://github.com/Oblikovati/Oblikovati/issues/3873"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport orbit controls and their interaction states belong to the full desktop shell (R7); a visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:0a01e4f0b16e1adba3a11923b88f6176a54bed941ac9d2450832fb8db85dde03",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Exit orbit with the context menu OK action",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3872",
+        "https://github.com/Oblikovati/Oblikovati/issues/3873"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport orbit controls and their interaction states belong to the full desktop shell (R7); a visible model is a fixture dependency."
     }
   ]
 }
