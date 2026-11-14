@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:cbb0076be6dea50f63a28a41ada8d25d508a7f8bf42c77c5ab87c5788859d4f4",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "e9a93d4c096090667952b8080a0cad01c48f480022a4b8ac72ae210607ca138d",
+  "application_commit": "1fb293ef6ccd57df73747887e8a98b224c997d02",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "application_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan Lavapipe on Xvfb, Linux"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-ribbon-fix-cbb0076be6dea50f-1fb293ef/cucumber.json",
+    "sha256": "25404b0e78a9041d96c18639c0f7a3f8d3cb85d2a78af55e2f25e41b603eb327"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-ribbon-fix-cbb0076be6dea50f-1fb293ef/source-revision.json",
+    "sha256": "2bb2d6adadfe7f4c1974e23c25b5606909b18d96cdc6ac7751d2dafb57e2ec7a"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-ribbon-fix-cbb0076be6dea50f-1fb293ef/Create-a-drawing-from-a-sheet-template.png",
+    "sha256": "9f3efe510b86f21da0bba7104868c8b29e20245b82cd3fc0e13baaf21e110234"
+  }
+}

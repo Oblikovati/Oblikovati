@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Create a document from a template: tmp/obk-r6-48987af/features/application/document-creation/document-creation.feature" package="testsuite/Feature: Create a document from a template: tmp/obk-r6-48987af/features/application/document-creation/document-creation.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T21:35:35.726506643Z" time="2.504306707"><testcase name="Scenario: Create a standard metric assembly: tmp/obk-r6-48987af/features/application/document-creation/document-creation.feature:52:3" time="2.504306707"><system-out><![CDATA[  Scenario: Create a standard metric assembly
+   ✔  Given the new-document template chooser is open in the MCAD Software
+   ✔  When the user selects the metric template folder
+   ✔  And the user selects the standard metric assembly template
+   ✔  Then the template details identify an assembly with millimeter units
+   ✔  When the user chooses Create
+   ✔  Then a new assembly document becomes active
+   ✔  And its viewport contains no visible components
+   ✔  And its model browser shows representations, relationships and origin entries
+   ✔  And the assembly ribbon offers commands to place and create components
+   ✔  And a new document tab is visible
+]]></system-out></testcase></testsuite></testsuites>

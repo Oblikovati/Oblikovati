@@ -14300,8 +14300,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-create-new-553cd207/receipt-553cd20756fa5ed6.json",
-        "sha256": "bfc994e7f1cf9956c56c2b7d91544bf71dbe34d1b8eaed16b3bef5ff2ce48140"
+        "path": "architecture/rust-port/receipts/2026-11-14-ribbon-fix-553cd20756fa5ed6-1fb293ef/receipt-553cd20756fa5ed6.json",
+        "sha256": "5a1d010ba2ba487ab973f609f3386e6bc76350646088b53a777cf133e520a5da"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/app/session.go",
       "mapping_reason": "Document-kind creation or drawing workflow depends on the R6 domain.",
@@ -14329,8 +14329,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-create-new-cbb0076b/receipt-cbb0076be6dea50f.json",
-        "sha256": "38752baefc5e29e7052e5930064f8f50475bc5c98d44456d42d67fe80b908580"
+        "path": "architecture/rust-port/receipts/2026-11-14-ribbon-fix-cbb0076be6dea50f-1fb293ef/receipt-cbb0076be6dea50f.json",
+        "sha256": "fbb9f53de493093caab7c78634faa8e7ac6ac07683b9d9575ad965fc172f8f57"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/app/session.go",
       "mapping_reason": "Document-kind creation or drawing workflow depends on the R6 domain.",
@@ -14356,10 +14356,15 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3899",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-ribbon-fix-c71569b3ae5b44b8-1fb293ef/receipt-c71569b3ae5b44b8.json",
+        "sha256": "cbf1f167b87daa7e9cad5230be70c2070a3a491fd9e2dcaf2492c213f1ab0ef4"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/head/ui/file_dialog.go",
-      "mapping_reason": "Document-kind creation or drawing workflow depends on the R6 domain."
+      "mapping_reason": "Document-kind creation or drawing workflow depends on the R6 domain.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:8819d8faec49cf15018200b8acc14267a9e7d15bbee5ceef01fea411bcbe7eac",
