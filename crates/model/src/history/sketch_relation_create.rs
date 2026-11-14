@@ -3,11 +3,11 @@ use super::{DocumentSnapshot, RecipeReservations, SketchConstraintReservationErr
 use crate::{
     document_sketch::{DocumentSketchId, DocumentSketchSolveOutcome},
     sketch::{
-        Sketch2D, SketchConstraint, SketchConstraintId, SketchError,
-        SketchGeometricConstraintCreation,
+        Sketch2D, SketchConstraint, SketchConstraintId, SketchEntityId, SketchError,
+        SketchGeometricConstraintCreation, SketchPoint2D,
     },
 };
-use oblikovati_solve::nonlinear::SolveOptions;
+use oblikovati_solve::nonlinear::{PreferenceTermination, SolveOptions};
 use std::{error::Error, fmt};
 /// One real authored relation, its geometric row, and resulting current numerical structure.
 #[derive(Clone, Debug, PartialEq)]
@@ -15,6 +15,8 @@ pub struct SketchGeometricCreationReport {
     pub constraint: SketchConstraint,
     pub geometric_index: usize,
     pub degrees_of_freedom: usize,
+    /// The requested temporary preference outcome, or None when no preference was requested.
+    pub preference: Option<PreferenceTermination>,
 }
 /// Geometry failure and permanent identity exhaustion remain separate diagnostic causes.
 #[derive(Clone, Debug, PartialEq)]
@@ -33,8 +35,39 @@ impl DocumentSnapshot {
         options: SolveOptions,
         ids: &mut RecipeReservations<'_>,
     ) -> Result<SketchGeometricCreationReport, SketchGeometricCreationError> {
+        self.create_geometric_with_preference(sketch, input, None, options, ids)
+    }
+    /// Create a relation while preferring one point's current position during its initial solve.
+    /// Example: `snapshot.create_sketch_geometric_constraint_preferred(sketch, &input, point, options, ids)?`.
+    pub fn create_sketch_geometric_constraint_preferred(
+        &mut self,
+        sketch: DocumentSketchId,
+        input: &SketchGeometricConstraintCreation,
+        point: SketchEntityId,
+        options: SolveOptions,
+        ids: &mut RecipeReservations<'_>,
+    ) -> Result<SketchGeometricCreationReport, SketchGeometricCreationError> {
+        self.create_geometric_with_preference(sketch, input, Some(point), options, ids)
+    }
+    fn create_geometric_with_preference(
+        &mut self,
+        sketch: DocumentSketchId,
+        input: &SketchGeometricConstraintCreation,
+        preferred: Option<SketchEntityId>,
+        options: SolveOptions,
+        ids: &mut RecipeReservations<'_>,
+    ) -> Result<SketchGeometricCreationReport, SketchGeometricCreationError> {
         let mut geometry = self
             .prepare_geometric_creation(sketch, input, options)
+            .map_err(SketchGeometricCreationError::Sketch)?;
+        if preferred.is_some() && !input.requires_current_seed() {
+            geometry = self
+                .current_sketch_authoring_geometry(sketch, options)
+                .map_err(SketchGeometricCreationError::Sketch)?;
+        }
+        let target = preferred
+            .map(|point| geometry.point(point).copied())
+            .transpose()
             .map_err(SketchGeometricCreationError::Sketch)?;
         let id = ids
             .allocate_sketch_constraint(sketch)
@@ -42,15 +75,46 @@ impl DocumentSnapshot {
         input
             .append(&mut geometry, id)
             .map_err(SketchGeometricCreationError::Sketch)?;
-        let (candidate, report) = self
+        let preference = self
+            .apply_geometric_preference(sketch, &mut geometry, target, options)
+            .map_err(SketchGeometricCreationError::Sketch)?;
+        let (candidate, mut report) = self
             .evaluate_geometric_creation(sketch, geometry, id, options)
             .map_err(SketchGeometricCreationError::Sketch)?;
+        report.preference = preference;
         // #3818: zero DOF does not certify convergence; refuse before adopting the candidate.
         candidate
             .require_converged_sketch(sketch)
             .map_err(SketchGeometricCreationError::Readiness)?;
         self.sketches = candidate.sketches;
         Ok(report)
+    }
+    fn apply_geometric_preference(
+        &self,
+        sketch: DocumentSketchId,
+        geometry: &mut Sketch2D,
+        target: Option<SketchPoint2D>,
+        options: SolveOptions,
+    ) -> Result<Option<PreferenceTermination>, SketchError> {
+        let Some(target) = target else {
+            return Ok(None);
+        };
+        let anchors = self.resolve_sketch_projected_points(sketch)?;
+        let (outcome, status) = geometry.solve_with_point_preferences(
+            &self.parameters,
+            &anchors,
+            &[target],
+            options,
+            || false,
+        )?;
+        let termination = outcome.numerical().termination;
+        if termination != oblikovati_solve::nonlinear::SolveTermination::Converged {
+            return Err(SketchError::Definition(format!(
+                "preferred sketch constraint solve {termination:?}: expected converged authored constraints"
+            )));
+        }
+        *geometry = outcome.into_candidate();
+        Ok(Some(status))
     }
     fn prepare_geometric_creation(
         &self,
@@ -82,6 +146,7 @@ impl DocumentSnapshot {
             constraint,
             geometric_index,
             degrees_of_freedom,
+            preference: None,
         };
         candidate.sketches = solved.candidate;
         Ok((candidate, report))
