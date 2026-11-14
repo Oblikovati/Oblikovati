@@ -24,6 +24,13 @@ impl SketchPrismEvaluator for NamedPrismEvaluator<'_> {
         body.body_report(self.history, self.document, key)
             .map(|_| ())
     }
+    fn resolve_planar_face(
+        &self,
+        body: &Self::Body,
+        key: &[u8],
+    ) -> Result<oblikovati_model::sketch::SketchPlane, String> {
+        body.face_plane(self.history, self.document, key)
+    }
     fn evaluate_prism(
         &mut self,
         feature: FeatureId,
@@ -99,6 +106,13 @@ impl SketchPrismEvaluator for CertifiedNamedPrismEvaluator<'_> {
     type Failure = EvaluationFailure;
     fn verify_body_reference(&self, body: &Self::Body, key: &[u8]) -> Result<(), String> {
         self.names.verify_body_reference(body, key)
+    }
+    fn resolve_planar_face(
+        &self,
+        body: &Self::Body,
+        key: &[u8],
+    ) -> Result<oblikovati_model::sketch::SketchPlane, String> {
+        self.names.resolve_planar_face(body, key)
     }
     fn evaluate_prism(
         &mut self,

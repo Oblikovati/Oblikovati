@@ -155,3 +155,6 @@ mod replay;
 
 #[path = "part_features/delete.rs"]
 mod delete;
+
+#[path = "part_features/face_plane.rs"]
+mod face_plane;

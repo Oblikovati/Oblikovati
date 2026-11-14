@@ -16,6 +16,16 @@ pub trait SketchPrismEvaluator {
     type Failure;
     /// Verify the complete body name before a body-set edit; example: `backend.verify_body_reference(body, key)?`.
     fn verify_body_reference(&self, body: &Self::Body, key: &[u8]) -> Result<(), String>;
+    /// Resolve a current named planar face; example: `backend.resolve_planar_face(body, key)?`.
+    fn resolve_planar_face(
+        &self,
+        _body: &Self::Body,
+        key: &[u8],
+    ) -> Result<crate::sketch::SketchPlane, String> {
+        Err(format!(
+            "face key {key:?}: expected a named planar-face evaluator"
+        ))
+    }
     /// Construct an isolated result from checked inputs; example: `backend.evaluate_prism(feature.id(), input)?`.
     fn evaluate_prism(
         &mut self,
@@ -159,10 +169,21 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             PartFeatureDefinition::DeleteBody(definition) => {
                 self.delete_body(backend, id, definition)
             }
-            _ => self
-                .datums
-                .evaluate_entry(&snapshot.work_geometry, id, &snapshot.parameters)
-                .map_err(|cause| PartFeatureFailure::Datum(Box::new(cause))),
+            _ => {
+                let bodies = &self.bodies;
+                let resolve_face =
+                    |reference: &crate::feature::work_plane::WorkPlaneFaceReference| {
+                        resolve_body_face(bodies, backend, reference)
+                    };
+                self.datums
+                    .evaluate_entry_with_face(
+                        &snapshot.work_geometry,
+                        id,
+                        &snapshot.parameters,
+                        &resolve_face,
+                    )
+                    .map_err(|cause| PartFeatureFailure::Datum(Box::new(cause)))
+            }
         }
     }
     fn delete_body<B: SketchPrismEvaluator<Body = Body, Failure = Failure>>(
@@ -231,6 +252,23 @@ impl<Body, Failure> crate::feature::work_plane::WorkPlaneResolver
     fn point(&self, feature: FeatureId) -> Result<[f64; 3], WorkGeometryError> {
         self.datums.point(feature)
     }
+}
+
+fn resolve_body_face<B: SketchPrismEvaluator>(
+    bodies: &BTreeMap<FeatureId, B::Body>,
+    backend: &B,
+    reference: &crate::feature::work_plane::WorkPlaneFaceReference,
+) -> Result<crate::sketch::SketchPlane, WorkGeometryError> {
+    let body = bodies.get(&reference.source()).ok_or_else(|| {
+        WorkGeometryError::BodyReference(format!(
+            "face key {:?}, source {:?}: expected an available unconsumed body",
+            reference.key(),
+            reference.source()
+        ))
+    })?;
+    backend
+        .resolve_planar_face(body, reference.key())
+        .map_err(WorkGeometryError::BodyReference)
 }
 
 fn require_replay_current(

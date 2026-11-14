@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::{
-    WorkGeometryDefinition, WorkGeometryError, WorkGeometryEvaluation, point::resolve_position,
-};
+use super::{WorkGeometryDefinition, WorkGeometryError, point::resolve_position};
 use crate::{
     feature::work_axis::WorkAxisLine, parameter::ParameterCollection, sketch::SketchPlane,
 };
@@ -30,7 +28,7 @@ impl WorkGeometryResult {
     pub(super) fn evaluate(
         definition: WorkGeometryDefinition,
         parameters: &ParameterCollection<u64>,
-        current: &WorkGeometryEvaluation,
+        current: &impl crate::feature::work_plane::WorkPlaneResolver,
     ) -> Result<Self, WorkGeometryError> {
         match definition {
             WorkGeometryDefinition::Axis(axis) => Ok(Self::Axis(axis)),
@@ -55,7 +53,7 @@ impl WorkGeometryResult {
 
 fn axis_between(
     points: super::WorkAxisPoints,
-    current: &WorkGeometryEvaluation,
+    current: &impl crate::feature::work_plane::WorkPlaneResolver,
 ) -> Result<WorkGeometryResult, WorkGeometryError> {
     WorkAxisLine::through_points(
         points.first.position(current)?,

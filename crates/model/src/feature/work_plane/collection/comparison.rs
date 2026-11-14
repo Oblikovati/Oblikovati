@@ -9,7 +9,9 @@ impl WorkPlaneDefinition {
         match (self, other) {
             (DeleteBody(first), DeleteBody(second)) => first == second,
             (SketchPrism(first), SketchPrism(second)) => first.same_recipe(second),
-            (AtAngleAboutAxis(first), AtAngleAboutAxis(second)) => same_line_angle(*first, *second),
+            (AtAngleAboutAxis(first), AtAngleAboutAxis(second)) => {
+                same_line_angle(first.clone(), second.clone())
+            }
             (ThroughTwoAxes(first), ThroughTwoAxes(second)) => first == second,
             (NormalToAxis(first), NormalToAxis(second)) => first == second,
             (LineThroughPoint(first), LineThroughPoint(second)) => first == second,

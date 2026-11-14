@@ -83,7 +83,7 @@ fn install_offset(
 ) -> Result<(), Error> {
     let (distance, added) = revise_distance(snapshot, ids, owner, revision)?;
     let definition = WorkGeometryDefinition::Offset {
-        base: revision.base,
+        base: revision.base.clone(),
         distance,
     };
     snapshot
@@ -161,8 +161,9 @@ fn same_geometry(
     Ok(match revision {
         LineAngle(geometry) => {
             same_scalar(snapshot, owner, Scalar::Angle, &geometry.expression)?
-                && definition
-                    .same_recipe(&WorkGeometryDefinition::AtAngleAboutAxis(geometry.source))
+                && definition.same_recipe(&WorkGeometryDefinition::AtAngleAboutAxis(
+                    geometry.source.clone(),
+                ))
         }
         Offset(geometry) => {
             same_scalar(snapshot, owner, Scalar::Offset, &geometry.expression)?

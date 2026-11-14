@@ -11,10 +11,10 @@ impl WorkGeometryDefinition {
             Self::SketchPrism(definition) => {
                 definition.source_reads().keys().iter().copied().collect()
             }
-            Self::Offset { base, distance } => offset_keys(*base, *distance),
-            Self::ParallelThroughPoint(source) => parallel_keys(*source),
+            Self::Offset { base, distance } => offset_keys(base.clone(), *distance),
+            Self::ParallelThroughPoint(source) => parallel_keys(source.clone()),
             Self::LineThroughPoint(source) | Self::NormalToAxis(source) => line_point_keys(*source),
-            Self::AtAngleAboutAxis(source) => line_angle_keys(*source),
+            Self::AtAngleAboutAxis(source) => line_angle_keys(source.clone()),
             Self::ThroughTwoAxes(axes) => axes.iter().copied().filter_map(axis_key).collect(),
             Self::ThroughThreePoints(points) => {
                 points.iter().copied().filter_map(point_key).collect()
@@ -40,6 +40,7 @@ fn plane_key(base: WorkPlaneReference) -> Option<FeatureReadKey> {
     match base {
         WorkPlaneReference::Origin(_) => None,
         WorkPlaneReference::Feature(id) => Some(FeatureReadKey::Feature(id)),
+        WorkPlaneReference::Face(reference) => Some(FeatureReadKey::Feature(reference.source())),
     }
 }
 fn offset_keys(base: WorkPlaneReference, distance: DatumLength) -> Vec<FeatureReadKey> {

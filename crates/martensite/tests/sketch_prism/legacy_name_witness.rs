@@ -89,7 +89,16 @@ fn reopened_history(history: &DocumentEditHistory) -> DocumentEditHistory {
         .unwrap()
         .with_sketches(&snapshot.sketches, 1, 9)
         .unwrap()
-        .with_work_geometry(&snapshot.work_geometry, 1)
+        .with_work_geometry(
+            &snapshot.work_geometry,
+            snapshot
+                .work_geometry
+                .features()
+                .iter()
+                .map(|feature| feature.id().0)
+                .max()
+                .unwrap_or(0),
+        )
         .unwrap();
     let reopened = DocumentPackage::decode(&package.encode().unwrap()).unwrap();
     let mut restored = snapshot.clone();
@@ -220,4 +229,80 @@ fn assert_frame_values(actual: [f64; 3], expected: [f64; 3]) {
             "value {actual}, expected {expected}"
         );
     }
+}
+
+fn face_offset_history(key: Vec<u8>) -> DocumentEditHistory {
+    use oblikovati_model::feature::work_plane::{
+        WorkPlaneDefinition, WorkPlaneDistance, WorkPlaneFaceReference, WorkPlaneReference,
+    };
+    let base = imported_history(GO_CUBE);
+    let mut snapshot = base.snapshot().clone();
+    let reference = WorkPlaneFaceReference::new(key).unwrap();
+    snapshot
+        .work_geometry
+        .append(AuthoredFeature::datum(
+            FeatureId(2),
+            "Face offset",
+            WorkPlaneDefinition::Offset {
+                base: WorkPlaneReference::Face(reference),
+                distance: WorkPlaneDistance::Constant(0.5),
+            },
+        ))
+        .unwrap();
+    let ids = RecipeIdAllocator::restore(None, snapshot.parameters.ids()).unwrap();
+    DocumentEditHistory::new(snapshot, ids).unwrap()
+}
+fn assert_face_offset(history: &DocumentEditHistory, expected_x: f64) {
+    use oblikovati_martensite::CertifiedNamedPrismEvaluator;
+    use oblikovati_model::feature::work_plane::WorkPlaneResolver;
+    let mut evaluator =
+        CertifiedNamedPrismEvaluator::new(history, document_guid(), app_resolution());
+    let replay = history
+        .snapshot()
+        .evaluate_part_features(&mut evaluator)
+        .unwrap();
+    let plane = replay.plane(FeatureId(2)).unwrap();
+    assert_frame_values(plane.recipe().origin, [expected_x, 0., 0.]);
+    assert_frame_values(plane.normal(), [1., 0., 0.]);
+}
+#[test]
+fn face_offset_replays_from_named_body_through_edit_history_and_recipe() {
+    let mut history = face_offset_history(native_side_name(7));
+    assert_face_offset(&history, 1.5);
+    let token = history.begin("size").unwrap();
+    history
+        .edit(&token, |snapshot, _| {
+            let id = snapshot.parameters.find("size").unwrap();
+            snapshot.parameters.set_expression(id, "20 mm")?;
+            solve_selected_sketches(snapshot);
+            Ok::<(), oblikovati_model::parameter::ParameterError<u64>>(())
+        })
+        .unwrap();
+    history.commit(&token, false).unwrap();
+    assert_face_offset(&history, 2.5);
+    history.undo().unwrap();
+    assert_face_offset(&history, 1.5);
+    history.redo().unwrap();
+    assert_face_offset(&history, 2.5);
+    assert_face_offset(&reopened_history(&history), 2.5);
+}
+
+#[test]
+fn face_offset_rejects_a_foreign_document_name_without_dropping_its_body() {
+    use oblikovati_martensite::CertifiedNamedPrismEvaluator;
+    use oblikovati_model::feature::work_plane::WorkPlaneResolver;
+    let foreign = "11111111-2222-3333-4444-555555555555".parse().unwrap();
+    let key = SemanticReferenceName::new(foreign, 1, 1, "sketch-prism", "side", &[1, 7])
+        .unwrap()
+        .encode()
+        .unwrap();
+    let history = face_offset_history(key);
+    let mut evaluator =
+        CertifiedNamedPrismEvaluator::new(&history, document_guid(), app_resolution());
+    let replay = history
+        .snapshot()
+        .evaluate_part_features(&mut evaluator)
+        .unwrap();
+    assert!(replay.body(FeatureId(1)).is_some());
+    assert!(replay.plane(FeatureId(2)).is_err());
 }

@@ -2,6 +2,7 @@
 
 use super::result::WorkGeometryResult;
 use super::{WorkGeometryDefinition as WorkPlaneDefinition, WorkGeometryError as WorkPlaneError};
+mod face;
 mod queries;
 use crate::{
     feature::{
@@ -78,6 +79,19 @@ impl WorkGeometryEvaluation {
         id: FeatureId,
         parameters: &ParameterCollection<u64>,
     ) -> Result<(), WorkPlaneError> {
+        self.evaluate_entry_with_face(sequence, id, parameters, &|reference| {
+            Err(crate::feature::work_plane::unavailable_face(reference))
+        })
+    }
+    pub(crate) fn evaluate_entry_with_face(
+        &mut self,
+        sequence: &FeatureSequence<WorkPlaneDefinition>,
+        id: FeatureId,
+        parameters: &ParameterCollection<u64>,
+        resolve_face: &impl Fn(
+            &crate::feature::work_plane::WorkPlaneFaceReference,
+        ) -> Result<crate::sketch::SketchPlane, WorkPlaneError>,
+    ) -> Result<(), WorkPlaneError> {
         let feature = sequence.get(id).map_err(|_| WorkPlaneError::Unavailable {
             feature: id,
             expected: "datum",
@@ -93,7 +107,12 @@ impl WorkGeometryEvaluation {
                 actual: "body feature",
             }));
         }
-        let datum = WorkGeometryResult::evaluate(feature.definition().clone(), parameters, self)?;
+        let resolver = face::DatumFaceResolver {
+            datums: self,
+            resolve_face,
+        };
+        let datum =
+            WorkGeometryResult::evaluate(feature.definition().clone(), parameters, &resolver)?;
         let datum = datum.with_plane_orientation(feature)?;
         self.datums.insert(id, datum);
         Ok(())

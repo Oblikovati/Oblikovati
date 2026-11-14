@@ -47,7 +47,7 @@ fn revised_source(
     owner: FeatureId,
     revision: &LineAngleRevision,
 ) -> Result<(WorkPlaneLineAngle, Option<u64>), Error> {
-    let mut source = revision.source;
+    let mut source = revision.source.clone();
     let Some(expression) = &revision.expression else {
         return Ok((source, None));
     };

@@ -55,7 +55,7 @@ pub(super) fn references<const COUNT: usize>(
 }
 
 /// Resolve one slot after the caller validates unique repicks; example: `repick(snapshot, args, (0, source.line), input::axis_reference)?`.
-pub(in crate::datums) fn repick<Reference: Copy>(
+pub(in crate::datums) fn repick<Reference>(
     snapshot: &DocumentSnapshot,
     args: &RedefineWorkPlaneArgs,
     slot: (i64, Reference),

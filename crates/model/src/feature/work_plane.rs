@@ -3,6 +3,8 @@
 
 mod collection;
 mod construction;
+mod face_reference;
+pub use face_reference::WorkPlaneFaceReference;
 mod recipe;
 pub use super::work_geometry::WorkGeometryError as WorkPlaneError;
 pub use super::work_geometry::WorkGeometryEvaluation as WorkPlaneEvaluation;
@@ -20,10 +22,11 @@ pub enum WorkPlaneOrigin {
 }
 
 /// References resolve by stable feature identity, never by nearest geometry.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum WorkPlaneReference {
     Origin(WorkPlaneOrigin),
     Feature(FeatureId),
+    Face(WorkPlaneFaceReference),
 }
 
 /// Source-compatible length used by plane offsets and datum point coordinates.
@@ -38,8 +41,19 @@ pub trait WorkPlaneResolver {
     fn axis(&self, feature: FeatureId) -> Result<super::work_axis::WorkAxisLine, WorkPlaneError>;
     /// Resolve one available current frame; example: `resolver.plane(FeatureId(1))?`.
     fn plane(&self, feature: FeatureId) -> Result<SketchPlane, WorkPlaneError>;
+    /// Resolve a complete current face name; example: `resolver.face(&reference)?`.
+    fn face(&self, reference: &WorkPlaneFaceReference) -> Result<SketchPlane, WorkPlaneError> {
+        Err(unavailable_face(reference))
+    }
     /// Resolve one available current position; example: `resolver.point(FeatureId(2))?`.
     fn point(&self, feature: FeatureId) -> Result<[f64; 3], WorkPlaneError>;
+}
+
+pub(crate) fn unavailable_face(reference: &WorkPlaneFaceReference) -> WorkPlaneError {
+    WorkPlaneError::BodyReference(format!(
+        "face key {:?}: expected a current named-face resolver",
+        reference.key()
+    ))
 }
 
 impl WorkPlaneOrigin {
@@ -121,6 +135,7 @@ impl WorkPlaneReference {
         match self {
             Self::Origin(origin) => Ok(origin.plane()),
             Self::Feature(id) => resolver.plane(id),
+            Self::Face(reference) => resolver.face(&reference),
         }
     }
 }

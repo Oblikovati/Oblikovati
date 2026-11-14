@@ -29,7 +29,7 @@ pub(crate) use point::validate_position;
 pub use point::{WorkAxisPoints, WorkPointCoordinateError, WorkPointReference};
 
 /// A plane inherits the current base axes and the current point position.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct WorkPlaneThroughPoint {
     pub base: WorkPlaneReference,
@@ -45,7 +45,7 @@ pub struct WorkPlaneLinePoint {
 }
 
 /// Current axis and base-plane references with one authored angular source.
-#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct WorkPlaneLineAngle {
     pub line: super::work_axis::WorkAxisReference,

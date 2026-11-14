@@ -324,3 +324,6 @@ fn verify_empty_slot(slot: &PartSlot, session: &PartSession) {
     assert!(error.to_string().contains("document 7"));
     assert!(std::error::Error::source(&error).is_none());
 }
+
+#[path = "part_evaluation/face_offset.rs"]
+mod face_offset;

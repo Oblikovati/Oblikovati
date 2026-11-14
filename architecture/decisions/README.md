@@ -16,7 +16,7 @@ Keep the original records in the Go repository, with references to the fixed
 
 The new sequence starts at `ADR-0001`. Use filenames such as
 `ADR-0001-<decision-title>.md`; assign numbers when records are created.
-The next unused number is `ADR-0034`.
+The next unused number is `ADR-0043`.
 Qualify old references with the repository, commit, and legacy ADR number so
 they cannot be confused with a new Rust ADR that has the same number.
 
@@ -137,6 +137,7 @@ Each record states its decision date. No application runtime acceptance is claim
 | [ADR-0039](ADR-0039-placed-dimension-value-editing.md) | One value editor for placed sketch dimensions | R2/R3/R4/R8 |
 | [ADR-0040](ADR-0040-first-class-cad-document-formats.md) | First-class SolidWorks and Inventor documents through Bessemer and Corliss | R2/R6/R8; K10 |
 | [ADR-0041](ADR-0041-kernel-profile-extrusion.md) | One kernel path for sketch profile extrusion | R3/R4/R8; #3857 |
+| [ADR-0042](ADR-0042-named-face-datum-replay.md) | Named face inputs in the datum program | R3/R5; #3882, #3884 |
 
 Use the [domain glossary](../../CONTEXT.md) for shared model terms. The
 [port plan](../rust-port/plan.md#architecture-decisions-and-implementation-evidence)

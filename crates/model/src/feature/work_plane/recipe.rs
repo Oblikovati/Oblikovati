@@ -52,18 +52,18 @@ impl WorkPlaneDefinition {
         match self {
             Self::DeleteBody(definition) => Source::DeleteBody(definition.key().to_vec()),
             Self::SketchPrism(definition) => Source::SketchPrism(definition.recipe()),
-            Self::AtAngleAboutAxis(source) => Source::AtAngleAboutAxis(*source),
+            Self::AtAngleAboutAxis(source) => Source::AtAngleAboutAxis(source.clone()),
             Self::ThroughTwoAxes(axes) => Source::ThroughTwoAxes(*axes),
             Self::NormalToAxis(source) => Source::NormalToAxis(*source),
             Self::LineThroughPoint(source) => Source::LineThroughPoint(*source),
             Self::ThroughThreePoints(points) => Source::ThroughThreePoints(*points),
-            Self::ParallelThroughPoint(source) => Source::ParallelThroughPoint(*source),
+            Self::ParallelThroughPoint(source) => Source::ParallelThroughPoint(source.clone()),
             Self::Axis(axis) => Source::Axis(axis.recipe()),
             Self::Point(coordinates) => Source::Point(*coordinates),
             Self::PointAtReference(reference) => Source::PointAtReference(*reference),
             Self::AxisThroughPoints(points) => Source::AxisThroughPoints(*points),
             Self::Fixed(plane) => fixed_frame_recipe(*plane),
-            Self::Offset { base, distance } => offset_source_recipe(*base, *distance),
+            Self::Offset { base, distance } => offset_source_recipe(base.clone(), *distance),
         }
     }
 
@@ -117,7 +117,19 @@ fn restore_point(
     Ok(WorkPlaneDefinition::Point(coordinates))
 }
 impl WorkPlaneDefinitionRecipe {
+    fn has_face_reference(&self) -> bool {
+        let base = match self {
+            Self::Offset { base, .. } => base,
+            Self::ParallelThroughPoint(source) => &source.base,
+            Self::AtAngleAboutAxis(source) => &source.base,
+            _ => return false,
+        };
+        matches!(base, WorkPlaneReference::Face(_))
+    }
     pub(super) fn source_version(&self) -> u32 {
+        if self.has_face_reference() {
+            return 13;
+        }
         match self {
             Self::DeleteBody(_) => 12,
             Self::SketchPrism(_) => 11,
@@ -134,6 +146,9 @@ impl WorkPlaneDefinitionRecipe {
         }
     }
     pub(super) fn minimum_program_version(&self) -> u32 {
+        if self.has_face_reference() {
+            return 18;
+        }
         match self {
             Self::DeleteBody(_) => 17,
             Self::SketchPrism(_) => 16,
