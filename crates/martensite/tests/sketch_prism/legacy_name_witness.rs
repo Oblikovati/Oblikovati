@@ -425,3 +425,6 @@ fn go_face_frame_tracks_fixture_through_edit_undo_redo_and_reopen() {
 
 #[path = "legacy_cap_witness.rs"]
 mod legacy_cap_witness;
+
+#[path = "legacy_cap_stage.rs"]
+mod legacy_cap_stage;

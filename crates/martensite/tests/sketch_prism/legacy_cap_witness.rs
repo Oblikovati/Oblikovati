@@ -217,7 +217,7 @@ fn migrated_go_cap_plane_history() -> DocumentEditHistory {
     DocumentEditHistory::new(snapshot, ids).unwrap()
 }
 
-fn assert_go_cap_offset(history: &DocumentEditHistory, expected_area: f64) {
+pub(super) fn assert_go_cap_offset(history: &DocumentEditHistory, expected_area: f64) {
     use oblikovati_martensite::CertifiedNamedPrismEvaluator;
     use oblikovati_model::feature::work_plane::WorkPlaneResolver;
     let mut evaluator =
