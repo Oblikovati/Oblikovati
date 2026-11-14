@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Navigate the ribbon using key tips: tmp/obk-bdd-ui-dcdIZZms/checkout/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature" package="testsuite/Feature: Navigate the ribbon using key tips: tmp/obk-bdd-ui-dcdIZZms/checkout/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T15:03:25.586522772Z" time="4.707346719"><testcase name="Scenario: Keep ribbon key tips visible while arrow keys change the model view: tmp/obk-bdd-ui-dcdIZZms/checkout/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:192:3" time="4.707346719"><system-out><![CDATA[  Scenario: Keep ribbon key tips visible while arrow keys change the model view
+   ✔  Given a part with a visible solid is active in the MCAD Software
+   ✔  And the full 3D Model ribbon is selected
+   ✔  When the user presses Alt to show top-level ribbon key tips
+   ✔  And the user presses the Right Arrow key
+   ✔  Then the displayed solid changes orientation
+   ✔  And the top-level ribbon key tips remain visible
+   ✔  When the user presses the Left Arrow key
+   ✔  Then the solid returns to its prior visible orientation
+   ✔  And the top-level ribbon key tips remain visible
+   ✔  When the user presses the 3D Model tab key tip
+   ✔  Then the ribbon shows command-level key tips
+   ✔  When the user presses Alt
+   ✔  Then the key tips disappear
+]]></system-out></testcase></testsuite></testsuites>

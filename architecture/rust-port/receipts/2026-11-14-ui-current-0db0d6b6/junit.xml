@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon docking: tmp/obk-bdd-ui-dcdIZZms/checkout/features/application/ribbon-docking/ribbon-docking.feature" package="testsuite/Feature: Ribbon docking: tmp/obk-bdd-ui-dcdIZZms/checkout/features/application/ribbon-docking/ribbon-docking.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T15:03:12.009796504Z" time="11.990358477000001"><testcase name="Scenario: Move the ribbon from the top to both sides and back: tmp/obk-bdd-ui-dcdIZZms/checkout/features/application/ribbon-docking/ribbon-docking.feature:36:3" time="11.990358477000001"><system-out><![CDATA[  Scenario: Move the ribbon from the top to both sides and back
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the model browser is docked on the left
+   ✔  And the ribbon is docked at the top with the 3D Model tab selected
+   ✔  When the user right-clicks the active 3D Model tab and chooses Left from Docking Positions
+   ✔  Then the ribbon tabs are arranged vertically along the left edge
+   ✔  And the 3D Model command groups are stacked beside the tabs
+   ✔  And the model browser appears to the right of the ribbon
+   ✔  When the user right-clicks the active 3D Model tab and opens Docking Positions
+   ✔  Then Left is checked
+   ✔  When the user chooses Right from the ribbon Docking Positions menu
+   ✔  Then the ribbon tabs and command groups are arranged vertically on the right
+   ✔  And the model browser is visible on the left of the viewport
+   ✔  When the user right-clicks the active 3D Model tab and opens Docking Positions
+   ✔  Then Right is checked
+   ✔  When the user chooses Top from the ribbon Docking Positions menu
+   ✔  Then the ribbon tabs and command groups are arranged horizontally above the viewport
+   ✔  And the same part remains active
+   ✔  And the model browser remains visible to the left of the viewport
+]]></system-out></testcase></testsuite></testsuites>

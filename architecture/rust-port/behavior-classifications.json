@@ -664,7 +664,7 @@
     },
     {
       "id": "scenario:59bbc7159c8ea4f06a7778692656e22f14242938f0a79f1cd0ce64c305d9dac4",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6",
       "milestone": "R7",
       "owner": "desktop",
@@ -676,8 +676,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-orbit-59bbc715/receipt-59bbc7159c8ea4f0.json",
-        "sha256": "1b4091cb8d167a25e49d981a0493ab2fd693bcfce310a803e7af4d3a2bdd6025"
+        "path": "architecture/rust-port/receipts/2026-11-14-ui-current-59bbc715/receipt-59bbc7159c8ea4f0.json",
+        "sha256": "b9bfe2b43802dcb0adb55f6465589ba62f3adc23cd20d60302b1bd04648eeb79"
       },
       "mapping_reason": "Viewport navigation belongs to the full desktop shell.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
@@ -978,7 +978,7 @@
     },
     {
       "id": "scenario:3e4b9e33e44dffb2c65edec2817081f095cd3ee4e2dd0a4018e976b135f897bb",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4",
       "milestone": "R7",
       "owner": "desktop",
@@ -990,8 +990,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-3e4b9e33/receipt-3e4b9e33e44dffb2.json",
-        "sha256": "2d21a3342edff7013d66ee69a7a1e259d96d4fe146aa070420b248044a94bdc0"
+        "path": "architecture/rust-port/receipts/2026-11-14-ui-current-3e4b9e33/receipt-3e4b9e33e44dffb2.json",
+        "sha256": "fe523c481eee286a0c1a55a19bc4ff628457e6b441903b0657de6b3840fc9463"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -1509,7 +1509,7 @@
     },
     {
       "id": "scenario:d18b6850de15454ecd7f32357111404c60d2e76f061f91351cc7e0ae230956e0",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "9793d6a9ad9655ef4412295075dfbf9f6f5a5f97566e5564f2ca9f5a9c68f62a",
       "milestone": "R7",
       "owner": "desktop",
@@ -1520,8 +1520,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-d18b6850/receipt-d18b6850de15454e.json",
-        "sha256": "8116d93434146e62f8bcb58fe2d59caabbf1ead4c3789659d4370df44d0b4628"
+        "path": "architecture/rust-port/receipts/2026-11-14-ui-current-d18b6850/receipt-d18b6850de15454e.json",
+        "sha256": "1621a0f37d67e1f9c1dfec0294252dafba48a46d5ac43e1e878208521f9258b4"
       },
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
@@ -2046,7 +2046,7 @@
     },
     {
       "id": "scenario:0db0d6b60a17036c6ec52d0756fe476071bb6d443fe662428dda048a95b5ae57",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "35ca58e5b39b0e08d7b10b0f9d82654e8373d34cb72e6db92ea6875525a61eaf",
       "milestone": "R7",
       "owner": "desktop",
@@ -2058,8 +2058,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-0db0d6b6/receipt-0db0d6b60a17036c.json",
-        "sha256": "a5aae57e12acb036faa38d008eeeaabdbbc4e1c6d184a11be0834ac801360ca7"
+        "path": "architecture/rust-port/receipts/2026-11-14-ui-current-0db0d6b6/receipt-0db0d6b60a17036c.json",
+        "sha256": "8f8cee6a1953c6f6bbc8809f704c503ae08f13bc7b2bd3bded1b67540c42099c"
       },
       "mapping_reason": "Ribbon docking and browser layout belong to the full desktop shell.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
@@ -3389,7 +3389,7 @@
     },
     {
       "id": "scenario:9a6cb2d0318b1fcb8760a6f74647414a928349ad959e48a7daa30f4c25969abc",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e",
       "milestone": "R7",
       "owner": "desktop",
@@ -3401,8 +3401,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-9a6cb2d0/receipt-9a6cb2d0318b1fcb.json",
-        "sha256": "c9ab36c6ebfb32fb60e71fd371c5bda251809cbde20274c9a453736f6ff4a531"
+        "path": "architecture/rust-port/receipts/2026-11-14-ui-current-9a6cb2d0/receipt-9a6cb2d0318b1fcb.json",
+        "sha256": "47b3a935b491ea08c4286634b5d062e646f91e83f3e29d917d9eb38a7963650f"
       },
       "mapping_reason": "Select a feature row and present its model outline and contextual controls.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
