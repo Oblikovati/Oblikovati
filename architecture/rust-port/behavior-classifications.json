@@ -4516,7 +4516,7 @@
     },
     {
       "id": "scenario:f0b61ad2f9a5655f1fe0473d77897338d6439c4a372597e86ec3f27aa2d9c982",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "fd33924caea15cf97ba75ad3600c7244cf17592b6bdf26bdc9882f7cae71fb91",
       "milestone": "R7",
       "owner": "desktop",
@@ -4528,8 +4528,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-file-menu-f0b61ad2/receipt-f0b61ad2f9a5655f.json",
-        "sha256": "bdfb9036e06f46c93ab0be402eb9f881d33213da5416aaf7ceaa54f177c5dcc7"
+        "path": "architecture/rust-port/receipts/2026-11-14-filemenu-current-f0b61ad2/receipt-f0b61ad2f9a5655f.json",
+        "sha256": "5a14ae3618f77cbcd229605bee3bd83e6d4208ee7cca4116c15325409c2e63e3"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go: drawFileMenu; legacy menu structure differs from the scenario",
       "mapping_reason": "Application shell menu, layout, and document-context interaction.",
@@ -4545,7 +4545,7 @@
     },
     {
       "id": "scenario:a94ed06a75a5dbb3cd0b18e6f3acc3aaeac44c4fcb78b38a6ba95505278d6516",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "fd33924caea15cf97ba75ad3600c7244cf17592b6bdf26bdc9882f7cae71fb91",
       "milestone": "R7",
       "owner": "desktop",
@@ -4557,8 +4557,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-file-menu-a94ed06a/receipt-a94ed06a75a5dbb3.json",
-        "sha256": "113b996960142ea4f57b06a84d69a74059503d4982b9864c58cc40775c2f2c25"
+        "path": "architecture/rust-port/receipts/2026-11-14-filemenu-current-a94ed06a/receipt-a94ed06a75a5dbb3.json",
+        "sha256": "687fc1cdf2beab7b26c1a695b2f6fdd494177ab0adbd59acf6219da6496e5e56"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go: drawFileMenu; legacy menu structure differs from the scenario",
       "mapping_reason": "Application shell menu, layout, and document-context interaction.",
@@ -4574,7 +4574,7 @@
     },
     {
       "id": "scenario:dac29e7f09893d1df715332e0b2f9a58173d701cc962db26f626644246b5869a",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "fd33924caea15cf97ba75ad3600c7244cf17592b6bdf26bdc9882f7cae71fb91",
       "milestone": "R7",
       "owner": "desktop",
@@ -4586,8 +4586,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-file-menu-dac29e7f/receipt-dac29e7f09893d1d.json",
-        "sha256": "2b5b3b01167d156311d8f41222e528689e54cfb9815c6bcd3f2e6d25df9b2a4b"
+        "path": "architecture/rust-port/receipts/2026-11-14-filemenu-current-dac29e7f/receipt-dac29e7f09893d1d.json",
+        "sha256": "1b5db3f0d21142425e2779b98ded76301c0ac814270c33708e9076d768fc710b"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go: drawFileMenu; legacy menu structure differs from the scenario",
       "mapping_reason": "Application shell menu, layout, and document-context interaction.",
@@ -4603,7 +4603,7 @@
     },
     {
       "id": "scenario:d5bc3120a72a620b38cfce7f292e55f13491a9f04841e4238c56b4e215534fc2",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "fd33924caea15cf97ba75ad3600c7244cf17592b6bdf26bdc9882f7cae71fb91",
       "milestone": "R7",
       "owner": "desktop",
@@ -4615,8 +4615,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-file-menu-d5bc3120/receipt-d5bc3120a72a620b.json",
-        "sha256": "a9ea4a63d0f57941b63c1c2775bd69ffb5982100fbc5c77a9f8c35182e15b702"
+        "path": "architecture/rust-port/receipts/2026-11-14-filemenu-current-d5bc3120/receipt-d5bc3120a72a620b.json",
+        "sha256": "1f3a6b3eb1f6a90cf76b344331f685e7d9e4f6431a5d2ab1fe685680498ce5f2"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go: drawFileMenu; legacy menu structure differs from the scenario",
       "mapping_reason": "Application shell menu, layout, and document-context interaction.",
@@ -4632,7 +4632,7 @@
     },
     {
       "id": "scenario:210565d68ab3712af8e53f19972c4a22e3a6fb8ca78e4c0c9c923fb948b2fae4",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "fd33924caea15cf97ba75ad3600c7244cf17592b6bdf26bdc9882f7cae71fb91",
       "milestone": "R7",
       "owner": "desktop",
@@ -4644,8 +4644,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-file-menu-210565d6/receipt-210565d68ab3712a.json",
-        "sha256": "4e881440de374162dff65a68c9651a3c6c32494f36338835bf1ae269b6e89c71"
+        "path": "architecture/rust-port/receipts/2026-11-14-filemenu-current-210565d6/receipt-210565d68ab3712a.json",
+        "sha256": "6e7cff285d3e768d716bb7b944d397cacb6a3b34d9ffd38e2ceb410dd224838d"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go: drawFileMenu; legacy menu structure differs from the scenario",
       "mapping_reason": "Application shell menu, layout, and document-context interaction.",
@@ -4661,7 +4661,7 @@
     },
     {
       "id": "scenario:e69248355099bdc95eb4c23727750ccba37f7f3cb04b9fd3a70b6baf9da7f9eb",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "fd33924caea15cf97ba75ad3600c7244cf17592b6bdf26bdc9882f7cae71fb91",
       "milestone": "R7",
       "owner": "desktop",
@@ -4673,8 +4673,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-file-menu-e6924835/receipt-e69248355099bdc9.json",
-        "sha256": "c4e13d972d3581c8fcd973c05b26ab49cfa5dceaa24fd284afe9960159ababc1"
+        "path": "architecture/rust-port/receipts/2026-11-14-filemenu-current-e6924835/receipt-e69248355099bdc9.json",
+        "sha256": "aa676273c15deb65167b79201d74261c4aaef51f72f807deec1bfaf8e72ffcb2"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go: drawFileMenu; legacy menu structure differs from the scenario",
       "mapping_reason": "Application shell menu, layout, and document-context interaction.",
@@ -4690,7 +4690,7 @@
     },
     {
       "id": "scenario:d703958d1cb7a6f8afc29bd7c8f1329cfddd6c762f405ed19855363a4866bbf8",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "fd33924caea15cf97ba75ad3600c7244cf17592b6bdf26bdc9882f7cae71fb91",
       "milestone": "R7",
       "owner": "desktop",
@@ -4702,8 +4702,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-file-menu-d703958d/receipt-d703958d1cb7a6f8.json",
-        "sha256": "8b76d1933f981aaad7ba36d803c43e9651e904739db0b2c825a8d21c1afe0b85"
+        "path": "architecture/rust-port/receipts/2026-11-14-filemenu-current-d703958d/receipt-d703958d1cb7a6f8.json",
+        "sha256": "2589f48e07b6dd88fa7bd40d2918344aa8396b9ebb6eb546240145786f06feb3"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go: drawFileMenu; legacy menu structure differs from the scenario",
       "mapping_reason": "Application shell menu, layout, and document-context interaction.",
@@ -4719,7 +4719,7 @@
     },
     {
       "id": "scenario:5c5237cc9af7f0342c3472f734bbcd8a6970cbc2a66d7aee9e875d7f5e8a1a52",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "fd33924caea15cf97ba75ad3600c7244cf17592b6bdf26bdc9882f7cae71fb91",
       "milestone": "R7",
       "owner": "desktop",
@@ -4731,8 +4731,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-file-menu-5c5237cc/receipt-5c5237cc9af7f034.json",
-        "sha256": "81021070c22d1ca6bf83e274143609af24f781487323eda5c720066e802b671e"
+        "path": "architecture/rust-port/receipts/2026-11-14-filemenu-current-5c5237cc/receipt-5c5237cc9af7f034.json",
+        "sha256": "0777abae366ac6e39f2c1b06377b7299a624c36ece2eb4d810c3017d41ba4954"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go: drawFileMenu; legacy menu structure differs from the scenario",
       "mapping_reason": "Application shell menu, layout, and document-context interaction.",
