@@ -8,6 +8,7 @@ fn desktop_resolution_supports_preview_commit_and_parameter_replay() {
         .unwrap();
     let document = open_sketch(&mut owner);
     let preview = oblikovati_gui::GuiExtrudePreview {
+        generation: None,
         document,
         sketch: crate::scene_fixture::SKETCH,
         profile: 0,
@@ -70,4 +71,37 @@ fn desktop_resolution_supports_preview_commit_and_parameter_replay() {
     owner.take_scene().unwrap().unwrap();
     assert_cube(&owner, reopened, 2.);
     assert_eq!(cube_keys(&owner, reopened), keys);
+}
+
+#[test]
+fn stale_extrusion_request_does_not_replace_the_current_preview() {
+    let (owner, _) = owner();
+    let mut owner = owner.with_extrusion_resolution(resolution()).unwrap();
+    let document = open_sketch(&mut owner);
+    let generation = owner
+        .documents()
+        .workspace()
+        .session(document)
+        .unwrap()
+        .generation();
+    let mut preview = oblikovati_gui::GuiExtrudePreview {
+        generation: Some(generation),
+        document,
+        sketch: crate::scene_fixture::SKETCH,
+        profile: 0,
+        distance: "width".into(),
+    };
+    set_size(&mut owner, "20 mm");
+    preview.generation = Some(
+        owner
+            .documents()
+            .workspace()
+            .session(document)
+            .unwrap()
+            .generation(),
+    );
+    assert!(owner.extrusion_preview_from_gui(Some(&preview)).unwrap());
+    preview.generation = Some(generation);
+    assert!(!owner.extrusion_preview_from_gui(Some(&preview)).unwrap());
+    assert!(owner.gui_command_state().unwrap().extrude_preview_active);
 }

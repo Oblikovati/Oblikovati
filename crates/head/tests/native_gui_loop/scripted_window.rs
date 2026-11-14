@@ -122,6 +122,7 @@ impl HeadWindow for ScriptedGuiWindow {
         self.native.process_view_input(event)
     }
     fn submit_scene(&mut self, update: crate::HeadSceneUpdate) -> Result<(), String> {
+        self.scene_triangles = update.scene.triangles.clone();
         self.scene_colors = update
             .scene
             .triangles

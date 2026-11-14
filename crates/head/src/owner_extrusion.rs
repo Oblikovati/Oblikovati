@@ -31,6 +31,7 @@ impl<
         self.extrusion_distance_validation = Some((
             session.generation(),
             oblikovati_gui::GuiExtrudeDistanceValidation {
+                generation: session.generation(),
                 document,
                 distance: distance.into(),
                 error,

@@ -366,6 +366,7 @@ fn extrusion_preview_is_transient_and_commit_reuses_the_same_feature_identity() 
         .unwrap()
         .generation();
     let preview = oblikovati_gui::GuiExtrudePreview {
+        generation: None,
         document,
         sketch: crate::scene_fixture::SKETCH,
         profile: 0,
@@ -414,6 +415,7 @@ fn invalid_or_stale_extrusion_preview_clears_the_old_scene() {
     let mut owner = owner.with_extrusion_resolution(resolution()).unwrap();
     let document = open_sketch(&mut owner);
     let mut preview = oblikovati_gui::GuiExtrudePreview {
+        generation: None,
         document,
         sketch: crate::scene_fixture::SKETCH,
         profile: 0,
@@ -453,6 +455,7 @@ fn closing_the_document_clears_its_preview_from_the_scene() {
     let mut owner = owner.with_extrusion_resolution(resolution()).unwrap();
     let document = open_sketch(&mut owner);
     let preview = oblikovati_gui::GuiExtrudePreview {
+        generation: None,
         document,
         sketch: crate::scene_fixture::SKETCH,
         profile: 0,

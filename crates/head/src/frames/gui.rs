@@ -132,6 +132,7 @@ pub(super) fn dispatch_gui_action(
     {
         window.reject_extrusion(
             &oblikovati_gui::GuiExtrudePreview {
+                generation: None,
                 document: *document,
                 sketch: *sketch,
                 profile: *profile,

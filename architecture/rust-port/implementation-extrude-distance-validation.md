@@ -17,3 +17,14 @@ The native regression covers zero, negative and wrong-unit values, an unknown
 name, reference-free arithmetic, a named parameter, parameter changes while the
 panel is open, cancellation, failed-profile retry, and one successful commit.
 The host resolver test checks the same expression rules without a window.
+
+## Automatic preview refresh (#3930)
+
+A valid draft requests a transient preview from the owner. The request includes the
+document generation used for validation. The owner declines an older generation
+without replacing a newer preview. An invalid draft clears the displayed preview.
+Parameter edits invalidate the previous validation and cause a new preview.
+
+The desktop frame dispatches GUI actions in order and computes previews inline.
+There is no background preview completion that can arrive after an edit or Cancel.
+Cancel clears the transient scene without creating a feature or changing history.

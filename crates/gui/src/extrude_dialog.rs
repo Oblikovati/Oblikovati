@@ -15,6 +15,7 @@ pub(crate) struct ExtrudeDialog {
     profile: i32,
     distance: String,
     previewed: bool,
+    attempted: Option<crate::GuiExtrudePreview>,
     pending: pending::PendingExtrude,
     submitted: Option<crate::GuiExtrudePreview>,
     commit_error: Option<String>,
@@ -40,6 +41,7 @@ impl ExtrudeDialog {
             self.requested = false;
             self.submitted = None;
             self.commit_error = None;
+            self.attempted = None;
             self.document = state.document;
             self.sketch = state.browser.as_ref().and_then(|browser| {
                 browser
@@ -70,17 +72,7 @@ impl ExtrudeDialog {
             self.sketch = Some(sketch);
             self.profile = 0;
             self.distance = "10 mm".into();
-            if let Some(document) = self.document {
-                actions.push(GuiShellAction::PreviewExtrude(Some(
-                    crate::GuiExtrudePreview {
-                        document,
-                        sketch,
-                        profile: 0,
-                        distance: self.distance.clone(),
-                    },
-                )));
-                self.previewed = true;
-            }
+            self.attempted = None;
         }
         if self.requested && self.previewed {
             actions.push(GuiShellAction::PreviewExtrude(None));
@@ -111,6 +103,7 @@ impl ExtrudeDialog {
                 actions.push(GuiShellAction::PreviewExtrude(None));
                 self.previewed = false;
             }
+            self.refresh_preview(state, document, edited, actions);
             let validation = self.current_distance_validation(state, document);
             if !self.distance.trim().is_empty() && validation.is_none() {
                 actions.push(GuiShellAction::ValidateExtrudeDistance {
@@ -133,6 +126,45 @@ impl ExtrudeDialog {
             }
             self.document = None;
         }
+    }
+    fn refresh_preview(
+        &mut self,
+        state: &GuiCommandState,
+        document: u64,
+        edited: bool,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        let request = self.valid_preview_request(state, document, edited);
+        if request == self.attempted {
+            return;
+        }
+        if self.previewed {
+            actions.push(GuiShellAction::PreviewExtrude(None));
+            self.previewed = false;
+        }
+        self.attempted = request.clone();
+        if let Some(request) = request {
+            actions.push(GuiShellAction::PreviewExtrude(Some(request)));
+            self.previewed = true;
+        }
+    }
+    fn valid_preview_request(
+        &self,
+        state: &GuiCommandState,
+        document: u64,
+        edited: bool,
+    ) -> Option<crate::GuiExtrudePreview> {
+        let validation = self.current_distance_validation(state, document)?;
+        if edited || validation.error.is_some() {
+            return None;
+        }
+        Some(crate::GuiExtrudePreview {
+            generation: Some(validation.generation),
+            document,
+            sketch: self.sketch?,
+            profile: i64::from(self.profile),
+            distance: self.distance.clone(),
+        })
     }
     fn sketch_choice(&mut self, ui: &Ui, state: &GuiCommandState) -> bool {
         let Some(browser) = state.browser.as_ref() else {
@@ -191,6 +223,9 @@ impl ExtrudeDialog {
         {
             actions.push(GuiShellAction::PreviewExtrude(Some(
                 crate::GuiExtrudePreview {
+                    generation: self
+                        .current_distance_validation(state, document)
+                        .map(|result| result.generation),
                     document,
                     sketch,
                     profile,
@@ -204,6 +239,7 @@ impl ExtrudeDialog {
         if enabled && (pressed || ui.is_window_focused() && ui.is_key_pressed_no_repeat(Key::Enter))
         {
             self.submitted = self.sketch.map(|sketch| crate::GuiExtrudePreview {
+                generation: None,
                 document,
                 sketch,
                 profile: i64::from(self.profile),

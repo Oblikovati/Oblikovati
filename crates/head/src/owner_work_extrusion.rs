@@ -18,6 +18,17 @@ macro_rules! desktop_extrusion_work {
             let Some(preview) = request else {
                 return Ok(self.clear_extrusion_preview());
             };
+            if let Some(generation) = preview.generation {
+                let current = self
+                    .files
+                    .workspace()
+                    .session(preview.document)
+                    .map_err(|cause| cause.to_string())?
+                    .generation();
+                if current != generation {
+                    return Ok(false);
+                }
+            }
             self.set_extrusion_preview(
                 preview.document,
                 preview.sketch,
