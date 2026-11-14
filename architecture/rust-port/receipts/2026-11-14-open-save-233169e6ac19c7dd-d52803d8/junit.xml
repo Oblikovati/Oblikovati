@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect files before opening a document: tmp/obk-open-save-48987af/features/application/document-opening/document-opening.feature" package="testsuite/Feature: Inspect files before opening a document: tmp/obk-open-save-48987af/features/application/document-opening/document-opening.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T21:03:36.034969105Z" time="6.891039507"><testcase name="Scenario: Activate an already open part through the Open dialog: tmp/obk-open-save-48987af/features/application/document-opening/document-opening.feature:122:3" time="6.891039507"><system-out><![CDATA[  Scenario: Activate an already open part through the Open dialog
+   ✔  Given a saved part is open in the MCAD Software
+   ✔  And a different drawing document is active
+   ✔  And the open part's exact file location is known
+   ✔  When the user presses Control+O and chooses the already open part at that location
+   ✔  And the user chooses Open
+   ✔  Then the Open dialog closes
+   ✔  And the existing part document tab becomes active
+   ✔  And no additional document tab is created
+   ✔  And the drawing tab remains available
+]]></system-out></testcase></testsuite></testsuites>

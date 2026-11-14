@@ -3742,8 +3742,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-material-save-d0dc7b66/receipt-d0dc7b66959fc4df.json",
-        "sha256": "0d978387d46cb9820a2cdcdd74fc5ccbbd85b566edaa973a02c76ac023550362"
+        "path": "architecture/rust-port/receipts/2026-11-14-open-save-d0dc7b66959fc4df-d52803d8/receipt-d0dc7b66959fc4df.json",
+        "sha256": "3f098e46d10283c93b74d4429a5687a7c59fcbc35d67d1366c0185a8b06528e7"
       },
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Native document save, close, or reopen lifecycle.",
@@ -3778,8 +3778,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-material-save-14f48e69/receipt-14f48e698bd03b3f.json",
-        "sha256": "9fc261b20589772ac926e67e8b15b4ff4c921bcbf1dc4932347b0e27f8678320"
+        "path": "architecture/rust-port/receipts/2026-11-14-open-save-14f48e698bd03b3f-d52803d8/receipt-14f48e698bd03b3f.json",
+        "sha256": "0c3632d3f4e6f2d5b5f4ccb7fcd2debadf59ac22e05afdf0a759ecd6f0fe168c"
       },
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Native document save, close, or reopen lifecycle.",
@@ -3814,8 +3814,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-material-save-cb5f7953/receipt-cb5f795341d33e87.json",
-        "sha256": "894a0042c8f36adff438e66933ada440f846f5f1957075e843aff2c334aa6b5a"
+        "path": "architecture/rust-port/receipts/2026-11-14-open-save-cb5f795341d33e87-d52803d8/receipt-cb5f795341d33e87.json",
+        "sha256": "c09057da7c4f7c7344a2b0f1bcde84e17e3a5830dc61b70e67d823d93b94a50b"
       },
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Native document save, close, or reopen lifecycle.",
@@ -3901,8 +3901,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-material-save-52a88b77/receipt-52a88b77aefd086f.json",
-        "sha256": "4cd70b89f346d7af5e881ff866adbc8eda3038dbdcc3b4118e7ad6fa27fbe8be"
+        "path": "architecture/rust-port/receipts/2026-11-14-open-save-52a88b77aefd086f-d52803d8/receipt-52a88b77aefd086f.json",
+        "sha256": "e7e11ebc55e51f6830ed35f07bf9de8f69d229eb8dc3ca0c0df1e153b56c1a17"
       },
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Native document save, close, or reopen lifecycle.",
@@ -3930,8 +3930,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-material-save-93af71b7/receipt-93af71b702f4432a.json",
-        "sha256": "9cdea6026c8b61e32af116fa36578cbd939626c25953e2a71a29493644b5f197"
+        "path": "architecture/rust-port/receipts/2026-11-14-open-save-93af71b702f4432a-d52803d8/receipt-93af71b702f4432a.json",
+        "sha256": "108b0272145e7b4d41adce2b19eb291adb1fc0f6cb25f6514e5ee34e244701bf"
       },
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Native document save, close, or reopen lifecycle.",
@@ -3976,8 +3976,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-material-save-f9b64673/receipt-f9b64673e9d0caa7.json",
-        "sha256": "44d8b4236dbbef354e9d065a478cc84c4c2ec0e369393734084203521f06582c"
+        "path": "architecture/rust-port/receipts/2026-11-14-open-save-f9b64673e9d0caa7-d52803d8/receipt-f9b64673e9d0caa7.json",
+        "sha256": "d73f8065649bfe294aca2091cbeda629e3578263d5192843c7be6834c431722c"
       },
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Native document save, close, or reopen lifecycle.",
@@ -4165,8 +4165,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-material-save-9eede580/receipt-9eede5804b59d06f.json",
-        "sha256": "a15b18be1e172855f775643ee29cf1daa77b8e82fd187c9355b20b7b2dec138c"
+        "path": "architecture/rust-port/receipts/2026-11-14-open-save-9eede5804b59d06f-d52803d8/receipt-9eede5804b59d06f.json",
+        "sha256": "3a2da8b298b85961de52788a68b5e2ff069da26aabf0ec75aaa1e4a10062dd2a"
       },
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Native document save, close, or reopen lifecycle.",
@@ -4398,8 +4398,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-material-save-233169e6/receipt-233169e6ac19c7dd.json",
-        "sha256": "10772f6182cdfaf94c5c1dde08f0aa089710acfd7dfa2ec1c93fe76e06c22cec"
+        "path": "architecture/rust-port/receipts/2026-11-14-open-save-233169e6ac19c7dd-d52803d8/receipt-233169e6ac19c7dd.json",
+        "sha256": "3a994a0060c9b79a3397807ddf9c5827237bef6badf4048f893c44d17690cdf5"
       },
       "go_reference": "../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Activate an existing part without creating a duplicate.",
