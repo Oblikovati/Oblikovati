@@ -89,10 +89,20 @@ fn preview_from_ribbon(
         "expected Extrude ribbon action"
     );
     window.gui_actions.clear();
-    let (position, _) = application_bdd::window_geometry("Extrude").unwrap();
-    let distance = application_bdd::pointer_pixels([position[0] + 70., position[1] + 85.]);
+    let label = application_bdd::rendered_label_center("Distance A");
+    let distance = [label[0] - 100, label[1]];
     click_shell_position(window, owner, distance);
     type_native_text(window, owner, "size");
+    let validated = owner
+        .gui_command_state()
+        .unwrap()
+        .extrude_distance_validation
+        .expect("expected owner validation after typing");
+    assert_eq!(validated.distance, "size");
+    assert!(
+        validated.error.is_none(),
+        "size must resolve as a positive length"
+    );
     let before = capture_framebuffer(&mut window.native);
     click_shell_position(
         window,
@@ -105,8 +115,7 @@ fn preview_from_ribbon(
             action,
             oblikovati_gui::GuiShellAction::PreviewExtrude(Some(_))
         )),
-        "preview actions {:?}",
-        window.gui_actions
+        "expected preview action"
     );
     assert!(
         !matches!(

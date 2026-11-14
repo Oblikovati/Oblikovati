@@ -31,12 +31,19 @@ fn unsaved_solid(world: &mut ApplicationWorld) {
     }
     world.finish_sketch();
     world.click_text("Extrude");
-    let (position, _) = super::super::diagnostics::window_geometry("Extrude").unwrap();
-    let distance =
-        super::super::diagnostics::pointer_pixels([position[0] + 70., position[1] + 85.]);
-    world.click(distance);
+    let label = world.run("Distance A").clone();
+    world.click([label.minimum[0] as i32 - 100, label.center()[1] as i32]);
     world.type_text("10 mm");
-    world.click_text("Apply");
+    let validation = world
+        .state()
+        .extrude_distance_validation
+        .expect("expected owner validation");
+    assert_eq!(validation.distance, "10 mm");
+    assert!(
+        validation.error.is_none(),
+        "distance must resolve as a positive length"
+    );
+    world.click_text("OK");
     world.pump(Vec::new());
     assert!(world.state().document_storage[&document].path.is_none());
     super::super::workspace_layout::browser_feature::expect_solid_visible(world);

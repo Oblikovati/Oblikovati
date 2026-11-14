@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:4adc48f8c743c21344ab77e94bf156cbee50b81283cc1760426394bfd6e2935b",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "655b02bd9241f192dd9bcd1eaa38263b0cbb7cb4db934c6738396a894b5ea6c3",
+  "application_commit": "fa30e11b3d9ae8182fb2b61410aaa6eafebaeb3b",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-validation-4adc48f8/cucumber.json",
+    "sha256": "168491f4bd96f1183c6865c9201ff89411530be118228a752523ef7088c9a8f9"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-validation-4adc48f8/source-revision.json",
+    "sha256": "e09be2a80cd7e15054279dc297b1ffe73e87377e7cca06b1d973d9d363ab903e"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-validation-4adc48f8/precise-input-03-Reject-an-alphabetic-coordinate.png",
+    "sha256": "a3a8944f2da4387c17ba45e51514e7a918fb9918a2a976e983e95c5a5a1b5c80"
+  }
+}

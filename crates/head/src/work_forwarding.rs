@@ -91,6 +91,13 @@ macro_rules! forward_owner_view_work {
         ) -> Result<bool, String> {
             self.$owner.extrusion_preview_from_gui(request)
         }
+        fn validate_extrusion_distance(
+            &mut self,
+            document: u64,
+            distance: &str,
+        ) -> Result<bool, String> {
+            self.$owner.validate_extrusion_distance(document, distance)
+        }
         fn activate_document_from_gui(
             &mut self,
             request: &oblikovati_api::wire::ActivateDocumentArgs,

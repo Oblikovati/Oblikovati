@@ -580,10 +580,25 @@
       "acceptance_test": "application_scenarios_use_the_native_window with OBK_BDD_AREA=solid-model: extrusion-05 Zero distance validation and recovery",
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3857",
-        "https://github.com/Oblikovati/Oblikovati/issues/3870"
+        "https://github.com/Oblikovati/Oblikovati/issues/3870",
+        "https://github.com/Oblikovati/Oblikovati/issues/3929",
+        "https://github.com/Oblikovati/Oblikovati/issues/3930"
       ],
-      "state": "inventoried",
-      "last_receipt": null
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-validation-2fc85f94/receipt-2fc85f94acd6cc5f.json",
+        "sha256": "949bfde8687e8bdd943500ce79480d5c8f07a8bdc527b1c894a91aecac88c33c"
+      },
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b: generic extrusion readiness, point creation, and sketch creation undo tests pass; they do not directly test these native validation or point-history scenarios. See receipts/2026-11-14-go-validation-baseline/README.md.",
+      "kernel_capabilities": "A constrained planar profile is extruded for the transient preview; no feature is committed.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The desktop owner evaluates the preview through the configured Martensite adapter.",
+      "rust_tests": "application_scenarios_use_the_native_window with OBK_BDD_AREA=solid-model: extrusion-05 Zero distance validation and recovery",
+      "oracle": "Pinned native scenario checks the red indicator, disabled/enabled control, typed values and a constrained preview fixture; final capture reviewed.",
+      "expected_result": "Zero distance shows a red error and disables OK; entering 8 clears the error and enables OK.",
+      "go_reference": "../Oblikovati/app/extrude_tool.go; ../Oblikovati/head/ui/extrude_dialog.go"
     },
     {
       "id": "scenario:d46c554381029cf43cc527f90d95974a544c5e83c23ead926db74cadd5f7afd3",
@@ -36617,10 +36632,11 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3916",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/preferences_window.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Native precise input or sketch preference and display interaction."
+      "mapping_reason": "Native precise input or sketch preference and display interaction.",
+      "reason": "The recorded sketch geometry, plane and reference-triad fixture is not specified; see the scenario folder BLOCKERS.md."
     },
     {
       "id": "scenario:74d752048f3ce375bd8780575fb61fb8fa0ac7978b2d5a1cf9b9985cf926c418",
@@ -36634,10 +36650,11 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3916",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/preferences_window.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Native precise input or sketch preference and display interaction."
+      "mapping_reason": "Native precise input or sketch preference and display interaction.",
+      "reason": "The recorded sketch geometry, plane and reference-triad fixture is not specified; see the scenario folder BLOCKERS.md."
     },
     {
       "id": "scenario:e9516627492b57a4cbd2ed67c0b27f6aefd714f1c8ae03549141ecd54aacab90",
@@ -36651,10 +36668,11 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3916",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/preferences_window.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Native precise input or sketch preference and display interaction."
+      "mapping_reason": "Native precise input or sketch preference and display interaction.",
+      "reason": "The recorded sketch geometry, plane and reference-triad fixture is not specified; see the scenario folder BLOCKERS.md."
     },
     {
       "id": "scenario:4adc48f8c743c21344ab77e94bf156cbee50b81283cc1760426394bfd6e2935b",
@@ -36668,10 +36686,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3916",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-validation-4adc48f8/receipt-4adc48f8c743c213.json",
+        "sha256": "d045717c48f13bb947acc58a83b09f36ffa129ebd417ec6bf64fda150418161c"
+      },
       "go_reference": "../Oblikovati/head/ui/preferences_window.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Native precise input or sketch preference and display interaction."
+      "mapping_reason": "Native precise input or sketch preference and display interaction.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b: generic extrusion readiness, point creation, and sketch creation undo tests pass; they do not directly test these native validation or point-history scenarios. See receipts/2026-11-14-go-validation-baseline/README.md.",
+      "kernel_capabilities": "A planar point sketch is exercised; no solid is created.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The desktop owner applies sketch input and presents the sketch scene.",
+      "rust_tests": "sketch_scenarios_use_the_native_window: precise-input-03 Reject an alphabetic coordinate",
+      "oracle": "Pinned native scenario checks rendered controls and point state through mouse and keyboard; final capture reviewed.",
+      "expected_result": "An alphabetic coordinate remains red and commits no point; restarting Point restores numeric fields."
     },
     {
       "id": "scenario:254ca2c358721a4818bb8318f218bee31c33edc2ead10bc41a0f0ec4e50174c4",
@@ -36685,10 +36715,11 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3916",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/preferences_window.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Native precise input or sketch preference and display interaction."
+      "mapping_reason": "Native precise input or sketch preference and display interaction.",
+      "reason": "The recorded sketch geometry, plane and reference-triad fixture is not specified; see the scenario folder BLOCKERS.md."
     },
     {
       "id": "scenario:ed1aa212dcf6f7bb8daa4e20b0f6c6ae2ee9a81056bd9ac507ea1bee59dd3c9a",
@@ -36702,10 +36733,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3916",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-validation-ed1aa212/receipt-ed1aa212dcf6f7bb.json",
+        "sha256": "07bd569dfd3a3d6cd6accb56450201d7d6440c149bbc5a631d466df492a08c6c"
+      },
       "go_reference": "../Oblikovati/head/ui/preferences_window.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Native precise input or sketch preference and display interaction."
+      "mapping_reason": "Native precise input or sketch preference and display interaction.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b: generic extrusion readiness, point creation, and sketch creation undo tests pass; they do not directly test these native validation or point-history scenarios. See receipts/2026-11-14-go-validation-baseline/README.md.",
+      "kernel_capabilities": "A planar point sketch is exercised; no solid is created.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The desktop owner applies sketch input and presents the sketch scene.",
+      "rust_tests": "sketch_scenarios_use_the_native_window: precise-input-05 Undo and redo a committed point",
+      "oracle": "Pinned native scenario checks rendered controls and point state through mouse and keyboard; final capture reviewed.",
+      "expected_result": "Undo removes the committed point marker and redo restores it."
     },
     {
       "id": "scenario:74317add2c71c691c58fa6ad56f033257e8dd7e015cda7947a558f20887b9b88",

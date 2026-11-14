@@ -100,6 +100,9 @@ impl HeadWindow for ScriptedGuiWindow {
     fn reject_dimension_edit(&mut self, value: &oblikovati_gui::GuiDimensionValue, cause: &str) {
         self.native.reject_dimension_edit(value, cause);
     }
+    fn reject_extrusion(&mut self, request: &oblikovati_gui::GuiExtrudePreview, cause: &str) {
+        self.native.reject_extrusion(request, cause);
+    }
     fn capture_window_preview(&mut self) -> Result<bool, String> {
         self.native.capture_window_preview()
     }
@@ -119,6 +122,7 @@ impl HeadWindow for ScriptedGuiWindow {
         self.native.process_view_input(event)
     }
     fn submit_scene(&mut self, update: crate::HeadSceneUpdate) -> Result<(), String> {
+        self.scene_triangles = update.scene.triangles.clone();
         self.scene_colors = update
             .scene
             .triangles

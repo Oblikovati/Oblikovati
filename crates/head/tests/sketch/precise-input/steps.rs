@@ -3,12 +3,9 @@
 use super::super::{ApplicationWorld, diagnostics};
 use super::fixtures::PointMark;
 use cucumber::{gherkin::Step, given, then, when};
-use oblikovati_model::sketch::SketchPlane;
 use oblikovati_viewport::ViewportPhysicalKey;
 
 const TOOLBAR: &str = "Precise Input";
-/// With this the recorded pair lands where the recording measured it, here and in Measure.
-const OFFSET_PLANE_ORIGIN_Y_CM: f64 = 0.05;
 const POINTER: [i32; 2] = [1000, 620];
 /// The isolated line: its end is where the triad goes, with nothing else beside it.
 const LINE: [[i32; 2]; 2] = [[420, 720], [600, 620]];
@@ -23,7 +20,6 @@ const MODE_INPUTS: [(&str, &str, &str); 4] = [
 
 fn point_active_on_yz(world: &mut ApplicationWorld) {
     world.start_sketch_on("YZ Plane");
-    world.seed_dimensions_needed(31);
     world.select_point_tool();
 }
 fn toolbar_shows(_: &ApplicationWorld) -> bool {
@@ -81,7 +77,9 @@ fn triad_at_origin(world: &mut ApplicationWorld) {
 }
 // precise-input-06
 #[when("I open Precise Input and its reference-mode dropdown")]
+#[when("the user open Precise Input and its reference-mode dropdown")]
 fn open_reference(world: &mut ApplicationWorld) {
+    require_recorded_fixture("precise-input-06");
     world.open_precise_input();
     open_reference_modes(world);
 }
@@ -144,24 +142,13 @@ fn restore_absolute(world: &mut ApplicationWorld) {
 fn closed_35(world: &mut ApplicationWorld) {
     assert!(!toolbar_shows(world), "expected the toolbar to close");
     world.expect_ready();
+    require_recorded_fixture("precise-input-06");
     world.expect_dimensions_needed(35);
 }
 // precise-input-07
 #[given("the point marker from the paired input trial remains visible")]
-fn marker_from_trial(world: &mut ApplicationWorld) {
-    let plane = SketchPlane::new(
-        [0., OFFSET_PLANE_ORIGIN_Y_CM, 0.],
-        [1., 0., 0.],
-        [0., 0., -1.],
-        Default::default(),
-    )
-    .unwrap();
-    world.start_sketch_on_plane(plane);
-    world.select_point_tool();
-    world.open_precise_input();
-    world.precise_point([5., 6.]);
-    world.escape();
-    world.pump(Vec::new());
+fn marker_from_trial(_: &mut ApplicationWorld) {
+    require_recorded_fixture("precise-input-07");
 }
 #[when("I open Measure and select that marker")]
 fn measure_marker(world: &mut ApplicationWorld) {
@@ -188,7 +175,9 @@ fn measure_closes(world: &mut ApplicationWorld) {
 }
 // precise-input-01
 #[when("I open Precise Input in X and Y coordinate mode")]
+#[when("the user open Precise Input in X and Y coordinate mode")]
 fn open_toolbar(world: &mut ApplicationWorld) {
+    require_recorded_fixture("precise-input-01");
     world.open_precise_input();
     assert!(toolbar_shows(world), "expected the toolbar");
 }
@@ -211,6 +200,7 @@ fn escape_and_measure(world: &mut ApplicationWorld) {
     "its global position is X=0.000 mm, Y=5.000 mm, Z=6.000 mm in the specified sketch-plane fixture"
 )]
 fn position_on_yz(world: &mut ApplicationWorld) {
+    require_recorded_fixture("precise-input-01");
     world.expect_measure("Position X 0.000 Y 5.000 Z 6.000 mm");
 }
 // precise-input-03
@@ -251,6 +241,7 @@ fn numeric_fields(world: &mut ApplicationWorld) {
     expect_numeric_fields(world);
 }
 #[when("I focus X, select its value, and enter the single character a")]
+#[when("the user focus X, select its value, and enter the single character a")]
 fn enter_a(world: &mut ApplicationWorld) {
     world.click_precise_field("X");
     world.type_text("a");
@@ -260,6 +251,7 @@ fn a_red(world: &mut ApplicationWorld) {
     expect_red_value(world);
 }
 #[when("I press Return")]
+#[when("the user press Return")]
 fn press_return(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::Enter, false);
     world.pump(Vec::new());
@@ -281,6 +273,7 @@ fn red_remains(world: &mut ApplicationWorld) {
     assert_eq!(near, 0, "points near the view");
 }
 #[when("I press Escape and restart Point")]
+#[when("the user press Escape and restart Point")]
 fn escape_and_restart(world: &mut ApplicationWorld) {
     world.escape();
     world.pump(Vec::new());
@@ -299,6 +292,7 @@ fn reopened_numeric(world: &mut ApplicationWorld) {
 // precise-input-04
 #[given("Precise Input is in X and Y coordinate mode")]
 fn in_xy_mode(world: &mut ApplicationWorld) {
+    require_recorded_fixture("precise-input-04");
     point_active_on_yz(world);
     world.open_precise_input();
     world.run_in_window(TOOLBAR, "Mode");
@@ -373,6 +367,7 @@ fn committed_point(world: &mut ApplicationWorld) {
     world.precise_point([5., 6.]);
 }
 #[when("I exit Point and undo and redo")]
+#[when("the user exit Point and undo and redo")]
 fn exit_undo_redo(world: &mut ApplicationWorld) {
     let at = newest_point_pixel(world);
     world.escape();
@@ -457,4 +452,24 @@ fn toolbar_gone(world: &mut ApplicationWorld) {
 #[then("Point ends and Ready is displayed")]
 fn point_ended(world: &mut ApplicationWorld) {
     world.expect_ready();
+}
+
+fn require_recorded_fixture(scenario: &str) {
+    super::super::gap_runner::block_fixture(&format!(
+        "{scenario}: recorded sketch geometry, plane and reference triad are unspecified; see precise-input/BLOCKERS.md"
+    ));
+}
+
+#[test]
+fn recorded_fixture_guard_refuses_an_inferred_setup() {
+    for scenario in [
+        "precise-input-01",
+        "precise-input-04",
+        "precise-input-06",
+        "precise-input-07",
+    ] {
+        let error = std::panic::catch_unwind(|| require_recorded_fixture(scenario)).unwrap_err();
+        let blocked = error.downcast_ref::<String>().unwrap();
+        assert!(blocked.contains(scenario) && blocked.contains("unspecified"));
+    }
 }

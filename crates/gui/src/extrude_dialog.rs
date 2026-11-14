@@ -15,7 +15,10 @@ pub(crate) struct ExtrudeDialog {
     profile: i32,
     distance: String,
     previewed: bool,
+    attempted: Option<crate::GuiExtrudePreview>,
     pending: pending::PendingExtrude,
+    submitted: Option<crate::GuiExtrudePreview>,
+    commit_error: Option<String>,
 }
 pub(crate) fn start_action(state: &GuiCommandState) -> GuiShellAction {
     if state
@@ -36,6 +39,9 @@ impl ExtrudeDialog {
     fn synchronize(&mut self, state: &GuiCommandState) {
         if self.requested {
             self.requested = false;
+            self.submitted = None;
+            self.commit_error = None;
+            self.attempted = None;
             self.document = state.document;
             self.sketch = state.browser.as_ref().and_then(|browser| {
                 browser
@@ -66,17 +72,7 @@ impl ExtrudeDialog {
             self.sketch = Some(sketch);
             self.profile = 0;
             self.distance = "10 mm".into();
-            if let Some(document) = self.document {
-                actions.push(GuiShellAction::PreviewExtrude(Some(
-                    crate::GuiExtrudePreview {
-                        document,
-                        sketch,
-                        profile: 0,
-                        distance: self.distance.clone(),
-                    },
-                )));
-                self.previewed = true;
-            }
+            self.attempted = None;
         }
         if self.requested && self.previewed {
             actions.push(GuiShellAction::PreviewExtrude(None));
@@ -100,11 +96,28 @@ impl ExtrudeDialog {
             }
             edited |= ui.input_int("Profile", &mut self.profile).build();
             edited |= ui.input_text("Distance A", &mut self.distance).build();
+            if edited {
+                self.commit_error = None;
+            }
             if edited && self.previewed {
                 actions.push(GuiShellAction::PreviewExtrude(None));
                 self.previewed = false;
             }
-            self.controls(ui, state, document, actions);
+            self.refresh_preview(state, document, edited, actions);
+            let validation = self.current_distance_validation(state, document);
+            if !self.distance.trim().is_empty() && validation.is_none() {
+                actions.push(GuiShellAction::ValidateExtrudeDistance {
+                    document,
+                    distance: self.distance.clone(),
+                });
+            }
+            if let Some(error) = validation.and_then(|result| result.error.as_ref()) {
+                ui.text_colored([1.0, 0.25, 0.25, 1.0], format!("Invalid distance: {error}"));
+            }
+            if let Some(error) = &self.commit_error {
+                ui.text_colored([1.0, 0.25, 0.25, 1.0], format!("Extrusion failed: {error}"));
+            }
+            self.controls(ui, state, document, edited, actions);
         });
         if !open {
             if self.previewed {
@@ -113,6 +126,45 @@ impl ExtrudeDialog {
             }
             self.document = None;
         }
+    }
+    fn refresh_preview(
+        &mut self,
+        state: &GuiCommandState,
+        document: u64,
+        edited: bool,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        let request = self.valid_preview_request(state, document, edited);
+        if request == self.attempted {
+            return;
+        }
+        if self.previewed {
+            actions.push(GuiShellAction::PreviewExtrude(None));
+            self.previewed = false;
+        }
+        self.attempted = request.clone();
+        if let Some(request) = request {
+            actions.push(GuiShellAction::PreviewExtrude(Some(request)));
+            self.previewed = true;
+        }
+    }
+    fn valid_preview_request(
+        &self,
+        state: &GuiCommandState,
+        document: u64,
+        edited: bool,
+    ) -> Option<crate::GuiExtrudePreview> {
+        let validation = self.current_distance_validation(state, document)?;
+        if edited || validation.error.is_some() {
+            return None;
+        }
+        Some(crate::GuiExtrudePreview {
+            generation: Some(validation.generation),
+            document,
+            sketch: self.sketch?,
+            profile: i64::from(self.profile),
+            distance: self.distance.clone(),
+        })
     }
     fn sketch_choice(&mut self, ui: &Ui, state: &GuiCommandState) -> bool {
         let Some(browser) = state.browser.as_ref() else {
@@ -143,6 +195,7 @@ impl ExtrudeDialog {
         ui: &Ui,
         state: &GuiCommandState,
         document: u64,
+        edited: bool,
         actions: &mut Vec<GuiShellAction>,
     ) {
         let action = self.sketch.map(|sketch| GuiShellAction::Extrude {
@@ -153,7 +206,11 @@ impl ExtrudeDialog {
         });
         let enabled = action
             .as_ref()
-            .is_some_and(|action| action.dispatchable(state));
+            .is_some_and(|action| action.dispatchable(state))
+            && !edited
+            && self
+                .current_distance_validation(state, document)
+                .is_some_and(|result| result.error.is_none());
         let disabled = ui.begin_disabled(!enabled);
         if crate::widget_abi::button(ui, "Preview", [0.; 2])
             && enabled
@@ -166,6 +223,9 @@ impl ExtrudeDialog {
         {
             actions.push(GuiShellAction::PreviewExtrude(Some(
                 crate::GuiExtrudePreview {
+                    generation: self
+                        .current_distance_validation(state, document)
+                        .map(|result| result.generation),
                     document,
                     sketch,
                     profile,
@@ -175,9 +235,16 @@ impl ExtrudeDialog {
             self.previewed = true;
         }
         ui.same_line();
-        let pressed = crate::widget_abi::button(ui, "Apply", [0.; 2]);
+        let pressed = crate::widget_abi::button(ui, "OK", [0.; 2]);
         if enabled && (pressed || ui.is_window_focused() && ui.is_key_pressed_no_repeat(Key::Enter))
         {
+            self.submitted = self.sketch.map(|sketch| crate::GuiExtrudePreview {
+                generation: None,
+                document,
+                sketch,
+                profile: i64::from(self.profile),
+                distance: self.distance.clone(),
+            });
             actions.extend(action);
             self.document = None;
             self.previewed = false;
@@ -193,6 +260,23 @@ impl ExtrudeDialog {
             }
             self.document = None;
         }
+    }
+    fn current_distance_validation<'a>(
+        &self,
+        state: &'a GuiCommandState,
+        document: u64,
+    ) -> Option<&'a crate::GuiExtrudeDistanceValidation> {
+        state
+            .extrude_distance_validation
+            .as_ref()
+            .filter(|result| result.document == document && result.distance == self.distance)
+    }
+    pub(crate) fn reject(&mut self, request: &crate::GuiExtrudePreview, cause: &str) {
+        if self.submitted.as_ref() != Some(request) {
+            return;
+        }
+        self.document = Some(request.document);
+        self.commit_error = Some(cause.into());
     }
 }
 

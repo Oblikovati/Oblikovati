@@ -10,6 +10,35 @@ impl<
     S: DispatchWakeup,
 > DesktopOwner<O, W, F, G, R, S>
 {
+    pub(super) fn validate_extrusion_distance_from_gui(
+        &mut self,
+        document: u64,
+        distance: &str,
+    ) -> Result<bool, String> {
+        if self.files.workspace().active_document() != Some(document) {
+            return Err(format!(
+                "extrude document {document}: expected the active document"
+            ));
+        }
+        let session = self
+            .files
+            .workspace()
+            .session(document)
+            .map_err(|cause| cause.to_string())?;
+        let error = oblikovati_automation::validate_extrude_distance(session.snapshot(), distance)
+            .err()
+            .map(|cause| cause.to_string());
+        self.extrusion_distance_validation = Some((
+            session.generation(),
+            oblikovati_gui::GuiExtrudeDistanceValidation {
+                generation: session.generation(),
+                document,
+                distance: distance.into(),
+                error,
+            },
+        ));
+        Ok(true)
+    }
     pub(super) fn create_extrusion_from_gui(
         &mut self,
         document: u64,

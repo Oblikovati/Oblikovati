@@ -217,6 +217,11 @@ fn distance(snapshot: &DocumentSnapshot, source: &str) -> Result<DatumLength, Er
     require_positive(quantity.value, quantity.dimension, source)?;
     Ok(DatumLength::Constant(quantity.value))
 }
+/// Check an extrusion expression with the same rules as feature creation.
+/// Example: `validate_extrude_distance(&snapshot, "10 mm")?`.
+pub fn validate_extrude_distance(snapshot: &DocumentSnapshot, source: &str) -> Result<(), Error> {
+    distance(snapshot, source).map(|_| ())
+}
 fn require_positive(value: f64, dimension: Dimension, source: &str) -> Result<(), Error> {
     if dimension != Dimension::Length || !value.is_finite() || value <= 0. {
         return Err(Error(format!(
@@ -250,3 +255,7 @@ fn next_name(snapshot: &DocumentSnapshot) -> Result<String, Error> {
 fn api_error(cause: impl std::fmt::Display) -> Error {
     Error(cause.to_string())
 }
+
+#[cfg(test)]
+#[path = "extrusion/validation_tests.rs"]
+mod validation_tests;

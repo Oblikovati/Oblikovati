@@ -14,7 +14,9 @@ mod edit;
 mod extrusion;
 mod feature_suppression;
 mod file_host;
-pub use extrusion::{ExtrudeRegionAccess, PreparedExtrusion, prepare_extrusion};
+pub use extrusion::{
+    ExtrudeRegionAccess, PreparedExtrusion, prepare_extrusion, validate_extrude_distance,
+};
 mod interests;
 pub use file_host::{
     APPLICATION_PREFERENCE_METHODS, ASSEMBLY_COMMAND_METHODS, AssemblyReferenceFailure,

@@ -93,9 +93,9 @@ mod widget_abi;
 pub use application::ribbon_customization::GuiRibbonSettingsStore;
 pub use commands::{
     GuiAuthoringContext, GuiBaseViewRequest, GuiBrowserChoice, GuiCommandState, GuiDocumentStorage,
-    GuiDrawingLine, GuiDrawingProjection, GuiExtrudePreview, GuiFeatureCondition, GuiFeatureEdit,
-    GuiParameterMutation, GuiPartAssetKind, GuiPreviewImage, GuiProject, GuiProjectGroup,
-    GuiSelectionMode, GuiShellAction, GuiSketchLineStyle,
+    GuiDrawingLine, GuiDrawingProjection, GuiExtrudeDistanceValidation, GuiExtrudePreview,
+    GuiFeatureCondition, GuiFeatureEdit, GuiParameterMutation, GuiPartAssetKind, GuiPreviewImage,
+    GuiProject, GuiProjectGroup, GuiSelectionMode, GuiShellAction, GuiSketchLineStyle,
 };
 pub use engine::{GuiFrameEngine, GuiFrameOutput, GuiFrameRequest};
 pub use input::{GuiInputCapture, GuiInputEvent, GuiKey, GuiModifiers, GuiPointerButton};

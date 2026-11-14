@@ -284,6 +284,9 @@ impl GuiShellAction {
                         .is_some_and(|browser| browser.sketches.iter().any(|row| row.id == *sketch))
             }
             Self::PreviewExtrude(None) => true,
+            Self::ValidateExtrudeDistance { document, .. } => {
+                state.document == Some(*document) && state.extrude_available
+            }
             Self::PreviewExtrude(Some(preview)) => Self::Extrude {
                 document: preview.document,
                 sketch: preview.sketch,
