@@ -50,6 +50,13 @@ pub struct PartFeatureEvaluation<Body, Failure> {
     health: Vec<FeatureHealthRecord<PartFeatureFailure<Failure>>>,
 }
 impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
+    /// Copy the datum results and their ordered health from this replay.
+    /// Example: `let datums = replay.datum_evaluation();` for datum queries.
+    pub fn datum_evaluation(&self) -> WorkGeometryEvaluation {
+        let mut datums = self.datums.clone();
+        datums.health = self.health.iter().filter_map(datum_health).collect();
+        datums
+    }
     fn empty() -> Self {
         Self {
             datums: WorkGeometryEvaluation::default(),
@@ -80,6 +87,30 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
     pub fn into_body(mut self, feature: FeatureId) -> Option<Body> {
         self.bodies.remove(&feature)
     }
+}
+
+fn datum_health<Failure>(
+    record: &FeatureHealthRecord<PartFeatureFailure<Failure>>,
+) -> Option<FeatureHealthRecord<WorkGeometryError>> {
+    use crate::feature::FeatureEvaluationStatus;
+    let status = match &record.status {
+        FeatureEvaluationStatus::Healthy => FeatureEvaluationStatus::Healthy,
+        FeatureEvaluationStatus::Suppressed => FeatureEvaluationStatus::Suppressed,
+        FeatureEvaluationStatus::ConditionFailed(error) => {
+            FeatureEvaluationStatus::ConditionFailed(error.clone())
+        }
+        FeatureEvaluationStatus::Blocked { drivers } => FeatureEvaluationStatus::Blocked {
+            drivers: drivers.clone(),
+        },
+        FeatureEvaluationStatus::Failed(
+            PartFeatureFailure::Datum(error) | PartFeatureFailure::Metadata(error),
+        ) => FeatureEvaluationStatus::Failed((**error).clone()),
+        FeatureEvaluationStatus::Failed(_) => return None,
+    };
+    Some(FeatureHealthRecord {
+        feature: record.feature,
+        status,
+    })
 }
 impl DocumentSnapshot {
     /// Replay every active datum and prism input with local failure quarantine.

@@ -14,7 +14,7 @@ use crate::{
 use std::collections::BTreeMap;
 
 /// Current validated construction frames plus complete replay health, without stale fallback.
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct WorkGeometryEvaluation {
     datums: BTreeMap<FeatureId, WorkGeometryResult>,
     pub health: Vec<FeatureHealthRecord<WorkPlaneError>>,

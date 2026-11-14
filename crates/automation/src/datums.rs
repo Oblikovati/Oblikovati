@@ -108,10 +108,37 @@ pub(super) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     request: &[u8],
 ) -> Result<Vec<u8>, Error> {
     let (_, snapshot) = datum_snapshot(files)?;
+    if planes::requires_part_replay(snapshot) {
+        return Err(Error(
+            "face-dependent datum query: expected an injected part replay owner".into(),
+        ));
+    }
     match method {
         METHOD_WORK_AXES_LIST => rows::axes(snapshot, query_args(method, request)?),
         METHOD_WORK_POINTS_LIST => rows::points(snapshot, query_args(method, request)?),
         METHOD_WORK_PLANES_LIST => planes::list(snapshot, query_args(method, request)?),
+        _ => Err(Error(format!(
+            "datum query {method:?}: expected {DATUM_QUERY_METHODS:?}"
+        ))),
+    }
+}
+pub(crate) fn query_evaluated<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &FileWorkspace<O, W, F>,
+    method: &str,
+    request: &[u8],
+    evaluation: &WorkGeometryEvaluation,
+) -> Result<Vec<u8>, Error> {
+    let (_, snapshot) = datum_snapshot(files)?;
+    match method {
+        METHOD_WORK_PLANES_LIST => {
+            planes::list_evaluated(snapshot, query_args(method, request)?, evaluation)
+        }
+        METHOD_WORK_AXES_LIST => {
+            rows::axes_evaluated(snapshot, query_args(method, request)?, evaluation)
+        }
+        METHOD_WORK_POINTS_LIST => {
+            rows::points_evaluated(snapshot, query_args(method, request)?, evaluation)
+        }
         _ => Err(Error(format!(
             "datum query {method:?}: expected {DATUM_QUERY_METHODS:?}"
         ))),

@@ -6,13 +6,21 @@ pub(super) fn axes(
     snapshot: &DocumentSnapshot,
     request: ListWorkAxesArgs,
 ) -> Result<Vec<u8>, Error> {
+    axes_evaluated(snapshot, request, &evaluate(snapshot)?)
+}
+pub(super) fn axes_evaluated(
+    snapshot: &DocumentSnapshot,
+    request: ListWorkAxesArgs,
+    evaluation: &WorkGeometryEvaluation,
+) -> Result<Vec<u8>, Error> {
     require_local_occurrence(request.occurrence.as_deref())?;
-    let axes = current_rows(
+    let axes = rows_with_evaluation(
         snapshot,
         DatumCollection::Axes,
         request.include_construction,
         origins::axes(),
         axis_info,
+        evaluation,
     )?;
     encode(&ListWorkAxesResult { axes: Some(axes) })
 }
@@ -20,13 +28,21 @@ pub(super) fn points(
     snapshot: &DocumentSnapshot,
     request: ListWorkPointsArgs,
 ) -> Result<Vec<u8>, Error> {
+    points_evaluated(snapshot, request, &evaluate(snapshot)?)
+}
+pub(super) fn points_evaluated(
+    snapshot: &DocumentSnapshot,
+    request: ListWorkPointsArgs,
+    evaluation: &WorkGeometryEvaluation,
+) -> Result<Vec<u8>, Error> {
     require_local_occurrence(request.occurrence.as_deref())?;
-    let points = current_rows(
+    let points = rows_with_evaluation(
         snapshot,
         DatumCollection::Points,
         request.include_construction,
         vec![origins::point()],
         point_info,
+        evaluation,
     )?;
     encode(&ListWorkPointsResult {
         points: Some(points),
@@ -34,21 +50,21 @@ pub(super) fn points(
 }
 type DatumProjection<T> =
     fn(&DocumentSnapshot, &DatumEntry, i64, &WorkGeometryEvaluation) -> Result<T, Error>;
-pub(super) fn current_rows<T>(
+pub(super) fn rows_with_evaluation<T>(
     snapshot: &DocumentSnapshot,
     collection: DatumCollection,
     include: bool,
     mut rows: Vec<T>,
     project: DatumProjection<T>,
+    evaluation: &WorkGeometryEvaluation,
 ) -> Result<Vec<T>, Error> {
-    let evaluation = evaluate(snapshot)?;
     let prefix = rows.len();
     for (index, feature) in entries(snapshot, collection).enumerate() {
         if feature.is_construction_datum() && !include {
             continue;
         }
         let position = wire_index(index, prefix)?;
-        rows.push(project(snapshot, feature, position, &evaluation)?);
+        rows.push(project(snapshot, feature, position, evaluation)?);
     }
     Ok(rows)
 }

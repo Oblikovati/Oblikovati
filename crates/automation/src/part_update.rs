@@ -41,12 +41,40 @@ pub trait PartUpdateAccess<O: TransactionObserver, W: WorkspaceObserver, F: Docu
         document: u64,
         face: &oblikovati_model::feature::work_plane::WorkPlaneFaceReference,
     ) -> Result<oblikovati_model::sketch::SketchPlane, String>;
+    /// Return current datum geometry and health; example: `owner.datum_evaluation(files, id)?`.
+    fn datum_evaluation(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<oblikovati_model::feature::work_geometry::WorkGeometryEvaluation, String>;
 }
 
 /// A headless owner of generation-checked Martensite replay results.
 #[derive(Default)]
 pub struct PartReplayService {
     slots: BTreeMap<u64, PartEvaluationSlot<NamedPrismSnapshot, EvaluationFailure>>,
+}
+impl PartReplayService {
+    fn current_slot<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<&PartEvaluationSlot<NamedPrismSnapshot, EvaluationFailure>, String> {
+        let session = files
+            .workspace()
+            .session(document)
+            .map_err(|error| error.to_string())?;
+        if self
+            .slots
+            .get(&document)
+            .is_none_or(|slot| slot.current(session).is_err())
+        {
+            self.update_part(files, document)?;
+        }
+        self.slots.get(&document).ok_or_else(|| {
+            format!("document {document} part replay: expected an adopted current result")
+        })
+    }
 }
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateAccess<O, W, F>
     for PartReplayService
@@ -93,13 +121,23 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
         document: u64,
         face: &oblikovati_model::feature::work_plane::WorkPlaneFaceReference,
     ) -> Result<oblikovati_model::sketch::SketchPlane, String> {
-        if self.part_requires_update(files, document)? || !self.slots.contains_key(&document) {
-            self.update_part(files, document)?;
-        }
-        let slot = self.slots.get(&document).ok_or_else(|| {
-            format!("document {document} part replay: expected an adopted current result")
-        })?;
+        let slot = self.current_slot(files, document)?;
         resolve_slot_face(files, document, slot, face)
+    }
+    fn datum_evaluation(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<oblikovati_model::feature::work_geometry::WorkGeometryEvaluation, String> {
+        let slot = self.current_slot(files, document)?;
+        let session = files
+            .workspace()
+            .session(document)
+            .map_err(|error| error.to_string())?;
+        Ok(slot
+            .current(session)
+            .map_err(|error| error.to_string())?
+            .datum_evaluation())
     }
 }
 

@@ -28,6 +28,18 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
         self.ensure_current(files, document)?;
         oblikovati_automation::resolve_slot_face(files, document, &self.slot, face)
     }
+    fn datum_evaluation(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<oblikovati_model::feature::work_geometry::WorkGeometryEvaluation, String> {
+        self.ensure_current(files, document)?;
+        let session = files
+            .workspace()
+            .session(document)
+            .map_err(|error| error.to_string())?;
+        Ok(self.current(session)?.datum_evaluation())
+    }
 }
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartTopologyAccess<O, W, F>
     for DesktopPartScenes

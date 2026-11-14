@@ -222,3 +222,48 @@ fn every_face_based_plane_recipe_requires_the_new_version_and_tracks_its_produce
         assert!(WorkPlaneDefinition::from_recipe(old).is_err());
     }
 }
+
+#[test]
+fn datum_view_uses_the_same_part_replay_geometry_and_health() {
+    let snapshot = face_document();
+    let replay = snapshot
+        .evaluate_part_features(&mut FaceEvaluator::default())
+        .unwrap();
+    let datums = replay.datum_evaluation();
+    assert_eq!(
+        datums.plane(FeatureId(3)).unwrap().recipe().origin,
+        [1.5, 0., 0.]
+    );
+    assert!(matches!(
+        datums
+            .health
+            .iter()
+            .find(|record| record.feature == FeatureId(3))
+            .unwrap()
+            .status,
+        FeatureEvaluationStatus::Healthy
+    ));
+
+    let replay = snapshot
+        .evaluate_part_features(&mut FaceEvaluator {
+            fail_body: true,
+            fail_face: false,
+        })
+        .unwrap();
+    let datums = replay.datum_evaluation();
+    assert!(datums.plane(FeatureId(3)).is_err());
+    assert!(
+        matches!(&datums.health.iter().find(|record| record.feature == FeatureId(3)).unwrap().status, FeatureEvaluationStatus::Blocked { drivers } if drivers == &[FeatureId(2)])
+    );
+
+    let replay = snapshot
+        .evaluate_part_features(&mut FaceEvaluator {
+            fail_body: false,
+            fail_face: true,
+        })
+        .unwrap();
+    let datums = replay.datum_evaluation();
+    assert!(
+        matches!(&datums.health.iter().find(|record| record.feature == FeatureId(3)).unwrap().status, FeatureEvaluationStatus::Failed(error) if error.to_string().contains("expected current face"))
+    );
+}

@@ -267,6 +267,24 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
 }
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext<'_, O, W, F> {
     fn owned_command(&mut self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
+        if crate::DATUM_QUERY_METHODS.contains(&method)
+            && (self.part_update.is_some() || self.part_topology.is_some())
+        {
+            let document = crate::part_owner::active_part(self.files)?;
+            let owner: &mut dyn crate::PartUpdateAccess<O, W, F> =
+                match self.part_update.as_deref_mut() {
+                    Some(owner) => owner,
+                    None => self.part_topology.as_deref_mut().ok_or_else(|| {
+                        Error(format!(
+                            "document {document} plane query: expected a part replay owner"
+                        ))
+                    })?,
+                };
+            let evaluation = owner
+                .datum_evaluation(self.files, document)
+                .map_err(Error)?;
+            return crate::datums::query_evaluated(self.files, method, request, &evaluation);
+        }
         if DOCUMENT_UPDATE_METHODS.contains(&method) {
             return document_update::apply(
                 self.files,

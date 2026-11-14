@@ -14,6 +14,18 @@ pub(in crate::datums) mod two_axes;
 pub(super) use inputs::plane_reference;
 pub(super) use inputs::prepare;
 type PlaneEntry = AuthoredFeature<WorkGeometryDefinition>;
+pub(super) fn requires_part_replay(snapshot: &DocumentSnapshot) -> bool {
+    use oblikovati_model::feature::work_plane::WorkPlaneReference;
+    snapshot.work_geometry.features().iter().any(|feature| {
+        let base = match feature.definition() {
+            WorkGeometryDefinition::Offset { base, .. } => Some(base),
+            WorkGeometryDefinition::ParallelThroughPoint(source) => Some(&source.base),
+            WorkGeometryDefinition::AtAngleAboutAxis(source) => Some(&source.base),
+            _ => None,
+        };
+        matches!(base, Some(WorkPlaneReference::Face(_)))
+    })
+}
 pub(super) fn current_info(
     snapshot: &DocumentSnapshot,
     id: FeatureId,
@@ -28,13 +40,21 @@ pub(super) fn list(
     snapshot: &DocumentSnapshot,
     request: ListWorkPlanesArgs,
 ) -> Result<Vec<u8>, Error> {
+    list_evaluated(snapshot, request, &rows::evaluate(snapshot)?)
+}
+pub(super) fn list_evaluated(
+    snapshot: &DocumentSnapshot,
+    request: ListWorkPlanesArgs,
+    evaluation: &WorkGeometryEvaluation,
+) -> Result<Vec<u8>, Error> {
     rows::require_local_occurrence(request.occurrence.as_deref())?;
-    let planes = rows::current_rows(
+    let planes = rows::rows_with_evaluation(
         snapshot,
         DatumCollection::Planes,
         request.include_construction,
         origins::planes()?,
         plane_info,
+        evaluation,
     )?;
     encode(&ListWorkPlanesResult {
         planes: Some(planes),
