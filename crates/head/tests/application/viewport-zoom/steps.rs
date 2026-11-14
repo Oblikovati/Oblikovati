@@ -79,6 +79,16 @@ fn face_middle(world: &mut ApplicationWorld) -> [i32; 2] {
     let (low, high) = solid_bounds(world);
     [(low[0] + high[0]) as i32 / 2, (low[1] + high[1]) as i32 / 2]
 }
+/// Ensure the click is on the rendered fixture, not merely its bounding rectangle.
+fn visible_face_middle(world: &mut ApplicationWorld) -> [i32; 2] {
+    let middle = face_middle(world);
+    let pixel = world.pixel_at(middle.map(|coordinate| coordinate as usize));
+    assert!(
+        super::solid_visibility::neutral_fixture_hue(&pixel),
+        "face center {middle:?} has pixel {pixel:?}: expected visible fixture fill"
+    );
+    middle
+}
 /// Part of the face, a quarter of its extent each way from its middle.
 fn window_corner(world: &mut ApplicationWorld, side: i32) -> [i32; 2] {
     let (low, high) = solid_bounds(world);
@@ -257,7 +267,13 @@ fn all_then_zoom(world: &mut ApplicationWorld) {
 // Zoom Selected
 #[given("the face is selected")]
 fn select_face(world: &mut ApplicationWorld) {
-    let at = face_middle(world);
+    world.click_text("Select");
+    world.click_text("Faces");
+    assert_eq!(
+        world.state().selection_mode,
+        oblikovati_gui::GuiSelectionMode::Faces
+    );
+    let at = visible_face_middle(world);
     click_pump(world, at);
     assert!(world.state().model_face_chosen, "expected the face chosen");
 }
@@ -299,7 +315,7 @@ fn entity_prompt(world: &mut ApplicationWorld) {
 #[when("I click the visible planar face")]
 #[when("the user clicks the visible planar face")]
 fn click_face(world: &mut ApplicationWorld) {
-    let at = face_middle(world);
+    let at = visible_face_middle(world);
     click_pump(world, at);
 }
 // A cancelled window
@@ -327,3 +343,7 @@ fn zoom_lit(world: &mut ApplicationWorld) {
 fn face_let_go(world: &mut ApplicationWorld) {
     assert!(!world.state().model_face_chosen, "expected no face chosen");
 }
+
+#[cfg(test)]
+#[path = "face_selection_regression.rs"]
+mod face_selection_regression;
