@@ -60,12 +60,12 @@ impl DocumentPackage {
             None | Some(serde_yaml_ng::Value::Null) => Vec::new(),
             Some(value) => serde_yaml_ng::from_value(value.clone()).map_err(failure)?,
         };
+        let face_offsets = self.prepare_legacy_face_offsets()?;
+        validate_creation_sequences(&sketches, &rows, &face_offsets)?;
         let extrusions: Vec<LegacyExtrusionCandidate> = rows
             .into_iter()
             .map(|row| prepare_extrusion(&sketches, row, resolver))
             .collect::<Result<_, _>>()?;
-        let face_offsets = self.prepare_legacy_face_offsets()?;
-        validate_creation_sequences(&sketches, &extrusions, &face_offsets)?;
         let candidate = LegacyPartCandidate {
             sketches,
             extrusions,
@@ -77,25 +77,48 @@ impl DocumentPackage {
 }
 fn validate_creation_sequences(
     sketches: &LegacySketchCandidate,
-    extrusions: &[LegacyExtrusionCandidate],
+    extrusions: &[LegacyFeature],
     planes: &[LegacyFaceOffsetCandidate],
 ) -> Result<(), PackageCodecError> {
-    if planes.is_empty() {
-        return Ok(());
-    }
+    // #3936: Go restores zero as a fresh load-time stamp, not the saved global order.
+    let needs_order = !extrusions.is_empty() || !planes.is_empty();
     let sequences = sketches
         .creation_sequences
         .iter()
         .map(|(_, seq)| *seq)
-        .chain(extrusions.iter().map(|row| row.creation_sequence))
+        .chain(extrusions.iter().map(|row| row.seq))
         .chain(planes.iter().map(|row| row.creation_sequence));
     let mut seen = BTreeSet::new();
     for sequence in sequences {
+        if sequence == 0 && !needs_order {
+            continue;
+        }
         if sequence == 0 || !seen.insert(sequence) {
             return Err(failure(format!(
                 "creation sequence {sequence}: expected a unique nonzero sequence across model records"
             )));
         }
+    }
+    for extrusion in extrusions {
+        require_prior_sketch(sketches, extrusion)?;
+    }
+    Ok(())
+}
+fn require_prior_sketch(
+    sketches: &LegacySketchCandidate,
+    extrusion: &LegacyFeature,
+) -> Result<(), PackageCodecError> {
+    let index = extrusion.extrude.sketch;
+    let (sketch, sequence) = sketches.creation_sequences.get(index).ok_or_else(|| {
+        failure(format!(
+            "sketch index {index}: expected an existing sketch sequence"
+        ))
+    })?;
+    if *sequence >= extrusion.seq {
+        return Err(failure(format!(
+            "sketch {sketch:?} sequence {sequence}, extrusion {:?} sequence {}: expected the sketch to precede its extrusion",
+            extrusion.name, extrusion.seq
+        )));
     }
     Ok(())
 }

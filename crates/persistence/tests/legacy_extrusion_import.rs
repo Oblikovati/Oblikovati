@@ -280,17 +280,24 @@ fn absent_work_features_produce_no_face_offset_candidates() {
 }
 
 #[test]
-fn face_offset_cannot_share_a_creation_sequence_with_an_extrusion() {
+fn face_offset_cannot_share_a_creation_sequence_with_other_nodes() {
     let bytes = include_bytes!(
         "../../../architecture/rust-port/receipts/2026-11-14-go-dependent-face/cube-with-face-plane.obk"
     );
     let source = std::str::from_utf8(bytes).unwrap();
-    let invalid = source.replacen("seq: 3", "seq: 2", 1);
-    let package = DocumentPackage::decode(invalid.as_bytes()).unwrap();
-    let error = package
-        .prepare_legacy_part_candidate(&GoCubeProfile)
-        .unwrap_err();
-    assert!(error.to_string().contains("creation sequence 2"), "{error}");
+    for sequence in [1, 2] {
+        let invalid = source.replacen("seq: 3", &format!("seq: {sequence}"), 1);
+        let package = DocumentPackage::decode(invalid.as_bytes()).unwrap();
+        let error = package
+            .prepare_legacy_part_candidate(&GoCubeProfile)
+            .unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains(&format!("creation sequence {sequence}")),
+            "{error}"
+        );
+    }
 }
 
 #[test]
@@ -381,3 +388,6 @@ fn face_offset_rejects_a_missing_or_later_extrusion_producer() {
         );
     }
 }
+
+#[path = "legacy_extrusion_import/order.rs"]
+mod creation_order;

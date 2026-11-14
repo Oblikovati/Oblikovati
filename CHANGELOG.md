@@ -12,6 +12,8 @@
 
 ### Fixed
 
+- Rejected ambiguous or forward legacy sketch and extrusion creation order before preparing a part candidate. (#3936)
+
 - Decoded legacy work-plane face references with Go's unpadded URL-safe base64 format. (#3935)
 
 - Showed the actual Part template material state, including unassigned and unresolved identities, in the chooser. (#3932)
