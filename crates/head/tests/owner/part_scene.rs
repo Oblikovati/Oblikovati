@@ -288,6 +288,8 @@ fn failed_replay_removes_exact_names_while_independent_names_remain_current() {
 mod assignments;
 #[path = "part_scene/bodies.rs"]
 mod bodies;
+#[path = "part_scene/measure.rs"]
+mod measure;
 #[path = "part_scene/part_mass.rs"]
 mod part_mass;
 #[path = "part_scene/physical.rs"]

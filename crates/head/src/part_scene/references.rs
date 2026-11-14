@@ -49,6 +49,27 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartTopolog
         self.ensure_current(files, document)?;
         self.body_physical_properties(files, document, index, density)
     }
+    fn face_area(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+        index: i64,
+        key: &[u8],
+    ) -> Result<f64, String> {
+        self.ensure_current(files, document)?;
+        let workspace = files.workspace();
+        let session = workspace
+            .session(document)
+            .map_err(|cause| cause.to_string())?;
+        let guid = workspace
+            .identity(document)
+            .map_err(|cause| cause.to_string())?
+            .internal_name;
+        let evaluation = self.current(session)?;
+        let bodies: Vec<_> = evaluation.ordered_bodies().collect();
+        let body = super::physical::selected_body(&bodies, index)?;
+        Ok(body.face_report(session.history(), guid, key)?.area)
+    }
     fn verify(
         &mut self,
         files: &mut FileWorkspace<O, W, F>,

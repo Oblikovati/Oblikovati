@@ -32,6 +32,14 @@ pub trait PartTopologyAccess<O: TransactionObserver, W: WorkspaceObserver, F: Do
         index: Option<i64>,
         density: f64,
     ) -> Result<MassPropertiesResult, String>;
+    /// Integrate a named face of the selected body; example: `access.face_area(files, document, 0, &key)?`.
+    fn face_area(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+        index: i64,
+        key: &[u8],
+    ) -> Result<f64, String>;
     /// Verify a current exact target before any edit; example: `access.verify(files, document, key, TopologyEntityKind::Face)?`.
     fn verify(
         &mut self,
@@ -43,12 +51,14 @@ pub trait PartTopologyAccess<O: TransactionObserver, W: WorkspaceObserver, F: Do
 }
 
 /// Native body queries share the exact reference owner used by assignments.
-pub const BODY_QUERY_METHODS: [&str; 4] = [
+pub const BODY_QUERY_METHODS: [&str; 5] = [
     METHOD_MODEL_REFERENCE_KEYS,
     METHOD_BODY_LIST,
     METHOD_BODY_PHYSICAL_PROPS,
     METHOD_ANALYSIS_MASS_PROPERTIES,
+    METHOD_ANALYSIS_MEASURE,
 ];
+mod measure;
 mod physical;
 pub(crate) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
@@ -96,6 +106,7 @@ pub(crate) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
                     .map_err(Error)?,
             )
         }
+        METHOD_ANALYSIS_MEASURE => measure::query(files, owner, document, encoded),
         _ => Err(Error(format!(
             "body query {method:?}: expected {BODY_QUERY_METHODS:?}"
         ))),

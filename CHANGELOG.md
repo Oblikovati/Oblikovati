@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Enabled analytic area measurements for named solid faces through the Analysis API. (#3876)
+
 - Kept toolbar arrow-key navigation from rotating the model on its first key press. (#3874)
 
 - Lit model faces in the viewport and isometric preview so their orientations are visible. (#3873)

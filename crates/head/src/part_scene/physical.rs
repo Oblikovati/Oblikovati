@@ -100,7 +100,7 @@ fn finite_conversion(result: &MassPropertiesResult) -> Result<(), String> {
     Ok(())
 }
 
-fn selected_body<'a>(
+pub(super) fn selected_body<'a>(
     bodies: &[&'a NamedPrismSnapshot],
     index: i64,
 ) -> Result<&'a NamedPrismSnapshot, String> {
