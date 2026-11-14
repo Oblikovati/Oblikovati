@@ -1061,6 +1061,651 @@
       "state": "inventoried",
       "last_receipt": null,
       "mapping_reason": "Viewport orbit controls and their interaction states belong to the full desktop shell (R7); a visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:6fbff7e6230279f35830ec5060b136f4de4e05909878c1dd52eb7388c3754c58",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "9793d6a9ad9655ef4412295075dfbf9f6f5a5f97566e5564f2ca9f5a9c68f62a",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Open the full navigation wheel and close it from its menu",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:6623c6765d27d9799c7fa2b869dcb83aafdd8838c059a13b48caae0aad104024",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "9793d6a9ad9655ef4412295075dfbf9f6f5a5f97566e5564f2ca9f5a9c68f62a",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Switch between the basic wheel layouts",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:791fb7e67d5bcbf44cf6e83f4c9f1e7af0a1986eb6aa0c7af7a28babbc97d39b",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "9793d6a9ad9655ef4412295075dfbf9f6f5a5f97566e5564f2ca9f5a9c68f62a",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Switch among compact wheel layouts",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:6dc8186623498078a895d92c56b401afbb37d86999b09033f95d714ff02d5e77",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "9793d6a9ad9655ef4412295075dfbf9f6f5a5f97566e5564f2ca9f5a9c68f62a",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Cancel a mini wheel size preference change",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:ca635292d14110becf47417a6c00ccd3544eaef2a9085eb3f035a2a45e19a7c7",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "9793d6a9ad9655ef4412295075dfbf9f6f5a5f97566e5564f2ca9f5a9c68f62a",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Inspect wheel display preference choices",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:f24d65dc5c1dc95d0c1e21b7f3d49e9c17a6b08c9b9b0836fb9c4998e501d4aa",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "9793d6a9ad9655ef4412295075dfbf9f6f5a5f97566e5564f2ca9f5a9c68f62a",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Apply and restore the big wheel size",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:b3e5f626846f7248a0933b3b0285d4aa5db1995f42e9142c75e1a44714125205",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "9793d6a9ad9655ef4412295075dfbf9f6f5a5f97566e5564f2ca9f5a9c68f62a",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Fit a small model from the wheel menu",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:9b5f312844179dc9e6deca880e66311fb9002cbe13f5bd96b170be09139183bd",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "9793d6a9ad9655ef4412295075dfbf9f6f5a5f97566e5564f2ca9f5a9c68f62a",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Return to the home view from the wheel menu",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:d18b6850de15454ecd7f32357111404c60d2e76f061f91351cc7e0ae230956e0",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "9793d6a9ad9655ef4412295075dfbf9f6f5a5f97566e5564f2ca9f5a9c68f62a",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Apply and restore wheel opacity",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:95896644bfae4afe270ce00742fc6364d4b6d93d78f41963a5d4e29f2442f73f",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "9793d6a9ad9655ef4412295075dfbf9f6f5a5f97566e5564f2ca9f5a9c68f62a",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Apply and restore the mini wheel size",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:217228a1571bcb54c2a17f8a4be2435104c39ab7bc3f37048fdb18615f51a101",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "9793d6a9ad9655ef4412295075dfbf9f6f5a5f97566e5564f2ca9f5a9c68f62a",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Change the wheel tool-tip preference",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:d6154b2b7acb9245a46480cc31c863593c6a5390e05ad9bb1d6e650ca8434b05",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "9793d6a9ad9655ef4412295075dfbf9f6f5a5f97566e5564f2ca9f5a9c68f62a",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Repeat the last navigation wheel command",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:850db3b6578b8bc2bccde20402d03adecb36ae5d967203cd569629691f713ff8",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: View the top of a part and return to the home view",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency. Face picking is a dependent behavior where model geometry is selected."
+    },
+    {
+      "id": "scenario:7bef0e59d8d04c35eebfc80cfe094bf50d73589c6c3caecd5a2d67c6a34864bb",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Step between adjacent orthogonal views",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:aa29f8c72c9d56c6dec4065257a97859719597aa79646dedb4a3a735de6a63f1",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Rotate and restore a face-on view",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:95ba01a785c74c7d2f3d409d33e90d1d230ceee6ab55e201183fb8e2a249e484",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Choose a corner from a face-on view",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:086b5824dec6ba073f6ec32b3099e762f0582633834d0bc80c1daa21a6345f37",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Cancel a compass preference change",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:f398fd9e4f521e56584341adc094ffde02cb8deb31b95de61bbcdd96e76487fa",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Move the orientation control to the opposite upper corner",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:4be0b6deff3b8c366641922b441d8f3b46f4ecad4a233e4bcf9274082f8d1fd7",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Change and restore the orientation control size",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:23f8ef84b30b00f65873806e853d2db7c9202d73f6a2eff32d9cac641da1597c",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Adjust the inactive opacity of the orientation control",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:28010315b21fd5146fa2224e8080256dfe607ca18da797aca130d13550f08fc5",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Switch between orthographic and perspective projection",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:8bc8ccc922a08e9bc9119656a4291ac8a0b51efe31682ae50860f9d44bef6560",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Retain hybrid projection when selecting a named face",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:da8c6a9eb2ac44c8a8e216bbd79c83f73a0ce0b1002337446dc822a6211e033a",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Show and hide the orientation compass",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:93f4129513062b45bde2ccfa8d138522f0685ac9a0ae9e0068c64316cc5d824f",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Enable and select the orientation control visibility scope",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:db4e530572d7fcea85192727af29240bd906d7c3335a30b142fac4c1abe8c204",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Select the current top plane as the front plane and cancel",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:713a5b9cd069a960b64a9da39f0cc4f0304c4bb7118620001b30cedd70bf0c71",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Set and restore the compass north angle",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:1fcedf70e80d0e4231731b9a4f03d28547336c4bca8000c56f5a735c9bb75573",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Fit the model when changing orientation",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:5dc28fc1fc27c43c7fb3491c7d535c60de2450049fee5bbc273477afe4af921f",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Rotate the Front view with keep model upright enabled",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:fabd09ea098f7cd5a899d3de75b5b519126fc60a0e414af5159f100db69a1a66",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Place the orientation control in the lower viewport corners",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:b85e1d1835926b35730c4ba10e32f74d328ba8b2abef3bda6c902d453fba0d9d",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Toggle orientation lock for a selected face",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency. Face picking is a dependent behavior where model geometry is selected."
+    },
+    {
+      "id": "scenario:a4c3b2c129840d0d7e059a72934d14a0f90de9b3b1e8b59c872501f2ba3c7523",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Inspect view-definition choices without applying them",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:73b06ab1c6f39f2b85d135952774a17c7772b5ff7102faeb467ffcfb56a9a12a",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Reduce the orientation control to Tiny size",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:f02c3c29dc2a2cf21cf6493e15fa73c1370f5c53eea3da44ee08d525de514047",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "4303c8a64b9262841dba3b8b48a74e51581a6a0ef9d98798286d514c53155647",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Activate and cancel viewport pan",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:5fbf81f76125990bad831562631fa233b9fba2b85d0110933a03eca9612e4ed9",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "4303c8a64b9262841dba3b8b48a74e51581a6a0ef9d98798286d514c53155647",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Cancel Pan by clicking the viewport",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:fbde41be98323fb4a9f0d5e8124131b706a7a0ab5745d38df17300a4afba53b7",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "4303c8a64b9262841dba3b8b48a74e51581a6a0ef9d98798286d514c53155647",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: End Pan using its context menu",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:d6296175cbca7baa1559a479c565a9f4f35af5e800a1fe8770b08201077f93f0",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "4303c8a64b9262841dba3b8b48a74e51581a6a0ef9d98798286d514c53155647",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Switch from Pan to Zoom using the contextual menu",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:1edb7a1739ca5af4c11ba9cfac9a045f7936deb734b9151220b600a3f4edd506",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "cb07444a13797a6d98fac5b8f26463343a1cbff5ed4781c359290bd6e4856e9c",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Change magnification with the mouse wheel",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:7a9612d5b55491de21d09d9b0c90e74706f4dedd0e807ac106feb6a58889ffb5",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "cb07444a13797a6d98fac5b8f26463343a1cbff5ed4781c359290bd6e4856e9c",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Activate and cancel Zoom from the navigation bar",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:cacbef09c9cf0fc9dc825085ff0caf312cba28201b83e1d898fa3adca6a4636e",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "cb07444a13797a6d98fac5b8f26463343a1cbff5ed4781c359290bd6e4856e9c",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Fit a distant block using Zoom All",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:1aa20f23aa027d8ff52869e9b06987570819301f025a9b744199a86fed12c7a7",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "cb07444a13797a6d98fac5b8f26463343a1cbff5ed4781c359290bd6e4856e9c",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Zoom into a rectangular window",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+    },
+    {
+      "id": "scenario:98a72eea29aa3836c6b46566331b7778eb238a64ceb9bc7a838cc7f0049254f0",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "cb07444a13797a6d98fac5b8f26463343a1cbff5ed4781c359290bd6e4856e9c",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Fit a selected planar face",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency. Face picking is a dependent behavior where model geometry is selected."
+    },
+    {
+      "id": "scenario:39b23c08b37cbdb0c150d74444384f1f534410f508a4959bf5c12cd801b96870",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "cb07444a13797a6d98fac5b8f26463343a1cbff5ed4781c359290bd6e4856e9c",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Choose a face after starting Zoom Selected",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency. Face picking is a dependent behavior where model geometry is selected."
+    },
+    {
+      "id": "scenario:5a234ab74178128a9dd8e1e2f06b3811912bfc421c56013fe9a71ca2849999ee",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "cb07444a13797a6d98fac5b8f26463343a1cbff5ed4781c359290bd6e4856e9c",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/gui, crates/head, crates/viewport",
+      "acceptance_test": "application_scenarios_use_the_native_window: Cancel a zoom window after its first corner",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3881"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
     }
   ]
 }
