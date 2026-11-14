@@ -425,32 +425,8 @@ fn closes_ready(world: &mut ApplicationWorld) {
     world.expect_no_text("Rewind");
     world.expect_ready();
 }
-#[given("the home view has a known three-face orientation")]
-fn known_home(_: &mut ApplicationWorld) {}
-#[given("the current view differs from the home view")]
-fn view_differs(world: &mut ApplicationWorld) {
-    let label = super::viewport_orientation::control_letters(world);
-    assert!(
-        label.len() < "TopFrontRight".len(),
-        "expected one face, read {label:?}"
-    );
-}
-#[when("I right-click the wheel and choose Go Home")]
-fn choose_home(world: &mut ApplicationWorld) {
-    right_click_wheel(world);
-    choose_row(world, "Go Home");
-}
-#[then("the block returns to the known home orientation")]
-fn at_home(world: &mut ApplicationWorld) {
-    let shown = super::viewport_orientation::control_letters(world);
-    let mut wanted: Vec<char> = "TopFrontRight".chars().collect();
-    wanted.sort_unstable();
-    assert_eq!(
-        shown,
-        wanted.into_iter().collect::<String>(),
-        "control's labels"
-    );
-}
+#[path = "home.rs"]
+mod home;
 #[path = "opacity.rs"]
 mod opacity;
 
