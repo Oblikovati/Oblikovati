@@ -1,6 +1,29 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{ColumnPivotedQr, LinearAlgebraError, finite, reflector};
 impl ColumnPivotedQr {
+    /// Project a vector orthogonal to the factored column space.
+    /// Example: `let free_motion = qr.project_orthogonal(&motion)?;`.
+    pub fn project_orthogonal(&self, values: &[f64]) -> Result<Vec<f64>, LinearAlgebraError> {
+        if values.len() != self.triangular.len() {
+            return Err(LinearAlgebraError(format!(
+                "projection vector length {}: expected {} rows",
+                values.len(),
+                self.triangular.len()
+            )));
+        }
+        let mut projected = values
+            .iter()
+            .map(|&value| finite(value, "projection vector"))
+            .collect::<Result<Vec<_>, _>>()?;
+        for (pivot, vector) in self.reflectors.iter().enumerate() {
+            reflector::apply(&mut projected[pivot..], vector)?;
+        }
+        projected[..self.rank()].fill(0.0);
+        for (pivot, vector) in self.reflectors.iter().enumerate().rev() {
+            reflector::apply(&mut projected[pivot..], vector)?;
+        }
+        Ok(projected)
+    }
     /// Measure each unit coordinate's squared distance from the factored column space.
     /// Example: `let freedom = qr.coordinate_projection_residuals()?;`.
     pub fn coordinate_projection_residuals(&self) -> Result<Vec<f64>, LinearAlgebraError> {

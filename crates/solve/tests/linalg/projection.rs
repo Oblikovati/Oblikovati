@@ -1,5 +1,46 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+
+#[test]
+fn vector_projection_preserves_only_motion_in_the_constraint_null_space() {
+    let jacobian_transpose = matrix(&[&[1.0], &[-1.0]]);
+    let qr = ColumnPivotedQr::factor(&jacobian_transpose, RANK_TOLERANCE).unwrap();
+    let projected = qr.project_orthogonal(&[1.0, 0.0]).unwrap();
+    close(projected[0], 0.5);
+    close(projected[1], 0.5);
+    close(projected[0] - projected[1], 0.0);
+}
+
+#[test]
+fn vector_projection_respects_fixed_and_unconstrained_spaces() {
+    let fixed =
+        ColumnPivotedQr::factor(&matrix(&[&[1.0, 0.0], &[0.0, 1.0]]), RANK_TOLERANCE).unwrap();
+    for value in fixed.project_orthogonal(&[2.0, -3.0]).unwrap() {
+        close(value, 0.0);
+    }
+    let free = ColumnPivotedQr::factor(
+        &DenseMatrix::new(0, vec![vec![]; 2]).unwrap(),
+        RANK_TOLERANCE,
+    )
+    .unwrap();
+    assert_eq!(free.project_orthogonal(&[2.0, -3.0]).unwrap(), [2.0, -3.0]);
+    assert!(free.project_orthogonal(&[1.0]).is_err());
+    assert!(free.project_orthogonal(&[f64::NAN, 0.0]).is_err());
+}
+
+#[test]
+fn vector_projection_is_idempotent_with_multiple_rank_pivots() {
+    let jacobian = matrix(&[&[1.0, 1.0, 0.0], &[0.0, 1.0, 1.0]]);
+    let qr = ColumnPivotedQr::factor(&jacobian.transpose(), RANK_TOLERANCE).unwrap();
+    let result = qr.project_orthogonal(&[3.0, 0.0, 0.0]).unwrap();
+    for (actual, expected) in result.iter().zip([1.0, -1.0, 1.0]) {
+        close(*actual, expected);
+    }
+    let repeated = qr.project_orthogonal(&result).unwrap();
+    for (actual, expected) in repeated.iter().zip(result) {
+        close(*actual, expected);
+    }
+}
 fn projection(rows: &[&[f64]]) -> Vec<f64> {
     ColumnPivotedQr::factor(&matrix(rows), RANK_TOLERANCE)
         .unwrap()
