@@ -87,18 +87,21 @@ impl ApplicationWorld {
     /// Open a tool from the dropdown beside a ribbon caption.
     pub fn choose_from_flyout(&mut self, caption: &str, choice: &str) {
         let caption = self.run(caption).clone();
-        let arrow = self
-            .frame
-            .runs
-            .iter()
-            .find(|run| {
-                run.text == "v"
-                    && run.minimum[0] > caption.maximum[0]
-                    && (run.center()[1] - caption.center()[1]).abs() < 4.
-            })
-            .expect("expected a dropdown beside the caption")
-            .center()
-            .map(|value| value as i32);
+        let arrow = if caption.text.ends_with('v') {
+            [caption.maximum[0] as i32 - 2, caption.center()[1] as i32]
+        } else {
+            self.frame
+                .runs
+                .iter()
+                .find(|run| {
+                    run.text == "v"
+                        && run.minimum[0] > caption.maximum[0]
+                        && (run.center()[1] - caption.center()[1]).abs() < 4.
+                })
+                .expect("expected a dropdown beside the caption")
+                .center()
+                .map(|value| value as i32)
+        };
         self.click(arrow);
         self.pump(Vec::new());
         self.click_text(choice);

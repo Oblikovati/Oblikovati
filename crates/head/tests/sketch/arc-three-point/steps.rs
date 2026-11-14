@@ -160,6 +160,9 @@ fn expect_rows(world: &ApplicationWorld, rows: &[&str]) {
 }
 // arc-three-point-01
 #[when("I select Three Point Arc and select a start, end, and noncollinear point on the arc")]
+#[when(
+    "the user select Three Point Arc and select a start, end, and noncollinear point on the arc"
+)]
 fn three_points(world: &mut ApplicationWorld) {
     pointer_arc(world);
 }
