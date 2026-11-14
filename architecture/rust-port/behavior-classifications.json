@@ -14,8 +14,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-measure-body/receipt-290c0844328af2d2.json",
-        "sha256": "44a0f8e4aabbe6d4cd4f7244f16df273af4f04e49884694852412e38e1c7cd95"
+        "path": "architecture/rust-port/receipts/2026-11-14-viewcube-body/receipt-290c0844328af2d2.json",
+        "sha256": "78c7ffd3d99d120a968a7b45405bf6a39b743b8abeb98a76d8cc129d98e66411"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
@@ -33,8 +33,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-measure-body/receipt-f024b2250132b323.json",
-        "sha256": "62dfa4665af3dc2223f9e4a08760148cf8beeb104bd3328b87e25eb681efe46f"
+        "path": "architecture/rust-port/receipts/2026-11-14-viewcube-body/receipt-f024b2250132b323.json",
+        "sha256": "3a7461ad90d6820bb7cf49671b8db306e49c1c96a2205ef12ab06e0ed4522f1d"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
@@ -52,8 +52,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-measure-body/receipt-48efe943e9ecc0d7.json",
-        "sha256": "1cf346c36f200446e09ca55eb5c819e07f377f6adc89ccdf5ca9d368761ed14e"
+        "path": "architecture/rust-port/receipts/2026-11-14-viewcube-body/receipt-48efe943e9ecc0d7.json",
+        "sha256": "6ac3c3091d5f37666e4cebc80b2272bcf95f5f034cdd966a383862b9c50e40cc"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
@@ -71,8 +71,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-measure-body/receipt-137ba03d06c38c43.json",
-        "sha256": "9d885750b99e08964ca764702d11a4f51e854a7f11685874d513886402f5749a"
+        "path": "architecture/rust-port/receipts/2026-11-14-viewcube-body/receipt-137ba03d06c38c43.json",
+        "sha256": "17b319e6903a726945e6bca4f5afb8b2783c7c41a79c12a2ba86abc963a22534"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
@@ -90,8 +90,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-measure-body/receipt-e22ccad1ec1386a7.json",
-        "sha256": "09cc6db6d96d4ebdbcd97cb9c4ae849552a41acc10110099235aeed04e9431d3"
+        "path": "architecture/rust-port/receipts/2026-11-14-viewcube-body/receipt-e22ccad1ec1386a7.json",
+        "sha256": "9c02f626e7219ac9df4e3db66e8e3d8ea844ab179c91a709cc0e02e70cf7b117"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
@@ -109,8 +109,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-measure-body/receipt-fe23247614f79aca.json",
-        "sha256": "b45812bfcf16b00a656f3554e926d9143d8f3c09e45bf5f5f2c1181be81bf11b"
+        "path": "architecture/rust-port/receipts/2026-11-14-viewcube-body/receipt-fe23247614f79aca.json",
+        "sha256": "02bf476d35331eb17265d957aea78a4e36ef1e6faf3f9ba5785ab2a246073d6b"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
@@ -126,8 +126,13 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3857"
       ],
-      "state": "inventoried",
-      "last_receipt": null
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-new-sketch-01/receipt-63f029b9f7034030.json",
+        "sha256": "f87f895481f0aa2a5348e94a5240d2a561a8198c52c387b659e54fa7b8508837"
+      },
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:4e511ca586195d67ed53eaedd9378d8bc9bab420ea3c606eda97feb3b4fb0b55",
@@ -140,8 +145,13 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3857"
       ],
-      "state": "inventoried",
-      "last_receipt": null
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-new-sketch-02/receipt-4e511ca586195d67.json",
+        "sha256": "66903304b894d6949829684705df05122697b6a485991634477a69f63a6ea9bb"
+      },
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:adfaa180b248a09493b79b65698c97167d4d8d53f4c3a763453aecd7d8b420e2",
@@ -154,8 +164,13 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3857"
       ],
-      "state": "inventoried",
-      "last_receipt": null
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-new-sketch-03/receipt-adfaa180b248a094.json",
+        "sha256": "41749af247a07ecfd23918a64bd22bf1ac3948258da8f74a8089ff423f671ba3"
+      },
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:cd9561e7b2b4f47522f44782c6ecc97307e4b18dd114f958c8b625807a9af6bb",
@@ -198,8 +213,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-measure-rectangle/receipt-cb85314818ef73da.json",
-        "sha256": "0d0d8805c3abb3418c27ea34c698c2e4ed48cefe8652183d19d514bd62bc63c3"
+        "path": "architecture/rust-port/receipts/2026-11-14-viewcube-rectangle/receipt-cb85314818ef73da.json",
+        "sha256": "033af50dfa3db4af102881d348be2cee2f79fc8f7fe133b920d8fcd0aa1073ae"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
@@ -260,8 +275,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-measure-extrusion/receipt-6d4a200f137644d4.json",
-        "sha256": "740f233a90ee475e9afa1300f68726d52735a29c28f9bcb6fa5e79be90fbb7b9"
+        "path": "architecture/rust-port/receipts/2026-11-14-viewcube-extrusion/receipt-6d4a200f137644d4.json",
+        "sha256": "dbc59a550151cbc10dccee1e5d54d7a08712ed71cd28bee51dfb290387be61e9"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
@@ -400,8 +415,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-measure-orbit/receipt-59bbc7159c8ea4f0.json",
-        "sha256": "6853631c9bb6172b7c4aa1f48c01481262e0dd56fcecf8e61c05b6537f297bd7"
+        "path": "architecture/rust-port/receipts/2026-11-14-viewcube-orbit/receipt-59bbc7159c8ea4f0.json",
+        "sha256": "ae85dc3505257ad0606db8b49053a9dfd9e14fc7be41e8328e856b5d88971ecd"
       },
       "mapping_reason": "Viewport navigation belongs to the full desktop shell.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
@@ -645,8 +660,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-measure-keytips/receipt-3e4b9e33e44dffb2.json",
-        "sha256": "36201339d58371ddd51e1232fbb6f2b023d8e85ed509ed6b31b63b741aca2297"
+        "path": "architecture/rust-port/receipts/2026-11-14-viewcube-keytips/receipt-3e4b9e33e44dffb2.json",
+        "sha256": "25d7e225fe49f2b0fdf7df6c53f02aba740033ff69401725c3b0d2e0c2abb406"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
