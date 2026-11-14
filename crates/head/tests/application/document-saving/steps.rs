@@ -3,6 +3,9 @@ use super::ApplicationWorld;
 use crate::HeadWork;
 use cucumber::{given, then, when};
 use oblikovati_model::application_prompts::{ApplicationPrompt, PromptFrequency};
+#[cfg(test)]
+#[path = "cancel_preview_regression.rs"]
+mod cancel_preview_regression;
 #[path = "dialog_navigation.rs"]
 mod dialog_navigation;
 #[path = "solid_preview.rs"]
@@ -233,15 +236,38 @@ fn dialog_open(world: &mut ApplicationWorld) {
 }
 #[given("Save Preview Picture is selected")]
 fn preview_selected(world: &mut ApplicationWorld) {
-    // The source choices exist only while the checkbox is set.
+    assert!(
+        world.checked("Save Preview Picture"),
+        "expected preview checked"
+    );
     world.expect_text(ICONIC);
 }
 #[when("I clear Save Preview Picture")]
 #[when("the user clears Save Preview Picture")]
+fn clear_preview(world: &mut ApplicationWorld) {
+    assert!(
+        world.checked("Save Preview Picture"),
+        "expected preview checked before clearing"
+    );
+    world.click_text("Save Preview Picture");
+    assert!(
+        !world.checked("Save Preview Picture"),
+        "expected preview unchecked after clearing"
+    );
+    world.expect_no_text(ICONIC);
+}
 #[when("I select Save Preview Picture again")]
 #[when("the user selects Save Preview Picture again")]
-fn toggle_preview(world: &mut ApplicationWorld) {
+fn select_preview(world: &mut ApplicationWorld) {
+    assert!(
+        !world.checked("Save Preview Picture"),
+        "expected preview unchecked before selecting"
+    );
     world.click_text("Save Preview Picture");
+    assert!(
+        world.checked("Save Preview Picture"),
+        "expected preview checked after selecting"
+    );
 }
 #[then("the preview source choices are hidden")]
 fn sources_hidden(world: &mut ApplicationWorld) {
@@ -263,6 +289,8 @@ fn sources_back(world: &mut ApplicationWorld) {
 #[when("the user chooses Active Window on Save")]
 fn choose_window(world: &mut ApplicationWorld) {
     world.click_text(WINDOW);
+    assert!(world.radio_selected(WINDOW), "expected {WINDOW:?} selected");
+    assert!(!world.radio_selected(ICONIC), "expected {ICONIC:?} cleared");
 }
 #[then("that preview source is selected")]
 fn window_selected(world: &mut ApplicationWorld) {
