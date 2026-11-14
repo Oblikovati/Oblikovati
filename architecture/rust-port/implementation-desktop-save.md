@@ -56,3 +56,11 @@ forwarding. A successful choice binds only its requested document and preserves
 its history. Other unsaved documents remain dirty and unbound. This is the owner
 completion path; it does not claim a native file picker, overwrite prompt, add-in
 dialog hook, thumbnail policy, or complete Go save-policy parity.
+
+## Save-path request feedback
+
+When the GUI accepts a save-path request, it opens Save As and clears that
+request from the title and status. Cancelling the dialog keeps the unsaved
+document active without leaving a save-path error on screen. A request received
+before the first GUI frame is retained until the dialog is ready. Native tests
+cover both entry paths and preserve feedback when no GUI is present (#3888).

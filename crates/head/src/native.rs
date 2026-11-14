@@ -255,6 +255,8 @@ impl HeadWindow for NativeHeadWindow {
             (&notice, &mut self.gui)
         {
             gui.request_save_path(*document)?;
+            self.command_notice = None;
+            return self.refresh_title();
         }
         if self.gui.is_none() {
             self.view.set_status_text(&notice.message())?;

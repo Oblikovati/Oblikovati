@@ -234,9 +234,11 @@ impl NativeHeadWindow {
             &self.command_notice
         {
             gui.request_save_path(*document)?;
+            self.command_notice = None;
         }
         self.gui = Some(gui);
         self.view.set_status_text("")?;
+        self.refresh_title()?;
         Ok(())
     }
     fn native_gui_notice(&self) -> Result<Option<String>, String> {

@@ -8,6 +8,15 @@ fn save_notice_before_initial_gui_frame_keeps_the_requesting_document() {
     let path = directory.path().join("startup.opd");
     let (mut window, mut owner) = initial_save_window();
     crate::frames::run_frames(&mut window, HeadOptions { frames: Some(3) }, &mut owner).unwrap();
+    assert!(window.native.command_notice.is_none());
+    assert!(
+        !window
+            .native
+            .view
+            .native_title()
+            .unwrap()
+            .contains("save path is required")
+    );
     type_native_text(&mut window, &mut owner, path.to_str().unwrap());
     press_shell_key(&mut window, &mut owner, ViewportPhysicalKey::Enter);
     assert!(path.is_file());

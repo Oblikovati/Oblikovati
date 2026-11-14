@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Cleared the save-path request after opening Save As, so cancellation leaves no stale error message. (#3888)
+
 - Preserved the conversion guard of built-in model parameters when saving and reopening. (#3883)
 
 - Made sketch creation and Finish Sketch separate undo and redo steps. (#3880)

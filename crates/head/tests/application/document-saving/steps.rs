@@ -97,6 +97,7 @@ fn cancel_dialog(world: &mut ApplicationWorld) {
 #[then("the Save As dialog closes")]
 fn save_as_closed(world: &mut ApplicationWorld) {
     world.expect_no_text(SAVE_IN);
+    world.expect_no_text("save path is required");
 }
 #[then("the unsaved part remains active")]
 fn unsaved_remains(world: &mut ApplicationWorld) {
