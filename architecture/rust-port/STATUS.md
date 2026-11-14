@@ -130,3 +130,5 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 - R4 viewport picking: the host adapter now restricts intersections to the forward ray (#3925). The inside-solid and behind-origin adapter regression, host regression, native camera-ray test, and all 22 prism tests passed. Competing-category priority remains open (#3890).
 
 - R3 cube journey: the native keyboard and pointer integration test passed after the forward-ray fix, including parameter edit, undo/redo, save/reopen, and named-face resolution. See `receipts/2026-11-14-forward-ray-cube/README.md`; this is not a BDD scenario receipt (#3870).
+
+- Live source watch, 2026-11-14: `arc-center-point` scenarios 08 and 09 now identify the recorded pointer coordinates and 1700 × 1012 window; the existing pin predates that correction. `user-coordinate-system` adds scenario 05 for canceling Redefine Feature (#3917). These changes await the next reviewed snapshot sync and are not counted in the pinned 2,719 declarations.
