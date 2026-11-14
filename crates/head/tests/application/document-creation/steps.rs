@@ -169,21 +169,11 @@ fn assembly_browser(world: &mut ApplicationWorld) {
         world.expect_text(entry);
     }
 }
-fn expect_muted_command(world: &mut ApplicationWorld, label: &str) {
-    world.expect_text(label);
-    let before = world.state();
-    world.click_text(label);
-    assert_eq!(
-        world.state().documents.len(),
-        before.documents.len(),
-        "muted command {label:?}: expected no effect"
-    );
-}
 #[then("the assembly ribbon offers commands to place and create components")]
 fn assembly_ribbon(world: &mut ApplicationWorld) {
     world.expect_text("Assemble");
-    expect_muted_command(world, "Place");
-    expect_muted_command(world, "Create");
+    world.expect_text("Place");
+    world.expect_text("Create");
 }
 #[given("a drawing template with a border and title block is available")]
 fn drawing_available(world: &mut ApplicationWorld) {
@@ -241,8 +231,6 @@ fn folded_browser(world: &mut ApplicationWorld) {
 #[then("the sheet-metal ribbon is active")]
 fn sheet_metal_ribbon(world: &mut ApplicationWorld) {
     world.expect_text("Sheet Metal");
-    expect_muted_command(world, "Flange");
-    expect_muted_command(world, "Flat Pattern");
 }
 #[given("the metric part template group is expanded")]
 fn part_group_expanded(world: &mut ApplicationWorld) {
@@ -398,3 +386,7 @@ fn grouping_on(_: &mut ApplicationWorld) {
 fn details_blank(world: &mut ApplicationWorld) {
     world.expect_no_text("Document type:");
 }
+
+#[cfg(test)]
+#[path = "ribbon_regression.rs"]
+mod ribbon_regression;
