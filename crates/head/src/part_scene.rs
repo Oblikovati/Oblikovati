@@ -12,6 +12,7 @@ use oblikovati_viewport::{PartPresentationDecline, ViewportScene};
 mod assembly;
 mod assembly_pick;
 pub(crate) mod extrusion;
+pub(crate) mod pick_candidates;
 pub(crate) mod resolution_policy;
 mod update;
 /// Owned display state names its document and generation; kernel handles stay in result storage.
@@ -264,23 +265,60 @@ impl DesktopPartScenes {
         )>,
         String,
     > {
+        let candidates = self.part_candidates(files, document, line)?;
+        let filter = oblikovati_session::selection::SelectionFilter::only([
+            oblikovati_session::selection::SelectionKind::Face,
+        ]);
+        let ambient = oblikovati_session::selection::AmbientSelectionFilter::default();
+        match candidates.resolve(&filter, &ambient, 0.)? {
+            Some(pick_candidates::PickTarget::Face(feature, role)) => Ok(Some((feature, role))),
+            None => Ok(None),
+            Some(other) => Err(format!("part hit {other:?}: expected a face")),
+        }
+    }
+    pub(crate) fn part_candidates<
+        O: TransactionObserver,
+        W: WorkspaceObserver,
+        F: DocumentFiles,
+    >(
+        &self,
+        files: &FileWorkspace<O, W, F>,
+        document: u64,
+        line: [[f64; 3]; 2],
+    ) -> Result<pick_candidates::PickCandidates, String> {
         let session = files
             .workspace()
             .session(document)
             .map_err(|cause| cause.to_string())?;
+        let guid = files
+            .workspace()
+            .identity(document)
+            .map_err(|cause| cause.to_string())?
+            .internal_name;
         let evaluated = self.current(session)?;
-        let mut nearest = None;
+        let mut candidates =
+            pick_candidates::PickCandidates::new(pick_candidates::PickCoverage::NearestFacePerBody);
         for record in evaluated.health() {
             let Some(body) = evaluated.body(record.feature) else {
                 continue;
             };
-            if let Some((role, reach)) = body.face_on_line(line)?
-                && nearest.is_none_or(|(_, _, best)| reach < best)
-            {
-                nearest = Some((record.feature, role, reach));
+            let key =
+                bodies::body_reference_text(body.body_reference_key(session.history(), guid)?);
+            if !session.body_visible(&key) {
+                continue;
+            }
+            if let Some((role, reach)) = body.face_on_line(line)? {
+                candidates.push(
+                    pick_candidates::PickTarget::Face(record.feature, role),
+                    reach,
+                )?;
+                candidates.push(
+                    pick_candidates::PickTarget::Body(record.feature, key),
+                    reach,
+                )?;
             }
         }
-        Ok(nearest.map(|(feature, role, _)| (feature, role)))
+        Ok(candidates)
     }
     pub(crate) fn invalidate_presentation(&mut self) {
         self.presentation_invalidated = true;

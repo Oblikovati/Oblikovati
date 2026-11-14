@@ -87,7 +87,14 @@ pub(super) fn dispatch_gui_action(
             return authoring::view_command(window, owner, command);
         }
         GuiShellAction::ClickModel { document, pixel } => {
-            return owner.click_model_from_gui(*document, window.view_line(*pixel)?);
+            let line = window.view_line(*pixel)?;
+            let Some([_, height]) = window.window_capture_extent()? else {
+                return owner.click_model_from_gui(*document, line);
+            };
+            let camera = window.view_camera()?;
+            let depth_window =
+                crate::part_scene::pick_candidates::depth_window(camera.scale, height)?;
+            return owner.click_model_with_window(*document, line, depth_window);
         }
         GuiShellAction::StartSketchAt {
             document,

@@ -1,13 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Pick assembly occurrences against component B-reps, not display meshes.
+use super::pick_candidates::{PickCandidates, PickCoverage, PickTarget};
 use super::*;
 use oblikovati_gui::GuiOccurrencePath;
-
-struct OccurrenceHit {
-    path: GuiOccurrencePath,
-    reach: f64,
-    ambiguous: bool,
-}
 
 impl DesktopPartScenes {
     pub(crate) fn occurrence_on_line<
@@ -20,17 +15,13 @@ impl DesktopPartScenes {
         document: u64,
         line: [[f64; 3]; 2],
     ) -> Result<Option<GuiOccurrencePath>, String> {
-        let mut nearest = None;
-        self.pick_occurrences(files, document, line, &[], &mut nearest)?;
-        if let Some(hit) = &nearest
-            && hit.ambiguous
-        {
-            return Err(format!(
-                "occurrence hit {}: expected an unambiguous nearest placement",
-                hit.reach
-            ));
+        let mut candidates = PickCandidates::new(PickCoverage::NearestFacePerOccurrenceBody);
+        self.pick_occurrences(files, document, line, &[], &mut candidates)?;
+        match candidates.nearest()? {
+            Some(PickTarget::Occurrence(path)) => Ok(Some(path)),
+            None => Ok(None),
+            Some(other) => Err(format!("assembly hit {other:?}: expected an occurrence")),
         }
-        Ok(nearest.map(|hit: OccurrenceHit| hit.path))
     }
 
     fn pick_occurrences<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
@@ -39,7 +30,7 @@ impl DesktopPartScenes {
         owner: u64,
         line: [[f64; 3]; 2],
         parent: &[(u64, u64, usize)],
-        nearest: &mut Option<OccurrenceHit>,
+        nearest: &mut PickCandidates,
     ) -> Result<(), String> {
         if parent.len() > super::assembly::MAX_ASSEMBLY_DEPTH {
             return Err(format!(
@@ -79,7 +70,7 @@ impl DesktopPartScenes {
         document: u64,
         line: [[f64; 3]; 2],
         path: &[(u64, u64, usize)],
-        nearest: &mut Option<OccurrenceHit>,
+        nearest: &mut PickCandidates,
     ) -> Result<(), String> {
         let nested = files
             .workspace()
@@ -101,7 +92,7 @@ impl DesktopPartScenes {
         document: u64,
         line: [[f64; 3]; 2],
         path: &[(u64, u64, usize)],
-        nearest: &mut Option<OccurrenceHit>,
+        nearest: &mut PickCandidates,
     ) -> Result<(), String> {
         let session = files
             .workspace()
@@ -127,19 +118,7 @@ impl DesktopPartScenes {
                         "occurrence {path:?} hit {distance}: expected a finite line parameter"
                     ));
                 }
-                if let Some(hit) = nearest.as_mut()
-                    && distance == hit.reach
-                    && hit.path != path
-                {
-                    hit.ambiguous = true;
-                }
-                if nearest.as_ref().is_none_or(|hit| distance < hit.reach) {
-                    *nearest = Some(OccurrenceHit {
-                        path: path.to_vec(),
-                        reach: distance,
-                        ambiguous: false,
-                    });
-                }
+                nearest.push(PickTarget::Occurrence(path.to_vec()), distance)?;
             }
         }
         Ok(())

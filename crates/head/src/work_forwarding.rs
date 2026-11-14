@@ -194,6 +194,14 @@ macro_rules! forward_owner_view_work {
         ) -> Result<bool, String> {
             self.$owner.click_model_from_gui(document, line)
         }
+        fn click_model_with_window(
+            &mut self,
+            document: u64,
+            line: [[f64; 3]; 2],
+            window: f64,
+        ) -> Result<bool, String> {
+            self.$owner.click_model_with_window(document, line, window)
+        }
         fn selected_browser_outline(&mut self) -> Vec<[[f64; 3]; 2]> {
             self.$owner.selected_browser_outline()
         }
