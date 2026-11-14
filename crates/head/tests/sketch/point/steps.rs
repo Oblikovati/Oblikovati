@@ -203,6 +203,7 @@ fn prompt_center(world: &mut ApplicationWorld) {
     world.expect_status("Select center point");
 }
 #[when("I click empty canvas and press Escape")]
+#[when("the user click empty canvas and press Escape")]
 fn click_and_escape(world: &mut ApplicationWorld) {
     world.sketch_click(FIRST);
     world.escape();
@@ -216,6 +217,21 @@ fn center_remains(world: &mut ApplicationWorld) {
 #[then("existing regular points retain their dot-style type")]
 fn regular_retained(world: &mut ApplicationWorld) {
     world.expect_point_mark(SECOND, PointMark::Dot);
+    let geometry = world.edited_geometry();
+    let points: Vec<_> = geometry
+        .points()
+        .iter()
+        .filter(|point| point.position != [0., 0.])
+        .collect();
+    assert_eq!(points.len(), 2, "placed point count");
+    for point in points {
+        let pixel = world.sketch_pixel_of(point.position);
+        match pixel {
+            FIRST => assert!(geometry.is_center_point(point.id), "first point role"),
+            SECOND => assert!(!geometry.is_center_point(point.id), "second point role"),
+            _ => panic!("point at {pixel:?}: expected {FIRST:?} or {SECOND:?}"),
+        }
+    }
 }
 // point-10
 #[given("the observed sketch fixture shows 208 dimensions needed")]
