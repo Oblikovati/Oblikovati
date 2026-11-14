@@ -1,0 +1,20 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.12s
+     Running unittests src/lib.rs (/tmp/obk-line-target/debug/deps/oblikovati_head-a66146db9cfbd922)
+
+running 1 test
+test native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window ... Feature: Line
+  Scenario: line-01 Commit the intended result
+   ✔  Given the MCAD Software is running
+   ✔  And an empty editable planar sketch is active
+   ✔  When the user select Line and click two distinct points
+   ✔  Then one segment joins the points and the command offers a connected next segment
+   ✔  When the user press Escape
+   ✔  Then the command ends and the visible segment remains
+[Summary]
+1 feature
+1 scenario (1 passed)
+6 steps (6 passed)
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 905 filtered out; finished in 6.51s
+

@@ -1,0 +1,35 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s
+     Running unittests src/lib.rs (/tmp/obk-line-target/debug/deps/oblikovati_head-a66146db9cfbd922)
+
+running 1 test
+test native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window ... Feature: Line
+  Scenario: line-02 Inspect repeated-pointer input
+   ✘  Given an editable sketch with the captured geometry is active
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/line/scenario.feature:15:5
+      Matched: crates/head/src/../tests/application/../sketch/line/repeated_click.rs:8:1
+      Step panicked. Captured output: BDD fixture blocked: line-02 and line-07: captured sketch, view, input state and both pointer events are unavailable; see line/BLOCKERS.md
+[Summary]
+1 feature
+1 scenario (1 failed)
+1 step (1 failed)
+FAILED
+
+failures:
+
+---- native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window stdout ----
+
+thread 'sketch-scenarios' (1311773) panicked at crates/head/src/../tests/application/benchmark.rs:257:5:
+scenario benchmark: expected no failed, undefined, or skipped steps
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window' (1311772) panicked at crates/head/src/../tests/application/../sketch/benchmark.rs:70:10:
+called `Result::unwrap()` on an `Err` value: Any { .. }
+
+
+failures:
+    native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 905 filtered out; finished in 2.34s
+
+error: test failed, to rerun pass `-p oblikovati-head --lib`
