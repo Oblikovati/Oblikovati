@@ -46,12 +46,13 @@ If a source correction conflicts with observed behavior or other scenarios,
 record the conflict in `scenario-defects/` and the relevant issue; do not
 silently weaken an assertion.
 
-Each live feature folder has a `BLOCKERS.md` for the scenario author. When a
-run finds invalid syntax, an inconsistent requirement, a missing fixture, or
-an implementation gap, update that file with the affected scenario, evidence,
-and issue link. Separate source defects from Rust implementation gaps. Remove
-or mark a blocker resolved only after checking the corrected source or behavior.
-Do not treat an empty blocker list as evidence that the feature passes.
+Each live feature folder has a `BLOCKERS.md` for the scenario author. Record
+only issues the author can fix in the scenario source, such as invalid syntax,
+contradictory steps, or unclear fixture requirements. Do not include Rust
+implementation details or ask the scenario author to fix the Rust port. Track
+those gaps in the Rust ledger and GitHub issues. Recheck a reported source
+defect before removing it. An empty blocker list does not prove that a feature
+passes.
 
 After triage, update the pinned snapshot, source inventory, and reviewed
 classifications together. Preserve old receipts as historical evidence when a
