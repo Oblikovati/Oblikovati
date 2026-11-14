@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Drive block placement through the native browser and sketch viewport.
 use super::{ApplicationWorld, diagnostics, sketch_constrain::segment_color_changed};
-use crate::{HeadWindow, HeadWork};
+use crate::HeadSketchWork;
+use crate::HeadWindow;
 use oblikovati_viewport::{ViewportKey, ViewportPhysicalKey};
 
 #[test]

@@ -67,12 +67,6 @@ impl<D: ScriptDocumentOwner> HeadWork for DesktopScripts<D> {
     ) -> Result<bool, String> {
         self.owner.set_marking_menu_from_gui(args)
     }
-    fn accept_sketch_alias(
-        &mut self,
-        event: oblikovati_viewport::ViewportEvent,
-    ) -> (bool, Option<oblikovati_gui::GuiShellAction>) {
-        self.owner.accept_sketch_alias(event)
-    }
     fn take_shortcut_action(&mut self) -> Option<oblikovati_gui::GuiShellAction> {
         self.owner.take_shortcut_action()
     }
@@ -128,30 +122,6 @@ impl<D: ScriptDocumentOwner> HeadWork for DesktopScripts<D> {
     ) -> Result<bool, String> {
         self.owner.set_prompt_frequency_from_gui(prompt, frequency)
     }
-    fn set_sketch_options_from_gui(
-        &mut self,
-        options: oblikovati_model::application_options::SketchApplicationOptions,
-    ) -> Result<bool, String> {
-        self.owner.set_sketch_options_from_gui(options)
-    }
-    fn edit_dimension_value_from_gui(
-        &mut self,
-        value: &oblikovati_gui::GuiDimensionValue,
-    ) -> Result<bool, String> {
-        self.owner.edit_dimension_value_from_gui(value)
-    }
-    fn start_sketch_on_plane_from_gui(
-        &mut self,
-        plane: oblikovati_gui::GuiOriginPlaneKind,
-    ) -> Result<bool, String> {
-        self.owner.start_sketch_on_plane_from_gui(plane)
-    }
-    fn start_sketch_on_work_plane_from_gui(
-        &mut self,
-        plane: oblikovati_model::feature::FeatureId,
-    ) -> Result<bool, String> {
-        self.owner.start_sketch_on_work_plane_from_gui(plane)
-    }
     fn recent_from_gui(
         &mut self,
         action: &oblikovati_gui::GuiRecentAction,
@@ -172,36 +142,6 @@ impl<D: ScriptDocumentOwner> HeadWork for DesktopScripts<D> {
         action: oblikovati_gui::GuiInspectAction,
     ) -> Result<bool, String> {
         self.owner.inspect_from_gui(action)
-    }
-    fn precise_point_from_gui(
-        &mut self,
-        point: &oblikovati_gui::GuiPrecisePoint,
-    ) -> Result<bool, String> {
-        self.owner.precise_point_from_gui(point)
-    }
-    fn sketch_constraint_marks(&self) -> Vec<crate::HeadConstraintMark> {
-        self.owner.sketch_constraint_marks()
-    }
-    fn precise_triad_from_gui(
-        &mut self,
-        command: oblikovati_gui::GuiTriadCommand,
-    ) -> Result<bool, String> {
-        self.owner.precise_triad_from_gui(command)
-    }
-    fn precise_triad_position(&self) -> Option<(oblikovati_model::sketch::SketchPlane, [f64; 2])> {
-        self.owner.precise_triad_position()
-    }
-    fn toggle_center_point_format_from_gui(&mut self) -> Result<bool, String> {
-        self.owner.toggle_center_point_format_from_gui()
-    }
-    fn set_center_point_from_gui(&mut self, point: u64, center: bool) -> Result<bool, String> {
-        self.owner.set_center_point_from_gui(point, center)
-    }
-    fn line_command_from_gui(
-        &mut self,
-        command: oblikovati_gui::GuiLineCommand,
-    ) -> Result<bool, String> {
-        self.owner.line_command_from_gui(command)
     }
     fn set_ui_scale_from_gui(
         &mut self,
@@ -285,6 +225,69 @@ fn owner_batch_budget(budget: usize, active: bool) -> Result<usize, String> {
     let reserved = usize::from(active);
     budget.checked_sub(reserved).filter(|remaining| *remaining > 0)
         .ok_or_else(|| format!("desktop frame budget {budget}, script active={active}: expected capacity for owner work and one active script event"))
+}
+impl<D: ScriptDocumentOwner> crate::HeadSketchWork for DesktopScripts<D> {
+    fn accept_sketch_alias(
+        &mut self,
+        event: oblikovati_viewport::ViewportEvent,
+    ) -> (bool, Option<oblikovati_gui::GuiShellAction>) {
+        self.owner.accept_sketch_alias(event)
+    }
+    fn set_sketch_options_from_gui(
+        &mut self,
+        options: oblikovati_model::application_options::SketchApplicationOptions,
+    ) -> Result<bool, String> {
+        self.owner.set_sketch_options_from_gui(options)
+    }
+    fn edit_dimension_value_from_gui(
+        &mut self,
+        value: &oblikovati_gui::GuiDimensionValue,
+    ) -> Result<bool, String> {
+        self.owner.edit_dimension_value_from_gui(value)
+    }
+    fn start_sketch_on_plane_from_gui(
+        &mut self,
+        plane: oblikovati_gui::GuiOriginPlaneKind,
+    ) -> Result<bool, String> {
+        self.owner.start_sketch_on_plane_from_gui(plane)
+    }
+    fn start_sketch_on_work_plane_from_gui(
+        &mut self,
+        plane: oblikovati_model::feature::FeatureId,
+    ) -> Result<bool, String> {
+        self.owner.start_sketch_on_work_plane_from_gui(plane)
+    }
+    fn precise_point_from_gui(
+        &mut self,
+        point: &oblikovati_gui::GuiPrecisePoint,
+    ) -> Result<bool, String> {
+        self.owner.precise_point_from_gui(point)
+    }
+    fn sketch_constraint_marks(&self) -> Vec<crate::HeadConstraintMark> {
+        self.owner.sketch_constraint_marks()
+    }
+    fn precise_triad_from_gui(
+        &mut self,
+        command: oblikovati_gui::GuiTriadCommand,
+    ) -> Result<bool, String> {
+        self.owner.precise_triad_from_gui(command)
+    }
+    fn precise_triad_position(&self) -> Option<(oblikovati_model::sketch::SketchPlane, [f64; 2])> {
+        self.owner.precise_triad_position()
+    }
+    fn toggle_center_point_format_from_gui(&mut self) -> Result<bool, String> {
+        self.owner.toggle_center_point_format_from_gui()
+    }
+    fn set_center_point_from_gui(&mut self, point: u64, center: bool) -> Result<bool, String> {
+        self.owner.set_center_point_from_gui(point, center)
+    }
+    fn line_command_from_gui(
+        &mut self,
+        command: oblikovati_gui::GuiLineCommand,
+    ) -> Result<bool, String> {
+        self.owner.line_command_from_gui(command)
+    }
+    crate::work_sketch_forwarding::forward_owner_sketch_work!(owner);
 }
 #[cfg(test)]
 mod tests {

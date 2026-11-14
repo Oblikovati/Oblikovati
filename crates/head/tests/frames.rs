@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+use crate::HeadSketchWork;
 use std::collections::VecDeque;
 #[derive(Default)]
 struct FakeHeadWindow {
@@ -232,9 +233,6 @@ struct FakeHeadWork {
     preview: Option<oblikovati_viewport::ViewportSketchPreview>,
 }
 impl crate::HeadWork for FakeHeadWork {
-    fn sketch_preview(&self) -> Option<oblikovati_viewport::ViewportSketchPreview> {
-        self.preview.clone()
-    }
     fn poll(&mut self, budget: usize) -> Result<crate::HeadWorkStatus, String> {
         assert_eq!(budget, 32);
         self.calls.push("poll");
@@ -449,3 +447,12 @@ mod edit_framing;
 
 #[path = "frames/sketch_display.rs"]
 mod sketch_display;
+
+impl crate::HeadSketchWork for FakeHeadWork {
+    fn sketch_preview(&self) -> Option<oblikovati_viewport::ViewportSketchPreview> {
+        self.preview.clone()
+    }
+}
+
+impl crate::HeadSketchWork for FakeSceneWork {}
+impl crate::HeadSketchWork for StartupHeadWork {}

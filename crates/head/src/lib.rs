@@ -37,6 +37,9 @@ mod work_forwarding;
 #[path = "work_idle.rs"]
 mod work_idle;
 #[cfg(target_os = "linux")]
+mod work_sketch;
+mod work_sketch_forwarding;
+#[cfg(target_os = "linux")]
 mod work_status;
 #[cfg(target_os = "linux")]
 pub use capture_png::{NativeWindowCaptureFiles, WindowCaptureFiles};
@@ -44,6 +47,8 @@ pub use capture_png::{NativeWindowCaptureFiles, WindowCaptureFiles};
 pub use window_capture::{DesktopWindowCaptures, WindowCaptureJob};
 #[cfg(target_os = "linux")]
 pub use work::HeadWork;
+#[cfg(target_os = "linux")]
+pub use work_sketch::HeadSketchWork;
 #[cfg(target_os = "linux")]
 pub use work_status::{HeadInvalidation, HeadWorkStatus};
 #[cfg(target_os = "linux")]

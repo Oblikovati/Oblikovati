@@ -154,7 +154,7 @@ fn reject_zero(world: &mut ApplicationWorld) {
         diagnostics::window_geometry("Edit Dimension").is_some(),
         "minor editor did not open at {label:?}: {:?}; annotations: {:?}",
         world.status_text(),
-        crate::HeadWork::sketch_dimension_annotations(&world.app().owner).unwrap()
+        crate::HeadSketchWork::sketch_dimension_annotations(&world.app().owner).unwrap()
     );
     world.type_text("0");
     world.key(ViewportPhysicalKey::Enter, false);
@@ -218,7 +218,7 @@ fn finish_dimensioned_sketch(world: &mut ApplicationWorld) {
 fn dimensions_after_finish(world: &mut ApplicationWorld) {
     world.expect_annotation("8");
     world.expect_annotation("4");
-    let labels = crate::HeadWork::sketch_dimension_annotations(&world.app().owner).unwrap();
+    let labels = crate::HeadSketchWork::sketch_dimension_annotations(&world.app().owner).unwrap();
     assert_eq!(labels.labels.len(), 2);
     let scene = world.app().window.native.sketch_scene.as_ref().unwrap();
     assert_eq!(scene.sketches.len(), 1);

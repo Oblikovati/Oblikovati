@@ -59,7 +59,7 @@ fn move_segment(world: &mut ApplicationWorld) {
     world.sketch_click(base);
     let target = [base[0] + 120, base[1] + 80];
     world.hover(target);
-    assert!(crate::HeadWork::sketch_preview(&world.app().owner).is_some());
+    assert!(crate::HeadSketchWork::sketch_preview(&world.app().owner).is_some());
     world.sketch_click(target);
     let done = world.run_in_window("Move", "Done").center();
     world.click(diagnostics::pointer_pixels(done));

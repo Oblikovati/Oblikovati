@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
+use crate::HeadSketchWork;
 use crate::{HeadWork, SketchPlacementTool};
 
 use oblikovati_model::sketch::{CircumcircleOptions, Sketch2D, SketchPlacementRecipe};

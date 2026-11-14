@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use crate::DesktopObservations;
+use crate::HeadSketchWork;
 use oblikovati_api::{client::Client, wire::*};
 use std::{
     sync::mpsc::{self, Receiver, Sender},

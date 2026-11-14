@@ -372,7 +372,7 @@ fn sketch_shown(world: &mut ApplicationWorld) {
     expect_outline(world, true);
     let state = world.state();
     assert!(state.browser.is_some(), "expected a browser");
-    let labels = crate::HeadWork::sketch_dimension_annotations(&world.app().owner)
+    let labels = crate::HeadSketchWork::sketch_dimension_annotations(&world.app().owner)
         .unwrap()
         .labels;
     assert!(!labels.is_empty(), "expected the sketch's dimensions");

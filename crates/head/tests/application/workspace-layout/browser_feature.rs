@@ -344,7 +344,8 @@ fn sketch_row_highlighted(world: &mut ApplicationWorld) {
     );
 }
 fn sketch_dimension_texts(world: &mut ApplicationWorld) -> Vec<String> {
-    let annotations = crate::HeadWork::sketch_dimension_annotations(&world.app().owner).unwrap();
+    let annotations =
+        crate::HeadSketchWork::sketch_dimension_annotations(&world.app().owner).unwrap();
     annotations
         .labels
         .into_iter()

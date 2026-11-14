@@ -69,7 +69,7 @@ fn moving_a_constrained_segment_follows_the_cursor_and_drags_the_join() {
     world.sketch_click(base);
     let target = [base[0] + 120, base[1] + 80];
     world.hover(target);
-    assert!(crate::HeadWork::sketch_preview(&world.app().owner).is_some());
+    assert!(crate::HeadSketchWork::sketch_preview(&world.app().owner).is_some());
     assert!(world.edited_geometry().same_recipe(&before));
     world.sketch_click(target);
     let after = world.edited_geometry();
@@ -206,8 +206,8 @@ fn stale_context_relation_cannot_delete_a_different_relation() {
             constraint_index: 0,
         })
         .unwrap();
-    let error =
-        crate::HeadWork::delete_sketch_relation_from_gui(&mut world.app().owner, id).unwrap_err();
+    let error = crate::HeadSketchWork::delete_sketch_relation_from_gui(&mut world.app().owner, id)
+        .unwrap_err();
     assert!(error.contains("expected an available relation"));
     assert_eq!(world.edited_geometry().geometric_constraints().count(), 0);
     world.close();
@@ -241,7 +241,7 @@ fn move_freed_segment_with_canvas_points_and_replay_history() {
     world.expect_status("Move: Select end point");
     let target = [base[0] + 120, base[1] + 80];
     world.hover(target);
-    assert!(crate::HeadWork::sketch_preview(&world.app().owner).is_some());
+    assert!(crate::HeadSketchWork::sketch_preview(&world.app().owner).is_some());
     assert!(world.edited_geometry().same_recipe(&deleted));
     world.sketch_click(target);
     let moved = world.edited_geometry();
@@ -286,9 +286,9 @@ fn cancelling_a_move_discards_its_solved_preview_and_preserves_history() {
     world.sketch_click(middle);
     world.sketch_click(base);
     world.hover([base[0] + 120, base[1] + 80]);
-    assert!(crate::HeadWork::sketch_preview(&world.app().owner).is_some());
+    assert!(crate::HeadSketchWork::sketch_preview(&world.app().owner).is_some());
     world.escape();
-    assert!(crate::HeadWork::sketch_preview(&world.app().owner).is_none());
+    assert!(crate::HeadSketchWork::sketch_preview(&world.app().owner).is_none());
     assert!(world.edited_geometry().same_recipe(&geometry));
     assert_eq!(world.state().undo_label, history);
     world.right_click([1000, 600]);

@@ -121,9 +121,6 @@ struct FakeGuiOwner {
     annotations: crate::HeadDimensionAnnotations,
 }
 impl HeadWork for FakeGuiOwner {
-    fn sketch_dimension_annotations(&self) -> Result<crate::HeadDimensionAnnotations, String> {
-        Ok(self.annotations.clone())
-    }
     fn create_part_document(&mut self) -> Result<bool, String> {
         self.created_parts += 1;
         Ok(true)
@@ -310,4 +307,10 @@ fn unprojectable_dimension_line_reports_its_failure_without_hiding_the_label() {
     advance_gui(&mut window, &mut owner, None).unwrap();
     assert_eq!(window.states[0].dimension_labels[0].line, None);
     assert!(window.notices[0].message().contains("dimension line"));
+}
+
+impl crate::HeadSketchWork for FakeGuiOwner {
+    fn sketch_dimension_annotations(&self) -> Result<crate::HeadDimensionAnnotations, String> {
+        Ok(self.annotations.clone())
+    }
 }

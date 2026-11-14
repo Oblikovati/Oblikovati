@@ -43,6 +43,8 @@ mod line_commit;
 mod model_browser;
 #[path = "owner_precise_input.rs"]
 pub(crate) mod owner_precise_input;
+#[path = "owner_work_sketch.rs"]
+mod owner_work_sketch;
 #[path = "owner_parameters.rs"]
 mod parameters_gui;
 #[path = "owner_part_assets.rs"]

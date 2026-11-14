@@ -2,6 +2,7 @@
 #![cfg(target_os = "linux")]
 #![allow(unsafe_code)]
 use oblikovati_automation::dispatch::PollingDispatchWakeup;
+use oblikovati_head::HeadSketchWork;
 use oblikovati_head::{
     DesktopDispatchOptions, DesktopObservations, DesktopOwner, DesktopScripts, HeadWork,
     ScriptDocumentOwner,

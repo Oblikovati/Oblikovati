@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+use crate::HeadSketchWork;
 use crate::{HeadGuiUpdate, HeadWork};
 use oblikovati_gui::GuiCommandState;
 use oblikovati_viewport::{ViewportButton, ViewportInput};

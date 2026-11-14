@@ -231,7 +231,7 @@ fn place_copy(world: &mut ApplicationWorld) {
     world.sketch_click(CENTER);
     let endpoint = [CENTER[0] + 110, CENTER[1] - 100];
     world.hover(endpoint);
-    let preview = crate::HeadWork::sketch_preview(&world.app().owner).unwrap();
+    let preview = crate::HeadSketchWork::sketch_preview(&world.app().owner).unwrap();
     assert!(
         matches!(preview, oblikovati_viewport::ViewportSketchPreview::Resolved { members, .. } if members.len() == 1)
     );
@@ -301,9 +301,9 @@ fn cancelling_copy_preview_keeps_the_source_and_history() {
     select_copy(&mut world);
     world.sketch_click(CENTER);
     world.hover([CENTER[0] + 110, CENTER[1] - 100]);
-    assert!(crate::HeadWork::sketch_preview(&world.app().owner).is_some());
+    assert!(crate::HeadSketchWork::sketch_preview(&world.app().owner).is_some());
     world.escape();
-    assert!(crate::HeadWork::sketch_preview(&world.app().owner).is_none());
+    assert!(crate::HeadSketchWork::sketch_preview(&world.app().owner).is_none());
     original_only(&mut world);
     assert_eq!(world.state().undo_label, history);
     world.click_text("Move");

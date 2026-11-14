@@ -164,3 +164,5 @@ fn startup_with_no_paths_uses_the_same_idle_wait_and_close_policy() {
     assert!(window.receipt.borrow().opened.is_empty());
     assert_eq!(window.receipt.borrow().retirements, ["owner", "window"]);
 }
+
+impl crate::HeadSketchWork for FakeStartupOwner {}

@@ -220,7 +220,7 @@ fn shows_as_body(world: &mut ApplicationWorld) {
 }
 // Show Dimensions
 fn annotation_texts(world: &mut ApplicationWorld) -> Vec<String> {
-    crate::HeadWork::sketch_dimension_annotations(&world.app().owner)
+    crate::HeadSketchWork::sketch_dimension_annotations(&world.app().owner)
         .unwrap()
         .labels
         .into_iter()

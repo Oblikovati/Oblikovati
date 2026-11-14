@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+use crate::HeadSketchWork;
 use crate::HeadWork;
 use crate::scene_fixture as fixture;
 use oblikovati_api::{client::Client, wire::*};

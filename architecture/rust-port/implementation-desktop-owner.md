@@ -15,6 +15,11 @@ GUID generation. UI commands can borrow `document_host` directly on the owner;
 they cannot use synchronous worker admission from the owner thread. Frame polling
 consumes observer invalidation even when the worker queue is empty.
 
+Sketch editing is a separate `HeadSketchWork` interface required by `HeadWork`.
+The desktop owner implements both; script and add-in wrappers forward sketch
+calls to that same owner. Custom `HeadWork` implementations must also implement
+`HeadSketchWork`, whose default methods decline unsupported operations (#3860).
+
 The fixed Go source is `head/cmd/oblikovati-head/addins.go` at
 `aa8297d1b0ac33c024f19e54821536d76e8a447a`. The default admission capacity remains
 64, host-call timeout remains 10 seconds, and the loop drains at most 32 calls

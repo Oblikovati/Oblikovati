@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 #![cfg(target_os = "linux")]
 use oblikovati_automation::dispatch::PollingDispatchWakeup;
+use oblikovati_head::HeadSketchWork;
 use oblikovati_head::{
     DesktopDispatchOptions, DesktopObservations, DesktopOwner, DesktopScripts, HeadOptions,
     HeadPresentation, HeadSummary, HeadWindow, HeadWork, HeadWorkStatus, NativeHeadWindow,
@@ -142,3 +143,5 @@ fn verify(owner: &ScriptOwner, window: &ScriptWindow, path: &Path, summary: Head
     assert!(path.is_file());
     assert!(summary.completed > 0 && window.timed_waits > 0);
 }
+
+impl crate::HeadSketchWork for ScriptOwner {}

@@ -176,7 +176,7 @@ fn editing_an_existing_label_keeps_general_dimension_active() {
     let mut world = ApplicationWorld::new();
     place_line_dimension(&mut world);
     world.escape();
-    let label = crate::HeadWork::sketch_dimension_annotations(&world.app().owner)
+    let label = crate::HeadSketchWork::sketch_dimension_annotations(&world.app().owner)
         .unwrap()
         .labels[0]
         .text

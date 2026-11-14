@@ -43,7 +43,7 @@ fn sketch_selected(world: &mut ApplicationWorld) {
 fn sketch_highlighted(world: &mut ApplicationWorld) {
     expect_outline(world, true);
     assert!(
-        !crate::HeadWork::sketch_dimension_annotations(&world.app().owner)
+        !crate::HeadSketchWork::sketch_dimension_annotations(&world.app().owner)
             .unwrap()
             .labels
             .is_empty()

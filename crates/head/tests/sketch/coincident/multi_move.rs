@@ -167,7 +167,7 @@ fn move_two_segments_as_one_edit_and_remember_selection_mode() {
     let target = [base[0] + 120, base[1] + 80];
     world.sketch_click(base);
     world.hover(target);
-    let preview = crate::HeadWork::sketch_preview(&world.app().owner).unwrap();
+    let preview = crate::HeadSketchWork::sketch_preview(&world.app().owner).unwrap();
     assert!(matches!(preview, ViewportSketchPreview::Resolved { members, .. } if members == ids));
     assert!(world.edited_geometry().same_recipe(&before));
     world.sketch_click(target);

@@ -3,6 +3,7 @@
 use crate::{HeadWork, HeadWorkStatus};
 
 pub(crate) struct IdleHeadWork;
+impl crate::HeadSketchWork for IdleHeadWork {}
 impl HeadWork for IdleHeadWork {
     fn poll(&mut self, _: usize) -> Result<HeadWorkStatus, String> {
         Ok(HeadWorkStatus::default())
@@ -18,6 +19,7 @@ impl HeadWork for IdleHeadWork {
 #[cfg(test)]
 mod document_activation_tests {
     use super::{HeadWork, IdleHeadWork};
+    use crate::HeadSketchWork;
     #[test]
     fn an_owner_without_documents_names_the_refused_activation() {
         let failure = IdleHeadWork

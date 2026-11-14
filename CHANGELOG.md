@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Split sketch frame operations into `HeadSketchWork`; custom `HeadWork` owners must implement that interface. (#3860)
+
 ### Fixed
 
 - Cleared the save-path request after opening Save As, so cancellation leaves no stale error message. (#3888)

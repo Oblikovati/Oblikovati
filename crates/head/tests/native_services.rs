@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+use crate::HeadSketchWork;
 use crate::{HeadWork, HeadWorkStatus, NativeAddInDesktop, ScriptDocumentOwner};
 use oblikovati_addin_host::NativeCompletion;
 use std::{cell::Cell, collections::VecDeque, path::PathBuf, rc::Rc};
@@ -263,3 +264,5 @@ fn verify_native_catalog(services: &mut TestNativeServices<'_>, id: &str) {
     assert_eq!(*listed, described);
     assert!(!described.activated);
 }
+
+impl crate::HeadSketchWork for FixtureStartup<'_> {}

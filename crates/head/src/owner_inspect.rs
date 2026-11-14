@@ -148,7 +148,7 @@ impl<
                 self.apply_dimension_intent(&oblikovati_gui::GuiDimensionAction::Start)?;
             }
             ViewportPhysicalKey::C if modifiers.control && modifiers.shift => {
-                crate::HeadWork::place_sketch_tool_from_gui(
+                crate::HeadSketchWork::place_sketch_tool_from_gui(
                     self,
                     oblikovati_gui::GuiSketchTool::Circle,
                 )?;
