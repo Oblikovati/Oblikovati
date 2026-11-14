@@ -527,8 +527,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-point-extrusion-current-6d4a200f/receipt-6d4a200f137644d4.json",
-        "sha256": "a4c902389dd10f2741f34f3c6d5de94855be444e376c8ef51bb490338d777a7a"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-last-6d4a200f/receipt-6d4a200f137644d4.json",
+        "sha256": "2c8a095d87f5f45920a78b19cfad04fe9e890d01efc9733be99f06f4ecce9be9"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -600,8 +600,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-validation-2fc85f94/receipt-2fc85f94acd6cc5f.json",
-        "sha256": "949bfde8687e8bdd943500ce79480d5c8f07a8bdc527b1c894a91aecac88c33c"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-last-2fc85f94/receipt-2fc85f94acd6cc5f.json",
+        "sha256": "8844200d540015a93b49e25ee5d30802a005b72c126b0864a3b160e27ac9d822"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -2462,8 +2462,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-point-extrusion-current-67ae50d1/receipt-67ae50d1d3318571.json",
-        "sha256": "71d6b8896860fe98ce8cb1316ffc79c42b7c405c26f886df13346a2348fa382b"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-last-67ae50d1/receipt-67ae50d1d3318571.json",
+        "sha256": "3919e72fa07563b53687fabe39ed81f4f63122631bbf1d823b4bbae1863179b2"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -36702,8 +36702,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-validation-4adc48f8/receipt-4adc48f8c743c213.json",
-        "sha256": "d045717c48f13bb947acc58a83b09f36ffa129ebd417ec6bf64fda150418161c"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-last-4adc48f8/receipt-4adc48f8c743c213.json",
+        "sha256": "25523cf2306d43e0cc74b057127440f2c5e41ff80b57cc647d653db42e8cca03"
       },
       "go_reference": "../Oblikovati/head/ui/preferences_window.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
       "mapping_reason": "Native precise input or sketch preference and display interaction.",
@@ -36749,8 +36749,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-validation-ed1aa212/receipt-ed1aa212dcf6f7bb.json",
-        "sha256": "07bd569dfd3a3d6cd6accb56450201d7d6440c149bbc5a631d466df492a08c6c"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-last-ed1aa212/receipt-ed1aa212dcf6f7bb.json",
+        "sha256": "dfd0362d8639b93f6f478f69f4c403c1cc2ce9f17350f81ddef80b5bb372caf5"
       },
       "go_reference": "../Oblikovati/head/ui/preferences_window.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
       "mapping_reason": "Native precise input or sketch preference and display interaction.",

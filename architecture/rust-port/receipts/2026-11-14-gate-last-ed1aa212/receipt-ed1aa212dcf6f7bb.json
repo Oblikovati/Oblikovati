@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:ed1aa212dcf6f7bb8daa4e20b0f6c6ae2ee9a81056bd9ac507ea1bee59dd3c9a",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "655b02bd9241f192dd9bcd1eaa38263b0cbb7cb4db934c6738396a894b5ea6c3",
+  "application_commit": "0e243a29c18f13617065c93b4410f10640b3a327",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-gate-last-ed1aa212/cucumber.json",
+    "sha256": "6de89e7482ff5450b25dd18efb8ab0187b294adbcb0678806b6370fd7f47db19"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-gate-last-ed1aa212/source-revision.json",
+    "sha256": "699bb0f0ae803b247985a63cfe10cb8d995533fe2a7aedcc615f93fad269b39c"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-gate-last-ed1aa212/precise-input-05-Undo-and-redo-a-committed-point.png",
+    "sha256": "a8a187c411cb8ebfc81f302f1e8442bc77c9948b65a0edff5f8957ad0ad16ece"
+  }
+}
