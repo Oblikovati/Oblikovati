@@ -1,0 +1,22 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use super::*;
+use oblikovati_martensite::{PrismResolution, certified_sketch_regions};
+use oblikovati_model::{document_sketch::{DocumentSketchId, DocumentSketches}, sketch::{PlanarConstraint, Sketch2D, SketchConstraintId, SketchEntityId, SketchPlane}};
+fn region_count(x:f64, side:f64) -> Result<usize,String> {
+ let mut geometry=Sketch2D::default();
+ let positions=[[x,x],[x+side,x],[x+side,x+side],[x,x+side]];
+ for (i,p) in positions.into_iter().enumerate(){let id=SketchEntityId((i+1) as u64);geometry.add_point(id,p).unwrap();geometry.add_constraint(SketchConstraintId((i+1) as u64),PlanarConstraint::Fix{point:id,position:p}).unwrap();}
+ for i in 0..4 {geometry.add_line(SketchEntityId((i+5) as u64),[SketchEntityId((i+1) as u64),SketchEntityId(((i+1)%4+1) as u64)]).unwrap();}
+ let mut document=selected_sketch_document();let mut sketches=DocumentSketches::default();sketches.add(DocumentSketchId(1),"Probe",SketchPlane::xy(),geometry).unwrap();document.sketches=sketches;solve_selected_sketches(&mut document);
+ let policy=PrismResolution{version:1,weld:1e-12,sew:1e-11,angular:1e-9,display_chordal:1e-3,display_angular:0.1,maximum_tolerance:1e-5};
+ certified_sketch_regions(&document,DocumentSketchId(1),policy).map(|x|x.len()).map_err(|e|e.to_string())
+}
+#[test] fn report_profile_parity(){for (name,x,side) in [("cube",0.,1.),("tiny",0.,0.00002),("small",0.,0.0001),("offset",1e8,1.),("offset_small",1e8,0.01)]{println!("{name}: {:?}",region_count(x,side));}}
+#[test]
+fn direct_kernel_offset_profile_probe() {
+ use martensite_tkbo::profile_extrusion::*;
+ let p=[[1e8,1e8],[1e8+1.0,1e8],[1e8+1.0,1e8+1.0],[1e8,1e8+1.0]];
+ let profile=SketchProfile{plane:ProfilePlane::world_xy(),vertices:p.into_iter().enumerate().map(|(i,point)|ProfileVertex{id:ProfileVertexId(i as u64+1),point}).collect(),curves:(0..4).map(|i|ProfileCurve::Line{id:ProfileCurveId(i+5),start:ProfileVertexId(i+1),end:ProfileVertexId((i+1)%4+1)}).collect()};
+ let resolution=Resolution::new(1e-12,1e-11,1e-9,DisplayTolerance{chordal:1e-3,angular:0.1},ToleranceCap::Refuse(1e-5));
+ let result=build_planar_regions(&profile,resolution);match result {Ok(regions)=>println!("direct kernel: {} regions",regions.regions().len()),Err(e)=>println!("direct kernel: {e:?}")};
+}

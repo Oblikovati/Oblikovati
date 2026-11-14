@@ -1,0 +1,15 @@
+use martensite_tkbo::profile_extrusion::*;
+fn main() {
+    let a = 100_000_000.0;
+    let points = [[a,a],[a+1.0,a],[a+1.0,a+1.0],[a,a+1.0]];
+    let profile = SketchProfile {
+        plane: ProfilePlane::world_xy(),
+        vertices: points.into_iter().enumerate().map(|(i,point)| ProfileVertex{id:ProfileVertexId(i as u64+1),point}).collect(),
+        curves: (0..4).map(|i| ProfileCurve::Line{id:ProfileCurveId(i+5),start:ProfileVertexId(i+1),end:ProfileVertexId((i+1)%4+1)}).collect(),
+    };
+    let resolution = Resolution::new(1e-12,1e-11,1e-9,DisplayTolerance{chordal:1e-3,angular:0.1},ToleranceCap::Refuse(1e-5));
+    match build_planar_regions(&profile,resolution) {
+       Ok(result) => println!("success: {} regions",result.regions().len()),
+       Err(error) => println!("declined: {error:?}"),
+    }
+}
