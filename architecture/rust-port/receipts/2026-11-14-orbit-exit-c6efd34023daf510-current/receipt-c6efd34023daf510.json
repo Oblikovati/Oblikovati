@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:c6efd34023daf5106f806588d47a0bcc19d5c1410946e7b8ef27405d7e011ac9",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6",
+  "application_commit": "fdd4b555d00a8022f0fc167f32d322ec0910ea92",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "application_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan Lavapipe on Xvfb, Linux"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-orbit-exit-c6efd34023daf510-current/cucumber.json",
+    "sha256": "2825640d24b0b7a977cf9b146c87aa509f33558d38ece3818e1f405ba37db36e"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-orbit-exit-c6efd34023daf510-current/source-revision.json",
+    "sha256": "457b477a7bd4981683ec600ef54c8d8e39a1bc1fa3bc82f4d26a13da4ba7bb0c"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-orbit-exit-c6efd34023daf510-current/Leave-free-orbit-using-the-Pan-control.png",
+    "sha256": "2c3a4245658cbdf43974d973c4ba7ae6bce5708b9c4c32871bf5bac9bf056f86"
+  }
+}

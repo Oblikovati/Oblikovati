@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport orbit: tmp/obk-orbit-exit-48987af/features/application/viewport-orbit/viewport-orbit.feature" package="testsuite/Feature: Viewport orbit: tmp/obk-orbit-exit-48987af/features/application/viewport-orbit/viewport-orbit.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T22:01:47.625655594Z" time="7.203786798"><testcase name="Scenario: Exit orbit with the context menu OK action: tmp/obk-orbit-exit-48987af/features/application/viewport-orbit/viewport-orbit.feature:113:3" time="7.203786798"><system-out><![CDATA[  Scenario: Exit orbit with the context menu OK action
+   ✔  Given a rectangular block is visible in an active part in the MCAD Software
+   ✔  And Orbit is active with its circular guide visible
+   ✔  When the user opens the orbit context menu
+   ✔  And the user chooses OK
+   ✔  Then the circular guide disappears
+   ✔  And the status area displays Ready
+   ✔  And the block remains visible in the same apparent orientation
+]]></system-out></testcase></testsuite></testsuites>
