@@ -130,15 +130,17 @@ fn successful_creation_reports_ambiguous_links_without_discarding_new_owner() {
 #[test]
 fn partial_close_all_refreshes_remaining_readers_and_preserves_save_error() {
     let (mut files, source, target, mut guids) = linked_files();
+    files.save(source, "test", &mut guids).unwrap();
     files
         .commands(target)
         .unwrap()
-        .run("Unsupported storage", |snapshot, ids| {
+        .run("Dirty target", |snapshot, ids| {
             snapshot
                 .parameters
                 .insert_auto_model(ids.allocate().unwrap(), "1 cm")
         })
         .unwrap();
+    files.files().refuse_write.set(true);
     let error = Client::new(FileHost::new(&mut files, &mut guids, "test"))
         .documents()
         .close_all(&CloseAllDocumentsArgs { force: false })
