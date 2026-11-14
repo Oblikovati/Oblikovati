@@ -397,6 +397,16 @@ pub trait HeadWork: HeadSketchWork {
             "view line {line:?}, document {document}: expected a selection owner"
         ))
     }
+    /// Choose a viewport candidate with a screen-derived depth window.
+    /// Example: `work.click_model_with_window(document, ray, 0.1)?`.
+    fn click_model_with_window(
+        &mut self,
+        document: u64,
+        line: [[f64; 3]; 2],
+        _window: f64,
+    ) -> Result<bool, String> {
+        self.click_model_from_gui(document, line)
+    }
     /// The chosen row's outline, in model space; example: to draw it over the view.
     fn selected_browser_outline(&mut self) -> Vec<[[f64; 3]; 2]> {
         Vec::new()

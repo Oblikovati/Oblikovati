@@ -3,6 +3,8 @@
 mod model_state;
 #[path = "owner_browser_outline.rs"]
 mod outline;
+#[path = "owner_viewport_selection.rs"]
+mod viewport;
 use super::*;
 use oblikovati_model::document_sketch::DocumentSketchId;
 use oblikovati_session::selection::SelectionClickMode;
@@ -49,72 +51,6 @@ impl<
         self.model_face = None;
         self.selected_occurrence = None;
         Ok(true)
-    }
-    /// A click on the view: the face on the line of sight is chosen, and every browser row is
-    /// let go. On nothing, nothing stays chosen.
-    pub(super) fn click_model(
-        &mut self,
-        document: u64,
-        line: [[f64; 3]; 2],
-    ) -> Result<bool, String> {
-        self.require_browser_document(document)?;
-        if self
-            .files
-            .workspace()
-            .session(document)
-            .map_err(|cause| cause.to_string())?
-            .snapshot()
-            .assembly
-            .is_some()
-        {
-            if !self
-                .ambient_selection
-                .filter()
-                .accepts(oblikovati_session::selection::SelectionKind::Occurrence)
-            {
-                return Ok(false);
-            }
-            return self.click_assembly(document, line);
-        }
-        if self
-            .part_measure
-            .as_ref()
-            .is_none_or(|measure| measure.document != document)
-            && !self
-                .ambient_selection
-                .filter()
-                .accepts(oblikovati_session::selection::SelectionKind::Face)
-        {
-            return Ok(false);
-        }
-        self.selected_occurrence = None;
-        self.files
-            .commands(document)
-            .map_err(|cause| cause.to_string())?
-            .set_browser_sketch_selection(None, SelectionClickMode::Replace, false)
-            .map_err(|cause| cause.to_string())?;
-        let picked = self.part_scenes.face_on_line(&self.files, document, line)?;
-        self.measure_part_face(document, picked)?;
-        self.model_face = picked.map(|(feature, role)| ChosenModelFace {
-            document,
-            feature,
-            role,
-        });
-        Ok(true)
-    }
-    fn click_assembly(&mut self, document: u64, line: [[f64; 3]; 2]) -> Result<bool, String> {
-        let picked = self
-            .part_scenes
-            .occurrence_on_line(&mut self.files, document, line);
-        let choice = match picked {
-            Ok(Some(path)) => oblikovati_gui::GuiBrowserChoice::Occurrence(path),
-            Ok(None) => oblikovati_gui::GuiBrowserChoice::Nothing,
-            Err(cause) => {
-                self.command_notice = Some(crate::DesktopCommandNotice::SelectionFailed { cause });
-                return Ok(true);
-            }
-        };
-        self.browser_choice(document, &choice)
     }
     fn set_sketch_dimensions_shown(
         &mut self,

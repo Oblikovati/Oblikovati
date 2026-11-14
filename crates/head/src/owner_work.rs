@@ -456,6 +456,14 @@ impl<
     fn click_model_from_gui(&mut self, document: u64, line: [[f64; 3]; 2]) -> Result<bool, String> {
         self.click_model(document, line)
     }
+    fn click_model_with_window(
+        &mut self,
+        document: u64,
+        line: [[f64; 3]; 2],
+        window: f64,
+    ) -> Result<bool, String> {
+        self.click_model_with_window(document, line, Some(window))
+    }
     fn selected_browser_outline(&mut self) -> Vec<[[f64; 3]; 2]> {
         self.current_browser_outline()
     }

@@ -75,8 +75,8 @@ impl SelectionFilterPanel {
     }
 }
 fn draw_filter(ui: &Ui, filter: Option<&GuiSelectionFilter>, actions: &mut Vec<GuiShellAction>) {
-    ui.text("Currently controls face and component picks.");
-    ui.text("Pick priority is not yet applied.");
+    ui.text("Priority applies to part faces and bodies.");
+    ui.text("Other pick categories are not yet complete.");
     let Some(filter) = filter else {
         ui.text("No active document");
         return;
