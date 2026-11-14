@@ -3353,8 +3353,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-first-save-cancel/receipt-d0dc7b66959fc4df.json",
-        "sha256": "50ed78f4a3507d53f21d7950a9fd7caffa7310903c9ccb5701cdaa580a464aea"
+        "path": "architecture/rust-port/receipts/2026-11-14-save-cancel-notice/receipt-d0dc7b66959fc4df.json",
+        "sha256": "446003c9336ee9a625d51e948f80d1ad0f2fdfec82af997a60aee04d5a048fd7"
       },
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Native document save, close, or reopen lifecycle.",

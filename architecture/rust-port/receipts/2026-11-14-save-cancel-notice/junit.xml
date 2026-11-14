@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Save and reopen part documents: tmp/obk-save-notice-oHxJkJ9D/checkout/features/application/document-saving/document-saving.feature" package="testsuite/Feature: Save and reopen part documents: tmp/obk-save-notice-oHxJkJ9D/checkout/features/application/document-saving/document-saving.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T10:00:17.982828921Z" time="20.628267736"><testcase name="Scenario: Open and cancel the first save: tmp/obk-save-notice-oHxJkJ9D/checkout/features/application/document-saving/document-saving.feature:4:3" time="20.628267736"><system-out><![CDATA[  Scenario: Open and cancel the first save
+   ✔  Given a new unsaved part is active in the MCAD Software
+   ✔  When the user presses Control+S
+   ✔  Then a Save As dialog opens
+   ✔  And a proposed document name is selected in the file name field
+   ✔  And a location, file type and preview options are displayed
+   ✔  When the user cancels the dialog
+   ✔  Then the Save As dialog closes
+   ✔  And the unsaved part remains active
+   ✔  When the user presses Control+S again in the same session
+   ✔  Then the Save As dialog reopens with the same proposed document name selected
+   ✔  When the user cancels the dialog again
+   ✔  Then the unsaved part remains active
+]]></system-out></testcase></testsuite></testsuites>
