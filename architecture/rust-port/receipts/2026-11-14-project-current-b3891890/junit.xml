@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect the project dialog: tmp/obk-bdd-project-wPhRV5Dm/checkout/features/application/project-dialog/project-dialog.feature" package="testsuite/Feature: Inspect the project dialog: tmp/obk-bdd-project-wPhRV5Dm/checkout/features/application/project-dialog/project-dialog.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T15:01:05.143916098Z" time="3.430583637"><testcase name="Scenario: Inspect project information from the template chooser: tmp/obk-bdd-project-wPhRV5Dm/checkout/features/application/project-dialog/project-dialog.feature:6:3" time="3.430583637"><system-out><![CDATA[  Scenario: Inspect project information from the template chooser
+   ✔  Given the new-document template chooser is open in the MCAD Software
+   ✔  And a project is active
+   ✔  And a template is selected with its details displayed
+   ✔  When the user chooses Projects in the chooser
+   ✔  Then a Projects dialog opens above the chooser
+   ✔  And the dialog lists project names and locations
+   ✔  And the active project is marked
+   ✔  And the dialog displays a project settings tree
+   ✔  And New, Browse, Save, Apply and Done controls are displayed
+   ✔  When the user chooses Done without changing the project
+   ✔  Then the Projects dialog closes
+   ✔  And the template chooser is displayed again
+   ✔  And the selected template details remain displayed
+]]></system-out></testcase></testsuite></testsuites>
