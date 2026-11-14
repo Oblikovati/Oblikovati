@@ -17,6 +17,16 @@ pub enum ResidualTolerance {
     Unitless,
 }
 
+/// Physical unit of a raw equation value; it is not a certified error bound.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum ResidualValueUnit {
+    Length,
+    Radians,
+    Dimensionless,
+    #[default]
+    Unknown,
+}
+
 /// A constraint's equations, expressed with the shared derivative primitives.
 pub trait ResidualSource {
     /// Declare the convergence domain; example: a radian error returns `ResidualTolerance::Unitless`.
@@ -27,6 +37,11 @@ pub trait ResidualSource {
     /// Select a row's convergence domain; example: a mixed source declares row 0 unitless and row 1 model-relative.
     fn equation_tolerance(&self, _row: usize) -> ResidualTolerance {
         self.tolerance_kind()
+    }
+
+    /// Describe the raw row's physical unit; example: an unknown equation returns `Unknown`.
+    fn equation_unit(&self, _row: usize) -> ResidualValueUnit {
+        ResidualValueUnit::Unknown
     }
 
     /// Evaluate local variables in declared order, returning the declared number of equations.

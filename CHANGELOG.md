@@ -4,6 +4,8 @@
 
 ### Changed
 
+- Added conservative physical-unit labels to raw sketch residual rows, with unknown units retained where the equation is ambiguous. These labels do not certify spatial or angular bounds. (#3928)
+
 - Exposed source-attributed raw sketch residual rows and their convergence domains in solver diagnostics; these values are not certified spatial bounds. (#3928)
 
 - Split sketch frame operations into `HeadSketchWork`; custom `HeadWork` owners must implement that interface. (#3860)

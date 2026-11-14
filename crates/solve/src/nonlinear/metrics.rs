@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 use super::{ResidualEvidence, SolveError, checked};
-use crate::residual::{ResidualBlock, ResidualEvaluation, ResidualTolerance};
+use crate::residual::{ResidualBlock, ResidualEvaluation, ResidualTolerance, ResidualValueUnit};
 
 use crate::row_scaling::RowScale;
 pub(super) struct ScaledEvaluation {
@@ -122,6 +122,17 @@ fn equation_domains(
         .iter()
         .zip(evaluation.source_rows())
         .flat_map(|(block, rows)| (0..rows.len()).map(|row| block.source.equation_tolerance(row)))
+        .collect()
+}
+
+pub(super) fn equation_units(
+    evaluation: &ResidualEvaluation,
+    blocks: &[ResidualBlock<'_>],
+) -> Vec<ResidualValueUnit> {
+    blocks
+        .iter()
+        .zip(evaluation.source_rows())
+        .flat_map(|(block, rows)| (0..rows.len()).map(|row| block.source.equation_unit(row)))
         .collect()
 }
 fn working_jacobian(

@@ -1,6 +1,28 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use oblikovati_model::sketch::AngleTurn;
+use oblikovati_model::sketch::{AngleTurn, SketchRelationId};
+use oblikovati_solve::residual::ResidualValueUnit;
+
+#[test]
+fn residual_units_follow_the_source_across_sketch_scales() {
+    for scale in [1e-3, 1.0, 1e3] {
+        let outcome = angled_rays(false, false, scale)
+            .solve(&angle_parameters(scale), SolveOptions::default(), || false)
+            .unwrap();
+        let rows = outcome.residual_rows();
+        let angle = rows
+            .iter()
+            .find(|row| row.relation == SketchRelationId::Authored(constraint(5)))
+            .unwrap();
+        let distance = rows
+            .iter()
+            .find(|row| row.relation == SketchRelationId::Authored(constraint(3)))
+            .unwrap();
+        assert_eq!(angle.unit, ResidualValueUnit::Radians);
+        assert_eq!(distance.unit, ResidualValueUnit::Length);
+        assert!(angle.value.is_finite() && distance.value.is_finite());
+    }
+}
 fn angled_rays(clockwise: bool, three_point: bool, scale: f64) -> Sketch2D {
     let mut sketch = Sketch2D::default();
     for (id, p) in [

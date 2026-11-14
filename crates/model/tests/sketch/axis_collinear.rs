@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use crate::sketch::residual::{PlanarEquation, PreparedConstraint};
-use oblikovati_solve::residual::{ResidualSource, ResidualTolerance};
+use oblikovati_solve::residual::{ResidualSource, ResidualTolerance, ResidualValueUnit};
 fn source(layouts: [AxisLayout; 2]) -> PreparedConstraint {
     PreparedConstraint {
         projection: None,
@@ -80,6 +80,9 @@ fn mixed_domains_and_bad_variable_shapes_have_explicit_contracts() {
     assert_eq!(source.equations(), 2);
     assert_eq!(source.equation_tolerance(0), ResidualTolerance::Unitless);
     assert_eq!(source.equation_tolerance(1), ResidualTolerance::ModelLength);
+    assert_eq!(source.equation_unit(0), ResidualValueUnit::Radians);
+    assert_eq!(source.equation_unit(1), ResidualValueUnit::Length);
+    assert_eq!(source.equation_unit(2), ResidualValueUnit::Unknown);
     assert!(
         source
             .evaluate(&[])
@@ -87,4 +90,47 @@ fn mixed_domains_and_bad_variable_shapes_have_explicit_contracts() {
             .to_string()
             .contains("expected 6")
     );
+}
+
+#[test]
+fn degenerate_axis_is_refused_before_unit_evidence_exists() {
+    let source = source([AxisLayout::Line; 2]);
+    let zero_lines = [0.0; 12];
+    assert!(
+        source
+            .evaluate(&DualNumber::seed(&zero_lines).unwrap())
+            .is_err()
+    );
+}
+
+#[test]
+fn normalized_line_relations_are_dimensionless_and_mixed_rows_remain_unknown() {
+    for (relation, expected) in [
+        (
+            crate::sketch::LineRelation::Parallel,
+            ResidualValueUnit::Dimensionless,
+        ),
+        (
+            crate::sketch::LineRelation::Perpendicular,
+            ResidualValueUnit::Dimensionless,
+        ),
+        (
+            crate::sketch::LineRelation::EqualLength,
+            ResidualValueUnit::Length,
+        ),
+        (
+            crate::sketch::LineRelation::Collinear,
+            ResidualValueUnit::Unknown,
+        ),
+    ] {
+        let source = PreparedConstraint {
+            projection: None,
+            equation: PlanarEquation::Lines {
+                relation,
+                shared_endpoints: 0,
+            },
+            variables: vec![],
+        };
+        assert_eq!(source.equation_unit(0), expected);
+    }
 }

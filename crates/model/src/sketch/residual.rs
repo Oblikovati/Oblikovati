@@ -158,6 +158,60 @@ impl ResidualSource for PreparedConstraint {
         }
         self.tolerance_kind()
     }
+
+    fn equation_unit(&self, row: usize) -> oblikovati_solve::residual::ResidualValueUnit {
+        use oblikovati_solve::residual::ResidualValueUnit::{
+            Dimensionless, Length, Radians, Unknown,
+        };
+        if row >= self.equations() {
+            return Unknown;
+        }
+        match &self.equation {
+            PlanarEquation::Coincident
+            | PlanarEquation::Coordinate(_)
+            | PlanarEquation::Fix(_)
+            | PlanarEquation::Ground(_)
+            | PlanarEquation::PatternPointLink(_)
+            | PlanarEquation::Midpoint
+            | PlanarEquation::PointOnLine
+            | PlanarEquation::PointOnCircle
+            | PlanarEquation::EqualRadius
+            | PlanarEquation::ScalarLength { .. }
+            | PlanarEquation::Distance { .. }
+            | PlanarEquation::ArcLength { .. } => Length,
+            PlanarEquation::LineAngle { .. }
+            | PlanarEquation::Angle { .. }
+            | PlanarEquation::ArcSweep { .. }
+            | PlanarEquation::AxisAlignment { .. }
+            | PlanarEquation::AxisRelation { .. } => Radians,
+            PlanarEquation::AxisCollinear { .. } => match row {
+                0 => Radians,
+                1 => Length,
+                _ => Unknown,
+            },
+            PlanarEquation::Lines {
+                relation: LineRelation::EqualLength,
+                ..
+            } => Length,
+            PlanarEquation::Lines {
+                relation: LineRelation::Parallel | LineRelation::Perpendicular,
+                ..
+            } => Dimensionless,
+            PlanarEquation::Lines {
+                relation: LineRelation::Collinear,
+                ..
+            }
+            | PlanarEquation::ArcCircularity
+            | PlanarEquation::ArcMidpoint(_)
+            | PlanarEquation::Offset { .. }
+            | PlanarEquation::LineTangent(_)
+            | PlanarEquation::CircleTangent(_)
+            | PlanarEquation::PinnedLineTangent { .. }
+            | PlanarEquation::PinnedCircularTangent(_)
+            | PlanarEquation::TangentDistance { .. }
+            | PlanarEquation::PinnedTangentDistance { .. } => Unknown,
+        }
+    }
     fn evaluate(&self, variables: &[DualNumber]) -> Result<Vec<DualNumber>, ResidualError> {
         let expected = self
             .projection

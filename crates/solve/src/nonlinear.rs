@@ -67,6 +67,8 @@ pub struct NonlinearResult {
     pub residual_evidence: ResidualEvidence,
     /// Convergence domain of each raw equation, in evaluation row order; not a tolerance certificate.
     pub residual_domains: Vec<crate::residual::ResidualTolerance>,
+    /// Physical units of raw rows, in evaluation order; these are not certified bounds.
+    pub residual_units: Vec<crate::residual::ResidualValueUnit>,
     /// Unsatisfied sources, descending severity, with input index as a tie break.
     pub conflicts: Vec<usize>,
     /// Most recent rejected numerical/domain trial, if any; success may follow it.

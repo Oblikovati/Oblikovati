@@ -81,6 +81,18 @@ fn accepted_solver_domain_evidence_survives_document_verification() {
     assert_eq!(rows[0].equation, 0);
     assert_eq!(rows[1].relation, rows[0].relation);
     assert_eq!(rows[1].equation, 1);
+    assert_eq!(
+        rows[0].unit,
+        oblikovati_solve::residual::ResidualValueUnit::Length
+    );
+    let offset = rows
+        .iter()
+        .find(|row| row.relation == SketchRelationId::Authored(SketchConstraintId(4)))
+        .unwrap();
+    assert_eq!(
+        offset.unit,
+        oblikovati_solve::residual::ResidualValueUnit::Unknown
+    );
     assert!(rows.iter().all(|row| row.value.is_finite()));
     assert_eq!(
         rows,

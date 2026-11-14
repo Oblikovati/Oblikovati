@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use oblikovati_solve::residual::ResidualTolerance;
+use oblikovati_solve::residual::{ResidualTolerance, ResidualValueUnit};
 struct LengthTarget;
 impl ResidualSource for LengthTarget {
     fn tolerance_kind(&self) -> ResidualTolerance {
         ResidualTolerance::ModelLength
+    }
+    fn equation_unit(&self, _: usize) -> ResidualValueUnit {
+        ResidualValueUnit::Length
     }
     fn evaluate(&self, variables: &[DualNumber]) -> Result<Vec<DualNumber>, ResidualError> {
         Ok(vec![variables[0].clone()])
@@ -32,6 +35,15 @@ fn accepted_evaluation_retains_each_declared_residual_domain() {
     assert_eq!(result.residual_evidence.model_length, Some(3.));
     assert_eq!(result.residual_evidence.unitless, Some(0.1));
     assert_eq!(result.residual_evidence.model_relative_rows, 1);
+    assert_eq!(
+        result.residual_units,
+        [
+            ResidualValueUnit::Length,
+            ResidualValueUnit::Length,
+            ResidualValueUnit::Radians,
+            ResidualValueUnit::Unknown
+        ]
+    );
     assert_eq!(result.evaluation.values(), &[2., -3., 0.1, 1e12]);
     assert_eq!(
         result.residual_domains,
@@ -65,6 +77,9 @@ struct RadianTarget;
 impl ResidualSource for RadianTarget {
     fn tolerance_kind(&self) -> ResidualTolerance {
         ResidualTolerance::Unitless
+    }
+    fn equation_unit(&self, _: usize) -> ResidualValueUnit {
+        ResidualValueUnit::Radians
     }
     fn evaluate(&self, variables: &[DualNumber]) -> Result<Vec<DualNumber>, ResidualError> {
         Ok(vec![variables[0].clone()])
