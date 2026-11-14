@@ -60,7 +60,7 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 - MCPBridge measures a saved face key after cube replay; the 20 mm cube face reports 400 mm². See `receipts/2026-11-14-face-area-live/`. Other `analysis.measure` types return explicit declines and remain open (#3876).
 - A7: the scenario bundle, file manifest, and verifier are tracked in `test-utilities/benchmarks/scenario-snapshots/` and `tools/bdd/`. See issue #3864.
 - A6: diagnostic runner reports all steps and taints results after a failure. See issue #3863 and `receipts/2026-11-13-bdd-diagnostics/`. Fixture blockers require an explicit fixture signal.
-- A4: this status file is the initial manual queue. Generate it from the ledger when A8 is ready.
+- A4: the action queue remains manual. `python3 -B tools/bdd/behavior_cli.py queue` generates scenario work by milestone and feature; it does not infer dependency readiness.
 - A5: applicable agent rules are tracked in `AGENTS.md` and its linked rule files. The branch and feature documentation policies match the port plan.
 - A1: appearance and material resolution committed at `718a5d545`; Body Properties passed 6/6 scenarios and 69/69 steps on the saved source snapshot. See `receipts/2026-11-13-body-properties/receipt.json` and issue #3859.
 - The stale green pixel oracle is replaced in the targeted native tests (#3867). The rotation test now checks that a move of the fixed profile is refused without changing the sketch, history generation, or displayed solid (#3868).

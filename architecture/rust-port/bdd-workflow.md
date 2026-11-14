@@ -56,8 +56,11 @@ work is in progress.
 
 Choose the next ready item in milestone order. Record its scope, problem, and
 dependencies in a GitHub issue. Assign each scenario in the classification
-file and link the issue. Use `behavior_cli.py backlog` to see the feature
-groups and their remaining unclassified scenarios.
+file and link the issue. Run `python3 -B tools/bdd/behavior_cli.py queue`
+to see open scenario work grouped by milestone and feature. The queue includes
+blocked work, stale evidence, and missing R0 baseline fields; it does not assert
+that dependencies are ready. Unclassified scenarios are counted separately.
+Use `behavior_cli.py backlog` for feature-wide totals.
 Use the Go source as a design reference and implement through the shared Rust
 host operations. Add the appropriate model and host tests, then drive the native
 window with mouse and keyboard for UI behavior. Close test windows afterward.
