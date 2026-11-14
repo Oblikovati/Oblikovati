@@ -4775,10 +4775,15 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3895",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-project-inactive/receipt-b41e4db379935547.json",
+        "sha256": "70e660eea07a889948ce8f7f088eae281801bc183a26bb364673b89615cfe86b"
+      },
       "go_reference": "No matching project dialog found by search in ../Oblikovati/head/ui; baseline review remains open.",
-      "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services."
+      "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:543cafe456aa7eca5f10af48340a3b37ded3aebdd661bbe92cfeae903a2624a6",
