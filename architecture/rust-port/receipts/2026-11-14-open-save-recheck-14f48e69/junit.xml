@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Save and reopen part documents: tmp/obk-open-save-recheck/checkout/features/application/document-saving/document-saving.feature" package="testsuite/Feature: Save and reopen part documents: tmp/obk-open-save-recheck/checkout/features/application/document-saving/document-saving.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T17:10:28.303759432Z" time="6.566183972"><testcase name="Scenario: Save and reopen a newly created empty part: tmp/obk-open-save-recheck/checkout/features/application/document-saving/document-saving.feature:19:3" time="6.566183972"><system-out><![CDATA[  Scenario: Save and reopen a newly created empty part
+   ✔  Given a new unsaved empty part is active in the MCAD Software
+   ✔  And the proposed file name does not already exist in the selected folder
+   ✔  When the user presses Control+S
+   ✔  And the user accepts the proposed file name in the Save As dialog
+   ✔  Then the dialog closes
+   ✔  And the active document tab displays the saved file name
+   ✔  And the model browser root displays the saved file name
+   ✔  When the user closes that document tab
+   ✔  And the user opens the saved file from the same folder
+   ✔  Then the saved part becomes active
+   ✔  And its viewport contains no visible model geometry
+   ✔  And its model browser displays the origin and end-of-part marker
+]]></system-out></testcase></testsuite></testsuites>
