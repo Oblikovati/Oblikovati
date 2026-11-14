@@ -150,3 +150,24 @@ fn failed_window_setup_marks_every_step_unexecuted() {
 fn empty_scenario_is_not_classified_as_passing() {
     assert_eq!(classify(&[]), "no steps");
 }
+
+#[given("diagnostic fixture has a textual decline")]
+fn textual_fixture_decline(_: &mut DiagnosticWorld) {
+    block_fixture("missing sketch plane");
+}
+#[test]
+fn textual_fixture_decline_keeps_the_reason_in_diagnostic_and_normal_runs() {
+    let feature = Feature::parse(
+        "Feature: test\n Scenario: fixture\n  Given diagnostic fixture has a textual decline\n",
+        Default::default(),
+    )
+    .unwrap();
+    let mut world = DiagnosticWorld::default();
+    let outcomes = execute_steps(
+        &mut world,
+        &DiagnosticWorld::collection(),
+        feature.scenarios[0].steps.iter(),
+    );
+    assert_eq!(classify(&outcomes), "blocked by fixture");
+    assert_eq!(outcomes[0].detail.as_deref(), Some("missing sketch plane"));
+}
