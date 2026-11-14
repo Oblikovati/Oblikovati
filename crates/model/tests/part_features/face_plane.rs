@@ -432,3 +432,42 @@ fn direct_face_sketch_uses_current_body_and_declines_a_missing_source() {
             .is_ok()
     );
 }
+
+#[test]
+fn go_face_frame_survives_recipe_and_uses_the_legacy_basis() {
+    let mut owner = part_owner();
+    append_prism(&mut owner);
+    let mut snapshot = owner.snapshot().clone();
+    let source = WorkPlaneFaceReference::new(face_key(1)).unwrap();
+    let definition = WorkPlaneDefinition::Offset {
+        base: WorkPlaneReference::GoPrismFace(source),
+        distance: WorkPlaneDistance::Constant(0.5),
+    };
+    let entry = AuthoredFeature::datum(FeatureId(3), "Go face offset", definition);
+    assert!(
+        entry
+            .reads()
+            .keys()
+            .contains(&FeatureReadKey::Feature(FeatureId(2)))
+    );
+    snapshot.work_geometry.append(entry).unwrap();
+    let recipe = snapshot.work_geometry.part_recipe().unwrap();
+    assert_eq!(recipe.version, 19);
+    let mut older = recipe.clone();
+    older.version = 18;
+    assert!(FeatureSequence::from_part_recipe(&older).is_err());
+    let encoded = serde_json::to_string(&recipe).unwrap();
+    snapshot.work_geometry =
+        FeatureSequence::from_part_recipe(&serde_json::from_str(&encoded).unwrap()).unwrap();
+    let result = snapshot
+        .evaluate_part_features(&mut FaceEvaluator::default())
+        .unwrap();
+    let plane = result.plane(FeatureId(3)).unwrap();
+    assert_eq!(plane.recipe().origin, [1.5, 0., 0.]);
+    assert_eq!(plane.recipe().x_axis, [0., 0., 1.]);
+    assert_eq!(plane.recipe().y_axis, [0., -1., 0.]);
+    assert_eq!(plane.to_model([2., 3.]).unwrap(), [1.5, -3., 2.]);
+}
+
+#[path = "face_plane/go_versions.rs"]
+mod go_versions;

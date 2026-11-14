@@ -34,7 +34,10 @@ pub fn requires_part_replay(snapshot: &DocumentSnapshot) -> bool {
             WorkGeometryDefinition::AtAngleAboutAxis(source) => Some(&source.base),
             _ => None,
         };
-        matches!(base, Some(WorkPlaneReference::Face(_)))
+        matches!(
+            base,
+            Some(WorkPlaneReference::Face(_) | WorkPlaneReference::GoPrismFace(_))
+        )
     })
 }
 pub(super) fn current_info(

@@ -40,7 +40,9 @@ fn plane_key(base: WorkPlaneReference) -> Option<FeatureReadKey> {
     match base {
         WorkPlaneReference::Origin(_) => None,
         WorkPlaneReference::Feature(id) => Some(FeatureReadKey::Feature(id)),
-        WorkPlaneReference::Face(reference) => Some(FeatureReadKey::Feature(reference.source())),
+        WorkPlaneReference::Face(reference) | WorkPlaneReference::GoPrismFace(reference) => {
+            Some(FeatureReadKey::Feature(reference.source()))
+        }
     }
 }
 fn offset_keys(base: WorkPlaneReference, distance: DatumLength) -> Vec<FeatureReadKey> {

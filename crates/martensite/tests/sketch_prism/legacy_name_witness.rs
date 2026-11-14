@@ -362,3 +362,63 @@ fn ordered_recompute_moves_face_sketch_after_size_edit() {
         })
         .unwrap();
 }
+
+fn go_face_offset_history() -> DocumentEditHistory {
+    use oblikovati_model::feature::work_plane::{
+        WorkPlaneDefinition, WorkPlaneDistance, WorkPlaneFaceReference, WorkPlaneReference,
+    };
+    let base = imported_history(GO_CUBE);
+    let mut snapshot = base.snapshot().clone();
+    let face = WorkPlaneFaceReference::new(native_side_name(7)).unwrap();
+    let definition = WorkPlaneDefinition::Offset {
+        base: WorkPlaneReference::GoPrismFace(face),
+        distance: WorkPlaneDistance::Constant(0.5),
+    };
+    snapshot
+        .work_geometry
+        .append(AuthoredFeature::datum(
+            FeatureId(2),
+            "Go face offset",
+            definition,
+        ))
+        .unwrap();
+    let ids = RecipeIdAllocator::restore(None, snapshot.parameters.ids()).unwrap();
+    DocumentEditHistory::new(snapshot, ids).unwrap()
+}
+
+fn assert_go_offset_frame(history: &DocumentEditHistory, expected_x: f64) {
+    use oblikovati_martensite::CertifiedNamedPrismEvaluator;
+    use oblikovati_model::feature::work_plane::WorkPlaneResolver;
+    let mut evaluator =
+        CertifiedNamedPrismEvaluator::new(history, document_guid(), app_resolution());
+    let replay = history
+        .snapshot()
+        .evaluate_part_features(&mut evaluator)
+        .unwrap();
+    let plane = replay.plane(FeatureId(2)).unwrap().recipe();
+    assert_frame_values(plane.origin, [expected_x, 0., 0.]);
+    assert_frame_values(plane.x_axis, [0., 0., 1.]);
+    assert_frame_values(plane.y_axis, [0., -1., 0.]);
+}
+
+#[test]
+fn go_face_frame_tracks_fixture_through_edit_undo_redo_and_reopen() {
+    let mut history = go_face_offset_history();
+    assert_go_offset_frame(&history, 1.5);
+    let token = history.begin("size").unwrap();
+    history
+        .edit(&token, |snapshot, _| {
+            let id = snapshot.parameters.find("size").unwrap();
+            snapshot.parameters.set_expression(id, "20 mm")?;
+            solve_selected_sketches(snapshot);
+            Ok::<(), oblikovati_model::parameter::ParameterError<u64>>(())
+        })
+        .unwrap();
+    history.commit(&token, false).unwrap();
+    assert_go_offset_frame(&history, 2.5);
+    history.undo().unwrap();
+    assert_go_offset_frame(&history, 1.5);
+    history.redo().unwrap();
+    assert_go_offset_frame(&history, 2.5);
+    assert_go_offset_frame(&reopened_history(&history), 2.5);
+}
