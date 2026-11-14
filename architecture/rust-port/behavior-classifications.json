@@ -13997,10 +13997,17 @@
         "path": "architecture/rust-port/receipts/2026-11-14-refresh-create-part-current/receipt-414a8cdb8182b258.json",
         "sha256": "1d7d3d8dbdab1b1d858a00e90ef5ed35834073d3b961eabb555ff1f9d3dbd7fd"
       },
-      "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/head/ui/file_dialog.go",
+      "go_reference": "Go aa8297d1b: head/ui/chrome_menubar.go invokes app/session.go NewPart or NewAssembly directly; no equivalent chooser was found in head/ui.",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b: TestNewPartCommandSwitchesRibbon and TestNewAssemblyCreatesActiveAssemblyDocument pass for document activation; neither checks template selection or chooser input. See receipts/2026-11-14-go-creation-baseline/README.md.",
+      "kernel_capabilities": "No solid modeling operation is needed to select a template or create an empty document.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The native viewport is initialized for a part; the chooser does not request solid geometry.",
+      "rust_tests": "application_scenarios_use_the_native_window: Create a standard metric part",
+      "oracle": "Pinned scenario assertions and reviewed final native capture; Go chooser or visual parity is not established.",
+      "expected_result": "its viewport contains no visible model geometry; its model browser displays an origin and an end-of-part marker; a new document tab is visible"
     },
     {
       "id": "scenario:553cd20756fa5ed6dc28cddeb27d3958f8b24976d8bd372475258fc6198af26f",
@@ -14240,10 +14247,17 @@
         "path": "architecture/rust-port/receipts/2026-11-14-refresh-template-57597e19/receipt-57597e1943cb4235.json",
         "sha256": "722cdc9674d0dd8041ea00f4bf3b6b5cec300699e2128ad34242963f4d6cc6e1"
       },
-      "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/head/ui/file_dialog.go",
+      "go_reference": "Go aa8297d1b: head/ui/chrome_menubar.go invokes app/session.go NewPart or NewAssembly directly; no equivalent chooser was found in head/ui.",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b: TestNewPartCommandSwitchesRibbon and TestNewAssemblyCreatesActiveAssemblyDocument pass for document activation; neither checks template selection or chooser input. See receipts/2026-11-14-go-creation-baseline/README.md.",
+      "kernel_capabilities": "No solid modeling operation is needed to select a template or create an empty document.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The native viewport is initialized for a part; the chooser does not request solid geometry.",
+      "rust_tests": "application_scenarios_use_the_native_window: Create a part by double-clicking its template",
+      "oracle": "Pinned scenario assertions and reviewed final native capture; Go chooser or visual parity is not established.",
+      "expected_result": "its viewport contains no visible model geometry; its model browser displays an origin and an end-of-part marker; a new document tab is visible"
     },
     {
       "id": "scenario:dc7e3e064afa2b62b9b98b143df9d7a730e275b9c56cd41ff50da2ca000cd5dc",
@@ -14262,10 +14276,17 @@
         "path": "architecture/rust-port/receipts/2026-11-14-refresh-template-dc7e3e06/receipt-dc7e3e064afa2b62.json",
         "sha256": "fed5732a2f511c7f16f29e2ea302c9c05fb58d39a2e0056812a5ad62e0fc6a2d"
       },
-      "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/head/ui/file_dialog.go",
+      "go_reference": "Go aa8297d1b: head/ui/chrome_menubar.go invokes app/session.go NewPart or NewAssembly directly; no equivalent chooser was found in head/ui.",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b: TestNewPartCommandSwitchesRibbon and TestNewAssemblyCreatesActiveAssemblyDocument pass for document activation; neither checks template selection or chooser input. See receipts/2026-11-14-go-creation-baseline/README.md.",
+      "kernel_capabilities": "No solid modeling operation is needed to select a template or create an empty document.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The native viewport is initialized for a part; the chooser does not request solid geometry.",
+      "rust_tests": "application_scenarios_use_the_native_window: Create a selected part template with Enter",
+      "oracle": "Pinned scenario assertions and reviewed final native capture; Go chooser or visual parity is not established.",
+      "expected_result": "a new empty part document becomes active; its model browser displays an origin and an end-of-part marker; a new document tab is visible"
     },
     {
       "id": "scenario:b0ddf0f8554f8f266954a7babeb0d9d1a3ebc30a85527dac55cb26a5094ea434",
@@ -14352,10 +14373,17 @@
         "path": "architecture/rust-port/receipts/2026-11-14-refresh-template-8acd0eea/receipt-8acd0eea06ca5d19.json",
         "sha256": "b33d105ee94171886ab7119c05f9fc0390cb93a7b7e44b601bd88df6f25d9f3d"
       },
-      "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/head/ui/file_dialog.go",
+      "go_reference": "Go aa8297d1b: head/ui/chrome_menubar.go invokes app/session.go NewPart or NewAssembly directly; no equivalent chooser was found in head/ui.",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b: TestNewPartCommandSwitchesRibbon and TestNewAssemblyCreatesActiveAssemblyDocument pass for document activation; neither checks template selection or chooser input. See receipts/2026-11-14-go-creation-baseline/README.md.",
+      "kernel_capabilities": "No solid modeling operation is needed to select a template or create an empty document.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The native viewport is initialized for a part; the chooser does not request solid geometry.",
+      "rust_tests": "application_scenarios_use_the_native_window: Create a part after navigating to an empty template root",
+      "oracle": "Pinned scenario assertions and reviewed final native capture; Go chooser or visual parity is not established.",
+      "expected_result": "a new empty part document becomes active; its model browser displays an origin and an end-of-part marker; a new document tab is visible"
     },
     {
       "id": "scenario:7264ec55b1fa3380faef248d62a15b4e41a66720fd3b4e35f5fc8717f34ef8ef",
@@ -14391,10 +14419,17 @@
         "path": "architecture/rust-port/receipts/2026-11-14-refresh-template-676af48b/receipt-676af48baf43f553.json",
         "sha256": "27c197a07414bd4d5eda464d3df30cd4df41d236eca9d5c22ae289b311faedf3"
       },
-      "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/head/ui/file_dialog.go",
+      "go_reference": "Go aa8297d1b: head/ui/chrome_menubar.go invokes app/session.go NewPart or NewAssembly directly; no equivalent chooser was found in head/ui.",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b: TestNewPartCommandSwitchesRibbon and TestNewAssemblyCreatesActiveAssemblyDocument pass for document activation; neither checks template selection or chooser input. See receipts/2026-11-14-go-creation-baseline/README.md.",
+      "kernel_capabilities": "No solid modeling operation is needed to select a template or create an empty document.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The native viewport is initialized for a part; the chooser does not request solid geometry.",
+      "rust_tests": "application_scenarios_use_the_native_window: Create the retained template after changing folders",
+      "oracle": "Pinned scenario assertions and reviewed final native capture; Go chooser or visual parity is not established.",
+      "expected_result": "a new empty assembly document becomes active; its browser displays representations, relationships and origin entries; a new document tab is visible"
     },
     {
       "id": "scenario:731f45c80f92de839fa7b927c425e0d095bbfd766f09db37f70973f4276582d8",
@@ -14600,10 +14635,17 @@
         "path": "architecture/rust-port/receipts/2026-11-14-refresh-template-59b4bf7d/receipt-59b4bf7d4c4e5e16.json",
         "sha256": "76add4eb2d465b242f4fb1b44dc40926dee9f6f597f674adeed68cd03ad66cbb"
       },
-      "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/head/ui/file_dialog.go",
+      "go_reference": "Go aa8297d1b: head/ui/chrome_menubar.go invokes app/session.go NewPart or NewAssembly directly; no equivalent chooser was found in head/ui.",
       "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b: TestNewPartCommandSwitchesRibbon and TestNewAssemblyCreatesActiveAssemblyDocument pass for document activation; neither checks template selection or chooser input. See receipts/2026-11-14-go-creation-baseline/README.md.",
+      "kernel_capabilities": "No solid modeling operation is needed to select a template or create an empty document.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The native viewport is initialized for a part; the chooser does not request solid geometry.",
+      "rust_tests": "application_scenarios_use_the_native_window: Select templates with the secondary mouse button",
+      "oracle": "Pinned scenario assertions and reviewed final native capture; Go chooser or visual parity is not established.",
+      "expected_result": "no context menu is visible; the user presses Escape; the chooser closes and the original part remains active"
     },
     {
       "id": "scenario:3984b0108067a0d222891b672b8e856ace01dbee301d00afcd31179720480fa2",
@@ -14622,10 +14664,17 @@
         "path": "architecture/rust-port/receipts/2026-11-14-refresh-template-3984b010/receipt-3984b0108067a0d2.json",
         "sha256": "718709bb88b256d18e5d4fd1ebbc859168c65b7a6e3b2cb001a701b0280bb230"
       },
-      "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/head/ui/file_dialog.go",
+      "go_reference": "Go aa8297d1b: head/ui/chrome_menubar.go invokes app/session.go NewPart or NewAssembly directly; no equivalent chooser was found in head/ui.",
       "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b: TestNewPartCommandSwitchesRibbon and TestNewAssemblyCreatesActiveAssemblyDocument pass for document activation; neither checks template selection or chooser input. See receipts/2026-11-14-go-creation-baseline/README.md.",
+      "kernel_capabilities": "No solid modeling operation is needed to select a template or create an empty document.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The native viewport is initialized for a part; the chooser does not request solid geometry.",
+      "rust_tests": "application_scenarios_use_the_native_window: Click a folder highlighted by keyboard navigation",
+      "oracle": "Pinned scenario assertions and reviewed final native capture; Go chooser or visual parity is not established.",
+      "expected_result": "the details pane still identifies Standard (mm) with millimeter units; the user cancels the chooser; the original part remains active"
     },
     {
       "id": "scenario:c65b58f2636efdbae8aab3b6ced9134833b1e8361bac7549e42c023bd95463fb",
