@@ -3170,6 +3170,159 @@
       "mapping_reason": "Select a feature row and present its model outline and contextual controls.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+    },
+    {
+      "id": "scenario:c1547ececd82265193e7e655fe1153003d790dd6dabaeb60577d3b1c62dbb047",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "f88b2e19cf22dae22f91dbd57e319e819d47e9f1daf9edc00b3da4c122111bf5",
+      "milestone": "R4",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: point-03 Cancel before placing a point",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3887",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
+      "mapping_reason": "Cancel point creation and return to Ready."
+    },
+    {
+      "id": "scenario:d21c1f8c789927b46db67abfe6f79e4e8774be0e990dddf6f6631b83c30b7ab8",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "f88b2e19cf22dae22f91dbd57e319e819d47e9f1daf9edc00b3da4c122111bf5",
+      "milestone": "R4",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: point-04 Undo and redo the recorded placement",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3887",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
+      "mapping_reason": "Create a center point and restore it through history."
+    },
+    {
+      "id": "scenario:436f15ab31b13b1dfef8458be1b83d8a3be1c7438819c5c0929b93c9b46729ef",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "f88b2e19cf22dae22f91dbd57e319e819d47e9f1daf9edc00b3da4c122111bf5",
+      "milestone": "R4",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: point-05 Continue regular point placement without restarting Point",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3887",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
+      "mapping_reason": "Place multiple regular points in one command."
+    },
+    {
+      "id": "scenario:b808d9e7aa5c4536ff4c80934a19febf1c6819957d1b0c9175d5fee7b467b11d",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "f88b2e19cf22dae22f91dbd57e319e819d47e9f1daf9edc00b3da4c122111bf5",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: point-06 Convert a regular sketch point to a center point and back",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3887",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
+      "mapping_reason": "Convert a selected point between regular and center types."
+    },
+    {
+      "id": "scenario:60e427c5b6f98f42341fd47f716bbc7733e555153ea62a9b58e26d2885209183",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "f88b2e19cf22dae22f91dbd57e319e819d47e9f1daf9edc00b3da4c122111bf5",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: point-07 Undo and redo point-type conversion",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3887",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
+      "mapping_reason": "Restore point type conversion through history."
+    },
+    {
+      "id": "scenario:545eaee5fec751471341c0834211f05d9377ece3ddc1bbc54c6cbcead3a10f12",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "f88b2e19cf22dae22f91dbd57e319e819d47e9f1daf9edc00b3da4c122111bf5",
+      "milestone": "R4",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: point-08 Create a center point using the Format toggle",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3887",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
+      "mapping_reason": "Create a center point using the format mode."
+    },
+    {
+      "id": "scenario:5c307c15c244bdd9c410a9f4b50259158f153aba04d9e03718836bfcb7a45577",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "f88b2e19cf22dae22f91dbd57e319e819d47e9f1daf9edc00b3da4c122111bf5",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: point-10 Resolve repeated center-point placement at the same coordinates",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3887",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
+      "mapping_reason": "Retain separate identity and history for overlapping points."
+    },
+    {
+      "id": "scenario:107f3008b75c61019e7b138855fe553c0e110de8641cdd81618aa54af455daae",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "f88b2e19cf22dae22f91dbd57e319e819d47e9f1daf9edc00b3da4c122111bf5",
+      "milestone": "R4",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: point-11 Cancel a center-point command with one Escape in the later fixture",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3887",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
+      "mapping_reason": "Cancel point creation in the recorded fixture."
+    },
+    {
+      "id": "scenario:858dc2bc227f70bfe665f1da2b23c5d37c4fb30d00e40fecfbc6b1be8105cc93",
+      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_sha256": "f88b2e19cf22dae22f91dbd57e319e819d47e9f1daf9edc00b3da4c122111bf5",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session, crates/model",
+      "acceptance_test": "sketch_scenarios_use_the_native_window: point-12 Inspect Precise Input while Point is active",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3887",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried",
+      "last_receipt": null,
+      "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
+      "mapping_reason": "Expose the Precise Input entry in the Create panel."
     }
   ]
 }
