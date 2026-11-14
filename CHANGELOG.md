@@ -12,6 +12,8 @@
 
 ### Fixed
 
+- Decoded legacy work-plane face references with Go's unpadded URL-safe base64 format. (#3935)
+
 - Showed the actual Part template material state, including unassigned and unresolved identities, in the chooser. (#3932)
 
 - Reopened the Extrude tool with its configurable shortcut after cancelling a draft. (#3931)
