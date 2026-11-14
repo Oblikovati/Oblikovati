@@ -201,6 +201,11 @@ pub trait HeadWindow {
             "view navigation {command:?}: expected a window with a view"
         ))
     }
+    /// Return the drawable extent and unobstructed document rectangle for a selection-centered fit.
+    /// Example: `window.orientation_fit_area()?` after a GUI frame.
+    fn orientation_fit_area(&mut self) -> Result<([u32; 2], [u32; 4]), String> {
+        Err("selection fit area: expected an active native document viewport".into())
+    }
     /// Remember this view, for a dialog that may put it back; example: on opening the dialog.
     fn mark_view(&mut self) -> Result<(), String> {
         Err("mark view: expected a window with a view".into())

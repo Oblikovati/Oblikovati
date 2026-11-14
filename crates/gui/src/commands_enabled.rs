@@ -208,9 +208,10 @@ impl GuiShellAction {
             Self::SaveDocumentAs(request) => {
                 state.document == Some(request.document) && !state.transaction_open
             }
-            Self::OrientView { .. } | Self::SetViewProjection(_) | Self::ViewCommand(_) => {
-                state.document.is_some()
-            }
+            Self::OrientView { .. }
+            | Self::SetViewProjection(_)
+            | Self::SetOrientationSelectionLock(_)
+            | Self::ViewCommand(_) => state.document.is_some(),
             Self::InspectFile(_) | Self::KeepDocumentPicture { .. } => true,
             Self::ClickModel { document, .. } | Self::UpdateBodyProperties { document, .. } => {
                 state.document == Some(*document)

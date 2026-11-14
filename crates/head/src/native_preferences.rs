@@ -145,3 +145,18 @@ impl oblikovati_gui::GuiRibbonSettingsStore for NativeRibbonSettings {
         .map_err(|error| error.to_string())
     }
 }
+
+pub(super) fn load_native_orientation_preferences(
+    directory: &Path,
+) -> Result<
+    oblikovati_persistence::orientation_preferences::OrientationPreferenceFile<
+        NativeThemePreferenceFiles,
+    >,
+    String,
+> {
+    oblikovati_persistence::orientation_preferences::OrientationPreferenceFile::load(
+        &directory.join("ui-preferences.yaml"),
+        NativeThemePreferenceFiles,
+    )
+    .map_err(|cause| cause.to_string())
+}

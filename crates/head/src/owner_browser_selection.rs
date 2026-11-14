@@ -337,8 +337,8 @@ pub(super) fn gui_sketch_selection<O: TransactionObserver>(
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) struct ChosenModelFace {
     document: u64,
-    feature: oblikovati_model::feature::FeatureId,
-    role: oblikovati_martensite::PrismFaceRole,
+    pub(super) feature: oblikovati_model::feature::FeatureId,
+    pub(super) role: oblikovati_martensite::PrismFaceRole,
 }
 const FEATURE_COMPARISONS: [oblikovati_model::feature::FeatureSuppressionComparison; 6] = {
     use oblikovati_model::feature::FeatureSuppressionComparison::{

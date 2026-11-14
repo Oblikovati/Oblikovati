@@ -97,18 +97,6 @@ impl NativeHeadWindow {
         })
     }
 }
-impl NativeHeadWindow {
-    /// Write the current composed image using the window's capture destination.
-    /// Example: `window.capture_window_png(path)?`.
-    pub fn capture_window_png(
-        &mut self,
-        path: &std::path::Path,
-    ) -> Result<oblikovati_viewport::ViewportCapture, String> {
-        let capture = self.view.capture()?;
-        self.capture_files.write_capture(path, &capture)?;
-        Ok(capture)
-    }
-}
 fn validate_window_extent(extent: [u32; 2]) -> Result<(), String> {
     if extent.contains(&0) {
         return Err(format!(
@@ -177,6 +165,15 @@ impl HeadWindow for NativeHeadWindow {
     }
     fn window_capture_extent(&mut self) -> Result<Option<[u32; 2]>, String> {
         self.view.drawable_extent().map(Some)
+    }
+    fn orientation_fit_area(&mut self) -> Result<([u32; 2], [u32; 4]), String> {
+        let extent = self.view.drawable_extent()?;
+        let area = self
+            .gui
+            .as_ref()
+            .ok_or("selection fit area: expected an active GUI")?
+            .document_area(extent)?;
+        Ok((extent, area))
     }
     fn window_capture_ready(&self) -> bool {
         self.capture_requests.is_empty()

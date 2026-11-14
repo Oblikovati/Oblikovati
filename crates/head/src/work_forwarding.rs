@@ -2,6 +2,15 @@
 // Keep authoring state on the same document owner when scripts or add-ins wrap frame work.
 macro_rules! forward_owner_view_work {
     ($owner:ident) => {
+        fn set_orientation_lock_from_gui(&mut self, locked: bool) -> Result<bool, String> {
+            self.$owner.set_orientation_lock_from_gui(locked)
+        }
+        fn orientation_selection_pivot(&mut self) -> Result<Option<[f64; 3]>, String> {
+            self.$owner.orientation_selection_pivot()
+        }
+        fn orientation_fit_bounds_from_gui(&mut self) -> Result<Vec<[[f64; 3]; 2]>, String> {
+            self.$owner.orientation_fit_bounds_from_gui()
+        }
         fn set_selection_mode_from_gui(
             &mut self,
             mode: oblikovati_gui::GuiSelectionMode,

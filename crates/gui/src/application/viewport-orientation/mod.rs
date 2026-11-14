@@ -240,7 +240,6 @@ fn rim_pick(across: f32, down: f32, axes: &GuiViewAxes, face: GuiCubeFace) -> Gu
 pub(crate) struct OrientationControl {
     options: OrientationOptions,
     projection: GuiViewProjection,
-    locked: bool,
     navigation: NavigationBar,
 }
 impl OrientationControl {
@@ -288,12 +287,12 @@ impl OrientationControl {
             if ui.is_item_clicked_with_button(MouseButton::Right) {
                 ui.open_popup(CONTROL_MENU);
             }
-            if self.locked {
+            if state.orientation_selection_locked {
                 let [x, y] = layout.step_down;
                 ui.set_cursor_pos([x - layout.half, y - LOCK_CAPTION_RISE]);
                 ui.text(LOCK_CAPTION);
             }
-            self.context_menu(ui, state.model_face_chosen, actions);
+            self.context_menu(ui, state, actions);
         });
         self.navigation_bar(
             ui,
@@ -354,17 +353,23 @@ impl OrientationControl {
             .build(|| self.navigation.buttons(ui, state, extent, actions));
     }
     /// Available with something to lock to; once locked, it stays to let the lock go.
-    fn lock_row(&mut self, ui: &Ui, has_selection: bool) {
+    fn lock_row(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
+        let locked = state.orientation_selection_locked;
         let row = ui
             .menu_item_config("Lock to Current Selection")
-            .selected(self.locked)
-            .enabled(has_selection || self.locked)
+            .selected(locked)
+            .enabled(state.orientation_selection_available || locked)
             .build();
         if row {
-            self.locked = !self.locked;
+            actions.push(GuiShellAction::SetOrientationSelectionLock(!locked));
         }
     }
-    fn context_menu(&mut self, ui: &Ui, has_selection: bool, actions: &mut Vec<GuiShellAction>) {
+    fn context_menu(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
         let Some(_menu) = ui.begin_popup(CONTROL_MENU) else {
             return;
         };
@@ -381,7 +386,7 @@ impl OrientationControl {
                 actions.push(GuiShellAction::SetViewProjection(mode));
             }
         }
-        self.lock_row(ui, has_selection);
+        Self::lock_row(ui, state, actions);
         ui.menu("Set Current View as", || {
             for row in ["Top", "Front"] {
                 muted_row(ui, row);

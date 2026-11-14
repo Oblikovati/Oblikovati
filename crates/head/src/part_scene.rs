@@ -14,6 +14,7 @@ mod assembly_pick;
 pub(crate) mod extrusion;
 pub(crate) mod pick_candidates;
 pub(crate) mod resolution_policy;
+mod selection_bounds;
 mod update;
 /// Owned display state names its document and generation; kernel handles stay in result storage.
 #[derive(Clone, Debug)]

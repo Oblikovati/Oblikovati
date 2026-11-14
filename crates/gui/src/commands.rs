@@ -137,6 +137,8 @@ pub enum GuiShellAction {
         fit: bool,
     },
     SetViewProjection(crate::GuiViewProjection),
+    /// Persist the orientation control selection pivot preference.
+    SetOrientationSelectionLock(bool),
     /// The navigation bar's commands on the view and the status area.
     ViewCommand(crate::GuiViewCommand),
     /// Read a closed file's stored properties, for the Open dialog's panes.
