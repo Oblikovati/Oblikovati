@@ -135,8 +135,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-frame-refresh-63f029b9f7034030/receipt-63f029b9f7034030.json",
-        "sha256": "3a845cf4375f05357bdd83773b0f353425485c9ed045233a9088a7289f02ee37"
+        "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-63f029b9f7034030/receipt-63f029b9f7034030.json",
+        "sha256": "860dac04572f961fec2067f48e78d49bd46414669629e7b3faa1e5669e7c1471"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -162,8 +162,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-frame-refresh-4e511ca586195d67/receipt-4e511ca586195d67.json",
-        "sha256": "3a98f8ea5bff1860dca1d7e643c18b7a780f685303f5301a93fe88a135ea4d02"
+        "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-4e511ca586195d67/receipt-4e511ca586195d67.json",
+        "sha256": "7d20bd0ea4c645481fe76add0f778472949f908b5c4ee845e408e6cb1e39ef8f"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -189,8 +189,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-frame-refresh-adfaa180b248a094/receipt-adfaa180b248a094.json",
-        "sha256": "9b3aeeb1be3debf589cdf82f116849e262beba246f48b4d1c9632eed752b0f7a"
+        "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-adfaa180b248a094/receipt-adfaa180b248a094.json",
+        "sha256": "2e6f099cb90d2102f6aafcf64fe446417e1763040fd7d5b443010d93de085773"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -217,8 +217,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-frame-refresh-cd9561e7b2b4f475/receipt-cd9561e7b2b4f475.json",
-        "sha256": "56488bbff4e95930c6667013a949a41d9ade090bfefb9a545296cfeec5aae056"
+        "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-cd9561e7b2b4f475/receipt-cd9561e7b2b4f475.json",
+        "sha256": "574ec0eee2d5b273c96facf4f12d1bfa832883104adfabcb356778883fe94e70"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -245,8 +245,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-frame-refresh-4ba58b431dc847ae/receipt-4ba58b431dc847ae.json",
-        "sha256": "284922e14aac825d2ee8db0a0fa7c9f8a8036021518128667b0634c6c128d3da"
+        "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-4ba58b431dc847ae/receipt-4ba58b431dc847ae.json",
+        "sha256": "8b7a02f21d9df000bb6e37667cba0701c9c9a4c552e216b06af0a17071a15ee8"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -272,8 +272,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-frame-refresh-cb85314818ef73da/receipt-cb85314818ef73da.json",
-        "sha256": "eeb645dc8b71ccac0033d5ccfc5c73b7e93a052f580a752fcca2fcc18706aa37"
+        "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-cb85314818ef73da/receipt-cb85314818ef73da.json",
+        "sha256": "3e5606955960618ebe14c3bbe98ef4464df32ce0cf838eee24a2ad61a8223f78"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
@@ -291,8 +291,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-frame-refresh-a661d2ccfbdfc85a/receipt-a661d2ccfbdfc85a.json",
-        "sha256": "5187b964e421f71b02dc1b2a7271da3c51a18fa26805c01540a2c0e6b849ba3b"
+        "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-a661d2ccfbdfc85a/receipt-a661d2ccfbdfc85a.json",
+        "sha256": "5872099028694c4f083f7fa7ac7e88cf3f2e428016ad7644f20b55c9d2e475f2"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
@@ -310,8 +310,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-frame-refresh-1e7472ca669ac6f4/receipt-1e7472ca669ac6f4.json",
-        "sha256": "1b6f66588c09d27218352c613784b4e03ea70ca84de4310fdb6d512e5e3f1440"
+        "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-1e7472ca669ac6f4/receipt-1e7472ca669ac6f4.json",
+        "sha256": "05a2ff9acec6696e8f89e024c20347f4f6eef46053a8cbbd26abead391bb589d"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
@@ -329,8 +329,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-frame-refresh-c7961c524b21f4e1/receipt-c7961c524b21f4e1.json",
-        "sha256": "f9d381ac6232408c55a3aedeca3e31a5700efed092ceab06be00c3a82a12fc20"
+        "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-c7961c524b21f4e1/receipt-c7961c524b21f4e1.json",
+        "sha256": "d21131c032d5ba36af4bddd3fd5f1333de19fe43ce2bc841af66bcf50bed841f"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
@@ -510,8 +510,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-frame-refresh-152ae6bfde300d9b/receipt-152ae6bfde300d9b.json",
-        "sha256": "d12ba32d87f204431f7e64d3b6074d9c5e4cc78b4141bcf531c11a8d84681ca3"
+        "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-152ae6bfde300d9b/receipt-152ae6bfde300d9b.json",
+        "sha256": "a90e2e758f885fe95f93c71455c6ee5d08e5d19ba6bc74afcfbdc57de47b357e"
       },
       "go_reference": "../Oblikovati/model/sketch/recipe_rectangle.go; ../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/measure_tool.go; ../Oblikovati/head/ui/measure_dialog.go",
       "mapping_reason": "Measure the rectangle edges through the analytic sketch-query path.",
@@ -548,8 +548,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-frame-refresh-be5c680262911cc1/receipt-be5c680262911cc1.json",
-        "sha256": "d9fd2688180886f8aa7f00acd7d5e63419632142421a9c4804501a88ba49c60c"
+        "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-be5c680262911cc1/receipt-be5c680262911cc1.json",
+        "sha256": "f05a62f43722520642c5eb937d72564c30245c94ac4e28956ffb5e6b137d8f1a"
       },
       "go_reference": "../Oblikovati/model/sketch/recipe_rectangle.go; ../Oblikovati/app/sketch_tools.go",
       "mapping_reason": "Numeric two-point rectangle creation belongs to the initial desktop sketch workflow.",
@@ -569,8 +569,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-frame-refresh-4e818f2994acb248/receipt-4e818f2994acb248.json",
-        "sha256": "81c0f6521733f33606a2c8fa46cb354eacda224bf162411c0062f9d26ddf4162"
+        "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-4e818f2994acb248/receipt-4e818f2994acb248.json",
+        "sha256": "56cb17a8bec98c12a8e86c1ad844ae8332a8faf7f2a530e170566cbcd9cd53f5"
       },
       "go_reference": "../Oblikovati/model/sketch/recipe_rectangle.go; ../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_dimension_edit.go",
       "mapping_reason": "Cancel a proposed edit to an existing sketch dimension.",
@@ -607,8 +607,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-frame-refresh-841bc6eecc0f2262/receipt-841bc6eecc0f2262.json",
-        "sha256": "5ad8e36b5d9f45bedaf946b48a222bf7ae8f4ca2bdc4b7bf02dd64032bd712bf"
+        "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-841bc6eecc0f2262/receipt-841bc6eecc0f2262.json",
+        "sha256": "b3a980da76dcf9521cb9eb894a7a8b2c2af0d95c22af94516fafcf00dca8ad5a"
       },
       "go_reference": "../Oblikovati/model/sketch/recipe_rectangle.go; ../Oblikovati/app/sketch_tools.go",
       "mapping_reason": "The second size field and command state are part of the initial desktop sketch workflow.",
@@ -1280,8 +1280,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-frame-refresh-d18b6850de15454e/receipt-d18b6850de15454e.json",
-        "sha256": "f6f633dead3a0079d65217124f16465ea31aeacb40ef574622aa65bfdedf9a54"
+        "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-d18b6850de15454e/receipt-d18b6850de15454e.json",
+        "sha256": "477d660b20a3aadace2f3970c8ec4af25da3d1c76e1fde3ec00c7d09f4aa4d7f"
       },
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
@@ -1811,8 +1811,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-frame-refresh-0db0d6b60a17036c/receipt-0db0d6b60a17036c.json",
-        "sha256": "5afc95862119df2c61e7f8fbab89b87a021d4cf2314ef15cc3167d67a441a8e9"
+        "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-0db0d6b60a17036c/receipt-0db0d6b60a17036c.json",
+        "sha256": "a0b0e4866582ddc6c12f26ef32e97d783726695e8253d6103542840c456f5ea0"
       },
       "mapping_reason": "Ribbon docking and browser layout belong to the full desktop shell.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
@@ -3134,8 +3134,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-frame-refresh-9a6cb2d0318b1fcb/receipt-9a6cb2d0318b1fcb.json",
-        "sha256": "c1bad83d24784869e44dcfb028517d6a337736177aaf9c7063f969ee7b10ee84"
+        "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-9a6cb2d0318b1fcb/receipt-9a6cb2d0318b1fcb.json",
+        "sha256": "bf9d741d84d9eaf0eb511487bc5582780693ac50059786419e7c3e1b1dc6ff87"
       },
       "mapping_reason": "Select a feature row and present its model outline and contextual controls.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",

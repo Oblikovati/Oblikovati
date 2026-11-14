@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:1e7472ca669ac6f4274e216b9e0f6dd9074d843189d749ea4a4ca6c0d7af7dd2",
+  "scenario_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+  "source_sha256": "fbdae71cbf4f67f7d8165002799ba77b0727fa89cb7b620f1298fdb27725916c",
+  "application_commit": "97ef5b75a86c4ca0653dc976f4feddd897279297",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-1e7472ca669ac6f4/cucumber.json",
+    "sha256": "c90e375205d3e4b3f20834b0fe501c86a9b2857f4cd86ca4f8371383c290d9f1"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-1e7472ca669ac6f4/source-revision.json",
+    "sha256": "a854beb737fe8ed9376c9926e503c44074b1ce783a7f2060f4a12cfd97299974"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-1e7472ca669ac6f4/rectangle-two-point-07-Keep-selecting-after-identical-corner-clicks.png",
+    "sha256": "0c0f814f3659bb591f5491db162ff807ea73735f76d3d92cb700c0f365b2d0cb"
+  }
+}
