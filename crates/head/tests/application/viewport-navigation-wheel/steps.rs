@@ -356,6 +356,7 @@ fn options_open(world: &mut ApplicationWorld) {
     open_options(world);
 }
 #[when("I open the big wheel size list")]
+#[when("the user opens the big wheel size list")]
 fn open_big_list(world: &mut ApplicationWorld) {
     open_list(world, "Big Wheel Size");
 }
@@ -364,9 +365,11 @@ fn big_sizes(world: &mut ApplicationWorld) {
     expect_rows(world, &["Small", "Normal", "Large"]);
 }
 #[when("I dismiss that list and open the wheel opacity list")]
+#[when("the user dismisses that list and opens the wheel opacity list")]
 fn open_opacity_list(world: &mut ApplicationWorld) {
-    world.escape();
+    world.click_text("Big Wheel Size");
     settle(world);
+    world.expect_text(OPTIONS_TITLE);
     open_list(world, "Wheel Opacity");
 }
 #[then("it offers 25%, 50%, 75% and 90%")]
@@ -374,9 +377,11 @@ fn opacity_rows(world: &mut ApplicationWorld) {
     expect_rows(world, &["25%", "50%", "75%", "90%"]);
 }
 #[when("I dismiss the list and click Cancel")]
+#[when("the user dismisses the list and clicks Cancel")]
 fn dismiss_cancel(world: &mut ApplicationWorld) {
-    world.escape();
+    world.click_text("Wheel Opacity");
     settle(world);
+    world.expect_text(OPTIONS_TITLE);
     choose_row(world, "Cancel");
 }
 #[then("the options dialog closes and the navigation wheel remains visible")]
