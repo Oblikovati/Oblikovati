@@ -84,7 +84,7 @@ fn select_tips(world: &mut ApplicationWorld) {
 // Repeating the command
 #[given("the full navigation wheel was the last command used")]
 fn wheel_used(world: &mut ApplicationWorld) {
-    open_wheel(world);
+    open_full_wheel(world);
     wheel_geometry();
 }
 #[given("the wheel is closed")]
@@ -97,6 +97,7 @@ fn wheel_closed(world: &mut ApplicationWorld) {
     );
 }
 #[when("I right-click the model viewport")]
+#[when("the user right-clicks the model viewport")]
 fn right_click_view(world: &mut ApplicationWorld) {
     world.right_click(PLACED_AT);
     settle(world);
@@ -106,6 +107,7 @@ fn offers_repeat(world: &mut ApplicationWorld) {
     world.expect_text(REPEAT);
 }
 #[when("I choose the repeat navigation wheel command")]
+#[when("the user chooses the repeat navigation wheel command")]
 fn choose_repeat(world: &mut ApplicationWorld) {
     world.click_text(REPEAT);
     settle(world);

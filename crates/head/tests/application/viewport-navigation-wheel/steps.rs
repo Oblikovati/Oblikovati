@@ -39,7 +39,7 @@ fn open_wheel(world: &mut ApplicationWorld) {
 fn open_wheel_on_block(world: &mut ApplicationWorld) {
     open_block(world);
     world.observed_view_camera = Some(camera(world));
-    open_wheel(world);
+    open_full_wheel(world);
 }
 fn wheel_geometry() -> ([f32; 2], [f32; 2]) {
     diagnostics::window_geometry(WHEEL).expect("expected the navigation wheel")
@@ -95,14 +95,29 @@ fn open_list(world: &mut ApplicationWorld, label: &str) {
     world.click([field.minimum[0] as i32 - 40, field.center()[1] as i32]);
     settle(world);
 }
+fn open_full_wheel(world: &mut ApplicationWorld) {
+    open_wheel(world);
+    right_click_wheel(world);
+    choose_row(world, "Full Navigation Wheel");
+    right_click_wheel(world);
+    expect_marked(world, "Full Navigation Wheel");
+    choose_row(world, "Full Navigation Wheel");
+}
 #[given("the full navigation wheel is the selected wheel layout")]
-fn full_selected(_: &mut ApplicationWorld) {}
+fn full_selected(world: &mut ApplicationWorld) {
+    open_full_wheel(world);
+    right_click_wheel(world);
+    choose_row(world, "Close Wheel");
+    assert!(diagnostics::window_geometry(WHEEL).is_none());
+}
 #[when("I open the navigation wheel from the navigation bar")]
+#[when("the user opens the navigation wheel from the navigation bar")]
 fn open_from_bar(world: &mut ApplicationWorld) {
     world.observed_view_camera = Some(camera(world));
     press_bar(world, "W");
 }
 #[when("I click within the viewport")]
+#[when("the user clicks within the viewport")]
 fn click_view(world: &mut ApplicationWorld) {
     world.click(PLACED_AT);
     settle(world);
@@ -121,7 +136,9 @@ fn full_tools(world: &mut ApplicationWorld) {
     );
 }
 #[when("I right-click the navigation wheel")]
+#[when("the user right-clicks the navigation wheel")]
 #[when("I right-click the wheel")]
+#[when("the user right-clicks the wheel")]
 fn right_click(world: &mut ApplicationWorld) {
     right_click_wheel(world);
 }
@@ -147,6 +164,7 @@ fn menu_rows(world: &mut ApplicationWorld) {
     );
 }
 #[when("I choose Close Wheel")]
+#[when("the user chooses Close Wheel")]
 fn close_wheel(world: &mut ApplicationWorld) {
     choose_row(world, "Close Wheel");
 }
@@ -167,6 +185,7 @@ fn wheel_open(world: &mut ApplicationWorld) {
     open_wheel_on_block(world);
 }
 #[when("I right-click the wheel and choose Basic View Object Wheel")]
+#[when("the user right-clicks the wheel and chooses Basic View Object Wheel")]
 fn choose_basic_view(world: &mut ApplicationWorld) {
     right_click_wheel(world);
     choose_row(world, "Basic View Object Wheel");
@@ -180,6 +199,7 @@ fn basic_view_marked(world: &mut ApplicationWorld) {
     expect_marked(world, "Basic View Object Wheel");
 }
 #[when("I choose Basic Tour Building Wheel")]
+#[when("the user chooses Basic Tour Building Wheel")]
 fn choose_basic_tour(world: &mut ApplicationWorld) {
     choose_row(world, "Basic Tour Building Wheel");
 }
@@ -192,11 +212,13 @@ fn basic_tour_marked(world: &mut ApplicationWorld) {
     expect_marked(world, "Basic Tour Building Wheel");
 }
 #[when("I choose Full Navigation Wheel")]
+#[when("the user chooses Full Navigation Wheel")]
 fn choose_full(world: &mut ApplicationWorld) {
     choose_row(world, "Full Navigation Wheel");
 }
 // Compact layouts
 #[when("I right-click the wheel and choose Mini View Object Wheel")]
+#[when("the user right-clicks the wheel and chooses Mini View Object Wheel")]
 fn choose_mini_view(world: &mut ApplicationWorld) {
     right_click_wheel(world);
     choose_row(world, "Mini View Object Wheel");
@@ -219,6 +241,7 @@ fn hovered_rewind(world: &mut ApplicationWorld) {
     world.expect_text("Rewind");
 }
 #[when("I right-click the wheel and choose Mini Tour Building Wheel")]
+#[when("the user right-clicks the wheel and chooses Mini Tour Building Wheel")]
 fn choose_mini_tour(world: &mut ApplicationWorld) {
     right_click_wheel(world);
     choose_row(world, "Mini Tour Building Wheel");
@@ -228,6 +251,7 @@ fn mini_tour_marked(world: &mut ApplicationWorld) {
     expect_marked(world, "Mini Tour Building Wheel");
 }
 #[when("I choose Mini Full Navigation Wheel")]
+#[when("the user chooses Mini Full Navigation Wheel")]
 fn choose_mini_full(world: &mut ApplicationWorld) {
     choose_row(world, "Mini Full Navigation Wheel");
 }
@@ -383,9 +407,10 @@ fn small_block(world: &mut ApplicationWorld) {
 }
 #[given("the full navigation wheel is open")]
 fn wheel_is_open(world: &mut ApplicationWorld) {
-    open_wheel(world);
+    open_full_wheel(world);
 }
 #[when("I right-click the wheel and choose Fit to Window")]
+#[when("the user right-clicks the wheel and chooses Fit to Window")]
 fn choose_fit(world: &mut ApplicationWorld) {
     right_click_wheel(world);
     choose_row(world, "Fit to Window");
@@ -428,3 +453,7 @@ fn at_home(world: &mut ApplicationWorld) {
 }
 #[path = "opacity.rs"]
 mod opacity;
+
+#[cfg(test)]
+#[path = "layout_fixture_regression.rs"]
+mod layout_fixture_regression;
