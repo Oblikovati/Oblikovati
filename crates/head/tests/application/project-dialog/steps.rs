@@ -158,6 +158,7 @@ fn marked_in_list(world: &mut ApplicationWorld) {
     expect_project_marked(world);
 }
 #[when("I select the other project with a single click")]
+#[when("the user selects the other project with a single click")]
 fn select_other(world: &mut ApplicationWorld) {
     let row = run_holding(world, "turbine.opj");
     choose_button(world, &row);
