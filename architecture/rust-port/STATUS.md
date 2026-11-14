@@ -134,3 +134,5 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 - Live source watch, 2026-11-14: `arc-center-point` scenarios 08 and 09 now identify the recorded pointer coordinates and 1700 × 1012 window; the current pin includes that correction. `user-coordinate-system` adds scenario 05 for canceling Redefine Feature (#3917). The current pin includes all 2,720 declarations; the new scenario is inventoried, not verified.
 
 - R4 selection priority: native part-body and face hits now use enabled filters and user order within a camera-scaled depth window. Tool-specific face selection remains effective. Assembly faces, work planes, other snap candidates, persisted priority, and perspective-depth scaling remain open (#3890). See `receipts/2026-11-14-part-priority/receipt.json`.
+
+- A12: the quick-access toolbar catalog is separate; both modules are below 500 lines. Eight GUI tests, the native Select control test, and strict GUI Clippy passed (#3860).
