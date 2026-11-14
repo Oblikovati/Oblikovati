@@ -4512,10 +4512,15 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-save-subfolder/receipt-61af1d42795bae99.json",
+        "sha256": "42a21a44cbd8b7d88da00352ac333661b8a865cd55d3d5ac5f0d479706426fd1"
+      },
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
-      "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences."
+      "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:61741ca27d5d4f42ba36a8379bfd9cdec2b363020d5425ff8740c544a8254c9c",
@@ -4529,10 +4534,15 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-save-subfolder/receipt-61741ca27d5d4f42.json",
+        "sha256": "024de376d2c3ce4ce9954af8f4e8af9b000b988337c2b224ba43ba7984c0c7a0"
+      },
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
-      "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences."
+      "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:81bcb1cf994edbed548c28c61bba7cbd6311599bde8c877519cca41ab206d2d9",
