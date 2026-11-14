@@ -135,8 +135,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-side-01/receipt-63f029b9f7034030.json",
-        "sha256": "ddb8f8e71b0430051409d7bef2fb10a02c2c9b3da04e2ada7f133a96d0cf12a6"
+        "path": "architecture/rust-port/receipts/2026-11-14-command-state-sketch/receipt-63f029b9f7034030.json",
+        "sha256": "300247bc2da97738bf5f2c8e7586f7bef5049827762c70444204a89fb46ba778"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
