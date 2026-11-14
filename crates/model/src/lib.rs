@@ -16,6 +16,7 @@ pub mod fits;
 pub mod history;
 pub mod identity;
 mod metadata_value;
+pub mod orientation_preferences;
 pub mod parameter;
 pub mod property;
 pub mod quantity;

@@ -202,3 +202,78 @@ fn part_properties_require_every_body_to_belong_to_the_current_history() {
     history.commit(&token, false).unwrap();
     assert!(oblikovati_martensite::named_part_properties(&history, document(), [&first]).is_err());
 }
+
+#[test]
+fn selection_centers_use_exact_named_body_and_face_bounds() {
+    let history = owner(selected_prism_document());
+    let body = named(&history);
+    let bounds = body
+        .body_bounds(&history, document(), &key("body", &[1]))
+        .unwrap();
+    assert_centroid(bounds[0], [0., 0., 0.]);
+    assert_centroid(bounds[1], [4., 3., 2.]);
+    assert_centroid(
+        body.body_bounds_center(&history, document(), &key("body", &[1]))
+            .unwrap(),
+        [2., 1.5, 1.],
+    );
+    assert_centroid(
+        body.face_bounds_center(&history, document(), &key("start", &[1]))
+            .unwrap(),
+        [2., 1.5, 0.],
+    );
+    assert_centroid(
+        body.face_bounds_center(&history, document(), &key("end", &[1]))
+            .unwrap(),
+        [2., 1.5, 2.],
+    );
+    assert!(
+        body.face_bounds_center(&history, document(), &key("body", &[1]))
+            .is_err()
+    );
+}
+
+#[test]
+fn selection_center_rebinds_after_edit_undo_and_redo() {
+    let mut history = owner(selected_prism_document());
+    let end = key("end", &[1]);
+    let initial = named(&history);
+    assert_centroid(
+        initial
+            .face_bounds_center(&history, document(), &end)
+            .unwrap(),
+        [2., 1.5, 2.],
+    );
+    let transaction = history.begin("Depth").unwrap();
+    history
+        .edit(&transaction, |snapshot, _| {
+            snapshot.parameters.set_expression(3, "3 cm")
+        })
+        .unwrap();
+    history.commit(&transaction, false).unwrap();
+    assert!(
+        initial
+            .face_bounds_center(&history, document(), &end)
+            .is_err()
+    );
+    assert_centroid(
+        named(&history)
+            .face_bounds_center(&history, document(), &end)
+            .unwrap(),
+        [2., 1.5, 3.],
+    );
+    history.undo().unwrap();
+    assert_centroid(
+        named(&history)
+            .face_bounds_center(&history, document(), &end)
+            .unwrap(),
+        [2., 1.5, 2.],
+    );
+    history.redo().unwrap();
+    assert_centroid(
+        named(&history)
+            .face_bounds_center(&history, document(), &end)
+            .unwrap(),
+        [2., 1.5, 3.],
+    );
+}
