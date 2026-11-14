@@ -14,8 +14,8 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 - Milestone: **R0 open**. The behavior inventory and full gate are not yet verified.
 - Work branch: local `rust-work`; base is `origin/rust`. The consolidated branch,
   Martensite 0.6 handoff, and two dependency PR heads are merged locally. The
-  `feat/sketch-circle-extrude` merge is in progress. All conflict markers are
-  resolved. Older desktop tests now use the current shell and the desktop test
+  `feat/sketch-circle-extrude` was merged at `3ad8a7384`. All 20 open PR heads
+  are ancestors of that local commit. Older desktop tests now use the current shell and the desktop test
   target compiles. Focused Xvfb tests passed for document ribbons, a mouse-drawn
   constrained circle extrusion, and scaled parameter entry. The full native
   cube journey passed after the local model-state fix for #3892. A later review
@@ -64,9 +64,9 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 ## Open items
 
 - A2: the diagnostic gate started on `6c5c1014a` and failed with 36 head test failures. The source changed during the run, so it cannot certify the current HEAD. See issue #3860 and `receipts/2026-11-13-gate-diagnostic/`. The latest gate preflight reported 2,457 unclassified scenarios; the current ledger has 1,839 after all application declarations were mapped (#3856, #3894–#3900). A fresh passing gate is required before the first push.
-- A3: stale worktrees and 24 ancestor branches removed. Two branches contain commits outside the working branch and remain for review; `unmerged-lanes-20261113.bundle` on the NAS backs up both. The `oblikovati-rust-backups` directory on the NAS holds the latest verified branch bundle.
+- A3: stale worktrees and merged local branches were removed after ancestry checks. Only `rust-work` and the unrelated `go-legacy` local branch remain. `unmerged-lanes-20261113.bundle` and the prior verified backup remain on the NAS.
 - A8: stale application or source evidence is downgraded without hiding damaged artifacts (#3869). Ledger-tool-only edits do not invalidate native UI tests.
-- A8: the ledger records 2,719 declarations with no parser-blocked scenarios after the source correction (#3866). Thirty-seven earlier receipts are stale after source or application changes; rerun them before counting them as verified. All 2,719 declarations are mapped; 37 receipts are stale and no declaration has a current verified receipt on the uncommitted integration. Outline receipts require every expanded example and cleanup. See `behavior-receipts.md` and issue #3865.
+- A8: the ledger records 2,719 declarations with no parser-blocked scenarios after the source correction (#3866). Thirty-seven earlier receipts are stale after source or application changes; rerun them before counting them as verified. All 2,719 declarations are mapped; 37 receipts are stale and no declaration has a current verified receipt on the merged integration. Outline receipts require every expanded example and cleanup. See `behavior-receipts.md` and issue #3865.
 - R7 File menu: all eight pinned scenarios and 59 steps passed on the uncommitted integration; two captures were inspected. This is diagnostic evidence, not a current verified receipt. See `receipts/2026-11-14-file-menu-merge-diagnostic/` and #3894.
 - R7 project dialog: the pinned diagnostic reported one passing declaration and seven with unbound steps; subsequent steps are tainted. See `receipts/2026-11-14-project-dialog-merge-diagnostic/` and #3895.
 - A8: `behavior_cli.py backlog` groups the 195 feature files by their assigned milestones and shows missing classifications, R0 rows, and counts for each missing baseline field. 2,713 rows still have incomplete R0 baseline fields; unassigned work is not given an inferred milestone.
