@@ -5,6 +5,10 @@ mod request;
 use crate::{DocumentSession, TransactionObserver};
 pub use error::PartEvaluationError;
 use oblikovati_model::feature::part::PartFeatureEvaluation;
+use oblikovati_model::{
+    feature::{part::SketchPrismEvaluator, work_plane::WorkPlaneFaceReference},
+    sketch::SketchPlane,
+};
 pub use request::{CompletedPartEvaluation, PartEvaluationRequest};
 /// One derived result store, injected into the document owner. No graph or model mutation lives here.
 pub struct PartEvaluationSlot<Body, Failure> {
@@ -23,6 +27,27 @@ pub struct PartEvaluationView<'a, Body, Failure> {
     pub evaluation: &'a PartFeatureEvaluation<Body, Failure>,
 }
 impl<Body, Failure> PartEvaluationSlot<Body, Failure> {
+    /// Resolve a face in the current body set; example: `slot.resolve_planar_face(session, backend, reference)?`.
+    pub fn resolve_planar_face<O, B>(
+        &self,
+        session: &DocumentSession<O>,
+        backend: &B,
+        reference: &WorkPlaneFaceReference,
+    ) -> Result<SketchPlane, String>
+    where
+        O: TransactionObserver,
+        B: SketchPrismEvaluator<Body = Body, Failure = Failure>,
+    {
+        let current = self.current(session).map_err(|error| error.to_string())?;
+        let body = current.body(reference.source()).ok_or_else(|| {
+            format!(
+                "face key {:?}, source {:?}: expected an available unconsumed body",
+                reference.key(),
+                reference.source()
+            )
+        })?;
+        backend.resolve_planar_face(body, reference.key())
+    }
     /// Require a current result for this exact session; example: `slot.current(&session)?.body(feature_id)`.
     /// ```compile_fail
     /// use oblikovati_session::{DocumentSession, TransactionObserver, part_evaluation::PartEvaluationSlot};

@@ -98,3 +98,64 @@ fn named_face_offset_replays_after_session_edit_undo_and_redo() {
     assert!(slot.current(&session).is_err());
     publish_face(&mut session, &mut slot, 4.5);
 }
+
+#[test]
+fn face_binding_requires_a_current_result_and_a_resolvable_planar_face() {
+    let mut session = face_session();
+    let mut slot = PartSlot::default();
+    let reference = WorkPlaneFaceReference::new(face_key()).unwrap();
+    assert!(
+        slot.resolve_planar_face(&session, &NamedFaceEvaluator, &reference)
+            .is_err()
+    );
+    publish_face(&mut session, &mut slot, 2.5);
+    let frame = slot
+        .resolve_planar_face(&session, &NamedFaceEvaluator, &reference)
+        .unwrap();
+    assert_eq!(frame.recipe().origin, [2., 0., 0.]);
+    let other_key = SemanticReferenceName::new(
+        "11111111-2222-3333-4444-555555555555".parse().unwrap(),
+        1,
+        1,
+        "sketch-prism",
+        "side",
+        &[1, 102],
+    )
+    .unwrap()
+    .encode()
+    .unwrap();
+    let other = WorkPlaneFaceReference::new(other_key).unwrap();
+    assert!(
+        slot.resolve_planar_face(&session, &NamedFaceEvaluator, &other)
+            .is_err()
+    );
+    let missing_key = SemanticReferenceName::new(
+        "11111111-2222-3333-4444-555555555555".parse().unwrap(),
+        99,
+        1,
+        "sketch-prism",
+        "side",
+        &[1, 101],
+    )
+    .unwrap()
+    .encode()
+    .unwrap();
+    let missing = WorkPlaneFaceReference::new(missing_key).unwrap();
+    let error = slot
+        .resolve_planar_face(&session, &NamedFaceEvaluator, &missing)
+        .unwrap_err();
+    assert!(error.contains("available unconsumed body"));
+    edit_depth(&mut session, "4 cm");
+    assert!(
+        slot.resolve_planar_face(&session, &NamedFaceEvaluator, &reference)
+            .is_err()
+    );
+    publish_face(&mut session, &mut slot, 4.5);
+    assert_eq!(
+        slot.resolve_planar_face(&session, &NamedFaceEvaluator, &reference)
+            .unwrap()
+            .recipe()
+            .origin,
+        [4., 0., 0.]
+    );
+}
