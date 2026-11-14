@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Create a document from a template: tmp/obk-bdd-template-m1iAUYjQ/checkout/features/application/document-creation/document-creation.feature" package="testsuite/Feature: Create a document from a template: tmp/obk-bdd-template-m1iAUYjQ/checkout/features/application/document-creation/document-creation.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T14:44:55.390631448Z" time="5.164539862"><testcase name="Scenario: Click a folder highlighted by keyboard navigation: tmp/obk-bdd-template-m1iAUYjQ/checkout/features/application/document-creation/document-creation.feature:540:3" time="5.164539862"><system-out><![CDATA[  Scenario: Click a folder highlighted by keyboard navigation
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the template chooser shows the metric folder and its grouped templates
+   ✔  And the details pane identifies the selected Standard (mm) part template
+   ✔  When the user clicks Metric in the folder tree and presses Up
+   ✔  Then English is highlighted in the tree
+   ✔  And the metric gallery and Standard (mm) details remain visible
+   ✔  When the user clicks the highlighted English folder
+   ✔  Then the gallery displays the English folder templates
+   ✔  And the details pane still identifies Standard (mm) with millimeter units
+   ✔  When the user cancels the chooser
+   ✔  Then the original part remains active
+]]></system-out></testcase></testsuite></testsuites>

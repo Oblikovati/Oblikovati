@@ -14225,7 +14225,7 @@
     },
     {
       "id": "scenario:57597e1943cb423566bc7c5da13d304d32bd715e073cadd24100b644c50a3cb6",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "e9a93d4c096090667952b8080a0cad01c48f480022a4b8ac72ae210607ca138d",
       "milestone": "R4",
       "owner": "desktop",
@@ -14237,8 +14237,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-create-r4-57597e19/receipt-57597e1943cb4235.json",
-        "sha256": "c04c0932b83d13583c9fb12bbb388f355bd62ce5ab9d2b9985dbf85855f4aa3c"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-template-57597e19/receipt-57597e1943cb4235.json",
+        "sha256": "722cdc9674d0dd8041ea00f4bf3b6b5cec300699e2128ad34242963f4d6cc6e1"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/head/ui/file_dialog.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
@@ -14247,7 +14247,7 @@
     },
     {
       "id": "scenario:dc7e3e064afa2b62b9b98b143df9d7a730e275b9c56cd41ff50da2ca000cd5dc",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "e9a93d4c096090667952b8080a0cad01c48f480022a4b8ac72ae210607ca138d",
       "milestone": "R4",
       "owner": "desktop",
@@ -14259,8 +14259,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-create-r4-dc7e3e06/receipt-dc7e3e064afa2b62.json",
-        "sha256": "9b92850b849af085e3273259516b2ac118881b8981281a6450f81905ffc0a612"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-template-dc7e3e06/receipt-dc7e3e064afa2b62.json",
+        "sha256": "fed5732a2f511c7f16f29e2ea302c9c05fb58d39a2e0056812a5ad62e0fc6a2d"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/head/ui/file_dialog.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
@@ -14337,7 +14337,7 @@
     },
     {
       "id": "scenario:8acd0eea06ca5d1915a806935b52199eab5b55f932c052e2a3b28ec7c58a2082",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "e9a93d4c096090667952b8080a0cad01c48f480022a4b8ac72ae210607ca138d",
       "milestone": "R4",
       "owner": "desktop",
@@ -14349,8 +14349,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-create-r4-8acd0eea/receipt-8acd0eea06ca5d19.json",
-        "sha256": "43bdf4c3572f1e5feec0c3fbd9b4e3d9d0ce144d64d1508f1a3fb1fcfbd69eae"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-template-8acd0eea/receipt-8acd0eea06ca5d19.json",
+        "sha256": "b33d105ee94171886ab7119c05f9fc0390cb93a7b7e44b601bd88df6f25d9f3d"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/head/ui/file_dialog.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
@@ -14376,7 +14376,7 @@
     },
     {
       "id": "scenario:676af48baf43f553b3d9ca85c0e4236e73e6fb19453f6d920d0aa1eb182e3124",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "e9a93d4c096090667952b8080a0cad01c48f480022a4b8ac72ae210607ca138d",
       "milestone": "R4",
       "owner": "desktop",
@@ -14388,8 +14388,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-create-r4-676af48b/receipt-676af48baf43f553.json",
-        "sha256": "791741380a3a8e54dcbf998a055c96c48c67b9e8ac69e86fa023b980304bd130"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-template-676af48b/receipt-676af48baf43f553.json",
+        "sha256": "27c197a07414bd4d5eda464d3df30cd4df41d236eca9d5c22ae289b311faedf3"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/head/ui/file_dialog.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
@@ -14585,7 +14585,7 @@
     },
     {
       "id": "scenario:59b4bf7d4c4e5e16e405e3e9a8134cd6cba7491a21f8b002211c2b166533d831",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "e9a93d4c096090667952b8080a0cad01c48f480022a4b8ac72ae210607ca138d",
       "milestone": "R7",
       "owner": "desktop",
@@ -14597,8 +14597,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-template-secondary/receipt-59b4bf7d4c4e5e16.json",
-        "sha256": "817b26b55a8ac06ea78363ebc14924793b22fbfe17f11dc8942ce33d58d6f546"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-template-59b4bf7d/receipt-59b4bf7d4c4e5e16.json",
+        "sha256": "76add4eb2d465b242f4fb1b44dc40926dee9f6f597f674adeed68cd03ad66cbb"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/head/ui/file_dialog.go",
       "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
@@ -14607,7 +14607,7 @@
     },
     {
       "id": "scenario:3984b0108067a0d222891b672b8e856ace01dbee301d00afcd31179720480fa2",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "e9a93d4c096090667952b8080a0cad01c48f480022a4b8ac72ae210607ca138d",
       "milestone": "R7",
       "owner": "desktop",
@@ -14619,8 +14619,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-template-folder-keyboard/receipt-3984b0108067a0d2.json",
-        "sha256": "8c7e69e3fde02dbe81606e336332abfba0123c6027fe1c1c01cb7d8f4f4daf61"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-template-3984b010/receipt-3984b0108067a0d2.json",
+        "sha256": "718709bb88b256d18e5d4fd1ebbc859168c65b7a6e3b2cb001a701b0280bb230"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/head/ui/file_dialog.go",
       "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
