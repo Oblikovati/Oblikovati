@@ -13982,7 +13982,7 @@
     },
     {
       "id": "scenario:414a8cdb8182b258369735ab0aaa1bebf2a7968f607002055b4282dcbf29716f",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "e9a93d4c096090667952b8080a0cad01c48f480022a4b8ac72ae210607ca138d",
       "milestone": "R4",
       "owner": "desktop",
@@ -13994,8 +13994,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-create-r4-414a8cdb/receipt-414a8cdb8182b258.json",
-        "sha256": "a3c42c8b823541e149310315aa81a69133c52acbc453be44f2692fb1bfbec0fa"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-create-part-current/receipt-414a8cdb8182b258.json",
+        "sha256": "1d7d3d8dbdab1b1d858a00e90ef5ed35834073d3b961eabb555ff1f9d3dbd7fd"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/head/ui/file_dialog.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
