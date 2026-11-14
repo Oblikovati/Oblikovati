@@ -32,6 +32,34 @@ fn accepted_evaluation_retains_each_declared_residual_domain() {
     assert_eq!(result.residual_evidence.model_length, Some(3.));
     assert_eq!(result.residual_evidence.unitless, Some(0.1));
     assert_eq!(result.residual_evidence.model_relative_rows, 1);
+    assert_eq!(result.evaluation.values(), &[2., -3., 0.1, 1e12]);
+    assert_eq!(
+        result.residual_domains,
+        [
+            ResidualTolerance::ModelLength,
+            ResidualTolerance::ModelLength,
+            ResidualTolerance::Unitless,
+            ResidualTolerance::ModelRelative
+        ]
+    );
+}
+struct NonfiniteResidual(f64);
+impl ResidualSource for NonfiniteResidual {
+    fn evaluate(&self, _: &[DualNumber]) -> Result<Vec<DualNumber>, ResidualError> {
+        Ok(vec![DualNumber::constant(self.0)?])
+    }
+}
+#[test]
+fn nonfinite_row_cannot_produce_residual_evidence() {
+    for invalid in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+        let source = NonfiniteResidual(invalid);
+        assert!(
+            solve_constraints(&[], &[block(&source, &[])], SolveOptions::default(), || {
+                false
+            })
+            .is_err()
+        );
+    }
 }
 struct RadianTarget;
 impl ResidualSource for RadianTarget {

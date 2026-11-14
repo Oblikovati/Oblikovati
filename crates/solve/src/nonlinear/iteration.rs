@@ -234,6 +234,7 @@ fn finish(
         trial_steps: state.trials,
         relative_residual: metrics::infinity_norm(residuals),
         residual_evidence,
+        residual_domains: state.scaled.domains,
         conflicts,
         rejected_trial: state.rejected,
     })

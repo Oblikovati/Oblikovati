@@ -5,6 +5,7 @@ use oblikovati_api::types::MODEL_VALUE_UPPER;
 use oblikovati_model::document_sketch::{
     PlacedSketch, PlacedSketchHealth, SketchEvaluation, SketchReadinessCause,
 };
+use oblikovati_model::sketch::SketchRelationId;
 use std::error::Error;
 fn solved(parameters: &ParameterCollection<u64>) -> DocumentSketches {
     document()
@@ -66,6 +67,32 @@ fn accepted_solver_domain_evidence_survives_document_verification() {
         .unwrap();
     assert_eq!(verified.residual_evidence, numerical.residual_evidence);
     assert!(verified.residual_evidence.model_relative_rows > 0);
+    let rows = outcome.report.reports[0]
+        .result
+        .as_ref()
+        .unwrap()
+        .residual_rows();
+    assert_eq!(verified.residual_rows, rows);
+    assert!(!rows.is_empty());
+    assert_eq!(
+        rows[0].relation,
+        SketchRelationId::Authored(SketchConstraintId(1))
+    );
+    assert_eq!(rows[0].equation, 0);
+    assert_eq!(rows[1].relation, rows[0].relation);
+    assert_eq!(rows[1].equation, 1);
+    assert!(rows.iter().all(|row| row.value.is_finite()));
+    assert_eq!(
+        rows,
+        document()
+            .solve(&parameters, SolveOptions::default(), || false)
+            .report
+            .reports[0]
+            .result
+            .as_ref()
+            .unwrap()
+            .residual_rows()
+    );
 }
 fn assert_recipe_restores_without_health(
     solved: &DocumentSketches,

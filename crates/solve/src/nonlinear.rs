@@ -65,6 +65,8 @@ pub struct NonlinearResult {
     pub relative_residual: f64,
     /// Accepted raw domain evidence, distinct from the combined convergence metric.
     pub residual_evidence: ResidualEvidence,
+    /// Convergence domain of each raw equation, in evaluation row order; not a tolerance certificate.
+    pub residual_domains: Vec<crate::residual::ResidualTolerance>,
     /// Unsatisfied sources, descending severity, with input index as a tie break.
     pub conflicts: Vec<usize>,
     /// Most recent rejected numerical/domain trial, if any; success may follow it.
