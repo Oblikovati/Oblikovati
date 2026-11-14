@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ellipse: tmp/obk-ellipse-48987af/features/sketch/ellipse/scenario.feature" package="testsuite/Feature: Ellipse: tmp/obk-ellipse-48987af/features/sketch/ellipse/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T21:19:20.276211416Z" time="7.676766788"><testcase name="Scenario: ellipse-06 Cancel after defining a rotated first axis: tmp/obk-ellipse-48987af/features/sketch/ellipse/scenario.feature:40:3" time="7.676766788"><system-out><![CDATA[  Scenario: ellipse-06 Cancel after defining a rotated first axis
+   ✔  Given an editable sketch is Ready
+   ✔  When the user choose Ellipse from the Circle dropdown
+   ✔  And the user select the fixture center
+   ✔  Then the prompt requests the first axis point
+   ✔  When the user select the fixture first-axis point
+   ✔  Then the prompt requests a point on the ellipse
+   ✔  When the user press Escape
+   ✔  Then the MCAD Software returns to Ready with no new ellipse visible
+]]></system-out></testcase></testsuite></testsuites>
