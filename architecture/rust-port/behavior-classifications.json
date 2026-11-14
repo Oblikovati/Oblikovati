@@ -18,7 +18,14 @@
         "sha256": "010f4d62cc86691223feba6e862d4ca6b4c510e4939c444bc1472d71856b3670"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_reference": "Go aa8297d1b: app/material_ops.go PhysicalProperties and sumBodyProperties; part-level query only; partial command baseline in receipts/2026-11-14-go-physical-baseline/receipt.json.",
+      "kernel_capabilities": "Martensite analytic solid mass properties for the certified prism; per-body area, volume, centroid and mass use material density.",
+      "platforms": "Native receipt: Linux, Vulkan Lavapipe under Xvfb; Windows and macOS not established.",
+      "kernel_integration": "crates/martensite/src/prism/snapshot.rs and crates/head/src/part_scene/physical.rs integrate the analytic body; Go part query uses a mesh and is not the numeric oracle.",
+      "rust_tests": "Native scenario: crates/head/tests/application/body-properties/steps.rs; analytic prism assertion: crates/head/tests/owner/part_scene/physical.rs.",
+      "oracle": "Independent rectangular prism formulas for volume, surface area, centroid and density-scaled mass; no Go per-body numeric comparison established.",
+      "expected_result": "Initially unavailable values become mass 24 g, area 5200 mm\u00b2, volume 24000 mm\u00b3, centroid (20, 15, 10) mm for the native prism fixture and remain displayed when reopened."
     },
     {
       "id": "scenario:f024b2250132b3239960cbba948d906a930fcb48716f2817e11ec492c5b22183",
