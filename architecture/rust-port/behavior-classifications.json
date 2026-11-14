@@ -14617,10 +14617,15 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3899",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-template-folder-keyboard/receipt-3984b0108067a0d2.json",
+        "sha256": "8c7e69e3fde02dbe81606e336332abfba0123c6027fe1c1c01cb7d8f4f4daf61"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/head/ui/file_dialog.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:c65b58f2636efdbae8aab3b6ced9134833b1e8361bac7549e42c023bd95463fb",
