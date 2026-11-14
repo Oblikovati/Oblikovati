@@ -99,3 +99,6 @@ fn assert_analytic_centroid(actual: [f64; 3], expected: [f64; 3]) {
         assert_analytic_scalar(measured, oracle);
     }
 }
+
+#[path = "sketch_prism/legacy_cube.rs"]
+mod legacy_cube;
