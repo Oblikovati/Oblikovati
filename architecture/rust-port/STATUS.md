@@ -128,3 +128,5 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 - R7 template chooser: keyboard highlight and mouse activation of the English folder retained the metric template details; all 11 native steps passed. The gallery assertion now inspects the gallery rather than the details pane. See `receipts/2026-11-14-template-folder-keyboard/` (#3899).
 
 - R4 viewport picking: the host adapter now restricts intersections to the forward ray (#3925). The inside-solid and behind-origin adapter regression, host regression, native camera-ray test, and all 22 prism tests passed. Competing-category priority remains open (#3890).
+
+- R3 cube journey: the native keyboard and pointer integration test passed after the forward-ray fix, including parameter edit, undo/redo, save/reopen, and named-face resolution. See `receipts/2026-11-14-forward-ray-cube/README.md`; this is not a BDD scenario receipt (#3870).
