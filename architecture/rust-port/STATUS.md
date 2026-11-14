@@ -15,6 +15,7 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 - Work branch: `feat/rust-consolidated`; base is `origin/rust`.
 - Scenario pin: `35f4a77b1519e2f29005be009c35fb7c5bdf4e89`, a locally created snapshot of the unversioned live source, not an upstream commit. Restore and verify it as described in `bdd-workflow.md`.
 - Source sync: weekly, in a separate batch. Store small JSON receipts in this repository.
+- Live source has corrections in `home-recent-documents`, `arc-center-point`, and `move` after the pin. The syntax and measurement reports were removed from their live `BLOCKERS.md` files. Review and update the snapshot before treating those corrections as benchmark results.
 - Kernel gaps: file and track validated gaps in `Oblikovati/Martensite`; application work belongs in `Oblikovati/Oblikovati`.
 - Branch policy: one working branch, with batch PRs to `rust`; push after each unit once the required pre-push gate passes.
 
