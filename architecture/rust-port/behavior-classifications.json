@@ -207,7 +207,7 @@
     },
     {
       "id": "scenario:63f029b9f70340308eef7d4b4187b3f20f136ee9e8984de6b3c28d4c3b9b61e7",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "e4011485e2cfe78197b73450bea0d26ba2b0dbc54f2307d3b27364ffe9d9a20d",
       "milestone": "R4",
       "owner": "desktop",
@@ -218,8 +218,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-sketch-63f029b9/receipt-63f029b9f7034030.json",
-        "sha256": "de3e622843936e3811fc1aa8a1075d761e09912e1e3e44970cb23e655774df44"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-new-sketch-63f029b9/receipt-63f029b9f7034030.json",
+        "sha256": "17bf43808dc31cce62f4a69b114a69fdb084941f23cba9d2c9cc444e95c68863"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -241,7 +241,7 @@
     },
     {
       "id": "scenario:4e511ca586195d67ed53eaedd9378d8bc9bab420ea3c606eda97feb3b4fb0b55",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "e4011485e2cfe78197b73450bea0d26ba2b0dbc54f2307d3b27364ffe9d9a20d",
       "milestone": "R4",
       "owner": "desktop",
@@ -252,8 +252,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-sketch-4e511ca5/receipt-4e511ca586195d67.json",
-        "sha256": "966421d00b22a7685ec86bce61db4d0b2a66b4aaf5a184536bcd26b35acf1510"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-new-sketch-4e511ca5/receipt-4e511ca586195d67.json",
+        "sha256": "8cc1addb20e72b83dd9cee9c49de8809e0ad776e5c858d823b3056cff362b2f9"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -275,7 +275,7 @@
     },
     {
       "id": "scenario:adfaa180b248a09493b79b65698c97167d4d8d53f4c3a763453aecd7d8b420e2",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "e4011485e2cfe78197b73450bea0d26ba2b0dbc54f2307d3b27364ffe9d9a20d",
       "milestone": "R4",
       "owner": "desktop",
@@ -286,8 +286,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-sketch-adfaa180/receipt-adfaa180b248a094.json",
-        "sha256": "df6cf6cf8568b77605c89829491aa85d604fd8eb205589877339f61f3d0c266a"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-new-sketch-adfaa180/receipt-adfaa180b248a094.json",
+        "sha256": "2514823e7f3a93524050ea9604fc00498694d2d5f717454d01121cb6654882fd"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -309,7 +309,7 @@
     },
     {
       "id": "scenario:cd9561e7b2b4f47522f44782c6ecc97307e4b18dd114f958c8b625807a9af6bb",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "e4011485e2cfe78197b73450bea0d26ba2b0dbc54f2307d3b27364ffe9d9a20d",
       "milestone": "R4",
       "owner": "desktop",
@@ -321,8 +321,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-sketch-cd9561e7/receipt-cd9561e7b2b4f475.json",
-        "sha256": "275d615414abaa5b96693600ed1d1c0c404ce6ae2c047b3b5608dfb92ebcc23a"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-new-sketch-cd9561e7/receipt-cd9561e7b2b4f475.json",
+        "sha256": "c368e169811aa296b38ddc4e01cbc5f9f3c312902cde0e7e5ca75d2f0abd193f"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -344,7 +344,7 @@
     },
     {
       "id": "scenario:4ba58b431dc847ae3a24f6b4c652dc6ce891a4b6150813100ab28b8c60d3b5f2",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "e4011485e2cfe78197b73450bea0d26ba2b0dbc54f2307d3b27364ffe9d9a20d",
       "milestone": "R4",
       "owner": "desktop",
@@ -356,8 +356,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-sketch-4ba58b43/receipt-4ba58b431dc847ae.json",
-        "sha256": "13c54ab205173c1e2f0ddc565f2187fa9b2f9f94e9d991674c2a019133e7fd8f"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-new-sketch-4ba58b43/receipt-4ba58b431dc847ae.json",
+        "sha256": "472a877c6c5b9c664e5e9ac9b246c8009266a9e496a44035eb3dcab80a25f4f5"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -555,7 +555,7 @@
     },
     {
       "id": "scenario:d46c554381029cf43cc527f90d95974a544c5e83c23ead926db74cadd5f7afd3",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "e4011485e2cfe78197b73450bea0d26ba2b0dbc54f2307d3b27364ffe9d9a20d",
       "milestone": "R5",
       "owner": "desktop and modeling",
@@ -567,8 +567,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-sketch-d46c5543/receipt-d46c554381029cf4.json",
-        "sha256": "541adca16f71589b6f86e7932b4db2224b2a88244085ee44afa743ae8815ef53"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-new-sketch-d46c5543/receipt-d46c554381029cf4.json",
+        "sha256": "590aacd2f59f1e546e1780e11e8a7d4d0e039f49f1e37d700203e6032241f781"
       },
       "mapping_reason": "Attach a sketch to a modeled planar face and preserve the extrusion.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
@@ -591,7 +591,7 @@
     },
     {
       "id": "scenario:44dfe89fda9e10be24739ae86dcce9b9e2df26b6fc34aeb0fa17ec252d15cb9f",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "e4011485e2cfe78197b73450bea0d26ba2b0dbc54f2307d3b27364ffe9d9a20d",
       "milestone": "R5",
       "owner": "desktop and modeling",
@@ -603,8 +603,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-sketch-44dfe89f/receipt-44dfe89fda9e10be.json",
-        "sha256": "4d5c7fc4cdad774c71a21ee597df91b6c99221d3c6a1632f9fe88b13eddf025e"
+        "path": "architecture/rust-port/receipts/2026-11-14-refresh-new-sketch-44dfe89f/receipt-44dfe89fda9e10be.json",
+        "sha256": "602a241624de9418d5a88bb1bb39b24e2a206ccd8cbf004ec40c8b5c7ac10482"
       },
       "mapping_reason": "Create and retain an offset work plane and its dependent sketch.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
