@@ -4,6 +4,7 @@ use super::{
     LegacyCapBindingVerifier, LegacyExtrusionFaceRole, LegacyPartCandidate, PackageCodecError,
 };
 use oblikovati_model::{
+    document_sketch::DocumentSketchId,
     feature::{AuthoredFeature, FeatureId},
     history::DocumentSnapshot,
     identity::DocumentGuid,
@@ -21,6 +22,18 @@ pub struct LegacyStagedFeatureIdentity {
 pub trait LegacyCapStageVerifier {
     /// Solve current sketches without replacing authored input; example: `verifier.solve(&mut snapshot)?`.
     fn solve(&self, snapshot: &mut DocumentSnapshot) -> Result<(), String>;
+    /// Qualify the current sketch's spatial and angular solve evidence; default is a named decline.
+    /// Implementations own this trust boundary and must not infer bounds from raw residuals.
+    /// Example: `verifier.qualify_sketch(snapshot, sketch)?` before creating a staged feature.
+    fn qualify_sketch(
+        &self,
+        _snapshot: &DocumentSnapshot,
+        sketch: DocumentSketchId,
+    ) -> Result<(), String> {
+        Err(format!(
+            "sketch {sketch:?}: qualified spatial and angular solve evidence is unavailable (#3928)"
+        ))
+    }
     /// Verify an exact cap against the current prefix; example: `verifier.verify(snapshot, doc, id, key, role)?`.
     fn verify(
         &self,
@@ -47,6 +60,7 @@ impl LegacyCapBindingVerifier for PrefixVerifier<'_> {
 
 impl LegacyPartCandidate {
     /// Build an isolated ordered program with caller-reserved IDs and verified cap bindings.
+    /// The verifier must qualify every source sketch; no production qualifier is supplied here.
     /// Example: `candidate.stage_cap_program(&base, document, &identities, verifier)?`.
     pub fn stage_cap_program(
         &self,
@@ -92,9 +106,9 @@ impl LegacyPartCandidate {
                     "extrusion {sequence}: expected original name and an unsuppressed source"
                 )));
             }
-            snapshot
-                .require_resolved_sketch(extrusion.definition.sketch())
-                .map_err(failure)?;
+            let sketch = extrusion.definition.sketch();
+            snapshot.require_resolved_sketch(sketch).map_err(failure)?;
+            verifier.qualify_sketch(snapshot, sketch).map_err(failure)?;
             let feature = AuthoredFeature::sketch_prism(
                 identity.id,
                 &identity.name,
