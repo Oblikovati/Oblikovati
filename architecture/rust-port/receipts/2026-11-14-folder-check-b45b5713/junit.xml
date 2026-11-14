@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect the project dialog: tmp/obk-folder-scenarios/features/application/project-dialog/project-dialog.feature" package="testsuite/Feature: Inspect the project dialog: tmp/obk-folder-scenarios/features/application/project-dialog/project-dialog.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T13:30:12.906883423Z" time="4.614899746"><testcase name="Scenario: Expand and collapse project settings with the keyboard: tmp/obk-folder-scenarios/features/application/project-dialog/project-dialog.feature:103:3" time="4.614899746"><system-out><![CDATA[  Scenario: Expand and collapse project settings with the keyboard
+   ✔  Given the Projects dialog is open in the MCAD Software
+   ✔  And an active project with Folder Options and Options groups is displayed
+   ✔  When the user selects the collapsed Folder Options group
+   ✔  And the user presses the Right Arrow key
+   ✔  Then the group expands to show folder entries including Templates, Design Data and Presets
+   ✔  When the user presses the Left Arrow key
+   ✔  Then the Folder Options children are hidden
+   ✔  When the user selects the collapsed Options group
+   ✔  And the user presses the Right Arrow key
+   ✔  Then the group expands to show project options including old versions to keep and unique file names
+   ✔  And the active project remains marked in the project list
+]]></system-out></testcase></testsuite></testsuites>
