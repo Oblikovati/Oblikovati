@@ -256,7 +256,10 @@ impl OrientationControl {
         let Some(axes) = state.view_axes else {
             return;
         };
-        if state.authoring != crate::GuiAuthoringContext::Part {
+        if !matches!(
+            state.authoring,
+            crate::GuiAuthoringContext::Part | crate::GuiAuthoringContext::Sketch
+        ) {
             return;
         }
         let side = self.options.side();

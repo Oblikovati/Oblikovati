@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Kept the ViewCube visible and interactive while editing a 2D sketch. (#3877)
+
 - Enabled analytic area measurements for named solid faces through the Analysis API. (#3876)
 
 - Kept toolbar arrow-key navigation from rotating the model on its first key press. (#3874)

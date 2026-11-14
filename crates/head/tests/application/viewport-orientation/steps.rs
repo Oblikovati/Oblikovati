@@ -41,7 +41,10 @@ fn press_at(world: &mut ApplicationWorld, position: [f32; 2], local: [f32; 2]) {
     world.pump(Vec::new());
     world.pump(Vec::new());
 }
-fn press_part(world: &mut ApplicationWorld, part: fn(&GuiOrientationLayout) -> [f32; 2]) {
+pub(super) fn press_part(
+    world: &mut ApplicationWorld,
+    part: fn(&GuiOrientationLayout) -> [f32; 2],
+) {
     let (position, parts) = layout();
     press_at(world, position, part(&parts));
 }

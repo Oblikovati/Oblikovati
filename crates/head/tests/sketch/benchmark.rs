@@ -27,6 +27,8 @@ pub(super) mod fixtures;
 mod line;
 #[path = "move/precise.rs"]
 mod move_precise;
+#[path = "new-sketch/steps.rs"]
+mod new_sketch;
 #[path = "point/steps.rs"]
 mod point;
 #[path = "precise-input/steps.rs"]
