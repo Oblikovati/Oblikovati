@@ -61,7 +61,7 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 | 1 | A8: complete the behavior ledger and progress counts | In progress | Issue #3865; reporting and receipt checks exist, but classifications, outline evidence, and R0 fields remain. |
 | 2 | A9: map feature files to milestones | In progress | Issue #3861; all declarations have initial mappings, but their Go baselines and milestone exits still need review. |
 | 3 | A10: replace prose evidence with durable receipts | In progress | Historical prose is archived; scenarios without retained current reports still need reruns and receipts. |
-| 4 | A11: record R0–R3 exit evidence or named gaps | Ready | Depends on the inventory and milestone mappings. |
+| 4 | A11: record R0–R3 exit evidence or named gaps | In progress | Known gaps are linked in `milestones.md`; an exhaustive exit audit and passing gate remain open. |
 | 5 | A12: split files over the line limit | Ready | Issue #3860; preserve behavior and run the required gate. |
 
 ## Open items
