@@ -182,3 +182,5 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 - R7 template gallery: four additional pinned scenarios passed for group expansion, folder changes, Details view, and grouping by type. Final captures were reviewed; see `receipts/2026-11-14-gallery-new-*/`. The live feature file matched the pin after the runs (#3899).
 
 - R7 template navigation: four additional pinned scenarios passed for list selection, Back and Forward, reopening after Cancel, and Home navigation. Final captures were reviewed; see `receipts/2026-11-14-gallery-nav-*/`. The live feature file matched the pin after the runs (#3899).
+
+- R7 document creation: the initial template-selection scenario needs a session and selection-history fixture before it can be verified. The scenario-side `document-creation/BLOCKERS.md` records the question; the chooser must also show the specified material in its details (#3899).
