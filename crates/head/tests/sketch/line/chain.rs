@@ -14,6 +14,7 @@ fn hud_is_open(world: &ApplicationWorld) -> bool {
 }
 // line-03
 #[when("I select Line and choose a start point")]
+#[when("the user select Line and choose a start point")]
 fn line_and_start(world: &mut ApplicationWorld) {
     world.select_line_tool();
     world.sketch_click(START);
@@ -46,6 +47,7 @@ fn start_and_end_inputs(world: &mut ApplicationWorld) {
     world.sketch_click(START);
 }
 #[when("I select a distinct endpoint")]
+#[when("the user select a distinct endpoint")]
 fn endpoint_accepted(world: &mut ApplicationWorld) {
     world.sketch_click(END);
 }

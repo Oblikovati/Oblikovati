@@ -16,6 +16,7 @@ fn empty_sketch(world: &mut ApplicationWorld) {
     world.expect_ready();
 }
 #[when("I select Line and click two distinct points")]
+#[when("the user select Line and click two distinct points")]
 fn line_two_points(world: &mut ApplicationWorld) {
     world.select_line_tool();
     for point in SEGMENT {
@@ -24,6 +25,11 @@ fn line_two_points(world: &mut ApplicationWorld) {
 }
 #[then("one segment joins the points and the command offers a connected next segment")]
 fn one_segment_and_next(world: &mut ApplicationWorld) {
+    assert_eq!(
+        world.edited_geometry().lines().len(),
+        1,
+        "expected one segment"
+    );
     world.expect_segment_drawn(SEGMENT[0], SEGMENT[1]);
     world.expect_status("Select end of line");
     assert!(
