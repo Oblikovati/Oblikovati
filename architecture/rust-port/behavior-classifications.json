@@ -858,8 +858,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-rectangle-ecfb4103/receipt-ecfb4103b54e7240.json",
-        "sha256": "2ffcffbc2b176c3b65132057e665af024d18e09f3448ef36e81bfb8b92e748ed"
+        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-history-geometry/receipt-ecfb4103b54e7240.json",
+        "sha256": "19c8b02f88e28c691208193eb4f9f802a162e9f10db9aca4938ac6d99d3dfdf6"
       },
       "go_reference": "Go aa8297d1b: app/sketch_tools_test.go and model/sketch/recipe_rectangle_test.go cover two-corner construction and sketch degrees of freedom.",
       "mapping_reason": "Edit and measure a sketch dimension through history.",
@@ -877,7 +877,7 @@
       "platforms": "Historical native run: Linux Xvfb with Vulkan Lavapipe. Other platforms were not checked.",
       "kernel_integration": "The desktop sketch path submits geometry and constraints through the host; no B-rep extrusion is asserted.",
       "rust_tests": "sketch_scenarios_use_the_native_window: rectangle-two-point-13 Accept and undo a rectangle height edit",
-      "oracle": "Pinned scenario assertions and reviewed final native capture; the receipt is stale after application test-source changes.",
+      "oracle": "Pinned native scenario, measured four-edge lengths through edit, undo and redo, and reviewed final capture; no stationary edge is assumed.",
       "expected_result": "the user redoes the height edit; the visible height annotation returns to 8; width annotation 4 remains"
     },
     {
