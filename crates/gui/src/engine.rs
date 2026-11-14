@@ -384,7 +384,15 @@ fn apply_quick_access(
     if requests.open_parameters {
         parameters.0.open(parameters.1.document);
     }
-    if requests.choose_plane || selected.contains(&GuiShellAction::ChooseSketchPlane) {
+    let extrude_sketch = requests.choose_plane_for_extrude
+        || selected.contains(&GuiShellAction::ChooseSketchPlaneForExtrude);
+    if extrude_sketch {
+        extrude.wait_for_sketch(parameters.1.document);
+    }
+    if requests.choose_plane
+        || extrude_sketch
+        || selected.contains(&GuiShellAction::ChooseSketchPlane)
+    {
         if let Some(plane) = workspace.take_selected_origin_plane() {
             planes.active = false;
             selected.push(GuiShellAction::StartSketchOn(plane));

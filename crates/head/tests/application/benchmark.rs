@@ -104,6 +104,7 @@ mod document_opening;
 mod document_saving;
 #[path = "document-tabs/steps.rs"]
 mod document_tabs;
+mod extrude_resume_native;
 #[path = "file-menu/steps.rs"]
 mod file_menu;
 #[path = "home-recent-documents/steps.rs"]

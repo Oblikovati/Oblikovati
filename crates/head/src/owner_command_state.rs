@@ -115,6 +115,9 @@ impl<
                 .collect(),
             transaction_open: session.in_transaction(),
             extrude_available: self.extrusion_access.is_some(),
+            extrude_preview_active: self.extrusion_preview.as_ref().is_some_and(
+                |(id, generation, _)| *id == document && *generation == session.generation(),
+            ),
             sketch_tool_keyboard: self
                 .placement_state()
                 .is_some_and(|tool| self.placement_context_valid(tool)),

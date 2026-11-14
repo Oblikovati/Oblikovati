@@ -59,6 +59,8 @@ pub struct GuiCommandState {
     pub transaction_open: bool,
     /// The owner has a certified extrusion service.
     pub extrude_available: bool,
+    /// The owner has accepted an extrusion preview for the active document.
+    pub extrude_preview_active: bool,
     /// The running Line command reads the keyboard before any GUI widget does.
     pub sketch_tool_keyboard: bool,
     pub dimension_tool_active: bool,

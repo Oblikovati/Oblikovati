@@ -218,6 +218,7 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::CreateDocument(_)
         | GuiShellAction::NewPart
         | GuiShellAction::ChooseSketchPlane
+        | GuiShellAction::ChooseSketchPlaneForExtrude
         | GuiShellAction::ShowHome
         | GuiShellAction::Recent(_)
         | GuiShellAction::ActivateWindow(_)

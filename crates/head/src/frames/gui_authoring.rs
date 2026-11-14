@@ -148,7 +148,9 @@ fn sketch(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, Str
             owner.edit_existing_sketch_from_gui(*document, *sketch)
         }
         // Only the frame's plane display reacts; the sketch starts when a plane is chosen.
-        GuiShellAction::ChooseSketchPlane | GuiShellAction::ShowHome => Ok(false),
+        GuiShellAction::ChooseSketchPlane
+        | GuiShellAction::ChooseSketchPlaneForExtrude
+        | GuiShellAction::ShowHome => Ok(false),
         GuiShellAction::Recent(action) => owner.recent_from_gui(action),
         GuiShellAction::ActivateWindow(id) => owner.document_window_from_gui(*id, false),
         GuiShellAction::CloseDocumentWindow(id) => owner.document_window_from_gui(*id, true),

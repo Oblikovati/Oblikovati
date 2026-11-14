@@ -4,6 +4,8 @@ use crate::dockable_window::DockableWindow;
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::{Key, Ui};
 use oblikovati_model::document_sketch::DocumentSketchId;
+#[path = "extrude_pending.rs"]
+mod pending;
 
 #[derive(Default)]
 pub(crate) struct ExtrudeDialog {
@@ -13,6 +15,7 @@ pub(crate) struct ExtrudeDialog {
     profile: i32,
     distance: String,
     previewed: bool,
+    pending: pending::PendingExtrude,
 }
 pub(crate) fn start_action(state: &GuiCommandState) -> GuiShellAction {
     if state
@@ -20,13 +23,16 @@ pub(crate) fn start_action(state: &GuiCommandState) -> GuiShellAction {
         .as_ref()
         .is_some_and(|browser| browser.sketches.is_empty())
     {
-        GuiShellAction::ChooseSketchPlane
+        GuiShellAction::ChooseSketchPlaneForExtrude
     } else {
         GuiShellAction::OpenExtrude
     }
 }
 impl DockableWindow for ExtrudeDialog {}
 impl ExtrudeDialog {
+    pub(crate) fn wait_for_sketch(&mut self, document: Option<u64>) {
+        self.pending.start(document);
+    }
     fn synchronize(&mut self, state: &GuiCommandState) {
         if self.requested {
             self.requested = false;
@@ -52,8 +58,26 @@ impl ExtrudeDialog {
         &mut self,
         ui: &Ui,
         state: &GuiCommandState,
+        plane_active: bool,
         actions: &mut Vec<GuiShellAction>,
     ) {
+        if let Some(sketch) = self.pending.observe(state, plane_active, actions) {
+            self.document = state.document;
+            self.sketch = Some(sketch);
+            self.profile = 0;
+            self.distance = "10 mm".into();
+            if let Some(document) = self.document {
+                actions.push(GuiShellAction::PreviewExtrude(Some(
+                    crate::GuiExtrudePreview {
+                        document,
+                        sketch,
+                        profile: 0,
+                        distance: self.distance.clone(),
+                    },
+                )));
+                self.previewed = true;
+            }
+        }
         if self.requested && self.previewed {
             actions.push(GuiShellAction::PreviewExtrude(None));
             self.previewed = false;
@@ -70,8 +94,12 @@ impl ExtrudeDialog {
         let mut open = true;
         Self::dockable_window(ui, "Extrude", &mut open).build(|| {
             let mut edited = self.sketch_choice(ui, state);
+            ui.text("Profiles");
+            if state.extrude_preview_active {
+                ui.text("1 Profile");
+            }
             edited |= ui.input_int("Profile", &mut self.profile).build();
-            edited |= ui.input_text("Distance", &mut self.distance).build();
+            edited |= ui.input_text("Distance A", &mut self.distance).build();
             if edited && self.previewed {
                 actions.push(GuiShellAction::PreviewExtrude(None));
                 self.previewed = false;
@@ -208,7 +236,10 @@ mod tests {
         assert_eq!(dialog.document, None);
         assert_eq!(start_action(&state), GuiShellAction::OpenExtrude);
         state.browser.as_mut().unwrap().sketches.clear();
-        assert_eq!(start_action(&state), GuiShellAction::ChooseSketchPlane);
+        assert_eq!(
+            start_action(&state),
+            GuiShellAction::ChooseSketchPlaneForExtrude
+        );
     }
     #[test]
     fn extrusion_requires_capability_current_sketch_and_nonempty_distance() {
