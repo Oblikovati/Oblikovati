@@ -7,7 +7,7 @@
   "command": "From the Go application workspace: go run /path/to/generate.go /absolute/path/to/output.obk",
   "exit_code": 0,
   "artifacts": {
-    "generate.go": "41b7e432383b9d705ace2706e7ef8f88661e78801565b0305d8b06fed5b009f8",
+    "generate.go": "4ccdffe283dceef74aa9cd195490632cf5161315faaf1263b90761c7e3ddc3ff",
     "go-cube.obk": "a751a46448ed933e035289ff256979f6a8a37adb4b7fb1bf3f723b6fadfd5d4d",
     "observations.json": "0b4147797f7a7bcbc72473c673b4c7a6deb1f26b27592ba65069b6a451a2ee76"
   },
