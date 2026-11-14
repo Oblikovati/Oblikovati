@@ -221,6 +221,11 @@ impl HeadWindow for NativeHeadWindow {
         update.changed |= changed || sketch_changed || selection_changed;
         Ok(update)
     }
+    fn request_extrusion(&mut self) {
+        if let Some(gui) = self.gui.as_mut() {
+            gui.request_extrusion();
+        }
+    }
     fn reject_dimension_edit(&mut self, value: &oblikovati_gui::GuiDimensionValue, cause: &str) {
         if let Some(gui) = self.gui.as_mut() {
             gui.reject_dimension_edit(value, cause);
@@ -242,7 +247,6 @@ impl HeadWindow for NativeHeadWindow {
     fn set_view_slot(&mut self, slot: u64) -> Result<bool, String> {
         self.switch_view_slot(slot)
     }
-
     fn set_sketch_preview(
         &mut self,
         preview: Option<&oblikovati_viewport::ViewportSketchPreview>,
@@ -261,11 +265,9 @@ impl HeadWindow for NativeHeadWindow {
         self.refresh_title()?;
         Ok(true)
     }
-
     fn process_view_input(&mut self, event: &ViewportEvent) -> Result<bool, String> {
         self.apply_navigation_inputs(&[*event])
     }
-
     fn sketch_point(
         &self,
         pixel: [i32; 2],
@@ -273,7 +275,6 @@ impl HeadWindow for NativeHeadWindow {
     ) -> Result<Option<[f64; 2]>, String> {
         NativeHeadWindow::sketch_point(self, pixel, plane)
     }
-
     fn navigation_active(&self) -> bool {
         self.navigation.captures_pointer()
     }

@@ -58,6 +58,20 @@ fn publish_parameter_view(
         Err(issue) => window.show_gui_parameter_issue(issue),
     }
 }
+pub(super) fn dispatch_shortcut_action(
+    window: &mut dyn HeadWindow,
+    owner: &mut dyn HeadWork,
+    action: &GuiShellAction,
+) -> Result<bool, String> {
+    if *action != GuiShellAction::OpenExtrude {
+        return dispatch_gui_action(window, owner, action);
+    }
+    if !action.dispatchable(&owner.gui_command_state()?) {
+        return Ok(false);
+    }
+    window.request_extrusion();
+    Ok(true)
+}
 pub(super) fn dispatch_gui_action(
     window: &mut dyn HeadWindow,
     owner: &mut dyn HeadWork,

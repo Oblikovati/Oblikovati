@@ -102,6 +102,7 @@ impl Keymap {
             ("dimension", "Dimension"),
         ];
         let actions = [
+            ("Create.Extrude", "Extrude", "E", &[][..]),
             ("edit.undo", "Undo", "Ctrl+Z", &[][..]),
             ("edit.redo", "Redo", "Ctrl+Y", &["Ctrl+Shift+Z"][..]),
             ("file.save", "Save", "Ctrl+S", &[][..]),
@@ -325,8 +326,8 @@ impl Keymap {
                     .collect()
             }),
         };
-        let mut candidate = self.clone();
-        candidate.import(&known)?;
+        let mut candidate = Self::new(self.actions.clone())?;
+        candidate.restore_known(&known)?;
         for (id, value) in delta
             .chords
             .iter()
@@ -345,6 +346,39 @@ impl Keymap {
         }
         *self = candidate;
         Ok(())
+    }
+    fn restore_known(&mut self, known: &KeymapExport) -> Result<(), String> {
+        for (id, value) in known.chords.iter().flatten() {
+            let chord = parse_chord(value)?;
+            chord::require_supported(&chord)?;
+            self.chords.insert(id.clone(), format_chord(&chord));
+        }
+        self.disable_defaults_owned_by_saved_chords();
+        self.check_conflicts()?;
+        for (id, alias) in known.aliases.iter().flatten() {
+            self.set_alias(id, alias)?;
+        }
+        Ok(())
+    }
+    fn disable_defaults_owned_by_saved_chords(&mut self) {
+        let owned: BTreeSet<_> = self
+            .chords
+            .values()
+            .filter(|chord| !chord.is_empty())
+            .map(|chord| chord::comparison(chord))
+            .collect();
+        for action in &self.actions {
+            if self.chords.contains_key(&action.id) {
+                continue;
+            }
+            let defaults = std::iter::once(&action.default).chain(&action.extra);
+            if defaults
+                .filter(|chord| !chord.is_empty())
+                .any(|chord| owned.contains(&chord::comparison(chord)))
+            {
+                self.chords.insert(action.id.clone(), String::new());
+            }
+        }
     }
     fn has_action(&self, id: &str) -> bool {
         self.actions.iter().any(|action| action.id == id)

@@ -136,3 +136,76 @@ fn positive_distance_is_accepted(world: &mut ApplicationWorld) {
     world.expect_no_text("Invalid distance:");
     assert!(world.run_is_enabled("OK"), "expected OK enabled");
 }
+
+#[given("the uncommitted rectangle extrusion preview")]
+fn uncommitted_rectangle_preview(world: &mut ApplicationWorld) {
+    selected_rectangle_preview(world);
+}
+
+#[when("Cancel is clicked")]
+fn cancel_extrusion(world: &mut ApplicationWorld) {
+    world.click_text("Cancel");
+    world.pump(Vec::new());
+}
+
+#[then("the shaded preview disappears and Sketch1 remains")]
+fn cancelled_preview_keeps_sketch(world: &mut ApplicationWorld) {
+    assert!(
+        !world.state().extrude_preview_active,
+        "preview remains active"
+    );
+    assert!(
+        world.app().window.scene_triangles.is_empty(),
+        "preview scene remains"
+    );
+    world.expect_text("Sketch1");
+    expect_unmodified_source(world);
+}
+
+fn expect_unmodified_source(world: &mut ApplicationWorld) {
+    let document = world.active_id();
+    let session = world
+        .app()
+        .owner
+        .documents()
+        .workspace()
+        .session(document)
+        .unwrap();
+    let snapshot = session.snapshot();
+    assert_eq!(snapshot.sketches.sketches().len(), 1, "source sketch count");
+    assert_eq!(
+        snapshot.sketches.sketches()[0].geometry().lines().len(),
+        4,
+        "source rectangle edges"
+    );
+    assert!(
+        snapshot.work_geometry.features().is_empty(),
+        "cancel committed a feature"
+    );
+}
+
+#[when("the user presses E")]
+fn press_extrude_key(world: &mut ApplicationWorld) {
+    use oblikovati_viewport::{ViewportEvent, ViewportInput, ViewportModifiers};
+    let event = |pressed| {
+        ViewportEvent::Input(ViewportInput::PhysicalKey {
+            key: ViewportPhysicalKey::E,
+            layout_key: ViewportPhysicalKey::E,
+            pressed,
+            command: None,
+            modifiers: ViewportModifiers::default(),
+        })
+    };
+    world.pump(vec![
+        event(true),
+        ViewportEvent::Input(ViewportInput::Text('e')),
+        event(false),
+    ]);
+    world.pump(Vec::new());
+}
+
+#[then("the extrusion panel reopens for the source sketch")]
+fn extrusion_reopens_for_sketch(world: &mut ApplicationWorld) {
+    world.run_in_window("Extrude", "Sketch1");
+    world.expect_text("Profiles");
+}

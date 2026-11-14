@@ -165,3 +165,54 @@ fn saved_unknown_bindings_survive_known_edits_without_becoming_actions() {
     );
     assert_eq!(exported.aliases, saved.aliases);
 }
+
+#[test]
+fn extrusion_shortcut_respects_remapping_and_collisions() {
+    let mut map = Keymap::desktop_defaults();
+    assert_eq!(
+        map.resolve_chord(&parse_chord("E").unwrap()),
+        Some("Create.Extrude")
+    );
+    map.set_chord("Create.Extrude", "Ctrl+E").unwrap();
+    assert!(map.set_chord("sketch-line", "Ctrl+E").is_err());
+    assert_eq!(map.resolve_chord(&parse_chord("E").unwrap()), None);
+    assert_eq!(
+        map.resolve_chord(&parse_chord("Ctrl+E").unwrap()),
+        Some("Create.Extrude")
+    );
+    map.reset("Create.Extrude").unwrap();
+    assert_eq!(
+        map.resolve_chord(&parse_chord("E").unwrap()),
+        Some("Create.Extrude")
+    );
+}
+
+#[test]
+fn saved_single_letter_assignment_keeps_ownership_over_a_new_default() {
+    let mut map = Keymap::desktop_defaults();
+    let saved = KeymapExport {
+        chords: Some(BTreeMap::from([
+            ("sketch-line".into(), "E".into()),
+            ("sketch-circle".into(), "Shift+E".into()),
+        ])),
+        aliases: None,
+    };
+    map.restore_saved(&saved).unwrap();
+    assert_eq!(
+        map.resolve_chord(&parse_chord("E").unwrap()),
+        Some("sketch-line")
+    );
+    assert_eq!(
+        map.resolve_chord(&parse_chord("Shift+E").unwrap()),
+        Some("sketch-circle")
+    );
+    assert_eq!(
+        map.catalog()
+            .iter()
+            .find(|entry| entry.action_id == "Create.Extrude")
+            .unwrap()
+            .chord,
+        ""
+    );
+    assert_eq!(map.export().chords.unwrap()["sketch-line"], "E");
+}

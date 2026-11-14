@@ -391,3 +391,86 @@ fn edit_depth_in_parameter_window(world: &mut ApplicationWorld) {
             .any(|row| row.name == "depth" && row.expression == "16 mm")
     );
 }
+
+#[test]
+fn extrude_shortcut_reopens_after_cancel_without_intercepting_text() {
+    let (mut world, document) = requested_extrusion_fixture();
+    let field = world.run("Distance A").clone();
+    world.click([field.minimum[0] as i32 - 30, field.center()[1] as i32]);
+    world.key(oblikovati_viewport::ViewportPhysicalKey::E, false);
+    world.type_text("e");
+    world.pump(Vec::new());
+    assert!(
+        world
+            .state()
+            .extrude_distance_validation
+            .unwrap()
+            .distance
+            .ends_with('e')
+    );
+    world.click_text("Cancel");
+    world.pump(Vec::new());
+    world.expect_no_text("Distance A");
+    let generation = document_generation(&mut world, document);
+    world.key(oblikovati_viewport::ViewportPhysicalKey::E, false);
+    world.pump(Vec::new());
+    world.expect_text("Distance A");
+    assert_no_feature(&mut world, document, generation);
+    world.close();
+}
+
+#[test]
+fn remapped_extrude_shortcut_respects_focus() {
+    use oblikovati_api::{client::Client, wire::SetChordArgs};
+    let (mut world, _) = requested_extrusion_fixture();
+    world.click_text("Cancel");
+    Client::new(world.app().owner.document_host())
+        .keymap()
+        .set_chord(&SetChordArgs {
+            action_id: "Create.Extrude".into(),
+            chord: "Ctrl+E".into(),
+        })
+        .unwrap();
+    world.pump(Vec::new());
+    world.key(oblikovati_viewport::ViewportPhysicalKey::E, false);
+    world.expect_no_text("Distance A");
+    world.pump(vec![oblikovati_viewport::ViewportEvent::Focus(false)]);
+    world.key(oblikovati_viewport::ViewportPhysicalKey::E, true);
+    world.expect_no_text("Distance A");
+    world.pump(vec![oblikovati_viewport::ViewportEvent::Focus(true)]);
+    world.key(oblikovati_viewport::ViewportPhysicalKey::E, true);
+    world.pump(Vec::new());
+    world.expect_text("Distance A");
+    world.close();
+}
+
+#[test]
+fn extrusion_shortcut_leaves_sketch_alias_input_available() {
+    let mut world = ApplicationWorld::new();
+    world.key(oblikovati_viewport::ViewportPhysicalKey::E, false);
+    world.expect_no_text("XY Plane");
+    world.add_template(oblikovati_gui::GuiTemplateKind::Part);
+    world.start_sketch();
+    world.key(oblikovati_viewport::ViewportPhysicalKey::E, false);
+    world.type_text("e");
+    world.pump(Vec::new());
+    assert_eq!(world.state().sketch_alias.as_deref(), Some("e"));
+    world.expect_no_text("Distance A");
+    world.close();
+}
+
+#[test]
+fn extrusion_shortcut_on_empty_part_starts_plane_selection() {
+    let mut world = ApplicationWorld::new();
+    world.add_template(oblikovati_gui::GuiTemplateKind::Part);
+    world.key(oblikovati_viewport::ViewportPhysicalKey::E, false);
+    world.pump(Vec::new());
+    world.expect_text("XY Plane");
+    world.click_text("XY Plane");
+    world.pump(Vec::new());
+    assert_eq!(
+        world.state().authoring,
+        oblikovati_gui::GuiAuthoringContext::Sketch
+    );
+    world.close();
+}

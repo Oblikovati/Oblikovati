@@ -197,10 +197,19 @@ fn process_frame_inputs(
         let event = owner.resolve_shortcut(*event);
         let gui = gui::advance_gui(window, owner, Some(&event))?;
         let shortcut = owner.take_shortcut_action();
+        let shortcut = match shortcut {
+            Some(oblikovati_gui::GuiShellAction::OpenExtrude)
+                if !oblikovati_gui::GuiShellAction::OpenExtrude
+                    .dispatchable(&owner.gui_command_state()?) =>
+            {
+                None
+            }
+            other => other,
+        };
         changed |= gui.changed;
         if !gui.consumed_input {
             if let Some(action) = shortcut {
-                changed |= gui::dispatch_gui_action(window, owner, &action)?;
+                changed |= gui::dispatch_shortcut_action(window, owner, &action)?;
             } else {
                 let (consumed, action) = owner.accept_sketch_alias(event);
                 if let Some(action) = action {

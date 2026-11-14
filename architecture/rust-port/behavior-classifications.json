@@ -565,10 +565,24 @@
       "acceptance_test": "application_scenarios_use_the_native_window with OBK_BDD_AREA=solid-model: extrusion-04 Cancel preserves the source sketch",
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3857",
-        "https://github.com/Oblikovati/Oblikovati/issues/3870"
+        "https://github.com/Oblikovati/Oblikovati/issues/3870",
+        "https://github.com/Oblikovati/Oblikovati/issues/3931"
       ],
-      "state": "inventoried",
-      "last_receipt": null
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-extrude-cancel-c958310f/receipt-c958310f71da6060.json",
+        "sha256": "d9ad2df0dea73ea2627d6dc2d83d1b7788040fcdcd05f85de3c088cbcece6baf"
+      },
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_reference": "../Oblikovati/app/commands_standard.go; ../Oblikovati/app/bindings_test.go; ../Oblikovati/app/extrude_tool.go",
+      "go_test_premise": "Go aa8297d1b command and binding tests pass; Go uses E as an Enter-terminated alias and does not provide a bare E chord. See receipts/2026-11-14-go-extrude-key-baseline/README.md.",
+      "kernel_capabilities": "A fully constrained rectangle is previewed and discarded; no feature is committed.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The desktop owner uses the Martensite adapter for the transient extrusion preview.",
+      "rust_tests": "application_scenarios_use_the_native_window with OBK_BDD_AREA=solid-model and OBK_BDD_SCENARIO=extrusion-04.",
+      "oracle": "The native scenario checks scene preview removal, the original four-edge sketch, an empty feature list, and the reopened panel; the final capture was reviewed.",
+      "expected_result": "Cancel removes the preview without modifying Sketch1; E reopens Extrude for that sketch."
     },
     {
       "id": "scenario:2fc85f94acd6cc5fba2c6fa3583808dd1d99608f49b07700761c67e95a66b61a",

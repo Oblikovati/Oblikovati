@@ -97,6 +97,9 @@ impl HeadWindow for ScriptedGuiWindow {
         self.gui_actions.extend(result.actions.iter().cloned());
         Ok(result)
     }
+    fn request_extrusion(&mut self) {
+        self.native.request_extrusion();
+    }
     fn reject_dimension_edit(&mut self, value: &oblikovati_gui::GuiDimensionValue, cause: &str) {
         self.native.reject_dimension_edit(value, cause);
     }

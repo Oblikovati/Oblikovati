@@ -89,22 +89,46 @@ impl<O, W, F, G, R, S: super::DispatchWakeup> super::DesktopOwner<O, W, F, G, R,
     }
 }
 
-#[derive(Default)]
-pub(super) struct ShortcutKeys(
-    Vec<(ViewportPhysicalKey, Option<ViewportKey>)>,
-    Option<oblikovati_gui::GuiShellAction>,
-);
+pub(super) struct ShortcutKeys {
+    held: Vec<(ViewportPhysicalKey, Option<ViewportKey>)>,
+    action: Option<oblikovati_gui::GuiShellAction>,
+    focused: bool,
+    mapped: bool,
+}
+impl Default for ShortcutKeys {
+    fn default() -> Self {
+        Self {
+            held: Vec::new(),
+            action: None,
+            focused: true,
+            mapped: true,
+        }
+    }
+}
 impl ShortcutKeys {
     pub(super) fn take_action(&mut self) -> Option<oblikovati_gui::GuiShellAction> {
-        self.1.take()
+        self.action.take()
     }
     pub(super) fn resolve(&mut self, map: &Keymap, event: ViewportEvent) -> ViewportEvent {
-        self.1 = None;
+        self.action = None;
         match event {
-            ViewportEvent::Focus(false)
-            | ViewportEvent::Mapped(false)
-            | ViewportEvent::CloseRequested => {
-                self.0.clear();
+            ViewportEvent::Focus(focused) => {
+                self.focused = focused;
+                if !focused {
+                    self.held.clear();
+                }
+                event
+            }
+            ViewportEvent::Mapped(mapped) => {
+                self.mapped = mapped;
+                if !mapped {
+                    self.held.clear();
+                }
+                event
+            }
+            ViewportEvent::CloseRequested => {
+                self.held.clear();
+                self.focused = false;
                 event
             }
             ViewportEvent::Input(ViewportInput::PhysicalKey {
@@ -114,8 +138,11 @@ impl ShortcutKeys {
                 pressed,
                 modifiers,
             }) => {
-                if pressed && !self.0.iter().any(|(held, _)| *held == key) {
-                    self.1 = action_id(map, layout_key, modifiers).and_then(sketch_action);
+                if !self.focused || !self.mapped {
+                    return event;
+                }
+                if pressed && !self.held.iter().any(|(held, _)| *held == key) {
+                    self.action = action_id(map, layout_key, modifiers).and_then(chord_action);
                 }
                 let command = self.transition(map, key, layout_key, command, pressed, modifiers);
                 ViewportEvent::Input(ViewportInput::PhysicalKey {
@@ -138,20 +165,26 @@ impl ShortcutKeys {
         pressed: bool,
         modifiers: oblikovati_viewport::ViewportModifiers,
     ) -> Option<ViewportKey> {
-        if let Some(index) = self.0.iter().position(|(held, _)| *held == key) {
+        if let Some(index) = self.held.iter().position(|(held, _)| *held == key) {
             return if pressed {
                 None
             } else {
-                self.0.remove(index).1
+                self.held.remove(index).1
             };
         }
         if !pressed {
             return None;
         }
         let command = shortcut(map, layout, modifiers);
-        self.0.push((key, command));
+        self.held.push((key, command));
         command
     }
+}
+fn chord_action(id: &str) -> Option<oblikovati_gui::GuiShellAction> {
+    if id == "Create.Extrude" {
+        return Some(oblikovati_gui::GuiShellAction::OpenExtrude);
+    }
+    sketch_action(id)
 }
 fn shortcut(
     map: &Keymap,
@@ -299,6 +332,11 @@ mod tests {
             Some(ViewportKey::Undo)
         );
         keys.resolve(&map, ViewportEvent::Focus(false));
+        assert_eq!(
+            command(keys.resolve(&map, key(ViewportPhysicalKey::U, true))),
+            None
+        );
+        keys.resolve(&map, ViewportEvent::Focus(true));
         assert_eq!(
             command(keys.resolve(&map, key(ViewportPhysicalKey::U, true))),
             Some(ViewportKey::Undo)
