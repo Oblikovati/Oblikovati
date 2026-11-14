@@ -188,10 +188,6 @@ fn choose_done_button(world: &mut ApplicationWorld) {
     choose_button(world, "Done");
     world.pump(Vec::new());
 }
-#[then("the chooser still displays the original active project")]
-fn chooser_keeps_project(world: &mut ApplicationWorld) {
-    world.expect_text(&format!("Project: {PROJECT_NAME}"));
-}
 // The new single-user project wizard
 #[given("the Projects dialog is open in the MCAD Software")]
 fn dialog_open(world: &mut ApplicationWorld) {

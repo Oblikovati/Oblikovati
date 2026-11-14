@@ -35,3 +35,8 @@ fn provisional_visible(world: &mut ApplicationWorld) {
         "expected a provisional entry behind the wizard"
     );
 }
+
+#[then("the chooser still displays the original active project")]
+fn chooser_keeps_project(world: &mut ApplicationWorld) {
+    world.expect_text(&format!("Project: {}", super::PROJECT_NAME));
+}
