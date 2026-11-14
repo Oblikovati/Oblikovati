@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Arc three point: tmp/obk-arc3-follow/features/sketch/arc-three-point/scenario.feature" package="testsuite/Feature: Arc three point: tmp/obk-arc3-follow/features/sketch/arc-three-point/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T19:32:23.569141549Z" time="7.035562449"><testcase name="Scenario: arc-three-point-03 Cancel before committing a change: tmp/obk-arc3-follow/features/sketch/arc-three-point/scenario.feature:20:3" time="7.035562449"><system-out><![CDATA[  Scenario: arc-three-point-03 Cancel before committing a change
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch
+   ✔  Given Three Point Arc is requesting a point on the arc after both endpoints were selected
+   ✔  When the user press Escape
+   ✔  Then the sketch returns to Ready without a new arc
+]]></system-out></testcase></testsuite></testsuites>

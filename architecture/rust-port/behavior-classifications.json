@@ -29779,10 +29779,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "First native sketch geometry input, cancellation, and history."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-arc3-03/receipt-cabc86d68811640a.json",
+        "sha256": "a8dfb566a3e74ed58a9ca47d15f3a4bf8f2f636d2dceed285e63866fac698256"
+      },
+      "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_geometry_tools_test.go",
+      "mapping_reason": "First native sketch geometry input, cancellation, and history.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b tests arc creation and Escape cancellation for a line, but not Escape after two arc points. See receipts/2026-11-14-go-arc-cancel/README.md.",
+      "kernel_capabilities": "The sketch tool discards an incomplete arc; no solid operation is performed.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The native desktop sends pointer and Escape input through the sketch placement and owner operations.",
+      "rust_tests": "sketch_scenarios_use_the_native_window with OBK_BDD_FEATURE=arc-three-point and OBK_BDD_SCENARIO=arc-three-point-03.",
+      "oracle": "The native scenario checks the third-point prompt, Ready state, and zero committed arcs; final capture reviewed.",
+      "expected_result": "Escape after selecting both endpoints returns the sketch to Ready without a new arc."
     },
     {
       "id": "scenario:43a835dbf4bbe1790ccd2a9792c907362e6d647f54aceb5fcea8b8848a3918f8",
