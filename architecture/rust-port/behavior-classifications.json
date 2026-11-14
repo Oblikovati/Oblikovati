@@ -1720,7 +1720,17 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "go_reference": "Go aa8297d1b: app/set_pivot_test.go and head/ui/steering_wheel_test.go; see receipts/2026-11-14-go-wheel-baseline/README.md.",
+      "go_test_premise": "Go wheel toggle, cancel, tool dispatch and wedge-position tests passed. They do not establish these native menus, options, or repeat behavior.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "A visible solid fixture is required; navigation and wheel preferences do not modify the B-rep.",
+      "platforms": "Go reference: Linux. Current native scenario and other platforms not established.",
+      "kernel_integration": "The native viewport renders a host-prepared solid fixture while wheel actions and preference controls affect the view or UI.",
+      "rust_tests": "Bindings in crates/head/tests/application/viewport-navigation-wheel/; current native scenarios need individual verification. The Go Home fixture is under review in #3944.",
+      "oracle": "Pinned scenario steps, observed menu and preference states, camera or visible size checks, and reviewed native captures; Go is a partial reference.",
+      "expected_result": "The options lists show the specified sizes and opacities; Cancel closes options while leaving the wheel visible."
     },
     {
       "id": "scenario:f24d65dc5c1dc95d0c1e21b7f3d49e9c17a6b08c9b9b0836fb9c4998e501d4aa",
@@ -1763,7 +1773,17 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "go_reference": "Go aa8297d1b: app/set_pivot_test.go and head/ui/steering_wheel_test.go; see receipts/2026-11-14-go-wheel-baseline/README.md.",
+      "go_test_premise": "Go wheel toggle, cancel, tool dispatch and wedge-position tests passed. They do not establish these native menus, options, or repeat behavior.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "A visible solid fixture is required; navigation and wheel preferences do not modify the B-rep.",
+      "platforms": "Go reference: Linux. Current native scenario and other platforms not established.",
+      "kernel_integration": "The native viewport renders a host-prepared solid fixture while wheel actions and preference controls affect the view or UI.",
+      "rust_tests": "Bindings in crates/head/tests/application/viewport-navigation-wheel/; current native scenarios need individual verification. The Go Home fixture is under review in #3944.",
+      "oracle": "Pinned scenario steps, observed menu and preference states, camera or visible size checks, and reviewed native captures; Go is a partial reference.",
+      "expected_result": "Fit to Window enlarges the block to fit without changing orientation; Escape closes the wheel."
     },
     {
       "id": "scenario:9b5f312844179dc9e6deca880e66311fb9002cbe13f5bd96b170be09139183bd",
@@ -1778,7 +1798,17 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "go_reference": "Go aa8297d1b: app/set_pivot_test.go and head/ui/steering_wheel_test.go; see receipts/2026-11-14-go-wheel-baseline/README.md.",
+      "go_test_premise": "Go wheel toggle, cancel, tool dispatch and wedge-position tests passed. They do not establish these native menus, options, or repeat behavior.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "A visible solid fixture is required; navigation and wheel preferences do not modify the B-rep.",
+      "platforms": "Go reference: Linux. Current native scenario and other platforms not established.",
+      "kernel_integration": "The native viewport renders a host-prepared solid fixture while wheel actions and preference controls affect the view or UI.",
+      "rust_tests": "Bindings in crates/head/tests/application/viewport-navigation-wheel/; current native scenarios need individual verification. The Go Home fixture is under review in #3944.",
+      "oracle": "Pinned scenario steps, observed menu and preference states, camera or visible size checks, and reviewed native captures; Go is a partial reference.",
+      "expected_result": "Go Home restores the known home orientation while keeping the wheel open; Escape closes it."
     },
     {
       "id": "scenario:d18b6850de15454ecd7f32357111404c60d2e76f061f91351cc7e0ae230956e0",
@@ -1805,7 +1835,15 @@
           "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-d18b6850de15454e/receipt-d18b6850de15454e.json",
           "sha256": "477d660b20a3aadace2f3970c8ec4af25da3d1c76e1fde3ec00c7d09f4aa4d7f"
         }
-      ]
+      ],
+      "go_reference": "Go aa8297d1b: app/set_pivot_test.go and head/ui/steering_wheel_test.go; see receipts/2026-11-14-go-wheel-baseline/README.md.",
+      "go_test_premise": "Go wheel toggle, cancel, tool dispatch and wedge-position tests passed. They do not establish these native menus, options, or repeat behavior.",
+      "kernel_capabilities": "A visible solid fixture is required; navigation and wheel preferences do not modify the B-rep.",
+      "platforms": "Go reference: Linux. Current native scenario and other platforms not established.",
+      "kernel_integration": "The native viewport renders a host-prepared solid fixture while wheel actions and preference controls affect the view or UI.",
+      "rust_tests": "Bindings in crates/head/tests/application/viewport-navigation-wheel/; current native scenarios need individual verification. The Go Home fixture is under review in #3944.",
+      "oracle": "Pinned scenario steps, observed menu and preference states, camera or visible size checks, and reviewed native captures; Go is a partial reference.",
+      "expected_result": "Applying 90 percent opacity is retained in Options; restoring 50 percent returns the setting."
     },
     {
       "id": "scenario:95896644bfae4afe270ce00742fc6364d4b6d93d78f41963a5d4e29f2442f73f",
@@ -1848,7 +1886,17 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "go_reference": "Go aa8297d1b: app/set_pivot_test.go and head/ui/steering_wheel_test.go; see receipts/2026-11-14-go-wheel-baseline/README.md.",
+      "go_test_premise": "Go wheel toggle, cancel, tool dispatch and wedge-position tests passed. They do not establish these native menus, options, or repeat behavior.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "A visible solid fixture is required; navigation and wheel preferences do not modify the B-rep.",
+      "platforms": "Go reference: Linux. Current native scenario and other platforms not established.",
+      "kernel_integration": "The native viewport renders a host-prepared solid fixture while wheel actions and preference controls affect the view or UI.",
+      "rust_tests": "Bindings in crates/head/tests/application/viewport-navigation-wheel/; current native scenarios need individual verification. The Go Home fixture is under review in #3944.",
+      "oracle": "Pinned scenario steps, observed menu and preference states, camera or visible size checks, and reviewed native captures; Go is a partial reference.",
+      "expected_result": "The tool-tip option can be disabled and restored, with the wheel remaining open."
     },
     {
       "id": "scenario:d6154b2b7acb9245a46480cc31c863593c6a5390e05ad9bb1d6e650ca8434b05",
@@ -1863,7 +1911,17 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "go_reference": "Go aa8297d1b: app/set_pivot_test.go and head/ui/steering_wheel_test.go; see receipts/2026-11-14-go-wheel-baseline/README.md.",
+      "go_test_premise": "Go wheel toggle, cancel, tool dispatch and wedge-position tests passed. They do not establish these native menus, options, or repeat behavior.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "A visible solid fixture is required; navigation and wheel preferences do not modify the B-rep.",
+      "platforms": "Go reference: Linux. Current native scenario and other platforms not established.",
+      "kernel_integration": "The native viewport renders a host-prepared solid fixture while wheel actions and preference controls affect the view or UI.",
+      "rust_tests": "Bindings in crates/head/tests/application/viewport-navigation-wheel/; current native scenarios need individual verification. The Go Home fixture is under review in #3944.",
+      "oracle": "Pinned scenario steps, observed menu and preference states, camera or visible size checks, and reviewed native captures; Go is a partial reference.",
+      "expected_result": "The viewport context menu repeats the last navigation-wheel command and Escape closes the wheel."
     },
     {
       "id": "scenario:850db3b6578b8bc2bccde20402d03adecb36ae5d967203cd569629691f713ff8",
