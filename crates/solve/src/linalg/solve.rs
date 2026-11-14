@@ -2,6 +2,47 @@
 use super::{ColumnPivotedQr, LinearAlgebraError, finite, reflector};
 
 impl ColumnPivotedQr {
+    /// Solve the transposed system with minimum Euclidean norm when columns are independent.
+    /// Example: `let motion = qr.minimum_norm_transpose(&targets)?;`.
+    pub fn minimum_norm_transpose(&self, rhs: &[f64]) -> Result<Vec<f64>, LinearAlgebraError> {
+        self.validate_transpose_rhs(rhs)?;
+        let mut result = vec![0.0; self.triangular.len()];
+        for pivot in 0..self.rank() {
+            let target = finite(
+                rhs[self.permutation[pivot]] / self.scale,
+                "transpose target",
+            )?;
+            let known: f64 = (0..pivot)
+                .map(|row| self.triangular[row][pivot] * result[row])
+                .sum();
+            result[pivot] = finite(
+                (target - known) / self.triangular[pivot][pivot],
+                "transpose solution",
+            )?;
+        }
+        for (pivot, vector) in self.reflectors.iter().enumerate().rev() {
+            reflector::apply(&mut result[pivot..], vector)?;
+        }
+        Ok(result)
+    }
+
+    fn validate_transpose_rhs(&self, rhs: &[f64]) -> Result<(), LinearAlgebraError> {
+        if rhs.len() != self.permutation.len() {
+            return Err(LinearAlgebraError(format!(
+                "transpose right-hand side length {}: expected {} columns",
+                rhs.len(),
+                self.permutation.len()
+            )));
+        }
+        if self.rank() != self.permutation.len() {
+            return Err(LinearAlgebraError(format!(
+                "matrix rank {}: expected {} independent columns for transpose solve",
+                self.rank(),
+                self.permutation.len()
+            )));
+        }
+        Ok(())
+    }
     /// Solve a full-column-rank least-squares system; singular/wide systems are refused.
     /// Example: `let solution = qr.least_squares(&rhs)?;`.
     pub fn least_squares(&self, rhs: &[f64]) -> Result<Vec<f64>, LinearAlgebraError> {

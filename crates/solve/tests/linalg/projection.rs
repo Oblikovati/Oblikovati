@@ -41,6 +41,40 @@ fn vector_projection_is_idempotent_with_multiple_rank_pivots() {
         close(*actual, expected);
     }
 }
+
+#[test]
+fn minimum_preferred_motion_preserves_coincidence_and_reaches_first_point() {
+    let constraints = matrix(&[&[1.0, -1.0, 0.0, 0.0], &[0.0, 0.0, 1.0, -1.0]]);
+    let qr = ColumnPivotedQr::factor(&constraints.transpose(), RANK_TOLERANCE).unwrap();
+    let preference = matrix(&[&[1.0, 0.0], &[0.0, 0.0], &[0.0, 1.0], &[0.0, 0.0]]);
+    let motion = qr
+        .minimum_norm_free_motion(&preference, &[-4.0, -2.0], RANK_TOLERANCE)
+        .unwrap();
+    for (actual, expected) in motion.iter().zip([-4.0, -4.0, -2.0, -2.0]) {
+        close(*actual, expected);
+    }
+}
+
+#[test]
+fn impossible_or_malformed_preferred_motion_is_refused() {
+    let fixed = ColumnPivotedQr::factor(&matrix(&[&[1.0]]), RANK_TOLERANCE).unwrap();
+    assert!(
+        fixed
+            .minimum_norm_free_motion(&matrix(&[&[1.0]]), &[1.0], RANK_TOLERANCE)
+            .is_err()
+    );
+    assert!(
+        fixed
+            .minimum_norm_free_motion(&matrix(&[&[1.0], &[0.0]]), &[1.0], RANK_TOLERANCE)
+            .is_err()
+    );
+    let coupled = ColumnPivotedQr::factor(&matrix(&[&[1.0], &[1.0]]), RANK_TOLERANCE).unwrap();
+    assert!(
+        coupled
+            .minimum_norm_free_motion(&matrix(&[&[1.0], &[1.0]]), &[1.0], RANK_TOLERANCE)
+            .is_err()
+    );
+}
 fn projection(rows: &[&[f64]]) -> Vec<f64> {
     ColumnPivotedQr::factor(&matrix(rows), RANK_TOLERANCE)
         .unwrap()
