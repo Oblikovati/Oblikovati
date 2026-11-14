@@ -14176,10 +14176,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3899",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/head/ui/file_dialog.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-create-new-7b6ffd67/receipt-7b6ffd678294fabc.json",
+        "sha256": "4e0d3d5ae8023e6e64653c454d7ddc9e0ecd3c5ca6e6d74ca280ff5cfb27af6f"
+      },
+      "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/app/session.go",
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b tests direct Part and Assembly activation, not the template chooser or its visual behavior; see receipts/2026-11-14-go-creation-baseline/README.md.",
+      "kernel_capabilities": "No geometric kernel operation is required for this empty-document and template chooser scenario.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The native desktop and document owner handle this scenario without a geometry operation.",
+      "rust_tests": "application_scenarios_use_the_native_window: Inspect metric and inch part templates",
+      "oracle": "Pinned native scenario steps check document state and visible controls; final capture reviewed.",
+      "expected_result": "The chooser groups templates and shows millimeter and inch units for the selected Part templates."
     },
     {
       "id": "scenario:9e6b078ce3b34a7db378704ad084347ec885ee1c93c40781a076ff9d8f6624c7",
@@ -14193,10 +14205,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3899",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/head/ui/file_dialog.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-create-new-9e6b078c/receipt-9e6b078ce3b34a7d.json",
+        "sha256": "df43254214859c275f8545cc4c2ef6730a1f269e51e47743ca3aa9943baaeeb5"
+      },
+      "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/app/session.go",
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b tests direct Part and Assembly activation, not the template chooser or its visual behavior; see receipts/2026-11-14-go-creation-baseline/README.md.",
+      "kernel_capabilities": "No geometric kernel operation is required for this empty-document and template chooser scenario.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The native desktop and document owner handle this scenario without a geometry operation.",
+      "rust_tests": "application_scenarios_use_the_native_window: Cancel the template chooser",
+      "oracle": "Pinned native scenario steps check document state and visible controls; final capture reviewed.",
+      "expected_result": "Cancel closes the chooser and retains the previously active document."
     },
     {
       "id": "scenario:b68fb43b973e56f88f9eb50bd0237ef1bb68c784314d3a1c4aa7c95001d82f95",
@@ -14256,10 +14280,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3899",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/head/ui/file_dialog.go",
-      "mapping_reason": "Document-kind creation or drawing workflow depends on the R6 domain."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-create-new-553cd207/receipt-553cd20756fa5ed6.json",
+        "sha256": "bfc994e7f1cf9956c56c2b7d91544bf71dbe34d1b8eaed16b3bef5ff2ce48140"
+      },
+      "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/app/session.go",
+      "mapping_reason": "Document-kind creation or drawing workflow depends on the R6 domain.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b tests direct Part and Assembly activation, not the template chooser or its visual behavior; see receipts/2026-11-14-go-creation-baseline/README.md.",
+      "kernel_capabilities": "No geometric kernel operation is required for this empty-document and template chooser scenario.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The native desktop and document owner handle this scenario without a geometry operation.",
+      "rust_tests": "application_scenarios_use_the_native_window: Create a standard metric assembly",
+      "oracle": "Pinned native scenario steps check document state and visible controls; final capture reviewed.",
+      "expected_result": "A metric Assembly opens with an empty viewport, browser entries, document tab, and component commands."
     },
     {
       "id": "scenario:cbb0076be6dea50f63a28a41ada8d25d508a7f8bf42c77c5ab87c5788859d4f4",
@@ -14273,10 +14309,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3899",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/head/ui/file_dialog.go",
-      "mapping_reason": "Document-kind creation or drawing workflow depends on the R6 domain."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-create-new-cbb0076b/receipt-cbb0076be6dea50f.json",
+        "sha256": "38752baefc5e29e7052e5930064f8f50475bc5c98d44456d42d67fe80b908580"
+      },
+      "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/app/session.go",
+      "mapping_reason": "Document-kind creation or drawing workflow depends on the R6 domain.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b tests direct Part and Assembly activation, not the template chooser or its visual behavior; see receipts/2026-11-14-go-creation-baseline/README.md.",
+      "kernel_capabilities": "No geometric kernel operation is required for this empty-document and template chooser scenario.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The native desktop and document owner handle this scenario without a geometry operation.",
+      "rust_tests": "application_scenarios_use_the_native_window: Create a drawing from a sheet template",
+      "oracle": "Pinned native scenario steps check document state and visible controls; final capture reviewed.",
+      "expected_result": "A Drawing opens with its sheet, border, title block, browser entries, drawing ribbon, and tab."
     },
     {
       "id": "scenario:c71569b3ae5b44b8058911fca8b680456cdd7fa8481fee7241ea6e9bb7011e6b",
