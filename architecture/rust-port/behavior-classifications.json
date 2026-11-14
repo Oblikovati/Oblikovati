@@ -425,11 +425,17 @@
       "target_module": "crates/head, crates/gui, crates/session, crates/model",
       "acceptance_test": "sketch_scenarios_use_the_native_window: new-sketch-08 Create a sketch on a non-origin work plane",
       "issues": [
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/3884"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "mapping_reason": "Create and retain an offset work plane and its dependent sketch."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-work-plane-44dfe89fda9e10be/receipt-44dfe89fda9e10be.json",
+        "sha256": "03cbaadc9d476b9a0829255402a5f67e410391efdc2c124de6f25af804c0f1bb"
+      },
+      "mapping_reason": "Create and retain an offset work plane and its dependent sketch.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:069877f38da85a95ada5c757ed2d348c06d5adb0b5d9f22480bf73a19cc17449",
