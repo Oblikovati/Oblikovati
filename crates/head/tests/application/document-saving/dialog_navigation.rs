@@ -10,7 +10,7 @@ fn dialog_open_on_empty_part(world: &mut ApplicationWorld) {
 #[when("I choose Active Window as the preview source")]
 #[when("the user chooses Active Window as the preview source")]
 fn choose_active_window(world: &mut ApplicationWorld) {
-    world.click_text(WINDOW);
+    choose_window(world);
 }
 #[then("a capture control appears beside Active Window")]
 fn capture_beside(world: &mut ApplicationWorld) {
@@ -183,6 +183,10 @@ fn original_selected(world: &mut ApplicationWorld) {
 }
 #[then("Save Preview Picture is selected")]
 fn preview_still_selected(world: &mut ApplicationWorld) {
+    assert!(
+        world.checked("Save Preview Picture"),
+        "expected preview checked"
+    );
     world.expect_text(ICONIC);
 }
 #[then("the preview source choices are displayed")]
