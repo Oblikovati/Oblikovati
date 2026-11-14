@@ -1608,7 +1608,17 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "go_reference": "Go aa8297d1b: app/set_pivot_test.go and head/ui/steering_wheel_test.go; see receipts/2026-11-14-go-wheel-baseline/README.md.",
+      "go_test_premise": "Go wheel toggle, cancel, tool dispatch and wedge-position tests passed. They do not establish the scenario layouts or native menu behavior.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "A visible solid fixture is required; opening and switching wheel layouts does not modify the B-rep.",
+      "platforms": "Go reference: Linux. Native scenario and other platforms not established.",
+      "kernel_integration": "The native viewport renders a host-prepared solid fixture while the navigation wheel controls view commands.",
+      "rust_tests": "Bindings in crates/head/tests/application/viewport-navigation-wheel/steps.rs; the required initial-layout fixture is under review in #3942.",
+      "oracle": "Pinned scenario steps, observed wheel controls and menu states, camera equality and reviewed native captures; Go is a partial reference.",
+      "expected_result": "The full wheel and its menu expose the listed controls; Close Wheel removes them and preserves the view."
     },
     {
       "id": "scenario:6623c6765d27d9799c7fa2b869dcb83aafdd8838c059a13b48caae0aad104024",
@@ -1623,7 +1633,17 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "go_reference": "Go aa8297d1b: app/set_pivot_test.go and head/ui/steering_wheel_test.go; see receipts/2026-11-14-go-wheel-baseline/README.md.",
+      "go_test_premise": "Go wheel toggle, cancel, tool dispatch and wedge-position tests passed. They do not establish the scenario layouts or native menu behavior.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "A visible solid fixture is required; opening and switching wheel layouts does not modify the B-rep.",
+      "platforms": "Go reference: Linux. Native scenario and other platforms not established.",
+      "kernel_integration": "The native viewport renders a host-prepared solid fixture while the navigation wheel controls view commands.",
+      "rust_tests": "Bindings in crates/head/tests/application/viewport-navigation-wheel/steps.rs; the required initial-layout fixture is under review in #3942.",
+      "oracle": "Pinned scenario steps, observed wheel controls and menu states, camera equality and reviewed native captures; Go is a partial reference.",
+      "expected_result": "Basic View Object and Basic Tour Building layouts show their respective controls and selected menu states; Escape closes the wheel."
     },
     {
       "id": "scenario:791fb7e67d5bcbf44cf6e83f4c9f1e7af0a1986eb6aa0c7af7a28babbc97d39b",
@@ -1638,7 +1658,17 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "go_reference": "Go aa8297d1b: app/set_pivot_test.go and head/ui/steering_wheel_test.go; see receipts/2026-11-14-go-wheel-baseline/README.md.",
+      "go_test_premise": "Go wheel toggle, cancel, tool dispatch and wedge-position tests passed. They do not establish the scenario layouts or native menu behavior.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "A visible solid fixture is required; opening and switching wheel layouts does not modify the B-rep.",
+      "platforms": "Go reference: Linux. Native scenario and other platforms not established.",
+      "kernel_integration": "The native viewport renders a host-prepared solid fixture while the navigation wheel controls view commands.",
+      "rust_tests": "Bindings in crates/head/tests/application/viewport-navigation-wheel/steps.rs; the required initial-layout fixture is under review in #3942.",
+      "oracle": "Pinned scenario steps, observed wheel controls and menu states, camera equality and reviewed native captures; Go is a partial reference.",
+      "expected_result": "The three mini layouts are selectable and show their corresponding segment counts and menu states; Escape closes the wheel."
     },
     {
       "id": "scenario:6dc8186623498078a895d92c56b401afbb37d86999b09033f95d714ff02d5e77",
