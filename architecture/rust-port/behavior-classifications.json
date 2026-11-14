@@ -14229,8 +14229,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-create-r4-recheck-414a8cdb/receipt-414a8cdb8182b258.json",
-        "sha256": "adf4477e1fe72bfacdbc9c5103f56e23b1349e887534ba15ff1ad6c07cea1f29"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-create-414a8cdb/receipt-414a8cdb8182b258.json",
+        "sha256": "4c430435c2af20488188f9ec680f777760e1e1e60377a4f0566bc2b107522c5c"
       },
       "go_reference": "Go aa8297d1b: head/ui/chrome_menubar.go invokes app/session.go NewPart or NewAssembly directly; no equivalent chooser was found in head/ui.",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
@@ -14479,8 +14479,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-create-r4-recheck-57597e19/receipt-57597e1943cb4235.json",
-        "sha256": "3c24b73225d2e5005a913f882cba3838b4481d78be8642eb6e6671ffc7b2655d"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-create-57597e19/receipt-57597e1943cb4235.json",
+        "sha256": "41b4bfedc2d279d8ea9b8fa40aea1e399dc9812aafa4c3bf5e87324d5ea134d6"
       },
       "go_reference": "Go aa8297d1b: head/ui/chrome_menubar.go invokes app/session.go NewPart or NewAssembly directly; no equivalent chooser was found in head/ui.",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
@@ -14508,8 +14508,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-create-r4-recheck-dc7e3e06/receipt-dc7e3e064afa2b62.json",
-        "sha256": "372ffb218408602dca2f92efed99e4a9f4e124d5e7c866edaed2c43b3e35cc2e"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-create-dc7e3e06/receipt-dc7e3e064afa2b62.json",
+        "sha256": "ad6293ba3bbe23a36f3c915e3beb837a5918bb4a86e7b3fa7740b611f689e05e"
       },
       "go_reference": "Go aa8297d1b: head/ui/chrome_menubar.go invokes app/session.go NewPart or NewAssembly directly; no equivalent chooser was found in head/ui.",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
@@ -14605,8 +14605,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-create-r4-recheck-8acd0eea/receipt-8acd0eea06ca5d19.json",
-        "sha256": "d7dcbf65e8a48a6c622a038f1b3478d35d90568997bfcf418a17bb7d87f07efd"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-create-8acd0eea/receipt-8acd0eea06ca5d19.json",
+        "sha256": "567c25f18e8c744c243b18d75e23430c886df301d7c9640171d2a583374238db"
       },
       "go_reference": "Go aa8297d1b: head/ui/chrome_menubar.go invokes app/session.go NewPart or NewAssembly directly; no equivalent chooser was found in head/ui.",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
@@ -14651,8 +14651,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-create-r4-recheck-676af48b/receipt-676af48baf43f553.json",
-        "sha256": "2dfcd9f22e4754930649c833946ac637fbd2eb4017c7f5fb9cdfc20619ad0fd6"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-create-676af48b/receipt-676af48baf43f553.json",
+        "sha256": "676f463b9620b2e44dbfb3585388aa4a0f5a8b8ceb279e5e256c6f1c74ccba44"
       },
       "go_reference": "Go aa8297d1b: head/ui/chrome_menubar.go invokes app/session.go NewPart or NewAssembly directly; no equivalent chooser was found in head/ui.",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
@@ -14867,8 +14867,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-template-59b4bf7d/receipt-59b4bf7d4c4e5e16.json",
-        "sha256": "76add4eb2d465b242f4fb1b44dc40926dee9f6f597f674adeed68cd03ad66cbb"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-create-59b4bf7d/receipt-59b4bf7d4c4e5e16.json",
+        "sha256": "ad9321011df5218caf4f5e6420c5d88015f80c70724a78848c4a8a3615cf574d"
       },
       "go_reference": "Go aa8297d1b: head/ui/chrome_menubar.go invokes app/session.go NewPart or NewAssembly directly; no equivalent chooser was found in head/ui.",
       "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
@@ -14896,8 +14896,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-template-3984b010/receipt-3984b0108067a0d2.json",
-        "sha256": "718709bb88b256d18e5d4fd1ebbc859168c65b7a6e3b2cb001a701b0280bb230"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-create-3984b010/receipt-3984b0108067a0d2.json",
+        "sha256": "20f55575ea991773af8300fec768d8efca02975c4c1b397dccc148a1c4365b0a"
       },
       "go_reference": "Go aa8297d1b: head/ui/chrome_menubar.go invokes app/session.go NewPart or NewAssembly directly; no equivalent chooser was found in head/ui.",
       "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
