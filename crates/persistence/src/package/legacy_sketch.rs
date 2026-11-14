@@ -17,6 +17,7 @@ use source::{LegacyConstraint, LegacyDimension, LegacyEntity, LegacyPoint, Legac
 pub struct LegacySketchCandidate {
     pub sketches: DocumentSketches,
     pub parameters: RestoredParameters,
+    /// Saved order stamps; zero means the legacy source did not retain an order.
     pub creation_sequences: Vec<(DocumentSketchId, u64)>,
 }
 
