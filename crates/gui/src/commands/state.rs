@@ -61,6 +61,8 @@ pub struct GuiCommandState {
     pub extrude_available: bool,
     /// The owner has accepted an extrusion preview for the active document.
     pub extrude_preview_active: bool,
+    /// The owner-validated distance for the current document generation.
+    pub extrude_distance_validation: Option<crate::GuiExtrudeDistanceValidation>,
     /// The running Line command reads the keyboard before any GUI widget does.
     pub sketch_tool_keyboard: bool,
     pub dimension_tool_active: bool,

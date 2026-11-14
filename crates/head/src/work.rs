@@ -169,6 +169,16 @@ pub trait HeadWork: HeadSketchWork {
             "extrude document {document}, sketch {sketch:?}, profile {profile}, distance {distance:?}: expected a certified extrusion owner"
         ))
     }
+    /// Validate a draft through the document owner; example: `work.validate_extrusion_distance(1, "10 mm")?`.
+    fn validate_extrusion_distance(
+        &mut self,
+        document: u64,
+        distance: &str,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "extrusion document {document}, distance {distance:?}: expected a document owner"
+        ))
+    }
     /// Show or clear a transient extrusion; example: `work.extrusion_preview_from_gui(None)?`.
     fn extrusion_preview_from_gui(
         &mut self,
