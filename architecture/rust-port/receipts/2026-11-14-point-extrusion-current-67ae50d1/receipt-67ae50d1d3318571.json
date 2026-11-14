@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:67ae50d1d3318571497883bf40ba4e53cee4b787738b9c3e9b48c50a24f9dfe0",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "a2d31789402dfca6ebb083bc02002b722f8518266c822d8c04b4ae45b8251c7f",
+  "application_commit": "216281fe7f4e33141a64a5ea2fcf8743e2faa210",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-point-extrusion-current-67ae50d1/cucumber.json",
+    "sha256": "376f7782eaf238aeb1c21c932a552ded435ecba2a516b55006d35aa91cf5a8e3"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-point-extrusion-current-67ae50d1/source-revision.json",
+    "sha256": "509629fd398de984a77e33b2011b33e83f1a66cdd591fabf2d88c7c0f1c0f9fd"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-point-extrusion-current-67ae50d1/coincident-07-Constrain-two-standalone-points-and-inspect-history.png",
+    "sha256": "e6b2f0bfdbc295eb9df063e7dcf9b6bdd52281b3f9d060a5760fc035cf0d4da3"
+  }
+}

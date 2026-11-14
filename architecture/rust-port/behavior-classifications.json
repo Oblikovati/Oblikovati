@@ -483,7 +483,7 @@
     },
     {
       "id": "scenario:6d4a200f137644d4c6104d1e91aeb91aa8167a0ac26b27ae09cb219eb27fadd2",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
       "milestone": "R4",
       "owner": "desktop",
@@ -495,8 +495,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-sketch-6d4a200f/receipt-6d4a200f137644d4.json",
-        "sha256": "b54feb90b7d58db8011eacf66a79f6f91b83853f4fd13ff48bab81cc07fedaba"
+        "path": "architecture/rust-port/receipts/2026-11-14-point-extrusion-current-6d4a200f/receipt-6d4a200f137644d4.json",
+        "sha256": "a4c902389dd10f2741f34f3c6d5de94855be444e376c8ef51bb490338d777a7a"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -2354,7 +2354,7 @@
     },
     {
       "id": "scenario:67ae50d1d3318571497883bf40ba4e53cee4b787738b9c3e9b48c50a24f9dfe0",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "a2d31789402dfca6ebb083bc02002b722f8518266c822d8c04b4ae45b8251c7f",
       "milestone": "R5",
       "owner": "desktop",
@@ -2366,8 +2366,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-coincident-67ae50d1/receipt-67ae50d1d3318571.json",
-        "sha256": "6ce8fedfe1c97ceff2fec2fd1d73149c58f1b3faa618fd1ce22984419513c27c"
+        "path": "architecture/rust-port/receipts/2026-11-14-point-extrusion-current-67ae50d1/receipt-67ae50d1d3318571.json",
+        "sha256": "71d6b8896860fe98ce8cb1316ffc79c42b7c405c26f886df13346a2348fa382b"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -3417,7 +3417,7 @@
     },
     {
       "id": "scenario:c1547ececd82265193e7e655fe1153003d790dd6dabaeb60577d3b1c62dbb047",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "f88b2e19cf22dae22f91dbd57e319e819d47e9f1daf9edc00b3da4c122111bf5",
       "milestone": "R4",
       "owner": "desktop",
@@ -3429,8 +3429,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-sketch-c1547ece/receipt-c1547ececd822651.json",
-        "sha256": "46ca0a289c1cc0c4c15f08c49d9980157643d979eb25d56422e212248530df49"
+        "path": "architecture/rust-port/receipts/2026-11-14-point-extrusion-current-c1547ece/receipt-c1547ececd822651.json",
+        "sha256": "2f12173e8fa76f2c9fa9dbdf0ddeb51dcfe9f834757c735cbc5ad7367dc1bdc7"
       },
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
       "mapping_reason": "Cancel point creation and return to Ready.",
@@ -3446,7 +3446,7 @@
     },
     {
       "id": "scenario:d21c1f8c789927b46db67abfe6f79e4e8774be0e990dddf6f6631b83c30b7ab8",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "f88b2e19cf22dae22f91dbd57e319e819d47e9f1daf9edc00b3da4c122111bf5",
       "milestone": "R4",
       "owner": "desktop",
@@ -3458,8 +3458,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-sketch-d21c1f8c/receipt-d21c1f8c789927b4.json",
-        "sha256": "ff8fc9486582b5737c31e4bc4b6f0f5e4191ed23c70897ddf6c03d6989a4c3a4"
+        "path": "architecture/rust-port/receipts/2026-11-14-point-extrusion-current-d21c1f8c/receipt-d21c1f8c789927b4.json",
+        "sha256": "b676767b538f5695da2336b4520ab2a589f12de5c04f4beded69d62fbdac014c"
       },
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
       "mapping_reason": "Create a center point and restore it through history.",
@@ -3475,7 +3475,7 @@
     },
     {
       "id": "scenario:436f15ab31b13b1dfef8458be1b83d8a3be1c7438819c5c0929b93c9b46729ef",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "f88b2e19cf22dae22f91dbd57e319e819d47e9f1daf9edc00b3da4c122111bf5",
       "milestone": "R4",
       "owner": "desktop",
@@ -3487,8 +3487,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-sketch-436f15ab/receipt-436f15ab31b13b1d.json",
-        "sha256": "10fe847e33162844ce17bb4b805b0bac4ec8b1fea92cd6a128493ec79bd70265"
+        "path": "architecture/rust-port/receipts/2026-11-14-point-extrusion-current-436f15ab/receipt-436f15ab31b13b1d.json",
+        "sha256": "c1770144544e54175961ce1abc01a9bff6b4632f77aba267e34fb2f7eb88aac9"
       },
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
       "mapping_reason": "Place multiple regular points in one command.",
