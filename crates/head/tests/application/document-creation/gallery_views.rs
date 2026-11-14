@@ -2,6 +2,8 @@
 use super::*;
 #[path = "chooser_details.rs"]
 mod chooser_details;
+#[path = "gallery_folder_keyboard.rs"]
+mod gallery_folder_keyboard;
 #[path = "gallery_icons.rs"]
 mod gallery_icons;
 #[path = "gallery_secondary.rs"]
@@ -204,13 +206,22 @@ fn metric_folder_selected(world: &mut ApplicationWorld) {
 }
 #[then("the gallery displays its inch templates")]
 fn inch_gallery(world: &mut ApplicationWorld) {
-    world.expect_text("Standard inch part");
-    world.expect_no_text(METRIC_PART);
+    assert!(gallery_has_template(world, "Standard inch part"));
+    assert!(!gallery_has_template(world, METRIC_PART));
 }
 #[then("the gallery displays its metric templates")]
 fn metric_gallery(world: &mut ApplicationWorld) {
-    world.expect_text(METRIC_PART);
-    world.expect_no_text("Standard inch part");
+    assert!(gallery_has_template(world, METRIC_PART));
+    assert!(!gallery_has_template(world, "Standard inch part"));
+}
+fn gallery_has_template(world: &ApplicationWorld, name: &str) -> bool {
+    let details = world.run("Template details").minimum[0];
+    let expected = name.replace(' ', "");
+    world
+        .frame
+        .runs
+        .iter()
+        .any(|run| run.minimum[0] < details && run.text.replace(' ', "") == expected)
 }
 #[given("the metric folder and standard metric assembly template are selected")]
 #[given("the standard metric assembly template details are displayed")]
