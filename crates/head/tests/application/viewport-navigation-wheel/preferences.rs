@@ -13,7 +13,8 @@ fn mini_open(world: &mut ApplicationWorld) {
     choose_row(world, "Mini View Object Wheel");
 }
 #[given("the mini wheel size preference is Normal")]
-fn mini_normal(world: &mut ApplicationWorld) {
+pub(super) fn mini_normal(world: &mut ApplicationWorld) {
+    set_saved_size(world, "Mini Wheel Size", "Normal");
     remember_side(world);
 }
 fn set_mini_size(world: &mut ApplicationWorld, size: &str) {
@@ -22,6 +23,7 @@ fn set_mini_size(world: &mut ApplicationWorld, size: &str) {
     settle(world);
 }
 #[when("I open wheel options and choose Extra Large for mini wheel size")]
+#[when("the user opens wheel options and chooses Extra Large for mini wheel size")]
 fn choose_extra_large(world: &mut ApplicationWorld) {
     open_options(world);
     set_mini_size(world, "Extra Large");
@@ -32,6 +34,7 @@ fn mini_larger(world: &mut ApplicationWorld) {
     assert!(side as usize > world.observed_counts[0], "side {side}");
 }
 #[when("I choose Normal for mini wheel size and click OK")]
+#[when("the user chooses Normal for mini wheel size and clicks OK")]
 fn mini_back_to_normal(world: &mut ApplicationWorld) {
     set_mini_size(world, "Normal");
     world.click_text("OK");
@@ -42,6 +45,7 @@ fn mini_earlier(world: &mut ApplicationWorld) {
     assert_eq!(wheel_side() as usize, world.observed_counts[0], "side");
 }
 #[when("I choose Full Navigation Wheel from the wheel menu")]
+#[when("the user chooses Full Navigation Wheel from the wheel menu")]
 fn menu_full(world: &mut ApplicationWorld) {
     right_click_wheel(world);
     choose_row(world, "Full Navigation Wheel");
