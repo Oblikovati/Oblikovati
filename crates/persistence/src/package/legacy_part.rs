@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Preparation only: feature adoption, reference-key migration, and package migration remain separate.
+mod cap_binding;
+pub use cap_binding::LegacyCapBindingVerifier;
 mod face_producer;
 pub use face_producer::{LegacyExtrusionFaceProducer, LegacyExtrusionFaceRole};
 mod source;

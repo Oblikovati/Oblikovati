@@ -21,8 +21,8 @@ mod legacy_face_offset;
 pub use legacy_face_offset::LegacyFaceOffsetCandidate;
 mod legacy_part;
 pub use legacy_part::{
-    LegacyExtrusionCandidate, LegacyExtrusionFaceProducer, LegacyExtrusionFaceRole,
-    LegacyPartCandidate, LegacyProfileResolver,
+    LegacyCapBindingVerifier, LegacyExtrusionCandidate, LegacyExtrusionFaceProducer,
+    LegacyExtrusionFaceRole, LegacyPartCandidate, LegacyProfileResolver,
 };
 mod legacy_sketch;
 pub use legacy_sketch::LegacySketchCandidate;
