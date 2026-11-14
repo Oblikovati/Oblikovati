@@ -737,8 +737,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-ui-current-59bbc715/receipt-59bbc7159c8ea4f0.json",
-        "sha256": "b9bfe2b43802dcb0adb55f6465589ba62f3adc23cd20d60302b1bd04648eeb79"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-ui-59bbc715/receipt-59bbc7159c8ea4f0.json",
+        "sha256": "1b6cd1d34b3af7ff6e5ddad93b0fe5ea40bbd2cb2499f39eac1023096a81fc95"
       },
       "mapping_reason": "Viewport navigation belongs to the full desktop shell.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
@@ -1086,8 +1086,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-ui-current-3e4b9e33/receipt-3e4b9e33e44dffb2.json",
-        "sha256": "fe523c481eee286a0c1a55a19bc4ff628457e6b441903b0657de6b3840fc9463"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-ui-3e4b9e33/receipt-3e4b9e33e44dffb2.json",
+        "sha256": "dd2c8bb7a262539c96d70a48b8baff12f1ce1d1afac2e3d786803366187279d7"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -1616,8 +1616,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-ui-current-d18b6850/receipt-d18b6850de15454e.json",
-        "sha256": "1621a0f37d67e1f9c1dfec0294252dafba48a46d5ac43e1e878208521f9258b4"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-ui-d18b6850/receipt-d18b6850de15454e.json",
+        "sha256": "a479e00bce3f0571f262ed5cd5cf8e1de4c6adcd3c6b3b62ab70a825cea204cd"
       },
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
@@ -2154,8 +2154,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-ui-current-0db0d6b6/receipt-0db0d6b60a17036c.json",
-        "sha256": "8f8cee6a1953c6f6bbc8809f704c503ae08f13bc7b2bd3bded1b67540c42099c"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-ui-0db0d6b6/receipt-0db0d6b60a17036c.json",
+        "sha256": "8fa11e60e44d2b66885ced72d81a3fb998a96c3b70d754964f96120040161afb"
       },
       "mapping_reason": "Ribbon docking and browser layout belong to the full desktop shell.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
@@ -3497,8 +3497,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-ui-current-9a6cb2d0/receipt-9a6cb2d0318b1fcb.json",
-        "sha256": "47b3a935b491ea08c4286634b5d062e646f91e83f3e29d917d9eb38a7963650f"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-ui-9a6cb2d0/receipt-9a6cb2d0318b1fcb.json",
+        "sha256": "ce0a490ede57e2b20356f98af3bd7cefaccde8804f027adcc2d652feeffa8604"
       },
       "mapping_reason": "Select a feature row and present its model outline and contextual controls.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",

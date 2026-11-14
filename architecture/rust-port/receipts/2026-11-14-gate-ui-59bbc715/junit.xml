@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport orbit: tmp/obk-ui-refresh/features/application/viewport-orbit/viewport-orbit.feature" package="testsuite/Feature: Viewport orbit: tmp/obk-ui-refresh/features/application/viewport-orbit/viewport-orbit.feature" tests="2" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T18:29:59.763306944Z" time="15.945187554"><testcase name="Scenario: Reverse a rotation using the remaining adjacent pairs: tmp/obk-ui-refresh/features/application/viewport-orbit/viewport-orbit.feature:91:5" time="7.97440664"><system-out><![CDATA[  Scenario Outline: Reverse a rotation using the remaining adjacent pairs
+   ✔  Given a rectangular block is visible at an inclined orientation in the MCAD Software
+   ✔  And the incremental view rotation dialog is open with increment 10
+   ✔  When the user clicks direction button 3 once
+   ✔  Then the block view changes
+   ✔  When the user clicks direction button 4 once
+   ✔  Then the block returns to its initial apparent orientation
+   ✔  And the dialog remains open
+   ✔  When the user clicks Cancel
+   ✔  Then the dialog closes and the status area displays Ready
+]]></system-out></testcase><testcase name="Scenario: Reverse a rotation using the remaining adjacent pairs: tmp/obk-ui-refresh/features/application/viewport-orbit/viewport-orbit.feature:92:5" time="7.970780914"><system-out><![CDATA[  Scenario Outline: Reverse a rotation using the remaining adjacent pairs
+   ✔  Given a rectangular block is visible at an inclined orientation in the MCAD Software
+   ✔  And the incremental view rotation dialog is open with increment 10
+   ✔  When the user clicks direction button 5 once
+   ✔  Then the block view changes
+   ✔  When the user clicks direction button 6 once
+   ✔  Then the block returns to its initial apparent orientation
+   ✔  And the dialog remains open
+   ✔  When the user clicks Cancel
+   ✔  Then the dialog closes and the status area displays Ready
+]]></system-out></testcase></testsuite></testsuites>
