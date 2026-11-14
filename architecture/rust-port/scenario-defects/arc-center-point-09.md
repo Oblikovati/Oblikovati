@@ -1,5 +1,7 @@
 # Arc center point 09: inconsistent recorded measurements
 
+**Source corrected:** the 2026-11-14 snapshot removes the inconsistent sweep assertion. The independent fixture input remains unresolved; see the live feature folder's `BLOCKERS.md`. The result below is historical.
+
 ## Source
 
 The source is
@@ -49,4 +51,4 @@ The Go reference uses one analytic circular recipe and one measured curve:
 `Oblikovati/app/sketch_variant_tools.go:133` and
 `Oblikovati/model/sketch/recipe_curve.go`. The Rust host uses its existing
 center-point arc placement and Measure paths; no special case was added for
-this scenario. The failing assertion remains active.
+this scenario. The corrected source no longer includes the failing sweep assertion.

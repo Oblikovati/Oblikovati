@@ -280,6 +280,7 @@ fn circle_retained(world: &mut ApplicationWorld) {
     world.expect_segment_drawn([CENTER[0], CENTER[1] - 80], [CENTER[0], CENTER[1] - 80]);
 }
 #[when("I undo")]
+#[when("the user presses Undo")]
 fn undo(world: &mut ApplicationWorld) {
     world.undo();
 }

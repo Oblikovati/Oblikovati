@@ -9,6 +9,7 @@ const FIRST: [i32; 2] = [560, 400];
 const SECOND: [i32; 2] = [1000, 550];
 
 #[given("two separate standalone points")]
+#[given("two separate standalone points at the recorded upper-left and lower-right positions")]
 fn separate_points(world: &mut ApplicationWorld) {
     world.start_empty_sketch();
     world.select_point_tool();
@@ -19,6 +20,7 @@ fn separate_points(world: &mut ApplicationWorld) {
     world.record_initial_sketch();
 }
 #[when("I invoke Coincident and select the upper-left point")]
+#[when("the user invokes Coincident and selects the upper-left point")]
 fn first_pick(world: &mut ApplicationWorld) {
     world.click_text("Coincident");
     world.sketch_click(FIRST);
@@ -29,10 +31,12 @@ fn second_prompt(world: &mut ApplicationWorld) {
     assert_eq!(world.state().sketch_selection.entities.len(), 1);
 }
 #[when("I select the lower-right point")]
+#[when("the user selects the lower-right point")]
 fn second_pick(world: &mut ApplicationWorld) {
     world.sketch_click(SECOND);
 }
 #[then("it moves onto the first point and a coincidence marker appears there")]
+#[then("the points share a visible position and a coincidence marker appears there")]
 #[then("their shared visible position returns")]
 fn points_joined(world: &mut ApplicationWorld) {
     let geometry = world.edited_geometry();
@@ -65,10 +69,12 @@ fn placement_remains(world: &mut ApplicationWorld) {
     points_joined(world);
 }
 #[when("I undo the relation")]
+#[when("the user undoes the relation")]
 fn undo_relation(world: &mut ApplicationWorld) {
     world.undo();
 }
 #[when("I redo the relation")]
+#[when("the user redoes the relation")]
 fn redo_relation(world: &mut ApplicationWorld) {
     world.redo();
 }

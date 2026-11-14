@@ -35,17 +35,36 @@ fn retained_six_four(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
     six_four(world);
 }
+#[given(
+    "the recorded Right-view sketch contains the overlapping ellipse and a rectangle annotated 6 mm high by 4 mm wide, with its height edit active"
+)]
+fn recorded_height_edit(world: &mut ApplicationWorld) {
+    retained_six_four(world);
+    super::super::super::viewport_orientation::expect_control_shows(world, "Right");
+    overlaps_ellipse(world);
+    world.open_dimension_label("6");
+    assert!(world.text_is_selected("6mm"));
+}
 #[when("I accept height 8 mm and exit General Dimension")]
 #[when("the user accept height 8 mm and exit General Dimension")]
 fn accept_eight(world: &mut ApplicationWorld) {
     let [min, max] = rectangle_bounds(world);
     world.observed_view = Some([min[1], max[1]]);
     world.open_dimension_label("6");
+    accept_open_height(world);
+}
+#[when("the user accepts height 8 mm and exits General Dimension")]
+fn accept_open_height(world: &mut ApplicationWorld) {
     world.type_text("8");
     world.key(ViewportPhysicalKey::Enter, false);
     world.pump(Vec::new());
     world.escape();
     world.pump(Vec::new());
+}
+#[then("the height annotation shows 8 and the width annotation remains 4")]
+fn height_eight_width_four(world: &mut ApplicationWorld) {
+    world.expect_annotation("8");
+    world.expect_annotation("4");
 }
 #[then("the rectangle extends downward while its top edge stays in place in the recorded view")]
 fn height_extends_down(world: &mut ApplicationWorld) {
@@ -64,6 +83,7 @@ fn height_extends_down(world: &mut ApplicationWorld) {
 }
 #[when("I open Measure and select the left edge")]
 #[when("the user open Measure and select the left edge")]
+#[when("the user opens Measure and selects the left edge")]
 fn measure_left(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::M, false);
     let count = sides(world);
@@ -88,6 +108,7 @@ fn left_eight(world: &mut ApplicationWorld) {
 }
 #[when("I close Measure and undo the height edit")]
 #[when("the user close Measure and undo the height edit")]
+#[when("the user closes Measure and undoes the height edit")]
 fn close_and_undo(world: &mut ApplicationWorld) {
     world.click_text("Done");
     world.pump(Vec::new());
@@ -99,6 +120,7 @@ fn height_six(world: &mut ApplicationWorld) {
 }
 #[when("I redo the height edit")]
 #[when("the user redo the height edit")]
+#[when("the user redoes the height edit")]
 fn redo_height(world: &mut ApplicationWorld) {
     world.redo();
 }

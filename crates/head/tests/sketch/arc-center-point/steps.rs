@@ -190,6 +190,7 @@ fn recorded_pointer_arc(world: &mut ApplicationWorld) {
     world.redo();
 }
 #[when("I open Measure and select its middle point")]
+#[when("the user open Measure and select its middle point")]
 fn select_middle(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::M, false);
     let at = arc_fraction_pixel(world, 0.5);
@@ -200,6 +201,7 @@ fn is_middle(world: &mut ApplicationWorld) {
     world.expect_measure("Selection 1: Middle Point");
 }
 #[when("I clear the selection and select the curve near its start")]
+#[when("the user clear the selection and select the curve near its start")]
 fn clear_and_select(world: &mut ApplicationWorld) {
     world.sketch_click(EMPTY);
     let at = arc_fraction_pixel(world, 0.25);
@@ -214,12 +216,10 @@ fn recorded_radius(world: &mut ApplicationWorld) {
     world.expect_measure("Radius 4.759 mm");
     world.expect_measure("Diameter 9.518 mm");
 }
-// The captured length and radius imply 84.72 degrees, even at their rounding limits.
-// Keep the recorded 81.72-degree assertion until the source observation is reviewed.
-#[then("the length is 7.037 mm and sweep is 81.72 degrees")]
+// The source correction removed the inconsistent sweep; the recorded length remains.
+#[then("the length is 7.037 mm")]
 fn recorded_length(world: &mut ApplicationWorld) {
     world.expect_measure("Length 7.037 mm");
-    world.expect_measure("Sweep 81.72 deg");
 }
 #[then("its center is X 0.000 mm, Y -7.023 mm, Z -83.568 mm")]
 fn recorded_center(world: &mut ApplicationWorld) {
