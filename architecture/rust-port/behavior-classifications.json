@@ -4106,10 +4106,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-decline-replacement/receipt-9eede5804b59d06f.json",
+        "sha256": "9d9a3c809481bf132d3135b45dbee37a15a16675bcde43804c4d1b3b71bc6e72"
+      },
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
-      "mapping_reason": "Native document save, close, or reopen lifecycle."
+      "mapping_reason": "Native document save, close, or reopen lifecycle.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b: the focused package-store tests cover save/reopen, not an overwrite confirmation or No choice; no matching confirmation test was found in head/ui. See receipts/2026-11-14-go-save-open-baseline/README.md.",
+      "kernel_capabilities": "No solid modeling operation is required for this file-dialog scenario.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The desktop owner retains the unsaved part; the test checks existing file bytes after No.",
+      "rust_tests": "application_scenarios_use_the_native_window: Decline replacing an existing part during first save",
+      "oracle": "Pinned native scenario assertions, existing-file byte comparison, and reviewed final capture; Go dialog parity is not established.",
+      "expected_result": "No closes the replacement confirmation, preserves the existing file and Save As dialog; cancel leaves the new unsaved part active."
     },
     {
       "id": "scenario:29faf9bb78c1fe481e8278f78bf88fded3506448069ee2778bb73ba656f93fd8",
