@@ -232,8 +232,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-01/receipt-cb85314818ef73da.json",
-        "sha256": "a881ee323b14a24a5c85aabddf65dd8df1d26fd41ec9b91f6a9ff82aa0b38596"
+        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-current-01/receipt-cb85314818ef73da.json",
+        "sha256": "76c9460f3fb84df0eda4540a98d9338b8aaa25311bfd3f4eeed7c34fb4bad5f7"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
@@ -251,8 +251,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-06/receipt-a661d2ccfbdfc85a.json",
-        "sha256": "32b820095510010bd0517eab49b0421090937bf9f414e1427057cc1018303311"
+        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-current-06/receipt-a661d2ccfbdfc85a.json",
+        "sha256": "f52f1dc940e1b64ec07c491d8858b705027c5e7cc8e53bd7062ffb19b1d2b292"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
@@ -270,8 +270,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-07/receipt-1e7472ca669ac6f4.json",
-        "sha256": "5fca2ed9fd5c49614f761bbb6ed6d0f731f41de467157ca2dbb68f1dde756bde"
+        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-current-07/receipt-1e7472ca669ac6f4.json",
+        "sha256": "bf16766f8fc9777fdc0478257e02768b5f74349ba7245b7e31ebc42421699ac6"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
@@ -289,8 +289,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-08/receipt-c7961c524b21f4e1.json",
-        "sha256": "f9794e2e5d490c44a77da11ed46dd27c423a14d0611925ddef26d6f9195cc362"
+        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-current-08/receipt-c7961c524b21f4e1.json",
+        "sha256": "781c5fb2020604a715bd7bf6de9a3c83e7061e4c8f0d690ca23b488182a10ec6"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
@@ -470,8 +470,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-09/receipt-152ae6bfde300d9b.json",
-        "sha256": "27ec18cee2180276132afaa96d70bf5a34334f962686c44d484d8046ccd9c8f7"
+        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-current-09/receipt-152ae6bfde300d9b.json",
+        "sha256": "c6c1c38a1685dd323a2fe7808b640360fde0999d51c9e4f85165f51fd6d2a13e"
       },
       "go_reference": "../Oblikovati/model/sketch/recipe_rectangle.go; ../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/measure_tool.go; ../Oblikovati/head/ui/measure_dialog.go",
       "mapping_reason": "Measure the rectangle edges through the analytic sketch-query path.",
@@ -487,7 +487,8 @@
       "target_module": "crates/model, crates/head, crates/gui",
       "acceptance_test": "sketch_scenarios_use_the_native_window: rectangle-two-point-10 Observe a zero first size",
       "issues": [
-        "https://github.com/Oblikovati/Oblikovati/issues/3857"
+        "https://github.com/Oblikovati/Oblikovati/issues/3857",
+        "https://github.com/Oblikovati/Oblikovati/issues/3886"
       ],
       "state": "inventoried",
       "last_receipt": null,
@@ -505,10 +506,15 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3857"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-current-11/receipt-be5c680262911cc1.json",
+        "sha256": "44a14e61c0ddff3f845f0e98e15533b1dec4d435960f07a3ad00302c57fa33d4"
+      },
       "go_reference": "../Oblikovati/model/sketch/recipe_rectangle.go; ../Oblikovati/app/sketch_tools.go",
-      "mapping_reason": "Numeric two-point rectangle creation belongs to the initial desktop sketch workflow."
+      "mapping_reason": "Numeric two-point rectangle creation belongs to the initial desktop sketch workflow.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:4e818f2994acb248e4b9581fff1b726df90bb658342df0b92244dd318f6e745c",
@@ -521,10 +527,15 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3855"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-current-12/receipt-4e818f2994acb248.json",
+        "sha256": "f8c35408b530c7bba0769fce3f355194ce049e01b93b0ad5f9a7ac74187bf1ec"
+      },
       "go_reference": "../Oblikovati/model/sketch/recipe_rectangle.go; ../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_dimension_edit.go",
-      "mapping_reason": "Cancel a proposed edit to an existing sketch dimension."
+      "mapping_reason": "Cancel a proposed edit to an existing sketch dimension.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:ecfb4103b54e7240f86118a4493a82fa9918a03162bfd26bcd7b4594a9791f99",
@@ -535,7 +546,8 @@
       "target_module": "crates/model, crates/head, crates/gui",
       "acceptance_test": "sketch_scenarios_use_the_native_window: rectangle-two-point-13 Accept and undo a rectangle height edit",
       "issues": [
-        "https://github.com/Oblikovati/Oblikovati/issues/3855"
+        "https://github.com/Oblikovati/Oblikovati/issues/3855",
+        "https://github.com/Oblikovati/Oblikovati/issues/3886"
       ],
       "state": "inventoried",
       "last_receipt": null,
@@ -553,10 +565,15 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3857"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-current-14/receipt-841bc6eecc0f2262.json",
+        "sha256": "cdf90130740af8ba53ad0f67de1b8a818bd1085500267f3fc5f22ead6419d66f"
+      },
       "go_reference": "../Oblikovati/model/sketch/recipe_rectangle.go; ../Oblikovati/app/sketch_tools.go",
-      "mapping_reason": "The second size field and command state are part of the initial desktop sketch workflow."
+      "mapping_reason": "The second size field and command state are part of the initial desktop sketch workflow.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:6687f2b9f0c80ee04273db1471cd659584217548980bb5880265a4820d31f8f8",

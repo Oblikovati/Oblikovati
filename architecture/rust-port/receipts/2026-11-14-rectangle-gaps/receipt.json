@@ -1,0 +1,23 @@
+{
+  "kind": "failing native scenarios, not acceptance",
+  "application_commit": "fa1bbc802",
+  "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+  "environment": "Linux, Vulkan Lavapipe under Xvfb",
+  "issue": "https://github.com/Oblikovati/Oblikovati/issues/3886",
+  "observations": [
+    "Scenario 10 expected a transient 24 dimensions, observed 22.",
+    "Scenario 13 expected a fixed top edge; observed the top move upward while the bottom stayed fixed."
+  ],
+  "limitations": "The height fixture reconstructs the recorded view; additional recorded constraints have not been ruled out.",
+  "artifacts": {
+    "10-junit.xml": "dc79a94b5f024f7765c9cffafd5bc7c039db45420993b1e3416b571f45f0bd13",
+    "13-cucumber.json": "7521c770619b6a3f5d61d6365c5aa4b4e05fadeaaca05f14fb135e88738fdbb6",
+    "13-junit.xml": "52a4971ea8ca12be7f099366e62a77f68507a4e6f57ac16d32e1ae48a7c7ccec",
+    "10-cucumber.json": "491771e9d5559fca6350d455a2eff9ab53aa49a23c06ab60abaa87da1a565b52",
+    "13-source-revision.json": "323bec8099c532fce3284f1c7abfbd0e0edca136974adfa9add106ee21be16c0",
+    "scenario-10.log.gz": "96014008c7369799a2c4e749934499269196edeffb934e55dbfb70e6d51eb908",
+    "10-source-revision.json": "323bec8099c532fce3284f1c7abfbd0e0edca136974adfa9add106ee21be16c0",
+    "clippy.log.gz": "40fe00f6b2a9d82c93e377179aec1998d253db23b273d0860e7a5b756fee13c6",
+    "scenario-13.log.gz": "89a09048d09de30aeea16653429d1667aee7dfd8b36588f03833f6ab958a5ae9"
+  }
+}
