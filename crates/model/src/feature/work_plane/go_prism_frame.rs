@@ -29,6 +29,51 @@ fn cross(a: [f64; 3], b: [f64; 3]) -> [f64; 3] {
 mod tests {
     use super::*;
 
+    #[derive(serde::Deserialize)]
+    struct OracleFrame {
+        input: [f64; 3],
+        u: [f64; 3],
+        v: [f64; 3],
+    }
+
+    fn independent_native_frame(normal: [f64; 3]) -> SketchPlane {
+        let seed = if normal[2].abs() > 0.9 * normal.iter().map(|v| v * v).sum::<f64>().sqrt() {
+            [0., 1., 0.]
+        } else {
+            [0., 0., 1.]
+        };
+        let x = cross(seed, normal);
+        let y = cross(normal, x);
+        SketchPlane::from_directions([1., 2., 3.], x, y, Default::default()).unwrap()
+    }
+
+    #[test]
+    fn go_analytic_oracle_matches_oblique_and_axis_boundary_frames() {
+        let source = include_str!(
+            "../../../../../architecture/rust-port/receipts/2026-11-14-go-frame-oracle/frames.json"
+        );
+        let cases: Vec<OracleFrame> = serde_json::from_str(source).unwrap();
+        assert_eq!(cases.len(), 11);
+        for case in cases {
+            let frame = go_prism_frame(independent_native_frame(case.input))
+                .unwrap()
+                .recipe();
+            for (actual, expected) in frame
+                .x_axis
+                .into_iter()
+                .zip(case.u)
+                .chain(frame.y_axis.into_iter().zip(case.v))
+            {
+                assert!(
+                    (actual - expected).abs() < 1e-12,
+                    "input {:?}: actual {actual}, expected {expected}",
+                    case.input
+                );
+            }
+            assert_eq!(frame.origin, [1., 2., 3.]);
+        }
+    }
+
     #[test]
     fn go_cube_face_axes_match_the_recorded_analytic_oracle() {
         // Go witness: architecture/rust-port/receipts/2026-11-14-face-frame/go-final.log.gz.
