@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! The customizable command row: which commands each document kind shows, and where the row sits.
 mod materials;
+mod standard_commands;
+use standard_commands::{STANDARD, StandardCommand};
 #[path = "plane_selection.rs"]
 pub(crate) mod plane_selection;
 mod selection;
@@ -9,23 +11,6 @@ use imgui::{MouseButton, Ui};
 use oblikovati_api::types::DocumentType;
 use std::collections::BTreeMap;
 
-/// Commands the customization menu lists, in its order.
-const STANDARD: [StandardCommand; 14] = [
-    StandardCommand::New,
-    StandardCommand::Open,
-    StandardCommand::Save,
-    StandardCommand::Undo,
-    StandardCommand::Redo,
-    StandardCommand::Home,
-    StandardCommand::Projects,
-    StandardCommand::Update,
-    StandardCommand::Select,
-    StandardCommand::MaterialBrowser,
-    StandardCommand::Materials,
-    StandardCommand::AppearanceBrowser,
-    StandardCommand::Parameters,
-    StandardCommand::Print,
-];
 const CUSTOMIZE_MENU: &str = "##quick-access-customize";
 const SHORTCUT_MENU: &str = "##quick-access-shortcut";
 const UNDO_HISTORY: &str = "##undo-history";
@@ -34,46 +19,6 @@ const NOT_AVAILABLE: &str = "This command is not available in this build.";
 pub(crate) const BELOW_ROW_HEIGHT: f32 = 30.;
 const SEPARATOR_WIDTH: f32 = 7.;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
-enum StandardCommand {
-    New,
-    Open,
-    Save,
-    Undo,
-    Redo,
-    Home,
-    Projects,
-    Update,
-    Select,
-    MaterialBrowser,
-    Materials,
-    AppearanceBrowser,
-    Parameters,
-    Print,
-}
-impl StandardCommand {
-    fn label(self) -> &'static str {
-        match self {
-            Self::New => "New",
-            Self::Open => "Open",
-            Self::Save => "Save",
-            Self::Undo => "Undo",
-            Self::Redo => "Redo",
-            Self::Home => "Home",
-            Self::Projects => "Projects",
-            Self::Update => "Update",
-            Self::Select => "Select",
-            Self::MaterialBrowser => "Material Browser",
-            Self::Materials => "Materials",
-            Self::AppearanceBrowser => "Appearance Browser",
-            Self::Parameters => "Parameters",
-            Self::Print => "Print",
-        }
-    }
-    fn default_shown(self) -> bool {
-        self != Self::Print
-    }
-}
 /// One thing a person added from a ribbon command's menu.
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum AddedEntry {
