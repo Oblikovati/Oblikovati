@@ -34,6 +34,13 @@ pub trait PartUpdateAccess<O: TransactionObserver, W: WorkspaceObserver, F: Docu
         files: &FileWorkspace<O, W, F>,
         document: u64,
     ) -> Result<bool, String>;
+    /// Resolve a named face in the current part; example: `owner.resolve_planar_face(files, id, &face)?`.
+    fn resolve_planar_face(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+        face: &oblikovati_model::feature::work_plane::WorkPlaneFaceReference,
+    ) -> Result<oblikovati_model::sketch::SketchPlane, String>;
 }
 
 /// A headless owner of generation-checked Martensite replay results.
@@ -80,6 +87,42 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
             .map_err(|error| error.to_string())?;
         Ok(part_replay_is_stale(session, self.slots.get(&document)))
     }
+    fn resolve_planar_face(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+        face: &oblikovati_model::feature::work_plane::WorkPlaneFaceReference,
+    ) -> Result<oblikovati_model::sketch::SketchPlane, String> {
+        if self.part_requires_update(files, document)? || !self.slots.contains_key(&document) {
+            self.update_part(files, document)?;
+        }
+        let slot = self.slots.get(&document).ok_or_else(|| {
+            format!("document {document} part replay: expected an adopted current result")
+        })?;
+        resolve_slot_face(files, document, slot, face)
+    }
+}
+
+/// Bind a named face through an adopted result; example: `resolve_slot_face(files, id, slot, &face)?`.
+pub fn resolve_slot_face<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &FileWorkspace<O, W, F>,
+    document: u64,
+    slot: &PartEvaluationSlot<NamedPrismSnapshot, EvaluationFailure>,
+    face: &oblikovati_model::feature::work_plane::WorkPlaneFaceReference,
+) -> Result<oblikovati_model::sketch::SketchPlane, String> {
+    let workspace = files.workspace();
+    let session = workspace
+        .session(document)
+        .map_err(|error| error.to_string())?;
+    let guid = workspace
+        .identity(document)
+        .map_err(|error| error.to_string())?
+        .internal_name;
+    slot.resolve_planar_face(
+        session,
+        &NamedPrismEvaluator::new(session.history(), guid),
+        face,
+    )
 }
 
 /// Check whether a session's authored part needs a current replay.

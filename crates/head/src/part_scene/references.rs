@@ -19,6 +19,15 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
     ) -> Result<bool, String> {
         self.requires_update_for_api(files, document)
     }
+    fn resolve_planar_face(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+        face: &oblikovati_model::feature::work_plane::WorkPlaneFaceReference,
+    ) -> Result<oblikovati_model::sketch::SketchPlane, String> {
+        self.ensure_current(files, document)?;
+        oblikovati_automation::resolve_slot_face(files, document, &self.slot, face)
+    }
 }
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartTopologyAccess<O, W, F>
     for DesktopPartScenes

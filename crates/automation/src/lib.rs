@@ -267,7 +267,7 @@ pub use part_topology::{BODY_QUERY_METHODS, PartTopologyAccess, TopologyEntityKi
 mod part_update;
 pub use part_update::{
     PartReplayService, PartUpdateAccess, complete_part_replay, part_feature_errors,
-    part_replay_is_stale,
+    part_replay_is_stale, resolve_slot_face,
 };
 
 mod body_commands;

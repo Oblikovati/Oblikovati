@@ -328,3 +328,6 @@ fn typed_kernel_decline_reaches_desktop_status_and_recovers() {
 mod body_properties;
 #[path = "part_scene/sketches.rs"]
 mod sketches;
+
+#[path = "part_scene/face_plane.rs"]
+mod face_plane;
