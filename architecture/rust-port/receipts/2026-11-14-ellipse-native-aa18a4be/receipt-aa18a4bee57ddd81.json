@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:aa18a4bee57ddd819e5a3f7683a46ce3018259057c7745133370e9faa7c161ca",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "af53af88f7a32b441d76154fd75aeb36e68d4e673c47d21ecefa5be14cef5a6f",
+  "application_commit": "de6af245e7e277334821481cda9dbede43538fe0",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-ellipse-native-aa18a4be/cucumber.json",
+    "sha256": "e9a5a95a5ae6e6aa4392d13f545b5a350f87168506f67f44decad6ec9dd7321f"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-ellipse-native-aa18a4be/source-revision.json",
+    "sha256": "432189f9333dd201e617c755a6eb1146d79245f102fb3963b4186f76d00ab4b5"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-ellipse-native-aa18a4be/ellipse-01-Create-an-ellipse-from-three-defining-points.png",
+    "sha256": "81eea05342e2683dc5675cc03aa921039f48df6623d7c590cf4268c1c53dfd3b"
+  }
+}

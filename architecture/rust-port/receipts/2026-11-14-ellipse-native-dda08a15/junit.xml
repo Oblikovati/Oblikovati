@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ellipse: tmp/obk-bdd-ellipse-mXzelVop/checkout/features/sketch/ellipse/scenario.feature" package="testsuite/Feature: Ellipse: tmp/obk-bdd-ellipse-mXzelVop/checkout/features/sketch/ellipse/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T16:20:11.542579631Z" time="8.393701197"><testcase name="Scenario: ellipse-08 Remain at first-axis selection after a coincident click: tmp/obk-bdd-ellipse-mXzelVop/checkout/features/sketch/ellipse/scenario.feature:66:3" time="8.393701197"><system-out><![CDATA[  Scenario: ellipse-08 Remain at first-axis selection after a coincident click
+   ✔  Given an editable sketch is Ready
+   ✔  When the user invoke Ellipse and select the fixture center
+   ✔  And the user select the same location again as its first-axis point
+   ✔  Then the prompt remains Select first axis point without an error dialog
+   ✔  When the user select a distinct first-axis point
+   ✔  Then the prompt advances to Select point on ellipse
+   ✔  When the user press Escape
+   ✔  Then the MCAD Software is Ready with no additional ellipse visible
+]]></system-out></testcase></testsuite></testsuites>
