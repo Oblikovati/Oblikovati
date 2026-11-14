@@ -3183,10 +3183,15 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3887",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-point-03/receipt-c1547ececd822651.json",
+        "sha256": "946d0c0b13016c3b603e2dbe644f52c010c37c0aee0e7ea68cf8126fca437e2c"
+      },
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
-      "mapping_reason": "Cancel point creation and return to Ready."
+      "mapping_reason": "Cancel point creation and return to Ready.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:d21c1f8c789927b46db67abfe6f79e4e8774be0e990dddf6f6631b83c30b7ab8",
