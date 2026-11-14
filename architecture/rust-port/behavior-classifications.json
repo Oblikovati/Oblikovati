@@ -4844,8 +4844,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-open-save-233169e6ac19c7dd-d52803d8/receipt-233169e6ac19c7dd.json",
-        "sha256": "3a994a0060c9b79a3397807ddf9c5827237bef6badf4048f893c44d17690cdf5"
+        "path": "architecture/rust-port/receipts/2026-11-15-open-existing/receipt-233169e6ac19c7dd.json",
+        "sha256": "161977576892feb334a8218fc2e51af6f5b858373cba5f67d1dc94eedc555c7c"
       },
       "go_reference": "../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Activate an existing part without creating a duplicate.",
