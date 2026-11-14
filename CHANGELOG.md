@@ -12,6 +12,8 @@
 
 ### Fixed
 
+- Refused legacy cap-program staging when qualified sketch precision evidence is unavailable. (#3928)
+
 - Rejected ambiguous or forward legacy sketch and extrusion creation order before preparing a part candidate. (#3936)
 
 - Decoded legacy work-plane face references with Go's unpadded URL-safe base64 format. (#3935)

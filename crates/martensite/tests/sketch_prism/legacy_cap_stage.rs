@@ -37,6 +37,57 @@ impl LegacyCapStageVerifier for CurrentBodyVerifier {
     }
 }
 
+// Test-only bypass for exercising replay while #3928 has no production qualifier.
+struct TestOnlyAssumeQualified;
+impl LegacyCapStageVerifier for TestOnlyAssumeQualified {
+    fn solve(&self, snapshot: &mut DocumentSnapshot) -> Result<(), String> {
+        CurrentBodyVerifier.solve(snapshot)
+    }
+    fn qualify_sketch(
+        &self,
+        snapshot: &DocumentSnapshot,
+        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+    ) -> Result<(), String> {
+        assert_eq!(sketch, SKETCH);
+        assert!(snapshot.require_resolved_sketch(sketch).is_ok());
+        Ok(())
+    }
+    fn verify(
+        &self,
+        snapshot: &DocumentSnapshot,
+        document: DocumentGuid,
+        feature: FeatureId,
+        key: &[u8],
+        role: LegacyExtrusionFaceRole,
+    ) -> Result<(), String> {
+        CurrentBodyVerifier.verify(snapshot, document, feature, key, role)
+    }
+}
+
+struct TestOnlyDecliningQualifier;
+impl LegacyCapStageVerifier for TestOnlyDecliningQualifier {
+    fn solve(&self, snapshot: &mut DocumentSnapshot) -> Result<(), String> {
+        CurrentBodyVerifier.solve(snapshot)
+    }
+    fn qualify_sketch(
+        &self,
+        _: &DocumentSnapshot,
+        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+    ) -> Result<(), String> {
+        Err(format!("test-only precision decline for {sketch:?}"))
+    }
+    fn verify(
+        &self,
+        _: &DocumentSnapshot,
+        _: DocumentGuid,
+        _: FeatureId,
+        _: &[u8],
+        _: LegacyExtrusionFaceRole,
+    ) -> Result<(), String> {
+        panic!("cap verification must not run after precision decline")
+    }
+}
+
 const CAP_PLANE: &[u8] = include_bytes!(
     "../../../../architecture/rust-port/receipts/2026-11-14-go-cap-plane/cube-with-cap-plane.obk"
 );
@@ -78,14 +129,14 @@ fn identity_mapping() -> BTreeMap<u64, LegacyStagedFeatureIdentity> {
 }
 
 #[test]
-fn go_cap_fixture_stages_a_complete_ordered_replay_program() {
+fn go_cap_fixture_replays_with_test_only_assumed_precision() {
     let (candidate, base) = candidate_and_base(CAP_PLANE);
     let staged = candidate
         .stage_cap_program(
             &base,
             document_guid(),
             &identity_mapping(),
-            &CurrentBodyVerifier,
+            &TestOnlyAssumeQualified,
         )
         .unwrap();
     assert_eq!(staged.work_geometry.features().len(), 2);
@@ -110,6 +161,55 @@ fn go_cap_fixture_stages_a_complete_ordered_replay_program() {
     history.redo().unwrap();
     super::legacy_cap_witness::assert_go_cap_offset(&history, 4.);
     super::legacy_cap_witness::assert_go_cap_offset(&reopened_history(&history), 4.);
+}
+
+#[test]
+fn staging_declines_current_solve_without_precision_qualification() {
+    let (candidate, base) = candidate_and_base(CAP_PLANE);
+    let original = base.clone();
+    let error = candidate
+        .stage_cap_program(
+            &base,
+            document_guid(),
+            &identity_mapping(),
+            &CurrentBodyVerifier,
+        )
+        .unwrap_err()
+        .to_string();
+    assert!(
+        error.contains("qualified spatial and angular solve evidence is unavailable (#3928)"),
+        "{error}"
+    );
+    assert!(base.sketches.same_recipe(&original.sketches));
+    assert!(base.parameters.same_recipe(&original.parameters));
+    assert!(
+        base.work_geometry
+            .same_work_geometry_recipe(&original.work_geometry)
+    );
+}
+
+#[test]
+fn staging_preserves_a_qualifier_decline_and_skips_cap_verification() {
+    let (candidate, base) = candidate_and_base(CAP_PLANE);
+    let original = base.clone();
+    let error = candidate
+        .stage_cap_program(
+            &base,
+            document_guid(),
+            &identity_mapping(),
+            &TestOnlyDecliningQualifier,
+        )
+        .unwrap_err()
+        .to_string();
+    assert!(
+        error.contains("test-only precision decline for DocumentSketchId(1)"),
+        "{error}"
+    );
+    assert!(base.sketches.same_recipe(&original.sketches));
+    assert!(
+        base.work_geometry
+            .same_work_geometry_recipe(&original.work_geometry)
+    );
 }
 
 struct NoSolve;
@@ -205,7 +305,7 @@ fn staging_refuses_go_side_faces_without_source_curve_evidence() {
             &base,
             document_guid(),
             &identity_mapping(),
-            &CurrentBodyVerifier,
+            &TestOnlyAssumeQualified,
         )
         .unwrap_err();
     assert!(
