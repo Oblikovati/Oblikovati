@@ -3395,10 +3395,15 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-save-sketch-reopen/receipt-cb5f795341d33e87.json",
+        "sha256": "7dcb11e3320bf210d2573f76a831a001db80ca93f433febee4900cb07d26596e"
+      },
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
-      "mapping_reason": "Native document save, close, or reopen lifecycle."
+      "mapping_reason": "Native document save, close, or reopen lifecycle.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:ec6362e3e986c02ef4690b3c134b9d166b8eeae0242613a788b7d246c671e067",
@@ -3514,10 +3519,15 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-save-on-close/receipt-f9b64673e9d0caa7.json",
+        "sha256": "b291288fd1379ded0de35cf70bd473fb2995999dabca6fdb2db70095cb6ebc0d"
+      },
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
-      "mapping_reason": "Native document save, close, or reopen lifecycle."
+      "mapping_reason": "Native document save, close, or reopen lifecycle.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:408b526faa48672c210f18a75a125074944da21cbd1a60dc5880e411c43b4442",
