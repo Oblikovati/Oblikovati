@@ -3525,8 +3525,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-point-extrusion-current-c1547ece/receipt-c1547ececd822651.json",
-        "sha256": "2f12173e8fa76f2c9fa9dbdf0ddeb51dcfe9f834757c735cbc5ad7367dc1bdc7"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-linepoint-c1547ece/receipt-c1547ececd822651.json",
+        "sha256": "0b88df37f97c79b8f47c23e5c6d8a6e03286f7999570bd26aa03e4e158db87cb"
       },
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
       "mapping_reason": "Cancel point creation and return to Ready.",
@@ -3554,8 +3554,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-point-extrusion-current-d21c1f8c/receipt-d21c1f8c789927b4.json",
-        "sha256": "b676767b538f5695da2336b4520ab2a589f12de5c04f4beded69d62fbdac014c"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-linepoint-d21c1f8c/receipt-d21c1f8c789927b4.json",
+        "sha256": "c9e71fa31034476109967d90214cebe12afa3882d71e0ed8e0a068be5bc46ce7"
       },
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
       "mapping_reason": "Create a center point and restore it through history.",
@@ -3583,8 +3583,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-point-extrusion-current-436f15ab/receipt-436f15ab31b13b1d.json",
-        "sha256": "c1770144544e54175961ce1abc01a9bff6b4632f77aba267e34fb2f7eb88aac9"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-linepoint-436f15ab/receipt-436f15ab31b13b1d.json",
+        "sha256": "94ae9b5d66eebf934222aff4b66413c5e2e709e57d26ae92f9ad732c801d0a60"
       },
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
       "mapping_reason": "Place multiple regular points in one command.",
@@ -3646,8 +3646,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-point-center-545eaee5/receipt-545eaee5fec75147.json",
-        "sha256": "f128497e622521b8b36bca5561097313f3a504cf1e11b2701e2a9889788ee7a1"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-linepoint-545eaee5/receipt-545eaee5fec75147.json",
+        "sha256": "40bcb75219927e150006b70b216009c4707bf63e24ebef83c244675267b869e1"
       },
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
       "mapping_reason": "Create a center point using the format mode.",
@@ -30599,8 +30599,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-line-native-cc0348ac/receipt-cc0348ac4e30bdb2.json",
-        "sha256": "166601d8eb2d783da24e7d82a46e6ded23ffff907a09f0d6effb4aaa6b43771d"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-linepoint-cc0348ac/receipt-cc0348ac4e30bdb2.json",
+        "sha256": "c9cd80444a509575cd942217ceb04f6c607767df90c07cef0f40506fd1f5ca20"
       },
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
       "mapping_reason": "First native sketch geometry input, cancellation, and history.",
@@ -30645,8 +30645,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-line-native-f0687ede/receipt-f0687ede83393785.json",
-        "sha256": "edd2802d4a031dc4dfd0dfc2f6ce15ceb610b2af87e91035e63ef19c0009098c"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-linepoint-f0687ede/receipt-f0687ede83393785.json",
+        "sha256": "563a951f2c226048b39751feddc0144afead21c4e7743adb4d1dd210b24306d9"
       },
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
       "mapping_reason": "First native sketch geometry input, cancellation, and history.",
@@ -30674,8 +30674,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-line-native-e66c7e30/receipt-e66c7e308267be09.json",
-        "sha256": "bc218e4c36d78e4b989152ddf7e0423fbfa7a6149c085ae4fac0f5a72bf43ac0"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-linepoint-e66c7e30/receipt-e66c7e308267be09.json",
+        "sha256": "e6d1549a1c509b82e2a03245188c1e8cab224ab65ba9715ae5d5c6e212f8b139"
       },
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
       "mapping_reason": "First native sketch geometry input, cancellation, and history.",
@@ -30703,8 +30703,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-line-native-4bd61ac9/receipt-4bd61ac9a19d199a.json",
-        "sha256": "2bcf1de659ccfb09f01f87df04b4dae442b3075ce340b80327521392ef6838af"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-linepoint-4bd61ac9/receipt-4bd61ac9a19d199a.json",
+        "sha256": "7726fd9cda61cb2b0054f2ec0600def05e9820eea6f04622bf590a79b4c728ce"
       },
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
       "mapping_reason": "First native sketch geometry input, cancellation, and history.",
