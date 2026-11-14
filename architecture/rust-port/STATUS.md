@@ -66,6 +66,8 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 
 ## Open items
 
+- R7 Sketch command availability: three baseline rows record the Go contextual-tab difference and partial Rust tab test; the native scenarios remain unverified. See `receipts/2026-11-14-go-sketch-ribbon-baseline/` (#3856).
+
 - A2: the diagnostic gate started on `6c5c1014a` and failed with 36 head test failures. The source changed during the run, so it cannot certify the current HEAD. See issue #3860 and `receipts/2026-11-13-gate-diagnostic/`. The latest gate preflight reported 2,457 unclassified scenarios; the current ledger has 1,839 after all application declarations were mapped (#3856, #3894–#3900). A diagnostic `make gate` at `5eda349c` stopped at 60 stale receipts before workspace checks; see `receipts/2026-11-14-gate-5eda349c/`. A fresh passing gate is required before the first push.
 - A3: stale worktrees and merged local branches were removed after ancestry checks. Only `rust-work` and the unrelated `go-legacy` local branch remain. `unmerged-lanes-20261113.bundle` and the prior verified backup remain on the NAS.
 - A8: stale application or source evidence is downgraded without hiding damaged artifacts (#3869). Ledger-tool-only edits do not invalidate native UI tests.

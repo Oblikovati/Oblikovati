@@ -5473,8 +5473,17 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_ribbon.go",
-      "mapping_reason": "Ribbon or quick-access UI behavior in the active document and sketch context."
+      "go_reference": "Go aa8297d1b: app/ribbon_registry_test.go and app/ribbon_alignment_test.go; see receipts/2026-11-14-go-sketch-ribbon-baseline/README.md.",
+      "mapping_reason": "Ribbon or quick-access UI behavior in the active document and sketch context.",
+      "go_test_premise": "Go contextual-tab, panel-alignment, button-style and in-sketch variant tests passed. Go hides Sketch outside sketch edit, unlike the pinned scenarios; these tests do not establish native availability or tooltips.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "No solid operation is required to inspect ribbon availability; the editing scenario requires an existing visible sketch.",
+      "platforms": "Reference and partial Rust unit checks: Linux. Native scenario and other platforms not established.",
+      "kernel_integration": "Ribbon context is derived from document and authoring state; no kernel operation is required by the ribbon availability checks.",
+      "rust_tests": "Partial: crates/gui/tests/ribbon/unit.rs document_tabs_keep_sketch_context_off_other_document_types. No complete native bindings for these three scenarios were found.",
+      "oracle": "Pinned scenario steps and native interaction, including enabled states, visible profile, tooltip, and workspace return; Go is a partial and conflicting reference outside sketch edit.",
+      "expected_result": "Select the Sketch tab and inspect the specified command states outside edit, or edit the existing sketch and verify Line, Finish, and the restored workspace as specified by this scenario."
     },
     {
       "id": "scenario:09c4149204b9a35a59a54bc5becec4c59f0a7f3c4c0204394cdb51608742b2f6",
@@ -5490,8 +5499,17 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_ribbon.go",
-      "mapping_reason": "Ribbon or quick-access UI behavior in the active document and sketch context."
+      "go_reference": "Go aa8297d1b: app/ribbon_registry_test.go and app/ribbon_alignment_test.go; see receipts/2026-11-14-go-sketch-ribbon-baseline/README.md.",
+      "mapping_reason": "Ribbon or quick-access UI behavior in the active document and sketch context.",
+      "go_test_premise": "Go contextual-tab, panel-alignment, button-style and in-sketch variant tests passed. Go hides Sketch outside sketch edit, unlike the pinned scenarios; these tests do not establish native availability or tooltips.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "No solid operation is required to inspect ribbon availability; the editing scenario requires an existing visible sketch.",
+      "platforms": "Reference and partial Rust unit checks: Linux. Native scenario and other platforms not established.",
+      "kernel_integration": "Ribbon context is derived from document and authoring state; no kernel operation is required by the ribbon availability checks.",
+      "rust_tests": "Partial: crates/gui/tests/ribbon/unit.rs document_tabs_keep_sketch_context_off_other_document_types. No complete native bindings for these three scenarios were found.",
+      "oracle": "Pinned scenario steps and native interaction, including enabled states, visible profile, tooltip, and workspace return; Go is a partial and conflicting reference outside sketch edit.",
+      "expected_result": "Select the Sketch tab and inspect the specified command states outside edit, or edit the existing sketch and verify Line, Finish, and the restored workspace as specified by this scenario."
     },
     {
       "id": "scenario:c7a7f9038a6c19bfc43cc6da954d8c377dd6501f8e276344dc6f4690a1b6694a",
@@ -5507,8 +5525,17 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_ribbon.go",
-      "mapping_reason": "Ribbon or quick-access UI behavior in the active document and sketch context."
+      "go_reference": "Go aa8297d1b: app/ribbon_registry_test.go and app/ribbon_alignment_test.go; see receipts/2026-11-14-go-sketch-ribbon-baseline/README.md.",
+      "mapping_reason": "Ribbon or quick-access UI behavior in the active document and sketch context.",
+      "go_test_premise": "Go contextual-tab, panel-alignment, button-style and in-sketch variant tests passed. Go hides Sketch outside sketch edit, unlike the pinned scenarios; these tests do not establish native availability or tooltips.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "No solid operation is required to inspect ribbon availability; the editing scenario requires an existing visible sketch.",
+      "platforms": "Reference and partial Rust unit checks: Linux. Native scenario and other platforms not established.",
+      "kernel_integration": "Ribbon context is derived from document and authoring state; no kernel operation is required by the ribbon availability checks.",
+      "rust_tests": "Partial: crates/gui/tests/ribbon/unit.rs document_tabs_keep_sketch_context_off_other_document_types. No complete native bindings for these three scenarios were found.",
+      "oracle": "Pinned scenario steps and native interaction, including enabled states, visible profile, tooltip, and workspace return; Go is a partial and conflicting reference outside sketch edit.",
+      "expected_result": "Select the Sketch tab and inspect the specified command states outside edit, or edit the existing sketch and verify Line, Finish, and the restored workspace as specified by this scenario."
     },
     {
       "id": "scenario:64f007a28e5ee3fbdced220b07b862cf48038b47a30c3fa81a3cb0fee5935fd1",
