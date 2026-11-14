@@ -199,6 +199,7 @@ fn existing_active(world: &mut ApplicationWorld) {
     expect_project_marked(world);
 }
 #[when("I choose New")]
+#[when("the user chooses New")]
 fn choose_new(world: &mut ApplicationWorld) {
     choose_button(world, "New");
 }
@@ -221,6 +222,7 @@ fn next_and_cancel(world: &mut ApplicationWorld) {
     assert!(world.run_is_enabled("Cancel"), "expected Cancel available");
 }
 #[when("I choose Next")]
+#[when("the user chooses Next")]
 fn choose_next(world: &mut ApplicationWorld) {
     choose_button(world, "Next");
 }
