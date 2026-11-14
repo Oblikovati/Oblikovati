@@ -3606,7 +3606,7 @@
     },
     {
       "id": "scenario:d0dc7b66959fc4df19efd5d8ab6d2537215ebd05bf9e5e4b6c25906beb719df1",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2",
       "milestone": "R4",
       "owner": "desktop",
@@ -3618,8 +3618,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-d0dc7b66/receipt-d0dc7b66959fc4df.json",
-        "sha256": "fbe9aa0eaf6960a99971e835412b0916b23433af2e9ccfbd40198f922efeb949"
+        "path": "architecture/rust-port/receipts/2026-11-14-save-open-current-d0dc7b66/receipt-d0dc7b66959fc4df.json",
+        "sha256": "4535e2b4c66b25a99d4ef3630e8a9e5b1756cb1dad6323beb36eccb2cc9ec0a5"
       },
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Native document save, close, or reopen lifecycle.",
@@ -3635,7 +3635,7 @@
     },
     {
       "id": "scenario:14f48e698bd03b3faf10660cc4dddccfa827d553243c2c8f76d8a0089380b700",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2",
       "milestone": "R4",
       "owner": "desktop",
@@ -3647,8 +3647,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-14f48e69/receipt-14f48e698bd03b3f.json",
-        "sha256": "dcbe9aa989393366f8d4e85de52d8de403a9b8e5caf27714868bd69a24476f3e"
+        "path": "architecture/rust-port/receipts/2026-11-14-save-open-current-14f48e69/receipt-14f48e698bd03b3f.json",
+        "sha256": "d6777191662eeb02d169073d6e08848b4e2c94792a78f51c7d5c30f55b250ed7"
       },
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Native document save, close, or reopen lifecycle.",
@@ -3664,7 +3664,7 @@
     },
     {
       "id": "scenario:cb5f795341d33e8781b661f83c644b2437997cfcbb69421d51fa51155c7ce1ed",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2",
       "milestone": "R4",
       "owner": "desktop",
@@ -3676,8 +3676,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-cb5f7953/receipt-cb5f795341d33e87.json",
-        "sha256": "9ca783f3379266f8c52deb32afb2b1750472f287e0ecb625a363968286d9e0f5"
+        "path": "architecture/rust-port/receipts/2026-11-14-save-open-current-cb5f7953/receipt-cb5f795341d33e87.json",
+        "sha256": "25c941f334cb385f7ede9ac2875705d0b95a13c56c283ca23458839842667dd1"
       },
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Native document save, close, or reopen lifecycle.",
@@ -3795,7 +3795,7 @@
     },
     {
       "id": "scenario:f9b64673e9d0caa73b8c69814bde87fbec67e340d1d4877052120439c06e62b2",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2",
       "milestone": "R4",
       "owner": "desktop",
@@ -3807,8 +3807,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-f9b64673/receipt-f9b64673e9d0caa7.json",
-        "sha256": "5c69249b34d8db1a898ac044422959deb432dc7f9983495590ce185341cd1606"
+        "path": "architecture/rust-port/receipts/2026-11-14-save-open-current-f9b64673/receipt-f9b64673e9d0caa7.json",
+        "sha256": "3b233d1ff25b11bae75e79362d81021675dc33d9bf937573c82163136f724c42"
       },
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Native document save, close, or reopen lifecycle.",
@@ -4198,7 +4198,7 @@
     },
     {
       "id": "scenario:233169e6ac19c7ddb757045b4193b135178c2e3e5089bebbc1fc574f8784e861",
-      "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
       "source_sha256": "d7965f270ecc21d99f2ed9a0837f17a1996203fccf4d4d1966e7876ebb01464c",
       "milestone": "R4",
       "owner": "desktop",
@@ -4210,8 +4210,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-refresh-233169e6/receipt-233169e6ac19c7dd.json",
-        "sha256": "6cce4373434a3667c2f6d048e4922f7f7b7e5081f5df783da30a2cdad531dd16"
+        "path": "architecture/rust-port/receipts/2026-11-14-save-open-current-233169e6/receipt-233169e6ac19c7dd.json",
+        "sha256": "dc2106a9f344740a3cc77c205cf3b43e2fc8f2ccee091b1edc335eb29837bd82"
       },
       "go_reference": "../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Activate an existing part without creating a duplicate.",

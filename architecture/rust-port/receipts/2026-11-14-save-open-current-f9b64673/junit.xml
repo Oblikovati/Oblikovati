@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Save and reopen part documents: tmp/obk-bdd-save-kl9hTsf2/checkout/features/application/document-saving/document-saving.feature" package="testsuite/Feature: Save and reopen part documents: tmp/obk-bdd-save-kl9hTsf2/checkout/features/application/document-saving/document-saving.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T14:53:29.44535566Z" time="10.248221589"><testcase name="Scenario: Save a new modified part while closing it: tmp/obk-bdd-save-kl9hTsf2/checkout/features/application/document-saving/document-saving.feature:113:3" time="10.248221589"><system-out><![CDATA[  Scenario: Save a new modified part while closing it
+   ✔  Given an unsaved part containing a finished empty sketch is active in the MCAD Software
+   ✔  And save-change prompts are configured to always show
+   ✔  And another document is open
+   ✔  And the proposed file name does not exist in the selected folder
+   ✔  When the user closes the document tab
+   ✔  And the user chooses Yes in the save-changes prompt
+   ✔  And the user accepts the proposed file name in Save As
+   ✔  Then the document closes
+   ✔  And another open document becomes active
+   ✔  When the user reopens the newly saved part in the same session
+   ✔  Then the part becomes active
+   ✔  And its model browser contains the finished sketch
+]]></system-out></testcase></testsuite></testsuites>
