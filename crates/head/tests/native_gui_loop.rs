@@ -24,6 +24,7 @@ struct ScriptedGuiWindow {
     scripted: Vec<ViewportEvent>,
     passed: Vec<ViewportEvent>,
     gui_actions: Vec<oblikovati_gui::GuiShellAction>,
+    scene_colors: Vec<[f32; 4]>,
     presentation_delay: Duration,
 }
 fn scripted_window(native: NativeHeadWindow) -> ScriptedGuiWindow {
@@ -32,6 +33,7 @@ fn scripted_window(native: NativeHeadWindow) -> ScriptedGuiWindow {
         scripted: Vec::new(),
         passed: Vec::new(),
         gui_actions: Vec::new(),
+        scene_colors: Vec::new(),
         presentation_delay: Duration::ZERO,
     }
 }
