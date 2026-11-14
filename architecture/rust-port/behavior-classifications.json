@@ -14242,11 +14242,10 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3899",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "blocked",
+      "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/head/ui/file_dialog.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
-      "reason": "The session and template-selection history are unspecified; see the scenario folder BLOCKERS.md."
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
     },
     {
       "id": "scenario:414a8cdb8182b258369735ab0aaa1bebf2a7968f607002055b4282dcbf29716f",
