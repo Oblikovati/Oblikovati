@@ -9,6 +9,20 @@ tracks these milestones. R0 creates the remaining detailed work items.
 Do not estimate the full port from source file counts; measure representative
 work first.
 
+## Exit review and known gaps
+
+These milestones are open. The links identify known gaps and partial evidence;
+they are not an exhaustive exit audit or proof that the other checks pass.
+The required checks remain in each milestone below.
+
+| Milestone | Known gap or evidence still needed |
+| --- | --- |
+| R0 | The full gate has not passed ([#3860](https://github.com/Oblikovati/Oblikovati/issues/3860)). Scenario baseline fields and current receipts remain incomplete ([#3865](https://github.com/Oblikovati/Oblikovati/issues/3865), [status](STATUS.md)). A clean-checkout gate is still needed. |
+| R1 | Profile extrusion does not yet qualify the sketch solver precision ([#3928](https://github.com/Oblikovati/Oblikovati/issues/3928)). The rotated-ellipse closest-point parity case remains open in [Martensite #406](https://github.com/Oblikovati/Martensite/issues/406); do not infer the complete kernel proof from other passing cases. |
+| R1V | Native Linux capture and selection have partial evidence in [status](STATUS.md), but the full exit and supported-platform presentation requirements are not established. Renderer lighting and curved-surface visual behavior remain open ([#3873](https://github.com/Oblikovati/Oblikovati/issues/3873)). |
+| R2 | Focused persistence and session tests are recorded in [status](STATUS.md), but they do not prove the full exit or a cross-platform storage round trip ([#3592](https://github.com/Oblikovati/Oblikovati/issues/3592)). Legacy sketch and feature adoption remains open ([#3882](https://github.com/Oblikovati/Oblikovati/issues/3882)); unsupported content must remain a named refusal. |
+| R3 | The Rust-authored cube has partial replay and native evidence in [status](STATUS.md), but solver precision qualification ([#3928](https://github.com/Oblikovati/Oblikovati/issues/3928)) and Go recipe and face-key migration ([#3882](https://github.com/Oblikovati/Oblikovati/issues/3882)) remain open. Complete the per-face and full exit checks under [#3857](https://github.com/Oblikovati/Oblikovati/issues/3857). |
+
 ## Dependency order
 
 ```text
