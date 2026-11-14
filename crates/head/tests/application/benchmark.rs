@@ -114,6 +114,7 @@ mod model_browser;
 mod project_dialog;
 #[path = "quick-access-toolbar/steps.rs"]
 mod quick_access_toolbar;
+mod rectangle_visibility;
 #[path = "ribbon-appearance/steps.rs"]
 mod ribbon_appearance;
 #[path = "ribbon-customization/steps.rs"]
