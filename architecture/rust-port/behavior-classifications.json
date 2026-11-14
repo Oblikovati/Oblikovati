@@ -1727,6 +1727,258 @@
       "mapping_reason": "Ribbon docking and browser layout belong to the full desktop shell.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+    },
+    {
+      "id": "scenario:be2c25b2f39d7ae721a7f08cce5fe95730a8e4db2995dc1513e24b25f9d2f8e0",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
+      "acceptance_test": "application_scenarios_use_the_native_window: extrusion-10 Reference selectors require input",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3870",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:7d911868103af0e383820346e9f833fd1e96584062059175dd4e37eb6691fc57",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
+      "acceptance_test": "application_scenarios_use_the_native_window: extrusion-11 Termination selection displays a To reference",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3870",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:e5c5168b1e62ff2e3e1ca62d770a4be95ef5c5dc7b512651ce3faa44ac3ce2bc",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session",
+      "acceptance_test": "application_scenarios_use_the_native_window: extrusion-12 Distance tolerance dialog can be inspected and cancelled",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3870",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:8fd89d6385b64c81738a8c643464f36706a592bb51a61336a0a9d9760ccab01d",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session",
+      "acceptance_test": "application_scenarios_use_the_native_window: extrusion-12a Inspect the Distance A editor menu",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3870",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:0375c3804f13a87cf4cc5bb400b7f0406cb183a7f2b86a1b19623becb9fa4b63",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session",
+      "acceptance_test": "application_scenarios_use_the_native_window: extrusion-12b Select Feature Dimension prompts for a feature",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3870",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:8d6629a37244ba99589ebcba9a4a850878ff5bc8ad42c8a313e895c3f8b166f4",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session",
+      "acceptance_test": "application_scenarios_use_the_native_window: extrusion-12c Parameters opens the part parameter table",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3870",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:c886bb6773e2fd0f09435753df021a71b4355805863890f3b44371b433e5df51",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
+      "acceptance_test": "application_scenarios_use_the_native_window: extrusion-13 Join adds a boss to one body",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3870",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:a6ce53fe7e8ba3377e819ec610ddefec4b45b3dfb98e718cd2dfb00d563818c8",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
+      "acceptance_test": "application_scenarios_use_the_native_window: extrusion-14 New Solid creates a named second body",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3870",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:925998a1d9ad4b6e5e498310d993ae9c2f1d6987df3e4a8836e1eb91e41ed893",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
+      "acceptance_test": "application_scenarios_use_the_native_window: extrusion-15 Cut selects inward direction and supports history",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3870",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:bb33afbd331af8d494414e55b9254f8b74e07cdaacda71caffb203ec982676c5",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
+      "acceptance_test": "application_scenarios_use_the_native_window: extrusion-16 Intersect retains the circular common region",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3870",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:defa5c41357f0c0f54012b06d46fd26c98ab6ed3159a7838e90bc0a1ac94ad42",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
+      "acceptance_test": "application_scenarios_use_the_native_window: extrusion-17 Measure identifies intersection diameter",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3870",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:6db87975918b15f8995ea494c1986c6c0bc993d3799ab0bf68048a4e504cbf09",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
+      "acceptance_test": "application_scenarios_use_the_native_window: extrusion-18 Auxiliary extent changes preview and accepts a cut",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3870",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:34007142e2ddea9d9fdbd0f77de5593484c627f56479ce80364cd5c10507901c",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
+      "acceptance_test": "application_scenarios_use_the_native_window: extrusion-19 Surface output retains separate surface entry",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3870",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:8ee96610359fdca243912bac3fdc1dcdc6de40f752546b6130687438996ee6c5",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
+      "acceptance_test": "application_scenarios_use_the_native_window: extrusion-20 Dimension pick can change the active distance expression",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3870",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:4253a44e35e179d2c329210f07f92249929d7c5473b377c1eea56d16ff080a96",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session",
+      "acceptance_test": "application_scenarios_use_the_native_window: extrusion-21 Hide Presets controls preset-row visibility",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3870",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:3f146bf19a7bfd387229b530e0d198b511f4936e593c0bd5bab5cc8ba149a4ee",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
+      "acceptance_test": "application_scenarios_use_the_native_window: extrusion-22 Change and flip an asymmetric preview",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3870",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:f945ebb349ef0eeb7cdd747260ebe846502ea1dd8e30530c6368eec7283191f7",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "milestone": "R5",
+      "owner": "desktop",
+      "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
+      "acceptance_test": "application_scenarios_use_the_native_window: extrusion-23 Cancel a failed edit in the dependent part",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3870",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
+    },
+    {
+      "id": "scenario:afb1aa7e332b90219189faf95f5286d9637937499da43cfc4cdbd30b6dc114cd",
+      "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "milestone": "R7",
+      "owner": "desktop",
+      "target_module": "crates/head, crates/gui, crates/session",
+      "acceptance_test": "application_scenarios_use_the_native_window: extrusion-24 Match Shape is disabled for the captured feature",
+      "issues": [
+        "https://github.com/Oblikovati/Oblikovati/issues/3870",
+        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+      ],
+      "state": "inventoried"
     }
   ]
 }
