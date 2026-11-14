@@ -90,6 +90,7 @@ fn accept_value(world: &mut ApplicationWorld, value: &str) {
 }
 // arc-center-point-01
 #[when("I select Center Point Arc, choose its center, start point, and end direction")]
+#[when("the user select Center Point Arc, choose its center, start point, and end direction")]
 fn pointer_arc(world: &mut ApplicationWorld) {
     select_tool(world);
     world.sketch_click(CENTER);
@@ -103,6 +104,16 @@ fn arc_created(world: &mut ApplicationWorld) {
     let geometry = world.edited_geometry();
     let center = geometry.point(arc.center).unwrap().position;
     assert_eq!(world.sketch_pixel_of(center), CENTER, "center pixel");
+    let start = geometry.point(arc.start).unwrap().position;
+    let end = geometry.point(arc.end).unwrap().position;
+    assert_eq!(world.sketch_pixel_of(start), START, "start pixel");
+    assert_eq!(world.sketch_pixel_of(end), BELOW, "end direction pixel");
+    let middle = arc_fraction_pixel(world, 0.5);
+    assert!(
+        middle[0] > CENTER[0] && middle[1] > CENTER[1],
+        "arc side: {middle:?}"
+    );
+    world.expect_segment_drawn(ON_THE_SHORT_ARC, ON_THE_SHORT_ARC);
 }
 #[then("the arc remains and the sketch returns to Ready")]
 fn arc_ready(world: &mut ApplicationWorld) {
