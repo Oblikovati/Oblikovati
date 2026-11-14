@@ -1,0 +1,19 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s
+     Running unittests src/lib.rs (/tmp/obk-line-target/debug/deps/oblikovati_head-a66146db9cfbd922)
+
+running 1 test
+test native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window ... Feature: Line
+  Scenario: line-03 Cancel after only a start point
+   ✔  Given an editable sketch is Ready
+   ✔  When the user select Line and choose a start point
+   ✔  And press Escape before an endpoint
+   ✔  Then the dynamic input closes and Ready returns
+   ✔  And no new segment is visible at the canceled location
+[Summary]
+1 feature
+1 scenario (1 passed)
+5 steps (5 passed)
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 905 filtered out; finished in 6.47s
+

@@ -30834,12 +30834,14 @@
       "acceptance_test": "sketch_scenarios_use_the_native_window: line-02 Inspect repeated-pointer input",
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/3933"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "First native sketch geometry input, cancellation, and history."
+      "mapping_reason": "First native sketch geometry input, cancellation, and history.",
+      "reason": "The captured sketch, view, input state and repeated pointer events are unavailable; see sketch/line/BLOCKERS.md and issue #3933."
     },
     {
       "id": "scenario:f0687ede833937858e4d33db9402e09686c877a89ea628305a7660eaf8b21602",
@@ -31159,12 +31161,14 @@
       "acceptance_test": "sketch_scenarios_use_the_native_window: line-07 Inspect both history operations after a repeated-coordinate attempt",
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/3933"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "reason": "The captured sketch, view, input state and repeated pointer events are unavailable; see sketch/line/BLOCKERS.md and issue #3933."
     },
     {
       "id": "scenario:05543428a7b1c60967dc1fc7b6abb25a4e5ece3e1747c7027ee77cdfdf462a04",
