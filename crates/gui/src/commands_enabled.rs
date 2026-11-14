@@ -326,6 +326,7 @@ impl GuiShellAction {
             Self::Undo => state.undo_label.is_some(),
             Self::Redo => state.redo_label.is_some(),
             Self::ChooseSketchPlane
+            | Self::ChooseSketchPlaneForExtrude
             | Self::StartSketchOn(_)
             | Self::StartSketchOnWorkPlane(_)
             | Self::StartSketchAt { .. } => state.authoring == GuiAuthoringContext::Part,

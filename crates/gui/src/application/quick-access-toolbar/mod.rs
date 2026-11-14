@@ -60,6 +60,7 @@ pub(crate) struct QuickAccessRequests {
     pub new_document: bool,
     pub open_document: bool,
     pub choose_plane: bool,
+    pub choose_plane_for_extrude: bool,
     pub open_extrude: bool,
     pub open_material_browser: bool,
     pub open_appearance_browser: bool,
@@ -295,7 +296,9 @@ impl QuickAccessToolbar {
         if label == EXTRUDE && extrude_can_start(state) {
             if ui.button(label) {
                 match crate::extrude_dialog::start_action(state) {
-                    GuiShellAction::ChooseSketchPlane => self.requests.choose_plane = true,
+                    GuiShellAction::ChooseSketchPlaneForExtrude => {
+                        self.requests.choose_plane_for_extrude = true
+                    }
                     GuiShellAction::OpenExtrude => self.requests.open_extrude = true,
                     _ => unreachable!(),
                 }

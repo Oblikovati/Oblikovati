@@ -46,6 +46,11 @@ fn point_in_window(point: [usize; 2], window: [f32; 4]) -> bool {
 pub(super) fn visible_solid_fill(capture: &ViewportCapture, windows: &[[f32; 4]]) -> bool {
     visible_fill(capture, windows, &fixture_hue)
 }
+pub(super) fn visible_preview_fill(capture: &ViewportCapture, windows: &[[f32; 4]]) -> bool {
+    visible_fill(capture, windows, &|pixel| {
+        pixel[0] > pixel[1].saturating_add(20) && pixel[1] > pixel[2].saturating_add(20)
+    })
+}
 pub(super) fn visible_fixture_point(
     capture: &ViewportCapture,
     windows: &[[f32; 4]],

@@ -34,3 +34,51 @@ fn first_sketch_is_open(world: &mut ApplicationWorld) {
     assert_eq!(browser.sketches.len(), 1, "new part: expected one sketch");
     assert_eq!(browser.sketches[0].name, "Sketch1");
 }
+
+#[given("a rectangle was drawn in the sketch requested by Extrude")]
+fn rectangle_for_waiting_extrusion(world: &mut ApplicationWorld) {
+    new_metric_part(world);
+    extrude_on_origin_plane(world);
+    first_sketch_is_open(world);
+    world.draw_rectangle();
+    assert_eq!(world.edited_geometry().lines().len(), 4, "rectangle edges");
+}
+
+#[when("Finish Sketch is clicked")]
+fn finish_requested_profile(world: &mut ApplicationWorld) {
+    world.finish_sketch();
+}
+
+#[then("the Extrusion panel shows one selected profile")]
+fn waiting_extrusion_shows_profile(world: &mut ApplicationWorld) {
+    world.expect_text("Profiles");
+    world.expect_text("1 Profile");
+}
+
+#[then("a solid preview displays Distance A of 10 mm")]
+fn waiting_extrusion_shows_default_preview(world: &mut ApplicationWorld) {
+    world.expect_text("Distance A");
+    world.expect_text("10 mm");
+    assert!(
+        !world.app().window.scene_colors.is_empty(),
+        "expected preview triangles submitted to the native viewport"
+    );
+    let document = world.active_id();
+    let session = world
+        .app()
+        .owner
+        .documents()
+        .workspace()
+        .session(document)
+        .unwrap();
+    assert!(
+        session.snapshot().work_geometry.features().is_empty(),
+        "preview must not commit a feature"
+    );
+    let capture = super::capture_framebuffer(&mut world.app().window.native);
+    let windows = super::diagnostics::window_occlusions();
+    assert!(
+        super::solid_visibility::visible_preview_fill(&capture, &windows),
+        "expected a shaded extrusion preview outside the panels"
+    );
+}

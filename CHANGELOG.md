@@ -8,6 +8,8 @@
 
 ### Fixed
 
+- Resumed Extrude after its requested sketch finishes, with a 10 mm preview when the sketch is fully constrained. (#3927)
+
 - Cleared the save-path request after opening Save As, so cancellation leaves no stale error message. (#3888)
 
 - Preserved the conversion guard of built-in model parameters when saving and reopening. (#3883)
