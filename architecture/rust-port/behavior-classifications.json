@@ -3205,10 +3205,15 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3887",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-point-04/receipt-d21c1f8c789927b4.json",
+        "sha256": "0874f3a52d7eff409075fafb8a72c1963eaa7230e3e0e4661b342361d5b8716e"
+      },
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
-      "mapping_reason": "Create a center point and restore it through history."
+      "mapping_reason": "Create a center point and restore it through history.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:436f15ab31b13b1dfef8458be1b83d8a3be1c7438819c5c0929b93c9b46729ef",
@@ -3222,10 +3227,15 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3887",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-point-05/receipt-436f15ab31b13b1d.json",
+        "sha256": "cab505d3f5ad71f4034f8467d2d0d379a1dd300b7404daba102e9bdb049ac57c"
+      },
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
-      "mapping_reason": "Place multiple regular points in one command."
+      "mapping_reason": "Place multiple regular points in one command.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:b808d9e7aa5c4536ff4c80934a19febf1c6819957d1b0c9175d5fee7b467b11d",
