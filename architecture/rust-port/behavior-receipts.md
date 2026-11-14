@@ -15,6 +15,24 @@ match the generated ledger and all R0 classification and evidence fields to be
 present. The full gate runs this check. It is expected to fail while those
 fields remain incomplete.
 
+To run one reviewed scenario and prepare its receipt for visual review, use:
+
+```sh
+python3 -B tools/bdd/capture_cli.py \
+  --checkout /absolute/path/to/scenario-checkout \
+  --scenario-id scenario:FULL_ID \
+  --output architecture/rust-port/receipts/UNIQUE_RUN \
+  --renderer "Vulkan with Lavapipe under Xvfb"
+```
+
+Run the command on a configured display, for example under `xvfb-run`. It runs
+the native test, checks the source and application inputs before and after,
+checks all reported steps and cleanup, and retains the report and capture in a
+new directory. If the run produces multiple PNG files, pass `--capture` with
+the intended filename. The command does not change the classification: inspect
+the capture and the result before updating `last_receipt` and marking a scenario
+verified. A successful receipt alone does not close a milestone.
+
 Use `python3 -B tools/bdd/behavior_cli.py backlog` for one entry per feature
 file, ordered by the earliest milestone assigned to one of its scenarios.
 Each entry counts verified, blocked, unclassified, stale, and incomplete R0

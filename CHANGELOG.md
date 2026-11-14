@@ -55,6 +55,8 @@
 
 ### Added
 
+- Added a native scenario receipt command that checks its artifacts before publication. (#3865)
+
 - Added a diagnostic mode to report native BDD step gaps after failures. (#3863)
 
 - Added browser rows and an editor for saved rectangular sketch patterns.
