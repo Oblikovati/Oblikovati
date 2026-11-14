@@ -14488,10 +14488,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3899",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/head/ui/file_dialog.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-gallery-nav-e312e398/receipt-e312e398ad835f6a.json",
+        "sha256": "cf837da16eca7e9627d505fa5d2bc7bafdfa6675ce0c6ee846494c3639eb83ce"
+      },
+      "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/app/session.go",
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b tests direct Part and Assembly activation, not the template chooser or its gallery; see receipts/2026-11-14-go-creation-baseline/README.md.",
+      "kernel_capabilities": "No geometric kernel operation is required for template gallery navigation.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The native desktop and document owner handle the chooser without a geometry operation.",
+      "rust_tests": "application_scenarios_use_the_native_window: Select an assembly template in list view",
+      "oracle": "Pinned native scenario steps check gallery navigation and selection state; final capture reviewed.",
+      "expected_result": "List view shows grouped entries and selected metric Assembly details; switching to medium icons retains the details."
     },
     {
       "id": "scenario:362044937588ba82719772e3b92dcc94620c0fb6d33a693b95ee0d910dac808e",
@@ -14505,10 +14517,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3899",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/head/ui/file_dialog.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-gallery-nav-36204493/receipt-362044937588ba82.json",
+        "sha256": "42ade09cca642d0ef54ec9d2a8fc590698197800f5dea8f9fcaebef2968e13d6"
+      },
+      "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/app/session.go",
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b tests direct Part and Assembly activation, not the template chooser or its gallery; see receipts/2026-11-14-go-creation-baseline/README.md.",
+      "kernel_capabilities": "No geometric kernel operation is required for template gallery navigation.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The native desktop and document owner handle the chooser without a geometry operation.",
+      "rust_tests": "application_scenarios_use_the_native_window: Navigate backward and forward through template folders",
+      "oracle": "Pinned native scenario steps check gallery navigation and selection state; final capture reviewed.",
+      "expected_result": "Back returns to English templates and Forward restores the metric folder and templates."
     },
     {
       "id": "scenario:d6ef766c1d05ae12be9f44eafd2275dc23cbde58e3bf25c663299dfaa7675151",
@@ -14522,10 +14546,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3899",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/head/ui/file_dialog.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-gallery-nav-d6ef766c/receipt-d6ef766c1d05ae12.json",
+        "sha256": "adf7559e8be6e4bf62ab20a6828f728c6290f151cb38940686fdd65aa8b91fb1"
+      },
+      "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/app/session.go",
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b tests direct Part and Assembly activation, not the template chooser or its gallery; see receipts/2026-11-14-go-creation-baseline/README.md.",
+      "kernel_capabilities": "No geometric kernel operation is required for template gallery navigation.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The native desktop and document owner handle the chooser without a geometry operation.",
+      "rust_tests": "application_scenarios_use_the_native_window: Reopen the chooser after canceling a selected template",
+      "oracle": "Pinned native scenario steps check gallery navigation and selection state; final capture reviewed.",
+      "expected_result": "Reopening after Cancel retains the metric folder, selected Assembly template, and its unit details."
     },
     {
       "id": "scenario:6518181908cf5fe93d8e5075dbafc6623a684a9054971710a6510ecb39e45729",
@@ -14539,10 +14575,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3899",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/head/ui/file_dialog.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-gallery-nav-65181819/receipt-6518181908cf5fe9.json",
+        "sha256": "16d255a25c53b09b566042059a490ba126aa67d6c4d78901e83abd28fd6d434c"
+      },
+      "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/app/session.go",
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b tests direct Part and Assembly activation, not the template chooser or its gallery; see receipts/2026-11-14-go-creation-baseline/README.md.",
+      "kernel_capabilities": "No geometric kernel operation is required for template gallery navigation.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The native desktop and document owner handle the chooser without a geometry operation.",
+      "rust_tests": "application_scenarios_use_the_native_window: Navigate home from a template folder",
+      "oracle": "Pinned native scenario steps check gallery navigation and selection state; final capture reviewed.",
+      "expected_result": "Home selects the empty template root while retaining the Assembly details; Back restores the metric gallery."
     },
     {
       "id": "scenario:55ed4d907bf15748d646176225f3d200ab9ed6086ffbc440605acaa9f6e33b55",
