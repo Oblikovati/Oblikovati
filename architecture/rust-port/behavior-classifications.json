@@ -13992,10 +13992,15 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3899",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-create-r4-414a8cdb/receipt-414a8cdb8182b258.json",
+        "sha256": "a3c42c8b823541e149310315aa81a69133c52acbc453be44f2692fb1bfbec0fa"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/head/ui/file_dialog.go",
-      "mapping_reason": "First part creation, document activation, or save/close path through the desktop."
+      "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:553cd20756fa5ed6dc28cddeb27d3958f8b24976d8bd372475258fc6198af26f",
@@ -14230,10 +14235,15 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3899",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-create-r4-57597e19/receipt-57597e1943cb4235.json",
+        "sha256": "c04c0932b83d13583c9fb12bbb388f355bd62ce5ab9d2b9985dbf85855f4aa3c"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/head/ui/file_dialog.go",
-      "mapping_reason": "First part creation, document activation, or save/close path through the desktop."
+      "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:dc7e3e064afa2b62b9b98b143df9d7a730e275b9c56cd41ff50da2ca000cd5dc",
@@ -14247,10 +14257,15 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3899",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-create-r4-dc7e3e06/receipt-dc7e3e064afa2b62.json",
+        "sha256": "9b92850b849af085e3273259516b2ac118881b8981281a6450f81905ffc0a612"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/head/ui/file_dialog.go",
-      "mapping_reason": "First part creation, document activation, or save/close path through the desktop."
+      "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:b0ddf0f8554f8f266954a7babeb0d9d1a3ebc30a85527dac55cb26a5094ea434",
@@ -14332,10 +14347,15 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3899",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-create-r4-8acd0eea/receipt-8acd0eea06ca5d19.json",
+        "sha256": "43bdf4c3572f1e5feec0c3fbd9b4e3d9d0ce144d64d1508f1a3fb1fcfbd69eae"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/head/ui/file_dialog.go",
-      "mapping_reason": "First part creation, document activation, or save/close path through the desktop."
+      "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:7264ec55b1fa3380faef248d62a15b4e41a66720fd3b4e35f5fc8717f34ef8ef",
@@ -14366,10 +14386,15 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3899",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-create-r4-676af48b/receipt-676af48baf43f553.json",
+        "sha256": "791741380a3a8e54dcbf998a055c96c48c67b9e8ac69e86fa023b980304bd130"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/head/ui/file_dialog.go",
-      "mapping_reason": "First part creation, document activation, or save/close path through the desktop."
+      "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:731f45c80f92de839fa7b927c425e0d095bbfd766f09db37f70973f4276582d8",

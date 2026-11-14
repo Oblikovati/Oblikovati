@@ -120,3 +120,5 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 - R7 project folder browser: selecting Documents updates the workspace and derived project path; cancel keeps the previous paths. Both pinned scenarios passed on the merged branch; see `receipts/2026-11-14-folder-check-729a2f28/` and `receipts/2026-11-14-folder-check-d4a00f9d/` (#3895).
 
 - R7 project-dialog scenario file: all eight declarations passed individually on the merged branch. Receipts are in `receipts/2026-11-14-project-final-*/`; the cancellation test also checked the visible provisional row and both empty library lists. This does not verify creating a project file (#3895).
+
+- R4 document creation: five pinned scenarios passed individually on the native window; four create a part and the retained-template scenario creates an assembly. See `receipts/2026-11-14-create-r4-*/` (#3899). A feature-wide diagnostic reported 27 passes and 12 unbound scenarios; it is not acceptance evidence. See `receipts/2026-11-14-creation-diagnostic/summary.json`.
