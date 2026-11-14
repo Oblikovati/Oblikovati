@@ -3,13 +3,13 @@
 mod error;
 mod request;
 use crate::{DocumentSession, TransactionObserver};
-pub use error::PartEvaluationError;
+pub use error::{PartEvaluationError, PartSketchAdoptionError};
 use oblikovati_model::feature::part::PartFeatureEvaluation;
 use oblikovati_model::{
     feature::{part::SketchPrismEvaluator, work_plane::WorkPlaneFaceReference},
     sketch::SketchPlane,
 };
-pub use request::{CompletedPartEvaluation, PartEvaluationRequest};
+pub use request::{CompletedPartEvaluation, CompletedPartSketchRecompute, PartEvaluationRequest};
 /// One derived result store, injected into the document owner. No graph or model mutation lives here.
 pub struct PartEvaluationSlot<Body, Failure> {
     published: Option<CompletedPartEvaluation<Body, Failure>>,
@@ -143,6 +143,30 @@ impl<Body, Failure> PartEvaluationSlot<Body, Failure> {
     }
 }
 impl<O: TransactionObserver> DocumentSession<O> {
+    /// Adopt recomputed sketch consequences without adding an undo step.
+    /// Example: `session.adopt_recomputed_part_sketches(completed)?` after a worker finishes.
+    pub fn adopt_recomputed_part_sketches<Body, Failure>(
+        &mut self,
+        completed: CompletedPartSketchRecompute<Body, Failure>,
+    ) -> Result<bool, PartSketchAdoptionError> {
+        completed
+            .part
+            .validate(self)
+            .map_err(PartSketchAdoptionError::Evaluation)?;
+        let changed = self
+            .history
+            .refresh(|snapshot| {
+                snapshot.sketches = completed.sketches;
+                Ok::<(), crate::MutationError<std::convert::Infallible>>(())
+            })
+            .map_err(crate::CommandError::Edit)
+            .map_err(PartSketchAdoptionError::Refresh)?;
+        if changed {
+            self.sketch_continuity.refresh(self.history.snapshot());
+            self.observer.changed(self.document, self.generation());
+        }
+        Ok(changed)
+    }
     /// Capture a sealed immutable request without holding the session borrow.
     /// Example: `let request = session.prepare_part_evaluation();` before an owner-thread kernel run.
     pub fn prepare_part_evaluation(&self) -> PartEvaluationRequest {

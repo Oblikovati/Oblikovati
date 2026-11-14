@@ -10,6 +10,22 @@ use crate::{
 use oblikovati_solve::{diagnostics::ConstraintStructure, nonlinear::SolveOptions};
 
 impl DocumentSnapshot {
+    pub(crate) fn solve_one_document_sketch_with_datums(
+        &self,
+        id: DocumentSketchId,
+        options: SolveOptions,
+        cancelled: impl FnMut() -> bool,
+        datums: &crate::feature::work_geometry::WorkGeometryEvaluation,
+    ) -> Result<DocumentSketchSolveOutcome, SketchError> {
+        self.sketches.get(id)?;
+        Ok(self.sketches.solve_scope(
+            &self.parameters,
+            options,
+            cancelled,
+            SketchSolveScope::One(id),
+            &BorrowedSketchProjectionInputs::from_datums(datums),
+        ))
+    }
     /// Solve pending sketches using the current ordered part datums.
     /// Example: `snapshot.solve_pending_document_sketches_with_datums(options, || false, &datums)`.
     pub fn solve_pending_document_sketches_with_datums(

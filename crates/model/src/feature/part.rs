@@ -12,7 +12,9 @@ mod delete;
 mod error;
 pub use delete::DeleteBodyDefinition;
 mod evaluate;
-pub use evaluate::{PartFeatureEvaluation, PartFeatureFailure, SketchPrismEvaluator};
+pub use evaluate::{
+    PartFeatureEvaluation, PartFeatureFailure, RecomputedPart, SketchPrismEvaluator,
+};
 mod reads;
 pub use super::work_plane::{
     WorkPlaneProgramRecipe as PartFeatureProgramRecipe,

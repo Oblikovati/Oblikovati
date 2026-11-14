@@ -3,10 +3,19 @@ use super::SessionCommands;
 use crate::{
     TransactionObserver,
     part_evaluation::{
-        CompletedPartEvaluation, PartEvaluationError, PartEvaluationRequest, PartEvaluationSlot,
+        CompletedPartEvaluation, CompletedPartSketchRecompute, PartEvaluationError,
+        PartEvaluationRequest, PartEvaluationSlot, PartSketchAdoptionError,
     },
 };
 impl<O: TransactionObserver> SessionCommands<'_, O> {
+    /// Publish current recomputed sketches without a new undo step.
+    /// Example: `files.commands(id)?.adopt_recomputed_part_sketches(completed)?`.
+    pub fn adopt_recomputed_part_sketches<Body, Failure>(
+        &mut self,
+        completed: CompletedPartSketchRecompute<Body, Failure>,
+    ) -> Result<bool, PartSketchAdoptionError> {
+        self.session.adopt_recomputed_part_sketches(completed)
+    }
     /// Capture from a fixed file-owned document without keeping the borrowed capability.
     /// Example: `files.commands(id)?.prepare_part_evaluation()` before kernel work.
     pub fn prepare_part_evaluation(&self) -> PartEvaluationRequest {

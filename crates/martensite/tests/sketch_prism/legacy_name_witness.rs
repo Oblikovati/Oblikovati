@@ -306,3 +306,59 @@ fn face_offset_rejects_a_foreign_document_name_without_dropping_its_body() {
     assert!(replay.body(FeatureId(1)).is_some());
     assert!(replay.plane(FeatureId(2)).is_err());
 }
+
+#[test]
+fn ordered_recompute_moves_face_sketch_after_size_edit() {
+    use oblikovati_martensite::CertifiedNamedPrismEvaluator;
+    use oblikovati_model::{
+        document_sketch::{PlacedSketchHealth, SketchEvaluation, SketchPlacement},
+        history::DocumentSketchCreation,
+    };
+    let history = face_offset_history(native_side_name(7));
+    let mut evaluator =
+        CertifiedNamedPrismEvaluator::new(&history, document_guid(), app_resolution());
+    let datums = history
+        .snapshot()
+        .evaluate_part_features(&mut evaluator)
+        .unwrap()
+        .datum_evaluation();
+    let request = DocumentSketchCreation {
+        name: "Face sketch".into(),
+        placement: SketchPlacement::WorkPlane(FeatureId(2)),
+        orientation: None,
+        project_origin: true,
+    };
+    history
+        .preview(|candidate, ids| {
+            let sketch = candidate.create_document_sketch_with_datums(&request, ids, &datums)?;
+            let size = candidate.parameters.find("size").unwrap();
+            candidate.parameters.set_expression(size, "20 mm").unwrap();
+            candidate.sketches = candidate
+                .solve_pending_document_sketches(Default::default(), || false)
+                .candidate;
+            let mut evaluator =
+                CertifiedNamedPrismEvaluator::new(&history, document_guid(), app_resolution());
+            let (result, sketches) = candidate
+                .recompute_part_with_sketches(&mut evaluator, Default::default())
+                .unwrap();
+            let mut updated = candidate.clone();
+            updated.sketches = sketches;
+            let datums = result.datum_evaluation();
+            let plane = updated
+                .resolve_sketch_plane_with_datums(sketch, &datums)
+                .unwrap();
+            assert_frame_values(plane.recipe().origin, [2.5, 0., 0.]);
+            let health = updated
+                .document_sketch_health_with_datums(sketch, &datums)
+                .unwrap();
+            assert!(
+                matches!(
+                    health,
+                    PlacedSketchHealth::Current(SketchEvaluation::Numerical(_))
+                ),
+                "{health:?}"
+            );
+            Ok::<_, oblikovati_model::history::DocumentSketchCreationError>(())
+        })
+        .unwrap();
+}

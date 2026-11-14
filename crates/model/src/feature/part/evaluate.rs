@@ -9,7 +9,7 @@ use crate::{
     },
     history::DocumentSnapshot,
 };
-use std::collections::BTreeMap;
+use std::{borrow::Cow, collections::BTreeMap};
 /// The model resolves current source inputs; the injected adapter owns kernel construction and validation.
 pub trait SketchPrismEvaluator {
     type Body;
@@ -49,6 +49,15 @@ pub struct PartFeatureEvaluation<Body, Failure> {
     deleted: BTreeMap<FeatureId, Vec<u8>>,
     health: Vec<FeatureHealthRecord<PartFeatureFailure<Failure>>>,
 }
+/// One ordered part result and the solved sketches that produced it.
+pub type RecomputedPart<Body, Failure> = (
+    PartFeatureEvaluation<Body, Failure>,
+    crate::document_sketch::DocumentSketches,
+);
+type PartReplayCandidate<'a, Body, Failure> = (
+    PartFeatureEvaluation<Body, Failure>,
+    Cow<'a, DocumentSnapshot>,
+);
 impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
     /// Copy the datum results and their ordered health from this replay.
     /// Example: `let datums = replay.datum_evaluation();` for datum queries.
@@ -128,6 +137,36 @@ impl DocumentSnapshot {
         backend: &mut B,
         mut cancelled: impl FnMut() -> bool,
     ) -> Result<PartFeatureEvaluation<B::Body, B::Failure>, PartFeatureProgramError> {
+        self.replay_part_with_sketches(backend, None, &mut cancelled)
+            .map(|(result, _)| result)
+    }
+    /// Recompute sketches in feature order using each current datum prefix.
+    /// Example: `let (part, sketches) = snapshot.recompute_part_with_sketches(&mut backend, options)?`.
+    pub fn recompute_part_with_sketches<B: SketchPrismEvaluator>(
+        &self,
+        backend: &mut B,
+        options: oblikovati_solve::nonlinear::SolveOptions,
+    ) -> Result<RecomputedPart<B::Body, B::Failure>, PartFeatureProgramError> {
+        self.recompute_part_with_sketches_cancellable(backend, options, || false)
+    }
+    /// Recompute an ordered part and discard all results on cancellation.
+    /// Example: `snapshot.recompute_part_with_sketches_cancellable(&mut backend, options, || false)?`.
+    pub fn recompute_part_with_sketches_cancellable<B: SketchPrismEvaluator>(
+        &self,
+        backend: &mut B,
+        options: oblikovati_solve::nonlinear::SolveOptions,
+        mut cancelled: impl FnMut() -> bool,
+    ) -> Result<RecomputedPart<B::Body, B::Failure>, PartFeatureProgramError> {
+        let (part, candidate) =
+            self.replay_part_with_sketches(backend, Some(options), &mut cancelled)?;
+        Ok((part, candidate.into_owned().sketches))
+    }
+    fn replay_part_with_sketches<'a, B: SketchPrismEvaluator>(
+        &'a self,
+        backend: &mut B,
+        options: Option<oblikovati_solve::nonlinear::SolveOptions>,
+        cancelled: &mut impl FnMut() -> bool,
+    ) -> Result<PartReplayCandidate<'a, B::Body, B::Failure>, PartFeatureProgramError> {
         let range = self.part_replay_range()?;
         let sequence = self.effective_work_geometry();
         let mut controller = FeatureReplayController::new_with_parameters(
@@ -138,23 +177,38 @@ impl DocumentSnapshot {
         )
         .map_err(PartFeatureProgramError::Reads)?;
         let mut evaluation = PartFeatureEvaluation::empty();
-        evaluation.replay(self, backend, &mut controller, &mut cancelled)?;
+        let mut candidate = Cow::Borrowed(self);
+        evaluation.replay(&mut candidate, backend, &mut controller, options, cancelled)?;
         evaluation.health = controller
             .finish()
             .map_err(PartFeatureProgramError::Reads)?;
-        Ok(evaluation)
+        if let Some(options) = options {
+            let candidate = candidate.to_mut();
+            let solved = candidate.solve_pending_document_sketches_with_datums(
+                options,
+                &mut *cancelled,
+                &evaluation.datums,
+            );
+            require_replay_current(
+                solved.report.cancelled || cancelled(),
+                evaluation.health.len(),
+            )?;
+            candidate.sketches = solved.candidate;
+        }
+        Ok((evaluation, candidate))
     }
 }
 impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
     fn replay<B: SketchPrismEvaluator<Body = Body, Failure = Failure>>(
         &mut self,
-        snapshot: &DocumentSnapshot,
+        snapshot: &mut Cow<'_, DocumentSnapshot>,
         backend: &mut B,
         controller: &mut FeatureReplayController<
             '_,
             PartFeatureDefinition,
             PartFeatureFailure<Failure>,
         >,
+        options: Option<oblikovati_solve::nonlinear::SolveOptions>,
         cancelled: &mut impl FnMut() -> bool,
     ) -> Result<(), PartFeatureProgramError> {
         loop {
@@ -166,12 +220,48 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
                 return Ok(());
             };
             if let FeatureReplayStep::Evaluate(id) = step {
+                if let Some(options) = options {
+                    self.solve_feature_sketch(
+                        snapshot,
+                        id,
+                        options,
+                        controller.records().len(),
+                        cancelled,
+                    )?;
+                }
                 let outcome = self.evaluate_entry(snapshot, backend, id);
                 controller
                     .record_result(id, outcome)
                     .map_err(PartFeatureProgramError::Reads)?;
             }
         }
+    }
+    fn solve_feature_sketch(
+        &self,
+        snapshot: &mut Cow<'_, DocumentSnapshot>,
+        id: FeatureId,
+        options: oblikovati_solve::nonlinear::SolveOptions,
+        completed: usize,
+        cancelled: &mut impl FnMut() -> bool,
+    ) -> Result<(), PartFeatureProgramError> {
+        let Ok(feature) = snapshot.work_geometry.get(id) else {
+            return Ok(());
+        };
+        let PartFeatureDefinition::SketchPrism(definition) = feature.definition() else {
+            return Ok(());
+        };
+        let sketch = definition.sketch();
+        let candidate = snapshot.to_mut();
+        if let Ok(solved) = candidate.solve_one_document_sketch_with_datums(
+            sketch,
+            options,
+            &mut *cancelled,
+            &self.datums,
+        ) {
+            require_replay_current(solved.report.cancelled || cancelled(), completed)?;
+            candidate.sketches = solved.candidate;
+        }
+        Ok(())
     }
     fn evaluate_entry<B: SketchPrismEvaluator<Body = Body, Failure = Failure>>(
         &mut self,

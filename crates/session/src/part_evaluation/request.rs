@@ -10,6 +10,28 @@ pub struct PartEvaluationRequest {
     pub(super) snapshot: HistoryEvaluationSnapshot,
 }
 impl PartEvaluationRequest {
+    /// Recompute sketches and part features in dependency order without adopting them.
+    /// Example: `request.recompute_sketches(&mut backend, options)?`.
+    pub fn recompute_sketches<B: SketchPrismEvaluator>(
+        self,
+        backend: &mut B,
+        options: oblikovati_solve::nonlinear::SolveOptions,
+    ) -> Result<CompletedPartSketchRecompute<B::Body, B::Failure>, PartEvaluationError> {
+        let scope = self.snapshot.scope().clone();
+        let (evaluation, sketches) = self
+            .snapshot
+            .snapshot()
+            .recompute_part_with_sketches_cancellable(backend, options, || scope.is_superseded())
+            .map_err(PartEvaluationError::Replay)?;
+        Ok(CompletedPartSketchRecompute {
+            part: CompletedPartEvaluation {
+                document: self.document,
+                scope,
+                evaluation,
+            },
+            sketches,
+        })
+    }
     /// Poll supersession or close without borrowing the session; example: `request.is_superseded()` while queued.
     pub fn is_superseded(&self) -> bool {
         self.snapshot.scope().is_superseded()
@@ -32,6 +54,11 @@ impl PartEvaluationRequest {
             evaluation,
         })
     }
+}
+/// A generation-sealed candidate; only its originating session may adopt its sketches.
+pub struct CompletedPartSketchRecompute<Body, Failure> {
+    pub(super) part: CompletedPartEvaluation<Body, Failure>,
+    pub(super) sketches: oblikovati_model::document_sketch::DocumentSketches,
 }
 /// A sealed completed receipt. Only its session can publish it into result storage.
 pub struct CompletedPartEvaluation<Body, Failure> {

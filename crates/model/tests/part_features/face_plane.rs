@@ -381,3 +381,6 @@ fn sketch_creation_validates_and_projects_origin_with_part_datums() {
         })
         .unwrap();
 }
+
+#[path = "face_plane/ordered_recompute.rs"]
+mod ordered_recompute;

@@ -1,6 +1,28 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use oblikovati_model::feature::part::PartFeatureProgramError;
 use std::{error::Error, fmt};
+/// A recompute was stale or could not be adopted as a derived refresh.
+#[derive(Debug)]
+pub enum PartSketchAdoptionError {
+    Evaluation(PartEvaluationError),
+    Refresh(crate::CommandError<std::convert::Infallible>),
+}
+impl fmt::Display for PartSketchAdoptionError {
+    fn fmt(&self, output: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Evaluation(error) => error.fmt(output),
+            Self::Refresh(error) => error.fmt(output),
+        }
+    }
+}
+impl Error for PartSketchAdoptionError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::Evaluation(error) => Some(error),
+            Self::Refresh(error) => Some(error),
+        }
+    }
+}
 /// Rejected results never replace the currently published generation.
 #[derive(Debug, PartialEq)]
 pub enum PartEvaluationError {
