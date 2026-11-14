@@ -157,3 +157,21 @@ fn unconverted_model_sections_are_not_silently_ignored() {
         .to_string();
     assert!(error.contains("futureFeatureData"), "{error}");
 }
+
+#[test]
+fn go_face_dependent_plane_is_refused_without_losing_its_reference() {
+    let bytes = include_bytes!(
+        "../../../architecture/rust-port/receipts/2026-11-14-go-dependent-face/cube-with-face-plane.obk"
+    );
+    let package = DocumentPackage::decode(bytes).unwrap();
+    let original = package.clone();
+    let error = package
+        .prepare_legacy_part_candidate(&GoCubeProfile)
+        .unwrap_err()
+        .to_string();
+    assert!(error.contains("workFeatures"), "unexpected error: {error}");
+    assert_eq!(package, original);
+    let encoded = package.encode().unwrap();
+    let restored = DocumentPackage::decode(&encoded).unwrap();
+    assert_eq!(restored, original);
+}
