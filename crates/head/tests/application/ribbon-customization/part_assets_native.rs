@@ -89,6 +89,27 @@ fn reopen_part(world: &mut ApplicationWorld, path: &std::path::Path) {
     world.pump(Vec::new());
     world.pump(Vec::new());
 }
+fn assert_submitted_color(world: &mut ApplicationWorld, rgb: [f32; 3]) {
+    let colors = &world.app().window.scene_colors;
+    assert!(!colors.is_empty(), "expected a submitted solid");
+    assert!(
+        colors
+            .iter()
+            .all(|color| *color == [rgb[0], rgb[1], rgb[2], 1.]),
+        "expected scene color {rgb:?}, got {colors:?}"
+    );
+}
+fn default_catalog_color() -> [f32; 3] {
+    use oblikovati_api::contract::Appearance;
+    let catalog = oblikovati_persistence::assets::load_builtin_catalog().unwrap();
+    let color = catalog
+        .appearances()
+        .get(oblikovati_model::assets::DEFAULT_APPEARANCE_ID)
+        .unwrap()
+        .base()
+        .color;
+    [color.r, color.g, color.b]
+}
 
 #[test]
 fn assigning_material_updates_the_visible_solid_to_its_catalog_appearance() {
@@ -99,6 +120,8 @@ fn assigning_material_updates_the_visible_solid_to_its_catalog_appearance() {
     let windows = diagnostics::window_occlusions();
     let point =
         super::super::super::solid_visibility::visible_fixture_point(&capture, &windows).unwrap();
+    let original = world.pixel_at([point[0] as usize, point[1] as usize]);
+    assert_submitted_color(&mut world, default_catalog_color());
     world.click_text("Tools");
     let material = choose_first_material(&mut world);
     let catalog = oblikovati_persistence::assets::load_builtin_catalog().unwrap();
@@ -109,18 +132,18 @@ fn assigning_material_updates_the_visible_solid_to_its_catalog_appearance() {
         .unwrap()
         .base()
         .color;
-    let expected =
-        super::super::super::solid_visibility::framebuffer_rgb([color.r, color.g, color.b]);
     world.pump(Vec::new());
+    assert_submitted_color(&mut world, [color.r, color.g, color.b]);
     let actual = world.pixel_at([point[0] as usize, point[1] as usize]);
-    assert!(
-        (0..3).all(|i| actual[i].abs_diff(expected[i]) <= 3),
-        "material {material:?}: expected {expected:?}, got {actual:?}"
+    assert_ne!(
+        actual[..3],
+        original[..3],
+        "material {material:?}: expected a visible repaint"
     );
     world.save_capture("material-appearance-solid");
     world.click_text("Undo");
+    assert_submitted_color(&mut world, default_catalog_color());
     let actual = world.pixel_at([point[0] as usize, point[1] as usize]);
-    let original = super::super::super::solid_visibility::default_fixture_rgb();
     assert!(
         (0..3).all(|i| actual[i].abs_diff(original[i]) <= 3),
         "expected {original:?} after undo, got {actual:?}"
@@ -137,20 +160,28 @@ fn assigning_part_appearance_refreshes_the_visible_solid() {
     let point = super::super::super::solid_visibility::visible_fixture_point(&capture, &windows)
         .expect("expected a visible solid before changing appearance");
     let before = world.pixel_at([point[0] as usize, point[1] as usize]);
-    let expected = super::super::super::solid_visibility::default_fixture_rgb();
-    assert!(
-        (0..3).all(|i| before[i].abs_diff(expected[i]) <= 3),
-        "expected default {expected:?}, got {before:?}"
-    );
+    assert_submitted_color(&mut world, default_catalog_color());
     world.click_text("Tools");
     let appearance = choose_first_appearance(&mut world);
+    use oblikovati_api::contract::Appearance;
+    let catalog = oblikovati_persistence::assets::load_builtin_catalog().unwrap();
+    let color = catalog.appearances().get(&appearance).unwrap().base().color;
     world.pump(Vec::new());
+    assert_submitted_color(&mut world, [color.r, color.g, color.b]);
     let after = world.pixel_at([point[0] as usize, point[1] as usize]);
     assert_ne!(
-        before, after,
+        before[..3],
+        after[..3],
         "appearance {appearance:?}: expected the solid to refresh"
     );
     world.save_capture("part-appearance-solid");
+    world.click_text("Undo");
+    assert_submitted_color(&mut world, default_catalog_color());
+    let restored = world.pixel_at([point[0] as usize, point[1] as usize]);
+    assert!(
+        (0..3).all(|i| restored[i].abs_diff(before[i]) <= 3),
+        "expected {before:?} after undo, got {restored:?}"
+    );
     world.close();
 }
 

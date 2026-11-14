@@ -119,6 +119,12 @@ impl HeadWindow for ScriptedGuiWindow {
         self.native.process_view_input(event)
     }
     fn submit_scene(&mut self, update: crate::HeadSceneUpdate) -> Result<(), String> {
+        self.scene_colors = update
+            .scene
+            .triangles
+            .iter()
+            .map(|triangle| triangle.color)
+            .collect();
         self.native.submit_scene(update)
     }
     fn submit_sketch_scene(&mut self, update: crate::HeadSketchSceneUpdate) -> Result<(), String> {

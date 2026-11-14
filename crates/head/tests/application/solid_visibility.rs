@@ -3,7 +3,6 @@
 use oblikovati_viewport::ViewportCapture;
 const PATCH_SIDE: usize = 5;
 const HUE_MARGIN: u8 = 20;
-pub(super) use crate::fixture_color::{default_fixture_rgb, framebuffer_rgb};
 pub(super) fn visible_fixture_bounds(
     capture: &ViewportCapture,
     windows: &[[f32; 4]],
