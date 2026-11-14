@@ -84,7 +84,7 @@ impl NamedPrismSnapshot {
     pub fn certification(&self) -> Option<&CertifiedPrismEvidence> {
         self.certification.as_ref()
     }
-    /// The nearest face a line meets; example: `body.face_on_line(window_line)?`.
+    /// The nearest face a forward ray meets; example: `body.face_on_line(window_line)?`.
     pub fn face_on_line(
         &self,
         line: [[f64; 3]; 2],

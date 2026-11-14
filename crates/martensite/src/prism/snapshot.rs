@@ -231,7 +231,7 @@ impl PrismProbeSnapshot {
         capture_prism(&self.shape, &self.faces).map_err(|cause| cause.to_string())
     }
     /// Derive presentation from a detached B-rep copy; example: `snapshot.presentation(options)?`.
-    /// The nearest face a line meets, and how far along the line: exact, from the kernel's
+    /// The nearest face a forward ray meets, and its distance: exact, from the kernel's
     /// faces, never from a display mesh. Example: `body.face_on_line([point, direction])?`.
     pub fn face_on_line(
         &self,
@@ -243,7 +243,7 @@ impl PrismProbeSnapshot {
             let mut intersector = IntCurvesFaceShapeIntersector::new();
             let reach = (|| -> Result<Option<f64>, martensite_tkernel::standard::Failure> {
                 intersector.load(face, PICK_TOLERANCE)?;
-                intersector.perform_nearest(&line, f64::MIN / 2., f64::MAX / 2.)?;
+                intersector.perform_nearest(&line, 0., f64::MAX / 2.)?;
                 if intersector.nb_pnt() == 0 {
                     return Ok(None);
                 }

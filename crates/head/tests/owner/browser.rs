@@ -3,6 +3,19 @@ use super::*;
 use oblikovati_model::{document_sketch::DocumentSketchId, sketch::SketchPlane};
 
 #[test]
+fn viewport_ray_from_inside_a_solid_selects_the_forward_face() {
+    let (mut owner, _) = owner();
+    let document = super::part_scene::open_prism(&mut owner, false);
+    owner.take_scene().unwrap();
+    let picked = owner
+        .part_scenes
+        .face_on_line(&owner.files, document, [[1., 1., 1.], [0., 0., 1.]])
+        .unwrap()
+        .unwrap();
+    assert_eq!(picked.1, oblikovati_martensite::PrismFaceRole::End);
+}
+
+#[test]
 fn selection_modes_filter_viewport_faces_without_blocking_measure() {
     use oblikovati_gui::{GuiInspectAction, GuiSelectionMode};
     let (mut owner, _) = owner();

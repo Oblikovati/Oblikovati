@@ -1,5 +1,20 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+
+#[test]
+fn native_camera_ray_picks_a_visible_prism_face() {
+    let directory = tempfile::tempdir().unwrap();
+    let mut window = NativeHeadWindow::open().unwrap();
+    let mut owner = native_owner(window.wake.clone()).unwrap();
+    let document = open_native_part(&mut owner, &directory.path().join("ray-pick.opd"));
+    submit_native_scene(&mut owner, &mut window);
+    let pixel = window.view.model_pixel([2., 1.5, 2.]).unwrap();
+    let ray = window.view.view_line(pixel).unwrap();
+    assert!(owner.click_model_from_gui(document, ray).unwrap());
+    assert!(owner.gui_command_state().unwrap().model_face_chosen);
+    owner.finish().unwrap();
+    window.finish().unwrap();
+}
 use crate::HeadSketchWork;
 use crate::HeadWork;
 use crate::scene_fixture as fixture;

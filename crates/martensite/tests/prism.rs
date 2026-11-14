@@ -225,6 +225,21 @@ fn a_line_of_sight_finds_the_nearest_face_of_the_solid_and_misses_beside_it() {
     );
 }
 
+#[test]
+fn a_ray_selects_only_forward_faces() {
+    let snapshot = retain_planar_prism(&rectangle()).unwrap();
+    let (role, reach) = snapshot
+        .face_on_line([[1., 1., 1.], [0., 0., 1.]])
+        .unwrap()
+        .unwrap();
+    assert_eq!(role, PrismFaceRole::End);
+    assert_eq!(reach, 1.);
+    assert_eq!(
+        snapshot.face_on_line([[1., 1., 3.], [0., 0., 1.]]).unwrap(),
+        None
+    );
+}
+
 fn polygon_mut(loop_: &mut PrismProbeLoop) -> (&mut Vec<u64>, &mut Vec<[f64; 2]>) {
     let PrismProbeLoop::Polygon {
         edge_keys,
