@@ -135,4 +135,4 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 
 - R4 selection priority: native part-body and face hits now use enabled filters and user order within a camera-scaled depth window. Tool-specific face selection remains effective. Assembly faces, work planes, other snap candidates, persisted priority, and perspective-depth scaling remain open (#3890). See `receipts/2026-11-14-part-priority/receipt.json`.
 
-- A12: the quick-access toolbar catalog is separate; both modules are below 500 lines. Eight GUI tests, the native Select control test, and strict GUI Clippy passed. The automation file-host test is now separate; 46 automation tests and strict Clippy passed (#3860).
+- A12: the quick-access toolbar catalog is separate; both modules are below 500 lines. Eight GUI tests, the native Select control test, and strict GUI Clippy passed. The automation file-host test is separate; 46 automation tests and strict Clippy passed. The native window boundary is separate from the frame loop; 24 frame tests, native resize, and strict head Clippy passed (#3860).
