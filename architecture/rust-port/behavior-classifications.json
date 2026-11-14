@@ -29847,12 +29847,14 @@
       "acceptance_test": "sketch_scenarios_use_the_native_window: arc-three-point-05 Measure a major arc",
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/3934"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "reason": "The recorded sketch, view and input events are unavailable; see sketch/arc-three-point/BLOCKERS.md and issue #3934."
     },
     {
       "id": "scenario:a551685663ac8e9892098d8818063c781d2b2b460aa3c9d029bea0b7767148c7",
@@ -29864,12 +29866,14 @@
       "acceptance_test": "sketch_scenarios_use_the_native_window: arc-three-point-06 Cancel after selecting only the start point",
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/3934"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "First native sketch geometry input, cancellation, and history."
+      "mapping_reason": "First native sketch geometry input, cancellation, and history.",
+      "reason": "The recorded sketch, view and input events are unavailable; see sketch/arc-three-point/BLOCKERS.md and issue #3934."
     },
     {
       "id": "scenario:630623170dfc39fdfe9051546adca2939fd1387a1068c08e1e5ba950ed210367",
@@ -29881,12 +29885,14 @@
       "acceptance_test": "sketch_scenarios_use_the_native_window: arc-three-point-07 Cancel after selecting both endpoints",
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/3934"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "First native sketch geometry input, cancellation, and history."
+      "mapping_reason": "First native sketch geometry input, cancellation, and history.",
+      "reason": "The recorded sketch, view and input events are unavailable; see sketch/arc-three-point/BLOCKERS.md and issue #3934."
     },
     {
       "id": "scenario:32ee491f0e2031be816302169b3a8f2b75f410638a8542c5209a9c6349e8a4d1",
@@ -29898,12 +29904,14 @@
       "acceptance_test": "sketch_scenarios_use_the_native_window: arc-three-point-08 Commit and undo and redo an arc",
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/3934"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "First native sketch geometry input, cancellation, and history."
+      "mapping_reason": "First native sketch geometry input, cancellation, and history.",
+      "reason": "The recorded sketch, view and input events are unavailable; see sketch/arc-three-point/BLOCKERS.md and issue #3934."
     },
     {
       "id": "scenario:b8ec7f78c67ad49a2c41b44c7f87e635f5e3e607409f5239b4b087f474e1a701",
@@ -29915,12 +29923,14 @@
       "acceptance_test": "sketch_scenarios_use_the_native_window: arc-three-point-09 Measure the restored arc sweep",
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/3934"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "reason": "The recorded sketch, view and input events are unavailable; see sketch/arc-three-point/BLOCKERS.md and issue #3934."
     },
     {
       "id": "scenario:393ef885caea31350e2f6d8478ee7275c7f6455d7d1d077c886416b6b249b718",
@@ -29932,12 +29942,14 @@
       "acceptance_test": "sketch_scenarios_use_the_native_window: arc-three-point-10 Continue after a same-position end click",
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/3934"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "First native sketch geometry input, cancellation, and history."
+      "mapping_reason": "First native sketch geometry input, cancellation, and history.",
+      "reason": "The recorded sketch, view and input events are unavailable; see sketch/arc-three-point/BLOCKERS.md and issue #3934."
     },
     {
       "id": "scenario:c705f7820a1e82f70acdfbae3d42c99581e1bde4e0e9c609eac6b2ae719bd6b9",
@@ -29949,12 +29961,14 @@
       "acceptance_test": "sketch_scenarios_use_the_native_window: arc-three-point-11 Create and measure a minor arc",
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/3934"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "reason": "The recorded sketch, view and input events are unavailable; see sketch/arc-three-point/BLOCKERS.md and issue #3934."
     },
     {
       "id": "scenario:37e1bc46bd8cdde449bc32d894b84c3c2190a57a3bfe911f1475491aa642e7a1",
@@ -29966,12 +29980,14 @@
       "acceptance_test": "sketch_scenarios_use_the_native_window: arc-three-point-12 Cancel a proposed radius while retaining its dimension",
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/3934"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "reason": "The recorded sketch, view and input events are unavailable; see sketch/arc-three-point/BLOCKERS.md and issue #3934."
     },
     {
       "id": "scenario:0f235ee88dbfbd7952b5ee2abd03de2fc45362405e5b1136a3a818bcd95f8a78",
@@ -29983,12 +29999,14 @@
       "acceptance_test": "sketch_scenarios_use_the_native_window: arc-three-point-13 Accept a radius edit and observe its history",
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/3934"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "reason": "The recorded sketch, view and input events are unavailable; see sketch/arc-three-point/BLOCKERS.md and issue #3934."
     },
     {
       "id": "scenario:0022aab215cc438e7d77bdca8e6ac1afde9b8024191900243f29cde70e117ff2",
@@ -30000,12 +30018,14 @@
       "acceptance_test": "sketch_scenarios_use_the_native_window: arc-three-point-14 Observe the keyboard-only endpoint and radius attempt",
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/3934"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "reason": "The recorded sketch, view and input events are unavailable; see sketch/arc-three-point/BLOCKERS.md and issue #3934."
     },
     {
       "id": "scenario:cf1f8f0dc8104b7b76d4abb18b920b3c4158e5ec75fec2c7d1cce249befdb130",
@@ -30017,12 +30037,14 @@
       "acceptance_test": "sketch_scenarios_use_the_native_window: arc-three-point-15 Create an arc using a locked numeric radius",
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/3934"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "reason": "The recorded sketch, view and input events are unavailable; see sketch/arc-three-point/BLOCKERS.md and issue #3934."
     },
     {
       "id": "scenario:81a0635893482797d30e342545ee2cbd06fc5839887e1f896aa045303c1d3882",
@@ -30034,12 +30056,14 @@
       "acceptance_test": "sketch_scenarios_use_the_native_window: arc-three-point-16 Recover from a third point on the endpoints screen row",
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/3934"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "reason": "The recorded sketch, view and input events are unavailable; see sketch/arc-three-point/BLOCKERS.md and issue #3934."
     },
     {
       "id": "scenario:11b3caa753052e719c384c2e235c3e91bd5470eb65dc98359c0adaaf234b2f98",

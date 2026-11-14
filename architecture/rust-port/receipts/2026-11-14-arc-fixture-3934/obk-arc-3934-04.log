@@ -1,0 +1,21 @@
+
+running 1 test
+Feature: Arc three point
+  Scenario: arc-three-point-04 Undo and redo a committed change
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch
+   ✔  Given the user has committed one valid arc through this feature
+   ✔  And the user has exited the creation or edit command
+   ✔  When the user press Ctrl+Z once
+   ✔  Then the last feature transaction is undone
+   ✔  When the user press Ctrl+Y once
+   ✔  Then that transaction is restored
+   ✔  And the arc and surrounding geometry are visible again
+[Summary]
+1 feature
+1 scenario (1 passed)
+9 steps (9 passed)
+test native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 905 filtered out; finished in 12.37s
+
