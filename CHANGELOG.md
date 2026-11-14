@@ -4,6 +4,8 @@
 
 ### Changed
 
+- Extended staged legacy part replay to face-offset planes with independently witnessed side lineage; production precision qualification remains required. (#3882, #3928)
+
 - Added a shared resolver that matches witnessed Go profile boundaries to current certified regions, with precision qualification required. Automatic Go profile witnessing remains open. (#3882, #3928)
 
 - Added conservative physical-unit labels to raw sketch residual rows, with unknown units retained where the equation is ambiguous. These labels do not certify spatial or angular bounds. (#3928)

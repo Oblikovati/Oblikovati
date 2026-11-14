@@ -92,7 +92,7 @@ const CAP_PLANE: &[u8] = include_bytes!(
     "../../../../architecture/rust-port/receipts/2026-11-14-go-cap-plane/cube-with-cap-plane.obk"
 );
 
-fn candidate_and_base(
+pub(super) fn candidate_and_base(
     bytes: &[u8],
 ) -> (
     oblikovati_persistence::package::LegacyPartCandidate,
@@ -109,7 +109,7 @@ fn candidate_and_base(
     (candidate, base)
 }
 
-fn identity_mapping() -> BTreeMap<u64, LegacyStagedFeatureIdentity> {
+pub(super) fn identity_mapping() -> BTreeMap<u64, LegacyStagedFeatureIdentity> {
     BTreeMap::from([
         (
             2,

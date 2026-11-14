@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Stage ordered legacy prism and cap-plane definitions without mutating the source.
+//! Stage ordered legacy prism and face-plane definitions without mutating the source.
 use super::{
-    LegacyCapBindingVerifier, LegacyExtrusionFaceRole, LegacyPartCandidate, LegacySketchCandidate,
-    PackageCodecError,
+    LegacyCapBindingVerifier, LegacyExtrusionCandidate, LegacyExtrusionFaceRole,
+    LegacyPartCandidate, LegacySideLineageWitness, LegacySketchCandidate, PackageCodecError,
 };
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
     feature::{AuthoredFeature, FeatureId},
     history::DocumentSnapshot,
     identity::DocumentGuid,
+    sketch::SketchEntityId,
 };
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -19,8 +20,8 @@ pub struct LegacyStagedFeatureIdentity {
     pub name: String,
 }
 
-/// Solve the staged input and check a named cap in its current prefix.
-pub trait LegacyCapStageVerifier {
+/// Solve staged sketches and verify named faces in the current prefix.
+pub trait LegacyPartStageVerifier {
     /// Solve current sketches without replacing authored input; example: `verifier.solve(&mut snapshot)?`.
     fn solve(&self, snapshot: &mut DocumentSnapshot) -> Result<(), String>;
     /// Qualify the current sketch's spatial and angular solve evidence; default is a named decline.
@@ -35,6 +36,32 @@ pub trait LegacyCapStageVerifier {
             "sketch {sketch:?}: qualified spatial and angular solve evidence is unavailable (#3928)"
         ))
     }
+    /// Certify a Go side ordinal against source-curve lineage; the default declines.
+    /// Example: `verifier.source_side_curve(&key, 0, source)?`.
+    fn source_side_curve(
+        &self,
+        _key: &[u8],
+        ordinal: u64,
+        _source: &LegacyExtrusionCandidate,
+    ) -> Result<SketchEntityId, String> {
+        Err(format!(
+            "Go side ordinal {ordinal}: source-curve lineage is unavailable"
+        ))
+    }
+    /// Verify one named side against the current body; the default declines.
+    /// Example: `verifier.verify_side(snapshot, document, feature, &key, curve)?`.
+    fn verify_side(
+        &self,
+        _snapshot: &DocumentSnapshot,
+        _document: DocumentGuid,
+        feature: FeatureId,
+        _key: &[u8],
+        curve: SketchEntityId,
+    ) -> Result<(), String> {
+        Err(format!(
+            "feature {feature:?}, curve {curve:?}: current side verification is unavailable"
+        ))
+    }
     /// Verify an exact cap against the current prefix; example: `verifier.verify(snapshot, doc, id, key, role)?`.
     fn verify(
         &self,
@@ -46,8 +73,11 @@ pub trait LegacyCapStageVerifier {
     ) -> Result<(), String>;
 }
 
+/// Compatibility name for the shared staged-part verifier.
+pub use LegacyPartStageVerifier as LegacyCapStageVerifier;
+
 struct PrefixVerifier<'a> {
-    owner: &'a dyn LegacyCapStageVerifier,
+    owner: &'a dyn LegacyPartStageVerifier,
     snapshot: &'a DocumentSnapshot,
     document: DocumentGuid,
     feature: FeatureId,
@@ -59,16 +89,42 @@ impl LegacyCapBindingVerifier for PrefixVerifier<'_> {
     }
 }
 
+impl LegacySideLineageWitness for PrefixVerifier<'_> {
+    fn source_curve(
+        &self,
+        key: &[u8],
+        ordinal: u64,
+        source: &LegacyExtrusionCandidate,
+    ) -> Result<SketchEntityId, String> {
+        self.owner.source_side_curve(key, ordinal, source)
+    }
+    fn verify_target(&self, key: &[u8], curve: SketchEntityId) -> Result<(), String> {
+        self.owner
+            .verify_side(self.snapshot, self.document, self.feature, key, curve)
+    }
+}
+
 impl LegacyPartCandidate {
-    /// Build an isolated ordered program with caller-reserved IDs and verified cap bindings.
-    /// The verifier must qualify every source sketch; no production qualifier is supplied here.
+    /// Compatibility alias for `stage_part_program`.
     /// Example: `candidate.stage_cap_program(&base, document, &identities, verifier)?`.
     pub fn stage_cap_program(
         &self,
         base: &DocumentSnapshot,
         document: DocumentGuid,
         identities: &BTreeMap<u64, LegacyStagedFeatureIdentity>,
-        verifier: &dyn LegacyCapStageVerifier,
+        verifier: &dyn LegacyPartStageVerifier,
+    ) -> Result<DocumentSnapshot, PackageCodecError> {
+        self.stage_part_program(base, document, identities, verifier)
+    }
+
+    /// Build an isolated ordered program with qualified sketches and verified face bindings.
+    /// Example: `candidate.stage_part_program(&base, document, &identities, verifier)?`.
+    pub fn stage_part_program(
+        &self,
+        base: &DocumentSnapshot,
+        document: DocumentGuid,
+        identities: &BTreeMap<u64, LegacyStagedFeatureIdentity>,
+        verifier: &dyn LegacyPartStageVerifier,
     ) -> Result<DocumentSnapshot, PackageCodecError> {
         validate_base(&self.sketches, base)?;
         let order = validate_identities(self, identities)?;
@@ -95,7 +151,7 @@ impl LegacyPartCandidate {
         sequence: u64,
         identity: &LegacyStagedFeatureIdentity,
         identities: &BTreeMap<u64, LegacyStagedFeatureIdentity>,
-        verifier: &dyn LegacyCapStageVerifier,
+        verifier: &dyn LegacyPartStageVerifier,
     ) -> Result<(), PackageCodecError> {
         if let Some(extrusion) = self
             .extrusions
@@ -133,7 +189,7 @@ impl LegacyPartCandidate {
         sequence: u64,
         identity: &LegacyStagedFeatureIdentity,
         identities: &BTreeMap<u64, LegacyStagedFeatureIdentity>,
-        verifier: &dyn LegacyCapStageVerifier,
+        verifier: &dyn LegacyPartStageVerifier,
     ) -> Result<(), PackageCodecError> {
         let plane = self
             .face_offsets
@@ -161,7 +217,12 @@ impl LegacyPartCandidate {
             document,
             feature: target_id,
         };
-        let definition = self.migrate_cap_offset(sequence, document, target, &adapter)?;
+        let definition = match producer.role {
+            LegacyExtrusionFaceRole::Side(_) => {
+                self.migrate_side_offset(sequence, document, target, &adapter)?
+            }
+            _ => self.migrate_cap_offset(sequence, document, target, &adapter)?,
+        };
         let feature = AuthoredFeature::datum(identity.id, &identity.name, definition);
         snapshot
             .work_geometry
@@ -178,7 +239,7 @@ impl LegacySketchCandidate {
         &self,
         base: &DocumentSnapshot,
         sketch: DocumentSketchId,
-        verifier: &dyn LegacyCapStageVerifier,
+        verifier: &dyn LegacyPartStageVerifier,
     ) -> Result<DocumentSnapshot, PackageCodecError> {
         validate_base(self, base)?;
         let mut solved = base.clone();
