@@ -401,6 +401,7 @@ fn groups_shown(world: &mut ApplicationWorld) {
     world.expect_text("Options");
 }
 #[when("I select the collapsed Folder Options group")]
+#[when("the user selects the collapsed Folder Options group")]
 fn select_folder_options(world: &mut ApplicationWorld) {
     assert!(
         !holds_text(world, "Presets"),
@@ -430,6 +431,7 @@ fn folder_entries_hidden(world: &mut ApplicationWorld) {
     );
 }
 #[when("I select the collapsed Options group")]
+#[when("the user selects the collapsed Options group")]
 fn select_options(world: &mut ApplicationWorld) {
     select_group(world, "Options");
 }
@@ -453,6 +455,7 @@ fn library_groups(world: &mut ApplicationWorld) {
     );
 }
 #[when("I select Appearance Libraries and press the Right Arrow key")]
+#[when("the user selects Appearance Libraries and presses the Right Arrow key")]
 fn open_appearances(world: &mut ApplicationWorld) {
     select_group(world, "Appearance Libraries");
     press_right(world);
@@ -466,6 +469,7 @@ fn appearance_entries(world: &mut ApplicationWorld) {
     );
 }
 #[when("I select Material Libraries and press the Right Arrow key")]
+#[when("the user selects Material Libraries and presses the Right Arrow key")]
 fn open_materials(world: &mut ApplicationWorld) {
     select_group(world, "Material Libraries");
     press_right(world);
