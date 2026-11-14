@@ -3631,7 +3631,14 @@
           "path": "architecture/rust-port/receipts/2026-11-14-save-cancel-notice/receipt-d0dc7b66959fc4df.json",
           "sha256": "446003c9336ee9a625d51e948f80d1ad0f2fdfec82af997a60aee04d5a048fd7"
         }
-      ]
+      ],
+      "go_test_premise": "Go aa8297d1b: package-store save/reopen, missing-path and MRU tests pass; they do not check this native dialog or saved-sketch scenario. See receipts/2026-11-14-go-save-open-baseline/README.md.",
+      "kernel_capabilities": "No solid modeling operation is required by this document and dialog scenario.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The native viewport and document owner are used; the scenario does not request solid geometry.",
+      "rust_tests": "application_scenarios_use_the_native_window: Open and cancel the first save",
+      "oracle": "Pinned scenario assertions and reviewed final native capture; Go file compatibility and visual parity are not established.",
+      "expected_result": "the Save As dialog reopens with the same proposed document name selected; the user cancels the dialog again; the unsaved part remains active"
     },
     {
       "id": "scenario:14f48e698bd03b3faf10660cc4dddccfa827d553243c2c8f76d8a0089380b700",
@@ -3660,7 +3667,14 @@
           "path": "architecture/rust-port/receipts/2026-11-14-empty-part-reopen/receipt-14f48e698bd03b3f.json",
           "sha256": "ae978c36a5dc7738ad77deee53d63a68602d6e73498b514c1ba1bb403ac6b35d"
         }
-      ]
+      ],
+      "go_test_premise": "Go aa8297d1b: package-store save/reopen, missing-path and MRU tests pass; they do not check this native dialog or saved-sketch scenario. See receipts/2026-11-14-go-save-open-baseline/README.md.",
+      "kernel_capabilities": "No solid modeling operation is required by this document and dialog scenario.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The native viewport and document owner are used; the scenario does not request solid geometry.",
+      "rust_tests": "application_scenarios_use_the_native_window: Save and reopen a newly created empty part",
+      "oracle": "Pinned scenario assertions and reviewed final native capture; Go file compatibility and visual parity are not established.",
+      "expected_result": "the saved part becomes active; its viewport contains no visible model geometry; its model browser displays the origin and end-of-part marker"
     },
     {
       "id": "scenario:cb5f795341d33e8781b661f83c644b2437997cfcbb69421d51fa51155c7ce1ed",
@@ -3689,7 +3703,14 @@
           "path": "architecture/rust-port/receipts/2026-11-14-save-sketch-edges/receipt-cb5f795341d33e87.json",
           "sha256": "91cc453e4f883d12a6dee3747b5330a9fc7c7b9ce77a979f6bbb9131d6810b1d"
         }
-      ]
+      ],
+      "go_test_premise": "Go aa8297d1b: package-store save/reopen, missing-path and MRU tests pass; they do not check this native dialog or saved-sketch scenario. See receipts/2026-11-14-go-save-open-baseline/README.md.",
+      "kernel_capabilities": "The scenario creates and saves a planar rectangular sketch; no solid operation is required.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "Sketch geometry is displayed after reopening through the host; this scenario does not verify a solid.",
+      "rust_tests": "application_scenarios_use_the_native_window: Save changes to an existing part and reopen its sketch",
+      "oracle": "Pinned scenario assertions and reviewed final native capture; Go file compatibility and visual parity are not established.",
+      "expected_result": "the user opens the selected part; the model browser contains the sketch; the rectangular sketch profile is visible in the viewport"
     },
     {
       "id": "scenario:ec6362e3e986c02ef4690b3c134b9d166b8eeae0242613a788b7d246c671e067",
@@ -3820,7 +3841,14 @@
           "path": "architecture/rust-port/receipts/2026-11-14-save-on-close/receipt-f9b64673e9d0caa7.json",
           "sha256": "b291288fd1379ded0de35cf70bd473fb2995999dabca6fdb2db70095cb6ebc0d"
         }
-      ]
+      ],
+      "go_test_premise": "Go aa8297d1b: package-store save/reopen, missing-path and MRU tests pass; they do not check this native dialog or saved-sketch scenario. See receipts/2026-11-14-go-save-open-baseline/README.md.",
+      "kernel_capabilities": "No solid modeling operation is required by this document and dialog scenario.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The native viewport and document owner are used; the scenario does not request solid geometry.",
+      "rust_tests": "application_scenarios_use_the_native_window: Save a new modified part while closing it",
+      "oracle": "Pinned scenario assertions and reviewed final native capture; Go file compatibility and visual parity are not established.",
+      "expected_result": "the user reopens the newly saved part in the same session; the part becomes active; its model browser contains the finished sketch"
     },
     {
       "id": "scenario:408b526faa48672c210f18a75a125074944da21cbd1a60dc5880e411c43b4442",
@@ -4223,7 +4251,14 @@
           "path": "architecture/rust-port/receipts/2026-11-14-open-existing-part/receipt-233169e6ac19c7dd.json",
           "sha256": "60fc10883c8241f659fab1e9a4d9bf3e05a9efa6de2e5c0f8146240221f89e94"
         }
-      ]
+      ],
+      "go_test_premise": "Go aa8297d1b: package-store save/reopen, missing-path and MRU tests pass; they do not check this native dialog or saved-sketch scenario. See receipts/2026-11-14-go-save-open-baseline/README.md.",
+      "kernel_capabilities": "No solid modeling operation is required by this document and dialog scenario.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The native viewport and document owner are used; the scenario does not request solid geometry.",
+      "rust_tests": "application_scenarios_use_the_native_window: Activate an already open part through the Open dialog",
+      "oracle": "Pinned scenario assertions and reviewed final native capture; Go file compatibility and visual parity are not established.",
+      "expected_result": "the existing part document tab becomes active; no additional document tab is created; the drawing tab remains available"
     },
     {
       "id": "scenario:59162ec325e7796e63268366914195a25056bc4db02bba09c772d154c62dc4b3",
