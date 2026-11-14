@@ -175,3 +175,55 @@ fn go_face_dependent_plane_is_refused_without_losing_its_reference() {
     let restored = DocumentPackage::decode(&encoded).unwrap();
     assert_eq!(restored, original);
 }
+
+#[test]
+fn go_face_offset_is_prepared_with_its_original_reference_and_sequence() {
+    let bytes = include_bytes!(
+        "../../../architecture/rust-port/receipts/2026-11-14-go-dependent-face/cube-with-face-plane.obk"
+    );
+    let package = DocumentPackage::decode(bytes).unwrap();
+    let candidate = package.prepare_legacy_face_offsets().unwrap();
+    assert_eq!(candidate.len(), 1);
+    assert_eq!(candidate[0].creation_sequence, 3);
+    assert_eq!(candidate[0].face_key, b"\x03Extrusion1:side#1");
+    assert_eq!(candidate[0].offset, 0.5);
+    assert!(package.restore_work_geometry().is_err());
+}
+
+#[test]
+fn go_face_offset_rejects_unsupported_values_without_mutation() {
+    let bytes = include_bytes!(
+        "../../../architecture/rust-port/receipts/2026-11-14-go-dependent-face/cube-with-face-plane.obk"
+    );
+    let source = std::str::from_utf8(bytes).unwrap();
+    for modified in [
+        source.replacen("kind: plane-offset", "kind: plane-angle", 1),
+        source.replacen("seq: 3", "seq: 0", 1),
+        source.replacen("face/A0V4dHJ1c2lvbjE6c2lkZSMx", "plane/1", 1),
+        source.replacen("face/A0V4dHJ1c2lvbjE6c2lkZSMx", "face/", 1),
+        source.replacen("offset: 0.5", "offset: .inf", 1),
+        source.replacen("face/A0V4dHJ1c2lvbjE6c2lkZSMx", "face/!!!", 1),
+        source.replacen("offset: 0.5", "offset: 0.5\n          flipped: true", 1),
+    ] {
+        let package = DocumentPackage::decode(modified.as_bytes()).unwrap();
+        let before = package.clone();
+        assert!(package.prepare_legacy_face_offsets().is_err());
+        assert_eq!(package, before);
+    }
+}
+
+#[test]
+fn face_offset_sequences_are_unique_and_nonzero() {
+    let package = DocumentPackage::decode(
+        b"schemaVersion: 2\ndocumentType: 1\nmodel:\n  workFeatures:\n    - {collection: plane, kind: plane-offset, seq: 3, refs: [face/AQ==]}\n    - {collection: plane, kind: plane-offset, seq: 3, refs: [face/Ag==]}\n",
+    )
+    .unwrap();
+    let error = package.prepare_legacy_face_offsets().unwrap_err();
+    assert!(error.to_string().contains("unique nonzero sequence"));
+}
+
+#[test]
+fn absent_work_features_produce_no_face_offset_candidates() {
+    let package = DocumentPackage::decode(b"schemaVersion: 2\ndocumentType: 1\n").unwrap();
+    assert!(package.prepare_legacy_face_offsets().unwrap().is_empty());
+}
