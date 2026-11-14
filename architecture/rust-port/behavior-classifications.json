@@ -401,7 +401,15 @@
           "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-cb85314818ef73da/receipt-cb85314818ef73da.json",
           "sha256": "3e5606955960618ebe14c3bbe98ef4464df32ce0cf838eee24a2ad61a8223f78"
         }
-      ]
+      ],
+      "go_reference": "Go aa8297d1b: app/sketch_tools_test.go and model/sketch/recipe_rectangle_test.go cover two-corner construction and sketch degrees of freedom.",
+      "go_test_premise": "Go aa8297d1b: focused rectangle construction, prompt, parameter and recipe tests pass; they do not cover every native input or visual step. See receipts/2026-11-14-go-rectangle-baseline/README.md.",
+      "kernel_capabilities": "Planar sketch geometry and constraints are exercised; these scenarios do not create an extruded solid.",
+      "platforms": "Historical native run: Linux Xvfb with Vulkan Lavapipe. Other platforms were not checked.",
+      "kernel_integration": "The desktop sketch path submits geometry and constraints through the host; no B-rep extrusion is asserted.",
+      "rust_tests": "sketch_scenarios_use_the_native_window: rectangle-two-point-01 Create a rectangle from opposite corners",
+      "oracle": "Pinned scenario assertions and reviewed final native capture; the receipt is stale after application test-source changes.",
+      "expected_result": "four connected sides form an axis-aligned closed rectangle; the user press Escape; the rectangle remains and the sketch is Ready"
     },
     {
       "id": "scenario:a661d2ccfbdfc85a763de8dd2eb91fc325e1a004e58059346306d9e69700b3c5",
@@ -427,7 +435,15 @@
           "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-a661d2ccfbdfc85a/receipt-a661d2ccfbdfc85a.json",
           "sha256": "5872099028694c4f083f7fa7ac7e88cf3f2e428016ad7644f20b55c9d2e475f2"
         }
-      ]
+      ],
+      "go_reference": "Go aa8297d1b: app/sketch_tools_test.go and model/sketch/recipe_rectangle_test.go cover two-corner construction and sketch degrees of freedom.",
+      "go_test_premise": "Go aa8297d1b: focused rectangle construction, prompt, parameter and recipe tests pass; they do not cover every native input or visual step. See receipts/2026-11-14-go-rectangle-baseline/README.md.",
+      "kernel_capabilities": "Planar sketch geometry and constraints are exercised; these scenarios do not create an extruded solid.",
+      "platforms": "Historical native run: Linux Xvfb with Vulkan Lavapipe. Other platforms were not checked.",
+      "kernel_integration": "The desktop sketch path submits geometry and constraints through the host; no B-rep extrusion is asserted.",
+      "rust_tests": "sketch_scenarios_use_the_native_window: rectangle-two-point-06 Cancel before the opposite corner",
+      "oracle": "Pinned scenario assertions and reviewed final native capture; the receipt is stale after application test-source changes.",
+      "expected_result": "the prompt requests the opposite corner; the user press Escape; the MCAD Software returns to Ready without a new rectangle"
     },
     {
       "id": "scenario:1e7472ca669ac6f4274e216b9e0f6dd9074d843189d749ea4a4ca6c0d7af7dd2",
@@ -453,7 +469,15 @@
           "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-1e7472ca669ac6f4/receipt-1e7472ca669ac6f4.json",
           "sha256": "05a2ff9acec6696e8f89e024c20347f4f6eef46053a8cbbd26abead391bb589d"
         }
-      ]
+      ],
+      "go_reference": "Go aa8297d1b: app/sketch_tools_test.go and model/sketch/recipe_rectangle_test.go cover two-corner construction and sketch degrees of freedom.",
+      "go_test_premise": "Go aa8297d1b: focused rectangle construction, prompt, parameter and recipe tests pass; they do not cover every native input or visual step. See receipts/2026-11-14-go-rectangle-baseline/README.md.",
+      "kernel_capabilities": "Planar sketch geometry and constraints are exercised; these scenarios do not create an extruded solid.",
+      "platforms": "Historical native run: Linux Xvfb with Vulkan Lavapipe. Other platforms were not checked.",
+      "kernel_integration": "The desktop sketch path submits geometry and constraints through the host; no B-rep extrusion is asserted.",
+      "rust_tests": "sketch_scenarios_use_the_native_window: rectangle-two-point-07 Keep selecting after identical corner clicks",
+      "oracle": "Pinned scenario assertions and reviewed final native capture; the receipt is stale after application test-source changes.",
+      "expected_result": "no error dialog or rectangle appears; the user press Escape; the MCAD Software returns to Ready"
     },
     {
       "id": "scenario:c7961c524b21f4e1124e3f4d865c19bde5f6dc740d654f9838726b63cccd0b84",
@@ -479,7 +503,15 @@
           "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-c7961c524b21f4e1/receipt-c7961c524b21f4e1.json",
           "sha256": "d21131c032d5ba36af4bddd3fd5f1333de19fe43ce2bc841af66bcf50bed841f"
         }
-      ]
+      ],
+      "go_reference": "Go aa8297d1b: app/sketch_tools_test.go and model/sketch/recipe_rectangle_test.go cover two-corner construction and sketch degrees of freedom.",
+      "go_test_premise": "Go aa8297d1b: focused rectangle construction, prompt, parameter and recipe tests pass; they do not cover every native input or visual step. See receipts/2026-11-14-go-rectangle-baseline/README.md.",
+      "kernel_capabilities": "Planar sketch geometry and constraints are exercised; these scenarios do not create an extruded solid.",
+      "platforms": "Historical native run: Linux Xvfb with Vulkan Lavapipe. Other platforms were not checked.",
+      "kernel_integration": "The desktop sketch path submits geometry and constraints through the host; no B-rep extrusion is asserted.",
+      "rust_tests": "sketch_scenarios_use_the_native_window: rectangle-two-point-08 Commit typed sizes and restore through history",
+      "oracle": "Pinned scenario assertions and reviewed final native capture; the receipt is stale after application test-source changes.",
+      "expected_result": "the rectangle and its two size annotations disappear; the user press Ctrl+Y; the rectangle and both annotations return"
     },
     {
       "id": "scenario:6d4a200f137644d4c6104d1e91aeb91aa8167a0ac26b27ae09cb219eb27fadd2",
@@ -706,7 +738,7 @@
         "path": "architecture/rust-port/receipts/2026-11-14-rectangle-current-152ae6bf/receipt-152ae6bfde300d9b.json",
         "sha256": "3bac647d05bbb24b4010364cca077bb7dcf2d1732d73e77ce280443be371d097"
       },
-      "go_reference": "../Oblikovati/model/sketch/recipe_rectangle.go; ../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/measure_tool.go; ../Oblikovati/head/ui/measure_dialog.go",
+      "go_reference": "Go aa8297d1b: app/sketch_tools_test.go and model/sketch/recipe_rectangle_test.go cover two-corner construction and sketch degrees of freedom.",
       "mapping_reason": "Measure the rectangle edges through the analytic sketch-query path.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -716,7 +748,14 @@
           "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-152ae6bfde300d9b/receipt-152ae6bfde300d9b.json",
           "sha256": "a90e2e758f885fe95f93c71455c6ee5d08e5d19ba6bc74afcfbdc57de47b357e"
         }
-      ]
+      ],
+      "go_test_premise": "Go aa8297d1b: focused rectangle construction, prompt, parameter and recipe tests pass; they do not cover every native input or visual step. See receipts/2026-11-14-go-rectangle-baseline/README.md.",
+      "kernel_capabilities": "Planar sketch geometry and constraints are exercised; these scenarios do not create an extruded solid.",
+      "platforms": "Historical native run: Linux Xvfb with Vulkan Lavapipe. Other platforms were not checked.",
+      "kernel_integration": "The desktop sketch path submits geometry and constraints through the host; no B-rep extrusion is asserted.",
+      "rust_tests": "sketch_scenarios_use_the_native_window: rectangle-two-point-09 Verify the numeric rectangle edge lengths",
+      "oracle": "Pinned scenario assertions and reviewed final native capture; the receipt is stale after application test-source changes.",
+      "expected_result": "Selection 1 is a Curve with Length 6.000 mm; the user click Done; Measure closes and the rectangle remains"
     },
     {
       "id": "scenario:4598b4de9868b11667330de37cc2e67c65b468129c6a78abd277ad8518101e05",
@@ -751,7 +790,7 @@
         "path": "architecture/rust-port/receipts/2026-11-14-rectangle-current-be5c6802/receipt-be5c680262911cc1.json",
         "sha256": "b7388fc2e050039859c7677ee8a46edffd04e8d6da722a9e272505600061d36e"
       },
-      "go_reference": "../Oblikovati/model/sketch/recipe_rectangle.go; ../Oblikovati/app/sketch_tools.go",
+      "go_reference": "Go aa8297d1b: app/sketch_tools_test.go and model/sketch/recipe_rectangle_test.go cover two-corner construction and sketch degrees of freedom.",
       "mapping_reason": "Numeric two-point rectangle creation belongs to the initial desktop sketch workflow.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -761,7 +800,14 @@
           "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-be5c680262911cc1/receipt-be5c680262911cc1.json",
           "sha256": "f05a62f43722520642c5eb937d72564c30245c94ac4e28956ffb5e6b137d8f1a"
         }
-      ]
+      ],
+      "go_test_premise": "Go aa8297d1b: focused rectangle construction, prompt, parameter and recipe tests pass; they do not cover every native input or visual step. See receipts/2026-11-14-go-rectangle-baseline/README.md.",
+      "kernel_capabilities": "Planar sketch geometry and constraints are exercised; these scenarios do not create an extruded solid.",
+      "platforms": "Historical native run: Linux Xvfb with Vulkan Lavapipe. Other platforms were not checked.",
+      "kernel_integration": "The desktop sketch path submits geometry and constraints through the host; no B-rep extrusion is asserted.",
+      "rust_tests": "sketch_scenarios_use_the_native_window: rectangle-two-point-11 Retain a numeric rectangle",
+      "oracle": "Pinned scenario assertions and reviewed final native capture; the receipt is stale after application test-source changes.",
+      "expected_result": "it overlaps part of the existing ellipse; the user press Escape; the rectangle remains and Ready returns"
     },
     {
       "id": "scenario:4e818f2994acb248e4b9581fff1b726df90bb658342df0b92244dd318f6e745c",
@@ -779,7 +825,7 @@
         "path": "architecture/rust-port/receipts/2026-11-14-rectangle-current-4e818f29/receipt-4e818f2994acb248.json",
         "sha256": "8b6ab88e6a1161a415b442350387b85b9696e98eeb7959edc2f478ecbb2ed6ba"
       },
-      "go_reference": "../Oblikovati/model/sketch/recipe_rectangle.go; ../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_dimension_edit.go",
+      "go_reference": "Go aa8297d1b: app/sketch_tools_test.go and model/sketch/recipe_rectangle_test.go cover two-corner construction and sketch degrees of freedom.",
       "mapping_reason": "Cancel a proposed edit to an existing sketch dimension.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -789,7 +835,14 @@
           "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-4e818f2994acb248/receipt-4e818f2994acb248.json",
           "sha256": "56cb17a8bec98c12a8e86c1ad844ae8332a8faf7f2a530e170566cbcd9cd53f5"
         }
-      ]
+      ],
+      "go_test_premise": "Go aa8297d1b: focused rectangle construction, prompt, parameter and recipe tests pass; they do not cover every native input or visual step. See receipts/2026-11-14-go-rectangle-baseline/README.md.",
+      "kernel_capabilities": "Planar sketch geometry and constraints are exercised; these scenarios do not create an extruded solid.",
+      "platforms": "Historical native run: Linux Xvfb with Vulkan Lavapipe. Other platforms were not checked.",
+      "kernel_integration": "The desktop sketch path submits geometry and constraints through the host; no B-rep extrusion is asserted.",
+      "rust_tests": "sketch_scenarios_use_the_native_window: rectangle-two-point-12 Cancel a rectangle height proposal",
+      "oracle": "Pinned scenario assertions and reviewed final native capture; the receipt is stale after application test-source changes.",
+      "expected_result": "the user enter 8 and press Escape; the user reopen the height annotation; the height editor still contains 6 mm"
     },
     {
       "id": "scenario:ecfb4103b54e7240f86118a4493a82fa9918a03162bfd26bcd7b4594a9791f99",
@@ -808,7 +861,7 @@
         "path": "architecture/rust-port/receipts/2026-11-14-refresh-rectangle-ecfb4103/receipt-ecfb4103b54e7240.json",
         "sha256": "2ffcffbc2b176c3b65132057e665af024d18e09f3448ef36e81bfb8b92e748ed"
       },
-      "go_reference": "../Oblikovati/model/sketch/recipe_rectangle.go; ../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_dimension_edit.go",
+      "go_reference": "Go aa8297d1b: app/sketch_tools_test.go and model/sketch/recipe_rectangle_test.go cover two-corner construction and sketch degrees of freedom.",
       "mapping_reason": "Edit and measure a sketch dimension through history.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -818,7 +871,14 @@
           "path": "architecture/rust-port/receipts/2026-11-14-corrected-rectangle-13/receipt-ecfb4103b54e7240.json",
           "sha256": "c37de5fe5c5caf99c73929852e4ec2639e1de3f9ee730fc93e0fa8847e27daab"
         }
-      ]
+      ],
+      "go_test_premise": "Go aa8297d1b: focused rectangle construction, prompt, parameter and recipe tests pass; they do not cover every native input or visual step. See receipts/2026-11-14-go-rectangle-baseline/README.md.",
+      "kernel_capabilities": "Planar sketch geometry and constraints are exercised; these scenarios do not create an extruded solid.",
+      "platforms": "Historical native run: Linux Xvfb with Vulkan Lavapipe. Other platforms were not checked.",
+      "kernel_integration": "The desktop sketch path submits geometry and constraints through the host; no B-rep extrusion is asserted.",
+      "rust_tests": "sketch_scenarios_use_the_native_window: rectangle-two-point-13 Accept and undo a rectangle height edit",
+      "oracle": "Pinned scenario assertions and reviewed final native capture; the receipt is stale after application test-source changes.",
+      "expected_result": "the user redoes the height edit; the visible height annotation returns to 8; width annotation 4 remains"
     },
     {
       "id": "scenario:841bc6eecc0f22624f0096f9d14e6fae6d64b60d913f2fea0ed3de284acf8ae2",
@@ -836,7 +896,7 @@
         "path": "architecture/rust-port/receipts/2026-11-14-rectangle-current-841bc6ee/receipt-841bc6eecc0f2262.json",
         "sha256": "ccd3510f09f4737539f7d4184f6fdc48d4f653b855f3adcb6bb31856c3841a0a"
       },
-      "go_reference": "../Oblikovati/model/sketch/recipe_rectangle.go; ../Oblikovati/app/sketch_tools.go",
+      "go_reference": "Go aa8297d1b: app/sketch_tools_test.go and model/sketch/recipe_rectangle_test.go cover two-corner construction and sketch degrees of freedom.",
       "mapping_reason": "The second size field and command state are part of the initial desktop sketch workflow.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -846,7 +906,14 @@
           "path": "architecture/rust-port/receipts/2026-11-14-face-replay-refresh-841bc6eecc0f2262/receipt-841bc6eecc0f2262.json",
           "sha256": "b3a980da76dcf9521cb9eb894a7a8b2c2af0d95c22af94516fafcf00dca8ad5a"
         }
-      ]
+      ],
+      "go_test_premise": "Go aa8297d1b: focused rectangle construction, prompt, parameter and recipe tests pass; they do not cover every native input or visual step. See receipts/2026-11-14-go-rectangle-baseline/README.md.",
+      "kernel_capabilities": "Planar sketch geometry and constraints are exercised; these scenarios do not create an extruded solid.",
+      "platforms": "Historical native run: Linux Xvfb with Vulkan Lavapipe. Other platforms were not checked.",
+      "kernel_integration": "The desktop sketch path submits geometry and constraints through the host; no B-rep extrusion is asserted.",
+      "rust_tests": "sketch_scenarios_use_the_native_window: rectangle-two-point-14 Observe a zero second size",
+      "oracle": "Pinned scenario assertions and reviewed final native capture; the receipt is stale after application test-source changes.",
+      "expected_result": "Select first corner returns without a warning or a visible new rectangle; the user press Escape; Ready returns and the prior rectangle remains"
     },
     {
       "id": "scenario:6687f2b9f0c80ee04273db1471cd659584217548980bb5880265a4820d31f8f8",
