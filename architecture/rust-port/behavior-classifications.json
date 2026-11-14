@@ -15112,10 +15112,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-tab-save-close-f2e3989e/receipt-f2e3989ecad9628f.json",
+        "sha256": "3eef12f15732b4d4ac3e51629acc4124295d88033b7f38577e8dc00fce8f3930"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "First part creation, document activation, or save/close path through the desktop."
+      "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b: package-store save/reopen and dirty-close guard tests pass; they do not verify these native tab journeys. See receipts/2026-11-14-go-save-open-baseline/README.md and receipts/2026-11-14-go-tab-baseline/README.md.",
+      "kernel_capabilities": "The scenarios use a finished empty sketch and do not require a solid modeling operation.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The desktop owner controls document close, save, reopen and sketch state.",
+      "rust_tests": "application_scenarios_use_the_native_window: Cancel the first save while closing an unsaved part",
+      "oracle": "Pinned native scenario assertions, document and file state, and reviewed final capture; Go dialog parity is not established.",
+      "expected_result": "the user cancels the Save As dialog; the part remains open and active; its sketch remains listed in the model browser"
     },
     {
       "id": "scenario:d6f09550bb0cdb933bc28a078c90f0070a2d54aa07b17c7067039b25d2a98912",
@@ -15129,10 +15141,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-tab-save-close-d6f09550/receipt-d6f09550bb0cdb93.json",
+        "sha256": "f0b9a7c826759fcb2f0973e4cb9820294f861b405b769b2d2e597ba546a41171"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "First part creation, document activation, or save/close path through the desktop."
+      "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b: package-store save/reopen and dirty-close guard tests pass; they do not verify these native tab journeys. See receipts/2026-11-14-go-save-open-baseline/README.md and receipts/2026-11-14-go-tab-baseline/README.md.",
+      "kernel_capabilities": "The scenarios use a finished empty sketch and do not require a solid modeling operation.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The desktop owner controls document close, save, reopen and sketch state.",
+      "rust_tests": "application_scenarios_use_the_native_window: Save a new part while closing its tab",
+      "oracle": "Pinned native scenario assertions, document and file state, and reviewed final capture; Go dialog parity is not established.",
+      "expected_result": "the user reopens the saved part file; the reopened part is active; its sketch is listed in the model browser"
     },
     {
       "id": "scenario:8f2c33b398b731b4c57b8fe973d59a15b162d40f6da04290cd34e0d21a8c4911",

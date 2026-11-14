@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: tmp/obk-bdd-tabsave-vJrMD2Ag/checkout/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: tmp/obk-bdd-tabsave-vJrMD2Ag/checkout/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T16:03:07.7173703Z" time="12.692144576"><testcase name="Scenario: Cancel the first save while closing an unsaved part: tmp/obk-bdd-tabsave-vJrMD2Ag/checkout/features/application/document-tabs/document-tabs.feature:120:3" time="12.692144576"><system-out><![CDATA[  Scenario: Cancel the first save while closing an unsaved part
+   ✔  Given a new part with an unsaved sketch is active in the MCAD Software
+   ✔  And the part is in the modeling environment
+   ✔  And save-change prompts are configured to always show
+   ✔  When the user clicks the close button on the part's document tab
+   ✔  Then a save-changes prompt identifies the part
+   ✔  When the user chooses Yes to save changes
+   ✔  Then a Save As dialog opens with a suggested file name
+   ✔  When the user cancels the Save As dialog
+   ✔  Then the part remains open and active
+   ✔  And its sketch remains listed in the model browser
+]]></system-out></testcase></testsuite></testsuites>
