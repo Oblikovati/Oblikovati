@@ -33,6 +33,7 @@ fn selected_metric_part_template_shows_its_material_in_details() {
     world.close();
 }
 ```
+
 The built-in chooser creates an empty Part with no material assignment. The
 bundled material catalog and Go reference do not provide a `Generic` material
 asset. The scenario's `FIXTURES.md` describes an observed configured session,
