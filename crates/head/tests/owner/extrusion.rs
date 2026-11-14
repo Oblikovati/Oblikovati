@@ -89,6 +89,10 @@ fn typed_extrude_creates_a_certified_scene_and_tracks_parameter_edits() {
         .0
         .unwrap();
     assert_eq!(reply["feature"], "Extrusion1");
+    assert_eq!(reply["id"], 1);
+    assert_eq!(reply["name"], "Extrusion1");
+    assert_eq!(reply["suppressed"], false);
+    assert_eq!(reply["health"], "");
     assert_eq!(reply["healthy"], true);
     assert_eq!(reply["bodies"], 1);
     let first = owner.take_scene().unwrap().unwrap();
@@ -287,6 +291,13 @@ impl oblikovati_automation::ExtrudeRegionAccess for RejectExtrusionCandidate {
 fn rejected_candidate_preserves_the_document_and_sketch_visibility() {
     let (mut owner, _) = owner();
     let document = open_sketch(&mut owner);
+    let session = owner.documents().workspace().session(document).unwrap();
+    let generation = session.generation();
+    let history = session
+        .undo_labels()
+        .into_iter()
+        .map(str::to_owned)
+        .collect::<Vec<_>>();
     let backend = RejectExtrusionCandidate;
     let result = Client::new(owner.document_host().with_extrusion(&backend))
         .features()
@@ -297,12 +308,10 @@ fn rejected_candidate_preserves_the_document_and_sketch_visibility() {
             .to_string()
             .contains("candidate rejected")
     );
-    let snapshot = owner
-        .documents()
-        .workspace()
-        .session(document)
-        .unwrap()
-        .snapshot();
+    let session = owner.documents().workspace().session(document).unwrap();
+    assert_eq!(session.generation(), generation);
+    assert_eq!(session.undo_labels(), history);
+    let snapshot = session.snapshot();
     assert!(snapshot.work_geometry.features().is_empty());
     assert!(
         snapshot

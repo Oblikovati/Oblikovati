@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use oblikovati_model::feature::sketch_prism::{SketchDirectedLine, SketchPrismSelection};
+use oblikovati_model::feature::sketch_prism::{SketchDirectedCurve, SketchPrismSelection};
 use oblikovati_model::{
     document_sketch::{DocumentSketchId, DocumentSketches},
     history::DocumentSnapshot,
@@ -46,10 +46,10 @@ fn add_ring(geometry: &mut Sketch2D, first_point: u64, first_line: u64, position
     }
 }
 /// Select four authored lines in traversal order; example: `selected_sketch_line_ring(101)`.
-pub fn selected_sketch_line_ring(first_line: u64) -> Vec<SketchDirectedLine> {
+pub fn selected_sketch_line_ring(first_line: u64) -> Vec<SketchDirectedCurve> {
     (first_line..first_line + 4)
-        .map(|id| SketchDirectedLine {
-            line: SketchEntityId(id),
+        .map(|id| SketchDirectedCurve {
+            curve: SketchEntityId(id),
             reversed: false,
         })
         .collect()

@@ -43,10 +43,15 @@ fn nonfinite_face_values_and_empty_faces_are_named_refusals() {
         (1., [f64::NAN, 0., 0.]),
     ] {
         assert!(
-            require_finite_face(PrismFaceRole::Start, area, centroid)
-                .unwrap_err()
-                .to_string()
-                .contains("finite positive")
+            require_finite_measurement(
+                Entity::Face(PrismFaceRole::Start),
+                "prism face Start",
+                area,
+                centroid
+            )
+            .unwrap_err()
+            .to_string()
+            .contains("finite positive")
         );
     }
     let mut face = Face::default();

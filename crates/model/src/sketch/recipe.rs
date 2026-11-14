@@ -3,8 +3,8 @@ use super::{
     Sketch2D, SketchArc2D, SketchCircle2D, SketchConstraint, SketchError, SketchLine2D,
     SketchPoint2D,
 };
-/// Latest planar schema: v2 records order, v3 construction roles, v4 line axis roles, v5 dimension placements, v6 drive settings, v7 analytic ellipses, v8 ground anchors, v9 ellipse minor-radius dimensions, v10 parent and offset splines, v11 offset dimensions, v12 defining-point ownership, v13 point direction dimensions, v14 structural pattern point and radius links, v15 parameter-driven pattern offsets, v16 rectangular pattern records.
-pub const SKETCH_RECIPE_VERSION: u32 = 16;
+/// Latest planar schema: v2 records order, v3 construction roles, v4 line axis roles, v5 dimension placements, v6 drive settings, v7 analytic ellipses, v8 ground anchors, v9 ellipse minor-radius dimensions, v10 parent and offset splines, v11 offset dimensions, v12 defining-point ownership, v13 point direction dimensions, v14 structural pattern point and radius links, v15 parameter-driven pattern offsets, v16 rectangular pattern records, v17 spline handles.
+pub const SKETCH_RECIPE_VERSION: u32 = 17;
 /// Owned authored values; no numerical workspace, derived topology or system equations.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -20,6 +20,8 @@ pub struct SketchRecipe {
     pub splines: Option<Vec<super::SketchSpline2D>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub offset_splines: Option<Vec<super::SketchOffsetSpline2D>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub spline_handles: Option<Vec<super::SketchSplineHandle2D>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub defining_points: Option<Vec<super::SketchEntityId>>,
     pub constraints: Vec<SketchConstraint>,
@@ -61,6 +63,10 @@ impl Sketch2D {
         self.capture_pattern_point_links(&mut recipe);
         self.capture_pattern_offsets(&mut recipe);
         self.capture_rectangular_patterns(&mut recipe);
+        if !self.spline_handles.is_empty() {
+            self.capture_point_ownership_metadata(&mut recipe);
+            recipe.version = 17;
+        }
         recipe
     }
     fn capture_point_angle_schema(&self, recipe: &mut SketchRecipe) {
@@ -80,6 +86,7 @@ impl Sketch2D {
             ellipses: None,
             splines: None,
             offset_splines: None,
+            spline_handles: None,
             defining_points: None,
             constraints: self.constraints.clone(),
             pattern_point_links: None,
@@ -133,8 +140,8 @@ impl Sketch2D {
         super::ground_constraint::require_ground_schema(recipe)?;
         sketch.restore_geometry(recipe)?;
         sketch.restore_ellipses(recipe)?;
-        sketch.restore_splines(recipe)?;
         sketch.restore_point_ownership(recipe)?;
+        sketch.restore_splines(recipe)?;
         sketch.restore_entity_order(recipe)?;
         sketch.restore_construction_curves(recipe)?;
         sketch.restore_centerlines(recipe)?;

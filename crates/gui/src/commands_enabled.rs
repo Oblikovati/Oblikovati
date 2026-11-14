@@ -296,7 +296,21 @@ impl GuiShellAction {
                 state.document_type == Some(oblikovati_api::types::DOCUMENT_PART)
                     && !state.transaction_open
             }
-            Self::SetSelectionMode(_) => {
+            Self::OpenHistoryBrowser => !state.histories.is_empty(),
+            Self::JumpHistoryTo { document, position } => {
+                !state.transaction_open
+                    && state.histories.iter().any(|history| {
+                        history.document == *document
+                            && *position >= 0
+                            && usize::try_from(*position).ok().is_some_and(|position| {
+                                position <= history.entries.as_ref().map_or(0, Vec::len)
+                            })
+                    })
+            }
+            Self::SetSelectionMode(_)
+            | Self::OpenSelectionFilter
+            | Self::SetSelectionEnabled { .. }
+            | Self::MoveSelectionKind { .. } => {
                 state.document.is_some()
                     && !state.transaction_open
                     && state.authoring != crate::GuiAuthoringContext::Sketch

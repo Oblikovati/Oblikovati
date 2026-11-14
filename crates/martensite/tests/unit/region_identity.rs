@@ -53,15 +53,15 @@ fn nested_regions(inner_first: bool) -> PlanarRegionSet {
     );
     build_planar_regions(&profile, resolution).unwrap()
 }
-fn boundary(first: u64) -> Vec<SketchDirectedLine> {
+fn boundary(first: u64) -> Vec<SketchDirectedCurve> {
     (0..4)
-        .map(|offset| SketchDirectedLine {
-            line: SketchEntityId(first + 10 + offset),
+        .map(|offset| SketchDirectedCurve {
+            curve: SketchEntityId(first + 10 + offset),
             reversed: false,
         })
         .collect()
 }
-fn reverse(boundary: &mut [SketchDirectedLine]) {
+fn reverse(boundary: &mut [SketchDirectedCurve]) {
     boundary.reverse();
     for edge in boundary {
         edge.reversed = !edge.reversed;

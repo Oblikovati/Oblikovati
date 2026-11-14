@@ -43,6 +43,24 @@ pub(super) fn rendered_label_center(label: &str) -> [i32; 2] {
         });
     diagnostics::pointer_pixels(run.center())
 }
+pub(super) fn rendered_label_in_rect(label: &str, min: [f32; 2], max: [f32; 2]) -> [i32; 2] {
+    let frame = diagnostics::rendered_frame();
+    let run = frame
+        .runs
+        .iter()
+        .find(|run| {
+            run.text == label
+                && (0..2)
+                    .all(|axis| run.center()[axis] >= min[axis] && run.center()[axis] < max[axis])
+        })
+        .unwrap_or_else(|| {
+            panic!(
+                "label {label:?}: expected in rectangle {min:?}..{max:?}; found {:?}",
+                frame.runs
+            )
+        });
+    diagnostics::pointer_pixels(run.center())
+}
 pub(super) fn rendered_label_start(label: &str) -> [i32; 2] {
     let wanted: String = label.chars().filter(|ch| !ch.is_whitespace()).collect();
     let frame = diagnostics::rendered_frame();

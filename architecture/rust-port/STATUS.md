@@ -12,30 +12,63 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 ## Current state
 
 - Milestone: **R0 open**. The behavior inventory and full gate are not yet verified.
-- Work branch: `feat/rust-consolidated`; base is `origin/rust`.
+- Work branch: local `rust-work`; base is `origin/rust`. The consolidated branch,
+  Martensite 0.6 handoff, and two dependency PR heads are merged locally. The
+  `feat/sketch-circle-extrude` merge is in progress. All conflict markers are
+  resolved. Older desktop tests now use the current shell and the desktop test
+  target compiles. Focused Xvfb tests passed for document ribbons, a mouse-drawn
+  constrained circle extrusion, and scaled parameter entry. The full native
+  cube journey passed after the local model-state fix for #3892. A later review
+  found that duplicate extrusion routes shadowed certified validation (#3893).
+  The local fix unifies extrusion and suppression on certified transactions;
+  the native cube journey and 352 desktop owner tests pass with that fix.
+  The remaining integration checks and full gate must pass before the branch
+  is pushed.
+  Old and new sketch recipe version 13 meanings have been reconciled using version
+  17 for new spline-handle recipes. Model, persistence, and session suites passed
+  1,640, 412, and 492 tests; the Martensite adapter passed 85 unit tests, and
+  automation library and query tests passed 797. Prism, sketch-prism, and revolve
+  integration groups passed 78 tests. The wider Martensite suite fails
+  `planar_pick::rotated_ellipse_pick_matches_the_independent_occt_minimum`: it
+  returns a boundary point instead of the expected closest point. This matches
+  [Martensite #406](https://github.com/Oblikovati/Martensite/issues/406). The
+  desktop library compiles; the richer parameter panel passes 58 focused tests,
+  and its revised keyboard journey passes on both configured platforms. The GUI
+  unit suite passed 460 tests, and the dockable-window guard passed after the
+  unused older shell was removed. Its sketch options now use the current shared
+  preference owner and passed a native mouse test. The parameter-view suite
+  passed 38 tests after the local fix for #3891; the issue remains open until
+  the fix lands. A full desktop unit diagnostic was stopped after failures and
+  later source changes made it stale; it cannot certify the merge.
+  The selection filter and history browser have focused GUI and head integration
+  coverage. Selection priority is still not applied to competing picks (#3890).
+  Remaining integration tests and the full gate still need validation. No PRs have been closed or pushed.
+  Preserve the user README edit and the three existing stashes.
 - Scenario pin: `c56a6f6678dbb9a7bdb96fe37561bb63d6413127`, a locally created snapshot of the unversioned live source, not an upstream commit. Restore and verify it as described in `bdd-workflow.md`.
 - Source sync: weekly, in a separate batch. Store small JSON receipts in this repository.
 - The 2026-11-14 source sync includes reviewed corrections in `home-recent-documents`, `arc-center-point`, `move`, `coincident`, and `rectangle-two-point`. All 2,719 declarations parse; the previous pin's native receipts are stale until rerun. Coincident 07 now checks a shared point without choosing which point moves. Rectangle 13 checks the recorded fixture and measured result without requiring a stationary edge.
 - Arc 09's current Rust fixture derives its arc angle from the expected measured length. That setup cannot independently verify the recorded length. The scenario author has since recorded pointer positions and the captured window size in the live source; this later change awaits the next source sync and fixture review. Do not count the scenario as verified until its premise is checked.
 - Kernel gaps: file and track validated gaps in `Oblikovati/Martensite`; application work belongs in `Oblikovati/Oblikovati`.
-- Branch policy: one working branch, with batch PRs to `rust`; push after each unit once the required pre-push gate passes.
+- Branch policy: merge completed work branches into `rust-work`; run the required pre-push gate before pushing.
 
 ## Queue
 
 | Order | Action | State | Evidence / dependency |
 | --- | --- | --- | --- |
 | 1 | A8: complete the behavior ledger and progress counts | In progress | Issue #3865; reporting and receipt checks exist, but classifications, outline evidence, and R0 fields remain. |
-| 2 | A9: map feature files to milestones | Ready | Issue #3861; validate mappings against the milestone exits. |
+| 2 | A9: map feature files to milestones | In progress | Issue #3861; all declarations have initial mappings, but their Go baselines and milestone exits still need review. |
 | 3 | A10: replace prose evidence with durable receipts | In progress | Historical prose is archived; scenarios without retained current reports still need reruns and receipts. |
 | 4 | A11: record R0–R3 exit evidence or named gaps | Ready | Depends on the inventory and milestone mappings. |
 | 5 | A12: split files over the line limit | Ready | Issue #3860; preserve behavior and run the required gate. |
 
 ## Open items
 
-- A2: the diagnostic gate started on `6c5c1014a` and failed with 36 head test failures. The source changed during the run, so it cannot certify the current HEAD. See issue #3860 and `receipts/2026-11-13-gate-diagnostic/`. The latest gate preflight reported 2,610 unclassified scenarios; the current ledger has 2,457. A fresh passing gate is required before the first push.
+- A2: the diagnostic gate started on `6c5c1014a` and failed with 36 head test failures. The source changed during the run, so it cannot certify the current HEAD. See issue #3860 and `receipts/2026-11-13-gate-diagnostic/`. The latest gate preflight reported 2,457 unclassified scenarios; the current ledger has 1,839 after all application declarations were mapped (#3856, #3894–#3900). A fresh passing gate is required before the first push.
 - A3: stale worktrees and 24 ancestor branches removed. Two branches contain commits outside the working branch and remain for review; `unmerged-lanes-20261113.bundle` on the NAS backs up both. The `oblikovati-rust-backups` directory on the NAS holds the latest verified branch bundle.
 - A8: stale application or source evidence is downgraded without hiding damaged artifacts (#3869). Ledger-tool-only edits do not invalidate native UI tests.
-- A8: the ledger records 2,719 declarations with no parser-blocked scenarios after the source correction (#3866). Thirty-seven earlier receipts are stale after source or application changes; rerun them before counting them as verified. 2,457 scenarios remain unclassified. Outline receipts require every expanded example and cleanup. See `behavior-receipts.md` and issue #3865.
+- A8: the ledger records 2,719 declarations with no parser-blocked scenarios after the source correction (#3866). Thirty-seven earlier receipts are stale after source or application changes; rerun them before counting them as verified. All 2,719 declarations are mapped; 37 receipts are stale and no declaration has a current verified receipt on the uncommitted integration. Outline receipts require every expanded example and cleanup. See `behavior-receipts.md` and issue #3865.
+- R7 File menu: all eight pinned scenarios and 59 steps passed on the uncommitted integration; two captures were inspected. This is diagnostic evidence, not a current verified receipt. See `receipts/2026-11-14-file-menu-merge-diagnostic/` and #3894.
+- R7 project dialog: the pinned diagnostic reported one passing declaration and seven with unbound steps; subsequent steps are tainted. See `receipts/2026-11-14-project-dialog-merge-diagnostic/` and #3895.
 - A8: `behavior_cli.py backlog` groups the 195 feature files by their assigned milestones and shows missing classifications, R0 rows, and counts for each missing baseline field. 2,713 rows still have incomplete R0 baseline fields; unassigned work is not given an inferred milestone.
 - A8: 15 native receipts were refreshed after the command-state split. Two initial runs hit an unavailable IBus input method and passed with `XMODIFIERS=@im=none`; some other captures show the warning. See `receipts/2026-11-14-rerun-environment/`.
 - A8: the first body-properties row now records its Go reference, analytic oracle, kernel path, and platform limits. Go command tests pass but do not verify the body dialog or numeric result; its Go test premise remains open. See `receipts/2026-11-14-go-physical-baseline/`.

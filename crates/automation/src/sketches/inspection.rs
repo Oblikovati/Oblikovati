@@ -178,7 +178,7 @@ mod tests {
     use oblikovati_model::{
         feature::{
             AuthoredFeature, FeatureId, FeatureReadFootprint,
-            sketch_prism::{SketchDirectedLine, SketchPrismDefinition, SketchPrismSelection},
+            sketch_prism::{SketchDirectedCurve, SketchPrismDefinition, SketchPrismSelection},
             work_geometry::DatumLength,
         },
         sketch::SketchEntityId,
@@ -245,8 +245,8 @@ mod tests {
 
     fn consumer_definition(sketch: DocumentSketchId) -> SketchPrismDefinition {
         let outer = (1..=3)
-            .map(|id| SketchDirectedLine {
-                line: SketchEntityId(id),
+            .map(|id| SketchDirectedCurve {
+                curve: SketchEntityId(id),
                 reversed: false,
             })
             .collect();

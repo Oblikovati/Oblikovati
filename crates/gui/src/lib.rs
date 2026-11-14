@@ -28,8 +28,25 @@ mod document_units;
 mod engine;
 mod files;
 mod frame_keys;
+mod history_browser;
 mod input;
 mod material_browser;
+mod parameter_drafts;
+mod parameter_panel;
+mod parameter_snapshot;
+pub use parameter_drafts::{
+    GuiParameterAck, GuiParameterDrafts, GuiParameterTextEdit, GuiParameterTextField,
+    GuiParameterTextTarget,
+};
+pub use parameter_panel::{
+    GuiParameterAction, GuiParameterChoiceEdit, GuiParameterCreation, GuiParameterGroupAction,
+    GuiParameterGroupEdit, GuiParameterInitialValue, GuiParameterLinkEdit,
+    GuiParameterRowOperation, GuiParameterToggleField, GuiParameterToleranceEdit,
+};
+pub use parameter_snapshot::{
+    GuiParameterGroup, GuiParameterLinkParameter, GuiParameterLinkSource, GuiParameterRow,
+    GuiParameterSnapshot,
+};
 mod parameters;
 mod ribbon;
 mod ribbon_fit;
@@ -37,6 +54,8 @@ mod ribbon_key_tips;
 mod ribbon_panel_contents;
 mod ribbon_panels;
 mod ribbon_part_assets;
+mod selection_filter;
+pub use selection_filter::{GuiSelectionFilter, GuiSelectionFilterEntry, GuiSelectionKind};
 mod sketch;
 pub use application::document_opening::GuiInspectedFile;
 pub use application::document_tabs::windows::{GuiDocumentWindow, active_window_name};
@@ -97,6 +116,7 @@ pub use dimension_labels::{GuiDimensionLabel, GuiDimensionLabelRole};
 
 mod sketch_delete;
 
+mod sketch_options_ui;
 mod ui_scale;
 
 mod icons;

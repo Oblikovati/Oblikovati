@@ -86,3 +86,7 @@ path = "tests/sketch_display.rs"
 [[test]]
 name = "planar_pick"
 path = "tests/planar_pick.rs"
+
+[[test]]
+name = "revolve"
+path = "tests/revolve.rs"

@@ -1,0 +1,356 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use crate::{Error, PartTopologyAccess, encode, part_owner::active_part};
+use oblikovati_api::wire::*;
+use oblikovati_model::{
+    feature::{AuthoredFeature, FeatureId, FeatureSequence, part::PartFeatureDefinition},
+    history::DocumentSnapshot,
+    quantity::{Dimension, Quantity},
+};
+use oblikovati_persistence::file_access::DocumentFiles;
+use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
+
+/// Native feature lifecycle calls that operate on the active part history.
+pub const FEATURE_LIFECYCLE_METHODS: [&str; 5] = [
+    METHOD_FEATURES_DELETE,
+    METHOD_FEATURES_EDIT,
+    METHOD_FEATURES_GET,
+    METHOD_FEATURES_RENAME,
+    METHOD_FEATURES_REORDER,
+];
+
+/// Read one native feature after refreshing its current evaluation.
+pub(crate) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &mut FileWorkspace<O, W, F>,
+    access: &mut Option<&mut dyn PartTopologyAccess<O, W, F>>,
+    encoded: &[u8],
+) -> Result<Vec<u8>, Error> {
+    let document = active_part(files)?;
+    let request: FeatureRefArgs = crate::decode(METHOD_FEATURES_GET, encoded)?;
+    let errors = refresh(access, files, document)?;
+    detail(files, document, request.id, errors)
+}
+
+/// Apply one native feature lifecycle edit, refresh its evaluation, then return its detail.
+pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &mut FileWorkspace<O, W, F>,
+    access: &mut Option<&mut dyn PartTopologyAccess<O, W, F>>,
+    method: &str,
+    encoded: &[u8],
+) -> Result<Vec<u8>, Error> {
+    let document = active_part(files)?;
+    require_owner(access, document)?;
+    let id = apply_edit(files, document, method, encoded)?;
+    let errors = refresh(access, files, document)?;
+    detail(files, document, id, errors)
+}
+
+/// Delete one unreferenced native feature and refresh the retained native evaluation.
+pub(crate) fn delete<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &mut FileWorkspace<O, W, F>,
+    access: &mut Option<&mut dyn PartTopologyAccess<O, W, F>>,
+    encoded: &[u8],
+) -> Result<Vec<u8>, Error> {
+    let document = active_part(files)?;
+    require_owner(access, document)?;
+    let request: FeatureRefArgs = crate::decode(METHOD_FEATURES_DELETE, encoded)?;
+    remove(files, document, request.id)?;
+    refresh(access, files, document)?;
+    encode(&DeleteFeatureResult {
+        id: request.id,
+        deleted: true,
+    })
+}
+
+fn apply_edit<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &mut FileWorkspace<O, W, F>,
+    document: u64,
+    method: &str,
+    encoded: &[u8],
+) -> Result<u64, Error> {
+    match method {
+        METHOD_FEATURES_EDIT => edit(files, document, crate::decode(method, encoded)?),
+        METHOD_FEATURES_RENAME => rename(files, document, crate::decode(method, encoded)?),
+        METHOD_FEATURES_REORDER => reorder(files, document, crate::decode(method, encoded)?),
+        _ => Err(Error(format!(
+            "feature lifecycle {method:?}: expected an implemented lifecycle method"
+        ))),
+    }
+}
+
+fn edit<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &mut FileWorkspace<O, W, F>,
+    document: u64,
+    request: EditFeatureArgs,
+) -> Result<u64, Error> {
+    files
+        .commands(document)
+        .map_err(api_error)?
+        .run("Edit Feature", |snapshot, _| {
+            edit_prism_distance(snapshot, &request)?;
+            Ok::<_, Error>(request.id)
+        })
+        .map_err(api_error)
+}
+
+fn edit_prism_distance(
+    snapshot: &mut DocumentSnapshot,
+    request: &EditFeatureArgs,
+) -> Result<(), Error> {
+    require_empty_repicks(request)?;
+    let source = prism_distance_parameter(snapshot, request.id)?;
+    let value = single_distance_edit(request)?;
+    snapshot
+        .parameters
+        .set_authored_expression(source, value, Dimension::Length)
+        .map_err(api_error)
+}
+
+fn require_empty_repicks(request: &EditFeatureArgs) -> Result<(), Error> {
+    if request.repick.as_deref().unwrap_or_default().is_empty() {
+        return Ok(());
+    }
+    Err(Error(format!(
+        "features.edit id {} repick: expected no repicks for a sketch prism",
+        request.id
+    )))
+}
+
+fn prism_distance_parameter(snapshot: &DocumentSnapshot, id: u64) -> Result<u64, Error> {
+    let (feature, _) = locate(&snapshot.work_geometry, id)?;
+    let PartFeatureDefinition::SketchPrism(definition) = feature.definition() else {
+        return Err(Error(format!(
+            "features.edit id {id}: expected a sketch prism feature"
+        )));
+    };
+    definition.displacement()[2].parameter().ok_or_else(|| {
+        Error(format!(
+            "features.edit id {id}: expected a parameter-driven prism distance"
+        ))
+    })
+}
+
+fn single_distance_edit(request: &EditFeatureArgs) -> Result<&str, Error> {
+    let edits = request.scalars.as_deref().unwrap_or_default();
+    if edits.len() != 1 || edits[0].index != 0 || edits[0].value.trim().is_empty() {
+        return Err(Error(format!(
+            "features.edit id {} scalars {edits:?}: expected one nonempty distance edit at slot 0",
+            request.id
+        )));
+    }
+    Ok(&edits[0].value)
+}
+
+fn rename<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &mut FileWorkspace<O, W, F>,
+    document: u64,
+    request: RenameFeatureArgs,
+) -> Result<u64, Error> {
+    files
+        .commands(document)
+        .map_err(api_error)?
+        .run("Rename Feature", |snapshot, _| {
+            let features = &mut snapshot.work_geometry;
+            require_rename(features, request.id, &request.name)?;
+            features
+                .rename(FeatureId(request.id), &request.name)
+                .map_err(api_error)?;
+            Ok::<_, Error>(request.id)
+        })
+        .map_err(api_error)
+}
+
+fn reorder<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &mut FileWorkspace<O, W, F>,
+    document: u64,
+    request: ReorderFeatureArgs,
+) -> Result<u64, Error> {
+    let index = history_index(request.new_index)?;
+    files
+        .commands(document)
+        .map_err(api_error)?
+        .run("Reorder Feature", |snapshot, _| {
+            snapshot
+                .work_geometry
+                .reorder(FeatureId(request.id), index)
+                .map_err(api_error)?;
+            Ok::<_, Error>(request.id)
+        })
+        .map_err(api_error)
+}
+
+fn history_index(index: i64) -> Result<usize, Error> {
+    usize::try_from(index).map_err(|cause| {
+        Error(format!(
+            "features.reorder index {index}: expected a non-negative history index: {cause}"
+        ))
+    })
+}
+
+fn remove<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &mut FileWorkspace<O, W, F>,
+    document: u64,
+    id: u64,
+) -> Result<(), Error> {
+    files
+        .commands(document)
+        .map_err(api_error)?
+        .run("Delete Feature", |snapshot, _| {
+            snapshot
+                .work_geometry
+                .remove(FeatureId(id))
+                .map_err(api_error)?;
+            Ok::<_, Error>(())
+        })
+        .map_err(api_error)
+}
+
+fn detail<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &FileWorkspace<O, W, F>,
+    document: u64,
+    id: u64,
+    errors: Vec<FeatureError>,
+) -> Result<Vec<u8>, Error> {
+    let snapshot = files
+        .workspace()
+        .session(document)
+        .map_err(api_error)?
+        .snapshot();
+    let (feature, index) = locate(&snapshot.work_geometry, id)?;
+    encode(&FeatureDetailResult {
+        feature: feature_detail(feature, index, &errors, snapshot)?,
+    })
+}
+
+fn locate(
+    features: &FeatureSequence<PartFeatureDefinition>,
+    id: u64,
+) -> Result<(&AuthoredFeature<PartFeatureDefinition>, usize), Error> {
+    let index = features
+        .features()
+        .iter()
+        .position(|feature| feature.id() == FeatureId(id))
+        .ok_or_else(|| {
+            Error(format!(
+                "features.get id {id}: expected an existing native feature"
+            ))
+        })?;
+    Ok((features.get(FeatureId(id)).map_err(api_error)?, index))
+}
+
+fn feature_detail(
+    feature: &AuthoredFeature<PartFeatureDefinition>,
+    index: usize,
+    errors: &[FeatureError],
+    snapshot: &DocumentSnapshot,
+) -> Result<FeatureDetail, Error> {
+    let id = feature.id().0;
+    Ok(FeatureDetail {
+        feature_info: FeatureInfo {
+            id,
+            name: feature.name().into(),
+            kind: feature.definition().kind().into(),
+            suppressed: feature.suppressed(),
+            health: health(feature.suppressed(), id, errors),
+        },
+        index: checked_index(id, index)?,
+        scalars: prism_scalars(feature, snapshot)?,
+        slots: None,
+    })
+}
+
+pub(crate) fn prism_scalars(
+    feature: &AuthoredFeature<PartFeatureDefinition>,
+    snapshot: &DocumentSnapshot,
+) -> Result<Option<Vec<FeatureScalar>>, Error> {
+    let PartFeatureDefinition::SketchPrism(definition) = feature.definition() else {
+        return Ok(None);
+    };
+    let distance = definition.displacement()[2]
+        .resolve(&snapshot.parameters)
+        .map_err(api_error)?;
+    let units = snapshot.parameters.units();
+    let value = units.to_preferred(Quantity::new(distance, Dimension::Length));
+    if !value.is_finite() {
+        return Err(Error(format!(
+            "feature {} distance {distance}: expected a finite display value",
+            feature.id().0
+        )));
+    }
+    Ok(Some(vec![FeatureScalar {
+        index: 0,
+        label: "Distance".into(),
+        unit: units.preferred_name(Dimension::Length).into(),
+        value,
+        integer: false,
+    }]))
+}
+
+fn checked_index(id: u64, index: usize) -> Result<i64, Error> {
+    i64::try_from(index).map_err(|cause| {
+        Error(format!(
+            "feature {id} index {index}: expected an i64: {cause}"
+        ))
+    })
+}
+
+fn require_rename(
+    features: &oblikovati_model::feature::FeatureSequence<PartFeatureDefinition>,
+    id: u64,
+    name: &str,
+) -> Result<(), Error> {
+    if name.is_empty() {
+        return Err(Error(
+            "features.rename name \"\": expected a non-empty unique feature name".into(),
+        ));
+    }
+    features.get(FeatureId(id)).map_err(api_error)?;
+    if features
+        .features()
+        .iter()
+        .any(|feature| feature.id() != FeatureId(id) && feature.name() == name)
+    {
+        return Err(Error(format!(
+            "features.rename name {name:?}: expected a name unique within the active part"
+        )));
+    }
+    Ok(())
+}
+
+fn health(suppressed: bool, id: u64, errors: &[FeatureError]) -> String {
+    if suppressed {
+        return "suppressed".into();
+    }
+    errors
+        .iter()
+        .find(|error| error.id == id)
+        .map(|error| error.message.clone())
+        .unwrap_or_default()
+}
+
+fn refresh<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    access: &mut Option<&mut dyn PartTopologyAccess<O, W, F>>,
+    files: &mut FileWorkspace<O, W, F>,
+    document: u64,
+) -> Result<Vec<FeatureError>, Error> {
+    let owner = access.as_deref_mut().ok_or_else(|| {
+        Error(format!(
+            "feature lifecycle document {document}: expected an injected exact topology owner"
+        ))
+    })?;
+    owner.update_part(files, document).map_err(Error)
+}
+
+fn require_owner<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    access: &mut Option<&mut dyn PartTopologyAccess<O, W, F>>,
+    document: u64,
+) -> Result<(), Error> {
+    access.as_deref_mut().map(|_| ()).ok_or_else(|| {
+        Error(format!(
+            "feature lifecycle document {document}: expected an injected exact topology owner"
+        ))
+    })
+}
+
+fn api_error(cause: impl std::fmt::Display) -> Error {
+    Error(cause.to_string())
+}

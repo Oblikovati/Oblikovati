@@ -68,11 +68,30 @@ impl<'a, D: ScriptDocumentOwner, W: DispatchWakeup + 'static> NativeAddInDesktop
         Ok(())
     }
     fn poll_native(&mut self, budget: usize) -> Result<bool, String> {
-        let host = self.owner.script_host();
-        let outcome = self
-            .runtime
-            .poll(budget, &host)
-            .map_err(|cause| cause.to_string())?;
+        let outcome = {
+            let host = self.owner.script_host();
+            self.runtime.poll(budget, &host)
+        }
+        .map_err(|cause| cause.to_string())?;
+        self.record_native_outcome(outcome)
+    }
+    fn poll_native_window(
+        &mut self,
+        budget: usize,
+        window: &mut dyn crate::HeadWindow,
+    ) -> Result<bool, String> {
+        let (outcome, capture_queued) = {
+            let host = crate::window_caller::WindowCaller::new(self.owner.script_host(), window);
+            let outcome = self.runtime.poll(budget, &host);
+            (outcome, host.capture_queued())
+        };
+        let outcome = outcome.map_err(|cause| cause.to_string())?;
+        Ok(self.record_native_outcome(outcome)? || capture_queued)
+    }
+    fn record_native_outcome(
+        &mut self,
+        outcome: Option<Result<NativeCompletion, oblikovati_api::Error>>,
+    ) -> Result<bool, String> {
         let Some(outcome) = outcome else {
             return Ok(false);
         };
@@ -228,6 +247,23 @@ impl<D: ScriptDocumentOwner, W: DispatchWakeup + 'static> HeadWork
     ) -> Result<bool, String> {
         self.owner.edit_parameter_from_gui(mutation, request)
     }
+    fn gui_parameter_snapshot(
+        &self,
+    ) -> Result<Option<oblikovati_gui::GuiParameterSnapshot>, String> {
+        self.owner.gui_parameter_snapshot()
+    }
+    fn apply_gui_parameter(
+        &mut self,
+        action: &oblikovati_gui::GuiParameterAction,
+    ) -> Result<bool, String> {
+        self.owner.apply_gui_parameter(action)
+    }
+    fn apply_gui_shell_action(
+        &mut self,
+        action: oblikovati_gui::GuiShellAction,
+    ) -> Result<bool, String> {
+        self.owner.apply_gui_shell_action(action)
+    }
     fn process_inputs(
         &mut self,
         inputs: &[oblikovati_viewport::ViewportEvent],
@@ -261,6 +297,23 @@ impl<D: ScriptDocumentOwner, W: DispatchWakeup + 'static> HeadWork
             ));
         }
         let changed = self.poll_native(budget / 2)?;
+        let mut activity = self.owner.poll(budget - budget / 2)?;
+        activity.changed |= changed;
+        activity.pending |= self
+            .runtime
+            .queued_calls_pending()
+            .map_err(|cause| cause.to_string())?;
+        Ok(activity)
+    }
+    fn poll_window(
+        &mut self,
+        budget: usize,
+        window: &mut dyn crate::HeadWindow,
+    ) -> Result<HeadWorkStatus, String> {
+        if self.stopped {
+            return Err("native desktop stopped=true: expected live owner polling".into());
+        }
+        let changed = self.poll_native_window(budget / 2, window)?;
         let mut activity = self.owner.poll(budget - budget / 2)?;
         activity.changed |= changed;
         activity.pending |= self

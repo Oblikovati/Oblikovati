@@ -2,7 +2,7 @@
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
     feature::{
-        sketch_prism::{SketchDirectedLine, SketchPrismSelection},
+        sketch_prism::{SketchDirectedCurve, SketchPrismSelection},
         work_geometry::DatumLength,
     },
     sketch::SketchEntityId,
@@ -36,8 +36,8 @@ impl LegacyProfileResolver for GoCubeProfile {
         );
         Ok(SketchPrismSelection {
             outer: (6..=9)
-                .map(|id| SketchDirectedLine {
-                    line: SketchEntityId(id),
+                .map(|id| SketchDirectedCurve {
+                    curve: SketchEntityId(id),
                     reversed: false,
                 })
                 .collect(),
@@ -123,8 +123,8 @@ impl LegacyProfileResolver for WrongSketchBoundary {
     ) -> Result<SketchPrismSelection, String> {
         Ok(SketchPrismSelection {
             outer: (100..=103)
-                .map(|id| SketchDirectedLine {
-                    line: SketchEntityId(id),
+                .map(|id| SketchDirectedCurve {
+                    curve: SketchEntityId(id),
                     reversed: false,
                 })
                 .collect(),

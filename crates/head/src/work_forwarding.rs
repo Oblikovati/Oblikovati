@@ -8,6 +8,19 @@ macro_rules! forward_owner_view_work {
         ) -> Result<bool, String> {
             self.$owner.set_selection_mode_from_gui(mode)
         }
+        fn set_selection_enabled_from_gui(
+            &mut self,
+            kind: oblikovati_gui::GuiSelectionKind,
+            enabled: bool,
+        ) -> Result<bool, String> {
+            self.$owner.set_selection_enabled_from_gui(kind, enabled)
+        }
+        fn move_selection_kind_from_gui(&mut self, from: usize, to: usize) -> Result<bool, String> {
+            self.$owner.move_selection_kind_from_gui(from, to)
+        }
+        fn jump_history_from_gui(&mut self, document: u64, position: i64) -> Result<bool, String> {
+            self.$owner.jump_history_from_gui(document, position)
+        }
         fn update_part_from_gui(&mut self) -> Result<bool, String> {
             self.$owner.update_part_from_gui()
         }

@@ -112,14 +112,23 @@ fn create<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     prepared: PreparedExtrusion,
 ) -> Result<Vec<u8>, Error> {
     let name = prepared.name.clone();
-    files.commands(document).map_err(api_error)?.run_projected(
-        "Create extrusion",
-        |snapshot, ids| prepared.create(snapshot, ids),
-        |candidate, id| {
-            let bodies = backend.validate(candidate, id).map_err(Error)?;
-            crate::encode(&serde_json::json!({"feature": name, "kind": wire::featureargs::KIND_EXTRUDE, "bodies": bodies, "healthy": true}))
-        },
-    ).map_err(api_error)
+    files
+        .commands(document)
+        .map_err(api_error)?
+        .run_projected(
+            "Create extrusion",
+            |snapshot, ids| prepared.create(snapshot, ids),
+            |candidate, id| {
+                let bodies = backend.validate(candidate, id).map_err(Error)?;
+                let feature = candidate.work_geometry.get(id).map_err(api_error)?;
+                crate::encode(&serde_json::json!({
+                    "id": id.0, "name": feature.name(), "kind": feature.definition().kind(),
+                    "suppressed": candidate.feature_suppressed(id).map_err(api_error)?,
+                    "health": "", "feature": name, "bodies": bodies, "healthy": true
+                }))
+            },
+        )
+        .map_err(api_error)
 }
 
 fn parse_request(request: wire::AddFeatureArgs) -> Result<Extrude, Error> {

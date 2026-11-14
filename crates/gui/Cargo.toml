@@ -16,7 +16,7 @@ oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev
 image = { version = "=0.25.6", default-features = false }
 resvg = { version = "=0.49.0", default-features = false }
 xml = "=1.4.0"
-imgui = { version = "=0.12.0", features = ["docking"] }
+imgui = { version = "=0.12.0", features = ["docking", "tables-api"] }
 imgui-sys = { version = "=0.12.0", features = ["docking"] }
 oblikovati-viewport = { path = "../viewport" }
 

@@ -6,6 +6,8 @@ use super::*;
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct GuiCommandState {
     pub selection_mode: GuiSelectionMode,
+    pub histories: Vec<oblikovati_api::wire::TransactionHistory>,
+    pub selection_filter: Option<crate::GuiSelectionFilter>,
     /// Per-environment marking-menu settings owned by the desktop.
     pub marking_menus: Option<oblikovati_model::marking_menu::MarkingMenus>,
     /// Marking menu for the current sketch environment.
@@ -104,6 +106,7 @@ pub struct GuiCommandState {
 }
 impl GuiCommandState {
     pub(crate) fn validate(&self) -> Result<(), String> {
+        crate::history_browser::validate_histories(&self.histories)?;
         crate::dimensions::validate_dimension_draft(self)?;
         crate::dimension_labels::validate_dimension_labels(&self.dimension_labels)?;
         crate::document_tabs::validate_documents(&self.documents)?;

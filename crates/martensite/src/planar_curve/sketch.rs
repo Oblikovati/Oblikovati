@@ -4,6 +4,8 @@ use super::{
     intersect_planar_curves,
 };
 use oblikovati_model::sketch::{Sketch2D, SketchEntityId};
+mod natural_tangent;
+pub use natural_tangent::natural_fit_tangent;
 mod failure;
 mod prepare;
 pub(crate) mod shape;

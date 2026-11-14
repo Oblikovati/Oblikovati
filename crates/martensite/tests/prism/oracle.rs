@@ -10,9 +10,16 @@ pub(super) fn oracle_definition(row: &[f64; 16]) -> PrismProbeDefinition {
     };
     let mut next = 1_u64;
     for ring in std::iter::once(&mut definition.outer).chain(&mut definition.holes) {
-        ring.edge_keys = (next..next + ring.vertices.len() as u64).collect();
-        next += ring.vertices.len() as u64;
-        for point in &mut ring.vertices {
+        let PrismProbeLoop::Polygon {
+            edge_keys,
+            vertices,
+        } = ring
+        else {
+            panic!("expected polygon oracle fixture");
+        };
+        *edge_keys = (next..next + vertices.len() as u64).collect();
+        next += vertices.len() as u64;
+        for point in vertices {
             point[0] *= row[1];
             point[1] *= row[1];
         }
@@ -22,10 +29,10 @@ pub(super) fn oracle_definition(row: &[f64; 16]) -> PrismProbeDefinition {
 }
 fn concave() -> PrismProbeDefinition {
     PrismProbeDefinition {
-        outer: PrismProbeLoop {
-            edge_keys: vec![1, 2, 3, 4, 5, 6],
-            vertices: vec![[0., 0.], [3., 0.], [3., 1.], [1., 1.], [1., 3.], [0., 3.]],
-        },
+        outer: PrismProbeLoop::polygon(
+            vec![1, 2, 3, 4, 5, 6],
+            vec![[0., 0.], [3., 0.], [3., 1.], [1., 1.], [1., 3.], [0., 3.]],
+        ),
         holes: Vec::new(),
         displacement: [0., 0., 2.],
     }

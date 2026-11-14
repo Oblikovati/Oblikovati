@@ -39,7 +39,7 @@ fn line_uses(
     sketch: &oblikovati_model::sketch::Sketch2D,
     index: &oblikovati_model::sketch::SketchReadIndex<'_>,
     curves: &[SketchRegionCurveUse],
-) -> Result<Vec<SketchDirectedLine>, EvaluationFailure> {
+) -> Result<Vec<SketchDirectedCurve>, EvaluationFailure> {
     curves
         .iter()
         .map(|curve| {
@@ -60,8 +60,8 @@ fn line_uses(
                 ));
             }
             boundary::require_boundary_line(sketch, curve.curve)?;
-            Ok(SketchDirectedLine {
-                line: curve.curve,
+            Ok(SketchDirectedCurve {
+                curve: curve.curve,
                 reversed: curve.reversed,
             })
         })

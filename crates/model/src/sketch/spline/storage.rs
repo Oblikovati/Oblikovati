@@ -13,6 +13,8 @@ impl Sketch2D {
         self.capture_complete_schema_metadata(recipe);
         recipe.splines = Some(self.splines.clone());
         recipe.offset_splines = Some(self.offset_splines.clone());
+        recipe.spline_handles =
+            (!self.spline_handles.is_empty()).then(|| self.spline_handles.clone());
     }
     pub(in crate::sketch) fn restore_splines(
         &mut self,
@@ -27,6 +29,9 @@ impl Sketch2D {
         for offset in offsets {
             self.add_offset_spline(*offset)?;
         }
+        for handle in recipe.spline_handles.as_deref().unwrap_or_default() {
+            self.add_spline_handle(*handle)?;
+        }
         Ok(())
     }
 }
@@ -38,10 +43,22 @@ pub(super) fn spline_records(
     recipe: &SketchRecipe,
 ) -> Result<Option<SplineRecords<'_>>, SketchError> {
     match (recipe.version, &recipe.splines, &recipe.offset_splines) {
-        (1..=9, None, None) => Ok(None),
-        (10..=16, Some(parents), Some(offsets)) => Ok(Some((parents, offsets))),
+        (1..=9, None, None) if recipe.spline_handles.is_none() => Ok(None),
+        (10..=16, Some(parents), Some(offsets))
+            if recipe.spline_handles.is_none() || recipe.version == 13 =>
+        {
+            Ok(Some((parents, offsets)))
+        }
+        (17, Some(parents), Some(offsets))
+            if recipe
+                .spline_handles
+                .as_ref()
+                .is_some_and(|handles| !handles.is_empty()) =>
+        {
+            Ok(Some((parents, offsets)))
+        }
         shape => Err(SketchError::Definition(format!(
-            "spline recipe {shape:?}: expected no spline fields in versions 1-9 or explicit parent/offset lists in versions 10-16"
+            "spline recipe {shape:?}: expected parent/offset lists in versions 10-17 and handles only in version 13 or 17"
         ))),
     }
 }

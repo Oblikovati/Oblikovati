@@ -14,6 +14,10 @@ pub use arguments::{HeadCommand, HeadOptions, parse_arguments};
 #[cfg(target_os = "linux")]
 mod frames;
 #[cfg(target_os = "linux")]
+mod viewport_automation;
+#[cfg(target_os = "linux")]
+mod window_caller;
+#[cfg(target_os = "linux")]
 pub use frames::{
     HeadGuiUpdate, HeadPresentation, HeadSummary, HeadWindow, run_window, run_window_with_owner,
 };

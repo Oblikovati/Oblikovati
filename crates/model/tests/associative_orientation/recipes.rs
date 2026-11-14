@@ -13,11 +13,11 @@ fn absent_orientation_keeps_legacy_layout_and_oriented_records_require_version_t
     );
     assign(&mut snapshot, SketchAxisReference::OriginX);
     let mut recipe = snapshot.sketches.recipe();
-    for version in [0, 1, 2, 12] {
+    for version in [0, 1, 2, 13] {
         recipe.version = version;
         assert!(DocumentSketches::from_recipe(&recipe).is_err());
     }
-    for version in [3, 4, 5, 6, 7] {
+    for version in [3, 4, 5, 6, 7, 8, 9, 10, 11, 12] {
         recipe.version = version;
         let restored = DocumentSketches::from_recipe(&recipe).unwrap();
         assert!(restored.same_recipe(&snapshot.sketches));

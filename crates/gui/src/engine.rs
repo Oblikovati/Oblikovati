@@ -24,6 +24,7 @@ pub struct GuiFrameRequest {
 pub struct GuiFrameOutput {
     pub draws: GuiFrame,
     pub actions: Vec<GuiShellAction>,
+    pub parameter_actions: Vec<crate::GuiParameterAction>,
     pub capture: GuiInputCapture,
     pub activity: GuiFrameActivity,
     /// The unobstructed document area in framebuffer pixels, if it has positive size.
@@ -58,6 +59,8 @@ pub struct GuiFrameEngine {
     home: crate::application::home_recent_documents::HomeWorkspace,
     plane_selection: crate::application::quick_access_toolbar::plane_selection::PlaneSelection,
     parameter_editor: crate::parameters::GuiParameterEditor,
+    selection_filter: crate::selection_filter::SelectionFilterPanel,
+    history_browser: crate::history_browser::HistoryBrowser,
     document_files: crate::files::GuiDocumentFiles,
     ribbon: crate::ribbon::DocumentRibbon,
     document_tabs: crate::document_tabs::DocumentTabs,
@@ -107,7 +110,9 @@ impl GuiFrameEngine {
             appearance_browser: crate::material_browser::MaterialBrowser::appearances(),
             home: Default::default(),
             plane_selection: Default::default(),
-            parameter_editor: Default::default(),
+            parameter_editor: crate::parameters::GuiParameterEditor::new()?,
+            selection_filter: Default::default(),
+            history_browser: Default::default(),
             document_files: Default::default(),
             ribbon: Default::default(),
             document_tabs: Default::default(),
@@ -124,6 +129,38 @@ impl GuiFrameEngine {
     pub fn apply_theme(&mut self, theme: &oblikovati_model::theme::ThemeDefinition) {
         self.icons.set_theme(theme);
         crate::theme::apply_chrome_theme(&mut self.context.style_mut().colors, theme.palette());
+    }
+    /// Supply the current document parameters to the editor.
+    /// Example: `engine.set_parameter_snapshot(Some(snapshot))?`.
+    pub fn set_parameter_snapshot(
+        &mut self,
+        snapshot: Option<crate::GuiParameterSnapshot>,
+    ) -> Result<bool, String> {
+        self.parameter_editor.set_snapshot(snapshot)
+    }
+    /// Show a parameter metadata error and discard stale rows.
+    /// Example: `engine.report_parameter_view_issue(issue)?`.
+    pub fn report_parameter_view_issue(&mut self, issue: String) -> Result<bool, String> {
+        self.parameter_editor.report_issue(issue)
+    }
+    /// Show or close the editor for the current document.
+    /// Example: `engine.set_parameters_open(true)`.
+    pub fn set_parameters_open(&mut self, open: bool) {
+        self.parameter_editor.set_open(open);
+    }
+    /// Report whether the editor needs parameter metadata.
+    /// Example: `engine.parameters_open()` before reading parameter rows.
+    pub fn parameters_open(&self) -> bool {
+        self.parameter_editor.is_open()
+    }
+    /// Return the outcome of a parameter edit to its control.
+    /// Example: `engine.acknowledge_parameter_action(&action, result)`.
+    pub fn acknowledge_parameter_action(
+        &mut self,
+        action: &crate::GuiParameterAction,
+        result: Result<(), String>,
+    ) {
+        self.parameter_editor.acknowledge(action, result);
     }
     /// Attach owner-thread clipboard I/O; example: `GuiFrameEngine::with_clipboard(clipboard)?`.
     pub fn with_clipboard(clipboard: crate::GuiClipboard) -> Result<Self, String> {

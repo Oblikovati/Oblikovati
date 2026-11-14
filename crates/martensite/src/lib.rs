@@ -96,22 +96,27 @@ mod prism;
 pub use prism::{
     CertifiedNamedPrismEvaluator, CertifiedPrismEvidence, CertifiedPrismSnapshot,
     DrawingBaseProjection, DrawingProjectedCurve, DrawingProjection, DrawingProjectionCurveKind,
-    DrawingProjectionFrame, NamedPrismEvaluator, NamedPrismSnapshot, PrismAchievedTolerance,
-    PrismFaceMesh, PrismFaceProbe, PrismFaceRole, PrismFaceTopology, PrismHistoryRelation,
-    PrismHistorySource, PrismMeshOptions, PrismPresentation, PrismPresentationSource,
-    PrismProbeDefinition, PrismProbeLoop, PrismProbeReport, PrismProbeSnapshot, PrismResolution,
-    PrismResolutionPolicy, PrismSubentityHistory, PrismSubentityProvenance, PrismSubentityRole,
-    PrismSurfaceKind, PrismTopologySummary, drawing_base_view_bodies, drawing_projection_bodies,
-    named_part_properties, probe_planar_prism, retain_certified_named_sketch_prism,
-    retain_certified_profile_prism, retain_named_sketch_prism, retain_planar_prism,
-    retain_prism_on_plane,
+    DrawingProjectionFrame, FaceProbe, NamedPrismEvaluator, NamedPrismSnapshot, PlanarProfileLoop,
+    PrismAchievedTolerance, PrismFaceMesh, PrismFaceProbe, PrismFaceRole, PrismFaceTopology,
+    PrismHistoryRelation, PrismHistorySource, PrismMeshOptions, PrismPresentation,
+    PrismPresentationSource, PrismProbeDefinition, PrismProbeLoop, PrismProbeReport,
+    PrismProbeSnapshot, PrismResolution, PrismResolutionPolicy, PrismSubentityHistory,
+    PrismSubentityProvenance, PrismSubentityRole, PrismSurfaceKind, PrismTopologySummary,
+    TopologySummary, drawing_base_view_bodies, drawing_projection_bodies, named_part_properties,
+    probe_planar_prism, retain_certified_named_sketch_prism, retain_certified_profile_prism,
+    retain_named_sketch_prism, retain_planar_prism, retain_prism_on_plane,
+};
+mod revolve;
+pub use revolve::{
+    RevolveFaceRole, RevolveProbeDefinition, RevolveProbeReport, probe_planar_revolve,
+    probe_revolve_on_plane,
 };
 mod region_identity;
 mod sketch_prism;
 pub use region_identity::{RegionSelectionError, resolve_region_by_boundary};
 mod stored_prism;
 pub use sketch_prism::{
-    CertifiedPrismEvaluator, MartensitePrismEvaluator, SketchDirectedLine, SketchPrismSelection,
+    CertifiedPrismEvaluator, MartensitePrismEvaluator, SketchDirectedCurve, SketchPrismSelection,
     SketchProfileExtent, SketchRegionBoundary, SketchRegionCurveUse, certified_sketch_regions,
     certified_sketch_regions_with_policy, retain_certified_sketch_prism,
     retain_resolved_sketch_prism, retain_selected_sketch_prism, retain_sketch_prism_definition,

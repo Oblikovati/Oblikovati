@@ -194,6 +194,7 @@ mod tests {
             key: "ab".into(),
             index: 0,
             visible: true,
+            faces: 6,
             appearance: "black".into(),
             physical: None,
         }

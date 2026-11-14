@@ -53,6 +53,8 @@ mod part_assets;
 mod part_measure;
 #[path = "owner_recent.rs"]
 mod recent;
+#[path = "owner_selection_filter.rs"]
+mod selection_filter;
 #[path = "owner_sketch_block.rs"]
 mod sketch_block;
 #[path = "owner_sketch_block_pick.rs"]

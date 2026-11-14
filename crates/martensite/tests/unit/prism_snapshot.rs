@@ -4,10 +4,10 @@ use martensite_tkbrep::{brep::BRepTool, topods};
 use martensite_tkmath::poly::mesh_purpose;
 fn retained_fixture() -> PrismProbeSnapshot {
     retain_planar_prism(&PrismProbeDefinition {
-        outer: PrismProbeLoop {
-            edge_keys: vec![1, 2, 3, 4],
-            vertices: vec![[0., 0.], [4., 0.], [4., 3.], [0., 3.]],
-        },
+        outer: PrismProbeLoop::polygon(
+            vec![1, 2, 3, 4],
+            vec![[0., 0.], [4., 0.], [4., 3.], [0., 3.]],
+        ),
         holes: Vec::new(),
         displacement: [1., 2., -3.],
     })

@@ -14,6 +14,14 @@ fn properties(
             accuracy: accuracy.into(),
         })
 }
+
+fn model_properties(
+    owner: &mut TestOwner,
+) -> Result<oblikovati_api::types::PhysicalProperties, oblikovati_api::Error> {
+    Client::new(owner.document_host())
+        .materials()
+        .physical_properties()
+}
 fn close_value(actual: f64, expected: f64) {
     assert!(
         (actual - expected).abs() <= expected.abs().max(1.) * 1e-10,
@@ -86,6 +94,36 @@ fn density_defaults_follow_the_part_contract_and_explicit_values_override_it() {
         1.
     );
     assert_eq!(properties(&mut owner, 0, 3., "").unwrap().density_g_cm3, 3.);
+}
+
+#[test]
+fn model_properties_use_current_named_bodies_and_part_density() {
+    let (mut owner, _) = owner();
+    let document = open_prism(&mut owner, false);
+    let default = model_properties(&mut owner).unwrap();
+    close_value(default.volume, 24.);
+    close_value(default.area, 52.);
+    close_value(default.mass, 24.);
+    close_value(default.density, 1.);
+    for (actual, expected) in default.centroid.into_iter().zip([2., 1.5, 1.]) {
+        close_value(actual, expected);
+    }
+    Client::new(owner.document_host())
+        .materials()
+        .assign(&AssignMaterialArgs {
+            body_key: String::new(),
+            material_id: "steel".into(),
+        })
+        .unwrap();
+    let steel = Client::new(owner.document_host())
+        .materials()
+        .get(&AssetRefArgs { id: "steel".into() })
+        .unwrap();
+    let assigned = model_properties(&mut owner).unwrap();
+    close_value(assigned.density, steel.density);
+    close_value(assigned.mass, 24. * steel.density);
+    owner.files.commands(document).unwrap().undo().unwrap();
+    close_value(model_properties(&mut owner).unwrap().mass, 24.);
 }
 #[test]
 fn queries_reject_bad_indices_accuracy_and_overflow_then_track_replay() {

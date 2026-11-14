@@ -51,7 +51,7 @@ const INFRASTRUCTURE: &[(&str, &str)] = &[
     ("application/workspace-layout/mod.rs", "##panel-plus"),
     ("application/workspace-layout/mod.rs", "##browser-boundary"),
     ("application/workspace-layout/status_bar.rs", "##status-bar"),
-    ("chrome.rs", "title"),
+    ("chrome/side.rs", "title"),
     ("chrome.rs", "##application-ribbon"),
     ("document_tabs.rs", "<dynamic>"),
     ("document_tabs.rs", "##open-document-tabs"),

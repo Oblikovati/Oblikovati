@@ -59,6 +59,19 @@ impl<D: ScriptDocumentOwner> DesktopScripts<D> {
         self.console.shutdown();
         self.owner
     }
+    fn poll_console(&mut self, activity: &mut HeadWorkStatus) {
+        let host = self.owner.script_host();
+        let console = self.console.poll_activity(&host);
+        activity.changed |= console.changed;
+        if console.active {
+            let interval = Duration::from_secs(1) / 60;
+            activity.wake_after = Some(
+                activity
+                    .wake_after
+                    .map_or(interval, |owner_wait| owner_wait.min(interval)),
+            );
+        }
+    }
 }
 impl<D: ScriptDocumentOwner> HeadWork for DesktopScripts<D> {
     fn set_marking_menu_from_gui(
@@ -162,6 +175,23 @@ impl<D: ScriptDocumentOwner> HeadWork for DesktopScripts<D> {
     ) -> Result<bool, String> {
         self.owner.edit_parameter_from_gui(mutation, request)
     }
+    fn gui_parameter_snapshot(
+        &self,
+    ) -> Result<Option<oblikovati_gui::GuiParameterSnapshot>, String> {
+        self.owner.gui_parameter_snapshot()
+    }
+    fn apply_gui_parameter(
+        &mut self,
+        action: &oblikovati_gui::GuiParameterAction,
+    ) -> Result<bool, String> {
+        self.owner.apply_gui_parameter(action)
+    }
+    fn apply_gui_shell_action(
+        &mut self,
+        action: oblikovati_gui::GuiShellAction,
+    ) -> Result<bool, String> {
+        self.owner.apply_gui_shell_action(action)
+    }
     fn process_inputs(
         &mut self,
         inputs: &[oblikovati_viewport::ViewportEvent],
@@ -185,18 +215,18 @@ impl<D: ScriptDocumentOwner> HeadWork for DesktopScripts<D> {
     fn poll(&mut self, budget: usize) -> Result<HeadWorkStatus, String> {
         let native_budget = owner_batch_budget(budget, self.console.is_active())?;
         let mut activity = self.owner.poll(native_budget)?;
-        let host = self.owner.script_host();
-        let console = self.console.poll_activity(&host);
-        activity.changed |= console.changed;
-        // A running VM may emit no stream event. Timed waits service deadlines without idle GPU redraws.
-        if console.active {
-            let interval = Duration::from_secs(1) / 60;
-            activity.wake_after = Some(
-                activity
-                    .wake_after
-                    .map_or(interval, |owner_wait| owner_wait.min(interval)),
-            );
-        }
+        self.poll_console(&mut activity);
+        Ok(activity)
+    }
+
+    fn poll_window(
+        &mut self,
+        budget: usize,
+        window: &mut dyn crate::HeadWindow,
+    ) -> Result<HeadWorkStatus, String> {
+        let native_budget = owner_batch_budget(budget, self.console.is_active())?;
+        let mut activity = self.owner.poll_window(native_budget, window)?;
+        self.poll_console(&mut activity);
         Ok(activity)
     }
 
@@ -292,11 +322,103 @@ impl<D: ScriptDocumentOwner> crate::HeadSketchWork for DesktopScripts<D> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use oblikovati_api::{Error, client::Caller};
+    use std::{cell::Cell, rc::Rc};
+
     #[test]
     fn script_event_reservation_keeps_the_total_frame_budget_bounded() {
         assert_eq!(owner_batch_budget(32, true).unwrap(), 31);
         assert_eq!(owner_batch_budget(32, false).unwrap(), 32);
         assert!(owner_batch_budget(1, true).is_err());
         assert!(owner_batch_budget(0, false).is_err());
+    }
+
+    #[test]
+    fn script_desktop_delegates_window_aware_polling() {
+        let window_called = Rc::new(Cell::new(false));
+        let action_called = Rc::new(Cell::new(false));
+        let mut desktop = DesktopScripts::new(
+            WindowAwareOwner {
+                window_called: Rc::clone(&window_called),
+                action_called: Rc::clone(&action_called),
+            },
+            IsolatedLuaEngine::new(std::path::Path::new("/usr/bin/true"), Vec::new()),
+            ScriptLimits::gui(),
+        );
+        desktop.poll_window(2, &mut EmptyWindow).unwrap();
+        assert!(window_called.get());
+        assert!(
+            desktop
+                .apply_gui_shell_action(oblikovati_gui::GuiShellAction::NewPart)
+                .unwrap()
+        );
+        assert!(action_called.get());
+    }
+
+    struct WindowAwareOwner {
+        window_called: Rc<Cell<bool>>,
+        action_called: Rc<Cell<bool>>,
+    }
+
+    impl crate::HeadSketchWork for WindowAwareOwner {}
+    impl HeadWork for WindowAwareOwner {
+        fn poll(&mut self, _: usize) -> Result<HeadWorkStatus, String> {
+            Ok(Default::default())
+        }
+        fn poll_window(
+            &mut self,
+            _: usize,
+            _: &mut dyn crate::HeadWindow,
+        ) -> Result<HeadWorkStatus, String> {
+            self.window_called.set(true);
+            Ok(Default::default())
+        }
+        fn apply_gui_shell_action(
+            &mut self,
+            _: oblikovati_gui::GuiShellAction,
+        ) -> Result<bool, String> {
+            self.action_called.set(true);
+            Ok(true)
+        }
+        fn close_allowed(&mut self) -> Result<bool, String> {
+            Ok(true)
+        }
+        fn finish(&mut self) -> Result<(), String> {
+            Ok(())
+        }
+    }
+
+    impl ScriptDocumentOwner for WindowAwareOwner {
+        type Host<'a> = NoopCaller;
+        fn script_host(&mut self) -> Self::Host<'_> {
+            NoopCaller
+        }
+    }
+
+    struct NoopCaller;
+
+    impl Caller for NoopCaller {
+        fn call(&self, method: &str, _: &[u8]) -> Result<Vec<u8>, Error> {
+            Err(Error(format!(
+                "test method {method:?}: expected no console request"
+            )))
+        }
+    }
+
+    struct EmptyWindow;
+
+    impl crate::HeadWindow for EmptyWindow {
+        fn events(&mut self, _: usize) -> Result<Vec<oblikovati_viewport::ViewportEvent>, String> {
+            Ok(Vec::new())
+        }
+        fn present(&mut self) -> Result<crate::HeadPresentation, String> {
+            Ok(crate::HeadPresentation::Completed)
+        }
+        fn wait(&mut self, _: Option<Duration>) -> Result<bool, String> {
+            Ok(false)
+        }
+        fn finish(&mut self) -> Result<(), String> {
+            Ok(())
+        }
     }
 }

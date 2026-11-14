@@ -48,6 +48,50 @@ pub trait HeadWindow {
     fn request_close(&mut self) -> Result<bool, String> {
         Err("exit: expected a native window that can close".into())
     }
+    /// Capture the current composed window on the owner thread; example: `window.capture_window()?`.
+    fn capture_window(&self) -> Result<oblikovati_viewport::ViewportCapture, String> {
+        Err("window capture: expected a native capture-capable window".into())
+    }
+
+    /// Queue a capture after the next presented frame; example: `window.queue_window_capture(path)?`.
+    fn queue_window_capture(&mut self, _: &std::path::Path) -> Result<[u32; 2], String> {
+        Err("window capture: expected a native capture-capable window".into())
+    }
+
+    /// Inject one viewport event through the same path as native input; example: `window.inject_viewport_input(event)?`.
+    fn inject_viewport_input(
+        &mut self,
+        _: oblikovati_viewport::ViewportEvent,
+    ) -> Result<(), String> {
+        Err("viewport input: expected a native input-capable window".into())
+    }
+
+    /// Request owner metadata only while visible; example: `window.gui_parameters_open()`.
+    fn gui_parameters_open(&self) -> bool {
+        false
+    }
+    /// Copy the current parameter view; example: `window.set_gui_parameter_snapshot(None)?` on close.
+    fn set_gui_parameter_snapshot(
+        &mut self,
+        _: Option<oblikovati_gui::GuiParameterSnapshot>,
+    ) -> Result<bool, String> {
+        Ok(false)
+    }
+    /// Show a parameter view decline locally; example: `window.show_gui_parameter_issue(issue)?`.
+    fn show_gui_parameter_issue(&mut self, issue: String) -> Result<bool, String> {
+        Err(format!(
+            "GUI parameter view issue {issue:?}: expected a window with parameter feedback"
+        ))
+    }
+    /// Return one owner result to its widget; example: `window.acknowledge_gui_parameter(&action, result)?`.
+    fn acknowledge_gui_parameter(
+        &mut self,
+        _: &oblikovati_gui::GuiParameterAction,
+        _: Result<(), String>,
+    ) -> Result<(), String> {
+        Ok(())
+    }
+
     /// Advance GUI work before routing one input; example: `window.gui_frame(Some(event), &commands)?`.
     fn gui_frame(
         &mut self,
@@ -345,12 +389,12 @@ fn run_owner_frame(
     let inputs = window.events(64)?;
     owner.observe_window_capture_extent(window.window_capture_extent()?);
     control.pending |= process_frame_inputs(window, owner, &inputs)?;
-    let mut activity = owner.poll(32)?;
+    let mut activity = owner.poll_window(32, window)?;
     publish_command_notice(window, owner)?;
     let gui = gui::advance_gui(window, owner, None)?;
     control.pending |= gui.changed;
     // Deferred GUI input can dispatch after polling; drain its owner effects before idle.
-    activity.pending |= !gui.actions.is_empty();
+    activity.pending |= !gui.actions.is_empty() || !gui.parameter_actions.is_empty();
     activity.wake_after = gui::earliest_wake(activity.wake_after, gui.wake_after);
     control.startup_ready = owner.startup_ready();
     control.pending |= activity.changed;

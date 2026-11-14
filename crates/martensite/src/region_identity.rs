@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Resolve saved boundary lineage against the kernel's current region arrangement.
 use martensite_tkbo::profile_extrusion::{LoopUse, PlanarRegion, PlanarRegionSet, RegionId};
-use oblikovati_model::feature::sketch_prism::{SketchDirectedLine, SketchPrismSelection};
+use oblikovati_model::feature::sketch_prism::{SketchDirectedCurve, SketchPrismSelection};
 use std::{error::Error, fmt};
 
 /// A saved region boundary did not resolve to exactly one current region.
@@ -76,7 +76,7 @@ fn matches_region(region: &PlanarRegion, selection: &SketchPrismSelection) -> bo
     true
 }
 
-fn same_loop(actual: &[LoopUse], expected: &[SketchDirectedLine]) -> bool {
+fn same_loop(actual: &[LoopUse], expected: &[SketchDirectedCurve]) -> bool {
     if actual.is_empty() || actual.len() != expected.len() {
         return false;
     }
@@ -88,7 +88,7 @@ fn same_loop(actual: &[LoopUse], expected: &[SketchDirectedLine]) -> bool {
 
 fn same_traversal(
     actual: &[LoopUse],
-    expected: &[SketchDirectedLine],
+    expected: &[SketchDirectedCurve],
     start: usize,
     reverse: bool,
 ) -> bool {
@@ -99,7 +99,7 @@ fn same_traversal(
             (start + offset) % actual.len()
         };
         let edge = actual[index];
-        edge.curve.0 == wanted.line.0 && (edge.reversed ^ reverse) == wanted.reversed
+        edge.curve.0 == wanted.curve.0 && (edge.reversed ^ reverse) == wanted.reversed
     })
 }
 

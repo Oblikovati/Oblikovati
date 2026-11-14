@@ -22,6 +22,7 @@ pub use legacy_part::{LegacyExtrusionCandidate, LegacyPartCandidate, LegacyProfi
 mod legacy_sketch;
 pub use legacy_sketch::LegacySketchCandidate;
 mod model_states;
+mod named_views;
 mod parameters;
 mod properties;
 mod resource_edit;

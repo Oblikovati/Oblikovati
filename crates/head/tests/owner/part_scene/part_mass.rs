@@ -15,6 +15,48 @@ fn one(owner: &mut TestOwner) -> MassPropertiesResult {
         .physical_properties(&BodyPhysicalPropertiesArgs::default())
         .unwrap()
 }
+fn health(owner: &mut TestOwner) -> ModelHealthResult {
+    Client::new(owner.document_host())
+        .analysis()
+        .model_health(&ModelHealthArgs::default())
+        .unwrap()
+}
+fn requires_update(owner: &mut TestOwner) -> bool {
+    Client::new(owner.document_host())
+        .documents()
+        .requires_update()
+        .unwrap()
+        .requires_update
+}
+fn update(owner: &mut TestOwner, accept_errors_and_continue: bool) -> UpdateDocumentResult {
+    Client::new(owner.document_host())
+        .documents()
+        .update(&UpdateDocumentArgs {
+            accept_errors_and_continue,
+        })
+        .unwrap()
+}
+fn rebuild(owner: &mut TestOwner) -> UpdateDocumentResult {
+    Client::new(owner.document_host())
+        .documents()
+        .rebuild(&UpdateDocumentArgs::default())
+        .unwrap()
+}
+fn end_of_part(owner: &mut TestOwner) -> EndOfPartResult {
+    Client::new(owner.document_host())
+        .documents()
+        .get_end_of_part(&oblikovati_api::json::EmptyObject {})
+        .unwrap()
+}
+fn feature(owner: &mut TestOwner, id: u64) -> FeatureDetailResult {
+    Client::new(owner.document_host())
+        .features()
+        .get(&FeatureRefArgs { id })
+        .unwrap()
+}
+fn tree(owner: &mut TestOwner) -> ModelTreeResult {
+    Client::new(owner.document_host()).model().tree().unwrap()
+}
 #[test]
 fn one_body_analysis_is_identical_and_empty_part_is_zero_with_the_requested_density() {
     let (mut owner, awake) = owner();
@@ -62,6 +104,227 @@ fn analysis_sums_current_bodies_without_union_and_tracks_edit_undo_and_failure()
     );
 }
 #[test]
+fn model_health_lists_only_the_failed_feature_after_current_replay() {
+    let (mut owner, _) = owner();
+    open_prism(&mut owner, false);
+    assert_eq!(
+        health(&mut owner),
+        ModelHealthResult {
+            overall: "ok".into(),
+            ..Default::default()
+        }
+    );
+    set_parameter(&mut owner, "depth", "0 cm");
+    let result = health(&mut owner);
+    assert_eq!((result.overall.as_str(), result.sick_count), ("sick", 1));
+    let unhealthy = result.unhealthy.unwrap();
+    assert_eq!((unhealthy.len(), unhealthy[0].status.as_str()), (1, "sick"));
+    assert!(!unhealthy[0].name.is_empty());
+    assert!(!unhealthy[0].reason.is_empty());
+}
+#[test]
+fn model_tree_publishes_native_feature_ids_and_current_body_count() {
+    let (mut owner, _) = owner();
+    open_prism(&mut owner, true);
+    let result = tree(&mut owner);
+    assert_eq!((result.sketches, result.bodies), (1, 2));
+    let features = result.features.unwrap();
+    assert_eq!(
+        features
+            .iter()
+            .map(|feature| feature.id)
+            .collect::<Vec<_>>(),
+        [1, 2]
+    );
+    assert!(features.iter().all(|feature| feature.kind == "extrude"));
+}
+#[test]
+fn native_reference_keys_list_verified_face_keys_per_body() {
+    let (owner, _) = owner();
+    let mut owner = owner
+        .with_extrusion_policy(crate::part_scene::resolution_policy::desktop_policy())
+        .unwrap();
+    open_prism(&mut owner, false);
+    let result = Client::new(owner.document_host())
+        .model()
+        .reference_keys()
+        .unwrap();
+    let bodies = result.bodies.unwrap();
+    assert_eq!(bodies.len(), 1);
+    let faces = bodies[0].faces.as_ref().unwrap();
+    assert_eq!(faces.len(), 6);
+    assert!(
+        faces
+            .iter()
+            .all(|face| face.kind == "plane" && !face.key.is_empty())
+    );
+}
+#[test]
+fn native_reference_keys_of_an_empty_part_are_empty() {
+    let (mut owner, awake) = owner();
+    create(&mut owner, &awake);
+    let result = Client::new(owner.document_host())
+        .model()
+        .reference_keys()
+        .unwrap();
+    assert_eq!(result.bodies, Some(Vec::new()));
+}
+#[test]
+fn requires_update_tracks_the_current_native_evaluation_generation() {
+    let (mut empty_owner, awake) = owner();
+    create(&mut empty_owner, &awake);
+    assert!(!requires_update(&mut empty_owner));
+    empty_owner.finish().unwrap();
+    let (mut owner, _) = owner();
+    open_prism(&mut owner, false);
+    total(&mut owner, 0.);
+    assert!(!requires_update(&mut owner));
+    set_parameter(&mut owner, "depth", "3 cm");
+    assert!(requires_update(&mut owner));
+    total(&mut owner, 0.);
+    assert!(!requires_update(&mut owner));
+}
+#[test]
+fn update_refreshes_a_healthy_part_and_reports_or_refuses_failed_features() {
+    let (mut owner, _) = owner();
+    open_prism(&mut owner, false);
+    assert_eq!(update(&mut owner, false), UpdateDocumentResult::default());
+    assert_eq!(rebuild(&mut owner), UpdateDocumentResult::default());
+    set_parameter(&mut owner, "depth", "0 cm");
+    assert!(
+        Client::new(owner.document_host())
+            .documents()
+            .update(&UpdateDocumentArgs::default())
+            .is_err()
+    );
+    let result = update(&mut owner, true);
+    assert!(!result.requires_update);
+    let errors = result.errors.unwrap();
+    assert_eq!((errors.len(), errors[0].kind.as_str()), (1, "extrude"));
+    assert!(!errors[0].name.is_empty() && !errors[0].message.is_empty());
+    assert!(!requires_update(&mut owner));
+}
+#[test]
+fn end_of_part_round_trips_through_history_and_the_native_evaluation() {
+    let (mut owner, _) = owner();
+    open_prism(&mut owner, true);
+    assert_eq!(
+        end_of_part(&mut owner),
+        EndOfPartResult {
+            position: -1,
+            rolled_back: false
+        }
+    );
+    let rolled_back = Client::new(owner.document_host())
+        .documents()
+        .set_end_of_part(&SetEndOfPartArgs { position: 1 })
+        .unwrap();
+    assert_eq!(
+        rolled_back,
+        EndOfPartResult {
+            position: 1,
+            rolled_back: true
+        }
+    );
+    assert!((total(&mut owner, 0.).volume_mm3 - 24000.).abs() < 1e-6);
+    let restored = Client::new(owner.document_host())
+        .documents()
+        .set_end_of_part(&SetEndOfPartArgs { position: -1 })
+        .unwrap();
+    assert_eq!(
+        restored,
+        EndOfPartResult {
+            position: -1,
+            rolled_back: false
+        }
+    );
+    assert!((total(&mut owner, 0.).volume_mm3 - 48000.).abs() < 1e-6);
+    assert!(
+        Client::new(owner.document_host())
+            .documents()
+            .set_end_of_part(&SetEndOfPartArgs { position: 3 })
+            .is_err()
+    );
+    assert_eq!(end_of_part(&mut owner), restored);
+}
+#[test]
+fn feature_lifecycle_edits_native_history_and_returns_current_detail() {
+    let (owner, _) = owner();
+    let mut owner = owner
+        .with_extrusion_policy(crate::part_scene::resolution_policy::desktop_policy())
+        .unwrap();
+    open_prism(&mut owner, true);
+    let initial = feature(&mut owner, 1);
+    assert_eq!(
+        (
+            initial.feature.index,
+            initial.feature.feature_info.kind.as_str()
+        ),
+        (0, "extrude")
+    );
+    let renamed = Client::new(owner.document_host())
+        .features()
+        .rename(&RenameFeatureArgs {
+            id: 1,
+            name: "Base".into(),
+        })
+        .unwrap();
+    assert_eq!(renamed.feature.feature_info.name, "Base");
+    assert!(
+        Client::new(owner.document_host())
+            .features()
+            .rename(&RenameFeatureArgs {
+                id: 2,
+                name: "Base".into()
+            })
+            .is_err()
+    );
+    let suppressed = Client::new(owner.document_host())
+        .features()
+        .set_suppressed(&SetFeatureSuppressedArgs {
+            id: 1,
+            suppressed: true,
+        })
+        .unwrap();
+    assert!(suppressed.feature.feature_info.suppressed);
+    assert!(suppressed.feature.feature_info.health.is_empty());
+    assert!((total(&mut owner, 0.).volume_mm3 - 24000.).abs() < 1e-6);
+    let restored = Client::new(owner.document_host())
+        .features()
+        .set_suppressed(&SetFeatureSuppressedArgs {
+            id: 1,
+            suppressed: false,
+        })
+        .unwrap();
+    assert!(restored.feature.feature_info.health.is_empty());
+    let moved = Client::new(owner.document_host())
+        .features()
+        .reorder(&ReorderFeatureArgs {
+            id: 2,
+            new_index: 0,
+        })
+        .unwrap();
+    assert_eq!(moved.feature.index, 0);
+    assert!((total(&mut owner, 0.).volume_mm3 - 48000.).abs() < 1e-6);
+    assert_eq!(
+        Client::new(owner.document_host())
+            .features()
+            .delete(&FeatureRefArgs { id: 1 })
+            .unwrap(),
+        DeleteFeatureResult {
+            id: 1,
+            deleted: true
+        }
+    );
+    assert!((total(&mut owner, 0.).volume_mm3 - 24000.).abs() < 1e-6);
+    assert!(
+        Client::new(owner.document_host())
+            .features()
+            .get(&FeatureRefArgs { id: 1 })
+            .is_err()
+    );
+}
+#[test]
 fn part_analysis_uses_assigned_density_and_validates_requests() {
     let (mut owner, _) = owner();
     assert!(
@@ -97,4 +360,23 @@ fn part_analysis_uses_assigned_density_and_validates_requests() {
             })
             .is_err()
     );
+}
+
+#[test]
+fn model_browser_state_names_each_exact_body() {
+    let (mut owner, _) = owner();
+    open_prism(&mut owner, false);
+    let expected = Client::new(owner.document_host())
+        .body()
+        .list(&oblikovati_api::json::EmptyObject {})
+        .unwrap()
+        .bodies
+        .unwrap_or_default();
+    let actual = owner.gui_command_state().unwrap().browser.unwrap().bodies;
+    assert_eq!(actual.len(), expected.len());
+    for (actual, expected) in actual.iter().zip(expected) {
+        assert_eq!(actual.name, expected.name);
+        assert_eq!(actual.visible, expected.visible);
+        assert_eq!(actual.faces, usize::try_from(expected.faces).unwrap());
+    }
 }

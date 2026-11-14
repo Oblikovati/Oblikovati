@@ -216,7 +216,7 @@ fn mixed_ambiguous_incomplete_and_legacy_reference_shapes_are_refused() {
             _ => recipe.sketches[0].plane_options = Some(Default::default()),
         }
         let error = DocumentSketches::from_recipe(&recipe).unwrap_err();
-        assert!(error.to_string().contains("expected a fixed frame"));
+        assert!(error.to_string().contains("expected one fixed frame"));
     }
 }
 #[test]

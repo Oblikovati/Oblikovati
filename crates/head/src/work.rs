@@ -11,6 +11,31 @@ pub trait HeadWork: HeadSketchWork {
             "selection mode {mode:?}: expected a desktop selection owner"
         ))
     }
+    /// Set one ambient selection category.
+    /// Example: `work.set_selection_enabled_from_gui(kind, true)?`.
+    fn set_selection_enabled_from_gui(
+        &mut self,
+        kind: oblikovati_gui::GuiSelectionKind,
+        enabled: bool,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "selection category {kind:?}, enabled {enabled}: expected a desktop selection owner"
+        ))
+    }
+    /// Change an ambient category's pick priority.
+    /// Example: `work.move_selection_kind_from_gui(2, 1)?`.
+    fn move_selection_kind_from_gui(&mut self, from: usize, to: usize) -> Result<bool, String> {
+        Err(format!(
+            "selection priority {from}->{to}: expected a desktop selection owner"
+        ))
+    }
+    /// Move a document's transaction cursor.
+    /// Example: `work.jump_history_from_gui(document, 0)?`.
+    fn jump_history_from_gui(&mut self, document: u64, position: i64) -> Result<bool, String> {
+        Err(format!(
+            "history {document}/{position}: expected a document history owner"
+        ))
+    }
     /// Recompute the active part; example: `work.update_part_from_gui()?`.
     fn update_part_from_gui(&mut self) -> Result<bool, String> {
         Err("part update: expected a part evaluation owner".into())
@@ -427,6 +452,33 @@ pub trait HeadWork: HeadSketchWork {
             "GUI parameter {mutation:?} {request:?}: expected a document parameter owner"
         ))
     }
+    /// Copy the current parameter editor view.
+    /// Example: `work.gui_parameter_snapshot()?` before drawing the panel.
+    fn gui_parameter_snapshot(
+        &self,
+    ) -> Result<Option<oblikovati_gui::GuiParameterSnapshot>, String> {
+        Ok(None)
+    }
+    /// Apply an editor action through the document owner.
+    /// Example: `work.apply_gui_parameter(&action)?`.
+    fn apply_gui_parameter(
+        &mut self,
+        action: &oblikovati_gui::GuiParameterAction,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "GUI parameter action {action:?}: expected a parameter-edit owner"
+        ))
+    }
+    /// Apply a shell action through an owner that supports it.
+    /// Example: `work.apply_gui_shell_action(action)?`.
+    fn apply_gui_shell_action(
+        &mut self,
+        action: oblikovati_gui::GuiShellAction,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "GUI shell action {action:?}: expected an owner that supports this legacy route"
+        ))
+    }
     /// Apply native commands on the document owner; example: `work.process_inputs(&events)?` before polling.
     fn process_inputs(&mut self, _: &[oblikovati_viewport::ViewportEvent]) -> Result<bool, String> {
         Ok(false)
@@ -449,6 +501,15 @@ pub trait HeadWork: HeadSketchWork {
     }
     /// Drain one bounded request batch; example: `work.poll(32)?` before presentation.
     fn poll(&mut self, budget: usize) -> Result<HeadWorkStatus, String>;
+    /// Poll owner work that requires the window.
+    /// Example: `work.poll_window(32, window)?`.
+    fn poll_window(
+        &mut self,
+        budget: usize,
+        _: &mut dyn crate::HeadWindow,
+    ) -> Result<HeadWorkStatus, String> {
+        self.poll(budget)
+    }
     /// Check close without discarding documents; example: `work.close_allowed()?` after a native close request.
     fn close_allowed(&mut self) -> Result<bool, String>;
     /// Stop admission before window retirement; example: `work.finish()?` after the owner loop ends.

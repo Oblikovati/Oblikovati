@@ -61,6 +61,14 @@ fn failed_choice_can_retry_without_binding_a_path_or_losing_history() {
     let mut saved = before;
     // #3800: successful save clears the tab's dirty flag without changing history or focus.
     saved.documents[0].dirty = false;
+    let entry = saved.histories[0]
+        .entries
+        .as_mut()
+        .unwrap()
+        .last_mut()
+        .unwrap();
+    assert!(!entry.saved);
+    entry.saved = true;
     saved.document_storage.insert(
         document,
         oblikovati_gui::GuiDocumentStorage {

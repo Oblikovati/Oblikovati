@@ -1,5 +1,10 @@
 # Action plan: review of the Rust port plan
 
+**Branch policy update, 2026-11-14:** The user requested `rust-work`, based on
+`rust`, as the integration branch for completed work. Consolidate pending
+branches there and close the existing PRs after their work is safely retained.
+This supersedes the earlier branch and PR instructions in this historical plan.
+
 Date: 2026-11-13. Scope: `architecture/rust-port/` (`plan.md`, `milestones.md`,
 `verification.md`, `bdd-workflow.md`, `bdd-work-ledger.md`), `AGENTS.md`, and
 the state of the repository on branch `feat/rust-consolidated` at `a306d76ea`.

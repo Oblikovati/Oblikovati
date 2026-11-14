@@ -225,6 +225,62 @@ fn create(owner: &mut TestOwner, awake: &Receiver<()>) -> u64 {
             .id
     })
 }
+
+#[test]
+fn selection_filter_updates_owner_state_and_rejects_invalid_moves() {
+    use oblikovati_gui::{GuiSelectionKind, GuiSelectionMode};
+    let (mut owner, awake) = owner();
+    assert!(
+        owner
+            .set_selection_enabled_from_gui(GuiSelectionKind::Face, false)
+            .is_err()
+    );
+    create(&mut owner, &awake);
+    assert!(
+        owner
+            .set_selection_enabled_from_gui(GuiSelectionKind::Face, false)
+            .unwrap()
+    );
+    let state = owner.gui_command_state().unwrap();
+    assert_eq!(state.selection_mode, GuiSelectionMode::Custom);
+    let filter = state.selection_filter.unwrap();
+    assert_eq!(filter.entries.len(), 12);
+    assert!(
+        !filter
+            .entries
+            .iter()
+            .find(|entry| entry.kind == GuiSelectionKind::Face)
+            .unwrap()
+            .enabled
+    );
+    assert!(owner.move_selection_kind_from_gui(7, 0).unwrap());
+    assert_eq!(
+        owner
+            .gui_command_state()
+            .unwrap()
+            .selection_filter
+            .unwrap()
+            .entries[0]
+            .kind,
+        GuiSelectionKind::Face
+    );
+    assert!(owner.move_selection_kind_from_gui(0, 12).is_err());
+    assert!(
+        owner
+            .set_selection_mode_from_gui(GuiSelectionMode::All)
+            .unwrap()
+    );
+    assert!(
+        owner
+            .gui_command_state()
+            .unwrap()
+            .selection_filter
+            .unwrap()
+            .entries
+            .iter()
+            .all(|entry| entry.enabled)
+    );
+}
 #[test]
 fn gui_new_part_creates_an_active_unsaved_document() {
     let (mut owner, _) = owner();
@@ -437,6 +493,8 @@ mod file_tools;
 mod gui_commands;
 #[path = "owner/parameter_editor.rs"]
 mod parameter_editor;
+#[path = "owner/parameter_view.rs"]
+mod parameter_view;
 #[path = "owner/prompts.rs"]
 mod prompts;
 
@@ -545,5 +603,7 @@ mod document_creation_benchmark;
 #[path = "owner/point_preview.rs"]
 mod point_preview;
 
+#[path = "owner/cube_ui.rs"]
+mod cube_ui;
 #[path = "owner/sketch_pattern.rs"]
 mod sketch_pattern;

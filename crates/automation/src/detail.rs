@@ -13,6 +13,15 @@ pub(super) fn read(
     request: ParameterNameArgs,
 ) -> Result<ParameterDetail, Error> {
     let id = parameters::resolve(parameters, &request.name)?;
+    parameter_detail(parameters, id)
+}
+
+/// Build the canonical detail without JSON loss for an application-owned parameter identity.
+/// Example: `parameter_detail(&snapshot.parameters, id)?` before publishing an internal GUI view.
+pub fn parameter_detail(
+    parameters: &ParameterCollection<u64>,
+    id: u64,
+) -> Result<ParameterDetail, Error> {
     let state = parameters::state(parameters, id)?;
     let readers = parameters.readers(id).map_err(|e| Error(e.to_string()))?;
     let drivers = parameters.drivers(id).map_err(|e| Error(e.to_string()))?;

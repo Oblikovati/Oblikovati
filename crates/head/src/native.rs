@@ -37,6 +37,7 @@ pub struct NativeHeadWindow {
     >,
     command_notice: Option<crate::DesktopCommandNotice>,
     gui: Option<gui_loop::NativeGui>,
+    injected_events: std::collections::VecDeque<ViewportEvent>,
     ribbon_settings_directory: Option<std::path::PathBuf>,
     gui_epoch: std::time::Instant,
     clipboard: std::rc::Rc<clipboard::NativeClipboardChannel>,
@@ -51,8 +52,20 @@ impl NativeHeadWindow {
     pub fn open_with_capture_files(
         capture_files: Box<dyn crate::WindowCaptureFiles>,
     ) -> Result<Self, String> {
+        Self::open_with_options([1440, 900], capture_files)
+    }
+    /// Open a window at the requested drawable size.
+    /// Example: `NativeHeadWindow::open_with_extent([800, 600])?`.
+    pub fn open_with_extent(extent: [u32; 2]) -> Result<Self, String> {
+        Self::open_with_options(extent, Box::new(crate::NativeWindowCaptureFiles))
+    }
+    fn open_with_options(
+        extent: [u32; 2],
+        capture_files: Box<dyn crate::WindowCaptureFiles>,
+    ) -> Result<Self, String> {
+        validate_window_extent(extent)?;
         let runtime = ViewportRuntime::new(ViewportOptions::default())?;
-        let mut view = runtime.open_window("Oblikovati", [1440, 900])?;
+        let mut view = runtime.open_window("Oblikovati", extent)?;
         view.submit(&ViewportScene {
             background: [0.; 3],
             triangles: Vec::new(),
@@ -77,16 +90,91 @@ impl NativeHeadWindow {
             saved_views: Default::default(),
             command_notice: None,
             gui: None,
+            injected_events: Default::default(),
             ribbon_settings_directory: None,
             gui_epoch: std::time::Instant::now(),
             clipboard: clipboard::NativeClipboardChannel::open(),
         })
     }
 }
+impl NativeHeadWindow {
+    /// Write the current composed image using the window's capture destination.
+    /// Example: `window.capture_window_png(path)?`.
+    pub fn capture_window_png(
+        &mut self,
+        path: &std::path::Path,
+    ) -> Result<oblikovati_viewport::ViewportCapture, String> {
+        let capture = self.view.capture()?;
+        self.capture_files.write_capture(path, &capture)?;
+        Ok(capture)
+    }
+}
+fn validate_window_extent(extent: [u32; 2]) -> Result<(), String> {
+    if extent.contains(&0) {
+        return Err(format!(
+            "native window extent {extent:?}: expected two positive pixel dimensions"
+        ));
+    }
+    Ok(())
+}
 mod scene_status;
 #[path = "native/view_inputs.rs"]
 mod view_inputs;
 impl HeadWindow for NativeHeadWindow {
+    fn capture_window(&self) -> Result<oblikovati_viewport::ViewportCapture, String> {
+        self.view.capture()
+    }
+    fn queue_window_capture(&mut self, path: &std::path::Path) -> Result<[u32; 2], String> {
+        let extent = self.view.drawable_extent()?;
+        self.request_window_captures(vec![crate::WindowCaptureJob {
+            path: path.into(),
+            extent,
+        }])?;
+        self.wake.wake()?;
+        Ok(extent)
+    }
+    fn inject_viewport_input(&mut self, event: ViewportEvent) -> Result<(), String> {
+        const MAX_INJECTED: usize = 256;
+        if self.injected_events.len() >= MAX_INJECTED {
+            return Err(format!(
+                "injected events {}: expected fewer than {MAX_INJECTED} pending events",
+                self.injected_events.len()
+            ));
+        }
+        self.injected_events.push_back(event);
+        self.wake.wake()?;
+        Ok(())
+    }
+    fn gui_parameters_open(&self) -> bool {
+        self.gui.as_ref().is_some_and(|gui| gui.parameters_open())
+    }
+    fn set_gui_parameter_snapshot(
+        &mut self,
+        snapshot: Option<oblikovati_gui::GuiParameterSnapshot>,
+    ) -> Result<bool, String> {
+        match &mut self.gui {
+            Some(gui) => gui.set_parameters(snapshot),
+            None => Ok(false),
+        }
+    }
+    fn show_gui_parameter_issue(&mut self, issue: String) -> Result<bool, String> {
+        match &mut self.gui {
+            Some(gui) => gui.report_parameter_issue(issue),
+            None => Err(format!(
+                "GUI parameter view issue {issue:?}: expected an initialized GUI"
+            )),
+        }
+    }
+    fn acknowledge_gui_parameter(
+        &mut self,
+        action: &oblikovati_gui::GuiParameterAction,
+        result: Result<(), String>,
+    ) -> Result<(), String> {
+        if let Some(gui) = &mut self.gui {
+            gui.acknowledge_parameter(action, result);
+        }
+        Ok(())
+    }
     fn window_capture_extent(&mut self) -> Result<Option<[u32; 2]>, String> {
         self.view.drawable_extent().map(Some)
     }
@@ -274,7 +362,11 @@ impl HeadWindow for NativeHeadWindow {
 
     fn events(&mut self, limit: usize) -> Result<Vec<ViewportEvent>, String> {
         self.clipboard.service_pending(limit);
-        let mut events = self.view.poll_events(limit)?;
+        let queued = limit.min(self.injected_events.len());
+        let mut events: Vec<_> = self.injected_events.drain(..queued).collect();
+        if events.len() < limit {
+            events.extend(self.view.poll_events(limit - events.len())?);
+        }
         if std::mem::take(&mut self.exit_requested) {
             events.push(ViewportEvent::CloseRequested);
         }

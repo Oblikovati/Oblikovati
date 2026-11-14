@@ -1,21 +1,21 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use crate::dockable_window::DockableWindow;
-use crate::{GuiCommandState, GuiParameterMutation, GuiShellAction};
+use crate::{GuiCommandState, GuiParameterAction, GuiParameterSnapshot};
 use imgui::Ui;
-use oblikovati_api::wire::ParameterSetArgs;
 
-#[derive(Default)]
 pub(crate) struct GuiParameterEditor {
     document: Option<u64>,
-    visible: bool,
-    name: String,
-    expression: String,
+    panel: crate::parameter_panel::ParameterPanel,
 }
-impl DockableWindow for GuiParameterEditor {}
 impl GuiParameterEditor {
+    pub(crate) fn new() -> Result<Self, String> {
+        Ok(Self {
+            document: None,
+            panel: crate::parameter_panel::ParameterPanel::new()?,
+        })
+    }
     pub(crate) fn open(&mut self, document: Option<u64>) {
-        self.synchronize_document(document);
-        self.visible = document.is_some();
+        self.panel
+            .set_open(document.is_some() && document == self.document);
     }
     pub(crate) fn toolbar(
         &mut self,
@@ -23,7 +23,6 @@ impl GuiParameterEditor {
         state: &GuiCommandState,
         icons: &crate::icons::GuiRibbonIcons,
     ) -> bool {
-        self.synchronize_document(state.document);
         let disabled = ui.begin_disabled(state.document.is_none());
         let clicked = icons.button(
             ui,
@@ -32,90 +31,77 @@ impl GuiParameterEditor {
             [108., 58.],
         );
         if clicked {
-            self.visible = !self.visible;
+            self.panel.set_open(!self.panel.is_open());
         }
         drop(disabled);
         clicked
     }
-    pub(crate) fn panel(
-        &mut self,
-        ui: &Ui,
-        state: &GuiCommandState,
-        actions: &mut Vec<GuiShellAction>,
-    ) {
-        self.synchronize_document(state.document);
-        if !self.visible {
-            return;
-        }
-        Self::fit_dockable(ui, "Parameters", [320., 190.], [540., 360.]);
-        let mut open = self.visible;
-        Self::dockable_window(ui, "Parameters", &mut open)
-            .build(|| self.contents(ui, state, actions));
-        self.visible &= open;
+    pub(crate) fn panel(&mut self, ui: &Ui) -> Vec<GuiParameterAction> {
+        self.panel.draw(ui)
     }
-    fn synchronize_document(&mut self, document: Option<u64>) {
+    pub(crate) fn synchronize_document(&mut self, document: Option<u64>) -> Result<(), String> {
         if self.document == document {
-            return;
+            return Ok(());
         }
-        *self = Self {
+        self.panel.replace_snapshot(None)?;
+        self.document = document;
+        self.panel.set_open(false);
+        Ok(())
+    }
+    pub(crate) fn set_open(&mut self, open: bool) {
+        self.panel.set_open(open);
+    }
+    pub(crate) fn is_open(&self) -> bool {
+        self.panel.is_open()
+    }
+    pub(crate) fn set_snapshot(
+        &mut self,
+        snapshot: Option<GuiParameterSnapshot>,
+    ) -> Result<bool, String> {
+        if let Some(view) = &snapshot
+            && Some(view.document) != self.document
+        {
+            return Err(format!(
+                "parameter view document {}: expected active document {:?}",
+                view.document, self.document
+            ));
+        }
+        self.panel.replace_snapshot(snapshot)
+    }
+    pub(crate) fn report_issue(&mut self, issue: String) -> Result<bool, String> {
+        self.panel.report_metadata_issue(issue)
+    }
+    pub(crate) fn acknowledge(&mut self, action: &GuiParameterAction, result: Result<(), String>) {
+        self.panel.acknowledge_action(action, result);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn snapshot(document: u64) -> GuiParameterSnapshot {
+        GuiParameterSnapshot {
             document,
-            ..Default::default()
-        };
-    }
-    fn contents(&mut self, ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
-        ui.input_text("Name", &mut self.name).build();
-        ui.input_text("Equation", &mut self.expression).build();
-        self.apply_buttons(ui, actions);
-        ui.separator();
-        self.parameter_rows(ui, state);
-    }
-    fn apply_buttons(&mut self, ui: &Ui, actions: &mut Vec<GuiShellAction>) {
-        let disabled =
-            ui.begin_disabled(self.name.trim().is_empty() || self.expression.trim().is_empty());
-        for (label, mutation) in [
-            ("Add", GuiParameterMutation::Add),
-            ("Apply", GuiParameterMutation::Set),
-        ] {
-            if crate::widget_abi::button(ui, label, [0.; 2]) {
-                actions.push(self.request(mutation));
-            }
-            ui.same_line();
-        }
-        drop(disabled);
-        if crate::widget_abi::button(ui, "Cancel", [0.; 2]) {
-            self.visible = false;
+            rows: Vec::new(),
+            linked_tables: Vec::new(),
+            link_sources: Vec::new(),
+            groups: Vec::new(),
         }
     }
-    fn request(&self, mutation: GuiParameterMutation) -> GuiShellAction {
-        GuiShellAction::Parameter {
-            mutation,
-            request: ParameterSetArgs {
-                name: self.name.clone(),
-                expression: self.expression.clone(),
-                ..Default::default()
-            },
-        }
-    }
-    fn parameter_rows(&mut self, ui: &Ui, state: &GuiCommandState) {
-        ui.columns(4, "parameter-columns", true);
-        for title in ["Name", "Equation", "Value", "Health"] {
-            ui.text(title);
-            ui.next_column();
-        }
-        ui.separator();
-        for row in &state.parameters {
-            if crate::widget_abi::selectable(ui, &row.name, false, false) {
-                self.name = row.name.clone();
-                self.expression = row.expression.clone();
-            }
-            ui.next_column();
-            ui.text(&row.expression);
-            ui.next_column();
-            ui.text(&row.value);
-            ui.next_column();
-            ui.text(&row.health);
-            ui.next_column();
-        }
-        ui.columns(1, "parameter-columns-end", false);
+
+    #[test]
+    fn document_change_closes_editor_and_retires_the_previous_parameter_view() {
+        let mut editor = GuiParameterEditor::new().unwrap();
+        editor.synchronize_document(Some(1)).unwrap();
+        assert!(editor.set_snapshot(Some(snapshot(1))).unwrap());
+        editor.open(Some(1));
+        assert!(editor.is_open());
+        editor.synchronize_document(Some(2)).unwrap();
+        assert!(!editor.is_open());
+        assert!(editor.set_snapshot(Some(snapshot(1))).is_err());
+        assert!(editor.set_snapshot(Some(snapshot(2))).unwrap());
+        editor.open(Some(1));
+        assert!(!editor.is_open());
     }
 }

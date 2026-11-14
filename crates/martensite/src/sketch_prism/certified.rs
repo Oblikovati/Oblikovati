@@ -90,11 +90,11 @@ pub(crate) fn evaluate(
 
 pub(super) fn profile_line(
     sketch: &oblikovati_model::sketch::Sketch2D,
-    directed: SketchDirectedLine,
+    directed: SketchDirectedCurve,
     coincidence: &super::incidence::CoincidentPoints,
     vertices: &mut BTreeMap<ProfileVertexId, ProfileVertex>,
 ) -> Result<ProfileCurve, EvaluationFailure> {
-    let line = boundary::require_boundary_line(sketch, directed.line)?;
+    let line = boundary::require_boundary_line(sketch, directed.curve)?;
     let [a, b] = line.endpoints;
     let start = profile_vertex(coincidence, vertices, a)?;
     let end = profile_vertex(coincidence, vertices, b)?;

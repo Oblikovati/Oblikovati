@@ -12,6 +12,7 @@ mod footprint;
 pub mod part;
 mod replay;
 pub mod sketch_prism;
+pub mod sketch_revolve;
 mod suppression;
 mod validation;
 pub mod work_axis;

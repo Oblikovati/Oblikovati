@@ -29,6 +29,7 @@ impl<
                 appearance: self.body_appearance(document, &row.key),
                 physical: self.calculated_physical(document, &row.key),
                 visible: self.session_shows_body(document, &row.key),
+                faces: row.faces,
                 name: row.name,
                 feature: row.feature,
                 key: row.key,

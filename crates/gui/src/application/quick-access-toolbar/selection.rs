@@ -23,6 +23,10 @@ pub(super) fn button(
 }
 
 fn choices(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
+    if ui.menu_item("Selection Filter…") {
+        actions.push(GuiShellAction::OpenSelectionFilter);
+    }
+    ui.separator();
     for (label, mode) in [
         ("All Types", GuiSelectionMode::All),
         ("Faces", GuiSelectionMode::Faces),

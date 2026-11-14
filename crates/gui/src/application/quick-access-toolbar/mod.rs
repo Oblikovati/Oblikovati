@@ -285,7 +285,7 @@ impl QuickAccessToolbar {
                     [0.; 2],
                     actions,
                 );
-                self.undo_history(ui, state);
+                self.undo_history(ui, state, actions);
             }
             StandardCommand::Redo => crate::chrome::command_button(
                 ui,
@@ -319,7 +319,12 @@ impl QuickAccessToolbar {
         }
     }
     /// Right-click on Undo reads what it would undo, latest first.
-    fn undo_history(&mut self, ui: &Ui, state: &GuiCommandState) {
+    fn undo_history(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
         let hovered = ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED);
         if hovered && ui.is_mouse_clicked(MouseButton::Right) {
             self.command_took_right_click = true;
@@ -330,6 +335,9 @@ impl QuickAccessToolbar {
         let Some(_menu) = ui.begin_popup(UNDO_HISTORY) else {
             return;
         };
+        if ui.menu_item("History Browser…") && GuiShellAction::OpenHistoryBrowser.enabled(state) {
+            actions.push(GuiShellAction::OpenHistoryBrowser);
+        }
         for label in state.undo_labels.iter().rev() {
             ui.text(label);
         }

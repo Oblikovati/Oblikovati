@@ -101,6 +101,8 @@ pub struct GuiBrowserBody {
     /// Where the part's API counts it.
     pub index: i64,
     pub visible: bool,
+    /// The number of exact faces in this body.
+    pub faces: usize,
     /// Its own appearance's id; empty when it looks as the part does.
     pub appearance: String,
     pub physical: Option<crate::GuiBodyPhysical>,

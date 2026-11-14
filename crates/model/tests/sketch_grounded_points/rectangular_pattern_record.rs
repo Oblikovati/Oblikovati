@@ -47,6 +47,45 @@ fn rectangular_pattern_retains_grid_and_associations_through_reload() {
     assert_eq!(restored.rectangular_patterns(), &[pattern]);
     assert_eq!(restored.parameter_dependencies(), [1]);
 }
+
+#[test]
+fn pattern_and_spline_handles_share_the_new_recipe_version() {
+    use oblikovati_model::sketch::{SketchSpline2D, SketchSplineHandle2D, SketchSplineKind};
+    let mut sketch = circle();
+    let mut ids = RecipeIdAllocator::restore(Some(200), &[]).unwrap();
+    let pattern = sketch
+        .create_rectangular_pattern(
+            SketchEntityId(100),
+            definition(),
+            &parameters(),
+            &mut || ids.allocate().map(SketchEntityId),
+        )
+        .unwrap();
+    for (id, position) in [(10, [0., 0.]), (11, [1., 1.]), (12, [2., 0.])] {
+        sketch.add_point(SketchEntityId(id), position).unwrap();
+    }
+    let spline = SketchSpline2D::new(
+        SketchEntityId(13),
+        vec![SketchEntityId(10), SketchEntityId(11), SketchEntityId(12)],
+        false,
+        SketchSplineKind::Fit {
+            method: oblikovati_api::types::SPLINE_FIT_SMOOTH,
+        },
+    )
+    .unwrap();
+    sketch.add_spline(spline).unwrap();
+    sketch
+        .add_defining_point(SketchEntityId(14), [3., 1.])
+        .unwrap();
+    let handle = SketchSplineHandle2D::new(SketchEntityId(13), 1, SketchEntityId(14)).unwrap();
+    sketch.add_spline_handle(handle).unwrap();
+    let recipe = sketch.recipe();
+    assert_eq!(recipe.version, 17);
+    let restored = Sketch2D::from_recipe(&recipe).unwrap();
+    assert!(restored.same_recipe(&sketch));
+    assert_eq!(restored.rectangular_patterns(), &[pattern]);
+    assert_eq!(restored.spline_handles(), &[handle]);
+}
 #[test]
 fn pattern_ownership_prevents_dangling_members_and_explicit_removal_preserves_seed() {
     let mut sketch = circle();

@@ -58,8 +58,8 @@ fn curve(
     match geometry {
         OwnedSketchGeometry::Line(line) => certified::profile_line(
             sketch,
-            SketchDirectedLine {
-                line: line.id,
+            SketchDirectedCurve {
+                curve: line.id,
                 reversed: false,
             },
             coincidence,

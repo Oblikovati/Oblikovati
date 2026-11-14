@@ -7,14 +7,13 @@ pub(super) fn create_size_parameter(
     owner: &mut NativeDesktopOwner,
 ) {
     open_parameter_ribbon(window, owner);
-    click_parameter_input(window, owner, 36.);
+    click_parameter_input(window, owner, [235., 140.]);
     type_native_text(window, owner, "size");
-    click_parameter_input(window, owner, 60.);
+    click_parameter_input(window, owner, [380., 140.]);
     type_native_text(window, owner, "10 mm");
-    click_parameter_label(window, owner, "Add");
+    click_parameter_input(window, owner, [475., 140.]);
     assert_size_expression(owner, "10 mm");
-    click_parameter_label(window, owner, "Cancel");
-    click_parameter_label(window, owner, "3D Model");
+    click_parameter_label(window, owner, "Done");
 }
 fn assert_size_expression(owner: &NativeDesktopOwner, expression: &str) {
     let state = owner.gui_command_state().unwrap();
@@ -25,27 +24,32 @@ fn assert_size_expression(owner: &NativeDesktopOwner, expression: &str) {
         .unwrap();
     assert_eq!(parameter.expression, expression);
 }
-fn edit_size_parameter(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOwner) {
+pub(super) fn edit_size_parameter(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOwner) {
     open_parameter_ribbon(window, owner);
-    let (position, _) = application_bdd::window_geometry("Parameters").unwrap();
-    let row = application_bdd::pointer_pixels([position[0] + 30., position[1] + 129.]);
-    click_shell_position(window, owner, row);
-    click_parameter_input(window, owner, 60.);
+    let (position, size) = application_bdd::window_geometry("Parameters").unwrap();
+    let name = application_bdd::rendered_label_in_rect(
+        "size",
+        position,
+        [position[0] + 200., position[1] + size[1]],
+    );
+    let equation_x = application_bdd::pointer_pixels([position[0] + 290., position[1]])[0];
+    click_shell_position(window, owner, [equation_x, name[1]]);
+    press_shell_key(window, owner, ViewportPhysicalKey::End);
     for _ in "10 mm".chars() {
         press_shell_key(window, owner, ViewportPhysicalKey::Backspace);
     }
     type_native_text(window, owner, "20 mm");
-    click_parameter_label(window, owner, "Apply");
+    click_parameter_label(window, owner, "Done");
     assert_size_expression(owner, "20 mm");
-    click_parameter_label(window, owner, "Cancel");
 }
 fn click_parameter_input(
     window: &mut ScriptedGuiWindow,
     owner: &mut NativeDesktopOwner,
-    offset: f32,
+    offset: [f32; 2],
 ) {
     let (position, _) = application_bdd::window_geometry("Parameters").unwrap();
-    let pixels = application_bdd::pointer_pixels([position[0] + 150., position[1] + offset]);
+    let pixels =
+        application_bdd::pointer_pixels([position[0] + offset[0], position[1] + offset[1]]);
     click_shell_position(window, owner, pixels);
 }
 fn click_parameter_label(
@@ -129,8 +133,6 @@ pub(super) fn verify_rectangle(
 }
 
 fn open_parameter_ribbon(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOwner) {
-    let manage = application_bdd::rendered_label_center("Manage");
-    click_shell_position(window, owner, manage);
     let parameters = application_bdd::rendered_label_center("Parameters");
     click_shell_position(window, owner, parameters);
 }

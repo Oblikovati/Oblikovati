@@ -224,6 +224,25 @@ pub enum GuiShellAction {
     UpdatePart,
     /// Set the ambient selection priority for viewport picks.
     SetSelectionMode(GuiSelectionMode),
+    /// Show the full selection filter.
+    OpenSelectionFilter,
+    /// Show the complete transaction timelines.
+    OpenHistoryBrowser,
+    /// Move a document's transaction cursor.
+    JumpHistoryTo {
+        document: u64,
+        position: i64,
+    },
+    /// Change one ambient pick category.
+    SetSelectionEnabled {
+        kind: crate::GuiSelectionKind,
+        enabled: bool,
+    },
+    /// Change the order of ambient pick categories.
+    MoveSelectionKind {
+        from: usize,
+        to: usize,
+    },
     Undo,
     Redo,
     Home,
@@ -235,6 +254,7 @@ pub enum GuiSelectionMode {
     All,
     Faces,
     Components,
+    Custom,
 }
 /// A drawing view chosen in the desktop dialog.
 #[derive(Clone, Debug, PartialEq)]

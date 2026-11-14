@@ -13,7 +13,7 @@ use crate::{
     EvaluationPhase as Phase, PrismProbeDefinition, PrismProbeSnapshot,
 };
 pub use certified::{CertifiedPrismEvaluator, retain_certified_sketch_prism};
-pub use oblikovati_model::feature::sketch_prism::{SketchDirectedLine, SketchPrismSelection};
+pub use oblikovati_model::feature::sketch_prism::{SketchDirectedCurve, SketchPrismSelection};
 use oblikovati_model::feature::{sketch_prism::SketchPrismDefinition, work_geometry::DatumLength};
 use oblikovati_model::{document_sketch::DocumentSketchId, history::DocumentSnapshot};
 pub use profile_extent::{SketchProfileExtent, sketch_profile_extent};

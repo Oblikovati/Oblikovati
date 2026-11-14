@@ -37,9 +37,9 @@ pub(super) fn check_switches(
     let branch = application_bdd::rendered_label_start("Model State");
     click_shell_position(window, owner, branch);
     activate_from_browser(window, owner, "Primary");
-    assert_eq!(window.native.scene_status().unwrap().visible_bodies, 0);
     let state = owner.gui_command_state().unwrap();
     assert!(state.browser.unwrap().features[0].suppressed);
+    assert_eq!(window.native.scene_status().unwrap().visible_bodies, 0);
     activate_from_browser(window, owner, "Capture State");
     assert_eq!(window.native.scene_status().unwrap().visible_bodies, 0);
     assert!(owner.gui_command_state().unwrap().browser.unwrap().features[0].suppressed);
@@ -71,4 +71,20 @@ fn activate_from_browser(
 ) {
     let position = application_bdd::rendered_label_center(name);
     drive_pointer_clicks(window, owner, position, 2);
+    let document = owner.gui_command_state().unwrap().document.unwrap();
+    let active = owner
+        .documents()
+        .workspace()
+        .session(document)
+        .unwrap()
+        .snapshot()
+        .model_states
+        .as_ref()
+        .unwrap()
+        .active()
+        .unwrap();
+    assert_eq!(
+        active.name, name,
+        "browser double-click must activate its member"
+    );
 }

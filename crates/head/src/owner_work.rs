@@ -25,11 +25,62 @@ impl<
             GuiSelectionMode::All => SelectionPriority::General,
             GuiSelectionMode::Faces => SelectionPriority::Face,
             GuiSelectionMode::Components => SelectionPriority::Part,
+            GuiSelectionMode::Custom => {
+                return Err("selection mode Custom: expected a concrete preset".into());
+            }
         };
         self.ambient_selection.apply_priority(priority);
         let changed = self.selection_mode != mode;
         self.selection_mode = mode;
         Ok(changed)
+    }
+    fn set_selection_enabled_from_gui(
+        &mut self,
+        kind: oblikovati_gui::GuiSelectionKind,
+        enabled: bool,
+    ) -> Result<bool, String> {
+        let state = self.gui_command_snapshot()?;
+        if !(oblikovati_gui::GuiShellAction::SetSelectionEnabled { kind, enabled }).enabled(&state)
+        {
+            return Err(format!(
+                "selection category {kind:?}: expected an idle part or assembly"
+            ));
+        }
+        let kind = super::selection_filter::session_kind(kind);
+        let changed = self.ambient_selection.enabled(kind) != enabled;
+        self.ambient_selection.set_enabled(kind, enabled);
+        if changed {
+            self.selection_mode = oblikovati_gui::GuiSelectionMode::Custom;
+        }
+        Ok(changed)
+    }
+    fn move_selection_kind_from_gui(&mut self, from: usize, to: usize) -> Result<bool, String> {
+        let state = self.gui_command_snapshot()?;
+        if !(oblikovati_gui::GuiShellAction::MoveSelectionKind { from, to }).enabled(&state) {
+            return Err(format!(
+                "selection priority {from}->{to}: expected an idle part or assembly"
+            ));
+        }
+        let count = self.ambient_selection.order().len();
+        if from >= count || to >= count {
+            return Err(format!(
+                "selection priority {from}->{to}: expected indices below {count}"
+            ));
+        }
+        self.ambient_selection.move_kind(from, to);
+        Ok(from != to)
+    }
+    fn jump_history_from_gui(&mut self, document: u64, position: i64) -> Result<bool, String> {
+        let client = oblikovati_api::client::Client::new(self.document_host());
+        let current = client
+            .transactions()
+            .history(&oblikovati_api::wire::TransactionHistoryArgs { document })
+            .map_err(|cause| cause.to_string())?;
+        client
+            .transactions()
+            .jump_to(&oblikovati_api::wire::TransactionJumpToArgs { document, position })
+            .map_err(|cause| cause.to_string())?;
+        Ok(current.position != position)
     }
     fn update_part_from_gui(&mut self) -> Result<bool, String> {
         oblikovati_api::client::Client::new(self.document_host())
@@ -251,6 +302,48 @@ impl<
     }
     fn gui_command_state(&self) -> Result<oblikovati_gui::GuiCommandState, String> {
         self.gui_command_snapshot()
+    }
+    fn gui_parameter_snapshot(
+        &self,
+    ) -> Result<Option<oblikovati_gui::GuiParameterSnapshot>, String> {
+        super::parameters_gui::owner_parameter_snapshot(&self.files)
+    }
+    fn apply_gui_parameter(
+        &mut self,
+        action: &oblikovati_gui::GuiParameterAction,
+    ) -> Result<bool, String> {
+        if let oblikovati_gui::GuiParameterAction::GroupManagement(edit) = action {
+            edit.validate()?;
+            return self.apply_parameter_group_management(edit);
+        }
+        if let oblikovati_gui::GuiParameterAction::Link(edit) = action {
+            edit.validate()?;
+            let (source_document, linked) =
+                super::parameters_gui::derived::linked_source_names(&self.files, edit)?;
+            oblikovati_api::client::Client::new(self.document_host())
+                .parameters()
+                .add_derived_table(&oblikovati_api::wire::DerivedParameterTableAddArgs {
+                    source_document,
+                    linked: Some(linked),
+                })
+                .map_err(|cause| cause.to_string())?;
+            return Ok(true);
+        }
+        if let oblikovati_gui::GuiParameterAction::DeleteLinkedTable { document, table } = action {
+            super::parameters_gui::derived::require_linked_table_owner(
+                &self.files,
+                *document,
+                *table,
+            )?;
+            oblikovati_api::client::Client::new(self.document_host())
+                .parameters()
+                .delete_derived_table(&oblikovati_api::wire::DerivedParameterTableDeleteArgs {
+                    id: *table,
+                })
+                .map_err(|cause| cause.to_string())?;
+            return Ok(true);
+        }
+        super::parameters_gui::apply::apply_owner_parameter(&mut self.files, action)
     }
     fn edit_parameter_from_gui(
         &mut self,

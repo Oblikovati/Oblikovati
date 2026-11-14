@@ -4,6 +4,14 @@ use super::*;
 use oblikovati_viewport::{ViewportModifiers, ViewportPhysicalKey};
 
 pub(super) fn metric_part(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOwner) {
+    metric_template(window, owner, "Standard metric part");
+}
+
+pub(super) fn metric_template(
+    window: &mut ScriptedGuiWindow,
+    owner: &mut NativeDesktopOwner,
+    template: &str,
+) {
     let key = ViewportPhysicalKey::N;
     let modifiers = ViewportModifiers {
         control: true,
@@ -25,20 +33,38 @@ pub(super) fn metric_part(window: &mut ScriptedGuiWindow, owner: &mut NativeDesk
         })
         .into();
     crate::frames::run_frames(window, HeadOptions { frames: Some(3) }, owner).unwrap();
-    for label in ["Metric", "Standard metric part", "Create"] {
+    for label in ["Metric", template] {
         let position = application_bdd::rendered_label_center(label);
         click_shell_position(window, owner, position);
     }
+    if template == "Metric drawing with title block" {
+        click_shell_position(
+            window,
+            owner,
+            application_bdd::rendered_label_center("Use Template"),
+        );
+    }
+    click_shell_position(
+        window,
+        owner,
+        application_bdd::rendered_label_center("Create"),
+    );
 }
 
 #[test]
 fn parameter_editor_accepts_scaled_pointer_input() {
-    let native = NativeHeadWindow::open().unwrap();
-    let mut owner = native_owner(native.wake.clone()).unwrap();
+    let preferences = tempfile::tempdir().unwrap();
+    let mut native = NativeHeadWindow::open().unwrap();
+    native.ribbon_settings_directory = Some(preferences.path().to_owned());
+    let mut owner = native_owner_at(native.wake.clone(), preferences.path()).unwrap();
+    owner
+        .set_ui_scale_from_gui(oblikovati_model::ui_scale::UiScaleOptions::new(1.5, 1.).unwrap())
+        .unwrap();
     let mut window = scripted_window(native);
     crate::frames::run_frames(&mut window, HeadOptions { frames: Some(3) }, &mut owner).unwrap();
     metric_part(&mut window, &mut owner);
     parameters::create_size_parameter(&mut window, &mut owner);
+    parameters::edit_size_parameter(&mut window, &mut owner);
     owner.finish().unwrap();
     window.finish().unwrap();
 }

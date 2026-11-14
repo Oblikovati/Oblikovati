@@ -88,6 +88,7 @@ fn verify_panel_and_document(
         .map(|(index, _)| [index % width, index / width])
         .collect();
     assert!(changed.len() > 1000, "expected a visible Dear ImGui panel");
+    assert_shell_chrome_regions(&changed);
     assert!(
         changed.iter().all(|[x, y]| {
             let [x, y] = [*x as f32 + 0.5, *y as f32 + 0.5];
@@ -110,6 +111,21 @@ fn shell_vertex_bounds(packet: &GuiFrame) -> [f32; 4] {
         }
     }
     bounds
+}
+
+fn assert_shell_chrome_regions(changed: &[[usize; 2]]) {
+    assert!(
+        changed.iter().any(|[_, y]| *y < 145),
+        "expected the fixed menu and ribbon bands"
+    );
+    assert!(
+        changed.iter().any(|[x, y]| *x < 280 && *y >= 145),
+        "expected the fixed model-browser panel"
+    );
+    assert!(
+        changed.iter().any(|[_, y]| *y >= 872),
+        "expected the fixed status bar"
+    );
 }
 fn verify_gui_retirement(window: &mut NativeHeadWindow) {
     let (compiler, packet) = owned_shell_packet(window.drawable_extent().unwrap());

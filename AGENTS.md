@@ -132,12 +132,10 @@ The Go reference is `../Oblikovati` on `go-legacy`.
 
 ## Integration workflow
 
-- Use `rust` as the integration branch and `feat/rust-consolidated` as the
-  single working branch. Preserve granular commits; do not squash them.
+- Base `rust-work` on `rust` and merge completed work branches into
+  `rust-work`. Preserve granular commits; do not squash them.
 - Integrate authorized work on the working branch. Fetch and merge upstream
   before a PR. Run the complete gate before the first push and before each
   batch PR; do not treat a skipped check as a pass.
-- Open one PR to `rust` for each reviewed batch of five to ten units. Merge
-  only after required checks pass and the user has authorized the merge.
 - Keep unfinished work and its history. Delete only merged branches and stale
   worktrees after checking commits, local changes, and active processes.

@@ -33,14 +33,14 @@ fn boundary_classification_refuses_short_duplicate_missing_and_open_selections()
     selected.outer.pop();
     assert!(refusal(&document, &selected).contains("closed directed boundary"));
     selected.outer.pop();
-    assert!(refusal(&document, &selected).contains("at least three"));
+    assert!(refusal(&document, &selected).contains("closed directed boundary"));
     selected = selected_sketch_boundary();
     selected.holes.push(selected.outer.clone());
     assert!(refusal(&document, &selected).contains("one occurrence"));
     selected = selected_sketch_boundary();
-    selected.outer[0].line = SketchEntityId(1);
+    selected.outer[0].curve = SketchEntityId(1);
     assert!(refusal(&document, &selected).contains("expected an existing line"));
-    selected.outer[0].line = SketchEntityId(999);
+    selected.outer[0].curve = SketchEntityId(999);
     assert!(refusal(&document, &selected).contains("SketchEntityId(999)"));
 }
 #[test]

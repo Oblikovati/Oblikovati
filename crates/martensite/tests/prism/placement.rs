@@ -67,7 +67,7 @@ fn placed_mesh_preserves_the_authored_axes_and_analytic_reports() {
 fn placement_overflow_and_kernel_resolution_loss_are_named_declines() {
     let huge = huge_origin_plane();
     let mut definition = rectangle();
-    definition.outer.vertices[1][0] = f64::MAX;
+    polygon_mut(&mut definition.outer).1[1][0] = f64::MAX;
     assert!(
         retain_prism_on_plane(&definition, huge)
             .err()

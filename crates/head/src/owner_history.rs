@@ -24,6 +24,26 @@ impl<
     S: DispatchWakeup,
 > DesktopOwner<O, W, F, G, R, S>
 {
+    pub(in crate::owner) fn gui_histories(
+        &self,
+    ) -> Result<Vec<oblikovati_api::wire::TransactionHistory>, String> {
+        let client = Client::new(oblikovati_automation::SessionQueryHost::new(
+            self.files.workspace(),
+        ));
+        self.files
+            .workspace()
+            .documents()
+            .iter()
+            .map(|document| {
+                client
+                    .transactions()
+                    .history(&oblikovati_api::wire::TransactionHistoryArgs {
+                        document: *document,
+                    })
+                    .map_err(|cause| cause.to_string())
+            })
+            .collect()
+    }
     pub(super) fn restore_document_history(
         &mut self,
         action: DesktopHistoryAction,

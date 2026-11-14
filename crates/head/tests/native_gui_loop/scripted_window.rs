@@ -1,6 +1,25 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 impl HeadWindow for ScriptedGuiWindow {
+    fn gui_parameters_open(&self) -> bool {
+        self.native.gui_parameters_open()
+    }
+    fn set_gui_parameter_snapshot(
+        &mut self,
+        snapshot: Option<oblikovati_gui::GuiParameterSnapshot>,
+    ) -> Result<bool, String> {
+        self.native.set_gui_parameter_snapshot(snapshot)
+    }
+    fn show_gui_parameter_issue(&mut self, issue: String) -> Result<bool, String> {
+        self.native.show_gui_parameter_issue(issue)
+    }
+    fn acknowledge_gui_parameter(
+        &mut self,
+        action: &oblikovati_gui::GuiParameterAction,
+        result: Result<(), String>,
+    ) -> Result<(), String> {
+        self.native.acknowledge_gui_parameter(action, result)
+    }
     fn set_sketch_preview(
         &mut self,
         preview: Option<&oblikovati_viewport::ViewportSketchPreview>,

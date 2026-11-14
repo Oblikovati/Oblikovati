@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Feature suppression through the document's transactional replay path.
 use oblikovati_api::{Error, wire};
-use oblikovati_model::{
-    feature::{FeatureId, part::PartFeatureDefinition},
-    history::DocumentSnapshot,
-};
+use oblikovati_model::{feature::FeatureId, history::DocumentSnapshot};
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 
@@ -25,7 +22,6 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         .run_projected(
             "Set feature suppression",
             |snapshot, _| {
-                require_extrusion(snapshot, id)?;
                 snapshot
                     .set_feature_suppressed(id, request.suppressed)
                     .map_err(api_error)?;
@@ -34,16 +30,6 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
             |candidate, ()| detail(candidate, id, backend),
         )
         .map_err(api_error)
-}
-
-fn require_extrusion(snapshot: &DocumentSnapshot, id: FeatureId) -> Result<(), Error> {
-    let feature = snapshot.work_geometry.get(id).map_err(api_error)?;
-    if !matches!(feature.definition(), PartFeatureDefinition::SketchPrism(_)) {
-        return Err(Error(format!(
-            "feature {id:?}: expected an extrusion with supported lifecycle detail"
-        )));
-    }
-    Ok(())
 }
 
 fn detail(
@@ -64,12 +50,12 @@ fn detail(
             feature_info: wire::FeatureInfo {
                 id: id.0,
                 name: feature.name().into(),
-                kind: wire::featureargs::KIND_EXTRUDE.into(),
+                kind: feature.definition().kind().into(),
                 suppressed: snapshot.feature_suppressed(id).map_err(api_error)?,
                 health,
             },
             index: i64::try_from(index).map_err(api_error)?,
-            scalars: None,
+            scalars: crate::feature_lifecycle::prism_scalars(feature, snapshot)?,
             slots: None,
         },
     })

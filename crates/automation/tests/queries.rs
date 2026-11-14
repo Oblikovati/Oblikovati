@@ -89,6 +89,20 @@ impl GuidSource for QueryGuids {
     }
 }
 type Workspace = WorkspaceSession<QueryObserver, QueryObserver>;
+
+#[test]
+fn application_api_version_uses_the_compiled_contract_without_a_document() {
+    let workspace = Workspace::new(QueryObserver::default());
+    let version = Client::new(SessionQueryHost::new(&workspace))
+        .application()
+        .api_version()
+        .unwrap();
+    assert_eq!(version.version, oblikovati_api::VERSION);
+    assert_eq!(version.major, i64::from(oblikovati_api::API_MAJOR));
+    assert_eq!(version.minor, i64::from(oblikovati_api::API_MINOR));
+    assert!(QUERY_METHODS.contains(&METHOD_APPLICATION_API_VERSION));
+}
+
 fn register(workspace: &mut Workspace, units: UnitsOfMeasure, source: &mut QueryGuids) -> u64 {
     let snapshot = DocumentSnapshot {
         work_geometry: Default::default(),
@@ -315,7 +329,7 @@ fn unregistered_methods_and_malformed_arguments_are_refused_before_model_work() 
             .iter()
             .collect::<std::collections::BTreeSet<_>>()
             .len(),
-        34
+        36
     );
     assert!(QUERY_METHODS.contains(&METHOD_MODEL_SELECTION));
     assert!(
@@ -395,6 +409,9 @@ mod parameter_tolerance;
 
 #[path = "queries/parameter_update.rs"]
 mod parameter_update;
+
+#[path = "queries/parameter_exchange.rs"]
+mod parameter_exchange;
 
 #[path = "queries/transactions.rs"]
 mod transactions;

@@ -110,8 +110,8 @@ fn verify_face_hosted_prism(direct: bool) {
                 let line = ids.allocate_sketch_entity().unwrap();
                 geometry.add_line(line, endpoints).unwrap();
                 lines.push(
-                    oblikovati_model::feature::sketch_prism::SketchDirectedLine {
-                        line,
+                    oblikovati_model::feature::sketch_prism::SketchDirectedCurve {
+                        curve: line,
                         reversed: false,
                     },
                 );

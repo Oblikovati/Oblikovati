@@ -47,6 +47,22 @@ fn versioned_recipe_round_trip_contains_only_authored_inputs() {
     assert!(!json.contains("verification"));
 }
 #[test]
+fn legacy_line_boundaries_restore_as_directed_curves() {
+    let original = driven_definition();
+    let mut encoded = serde_json::to_value(original.recipe()).unwrap();
+    for edge in encoded["selection"]["outer"].as_array_mut().unwrap() {
+        let object = edge.as_object_mut().unwrap();
+        let curve = object.remove("curve").unwrap();
+        object.insert("line".into(), curve);
+    }
+    let recipe: SketchPrismRecipe = serde_json::from_value(encoded).unwrap();
+    assert!(
+        SketchPrismDefinition::from_recipe(&recipe)
+            .unwrap()
+            .same_recipe(&original)
+    );
+}
+#[test]
 fn exact_recipe_comparison_keeps_signed_zero_and_authored_traversal() {
     let original = driven_definition();
     let mut recipe = original.recipe();

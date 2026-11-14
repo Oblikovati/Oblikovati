@@ -9,6 +9,12 @@ struct FakeGuiWindow {
     inputs: Vec<ViewportEvent>,
     states: Vec<oblikovati_gui::GuiCommandState>,
     presentations: usize,
+    previous_views: usize,
+    parameters_open: bool,
+    parameter_views: Vec<Option<oblikovati_gui::GuiParameterSnapshot>>,
+    parameter_results: Vec<Result<(), String>>,
+    parameter_view_decline: bool,
+    parameter_issues: Vec<String>,
 }
 #[test]
 fn physical_command_dispatch_reuses_the_semantic_command_path() {
@@ -48,6 +54,33 @@ impl HeadWindow for FakeGuiWindow {
         self.notices.push(notice);
         Ok(())
     }
+    fn gui_parameters_open(&self) -> bool {
+        self.parameters_open
+    }
+    fn set_gui_parameter_snapshot(
+        &mut self,
+        snapshot: Option<oblikovati_gui::GuiParameterSnapshot>,
+    ) -> Result<bool, String> {
+        self.parameter_views.push(snapshot);
+        if self.parameter_view_decline {
+            return Err("parameter 11: expected display-safe text".into());
+        }
+        Ok(true)
+    }
+    fn show_gui_parameter_issue(&mut self, issue: String) -> Result<bool, String> {
+        let changed = self.parameter_issues.last() != Some(&issue);
+        self.parameter_issues.push(issue);
+        Ok(changed)
+    }
+    fn acknowledge_gui_parameter(
+        &mut self,
+        _: &oblikovati_gui::GuiParameterAction,
+        result: Result<(), String>,
+    ) -> Result<(), String> {
+        self.parameter_results.push(result);
+        Ok(())
+    }
+
     fn gui_frame(
         &mut self,
         _: Option<&ViewportEvent>,
@@ -55,6 +88,10 @@ impl HeadWindow for FakeGuiWindow {
     ) -> Result<HeadGuiUpdate, String> {
         self.states.push(state.clone());
         Ok(self.packets.pop_front().unwrap_or_default())
+    }
+    fn previous_view(&mut self) -> Result<bool, String> {
+        self.previous_views += 1;
+        Ok(true)
     }
     fn process_view_input(&mut self, event: &ViewportEvent) -> Result<bool, String> {
         self.inputs.push(*event);
@@ -119,12 +156,61 @@ struct FakeGuiOwner {
     inputs: Vec<ViewportEvent>,
     created_parts: usize,
     annotations: crate::HeadDimensionAnnotations,
+    shell_actions: Vec<oblikovati_gui::GuiShellAction>,
+    parameter_edits: Vec<oblikovati_gui::GuiParameterAction>,
+    accept_cube_actions: bool,
+    parameter_failure: bool,
+    parameter_view_failure: bool,
 }
 impl HeadWork for FakeGuiOwner {
     fn create_part_document(&mut self) -> Result<bool, String> {
         self.created_parts += 1;
+        self.shell_actions.push(GuiShellAction::NewPart);
         Ok(true)
     }
+    fn extrude_from_gui(
+        &mut self,
+        document: u64,
+        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+        profile: i64,
+        distance: &str,
+    ) -> Result<bool, String> {
+        self.shell_actions.push(GuiShellAction::Extrude {
+            document,
+            sketch,
+            profile,
+            distance: distance.into(),
+        });
+        Ok(true)
+    }
+    fn gui_parameter_snapshot(
+        &self,
+    ) -> Result<Option<oblikovati_gui::GuiParameterSnapshot>, String> {
+        if self.parameter_view_failure {
+            return Err("parameter 11: expected a readable parameter view".into());
+        }
+        Ok(None)
+    }
+
+    fn apply_gui_parameter(
+        &mut self,
+        action: &oblikovati_gui::GuiParameterAction,
+    ) -> Result<bool, String> {
+        self.parameter_edits.push(action.clone());
+        if self.parameter_failure {
+            return Err("formula (: expected a valid expression".into());
+        }
+        Ok(true)
+    }
+
+    fn apply_gui_shell_action(
+        &mut self,
+        action: oblikovati_gui::GuiShellAction,
+    ) -> Result<bool, String> {
+        self.shell_actions.push(action);
+        Ok(true)
+    }
+
     fn process_inputs(&mut self, events: &[ViewportEvent]) -> Result<bool, String> {
         self.inputs.extend(events);
         Ok(!events.is_empty())
@@ -165,6 +251,7 @@ fn gui_actions_use_existing_owner_and_camera_command_paths() {
         GuiShellAction::Undo,
         GuiShellAction::Redo,
         GuiShellAction::Home,
+        GuiShellAction::ViewCommand(oblikovati_gui::GuiViewCommand::Previous),
     ];
     let mut window = FakeGuiWindow {
         packets: [HeadGuiUpdate {
@@ -186,8 +273,39 @@ fn gui_actions_use_existing_owner_and_camera_command_paths() {
     .into();
     assert_eq!(window.inputs, expected);
     assert_eq!(owner.inputs, expected);
+    assert_eq!(window.previous_views, 1);
     assert_eq!(window.states[0].undo_label.as_deref(), Some("Dimension"));
 }
+#[test]
+fn cube_actions_reach_the_owner_without_viewport_commands() {
+    let actions = vec![
+        GuiShellAction::NewPart,
+        GuiShellAction::StartSketchOn(oblikovati_gui::GuiOriginPlaneKind::Xy),
+        GuiShellAction::PlaceSketchTool(oblikovati_gui::GuiSketchTool::Rectangle),
+        GuiShellAction::Extrude {
+            document: 1,
+            sketch: oblikovati_model::document_sketch::DocumentSketchId(1),
+            profile: 0,
+            distance: "10 mm".into(),
+        },
+    ];
+    let mut window = FakeGuiWindow {
+        packets: [HeadGuiUpdate {
+            actions: actions.clone(),
+            ..Default::default()
+        }]
+        .into(),
+        ..Default::default()
+    };
+    let mut owner = FakeGuiOwner {
+        accept_cube_actions: true,
+        ..Default::default()
+    };
+    assert!(advance_gui(&mut window, &mut owner, None).unwrap().changed);
+    assert_eq!(owner.shell_actions, actions);
+    assert!(window.inputs.is_empty() && owner.inputs.is_empty());
+}
+
 #[test]
 fn captured_pointer_does_not_reach_document_or_camera() {
     let mut window = FakeGuiWindow {
@@ -310,7 +428,81 @@ fn unprojectable_dimension_line_reports_its_failure_without_hiding_the_label() {
 }
 
 impl crate::HeadSketchWork for FakeGuiOwner {
+    fn start_sketch_on_plane_from_gui(
+        &mut self,
+        plane: oblikovati_gui::GuiOriginPlaneKind,
+    ) -> Result<bool, String> {
+        if !self.accept_cube_actions {
+            return Err(format!("plane {plane:?}: expected a sketch owner"));
+        }
+        self.shell_actions
+            .push(GuiShellAction::StartSketchOn(plane));
+        Ok(true)
+    }
+    fn place_sketch_tool_from_gui(
+        &mut self,
+        tool: oblikovati_gui::GuiSketchTool,
+    ) -> Result<bool, String> {
+        if !self.accept_cube_actions {
+            return Err(format!("tool {tool:?}: expected an active sketch"));
+        }
+        self.shell_actions
+            .push(GuiShellAction::PlaceSketchTool(tool));
+        Ok(true)
+    }
     fn sketch_dimension_annotations(&self) -> Result<crate::HeadDimensionAnnotations, String> {
         Ok(self.annotations.clone())
+    }
+}
+
+#[test]
+fn parameter_owner_results_are_local_and_metadata_is_requested_only_when_open() {
+    let action = oblikovati_gui::GuiParameterAction::Toggle {
+        document: 7,
+        parameter: 11,
+        field: oblikovati_gui::GuiParameterToggleField::Key,
+        value: true,
+    };
+    let mut window = FakeGuiWindow::default();
+    let mut owner = FakeGuiOwner {
+        parameter_failure: true,
+        ..Default::default()
+    };
+    window.packets.push_back(HeadGuiUpdate {
+        parameter_actions: vec![action.clone()],
+        ..Default::default()
+    });
+    assert!(!advance_gui(&mut window, &mut owner, None).unwrap().changed);
+    assert!(window.parameter_views.is_empty());
+    assert!(window.parameter_results[0].is_err());
+    window.parameters_open = true;
+    owner.parameter_failure = false;
+    window.packets.push_back(HeadGuiUpdate {
+        parameter_actions: vec![action.clone()],
+        ..Default::default()
+    });
+    assert!(advance_gui(&mut window, &mut owner, None).unwrap().changed);
+    assert_eq!(window.parameter_views, vec![None]);
+    assert_eq!(window.parameter_results[1], Ok(()));
+    assert_eq!(owner.parameter_edits, vec![action.clone(), action]);
+}
+
+#[test]
+fn failed_parameter_views_are_local_and_do_not_repeat_idle_redraws() {
+    for producer_failure in [true, false] {
+        let mut owner = FakeGuiOwner {
+            parameter_view_failure: producer_failure,
+            ..Default::default()
+        };
+        let mut window = FakeGuiWindow {
+            parameters_open: true,
+            parameter_view_decline: !producer_failure,
+            ..Default::default()
+        };
+        assert!(advance_gui(&mut window, &mut owner, None).unwrap().changed);
+        assert_eq!(window.parameter_issues.len(), 1);
+        assert!(!advance_gui(&mut window, &mut owner, None).unwrap().changed);
+        assert_eq!(window.parameter_issues.len(), 2);
+        assert!(window.states.len() == 2);
     }
 }

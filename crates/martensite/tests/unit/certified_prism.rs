@@ -4,7 +4,7 @@ use martensite_tkbo::profile_extrusion::{
     DisplayTolerance, ProfileCurve, ProfileCurveId, ProfilePlane, ProfileVertex, ProfileVertexId,
     ToleranceCap,
 };
-use oblikovati_model::{feature::sketch_prism::SketchDirectedLine, sketch::SketchEntityId};
+use oblikovati_model::{feature::sketch_prism::SketchDirectedCurve, sketch::SketchEntityId};
 
 fn square(size: f64) -> (SketchProfile, SketchPrismSelection) {
     let positions = [[0., 0.], [size, 0.], [size, size], [0., size]];
@@ -24,8 +24,8 @@ fn square(size: f64) -> (SketchProfile, SketchPrismSelection) {
         })
         .collect();
     let outer = (11..15)
-        .map(|id| SketchDirectedLine {
-            line: SketchEntityId(id),
+        .map(|id| SketchDirectedCurve {
+            curve: SketchEntityId(id),
             reversed: false,
         })
         .collect();
@@ -103,7 +103,7 @@ fn certified_cube_retains_analytic_faces_lineage_and_measured_tolerance() {
 #[test]
 fn certified_prism_declines_an_unmatched_saved_profile() {
     let (profile, mut selection) = square(10.);
-    selection.outer[0].line = SketchEntityId(99);
+    selection.outer[0].curve = SketchEntityId(99);
     let error = retain_certified_profile_prism(
         &profile,
         &selection,

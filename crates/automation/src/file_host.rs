@@ -32,7 +32,9 @@ pub use open::DocumentObserverFactory;
 pub(crate) use sketch_construction::SketchConstructionAccess;
 
 /// Implemented calls that require the file owner.
-pub const FILE_COMMAND_METHODS: [&str; 10] = [
+pub const FILE_COMMAND_METHODS: [&str; 12] = [
+    METHOD_DOCUMENT_SET_END_OF_PART,
+    METHOD_DOCUMENT_SET_SKETCH_SETTINGS,
     METHOD_DOCUMENTS_ADD_ATTACHMENT,
     METHOD_DOCUMENTS_ACTIVATE,
     METHOD_DOCUMENTS_OPEN,
@@ -46,6 +48,11 @@ pub const FILE_COMMAND_METHODS: [&str; 10] = [
 ];
 /// Assembly mutations currently owned by the file host.
 pub const ASSEMBLY_COMMAND_METHODS: [&str; 2] = [METHOD_ASSEMBLY_SUPPRESS, METHOD_ASSEMBLY_PLACE];
+/// Application preferences that require the injected persistent preference owner.
+pub const APPLICATION_PREFERENCE_METHODS: [&str; 2] = [
+    METHOD_APPLICATION_GET_HUD_OPTIONS,
+    METHOD_APPLICATION_SET_HUD_OPTIONS,
+];
 
 /// Synchronous API access that retains file, history, and identity ownership.
 pub struct FileHost<'a, O: TransactionObserver, W, F> {
@@ -251,6 +258,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
         if crate::WINDOW_CAPTURE_METHODS.contains(&method) {
             return crate::window_capture::apply(&mut context.window_capture, request);
         }
+        if APPLICATION_PREFERENCE_METHODS.contains(&method) {
+            return context.hud_options(method, request);
+        }
         if crate::CLIENT_COMMAND_METHODS.contains(&method) {
             return crate::clients::apply(context.files.connected_clients_mut(), method, request);
         }
@@ -275,6 +285,49 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
         }
         if crate::SKETCH_COMMAND_METHODS.contains(&method) {
             return context.sketch_command(method, request);
+        }
+        if method == METHOD_DOCUMENT_SET_SKETCH_SETTINGS {
+            return crate::document_sketch_settings::apply(context.files, decode(method, request)?);
+        }
+        if method == METHOD_DOCUMENT_SET_END_OF_PART {
+            let FileContext {
+                files,
+                part_topology,
+                ..
+            } = &mut *context;
+            return crate::end_of_part::apply(files, part_topology, request);
+        }
+        if method == METHOD_FEATURES_GET {
+            let FileContext {
+                files,
+                part_topology,
+                ..
+            } = &mut *context;
+            return crate::feature_lifecycle::query(files, part_topology, request);
+        }
+        if method == METHOD_FEATURES_DELETE {
+            let FileContext {
+                files,
+                part_topology,
+                ..
+            } = &mut *context;
+            return crate::feature_lifecycle::delete(files, part_topology, request);
+        }
+        if method == METHOD_MODEL_TREE {
+            let FileContext {
+                files,
+                part_topology,
+                ..
+            } = &mut *context;
+            return crate::model_tree::query(files, part_topology, request);
+        }
+        if crate::FEATURE_LIFECYCLE_METHODS.contains(&method) {
+            let FileContext {
+                files,
+                part_topology,
+                ..
+            } = &mut *context;
+            return crate::feature_lifecycle::apply(files, part_topology, method, request);
         }
         context.owned_command(method, request)
     }

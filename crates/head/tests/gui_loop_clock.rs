@@ -12,6 +12,14 @@ fn gui_step(gui: &mut NativeGui, tick: u32, event: Option<&ViewportEvent>) -> He
     )
     .unwrap()
 }
+fn gui_step_for_document(gui: &mut NativeGui, tick: u32, document: u64) -> HeadGuiUpdate {
+    let commands = GuiCommandState {
+        document: Some(document),
+        ..Default::default()
+    };
+    gui.step(GUI_TICK * tick, [640, 480], None, &commands, None)
+        .unwrap()
+}
 fn click_event(pressed: bool) -> ViewportEvent {
     ViewportEvent::Input(ViewportInput::Button {
         button: ViewportButton::Left,
@@ -133,4 +141,71 @@ fn changed_content_scale_replaces_the_compiler_atlas_before_publication() {
     assert_eq!(&gui.textures, gui.engine.resources());
     assert!(gui.dirty);
     gui.compiler.compile(gui.draws.as_ref().unwrap()).unwrap();
+}
+#[test]
+fn parameter_metadata_and_results_schedule_frames_without_replaying_commands() {
+    let mut gui = NativeGui::new(None).unwrap();
+    for tick in 0..8 {
+        gui_step_for_document(&mut gui, tick, 7);
+    }
+    assert!(!gui.parameters_open());
+    gui.engine.set_parameters_open(true);
+    assert!(gui.parameters_open());
+    let snapshot = oblikovati_gui::GuiParameterSnapshot {
+        linked_tables: Vec::new(),
+        link_sources: Vec::new(),
+        groups: Vec::new(),
+        document: 7,
+        rows: Vec::new(),
+    };
+    assert!(gui.set_parameters(Some(snapshot.clone())).unwrap());
+    assert!(!gui.set_parameters(Some(snapshot)).unwrap());
+    let output = gui_step_for_document(&mut gui, 9, 7);
+    assert!(output.actions.is_empty());
+    assert_eq!(gui.last_frame, Some(GUI_TICK * 9));
+    assert!(!gui.parameter_changed);
+    let action = oblikovati_gui::GuiParameterAction::Toggle {
+        document: 7,
+        parameter: 11,
+        field: oblikovati_gui::GuiParameterToggleField::Key,
+        value: true,
+    };
+    gui.acknowledge_parameter(
+        &action,
+        Err("parameter 11: expected an editable row".into()),
+    );
+    assert_eq!(gui.wake_after(GUI_TICK * 10), Some(Duration::ZERO));
+    let output = gui_step_for_document(&mut gui, 10, 7);
+    assert!(output.parameter_actions.is_empty());
+    assert!(output.actions.is_empty());
+    assert_eq!(gui.last_frame, Some(GUI_TICK * 10));
+}
+#[test]
+fn parameter_view_issues_request_one_frame_and_valid_metadata_recovers() {
+    let mut gui = NativeGui::new(None).unwrap();
+    gui.engine.set_parameters_open(true);
+    for tick in 0..8 {
+        gui_step_for_document(&mut gui, tick, 7);
+    }
+    assert!(
+        gui.report_parameter_issue("parameter 11: expected display-safe text".into())
+            .unwrap()
+    );
+    gui_step_for_document(&mut gui, 9, 7);
+    assert!(!gui.parameter_changed);
+    assert!(
+        !gui.report_parameter_issue("parameter 11: expected display-safe text".into())
+            .unwrap()
+    );
+    let view = oblikovati_gui::GuiParameterSnapshot {
+        linked_tables: Vec::new(),
+        link_sources: Vec::new(),
+        groups: Vec::new(),
+        document: 7,
+        rows: Vec::new(),
+    };
+    assert!(gui.set_parameters(Some(view)).unwrap());
+    assert!(gui.parameter_changed);
+    gui_step_for_document(&mut gui, 10, 7);
+    assert!(!gui.parameter_changed);
 }

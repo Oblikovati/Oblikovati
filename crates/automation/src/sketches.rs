@@ -21,6 +21,7 @@ pub(crate) mod owner;
 mod pattern;
 mod properties;
 mod references;
+mod spline_handle;
 mod transform;
 use oblikovati_api::{Error, wire::*};
 use oblikovati_model::{
@@ -38,7 +39,7 @@ use oblikovati_solve::{
 };
 
 /// Geometry commands require a part or assembly; inference preferences use the workspace owner.
-pub const SKETCH_COMMAND_METHODS: [&str; 17] = [
+pub const SKETCH_COMMAND_METHODS: [&str; 18] = [
     METHOD_SKETCH_ADD_BLOCK_INSTANCE,
     METHOD_SKETCH_BLOCK_DEFINITION_CREATE,
     METHOD_SKETCH_BLOCK_DEFINITION_DELETE,
@@ -56,6 +57,7 @@ pub const SKETCH_COMMAND_METHODS: [&str; 17] = [
     METHOD_SKETCH_MOVE_DIMENSION,
     METHOD_SKETCH_DRIVE_DIMENSION,
     METHOD_SKETCH_ADD_DIMENSION,
+    METHOD_SKETCH_SET_SPLINE_HANDLE,
 ];
 /// Read-only sketch queries use one current owner and the canonical API DTOs.
 pub const SKETCH_QUERY_METHODS: [&str; 10] = [
@@ -136,6 +138,9 @@ fn apply_geometry_command<O: TransactionObserver, W: WorkspaceObserver, F: Docum
     request: &[u8],
 ) -> Result<Vec<u8>, Error> {
     match method {
+        METHOD_SKETCH_SET_SPLINE_HANDLE => {
+            spline_handle::apply(files, crate::decode(method, request)?)
+        }
         METHOD_SKETCH_TRANSFORM => transform::apply(files, crate::decode(method, request)?),
         METHOD_SKETCH_ADD_PATTERN => pattern::apply(files, crate::decode(method, request)?),
         METHOD_SKETCH_ADD_ENTITY => add_entity::apply(files, crate::decode(method, request)?, None),

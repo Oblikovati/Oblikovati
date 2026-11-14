@@ -26,6 +26,7 @@ pub mod interest;
 pub mod keymap;
 pub mod marking_menu;
 pub mod model_state;
+pub mod named_view;
 
 pub mod document_sketch;
 pub mod sketch;

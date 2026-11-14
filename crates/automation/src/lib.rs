@@ -17,9 +17,9 @@ mod file_host;
 pub use extrusion::{ExtrudeRegionAccess, PreparedExtrusion, prepare_extrusion};
 mod interests;
 pub use file_host::{
-    ASSEMBLY_COMMAND_METHODS, AssemblyReferenceFailure, AssemblyReferenceReport,
-    DERIVED_COMMAND_METHODS, DOCUMENT_UPDATE_METHODS, DocumentObserverFactory,
-    FILE_COMMAND_METHODS, FileHost,
+    APPLICATION_PREFERENCE_METHODS, ASSEMBLY_COMMAND_METHODS, AssemblyReferenceFailure,
+    AssemblyReferenceReport, DERIVED_COMMAND_METHODS, DOCUMENT_UPDATE_METHODS,
+    DocumentObserverFactory, FILE_COMMAND_METHODS, FileHost,
 };
 pub mod dispatch;
 mod file_queries;
@@ -47,14 +47,21 @@ pub use options::SKETCH_OPTION_METHODS;
 pub use sketches::{SKETCH_COMMAND_METHODS, SKETCH_QUERY_METHODS};
 mod collection;
 mod detail;
+pub use detail::parameter_detail;
+mod document_sketch_settings;
+mod end_of_part;
 mod expressions;
+mod feature_lifecycle;
+mod model_tree;
 mod parameter_choices;
 mod parameter_edit;
+mod parameter_exchange;
 mod parameter_tolerance;
 mod parameter_update;
 mod parameter_value;
 mod parameters;
 mod properties;
+pub mod ribbon;
 mod transactions;
 mod units;
 mod units_edit;
@@ -67,8 +74,9 @@ use oblikovati_session::{
 pub use transactions::TRANSACTION_METHODS;
 
 /// The exact query inventory; version compatibility alone does not imply other methods exist.
-pub const QUERY_METHODS: [&str; 34] = [
+pub const QUERY_METHODS: [&str; 36] = [
     METHOD_MODEL_STATES_LIST,
+    METHOD_APPLICATION_API_VERSION,
     METHOD_CLIENT_APPS_LIST,
     METHOD_MODEL_SELECTION,
     METHOD_SKETCH_GET_INFERENCE_OPTIONS,
@@ -89,6 +97,7 @@ pub const QUERY_METHODS: [&str; 34] = [
     METHOD_PARAMETERS_GET_SETTINGS,
     METHOD_PARAMETERS_GROUPS_LIST,
     METHOD_PARAMETERS_GET,
+    METHOD_PARAMETERS_EXPORT,
     METHOD_PARAMETERS_DRIVEN_BY,
     METHOD_PARAMETERS_DEPENDENTS,
     METHOD_UNITS_GET_VALUE_FROM_EXPRESSION,
@@ -137,9 +146,15 @@ impl<O: TransactionObserver, W: WorkspaceObserver> Caller for SessionQueryHost<'
         match method {
             METHOD_MODEL_STATES_LIST => encode(&model_states::list(self.workspace)?),
             METHOD_MODEL_SELECTION => encode(&model_selection::read(self.workspace)?),
+            METHOD_APPLICATION_API_VERSION => encode(&ApplicationApiVersionResult {
+                version: oblikovati_api::VERSION.into(),
+                major: i64::from(oblikovati_api::API_MAJOR),
+                minor: i64::from(oblikovati_api::API_MINOR),
+            }),
             METHOD_SKETCH_GET_INFERENCE_OPTIONS => {
                 sketch_inference::query_inference_preferences(self.workspace)
             }
+            METHOD_RIBBON_LIST => encode(&ribbon::list(ribbon::key_for_document(None))),
             METHOD_CLIENT_APPS_LIST => encode(&ListClientApplicationsResult {
                 clients: Some(self.workspace.connected_clients().entries().to_vec()),
             }),
@@ -184,6 +199,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver> Caller for SessionQueryHost<'
                 self.active_parameters()?,
                 decode(method, request)?,
             )?),
+            METHOD_PARAMETERS_EXPORT => {
+                encode(&parameter_exchange::export(self.active_parameters()?)?)
+            }
             METHOD_PARAMETERS_DRIVEN_BY => encode(&parameters::neighbors(
                 self.active_parameters()?,
                 decode(method, request)?,
@@ -263,6 +281,7 @@ pub use asset_commands::ASSET_COMMAND_METHODS;
 mod asset_assignments;
 pub use asset_assignments::ASSET_ASSIGNMENT_METHODS;
 mod part_topology;
+pub use feature_lifecycle::FEATURE_LIFECYCLE_METHODS;
 pub use part_topology::{BODY_QUERY_METHODS, PartTopologyAccess, TopologyEntityKind};
 mod part_sketch_continuity;
 pub use part_sketch_continuity::PartSketchContinuity;

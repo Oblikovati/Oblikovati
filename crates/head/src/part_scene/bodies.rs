@@ -35,6 +35,7 @@ pub(crate) struct BodyRow {
     pub key: String,
     /// Where the API's body list counts it.
     pub index: i64,
+    pub faces: usize,
 }
 impl DesktopPartScenes {
     /// Each solid and the feature that made it, for the browser's folder.
@@ -74,8 +75,14 @@ impl DesktopPartScenes {
             let (name, _) = files
                 .body_display_metadata(document, &key)
                 .map_err(|cause| cause.to_string())?;
+            let encoded = body.body_reference_key(session.history(), guid)?;
+            let faces = body
+                .body_report(session.history(), guid, encoded)?
+                .topology
+                .faces;
             rows.push(BodyRow {
                 feature: record.feature,
+                faces,
                 name: name.map_or_else(|| format!("Solid{}", index + 1), Into::into),
                 key,
                 index: api_count("body index", index)?,

@@ -6,10 +6,12 @@ use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 
 /// Additional queries that require a file owner, rather than bare recipe sessions.
-pub const FILE_QUERY_METHODS: [&str; 14] = [
+pub const FILE_QUERY_METHODS: [&str; 16] = [
     METHOD_ASSEMBLY_OCCURRENCES,
     METHOD_SKETCH_LIST,
     METHOD_SKETCH_GET,
+    METHOD_DOCUMENT_GET_END_OF_PART,
+    METHOD_DOCUMENT_GET_SKETCH_SETTINGS,
     METHOD_DOCUMENTS_LIST,
     METHOD_PARAMETERS_DERIVED_TABLES_LIST,
     METHOD_SKETCH_CONSTRAINT_STATUS,
@@ -104,6 +106,27 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
                 );
             }
             return crate::sketches::query(self.files, method, request, editing);
+        }
+        if method == METHOD_RIBBON_LIST {
+            let document = self
+                .files
+                .workspace()
+                .active_document()
+                .map(|id| self.files.document_type(id))
+                .transpose()
+                .map_err(|error| Error(error.to_string()))?;
+            return encode(&crate::ribbon::list(crate::ribbon::key_for_document(
+                document,
+            )));
+        }
+        if method == METHOD_DOCUMENT_GET_END_OF_PART {
+            return crate::end_of_part::query(self.files, request);
+        }
+        if method == METHOD_DOCUMENT_GET_SKETCH_SETTINGS {
+            return crate::document_sketch_settings::query(
+                self.files,
+                crate::decode(method, request)?,
+            );
         }
         if method == METHOD_PARAMETERS_DERIVED_TABLES_LIST {
             return encode(&derived::list(self.files)?);

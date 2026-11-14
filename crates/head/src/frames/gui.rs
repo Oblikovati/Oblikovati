@@ -14,6 +14,7 @@ pub struct HeadGuiUpdate {
     pub consumed_input: bool,
     pub deferred: bool,
     pub actions: Vec<GuiShellAction>,
+    pub parameter_actions: Vec<oblikovati_gui::GuiParameterAction>,
     pub wake_after: Option<Duration>,
 }
 pub(super) fn advance_gui(
@@ -21,6 +22,7 @@ pub(super) fn advance_gui(
     owner: &mut dyn HeadWork,
     event: Option<&ViewportEvent>,
 ) -> Result<HeadGuiUpdate, String> {
+    let metadata_changed = window.gui_parameters_open() && publish_parameter_view(window, owner)?;
     let mut commands = owner.gui_command_state()?;
     commands.dimension_labels = dimension_labels::projected_dimension_labels(window, owner)?;
     commands.origin_planes = dimension_labels::origin_plane_outlines(window, &commands);
@@ -34,10 +36,27 @@ pub(super) fn advance_gui(
     commands.constraint_glyphs = dimension_labels::projected_constraint_glyphs(window, owner);
     dimension_labels::project_precise_triad(window, owner, &mut commands);
     let mut update = window.gui_frame(event, &commands)?;
+    update.changed |= metadata_changed;
+    for action in &update.parameter_actions {
+        let result = owner.apply_gui_parameter(action);
+        update.changed |= result.as_ref().copied().unwrap_or(false);
+        window.acknowledge_gui_parameter(action, result.map(|_| ()))?;
+    }
     for action in &update.actions {
         update.changed |= dispatch_gui_action(window, owner, action)?;
     }
     Ok(update)
+}
+fn publish_parameter_view(
+    window: &mut dyn HeadWindow,
+    owner: &dyn HeadWork,
+) -> Result<bool, String> {
+    match owner.gui_parameter_snapshot() {
+        Ok(snapshot) => window
+            .set_gui_parameter_snapshot(snapshot)
+            .or_else(|issue| window.show_gui_parameter_issue(issue)),
+        Err(issue) => window.show_gui_parameter_issue(issue),
+    }
 }
 pub(super) fn dispatch_gui_action(
     window: &mut dyn HeadWindow,
@@ -150,6 +169,11 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::Parameter { .. }
         | GuiShellAction::UpdatePart
         | GuiShellAction::SetSelectionMode(_)
+        | GuiShellAction::OpenSelectionFilter
+        | GuiShellAction::OpenHistoryBrowser
+        | GuiShellAction::JumpHistoryTo { .. }
+        | GuiShellAction::SetSelectionEnabled { .. }
+        | GuiShellAction::MoveSelectionKind { .. }
         | GuiShellAction::ActivateDocument(_)
         | GuiShellAction::OpenDocument(_)
         | GuiShellAction::OpenDeferredDrawing(_)

@@ -6,6 +6,8 @@ impl GuiFrameEngine {
         &mut self,
         request: &GuiFrameRequest,
     ) -> Result<GuiFrameOutput, String> {
+        self.parameter_editor
+            .synchronize_document(request.commands.document)?;
         let keys = prepare_frame_inputs(
             &mut self.context,
             request,
@@ -70,8 +72,22 @@ impl GuiFrameEngine {
             &mut self.home,
             &mut selected,
         );
-        self.parameter_editor
-            .panel(ui, &request.commands, &mut selected);
+        selected.retain(|action| {
+            if matches!(action, GuiShellAction::OpenHistoryBrowser) {
+                self.history_browser.open();
+                return false;
+            }
+            if matches!(action, GuiShellAction::OpenSelectionFilter) {
+                self.selection_filter.open();
+                return false;
+            }
+            true
+        });
+        self.selection_filter
+            .draw(ui, &request.commands, &mut selected);
+        self.history_browser
+            .draw(ui, &request.commands, &mut selected);
+        let parameter_actions = self.parameter_editor.panel(ui);
         self.workspace
             .panels
             .record_status(request.status.as_deref());
@@ -272,6 +288,7 @@ impl GuiFrameEngine {
         Ok(GuiFrameOutput {
             draws: snapshot,
             actions: selected,
+            parameter_actions,
             capture,
             activity,
             document_area: area.framebuffer_region(request.layout_scale(), request.extent),

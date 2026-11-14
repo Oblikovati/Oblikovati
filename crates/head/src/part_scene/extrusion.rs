@@ -26,14 +26,20 @@ impl ExtrudeRegionAccess for CertifiedExtrudeAccess {
                 regions.len()
             )
         })?;
-        let geometry = snapshot
-            .sketches
-            .get(sketch)
-            .map_err(|cause| cause.to_string())?
-            .geometry();
-        region
-            .line_selection(geometry)
-            .map_err(|cause| cause.to_string())
+        let convert = |uses: &[oblikovati_martensite::SketchRegionCurveUse]| {
+            uses.iter()
+                .map(
+                    |item| oblikovati_model::feature::sketch_prism::SketchDirectedCurve {
+                        curve: item.curve,
+                        reversed: item.reversed,
+                    },
+                )
+                .collect()
+        };
+        Ok(SketchPrismSelection {
+            outer: convert(&region.outer),
+            holes: region.holes.iter().map(|hole| convert(hole)).collect(),
+        })
     }
     fn validate(&self, candidate: &DocumentSnapshot, feature: FeatureId) -> Result<usize, String> {
         let mut backend = CertifiedPrismEvaluator::with_policy(self.0);

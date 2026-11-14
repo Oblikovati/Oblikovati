@@ -40,6 +40,12 @@ pub trait PartTopologyAccess<O: TransactionObserver, W: WorkspaceObserver, F: Do
         index: i64,
         key: &[u8],
     ) -> Result<f64, String>;
+    /// Read current replay health; example: `access.model_health(files, document)?`.
+    fn model_health(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<ModelHealthResult, String>;
     /// Verify a current exact target before any edit; example: `access.verify(files, document, key, TopologyEntityKind::Face)?`.
     fn verify(
         &mut self,
@@ -51,7 +57,9 @@ pub trait PartTopologyAccess<O: TransactionObserver, W: WorkspaceObserver, F: Do
 }
 
 /// Native body queries share the exact reference owner used by assignments.
-pub const BODY_QUERY_METHODS: [&str; 5] = [
+pub const BODY_QUERY_METHODS: [&str; 7] = [
+    METHOD_MODEL_PHYSICAL_PROPERTIES,
+    METHOD_ANALYSIS_MODEL_HEALTH,
     METHOD_MODEL_REFERENCE_KEYS,
     METHOD_BODY_LIST,
     METHOD_BODY_PHYSICAL_PROPS,
@@ -73,6 +81,17 @@ pub(crate) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         ))
     })?;
     match method {
+        METHOD_MODEL_PHYSICAL_PROPERTIES => {
+            let density = physical::model_density(files, encoded)?;
+            let result = owner
+                .physical_properties(files, document, None, density)
+                .map_err(Error)?;
+            crate::encode(&physical::model_properties(result)?)
+        }
+        METHOD_ANALYSIS_MODEL_HEALTH => {
+            let _: ModelHealthArgs = crate::decode(method, encoded)?;
+            crate::encode(&owner.model_health(files, document).map_err(Error)?)
+        }
         METHOD_MODEL_REFERENCE_KEYS => {
             if !encoded.is_empty() {
                 let _: EmptyObject = crate::decode(method, encoded)?;
@@ -111,4 +130,11 @@ pub(crate) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
             "body query {method:?}: expected {BODY_QUERY_METHODS:?}"
         ))),
     }
+}
+
+pub(super) fn no_arguments(method: &str, encoded: &[u8]) -> Result<(), Error> {
+    if !encoded.is_empty() {
+        let _: EmptyObject = crate::decode(method, encoded)?;
+    }
+    Ok(())
 }

@@ -413,3 +413,11 @@ mod application_bdd;
 
 #[path = "native_gui_loop/pattern.rs"]
 mod pattern;
+
+#[path = "native_gui_loop/document_ribbons.rs"]
+mod document_ribbons;
+#[path = "native_gui_loop/legacy_parameters.rs"]
+mod legacy_parameters;
+
+#[path = "native_gui_loop/sketch_preferences.rs"]
+mod sketch_preferences;

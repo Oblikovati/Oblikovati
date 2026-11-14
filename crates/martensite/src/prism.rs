@@ -4,7 +4,7 @@ use crate::{
     EvaluationPhase as Phase,
 };
 mod certified;
-mod input;
+pub(crate) mod input;
 pub use certified::{
     CertifiedPrismSnapshot, PrismAchievedTolerance, retain_certified_profile_prism,
 };
@@ -18,13 +18,13 @@ pub use named::{
 };
 mod mesh;
 pub(crate) mod placement;
-mod profile;
+pub(crate) mod profile;
 mod provenance;
 pub use provenance::{
     PrismHistoryRelation, PrismHistorySource, PrismSubentityHistory, PrismSubentityProvenance,
     PrismSubentityRole,
 };
-mod report;
+pub(crate) mod report;
 mod resolution;
 pub use resolution::{PrismResolution, PrismResolutionPolicy};
 mod snapshot;
@@ -38,8 +38,8 @@ pub use mesh::{PrismFaceMesh, PrismMeshOptions, PrismPresentation};
 use oblikovati_model::sketch::SketchPlane;
 pub use snapshot::{PrismProbeSnapshot, retain_planar_prism, retain_prism_on_plane};
 pub use types::{
-    PrismFaceProbe, PrismFaceRole, PrismProbeDefinition, PrismProbeLoop, PrismProbeReport,
-    PrismTopologySummary,
+    FaceProbe, PlanarProfileLoop, PrismFaceProbe, PrismFaceRole, PrismProbeDefinition,
+    PrismProbeLoop, PrismProbeReport, PrismTopologySummary, TopologySummary,
 };
 /// Check the released planar profile/prism path and generated-face lineage in working units.
 /// Example: `probe_planar_prism(&definition)?` reports analytic geometry without publishing a feature result.
@@ -53,7 +53,7 @@ pub(crate) fn build_prism(
 ) -> Result<PrismProbeSnapshot, EvaluationFailure> {
     input::validate_definition(definition)?;
     let vector = placement::model_displacement(plane, definition.displacement)?;
-    let profile = profile::build_profile(definition, plane)?;
+    let profile = profile::build_profile(&definition.outer, &definition.holes, plane)?;
     let mut maker = construct_prism(&profile.face, vector, definition.displacement)?;
     let shape = completed_prism(&mut maker)?;
     crate::checked_shape::require_geometry(&shape, "prism result")?;

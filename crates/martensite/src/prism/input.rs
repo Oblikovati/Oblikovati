@@ -10,11 +10,16 @@ pub(super) fn validate_definition(
             "prism displacement {vector:?}: expected finite components with nonzero profile-normal displacement"
         )));
     }
+    validate_profile(&definition.outer, &definition.holes)
+}
+/// Validate shared planar profile inputs before any kernel construction.
+/// Example: `validate_profile(&outer, &holes)?` before a rotational sweep.
+pub(crate) fn validate_profile(
+    outer: &PrismProbeLoop,
+    holes: &[PrismProbeLoop],
+) -> Result<(), EvaluationFailure> {
     let mut keys = BTreeSet::new();
-    for (index, profile) in std::iter::once(&definition.outer)
-        .chain(&definition.holes)
-        .enumerate()
-    {
+    for (index, profile) in std::iter::once(outer).chain(holes).enumerate() {
         validate_loop(profile, index, &mut keys)?;
     }
     Ok(())
@@ -24,15 +29,29 @@ fn validate_loop(
     index: usize,
     keys: &mut BTreeSet<u64>,
 ) -> Result<(), EvaluationFailure> {
-    if profile.vertices.len() < 3 || profile.vertices.len() != profile.edge_keys.len() {
-        return Err(Phase::Input.refused(Kind::InvalidInput, Entity::Loop(index), format!(
-            "prism loop {index} vertices={}, edge keys={}: expected at least three vertices and one key per segment",
-            profile.vertices.len(),
-            profile.edge_keys.len()
-        )));
+    match profile {
+        PrismProbeLoop::Polygon {
+            edge_keys,
+            vertices,
+        } => {
+            if vertices.len() < 3 || vertices.len() != edge_keys.len() {
+                return Err(Phase::Input.refused(Kind::InvalidInput, Entity::Loop(index), format!(
+                    "prism polygon loop {index} vertices={}, edge keys={}: expected at least three vertices and one key per segment",
+                    vertices.len(), edge_keys.len()
+                )));
+            }
+            require_finite_vertices(vertices, index)?;
+        }
+        PrismProbeLoop::Circle { center, radius, .. } => {
+            if !center.iter().all(|value| value.is_finite()) || !radius.is_finite() || *radius <= 0.
+            {
+                return Err(Phase::Input.refused(Kind::InvalidInput, Entity::Loop(index), format!(
+                    "prism circle loop {index} center {center:?}, radius {radius:?}: expected finite center and positive finite radius"
+                )));
+            }
+        }
     }
-    require_finite_vertices(profile, index)?;
-    validate_keys(&profile.edge_keys, keys)
+    validate_keys(&profile.edge_keys(), keys)
 }
 fn validate_keys(edge_keys: &[u64], keys: &mut BTreeSet<u64>) -> Result<(), EvaluationFailure> {
     for key in edge_keys {
@@ -49,16 +68,8 @@ fn validate_keys(edge_keys: &[u64], keys: &mut BTreeSet<u64>) -> Result<(), Eval
     Ok(())
 }
 
-fn require_finite_vertices(
-    profile: &PrismProbeLoop,
-    index: usize,
-) -> Result<(), EvaluationFailure> {
-    if profile
-        .vertices
-        .iter()
-        .flatten()
-        .all(|value| value.is_finite())
-    {
+fn require_finite_vertices(vertices: &[[f64; 2]], index: usize) -> Result<(), EvaluationFailure> {
+    if vertices.iter().flatten().all(|value| value.is_finite()) {
         return Ok(());
     }
     Err(Phase::Input.refused(
@@ -66,7 +77,7 @@ fn require_finite_vertices(
         Entity::Loop(index),
         format!(
             "prism loop {index} {:?}: expected finite XY coordinates",
-            profile.vertices
+            vertices
         ),
     ))
 }

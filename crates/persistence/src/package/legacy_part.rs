@@ -146,11 +146,11 @@ fn validate_boundary_ownership(
         .iter()
         .chain(selection.holes.iter().flatten())
     {
-        let entity = index.entity(line.line).map_err(failure)?;
+        let entity = index.entity(line.curve).map_err(failure)?;
         if !matches!(entity, OwnedSketchGeometry::Line(_)) {
             return Err(failure(format!(
                 "profile entity {:?}: expected a line in sketch {sketch:?}",
-                line.line
+                line.curve
             )));
         }
     }

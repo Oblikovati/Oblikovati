@@ -388,3 +388,5 @@ mod certified_tests;
 #[cfg(test)]
 #[path = "../tests/part_scene_assembly.rs"]
 mod assembly_tests;
+
+mod health;

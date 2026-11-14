@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{
-    Sketch2D, SketchEntityId, SketchError, SketchPoint2D,
+    Sketch2D, SketchEntityId, SketchError, SketchPoint2D, SketchSplineHandle2D,
     entity_geometry::{OwnedSketchGeometry, catalogue},
 };
 mod circular_seed;
@@ -42,6 +42,20 @@ impl<'a> SketchReadIndex<'a> {
                 actual.kind()
             ))),
         }
+    }
+    /// Read active handles for one spline in stable insertion order; example: `index.spline_handles(parent)?`.
+    pub fn spline_handles(
+        &self,
+        parent: SketchEntityId,
+    ) -> Result<Vec<SketchSplineHandle2D>, SketchError> {
+        self.sketch.spline(parent)?;
+        Ok(self
+            .sketch
+            .spline_handles()
+            .iter()
+            .copied()
+            .filter(|handle| handle.parent() == parent)
+            .collect())
     }
     /// Derive a circular arc radius through the common model rule; example: `index.arc_radius(id)?`.
     pub fn arc_radius(&self, id: SketchEntityId) -> Result<f64, SketchError> {

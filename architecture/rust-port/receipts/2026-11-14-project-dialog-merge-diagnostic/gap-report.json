@@ -1,0 +1,787 @@
+{
+  "kind": "diagnostic only; not acceptance",
+  "source_files": {
+    "features/application/project-dialog/project-dialog.feature": "@application @projects\r\nFeature: Inspect the project dialog\r\n  The MCAD Software provides project information from the new-document chooser.\r\n\r\n  @needs_fixture\r\n  Scenario: Inspect project information from the template chooser\r\n    Given the new-document template chooser is open in the MCAD Software\r\n    And a project is active\r\n    And a template is selected with its details displayed\r\n    When the user chooses Projects in the chooser\r\n    Then a Projects dialog opens above the chooser\r\n    And the dialog lists project names and locations\r\n    And the active project is marked\r\n    And the dialog displays a project settings tree\r\n    And New, Browse, Save, Apply and Done controls are displayed\r\n    When the user chooses Done without changing the project\r\n    Then the Projects dialog closes\r\n    And the template chooser is displayed again\r\n    And the selected template details remain displayed\r\n\n  @needs_fixture\n  Scenario: Inspect an inactive project without activating it\n    Given the new-document template chooser is open in the MCAD Software\n    And the Projects dialog lists an active project and another project\n    And the active project is marked in the list\n    When the user selects the other project with a single click\n    Then the other project row is highlighted\n    And the settings tree displays information for the selected project\n    And the active-project mark remains beside the original project\n    When the user chooses Done\n    Then the Projects dialog closes\n    And the chooser still displays the original active project\r\n\n  @needs_fixture\n  Scenario: Inspect and cancels the new single-user project wizard\n    Given the Projects dialog is open in the MCAD Software\n    And an existing project is active\n    And the wizard fixture has no entries in either library list\r\n    When the user chooses New\n    Then the new-project wizard opens on a project-type page\n    And New Single User Project is selected\n    And the Next and cancels controls are available\n    When the user chooses Next\n    Then the wizard displays a project name, workspace folder and project file to be created\n    And it provides a folder browsing control\n    When the user chooses Next\n    Then the wizard displays a Select Libraries page\n    And the page has All Projects and New Project lists with transfer controls\n    And both library lists are empty\r\n    And a provisional project entry is visible in the project list behind the wizard\r\n    When the user chooses Cancel\n    Then the wizard closes and the Projects dialog is displayed\n    And the provisional project entry is no longer listed\n    And the original project remains marked active\r\n\n  @needs_fixture\n  Scenario: Navigate backward through the new-project wizard\n    Given the new single-user project wizard is on its project-type page in the MCAD Software\n    When the user chooses Next\n    Then the project-file page displays the project name and workspace folder\n    When the user chooses Next\n    Then the Select Libraries page is displayed\n    When the user chooses Back\n    Then the project-file page is displayed\n    And its project name and workspace folder remain displayed\n    When the user chooses Back\n    Then the project-type page is displayed\n    And New Single User Project remains selected\n    And Back and Finish are unavailable\n    When the user chooses Cancel\n    Then the wizard closes and the Projects dialog is displayed\r\n\n  @needs_fixture\n  Scenario: Cancel browsing for a project workspace folder\n    Given the new single-user project wizard is on its project-file page in the MCAD Software\n    And a workspace folder and project file location are displayed\n    When the user chooses the workspace folder browse control\n    Then a folder browser opens with a folder tree and a Folder field\n    And it offers Make New Folder, OK and cancels\n    When the user selects Documents in the folder tree\n    Then Documents is selected and its child folders are displayed\n    And the Folder field displays Documents\n    When the user chooses Cancel in the folder browser\n    Then the folder browser closes\n    And the wizard still displays the previous workspace folder and project file location\n    When the user cancels the project wizard\n    Then the Projects dialog is displayed\r\n\n  @needs_fixture\n  Scenario: Choose the workspace folder for a new project\n    Given the new single-user project wizard is on its project-file page in the MCAD Software\n    And the project has a displayed name\n    When the user chooses the workspace folder browse control\n    And the user selects the Documents folder\n    And the user chooses OK in the folder browser\n    Then the wizard displays Documents as the workspace folder\n    And the displayed project file location is inside Documents and uses the displayed project name\n    When the user cancels the project wizard\n    Then the Projects dialog is displayed\n    And the original project remains marked active\r\n\n  @needs_fixture\n  Scenario: Expand and collapse project settings with the keyboard\n    Given the Projects dialog is open in the MCAD Software\n    And an active project with Folder Options and Options groups is displayed\n    When the user selects the collapsed Folder Options group\n    And the user presses the Right Arrow key\n    Then the group expands to show folder entries including Templates, Design Data and Presets\n    When the user presses the Left Arrow key\n    Then the Folder Options children are hidden\n    When the user selects the collapsed Options group\n    And the user presses the Right Arrow key\n    Then the group expands to show project options including old versions to keep and unique file names\n    And the active project remains marked in the project list\r\n\n  @needs_fixture\n  Scenario: Expand library groups independently in the project tree\n    Given the Projects dialog is open in the MCAD Software\n    And the selected project has collapsed Appearance Libraries and Material Libraries groups with entries\n    When the user selects Appearance Libraries and presses the Right Arrow key\n    Then the appearance library entries are visible beneath their group\n    When the user selects Material Libraries and presses the Right Arrow key\n    Then the material library entries are visible beneath their group\n    And the appearance library entries remain visible\n    When the user presses the Left Arrow key\n    Then the material library entries are hidden\n    And the appearance library entries remain visible\n    And the active project remains marked in the project list\r\n"
+  },
+  "scenarios": [
+    {
+      "source": "features/application/project-dialog/project-dialog.feature",
+      "scenario": "Inspect project information from the template chooser",
+      "line": 6,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 7,
+          "step": "the new-document template chooser is open in the MCAD Software",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 8,
+          "step": "a project is active",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 9,
+          "step": "a template is selected with its details displayed",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 10,
+          "step": "the user chooses Projects in the chooser",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 11,
+          "step": "a Projects dialog opens above the chooser",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 12,
+          "step": "the dialog lists project names and locations",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 13,
+          "step": "the active project is marked",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 14,
+          "step": "the dialog displays a project settings tree",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 15,
+          "step": "New, Browse, Save, Apply and Done controls are displayed",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 16,
+          "step": "the user chooses Done without changing the project",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 17,
+          "step": "the Projects dialog closes",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 18,
+          "step": "the template chooser is displayed again",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 19,
+          "step": "the selected template details remain displayed",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "features/application/project-dialog/project-dialog.feature",
+      "scenario": "Inspect an inactive project without activating it",
+      "line": 22,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 23,
+          "step": "the new-document template chooser is open in the MCAD Software",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 24,
+          "step": "the Projects dialog lists an active project and another project",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 25,
+          "step": "the active project is marked in the list",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 26,
+          "step": "the user selects the other project with a single click",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 27,
+          "step": "the other project row is highlighted",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected the row's accent"
+        },
+        {
+          "line": 28,
+          "step": "the settings tree displays information for the selected project",
+          "result": "failed",
+          "tainted": true,
+          "detail": "tree shows \"Location:/tmp/.tmpIk3IaY/gearbox.opj\""
+        },
+        {
+          "line": 29,
+          "step": "the active-project mark remains beside the original project",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 30,
+          "step": "the user chooses Done",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 31,
+          "step": "the Projects dialog closes",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 32,
+          "step": "the chooser still displays the original active project",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "features/application/project-dialog/project-dialog.feature",
+      "scenario": "Inspect and cancels the new single-user project wizard",
+      "line": 35,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 36,
+          "step": "the Projects dialog is open in the MCAD Software",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 37,
+          "step": "an existing project is active",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 38,
+          "step": "the wizard fixture has no entries in either library list",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 39,
+          "step": "the user chooses New",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 40,
+          "step": "the new-project wizard opens on a project-type page",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected \"New Single User Project\" in rendered text \"Ready\\nFile\\nTools\\nNew\\nOpen\\nSave\\nUndo\\nRedo\\nHome\\nProjects\\nUpdate\\nSelect\\nMaterialBrowser\\nMaterials\\nAppearanceBrowser\\nParameters\\n...\\nGetStarted\\nTools\\nRibbonDisplay\\nv\\nv\\nNewPart\\nLaunch\\nModel\\n+\\nModel\\n(nodocument)\\nNewdocument\\nTemplatefolders\\nTemplates\\nMetric\\nEnglish\\nBack\\nForward\\nHome\\nDisplay\\nTemplatedetails\\nSelectatemplate.\\nCreate\\nCancel\\nProjects\\nProject:Gearbox\\nPart\\nMetricsheet-metalpart\\nStandardmetricpart\\nAssembly\\nStandardmetricassembly\\nDrawing\\nMetricdrawingwithtitleblock\\nPresentation\\nStandardmetricpresentation\\nProjects\\n(active)Gearbox\\n/tmp/.tmp8a97iz/gearbox.opj\\nProjectSettings\\nLocation:/tmp/.tmp8a97iz/gearbox.opj\\nWorkspace:work\\nLibraries:\\nFolderOptions\\nOptions\\nAppearanceLibraries\\nMaterialLibraries\\nNew\\nBrowse\\nSave\\nApply\\nDone\""
+        },
+        {
+          "line": 41,
+          "step": "New Single User Project is selected",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected \"New Single User Project\" in rendered text \"Ready\\nFile\\nTools\\nNew\\nOpen\\nSave\\nUndo\\nRedo\\nHome\\nProjects\\nUpdate\\nSelect\\nMaterialBrowser\\nMaterials\\nAppearanceBrowser\\nParameters\\n...\\nGetStarted\\nTools\\nRibbonDisplay\\nv\\nv\\nNewPart\\nLaunch\\nModel\\n+\\nModel\\n(nodocument)\\nNewdocument\\nTemplatefolders\\nTemplates\\nMetric\\nEnglish\\nBack\\nForward\\nHome\\nDisplay\\nTemplatedetails\\nSelectatemplate.\\nCreate\\nCancel\\nProjects\\nProject:Gearbox\\nPart\\nMetricsheet-metalpart\\nStandardmetricpart\\nAssembly\\nStandardmetricassembly\\nDrawing\\nMetricdrawingwithtitleblock\\nPresentation\\nStandardmetricpresentation\\nProjects\\n(active)Gearbox\\n/tmp/.tmp8a97iz/gearbox.opj\\nProjectSettings\\nLocation:/tmp/.tmp8a97iz/gearbox.opj\\nWorkspace:work\\nLibraries:\\nFolderOptions\\nOptions\\nAppearanceLibraries\\nMaterialLibraries\\nNew\\nBrowse\\nSave\\nApply\\nDone\""
+        },
+        {
+          "line": 42,
+          "step": "the Next and cancels controls are available",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 43,
+          "step": "the user chooses Next",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 44,
+          "step": "the wizard displays a project name, workspace folder and project file to be created",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected \"Name\" in rendered text \"Ready\\nFile\\nTools\\nNew\\nOpen\\nSave\\nUndo\\nRedo\\nHome\\nProjects\\nUpdate\\nSelect\\nMaterialBrowser\\nMaterials\\nAppearanceBrowser\\nParameters\\n...\\nGetStarted\\nTools\\nRibbonDisplay\\nv\\nv\\nNewPart\\nLaunch\\nModel\\n+\\nModel\\n(nodocument)\\nNewdocument\\nTemplatefolders\\nTemplates\\nMetric\\nEnglish\\nBack\\nForward\\nHome\\nDisplay\\nTemplatedetails\\nSelectatemplate.\\nCreate\\nCancel\\nProjects\\nProject:Gearbox\\nPart\\nMetricsheet-metalpart\\nStandardmetricpart\\nAssembly\\nStandardmetricassembly\\nDrawing\\nMetricdrawingwithtitleblock\\nPresentation\\nStandardmetricpresentation\\nProjects\\n(active)Gearbox\\n/tmp/.tmp8a97iz/gearbox.opj\\nProjectSettings\\nLocation:/tmp/.tmp8a97iz/gearbox.opj\\nWorkspace:work\\nLibraries:\\nFolderOptions\\nOptions\\nAppearanceLibraries\\nMaterialLibraries\\nNew\\nBrowse\\nSave\\nApply\\nDone\""
+        },
+        {
+          "line": 45,
+          "step": "it provides a folder browsing control",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 46,
+          "step": "the user chooses Next",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 47,
+          "step": "the wizard displays a Select Libraries page",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected \"Select Libraries\" in rendered text \"Ready\\nFile\\nTools\\nNew\\nOpen\\nSave\\nUndo\\nRedo\\nHome\\nProjects\\nUpdate\\nSelect\\nMaterialBrowser\\nMaterials\\nAppearanceBrowser\\nParameters\\n...\\nGetStarted\\nTools\\nRibbonDisplay\\nv\\nv\\nNewPart\\nLaunch\\nModel\\n+\\nModel\\n(nodocument)\\nNewdocument\\nTemplatefolders\\nTemplates\\nMetric\\nEnglish\\nBack\\nForward\\nHome\\nDisplay\\nTemplatedetails\\nSelectatemplate.\\nCreate\\nCancel\\nProjects\\nProject:Gearbox\\nPart\\nMetricsheet-metalpart\\nStandardmetricpart\\nAssembly\\nStandardmetricassembly\\nDrawing\\nMetricdrawingwithtitleblock\\nPresentation\\nStandardmetricpresentation\\nProjects\\n(active)Gearbox\\n/tmp/.tmp8a97iz/gearbox.opj\\nProjectSettings\\nLocation:/tmp/.tmp8a97iz/gearbox.opj\\nWorkspace:work\\nLibraries:\\nFolderOptions\\nOptions\\nAppearanceLibraries\\nMaterialLibraries\\nNew\\nBrowse\\nSave\\nApply\\nDone\""
+        },
+        {
+          "line": 48,
+          "step": "the page has All Projects and New Project lists with transfer controls",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected \"All Projects\" in rendered text \"Ready\\nFile\\nTools\\nNew\\nOpen\\nSave\\nUndo\\nRedo\\nHome\\nProjects\\nUpdate\\nSelect\\nMaterialBrowser\\nMaterials\\nAppearanceBrowser\\nParameters\\n...\\nGetStarted\\nTools\\nRibbonDisplay\\nv\\nv\\nNewPart\\nLaunch\\nModel\\n+\\nModel\\n(nodocument)\\nNewdocument\\nTemplatefolders\\nTemplates\\nMetric\\nEnglish\\nBack\\nForward\\nHome\\nDisplay\\nTemplatedetails\\nSelectatemplate.\\nCreate\\nCancel\\nProjects\\nProject:Gearbox\\nPart\\nMetricsheet-metalpart\\nStandardmetricpart\\nAssembly\\nStandardmetricassembly\\nDrawing\\nMetricdrawingwithtitleblock\\nPresentation\\nStandardmetricpresentation\\nProjects\\n(active)Gearbox\\n/tmp/.tmp8a97iz/gearbox.opj\\nProjectSettings\\nLocation:/tmp/.tmp8a97iz/gearbox.opj\\nWorkspace:work\\nLibraries:\\nFolderOptions\\nOptions\\nAppearanceLibraries\\nMaterialLibraries\\nNew\\nBrowse\\nSave\\nApply\\nDone\""
+        },
+        {
+          "line": 49,
+          "step": "both library lists are empty",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 50,
+          "step": "a provisional project entry is visible in the project list behind the wizard",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 51,
+          "step": "the user chooses Cancel",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 52,
+          "step": "the wizard closes and the Projects dialog is displayed",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 53,
+          "step": "the provisional project entry is no longer listed",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 54,
+          "step": "the original project remains marked active",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "features/application/project-dialog/project-dialog.feature",
+      "scenario": "Navigate backward through the new-project wizard",
+      "line": 57,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 58,
+          "step": "the new single-user project wizard is on its project-type page in the MCAD Software",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 59,
+          "step": "the user chooses Next",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 60,
+          "step": "the project-file page displays the project name and workspace folder",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected \"Name\" in rendered text \"Ready\\nFile\\nTools\\nNew\\nOpen\\nSave\\nUndo\\nRedo\\nHome\\nProjects\\nUpdate\\nSelect\\nMaterialBrowser\\nMaterials\\nAppearanceBrowser\\nParameters\\n...\\nGetStarted\\nTools\\nRibbonDisplay\\nv\\nv\\nNewPart\\nLaunch\\nModel\\n+\\nModel\\n(nodocument)\\nNewdocument\\nTemplatefolders\\nTemplates\\nMetric\\nEnglish\\nBack\\nForward\\nHome\\nDisplay\\nTemplatedetails\\nSelectatemplate.\\nCreate\\nCancel\\nProjects\\nProject:Gearbox\\nPart\\nMetricsheet-metalpart\\nStandardmetricpart\\nAssembly\\nStandardmetricassembly\\nDrawing\\nMetricdrawingwithtitleblock\\nPresentation\\nStandardmetricpresentation\\nProjects\\n(active)Gearbox\\n/tmp/.tmpNb9SmW/gearbox.opj\\nNewProject\\nProjectSettings\\nLocation:/tmp/.tmpNb9SmW/gearbox.opj\\nWorkspace:work\\nLibraries:\\nFolderOptions\\nOptions\\nAppearanceLibraries\\nMaterialLibraries\\nNew\\nBrowse\\nSave\\nApply\\nDone\\nNewProject\\nNewSingleUserProject\\nBack\\nNext\\nFinish\\nCancel\""
+        },
+        {
+          "line": 61,
+          "step": "the user chooses Next",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 62,
+          "step": "the Select Libraries page is displayed",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected \"Select Libraries\" in rendered text \"Ready\\nFile\\nTools\\nNew\\nOpen\\nSave\\nUndo\\nRedo\\nHome\\nProjects\\nUpdate\\nSelect\\nMaterialBrowser\\nMaterials\\nAppearanceBrowser\\nParameters\\n...\\nGetStarted\\nTools\\nRibbonDisplay\\nv\\nv\\nNewPart\\nLaunch\\nModel\\n+\\nModel\\n(nodocument)\\nNewdocument\\nTemplatefolders\\nTemplates\\nMetric\\nEnglish\\nBack\\nForward\\nHome\\nDisplay\\nTemplatedetails\\nSelectatemplate.\\nCreate\\nCancel\\nProjects\\nProject:Gearbox\\nPart\\nMetricsheet-metalpart\\nStandardmetricpart\\nAssembly\\nStandardmetricassembly\\nDrawing\\nMetricdrawingwithtitleblock\\nPresentation\\nStandardmetricpresentation\\nProjects\\n(active)Gearbox\\n/tmp/.tmpNb9SmW/gearbox.opj\\nNewProject\\nProjectSettings\\nLocation:/tmp/.tmpNb9SmW/gearbox.opj\\nWorkspace:work\\nLibraries:\\nFolderOptions\\nOptions\\nAppearanceLibraries\\nMaterialLibraries\\nNew\\nBrowse\\nSave\\nApply\\nDone\\nNewProject\\nNewSingleUserProject\\nBack\\nNext\\nFinish\\nCancel\""
+        },
+        {
+          "line": 63,
+          "step": "the user chooses Back",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 64,
+          "step": "the project-file page is displayed",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected \"Name\" in rendered text \"Ready\\nFile\\nTools\\nNew\\nOpen\\nSave\\nUndo\\nRedo\\nHome\\nProjects\\nUpdate\\nSelect\\nMaterialBrowser\\nMaterials\\nAppearanceBrowser\\nParameters\\n...\\nGetStarted\\nTools\\nRibbonDisplay\\nv\\nv\\nNewPart\\nLaunch\\nModel\\n+\\nModel\\n(nodocument)\\nNewdocument\\nTemplatefolders\\nTemplates\\nMetric\\nEnglish\\nBack\\nForward\\nHome\\nDisplay\\nTemplatedetails\\nSelectatemplate.\\nCreate\\nCancel\\nProjects\\nProject:Gearbox\\nPart\\nMetricsheet-metalpart\\nStandardmetricpart\\nAssembly\\nStandardmetricassembly\\nDrawing\\nMetricdrawingwithtitleblock\\nPresentation\\nStandardmetricpresentation\\nProjects\\n(active)Gearbox\\n/tmp/.tmpNb9SmW/gearbox.opj\\nNewProject\\nProjectSettings\\nLocation:/tmp/.tmpNb9SmW/gearbox.opj\\nWorkspace:work\\nLibraries:\\nFolderOptions\\nOptions\\nAppearanceLibraries\\nMaterialLibraries\\nNew\\nBrowse\\nSave\\nApply\\nDone\\nNewProject\\nNewSingleUserProject\\nBack\\nNext\\nFinish\\nCancel\""
+        },
+        {
+          "line": 65,
+          "step": "its project name and workspace folder remain displayed",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected \"Name\" in rendered text \"Ready\\nFile\\nTools\\nNew\\nOpen\\nSave\\nUndo\\nRedo\\nHome\\nProjects\\nUpdate\\nSelect\\nMaterialBrowser\\nMaterials\\nAppearanceBrowser\\nParameters\\n...\\nGetStarted\\nTools\\nRibbonDisplay\\nv\\nv\\nNewPart\\nLaunch\\nModel\\n+\\nModel\\n(nodocument)\\nNewdocument\\nTemplatefolders\\nTemplates\\nMetric\\nEnglish\\nBack\\nForward\\nHome\\nDisplay\\nTemplatedetails\\nSelectatemplate.\\nCreate\\nCancel\\nProjects\\nProject:Gearbox\\nPart\\nMetricsheet-metalpart\\nStandardmetricpart\\nAssembly\\nStandardmetricassembly\\nDrawing\\nMetricdrawingwithtitleblock\\nPresentation\\nStandardmetricpresentation\\nProjects\\n(active)Gearbox\\n/tmp/.tmpNb9SmW/gearbox.opj\\nNewProject\\nProjectSettings\\nLocation:/tmp/.tmpNb9SmW/gearbox.opj\\nWorkspace:work\\nLibraries:\\nFolderOptions\\nOptions\\nAppearanceLibraries\\nMaterialLibraries\\nNew\\nBrowse\\nSave\\nApply\\nDone\\nNewProject\\nNewSingleUserProject\\nBack\\nNext\\nFinish\\nCancel\""
+        },
+        {
+          "line": 66,
+          "step": "the user chooses Back",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 67,
+          "step": "the project-type page is displayed",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 68,
+          "step": "New Single User Project remains selected",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 69,
+          "step": "Back and Finish are unavailable",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 70,
+          "step": "the user chooses Cancel",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 71,
+          "step": "the wizard closes and the Projects dialog is displayed",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "features/application/project-dialog/project-dialog.feature",
+      "scenario": "Cancel browsing for a project workspace folder",
+      "line": 74,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 75,
+          "step": "the new single-user project wizard is on its project-file page in the MCAD Software",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 76,
+          "step": "a workspace folder and project file location are displayed",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 77,
+          "step": "the user chooses the workspace folder browse control",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 78,
+          "step": "a folder browser opens with a folder tree and a Folder field",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected \"Documents\" in rendered text \"Ready\\nFile\\nTools\\nNew\\nOpen\\nSave\\nUndo\\nRedo\\nHome\\nProjects\\nUpdate\\nSelect\\nMaterialBrowser\\nMaterials\\nAppearanceBrowser\\nParameters\\n...\\nGetStarted\\nTools\\nRibbonDisplay\\nv\\nv\\nNewPart\\nLaunch\\nModel\\n+\\nModel\\n(nodocument)\\nNewdocument\\nTemplatefolders\\nTemplates\\nMetric\\nEnglish\\nBack\\nForward\\nHome\\nDisplay\\nTemplatedetails\\nSelectatemplate.\\nCreate\\nCancel\\nProjects\\nProject:Gearbox\\nPart\\nMetricsheet-metalpart\\nStandardmetricpart\\nAssembly\\nStandardmetricassembly\\nDrawing\\nMetricdrawingwithtitleblock\\nPresentation\\nStandardmetricpresentation\\nProjects\\n(active)Gearbox\\n/tmp/.tmpfxyG4t/gearbox.opj\\nNewProject\\nProjectSettings\\nLocation:/tmp/.tmpfxyG4t/gearbox.opj\\nWorkspace:work\\nLibraries:\\nFolderOptions\\nOptions\\nAppearanceLibraries\\nMaterialLibraries\\nNew\\nBrowse\\nSave\\nApply\\nDone\\nNewProject\\nNewProject\\nName\\nProject(Workspace)Folder\\n...\\n/home/vmiguel/git/oblikovati-workspace/oblikovati-rust\\nProjectFiletobeCreated\\n/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/NewProject.opj\\nBack\\nNext\\nFinish\\nCancel\""
+        },
+        {
+          "line": 79,
+          "step": "it offers Make New Folder, OK and cancels",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 80,
+          "step": "the user selects Documents in the folder tree",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 81,
+          "step": "Documents is selected and its child folders are displayed",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected \"Documents\" in rendered text \"Ready\\nFile\\nTools\\nNew\\nOpen\\nSave\\nUndo\\nRedo\\nHome\\nProjects\\nUpdate\\nSelect\\nMaterialBrowser\\nMaterials\\nAppearanceBrowser\\nParameters\\n...\\nGetStarted\\nTools\\nRibbonDisplay\\nv\\nv\\nNewPart\\nLaunch\\nModel\\n+\\nModel\\n(nodocument)\\nNewdocument\\nTemplatefolders\\nTemplates\\nMetric\\nEnglish\\nBack\\nForward\\nHome\\nDisplay\\nTemplatedetails\\nSelectatemplate.\\nCreate\\nCancel\\nProjects\\nProject:Gearbox\\nPart\\nMetricsheet-metalpart\\nStandardmetricpart\\nAssembly\\nStandardmetricassembly\\nDrawing\\nMetricdrawingwithtitleblock\\nPresentation\\nStandardmetricpresentation\\nProjects\\n(active)Gearbox\\n/tmp/.tmpfxyG4t/gearbox.opj\\nNewProject\\nProjectSettings\\nLocation:/tmp/.tmpfxyG4t/gearbox.opj\\nWorkspace:work\\nLibraries:\\nFolderOptions\\nOptions\\nAppearanceLibraries\\nMaterialLibraries\\nNew\\nBrowse\\nSave\\nApply\\nDone\\nNewProject\\nNewProject\\nName\\nProject(Workspace)Folder\\n...\\n/home/vmiguel/git/oblikovati-workspace/oblikovati-rust\\nProjectFiletobeCreated\\n/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/NewProject.opj\\nBack\\nNext\\nFinish\\nCancel\""
+        },
+        {
+          "line": 82,
+          "step": "the Folder field displays Documents",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected \"Folder: Documents\" in rendered text \"Ready\\nFile\\nTools\\nNew\\nOpen\\nSave\\nUndo\\nRedo\\nHome\\nProjects\\nUpdate\\nSelect\\nMaterialBrowser\\nMaterials\\nAppearanceBrowser\\nParameters\\n...\\nGetStarted\\nTools\\nRibbonDisplay\\nv\\nv\\nNewPart\\nLaunch\\nModel\\n+\\nModel\\n(nodocument)\\nNewdocument\\nTemplatefolders\\nTemplates\\nMetric\\nEnglish\\nBack\\nForward\\nHome\\nDisplay\\nTemplatedetails\\nSelectatemplate.\\nCreate\\nCancel\\nProjects\\nProject:Gearbox\\nPart\\nMetricsheet-metalpart\\nStandardmetricpart\\nAssembly\\nStandardmetricassembly\\nDrawing\\nMetricdrawingwithtitleblock\\nPresentation\\nStandardmetricpresentation\\nProjects\\n(active)Gearbox\\n/tmp/.tmpfxyG4t/gearbox.opj\\nNewProject\\nProjectSettings\\nLocation:/tmp/.tmpfxyG4t/gearbox.opj\\nWorkspace:work\\nLibraries:\\nFolderOptions\\nOptions\\nAppearanceLibraries\\nMaterialLibraries\\nNew\\nBrowse\\nSave\\nApply\\nDone\\nNewProject\\nNewProject\\nName\\nProject(Workspace)Folder\\n...\\n/home/vmiguel/git/oblikovati-workspace/oblikovati-rust\\nProjectFiletobeCreated\\n/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/NewProject.opj\\nBack\\nNext\\nFinish\\nCancel\""
+        },
+        {
+          "line": 83,
+          "step": "the user chooses Cancel in the folder browser",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 84,
+          "step": "the folder browser closes",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 85,
+          "step": "the wizard still displays the previous workspace folder and project file location",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 86,
+          "step": "the user cancels the project wizard",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 87,
+          "step": "the Projects dialog is displayed",
+          "result": "failed",
+          "tainted": true,
+          "detail": "rendered text \"Ready\\nFile\\nTools\\nNew\\nOpen\\nSave\\nUndo\\nRedo\\nHome\\nProjects\\nUpdate\\nSelect\\nMaterialBrowser\\nMaterials\\nAppearanceBrowser\\nParameters\\n...\\nGetStarted\\nTools\\nRibbonDisplay\\nv\\nv\\nNewPart\\nLaunch\\nModel\\n+\\nModel\\n(nodocument)\\nNewdocument\\nTemplatefolders\\nTemplates\\nMetric\\nEnglish\\nBack\\nForward\\nHome\\nDisplay\\nTemplatedetails\\nSelectatemplate.\\nCreate\\nCancel\\nProjects\\nProject:Gearbox\\nPart\\nMetricsheet-metalpart\\nStandardmetricpart\\nAssembly\\nStandardmetricassembly\\nDrawing\\nMetricdrawingwithtitleblock\\nPresentation\\nStandardmetricpresentation\\nProjects\\n(active)Gearbox\\n/tmp/.tmpfxyG4t/gearbox.opj\\nNewProject\\nProjectSettings\\nLocation:/tmp/.tmpfxyG4t/gearbox.opj\\nWorkspace:work\\nLibraries:\\nFolderOptions\\nOptions\\nAppearanceLibraries\\nMaterialLibraries\\nNew\\nBrowse\\nSave\\nApply\\nDone\\nNewProject\\nNewProject\\nName\\nProject(Workspace)Folder\\n...\\n/home/vmiguel/git/oblikovati-workspace/oblikovati-rust\\nProjectFiletobeCreated\\n/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/NewProject.opj\\nBack\\nNext\\nFinish\\nCancel\": expected no \"Project File to be Created\""
+        }
+      ]
+    },
+    {
+      "source": "features/application/project-dialog/project-dialog.feature",
+      "scenario": "Choose the workspace folder for a new project",
+      "line": 90,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 91,
+          "step": "the new single-user project wizard is on its project-file page in the MCAD Software",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 92,
+          "step": "the project has a displayed name",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 93,
+          "step": "the user chooses the workspace folder browse control",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 94,
+          "step": "the user selects the Documents folder",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 95,
+          "step": "the user chooses OK in the folder browser",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 96,
+          "step": "the wizard displays Documents as the workspace folder",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected the folder ending in Documents"
+        },
+        {
+          "line": 97,
+          "step": "the displayed project file location is inside Documents and uses the displayed project name",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected the derived file"
+        },
+        {
+          "line": 98,
+          "step": "the user cancels the project wizard",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 99,
+          "step": "the Projects dialog is displayed",
+          "result": "failed",
+          "tainted": true,
+          "detail": "rendered text \"Ready\\nFile\\nTools\\nNew\\nOpen\\nSave\\nUndo\\nRedo\\nHome\\nProjects\\nUpdate\\nSelect\\nMaterialBrowser\\nMaterials\\nAppearanceBrowser\\nParameters\\n...\\nGetStarted\\nTools\\nRibbonDisplay\\nv\\nv\\nNewPart\\nLaunch\\nModel\\n+\\nModel\\n(nodocument)\\nNewdocument\\nTemplatefolders\\nTemplates\\nMetric\\nEnglish\\nBack\\nForward\\nHome\\nDisplay\\nTemplatedetails\\nSelectatemplate.\\nCreate\\nCancel\\nProjects\\nProject:Gearbox\\nPart\\nMetricsheet-metalpart\\nStandardmetricpart\\nAssembly\\nStandardmetricassembly\\nDrawing\\nMetricdrawingwithtitleblock\\nPresentation\\nStandardmetricpresentation\\nProjects\\n(active)Gearbox\\n/tmp/.tmpGCfK1k/gearbox.opj\\nNewProject\\nProjectSettings\\nLocation:/tmp/.tmpGCfK1k/gearbox.opj\\nWorkspace:work\\nLibraries:\\nFolderOptions\\nOptions\\nAppearanceLibraries\\nMaterialLibraries\\nNew\\nBrowse\\nSave\\nApply\\nDone\\nNewProject\\nNewProject\\nName\\nProject(Workspace)Folder\\n...\\n/home/vmiguel/git/oblikovati-workspace/oblikovati-rust\\nProjectFiletobeCreated\\n/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/NewProject.opj\\nBack\\nNext\\nFinish\\nCancel\": expected no \"Project File to be Created\""
+        },
+        {
+          "line": 100,
+          "step": "the original project remains marked active",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "features/application/project-dialog/project-dialog.feature",
+      "scenario": "Expand and collapse project settings with the keyboard",
+      "line": 103,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 104,
+          "step": "the Projects dialog is open in the MCAD Software",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 105,
+          "step": "an active project with Folder Options and Options groups is displayed",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 106,
+          "step": "the user selects the collapsed Folder Options group",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 107,
+          "step": "the user presses the Right Arrow key",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 108,
+          "step": "the group expands to show folder entries including Templates, Design Data and Presets",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected Templates: in the tree"
+        },
+        {
+          "line": 109,
+          "step": "the user presses the Left Arrow key",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 110,
+          "step": "the Folder Options children are hidden",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 111,
+          "step": "the user selects the collapsed Options group",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 112,
+          "step": "the user presses the Right Arrow key",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 113,
+          "step": "the group expands to show project options including old versions to keep and unique file names",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected Old Versions To Keep in the tree"
+        },
+        {
+          "line": 114,
+          "step": "the active project remains marked in the project list",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "features/application/project-dialog/project-dialog.feature",
+      "scenario": "Expand library groups independently in the project tree",
+      "line": 117,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 118,
+          "step": "the Projects dialog is open in the MCAD Software",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 119,
+          "step": "the selected project has collapsed Appearance Libraries and Material Libraries groups with entries",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 120,
+          "step": "the user selects Appearance Libraries and presses the Right Arrow key",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 121,
+          "step": "the appearance library entries are visible beneath their group",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected the entries"
+        },
+        {
+          "line": 122,
+          "step": "the user selects Material Libraries and presses the Right Arrow key",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 123,
+          "step": "the material library entries are visible beneath their group",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected the entries"
+        },
+        {
+          "line": 124,
+          "step": "the appearance library entries remain visible",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected the entries"
+        },
+        {
+          "line": 125,
+          "step": "the user presses the Left Arrow key",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 126,
+          "step": "the material library entries are hidden",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 127,
+          "step": "the appearance library entries remain visible",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected the entries"
+        },
+        {
+          "line": 128,
+          "step": "the active project remains marked in the project list",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    }
+  ]
+}

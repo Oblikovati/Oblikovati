@@ -123,3 +123,6 @@ fn empty_owner_gui_state() -> GuiCommandState {
         ..Default::default()
     }
 }
+
+#[path = "gui_commands/legacy.rs"]
+mod legacy;
