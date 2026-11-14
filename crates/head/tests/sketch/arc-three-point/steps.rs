@@ -21,46 +21,10 @@ const ROW_END: [i32; 2] = [760, 500];
 const ROW_BETWEEN: [i32; 2] = [660, 500];
 const BELOW_ROW: [i32; 2] = [660, 600];
 const SURROUNDING_LINE: [[i32; 2]; 2] = [[900, 300], [1100, 300]];
-/// Clear of where the recorded arcs sit, to hold the fixture's ellipse and circle.
-const ELLIPSE: [[i32; 2]; 3] = [[1000, 640], [1060, 640], [1000, 680]];
-const CIRCLE: [[i32; 2]; 2] = [[920, 640], [940, 640]];
-const LABEL_PLACE: [i32; 2] = [500, 600];
-/// Radius that rounds to each recorded row: 4.751, diameter 9.501 and length 15.657.
-const MAJOR_ARC: RecordedArc = RecordedArc {
-    center: [22.838, 33.371],
-    radius: 4.7507,
-    sweep: 188.83,
-};
-const MINOR_ARC: RecordedArc = RecordedArc {
-    center: [-9.513, 36.783],
-    radius: 4.2941329,
-    sweep: 167.57,
-};
-const LOCKED_ARC: RecordedArc = RecordedArc {
-    center: [1.534, 0.604],
-    radius: 6.,
-    sweep: 90.33,
-};
-/// Measured values of a recorded arc, in millimetres along model Y and Z and in degrees.
-struct RecordedArc {
-    center: [f64; 2],
-    radius: f64,
-    sweep: f64,
-}
-impl RecordedArc {
-    /// The two ends, each half the sweep from the arc's middle along model +Y (up on screen).
-    fn ends(&self) -> [[f64; 2]; 2] {
-        let (sin, cos) = (self.sweep / 2.).to_radians().sin_cos();
-        [1., -1.].map(|side| {
-            [
-                self.center[0] + self.radius * cos,
-                self.center[1] + self.radius * sin * side,
-            ]
-        })
-    }
-    fn middle(&self) -> [f64; 2] {
-        [self.center[0] + self.radius, self.center[1]]
-    }
+fn require_recorded_fixture(case: &str) {
+    super::super::gap_runner::block_fixture(&format!(
+        "{case}: recorded sketch, view, and pointer inputs are unavailable; see arc-three-point/BLOCKERS.md"
+    ));
 }
 fn select_tool(world: &mut ApplicationWorld) {
     world.choose_from_flyout("Center Arc", "Three Point Arc");
@@ -94,14 +58,6 @@ fn exit_tool(world: &mut ApplicationWorld) {
     world.escape();
     world.pump(Vec::new());
 }
-fn typed_arc(world: &mut ApplicationWorld, recorded: &RecordedArc) {
-    select_tool(world);
-    world.open_precise_input();
-    let [start, end] = recorded.ends();
-    for point in [start, end, recorded.middle()] {
-        world.precise_point(point);
-    }
-}
 fn measure_arc(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::M, false);
     let at = arc_fraction_pixel(world, 0.25);
@@ -111,48 +67,17 @@ fn close_measure(world: &mut ApplicationWorld) {
     world.click_text("Done");
     world.pump(Vec::new());
 }
-fn major_arc_restored(world: &mut ApplicationWorld) {
-    world.start_sketch_on("YZ Plane");
-    typed_arc(world, &MAJOR_ARC);
-    exit_tool(world);
-    world.undo();
-    world.redo();
+fn major_arc_restored(_: &mut ApplicationWorld) {
+    require_recorded_fixture("recorded major arc");
 }
-fn seeded_ready(world: &mut ApplicationWorld, needed: usize) {
-    world.start_empty_sketch();
-    world.seed_dimensions_needed(needed);
-    world.expect_ready();
+fn seeded_ready(_: &mut ApplicationWorld, needed: usize) {
+    require_recorded_fixture(&format!("recorded sketch with {needed} dimensions needed"));
 }
-fn ellipse_and_circle(world: &mut ApplicationWorld) {
-    world.start_sketch_on("YZ Plane");
-    world.click_text("Ellipse");
-    world.pump(Vec::new());
-    for point in ELLIPSE {
-        world.sketch_click(point);
-    }
-    exit_tool(world);
-    world.click_text("Circle");
-    world.pump(Vec::new());
-    for point in CIRCLE {
-        world.sketch_click(point);
-    }
-    exit_tool(world);
+fn ellipse_and_circle(_: &mut ApplicationWorld) {
+    require_recorded_fixture("recorded ellipse and tangent-circle sketch");
 }
-/// The recorded arc with a radius dimension holding its measured value.
-fn dimensioned_minor_arc(world: &mut ApplicationWorld) {
-    ellipse_and_circle(world);
-    typed_arc(world, &MINOR_ARC);
-    exit_tool(world);
-    world.click_text("Dimension");
-    world.pump(Vec::new());
-    let at = arc_fraction_pixel(world, 0.25);
-    world.sketch_click(at);
-    world.sketch_click(LABEL_PLACE);
-    world.click_text("Apply");
-    world.pump(Vec::new());
-    world.escape();
-    world.pump(Vec::new());
-    world.expect_annotation("4.294");
+fn dimensioned_minor_arc(_: &mut ApplicationWorld) {
+    require_recorded_fixture("recorded minor arc and radius dimension");
 }
 fn expect_rows(world: &ApplicationWorld, rows: &[&str]) {
     for row in rows {
@@ -200,11 +125,9 @@ fn on_arc_stays(world: &mut ApplicationWorld) {
     assert_eq!(arcs(world), 0, "arcs");
 }
 #[given("I selected the start and end on the same screen row")]
-fn same_row(world: &mut ApplicationWorld) {
-    world.start_empty_sketch();
-    select_tool(world);
-    world.sketch_click(ROW_START);
-    world.sketch_click(ROW_END);
+#[given("the user selected the start and end on the same screen row")]
+fn same_row(_: &mut ApplicationWorld) {
+    require_recorded_fixture("recorded same-screen-row boundary");
 }
 #[when("I click between them on that row for the third point")]
 fn between(world: &mut ApplicationWorld) {
@@ -431,4 +354,13 @@ fn ready_no_arc(world: &mut ApplicationWorld) {
 #[then("161 dimensions are still needed")]
 fn still_161(world: &mut ApplicationWorld) {
     world.expect_dimensions_needed(161);
+}
+
+#[test]
+fn recorded_arc_fixture_guard_reports_the_missing_inputs() {
+    let error = std::panic::catch_unwind(|| require_recorded_fixture("recorded major arc"))
+        .expect_err("the recorded fixture must not be inferred");
+    let message = error.downcast_ref::<String>().expect("fixture diagnostic");
+    assert!(message.contains("BDD fixture blocked: recorded major arc"));
+    assert!(message.contains("sketch, view, and pointer inputs"));
 }

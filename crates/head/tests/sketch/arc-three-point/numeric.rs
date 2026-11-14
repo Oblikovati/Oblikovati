@@ -7,8 +7,8 @@ fn fixture_sketch(world: &mut ApplicationWorld) {
     ellipse_and_circle(world);
 }
 #[when("I select Three Point Arc and supply the specified start, end and arc point")]
-fn specified_points(world: &mut ApplicationWorld) {
-    typed_arc(world, &MINOR_ARC);
+fn specified_points(_: &mut ApplicationWorld) {
+    require_recorded_fixture("recorded minor arc pointer inputs");
 }
 #[then("the arc commits and Select start of arc returns")]
 fn arc_commits(world: &mut ApplicationWorld) {
@@ -66,6 +66,9 @@ fn stored(world: &mut ApplicationWorld) {
     );
 }
 #[given("d3 retains the original arc radius")]
+#[given(
+    "the recorded arc's radial dimension editor is open with its original 4.2941329 mm value selected"
+)]
 fn dimension_retained(world: &mut ApplicationWorld) {
     dimensioned_minor_arc(world);
 }
@@ -146,15 +149,8 @@ fn ready_nine(world: &mut ApplicationWorld) {
 }
 // arc-three-point-15
 #[given("distinct mouse-selected endpoints")]
-fn locked_endpoints(world: &mut ApplicationWorld) {
-    world.start_sketch_on("YZ Plane");
-    select_tool(world);
-    world.open_precise_input();
-    let [start, end] = LOCKED_ARC.ends();
-    world.precise_point(start);
-    world.precise_point(end);
-    let above = world.sketch_pixel_of(LOCKED_ARC.middle().map(|value| value / 10.));
-    world.hover(above);
+fn locked_endpoints(_: &mut ApplicationWorld) {
+    require_recorded_fixture("recorded locked-radius endpoint inputs");
 }
 #[when("I enter 6 in the radius field and press Tab")]
 fn radius_tab(world: &mut ApplicationWorld) {
@@ -181,22 +177,12 @@ fn field_locked(world: &mut ApplicationWorld) {
     );
 }
 #[when("I click a suitable canvas location and exit repetition")]
-fn click_and_exit(world: &mut ApplicationWorld) {
-    let above = world.sketch_pixel_of(LOCKED_ARC.middle().map(|value| value / 10.));
-    world.sketch_click(above);
-    exit_tool(world);
+fn click_and_exit(_: &mut ApplicationWorld) {
+    require_recorded_fixture("recorded locked-radius canvas input");
 }
 #[then("an upper-bowed arc and radial dimension 6 are retained")]
-fn upper_bowed(world: &mut ApplicationWorld) {
-    assert_eq!(arcs(world), 1, "arcs");
-    let middle = arc_middle_pixel(world);
-    let [start, _] = LOCKED_ARC.ends();
-    let chord = world.sketch_pixel_of(start.map(|value| value / 10.));
-    assert!(
-        middle[1] < chord[1],
-        "middle {middle:?} above the chord row {chord:?}"
-    );
-    world.expect_annotation("6");
+fn upper_bowed(_: &mut ApplicationWorld) {
+    require_recorded_fixture("recorded locked-radius chord");
 }
 #[when("I measure its curve")]
 fn measure_its_curve(world: &mut ApplicationWorld) {
