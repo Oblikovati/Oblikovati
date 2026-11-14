@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport navigation wheel: tmp/obk-wheel-size-3943-source/features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature" package="testsuite/Feature: Viewport navigation wheel: tmp/obk-wheel-size-3943-source/features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T22:31:23.274332585Z" time="28.665253221"><testcase name="Scenario: Apply and restore the big wheel size: tmp/obk-wheel-size-3943-source/features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature:88:3" time="28.665253221"><system-out><![CDATA[  Scenario: Apply and restore the big wheel size
+   ✔  Given the full navigation wheel is visible in the MCAD Software
+   ✔  And its big wheel size preference is Normal
+   ✔  When the user opens the wheel options and chooses Large for big wheel size
+   ✔  And the user clicks OK
+   ✔  Then the options dialog closes
+   ✔  And the full wheel appears larger than before
+   ✔  When the user reopens wheel options
+   ✔  Then the big wheel size field displays Large
+   ✔  When the user chooses Normal for big wheel size and clicks OK
+   ✔  Then the full wheel returns to its previous apparent size
+   ✔  When the user presses Escape
+   ✔  Then the wheel closes
+]]></system-out></testcase></testsuite></testsuites>
