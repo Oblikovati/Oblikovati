@@ -164,6 +164,9 @@ fn sketch(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, Str
         GuiShellAction::PreviewExtrude(request) => {
             owner.extrusion_preview_from_gui(request.as_ref())
         }
+        GuiShellAction::ValidateExtrudeDistance { document, distance } => {
+            owner.validate_extrusion_distance(*document, distance)
+        }
         GuiShellAction::Extrude {
             document,
             sketch,

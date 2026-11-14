@@ -122,6 +122,24 @@ pub(super) fn dispatch_gui_action(
     {
         window.reject_dimension_edit(value, cause);
     }
+    if let Err(cause) = &result
+        && let GuiShellAction::Extrude {
+            document,
+            sketch,
+            profile,
+            distance,
+        } = action
+    {
+        window.reject_extrusion(
+            &oblikovati_gui::GuiExtrudePreview {
+                document: *document,
+                sketch: *sketch,
+                profile: *profile,
+                distance: distance.clone(),
+            },
+            cause,
+        );
+    }
     let changed = report_authoring_result(window, result)?;
     Ok(synchronize_sketch_view(window, owner)? || changed)
 }
@@ -229,6 +247,7 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::StartSketchAt { .. }
         | GuiShellAction::FinishSketch
         | GuiShellAction::OpenExtrude
+        | GuiShellAction::ValidateExtrudeDistance { .. }
         | GuiShellAction::PreviewExtrude(_)
         | GuiShellAction::Extrude { .. } => {
             return None;

@@ -115,6 +115,13 @@ impl<
                 .collect(),
             transaction_open: session.in_transaction(),
             extrude_available: self.extrusion_access.is_some(),
+            extrude_distance_validation: self
+                .extrusion_distance_validation
+                .as_ref()
+                .filter(|(generation, validation)| {
+                    *generation == session.generation() && validation.document == document
+                })
+                .map(|(_, validation)| validation.clone()),
             extrude_preview_active: self.extrusion_preview.as_ref().is_some_and(
                 |(id, generation, _)| *id == document && *generation == session.generation(),
             ),

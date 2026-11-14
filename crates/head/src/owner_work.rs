@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+#[macro_use]
+#[path = "owner_work_extrusion.rs"]
+mod extrusion_work;
 impl<
     O: TransactionObserver,
     W: WorkspaceObserver,
@@ -130,29 +133,7 @@ impl<
     ) -> Result<bool, String> {
         self.set_component_file_preview(assembly, path)
     }
-    fn extrude_from_gui(
-        &mut self,
-        document: u64,
-        sketch: oblikovati_model::document_sketch::DocumentSketchId,
-        profile: i64,
-        distance: &str,
-    ) -> Result<bool, String> {
-        self.create_extrusion_from_gui(document, sketch, profile, distance)
-    }
-    fn extrusion_preview_from_gui(
-        &mut self,
-        request: Option<&oblikovati_gui::GuiExtrudePreview>,
-    ) -> Result<bool, String> {
-        let Some(preview) = request else {
-            return Ok(self.clear_extrusion_preview());
-        };
-        self.set_extrusion_preview(
-            preview.document,
-            preview.sketch,
-            preview.profile,
-            &preview.distance,
-        )
-    }
+    desktop_extrusion_work!();
     fn observe_window_capture_extent(&mut self, extent: Option<[u32; 2]>) {
         if let Some(captures) = &mut self.window_captures {
             captures.observe_extent(extent);

@@ -226,17 +226,19 @@ impl HeadWindow for NativeHeadWindow {
             gui.reject_dimension_edit(value, cause);
         }
     }
-
+    fn reject_extrusion(&mut self, request: &oblikovati_gui::GuiExtrudePreview, cause: &str) {
+        if let Some(gui) = self.gui.as_mut() {
+            gui.reject_extrusion(request, cause);
+        }
+    }
     fn submit_sketch_scene(&mut self, update: crate::HeadSketchSceneUpdate) -> Result<(), String> {
         self.view.set_sketch_display(&update.sketches)?;
         self.sketch_scene = Some(update);
         self.refresh_title()
     }
-
     fn set_sketch_edit(&mut self, edit: Option<crate::HeadSketchEdit>) -> Result<bool, String> {
         self.synchronize_sketch_camera(edit)
     }
-
     fn set_view_slot(&mut self, slot: u64) -> Result<bool, String> {
         self.switch_view_slot(slot)
     }

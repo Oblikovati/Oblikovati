@@ -216,6 +216,11 @@ pub enum GuiShellAction {
     },
     /// Show or clear a transient extrusion preview.
     PreviewExtrude(Option<GuiExtrudePreview>),
+    /// Ask the document owner to validate the current extrusion expression.
+    ValidateExtrudeDistance {
+        document: u64,
+        distance: String,
+    },
     DeleteSketchSelection,
     ToggleSketchFormat(oblikovati_model::sketch::SketchCurveFormat),
     PlaceSketchTool(crate::GuiSketchTool),
@@ -276,6 +281,13 @@ pub struct GuiExtrudePreview {
     pub sketch: oblikovati_model::document_sketch::DocumentSketchId,
     pub profile: i64,
     pub distance: String,
+}
+/// Owner validation for one extrusion expression and active document.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GuiExtrudeDistanceValidation {
+    pub document: u64,
+    pub distance: String,
+    pub error: Option<String>,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GuiParameterMutation {

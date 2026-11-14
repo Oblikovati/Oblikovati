@@ -37,6 +37,14 @@ impl NativeGui {
         self.engine.reject_dimension_edit(value, cause);
         self.deadline = Some(Duration::ZERO);
     }
+    pub(super) fn reject_extrusion(
+        &mut self,
+        request: &oblikovati_gui::GuiExtrudePreview,
+        cause: &str,
+    ) {
+        self.engine.reject_extrusion(request, cause);
+        self.deadline = Some(Duration::ZERO);
+    }
     pub(super) fn request_save_path(&mut self, document: u64) -> Result<(), String> {
         self.engine.request_save_path(document)?;
         self.deadline = Some(Duration::ZERO);
