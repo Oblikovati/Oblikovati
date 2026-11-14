@@ -14,8 +14,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-body-current-290c0844/receipt-290c0844328af2d2.json",
-        "sha256": "2ee4d622f56cd7ca31a8d7b36e1919b987631c2012f00c8b7e3c261b3cd8a68f"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-body-290c0844/receipt-290c0844328af2d2.json",
+        "sha256": "e9fd36fef8457b8692859d12fb6ac16d695e221eee179d72f435a7f2ae7f7dc4"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -48,8 +48,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-body-current-f024b225/receipt-f024b2250132b323.json",
-        "sha256": "0b85c46539a7b9fe298d79968c874ee660ef91513040cee2b5b015a7c2a2b60c"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-body-f024b225/receipt-f024b2250132b323.json",
+        "sha256": "47fe0cf7f9c4c4c1b2d79a73cf886e0aebd5e9def39f34d085ee4629999eab19"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -82,8 +82,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-body-current-48efe943/receipt-48efe943e9ecc0d7.json",
-        "sha256": "d334b463201bf494eb3addaf376a8b90cc1ff0e18cd165d60e23b02ce22fe82f"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-body-48efe943/receipt-48efe943e9ecc0d7.json",
+        "sha256": "47308f1ee1e9f4440772ea54deb1b6ae5886026f65b2d4ee18d398008824cdcb"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -116,8 +116,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-body-current-137ba03d/receipt-137ba03d06c38c43.json",
-        "sha256": "ae536c1617247191cf75e51f3aad2b0680cddebd394fc260e6c18278da5f37bc"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-body-137ba03d/receipt-137ba03d06c38c43.json",
+        "sha256": "33d486b85ab94b79a7d236ae88874b43b65907d037e5657492926336a57fa510"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -150,8 +150,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-body-current-e22ccad1/receipt-e22ccad1ec1386a7.json",
-        "sha256": "898932da5ca357ba3abd18ae770edbfb8b926586a9994bc0bd79e459cf676da9"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-body-e22ccad1/receipt-e22ccad1ec1386a7.json",
+        "sha256": "68b1a8610f9cc6401b3916d03fdb28d000b3982b8a59c22c63faf4eb1d6f46a1"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -184,8 +184,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-body-current-fe232476/receipt-fe23247614f79aca.json",
-        "sha256": "34cff35813a23d6874c09d3f9d03ffd90d9f73fde00b9aa1eb5466dcaf7c5c52"
+        "path": "architecture/rust-port/receipts/2026-11-14-gate-body-fe232476/receipt-fe23247614f79aca.json",
+        "sha256": "7849f049dbd193ddd1942ec7dc2eb59736a661ccaf5528a35200c297077fd898"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
