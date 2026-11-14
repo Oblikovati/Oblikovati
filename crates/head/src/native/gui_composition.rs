@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::NativeHeadWindow;
 use oblikovati_viewport::{GuiFrame, GuiFrameCompiler};
-mod preview_shading;
 impl NativeHeadWindow {
     pub(super) fn publish_isometric_preview(&mut self, document: u64) -> Result<bool, String> {
         match self.isometric_preview_image(document) {
@@ -36,7 +35,7 @@ impl NativeHeadWindow {
             format!("isometric preview document {document}: expected a submitted scene")
         })?;
         let mut preview = self.runtime.open_offscreen([256, 144])?;
-        preview.submit(&preview_shading::shaded_scene(scene))?;
+        preview.submit(scene)?;
         if let Some(background) = self.preview_background {
             preview.set_background(background)?;
         }

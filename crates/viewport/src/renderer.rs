@@ -12,6 +12,7 @@ use martensite_tkservice::{
 use martensite_tkv3d::v3d::{V3dViewSource, V3dViewer};
 use martensite_vulkan::{Graphic3dRenderDriver, Graphic3dRenderView};
 mod background;
+mod lighting;
 #[path = "renderer/navigation.rs"]
 mod navigation;
 mod sketch_display;
@@ -67,6 +68,7 @@ impl RenderView {
             sketches: Default::default(),
         };
         result.configure(window)?;
+        lighting::configure(&result.viewer)?;
         result.camera(ViewportCamera::default(), extent)?;
         Ok(result)
     }

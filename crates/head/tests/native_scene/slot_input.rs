@@ -156,8 +156,18 @@ fn drive_slot_commit(
     assert!(owner.placement_active());
     assert!(owner.placement_preview().is_none());
     assert!(!window.native.set_sketch_preview(None).unwrap());
-    assert_eq!(solid_pixels(&capture_native_scene(&mut window.native)), 0);
+    verify_slot_scene_has_no_body(&mut window.native);
     sketches
+}
+fn verify_slot_scene_has_no_body(window: &mut NativeHeadWindow) {
+    let actual = capture_native_scene(window);
+    let scene = window.current_scene.clone().unwrap();
+    let mut empty = scene.clone();
+    empty.triangles.clear();
+    window.view.submit(&empty).unwrap();
+    let without_body = capture_native_scene(window);
+    assert_eq!(actual.rgba, without_body.rgba);
+    window.view.submit(&scene).unwrap();
 }
 fn drive_slot_undo(
     owner: &mut NativeDesktopOwner,

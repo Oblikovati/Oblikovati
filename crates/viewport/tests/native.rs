@@ -8,6 +8,8 @@ use oblikovati_viewport::{
 use std::time::{Duration, Instant};
 #[path = "native/background.rs"]
 mod background;
+#[path = "native/lighting.rs"]
+mod lighting;
 #[path = "native/navigation.rs"]
 mod navigation;
 #[path = "native/prism.rs"]
@@ -30,9 +32,15 @@ fn scene() -> ViewportScene {
 fn verify_native(view: &mut Viewport) -> ViewportCapture {
     let capture = complete_surface_frame(view);
     await_presented_pixels(view, &capture);
-    for expected in [[255, 0, 0, 255], [0, 0, 255, 255]] {
-        assert!(capture.rgba.as_chunks::<4>().0.contains(&expected));
-    }
+    assert!(
+        capture
+            .rgba
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .any(|p| p[0] > 0 && p[1] == 0 && p[2] == 0 && p[3] == 255)
+    );
+    assert!(capture.rgba.as_chunks::<4>().0.contains(&[0, 0, 255, 255]));
     capture
 }
 fn complete_surface_frame(view: &mut Viewport) -> ViewportCapture {

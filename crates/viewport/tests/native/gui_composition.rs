@@ -38,8 +38,20 @@ fn pixel(capture: &ViewportCapture, [x, y]: [usize; 2]) -> [u8; 4] {
     capture.rgba[start..start + 4].try_into().unwrap()
 }
 fn verify_gui_pixels(baseline: &ViewportCapture, drawn: &ViewportCapture) {
-    assert_eq!(pixel(baseline, [160, 120]), [255, 0, 0, 255]);
-    for (actual, expected) in pixel(drawn, [160, 120]).into_iter().zip([187, 0, 188, 255]) {
+    let face = pixel(baseline, [160, 120]);
+    assert!(face[0] > 80 && face[1..] == [0, 0, 255], "{face:?}");
+    let red = f64::from(face[0]) / 255.;
+    let linear = if red <= 0.04045 {
+        red / 12.92
+    } else {
+        ((red + 0.055) / 1.055).powf(2.4)
+    };
+    let blended = linear * (1. - 128. / 255.);
+    let expected_red = ((1.055 * blended.powf(1. / 2.4) - 0.055) * 255.).round() as u8;
+    for (actual, expected) in pixel(drawn, [160, 120])
+        .into_iter()
+        .zip([expected_red, 0, 188, 255])
+    {
         assert!(
             actual.abs_diff(expected) <= 1,
             "{actual}: expected {expected}"

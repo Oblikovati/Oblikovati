@@ -83,7 +83,7 @@ fn green_pixels(capture: &ViewportCapture) -> usize {
         .as_chunks::<4>()
         .0
         .iter()
-        .filter(|pixel| **pixel == [0, 255, 0, 255])
+        .filter(|pixel| pixel[0] == 0 && pixel[1] > 80 && pixel[2] == 0 && pixel[3] == 255)
         .count()
 }
 fn prism_camera(plane: SketchPlane) -> ViewportCamera {
@@ -101,9 +101,10 @@ fn verify_hole_pixels(capture: &ViewportCapture) {
     let [width, height] = capture.extent;
     assert_eq!(sample(capture, width / 2, height / 2), [0, 0, 255, 255]);
     // The camera fixes vertical span; a horizontal fraction can leave the body on wide windows.
-    assert_eq!(
-        sample(capture, width / 2, height * 3 / 10),
-        [0, 255, 0, 255]
+    let face = sample(capture, width / 2, height * 3 / 10);
+    assert!(
+        face[0] == 0 && face[1] > 80 && face[2..] == [0, 255],
+        "{face:?}"
     );
     assert_eq!(sample(capture, 0, 0), [0, 0, 255, 255]);
 }

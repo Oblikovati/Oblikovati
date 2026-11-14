@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Lit model faces in the viewport and isometric preview so their orientations are visible. (#3873)
+
 - Kept the model inside the document area when using Home or Fit with docked panels. (#3872)
 
 - Selected a ribbon tab on the click that dismisses its context menu.

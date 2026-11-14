@@ -39,7 +39,8 @@ fn verify_mapping(view: &mut Viewport) {
     let plane = SketchPlane::xy();
     let pixel = view.sketch_pixel(plane, [0.; 2]).unwrap();
     let index = (pixel[1] as usize * capture.extent[0] as usize + pixel[0] as usize) * 4;
-    assert_eq!(&capture.rgba[index..index + 4], &[255, 0, 0, 255]);
+    let pixel = &capture.rgba[index..index + 4];
+    assert!(pixel[0] > 80 && pixel[1..] == [0, 0, 255], "{pixel:?}");
     let [w, h] = capture.extent.map(|x| i32::try_from(x).unwrap());
     for pixel in [
         [w / 2, h / 2],

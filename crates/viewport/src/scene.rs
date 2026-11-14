@@ -3,6 +3,7 @@ use crate::ViewportTriangle;
 use martensite_tkernel::{quantity::ColorRgba, standard::Handle};
 use martensite_tkservice::graphic3d::*;
 use martensite_tkv3d::v3d::V3dViewer;
+mod normal;
 pub(crate) fn build_scene(
     viewer: &V3dViewer,
     triangles: &[ViewportTriangle],
@@ -22,7 +23,7 @@ fn build_triangle(
     let group = structure.new_group().map_err(|error| error.to_string())?;
     let aspects = Handle::new(Graphic3dAspects::default());
     aspects.set_polygon_offsets(0, 0., 0.);
-    aspects.set_shading_model(Graphic3dTypeOfShadingModel::Unlit);
+    aspects.set_shading_model(Graphic3dTypeOfShadingModel::Phong);
     let [red, green, blue, alpha] = triangle.color;
     aspects.set_interior_color_rgba(
         ColorRgba::new(red, green, blue, alpha).map_err(|error| error.to_string())?,
@@ -35,12 +36,19 @@ fn triangle_vertices(
     triangle: &ViewportTriangle,
 ) -> Result<Handle<Graphic3dArrayOfPrimitives>, String> {
     let vertices = Handle::new(
-        Graphic3dArrayOfPrimitives::new(Graphic3dTypeOfPrimitiveArray::Triangles, 3, 0, 3, 0)
-            .map_err(|error| error.to_string())?,
+        Graphic3dArrayOfPrimitives::new(
+            Graphic3dTypeOfPrimitiveArray::Triangles,
+            3,
+            0,
+            3,
+            GRAPHIC3D_ARRAY_FLAGS_VERTEX_NORMAL,
+        )
+        .map_err(|error| error.to_string())?,
     );
-    for [x, y, z] in triangle.positions {
+    let normal = normal::triangle_normal(triangle.positions);
+    for point in triangle.positions {
         vertices
-            .add_vertex(x, y, z)
+            .add_vertex_normal(point, normal)
             .map_err(|error| error.to_string())?;
     }
     vertices

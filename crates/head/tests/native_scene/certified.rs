@@ -38,7 +38,7 @@ fn certified_replay_draws_in_native_window_after_edit_and_undo() {
     let mut history = history();
     window.submit_scene(scene(&history)).unwrap();
     let initial = capture_native_scene(&mut window);
-    assert!(crate::fixture_color::count_fixture_color(&initial, [0, 255, 0]) > 0);
+    assert!(green_pixels(&initial) > 0);
     let token = history.begin("Width").unwrap();
     history
         .edit(&token, |snapshot, _| {
@@ -50,12 +50,19 @@ fn certified_replay_draws_in_native_window_after_edit_and_undo() {
     history.commit(&token, false).unwrap();
     window.submit_scene(scene(&history)).unwrap();
     let edited = capture_native_scene(&mut window);
-    assert!(
-        crate::fixture_color::count_fixture_color(&edited, [0, 255, 0])
-            > crate::fixture_color::count_fixture_color(&initial, [0, 255, 0])
-    );
+    assert!(green_pixels(&edited) > green_pixels(&initial));
     history.undo().unwrap();
     window.submit_scene(scene(&history)).unwrap();
     assert_eq!(capture_native_scene(&mut window).rgba, initial.rgba);
     window.finish().unwrap();
+}
+
+fn green_pixels(capture: &ViewportCapture) -> usize {
+    capture
+        .rgba
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .filter(|pixel| pixel[0] == 0 && pixel[1] > 0 && pixel[2] == 0 && pixel[3] == 255)
+        .count()
 }

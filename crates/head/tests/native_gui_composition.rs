@@ -57,8 +57,26 @@ fn verify_panel_and_document(
     assert_eq!(composed.scene_generation, baseline.scene_generation);
     assert_eq!(composed.camera_generation, baseline.camera_generation);
     assert!(composed.overlay_generation > baseline.overlay_generation);
-    assert_eq!(solid_pixels(composed), solid_pixels(baseline));
     let width = baseline.extent[0] as usize;
+    let colors: std::collections::BTreeSet<_> = baseline
+        .rgba
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .filter(|pixel| scene_tests::fixture_solid_pixel(pixel))
+        .copied()
+        .collect();
+    let matching = |capture: &oblikovati_viewport::ViewportCapture| {
+        capture
+            .rgba
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .filter(|pixel| colors.contains(*pixel))
+            .count()
+    };
+    assert!(!colors.is_empty());
+    assert_eq!(matching(composed), matching(baseline));
     let changed: Vec<_> = baseline
         .rgba
         .as_chunks::<4>()
