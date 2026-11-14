@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: New sketch: home/vmiguel/git/oblikovati-workspace/oblikovati-rust/target/benchmarks/mcad-scenarios-35f4a77b/features/sketch/new-sketch/scenario.feature" package="testsuite/Feature: New sketch: home/vmiguel/git/oblikovati-workspace/oblikovati-rust/target/benchmarks/mcad-scenarios-35f4a77b/features/sketch/new-sketch/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T03:40:16.482514285Z" time="8.57583399"><testcase name="Scenario: new-sketch-01 Create a sketch on a named origin plane: home/vmiguel/git/oblikovati-workspace/oblikovati-rust/target/benchmarks/mcad-scenarios-35f4a77b/features/sketch/new-sketch/scenario.feature:5:3" time="8.57583399"><system-out><![CDATA[  Scenario: new-sketch-01 Create a sketch on a named origin plane
+   ✔  Given Part2 has Sketch1 and the Origin browser is expanded
+   ✔  When the user invoke Start 2D Sketch and choose XZ Plane
+   ✔  Then Sketch2 is added in the Sketch editing environment
+   ✔  And the ViewCube reads TOP
+   ✔  And the empty sketch status reads Fully Constrained
+]]></system-out></testcase></testsuite></testsuites>

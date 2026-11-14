@@ -198,12 +198,12 @@ enum values. Output includes explicit defaults; it is valid legacy YAML but is
 not byte-identical to Go's sparse writer.
 
 Before returning, export restores the candidate and compares each parameter's
-state in recipe order. A changed working scale, unhealthy value, or state the
-current recipe cannot represent refuses the candidate without changing the
-original package. The legacy format stores derived source/local names as one
-name, so renamed local links are explicitly refused, as are built-in ownership
-flags that require the future feature recipe decoder. These are remaining export
-work, not silently dropped state. Measured-constant export is covered below. Parameter IDs still follow
+state in recipe order. A changed working scale or state the current recipe cannot represent refuses
+the candidate without changing the original package. Supported unhealthy values
+can use the schema-3 diagnostic representation. The legacy format stores derived source/local names as one
+name, so renamed local links require the schema-3 mapping described below.
+Built-in conversion guards now use the schema-3 field described below; associating
+a parameter with its owning legacy feature still requires feature migration. Measured-constant export is covered below. Parameter IDs still follow
 the legacy load-order allocation; this does not add persisted parameter IDs.
 
 Eight export tests cover every numeric kind, literals, all tolerance/selection
@@ -247,8 +247,8 @@ subnormal, and the largest finite number. Every saved value reloads bit-for-bit.
 A copied read-only area measurement exports, reopens as an editable user
 parameter, and recomputes its reader after an authored edit. Additional tests
 cover category-name references, named-unit literals, malformed input, and old
-Rust diagnostic capitalization. Renamed derived links, built-in feature
-ownership, and full feature/model export remain pending.
+Rust diagnostic capitalization. Full feature/model export and legacy feature
+ownership mapping remain pending.
 
 ## Document unit context — partial R2
 
@@ -273,3 +273,18 @@ scale changes on retained models. Go's reserved-key and working-scale recipe
 tests are the baseline. Rust's current display precision representation is
 bounded to `0..=255`; larger Go values are explicitly refused rather than clamped.
 Full document reconstruction and feature-owned units remain host integration work.
+
+## Built-in model-parameter guard — partial R2
+
+Tracking: [#3883](https://github.com/Oblikovati/Oblikovati/issues/3883).
+Schema 3 stores `builtIn: true` for a built-in model parameter. Schema 2 rejects
+the field, and schema 3 rejects false, null, non-boolean values, and use on a
+non-model parameter. Absence retains the earlier non-built-in default. Export
+promotes a schema-2 package when this flag is needed and checks the restored
+parameter state before returning. The restored parameter continues to refuse
+kind conversion; healthy and failed dependency states both round-trip.
+
+This preserves the parameter guard, not a complete feature-ownership mapping.
+The Go cube lineage check uses an external witness and a fixture-specific profile
+resolver. Production Go profile-index mapping, key migration, and document import
+remain open under [#3882](https://github.com/Oblikovati/Oblikovati/issues/3882).
