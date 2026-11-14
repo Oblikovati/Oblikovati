@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Inspect supported Go face-offset records without adopting or rewriting them.
-use super::{DocumentPackage, PackageCodecError, binary_text::decode_base64};
+use super::{DocumentPackage, PackageCodecError, binary_text::decode_raw_url_base64};
 use serde::Deserialize;
 use std::collections::BTreeSet;
 
@@ -87,7 +87,7 @@ fn decode_face_reference(reference: &str) -> Result<Vec<u8>, PackageCodecError> 
     let encoded = reference
         .strip_prefix("face/")
         .ok_or_else(|| failure(format!("reference {reference:?}: expected face/<base64>")))?;
-    let key = decode_base64("legacy face reference", encoded)?;
+    let key = decode_raw_url_base64("legacy face reference", encoded)?;
     if key.is_empty() {
         return Err(failure(format!(
             "reference {reference:?}: expected a nonempty face key"

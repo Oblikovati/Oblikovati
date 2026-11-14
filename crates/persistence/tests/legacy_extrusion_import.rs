@@ -193,6 +193,55 @@ fn go_face_offset_is_prepared_with_its_original_reference_and_sequence() {
 }
 
 #[test]
+fn go_raw_url_face_keys_are_decoded_without_loss() {
+    // Generated independently with Go base64.RawURLEncoding.EncodeToString (#3935).
+    for (encoded, expected) in [
+        ("-w", &[0xfb][..]),
+        ("__8", &[0xff, 0xff][..]),
+        ("-_8A", &[0xfb, 0xff, 0x00][..]),
+        ("APv_EA", &[0x00, 0xfb, 0xff, 0x10][..]),
+        ("_-7dzLs", &[0xff, 0xee, 0xdd, 0xcc, 0xbb][..]),
+    ] {
+        let package = face_offset_with_reference(&format!("'face/{encoded}'"));
+        assert_eq!(
+            package.prepare_legacy_face_offsets().unwrap()[0].face_key,
+            expected,
+            "reference {encoded:?}"
+        );
+    }
+    // Go DecodeString also accepts nonzero unused bits in a raw encoding.
+    let package = face_offset_with_reference("'face/_x'");
+    assert_eq!(
+        package.prepare_legacy_face_offsets().unwrap()[0].face_key,
+        [0xff]
+    );
+    let package = face_offset_with_reference("\"face/_\\r\\nw\"");
+    assert_eq!(
+        package.prepare_legacy_face_offsets().unwrap()[0].face_key,
+        [0xff]
+    );
+}
+
+#[test]
+fn go_raw_url_face_keys_reject_padding_standard_alphabet_and_bad_lengths() {
+    for encoded in ["_w==", "AQ==", "+w", "+w==", "/w", "A", "_w=", "_ w"] {
+        let package = face_offset_with_reference(&format!("'face/{encoded}'"));
+        let error = package
+            .prepare_legacy_face_offsets()
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains(encoded), "reference {encoded:?}: {error}");
+    }
+}
+
+fn face_offset_with_reference(reference: &str) -> DocumentPackage {
+    let source = format!(
+        "schemaVersion: 2\ndocumentType: 1\nmodel:\n  workFeatures:\n    - {{collection: plane, kind: plane-offset, seq: 1, refs: [{reference}]}}\n"
+    );
+    DocumentPackage::decode(source.as_bytes()).unwrap()
+}
+
+#[test]
 fn go_face_offset_rejects_unsupported_values_without_mutation() {
     let bytes = include_bytes!(
         "../../../architecture/rust-port/receipts/2026-11-14-go-dependent-face/cube-with-face-plane.obk"
@@ -217,7 +266,7 @@ fn go_face_offset_rejects_unsupported_values_without_mutation() {
 #[test]
 fn face_offset_sequences_are_unique_and_nonzero() {
     let package = DocumentPackage::decode(
-        b"schemaVersion: 2\ndocumentType: 1\nmodel:\n  workFeatures:\n    - {collection: plane, kind: plane-offset, seq: 3, refs: [face/AQ==]}\n    - {collection: plane, kind: plane-offset, seq: 3, refs: [face/Ag==]}\n",
+        b"schemaVersion: 2\ndocumentType: 1\nmodel:\n  workFeatures:\n    - {collection: plane, kind: plane-offset, seq: 3, refs: [face/AQ]}\n    - {collection: plane, kind: plane-offset, seq: 3, refs: [face/Ag]}\n",
     )
     .unwrap();
     let error = package.prepare_legacy_face_offsets().unwrap_err();
