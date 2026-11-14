@@ -4226,10 +4226,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3894",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-file-menu-f0b61ad2/receipt-f0b61ad2f9a5655f.json",
+        "sha256": "bdfb9036e06f46c93ab0be402eb9f881d33213da5416aaf7ceaa54f177c5dcc7"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go: drawFileMenu; legacy menu structure differs from the scenario",
-      "mapping_reason": "Application shell menu, layout, and document-context interaction."
+      "mapping_reason": "Application shell menu, layout, and document-context interaction.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "No geometric kernel operation is required to inspect the File menu on an empty part.",
+      "platforms": "Linux Xvfb 1920x1200 with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "Native viewport is present; this menu scenario makes no geometry request.",
+      "rust_tests": "application_scenarios_use_the_native_window: Open the file menu while a part is active",
+      "oracle": "Pinned scenario steps and inspected native capture; this does not establish visual parity with Go.",
+      "expected_result": "The File menu shows its commands, recent-document region, disclosure indicators, options, and exit while the part workspace remains visible."
     },
     {
       "id": "scenario:a94ed06a75a5dbb3cd0b18e6f3acc3aaeac44c4fcb78b38a6ba95505278d6516",
@@ -4243,10 +4254,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3894",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-file-menu-a94ed06a/receipt-a94ed06a75a5dbb3.json",
+        "sha256": "113b996960142ea4f57b06a84d69a74059503d4982b9864c58cc40775c2f2c25"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go: drawFileMenu; legacy menu structure differs from the scenario",
-      "mapping_reason": "Application shell menu, layout, and document-context interaction."
+      "mapping_reason": "Application shell menu, layout, and document-context interaction.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "No geometric modeling operation is required for the menu interaction; document setup uses the host.",
+      "platforms": "Linux Xvfb 1920x1200 with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "Native viewport and document owner are present; this menu scenario makes no geometry request.",
+      "rust_tests": "application_scenarios_use_the_native_window: Dismiss the file menu with Escape",
+      "oracle": "Pinned scenario assertions and inspected final native capture; Go visual parity is not established.",
+      "expected_result": "All recorded steps pass, ending with: the same part document remains active"
     },
     {
       "id": "scenario:dac29e7f09893d1df715332e0b2f9a58173d701cc962db26f626644246b5869a",
@@ -4260,10 +4282,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3894",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-file-menu-dac29e7f/receipt-dac29e7f09893d1d.json",
+        "sha256": "2b5b3b01167d156311d8f41222e528689e54cfb9815c6bcd3f2e6d25df9b2a4b"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go: drawFileMenu; legacy menu structure differs from the scenario",
-      "mapping_reason": "Application shell menu, layout, and document-context interaction."
+      "mapping_reason": "Application shell menu, layout, and document-context interaction.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "No geometric modeling operation is required for the menu interaction; document setup uses the host.",
+      "platforms": "Linux Xvfb 1920x1200 with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "Native viewport and document owner are present; this menu scenario makes no geometry request.",
+      "rust_tests": "application_scenarios_use_the_native_window: Dismiss the file menu by clicking outside",
+      "oracle": "Pinned scenario assertions and inspected final native capture; Go visual parity is not established.",
+      "expected_result": "All recorded steps pass, ending with: the same part document remains active"
     },
     {
       "id": "scenario:d5bc3120a72a620b38cfce7f292e55f13491a9f04841e4238c56b4e215534fc2",
@@ -4277,10 +4310,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3894",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-file-menu-d5bc3120/receipt-d5bc3120a72a620b.json",
+        "sha256": "a9ea4a63d0f57941b63c1c2775bd69ffb5982100fbc5c77a9f8c35182e15b702"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go: drawFileMenu; legacy menu structure differs from the scenario",
-      "mapping_reason": "Application shell menu, layout, and document-context interaction."
+      "mapping_reason": "Application shell menu, layout, and document-context interaction.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "No geometric modeling operation is required for the menu interaction; document setup uses the host.",
+      "platforms": "Linux Xvfb 1920x1200 with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "Native viewport and document owner are present; this menu scenario makes no geometry request.",
+      "rust_tests": "application_scenarios_use_the_native_window: Open and dismiss the file menu in a drawing",
+      "oracle": "Pinned scenario assertions and inspected final native capture; Go visual parity is not established.",
+      "expected_result": "All recorded steps pass, ending with: the same drawing document remains active"
     },
     {
       "id": "scenario:210565d68ab3712af8e53f19972c4a22e3a6fb8ca78e4c0c9c923fb948b2fae4",
@@ -4294,10 +4338,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3894",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-file-menu-210565d6/receipt-210565d68ab3712a.json",
+        "sha256": "4e881440de374162dff65a68c9651a3c6c32494f36338835bf1ae269b6e89c71"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go: drawFileMenu; legacy menu structure differs from the scenario",
-      "mapping_reason": "Application shell menu, layout, and document-context interaction."
+      "mapping_reason": "Application shell menu, layout, and document-context interaction.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "No geometric modeling operation is required for the menu interaction; document setup uses the host.",
+      "platforms": "Linux Xvfb 1920x1200 with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "Native viewport and document owner are present; this menu scenario makes no geometry request.",
+      "rust_tests": "application_scenarios_use_the_native_window: Inspect controls in the recent-documents region",
+      "oracle": "Pinned scenario assertions and inspected final native capture; Go visual parity is not established.",
+      "expected_result": "All recorded steps pass, ending with: the menu closes and the same part remains active"
     },
     {
       "id": "scenario:e69248355099bdc95eb4c23727750ccba37f7f3cb04b9fd3a70b6baf9da7f9eb",
@@ -4311,10 +4366,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3894",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-file-menu-e6924835/receipt-e69248355099bdc9.json",
+        "sha256": "c4e13d972d3581c8fcd973c05b26ab49cfa5dceaa24fd284afe9960159ababc1"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go: drawFileMenu; legacy menu structure differs from the scenario",
-      "mapping_reason": "Application shell menu, layout, and document-context interaction."
+      "mapping_reason": "Application shell menu, layout, and document-context interaction.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "No geometric modeling operation is required for the menu interaction; document setup uses the host.",
+      "platforms": "Linux Xvfb 1920x1200 with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "Native viewport and document owner are present; this menu scenario makes no geometry request.",
+      "rust_tests": "application_scenarios_use_the_native_window: Inspect the Save As submenu for a saved part",
+      "oracle": "Pinned scenario assertions and inspected final native capture; Go visual parity is not established.",
+      "expected_result": "All recorded steps pass, ending with: the Save Copy As description says the original file remains open"
     },
     {
       "id": "scenario:d703958d1cb7a6f8afc29bd7c8f1329cfddd6c762f405ed19855363a4866bbf8",
@@ -4328,10 +4394,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3894",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-file-menu-d703958d/receipt-d703958d1cb7a6f8.json",
+        "sha256": "8b76d1933f981aaad7ba36d803c43e9651e904739db0b2c825a8d21c1afe0b85"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go: drawFileMenu; legacy menu structure differs from the scenario",
-      "mapping_reason": "Application shell menu, layout, and document-context interaction."
+      "mapping_reason": "Application shell menu, layout, and document-context interaction.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "No geometric modeling operation is required for the menu interaction; document setup uses the host.",
+      "platforms": "Linux Xvfb 1920x1200 with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "Native viewport and document owner are present; this menu scenario makes no geometry request.",
+      "rust_tests": "application_scenarios_use_the_native_window: Open the New submenu from the File menu",
+      "oracle": "Pinned scenario assertions and inspected final native capture; Go visual parity is not established.",
+      "expected_result": "All recorded steps pass, ending with: no document type has been activated"
     },
     {
       "id": "scenario:5c5237cc9af7f0342c3472f734bbcd8a6970cbc2a66d7aee9e875d7f5e8a1a52",
@@ -4345,10 +4422,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3894",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-file-menu-5c5237cc/receipt-5c5237cc9af7f034.json",
+        "sha256": "81021070c22d1ca6bf83e274143609af24f781487323eda5c720066e802b671e"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go: drawFileMenu; legacy menu structure differs from the scenario",
-      "mapping_reason": "Application shell menu, layout, and document-context interaction."
+      "mapping_reason": "Application shell menu, layout, and document-context interaction.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "No geometric modeling operation is required for the menu interaction; document setup uses the host.",
+      "platforms": "Linux Xvfb 1920x1200 with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "Native viewport and document owner are present; this menu scenario makes no geometry request.",
+      "rust_tests": "application_scenarios_use_the_native_window: Inspect the File menu from Home",
+      "oracle": "Pinned scenario assertions and inspected final native capture; Go visual parity is not established.",
+      "expected_result": "All recorded steps pass, ending with: the Home recent-documents view remains visible around the menu"
     },
     {
       "id": "scenario:b389189024e3e0b0186faa06d389bfbd8b7f090e5b865ffe9d0cdc1265650c90",

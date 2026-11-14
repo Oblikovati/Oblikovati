@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: File menu: tmp/obk-file-menu-receipt-b13d/features/application/file-menu/file-menu.feature" package="testsuite/Feature: File menu: tmp/obk-file-menu-receipt-b13d/features/application/file-menu/file-menu.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T12:59:14.362272033Z" time="2.546668233"><testcase name="Scenario: Open the file menu while a part is active: tmp/obk-file-menu-receipt-b13d/features/application/file-menu/file-menu.feature:4:3" time="2.546668233"><system-out><![CDATA[  Scenario: Open the file menu while a part is active
+   ✔  Given a part document is active in the MCAD Software
+   ✔  When the user selects File
+   ✔  Then a menu opens with New, Open, Save, Save As, Export, Print and Close entries
+   ✔  And the menu also shows Share, Manage and document properties entries
+   ✔  And the command entries form a vertical list on the left
+   ✔  And a recent-documents region is visible to the right of that list
+   ✔  And some commands show disclosure indicators
+   ✔  And application options and an exit control appear at the bottom of the menu
+   ✔  And the model workspace remains visible behind the menu
+]]></system-out></testcase></testsuite></testsuites>
