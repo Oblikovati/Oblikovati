@@ -159,20 +159,22 @@ fn unconverted_model_sections_are_not_silently_ignored() {
 }
 
 #[test]
-fn go_face_dependent_plane_is_refused_without_losing_its_reference() {
+fn go_face_dependent_plane_is_prepared_without_mutating_the_package() {
     let bytes = include_bytes!(
         "../../../architecture/rust-port/receipts/2026-11-14-go-dependent-face/cube-with-face-plane.obk"
     );
     let package = DocumentPackage::decode(bytes).unwrap();
     let original = package.clone();
-    let error = package
+    let candidate = package
         .prepare_legacy_part_candidate(&GoCubeProfile)
-        .unwrap_err()
-        .to_string();
-    assert!(error.contains("workFeatures"), "unexpected error: {error}");
+        .unwrap();
+    assert_eq!(candidate.face_offsets.len(), 1);
+    assert_eq!(candidate.face_offsets[0].creation_sequence, 3);
+    assert_eq!(candidate.face_offsets[0].face_key, b"\x03Extrusion1:side#1");
+    assert_eq!(candidate.face_offsets[0].offset, 0.5);
+    assert!(package.restore_work_geometry().is_err());
     assert_eq!(package, original);
-    let encoded = package.encode().unwrap();
-    let restored = DocumentPackage::decode(&encoded).unwrap();
+    let restored = DocumentPackage::decode(&package.encode().unwrap()).unwrap();
     assert_eq!(restored, original);
 }
 
@@ -226,4 +228,18 @@ fn face_offset_sequences_are_unique_and_nonzero() {
 fn absent_work_features_produce_no_face_offset_candidates() {
     let package = DocumentPackage::decode(b"schemaVersion: 2\ndocumentType: 1\n").unwrap();
     assert!(package.prepare_legacy_face_offsets().unwrap().is_empty());
+}
+
+#[test]
+fn face_offset_cannot_share_a_creation_sequence_with_an_extrusion() {
+    let bytes = include_bytes!(
+        "../../../architecture/rust-port/receipts/2026-11-14-go-dependent-face/cube-with-face-plane.obk"
+    );
+    let source = std::str::from_utf8(bytes).unwrap();
+    let invalid = source.replacen("seq: 3", "seq: 2", 1);
+    let package = DocumentPackage::decode(invalid.as_bytes()).unwrap();
+    let error = package
+        .prepare_legacy_part_candidate(&GoCubeProfile)
+        .unwrap_err();
+    assert!(error.to_string().contains("creation sequence 2"), "{error}");
 }
