@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport zoom: tmp/obk-zoom-48987af/features/application/viewport-zoom/viewport-zoom.feature" package="testsuite/Feature: Viewport zoom: tmp/obk-zoom-48987af/features/application/viewport-zoom/viewport-zoom.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T21:52:50.584562154Z" time="14.218153951"><testcase name="Scenario: Zoom into a rectangular window: tmp/obk-zoom-48987af/features/application/viewport-zoom/viewport-zoom.feature:43:3" time="14.218153951"><system-out><![CDATA[  Scenario: Zoom into a rectangular window
+   ✔  Given a rectangular block is active in the MCAD Software
+   ✔  And its visible face occupies most of the viewport with its outline visible
+   ✔  When the user chooses Zoom Window from the navigation bar Zoom menu
+   ✔  Then the status area prompts for a zoom window
+   ✔  When the user clicks one corner within the visible face
+   ✔  And the user clicks an opposite corner within that face
+   ✔  Then the view zooms into the chosen area
+   ✔  And the face extends beyond the viewport
+   ✔  And the status area displays Ready
+   ✔  And the same part and orientation remain active
+   ✔  When the user reopens the Zoom menu
+   ✔  Then Zoom Window is marked as the selected action
+   ✔  When the user chooses Zoom All and then restores Zoom as the selected action
+   ✔  And the user presses Escape
+   ✔  Then the status area displays Ready
+]]></system-out></testcase></testsuite></testsuites>

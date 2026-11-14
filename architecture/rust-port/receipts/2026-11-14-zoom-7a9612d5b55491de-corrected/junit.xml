@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport zoom: tmp/obk-zoom-48987af/features/application/viewport-zoom/viewport-zoom.feature" package="testsuite/Feature: Viewport zoom: tmp/obk-zoom-48987af/features/application/viewport-zoom/viewport-zoom.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T21:52:33.131870141Z" time="5.104224808"><testcase name="Scenario: Activate and cancel Zoom from the navigation bar: tmp/obk-zoom-48987af/features/application/viewport-zoom/viewport-zoom.feature:16:3" time="5.104224808"><system-out><![CDATA[  Scenario: Activate and cancel Zoom from the navigation bar
+   ✔  Given a part containing a visible solid is active in the MCAD Software
+   ✔  And the viewport navigation bar is visible
+   ✔  When the user selects Zoom on the navigation bar
+   ✔  Then Zoom is active
+   ✔  And the Zoom control is highlighted
+   ✔  And the status area prompts for zooming and indicates cancellation is available
+   ✔  And the active part and solid remain visible
+   ✔  When the user presses Escape
+   ✔  Then the status area displays Ready
+   ✔  And the active part and solid remain visible
+]]></system-out></testcase></testsuite></testsuites>
