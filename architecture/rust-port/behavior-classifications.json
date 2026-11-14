@@ -135,11 +135,19 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-command-state-sketch/receipt-63f029b9f7034030.json",
-        "sha256": "300247bc2da97738bf5f2c8e7586f7bef5049827762c70444204a89fb46ba778"
+        "path": "architecture/rust-port/receipts/2026-11-14-newsketch-current-01/receipt-63f029b9f7034030.json",
+        "sha256": "cc20a373578de6aef7d8ec4b1f5ffc1571440723fa09395541268ed48b2526f0"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_reference": "Go aa8297d1b: app/commands_standard.go modelTabCommands, app/create_sketch_tool.go, app/sketch_env.go; face labels follow camera orientation in head/ui/viewcube_text.go.",
+      "go_test_premise": "Go TestCreateSketchToolFlow uses a fake viewport picker and checks XZ normal and editing; TestCreateSketchToolPicksViaBrowser checks a YZ browser pick. Neither checks this exact XZ browser flow, cube label, or empty-sketch status.",
+      "kernel_capabilities": "No solid-kernel operation is required for origin-plane selection or an empty sketch; this does not verify face-hosted sketches.",
+      "kernel_integration": "No Martensite solid call is needed by this scenario. Fixed XY, XZ and YZ sketch frames are created in crates/head/src/owner_work.rs.",
+      "platforms": "Native receipt: Linux with Vulkan Lavapipe under Xvfb; Windows and macOS are not established.",
+      "rust_tests": "Native scenario: crates/head/tests/sketch/new-sketch/steps.rs. Origin-plane creation: crates/session/tests/lifecycle/sketch_create.rs; finish history: crates/head/tests/owner/sketch_history.rs.",
+      "oracle": "Pinned scenario expectations plus queried browser, editor and plane state and rendered status/cube text; Go tests provide a partial command reference. TOP label follows the cube face and may rotate with view roll.",
+      "expected_result": "A second empty XZ sketch opens, the cube identifies TOP, and zero free dimensions show Fully Constrained."
     },
     {
       "id": "scenario:4e511ca586195d67ed53eaedd9378d8bc9bab420ea3c606eda97feb3b4fb0b55",
@@ -154,11 +162,19 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-command-rerun-4e511ca586195d67/receipt-4e511ca586195d67.json",
-        "sha256": "7444a1d0e62cab71f5d6cabacba0974b845dc77035e6d7e33663d15c7b91a3e9"
+        "path": "architecture/rust-port/receipts/2026-11-14-newsketch-current-02/receipt-4e511ca586195d67.json",
+        "sha256": "467ea683c77cea3f63a11f29ee26b07cb3f699cd711b45bea2bdacb5fe095e6d"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_reference": "Go aa8297d1b: app/commands_standard.go modelTabCommands, app/create_sketch_tool.go, app/sketch_env.go; face labels follow camera orientation in head/ui/viewcube_text.go.",
+      "go_test_premise": "Go TestCreateSketchToolCancelRestoresFilter checks filter restoration, not visible previews or preservation of an existing browser row.",
+      "kernel_capabilities": "No solid-kernel operation is required for origin-plane selection or an empty sketch; this does not verify face-hosted sketches.",
+      "kernel_integration": "No Martensite solid call is needed by this scenario. Fixed XY, XZ and YZ sketch frames are created in crates/head/src/owner_work.rs.",
+      "platforms": "Native receipt: Linux with Vulkan Lavapipe under Xvfb; Windows and macOS are not established.",
+      "rust_tests": "Native scenario: crates/head/tests/sketch/new-sketch/steps.rs. Origin-plane creation: crates/session/tests/lifecycle/sketch_create.rs; finish history: crates/head/tests/owner/sketch_history.rs.",
+      "oracle": "Pinned scenario expectations plus queried browser, editor and plane state and rendered status/cube text; Go tests provide a partial command reference. TOP label follows the cube face and may rotate with view roll.",
+      "expected_result": "Cancel plane selection; previews disappear and the original sketch remains."
     },
     {
       "id": "scenario:adfaa180b248a09493b79b65698c97167d4d8d53f4c3a763453aecd7d8b420e2",
@@ -173,11 +189,19 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-command-rerun-adfaa180b248a094/receipt-adfaa180b248a094.json",
-        "sha256": "dbb8672bf5554246ee060f3b92cbb7a11617041fd25330a107a04786d12f2e7d"
+        "path": "architecture/rust-port/receipts/2026-11-14-newsketch-current-03/receipt-adfaa180b248a094.json",
+        "sha256": "a47a95e301cb1a5f201acf4b167ece23302195f5f75ae3991878a50f104517b9"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_reference": "Go aa8297d1b: app/commands_standard.go modelTabCommands, app/create_sketch_tool.go, app/sketch_env.go; face labels follow camera orientation in head/ui/viewcube_text.go.",
+      "go_test_premise": "No Go test in the selected set proves Escape after host acceptance; the scenario is the behavioral oracle.",
+      "kernel_capabilities": "No solid-kernel operation is required for origin-plane selection or an empty sketch; this does not verify face-hosted sketches.",
+      "kernel_integration": "No Martensite solid call is needed by this scenario. Fixed XY, XZ and YZ sketch frames are created in crates/head/src/owner_work.rs.",
+      "platforms": "Native receipt: Linux with Vulkan Lavapipe under Xvfb; Windows and macOS are not established.",
+      "rust_tests": "Native scenario: crates/head/tests/sketch/new-sketch/steps.rs. Origin-plane creation: crates/session/tests/lifecycle/sketch_create.rs; finish history: crates/head/tests/owner/sketch_history.rs.",
+      "oracle": "Pinned scenario expectations plus queried browser, editor and plane state and rendered status/cube text; Go tests provide a partial command reference. TOP label follows the cube face and may rotate with view roll.",
+      "expected_result": "Escape after accepting XZ leaves the second sketch active."
     },
     {
       "id": "scenario:cd9561e7b2b4f47522f44782c6ecc97307e4b18dd114f958c8b625807a9af6bb",
@@ -193,11 +217,19 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-command-rerun-cd9561e7b2b4f475/receipt-cd9561e7b2b4f475.json",
-        "sha256": "a3f6cbfcd95fc9854ce127213922bfefb481d01ccb103862f57ce56200f24fb8"
+        "path": "architecture/rust-port/receipts/2026-11-14-newsketch-current-04/receipt-cd9561e7b2b4f475.json",
+        "sha256": "3af2acfd20f5108d69d5f2017a3bdf0aa155a7a71c0b2483565a0a00b56b25ad"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_reference": "Go aa8297d1b: app/commands_standard.go modelTabCommands, app/create_sketch_tool.go, app/sketch_env.go; face labels follow camera orientation in head/ui/viewcube_text.go.",
+      "go_test_premise": "Go TestSketchCreationIsUndoable covers creation history, but the selected Go tests do not establish separate empty Finish and creation undo steps. The Go recipe no-op policy differs from this scenario; see #3880.",
+      "kernel_capabilities": "No solid-kernel operation is required for origin-plane selection or an empty sketch; this does not verify face-hosted sketches.",
+      "kernel_integration": "No Martensite solid call is needed by this scenario. Fixed XY, XZ and YZ sketch frames are created in crates/head/src/owner_work.rs.",
+      "platforms": "Native receipt: Linux with Vulkan Lavapipe under Xvfb; Windows and macOS are not established.",
+      "rust_tests": "Native scenario: crates/head/tests/sketch/new-sketch/steps.rs. Origin-plane creation: crates/session/tests/lifecycle/sketch_create.rs; finish history: crates/head/tests/owner/sketch_history.rs.",
+      "oracle": "Pinned scenario expectations plus queried browser, editor and plane state and rendered status/cube text; Go tests provide a partial command reference. TOP label follows the cube face and may rotate with view roll.",
+      "expected_result": "Undo Finish reopens the second sketch; undo creation removes it; redo restores creation and Finish in order."
     },
     {
       "id": "scenario:4ba58b431dc847ae3a24f6b4c652dc6ce891a4b6150813100ab28b8c60d3b5f2",
@@ -213,11 +245,19 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-command-rerun-4ba58b431dc847ae/receipt-4ba58b431dc847ae.json",
-        "sha256": "59e3cc1e91d245e523e31eac6857652b440f8ab5d4293123e5bd3debff585f75"
+        "path": "architecture/rust-port/receipts/2026-11-14-newsketch-current-05/receipt-4ba58b431dc847ae.json",
+        "sha256": "1fcc14dd7775342bcb88337573f69f6d150891805fbd5a6c63e28b072debfbc7"
       },
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_reference": "Go aa8297d1b: app/commands_standard.go modelTabCommands, app/create_sketch_tool.go, app/sketch_env.go; face labels follow camera orientation in head/ui/viewcube_text.go.",
+      "go_test_premise": "Go TestCreate2DSketchUsesPreselectedPlane uses XZ and checks immediate entry, not YZ, cube label, or status.",
+      "kernel_capabilities": "No solid-kernel operation is required for origin-plane selection or an empty sketch; this does not verify face-hosted sketches.",
+      "kernel_integration": "No Martensite solid call is needed by this scenario. Fixed XY, XZ and YZ sketch frames are created in crates/head/src/owner_work.rs.",
+      "platforms": "Native receipt: Linux with Vulkan Lavapipe under Xvfb; Windows and macOS are not established.",
+      "rust_tests": "Native scenario: crates/head/tests/sketch/new-sketch/steps.rs. Origin-plane creation: crates/session/tests/lifecycle/sketch_create.rs; finish history: crates/head/tests/owner/sketch_history.rs.",
+      "oracle": "Pinned scenario expectations plus queried browser, editor and plane state and rendered status/cube text; Go tests provide a partial command reference. TOP label follows the cube face and may rotate with view roll.",
+      "expected_result": "A preselected YZ plane starts the third sketch without a second pick; the cube identifies RIGHT and the empty sketch is fully constrained."
     },
     {
       "id": "scenario:cb85314818ef73daa1093f520bc4f5fa70977685fb7b8716070ffe6314ba9a58",
