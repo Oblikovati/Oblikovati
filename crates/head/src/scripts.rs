@@ -358,10 +358,6 @@ mod tests {
             desktop.orientation_selection_pivot().unwrap(),
             Some([1., 2., 3.])
         );
-        assert_eq!(
-            desktop.orientation_fit_bounds_from_gui().unwrap(),
-            vec![[[0.; 3], [1.; 3]]]
-        );
     }
 
     struct WindowAwareOwner {
@@ -376,9 +372,6 @@ mod tests {
         }
         fn orientation_selection_pivot(&mut self) -> Result<Option<[f64; 3]>, String> {
             Ok(Some([1., 2., 3.]))
-        }
-        fn orientation_fit_bounds_from_gui(&mut self) -> Result<Vec<[[f64; 3]; 2]>, String> {
-            Ok(vec![[[0.; 3], [1.; 3]]])
         }
         fn poll(&mut self, _: usize) -> Result<HeadWorkStatus, String> {
             Ok(Default::default())

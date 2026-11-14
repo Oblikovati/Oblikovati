@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Fit visible analytic body bounds while retaining the selected orientation pivot.
+//! Fit displayed scene bounds while retaining the analytic selection pivot.
 use super::{Vector, dot, frame};
 use oblikovati_viewport::ViewportCamera;
 
 /// The standard Fit margin is ten percent of the resulting view height.
 const FIT_MARGIN_FACTOR: f64 = 1.1;
+/// Keep the eye clear of the visible box independently of the camera near plane.
+const FIT_EYE_CLEARANCE: f64 = 0.1;
 
 pub(crate) fn fit_about_selection(
     camera: &ViewportCamera,
@@ -15,7 +17,7 @@ pub(crate) fn fit_about_selection(
     let region = region_fractions(extent, area)?;
     let points = corners(bounds)?;
     if points.is_empty() {
-        return Err("selection fit bounds []: expected visible bodies".into());
+        return Err("selection fit bounds []: expected visible content".into());
     }
     fit_camera(camera, &points, region)
 }
@@ -64,80 +66,23 @@ fn fit_distance(camera: &ViewportCamera, points: &[Vector], toward: Vector) -> f
         .iter()
         .map(|point| dot(relative(*point, camera.target), toward))
         .fold(f64::NEG_INFINITY, f64::max);
-    distance.max(nearest + camera.near * 2.)
+    let clearance = (scene_diagonal(points) * FIT_EYE_CLEARANCE).max(camera.near * 2.);
+    distance.max(nearest + clearance)
 }
-/// Keep every point from the previous fitted frustum visible after centering on the selection.
-pub(crate) fn cover_previous_fit(
-    candidate: &ViewportCamera,
-    fitted: &ViewportCamera,
-    extent: [u32; 2],
-    area: [u32; 4],
-) -> Result<ViewportCamera, String> {
-    let region = region_fractions(extent, area)?;
-    let axes = frame(candidate);
-    let (eye, distance, depth_shift) = covering_eye(candidate, fitted, axes.2);
-    let scale = covering_scale(fitted, eye, distance, depth_shift, [axes.0, axes.1], region)?;
-    Ok(ViewportCamera {
-        eye,
-        scale: candidate.scale.max(scale),
-        far: candidate.far.max(fitted.far + depth_shift),
-        ..*candidate
-    })
+fn scene_diagonal(points: &[Vector]) -> f64 {
+    let span: Vector = std::array::from_fn(|axis| {
+        let low = points
+            .iter()
+            .map(|point| point[axis])
+            .fold(f64::INFINITY, f64::min);
+        let high = points
+            .iter()
+            .map(|point| point[axis])
+            .fold(f64::NEG_INFINITY, f64::max);
+        high - low
+    });
+    dot(span, span).sqrt()
 }
-fn covering_eye(
-    candidate: &ViewportCamera,
-    fitted: &ViewportCamera,
-    toward: Vector,
-) -> (Vector, f64, f64) {
-    let old_delta = relative(fitted.eye, fitted.target);
-    let target_delta = relative(candidate.target, fitted.target);
-    let candidate_delta = relative(candidate.eye, candidate.target);
-    let distance = dot(candidate_delta, candidate_delta)
-        .sqrt()
-        .max(dot(old_delta, old_delta).sqrt() - dot(target_delta, toward));
-    let eye = std::array::from_fn(|axis| candidate.target[axis] + toward[axis] * distance);
-    (eye, distance, dot(relative(eye, fitted.eye), toward))
-}
-fn covering_scale(
-    fitted: &ViewportCamera,
-    eye: Vector,
-    distance: f64,
-    depth_shift: f64,
-    axes: [Vector; 2],
-    region: [f64; 2],
-) -> Result<f64, String> {
-    let old = relative(fitted.eye, fitted.target);
-    let old_distance = dot(old, old).sqrt();
-    let minimum_depth = fitted.near + depth_shift;
-    if old_distance <= 0. || minimum_depth <= 0. {
-        return Err(format!(
-            "selection fit distance {old_distance}, depth {minimum_depth}: expected positive camera distances"
-        ));
-    }
-    let eye_shift = relative(eye, fitted.eye);
-    let shift =
-        (dot(eye_shift, axes[0]).abs() / region[0]).max(dot(eye_shift, axes[1]).abs() / region[1]);
-    let scale = projected_cover_scale(fitted, distance, old_distance, minimum_depth, shift);
-    if !scale.is_finite() {
-        return Err(format!(
-            "selection fit scale {scale}: expected a finite camera scale"
-        ));
-    }
-    Ok(scale)
-}
-fn projected_cover_scale(
-    fitted: &ViewportCamera,
-    distance: f64,
-    old_distance: f64,
-    minimum_depth: f64,
-    shift: f64,
-) -> f64 {
-    if fitted.perspective {
-        return fitted.scale * distance / old_distance + 2. * shift * distance / minimum_depth;
-    }
-    fitted.scale + 2. * shift
-}
-
 fn relative(point: Vector, origin: Vector) -> Vector {
     std::array::from_fn(|axis| point[axis] - origin[axis])
 }
@@ -238,50 +183,60 @@ mod tests {
         }
     }
     #[test]
-    fn conservative_fit_keeps_prior_visible_frustum_after_pivot_shift() {
-        for perspective in [false, true] {
-            let old = ViewportCamera {
-                perspective,
-                near: 2.,
-                far: 40.,
+    fn perspective_fit_is_stable_across_near_planes_and_scene_scales() {
+        for scene_scale in [1e-4, 1., 1e4] {
+            let bounds = [
+                [[0., 0., 0.], [4., 3., 2.]].map(|point| point.map(|value| value * scene_scale))
+            ];
+            let mut observed = Vec::new();
+            for near in [1e-9, 1e-6, 1e-3] {
+                let camera = ViewportCamera {
+                    eye: [2. * scene_scale, 1.5 * scene_scale, 22. * scene_scale],
+                    target: [2. * scene_scale, 1.5 * scene_scale, 2. * scene_scale],
+                    near: near * scene_scale,
+                    far: 100. * scene_scale,
+                    scale: 20. * scene_scale,
+                    perspective: true,
+                    ..Default::default()
+                };
+                let fitted =
+                    fit_about_selection(&camera, &bounds, [1000, 1000], [0, 0, 1000, 1000])
+                        .unwrap();
+                observed.push(fitted.scale / scene_scale);
+                assert!(
+                    fitted.scale / scene_scale < 10.,
+                    "unexpected zoom {}",
+                    fitted.scale / scene_scale
+                );
+            }
+            assert!(
+                (observed[0] - observed[2]).abs() < 1e-9,
+                "near plane changed fit: {observed:?}"
+            );
+        }
+    }
+    #[test]
+    fn camera_inside_scene_uses_geometry_clearance_not_the_near_plane() {
+        let bounds = [[[0., 0., 0.], [4., 3., 30.]]];
+        let mut values = Vec::new();
+        for near in [1e-9, 1e-6, 1e-3] {
+            let camera = ViewportCamera {
+                eye: [2., 1.5, 22.],
+                target: [2., 1.5, 2.],
+                near,
+                perspective: true,
                 ..Default::default()
             };
-            let candidate = ViewportCamera {
-                eye: [3., 4., 24.],
-                target: [3., 4., 4.],
-                perspective,
-                ..old
-            };
             let fitted =
-                cover_previous_fit(&candidate, &old, [800, 600], [0, 0, 800, 600]).unwrap();
-            let distance = fitted.eye[2] - fitted.target[2];
-            for depth in [old.near, old.far] {
-                for x in [-1., 1.] {
-                    for y in [-1., 1.] {
-                        let old_factor = if perspective { depth / 20. } else { 1. };
-                        let point = [
-                            x * old.scale * (800. / 600.) * old_factor / 2.,
-                            y * old.scale * old_factor / 2.,
-                            20. - depth,
-                        ];
-                        let new_depth = fitted.eye[2] - point[2];
-                        let new_factor = if perspective {
-                            distance / new_depth
-                        } else {
-                            1.
-                        };
-                        assert!(
-                            ((point[0] - fitted.target[0]) * new_factor).abs()
-                                <= fitted.scale * (800. / 600.) / 2. + 1e-9
-                        );
-                        assert!(
-                            ((point[1] - fitted.target[1]) * new_factor).abs()
-                                <= fitted.scale / 2. + 1e-9
-                        );
-                    }
-                }
-            }
+                fit_about_selection(&camera, &bounds, [1000, 1000], [0, 0, 1000, 1000]).unwrap();
+            values.push(fitted.scale);
+            assert!(fitted.scale < 100., "unusable fit scale {}", fitted.scale);
+            assert!(fitted.eye[2] > 30., "eye must be outside bounds");
         }
+        assert!(
+            (values[0] - values[2]).abs() < 1e-9,
+            "near plane changed fit: {values:?}"
+        );
     }
     #[test]
     fn refuses_empty_invalid_and_unrepresentable_bounds() {

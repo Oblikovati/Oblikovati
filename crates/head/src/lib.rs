@@ -19,7 +19,8 @@ mod viewport_automation;
 mod window_caller;
 #[cfg(target_os = "linux")]
 pub use frames::{
-    HeadGuiUpdate, HeadPresentation, HeadSummary, HeadWindow, run_window, run_window_with_owner,
+    HeadGuiUpdate, HeadOrientationFitFrame, HeadPresentation, HeadSummary, HeadWindow, run_window,
+    run_window_with_owner,
 };
 #[cfg(target_os = "linux")]
 mod native;

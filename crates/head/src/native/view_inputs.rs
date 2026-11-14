@@ -64,3 +64,12 @@ fn previous_view_pressed(event: &ViewportEvent) -> bool {
         })
     )
 }
+
+pub(super) fn validate_window_extent(extent: [u32; 2]) -> Result<(), String> {
+    if extent.contains(&0) {
+        return Err(format!(
+            "native window extent {extent:?}: expected two positive pixel dimensions"
+        ));
+    }
+    Ok(())
+}

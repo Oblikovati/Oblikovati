@@ -78,7 +78,7 @@ fn selection_lock_uses_current_face_and_reports_a_missing_selection() {
 
 fn assert_block_fits_document_area(world: &mut ApplicationWorld) {
     use crate::HeadWindow;
-    let (_, [left, top, right, bottom]) = world.app().window.orientation_fit_area().unwrap();
+    let [left, top, right, bottom] = world.app().window.orientation_fit_frame().unwrap().area;
     for x in [0., 4.] {
         for y in [0., 3.] {
             for z in [0., 2.] {
@@ -176,5 +176,84 @@ fn a_selected_body_uses_its_own_named_bounds() {
     choose_mode(&mut world, "Lock to Current Selection");
     press_part(&mut world, |parts| parts.step_right);
     close_to(camera(&mut world).target, [2., 1.5, 1.]);
+    world.close();
+}
+
+fn display_distant_sketch(world: &mut ApplicationWorld) {
+    use oblikovati_model::{
+        document_sketch::DocumentSketchId,
+        sketch::{Sketch2D, SketchEntityId, SketchPlane},
+    };
+    let mut geometry = Sketch2D::default();
+    geometry
+        .add_defining_point(SketchEntityId(1), [0., 12.])
+        .unwrap();
+    geometry
+        .add_defining_point(SketchEntityId(2), [0., 16.])
+        .unwrap();
+    geometry
+        .add_line(SketchEntityId(3), [SketchEntityId(1), SketchEntityId(2)])
+        .unwrap();
+    let sketch = oblikovati_viewport::ViewportSketchDisplay {
+        sketch: DocumentSketchId(99),
+        plane: SketchPlane::xy(),
+        geometry,
+        blocks: Vec::new(),
+        line_color: None,
+    };
+    world
+        .app()
+        .window
+        .native
+        .view
+        .set_sketch_display(&[sketch])
+        .unwrap();
+}
+
+#[test]
+fn selection_fit_includes_a_distant_visible_sketch_and_the_selected_solid() {
+    use crate::HeadWindow;
+    let mut world = ApplicationWorld::new();
+    open_block(&mut world);
+    select_visible_face(&mut world);
+    open_menu(&mut world);
+    choose_mode(&mut world, "Lock to Current Selection");
+    open_options(&mut world);
+    world.click_text("Fit to view on change");
+    confirm(&mut world);
+    display_distant_sketch(&mut world);
+    let bounds = world.app().window.orientation_fit_frame().unwrap().bounds;
+    assert!(
+        bounds[1][1] >= 16.,
+        "display bounds {bounds:?} must include the sketch"
+    );
+    press_part(&mut world, |parts| parts.step_right);
+    close_to(camera(&mut world).target, [2., 1.5, 2.]);
+    assert_block_fits_document_area(&mut world);
+    let [left, top, right, bottom] = world.app().window.orientation_fit_frame().unwrap().area;
+    for point in [[0., 12., 0.], [0., 16., 0.]] {
+        let pixel = world.app().window.model_pixel(point).unwrap();
+        assert!(
+            pixel[0] >= left as i32
+                && pixel[0] < right as i32
+                && pixel[1] >= top as i32
+                && pixel[1] < bottom as i32,
+            "sketch point {point:?} at {pixel:?} must fit"
+        );
+    }
+    world
+        .app()
+        .window
+        .native
+        .view
+        .set_sketch_display(&[])
+        .unwrap();
+    world.sketch_baseline = Some(super::super::capture_framebuffer(
+        &mut world.app().window.native,
+    ));
+    display_distant_sketch(&mut world);
+    let first = world.app().window.model_pixel([0., 12., 0.]).unwrap();
+    let second = world.app().window.model_pixel([0., 16., 0.]).unwrap();
+    world.expect_segment_drawn(first, second);
     world.close();
 }

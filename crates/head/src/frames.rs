@@ -14,7 +14,7 @@ pub struct HeadSummary {
 mod gui;
 pub use gui::HeadGuiUpdate;
 mod window;
-pub use window::HeadWindow;
+pub use window::{HeadOrientationFitFrame, HeadWindow};
 struct FrameControl {
     options: HeadOptions,
     summary: HeadSummary,

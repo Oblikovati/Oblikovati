@@ -207,11 +207,6 @@ fn part_properties_require_every_body_to_belong_to_the_current_history() {
 fn selection_centers_use_exact_named_body_and_face_bounds() {
     let history = owner(selected_prism_document());
     let body = named(&history);
-    let bounds = body
-        .body_bounds(&history, document(), &key("body", &[1]))
-        .unwrap();
-    assert_centroid(bounds[0], [0., 0., 0.]);
-    assert_centroid(bounds[1], [4., 3., 2.]);
     assert_centroid(
         body.body_bounds_center(&history, document(), &key("body", &[1]))
             .unwrap(),

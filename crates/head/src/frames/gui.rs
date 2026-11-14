@@ -56,7 +56,7 @@ fn orient_view(
     let current = window.view_camera()?;
     let (camera, selection_pivot) = orientation_camera(owner, &current, command)?;
     if fit && selection_pivot {
-        return fit_selection_view(window, owner, current, camera);
+        return fit_selection_view(window, current, camera);
     }
     let changed = window.set_view_camera(camera)?;
     if fit {
@@ -84,17 +84,18 @@ fn orientation_camera(
 }
 fn fit_selection_view(
     window: &mut dyn HeadWindow,
-    owner: &mut dyn HeadWork,
     current: oblikovati_viewport::ViewportCamera,
     camera: oblikovati_viewport::ViewportCamera,
 ) -> Result<bool, String> {
-    let bounds = owner.orientation_fit_bounds_from_gui()?;
-    let (extent, area) = window.orientation_fit_area()?;
+    let frame = window.orientation_fit_frame()?;
     let fitted = crate::view_orientation::selection_fit::fit_about_selection(
-        &camera, &bounds, extent, area,
+        &camera,
+        &[frame.bounds],
+        frame.extent,
+        frame.area,
     )?;
     window.set_view_camera(camera)?;
-    let applied = apply_selection_fit(window, fitted, extent, area);
+    let applied = apply_selection_fit(window, fitted);
     match applied {
         Ok(changed) => Ok(changed),
         Err(cause) => match window.set_view_camera(current) {
@@ -108,15 +109,9 @@ fn fit_selection_view(
 fn apply_selection_fit(
     window: &mut dyn HeadWindow,
     fitted: oblikovati_viewport::ViewportCamera,
-    extent: [u32; 2],
-    area: [u32; 4],
 ) -> Result<bool, String> {
     window.navigate_view(FIT_THE_MODEL)?;
-    let full_fit = window.view_camera()?;
-    let safe_fit = crate::view_orientation::selection_fit::cover_previous_fit(
-        &fitted, &full_fit, extent, area,
-    )?;
-    window.set_view_camera(safe_fit)
+    window.set_view_camera(fitted)
 }
 fn publish_parameter_view(
     window: &mut dyn HeadWindow,

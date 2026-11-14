@@ -64,13 +64,4 @@ impl<
             .selection_center(&mut self.files, document, feature, None, Some(&key))
             .map(Some)
     }
-    pub(super) fn orientation_fit_bounds(&mut self) -> Result<Vec<[[f64; 3]; 2]>, String> {
-        let document = self
-            .files
-            .workspace()
-            .active_document()
-            .ok_or("selection fit: expected an active document")?;
-        self.part_scenes
-            .visible_body_bounds(&mut self.files, document)
-    }
 }

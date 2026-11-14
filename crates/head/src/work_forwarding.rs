@@ -8,9 +8,6 @@ macro_rules! forward_owner_view_work {
         fn orientation_selection_pivot(&mut self) -> Result<Option<[f64; 3]>, String> {
             self.$owner.orientation_selection_pivot()
         }
-        fn orientation_fit_bounds_from_gui(&mut self) -> Result<Vec<[[f64; 3]; 2]>, String> {
-            self.$owner.orientation_fit_bounds_from_gui()
-        }
         fn set_selection_mode_from_gui(
             &mut self,
             mode: oblikovati_gui::GuiSelectionMode,

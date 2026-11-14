@@ -17,32 +17,6 @@ impl NamedPrismSnapshot {
         shape_bounds_center(&self.snapshot.shape)
     }
 
-    /// Find conservative analytic bounds of a current named body.
-    /// Example: `body.body_bounds(history, document, key)?` for display framing.
-    pub fn body_bounds(
-        &self,
-        history: &DocumentEditHistory,
-        document: DocumentGuid,
-        key: &[u8],
-    ) -> Result<[[f64; 3]; 2], String> {
-        self.bindings.bind(history, document, key, 4)?;
-        let mut bounds = BoundingBox3::default();
-        BRepBndLib::add_optimal(&self.snapshot.shape, &mut bounds, false, false)
-            .map_err(|cause| format!("body bounds: expected analytic B-rep bounds: {cause}"))?;
-        let values = bounds
-            .get()
-            .map_err(|cause| format!("body bounds: expected finite bounds: {cause}"))?;
-        if values.iter().any(|value| !value.is_finite()) {
-            return Err(format!(
-                "body bounds {values:?}: expected finite coordinates"
-            ));
-        }
-        Ok([
-            [values[0], values[1], values[2]],
-            [values[3], values[4], values[5]],
-        ])
-    }
-
     /// Find the analytic bounds center of a current named face.
     /// Example: `body.face_bounds_center(history, document, key)?`.
     pub fn face_bounds_center(

@@ -19,9 +19,6 @@ impl<
         self.orientation_pivot()
     }
 
-    fn orientation_fit_bounds_from_gui(&mut self) -> Result<Vec<[[f64; 3]; 2]>, String> {
-        self.orientation_fit_bounds()
-    }
     fn set_selection_mode_from_gui(
         &mut self,
         mode: oblikovati_gui::GuiSelectionMode,
