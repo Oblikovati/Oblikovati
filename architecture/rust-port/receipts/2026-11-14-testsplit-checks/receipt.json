@@ -1,0 +1,22 @@
+{
+  "kind": "test module split verification",
+  "application_commit": "0c580d0d2",
+  "results": {
+    "persistence_load": "22 passed",
+    "drawing_owner": "2 passed",
+    "native_drawing_projection": "1 passed under Xvfb",
+    "clippy": "head and persistence all targets passed",
+    "docs_lint": "markdownlint passed; line limit still fails at owner_work.rs",
+    "native_receipts": "16 scenarios passed; all final screenshots match the previous reviewed images"
+  },
+  "limits": "The first head compile failed on relative paths moved with the test; the second compile and tests passed. The full gate was not run.",
+  "artifacts": {
+    "compile.log.gz": "647ccc78d52ea1aa87e6214a5c5c5517b50466d7d2ff9970f109b8a94536d2ef",
+    "owner.log.gz": "0e1e5837823392feff4221dbb5705a66b46056fbe87fe99b1d3a01abbdf86edc",
+    "compile2.log.gz": "ce691ffd093a803705fd458970bb7cd2567bc19363eb6a4141a3b2ebd1ca91d0",
+    "native.log.gz": "5a6e50d9dfbb74415264d389ec02b43ffd67a1796983ae14b43733b567f2d71b",
+    "docs.log.gz": "0a6e05c74558735fa3d489c7188504016feb74d4c15dc5a014795a6b45c43a82",
+    "load.log.gz": "c80be9bdf7e0ea7ca91ae40141e81f6cf3db3d0715e54f334afcbdfcbbe615c2",
+    "clippy.log.gz": "e2e52e626968e8ce1afb10ec276c4149d333cc41c367751ecf7e3907925e3289"
+  }
+}
