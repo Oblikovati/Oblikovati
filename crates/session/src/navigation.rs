@@ -12,7 +12,12 @@ impl<O: TransactionObserver> DocumentSession<O> {
         let label = self.history.undo_label()?;
         let event = self.payload(EVENT_TRANSACTION_UNDONE, label, TRANSACTION_POINT_PREVIOUS);
         self.notify_before(&event)?;
+        let transition = self.history.undo_sketch_transition();
         self.history.undo()?;
+        self.remember_sketch_navigation(transition.map(|value| crate::SketchEditNavigation {
+            from: value.after,
+            to: value.before,
+        }));
         self.notify_changed(&event);
         Ok(())
     }
@@ -22,7 +27,12 @@ impl<O: TransactionObserver> DocumentSession<O> {
         let label = self.history.redo_label()?;
         let event = self.payload(EVENT_TRANSACTION_REDONE, label, TRANSACTION_POINT_NEXT);
         self.notify_before(&event)?;
+        let transition = self.history.redo_sketch_transition();
         self.history.redo()?;
+        self.remember_sketch_navigation(transition.map(|value| crate::SketchEditNavigation {
+            from: value.before,
+            to: value.after,
+        }));
         self.notify_changed(&event);
         Ok(())
     }

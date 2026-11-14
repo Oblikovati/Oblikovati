@@ -62,6 +62,8 @@ pub use sketch_placement::{DocumentSketchPlacementError, ResolvedDocumentSketch}
 pub use sketch_projection::ResolvedSketchPointProjection;
 mod error;
 mod navigation;
+mod sketch_edit_history;
+pub use sketch_edit_history::SketchEditTransition;
 mod refresh;
 pub use error::{EditError, HistoryError};
 pub use refresh::PreparedRefresh;
@@ -152,6 +154,7 @@ struct HistoryStep {
     saved: bool,
     before: DocumentSnapshot,
     after: DocumentSnapshot,
+    sketch_edit: Option<SketchEditTransition>,
 }
 
 /// Owns current recipe state, permanent ID reservations, and nested edit history.
@@ -323,7 +326,12 @@ impl DocumentEditHistory {
         if !self.open.is_empty() {
             return Ok(());
         }
-        if merge_previous && let Some(previous) = self.done.last_mut() {
+        if merge_previous
+            && let Some(previous) = self
+                .done
+                .last_mut()
+                .filter(|step| step.sketch_edit.is_none())
+        {
             previous.after = self.current.clone();
             previous.saved = false;
         } else {
@@ -332,6 +340,7 @@ impl DocumentEditHistory {
                 saved: false,
                 before: frame.before,
                 after: self.current.clone(),
+                sketch_edit: None,
             });
         }
         self.undone.clear();

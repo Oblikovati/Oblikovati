@@ -50,14 +50,7 @@ impl<
         self.require_sketch_edit_entry(document)?;
         self.watch_sketch_edit(document, sketch)?;
         // A feature took this sketch out of view: opening it brings it back while it is open.
-        self.opened_hidden_sketch = self
-            .files
-            .workspace()
-            .session(document)
-            .ok()
-            .and_then(|session| session.snapshot().sketches.get(sketch).ok().cloned())
-            .filter(|placed| !placed.visible())
-            .map(|_| sketch);
+        self.remember_hidden_sketch(document, sketch);
         // What the last command reported is over; an open sketch at rest reads Ready.
         self.command_notice = Some(DesktopCommandNotice::Ready);
         Ok(())
@@ -103,12 +96,16 @@ impl<
             commands.create_sketch(&request)
         }
         .map_err(|cause| cause.to_string())?;
+        commands
+            .tag_sketch_creation(sketch)
+            .map_err(|cause| cause.to_string())?;
         self.watch_sketch_edit(document, sketch)?;
         Ok(sketch)
     }
     /// Leave the edit and discard unfinished placement; committed commands keep their own undo entries.
     /// Example: `owner.finish_sketch_edit()?` before selecting another sketch.
     pub fn finish_sketch_edit(&mut self) -> Result<(), String> {
+        self.synchronize_sketch_edit();
         let edit = self.active_sketch_edit().ok_or_else(|| {
             format!(
                 "sketch edit {:?}: expected a live active sketch",
@@ -116,6 +113,11 @@ impl<
             )
         })?;
         self.require_edit_document(edit.document)?;
+        self.files
+            .commands(edit.document)
+            .map_err(|cause| cause.to_string())?
+            .finish_sketch_history(edit.sketch)
+            .map_err(|cause| cause.to_string())?;
         self.retire_sketch_tool()?;
         self.sketch_edit = None;
         self.command_notice = Some(DesktopCommandNotice::PlacementPrompt {
@@ -125,6 +127,26 @@ impl<
     }
     /// Re-resolve identity after edits and history restore; example: `owner.active_sketch_edit()` for command enablement.
     pub fn active_sketch_edit(&self) -> Option<HeadSketchEdit> {
+        let current = self.current_sketch_edit();
+        let document = self.files.workspace().active_document()?;
+        let navigation = self
+            .files
+            .workspace()
+            .session(document)
+            .ok()?
+            .pending_sketch_navigation();
+        let Some(navigation) = navigation else {
+            return current;
+        };
+        let target = navigation.target(
+            current.map(|edit| edit.sketch),
+            self.focused_sketch_identity(),
+        );
+        target.map_or(current, |target| {
+            target.and_then(|sketch| self.resolve_edit(document, sketch).ok())
+        })
+    }
+    fn current_sketch_edit(&self) -> Option<HeadSketchEdit> {
         let (document, watch, focus) = self.sketch_edit.as_ref()?;
         if !watch.is_live() || !self.files.workspace().retains_focus(focus) {
             return None;
@@ -135,6 +157,12 @@ impl<
             return None;
         }
         self.resolve_edit(document, sketch).ok()
+    }
+    fn focused_sketch_identity(&self) -> Option<DocumentSketchId> {
+        let (document, watch, focus) = self.sketch_edit.as_ref()?;
+        (self.files.workspace().retains_focus(focus)
+            && self.files.workspace().active_document() == Some(*document))
+        .then(|| watch.sketch())
     }
     fn watch_sketch_edit(&mut self, document: u64, sketch: DocumentSketchId) -> Result<(), String> {
         let watch = self
@@ -209,6 +237,9 @@ impl<
         Ok(())
     }
     pub(super) fn synchronize_sketch_edit(&mut self) -> bool {
+        if self.apply_sketch_history_navigation() {
+            return true;
+        }
         if self.sketch_edit.is_none() || self.active_sketch_edit().is_some() {
             return false;
         }
@@ -221,6 +252,55 @@ impl<
             Err(cause) => DesktopCommandNotice::AuthoringFailed { cause },
         });
         true
+    }
+    fn apply_sketch_history_navigation(&mut self) -> bool {
+        let Some(document) = self.files.workspace().active_document() else {
+            return false;
+        };
+        let navigation = self
+            .files
+            .commands(document)
+            .ok()
+            .and_then(|mut commands| commands.take_sketch_navigation());
+        let Some(navigation) = navigation else {
+            return false;
+        };
+        let current = self.current_sketch_edit().map(|edit| edit.sketch);
+        let Some(target) = navigation.target(current, self.focused_sketch_identity()) else {
+            return false;
+        };
+        if current == target {
+            return false;
+        }
+        let result = self.restore_sketch_history_target(document, target);
+        if let Err(cause) = result {
+            self.command_notice = Some(DesktopCommandNotice::AuthoringFailed { cause });
+        }
+        true
+    }
+    fn restore_sketch_history_target(
+        &mut self,
+        document: u64,
+        target: Option<DocumentSketchId>,
+    ) -> Result<(), String> {
+        self.retire_sketch_tool()?;
+        self.sketch_edit = None;
+        self.opened_hidden_sketch = None;
+        if let Some(sketch) = target {
+            self.watch_sketch_edit(document, sketch)?;
+            self.remember_hidden_sketch(document, sketch);
+        }
+        Ok(())
+    }
+    fn remember_hidden_sketch(&mut self, document: u64, sketch: DocumentSketchId) {
+        self.opened_hidden_sketch = self
+            .files
+            .workspace()
+            .session(document)
+            .ok()
+            .and_then(|session| session.snapshot().sketches.get(sketch).ok())
+            .filter(|placed| !placed.visible())
+            .map(|_| sketch);
     }
     pub(super) fn select_placement_sketch(
         &mut self,

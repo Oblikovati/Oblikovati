@@ -79,6 +79,39 @@ fn still_editing_second_sketch(world: &mut ApplicationWorld) {
     second_sketch_active(world);
 }
 
+#[given("the user have created empty Sketch2 and chosen Finish Sketch")]
+fn finished_second_sketch(world: &mut ApplicationWorld) {
+    one_finished_sketch(world);
+    choose_xz(world);
+    world.finish_sketch();
+    assert_eq!(world.browser_sketch_count(), 2);
+}
+#[when("the user press Ctrl+Z once")]
+#[when("the user press Ctrl+Z again")]
+fn undo_sketch_step(world: &mut ApplicationWorld) {
+    world.undo();
+}
+#[then("Sketch2 remains and its editing environment returns")]
+fn undo_finish_reenters_sketch(world: &mut ApplicationWorld) {
+    second_sketch_active(world);
+}
+#[then("Sketch2 disappears from the model browser")]
+fn undo_creation_removes_sketch(world: &mut ApplicationWorld) {
+    only_first_sketch(world);
+}
+#[when("the user press Ctrl+Y twice in sequence")]
+fn redo_creation_and_finish(world: &mut ApplicationWorld) {
+    world.redo();
+    second_sketch_active(world);
+    world.redo();
+}
+#[then("creation and Finish Sketch are restored in order")]
+fn redo_restores_finished_sketch(world: &mut ApplicationWorld) {
+    assert_eq!(world.browser_sketch_count(), 2);
+    assert_eq!(world.state().authoring, GuiAuthoringContext::Part);
+    world.expect_text("Sketch2");
+}
+
 #[given("the model browser exposes YZ Plane")]
 fn two_existing_sketches(world: &mut ApplicationWorld) {
     world.add_part();

@@ -42,7 +42,7 @@ fn typed_sketch_inspection_tracks_enter_and_exit_without_authored_edits() {
     );
 }
 #[test]
-fn creation_enters_once_and_finish_preserves_independent_history() {
+fn creation_enters_once_and_finish_records_a_separate_history_step() {
     let (mut owner, awake) = owner();
     assert!(owner.finish_sketch_edit().is_err());
     let document = create(&mut owner, &awake);
@@ -64,15 +64,14 @@ fn creation_enters_once_and_finish_preserves_independent_history() {
         .history_entries();
     owner.finish_sketch_edit().unwrap();
     assert!(owner.active_sketch_edit().is_none());
-    assert_eq!(
-        owner
-            .documents()
-            .workspace()
-            .session(document)
-            .unwrap()
-            .history_entries(),
-        history
-    );
+    let updated = owner
+        .documents()
+        .workspace()
+        .session(document)
+        .unwrap()
+        .history_entries();
+    assert_eq!(updated.len(), history.len() + 1);
+    assert_eq!(updated.last().unwrap().label, "Finish Sketch");
     owner.begin_sketch_edit(document, sketch).unwrap();
     owner.start_slot_placement(document, sketch, 2.).unwrap();
     owner.finish_sketch_edit().unwrap();
@@ -103,8 +102,7 @@ fn history_reattaches_identity_and_undoing_creation_exits() {
         .redo()
         .unwrap();
     owner.poll(32).unwrap();
-    assert!(owner.active_sketch_edit().is_none());
-    owner.begin_sketch_edit(document, sketch).unwrap();
+    assert_eq!(owner.active_sketch_edit().unwrap().sketch, sketch);
 }
 #[test]
 fn invalid_entry_and_document_switch_do_not_select_an_arbitrary_sketch() {
@@ -214,24 +212,6 @@ fn only_part_and_assembly_host_edits_and_assembly_does_not_project_part_origin()
             .len();
         assert_eq!(count, usize::from(kind == "part"));
     }
-}
-
-#[test]
-fn undo_redo_in_one_host_borrow_does_not_revive_a_removed_edit() {
-    let (mut owner, awake) = owner();
-    let document = create(&mut owner, &awake);
-    owner
-        .create_sketch_for_edit(document, &request(SketchPlane::xy()))
-        .unwrap();
-    {
-        let client = Client::new(owner.document_host());
-        client.transactions().undo().unwrap();
-        client.transactions().redo().unwrap();
-    }
-    assert!(
-        owner.active_sketch_edit().is_none(),
-        "redo must not reopen an edit ended by undoing its creation"
-    );
 }
 
 #[test]

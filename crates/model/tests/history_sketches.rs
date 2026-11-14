@@ -16,6 +16,90 @@ fn history() -> DocumentEditHistory {
     )
     .unwrap()
 }
+
+fn create_tagged_sketch(history: &mut DocumentEditHistory) -> DocumentSketchId {
+    let token = history.begin("Create sketch").unwrap();
+    let sketch = history
+        .edit(&token, |snapshot, ids| {
+            let sketch = ids.allocate_sketch().unwrap();
+            snapshot
+                .sketches
+                .add(sketch, "First", SketchPlane::xy(), Sketch2D::default())
+                .unwrap();
+            Ok::<_, String>(sketch)
+        })
+        .unwrap();
+    history.commit(&token, false).unwrap();
+    history.tag_sketch_creation(sketch).unwrap();
+    sketch
+}
+
+#[test]
+fn sketch_editor_history_replays_without_changing_the_recipe() {
+    let mut history = history();
+    let sketch = create_tagged_sketch(&mut history);
+    let before = history.snapshot().sketches.clone();
+    history.record_sketch_finish(sketch).unwrap();
+    assert_eq!(
+        history.undo_sketch_transition().unwrap().before,
+        Some(sketch)
+    );
+    history.undo().unwrap();
+    assert_eq!(history.snapshot().sketches, before);
+    assert_eq!(history.undo_sketch_transition().unwrap().before, None);
+    history.undo().unwrap();
+    assert!(history.snapshot().sketches.get(sketch).is_err());
+    assert_eq!(
+        history.redo_sketch_transition().unwrap().after,
+        Some(sketch)
+    );
+    history.redo().unwrap();
+    assert_eq!(history.redo_sketch_transition().unwrap().after, None);
+    history.redo().unwrap();
+    assert_eq!(history.snapshot().sketches, before);
+}
+
+#[test]
+fn a_recipe_merge_does_not_absorb_a_sketch_editor_transition() {
+    let mut history = history();
+    let sketch = create_tagged_sketch(&mut history);
+    history.record_sketch_finish(sketch).unwrap();
+    history.undo().unwrap();
+    let edit = history.begin("Hide sketch").unwrap();
+    history
+        .edit(&edit, |snapshot, _| {
+            snapshot.sketches.set_visible(sketch, false)
+        })
+        .unwrap();
+    history.commit(&edit, true).unwrap();
+    assert_eq!(history.undo_labels(), ["Create sketch", "Hide sketch"]);
+    assert!(history.redo_labels().is_empty());
+    history.undo().unwrap();
+    assert!(history.snapshot().sketches.get(sketch).unwrap().visible());
+    assert_eq!(
+        history.undo_sketch_transition().unwrap().after,
+        Some(sketch)
+    );
+}
+
+#[test]
+fn sketch_editor_history_rejects_missing_sketches_and_open_transactions() {
+    let mut history = history();
+    let missing = DocumentSketchId(7);
+    assert!(
+        history
+            .record_sketch_finish(missing)
+            .unwrap_err()
+            .to_string()
+            .contains('7')
+    );
+    assert!(history.tag_sketch_creation(missing).is_err());
+    let group = history.begin("Open").unwrap();
+    assert!(history.record_sketch_finish(missing).is_err());
+    assert!(history.tag_sketch_creation(missing).is_err());
+    history.abort(&group).unwrap();
+    assert!(history.undo_labels().is_empty());
+}
 #[test]
 fn undo_redo_abort_and_failed_edits_never_release_sketch_or_entity_ids() {
     let mut history = history();

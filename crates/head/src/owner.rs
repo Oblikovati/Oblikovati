@@ -311,6 +311,7 @@ impl<
     }
     /// Borrow the canonical caller for UI commands on this owner; example: `Client::new(owner.document_host())`.
     pub fn document_host(&mut self) -> FileHost<'_, O, W, F> {
+        self.synchronize_sketch_edit();
         let editing = self.sketch_inspection_edit();
         let host = borrowed_host(
             &mut self.files,

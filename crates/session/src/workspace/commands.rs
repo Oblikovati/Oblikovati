@@ -9,6 +9,24 @@ pub struct SessionCommands<'a, O> {
 }
 
 impl<O: TransactionObserver> SessionCommands<'_, O> {
+    /// Mark the latest desktop sketch creation as entering edit mode; example: `commands.tag_sketch_creation(id)?`.
+    pub fn tag_sketch_creation(
+        &mut self,
+        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+    ) -> Result<(), SessionError> {
+        self.session.tag_sketch_creation(sketch)
+    }
+    /// Record a reversible editor finish; example: `commands.finish_sketch_history(id)?`.
+    pub fn finish_sketch_history(
+        &mut self,
+        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+    ) -> Result<(), SessionError> {
+        self.session.finish_sketch_history(sketch)
+    }
+    /// Consume the last editor target after history navigation; example: `commands.take_sketch_navigation()`.
+    pub fn take_sketch_navigation(&mut self) -> Option<crate::SketchEditNavigation> {
+        self.session.take_sketch_navigation()
+    }
     /// Start a bounded group on this document; example: `commands.begin("batch")?;`.
     pub fn begin(&mut self, label: &str) -> Result<(), SessionError> {
         self.session.begin(label)

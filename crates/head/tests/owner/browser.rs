@@ -421,6 +421,10 @@ fn browser_selection_snapshot_tracks_undo_and_redo_without_reusing_row_positions
         .transactions()
         .undo()
         .unwrap();
+    Client::new(owner.document_host())
+        .transactions()
+        .undo()
+        .unwrap();
     assert!(
         owner
             .gui_browser_snapshot(document)
@@ -433,6 +437,10 @@ fn browser_selection_snapshot_tracks_undo_and_redo_without_reusing_row_positions
             .select_browser_sketch_from_gui(document, sketch, false)
             .is_err()
     );
+    Client::new(owner.document_host())
+        .transactions()
+        .redo()
+        .unwrap();
     Client::new(owner.document_host())
         .transactions()
         .redo()

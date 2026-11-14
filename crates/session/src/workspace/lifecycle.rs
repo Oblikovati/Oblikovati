@@ -52,6 +52,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
         for id in self.active.into_iter().chain(document) {
             if let Some(entry) = self.entries.get_mut(&id) {
                 entry.session.clear_transient_selection();
+                entry.session.clear_sketch_navigation();
             }
         }
         self.focus_identity = std::sync::Arc::new(());

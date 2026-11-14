@@ -9,6 +9,8 @@ mod error;
 mod events;
 pub mod files;
 mod navigation;
+mod sketch_edit_navigation;
+pub use sketch_edit_navigation::SketchEditNavigation;
 pub mod part_evaluation;
 mod refresh;
 pub mod selection;
@@ -65,6 +67,7 @@ struct BoundedGroup {
 
 /// One document owner; observers can inspect snapshots but cannot mutate this owner.
 pub struct DocumentSession<O> {
+    pending_sketch_navigation: Option<sketch_edit_navigation::SketchEditNavigation>,
     document: u64,
     browser_selection: selection::SelectionSet<selection::BrowserSketchPick>,
     browser_feature: Option<oblikovati_model::feature::FeatureId>,
@@ -96,6 +99,7 @@ impl<O: TransactionObserver> DocumentSession<O> {
         sketch_options: oblikovati_solve::nonlinear::SolveOptions,
     ) -> Self {
         Self {
+            pending_sketch_navigation: None,
             document,
             browser_selection: Default::default(),
             browser_feature: None,

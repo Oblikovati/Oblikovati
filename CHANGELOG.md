@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Made sketch creation and Finish Sketch separate undo and redo steps. (#3880)
+
 - Started a sketch directly on a preselected origin plane. (#3879)
 
 - Kept the ViewCube visible and interactive while editing a 2D sketch. (#3877)

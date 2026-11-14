@@ -65,6 +65,11 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
                 .sketch_edit
                 .as_ref()
                 .and_then(|edit| edit.current(self.files.workspace()));
+            let focused = self
+                .sketch_edit
+                .as_ref()
+                .and_then(|edit| edit.focused_identity(self.files.workspace()));
+            let editing = pending_sketch_edit(self.files.workspace(), editing, focused);
             return crate::sketches::query(self.files, method, request, editing);
         }
         if method == METHOD_PARAMETERS_DERIVED_TABLES_LIST {
@@ -77,6 +82,29 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
             documents: Some(self.documents()?),
         })
     }
+}
+fn pending_sketch_edit<O: TransactionObserver, W: WorkspaceObserver>(
+    workspace: &oblikovati_session::workspace::WorkspaceSession<O, W>,
+    editing: Option<(u64, oblikovati_model::document_sketch::DocumentSketchId)>,
+    focused: Option<(u64, oblikovati_model::document_sketch::DocumentSketchId)>,
+) -> Option<(u64, oblikovati_model::document_sketch::DocumentSketchId)> {
+    let document = workspace.active_document()?;
+    let Some(navigation) = workspace
+        .session(document)
+        .ok()
+        .and_then(|session| session.pending_sketch_navigation())
+    else {
+        return editing;
+    };
+    let current = editing
+        .filter(|(owner, _)| *owner == document)
+        .map(|(_, sketch)| sketch);
+    let focused = focused
+        .filter(|(owner, _)| *owner == document)
+        .map(|(_, sketch)| sketch);
+    navigation
+        .target(current, focused)
+        .map_or(editing, |target| target.map(|sketch| (document, sketch)))
 }
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileQueryHost<'_, O, W, F> {
     fn documents(&self) -> Result<Vec<DocumentInfo>, Error> {

@@ -12,6 +12,7 @@ pub enum HistoryError {
     Identity(crate::identity::RecipeIdError),
     ScalarOwnership(crate::feature::FeatureScalarOwnershipError),
     DatumMetadata(crate::feature::work_geometry::WorkGeometryError),
+    SketchEditTransition(String),
     UnreservedIdentity(u64),
     UnreservedFeatureId(u64),
     UnreservedOccurrenceId(u64),
@@ -42,6 +43,7 @@ impl fmt::Display for HistoryError {
             Self::Identity(error) => error.fmt(output),
             Self::ScalarOwnership(error) => error.fmt(output),
             Self::DatumMetadata(error) => error.fmt(output),
+            Self::SketchEditTransition(error) => output.write_str(error),
             Self::UnreservedFeatureId(id) => write!(
                 output,
                 "feature ID {id}: expected an existing identity or one reserved by this edit"

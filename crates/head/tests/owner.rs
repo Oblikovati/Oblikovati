@@ -446,6 +446,8 @@ mod slot_input;
 mod browser;
 #[path = "owner/sketch_edit.rs"]
 mod sketch_edit;
+#[path = "owner/sketch_history.rs"]
+mod sketch_history;
 
 #[path = "owner/placement_fields.rs"]
 mod placement_fields;

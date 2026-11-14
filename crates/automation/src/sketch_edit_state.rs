@@ -31,4 +31,11 @@ impl SketchInspectionEdit {
             && workspace.active_document() == Some(self.document))
         .then(|| (self.document, self.watch.sketch()))
     }
+    pub(crate) fn focused_identity<O: TransactionObserver, W: WorkspaceObserver>(
+        &self,
+        workspace: &WorkspaceSession<O, W>,
+    ) -> Option<(u64, DocumentSketchId)> {
+        (workspace.retains_focus(&self.focus) && workspace.active_document() == Some(self.document))
+            .then(|| (self.document, self.watch.sketch()))
+    }
 }
