@@ -20,6 +20,7 @@ const ROW_START: [i32; 2] = [560, 500];
 const ROW_END: [i32; 2] = [760, 500];
 const ROW_BETWEEN: [i32; 2] = [660, 500];
 const BELOW_ROW: [i32; 2] = [660, 600];
+const SURROUNDING_LINE: [[i32; 2]; 2] = [[900, 300], [1100, 300]];
 /// Clear of where the recorded arcs sit, to hold the fixture's ellipse and circle.
 const ELLIPSE: [[i32; 2]; 3] = [[1000, 640], [1060, 640], [1000, 680]];
 const CIRCLE: [[i32; 2]; 2] = [[920, 640], [940, 640]];
@@ -239,12 +240,20 @@ fn ready_empty(world: &mut ApplicationWorld) {
 }
 // arc-three-point-04
 #[given("I have committed one valid change through this feature")]
+#[given("the user has committed one valid arc through this feature")]
 fn committed(world: &mut ApplicationWorld) {
-    world.remember_sketch_baseline();
+    world.select_line_tool();
+    for point in SURROUNDING_LINE {
+        world.sketch_click(point);
+    }
+    exit_tool(world);
+    assert_eq!(world.edited_geometry().lines().len(), 1, "fixture line");
     pointer_arc(world);
     assert_eq!(arcs(world), 1, "arcs");
+    world.record_initial_sketch();
 }
 #[given("I have exited the creation or edit command")]
+#[given("the user has exited the creation or edit command")]
 fn exited(world: &mut ApplicationWorld) {
     exit_tool(world);
 }
@@ -255,14 +264,32 @@ fn undo_once(world: &mut ApplicationWorld) {
 #[then("the last feature transaction is undone")]
 fn undone(world: &mut ApplicationWorld) {
     assert_eq!(arcs(world), 0, "arcs");
+    surrounding_unchanged(world);
 }
 #[when("I press Ctrl+Y once")]
+#[when("the user press Ctrl+Y once")]
 fn redo_once(world: &mut ApplicationWorld) {
     world.redo();
 }
 #[then("that transaction is restored")]
 fn restored(world: &mut ApplicationWorld) {
     assert_eq!(arcs(world), 1, "arcs");
+    surrounding_unchanged(world);
+    let current = world.edited_geometry();
+    let before = &world.observed_sketch.as_ref().unwrap().geometry;
+    assert_eq!(current.arcs(), before.arcs(), "restored arc");
+    let arc = before.arcs()[0];
+    for id in [arc.center, arc.start, arc.end] {
+        assert_eq!(current.point(id).unwrap(), before.point(id).unwrap());
+    }
+}
+fn surrounding_unchanged(world: &mut ApplicationWorld) {
+    let current = world.edited_geometry();
+    let before = &world.observed_sketch.as_ref().unwrap().geometry;
+    assert_eq!(current.lines(), before.lines(), "surrounding lines");
+    for id in before.lines()[0].endpoints {
+        assert_eq!(current.point(id).unwrap(), before.point(id).unwrap());
+    }
 }
 #[then("the arc and surrounding geometry are visible again")]
 fn visible_again(world: &mut ApplicationWorld) {
@@ -271,6 +298,7 @@ fn visible_again(world: &mut ApplicationWorld) {
         arc_fraction_pixel(world, 0.3),
     );
     world.expect_segment_drawn(from, to);
+    world.expect_segment_drawn(SURROUNDING_LINE[0], SURROUNDING_LINE[1]);
 }
 // arc-three-point-05 and arc-three-point-09
 #[given("the three-point arc has been restored by Redo")]
