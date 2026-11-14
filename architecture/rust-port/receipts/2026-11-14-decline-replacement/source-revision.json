@@ -1,0 +1,13 @@
+{
+  "after": {
+    "commit": "48987af7b5cbb06515bc6f30385f508382f34064",
+    "dirty": false,
+    "root": "/tmp/obk-bdd-replace-pMc9jmyc/checkout"
+  },
+  "before": {
+    "commit": "48987af7b5cbb06515bc6f30385f508382f34064",
+    "dirty": false,
+    "root": "/tmp/obk-bdd-replace-pMc9jmyc/checkout"
+  },
+  "source_changed": false
+}
