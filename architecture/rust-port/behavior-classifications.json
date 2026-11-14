@@ -29808,10 +29808,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "First native sketch geometry input, cancellation, and history."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-14-arc3-04/receipt-43a835dbf4bbe179.json",
+        "sha256": "e62efed995b7cc3ef9743c9afdcaaa58ac65115848ef05b99e22ebfaeccf50d7"
+      },
+      "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_undo_test.go",
+      "mapping_reason": "First native sketch geometry input, cancellation, and history.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go aa8297d1b tests arc creation and sketch creation undo separately, not this arc history with surrounding geometry. See receipts/2026-11-14-go-arc-history/README.md.",
+      "kernel_capabilities": "The sketch tool creates a three-point arc and history restores its recipe; no solid operation is performed.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The native desktop sends sketch placement and undo/redo input through the owner.",
+      "rust_tests": "sketch_scenarios_use_the_native_window with OBK_BDD_FEATURE=arc-three-point and OBK_BDD_SCENARIO=arc-three-point-04.",
+      "oracle": "Native scenario compares arc identity and defining points after redo, verifies the surrounding line is unchanged, and checks both are drawn; final capture reviewed.",
+      "expected_result": "Undo removes the arc and keeps the surrounding line; redo restores the same arc while keeping the line visible."
     },
     {
       "id": "scenario:b11598e4f2baf34328d4dce7a982b564380badb67d0bcab201f81ccb66310755",
