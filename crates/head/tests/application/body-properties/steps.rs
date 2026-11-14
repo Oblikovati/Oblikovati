@@ -240,11 +240,7 @@ fn solid_black(world: &mut ApplicationWorld) {
     let capture = super::capture_framebuffer(&mut world.app().window.native);
     let windows = diagnostics::window_occlusions();
     assert!(
-        !super::solid_visibility::visible_appearance_fill(
-            &capture,
-            &windows,
-            super::solid_visibility::default_fixture_rgb()
-        ),
+        super::solid_visibility::visible_fixture_point(&capture, &windows).is_none(),
         "expected no default appearance left"
     );
     assert!(
@@ -257,11 +253,7 @@ fn solid_part(world: &mut ApplicationWorld) {
     let capture = super::capture_framebuffer(&mut world.app().window.native);
     let windows = diagnostics::window_occlusions();
     assert!(
-        super::solid_visibility::visible_appearance_fill(
-            &capture,
-            &windows,
-            super::solid_visibility::default_fixture_rgb()
-        ),
+        super::solid_visibility::visible_fixture_point(&capture, &windows).is_some(),
         "expected the part's appearance"
     );
 }

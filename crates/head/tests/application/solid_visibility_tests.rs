@@ -79,6 +79,14 @@ fn fixture_point_excludes_ui_and_requires_filled_neutral() {
 }
 
 #[test]
+fn fixture_point_recognizes_a_lit_neutral_face_but_not_black() {
+    let lit = capture_with_patch([174, 176, 178, 255], true);
+    let black = capture_with_patch([19, 19, 19, 255], true);
+    assert!(visible_fixture_point(&lit, &[]).is_some());
+    assert_eq!(visible_fixture_point(&black, &[]), None);
+}
+
+#[test]
 fn fixture_bounds_exclude_neutral_pixels_in_application_chrome() {
     let mut capture = capture_with_patch([210, 212, 214, 255], true);
     capture.rgba[(2 * 32 + 2) * 4..(2 * 32 + 2) * 4 + 4].copy_from_slice(&[210, 212, 214, 255]);
