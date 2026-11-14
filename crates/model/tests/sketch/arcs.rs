@@ -1,6 +1,26 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use oblikovati_model::sketch::SketchRelationId;
+#[test]
+fn raw_residual_rows_identify_structural_arc_and_survive_cloning() {
+    let outcome = driven_arc(1.0, true)
+        .solve(&parameters(), SolveOptions::default(), || false)
+        .unwrap();
+    let rows = outcome.residual_rows();
+    assert!(
+        rows.iter()
+            .any(|row| row.relation == SketchRelationId::ArcCircularity(entity(4)))
+    );
+    assert_eq!(outcome.clone().residual_rows(), rows);
+}
+#[test]
+fn unconstrained_empty_sketch_has_no_residual_rows() {
+    let outcome = Sketch2D::default()
+        .solve(&parameters(), SolveOptions::default(), || false)
+        .unwrap();
+    assert!(outcome.residual_rows().is_empty());
+    assert!(outcome.numerical().residual_domains.is_empty());
+}
 pub(super) fn driven_arc(scale: f64, counter_clockwise: bool) -> Sketch2D {
     let mut sketch = Sketch2D::default();
     for (id, position) in [

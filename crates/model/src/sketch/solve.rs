@@ -21,7 +21,36 @@ pub struct SketchSolveOutcome {
     origins: Vec<SketchRelationId>,
     parameter_dependencies: Vec<u64>,
 }
+/// One raw solver equation with its relation and convergence domain, not a certified bound.
+#[derive(Clone, Debug, PartialEq)]
+pub struct SketchResidualRow {
+    pub relation: SketchRelationId,
+    pub equation: usize,
+    pub value: f64,
+    pub convergence_domain: oblikovati_solve::residual::ResidualTolerance,
+}
 impl SketchSolveOutcome {
+    /// Retain raw source-ordered evidence; example: `outcome.residual_rows()`.
+    pub fn residual_rows(&self) -> Vec<SketchResidualRow> {
+        let numerical = &self.numerical;
+        numerical
+            .evaluation
+            .source_rows()
+            .iter()
+            .enumerate()
+            .flat_map(|(source, rows)| {
+                let relation = self.origins[source];
+                rows.clone()
+                    .enumerate()
+                    .map(move |(equation, index)| SketchResidualRow {
+                        relation,
+                        equation,
+                        value: numerical.evaluation.values()[index],
+                        convergence_domain: numerical.residual_domains[index],
+                    })
+            })
+            .collect()
+    }
     /// Inspect accepted numerical values without changing the input sketch; example: `outcome.candidate()`.
     pub fn candidate(&self) -> &Sketch2D {
         &self.candidate

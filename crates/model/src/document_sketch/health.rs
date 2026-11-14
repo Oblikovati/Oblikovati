@@ -16,6 +16,8 @@ pub struct SketchSolveDiagnostics {
     pub relative_residual: f64,
     /// Accepted domain evidence; not a certificate of spatial or angular tolerance.
     pub residual_evidence: oblikovati_solve::nonlinear::ResidualEvidence,
+    /// Raw source-attributed equation values in stable order; not certified error bounds.
+    pub residual_rows: Vec<crate::sketch::SketchResidualRow>,
 }
 /// Last attempted verification, retained independently from the authored recipe.
 #[derive(Clone, Debug, PartialEq)]
@@ -147,5 +149,6 @@ fn numerical_evaluation(outcome: &SketchSolveOutcome) -> SketchEvaluation {
         conflicts: outcome.conflicting_relations(),
         relative_residual: numerical.relative_residual,
         residual_evidence: numerical.residual_evidence,
+        residual_rows: outcome.residual_rows(),
     })
 }
