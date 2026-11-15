@@ -125,8 +125,10 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   passed on the current source pin (#3888); their receipts are now stale. See
   `receipts/2026-11-15-save-r4-current-1/` through `-7/`. Input is frame-loop scripted.
 - Document opening: Express open and Load Full are in `rust-work` (#3949).
-  The pinned journey passes 13 of 14 steps; Finish and Simplify need the
-  scenario clarification recorded in #3963. Saved views require matching source,
+  The pinned journey passes 13 of 14 steps; Finish and Simplify still need
+  implementation (#3963). The scenario owner clarified that
+  this step checks visibility and enabled state only; it does not invoke the
+  commands. Saved views require matching source,
   mesh quality and producer identity. Cache creation is unavailable on macOS
   and Windows until the running executable can be verified (#3964). See
   `receipts/2026-11-15-express-contract/` for the diagnostic run.
@@ -137,26 +139,31 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 - Document tabs: eight R4 tab and close scenarios passed on the current source
   pin (#3900); their receipts are now stale. See
   `receipts/2026-11-15-tabs-r4-current-1/` through `-8/`. The earlier full-file
-  diagnostic passed 9 of 38 scenarios. Two Home menu scenarios need source
-  clarification in their `BLOCKERS.md`; keyboard receipts are stale (#3950).
+  diagnostic passed 9 of 38 scenarios. The scenario owner clarified that the
+  Home menu cases inspect labels and dismiss the menu; keyboard receipts are
+  stale (#3950).
 - Quick access: the diagnostic passed 11 of 12 scenarios. Clear can open
   before selection and can clear multiple browser-selected bodies in one edit
   (#3962). Viewport multi-selection, faces, and occurrences remain open; see
   `receipts/2026-11-15-clear-multiple-bodies/`. Clear has confirmation, undo and
   redo checks in `receipts/2026-11-15-clear-appearance/`; its wider selection
   workflow remains open (#3962). The recorded profile remains incomplete
-  (#3955).
+  (#3955). The scenario owner clarified that the menu-inspection case does
+  not require a particular toolbar profile.
 - Body properties: all six pinned scenarios passed with checked setup, list
   scrolling and exact physical-value rows (#3954). Receipts become stale after
   relevant source changes; see `receipts/2026-11-15-body-properties-verified/`.
-- Sketch ribbon: inactive-sketch setup was unbound (#3956). The source's
-  outside-edit Create availability conflicts with the Go gate; the scenario
-  owner has an actionable blocker.
-- Ribbon appearance: 16 of 18 pinned scenarios passed; the Team Web fixture
-  remains missing (#3957). See `receipts/2026-11-15-ribbon-appearance/`.
-- Two-point rectangle: nine of ten scenarios passed in a configured diagnostic
-  run. Scenario 10 needs the recorded fixture to assess its transient count
-  (#3953). See the scenario owner's `BLOCKERS.md`.
+- Sketch ribbon: inactive-sketch setup was unbound (#3956). The scenario owner
+  clarified that outside-edit cases check enabled states for one part and one
+  sketch; compare that observation with the Go gate before changing behavior.
+- Ribbon appearance: 16 of 18 pinned scenarios passed in an earlier run (#3957).
+  The scenario owner clarified the Team Web and reset starting states and that
+  the test checks panel visibility, not command destinations. Reassess the two
+  remaining cases against the clarified fixture notes. See
+  `receipts/2026-11-15-ribbon-appearance/`.
+- Two-point rectangle: the scenario owner clarified that scenario 10 uses an
+  empty metric sketch and does not require recorded whole-sketch counts. Its
+  corrected eight-step native run passed, but its receipt is stale (#3953).
 - Martensite closest-point behavior is tracked separately in
   [Martensite #406](https://github.com/Oblikovati/Martensite/issues/406).
 
