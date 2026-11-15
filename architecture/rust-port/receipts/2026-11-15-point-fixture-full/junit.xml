@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Point: tmp/oblikovati-bdd-rbXb01/checkout/features/sketch/point/scenario.feature" package="testsuite/Feature: Point: tmp/oblikovati-bdd-rbXb01/checkout/features/sketch/point/scenario.feature" tests="9" errors="0" failures="1" hostname="localhost" timestamp="2026-11-15T11:28:55.120897799Z" time="105.36322097"><testcase name="Scenario: point-03 Cancel before placing a point: tmp/oblikovati-bdd-rbXb01/checkout/features/sketch/point/scenario.feature:5:3" time="11.128389113"><system-out><![CDATA[  Scenario: point-03 Cancel before placing a point
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch is active
+   ✔  And Point is active with Select center point
+   ✔  When the user press Escape twice without clicking the canvas
+   ✔  And the user right-click empty canvas to inspect state
+   ✔  Then the status is Ready and the menu offers Repeat Point, Center Point
+   ✔  And no new point marker is retained
+   ✔  When the user press Escape
+   ✔  Then the Ready-state menu closes
+]]></system-out></testcase><testcase name="Scenario: point-04 Undo and redo the recorded placement: tmp/oblikovati-bdd-rbXb01/checkout/features/sketch/point/scenario.feature:17:3" time="10.735454783"><system-out><![CDATA[  Scenario: point-04 Undo and redo the recorded placement
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch is active
+   ✔  And a center point remains after placement and Escape
+   ✔  When the user press Ctrl+Z
+   ✔  Then the point cross disappears
+   ✔  When the user press Ctrl+Y
+   ✔  Then the point cross returns at its prior visible location
+]]></system-out></testcase><testcase name="Scenario: point-05 Continue regular point placement without restarting Point: tmp/oblikovati-bdd-rbXb01/checkout/features/sketch/point/scenario.feature:27:3" time="11.418062506"><system-out><![CDATA[  Scenario: point-05 Continue regular point placement without restarting Point
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch is active
+   ✔  And the Format Center Point toggle is off
+   ✔  When the user invoke Point
+   ✔  Then the prompt is Select Sketch Point
+   ✔  When the user click two separate canvas positions
+   ✔  Then both dot-style markers appear
+   ✔  And Point remains available after each placement
+   ✔  When the user press Escape
+   ✔  Then Ready is displayed with both point markers retained
+]]></system-out></testcase><testcase name="Scenario: point-06 Convert a regular sketch point to a center point and back: tmp/oblikovati-bdd-rbXb01/checkout/features/sketch/point/scenario.feature:40:3" time="14.997379245"><system-out><![CDATA[  Scenario: point-06 Convert a regular sketch point to a center point and back
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch is active
+   ✔  And a regular dot-style sketch point and a separate unchanged point
+   ✔  When the user right-click the first point and choose Center Point
+   ✔  Then its selected marker is a cross
+   ✔  And reopening its context menu shows Center Point checked
+   ✔  When the user choose Center Point again
+   ✔  Then the first point returns to a dot marker
+   ✔  And the separate point retains its dot marker at its displayed location
+]]></system-out></testcase><testcase name="Scenario: point-07 Undo and redo point-type conversion: tmp/oblikovati-bdd-rbXb01/checkout/features/sketch/point/scenario.feature:52:3" time="14.839357092"><system-out><![CDATA[  Scenario: point-07 Undo and redo point-type conversion
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch is active
+   ✔  And the user have converted a regular sketch point to Center Point
+   ✔  When the user press Ctrl+Z
+   ✔  Then the point returns to its dot marker
+   ✔  When the user press Ctrl+Y
+   ✔  Then the point is a Center Point again
+   ✔  When the user reopen the point context menu
+   ✔  Then Center Point is checked
+]]></system-out></testcase><testcase name="Scenario: point-08 Create a center point using the Format toggle: tmp/oblikovati-bdd-rbXb01/checkout/features/sketch/point/scenario.feature:64:3" time="13.357437502"><system-out><![CDATA[  Scenario: point-08 Create a center point using the Format toggle
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch is active
+   ✔  And no geometry is selected and Center Point is enabled in Format
+   ✔  When the user invoke Point
+   ✔  Then the prompt is Select center point
+   ✔  When the user click empty canvas and press Escape
+   ✔  Then a center point remains at that location
+   ✔  And existing regular points retain their dot-style type
+]]></system-out></testcase><testcase name="Scenario: point-10 Resolve repeated center-point placement at the same coordinates: tmp/oblikovati-bdd-rbXb01/checkout/features/sketch/point/scenario.feature:75:3" time="8.703522721"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: point-10 Resolve repeated center-point placement at the same coordinates
+   ✔  Given Point is active with Select center point
+   ✘  And the observed sketch fixture shows 208 dimensions needed
+      Step failed:
+      Defined: tmp/oblikovati-bdd-rbXb01/checkout/features/sketch/point/scenario.feature:77:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: point-11 Cancel a center-point command with one Escape: tmp/oblikovati-bdd-rbXb01/checkout/features/sketch/point/scenario.feature:92:3" time="10.82361892"><system-out><![CDATA[  Scenario: point-11 Cancel a center-point command with one Escape
+   ✔  Given an editable planar sketch has no active selection and Center Point is enabled in Format
+   ✔  And Point is active with Select center point
+   ✔  When the user press Escape without placing a point
+   ✔  And the user right-click empty canvas to inspect the refreshed state
+   ✔  Then Ready is displayed and the menu offers Repeat Point, Center Point
+   ✔  And no new point marker is visible
+   ✔  When the user press Escape
+   ✔  Then the menu closes and Ready remains displayed
+]]></system-out></testcase><testcase name="Scenario: point-12 Inspect Precise Input while Point is active: tmp/oblikovati-bdd-rbXb01/checkout/features/sketch/point/scenario.feature:103:3" time="9.359999088"><system-out><![CDATA[  Scenario: point-12 Inspect Precise Input while Point is active
+   ✔  Given Point is active in an editable sketch
+   ✔  When the user expand the Create panel
+   ✔  Then Precise Input is available
+]]></system-out></testcase></testsuite></testsuites>

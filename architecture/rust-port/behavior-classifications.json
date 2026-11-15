@@ -4465,10 +4465,11 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3887",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
-      "mapping_reason": "Retain separate identity and history for overlapping points."
+      "mapping_reason": "Retain separate identity and history for overlapping points.",
+      "reason": "The recorded sketch fixture is not supplied, and its notes require the complete starting state. A substitute with only the same dimension count is not established as equivalent."
     },
     {
       "id": "scenario:81ae2ce6c9e8c3611be3c774e04953bcf5baabc693486e5a3ab43dd524703629",
@@ -4509,7 +4510,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
-      "mapping_reason": "Expose the Precise Input entry in the Create panel."
+      "mapping_reason": "Expose the Precise Input entry in the Create panel.",
+      "historical_receipts": [
+        {
+          "source_revision": "05317bbb2d0809a532b29b7ff6f726a5722b865f",
+          "path": "architecture/rust-port/receipts/2026-11-15-point12-precise/receipt-858dc2bc227f70bf.json",
+          "sha256": "e7b708981cb7bbdce987af84541a357b4dfe7607a334d9c4fa2bacb8d87888d9"
+        }
+      ]
     },
     {
       "id": "scenario:d0dc7b66959fc4df19efd5d8ab6d2537215ebd05bf9e5e4b6c25906beb719df1",
