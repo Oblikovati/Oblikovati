@@ -31918,10 +31918,11 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "reason": "The title specifies a mouse-created circle, but the fixture uses precise input. The scenario folder requests a reproducible mouse fixture or clarification of the creation method."
     },
     {
       "id": "scenario:43f992f8d5a14b8dcc58c3bd130bc99156ac12752ffa90178917d95ef19447f6",

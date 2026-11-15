@@ -9,6 +9,11 @@ Scenarios `circle-center-point-01`, `-06`, `-07`, `-08`, and `-09` passed in
 diagnostic mode. The filter was `circle-center-point-0`; it did not run the
 other scenarios in the feature. The report records each executed step.
 
+The `-08` fixture creates its circle with precise input, although the scenario
+title calls it mouse-created. Its measurement steps passed, but the fixture
+does not establish that part of the premise. The scenario folder asks for
+clarification of the intended input and recorded view.
+
 The run used Xvfb, Lavapipe, and frame-loop input with `XMODIFIERS=@im=none`.
 It is not verified acceptance or OS-level input evidence. Native build
 provenance remains open in issue #3978. Circle scenario 10 has a separate
