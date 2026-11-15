@@ -66,6 +66,21 @@ fn a_blue_outline_or_gui_fill_does_not_prove_a_visible_solid() {
 }
 
 #[test]
+fn selected_face_requires_blue_fill_outside_the_gui() {
+    let blue = capture_with_patch([46, 108, 177, 255], true);
+    assert!(visible_selected_fill(&blue, &[]));
+    assert!(!visible_selected_fill(&blue, &[[8., 8., 24., 24.]]));
+    assert!(!visible_selected_fill(
+        &capture_with_patch([46, 108, 177, 255], false),
+        &[]
+    ));
+    assert!(!visible_selected_fill(
+        &capture_with_patch([210, 212, 214, 255], true),
+        &[]
+    ));
+}
+
+#[test]
 fn black_appearance_requires_model_pixels_outside_all_ui_panels() {
     let black = capture_with_patch([19, 19, 19, 255], true);
     assert!(visible_appearance_fill(&black, &[], [19, 19, 19]));

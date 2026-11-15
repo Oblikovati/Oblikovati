@@ -5,9 +5,7 @@ use super::*;
 const TOOLBAR: &str = "##selection-toolbar";
 /// Well inside the block's outline, in the home view.
 const SMALL_VIEW_FACTOR: f64 = 4.;
-const FACE_COLOR: [u8; 3] = [64, 153, 255];
 /// A shaded face in the accent colour fills many times what an outline does.
-const FACE_PIXELS: usize = 4000;
 
 fn expect_toolbar(shown: bool) {
     assert_eq!(
@@ -211,8 +209,12 @@ fn right_click_body(world: &mut ApplicationWorld) {
 }
 #[then("the block faces are highlighted in blue")]
 fn faces_blue(world: &mut ApplicationWorld) {
-    let shaded = super::super::workspace_layout::browser_feature::colored_pixels(world, FACE_COLOR);
-    assert!(shaded > FACE_PIXELS, "accent pixels {shaded}");
+    let capture = super::super::capture_framebuffer(&mut world.app().window.native);
+    let windows = super::super::diagnostics::window_occlusions();
+    assert!(
+        super::super::solid_visibility::visible_selected_fill(&capture, &windows),
+        "expected a blue face outside the GUI windows"
+    );
 }
 #[then("Visibility is checked in the context menu")]
 #[then("Visibility is checked")]
@@ -323,6 +325,13 @@ fn folder_visible(world: &mut ApplicationWorld) {
 #[when("the user right-clicks the Solid Bodies folder again")]
 fn right_click_folder(world: &mut ApplicationWorld) {
     right_click_row(world, "Solid Bodies");
+}
+#[then("its context menu offers Visibility, Expand All Children and collapses All Children")]
+fn body_folder_menu(world: &mut ApplicationWorld) {
+    expect_rows(
+        world,
+        &["Visibility", "Expand All Children", "Collapse All Children"],
+    );
 }
 // The document's own row
 #[given("the document root row is visible in the model browser")]

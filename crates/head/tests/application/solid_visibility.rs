@@ -46,6 +46,9 @@ fn point_in_window(point: [usize; 2], window: [f32; 4]) -> bool {
 pub(super) fn visible_solid_fill(capture: &ViewportCapture, windows: &[[f32; 4]]) -> bool {
     visible_fill(capture, windows, &fixture_hue)
 }
+pub(super) fn visible_selected_fill(capture: &ViewportCapture, windows: &[[f32; 4]]) -> bool {
+    visible_fill(capture, windows, &blue_selection_hue)
+}
 pub(super) fn visible_preview_fill(capture: &ViewportCapture, windows: &[[f32; 4]]) -> bool {
     visible_fill(capture, windows, &|pixel| {
         pixel[0] > pixel[1].saturating_add(20) && pixel[1] > pixel[2].saturating_add(20)
@@ -125,10 +128,10 @@ pub(super) fn neutral_fixture_hue(pixel: &[u8]) -> bool {
         && pixel[2] - pixel[0] < HUE_MARGIN
 }
 fn fixture_hue(pixel: &[u8]) -> bool {
-    let neutral = neutral_fixture_hue(pixel);
-    let blue = pixel[2] > pixel[0].saturating_add(HUE_MARGIN)
-        && pixel[2] > pixel[1].saturating_add(HUE_MARGIN);
-    neutral || blue
+    neutral_fixture_hue(pixel) || blue_selection_hue(pixel)
+}
+fn blue_selection_hue(pixel: &[u8]) -> bool {
+    pixel[2] > pixel[0].saturating_add(HUE_MARGIN) && pixel[2] > pixel[1].saturating_add(HUE_MARGIN)
 }
 #[cfg(test)]
 #[path = "solid_visibility_tests.rs"]
