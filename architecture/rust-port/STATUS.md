@@ -67,7 +67,9 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   `receipts/2026-11-15-arc-boundary-refresh/`. Its receipt is now stale.
 - Extrusion editing: browser distance editing, candidate preview, cancel,
   history and reopen passed focused native tests (#3968); see
-  `receipts/2026-11-15-extrusion-distance-edit/`. The pinned profile-extrusion
+  `receipts/2026-11-15-extrusion-distance-edit/`. A live XTest and MCPBridge run
+  also checked the edit and preserved shared parameters; see
+  `receipts/2026-11-15-live-extrusion-edit/`. The pinned profile-extrusion
   contract has no taper input; kernel work is tracked in
   [Martensite #463](https://github.com/Oblikovati/Martensite/issues/463).
 - A manual XTest and MCPBridge run created a part and free rectangle, extruded,
