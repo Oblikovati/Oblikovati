@@ -9,7 +9,14 @@ binding, a unit test, or an API-only test as proof of a native UI scenario.
 ## Restore the pinned source
 
 The source directory is edited without Git. The pinned commit is a local snapshot,
-not an upstream revision. Restore and verify it before using it for a run:
+not an upstream revision. Without `OBK_BDD_ROOT`, the native runners and binding
+inventory restore and verify a temporary checkout of the pinned bundle. The
+checkout is removed when the test thread ends. A gate run requires the pinned
+revision, a clean checkout and unchanged content; it rejects diagnostic and
+feature or scenario filters. The gate still has its documented accepted sketch
+feature list and is not a full sketch-area run.
+
+For a reproducible focused run, restore and verify the checkout explicitly:
 
 ```sh
 git clone -c core.autocrlf=false --branch snapshot \
@@ -19,9 +26,11 @@ python3 tools/bdd/verify_snapshot.py /absolute/path/to/scenario-checkout
 export OBK_BDD_ROOT=/absolute/path/to/scenario-checkout
 ```
 
-Keep the checkout outside the live source directory. Each native run records
-`source-revision.json`, including the commit and dirty state before and after
-the run. A source change during a run invalidates its results. If the source is
+Keep the checkout outside the live source directory. Explicit `OBK_BDD_ROOT`
+overrides also support unversioned or dirty diagnostic sources outside the
+gate; their identity is reported and they are not pinned acceptance evidence.
+Each native run records `source-revision.json`, including the commit and dirty
+state before and after the run. A source change during a run invalidates its results. If the source is
 not a Git checkout, the report records a null commit and dirty state.
 
 Outline receipts keep one image per example, named from the feature path and the
@@ -94,8 +103,10 @@ only selects its accepted feature list, so it is not a full sketch run.
 
 ## Record test evidence
 
-Give each run its own absolute `OBK_BDD_REPORTS` directory. The existing default
-report directory is overwritten on each run. Use a separate absolute
+Each run uses a unique default report directory under
+`target/benchmarks/application`. For a known path, give each run its own absolute
+`OBK_BDD_REPORTS` directory. An occupied report directory is refused; prior
+artifacts are never removed or overwritten by a new run. Use a separate absolute
 `CARGO_TARGET_DIR` for each concurrently active worktree. A shared target can
 reuse a test binary built from another checkout; discard that run as acceptance
 evidence if the binary provenance is uncertain. Keep the target until its runs

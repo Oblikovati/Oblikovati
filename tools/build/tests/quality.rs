@@ -88,6 +88,7 @@ struct GateRunner {
     tree: FixtureTree,
     help: crate::script_docs::tests::HelpSourceFixture,
     calls: std::cell::RefCell<Vec<String>>,
+    environments: std::cell::RefCell<Vec<Vec<(String, String)>>>,
 }
 
 impl Runner for GateRunner {
@@ -116,8 +117,14 @@ impl Runner for GateRunner {
         root: &Path,
         program: &str,
         arguments: &[&str],
-        _environment: &[(&str, &str)],
+        environment: &[(&str, &str)],
     ) -> BuildResult<String> {
+        self.environments.borrow_mut().push(
+            environment
+                .iter()
+                .map(|(k, v)| (k.to_string(), v.to_string()))
+                .collect(),
+        );
         self.output(root, program, arguments)
     }
 }
@@ -133,6 +140,13 @@ fn full_gate_schedules_coverage_docs_workflow_lint_and_duplication_without_skips
         .find(|call| call.starts_with("cargo llvm-cov --locked"))
         .unwrap();
     assert!(coverage.ends_with(" -- --test-threads=1"));
+    assert!(
+        runner
+            .environments
+            .borrow()
+            .iter()
+            .any(|env| env.contains(&("OBK_BDD_REQUIRE_PINNED".into(), "1".into())))
+    );
     for fragment in [
         "llvm-cov --locked",
         "behavior_cli.py check",
@@ -149,6 +163,19 @@ fn full_gate_schedules_coverage_docs_workflow_lint_and_duplication_without_skips
             "{fragment}"
         );
     }
+}
+
+#[test]
+fn gate_test_command_requires_pinned_scenarios() {
+    let runner = gate_fixture();
+    execute_gate_tests(&runner, runner.tree.root(), &["cargo", "test"]).unwrap();
+    assert!(
+        runner
+            .environments
+            .borrow()
+            .iter()
+            .any(|env| env.contains(&("OBK_BDD_REQUIRE_PINNED".into(), "1".into())))
+    );
 }
 
 #[test]
@@ -174,6 +201,7 @@ fn gate_fixture() -> GateRunner {
         tree,
         help,
         calls: std::cell::RefCell::new(Vec::new()),
+        environments: std::cell::RefCell::new(Vec::new()),
     };
     for name in ["Cargo.toml", "LICENSE"] {
         runner.tree.put(name, "fixture");

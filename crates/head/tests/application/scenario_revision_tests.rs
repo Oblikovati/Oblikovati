@@ -73,3 +73,21 @@ fn changed_source_discards_result_files() {
     assert!(failure.is_err());
     assert!(!result.exists());
 }
+
+#[test]
+fn failed_pinned_verification_discards_only_current_results() {
+    let temp = tempfile::tempdir().unwrap();
+    let current = temp.path().join("current.json");
+    let other = temp.path().join("other.json");
+    std::fs::write(&current, "partial result").unwrap();
+    std::fs::write(&other, "unrelated evidence").unwrap();
+    let failure = std::panic::catch_unwind(|| {
+        require_verified(Err("changed source".into()), &[&current]);
+    });
+    assert!(failure.is_err());
+    assert!(!current.exists());
+    assert_eq!(
+        std::fs::read_to_string(other).unwrap(),
+        "unrelated evidence"
+    );
+}

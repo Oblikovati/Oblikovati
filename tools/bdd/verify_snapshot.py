@@ -31,7 +31,7 @@ def checkout_files(checkout: Path) -> dict[str, str]:
     files: dict[str, str] = {}
     for path in sorted(checkout.rglob("*")):
         relative = path.relative_to(checkout)
-        if ".git" in relative.parts:
+        if relative.parts[0] == ".git":
             continue
         if path.is_symlink():
             raise ValueError(
@@ -46,6 +46,12 @@ def git_revision(checkout: Path) -> str:
     """Read a checkout revision; for example, git_revision(Path('/tmp/scenarios'))."""
     if not (checkout / ".git").exists():
         raise ValueError(f"snapshot {checkout}: expected its own Git checkout")
+    status = subprocess.check_output(
+        ["git", "-C", str(checkout), "status", "--porcelain", "--untracked-files=all"],
+        text=True,
+    )
+    if status:
+        raise ValueError(f"snapshot {checkout}: expected clean Git status, got {status!r}")
     return subprocess.check_output(
         ["git", "-C", str(checkout), "rev-parse", "HEAD"], text=True
     ).strip()
@@ -75,21 +81,38 @@ def verify_checkout(
         )
 
 
+def read_snapshot_metadata() -> tuple[dict[str, object], dict[str, str]]:
+    """Verify the pinned artifacts and return their manifest; example: read_snapshot_metadata()."""
+    metadata = json.loads((SNAPSHOT_FOLDER / "current.json").read_text())
+    verify_artifact(SNAPSHOT_FOLDER / metadata["bundle"], metadata["bundle_sha256"])
+    manifest_path = SNAPSHOT_FOLDER / metadata["manifest"]
+    verify_artifact(manifest_path, metadata["manifest_sha256"])
+    return metadata, json.loads(manifest_path.read_text())
+
+
+def restore_snapshot(destination: Path) -> None:
+    """Restore and verify the pinned source; example: restore_snapshot(Path('/tmp/source'))."""
+    metadata, manifest = read_snapshot_metadata()
+    subprocess.run(
+        ["git", "clone", "--quiet", "-c", "core.autocrlf=false", "--branch",
+         metadata["branch"], str(SNAPSHOT_FOLDER / metadata["bundle"]), str(destination)],
+        check=True,
+    )
+    verify_checkout(destination, metadata, manifest, git_revision)
+
+
 def main() -> None:
-    """Verify a snapshot checkout; run as `python3 tools/bdd/verify_snapshot.py CHECKOUT`."""
+    """Verify or restore a snapshot; run as `python3 tools/bdd/verify_snapshot.py CHECKOUT`."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("checkout", type=Path)
+    parser.add_argument("--restore", action="store_true")
     args = parser.parse_args()
-    metadata = json.loads((SNAPSHOT_FOLDER / "current.json").read_text())
-    bundle = SNAPSHOT_FOLDER / metadata["bundle"]
-    manifest_path = SNAPSHOT_FOLDER / metadata["manifest"]
-    verify_artifact(bundle, metadata["bundle_sha256"])
-    verify_artifact(manifest_path, metadata["manifest_sha256"])
-    manifest = json.loads(manifest_path.read_text())
+    if args.restore:
+        restore_snapshot(args.checkout)
+        return
+    metadata, manifest = read_snapshot_metadata()
     verify_checkout(args.checkout, metadata, manifest, git_revision)
-    print(
-        f"Verified {len(manifest)} files at snapshot commit {metadata['snapshot_commit']}"
-    )
+    print(f"Verified {len(manifest)} files at snapshot commit {metadata['snapshot_commit']}")
 
 
 if __name__ == "__main__":

@@ -27,7 +27,7 @@ from behavior_ledger import (
 from behavior_evidence import check_receipt_integrity
 from behavior_backlog import feature_backlog
 from behavior_queue import scenario_queue
-from verify_snapshot import SNAPSHOT_FOLDER
+from verify_snapshot import restore_snapshot
 
 
 def execute(action: str, checkout: Path, output: Path | None) -> None:
@@ -85,28 +85,6 @@ def check_generated(ledger: dict[str, object], expected: object) -> None:
     if expected != ledger:
         raise ValueError("checked-in behavior ledger: expected current generated rows")
     require_classified(ledger)
-
-
-def restore_snapshot(destination: Path) -> None:
-    """Restore the pinned bundle into an empty path; for example, restore_snapshot(Path('/tmp/snapshot'))."""
-    metadata = require_object(
-        read_json(SNAPSHOT_FOLDER / "current.json"), "snapshot metadata"
-    )
-    bundle = SNAPSHOT_FOLDER / str(metadata["bundle"])
-    subprocess.run(
-        [
-            "git",
-            "clone",
-            "--quiet",
-            "-c",
-            "core.autocrlf=false",
-            "--branch",
-            str(metadata["branch"]),
-            str(bundle),
-            str(destination),
-        ],
-        check=True,
-    )
 
 
 def main() -> None:

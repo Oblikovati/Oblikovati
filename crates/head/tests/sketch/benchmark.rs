@@ -64,7 +64,11 @@ fn sketch_scenarios_use_the_native_window() {
     std::thread::Builder::new()
         .name("sketch-scenarios".into())
         .stack_size(SCENARIO_STACK_BYTES)
-        .spawn(|| run_scenarios(feature_root("sketch"), accepted_sketch_feature))
+        .spawn(|| {
+            let _reports = report_destination::reserve(&world::reports_folder())
+                .unwrap_or_else(|error| panic!("{error}"));
+            run_scenarios(feature_root("sketch"), accepted_sketch_feature)
+        })
         .unwrap()
         .join()
         .unwrap();
