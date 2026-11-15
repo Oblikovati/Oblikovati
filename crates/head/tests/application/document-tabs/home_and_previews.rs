@@ -146,6 +146,7 @@ fn second_in_sketch(world: &mut ApplicationWorld) {
     world.activate_through_tab(first);
 }
 #[when("I select the second part from the menu")]
+#[when("the user selects the second part from the menu")]
 fn select_second_row(world: &mut ApplicationWorld) {
     let second = world.parts[1];
     let name = world.document_name(second);
@@ -179,6 +180,7 @@ fn part_open(world: &mut ApplicationWorld) {
 }
 #[when("I choose Home from the View tab's Switch menu")]
 #[when("I choose Home from the View ribbon Switch menu")]
+#[when("the user chooses Home from the View tab's Switch menu")]
 fn home_from_switch(world: &mut ApplicationWorld) {
     open_switch(world);
     world.click_text("Home");
@@ -200,6 +202,7 @@ fn part_in_strip(world: &mut ApplicationWorld) {
 }
 #[when("I select the part's document tab")]
 #[when("I select the remaining part tab")]
+#[when("the user selects the part's document tab")]
 fn select_part_tab(world: &mut ApplicationWorld) {
     let part = world.previous_document.expect("expected a remembered part");
     world.click_tab(part);
