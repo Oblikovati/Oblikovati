@@ -102,13 +102,32 @@ fn expect_highlighted(world: &mut ApplicationWorld) {
     assert!(outlined > 0, "expected the solid's edges outlined");
 }
 fn expect_physical_calculated(world: &ApplicationWorld) {
-    world.expect_no_text("Mass: N/A");
-    for row in [MASS, AREA, VOLUME] {
-        world.expect_text(row);
+    let (position, size) = diagnostics::window_geometry(TITLE).expect("expected Body Properties");
+    let rows = world.frame.runs.iter().filter(|run| {
+        let point = run.center();
+        (0..2)
+            .all(|axis| point[axis] >= position[axis] && point[axis] <= position[axis] + size[axis])
+    });
+    validate_physical_rows(rows.map(|run| run.text.as_str())).unwrap();
+}
+fn validate_physical_rows<'a>(rows: impl Iterator<Item = &'a str>) -> Result<(), String> {
+    let rows: Vec<String> = rows
+        .map(|row| row.chars().filter(|ch| !ch.is_whitespace()).collect())
+        .collect();
+    for expected in [MASS, AREA, VOLUME, CENTER[0], CENTER[1], CENTER[2]] {
+        let expected: String = expected.chars().filter(|ch| !ch.is_whitespace()).collect();
+        let label = expected.split(':').next().unwrap();
+        let matching: Vec<_> = rows
+            .iter()
+            .filter(|row| row.starts_with(&format!("{label}:")))
+            .collect();
+        if matching.len() != 1 || matching[0] != &expected {
+            return Err(format!(
+                "physical field {label:?} is {matching:?}: expected exactly {expected:?}"
+            ));
+        }
     }
-    for row in CENTER {
-        world.expect_text(row);
-    }
+    Ok(())
 }
 fn expect_selector_reads(world: &ApplicationWorld, name: &str) {
     let label = world.run("Body Appearance").clone();
@@ -380,4 +399,28 @@ fn body_properties_invalidates_calculated_values_after_an_edit() {
     shows_not_available(&mut world);
     close_control(&mut world);
     world.close();
+}
+
+#[test]
+fn calculated_physical_rows_reject_missing_non_numeric_and_partial_values() {
+    let valid = [MASS, AREA, VOLUME, CENTER[0], CENTER[1], CENTER[2]];
+    assert!(validate_physical_rows(valid.into_iter()).is_ok());
+    for index in 0..valid.len() {
+        let mut missing = valid.to_vec();
+        missing.remove(index);
+        assert!(validate_physical_rows(missing.into_iter()).is_err());
+        let mut invalid = valid.to_vec();
+        invalid[index] = [
+            "Mass: N/A",
+            "Area: N/A",
+            "Volume: N/A",
+            "X: N/A",
+            "Y: N/A",
+            "Z: N/A",
+        ][index];
+        assert!(validate_physical_rows(invalid.into_iter()).is_err());
+    }
+    let mut partial = valid;
+    partial[1] = "Area: 5200.000 mm^2 extra";
+    assert!(validate_physical_rows(partial.into_iter()).is_err());
 }
