@@ -202,6 +202,7 @@ fn part_in_strip(world: &mut ApplicationWorld) {
 }
 #[when("I select the part's document tab")]
 #[when("I select the remaining part tab")]
+#[when("the user selects the remaining part tab")]
 #[when("the user selects the part's document tab")]
 fn select_part_tab(world: &mut ApplicationWorld) {
     let part = world.previous_document.expect("expected a remembered part");

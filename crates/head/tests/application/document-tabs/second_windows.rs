@@ -152,6 +152,7 @@ fn first_window_active(world: &mut ApplicationWorld) {
     click_window_tab(world, FIRST);
 }
 #[when("I switch to the second window through Home")]
+#[when("the user switches to the second window through Home")]
 fn second_through_home(world: &mut ApplicationWorld) {
     through_home(world, SECOND);
 }
@@ -161,6 +162,7 @@ fn shows_isometric(world: &mut ApplicationWorld) {
     assert_ne!(probe[1], 0, "probe {probe:?}: expected an oblique view");
 }
 #[when("I switch back to the first window through Home")]
+#[when("the user switches back to the first window through Home")]
 fn first_through_home(world: &mut ApplicationWorld) {
     through_home(world, FIRST);
 }
@@ -183,6 +185,7 @@ fn second_from_home(world: &mut ApplicationWorld) {
     through_home(world, SECOND);
 }
 #[when("I press Control+F4")]
+#[when("the user presses Control+F4")]
 fn control_f4(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::F4, true);
     world.pump(Vec::new());
@@ -292,6 +295,7 @@ fn second_is_active_window(world: &mut ApplicationWorld) {
 }
 #[when("I zoom in within the second window")]
 #[when("I scroll to zoom in within the second window")]
+#[when("the user scrolls to zoom in within the second window")]
 fn zoom_second(world: &mut ApplicationWorld) {
     let before = view_probe(world);
     world.pump(vec![ViewportEvent::Input(ViewportInput::Motion {
@@ -316,6 +320,7 @@ fn zoomed_geometry_visible(world: &mut ApplicationWorld) {
     assert_eq!(Some(view_probe(world)), world.observed_second_view);
 }
 #[when("I select the first window from the View tab's Switch menu")]
+#[when("the user selects the first window from the View tab's Switch menu")]
 fn first_from_switch(world: &mut ApplicationWorld) {
     world.click_text("View");
     world.pump(Vec::new());
@@ -333,6 +338,7 @@ fn first_retained(world: &mut ApplicationWorld) {
     );
 }
 #[when("I return to the second window")]
+#[when("the user returns to the second window")]
 fn return_second(world: &mut ApplicationWorld) {
     click_window_tab(world, SECOND);
 }
