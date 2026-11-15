@@ -15,8 +15,8 @@ restoring an open document keeps its dragged position. Another checks that
 closing an inactive window keeps the active window and sketch.
 
 The focused captures and four passing native tests use source commit
-`421c19c9c`, Linux Xvfb and Mesa Lavapipe. Build provenance is still tracked in
-#3978; the frame-loop test is not an OS-input test.
+`421c19c9c`, Linux Xvfb and Mesa Lavapipe. Build provenance remains open under
+issue #3978; the frame-loop test is not an OS-input test.
 
 The full feature ran on source commit `421c19c9c`, using pinned scenario snapshot
 `05317bbb2d0809a532b29b7ff6f726a5722b865f`. All 38 scenarios and 334 steps
