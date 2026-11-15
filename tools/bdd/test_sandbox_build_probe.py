@@ -100,6 +100,7 @@ class SandboxBuildProbeTests(unittest.TestCase):
         )
         self.assertEqual(len(result["sandbox_sha256"]), 64)
         self.assertIn("--unshare-all", process.command)
+        self.assertIn("--disable-userns", process.command)
         self.assertIn("--clearenv", process.command)
         self.assertIn("--offline", process.command)
         self.assertNotIn("RUSTFLAGS", build_environment())

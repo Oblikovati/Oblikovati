@@ -105,6 +105,7 @@ def build_environment() -> dict[str, str]:
 SANDBOX_PREFIX = (
     "--unshare-all",
     "--unshare-user",
+    "--disable-userns",
     "--die-with-parent",
     "--new-session",
     "--clearenv",
