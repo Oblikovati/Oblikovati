@@ -90,13 +90,15 @@ fn api_cube_rebuilds_through_history_storage_and_named_faces() {
     assert_extrude_scalar(&mut owner, 1, 10.);
     let original = current_cube(&mut owner);
     assert_volume(&mut owner, 1_000.);
+    let source_keys = published_keys(&owner, document, oblikovati_model::feature::FeatureId(1));
     edit_extrude_distance(&mut owner, 1, "20 mm");
+    assert_shared_size_unchanged(&owner, document);
     assert_extrude_scalar(&mut owner, 1, 20.);
     assert_eq!(
         current_cube(&mut owner).scene.triangles.len(),
         original.scene.triangles.len()
     );
-    assert_volume(&mut owner, 8_000.);
+    assert_volume(&mut owner, 2_000.);
     Client::new(owner.document_host())
         .transactions()
         .undo()
@@ -106,11 +108,23 @@ fn api_cube_rebuilds_through_history_storage_and_named_faces() {
         .transactions()
         .redo()
         .unwrap();
-    assert_volume(&mut owner, 8_000.);
+    assert_volume(&mut owner, 2_000.);
     save_reopen_cube(&mut owner, document);
-    assert_volume(&mut owner, 8_000.);
+    assert_volume(&mut owner, 2_000.);
     assert_cube_topology(&mut owner);
+    let reopened = owner.documents().workspace().active_document().unwrap();
+    assert_eq!(
+        published_keys(&owner, reopened, oblikovati_model::feature::FeatureId(1)),
+        source_keys
+    );
     assert_cube_face_properties(&owner);
+}
+
+fn assert_shared_size_unchanged(owner: &TestOwner, document: u64) {
+    let session = owner.documents().workspace().session(document).unwrap();
+    let parameters = &session.snapshot().parameters;
+    let size = parameters.find("size").unwrap();
+    assert_eq!(parameters.model_value(size).unwrap().value, 1.);
 }
 
 fn author_cube(owner: &mut TestOwner) {
@@ -321,11 +335,14 @@ fn assert_cube_face_properties(owner: &TestOwner) {
         .filter(|key| face_key(key))
         .collect::<Vec<_>>();
     assert_eq!(faces.len(), 6);
+    let mut areas = Vec::new();
     for key in faces {
         let face = body.face_report(session.history(), guid, &key).unwrap();
         assert_eq!(face.loops, 1);
-        assert!((face.area - 4.).abs() < 1e-9);
+        areas.push((face.area * 1000.).round() as i64);
     }
+    areas.sort_unstable();
+    assert_eq!(areas, [1000, 1000, 2000, 2000, 2000, 2000]);
 }
 
 fn face_key(key: &[u8]) -> bool {

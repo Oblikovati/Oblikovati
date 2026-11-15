@@ -147,7 +147,7 @@ impl<
                 })
                 .map(|(_, validation)| validation.clone()),
             extrude_preview_active: self.extrusion_preview.as_ref().is_some_and(
-                |(id, generation, _)| *id == document && *generation == session.generation(),
+                |(id, generation, _, _)| *id == document && *generation == session.generation(),
             ),
             sketch_tool_keyboard: self
                 .placement_state()

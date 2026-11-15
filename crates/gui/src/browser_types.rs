@@ -27,6 +27,8 @@ pub struct GuiModelBrowser {
     /// Rectangular patterns owned by each sketch.
     pub rectangular_patterns: Vec<GuiBrowserRectangularPattern>,
     pub features: Vec<GuiBrowserFeature>,
+    /// Editable extrusion distance sources, indexed by their current feature identities.
+    pub extrusion_edits: std::collections::BTreeMap<FeatureId, GuiExtrudeEditSeed>,
     /// Placed components in assembly order, including their reference status.
     pub occurrences: Vec<GuiBrowserOccurrence>,
     /// The selected occurrence path, scoped to the current document generations.
@@ -47,6 +49,12 @@ pub struct GuiModelBrowser {
     pub materials: Vec<GuiMaterialChoice>,
     pub part_material: Option<String>,
     pub part_appearance: Option<String>,
+}
+/// Current authored inputs for a supported extrusion distance draft.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GuiExtrudeEditSeed {
+    pub sketch: DocumentSketchId,
+    pub distance: String,
 }
 /// A material available to a selector.
 pub type GuiMaterialChoice = crate::GuiAssetChoice;

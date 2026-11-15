@@ -14,8 +14,8 @@ pub use asset_choice::GuiAssetChoice;
 mod browser;
 pub use browser::{
     GuiBrowserBlockInstance, GuiBrowserBody, GuiBrowserFeature, GuiBrowserKind,
-    GuiBrowserOccurrence, GuiBrowserRectangularPattern, GuiBrowserSketch, GuiMaterialChoice,
-    GuiModelBrowser, GuiOccurrencePath,
+    GuiBrowserOccurrence, GuiBrowserRectangularPattern, GuiBrowserSketch, GuiExtrudeEditSeed,
+    GuiMaterialChoice, GuiModelBrowser, GuiOccurrencePath,
 };
 mod clipboard;
 pub use activity::GuiFrameActivity;
@@ -97,9 +97,10 @@ mod widget_abi;
 pub use application::ribbon_customization::GuiRibbonSettingsStore;
 pub use commands::{
     GuiAuthoringContext, GuiBaseViewRequest, GuiBrowserChoice, GuiCommandState, GuiDocumentStorage,
-    GuiDrawingLine, GuiDrawingProjection, GuiExtrudeDistanceValidation, GuiExtrudePreview,
-    GuiFeatureCondition, GuiFeatureEdit, GuiParameterMutation, GuiPartAssetKind, GuiPreviewImage,
-    GuiProject, GuiProjectGroup, GuiSelectionMode, GuiShellAction, GuiSketchLineStyle,
+    GuiDrawingLine, GuiDrawingProjection, GuiExtrudeDistanceValidation, GuiExtrudeEditRequest,
+    GuiExtrudePreview, GuiFeatureCondition, GuiFeatureEdit, GuiParameterMutation, GuiPartAssetKind,
+    GuiPreviewImage, GuiProject, GuiProjectGroup, GuiSelectionMode, GuiShellAction,
+    GuiSketchLineStyle,
 };
 pub use engine::{GuiFrameEngine, GuiFrameOutput, GuiFrameRequest};
 pub use input::{GuiInputCapture, GuiInputEvent, GuiKey, GuiModifiers, GuiPointerButton};

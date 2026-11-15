@@ -170,6 +170,9 @@ fn sketch(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, Str
         }
         GuiShellAction::FinishSketch => owner.edit_sketch_from_gui(false),
         GuiShellAction::OpenExtrude => Ok(false),
+        GuiShellAction::OpenExtrudeEdit(_) => Ok(false),
+        GuiShellAction::PreviewExtrudeEdit(request) => owner.preview_extrusion_edit(request),
+        GuiShellAction::EditExtrudeDistance(request) => owner.commit_extrusion_edit(request),
         GuiShellAction::PreviewExtrude(request) => {
             owner.extrusion_preview_from_gui(request.as_ref())
         }

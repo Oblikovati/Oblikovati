@@ -190,6 +190,24 @@ pub trait HeadWork: HeadSketchWork {
             "extrusion preview {request:?}: expected a certified extrusion owner"
         ))
     }
+    /// Preview an existing extrusion edit without changing history.
+    fn preview_extrusion_edit(
+        &mut self,
+        request: &oblikovati_gui::GuiExtrudeEditRequest,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "extrusion edit {request:?}: expected a certified extrusion owner"
+        ))
+    }
+    /// Commit an existing extrusion edit through the feature lifecycle.
+    fn commit_extrusion_edit(
+        &mut self,
+        request: &oblikovati_gui::GuiExtrudeEditRequest,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "extrusion edit {request:?}: expected a document owner"
+        ))
+    }
     /// Change how often a prompt appears; example: `work.set_prompt_frequency_from_gui(prompt, frequency)?`.
     fn set_prompt_frequency_from_gui(
         &mut self,

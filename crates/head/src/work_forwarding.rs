@@ -104,6 +104,18 @@ macro_rules! forward_owner_view_work {
         ) -> Result<bool, String> {
             self.$owner.validate_extrusion_distance(document, distance)
         }
+        fn preview_extrusion_edit(
+            &mut self,
+            request: &oblikovati_gui::GuiExtrudeEditRequest,
+        ) -> Result<bool, String> {
+            self.$owner.preview_extrusion_edit(request)
+        }
+        fn commit_extrusion_edit(
+            &mut self,
+            request: &oblikovati_gui::GuiExtrudeEditRequest,
+        ) -> Result<bool, String> {
+            self.$owner.commit_extrusion_edit(request)
+        }
         fn activate_document_from_gui(
             &mut self,
             request: &oblikovati_api::wire::ActivateDocumentArgs,

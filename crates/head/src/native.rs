@@ -230,6 +230,15 @@ impl HeadWindow for NativeHeadWindow {
             gui.reject_extrusion(request, cause);
         }
     }
+    fn reject_extrusion_edit(
+        &mut self,
+        request: &oblikovati_gui::GuiExtrudeEditRequest,
+        cause: &str,
+    ) {
+        if let Some(gui) = self.gui.as_mut() {
+            gui.reject_extrusion_edit(request, cause);
+        }
+    }
     fn submit_sketch_scene(&mut self, update: crate::HeadSketchSceneUpdate) -> Result<(), String> {
         self.view.set_sketch_display(&update.sketches)?;
         self.sketch_scene = Some(update);

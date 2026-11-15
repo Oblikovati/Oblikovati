@@ -162,3 +162,83 @@ fn save_and_reopen(world: &mut ApplicationWorld, path: &std::path::Path) {
         })
         .unwrap();
 }
+
+fn open_extrusion_editor(world: &mut ApplicationWorld) {
+    let position = world.run("Extrusion1").center().map(|value| value as i32);
+    world.right_click(position);
+    world.pump(Vec::new());
+    world.pump(Vec::new());
+    world.expect_text("Show Dimensions");
+    let anchor = world.run("Show Dimensions").center();
+    let edit = world
+        .frame
+        .runs
+        .iter()
+        .filter(|run| {
+            run.text
+                .chars()
+                .filter(|c| !c.is_whitespace())
+                .eq("EditFeature".chars())
+        })
+        .min_by(|a, b| {
+            (a.center()[1] - anchor[1])
+                .abs()
+                .total_cmp(&(b.center()[1] - anchor[1]).abs())
+        })
+        .expect("expected Edit Feature in the context menu")
+        .center();
+    world.click(edit.map(|value| value as i32));
+    world.pump(Vec::new());
+    world.expect_text("Distance A");
+}
+fn feature_distance(world: &mut ApplicationWorld) -> f64 {
+    use oblikovati_api::{client::Client, wire::FeatureRefArgs};
+    Client::new(world.app().owner.document_host())
+        .features()
+        .get(&FeatureRefArgs { id: 1 })
+        .unwrap()
+        .feature
+        .scalars
+        .unwrap()[0]
+        .value
+}
+#[test]
+fn browser_distance_edit_previews_cancels_commits_and_reopens() {
+    let mut world = ApplicationWorld::new();
+    super::selected_rectangle_preview(&mut world);
+    world.click_text("OK");
+    world.pump(Vec::new());
+    assert_eq!(feature_count(&mut world), 1);
+    let original_keys = named_solid_edges(&mut world);
+    open_extrusion_editor(&mut world);
+    super::replace_extrusion_distance(&mut world, "20");
+    world.pump(Vec::new());
+    assert!(world.state().extrude_preview_active);
+    assert_eq!(feature_distance(&mut world), 10.);
+    if std::env::var_os("OBK_EDIT_RECEIPT").is_some() {
+        world.save_capture("extrusion-distance-edit-preview");
+    }
+    world.click_text("Cancel");
+    world.pump(Vec::new());
+    assert_eq!(feature_distance(&mut world), 10.);
+    open_extrusion_editor(&mut world);
+    super::replace_extrusion_distance(&mut world, "20");
+    world.pump(Vec::new());
+    world.click_text("OK");
+    world.pump(Vec::new());
+    assert_eq!(feature_distance(&mut world), 20.);
+    assert_eq!(named_solid_edges(&mut world), original_keys);
+    world.key(ViewportPhysicalKey::Z, true);
+    world.pump(Vec::new());
+    assert_eq!(feature_distance(&mut world), 10.);
+    world.key(ViewportPhysicalKey::Y, true);
+    world.pump(Vec::new());
+    assert_eq!(feature_distance(&mut world), 20.);
+    assert_eq!(named_solid_edges(&mut world), original_keys);
+    let directory = tempfile::tempdir().unwrap();
+    save_and_reopen(&mut world, &directory.path().join("edited-extrusion.opd"));
+    world.pump(Vec::new());
+    assert_eq!(feature_distance(&mut world), 20.);
+    assert_eq!(named_solid_edges(&mut world), original_keys);
+    world.close();
+}

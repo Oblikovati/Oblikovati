@@ -119,8 +119,12 @@ impl GuiFrameEngine {
                 self.sketch_pattern
                     .open_edit(&request.commands, *sketch, *pattern);
             }
+            if let GuiShellAction::OpenExtrudeEdit(feature) = action {
+                self.extrude_dialog.open_edit(&request.commands, *feature);
+            }
         }
         selected.retain(|action| !matches!(action, GuiShellAction::OpenSketchPattern { .. }));
+        selected.retain(|action| !matches!(action, GuiShellAction::OpenExtrudeEdit(_)));
         let logical =
             std::array::from_fn(|axis| request.extent[axis] as f32 / request.layout_scale()[axis]);
         let area = self.workspace.document_area(logical, band_height);

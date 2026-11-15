@@ -494,3 +494,6 @@ mod policy;
 
 #[path = "extrusion_topology.rs"]
 mod topology;
+
+#[path = "extrusion_edit.rs"]
+mod edit;

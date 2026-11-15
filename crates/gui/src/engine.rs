@@ -231,6 +231,10 @@ impl GuiFrameEngine {
     pub fn reject_extrusion(&mut self, request: &crate::GuiExtrudePreview, cause: &str) {
         self.extrude_dialog.reject(request, cause);
     }
+    /// Restore a rejected extrusion edit draft; example: `engine.reject_extrusion_edit(&request, "invalid")`.
+    pub fn reject_extrusion_edit(&mut self, request: &crate::GuiExtrudeEditRequest, cause: &str) {
+        self.extrude_dialog.reject_edit(request, cause);
+    }
     /// Request a path for the owner's unsaved document without writing it.
     /// Example: `engine.request_save_path(document)?` after a SavePathRequired notice.
     pub fn request_save_path(&mut self, document: u64) -> Result<(), String> {

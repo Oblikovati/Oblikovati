@@ -225,6 +225,12 @@ pub enum GuiShellAction {
     FinishSketch,
     /// Open the Extrude dialog for the active part.
     OpenExtrude,
+    /// Reopen an existing extrusion's distance draft.
+    OpenExtrudeEdit(oblikovati_model::feature::FeatureId),
+    /// Commit an existing extrusion's distance through the typed lifecycle operation.
+    EditExtrudeDistance(GuiExtrudeEditRequest),
+    /// Preview an existing extrusion on a private candidate.
+    PreviewExtrudeEdit(GuiExtrudeEditRequest),
     /// Commit the chosen sketch profile through the document owner.
     Extrude {
         document: u64,
@@ -299,6 +305,14 @@ pub struct GuiExtrudePreview {
     pub document: u64,
     pub sketch: oblikovati_model::document_sketch::DocumentSketchId,
     pub profile: i64,
+    pub distance: String,
+}
+/// A document-scoped extrusion distance draft.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GuiExtrudeEditRequest {
+    pub generation: Option<u64>,
+    pub document: u64,
+    pub feature: oblikovati_model::feature::FeatureId,
     pub distance: String,
 }
 /// Owner validation for one extrusion expression and active document.

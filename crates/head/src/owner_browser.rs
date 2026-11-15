@@ -146,6 +146,33 @@ fn populate_browser<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
             kind: feature_kind_name(feature.definition()),
         })
         .collect();
+    browser.extrusion_edits = snapshot
+        .work_geometry
+        .features()
+        .iter()
+        .filter_map(|feature| {
+            let oblikovati_model::feature::part::PartFeatureDefinition::SketchPrism(definition) =
+                feature.definition()
+            else {
+                return None;
+            };
+            let distance = match definition.displacement()[2] {
+                oblikovati_model::feature::work_geometry::DatumLength::Constant(value) => {
+                    format!("{value} cm")
+                }
+                oblikovati_model::feature::work_geometry::DatumLength::Parameter(id) => {
+                    snapshot.parameters.get(id)?.name.clone()
+                }
+            };
+            Some((
+                feature.id(),
+                oblikovati_gui::GuiExtrudeEditSeed {
+                    sketch: definition.sketch(),
+                    distance,
+                },
+            ))
+        })
+        .collect();
     Ok(())
 }
 fn browser_rectangular_patterns(
