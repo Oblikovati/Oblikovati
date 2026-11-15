@@ -4485,7 +4485,7 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
+      "go_reference": "Go aa8297d1b: app/sketch_geometry_tools.go, app/session_input.go and app/sketch_tool_lifecycle_test.go; see receipts/2026-11-15-go-point-cancel-baseline/README.md.",
       "mapping_reason": "Cancel point creation in an editable planar sketch.",
       "historical_receipts": [
         {
@@ -4493,7 +4493,16 @@
           "path": "architecture/rust-port/receipts/2026-11-15-point11-cancel/receipt-81ae2ce6c9e8c361.json",
           "sha256": "546d57edccd50724c056cf0347c998d4f298947c6ec19af95408578989191f5d"
         }
-      ]
+      ],
+      "go_test_premise": "Go sketch-tool lifecycle, Point prompt and center-point mode tests pass; they do not assert the cancellation result, Escape key, menu, Ready status or marker pixels. See receipts/2026-11-15-go-point-cancel-baseline/README.md.",
+      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "Point tool cancellation does not create a solid or invoke a B-rep operation.",
+      "platforms": "Historical native run: Linux Xvfb with Vulkan Lavapipe. Other platforms were not checked.",
+      "kernel_integration": "The desktop owner manages the active point placement tool in an editable planar sketch; no solid operation is asserted.",
+      "rust_tests": "sketch_scenarios_use_the_native_window: point-11 Cancel a center-point command with one Escape",
+      "oracle": "Pinned scenario checks Ready, menu labels, menu dismissal and marker absence at its observed locations; the frame-loop receipt is historical and build provenance is unbounded.",
+      "expected_result": "Escape cancels the unplaced center-point command. The refreshed menu offers Repeat Point and Center Point; a second Escape dismisses the menu and Ready remains."
     },
     {
       "id": "scenario:858dc2bc227f70bfe665f1da2b23c5d37c4fb30d00e40fecfbc6b1be8105cc93",
