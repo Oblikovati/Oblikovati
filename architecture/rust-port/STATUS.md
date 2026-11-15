@@ -15,8 +15,8 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 - **R0 remains open.** The full gate, baseline fields and milestone exit audits
   are incomplete. Run `python3 -B tools/bdd/behavior_cli.py report` for current
   counts; source and application changes can make earlier receipts stale.
-- At `ec2b3fdc8ed8f5c045f9cb3e4dc909cee47449f6`, the ledger reported one
-  current verified scenario, 156 stale receipts, 34 blocked and 38 excluded
+- At `e5c2bcd72`, the ledger reported one current verified scenario, 156 stale
+  receipts, 35 blocked and 38 excluded
   across 2,720 declarations. The gate also requires missing baseline fields.
 - `rust-work` is local and has not passed the full pre-push gate. All 20 former
   application PR heads were merged locally and their PRs closed. Do not remove
@@ -61,6 +61,10 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 
 ## Active gaps
 
+- Point cancellation: point-11 requires a recorded sketch that was not supplied.
+  The scenario owner's `features/sketch/point/BLOCKERS.md` requests the sketch
+  or the properties of an acceptable substitute (#3887). The sizing report is
+  in `receipts/2026-11-15-point11-sizing/` and is not acceptance evidence.
 - Extrusion undo and redo: the native diagnostic passed three of four scenario
   steps. Named edge lengths are available through the typed API; selecting and
   measuring two edges in the viewport remains open (#3967). See
