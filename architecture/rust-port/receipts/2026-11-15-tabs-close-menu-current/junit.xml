@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: tmp/obk-quick-access-3955-source/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: tmp/obk-quick-access-3955-source/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T03:24:05.625344919Z" time="9.983461467"><testcase name="Scenario: Close an inactive saved document from its tab menu: tmp/obk-quick-access-3955-source/features/application/document-tabs/document-tabs.feature:149:3" time="9.983461467"><system-out><![CDATA[  Scenario: Close an inactive saved document from its tab menu
+   ✔  Given multiple part documents are open in the MCAD Software
+   ✔  And the first part is active
+   ✔  And the second part is saved and has no unsaved changes
+   ✔  When the user opens the second part's document tab context menu
+   ✔  And the user chooses Close
+   ✔  Then the second part's tab disappears
+   ✔  And the first part remains active in the workspace
+   ✔  And no save prompt is displayed
+]]></system-out></testcase></testsuite></testsuites>
