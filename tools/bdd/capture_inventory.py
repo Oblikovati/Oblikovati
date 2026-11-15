@@ -12,7 +12,9 @@ from capture_build_environment import (
     reject_ancestor_cargo_configs,
 )
 from committed_build_source import materialize_source
-from capture_dependency_stage import stage_capture_dependencies
+from capture_dependency_stage import stage_capture_dependencies, require_same_capture_lock
+from capture_source_config import read_capture_source_config, require_same_source_config
+from capture_manifest_check import read_capture_manifests, require_same_manifests
 
 
 def inventory_command(checkout: Path, revision: str) -> list[str]:
@@ -33,11 +35,16 @@ def isolated_inventory(
         source = folder / "source"
         materialize_source(root, commit, source)
         reject_ancestor_cargo_configs(source)
+        source_config = read_capture_source_config(source)
+        manifests = read_capture_manifests(source)
         host_environment = os.environ if environment is None else environment
         settings = capture_build_environment(folder, host_environment)
-        stage_capture_dependencies(source, host_environment, settings)
+        lock = stage_capture_dependencies(source, host_environment, settings)
         output = subprocess.check_output(
             inventory_command(checkout, revision), cwd=source, env=settings, text=True,
         )
         reject_ancestor_cargo_configs(source)
+        require_same_source_config(source, source_config)
+        require_same_manifests(source, manifests)
+        require_same_capture_lock(source, lock)
         return output

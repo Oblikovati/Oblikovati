@@ -5,6 +5,8 @@ import os
 from pathlib import Path
 from typing import Mapping
 
+from capture_registry_index import stage_registry_index
+
 
 CAPTURE_ENVIRONMENT = frozenset({
     "PATH", "HOME", "USER", "LOGNAME", "LANG", "LC_ALL", "TERM", "TMPDIR",
@@ -47,7 +49,7 @@ def isolate_cargo_home(folder: Path, environment: Mapping[str, str]) -> Path:
     if index.exists():
         if not index.is_dir():
             raise ValueError(f"Cargo index {index}: expected a directory")
-        (registry / "index").symlink_to(index.resolve(), target_is_directory=True)
+        stage_registry_index(index, registry / "index")
     return home
 
 
