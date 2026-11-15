@@ -11,11 +11,28 @@ const EMPTY: [i32; 2] = [1100, 700];
 const CANDIDATE_LIST_ABOVE_ROW: f32 = 30.;
 
 fn toggle_center_point_format(world: &mut ApplicationWorld) {
+    let panel = world.run("Format").center();
+    world.click([panel[0] as i32, panel[1] as i32 - 35]);
+    world.pump(Vec::new());
     world.click_text("Center Point");
     world.pump(Vec::new());
 }
+fn set_center_point_format(world: &mut ApplicationWorld, enabled: bool) {
+    assert!(
+        world.state().sketch_selection.entities.is_empty(),
+        "expected no selected geometry"
+    );
+    if world.state().center_point_format != enabled {
+        toggle_center_point_format(world);
+    }
+    assert_eq!(
+        world.state().center_point_format,
+        enabled,
+        "Center Point mode"
+    );
+}
 fn place_regular_points(world: &mut ApplicationWorld, points: &[[i32; 2]]) {
-    toggle_center_point_format(world);
+    set_center_point_format(world, false);
     world.select_point_tool();
     for point in points {
         world.sketch_click(*point);
@@ -49,14 +66,7 @@ fn sketch_active(world: &mut ApplicationWorld) {
 #[given("an editable planar sketch has no active selection and Center Point is enabled in Format")]
 fn empty_center_point_fixture(world: &mut ApplicationWorld) {
     world.start_empty_sketch();
-    assert!(world.state().sketch_selection.entities.is_empty());
-    if !world.state().center_point_format {
-        toggle_center_point_format(world);
-    }
-    assert!(
-        world.state().center_point_format,
-        "expected Center Point enabled"
-    );
+    set_center_point_format(world, true);
     world.remember_edited_sketch(Vec::new());
 }
 #[when("the user press Escape without placing a point")]
@@ -132,11 +142,7 @@ fn cross_back(world: &mut ApplicationWorld) {
 // point-05
 #[given("the Format Center Point toggle is off")]
 fn format_off(world: &mut ApplicationWorld) {
-    toggle_center_point_format(world);
-    assert!(
-        !world.state().center_point_format,
-        "expected the toggle off"
-    );
+    set_center_point_format(world, false);
 }
 #[when("I invoke Point")]
 #[when("the user invoke Point")]
@@ -226,8 +232,7 @@ fn is_checked(world: &mut ApplicationWorld) {
 #[given("no geometry is selected and Center Point is enabled in Format")]
 fn format_on(world: &mut ApplicationWorld) {
     place_regular_points(world, &[SECOND]);
-    toggle_center_point_format(world);
-    assert!(world.state().center_point_format, "expected the toggle on");
+    set_center_point_format(world, true);
 }
 #[then("the prompt is Select center point")]
 fn prompt_center(world: &mut ApplicationWorld) {
