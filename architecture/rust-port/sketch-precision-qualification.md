@@ -178,3 +178,17 @@ The anchor source identity and bounds remain available with the result. A
 non-square or singular augmented system declines. This equivalence holds under
 the supplied frame bounds; it does not validate those assumptions or enable
 feature admission.
+
+## Canonical origin-plane source
+
+New sketches created on an origin plane retain `XY`, `XZ`, or `YZ` as an
+explicit placement identity in sketch recipe version 13. The matching canonical
+frame supplies exact model-origin and unit-axis bounds for conditional origin
+projection. An orientation override declines this path. Older fixed frames
+remain fixed; equal coordinates do not establish origin-plane provenance.
+
+The conditional result still borrows one immutable document snapshot and does
+not establish session identity across snapshots or validate cross-platform
+interval arithmetic. It does not enable feature admission. Rust's native
+planar-sketch section uses document schema 3. The Go host tested with this
+change supports schema 2 and rejects schema 3 before model restoration.

@@ -85,7 +85,12 @@ fn rectangle_document(omit: bool, duplicate: bool) -> (DocumentSnapshot, SketchS
     }
     snapshot
         .sketches
-        .add(SKETCH, "Rectangle", SketchPlane::xy(), geometry)
+        .add_on_origin_plane(
+            SKETCH,
+            "Rectangle",
+            oblikovati_model::feature::work_plane::WorkPlaneOrigin::XY,
+            geometry,
+        )
         .unwrap();
     snapshot
         .sketches
@@ -270,6 +275,84 @@ fn changed_projection_source_is_rejected_even_when_local_coordinates_match() {
     assert!(
         snapshot
             .conditional_origin_projection(SKETCH, ANCHOR, &outcome, assumptions())
+            .is_err()
+    );
+}
+
+#[test]
+fn canonical_xy_identity_supplies_exact_origin_bounds_for_rectangle() {
+    use oblikovati_model::{feature::work_plane::WorkPlaneOrigin, history::ConditionalFrameSource};
+    let (snapshot, outcome) = rectangle_document(false, false);
+    let projection = snapshot
+        .canonical_origin_projection(SKETCH, ANCHOR, &outcome)
+        .unwrap();
+    assert_eq!(
+        projection.frame_source(),
+        ConditionalFrameSource::CanonicalOrigin(WorkPlaneOrigin::XY)
+    );
+    assert_eq!(projection.local_bounds(), [[0., 0.], [0., 0.]]);
+    let result = projection
+        .conditional_root(&full_box(&outcome), &[], &inverse())
+        .unwrap();
+    for (exact, bounds) in [0., 0., 0., 0., 1., 0., 1., 1., 0., 1.]
+        .into_iter()
+        .zip(result.root().enclosure())
+    {
+        assert!(bounds[0] <= exact && exact <= bounds[1]);
+    }
+}
+#[test]
+fn fixed_lookalike_and_edited_plane_cannot_claim_canonical_identity() {
+    let (mut snapshot, outcome) = rectangle_document(false, false);
+    snapshot
+        .sketches
+        .replace_plane(SKETCH, SketchPlane::xy())
+        .unwrap();
+    assert!(
+        snapshot
+            .canonical_origin_projection(SKETCH, ANCHOR, &outcome)
+            .is_err()
+    );
+}
+
+#[test]
+fn all_canonical_origin_plane_identities_bound_the_projected_origin() {
+    use oblikovati_model::{
+        document_sketch::DocumentSketches, feature::work_plane::WorkPlaneOrigin,
+        history::ConditionalFrameSource,
+    };
+    for origin in [
+        WorkPlaneOrigin::XY,
+        WorkPlaneOrigin::XZ,
+        WorkPlaneOrigin::YZ,
+    ] {
+        let (mut snapshot, _) = rectangle_document(false, false);
+        let mut recipe = snapshot.sketches.recipe();
+        recipe.sketches[0].plane_origin = Some(origin);
+        snapshot.sketches = DocumentSketches::from_recipe(&recipe).unwrap();
+        let batch = snapshot
+            .solve_one_document_sketch(SKETCH, SolveOptions::default(), || false)
+            .unwrap();
+        let outcome = batch.report.reports[0].result.as_ref().unwrap().clone();
+        snapshot.sketches = batch.candidate;
+        let projection = snapshot
+            .canonical_origin_projection(SKETCH, ANCHOR, &outcome)
+            .unwrap();
+        assert_eq!(
+            projection.frame_source(),
+            ConditionalFrameSource::CanonicalOrigin(origin)
+        );
+        assert_eq!(projection.local_bounds(), [[0., 0.], [0., 0.]]);
+    }
+}
+#[test]
+fn canonical_origin_rejects_stale_same_value_parameter_source() {
+    let (mut snapshot, outcome) = rectangle_document(false, false);
+    snapshot.parameters.set_expression(1, "1 cm").unwrap();
+    assert_eq!(snapshot.parameters.model_value(1).unwrap().value, 1.);
+    assert!(
+        snapshot
+            .canonical_origin_projection(SKETCH, ANCHOR, &outcome)
             .is_err()
     );
 }

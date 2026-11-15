@@ -319,3 +319,46 @@ fn repeated_creations_reserve_distinct_sketches_and_origin_anchor_identities() {
     assert_anchor(&session, second, [0.0; 2]);
     assert_eq!(session.undo_labels(), ["Create sketch", "Create sketch"]);
 }
+
+#[test]
+fn origin_plane_identity_survives_history_and_recipe_reopen() {
+    use oblikovati_model::feature::work_plane::WorkPlaneOrigin;
+    let mut session = session(None);
+    let mut request = request(true);
+    request.placement = SketchPlacement::OriginPlane(WorkPlaneOrigin::XY);
+    let sketch = session.create_sketch(&request).unwrap();
+    assert_eq!(
+        session.snapshot().sketches.get(sketch).unwrap().placement(),
+        request.placement
+    );
+    session.undo().unwrap();
+    session.redo().unwrap();
+    session
+        .run("Change placement", |snapshot, _| {
+            snapshot
+                .sketches
+                .replace_plane(sketch, SketchPlane::xy())
+                .map_err(|e| e.to_string())
+        })
+        .unwrap();
+    assert!(matches!(
+        session.snapshot().sketches.get(sketch).unwrap().placement(),
+        SketchPlacement::Fixed(_)
+    ));
+    session.undo().unwrap();
+    assert_eq!(
+        session.snapshot().sketches.get(sketch).unwrap().placement(),
+        request.placement
+    );
+    session.redo().unwrap();
+    assert!(matches!(
+        session.snapshot().sketches.get(sketch).unwrap().placement(),
+        SketchPlacement::Fixed(_)
+    ));
+    session.undo().unwrap();
+    let recipe = session.snapshot().sketches.recipe();
+    assert_eq!(recipe.version, 13);
+    let restored =
+        oblikovati_model::document_sketch::DocumentSketches::from_recipe(&recipe).unwrap();
+    assert_eq!(restored.get(sketch).unwrap().placement(), request.placement);
+}

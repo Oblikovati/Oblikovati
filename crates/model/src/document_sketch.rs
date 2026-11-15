@@ -97,6 +97,9 @@ pub struct PlacedSketchRecipe {
     pub plane_options: Option<SketchPlaneOptions>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub plane_feature: Option<crate::feature::FeatureId>,
+    /// Version 13 stores the selected canonical origin plane by identity.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub plane_origin: Option<crate::feature::work_plane::WorkPlaneOrigin>,
     /// Version 12 stores the stable face name rather than a derived plane.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub plane_face: Option<crate::feature::work_plane::WorkPlaneFaceReference>,
@@ -152,12 +155,18 @@ impl PlacedSketch {
         &self.geometry
     }
     fn recipe(&self) -> PlacedSketchRecipe {
-        let (plane, plane_options, plane_feature, plane_face) = match &self.placement {
-            SketchPlacement::Fixed(frame) => {
-                (Some(frame.recipe()), Some(frame.options()), None, None)
-            }
-            SketchPlacement::WorkPlane(id) => (None, None, Some(*id), None),
-            SketchPlacement::Face(reference) => (None, None, None, Some(reference.clone())),
+        let (plane, plane_options, plane_feature, plane_face, plane_origin) = match &self.placement
+        {
+            SketchPlacement::Fixed(frame) => (
+                Some(frame.recipe()),
+                Some(frame.options()),
+                None,
+                None,
+                None,
+            ),
+            SketchPlacement::WorkPlane(id) => (None, None, Some(*id), None, None),
+            SketchPlacement::Face(reference) => (None, None, None, Some(reference.clone()), None),
+            SketchPlacement::OriginPlane(origin) => (None, None, None, None, Some(*origin)),
         };
         PlacedSketchRecipe {
             id: self.id,
@@ -170,6 +179,7 @@ impl PlacedSketch {
             plane_options,
             plane_feature,
             plane_face,
+            plane_origin,
             orientation: self.orientation,
             point_projections: self.point_projections.clone(),
             block_instances: self.block_instances.clone(),
@@ -177,6 +187,9 @@ impl PlacedSketch {
         }
     }
     fn recipe_version(&self) -> u32 {
+        if matches!(self.placement, SketchPlacement::OriginPlane(_)) {
+            return 13;
+        }
         if matches!(self.placement, SketchPlacement::Face(_)) {
             return 12;
         }
@@ -324,6 +337,13 @@ impl DocumentSketches {
         if self
             .sketches
             .iter()
+            .any(|sketch| matches!(sketch.placement, SketchPlacement::OriginPlane(_)))
+        {
+            return 13;
+        }
+        if self
+            .sketches
+            .iter()
             .any(|sketch| matches!(sketch.placement, SketchPlacement::Face(_)))
         {
             return 12;
@@ -353,9 +373,9 @@ impl DocumentSketches {
     }
     /// Restore a complete collection before replacing a document owner; example: `DocumentSketches::from_recipe(&recipe)?`.
     pub fn from_recipe(recipe: &DocumentSketchRecipe) -> Result<Self, SketchError> {
-        if !matches!(recipe.version, 1..=12) {
+        if !matches!(recipe.version, 1..=13) {
             return Err(SketchError::Definition(format!(
-                "document sketch recipe version {}: expected 1 through 12",
+                "document sketch recipe version {}: expected 1 through 13",
                 recipe.version
             )));
         }

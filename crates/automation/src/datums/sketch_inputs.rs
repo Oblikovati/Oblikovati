@@ -32,7 +32,7 @@ fn invalid_plane_index(snapshot: &DocumentSnapshot, index: i64) -> Error {
 
 fn origin_placement(origin: WorkPlaneOrigin) -> (SketchPlacement, String) {
     (
-        SketchPlacement::Fixed(origin.plane()),
+        SketchPlacement::OriginPlane(origin),
         format!("{origin:?} Plane"),
     )
 }

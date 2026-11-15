@@ -360,3 +360,59 @@ mod centerlines;
 
 #[path = "package_sketches/line_constraints.rs"]
 mod line_constraints;
+
+#[test]
+fn origin_plane_identity_round_trips_and_old_fixed_frames_stay_fixed() {
+    use oblikovati_model::{
+        document_sketch::SketchPlacement, feature::work_plane::WorkPlaneOrigin,
+    };
+    let mut owner = DocumentSketches::default();
+    owner
+        .add_on_origin_plane(
+            DocumentSketchId(1),
+            "XY",
+            WorkPlaneOrigin::XY,
+            Sketch2D::default(),
+        )
+        .unwrap();
+    owner
+        .add(
+            DocumentSketchId(2),
+            "Legacy",
+            SketchPlane::xy(),
+            Sketch2D::default(),
+        )
+        .unwrap();
+    let saved = package().with_sketches(&owner, 2, 0).unwrap();
+    let bytes = saved.encode().unwrap();
+    assert!(String::from_utf8_lossy(&bytes).contains("schemaVersion: 3"));
+    let reopened = DocumentPackage::decode(&bytes)
+        .unwrap()
+        .restore_sketches()
+        .unwrap()
+        .sketches;
+    assert_eq!(
+        reopened.get(DocumentSketchId(1)).unwrap().placement(),
+        SketchPlacement::OriginPlane(WorkPlaneOrigin::XY)
+    );
+    assert!(matches!(
+        reopened.get(DocumentSketchId(2)).unwrap().placement(),
+        SketchPlacement::Fixed(_)
+    ));
+    let mut ambiguous = owner.recipe();
+    ambiguous.sketches[0].plane = Some(SketchPlane::xy().recipe());
+    ambiguous.sketches[0].plane_options = Some(SketchPlane::xy().options());
+    assert!(DocumentSketches::from_recipe(&ambiguous).is_err());
+    let mut old = owner.recipe();
+    old.version = 12;
+    assert!(DocumentSketches::from_recipe(&old).is_err());
+    let yaml = serde_yaml_ng::to_string(&owner.recipe()).unwrap();
+    let unknown = yaml.replace("plane_origin: XY", "plane_origin: FuturePlane");
+    assert_ne!(unknown, yaml);
+    assert!(
+        serde_yaml_ng::from_str::<oblikovati_model::document_sketch::DocumentSketchRecipe>(
+            &unknown
+        )
+        .is_err()
+    );
+}

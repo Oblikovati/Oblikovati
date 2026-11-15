@@ -4,7 +4,7 @@ use oblikovati_api::types::DOCUMENT_PART;
 use oblikovati_model::{
     document_sketch::{SketchOrientationDefinition, SketchPlacement},
     history::DocumentSketchCreation,
-    sketch::{SketchFrameAxis, SketchPlane},
+    sketch::SketchFrameAxis,
 };
 pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
@@ -62,17 +62,18 @@ fn creation_inputs(
 }
 fn origin_plane(label: &str) -> Result<(SketchPlacement, String), Error> {
     let name = label.trim().to_ascii_uppercase();
-    let (frame, normalized) = match name.as_str() {
-        "" | "XY" => (SketchPlane::xy(), "XY"),
-        "XZ" => (SketchPlane::xz(), "XZ"),
-        "YZ" => (SketchPlane::yz(), "YZ"),
+    use oblikovati_model::feature::work_plane::WorkPlaneOrigin;
+    let (origin, normalized) = match name.as_str() {
+        "" | "XY" => (WorkPlaneOrigin::XY, "XY"),
+        "XZ" => (WorkPlaneOrigin::XZ, "XZ"),
+        "YZ" => (WorkPlaneOrigin::YZ, "YZ"),
         _ => {
             return Err(Error(format!(
                 "sketch.create origin plane {label:?}: expected XY, XZ, YZ, or empty for XY"
             )));
         }
     };
-    Ok((SketchPlacement::Fixed(frame), normalized.into()))
+    Ok((SketchPlacement::OriginPlane(origin), normalized.into()))
 }
 fn orientation_input(
     snapshot: &DocumentSnapshot,

@@ -3,7 +3,7 @@
 use super::DocumentSnapshot;
 use crate::{
     document_sketch::{DocumentSketchId, SketchPlacement, SketchSolveDiagnostics},
-    feature::work_geometry::WorkPointReference,
+    feature::{work_geometry::WorkPointReference, work_plane::WorkPlaneOrigin},
     sketch::{
         SketchEntityId, SketchPlaneRecipe, SketchSolveOutcome,
         interval_equations::enclosure::Enclosure,
@@ -17,6 +17,12 @@ pub struct SketchFrameInputBounds {
     pub x_axis: [[f64; 2]; 3],
     pub y_axis: [[f64; 2]; 3],
 }
+/// Provenance of the resolved frame bounds.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ConditionalFrameSource {
+    CallerAssumed,
+    CanonicalOrigin(WorkPlaneOrigin),
+}
 /// Conditional enclosure of the model origin in one borrowed document snapshot.
 pub struct ConditionalOriginProjection<'a> {
     snapshot: &'a DocumentSnapshot,
@@ -24,6 +30,7 @@ pub struct ConditionalOriginProjection<'a> {
     sketch: DocumentSketchId,
     anchor: SketchEntityId,
     frame: SketchPlaneRecipe,
+    frame_source: ConditionalFrameSource,
     assumptions: SketchFrameInputBounds,
     local: [[f64; 2]; 2],
 }
@@ -47,6 +54,10 @@ impl ConditionalOriginProjection<'_> {
     /// Read the resolved frame snapshot; example: `evidence.frame()`.
     pub fn frame(&self) -> SketchPlaneRecipe {
         self.frame
+    }
+    /// Read how the frame bounds were obtained; example: `evidence.frame_source()`.
+    pub fn frame_source(&self) -> ConditionalFrameSource {
+        self.frame_source
     }
     /// Read caller assumptions; example: `evidence.assumptions()`.
     pub fn assumptions(&self) -> SketchFrameInputBounds {
@@ -111,6 +122,38 @@ impl<'s> ConditionalOriginProjection<'s> {
     }
 }
 impl DocumentSnapshot {
+    /// Bound an origin projection from an explicitly authored canonical origin-plane identity.
+    /// Example: `snapshot.canonical_origin_projection(sketch, anchor, &outcome)?`.
+    /// Other placements and derived orientations remain unsupported.
+    pub fn canonical_origin_projection<'a>(
+        &'a self,
+        sketch: DocumentSketchId,
+        anchor: SketchEntityId,
+        outcome: &'a SketchSolveOutcome,
+    ) -> Result<ConditionalOriginProjection<'a>, String> {
+        let placed = self.sketches.get(sketch).map_err(|e| e.to_string())?;
+        let SketchPlacement::OriginPlane(origin) = placed.placement() else {
+            return Err(format!(
+                "sketch {sketch:?}: expected an explicit canonical origin-plane identity"
+            ));
+        };
+        if placed.orientation().is_some() {
+            return Err(format!(
+                "sketch {sketch:?}: expected the unmodified canonical origin-plane frame"
+            ));
+        }
+        let frame = origin.plane().recipe();
+        let singleton = |values: [f64; 3]| values.map(|value| [value, value]);
+        let assumptions = SketchFrameInputBounds {
+            origin: singleton(frame.origin),
+            x_axis: singleton(frame.x_axis),
+            y_axis: singleton(frame.y_axis),
+        };
+        let mut evidence =
+            self.conditional_origin_projection(sketch, anchor, outcome, assumptions)?;
+        evidence.frame_source = ConditionalFrameSource::CanonicalOrigin(origin);
+        Ok(evidence)
+    }
     /// Bound an origin binding under explicit resolved-frame assumptions and a current solve.
     /// Example: `snapshot.conditional_origin_projection(sketch, anchor, &outcome, bounds)?`.
     /// This is conditional evidence, not document or feature qualification.
@@ -124,8 +167,10 @@ impl DocumentSnapshot {
         let view = self
             .require_converged_resolved_sketch(sketch)
             .map_err(|e| e.to_string())?;
-        if !matches!(view.sketch.placement(), SketchPlacement::Fixed(_))
-            || view.sketch.orientation().is_some()
+        if !matches!(
+            view.sketch.placement(),
+            SketchPlacement::Fixed(_) | SketchPlacement::OriginPlane(_)
+        ) || view.sketch.orientation().is_some()
         {
             return Err(format!(
                 "sketch {sketch:?}: expected a fixed frame without derived orientation"
@@ -170,6 +215,7 @@ impl DocumentSnapshot {
             sketch,
             anchor,
             frame,
+            frame_source: ConditionalFrameSource::CallerAssumed,
             assumptions,
             local,
         })

@@ -448,5 +448,6 @@ pub use sketch_placement_recipe::{
 
 mod conditional_projection;
 pub use conditional_projection::{
-    ConditionalOriginProjection, ConditionalProjectedSketchRoot, SketchFrameInputBounds,
+    ConditionalFrameSource, ConditionalOriginProjection, ConditionalProjectedSketchRoot,
+    SketchFrameInputBounds,
 };

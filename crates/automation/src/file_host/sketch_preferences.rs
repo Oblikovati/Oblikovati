@@ -83,6 +83,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
             if matches!(
                 placement,
                 oblikovati_model::document_sketch::SketchPlacement::Fixed(_)
+                    | oblikovati_model::document_sketch::SketchPlacement::OriginPlane(_)
             ) && args.orientation.is_none()
             {
                 return Ok(None);

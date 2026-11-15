@@ -76,6 +76,10 @@ impl DocumentSnapshot {
     ) -> Result<(), SketchError> {
         let geometry = Sketch2D::default();
         match &request.placement {
+            SketchPlacement::OriginPlane(origin) => {
+                self.sketches
+                    .add_on_origin_plane(sketch, &request.name, *origin, geometry)?
+            }
             SketchPlacement::Fixed(plane) => {
                 self.sketches.add(sketch, &request.name, *plane, geometry)?
             }

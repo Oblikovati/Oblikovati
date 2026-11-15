@@ -174,3 +174,17 @@ fn nonconstant_axis_assumptions_enclose_exact_corner_products() {
         }
     }
 }
+
+#[test]
+fn legacy_fixed_xy_frame_is_not_promoted_to_canonical_origin() {
+    let (snapshot, outcome) = source_snapshot();
+    assert_eq!(
+        snapshot.resolve_sketch_plane(SKETCH).unwrap(),
+        SketchPlane::xy()
+    );
+    assert!(
+        snapshot
+            .canonical_origin_projection(SKETCH, ANCHOR, &outcome)
+            .is_err()
+    );
+}

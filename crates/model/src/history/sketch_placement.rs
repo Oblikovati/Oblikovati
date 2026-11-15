@@ -103,7 +103,11 @@ impl DocumentSnapshot {
                     crate::document_sketch::SketchAxisReference::Feature(_)
                 )
             });
-        if matches!(placed.placement(), SketchPlacement::Fixed(_)) && !needs_axis {
+        if matches!(
+            placed.placement(),
+            SketchPlacement::Fixed(_) | SketchPlacement::OriginPlane(_)
+        ) && !needs_axis
+        {
             return Ok(None);
         }
         self.effective_work_geometry()
