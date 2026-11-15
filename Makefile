@@ -17,7 +17,7 @@ else
 $(error BUILD_CACHE=$(BUILD_CACHE): expected kache or off)
 endif
 
-.PHONY: tools gate build test lint docs-lint package release-check
+.PHONY: tools gate gate-xvfb build test lint docs-lint package release-check
 tools:
 	npm ci
 	"$(CARGO)" install cargo-llvm-cov --locked --version 0.9.1
@@ -25,6 +25,9 @@ tools:
 
 gate:
 	"$(CARGO)" xtask gate
+
+gate-xvfb:
+	./tools/with-xvfb.sh $(MAKE) gate
 
 build:
 	"$(CARGO)" xtask build

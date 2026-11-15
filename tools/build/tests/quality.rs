@@ -201,3 +201,59 @@ fn write_stale_pin(tree: &FixtureTree, owner: &str) {
     pin.revision = "0".repeat(40);
     tree.put("release.toml", &toml::to_string(&config).unwrap());
 }
+
+#[cfg(unix)]
+mod xvfb_wrapper {
+    use std::{os::unix::fs::PermissionsExt, path::Path, process::Command};
+
+    struct XvfbRunFake(tempfile::TempDir);
+    impl XvfbRunFake {
+        fn new() -> Self {
+            let directory = tempfile::tempdir().unwrap();
+            let executable = directory.path().join("xvfb-run");
+            std::fs::write(&executable, "#!/bin/sh\nprintf '%s\\n' \"$@\"\nexit 37\n").unwrap();
+            std::fs::set_permissions(executable, std::fs::Permissions::from_mode(0o755)).unwrap();
+            Self(directory)
+        }
+        fn path(&self) -> &Path {
+            self.0.path()
+        }
+    }
+
+    fn wrapper() -> std::path::PathBuf {
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tools/with-xvfb.sh")
+    }
+
+    #[test]
+    fn xvfb_wrapper_provides_a_large_screen_and_preserves_arguments_and_status() {
+        let fake = XvfbRunFake::new();
+        let result = Command::new(wrapper())
+            .env("PATH", fake.path())
+            .args(["example command", "two words"])
+            .output()
+            .unwrap();
+        assert_eq!(result.status.code(), Some(37));
+        assert_eq!(
+            String::from_utf8(result.stdout).unwrap(),
+            "-a\n-s\n-screen 0 1920x1080x24 -noreset\nexample command\ntwo words\n"
+        );
+    }
+
+    #[test]
+    fn xvfb_wrapper_names_missing_command_and_missing_dependency() {
+        let directory = tempfile::tempdir().unwrap();
+        let no_command = Command::new(wrapper())
+            .env("PATH", directory.path())
+            .output()
+            .unwrap();
+        assert_eq!(no_command.status.code(), Some(2));
+        assert!(String::from_utf8_lossy(&no_command.stderr).contains("expected a command"));
+        let no_xvfb = Command::new(wrapper())
+            .env("PATH", directory.path())
+            .arg("gate")
+            .output()
+            .unwrap();
+        assert_eq!(no_xvfb.status.code(), Some(1));
+        assert!(String::from_utf8_lossy(&no_xvfb.stderr).contains("xvfb-run is missing"));
+    }
+}

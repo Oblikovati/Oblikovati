@@ -52,6 +52,12 @@ under an automatically created virtual display. For a headless **build**, the
 script starts its own Xvfb server and closes that server when the script exits.
 It does not close another user's display or GUI.
 
+For the full local gate on a headless Linux machine, run `make gate-xvfb`.
+It runs `make gate` under a private 1920 by 1080 Xvfb screen and closes the
+server when the gate exits. Native tests capture the complete 1440 by 900
+application window; the smaller default Xvfb screen cannot contain it.
+Install Xvfb and xauth first. On a suitable real display, use `make gate`.
+
 ## Dependency installation
 
 Linux selects an available package manager in this order:
