@@ -15,9 +15,10 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 - **R0 remains open.** The full gate, baseline fields and milestone exit audits
   are incomplete. Run `python3 -B tools/bdd/behavior_cli.py report` for current
   counts; source and application changes can make earlier receipts stale.
-- At `433e83c4548590327ff2805238d6daaf066d41f5`, the ledger reported zero
-  current verified scenarios, 156 stale receipts and 21 blocked scenarios
+- At `6d0432f09d89c887951b5f22698b49ecd09f68b7`, the ledger reported zero
+  current verified scenarios, 178 stale receipts and 21 blocked scenarios
   across 2,720 declarations. This is a checkpoint, not a permanent count.
+  The gate also requires baseline fields for 2,580 scenarios.
 - `rust-work` is local and has not passed the full pre-push gate. All 20 former
   application PR heads were merged locally and their PRs closed. Do not remove
   their remaining remote branches until the consolidated work is safely pushed.
@@ -46,10 +47,12 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   (#3961). See `receipts/2026-11-15-orientation-verified/`. The run uses
   frame-loop input; OS-level input and the full Go baseline remain open.
 
-- Document opening: Express assembly loading, qualified cache and Load Full
-  remain incomplete (#3949). A real saved assembly fixture and shared live
-  presenter are in `rust-work`. The cache producer and saved-source validator
-  are present; Express open and Load Full are not yet wired.
+- Document opening: Express open and Load Full are in `rust-work` (#3949).
+  The pinned journey passes 13 of 14 steps; Finish and Simplify need the
+  scenario clarification recorded in #3963. Saved views require matching source,
+  mesh quality and producer identity. Cache creation is unavailable on macOS
+  and Windows until the running executable can be verified (#3964). See
+  `receipts/2026-11-15-express-contract/` for the diagnostic run.
 - Document creation: the full diagnostic passed 29 of 39 scenarios. Named
   template assets and their catalog configuration are missing (#3899, #3951,
   #3952). The scenario owner's `BLOCKERS.md` lists the fixture requirements.
@@ -69,8 +72,8 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 - Sketch ribbon: inactive-sketch setup was unbound (#3956). The source's
   outside-edit Create availability conflicts with the Go gate; the scenario
   owner has an actionable blocker.
-- Ribbon appearance: seven of 18 diagnostic scenarios passed; unbound steps and
-  the missing Team Web group remain (#3957).
+- Ribbon appearance: 16 of 18 pinned scenarios passed; the Team Web fixture
+  remains missing (#3957). See `receipts/2026-11-15-ribbon-appearance/`.
 - Two-point rectangle: nine of ten scenarios passed in a configured diagnostic
   run. Scenario 10 needs the recorded fixture to assess its transient count
   (#3953). See the scenario owner's `BLOCKERS.md`.
