@@ -4333,8 +4333,8 @@
     },
     {
       "id": "scenario:436f15ab31b13b1dfef8458be1b83d8a3be1c7438819c5c0929b93c9b46729ef",
-      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
-      "source_sha256": "f88b2e19cf22dae22f91dbd57e319e819d47e9f1daf9edc00b3da4c122111bf5",
+      "source_revision": "05317bbb2d0809a532b29b7ff6f726a5722b865f",
+      "source_sha256": "c0b6827af861c35ed71f715077fe24911a883571d12a5a760f5738958de22d9b",
       "milestone": "R4",
       "owner": "desktop",
       "target_module": "crates/head, crates/gui, crates/session, crates/model",
@@ -4343,11 +4343,7 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3887",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "verified",
-      "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-point-436f15ab31b13b1d-941dd9bf/receipt-436f15ab31b13b1d.json",
-        "sha256": "53f3f71f8b0944ed214a1500b68f8b8879f9c2853b84db44cab1bfa79213d363"
-      },
+      "state": "inventoried",
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
       "mapping_reason": "Place multiple regular points in one command.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
@@ -4357,8 +4353,19 @@
           "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
           "path": "architecture/rust-port/receipts/2026-11-14-point-05/receipt-436f15ab31b13b1d.json",
           "sha256": "cab505d3f5ad71f4034f8467d2d0d379a1dd300b7404daba102e9bdb049ac57c"
+        },
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-14-point-436f15ab31b13b1d-941dd9bf/receipt-436f15ab31b13b1d.json",
+          "sha256": "53f3f71f8b0944ed214a1500b68f8b8879f9c2853b84db44cab1bfa79213d363"
+        },
+        {
+          "source_revision": "05317bbb2d0809a532b29b7ff6f726a5722b865f",
+          "path": "architecture/rust-port/receipts/2026-11-15-point05-regular/receipt-436f15ab31b13b1d.json",
+          "sha256": "5b062760ec5f1f6252dd5be773c16f913568b92332333d76562935fcd41d1ef4"
         }
-      ]
+      ],
+      "last_receipt": null
     },
     {
       "id": "scenario:b808d9e7aa5c4536ff4c80934a19febf1c6819957d1b0c9175d5fee7b467b11d",
@@ -4396,8 +4403,8 @@
     },
     {
       "id": "scenario:545eaee5fec751471341c0834211f05d9377ece3ddc1bbc54c6cbcead3a10f12",
-      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
-      "source_sha256": "f88b2e19cf22dae22f91dbd57e319e819d47e9f1daf9edc00b3da4c122111bf5",
+      "source_revision": "05317bbb2d0809a532b29b7ff6f726a5722b865f",
+      "source_sha256": "c0b6827af861c35ed71f715077fe24911a883571d12a5a760f5738958de22d9b",
       "milestone": "R4",
       "owner": "desktop",
       "target_module": "crates/head, crates/gui, crates/session, crates/model",
@@ -4406,11 +4413,7 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3887",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "verified",
-      "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-point-545eaee5fec75147-941dd9bf/receipt-545eaee5fec75147.json",
-        "sha256": "ddf030002ee184d0a1b2a161fda9c0308e231c468f6be3fa697c5716662688a8"
-      },
+      "state": "inventoried",
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
       "mapping_reason": "Create a center point using the format mode.",
       "go_test_premise": "Go aa8297d1b: center-point mode and point creation tests pass; rendering and retention of another regular point are not covered. The point-tool lifecycle differs. See receipts/2026-11-14-go-point-center-baseline/README.md.",
@@ -4421,7 +4424,20 @@
       "kernel_integration": "The desktop owner applies point sketch actions and presents the sketch scene.",
       "rust_tests": "sketch_scenarios_use_the_native_window: point-08 Create a center point using the Format toggle",
       "oracle": "Pinned native scenario checks the marker pixels and model point roles at each selected location; final capture reviewed.",
-      "expected_result": "A new center point appears at the clicked location and the existing regular point remains a regular dot."
+      "expected_result": "A new center point appears at the clicked location and the existing regular point remains a regular dot.",
+      "historical_receipts": [
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-14-point-545eaee5fec75147-941dd9bf/receipt-545eaee5fec75147.json",
+          "sha256": "ddf030002ee184d0a1b2a161fda9c0308e231c468f6be3fa697c5716662688a8"
+        },
+        {
+          "source_revision": "05317bbb2d0809a532b29b7ff6f726a5722b865f",
+          "path": "architecture/rust-port/receipts/2026-11-15-point08-center/receipt-545eaee5fec75147.json",
+          "sha256": "211cae179bf2b535e44a9fe77126d8907953c0d91db69cf5a79804067d223683"
+        }
+      ],
+      "last_receipt": null
     },
     {
       "id": "scenario:5c307c15c244bdd9c410a9f4b50259158f153aba04d9e03718836bfcb7a45577",

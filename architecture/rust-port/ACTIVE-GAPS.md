@@ -7,8 +7,8 @@ acceptance evidence. The build-provenance gap in #3978 applies to every native
 BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
 
 - Point cancellation: point-11 passed a focused native run and the full Point
-  feature run (#3887). The full run passed 3 of 9 scenarios; six failed. See
-  `receipts/2026-11-15-point11-cancel/`. The capture remains historical (#3978).
+  feature run (#3887). The latest full run passed 5 of 9 scenarios; four failed.
+  See `receipts/2026-11-15-point-mode-full/`. Captures remain historical (#3978).
 - Extrusion undo and redo: the native diagnostic passed three of four scenario
   steps. Named edge lengths are available through the typed API; selecting and
   measuring two edges in the viewport remains open (#3967). See
