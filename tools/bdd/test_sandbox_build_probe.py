@@ -6,14 +6,18 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
+from dataclasses import replace
 from unittest.mock import patch
 
 from committed_build_source import materialize_source
 from test_committed_build_source import SourceRepository
+from test_registry_vendor_check import RegistryVendorFixture
+from runtime_snapshot import snapshot_runtime
 
 from sandbox_build_probe import (
     BuildProbe,
     build_environment,
+    check_source_cargo_config,
     require_probe,
     run_build_probe,
     run_committed_build_probe,
@@ -116,6 +120,55 @@ class SandboxBuildProbeTests(unittest.TestCase):
         self.assertEqual(result["source_commit"], fixture.commit)
         self.assertFalse(result["reusable"])
 
+    def test_registry_mismatch_stops_committed_build(self) -> None:
+        root = self.probe.source.parent
+        fixture_root = root / "registry-fixture"
+        fixture_root.mkdir()
+        vendor = RegistryVendorFixture(fixture_root)
+        (self.probe.config / "config.toml").write_text(
+            '[source.crates-io]\nreplace-with="vendored-sources"\n'
+            '[source."git+https://example.invalid/repo"]\n'
+            'git="https://example.invalid/repo"\nreplace-with="vendored-sources"\n'
+            '[source.vendored-sources]\ndirectory="/vendor"\n'
+        )
+        repo = root / "repository"
+        repo.mkdir()
+        git = SourceRepository(repo)
+        (repo / "Cargo.lock").write_bytes(vendor.lock)
+        git.git("add", "Cargo.lock")
+        git.git("commit", "-qm", "lock registry")
+        revision = git.git("rev-parse", "HEAD")
+        self.probe.source.rmdir()
+        materialize_source(repo, revision, self.probe.source)
+        probe = replace(self.probe, vendor=vendor.vendor)
+        process = FakeBuildProcess(probe.target)
+        (vendor.package / "src/lib.rs").write_text("forged")
+        with self.assertRaisesRegex(ValueError, "expected archive content"):
+            run_committed_build_probe(
+                probe, repo, revision, process, archives=vendor.archives
+            )
+        self.assertEqual(process.command, [])
+        (vendor.package / "src/lib.rs").write_bytes(vendor.contents["src/lib.rs"])
+        config_path = probe.config / "config.toml"
+        valid_config = config_path.read_text()
+        config_path.write_text(
+            valid_config.replace('directory="/vendor"', 'directory="/usr"')
+        )
+        with self.assertRaisesRegex(ValueError, "expected only locked sources"):
+            run_committed_build_probe(
+                probe, repo, revision, process, archives=vendor.archives
+            )
+        self.assertEqual(process.command, [])
+        config_path.write_text(valid_config)
+        result = run_committed_build_probe(
+            probe, repo, revision, process, archives=vendor.archives
+        )
+        self.assertEqual(result["registry_check"]["registry_packages_checked"], 1)
+        self.assertEqual(
+            result["registry_check"]["git_packages_unverified"], ["git-dep 0.1.0"]
+        )
+        self.assertFalse(result["reusable"])
+
     def test_changed_inputs_and_failed_build_are_rejected(self) -> None:
         with self.assertRaisesRegex(ValueError, "inputs changed"):
             run_build_probe(
@@ -133,6 +186,20 @@ class SandboxBuildProbeTests(unittest.TestCase):
             run_build_probe(
                 self.probe, FakeBuildProcess(self.probe.target, 3), FakeInputSnapshot()
             )
+
+    def test_source_cargo_overrides_are_rejected(self) -> None:
+        folder = self.probe.source / ".cargo"
+        folder.mkdir()
+        config = folder / "config.toml"
+        config.write_text("[build]\njobs=2\n")
+        check_source_cargo_config(self.probe, snapshot_runtime(self.probe.source))
+        config.write_text('[source.crates-io]\nreplace-with="host"\n')
+        with self.assertRaisesRegex(ValueError, "expected no source overrides"):
+            check_source_cargo_config(self.probe, snapshot_runtime(self.probe.source))
+        config.unlink()
+        (folder / "config").write_text("[build]\njobs=2\n")
+        with self.assertRaisesRegex(ValueError, "no legacy Cargo configuration"):
+            check_source_cargo_config(self.probe, snapshot_runtime(self.probe.source))
 
     def test_refuses_overlap_occupied_output_and_unsupported_host(self) -> None:
         overlap = BuildProbe(

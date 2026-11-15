@@ -114,8 +114,20 @@ set, file contents, file permissions and link counts. It reports the selected co
 when the comparison succeeds. Without those options, it does not perform this
 comparison.
 
-The tool does not prove that the vendor directory matches trusted registry
-content. It uses the host `/usr`, GCC, kernel, devices and clock. The read-only
+With `--repository` and `--revision`, add `--registry-archives /absolute/cache`
+to compare crates.io vendor packages with the `.crate` files named by the locked
+source. The check verifies each archive against its lockfile SHA-256, then checks
+vendored paths, contents, executable bits and canonical checksum metadata. It
+requires the explicit Cargo configuration to replace the locked sources with
+`/vendor`, and refuses project Cargo source overrides. It accounts for Cargo's
+VCS metadata exclusions and refuses unknown package sources or noncanonical
+metadata. The archive cache must support no-atime reads. Cargo's
+[checksum metadata](https://doc.rust-lang.org/cargo/reference/source-replacement.html)
+is not itself a security mechanism; it is checked against the archive instead.
+Git packages are listed as unverified. This check does not establish the whole
+vendor directory as trusted.
+
+The tool uses the host `/usr`, GCC, kernel, devices and clock. The read-only
 mounts do not stop host-side writes during the build, and comparing snapshots
 before and after cannot detect every transient change. The input inventory
 hashes identify observations, not independently checked build provenance.
