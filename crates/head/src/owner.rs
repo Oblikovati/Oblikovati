@@ -39,6 +39,8 @@ mod geometric_batch;
 mod inspect;
 #[path = "owner_line_commit.rs"]
 mod line_commit;
+#[path = "owner_metadata.rs"]
+mod metadata;
 #[path = "owner_browser.rs"]
 mod model_browser;
 #[path = "owner_precise_input.rs"]

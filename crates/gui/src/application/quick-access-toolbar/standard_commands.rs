@@ -2,7 +2,7 @@
 //! Ordered standard commands for the quick-access toolbar.
 
 /// Commands the customization menu lists, in its order.
-pub(super) const STANDARD: [StandardCommand; 15] = [
+pub(super) const STANDARD: [StandardCommand; 16] = [
     StandardCommand::New,
     StandardCommand::Open,
     StandardCommand::Save,
@@ -18,6 +18,7 @@ pub(super) const STANDARD: [StandardCommand; 15] = [
     StandardCommand::Parameters,
     StandardCommand::Print,
     StandardCommand::Measure,
+    StandardCommand::IProperties,
 ];
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -37,6 +38,7 @@ pub(super) enum StandardCommand {
     Parameters,
     Print,
     Measure,
+    IProperties,
 }
 impl StandardCommand {
     pub(super) fn label(self) -> &'static str {
@@ -56,9 +58,10 @@ impl StandardCommand {
             Self::Parameters => "Parameters",
             Self::Print => "Print",
             Self::Measure => "Measure",
+            Self::IProperties => "iProperties",
         }
     }
     pub(super) fn default_shown(self) -> bool {
-        !matches!(self, Self::Print | Self::Measure)
+        !matches!(self, Self::Print | Self::Measure | Self::IProperties)
     }
 }

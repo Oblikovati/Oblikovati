@@ -69,6 +69,9 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
         GuiShellAction::SaveTheme { name } => owner.save_theme_from_gui(name),
         GuiShellAction::SetColorScheme(request) => owner.select_color_scheme_from_gui(request),
         GuiShellAction::SetTheme(name) => owner.select_theme_from_gui(name),
+        GuiShellAction::SetDocumentProperty(request) => {
+            owner.set_document_property_from_gui(request)
+        }
         GuiShellAction::Parameter { mutation, request } => {
             owner.edit_parameter_from_gui(*mutation, request)
         }

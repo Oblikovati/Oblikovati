@@ -177,6 +177,10 @@ pub enum GuiShellAction {
         mutation: GuiParameterMutation,
         request: oblikovati_api::wire::ParameterSetArgs,
     },
+    /// Set a typed document property through the document owner.
+    SetDocumentProperty(oblikovati_api::wire::SetPropertyArgs),
+    /// Open the metadata editor of the active document.
+    OpenIProperties,
     NewPart,
     CreateDocument(crate::GuiDocumentTemplate),
     /// Picture the active window for the Save As preview; the file is not changed.

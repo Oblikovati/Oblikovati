@@ -272,6 +272,8 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::SetColorScheme(_)
         | GuiShellAction::SetTheme(_)
         | GuiShellAction::Parameter { .. }
+        | GuiShellAction::SetDocumentProperty(_)
+        | GuiShellAction::OpenIProperties
         | GuiShellAction::UpdatePart
         | GuiShellAction::SetSelectionMode(_)
         | GuiShellAction::OpenSelectionFilter

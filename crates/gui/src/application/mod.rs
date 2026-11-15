@@ -25,3 +25,6 @@ pub(crate) mod ribbon_display;
 pub(crate) mod viewport_orientation;
 #[path = "workspace-layout/mod.rs"]
 pub(crate) mod workspace_layout;
+
+#[path = "document-properties/metadata.rs"]
+pub(crate) mod document_metadata;

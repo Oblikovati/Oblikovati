@@ -55,6 +55,7 @@ pub struct GuiFrameEngine {
     /// Keys a widget received the press of, so their release reaches it too.
     widget_keys: Vec<crate::GuiKey>,
     quick_access: crate::application::quick_access_toolbar::QuickAccessToolbar,
+    metadata: crate::application::document_metadata::MetadataEditor,
     material_browser: crate::material_browser::MaterialBrowser,
     appearance_browser: crate::material_browser::MaterialBrowser,
     home: crate::application::home_recent_documents::HomeWorkspace,
@@ -112,6 +113,7 @@ impl GuiFrameEngine {
             popup_was_open: false,
             widget_keys: Vec::new(),
             quick_access: Default::default(),
+            metadata: Default::default(),
             material_browser: Default::default(),
             appearance_browser: crate::material_browser::MaterialBrowser::appearances(),
             home: Default::default(),

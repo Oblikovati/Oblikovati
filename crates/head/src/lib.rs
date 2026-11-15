@@ -41,6 +41,9 @@ mod window_capture;
 #[path = "work_orientation.rs"]
 mod orientation_work;
 #[cfg(target_os = "linux")]
+#[macro_use]
+mod work_metadata;
+#[cfg(target_os = "linux")]
 mod work;
 mod work_forwarding;
 #[path = "work_idle.rs"]
