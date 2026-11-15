@@ -12,8 +12,8 @@ parent, using the same five-line and 50-token thresholds. The different results
 are retained rather than treated as equivalent; API duplication tracking is in
 [Oblikovati.API #301](https://github.com/Oblikovati/Oblikovati.API/issues/301).
 
-The native pinned Express journey ran on the uncommitted host branch using the
-published API commit above, after the display-quality check was added. It passed 13 of 14 steps: open a real cached assembly, display
+The native pinned Express journey ran on the host branch using the published API
+commit above, after the display-quality check and ribbon appearance merge. It passed 13 of 14 steps: open a real cached assembly, display
 its geometry, and load its components. The final step failed because Finish and
 Simplify were absent from the full assembly ribbon; see
 [issue #3963](https://github.com/Oblikovati/Oblikovati/issues/3963). This is a
