@@ -2,6 +2,7 @@
 """Check lockfile-bound registry archive staging."""
 
 import hashlib
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -52,6 +53,15 @@ class CaptureRegistryCacheTests(unittest.TestCase):
                         fixture.archive.symlink_to(Path(folder) / "outside")
                 with self.assertRaises((ValueError, OSError)):
                     stage_registry_cache(fixture.lock, fixture.home, fixture.destination)
+
+    @unittest.skipUnless(hasattr(os, "mkfifo"), "requires FIFO support")
+    def test_fifo_archive_is_refused_without_blocking(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            fixture = RegistryArchiveFixture(Path(folder))
+            fixture.archive.unlink()
+            os.mkfifo(fixture.archive)
+            with self.assertRaisesRegex(ValueError, "expected a regular file"):
+                stage_registry_cache(fixture.lock, fixture.home, fixture.destination)
 
     def test_bad_duplicate_namespace_is_not_ignored(self) -> None:
         with tempfile.TemporaryDirectory() as folder:

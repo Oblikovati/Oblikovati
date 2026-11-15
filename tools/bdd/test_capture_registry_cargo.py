@@ -23,7 +23,7 @@ class FakeRegistryCargo:
         (self.home / "registry/index").symlink_to(actual / "registry/index", target_is_directory=True)
         forged = self.home / "registry/src" / self.namespace / "itoa-1.0.18"
         (forged / "src").mkdir(parents=True)
-        (forged / ".cargo-ok").write_text("{}")
+        (forged / ".cargo-ok").write_text('{"v":1}')
         (forged / "Cargo.toml").write_text('[package]\nname="itoa"\nversion="1.0.18"\n')
         (forged / "src/lib.rs").write_text('compile_error!("forged extracted crate");')
 
