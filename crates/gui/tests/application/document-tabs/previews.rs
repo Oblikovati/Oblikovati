@@ -246,7 +246,7 @@ fn closing_one_of_three_windows_only_discards_that_window() {
 }
 
 #[test]
-fn collapsing_windows_discards_ambiguous_original_identity() {
+fn closing_original_window_discards_only_its_picture() {
     let mut previews = TabPreviews::default();
     let mut state = crate::GuiCommandState {
         documents: vec![document(1, true)],
@@ -254,14 +254,15 @@ fn collapsing_windows_discards_ambiguous_original_identity() {
         ..Default::default()
     };
     previews.synchronize(&state);
+    capture(&mut previews, 1, 90);
     capture(&mut previews, 1, 1);
-    state.document_windows.clear();
-    state.document_window_identity_revisions.insert(1, 1);
+    state.document_windows.retain(|item| item.id == 90);
     previews.synchronize(&state);
     assert!(!previews.images.contains_key(&PreviewKey::Window(1)));
+    assert!(previews.images.contains_key(&PreviewKey::Window(90)));
     assert_eq!(previews.captured_front, None);
     assert!(previews.take_changed_picture().is_none());
-    capture(&mut previews, 1, 1);
+    capture(&mut previews, 1, 90);
     assert!(previews.take_changed_picture().is_some());
 }
 
@@ -282,7 +283,7 @@ fn stable_survivor_keeps_its_picture_when_extra_window_closes() {
 }
 
 #[test]
-fn identity_revision_detects_open_and_close_between_frames() {
+fn stable_survivor_detects_open_and_close_between_frames() {
     let mut previews = TabPreviews::default();
     let mut state = crate::GuiCommandState {
         documents: vec![document(1, true)],
@@ -290,11 +291,11 @@ fn identity_revision_detects_open_and_close_between_frames() {
     };
     previews.synchronize(&state);
     capture(&mut previews, 1, 1);
-    state.document_window_identity_revisions.insert(1, 7);
+    state.document_windows.push(window(90, 1));
     previews.synchronize(&state);
     assert!(!previews.images.contains_key(&PreviewKey::Window(1)));
     assert!(previews.take_changed_picture().is_none());
-    capture(&mut previews, 1, 1);
+    capture(&mut previews, 1, 90);
     assert!(previews.take_changed_picture().is_some());
 }
 

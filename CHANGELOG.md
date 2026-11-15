@@ -36,6 +36,8 @@
 
 ### Fixed
 
+- Preserved document and Home tab order when scrolling and closing windows. (#3993)
+
 - Kept off-screen document selection from highlighting a different visible tab. (#3992)
 
 - Kept document tab previews clear of the tab at large UI scales and near window edges. (#3988)

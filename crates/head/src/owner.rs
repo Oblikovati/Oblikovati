@@ -196,7 +196,6 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     /// The last outlined browser row, keyed by what it was worked out from.
     browser_outline: Option<(browser_selection::BrowserOutlineSource, Vec<[[f64; 3]; 2]>)>,
     document_windows: Vec<oblikovati_gui::GuiDocumentWindow>,
-    window_identity_revisions: std::collections::BTreeMap<u64, u64>,
     active_window: Option<u64>,
     window_serial: u64,
     recent_documents: Vec<oblikovati_model::application_recent::RecentDocument>,
@@ -280,7 +279,6 @@ impl<
             body_physical: Default::default(),
             browser_outline: None,
             document_windows: Vec::new(),
-            window_identity_revisions: Default::default(),
             active_window: None,
             window_serial: 0,
             recent_documents: Vec::new(),

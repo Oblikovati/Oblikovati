@@ -200,7 +200,6 @@ impl<
                 || session.selected_browser_body().is_some(),
             orientation_selection_locked: self.orientation_lock,
             document_windows: self.document_windows.clone(),
-            document_window_identity_revisions: self.window_identity_revisions.clone(),
             active_window: Some(self.active_view_slot()),
             measure: self.gui_measure_panel(),
             region_properties: self.gui_region_panel(),

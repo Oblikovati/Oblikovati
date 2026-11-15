@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -eu
+export OBK_ADDINS_DIR=/tmp/obk-tabs-3993-os/addins OBK_MCP_ADDR=127.0.0.1:17993 VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json XMODIFIERS=@im=none
+/tmp/obk-tab-order-3993-target/debug/oblikovati > /tmp/obk-tabs-3993-os/host.log 2>&1 &
+pid=$!
+trap 'kill "$pid" 2>/dev/null || true; wait "$pid" 2>/dev/null || true' EXIT
+ready=0
+for i in $(seq 1 60); do
+  if /tmp/obk-tabs-3993-os/probe list_documents > /tmp/obk-tabs-3993-os/list-initial.txt 2>/dev/null; then ready=1; break; fi
+  sleep 1
+done
+[ "$ready" -eq 1 ] || { echo 'MCPBridge did not start'; exit 1; }
+python3 /tmp/obk-tabs-3993-os/input.py resize
+for i in $(seq 1 14); do
+ /tmp/obk-tabs-3993-os/probe create_document "{\"type\":\"part\",\"name\":\"LivePart$i\"}" >> /tmp/obk-tabs-3993-os/created.txt
+done
+sleep 3
+/tmp/obk-tabs-3993-os/probe capture_window before
+python3 /tmp/obk-tabs-3993-os/input.py click 1689 266
+python3 /tmp/obk-tabs-3993-os/input.py move 900 500
+/tmp/obk-tabs-3993-os/probe capture_window scrolled
+/tmp/obk-tabs-3993-os/probe list_documents > /tmp/obk-tabs-3993-os/list-final.txt
