@@ -24,6 +24,11 @@ before and after; `runtime-inventory.json.gz` and `sealed-rerun.log.gz`
 record the probe. This does not yet qualify the complete runtime or establish
 that a changed application compiles to an equivalent runner.
 
+At clean application commit `32b460500`, the new map generator inventoried
+2,720 scenario declarations, 9,289 tracked Git inputs and the 556 runtime
+entries. A comparison against the same commit and runtime reported no changes
+but still refused receipt reuse because runtime coverage is unbounded.
+
 ```sh
 bwrap --unshare-all --ro-bind /usr /usr --ro-bind /lib /lib \
   --ro-bind /etc /etc --symlink /usr/bin /bin --symlink /usr/sbin /sbin \
