@@ -124,7 +124,10 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
   command checks did not run. The existing-sketch edit, Line prompt and
   tooltip, Finish and workspace restoration passed. See
   `receipts/2026-11-15-sketch-availability-clarified/`. This is diagnostic
-  evidence, not verified acceptance (#3978).
+  evidence, not verified acceptance (#3978). The Go reference enables sketch
+  tools only in the sketch environment; `TestSketchToolsDisabledOutsideSketchEnvironment`
+  passed on `aa8297d1b` on 2026-11-15. That test does not cover the scenario's
+  specific existing-sketch fixture or establish the intended action on click.
 - Ribbon appearance: the clarified pinned feature ran with 15 of 18 scenarios
   passing (#3957). Three stop at the required Team Web visibility setup; the
   Tools panel list has no Team Web or Tutorials entry. The setup now operates

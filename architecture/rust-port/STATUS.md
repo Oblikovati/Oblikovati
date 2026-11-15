@@ -15,7 +15,7 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 - **R0 remains open.** The full gate, baseline fields and milestone exit audits
   are incomplete. Run `python3 -B tools/bdd/behavior_cli.py report` for current
   counts; source and application changes can make earlier receipts stale.
-- At `7075016f1`, the ledger reports **0 verified**, 158 stale, 36 blocked
+- At `3974546c5`, the ledger reports **0 verified**, 156 stale, 36 blocked
   and 38 excluded across 2,720 declarations. Native build provenance is not
   bounded (#3978); prior captures remain historical evidence. The gate also
   requires missing baseline fields.
@@ -68,7 +68,11 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   sandbox probe compared committed source, 280 registry packages and 22,972
   Git-sourced files in one build. Generated Git manifests and host inputs remain
   unverified. See `receipts/2026-11-15-combined-build-probe/`. The observation
-  does not prove the build. Receipt reuse is also open (#3974).
+  does not prove the build. Capture now builds from a commit export with a fresh
+  target, an isolated Cargo home and offline caches. Toolchain binaries, cached
+  dependencies, host inputs and the inventory preflight remain unbounded.
+  See `receipts/2026-11-15-provenance-config-3978-diagnostic/`. Receipt reuse
+  is also open (#3974).
 - Sketch extrusion lacks a certified solve precision bound (#3928). Analytic
   edge picking is blocked by [Martensite #462](https://github.com/Oblikovati/Martensite/issues/462).
 - The full gate needs a released API contract (#3965). The Point feature passed
