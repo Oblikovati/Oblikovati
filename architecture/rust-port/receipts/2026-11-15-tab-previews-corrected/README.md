@@ -26,3 +26,11 @@ Clippy and the negative test passed. The filtered Cucumber command was
 application_scenarios_use_the_native_window -- --nocapture`, run under Xvfb
 with the Mesa software Vulkan ICD. Build provenance remains open (#3978); these
 are diagnostic observations, not verified BDD acceptance.
+
+After the Home capture fix was merged into the capability branch at
+`f12341af1b1c0116eebd3903907091c2e3df4664`, the three scenarios whose names
+contain `Preview` passed 21 steps, and the saved-location scenario passed seven
+steps. Their reports and captures are in `green/` and `location-green/`. The
+Home thumbnail now contains visible workspace detail near its upper edge. The
+picture probe begins below the rendered name row so it includes that detail
+without counting the label or window border. These runs remain diagnostic.
