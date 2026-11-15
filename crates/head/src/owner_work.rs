@@ -436,13 +436,19 @@ impl<
         &mut self,
         request: &oblikovati_api::wire::CloseDocumentArgs,
     ) -> Result<bool, String> {
-        oblikovati_api::client::Client::new(self.document_host())
+        let result = oblikovati_api::client::Client::new(self.document_host())
             .documents()
             .close(request)
             .map_err(|cause| cause.to_string())?;
         self.forget_document_windows(request.id);
-        self.command_notice = Some(DesktopCommandNotice::DocumentClosed {
-            document: request.id,
+        self.command_notice = Some(match super::commands::warning_details(result.warnings) {
+            Some(detail) => DesktopCommandNotice::ClosedWithWarning {
+                document: request.id,
+                detail,
+            },
+            None => DesktopCommandNotice::DocumentClosed {
+                document: request.id,
+            },
         });
         Ok(true)
     }

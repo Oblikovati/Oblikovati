@@ -1,0 +1,5 @@
+documents: {"documents":[{"id":1,"name":"missing","type":"assembly","dirty":false,"visible":true,"active":true}]}
+save: {"fullDocumentName":"/tmp/obk-express-live/missing.oad","warnings":[{"document":1,"code":"assemblyCacheUnavailable","detail":"Express assembly cache unavailable: assembly 1 reference \"missing-component.opd\": expected an owned saved component"}]}
+sent Ctrl+S to 0x200001
+capture: 1440x900 captured to /tmp/obk-express-live/window.png
+MCP save warning and window capture passed

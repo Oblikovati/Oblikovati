@@ -35,7 +35,7 @@ pub trait AssemblyPresentationSource {
 }
 
 /// Present a referenced assembly without taking ownership of its model.
-/// Selection paths are session-scoped; `None` produces an unselected presentation for caching.
+/// Selection paths are session-scoped; `None` disables occurrence tint. The source owns part styling.
 /// Example: `present_assembly(&mut source, document, None)?` for a native scene.
 pub fn present_assembly<S: AssemblyPresentationSource>(
     source: &mut S,

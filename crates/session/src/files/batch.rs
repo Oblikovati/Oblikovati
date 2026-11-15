@@ -53,6 +53,22 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
     where
         P: FnMut(&mut Self, u64) -> Result<(), String>,
     {
+        self.batch_save_with_report(request, version, source, |files, id, _| {
+            prepare(files, id).map(|()| Vec::new())
+        })
+    }
+    /// Prepare each destination and report nonfatal warnings on successful saves.
+    /// Example: `files.batch_save_with_report(args, version, ids, prepare)`.
+    pub fn batch_save_with_report<P>(
+        &mut self,
+        request: BatchSaveArgs,
+        version: &str,
+        source: &mut dyn GuidSource,
+        mut prepare: P,
+    ) -> Result<BatchSaveResult, BatchSaveError>
+    where
+        P: FnMut(&mut Self, u64, &Path) -> Result<Vec<oblikovati_api::wire::SaveWarning>, String>,
+    {
         let operation = SaveOperation::parse(&request.operation)?;
         let prepared = self.prepare_batch(operation, request.items.unwrap_or_default())?;
         let results: Vec<_> = prepared
@@ -64,7 +80,6 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
             results: Some(results),
         })
     }
-
     fn execute_batch_item<P>(
         &mut self,
         operation: SaveOperation,
@@ -74,18 +89,25 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         prepare: &mut P,
     ) -> BatchSaveItemResult
     where
-        P: FnMut(&mut Self, u64) -> Result<(), String>,
+        P: FnMut(&mut Self, u64, &Path) -> Result<Vec<oblikovati_api::wire::SaveWarning>, String>,
     {
         let outcome = item.destination.and_then(|path| {
-            prepare(self, item.document)?;
+            let warnings = prepare(self, item.document, &path)?;
             self.execute_save_operation(operation, item.document, &path, version, source)
-                .map_err(|error| error.to_string())
+                .map_err(|error| error.to_string())?;
+            Ok(warnings)
         });
+        self.clear_assembly_view(item.document);
+        let (ok, error, warnings) = match outcome {
+            Ok(warnings) => (true, String::new(), Some(warnings)),
+            Err(error) => (false, error, None),
+        };
         BatchSaveItemResult {
             document: item.document,
             full_document_name: item.full_document_name,
-            ok: outcome.is_ok(),
-            error: outcome.err().unwrap_or_default(),
+            ok,
+            error,
+            warnings,
         }
     }
 

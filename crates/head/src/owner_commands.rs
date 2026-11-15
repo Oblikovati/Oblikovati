@@ -76,6 +76,15 @@ pub enum DesktopCommandNotice {
         document: u64,
         path: String,
     },
+    SavedWithWarning {
+        document: u64,
+        path: String,
+        detail: String,
+    },
+    ClosedWithWarning {
+        document: u64,
+        detail: String,
+    },
     SaveFailed {
         document: u64,
         cause: String,
@@ -118,6 +127,14 @@ impl DesktopCommandNotice {
                 format!("Save document {document}: a save path is required")
             }
             Self::Saved { document, path } => format!("Saved document {document}: {path}"),
+            Self::SavedWithWarning {
+                document,
+                path,
+                detail,
+            } => format!("Saved document {document}: {path}. Save warning: {detail}"),
+            Self::ClosedWithWarning { document, detail } => {
+                format!("Closed document {document}. Save warning: {detail}")
+            }
             Self::SaveFailed { document, cause } => format!("Save document {document}: {cause}"),
             Self::CloseFailed { document, cause } => format!("Close document {document}: {cause}"),
         }
@@ -162,10 +179,10 @@ impl<
         };
         let result = self.save_selected_document(document, path);
         if let Ok(saved) = &result {
-            self.note_recent_file(&saved.clone());
+            self.note_recent_file(&saved.full_document_name);
         }
         self.command_notice = Some(match result {
-            Ok(path) => DesktopCommandNotice::Saved { document, path },
+            Ok(saved) => saved_notice(document, saved),
             Err(cause) => DesktopCommandNotice::SaveFailed { document, cause },
         });
         true
@@ -174,7 +191,7 @@ impl<
         &mut self,
         document: u64,
         path: &std::path::Path,
-    ) -> Result<String, String> {
+    ) -> Result<oblikovati_api::wire::SaveDocumentResult, String> {
         self.files
             .workspace()
             .session(document)
@@ -188,7 +205,6 @@ impl<
                 document,
                 new_full_document_name: name.into(),
             })
-            .map(|saved| saved.full_document_name)
             .map_err(|cause| cause.to_string())
     }
     fn save_active_document(&mut self) -> DesktopCommandNotice {
@@ -205,15 +221,39 @@ impl<
             .documents()
             .save(&SaveDocumentArgs { document })
         {
-            Ok(saved) => DesktopCommandNotice::Saved {
-                document,
-                path: saved.full_document_name,
-            },
+            Ok(saved) => saved_notice(document, saved),
             Err(cause) => DesktopCommandNotice::SaveFailed {
                 document,
                 cause: cause.to_string(),
             },
         }
+    }
+}
+
+pub(super) fn warning_details(
+    warnings: Option<Vec<oblikovati_api::wire::SaveWarning>>,
+) -> Option<String> {
+    let details: Vec<_> = warnings
+        .unwrap_or_default()
+        .into_iter()
+        .map(|warning| warning.detail)
+        .collect();
+    (!details.is_empty()).then(|| details.join("; "))
+}
+fn saved_notice(
+    document: u64,
+    saved: oblikovati_api::wire::SaveDocumentResult,
+) -> DesktopCommandNotice {
+    match warning_details(saved.warnings) {
+        Some(detail) => DesktopCommandNotice::SavedWithWarning {
+            document,
+            path: saved.full_document_name,
+            detail,
+        },
+        None => DesktopCommandNotice::Saved {
+            document,
+            path: saved.full_document_name,
+        },
     }
 }
 

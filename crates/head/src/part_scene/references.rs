@@ -106,6 +106,43 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartTopologyAccess<O, W, F>
     for DesktopPartScenes
 {
+    fn assembly_view(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<
+        (
+            Vec<oblikovati_persistence::package::SavedAssemblyTriangle>,
+            f64,
+            f64,
+        ),
+        String,
+    > {
+        let update =
+            self.evaluate_assembly_for_view(files, document, AssemblyViewMode::Persisted)?;
+        if update.status.unavailable_count() != 0 {
+            return Err(format!(
+                "assembly {document}: expected complete presentation: {:?}",
+                update.status
+            ));
+        }
+        let triangles = update
+            .scene
+            .triangles
+            .into_iter()
+            .map(
+                |triangle| oblikovati_persistence::package::SavedAssemblyTriangle {
+                    positions: triangle.positions,
+                    color: triangle.color,
+                },
+            )
+            .collect();
+        Ok((
+            triangles,
+            DISPLAY_MESH.chord_error,
+            DISPLAY_MESH.angular_error,
+        ))
+    }
     fn list_bodies(
         &mut self,
         files: &mut FileWorkspace<O, W, F>,

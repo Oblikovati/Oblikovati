@@ -12,7 +12,7 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
-oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "f0943c724a6e07ec49533769c9e680137bb3d55c", version = "=0.159.0" }
+oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "21b18a952fa7548a31e7eac338f6c78a32e5cfe1", version = "=0.159.0" }
 oblikovati-automation = { path = "../automation" }
 oblikovati-martensite = { path = "../martensite" }
 oblikovati-model = { path = "../model" }

@@ -4,6 +4,13 @@ use super::*;
 use oblikovati_model::assembly::AssemblyOccurrenceRecipe;
 pub(super) use oblikovati_viewport::assembly_presentation::MAX_ASSEMBLY_DEPTH;
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(super) enum AssemblyViewMode {
+    Live,
+    // This only removes transient view state; #3949 must qualify the source before saving.
+    Persisted,
+}
+
 #[derive(PartialEq, Eq)]
 pub(super) struct SceneSource {
     pub document: u64,
@@ -168,6 +175,19 @@ impl DesktopPartScenes {
         files: &mut FileWorkspace<O, W, F>,
         document: u64,
     ) -> Result<HeadSceneUpdate, String> {
+        self.evaluate_assembly_for_view(files, document, AssemblyViewMode::Live)
+    }
+
+    pub(super) fn evaluate_assembly_for_view<
+        O: TransactionObserver,
+        W: WorkspaceObserver,
+        F: DocumentFiles,
+    >(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+        mode: AssemblyViewMode,
+    ) -> Result<HeadSceneUpdate, String> {
         let generation = match files.workspace().session(document) {
             Ok(session) => session.generation(),
             Err(error) => {
@@ -175,10 +195,14 @@ impl DesktopPartScenes {
                 return Err(error.to_string());
             }
         };
-        let selection = self.occurrence_selection.clone();
+        let selection = match mode {
+            AssemblyViewMode::Live => self.occurrence_selection.clone(),
+            AssemblyViewMode::Persisted => None,
+        };
         let mut source = AssemblySceneSource {
             scenes: self,
             files,
+            mode,
         };
         let mut result = oblikovati_viewport::assembly_presentation::present_assembly(
             &mut source,
@@ -193,6 +217,7 @@ impl DesktopPartScenes {
 struct AssemblySceneSource<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> {
     scenes: &'a mut DesktopPartScenes,
     files: &'a mut FileWorkspace<O, W, F>,
+    mode: AssemblyViewMode,
 }
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>
     oblikovati_viewport::assembly_presentation::AssemblyPresentationSource
@@ -229,7 +254,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>
             .is_some())
     }
     fn part(&mut self, component: u64) -> Result<Self::Output, String> {
-        self.scenes.evaluate(self.files, component)
+        self.scenes.ensure_current(self.files, component)?;
+        self.scenes
+            .present_current(self.files, component, self.mode)
     }
     fn place(
         &self,

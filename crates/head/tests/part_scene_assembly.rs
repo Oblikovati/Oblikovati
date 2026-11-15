@@ -380,3 +380,70 @@ fn nested_placements_compose_and_suppressed_occurrences_are_hidden() {
         2
     );
 }
+
+fn current_part_body_key(scenes: &DesktopPartScenes, files: &TestFiles, part: u64) -> String {
+    let session = files.workspace().session(part).unwrap();
+    let guid = files.workspace().identity(part).unwrap().internal_name;
+    let feature = oblikovati_model::feature::FeatureId(1);
+    let body = scenes.current(session).unwrap().body(feature).unwrap();
+    bodies::body_reference_text(body.body_reference_key(session.history(), guid).unwrap())
+}
+
+fn assert_same_presentation(actual: &HeadSceneUpdate, expected: &HeadSceneUpdate) {
+    assert_eq!(actual.scene.triangles.len(), expected.scene.triangles.len());
+    for (actual, expected) in actual.scene.triangles.iter().zip(&expected.scene.triangles) {
+        assert_eq!(actual.positions, expected.positions);
+        assert_eq!(actual.color, expected.color);
+    }
+}
+
+#[test]
+fn persisted_view_ignores_transient_occurrence_and_body_state() {
+    let (mut files, part, assembly, _) = workspace();
+    let mut scenes = DesktopPartScenes::default();
+    let original = scenes.refresh(&mut files).unwrap().unwrap();
+    assert!(!original.scene.triangles.is_empty());
+    let key = current_part_body_key(&scenes, &files, part);
+    let generation = files.workspace().session(assembly).unwrap().generation();
+    files
+        .commands(part)
+        .unwrap()
+        .set_browser_body_selection(&key, oblikovati_model::feature::FeatureId(1));
+    scenes.set_occurrence_selection(Some(vec![(assembly, generation, 1)]));
+    let selected = scenes.evaluate_assembly(&mut files, assembly).unwrap();
+    assert!(
+        selected
+            .scene
+            .triangles
+            .iter()
+            .all(|triangle| triangle.color == CHOSEN_BODY_COLOR)
+    );
+    let saved = scenes
+        .evaluate_assembly_for_view(&mut files, assembly, AssemblyViewMode::Persisted)
+        .unwrap();
+    assert_same_presentation(&saved, &original);
+    files
+        .commands(part)
+        .unwrap()
+        .set_body_visible(&key, false)
+        .unwrap();
+    let hidden = scenes.evaluate_assembly(&mut files, assembly).unwrap();
+    assert!(hidden.scene.triangles.is_empty());
+    let saved = scenes
+        .evaluate_assembly_for_view(&mut files, assembly, AssemblyViewMode::Persisted)
+        .unwrap();
+    assert_same_presentation(&saved, &original);
+    files
+        .commands(part)
+        .unwrap()
+        .set_body_visible(&key, true)
+        .unwrap();
+    let still_selected = scenes.evaluate_assembly(&mut files, assembly).unwrap();
+    assert!(
+        still_selected
+            .scene
+            .triangles
+            .iter()
+            .all(|triangle| triangle.color == CHOSEN_BODY_COLOR)
+    );
+}
