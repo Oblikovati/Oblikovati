@@ -15,8 +15,8 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 - **R0 remains open.** The full gate, baseline fields and milestone exit audits
   are incomplete. Run `python3 -B tools/bdd/behavior_cli.py report` for current
   counts; source and application changes can make earlier receipts stale.
-- At `51c1b8892b72f75e645efdc6acc5daf57a118ad6`, the ledger reported nine
-  current verified scenarios, 147 stale receipts, 34 blocked and 38 excluded
+- At `0d89e351e10bcedf6ef8e707b67ad4863e27c7ca`, the ledger reported 17
+  current verified scenarios, 139 stale receipts, 34 blocked and 38 excluded
   across 2,720 declarations. The gate also requires missing baseline fields.
 - `rust-work` is local and has not passed the full pre-push gate. All 20 former
   application PR heads were merged locally and their PRs closed. Do not remove
@@ -122,11 +122,11 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   receipt is historical. The updated feature is capture-host only, and five
   cases are also capture-only. The portable gate cannot claim these as passes;
   see #3899, #3951, and #3952.
-- Document tabs: the diagnostic passed 9 of 38 scenarios (#3900). Two context
-  menu scenarios passed on the merged revision; see
-  `receipts/2026-11-15-tab-context-verified/`. Two Home menu scenarios need
-  source clarification in their `BLOCKERS.md`. The keyboard scenario receipts
-  predate later source changes (#3950).
+- Document tabs: eight R4 tab and close scenarios passed on the current source
+  pin (#3900). Their reviewed receipts are in
+  `receipts/2026-11-15-tabs-r4-current-1/` through `-8/`. The earlier full-file
+  diagnostic passed 9 of 38 scenarios. Two Home menu scenarios need source
+  clarification in their `BLOCKERS.md`; keyboard receipts are stale (#3950).
 - Quick access: the diagnostic passed 11 of 12 scenarios. Clear can open
   before selection and can clear multiple browser-selected bodies in one edit
   (#3962). Viewport multi-selection, faces, and occurrences remain open; see
