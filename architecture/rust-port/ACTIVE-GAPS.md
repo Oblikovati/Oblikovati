@@ -105,9 +105,12 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
 - Body properties: all six pinned scenarios passed with checked setup, list
   scrolling and exact physical-value rows (#3954). Receipts become stale after
   relevant source changes; see `receipts/2026-11-15-body-properties-verified/`.
-- Sketch ribbon: inactive-sketch setup was unbound (#3956). The scenario owner
-  clarified that outside-edit cases check enabled states for one part and one
-  sketch; compare that observation with the Go gate before changing behavior.
+- Sketch ribbon: the clarified feature ran with one of three scenarios passing
+  (#3956). Both outside-edit cases fail because Line is disabled; their later
+  command checks did not run. The existing-sketch edit, Line prompt and
+  tooltip, Finish and workspace restoration passed. See
+  `receipts/2026-11-15-sketch-availability-clarified/`. This is diagnostic
+  evidence, not verified acceptance (#3978).
 - Ribbon appearance: the clarified pinned feature ran with 15 of 18 scenarios
   passing (#3957). Three stop at the required Team Web visibility setup; the
   Tools panel list has no Team Web or Tutorials entry. The setup now operates
