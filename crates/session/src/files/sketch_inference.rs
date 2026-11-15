@@ -10,6 +10,16 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         request: &InferenceOptionsView,
         project: impl FnOnce(SketchInferenceProjectionInput<'_>) -> Result<R, E>,
     ) -> Result<R, SketchInferenceCommandError<E>> {
+        if let Some(id) = self.workspace.active_document()
+            && self
+                .retained
+                .get(&id)
+                .is_some_and(|file| file.express_view.is_some())
+        {
+            return Err(SketchInferenceCommandError::Workspace(
+                WorkspaceError::ExpressReadOnly(id),
+            ));
+        }
         self.workspace
             .set_sketch_inference_options_projected(request, project)
     }

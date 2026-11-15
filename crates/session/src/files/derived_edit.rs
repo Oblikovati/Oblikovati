@@ -38,6 +38,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         source: &str,
         linked: &[String],
     ) -> Result<i64, FileWorkspaceError> {
+        self.retained_file(target)?.require_full_content(target)?;
         let source_id = self.validate_derived_link(target, source)?;
         let values = self
             .derived_source_values(source, target)?

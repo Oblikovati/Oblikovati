@@ -39,7 +39,8 @@ fn gui_file_operations_save_close_and_reopen_the_same_sketch_recipe() {
             .open_document_from_gui(&OpenDocumentArgs {
                 full_document_name: "/memory/part.opd".into(),
                 visible: true,
-                defer_content: false
+                defer_content: false,
+                express: false,
             })
             .unwrap()
     );
@@ -99,6 +100,7 @@ fn verify_failed_open(owner: &mut TestOwner, path: &str) {
             full_document_name: path.into(),
             visible: true,
             defer_content: false,
+            express: false,
         })
         .unwrap_err();
     assert!(

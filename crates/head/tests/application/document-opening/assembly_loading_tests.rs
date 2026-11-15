@@ -3,7 +3,7 @@
 use super::*;
 
 #[test]
-fn express_open_refuses_mouse_and_enter_until_full_mode_is_selected() {
+fn express_open_without_saved_view_keeps_existing_document_active() {
     let mut world = ApplicationWorld::new();
     let part = world.add_part();
     let folder = models_folder(&mut world);
@@ -14,22 +14,19 @@ fn express_open_refuses_mouse_and_enter_until_full_mode_is_selected() {
         ASSEMBLY_FILE,
     );
     close_active(&mut world);
+    let path = folder.join(ASSEMBLY_FILE);
+    let package =
+        oblikovati_persistence::package::DocumentPackage::decode(&std::fs::read(&path).unwrap())
+            .unwrap()
+            .without_stream("cache/assembly-view-v1");
+    std::fs::write(&path, package.encode().unwrap()).unwrap();
     open_dialog(&mut world);
     look_in(&mut world, &folder);
     select_row(&mut world, ASSEMBLY_FILE);
     toggle_express(&mut world);
-    world.expect_text("Express assembly loading is not available");
     choose_open(&mut world);
-    world.key(ViewportPhysicalKey::Enter, false);
-    let center = world.run(ASSEMBLY_FILE).center().map(|value| value as i32);
-    world.pump(super::super::super::pointer_click_events(center, 2));
-    settle(&mut world);
-    world.expect_text("Look in");
     assert_eq!(world.active_id(), part);
-    toggle_express(&mut world);
-    choose_open(&mut world);
-    world.expect_no_text("Look in");
-    assert_ne!(world.active_id(), part);
+    world.expect_text("expected a saved assembly view");
     world.close();
 }
 

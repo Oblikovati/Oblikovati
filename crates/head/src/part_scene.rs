@@ -21,6 +21,7 @@ mod update;
 #[derive(Clone, Debug)]
 pub struct HeadSceneStatus {
     pub source: Option<(u64, u64)>,
+    pub cached_assembly: bool,
     pub visible_bodies: usize,
     pub health:
         Vec<FeatureHealthRecord<PartFeatureFailure<oblikovati_martensite::EvaluationFailure>>>,
@@ -33,6 +34,11 @@ impl HeadSceneStatus {
         let Some((document, generation)) = self.source else {
             return "Oblikovati".into();
         };
+        if self.cached_assembly {
+            return format!(
+                "Oblikovati - document {document} generation {generation} - express assembly"
+            );
+        }
         let unavailable = self.unavailable_count();
         let title = format!(
             "Oblikovati - document {document} generation {generation} - {} solids, {unavailable} unavailable features",
@@ -65,6 +71,7 @@ pub struct HeadSceneUpdate {
 }
 #[derive(Default)]
 pub(crate) struct DesktopPartScenes {
+    producer_digest: Option<Result<String, String>>,
     source: Option<assembly::SceneSource>,
     scene_failure: Option<(u64, u64, String)>,
     presentation_invalidated: bool,
@@ -73,6 +80,12 @@ pub(crate) struct DesktopPartScenes {
     slot: PartEvaluationSlot<NamedPrismSnapshot, oblikovati_martensite::EvaluationFailure>,
 }
 impl DesktopPartScenes {
+    pub(crate) fn assembly_producer_digest(&mut self) -> Result<String, String> {
+        self.producer_digest
+            .get_or_insert_with(crate::assembly_producer::current_executable_digest)
+            .clone()
+    }
+
     pub(crate) fn sketch_continuity_resolver<
         O: TransactionObserver,
         W: WorkspaceObserver,
@@ -228,6 +241,7 @@ impl DesktopPartScenes {
             },
             status: HeadSceneStatus {
                 source: None,
+                cached_assembly: false,
                 visible_bodies: 0,
                 health: Vec::new(),
                 presentation_declines: Vec::new(),
@@ -407,6 +421,7 @@ pub(crate) fn render_part_scene(
         scene: presentation.scene,
         status: HeadSceneStatus {
             source: Some(source),
+            cached_assembly: false,
             visible_bodies: presentation.visible_bodies,
             health: evaluated.health().to_vec(),
             presentation_declines: presentation.declines,

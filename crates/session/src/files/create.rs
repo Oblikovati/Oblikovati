@@ -47,6 +47,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
                 picture: None,
                 drawing_views: None,
                 assembly_view: None,
+                express_view: None,
                 deferred_views: None,
             },
         );

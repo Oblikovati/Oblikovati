@@ -345,6 +345,7 @@ impl HeadWork for FakeSceneWork {
             },
             status: crate::HeadSceneStatus {
                 source: Some((1, 0)),
+                cached_assembly: false,
                 visible_bodies: 0,
                 health: Vec::new(),
                 presentation_declines: Vec::new(),

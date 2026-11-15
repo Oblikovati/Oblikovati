@@ -77,6 +77,7 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
         }
         GuiShellAction::ActivateDocument(_)
         | GuiShellAction::OpenDocument(_)
+        | GuiShellAction::LoadFullDocument(_)
         | GuiShellAction::OpenDeferredDrawing(_)
         | GuiShellAction::CloseDocument(_)
         | GuiShellAction::SaveDocumentAs(_)
@@ -89,6 +90,7 @@ fn document(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, S
     match action {
         GuiShellAction::ActivateDocument(request) => owner.activate_document_from_gui(request),
         GuiShellAction::OpenDocument(request) => owner.open_document_from_gui(request),
+        GuiShellAction::LoadFullDocument(id) => owner.load_full_from_gui(*id),
         GuiShellAction::OpenDeferredDrawing(path) => owner.open_deferred_drawing_from_gui(path),
         GuiShellAction::CloseDocument(request) => owner.close_document_from_gui(request),
         GuiShellAction::SaveDocumentAs(request) => owner.complete_save_path(

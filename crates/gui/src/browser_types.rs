@@ -60,6 +60,7 @@ pub struct GuiBrowserOccurrence {
     pub component: String,
     pub suppressed: bool,
     pub virtual_: bool,
+    pub deferred: bool,
     pub error: Option<String>,
     pub children: Vec<GuiBrowserOccurrence>,
 }

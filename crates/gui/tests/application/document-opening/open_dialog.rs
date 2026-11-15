@@ -18,11 +18,19 @@ impl GuiFolders for FakeFolders {
 }
 #[test]
 fn opening_keeps_the_path_exactly_and_shows_the_document() {
-    let GuiShellAction::OpenDocument(request) = open_action(" /tmp/部品.opd ", false) else {
+    let GuiShellAction::OpenDocument(request) = open_action(" /tmp/部品.opd ", false, false)
+    else {
         panic!("expected an OpenDocument action");
     };
     assert_eq!(request.full_document_name, " /tmp/部品.opd ");
     assert!(request.visible && !request.defer_content);
+}
+#[test]
+fn express_open_carries_the_selected_mode_to_the_host() {
+    let GuiShellAction::OpenDocument(request) = open_action("assembly.oad", false, true) else {
+        panic!("expected an OpenDocument action");
+    };
+    assert!(request.express && !request.defer_content);
 }
 #[test]
 fn a_request_starts_empty_and_asks_for_a_frame() {

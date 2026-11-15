@@ -8,6 +8,7 @@ use std::{error::Error, fmt};
 pub enum WorkspaceError {
     Missing(u64),
     NoActive,
+    ExpressReadOnly(u64),
     Exhausted,
     Identity(IdentityRegistrationError),
     InitialVerification(oblikovati_model::history::HistoryError),
@@ -22,6 +23,10 @@ impl fmt::Display for WorkspaceError {
     fn fmt(&self, output: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Missing(id) => write!(output, "document {id}: expected an open document"),
+            Self::ExpressReadOnly(id) => write!(
+                output,
+                "document {id}: expected full loading before editing"
+            ),
             Self::NoActive => write!(
                 output,
                 "active document is absent: expected an activated open document"

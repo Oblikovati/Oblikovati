@@ -56,6 +56,7 @@ fn occurrence_search_keeps_nested_ancestors() {
         component: String::new(),
         suppressed: false,
         virtual_: false,
+        deferred: false,
         error: None,
         children,
     };

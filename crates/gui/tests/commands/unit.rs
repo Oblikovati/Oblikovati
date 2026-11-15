@@ -117,3 +117,25 @@ fn a_running_line_command_leaves_sketch_commands_available_and_opens_no_transact
         state.transaction_open = false;
     }
 }
+
+#[test]
+fn express_assembly_offers_full_load_but_refuses_edits_and_save() {
+    let mut state = GuiCommandState {
+        document: Some(7),
+        documents: vec![oblikovati_api::wire::DocumentInfo {
+            id: 7,
+            express: true,
+            ..Default::default()
+        }],
+        undo_label: Some("Edit".into()),
+        redo_label: Some("Edit".into()),
+        ..Default::default()
+    };
+    assert!(GuiShellAction::LoadFullDocument(7).enabled(&state));
+    assert!(!GuiShellAction::Save.enabled(&state));
+    assert!(!GuiShellAction::Undo.enabled(&state));
+    assert!(!GuiShellAction::Redo.enabled(&state));
+    state.documents[0].express = false;
+    assert!(!GuiShellAction::LoadFullDocument(7).enabled(&state));
+    assert!(GuiShellAction::Save.enabled(&state));
+}

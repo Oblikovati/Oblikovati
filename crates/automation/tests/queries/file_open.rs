@@ -20,6 +20,7 @@ fn open_reuses_unsaved_state_and_constructs_observers_only_for_new_owners() {
                 full_document_name: "/fixtures/part.opd".into(),
                 visible: true,
                 defer_content: false,
+                express: false,
             })
             .unwrap();
         assert_ne!(opened.id, original);
@@ -66,6 +67,7 @@ fn open_reuses_unsaved_state_and_constructs_observers_only_for_new_owners() {
                 full_document_name: "/fixtures/part.opd".into(),
                 visible: true,
                 defer_content: false,
+                express: false,
             })
             .unwrap();
         assert_ne!(reopened.id, cached.id);
@@ -95,6 +97,7 @@ fn cached_open_needs_no_factory_and_visibility_is_not_a_recipe_edit() {
             full_document_name: "/fixtures/part.opd".into(),
             visible: false,
             defer_content: false,
+            express: false,
         })
         .unwrap();
     assert_eq!(result.id, id);

@@ -44,13 +44,93 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
     }
     pub(super) fn open(&mut self, request: OpenDocumentArgs) -> Result<Vec<u8>, Error> {
         validate_open(&request)?;
-        let id = self.open_path(Path::new(&request.full_document_name), request.visible)?;
+        let id = if request.express {
+            self.open_express_path(Path::new(&request.full_document_name), request.visible)?
+        } else {
+            self.open_path(Path::new(&request.full_document_name), request.visible)?
+        };
         encode(
             &self
                 .files
                 .document_info(id)
                 .map_err(|error| Error(error.to_string()))?,
         )
+    }
+
+    fn open_express_path(&mut self, path: &Path, visible: bool) -> Result<u64, Error> {
+        let limits = self.assembly_display_limits.ok_or_else(|| {
+            Error("express assembly display limits: expected an injected display policy".into())
+        })?;
+        let producer = self
+            .assembly_producer
+            .as_ref()
+            .ok_or_else(|| {
+                Error("express assembly producer: expected an injected producer identity".into())
+            })?
+            .as_ref()
+            .map_err(|error| Error(error.clone()))?;
+        let observers = &mut self.observers;
+        let outcome = self
+            .files
+            .open_express_with_factory(
+                path,
+                || create_observer(observers),
+                self.version,
+                self.source,
+                limits,
+                producer,
+            )
+            .map_err(|error| Error(error.to_string()))?;
+        let id = outcome.session_id();
+        self.files
+            .set_visible(id, visible)
+            .map_err(|error| Error(error.to_string()))?;
+        Ok(id)
+    }
+
+    pub(super) fn load_full(&mut self, request: LoadFullDocumentArgs) -> Result<Vec<u8>, Error> {
+        let before = self.source_bindings()?;
+        let prepared = self.prepare_load_full(request.id);
+        let refresh = self.refresh_after_native_file_change(&before, "documents.loadFull");
+        super::lifecycle::combine_lifecycle_result("documents.loadFull", prepared, refresh)?;
+        self.files
+            .finish_express_assembly(request.id)
+            .map_err(|e| Error(e.to_string()))?;
+        encode(
+            &self
+                .files
+                .document_info(request.id)
+                .map_err(|e| Error(e.to_string()))?,
+        )
+    }
+
+    fn prepare_load_full(&mut self, id: u64) -> Result<(), Error> {
+        if self
+            .files
+            .document_type(id)
+            .map_err(|e| Error(e.to_string()))?
+            != oblikovati_api::types::DOCUMENT_ASSEMBLY
+        {
+            return Err(Error(format!(
+                "document {}: expected an assembly for Load Full",
+                id
+            )));
+        }
+        if self
+            .files
+            .express_assembly_view(id)
+            .map_err(|e| Error(e.to_string()))?
+            .is_some()
+        {
+            let report = self.resolve_assembly_references(id)?;
+            if !report.failures.is_empty() {
+                return Err(Error(format!(
+                    "assembly {}: expected all components loaded: {:?}",
+                    id, report.failures
+                )));
+            }
+        }
+        Ok(())
     }
 
     pub(super) fn open_path(&mut self, path: &Path, visible: bool) -> Result<u64, Error> {

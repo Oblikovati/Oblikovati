@@ -34,12 +34,13 @@ pub use open::DocumentObserverFactory;
 pub(crate) use sketch_construction::SketchConstructionAccess;
 
 /// Implemented calls that require the file owner.
-pub const FILE_COMMAND_METHODS: [&str; 12] = [
+pub const FILE_COMMAND_METHODS: [&str; 13] = [
     METHOD_DOCUMENT_SET_END_OF_PART,
     METHOD_DOCUMENT_SET_SKETCH_SETTINGS,
     METHOD_DOCUMENTS_ADD_ATTACHMENT,
     METHOD_DOCUMENTS_ACTIVATE,
     METHOD_DOCUMENTS_OPEN,
+    METHOD_DOCUMENTS_LOAD_FULL,
     METHOD_DOCUMENTS_CREATE,
     METHOD_DOCUMENTS_BATCH_SAVE,
     METHOD_DOCUMENTS_SAVE,
@@ -76,6 +77,8 @@ struct FileContext<'a, O: TransactionObserver, W, F> {
     observers: Option<&'a mut dyn DocumentObserverFactory<Observer = O>>,
     sketch_construction: Option<SketchConstructionAccess<'a>>,
     part_topology: Option<&'a mut dyn crate::PartTopologyAccess<O, W, F>>,
+    assembly_display_limits: Option<(f64, f64)>,
+    assembly_producer: Option<Result<String, String>>,
     part_update: Option<&'a mut dyn crate::PartUpdateAccess<O, W, F>>,
     extrusion: Option<&'a dyn crate::ExtrudeRegionAccess>,
     drawing_views: Option<&'a dyn crate::DrawingViewProjectionAccess>,
@@ -83,6 +86,18 @@ struct FileContext<'a, O: TransactionObserver, W, F> {
         Option<&'a mut dyn oblikovati_model::application_options::SketchPreferenceAccess>,
 }
 impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHost<'a, O, W, F> {
+    /// Set the current display producer identity.
+    /// Example: `host.with_assembly_producer(Ok(digest))`.
+    pub fn with_assembly_producer(mut self, producer: Result<String, String>) -> Self {
+        self.context.get_mut().assembly_producer = Some(producer);
+        self
+    }
+    /// Set the active display quality for saved assembly views.
+    /// Example: `host.with_assembly_display_limits((0.05, 0.5))`.
+    pub fn with_assembly_display_limits(mut self, limits: (f64, f64)) -> Self {
+        self.context.get_mut().assembly_display_limits = Some(limits);
+        self
+    }
     /// Inject part replay ownership; example: `host.with_part_update(&mut replay)`.
     pub fn with_part_update(
         mut self,
@@ -188,6 +203,8 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHos
                 external: None,
                 sketch_preferences: None,
                 part_topology: None,
+                assembly_display_limits: None,
+                assembly_producer: None,
                 part_update: None,
                 extrusion: None,
                 drawing_views: None,

@@ -103,6 +103,7 @@ fn file_menu_opens_a_visible_document_without_an_existing_document() {
                 full_document_name: "/tmp/input.opd".into(),
                 visible: true,
                 defer_content: false,
+                express: false,
             }
         )]
     );

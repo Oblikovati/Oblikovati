@@ -4,6 +4,13 @@ use super::*;
 use oblikovati_model::history::DocumentSnapshot;
 use oblikovati_persistence::load::{PreparedParameterPackage, read_parameter_package};
 
+#[derive(Clone, Copy, PartialEq)]
+enum OpenContentMode<'a> {
+    Full,
+    Deferred,
+    Express((f64, f64), &'a str),
+}
+
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspace<O, W, F> {
     /// Reuse an open canonical path or validate and register a new file.
     /// Example: `host.open(path, observer, "alpha", source, OpenActivation::Activate)?;`.
@@ -28,7 +35,35 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         source: &mut dyn GuidSource,
         activation: OpenActivation,
     ) -> Result<FileOpenOutcome, FileWorkspaceError> {
-        self.open_in_mode(path, factory, version, source, activation, false)
+        self.open_in_mode(
+            path,
+            factory,
+            version,
+            source,
+            activation,
+            OpenContentMode::Full,
+        )
+    }
+
+    /// Open an assembly from a validated saved view without loading its components.
+    /// Example: `files.open_express_with_factory(path, factory, version, source, (0.05, 0.5), producer)?`.
+    pub fn open_express_with_factory(
+        &mut self,
+        path: &Path,
+        factory: impl FnOnce() -> Result<O, String>,
+        version: &str,
+        source: &mut dyn GuidSource,
+        display_limits: (f64, f64),
+        producer: &str,
+    ) -> Result<FileOpenOutcome, FileWorkspaceError> {
+        self.open_in_mode(
+            path,
+            factory,
+            version,
+            source,
+            OpenActivation::Activate,
+            OpenContentMode::Express(display_limits, producer),
+        )
     }
 
     /// Open a drawing with its saved views frozen; example: `files.open_deferred_with_factory(path, factory, version, source)?`.
@@ -45,7 +80,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
             version,
             source,
             OpenActivation::Activate,
-            true,
+            OpenContentMode::Deferred,
         )
     }
 
@@ -56,27 +91,53 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         version: &str,
         source: &mut dyn GuidSource,
         activation: OpenActivation,
-        deferred: bool,
+        mode: OpenContentMode<'_>,
     ) -> Result<FileOpenOutcome, FileWorkspaceError> {
         if let Some(&id) = self.paths.get(path) {
-            self.require_matching_defer_mode(id, deferred)?;
+            self.require_matching_defer_mode(id, mode)?;
             return self.reuse_open(id, activation);
         }
         let canonical = checked_path(path, self.files.canonical_path(path))?;
         if let Some(&id) = self.paths.get(&canonical) {
-            self.require_matching_defer_mode(id, deferred)?;
+            self.require_matching_defer_mode(id, mode)?;
             return self.reuse_open(id, activation);
         }
         let observer = factory().map_err(FileWorkspaceError::ObserverFactory)?;
-        self.open_new(canonical, observer, version, source, activation, deferred)
+        self.open_new(canonical, observer, version, source, activation, mode)
     }
 
     fn require_matching_defer_mode(
         &self,
         id: u64,
-        deferred: bool,
+        mode: OpenContentMode<'_>,
     ) -> Result<(), FileWorkspaceError> {
-        if deferred && self.deferred_drawing_views(id)?.is_none() {
+        if self.retained_file(id)?.express_view.is_some()
+            != matches!(mode, OpenContentMode::Express(..))
+        {
+            return Err(FileWorkspaceError::ExpressMode(
+                id,
+                matches!(mode, OpenContentMode::Express(..)),
+            ));
+        }
+        if let OpenContentMode::Express((chord, angular), producer) = mode {
+            let retained = self.retained_file(id)?;
+            if let Some(view) = &retained.express_view {
+                view.validate_producer(producer).map_err(|reason| {
+                    FileWorkspaceError::ExpressOpen(
+                        retained.path.clone().unwrap_or_default(),
+                        reason.to_string(),
+                    )
+                })?;
+                view.validate_display_quality(chord, angular)
+                    .map_err(|reason| {
+                        FileWorkspaceError::ExpressOpen(
+                            retained.path.clone().unwrap_or_default(),
+                            reason.to_string(),
+                        )
+                    })?;
+            }
+        }
+        if mode == OpenContentMode::Deferred && self.deferred_drawing_views(id)?.is_none() {
             return Err(FileWorkspaceError::DeferredDrawing(
                 id,
                 "expected a drawing already open in deferred mode".into(),
@@ -105,10 +166,28 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         version: &str,
         source: &mut dyn GuidSource,
         activation: OpenActivation,
-        deferred: bool,
+        mode: OpenContentMode<'_>,
     ) -> Result<FileOpenOutcome, FileWorkspaceError> {
         let prepared = self.prepare_open(&path, version, source)?;
-        let views = if deferred {
+        let express_view = if let OpenContentMode::Express((chord, angular), producer) = mode {
+            let view = self
+                .validated_assembly_view(&path, &prepared.package, producer)
+                .map_err(|reason| FileWorkspaceError::ExpressOpen(path.clone(), reason))?
+                .ok_or_else(|| {
+                    FileWorkspaceError::ExpressOpen(
+                        path.clone(),
+                        "expected a saved assembly view".into(),
+                    )
+                })?;
+            view.validate_display_quality(chord, angular)
+                .map_err(|reason| {
+                    FileWorkspaceError::ExpressOpen(path.clone(), reason.to_string())
+                })?;
+            Some(view)
+        } else {
+            None
+        };
+        let views = if mode == OpenContentMode::Deferred {
             Some(
                 prepared
                     .package
@@ -160,6 +239,12 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
             .register(history, prepared.identity, observer, source, activation)
             .map_err(FileWorkspaceError::Workspace)?;
         let outcome = self.install_file(path, prepared.package, registration);
+        if let Some(view) = express_view {
+            self.retained
+                .get_mut(&registration.session_id)
+                .expect("installed file")
+                .express_view = Some(view);
+        }
         if let Some(views) = views {
             self.retained
                 .get_mut(&registration.session_id)
@@ -212,6 +297,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
                 picture: None,
                 drawing_views: None,
                 assembly_view: None,
+                express_view: None,
                 deferred_views: None,
             },
         );

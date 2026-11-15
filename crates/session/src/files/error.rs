@@ -45,6 +45,8 @@ pub enum FileWorkspaceError {
     MissingFile(u64),
     DeferredDrawing(u64, String),
     DeferredOpen(PathBuf, String),
+    ExpressOpen(PathBuf, String),
+    ExpressMode(u64, bool),
     ReferenceGraph(String),
     ReferencedModel(u64),
     UnboundDocument(u64),
@@ -70,6 +72,12 @@ pub enum FileWorkspaceError {
 impl fmt::Display for FileWorkspaceError {
     fn fmt(&self, output: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::ExpressOpen(path, reason) => {
+                write!(output, "express assembly {path:?}: {reason}")
+            }
+            Self::ExpressMode(id, express) => {
+                write!(output, "document {id}: expected express mode {express}")
+            }
             Self::ProjectAssets(cause) => write!(output, "project assets: {cause}"),
             Self::DerivedRefresh(reason) => write!(output, "derived refresh: {reason}"),
             Self::SourceValue {
@@ -209,6 +217,8 @@ impl Error for FileWorkspaceError {
             | Self::DestinationInUse { .. }
             | Self::DeferredDrawing(..)
             | Self::DeferredOpen(..)
+            | Self::ExpressOpen(..)
+            | Self::ExpressMode(..)
             | Self::ReferenceGraph(_) => None,
         }
     }

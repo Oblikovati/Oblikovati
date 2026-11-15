@@ -57,6 +57,7 @@ fn save_reopen<T: Caller>(client: &Client<T>, document: u64, path: &Path) -> u64
             full_document_name: path.into(),
             visible: true,
             defer_content: false,
+            express: false,
         })
         .unwrap();
     assert!(!reopened.dirty);

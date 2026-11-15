@@ -134,6 +134,7 @@ fn synthetic_view(
             .unwrap(),
         sources: host.assembly_saved_sources(root, destination).unwrap(),
         catalog_digest: "a".repeat(64),
+        producer_digest: "c".repeat(64),
         chord_error: 0.05,
         angular_error: 0.5,
         triangles: vec![SavedAssemblyTriangle {

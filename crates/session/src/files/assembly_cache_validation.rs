@@ -6,12 +6,22 @@ use oblikovati_persistence::package::{AssemblySourceRecord, SavedAssemblyView};
 use std::collections::BTreeSet;
 
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspace<O, W, F> {
+    /// Borrow the validated presentation of an express assembly, if it is open in that mode.
+    /// Example: `files.express_assembly_view(id)?` before drawing the saved view.
+    pub fn express_assembly_view(
+        &self,
+        id: u64,
+    ) -> Result<Option<&SavedAssemblyView>, FileWorkspaceError> {
+        Ok(self.retained_file(id)?.express_view.as_ref())
+    }
+
     /// Validate the cached presentation against the files and catalog used to create it.
-    /// Example: `files.validated_assembly_view(path, &package)?` before Express open.
+    /// Example: `files.validated_assembly_view(path, &package, producer)?` before Express open.
     pub fn validated_assembly_view(
         &mut self,
         path: &Path,
         package: &DocumentPackage,
+        producer: &str,
     ) -> Result<Option<SavedAssemblyView>, String> {
         let Some(view) = package
             .restore_saved_assembly_view()
@@ -19,6 +29,8 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         else {
             return Ok(None);
         };
+        view.validate_producer(producer)
+            .map_err(|error| error.to_string())?;
         if !path.is_absolute() || self.assembly_view_catalog_digest()? != view.catalog_digest {
             return Err(format!(
                 "assembly cache {path:?}: expected an absolute path and current catalog"
