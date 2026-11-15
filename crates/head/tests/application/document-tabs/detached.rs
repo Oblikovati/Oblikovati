@@ -8,6 +8,7 @@ fn drawing_in_main_strip(world: &mut ApplicationWorld) {
     tab_x(world, drawing);
 }
 #[when("I drag the drawing tab from the strip into the workspace")]
+#[when("the user drags the drawing tab from the strip into the workspace")]
 fn drag_drawing_out(world: &mut ApplicationWorld) {
     let name = world.document_name(drawing_of(world));
     let from = world.expect_tab(&name).center().map(|value| value as i32);
@@ -36,6 +37,8 @@ fn part_in_main(world: &mut ApplicationWorld) {
 }
 #[when("I select another open part tab in the main workspace")]
 #[when("I select the part tab in the main workspace")]
+#[when("the user selects another open part tab in the main workspace")]
+#[when("the user selects the part tab in the main workspace")]
 fn select_main_part_tab(world: &mut ApplicationWorld) {
     world.click_tab(part_of(world));
 }
@@ -73,6 +76,7 @@ fn drawing_in_window(world: &mut ApplicationWorld) {
     drag_drawing_out(world);
 }
 #[when("I open the detached drawing tab context menu")]
+#[when("the user opens the detached drawing tab context menu")]
 fn open_detached_menu(world: &mut ApplicationWorld) {
     let name = world.document_name(drawing_of(world));
     let center = world.run(&name).center().map(|value| value as i32);
@@ -85,6 +89,7 @@ fn part_context(world: &mut ApplicationWorld) {
     world.expect_active(part_of(world));
 }
 #[when("I click the detached drawing sheet")]
+#[when("the user clicks the detached drawing sheet")]
 fn click_detached_sheet(world: &mut ApplicationWorld) {
     let name = world.document_name(drawing_of(world));
     let title = world.run(&name).center();

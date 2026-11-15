@@ -408,10 +408,6 @@ fn presentation_active(world: &mut ApplicationWorld) {
     let presentation = world.add_template(oblikovati_gui::GuiTemplateKind::Presentation);
     world.previous_document = Some(presentation);
     world.pump(Vec::new());
-    assert!(world.tab_run("Home").is_none(), "expected Home out of view");
-}
-#[when("I click the left navigation arrow at the end of the tab strip")]
-fn click_left_arrow(world: &mut ApplicationWorld) {
     for _ in 0..=MANY_DOCUMENTS {
         if world.tab_run("Home").is_some() {
             break;
@@ -419,6 +415,16 @@ fn click_left_arrow(world: &mut ApplicationWorld) {
         world.click_text("<");
         world.pump(Vec::new());
     }
+    world.expect_tab("Home");
+    world.click_text(">");
+    world.pump(Vec::new());
+    assert!(world.tab_run("Home").is_none(), "expected Home out of view");
+}
+#[when("I click the left navigation arrow at the end of the tab strip")]
+#[when("the user clicks the left navigation arrow at the end of the tab strip")]
+fn click_left_arrow(world: &mut ApplicationWorld) {
+    world.click_text("<");
+    world.pump(Vec::new());
 }
 #[then("earlier tabs, including Home, become visible")]
 fn earlier_visible(world: &mut ApplicationWorld) {
@@ -446,6 +452,7 @@ fn part_outside(world: &mut ApplicationWorld) {
     );
 }
 #[when("I select that part from the View tab's Switch menu")]
+#[when("the user selects that part from the View tab's Switch menu")]
 fn select_from_switch(world: &mut ApplicationWorld) {
     let hidden = world.parts[HIDDEN_PART];
     let name = world.document_name(hidden);
