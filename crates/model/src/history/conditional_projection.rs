@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Conditional origin projection evidence bound to one borrowed document snapshot.
+mod segment;
 mod spatial;
 use super::DocumentSnapshot;
 use crate::{
@@ -10,6 +11,7 @@ use crate::{
         interval_equations::enclosure::Enclosure,
     },
 };
+pub use segment::ConditionalSegmentError;
 pub use spatial::ConditionalPointDisplacement;
 
 /// Caller assumptions on the current resolved frame; these are not proven document bounds.

@@ -40,6 +40,15 @@ impl Enclosure {
     pub fn sum(self, rhs: Self) -> Result<Self, String> {
         Self::finite(Self(self.0 + rhs.0), "sum")
     }
+    pub fn quotient(self, rhs: Self) -> Result<Self, String> {
+        let [lower, upper] = rhs.bounds();
+        if lower <= 0.0 && upper >= 0.0 {
+            return Err(format!(
+                "divisor [{lower:?}, {upper:?}]: expected an interval excluding zero"
+            ));
+        }
+        Self::finite(Self(self.0 / rhs.0), "quotient")
+    }
     pub fn half(self) -> Result<Self, String> {
         Self::finite(Self(self.0 * Interval::new(0.5, 0.5)), "half")
     }
@@ -194,6 +203,30 @@ mod tests {
                 }
             }
         }
+    }
+    #[test]
+    fn directed_quotients_enclose_exact_rational_corners() {
+        for left in [[-2., 3.], [0.1, 2.], [f64::from_bits(1), 1.]] {
+            for right in [[0.1, 0.3], [1., 3.], [-2., -0.5]] {
+                let [lo, hi] = Enclosure::new(left)
+                    .unwrap()
+                    .quotient(Enclosure::new(right).unwrap())
+                    .unwrap()
+                    .bounds();
+                for a in left {
+                    for b in right {
+                        let exact = rational(a) / rational(b);
+                        assert!(rational(lo) <= exact && exact <= rational(hi));
+                    }
+                }
+            }
+        }
+        assert!(
+            Enclosure::new([1., 1.])
+                .unwrap()
+                .quotient(Enclosure::new([-1., 1.]).unwrap())
+                .is_err()
+        );
     }
     #[test]
     fn overflowing_decimal_source_is_refused() {
