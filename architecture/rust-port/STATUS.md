@@ -99,9 +99,11 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   mesh quality and producer identity. Cache creation is unavailable on macOS
   and Windows until the running executable can be verified (#3964). See
   `receipts/2026-11-15-express-contract/` for the diagnostic run.
-- Document creation: the full diagnostic passed 29 of 39 scenarios. Named
-  template assets and their catalog configuration are missing (#3899, #3951,
-  #3952). The scenario owner's `BLOCKERS.md` lists the fixture requirements.
+- Document creation: the current full diagnostic passed 28 of 39 scenarios;
+  four stopped at undefined steps and seven at explicit fixture blockers. See
+  `receipts/2026-11-15-document-creation-current/`. Named template assets and
+  catalog configuration are missing (#3899, #3951, #3952); the scenario
+  owner's `BLOCKERS.md` lists the fixture requirements.
 - Document tabs: the diagnostic passed 9 of 38 scenarios (#3900). Two context
   menu scenarios passed on the merged revision; see
   `receipts/2026-11-15-tab-context-verified/`. Two Home menu scenarios need
