@@ -296,12 +296,13 @@ values and type substitutions are refused even if vendor checksums are updated.
 The checker compares explicit package README strings and booleans, and direct
 or absent license-file declarations. Cargo maps README true to `README.md` and
 false to false. Three real Cargo-vendored Git fixtures exercised these cases.
-The default and inherited paths remain unverified. Cargo [checks the filesystem](https://github.com/rust-lang/cargo/blob/5f94df4789f005f9a352888e8355ffc645b7ed0e/src/workspace/parser/mod.rs#L845-L879)
-for default README names and rewrites inherited README and license-file paths.
-A locked Git tree alone does not prove the checkout contained no extra files
-or that workspace paths resolved to the same files. A future comparison must
-first bound the checkout namespace and path resolution, then test Cargo's
-normalization against inherited and default paths.
+Explicit workspace README and license-file paths are also checked when they use
+portable relative path components. The pinned Cargo parser uses a [lexical path
+calculation](https://github.com/rust-lang/cargo/blob/5f94df4789f005f9a352888e8355ffc645b7ed0e/src/workspace/workspace.rs#L2134-L2158).
+Other inherited path syntax is declined. Inherited README without an explicit
+workspace value remains unverified: Cargo [checks the filesystem](https://github.com/rust-lang/cargo/blob/5f94df4789f005f9a352888e8355ffc645b7ed0e/src/workspace/parser/mod.rs#L845-L879)
+for default README names. A locked Git tree alone does not prove the checkout
+contained no extra files. Full manifest and runtime provenance remain unproven.
 
 The checks passed on 18 Git packages and 22,972 tracked vendor files; the
 [copied field observation](receipts/2026-11-15-git-copied-fields/README.md)
