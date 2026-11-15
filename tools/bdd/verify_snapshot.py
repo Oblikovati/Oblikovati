@@ -5,6 +5,7 @@
 import argparse
 import hashlib
 import json
+import os
 import stat
 import subprocess
 from pathlib import Path, PurePosixPath
@@ -79,12 +80,17 @@ def git_revision(checkout: Path) -> str:
     """Read a checkout revision; for example, git_revision(Path('/tmp/scenarios'))."""
     if not (checkout / ".git").exists():
         raise ValueError(f"snapshot {checkout}: expected its own Git checkout")
+    environment = os.environ.copy()
+    environment["GIT_OPTIONAL_LOCKS"] = "0"
     status = subprocess.check_output(
         ["git", "-C", str(checkout), "status", "--porcelain", "--untracked-files=all"],
         text=True,
+        env=environment,
     )
     if status:
-        raise ValueError(f"snapshot {checkout}: expected clean Git status, got {status!r}")
+        raise ValueError(
+            f"snapshot {checkout}: expected clean Git status, got {status!r}"
+        )
     return subprocess.check_output(
         ["git", "-C", str(checkout), "rev-parse", "HEAD"], text=True
     ).strip()
@@ -132,8 +138,17 @@ def restore_snapshot(destination: Path) -> None:
     """Restore and verify the pinned source; example: restore_snapshot(Path('/tmp/source'))."""
     metadata, manifest = read_snapshot_metadata()
     subprocess.run(
-        ["git", "clone", "--quiet", "-c", "core.autocrlf=false", "--branch",
-         metadata["branch"], str(SNAPSHOT_FOLDER / metadata["bundle"]), str(destination)],
+        [
+            "git",
+            "clone",
+            "--quiet",
+            "-c",
+            "core.autocrlf=false",
+            "--branch",
+            metadata["branch"],
+            str(SNAPSHOT_FOLDER / metadata["bundle"]),
+            str(destination),
+        ],
         check=True,
     )
     verify_checkout(destination, metadata, manifest, git_revision)
@@ -150,7 +165,9 @@ def main() -> None:
         return
     metadata, manifest = read_snapshot_metadata()
     verify_checkout(args.checkout, metadata, manifest, git_revision)
-    print(f"Verified {len(manifest)} files at snapshot commit {metadata['snapshot_commit']}")
+    print(
+        f"Verified {len(manifest)} files at snapshot commit {metadata['snapshot_commit']}"
+    )
 
 
 if __name__ == "__main__":

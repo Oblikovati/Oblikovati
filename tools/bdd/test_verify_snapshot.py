@@ -9,8 +9,14 @@ import unittest
 from pathlib import Path
 
 from verify_snapshot import (
-    checkout_files, checkout_namespace, git_revision, manifest_directories,
-    read_snapshot_metadata, restore_snapshot, verify_artifact, verify_checkout,
+    checkout_files,
+    checkout_namespace,
+    git_revision,
+    manifest_directories,
+    read_snapshot_metadata,
+    restore_snapshot,
+    verify_artifact,
+    verify_checkout,
 )
 
 
@@ -41,14 +47,41 @@ class SnapshotVerificationTests(unittest.TestCase):
             item = root / "case.feature"
             item.write_text("Feature: example\n")
             subprocess.run(["git", "-C", str(root), "add", "case.feature"], check=True)
-            subprocess.run(["git", "-C", str(root), "-c", "user.name=Test", "-c",
-                            "user.email=test@example.com", "commit", "-qm", "fixture"], check=True)
+            subprocess.run(
+                [
+                    "git",
+                    "-C",
+                    str(root),
+                    "-c",
+                    "user.name=Test",
+                    "-c",
+                    "user.email=test@example.com",
+                    "commit",
+                    "-qm",
+                    "fixture",
+                ],
+                check=True,
+            )
             clean = git_revision(root)
             item.write_text("Feature: changed\n")
             with self.assertRaisesRegex(ValueError, "expected clean Git status"):
                 git_revision(root)
             item.write_text("Feature: example\n")
             self.assertEqual(git_revision(root), clean)
+
+    @unittest.skipUnless(
+        os.name == "posix" and hasattr(os, "O_NOATIME"),
+        "requires Linux no-atime descriptors",
+    )
+    def test_revision_inspection_does_not_modify_git_namespace(self) -> None:
+        from runtime_snapshot import snapshot_runtime
+
+        with tempfile.TemporaryDirectory() as folder:
+            checkout = Path(folder) / "checkout"
+            restore_snapshot(checkout)
+            before = snapshot_runtime(checkout / ".git")
+            git_revision(checkout)
+            self.assertEqual(snapshot_runtime(checkout / ".git"), before)
 
     def test_checkout_detects_changed_and_added_files(self) -> None:
         with tempfile.TemporaryDirectory() as folder:

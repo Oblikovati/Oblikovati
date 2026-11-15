@@ -54,6 +54,7 @@ class SealedFixture:
         self.binary.write_bytes(b"fixture binary")
         self.checkout = parent / "checkout"
         self.checkout.mkdir()
+        (self.checkout / "input").write_bytes(b"source")
         self.reports = parent / "reports"
         self.reports.mkdir()
         self.log = parent / "native.log"
@@ -92,6 +93,8 @@ class SealedExecutionTests(unittest.TestCase):
         proof = run_sealed(request, self.fixture.process, self.fixture.verify)
         command = self.fixture.process.command
         self.assertIn("--unshare-all", command)
+        self.assertIn("--unshare-user", command)
+        self.assertIn("--disable-userns", command)
         self.assertIn("--clearenv", command)
         self.assertNotIn("--proc", command)
         self.assertEqual(
@@ -99,6 +102,7 @@ class SealedExecutionTests(unittest.TestCase):
         )
         self.assertEqual(proof["runtime_coverage"], "unbounded")
         self.assertFalse(proof["reusable"])
+        self.assertIn("input", proof["source_namespace"])
 
     def test_runtime_mutation_is_refused(self) -> None:
         request = self.fixture.request()
@@ -109,6 +113,13 @@ class SealedExecutionTests(unittest.TestCase):
     def test_source_change_is_refused(self) -> None:
         self.fixture.verify.change_after_first = True
         with self.assertRaisesRegex(ValueError, "source identity"):
+            run_sealed(
+                self.fixture.request(), self.fixture.process, self.fixture.verify
+            )
+
+    def test_source_namespace_mutation_is_refused_even_with_same_revision(self) -> None:
+        self.fixture.process.change = self.fixture.checkout / "input"
+        with self.assertRaisesRegex(ValueError, "source namespace"):
             run_sealed(
                 self.fixture.request(), self.fixture.process, self.fixture.verify
             )
@@ -159,7 +170,9 @@ class SealedExecutionTests(unittest.TestCase):
         request = replace(self.fixture.request(), log=self.fixture.runtime / "new-log")
         with self.assertRaisesRegex(ValueError, "outside all mounted roots"):
             run_sealed(request, self.fixture.process, self.fixture.verify)
-        request = replace(self.fixture.request(), reports=self.fixture.checkout)
+        nested = self.fixture.checkout / "reports"
+        nested.mkdir()
+        request = replace(self.fixture.request(), reports=nested)
         with self.assertRaisesRegex(ValueError, "disjoint directories"):
             run_sealed(request, self.fixture.process, self.fixture.verify)
 

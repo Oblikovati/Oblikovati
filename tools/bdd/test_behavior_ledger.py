@@ -221,6 +221,20 @@ class GitRepositoryFixture:
 
 
 class ApplicationInputsTests(unittest.TestCase):
+    def test_inventory_command_does_not_write_git_index(self) -> None:
+        import tempfile
+        from behavior_ledger import read_inventory_command
+        from runtime_snapshot import snapshot_runtime
+
+        with tempfile.TemporaryDirectory() as folder:
+            fixture = GitRepositoryFixture(Path(folder))
+            before = snapshot_runtime(fixture.root / ".git")
+            result = read_inventory_command(
+                fixture.root, ["git", "status", "--porcelain"]
+            )
+            self.assertEqual(result, "")
+            self.assertEqual(snapshot_runtime(fixture.root / ".git"), before)
+
     def test_only_unchanged_ancestor_application_inputs_can_reuse_receipts(
         self,
     ) -> None:

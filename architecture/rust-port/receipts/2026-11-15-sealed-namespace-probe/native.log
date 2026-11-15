@@ -1,0 +1,21 @@
+
+running 1 test
+Feature: Inspect files before opening a document
+  Scenario: Activate an already open part through the Open dialog
+   ✔  Given a saved part is open in the MCAD Software
+   ✔  And a different drawing document is active
+   ✔  And the open part's exact file location is known
+   ✔  When the user presses Control+O and chooses the already open part at that location
+   ✔  And the user chooses Open
+   ✔  Then the Open dialog closes
+   ✔  And the existing part document tab becomes active
+   ✔  And no additional document tab is created
+   ✔  And the drawing tab remains available
+[Summary]
+1 feature
+1 scenario (1 passed)
+9 steps (9 passed)
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1004 filtered out; finished in 8.30s
+

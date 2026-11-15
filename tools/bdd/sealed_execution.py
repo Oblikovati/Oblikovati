@@ -7,7 +7,7 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Mapping
 
 from runtime_snapshot import open_flags, snapshot_file, snapshot_runtime
 
@@ -25,6 +25,17 @@ class SealedRequest:
     area: str
     feature: str
     scenario: str
+
+
+@dataclass(frozen=True)
+class SealedInputs:
+    """Inputs observed around one run; example: SealedInputs(source, checkout, runtime, runner, sandbox)."""
+
+    source: str
+    checkout: Mapping[str, object]
+    runtime: Mapping[str, object]
+    runner: Mapping[str, object]
+    sandbox: Mapping[str, object]
 
 
 SealedProcess = Callable[[list[str], Path], int]
@@ -149,6 +160,9 @@ def scenario_environment(request: SealedRequest) -> list[tuple[str, str]]:
         ("LANG", "C.UTF-8"),
         ("XDG_RUNTIME_DIR", "/tmp"),
         ("VK_ICD_FILENAMES", "/usr/share/vulkan/icd.d/lvp_icd.json"),
+        ("GIT_OPTIONAL_LOCKS", "0"),
+        ("GIT_CONFIG_NOSYSTEM", "1"),
+        ("GIT_CONFIG_GLOBAL", "/dev/null"),
         ("OBK_BDD_ROOT", "/scenario"),
         ("OBK_BDD_REPORTS", "/reports"),
         ("OBK_BDD_FEATURE", request.feature),
@@ -170,7 +184,14 @@ def sandbox_command(request: SealedRequest) -> list[str]:
 
 def sandbox_mounts(request: SealedRequest) -> list[str]:
     """Fix the allowed filesystem mounts; example: sandbox_mounts(request)."""
-    command = [str(request.bwrap), "--unshare-all", "--clearenv", "--die-with-parent"]
+    command = [
+        str(request.bwrap),
+        "--unshare-all",
+        "--unshare-user",
+        "--disable-userns",
+        "--clearenv",
+        "--die-with-parent",
+    ]
     command.extend(["--ro-bind", str(request.runtime), "/"])
     command.extend(["--dev", "/dev", "--tmpfs", "/tmp"])
     command.extend(["--ro-bind", str(request.binary), "/runner"])
@@ -213,17 +234,23 @@ def run_sealed(
 ) -> dict[str, object]:
     """Run and inventory one scenario without authorizing reuse; example: run_sealed(request, run_process, verify)."""
     require_request(request)
-    before_source = verify(request.checkout)
-    before_runtime = snapshot_runtime(request.runtime)
-    before_runner = file_identity(request.binary)
-    before_sandbox = file_identity(request.bwrap)
+    before = collect_inputs(request, verify)
     status = process(sandbox_command(request), request.log)
     if status != 0:
         raise ValueError(f"sealed runner exit {status!r}: expected zero")
-    require_same_source(before_source, verify(request.checkout))
-    require_stable_inputs(request, before_runtime, before_runner, before_sandbox)
-    return execution_observation(
-        request, before_source, before_runtime, before_runner, before_sandbox
+    require_same_source(before.source, verify(request.checkout))
+    require_stable_inputs(request, before)
+    return execution_observation(request, before)
+
+
+def collect_inputs(request: SealedRequest, verify: SourceVerifier) -> SealedInputs:
+    """Inventory the inputs before launching; example: collect_inputs(request, verify)."""
+    return SealedInputs(
+        verify(request.checkout),
+        snapshot_runtime(request.checkout),
+        snapshot_runtime(request.runtime),
+        file_identity(request.binary),
+        file_identity(request.bwrap),
     )
 
 
@@ -234,35 +261,37 @@ def require_same_source(before: str, after: str) -> None:
 
 
 def execution_observation(
-    request: SealedRequest,
-    source: str,
-    runtime: object,
-    runner: object,
-    sandbox: object,
+    request: SealedRequest, inputs: SealedInputs
 ) -> dict[str, object]:
-    """Record the checked inputs without claiming reuse; example: execution_observation(request, source, runtime, runner, sandbox)."""
+    """Record checked inputs without claiming reuse; example: execution_observation(request, inputs)."""
     return {
         "runtime_coverage": "unbounded",
-        "source_identity": source,
+        "source_identity": inputs.source,
+        "source_namespace": inputs.checkout,
         "reusable": False,
-        "runtime_inputs": runtime,
-        "runner_input": runner,
-        "sandbox_input": sandbox,
+        "runtime_inputs": inputs.runtime,
+        "runner_input": inputs.runner,
+        "sandbox_input": inputs.sandbox,
         "area": request.area,
         "feature": request.feature,
         "scenario": request.scenario,
     }
 
 
-def require_stable_inputs(
-    request: SealedRequest, runtime: object, runner: object, sandbox: object
-) -> None:
-    """Refuse changes while the scenario ran; example: require_stable_inputs(request, runtime, runner, sandbox)."""
-    if snapshot_runtime(request.runtime) != runtime:
+def require_source_namespace(checkout: Path, before: object) -> None:
+    """Refuse changes to any mounted scenario file, including Git metadata."""
+    if snapshot_runtime(checkout) != before:
+        raise ValueError("source namespace: expected unchanged mounted checkout inputs")
+
+
+def require_stable_inputs(request: SealedRequest, before: SealedInputs) -> None:
+    """Refuse changes while the scenario ran; example: require_stable_inputs(request, before)."""
+    require_source_namespace(request.checkout, before.checkout)
+    if snapshot_runtime(request.runtime) != before.runtime:
         raise ValueError(
             "runtime inputs: expected unchanged mounted files during the run"
         )
-    if file_identity(request.binary) != runner:
+    if file_identity(request.binary) != before.runner:
         raise ValueError("runner input: expected the same executable during the run")
-    if file_identity(request.bwrap) != sandbox:
+    if file_identity(request.bwrap) != before.sandbox:
         raise ValueError("sandbox input: expected the same executable during the run")
