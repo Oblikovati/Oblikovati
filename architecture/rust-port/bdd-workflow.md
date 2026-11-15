@@ -95,8 +95,13 @@ only selects its accepted feature list, so it is not a full sketch run.
 ## Record test evidence
 
 Give each run its own absolute `OBK_BDD_REPORTS` directory. The existing default
-report directory is overwritten on each run. Retain a checked receipt and its
-artifacts as described in [behavior receipts](behavior-receipts.md), including:
+report directory is overwritten on each run. Use a separate absolute
+`CARGO_TARGET_DIR` for each concurrently active worktree. A shared target can
+reuse a test binary built from another checkout; discard that run as acceptance
+evidence if the binary provenance is uncertain. Keep the target until its runs
+finish, then remove task-owned temporary targets when they are no longer needed.
+Retain a checked receipt and its artifacts as described in
+[behavior receipts](behavior-receipts.md), including:
 
 1. Feature file path and SHA-256 before and after the run. If the hashes differ,
    discard the run as current evidence and rerun against stable source.
@@ -114,6 +119,7 @@ For example, after configuring the local Vulkan runtime and an Xvfb display:
 ```sh
 export OBK_BDD_ROOT=/path/to/MCAD-Scenarios
 export OBK_BDD_REPORTS=/absolute/path/to/unique-report-directory
+export CARGO_TARGET_DIR=/absolute/path/to/this-worktree-target
 export OBK_BDD_FEATURE=pattern-rectangular
 cargo test --locked -p oblikovati-head --lib \
   sketch_scenarios_use_the_native_window -- --nocapture
