@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:c7961c524b21f4e1124e3f4d865c19bde5f6dc740d654f9838726b63cccd0b84",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "130621bae0d8b2196d399a885f76d6f3bb4c5050a41257459a9f02cd0ec4de17",
+  "application_commit": "7bf01a1789c3ee33b3eed7a11d12a662ba69d445",
+  "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan Lavapipe on Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-15-rect-history-current/cucumber.json",
+    "sha256": "9dcf499815734a62c72d650f7fca641d39a1790025b6a2217b7341053b4064a2"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-15-rect-history-current/source-revision.json",
+    "sha256": "9e5ed24b3717cb297907e1092647920a4f12aed3edd7ab23fcb23ce0a34bb140"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-15-rect-history-current/rectangle-two-point-08-Commit-typed-sizes-and-restore-through-history.png",
+    "sha256": "4070912af6348b74ff9ab0f6c0cc8d7230d5ff087e158430036d79db72b1fe18"
+  }
+}
