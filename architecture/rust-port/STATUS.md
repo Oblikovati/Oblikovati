@@ -15,7 +15,7 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 - **R0 remains open.** The full gate, baseline fields and milestone exit audits
   are incomplete. Run `python3 -B tools/bdd/behavior_cli.py report` for current
   counts; source and application changes can make earlier receipts stale.
-- At `d5bc1edfe682c8f2a704a57e039566c2ee37a883`, the ledger reported zero
+- At `7c2de14943ee305cb32742967d008defe599b525`, the ledger reported zero
   current verified scenarios, 180 stale receipts and 21 blocked scenarios
   across 2,720 declarations. Application changes made prior receipts stale.
   The gate also requires baseline fields for 2,577 scenarios.
@@ -43,8 +43,8 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   ownership check still rejects a second active owner. Native windows and
   headless diagnostics now share a test-only lease (#3878). Two Clear tests
   passed twice with two threads, and a mixed group of 15 passed with eight;
-  the full native head suite remains unverified. See
-  `receipts/2026-11-15-native-context-isolation/`.
+  the full native head suite remains unverified. A later partial serial run
+  recorded two failures; see `receipts/2026-11-15-head-partial/`.
 
 ## Queue
 
@@ -117,9 +117,10 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   `receipts/2026-11-15-tab-context-verified/`. Two Home menu scenarios need
   source clarification in their `BLOCKERS.md`. The keyboard scenario receipts
   predate later source changes (#3950).
-- Quick access: the diagnostic passed 11 of 12 scenarios. Measure and Clear
-  for one body are available; Clear can open before body selection (#3962).
-  Clear has confirmation, undo and
+- Quick access: the diagnostic passed 11 of 12 scenarios. Clear can open
+  before selection and can clear multiple browser-selected bodies in one edit
+  (#3962). Viewport multi-selection, faces, and occurrences remain open; see
+  `receipts/2026-11-15-clear-multiple-bodies/`. Clear has confirmation, undo and
   redo checks in `receipts/2026-11-15-clear-appearance/`; its wider selection
   workflow remains open (#3962). The recorded profile remains incomplete
   (#3955).
