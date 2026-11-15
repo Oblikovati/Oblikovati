@@ -164,6 +164,8 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
   `receipts/2026-11-15-browser-collapse/`; this is diagnostic evidence.
   Four selection, context-menu, Find in Window and origin-plane scenarios also
   passed focused diagnostics; see `receipts/2026-11-15-browser-selection/`.
+  Four search and criteria scenarios passed focused diagnostics; see
+  `receipts/2026-11-15-browser-find/`.
 
 - Clear Appearance: multiple exact face overrides can now be selected and
   cleared in one edit. Owner and native-window tests cover selection, Cancel,
