@@ -528,8 +528,11 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3857",
         "https://github.com/Oblikovati/Oblikovati/issues/3870"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-extrusion-r4-current-1/receipt-6d4a200f137644d4.json",
+        "sha256": "007f5a069566786a574a64b8103aa9850ae5d7a6ec1ec0a84e307b342fe3296b"
+      },
       "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "historical_receipts": [
@@ -582,8 +585,11 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3927",
         "https://github.com/Oblikovati/Oblikovati/issues/3928"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-extrusion-r4-current-2/receipt-5c666abf06d3e4d2.json",
+        "sha256": "7e2f4bd2868ee3e76e3f83e38e988d7ec6a351c9af7207bf26cf38f120d9db7a"
+      },
       "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "go_reference": "../Oblikovati/app/extrude_tool.go; ../Oblikovati/head/ui/extrude_dialog.go",
@@ -625,8 +631,11 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3870",
         "https://github.com/Oblikovati/Oblikovati/issues/3931"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-extrusion-r4-current-3/receipt-c958310f71da6060.json",
+        "sha256": "4f3cf3c158692b2912e8dcdd2a324a205de461dc56fc36ac567f29217f8b8401"
+      },
       "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "go_reference": "../Oblikovati/app/commands_standard.go; ../Oblikovati/app/bindings_test.go; ../Oblikovati/app/extrude_tool.go",
@@ -669,8 +678,11 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3929",
         "https://github.com/Oblikovati/Oblikovati/issues/3930"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-extrusion-r4-current-4/receipt-2fc85f94acd6cc5f.json",
+        "sha256": "75df3a8a621911499ae4e5f085e0555d80943599c451dc73003d5689213bee25"
+      },
       "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "go_test_premise": "Go aa8297d1b: generic extrusion readiness, point creation, and sketch creation undo tests pass; they do not directly test these native validation or point-history scenarios. See receipts/2026-11-14-go-validation-baseline/README.md.",

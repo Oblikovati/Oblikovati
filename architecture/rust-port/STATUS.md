@@ -15,7 +15,7 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 - **R0 remains open.** The full gate, baseline fields and milestone exit audits
   are incomplete. Run `python3 -B tools/bdd/behavior_cli.py report` for current
   counts; source and application changes can make earlier receipts stale.
-- At `69a64af91`, the ledger reported one current verified scenario, 156 stale
+- At `67f0dba67`, the ledger reported five current verified scenarios, 152 stale
   receipts, 36 blocked and 38 excluded
   across 2,720 declarations. The gate also requires missing baseline fields.
 - `rust-work` is local and has not passed the full pre-push gate. All 20 former
@@ -73,8 +73,9 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   [Martensite #462](https://github.com/Oblikovati/Martensite/issues/462).
 - Extrusion entry: the new metric part and origin-plane selection scenario
   and the following preview, cancel/reopen and zero distance recovery scenarios
-  passed before later source and test changes (#3927, #3931, #3929); their
-  receipts are stale. The solve precision certificate remains open (#3928); see
+  passed on the current pin (#3927, #3931, #3929); see
+  `receipts/2026-11-15-extrusion-r4-current-1/` through `-4/`. The solve
+  precision certificate remains open (#3928); see
   `solver-precision-investigation.md`.
 - Rectangle zero-first-size: the corrected portable scenario passed eight
   native steps after the status fix; its receipt is now stale. See
