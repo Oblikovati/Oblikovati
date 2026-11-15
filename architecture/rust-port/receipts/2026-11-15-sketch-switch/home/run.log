@@ -1,0 +1,22 @@
+    Finished `test` profile [unoptimized] target(s) in 0.10s
+     Running unittests src/lib.rs (/tmp/obk-sketch-switch-target/debug/deps/oblikovati_head-0c1a18eb5aa1b656)
+
+running 1 test
+Feature: Open document tabs
+  Scenario: Visit Home without leaving an active sketch
+   ✔  Given a part is open in the MCAD Software
+   ✔  And the part has an active sketch editing environment
+   ✔  When the user chooses Home from the View tab's Switch menu
+   ✔  Then the Home workspace displays its recent documents
+   ✔  And the part remains available in the document tab strip
+   ✔  When the user selects the part's document tab
+   ✔  Then the part's sketch viewport and model browser are displayed
+   ✔  And the sketch editing environment remains active
+[Summary]
+1 feature
+1 scenario (1 passed)
+8 steps (8 passed)
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1054 filtered out; finished in 10.80s
+
