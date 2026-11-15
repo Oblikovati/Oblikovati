@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Rectangle two point: tmp/obk-rect-corrected-source/features/sketch/rectangle-two-point/scenario.feature" package="testsuite/Feature: Rectangle two point: tmp/obk-rect-corrected-source/features/sketch/rectangle-two-point/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T07:52:36.914896939Z" time="10.782051304"><testcase name="Scenario: rectangle-two-point-10 Observe a zero first size: tmp/obk-rect-corrected-source/features/sketch/rectangle-two-point/scenario.feature:61:3" time="10.782051304"><system-out><![CDATA[  Scenario: rectangle-two-point-10 Observe a zero first size
+   ✔  Given an empty editable metric sketch is Ready
+   ✔  When the user choose Two Point Rectangle and click a clear point in the sketch canvas
+   ✔  And the user enter 0 and press Tab
+   ✔  Then the first size is locked at 0.000 mm and the second field is focused
+   ✔  When the user enter 4 and press Return
+   ✔  Then the command returns to Select first corner without a warning dialog
+   ✔  When the user press Escape
+   ✔  Then Ready returns with no new rectangle visible
+]]></system-out></testcase></testsuite></testsuites>
