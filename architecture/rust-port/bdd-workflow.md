@@ -121,6 +121,11 @@ environment variables are not passed through. The committed Cargo config still
 applies, and cached dependencies, tools, runtime settings, and system files are
 not attested. The dependencies must already be available offline.
 
+Native capture also builds its inventory generator from the selected commit in
+a separate temporary offline target. `OBK_SCENARIO_LEDGER_TOOL` does not select
+the generator for capture. This adds another build and needs the tool's locked
+dependencies in the local cache. The host compiler and caches remain unproven.
+
 ## Record test evidence
 
 Each run uses a unique default report directory under

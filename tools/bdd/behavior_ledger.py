@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Callable, Mapping
 
 from behavior_evidence import StaleEvidence, verify_receipt
+from git_environment import checkout_git_environment
 from verify_snapshot import (
     SNAPSHOT_FOLDER,
     git_revision,
@@ -314,7 +315,10 @@ def require_classified(ledger: Mapping[str, object]) -> None:
         )
 
 
-def verify_inputs(root: Path, checkout: Path, inventory: Mapping[str, object]) -> None:
+def verify_inputs(
+    root: Path, checkout: Path, inventory: Mapping[str, object],
+    inventory_reader: Callable[[Path, Path, str], str] | None = None,
+) -> None:
     """Verify the pinned checkout and inventory hashes; for example, verify_inputs(root, checkout, inventory)."""
     metadata = require_object(
         read_json(SNAPSHOT_FOLDER / "current.json"), "snapshot metadata"
@@ -335,17 +339,21 @@ def verify_inputs(root: Path, checkout: Path, inventory: Mapping[str, object]) -
             raise ValueError(
                 f"inventory source {row.get('path')!r}: expected its pinned file hash"
             )
-    tool = os.environ.get("OBK_SCENARIO_LEDGER_TOOL")
-    command = ([tool] if tool else ["cargo", "xtask"]) + [
-        "scenario-ledger",
-        str(checkout.resolve()),
-        str(metadata["snapshot_commit"]),
-    ]
-    generated = read_inventory_command(root, command)
+    reader = inventory_reader or read_default_inventory
+    generated = reader(root, checkout, str(metadata["snapshot_commit"]))
     if json.loads(generated) != inventory:
         raise ValueError(
             "scenario inventory: expected all declarations from the current pinned source"
         )
+
+
+def read_default_inventory(root: Path, checkout: Path, revision: str) -> str:
+    """Run the standard ledger generator; example: read_default_inventory(root, checkout, revision)."""
+    tool = os.environ.get("OBK_SCENARIO_LEDGER_TOOL")
+    command = ([tool] if tool else ["cargo", "xtask"]) + [
+        "scenario-ledger", str(checkout.resolve()), revision,
+    ]
+    return read_inventory_command(root, command)
 
 
 def read_inventory_command(root: Path, command: list[str]) -> str:
@@ -367,7 +375,7 @@ APPLICATION_PATHS = [
 def application_state(root: Path) -> tuple[str, bool]:
     """Read application commit and relevant dirty state; for example, application_state(Path('.'))."""
     commit = subprocess.check_output(
-        ["git", "-C", str(root), "rev-parse", "HEAD"], text=True
+        ["git", "-C", str(root), "rev-parse", "HEAD"], text=True, env=checkout_git_environment()
     ).strip()
     status = subprocess.check_output(
         [
@@ -380,7 +388,7 @@ def application_state(root: Path) -> tuple[str, bool]:
             "--",
             *APPLICATION_PATHS,
         ],
-        text=True,
+        text=True, env=checkout_git_environment() | {"GIT_OPTIONAL_LOCKS": "0"},
     )
     return commit, not bool(status.strip())
 
