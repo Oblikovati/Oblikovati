@@ -29,7 +29,8 @@ fn picture_probe_bounds(
     size: [f32; 2],
 ) -> Option<[usize; 4]> {
     let left = position[0] as usize + 8;
-    let top = (position[1] + size[1] * 0.5) as usize;
+    // The pinned 1440×900 fixture uses at most two unwrapped label rows.
+    let top = (position[1] + size[1] * 0.35) as usize;
     let right = ((position[0] + size[0]) as usize).saturating_sub(8);
     let bottom = ((position[1] + size[1]) as usize).saturating_sub(8);
     if left >= right
@@ -57,7 +58,7 @@ fn preview_detail_check_rejects_a_blank_interior() {
     let size = [64., 64.];
     capture.rgba[0] = 255;
     assert!(!picture_has_detail(&capture, position, size));
-    capture.rgba[(35 * 64 + 11) * 4] = 255;
+    capture.rgba[(25 * 64 + 11) * 4] = 255;
     assert!(picture_has_detail(&capture, position, size));
     assert!(!picture_has_detail(&capture, position, [80., 64.]));
     capture.rgba.clear();

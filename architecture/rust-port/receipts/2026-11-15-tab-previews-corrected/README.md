@@ -11,7 +11,9 @@ model-state suffix, while requiring the name to start a separate row in the
 same preview draw list.
 
 The Home preview run failed at its fourth step: the preview picture interior
-was blank. The new interior-detail check rejects a uniform image even when its
+was blank. A repeat with a wider probe starting below the two label rows also
+failed; its report is in `home-red-wide/`. The interior-detail check rejects a
+uniform image even when its
 border has contrast; a focused negative test covers that case. The screenshot
 was inspected and shows an empty preview. Issue #3989 tracks the product fix.
 The check establishes that there is variation in the picture area; it does not
