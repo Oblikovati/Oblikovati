@@ -63,3 +63,15 @@ worktree; the checks here do not establish full repository coverage or a complet
 Express-open journey.
 
 The compressed logs and profiles are lossless; use `gzip -dc` to inspect them.
+
+## Combined branch checks
+
+At merged application commit `68fe8fca333794b1b4f58c6d37e47796578d0b74`,
+`merged-suites.log.gz` records passing persistence, session, automation, and
+CLI tests and doc tests against the published API revision. The three native
+assembly fixture tests also passed; see `merged-native.log.gz`.
+
+The document lifecycle methods were then separated to restore the file-size
+guard. The same three native tests passed with that split in the worktree before
+commit `0a4ad5fed`; `split-native.log.gz` records the run. Documentation lint
+passed in that worktree. These checks do not establish Express open or Load Full.
