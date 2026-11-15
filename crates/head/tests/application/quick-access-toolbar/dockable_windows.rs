@@ -157,3 +157,20 @@ fn dockable_tool_windows_can_be_docked_together() {
     assert!(window_geometry("Application Options").is_some());
     world.close();
 }
+
+#[test]
+fn quick_access_measure_starts_and_closes_the_real_measure_tool() {
+    let mut world = ApplicationWorld::new();
+    part_active(&mut world);
+    open_customization(&mut world);
+    world.click_text("Measure");
+    world.pump(Vec::new());
+    assert!(on_row(&world, "Measure"));
+    world.click(row_center(&world, "Measure"));
+    world.pump(Vec::new());
+    assert!(world.state().measure.is_some());
+    assert!(window_geometry("Measure").is_some());
+    close_title(&mut world, "Measure");
+    assert!(world.state().measure.is_none());
+    world.close();
+}

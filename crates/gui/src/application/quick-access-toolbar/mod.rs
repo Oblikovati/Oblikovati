@@ -142,6 +142,9 @@ impl QuickAccessToolbar {
             Some(StandardCommand::Redo) => GuiShellAction::Redo,
             Some(StandardCommand::Home) => GuiShellAction::ShowHome,
             Some(StandardCommand::Update) => GuiShellAction::UpdatePart,
+            Some(StandardCommand::Measure) => {
+                GuiShellAction::Inspect(crate::GuiInspectAction::StartMeasure)
+            }
             Some(StandardCommand::Select)
                 if GuiShellAction::SetSelectionMode(crate::GuiSelectionMode::All)
                     .enabled(state) =>
@@ -262,6 +265,14 @@ impl QuickAccessToolbar {
                 drop(disabled);
             }
             StandardCommand::Print => muted_button(ui, label),
+            StandardCommand::Measure => crate::chrome::command_button(
+                ui,
+                label,
+                GuiShellAction::Inspect(crate::GuiInspectAction::StartMeasure),
+                state,
+                [0.; 2],
+                actions,
+            ),
         }
     }
     /// Right-click on Undo reads what it would undo, latest first.
