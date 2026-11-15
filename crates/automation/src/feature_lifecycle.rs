@@ -86,23 +86,46 @@ fn edit<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
         .commands(document)
         .map_err(api_error)?
         .run("Edit Feature", |snapshot, _| {
-            edit_prism_distance(snapshot, &request)?;
+            apply_feature_distance_edit(snapshot, &request)?;
             Ok::<_, Error>(request.id)
         })
         .map_err(api_error)
 }
 
-fn edit_prism_distance(
+/// Edit one prism distance on a caller-owned candidate, with no geometry or history side effects.
+/// Example: `apply_feature_distance_edit(&mut candidate, &request)?` before preview.
+pub fn apply_feature_distance_edit(
     snapshot: &mut DocumentSnapshot,
     request: &EditFeatureArgs,
 ) -> Result<(), Error> {
     require_empty_repicks(request)?;
-    let source = prism_distance_parameter(snapshot, request.id)?;
     let value = single_distance_edit(request)?;
+    let distance = crate::extrusion::distance(snapshot, value)?;
+    let (feature, _) = locate(&snapshot.work_geometry, request.id)?;
+    let PartFeatureDefinition::SketchPrism(previous) = feature.definition() else {
+        return Err(Error(format!(
+            "features.edit id {}: expected a sketch prism feature",
+            request.id
+        )));
+    };
+    let mut displacement = previous.displacement();
+    displacement[2] = distance;
+    let definition = oblikovati_model::feature::sketch_prism::SketchPrismDefinition::new(
+        previous.sketch(),
+        previous.selection().clone(),
+        displacement,
+    )
+    .map_err(api_error)?;
+    let reads = definition.reads(snapshot).map_err(api_error)?;
     snapshot
-        .parameters
-        .set_authored_expression(source, value, Dimension::Length)
-        .map_err(api_error)
+        .work_geometry
+        .replace(
+            FeatureId(request.id),
+            PartFeatureDefinition::SketchPrism(Box::new(definition)),
+            reads,
+        )
+        .map_err(api_error)?;
+    Ok(())
 }
 
 fn require_empty_repicks(request: &EditFeatureArgs) -> Result<(), Error> {
@@ -113,20 +136,6 @@ fn require_empty_repicks(request: &EditFeatureArgs) -> Result<(), Error> {
         "features.edit id {} repick: expected no repicks for a sketch prism",
         request.id
     )))
-}
-
-fn prism_distance_parameter(snapshot: &DocumentSnapshot, id: u64) -> Result<u64, Error> {
-    let (feature, _) = locate(&snapshot.work_geometry, id)?;
-    let PartFeatureDefinition::SketchPrism(definition) = feature.definition() else {
-        return Err(Error(format!(
-            "features.edit id {id}: expected a sketch prism feature"
-        )));
-    };
-    definition.displacement()[2].parameter().ok_or_else(|| {
-        Error(format!(
-            "features.edit id {id}: expected a parameter-driven prism distance"
-        ))
-    })
 }
 
 fn single_distance_edit(request: &EditFeatureArgs) -> Result<&str, Error> {

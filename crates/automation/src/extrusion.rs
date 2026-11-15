@@ -194,7 +194,7 @@ fn sketch_index(snapshot: &DocumentSnapshot, index: i64) -> Result<DocumentSketc
             ))
         })
 }
-fn distance(snapshot: &DocumentSnapshot, source: &str) -> Result<DatumLength, Error> {
+pub(super) fn distance(snapshot: &DocumentSnapshot, source: &str) -> Result<DatumLength, Error> {
     let parameters = &snapshot.parameters;
     let text = source.trim();
     if let Some(id) = parameters.find(text) {

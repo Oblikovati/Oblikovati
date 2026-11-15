@@ -284,7 +284,7 @@ pub use asset_commands::ASSET_COMMAND_METHODS;
 mod asset_assignments;
 pub use asset_assignments::ASSET_ASSIGNMENT_METHODS;
 mod part_topology;
-pub use feature_lifecycle::FEATURE_LIFECYCLE_METHODS;
+pub use feature_lifecycle::{FEATURE_LIFECYCLE_METHODS, apply_feature_distance_edit};
 pub use part_topology::{BODY_QUERY_METHODS, PartTopologyAccess, TopologyEntityKind};
 mod part_sketch_continuity;
 pub use part_sketch_continuity::PartSketchContinuity;
