@@ -140,11 +140,16 @@ fn toggle_tabs_option(world: &mut ApplicationWorld) {
 }
 #[when("I clear Document Tabs in the View tab's User Interface menu")]
 #[when("I select Document Tabs in the same menu")]
+#[when("the user clears Document Tabs in the View tab's User Interface menu")]
+#[when("the user selects Document Tabs in the same menu")]
 fn toggle_tabs(world: &mut ApplicationWorld) {
     toggle_tabs_option(world);
 }
 #[given("document tabs are hidden")]
 fn tabs_hidden(world: &mut ApplicationWorld) {
+    while world.parts.len() < OVERFLOWING_DOCUMENTS {
+        world.add_part();
+    }
     toggle_tabs_option(world);
     assert!(
         window_geometry(TAB_STRIP).is_none(),
@@ -178,6 +183,7 @@ fn all_tabs(world: &mut ApplicationWorld) {
     }
 }
 #[when("I open the Switch menu on the View tab")]
+#[when("the user opens the Switch menu on the View tab")]
 fn open_switch(world: &mut ApplicationWorld) {
     world.click_text("View");
     world.click_text("Switch");
@@ -191,15 +197,13 @@ fn switch_entries(world: &mut ApplicationWorld) {
     world.expect_text("More Windows");
 }
 #[when("I choose More Windows")]
+#[when("the user chooses More Windows")]
 fn more_windows(world: &mut ApplicationWorld) {
     world.click_text("More Windows");
 }
 #[then("a Select Window dialog displays a scrollable list of open documents")]
 fn select_window_list(world: &mut ApplicationWorld) {
     world.expect_text("Select Window");
-    while world.parts.len() < OVERFLOWING_DOCUMENTS {
-        world.add_part();
-    }
     // A middle row stays visible after scrolling, so the same row is measured twice.
     let name = world.document_name(world.parts[7]);
     let top = world.run(&name).center();

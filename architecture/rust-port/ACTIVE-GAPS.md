@@ -92,6 +92,9 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
   and Home wrap; it is manual evidence, not a scenario receipt. See
   `receipts/2026-11-15-live-tab-keyboard/`. Three clarified Home-tab and window-list scenarios passed
   a later diagnostic; see `receipts/2026-11-15-tabs-clarified/`.
+  Hide/restore and the hidden-tab window list also passed after the list fixture
+  was corrected to create its documents before opening the dialog (#3900); see
+  `receipts/2026-11-15-tabs-visibility-corrected/`.
 - Quick access: the diagnostic passed 11 of 12 scenarios. Clear can open
   before selection and can clear multiple browser-selected bodies in one edit
   (#3962). Viewport body multi-selection now passes frame-loop tests; named
