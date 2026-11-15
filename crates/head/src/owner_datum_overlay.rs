@@ -22,14 +22,7 @@ impl<
         let Some(document) = self.active_datum_part()? else {
             return Ok(crate::HeadDatumPlaneUpdate::default());
         };
-        let theme = match &self.themes {
-            Some(library) => library.active(),
-            None => self
-                .datum_fallback_theme
-                .get_or_insert_with(ThemeDefinition::dark)
-                .as_ref()
-                .map_err(Clone::clone)?,
-        };
+        let theme = datum_theme(&self.themes, &mut self.datum_fallback_theme)?;
         let session = self
             .files
             .workspace()
@@ -56,6 +49,19 @@ impl<
             .document_type(document)
             .map_err(|error| error.to_string())?;
         Ok((kind == oblikovati_api::types::DOCUMENT_PART).then_some(document))
+    }
+}
+
+fn datum_theme<'a>(
+    library: &'a Option<oblikovati_model::theme::ThemeLibrary>,
+    fallback: &'a mut Option<Result<ThemeDefinition, String>>,
+) -> Result<&'a ThemeDefinition, String> {
+    match library {
+        Some(library) => Ok(library.active()),
+        None => fallback
+            .get_or_insert_with(ThemeDefinition::dark)
+            .as_ref()
+            .map_err(Clone::clone),
     }
 }
 
@@ -127,6 +133,20 @@ fn plane_corners(
     corners: [[f64; 3]; 2],
     scale: f64,
 ) -> Result<[[f64; 3]; 4], String> {
+    let [first, second] = local_diagonal(frame, corners, scale)?;
+    let points = [first, [second[0], first[1]], second, [first[0], second[1]]];
+    let mut result = [[0.; 3]; 4];
+    for (out, point) in result.iter_mut().zip(points) {
+        *out = frame.to_model(point).map_err(|error| error.to_string())?;
+    }
+    Ok(result)
+}
+
+fn local_diagonal(
+    frame: SketchPlane,
+    corners: [[f64; 3]; 2],
+    scale: f64,
+) -> Result<[[f64; 2]; 2], String> {
     if !scale.is_finite() || scale <= 0. {
         return Err(format!(
             "work-plane scale {scale:?}: expected a finite positive working scale"
@@ -140,12 +160,7 @@ fn plane_corners(
             "work-plane corners {corners:?}: expected a nondegenerate rectangle"
         ));
     }
-    let points = [first, [second[0], first[1]], second, [first[0], second[1]]];
-    let mut result = [[0.; 3]; 4];
-    for (out, point) in result.iter_mut().zip(points) {
-        *out = frame.to_model(point).map_err(|error| error.to_string())?;
-    }
-    Ok(result)
+    Ok([first, second])
 }
 
 #[cfg(test)]

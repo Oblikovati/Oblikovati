@@ -13,6 +13,11 @@ pub struct ViewportDatumPlane {
 impl ViewportDatumPlane {
     /// Refuse non-finite overlay inputs; example: `plane.validate()?` before rendering.
     pub fn validate(&self) -> Result<(), String> {
+        self.validate_corners()?;
+        self.validate_colors()?;
+        Ok(())
+    }
+    fn validate_corners(&self) -> Result<(), String> {
         if self
             .corners
             .iter()
@@ -33,6 +38,9 @@ impl ViewportDatumPlane {
                 self.corners
             ));
         }
+        Ok(())
+    }
+    fn validate_colors(&self) -> Result<(), String> {
         for color in [&self.fill, &self.border] {
             if [color.r, color.g, color.b, color.a]
                 .iter()
