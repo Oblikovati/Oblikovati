@@ -24,6 +24,8 @@ impl NativeHeadWindow {
         extent: [u32; 2],
         capture_files: Box<dyn crate::WindowCaptureFiles>,
     ) -> Result<Self, String> {
+        #[cfg(test)]
+        let context_lease = crate::test_context::acquire();
         validate_window_extent(extent)?;
         let runtime = ViewportRuntime::new(ViewportOptions::default())?;
         let mut view = runtime.open_window("Oblikovati", extent)?;
@@ -55,6 +57,8 @@ impl NativeHeadWindow {
             ribbon_settings_directory: None,
             gui_epoch: std::time::Instant::now(),
             clipboard: clipboard::NativeClipboardChannel::open(),
+            #[cfg(test)]
+            _context_lease: context_lease,
         })
     }
 }
