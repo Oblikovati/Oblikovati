@@ -19,6 +19,7 @@ fn half_opacity(world: &mut ApplicationWorld) {
     world.observed_row_plain = Some(pixel);
 }
 #[when("I open the orientation control options and expand the inactive opacity list")]
+#[when("the user opens the orientation control options and expands the inactive opacity list")]
 fn expand_opacity(world: &mut ApplicationWorld) {
     open_options(world);
     choose_list_row(world, "Inactive Opacity", "");
@@ -30,6 +31,7 @@ fn opacity_rows(world: &mut ApplicationWorld) {
     }
 }
 #[when("I choose 100 percent and confirm the options")]
+#[when("the user chooses 100 percent and confirms the options")]
 fn choose_opaque(world: &mut ApplicationWorld) {
     world.click_text("100%");
     world.pump(Vec::new());
@@ -37,7 +39,9 @@ fn choose_opaque(world: &mut ApplicationWorld) {
     confirm(world);
 }
 #[when("I move the pointer away from the orientation control")]
+#[when("the user moves the pointer away from the orientation control")]
 #[when("I move the pointer away from the control")]
+#[when("the user moves the pointer away from the control")]
 fn pointer_away(world: &mut ApplicationWorld) {
     world.hover(AWAY);
     world.pump(Vec::new());
@@ -51,6 +55,7 @@ fn more_opaque(world: &mut ApplicationWorld) {
     assert!(now[0] > earlier[0], "face {now:?} from {earlier:?}");
 }
 #[when("I reopen the options, choose 50 percent and confirm")]
+#[when("the user reopens the options, chooses 50 percent and confirms")]
 fn back_half(world: &mut ApplicationWorld) {
     open_options(world);
     choose_list_row(world, "Inactive Opacity", "50%");
@@ -94,6 +99,7 @@ fn oblique_orthographic(world: &mut ApplicationWorld) {
 #[when("I open the orientation control context menu")]
 #[when("I reopen the orientation control context menu")]
 #[when("I reopen the orientation control menu")]
+#[when("the user reopens the orientation control menu")]
 #[when("the user opens the orientation control context menu")]
 #[when("the user reopens the orientation control context menu")]
 fn open_control_menu(world: &mut ApplicationWorld) {
@@ -144,11 +150,13 @@ fn orthographic_again(world: &mut ApplicationWorld) {
     );
 }
 #[when("I choose Perspective with Ortho Faces from the orientation control menu")]
+#[when("the user chooses Perspective with Ortho Faces from the orientation control menu")]
 fn choose_hybrid(world: &mut ApplicationWorld) {
     open_menu(world);
     choose_mode(world, "Perspective with Ortho Faces");
 }
 #[when("I select Top on the orientation control")]
+#[when("the user selects Top on the orientation control")]
 fn select_top_face(world: &mut ApplicationWorld) {
     press_top_in_iso(world);
 }
@@ -189,7 +197,9 @@ pub(super) fn expect_no_compass(world: &ApplicationWorld) {
     }
 }
 #[when("I enable the compass and confirm the options")]
+#[when("the user enables the compass and confirms the options")]
 #[when("I disable the compass and confirm the options")]
+#[when("the user disables the compass and confirms the options")]
 pub(super) fn toggle_compass(world: &mut ApplicationWorld) {
     world.click_text("Show the compass");
     world.pump(Vec::new());
@@ -212,6 +222,7 @@ fn stays_top(world: &mut ApplicationWorld) {
     expect_control_shows(world, "Top");
 }
 #[when("I reopen the orientation control options")]
+#[when("the user reopens the orientation control options")]
 fn reopen_options(world: &mut ApplicationWorld) {
     open_options(world);
 }

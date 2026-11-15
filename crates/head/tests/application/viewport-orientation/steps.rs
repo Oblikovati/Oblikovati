@@ -6,6 +6,10 @@ use cucumber::{given, then, when};
 use oblikovati_gui::GuiOrientationLayout;
 use oblikovati_viewport::ViewportPhysicalKey;
 
+#[path = "navigation.rs"]
+mod navigation;
+use navigation::{front_displayed, label_turned, taller, top_face_on};
+
 #[path = "appearance.rs"]
 mod appearance;
 #[path = "behaviour.rs"]
@@ -155,6 +159,7 @@ fn press_at_front(world: &mut ApplicationWorld) {
     press_at(world, position, parts.center);
 }
 fn open_options(world: &mut ApplicationWorld) {
+    world.observed_view_camera = Some(super::viewport_pan::camera(world));
     world.observed_rows = Some(control_letters(world));
     let (position, parts) = layout();
     world.right_click([
@@ -189,145 +194,15 @@ fn confirm(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
     world.pump(Vec::new());
 }
-// View the top of a part and return to the home view
-#[given("a part containing a rectangular block is active in the MCAD Software")]
-#[given("a rectangular block is active in the MCAD Software")]
-fn given_block(world: &mut ApplicationWorld) {
-    open_block(world);
-}
-#[given("its home view shows the block isometrically")]
-fn home_iso(world: &mut ApplicationWorld) {
-    press_part(world, |parts| parts.home);
-    expect_control_shows(world, "TopFrontRight");
-}
-#[given("the viewport orientation control is visible")]
-#[given("the orientation control is visible in the viewport")]
-fn control_visible(_: &mut ApplicationWorld) {
-    control_geometry();
-}
-#[when("I select the Top face of the orientation control")]
-fn select_top(world: &mut ApplicationWorld) {
-    press_top_in_iso(world);
-}
-#[then("the viewport shows the top of the block face-on as a rectangle")]
-fn top_face_on(world: &mut ApplicationWorld) {
-    // 40 mm wide by 20 mm deep from above.
-    let [wide, deep] = solid_extent(world);
-    expect_proportion(wide, deep, 2, 1);
-}
-#[then("the orientation control displays Top")]
-fn displays_top(world: &mut ApplicationWorld) {
-    expect_control_shows(world, "Top");
-}
-#[then("the same part and model browser remain active")]
-fn same_part(world: &mut ApplicationWorld) {
-    expect_same_part(world);
-}
-#[when("I select the orientation control's Home action")]
-fn press_home(world: &mut ApplicationWorld) {
-    press_part(world, |parts| parts.home);
-}
-#[then("the viewport returns to the block's isometric home view")]
-fn back_home(world: &mut ApplicationWorld) {
-    expect_control_shows(world, "TopFrontRight");
-    solid_extent(world);
-}
-// Step between adjacent orthogonal views
-#[given("the orientation control displays the Front view")]
-#[given("the orientation control displays Front with its label upright")]
-#[given("the orientation control displays an upright Front view")]
-fn front_displayed(world: &mut ApplicationWorld) {
-    press_at_front(world);
-    expect_control_shows(world, "Front");
-    assert!(label_is_upright(world), "expected an upright label");
-}
-#[when("I select the right-side navigation arrow beside the orientation control")]
-fn step_right(world: &mut ApplicationWorld) {
-    press_part(world, |parts| parts.step_right);
-}
-#[then("the control displays Right")]
-fn displays_right(world: &mut ApplicationWorld) {
-    expect_control_shows(world, "Right");
-}
-#[then("the block is displayed face-on from the right")]
-fn right_face_on(world: &mut ApplicationWorld) {
-    // 20 mm deep by 30 mm tall from the side.
-    let [wide, tall] = solid_extent(world);
-    expect_proportion(wide, tall, 2, 3);
-}
-#[when("I select the left-side navigation arrow")]
-fn step_left(world: &mut ApplicationWorld) {
-    press_part(world, |parts| parts.step_left);
-}
-#[then("the control displays Front")]
-fn displays_front(world: &mut ApplicationWorld) {
-    expect_control_shows(world, "Front");
-}
-#[then("the block returns to the face-on front view")]
-fn front_face_on(world: &mut ApplicationWorld) {
-    // 40 mm wide by 30 mm tall from the front.
-    let [wide, tall] = solid_extent(world);
-    expect_proportion(wide, tall, 4, 3);
-}
-// Rotate and restore a face-on view
-#[given("the block's front face is wider than it is tall on screen")]
-#[then("the block's front face is wider than it is tall again")]
-fn wider(world: &mut ApplicationWorld) {
-    let [wide, tall] = solid_extent(world);
-    assert!(wide > tall, "extent {wide} by {tall}");
-}
-#[when("I select the upper curved rotation arrow on the orientation control")]
-fn roll_upper(world: &mut ApplicationWorld) {
-    press_part(world, |parts| parts.roll_upper);
-}
-#[then("the control still displays Front with its label rotated by a quarter turn")]
-fn label_turned(world: &mut ApplicationWorld) {
-    expect_control_shows(world, "Front");
-    assert!(!label_is_upright(world), "expected the label turned");
-}
-#[then("the block's front face is taller than it is wide on screen")]
-fn taller(world: &mut ApplicationWorld) {
-    let [wide, tall] = solid_extent(world);
-    assert!(tall > wide, "extent {wide} by {tall}");
-}
-#[when("I select the other curved rotation arrow")]
-fn roll_lower(world: &mut ApplicationWorld) {
-    press_part(world, |parts| parts.roll_lower);
-}
-#[then("the Front label is upright again")]
-fn upright_again(world: &mut ApplicationWorld) {
-    expect_control_shows(world, "Front");
-    assert!(label_is_upright(world), "expected an upright label");
-}
-// Choose a corner from a face-on view
-#[when("I select the upper-right corner of the orientation control")]
-fn select_corner(world: &mut ApplicationWorld) {
-    let (position, parts) = layout();
-    press_at(
-        world,
-        position,
-        [
-            parts.center[0] + parts.half * IN_THE_CORNER,
-            parts.center[1] - parts.half * IN_THE_CORNER,
-        ],
-    );
-}
-#[then("the block is displayed obliquely with its top, front and right faces visible")]
-fn block_oblique(world: &mut ApplicationWorld) {
-    solid_extent(world);
-    expect_control_shows(world, "TopFrontRight");
-}
-#[then("the orientation control shows the Top, Front and Right faces")]
-fn three_faces(world: &mut ApplicationWorld) {
-    expect_control_shows(world, "TopFrontRight");
-}
 // Options
 #[given("its compass preference is off")]
 fn compass_off(world: &mut ApplicationWorld) {
     appearance::expect_no_compass(world);
 }
 #[when("I open the orientation control context menu and choose Options")]
+#[when("the user opens the orientation control context menu and chooses Options")]
 #[when("I open the orientation control options")]
+#[when("the user opens the orientation control options")]
 fn context_options(world: &mut ApplicationWorld) {
     open_options(world);
 }
@@ -361,6 +236,7 @@ fn north_off(world: &mut ApplicationWorld) {
     expect_north_angle(world, false);
 }
 #[when("I enable the compass option")]
+#[when("the user enables the compass option")]
 fn enable_compass(world: &mut ApplicationWorld) {
     world.click_text("Show the compass");
     world.pump(Vec::new());
@@ -371,6 +247,7 @@ fn north_on(world: &mut ApplicationWorld) {
     expect_north_angle(world, true);
 }
 #[when("I cancel the options dialog and reopen it")]
+#[when("the user cancels the options dialog and reopens it")]
 fn cancel_reopen(world: &mut ApplicationWorld) {
     world.click_text("Cancel");
     world.pump(Vec::new());
@@ -388,6 +265,7 @@ fn expect_on_right(_: &mut ApplicationWorld) {
     assert!(control[0] > 700. && bar[0] > 700., "{control:?} {bar:?}");
 }
 #[when("I open the on-screen position list")]
+#[when("the user opens the on-screen position list")]
 fn open_position_list(world: &mut ApplicationWorld) {
     choose_list_row(world, "On-screen Position", "");
 }
@@ -398,6 +276,7 @@ fn position_rows(world: &mut ApplicationWorld) {
     }
 }
 #[when("I choose Top Left and confirm the options")]
+#[when("the user chooses Top Left and confirms the options")]
 fn choose_top_left(world: &mut ApplicationWorld) {
     world.click_text("Top Left");
     world.pump(Vec::new());
@@ -421,6 +300,12 @@ fn existing_view(world: &mut ApplicationWorld) {
         .clone()
         .expect("expected the earlier view");
     assert_eq!(control_letters(world), earlier, "control's label");
+    assert_eq!(
+        super::viewport_pan::camera(world),
+        world.observed_view_camera.unwrap(),
+        "view camera"
+    );
+    world.expect_blank_region([400, 600], [250, 300]);
 }
 #[then("the orientation control and navigation bar return to the right side")]
 fn returned_right(world: &mut ApplicationWorld) {
@@ -433,6 +318,7 @@ fn automatic_size(world: &mut ApplicationWorld) {
     world.observed_counts = vec![size[0] as usize];
 }
 #[when("I open the orientation control options and expand the size list")]
+#[when("the user opens the orientation control options and expands the size list")]
 fn expand_size(world: &mut ApplicationWorld) {
     open_options(world);
     choose_list_row(world, "Size", "");
@@ -444,6 +330,7 @@ fn size_rows(world: &mut ApplicationWorld) {
     }
 }
 #[when("I choose Large and confirm the options")]
+#[when("the user chooses Large and confirms the options")]
 fn choose_large(world: &mut ApplicationWorld) {
     world.click_text("Large");
     world.pump(Vec::new());
@@ -465,6 +352,7 @@ fn earlier_size(world: &mut ApplicationWorld) {
     assert_eq!(size[0] as usize, world.observed_counts[0], "side");
 }
 #[when("I reopen the options")]
+#[when("the user reopens the options")]
 fn reopen_options(world: &mut ApplicationWorld) {
     open_options(world);
 }
@@ -473,6 +361,7 @@ fn position_top_left(world: &mut ApplicationWorld) {
     world.expect_text("Top Left");
 }
 #[when("I choose Top Right and confirm")]
+#[when("the user chooses Top Right and confirms")]
 fn choose_top_right(world: &mut ApplicationWorld) {
     choose_list_row(world, "On-screen Position", "Top Right");
     confirm(world);
@@ -482,6 +371,7 @@ fn size_large(world: &mut ApplicationWorld) {
     world.expect_text("Large");
 }
 #[when("I choose Automatic and confirm")]
+#[when("the user chooses Automatic and confirms")]
 fn choose_automatic(world: &mut ApplicationWorld) {
     choose_list_row(world, "Size", "Automatic");
     confirm(world);

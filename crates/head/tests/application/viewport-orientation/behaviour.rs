@@ -32,11 +32,13 @@ fn compass_at_zero(world: &mut ApplicationWorld) {
     expect_no_compass(world);
 }
 #[when("I enable the compass and enter 90 degrees as the north angle")]
+#[when("the user enables the compass and enters 90 degrees as the north angle")]
 fn enable_with_ninety(world: &mut ApplicationWorld) {
     click_row(world, "Show the compass");
     enter_north_angle(world, "90");
 }
 #[when("I confirm the options")]
+#[when("the user confirms the options")]
 fn confirm_options(world: &mut ApplicationWorld) {
     confirm(world);
 }
@@ -68,6 +70,7 @@ fn ninety_shown(world: &mut ApplicationWorld) {
     assert!(shown, "expected 90 in the angle field");
 }
 #[when("I change the north angle to 0 degrees and confirm")]
+#[when("the user changes the north angle to 0 degrees and confirms")]
 fn change_to_zero(world: &mut ApplicationWorld) {
     enter_north_angle(world, "0");
     confirm(world);
@@ -82,6 +85,7 @@ fn north_above(world: &mut ApplicationWorld) {
     );
 }
 #[when("I disable the compass in the orientation control options and confirm")]
+#[when("the user disables the compass in the orientation control options and confirms")]
 fn disable_compass(world: &mut ApplicationWorld) {
     open_options(world);
     toggle_compass(world);
@@ -125,12 +129,14 @@ fn fit_enabled(world: &mut ApplicationWorld) {
 }
 #[given("the block is magnified until its face extends beyond the viewport")]
 #[when("I magnify the Front view until the block extends beyond the viewport")]
+#[when("the user magnifies the Front view until the block extends beyond the viewport")]
 fn magnified(world: &mut ApplicationWorld) {
     magnify(world);
     assert!(!whole_block_visible(world), "expected the block magnified");
 }
 /// The rim at the screen's bottom picks the face below: from Top, that is Front.
 #[when("I use the orientation control to change to Front view")]
+#[when("the user uses the orientation control to change to Front view")]
 fn change_to_front(world: &mut ApplicationWorld) {
     let (position, parts) = layout();
     press_at(
@@ -145,6 +151,7 @@ fn change_to_front(world: &mut ApplicationWorld) {
     expect_control_shows(world, "Front");
 }
 #[when("I use the orientation control to change to Top view")]
+#[when("the user uses the orientation control to change to Top view")]
 fn change_to_top(world: &mut ApplicationWorld) {
     press_top_rim(world);
     expect_control_shows(world, "Top");
@@ -157,7 +164,9 @@ fn whole_visible(world: &mut ApplicationWorld) {
     );
 }
 #[when("I disable fit to view on orientation change in the orientation control options")]
+#[when("the user disables fit to view on orientation change in the orientation control options")]
 #[when("I re-enable fit to view on orientation change")]
+#[when("the user re-enables fit to view on orientation change")]
 fn toggle_fit(world: &mut ApplicationWorld) {
     set_fit_option(world);
 }
@@ -182,6 +191,7 @@ fn upright_off(world: &mut ApplicationWorld) {
     click_row(world, "Cancel");
 }
 #[when("I enable keep model upright and confirm the options")]
+#[when("the user enables keep model upright and confirms the options")]
 fn enable_upright(world: &mut ApplicationWorld) {
     open_options(world);
     click_row(world, KEEP_UPRIGHT);
@@ -202,6 +212,7 @@ fn upright_checked(world: &mut ApplicationWorld) {
     assert!(world.checked(KEEP_UPRIGHT), "expected it checked");
 }
 #[when("I clear keep model upright and confirm the options")]
+#[when("the user clears keep model upright and confirms the options")]
 fn clear_upright(world: &mut ApplicationWorld) {
     click_row(world, KEEP_UPRIGHT);
     confirm(world);
@@ -225,6 +236,7 @@ fn in_top_right(world: &mut ApplicationWorld) {
     expect_on_right(world);
 }
 #[when("I set the orientation control position to Bottom Right and confirm")]
+#[when("the user sets the orientation control position to Bottom Right and confirms")]
 fn to_bottom_right(world: &mut ApplicationWorld) {
     set_position(world, "Bottom Right");
 }
@@ -235,13 +247,32 @@ fn lower_right(_: &mut ApplicationWorld) {
 }
 #[then("the part view remains visible")]
 fn view_remains(world: &mut ApplicationWorld) {
-    world.expect_text("Origin");
+    expect_empty_part_view(world);
+}
+// The shared Given creates an empty part. The gradient is its visible viewport, not a solid.
+fn expect_empty_part_view(world: &mut ApplicationWorld) {
+    expect_same_part(world);
+    let browser = world
+        .state()
+        .browser
+        .expect("expected the active part browser");
+    assert!(browser.bodies.is_empty(), "expected the empty part fixture");
+    let before = world
+        .observed_view_camera
+        .expect("expected the view before opening options");
+    assert_eq!(
+        super::super::viewport_pan::camera(world),
+        before,
+        "expected the same view camera"
+    );
+    world.expect_blank_region([400, 600], [250, 300]);
 }
 #[then("the position is Bottom Right")]
 fn position_shown(world: &mut ApplicationWorld) {
     world.expect_text("Bottom Right");
 }
 #[when("I set the position to Bottom Left and confirm")]
+#[when("the user sets the position to Bottom Left and confirms")]
 fn to_bottom_left(world: &mut ApplicationWorld) {
     choose_list_row(world, "On-screen Position", "Bottom Left");
     confirm(world);
@@ -252,6 +283,7 @@ fn lower_left(_: &mut ApplicationWorld) {
     expect_lower(false);
 }
 #[when("I restore the position to Top Right and confirm")]
+#[when("the user restores the position to Top Right and confirms")]
 fn restore_top_right(world: &mut ApplicationWorld) {
     set_position(world, "Top Right");
 }
@@ -364,6 +396,7 @@ fn clear_face(world: &mut ApplicationWorld) {
 }
 // Set Current View as
 #[when("I expand Set Current View as")]
+#[when("the user expands Set Current View as")]
 fn expand_set_view(world: &mut ApplicationWorld) {
     choose_mode(world, "Set Current View as");
 }
@@ -374,6 +407,7 @@ fn top_and_front(world: &mut ApplicationWorld) {
     }
 }
 #[when("I expand Set Current View as Home")]
+#[when("the user expands Set Current View as Home")]
 fn expand_set_home(world: &mut ApplicationWorld) {
     choose_mode(world, "Set Current View as Home");
 }
@@ -384,6 +418,7 @@ fn home_rows(world: &mut ApplicationWorld) {
     }
 }
 #[when("I press Escape without choosing a submenu action")]
+#[when("the user presses Escape without choosing a submenu action")]
 fn escape_menus(world: &mut ApplicationWorld) {
     world.escape();
     world.pump(Vec::new());
@@ -394,6 +429,7 @@ fn menus_closed(world: &mut ApplicationWorld) {
     world.expect_no_text("Orthographic");
     world.expect_text("Origin");
     expect_same_part(world);
+    world.expect_blank_region([400, 600], [250, 300]);
 }
 // Tiny
 #[given("the orientation control size is Automatic")]
@@ -401,6 +437,7 @@ fn size_automatic(world: &mut ApplicationWorld) {
     automatic_size(world);
 }
 #[when("I set the orientation control size to Tiny and confirm")]
+#[when("the user sets the orientation control size to Tiny and confirms")]
 fn to_tiny(world: &mut ApplicationWorld) {
     open_options(world);
     choose_list_row(world, "Size", "Tiny");
@@ -420,6 +457,7 @@ fn size_is_tiny(world: &mut ApplicationWorld) {
     world.expect_text("Tiny");
 }
 #[when("I set the size to Automatic and confirm")]
+#[when("the user sets the size to Automatic and confirms")]
 fn to_automatic(world: &mut ApplicationWorld) {
     choose_list_row(world, "Size", "Automatic");
     confirm(world);
@@ -430,7 +468,7 @@ fn apparent_size(world: &mut ApplicationWorld) {
 }
 #[then("the same part view remains visible")]
 fn same_view(world: &mut ApplicationWorld) {
-    expect_same_part(world);
+    expect_empty_part_view(world);
 }
 
 #[test]
