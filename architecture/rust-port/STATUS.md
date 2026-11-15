@@ -15,7 +15,7 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 - **R0 remains open.** The full gate, baseline fields and milestone exit audits
   are incomplete. Run `python3 -B tools/bdd/behavior_cli.py report` for current
   counts; source and application changes can make earlier receipts stale.
-- At `6fde7ee56762469a2b39270ff19b04110fe96793`, the ledger reported zero
+- At `d5bc1edfe682c8f2a704a57e039566c2ee37a883`, the ledger reported zero
   current verified scenarios, 180 stale receipts and 21 blocked scenarios
   across 2,720 declarations. Application changes made prior receipts stale.
   The gate also requires baseline fields for 2,577 scenarios.
@@ -40,9 +40,11 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   `Oblikovati/Martensite`; do not modify the kernel in this lane.
 - GUI unit tests isolate the shared ImGui context under parallel execution
   (#3878). The final eight-thread run passed 495 tests; the production context
-  ownership check still rejects a second active owner. Two native head tests
-  still race under parallel execution; the clean-base comparison is in
-  `receipts/2026-11-15-clear-context-comparison/`.
+  ownership check still rejects a second active owner. Native windows and
+  headless diagnostics now share a test-only lease (#3878). Two Clear tests
+  passed twice with two threads, and a mixed group of 15 passed with eight;
+  the full native head suite remains unverified. See
+  `receipts/2026-11-15-native-context-isolation/`.
 
 ## Queue
 
