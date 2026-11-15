@@ -27,8 +27,8 @@ fn select_sketch_tab(world: &mut ApplicationWorld) {
         .center();
     world.click(diagnostics::pointer_pixels(tab));
 }
-#[then("Line, Circle, Arc, Rectangle, Fillet, Text and Point are available in Create")]
-#[then("Line, Circle, Arc, Rectangle, Fillet, Text and Point remain available in Create")]
+#[then("Line, Circle, Arc, Rectangle, Fillet, Text and Point are enabled in Create")]
+#[then("Line, Circle, Arc, Rectangle, Fillet, Text and Point remain enabled in Create")]
 fn create_commands_available(world: &mut ApplicationWorld) {
     for label in [
         "Line",
@@ -45,13 +45,13 @@ fn create_commands_available(world: &mut ApplicationWorld) {
         );
     }
 }
-#[then("Project Geometry is unavailable")]
-#[then("Project Geometry remains unavailable")]
+#[then("Project Geometry is disabled")]
+#[then("Project Geometry remains disabled")]
 fn project_geometry_unavailable(world: &mut ApplicationWorld) {
     assert!(!world.run_is_enabled("Project Geometry"));
 }
-#[then("the commands in Modify, Pattern, Constrain, Insert and Format are unavailable")]
-#[then("the commands in Modify, Pattern, Constrain, Insert and Format remain unavailable")]
+#[then("the commands in Modify, Pattern, Constrain, Insert and Format are disabled")]
+#[then("the commands in Modify, Pattern, Constrain, Insert and Format remain disabled")]
 fn other_groups_unavailable(world: &mut ApplicationWorld) {
     for (group, commands) in [
         ("Modify", &["Move", "Delete"][..]),
@@ -193,7 +193,7 @@ fn select_line(world: &mut ApplicationWorld) {
 fn line_prompt(world: &mut ApplicationWorld) {
     world.expect_status("Select start of line");
 }
-#[then("the Line tooltip describes line and arc creation")]
+#[then("the Line tooltip indicates line and arc creation")]
 fn line_tooltip(world: &mut ApplicationWorld) {
     let line = world.run("Line").clone();
     world.hover(diagnostics::pointer_pixels(line.center()));
