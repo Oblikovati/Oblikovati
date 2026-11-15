@@ -66,6 +66,7 @@ fn part_active(world: &mut ApplicationWorld) {
     world.activate_through_tab(part_of(world));
 }
 #[when("I open the document list at the end of the tab strip")]
+#[when("the user opens the document list at the end of the tab strip")]
 fn open_document_list(world: &mut ApplicationWorld) {
     world.click_text("Documents");
     world.pump(Vec::new());
@@ -83,6 +84,7 @@ fn active_marked(world: &mut ApplicationWorld) {
     assert!(world.checked(&name), "list row {name:?}: expected a mark");
 }
 #[when("I select the drawing from the list")]
+#[when("the user selects the drawing from the list")]
 fn select_drawing_row(world: &mut ApplicationWorld) {
     let name = world.document_name(drawing_of(world));
     world.click_text(&name);

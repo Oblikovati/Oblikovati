@@ -319,6 +319,7 @@ fn arrangement_offered(world: &mut ApplicationWorld) {
     }
 }
 #[then("the menu offers Close Tabs and Close All")]
+#[then("the menu offers separate Close Tabs and Close All items")]
 fn list_offers_closes(world: &mut ApplicationWorld) {
     world.expect_text("Close Tabs");
     world.expect_text("Close All");
