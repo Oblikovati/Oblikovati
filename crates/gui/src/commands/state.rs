@@ -55,6 +55,8 @@ pub struct GuiCommandState {
     pub document: Option<u64>,
     pub document_type: Option<oblikovati_api::types::DocumentType>,
     pub parameters: Vec<oblikovati_api::wire::ParameterInfo>,
+    /// Typed document metadata for the iProperties editor.
+    pub document_properties: Vec<oblikovati_api::wire::PropertyInfo>,
     pub authoring: GuiAuthoringContext,
     pub undo_label: Option<String>,
     pub redo_label: Option<String>,

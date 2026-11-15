@@ -142,6 +142,7 @@ impl QuickAccessToolbar {
             Some(StandardCommand::Redo) => GuiShellAction::Redo,
             Some(StandardCommand::Home) => GuiShellAction::ShowHome,
             Some(StandardCommand::Update) => GuiShellAction::UpdatePart,
+            Some(StandardCommand::IProperties) => GuiShellAction::OpenIProperties,
             Some(StandardCommand::Measure) => {
                 GuiShellAction::Inspect(crate::GuiInspectAction::StartMeasure)
             }
@@ -265,6 +266,14 @@ impl QuickAccessToolbar {
                 drop(disabled);
             }
             StandardCommand::Print => muted_button(ui, label),
+            StandardCommand::IProperties => crate::chrome::command_button(
+                ui,
+                label,
+                GuiShellAction::OpenIProperties,
+                state,
+                [0.; 2],
+                actions,
+            ),
             StandardCommand::Measure => crate::chrome::command_button(
                 ui,
                 label,

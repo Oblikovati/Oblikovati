@@ -174,3 +174,70 @@ fn quick_access_measure_starts_and_closes_the_real_measure_tool() {
     assert!(world.state().measure.is_none());
     world.close();
 }
+
+fn has_motor_title(world: &mut ApplicationWorld) -> bool {
+    use oblikovati_api::types::VariantValue;
+    world
+        .state()
+        .document_properties
+        .iter()
+        .any(|p| p.name == "Title" && p.value.value == VariantValue::String("Motor".into()))
+}
+fn create_motor_title(world: &mut ApplicationWorld) {
+    open_customization(world);
+    world.click_text("iProperties");
+    world.pump(Vec::new());
+    assert!(on_row(world, "iProperties"));
+    world.click(row_center(world, "iProperties"));
+    assert!(window_geometry("iProperties").is_some());
+    enter_parameter_field(world, "Name", "Title");
+    enter_parameter_field(world, "Value", "Motor");
+    world.click_text("Set property");
+    world.pump(Vec::new());
+    assert!(has_motor_title(world));
+    close_title(world, "iProperties");
+}
+#[test]
+fn quick_access_iproperties_edits_and_undoes_document_metadata() {
+    let mut world = ApplicationWorld::new();
+    part_active(&mut world);
+    create_motor_title(&mut world);
+    world.click(row_center(&world, "Undo"));
+    world.pump(Vec::new());
+    assert!(!has_motor_title(&mut world));
+    world.click(row_center(&world, "Redo"));
+    world.pump(Vec::new());
+    assert!(has_motor_title(&mut world));
+    world.close();
+}
+
+#[test]
+fn iproperties_closes_when_the_active_document_changes() {
+    let mut world = ApplicationWorld::new();
+    part_and_assembly(&mut world);
+    let part = world.parts[0];
+    world.click_tab(part);
+    world.pump(Vec::new());
+    open_customization(&mut world);
+    world.click_text("iProperties");
+    world.click(row_center(&world, "iProperties"));
+    assert!(window_geometry("iProperties").is_some());
+    world.click_tab(world.other_document.unwrap());
+    world.pump(Vec::new());
+    assert!(window_geometry("iProperties").is_none());
+    assert!(world.state().document_properties.is_empty());
+    world.close();
+}
+
+#[test]
+fn iproperties_text_survives_save_and_reopen() {
+    let mut world = ApplicationWorld::new();
+    part_active(&mut world);
+    create_motor_title(&mut world);
+    world.press_save_shortcut();
+    let path = world.accept_save_as();
+    world.close_active_tab();
+    world.reopen_through_dialog(&path);
+    assert!(has_motor_title(&mut world));
+    world.close();
+}

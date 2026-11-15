@@ -247,6 +247,12 @@ impl<D: ScriptDocumentOwner, W: DispatchWakeup + 'static> HeadWork
     ) -> Result<bool, String> {
         self.owner.edit_parameter_from_gui(mutation, request)
     }
+    fn set_document_property_from_gui(
+        &mut self,
+        request: &oblikovati_api::wire::SetPropertyArgs,
+    ) -> Result<bool, String> {
+        self.owner.set_document_property_from_gui(request)
+    }
     fn gui_parameter_snapshot(
         &self,
     ) -> Result<Option<oblikovati_gui::GuiParameterSnapshot>, String> {

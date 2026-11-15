@@ -283,6 +283,12 @@ impl<
         .map_err(|cause| format!("Parameter {:?}: {cause}", request.name))?;
         Ok(true)
     }
+    fn set_document_property_from_gui(
+        &mut self,
+        request: &oblikovati_api::wire::SetPropertyArgs,
+    ) -> Result<bool, String> {
+        self.set_text_document_property(request)
+    }
     fn activate_document_from_gui(
         &mut self,
         request: &oblikovati_api::wire::ActivateDocumentArgs,

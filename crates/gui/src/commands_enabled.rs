@@ -294,6 +294,10 @@ impl GuiShellAction {
             }
             .enabled(state),
             Self::Parameter { .. } => state.document.is_some(),
+            Self::OpenIProperties => state.document.is_some(),
+            Self::SetDocumentProperty(request) => {
+                state.document == Some(request.document) && !state.transaction_open
+            }
             Self::UpdatePart => {
                 state.document_type == Some(oblikovati_api::types::DOCUMENT_PART)
                     && !state.transaction_open

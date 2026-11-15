@@ -112,6 +112,20 @@ impl<
                     .map_err(|cause| cause.to_string())?,
             ),
             parameters: self.gui_parameter_rows()?,
+            document_properties: session
+                .snapshot()
+                .properties
+                .sets()
+                .iter()
+                .flat_map(|set| {
+                    set.properties().iter().filter_map(|property| {
+                        session
+                            .snapshot()
+                            .properties
+                            .info(&set.name, &property.name)
+                    })
+                })
+                .collect(),
             authoring: self.gui_authoring_context(document)?,
             undo_label: session.undo_label().map(str::to_owned),
             redo_label: session.redo_label().map(str::to_owned),
