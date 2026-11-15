@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect ribbon command availability: tmp/obk-ribbon-availability-pinned-20261115/features/application/ribbon-command-availability/ribbon-command-availability.feature" package="testsuite/Feature: Inspect ribbon command availability: tmp/obk-ribbon-availability-pinned-20261115/features/application/ribbon-command-availability/ribbon-command-availability.feature" tests="3" errors="0" failures="3" hostname="localhost" timestamp="2026-11-15T00:32:53.176601288Z" time="9.208664405"><testcase name="Scenario: Inspect Sketch commands outside sketch edit: tmp/obk-ribbon-availability-pinned-20261115/features/application/ribbon-command-availability/ribbon-command-availability.feature:5:3" time="3.014625607"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Inspect Sketch commands outside sketch edit
+   ✔  Given a part containing an existing sketch is active in the MCAD Software
+   ✘  And sketch edit is inactive
+      Step failed:
+      Defined: tmp/obk-ribbon-availability-pinned-20261115/features/application/ribbon-command-availability/ribbon-command-availability.feature:7:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Revisit Sketch from another ribbon tab: tmp/obk-ribbon-availability-pinned-20261115/features/application/ribbon-command-availability/ribbon-command-availability.feature:14:3" time="2.951051779"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Revisit Sketch from another ribbon tab
+   ✔  Given a part containing an existing sketch is active in the MCAD Software
+   ✘  And sketch edit is inactive
+      Step failed:
+      Defined: tmp/obk-ribbon-availability-pinned-20261115/features/application/ribbon-command-availability/ribbon-command-availability.feature:16:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Inspect Sketch ribbon while editing an existing sketch: tmp/obk-ribbon-availability-pinned-20261115/features/application/ribbon-command-availability/ribbon-command-availability.feature:25:3" time="3.242987019"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Inspect Sketch ribbon while editing an existing sketch
+   ✔  Given a part containing an existing sketch is active in the MCAD Software
+   ✘  And sketch edit is inactive
+      Step failed:
+      Defined: tmp/obk-ribbon-availability-pinned-20261115/features/application/ribbon-command-availability/ribbon-command-availability.feature:27:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

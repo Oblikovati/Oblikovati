@@ -66,6 +66,8 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 
 ## Open items
 
+- R7 sketch ribbon availability: all three scenarios stopped at an unbound inactive-sketch setup step (#3956). See `receipts/2026-11-15-ribbon-availability-diagnostic/`.
+
 - R7 quick access: a full diagnostic run passed 11 of 12 scenarios; the command-choice scenario is incomplete (#3955). See `receipts/2026-11-15-quick-access-diagnostic/`.
 
 - R7 body properties: a full run reported 6 passes, but an empty unavailable-properties setup step prevents feature acceptance (#3954). See `receipts/2026-11-15-body-properties-diagnostic/`.
