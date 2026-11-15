@@ -55,7 +55,9 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 - Extrusion undo and redo: the native diagnostic passed three of four scenario
   steps. Named edge lengths are available through the typed API; selecting and
   measuring two edges in the viewport remains open (#3967). See
-  `receipts/2026-11-15-extrusion-history-diagnostic/`.
+  `receipts/2026-11-15-extrusion-history-diagnostic/`. General analytic curve
+  picking is blocked by missing interior extrema in
+  [Martensite #462](https://github.com/Oblikovati/Martensite/issues/462).
 
 - Viewport orientation: all 20 pinned scenarios passed on the merged revision
   (#3961). See `receipts/2026-11-15-orientation-verified/`. The run uses
