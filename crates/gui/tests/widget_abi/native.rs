@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-fn probe_context() -> imgui::Context {
-    let mut context = imgui::Context::create();
+fn probe_context() -> crate::test_context::TestContext {
+    let mut context = crate::test_context::create();
     context.set_ini_filename(None);
     context.set_log_filename(None);
     context.io_mut().display_size = [640., 480.];

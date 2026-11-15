@@ -303,7 +303,7 @@ mod tests {
     #[test]
     fn expanded_palette_keeps_the_answer_row_visible_at_both_pixel_densities() {
         for density in [1., 2.] {
-            let mut context = imgui::Context::create();
+            let mut context = crate::test_context::create();
             context.set_ini_filename(None);
             context.fonts().build_rgba32_texture();
             context.io_mut().display_size = [1440. / density, 900. / density];

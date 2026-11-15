@@ -69,7 +69,7 @@ mod tests {
 
     #[test]
     fn go_dark_palette_sets_the_chrome_and_accent_values() {
-        let mut context = Context::create();
+        let mut context = crate::test_context::create();
         configure(&mut context);
         let style = context.style();
         assert_eq!(style[StyleColor::WindowBg], rgba(0.086, 0.086, 0.086, 1.));
@@ -79,7 +79,7 @@ mod tests {
 
     #[test]
     fn go_default_geometry_remains_unchanged() {
-        let mut context = Context::create();
+        let mut context = crate::test_context::create();
         configure(&mut context);
         let style = context.style();
         assert_eq!(style.window_padding, [8., 8.]);

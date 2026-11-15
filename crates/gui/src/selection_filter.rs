@@ -143,13 +143,13 @@ fn set_all(filter: &GuiSelectionFilter, enabled: bool, actions: &mut Vec<GuiShel
 mod tests {
     use super::*;
     struct SelectionPanelFixture {
-        context: imgui::Context,
+        context: crate::test_context::TestContext,
         panel: SelectionFilterPanel,
         state: GuiCommandState,
     }
     impl SelectionPanelFixture {
         fn new() -> Self {
-            let mut context = imgui::Context::create();
+            let mut context = crate::test_context::create();
             context.set_ini_filename(None);
             context.io_mut().display_size = [800., 600.];
             context.io_mut().delta_time = 1. / 60.;

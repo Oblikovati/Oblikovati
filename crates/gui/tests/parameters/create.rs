@@ -89,13 +89,13 @@ fn creation_enqueue_keeps_local_declines_and_publishes_owned_packets_once() {
     assert!(form.request.issue.is_none());
 }
 struct ParameterCreationWidgetFixture {
-    context: imgui::Context,
+    context: crate::test_context::TestContext,
     form: ParameterCreationForm,
     add_position: [f32; 2],
 }
 impl ParameterCreationWidgetFixture {
     fn new() -> Self {
-        let mut context = imgui::Context::create();
+        let mut context = crate::test_context::create();
         context.set_ini_filename(None);
         context.io_mut().display_size = [800., 300.];
         context.io_mut().delta_time = 1. / 60.;

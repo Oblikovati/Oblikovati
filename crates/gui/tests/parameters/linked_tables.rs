@@ -76,12 +76,12 @@ fn canonical_linked_tables_build_owned_draws_in_the_parameter_panel() {
     assert!(frame.parameter_actions.is_empty());
 }
 struct LinkedTableWidgetFixture {
-    context: imgui::Context,
+    context: crate::test_context::TestContext,
     delete_position: [f32; 2],
 }
 impl LinkedTableWidgetFixture {
     fn new() -> Self {
-        let mut context = imgui::Context::create();
+        let mut context = crate::test_context::create();
         context.set_ini_filename(None);
         context.io_mut().display_size = [900., 300.];
         context.io_mut().delta_time = 1. / 60.;

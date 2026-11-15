@@ -35,8 +35,8 @@ fn real_text_widget_consumes_unicode_keys_and_reports_channel_capture() {
     verify_unicode_edit(&mut context, &mut text);
     verify_pointer_channels(&mut context, &mut text);
 }
-fn input_probe_context() -> Context {
-    let mut context = Context::create();
+fn input_probe_context() -> crate::test_context::TestContext {
+    let mut context = crate::test_context::create();
     context.set_ini_filename(None);
     context.io_mut().display_size = [400., 240.];
     context.io_mut().delta_time = 1. / 60.;

@@ -2,6 +2,8 @@
 //! Owned Dear ImGui frames for the application viewport draw boundary.
 mod activity;
 mod application;
+#[cfg(test)]
+mod test_context;
 pub use application::document_creation::templates::{
     GuiDocumentTemplate, GuiTemplateKind, GuiTemplateMaterial, GuiTemplateMaterialEntry,
     GuiTemplateUnits,
@@ -124,3 +126,7 @@ mod ui_scale;
 mod icons;
 
 mod clear_appearance;
+
+#[cfg(test)]
+#[path = "../tests/context/parallel.rs"]
+mod context_parallel_tests;
