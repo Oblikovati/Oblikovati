@@ -10,6 +10,7 @@ from typing import Mapping
 
 from git_object_inventory import GitBlobReader, git_blob_bytes, locked_git_tree
 from git_manifest_declarations import check_git_manifest_declarations
+from git_manifest_library import check_git_manifest_library
 from registry_vendor_check import (
     ignored_vendor_path,
     read_observed_manifest,
@@ -125,6 +126,7 @@ def verify_git_vendor(
                 original = git_blob_bytes(repository, entries["Cargo.toml"].split(":")[-1])
                 generated = read_observed_manifest(vendor, folders[key], inventory)
                 check_git_manifest_declarations(original, generated, entries, folders[key])
+                check_git_manifest_library(original, generated, entries, folders[key])
                 checked += check_package(folders[key], entries, inventory, reader, cache)
                 manifests.append(f"{key[0]} {key[1]}")
     return {
@@ -133,7 +135,7 @@ def verify_git_vendor(
         "git_manifest_declarations_checked": len(manifests),
         "git_manifest_check_scope": [
             "dependencies", "dev-dependencies", "build-dependencies",
-            "target", "features", "no-build-script",
+            "target", "features", "no-build-script", "conventional-library", "target-autodiscovery", "package-links",
         ],
         "git_manifests_unverified": manifests,
         "complete": False,

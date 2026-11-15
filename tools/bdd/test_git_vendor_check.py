@@ -36,7 +36,9 @@ class GitVendorFixture:
         self.package = self.vendor / "witness"
         (self.package / "src").mkdir(parents=True)
         (self.package / "Cargo.toml").write_text(
-            '[package]\nname="witness"\nversion="1.2.3"\n# generated\n'
+            '[package]\nname="witness"\nversion="1.2.3"\n'
+            'autolib=false\nautobins=false\nautoexamples=false\nautotests=false\nautobenches=false\n'
+            '[lib]\nname="witness"\npath="src/lib.rs"\n'
         )
         (self.package / "src/lib.rs").write_text("committed\n")
         self.write_checksum()
@@ -87,15 +89,15 @@ class GitVendorCheckTests(unittest.TestCase):
             self.fixture.verify()
 
     def test_forged_generated_build_script_is_refused(self) -> None:
-        with (self.fixture.package / "Cargo.toml").open("a") as manifest:
-            manifest.write('build="untrusted.rs"\n')
+        manifest = self.fixture.package / "Cargo.toml"
+        manifest.write_text(manifest.read_text().replace('[lib]', 'build="untrusted.rs"\n[lib]'))
         self.fixture.write_checksum()
         with self.assertRaisesRegex(ValueError, "expected no build script"):
             self.fixture.verify()
 
     def test_unchecked_manifest_metadata_remains_unverified(self) -> None:
-        with (self.fixture.package / "Cargo.toml").open("a") as manifest:
-            manifest.write('description="not independently checked"\n')
+        manifest = self.fixture.package / "Cargo.toml"
+        manifest.write_text(manifest.read_text().replace('[lib]', 'description="not independently checked"\n[lib]'))
         self.fixture.write_checksum()
         result = self.fixture.verify()
         self.assertEqual(result["git_manifest_declarations_checked"], 1)
@@ -117,6 +119,13 @@ class GitVendorCheckTests(unittest.TestCase):
                     self.fixture.verify()
                 path.write_text(original)
                 self.fixture.write_checksum()
+
+    def test_forged_proc_macro_manifest_with_updated_checksum_is_refused(self) -> None:
+        manifest = self.fixture.package / "Cargo.toml"
+        manifest.write_text(manifest.read_text() + 'proc-macro=true\n')
+        self.fixture.write_checksum()
+        with self.assertRaisesRegex(ValueError, "expected .*src/lib.rs"):
+            self.fixture.verify()
 
     def test_missing_extra_or_executable_files_are_rejected(self) -> None:
         source = self.fixture.package / "src/lib.rs"
