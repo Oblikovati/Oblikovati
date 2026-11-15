@@ -15,7 +15,7 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 - **R0 remains open.** The full gate, baseline fields and milestone exit audits
   are incomplete. Run `python3 -B tools/bdd/behavior_cli.py report` for current
   counts; source and application changes can make earlier receipts stale.
-- At `67f0dba67`, the ledger reported five current verified scenarios, 152 stale
+- At `e2bb3591b`, the ledger reported one current verified scenario, 157 stale
   receipts, 36 blocked and 38 excluded
   across 2,720 declarations. The gate also requires missing baseline fields.
 - `rust-work` is local and has not passed the full pre-push gate. All 20 former
@@ -73,7 +73,8 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   [Martensite #462](https://github.com/Oblikovati/Martensite/issues/462).
 - Extrusion entry: the new metric part and origin-plane selection scenario
   and the following preview, cancel/reopen and zero distance recovery scenarios
-  passed on the current pin (#3927, #3931, #3929); see
+  passed on the current pin (#3927, #3931, #3929); their receipts are now
+  stale after the offset-plane change. See
   `receipts/2026-11-15-extrusion-r4-current-1/` through `-4/`. The solve
   precision certificate remains open (#3928); see
   `solver-precision-investigation.md`.
@@ -104,8 +105,10 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   `receipts/2026-11-15-live-parameter-cube/`. This does not close the solver
   precision or full milestone gates (#3928, #3857).
 - Projection fixture: the native rectangular source scenario passed on the
-  current pin (#3976); see `receipts/2026-11-15-projection-rectangular-source/`.
+  current pin (#3976); its receipt is now stale. The offset-plane scenario
+  passed on the current code (#3977); see `receipts/2026-11-15-offset-plane-scenario/`.
   The chosen 10 mm square is a fixture; the source did not record its size.
+  OS input and MCPBridge evidence is in `receipts/2026-11-15-live-offset-plane/`.
 - The native cube test now checks the projected rectangle edges and proves the
   check fails when the sketch is hidden (#3969); see
   `receipts/2026-11-15-rectangle-visibility/`.

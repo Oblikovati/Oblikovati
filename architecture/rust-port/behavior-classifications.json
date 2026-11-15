@@ -44531,12 +44531,25 @@
       "acceptance_test": "application_scenarios_use_the_native_window with OBK_BDD_AREA=solid-model: solid-projection-fixture-02 Prepare an outside work plane",
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3884",
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/3977"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_project_tool.go; exact per-feature Go baseline review remains open.",
-      "mapping_reason": "Work-plane and sketch-projection fixture."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-offset-plane-scenario/receipt-f8753aa4f36b0a5e.json",
+        "sha256": "c27722ce695131982cc157e45366f44eca660611b2e56caf5c0205f5fbc79c9a"
+      },
+      "go_reference": "../Oblikovati/app/offset_plane_tool.go; ../Oblikovati/head/ui/offset_plane_dialog.go",
+      "mapping_reason": "Work-plane and sketch-projection fixture.",
+      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go offset-plane command and dialog were inspected; no Go test was run for this scenario.",
+      "kernel_capabilities": "The source uses a straight rectangular prism; the work plane is evaluated from the model datum program.",
+      "platforms": "Linux Xvfb and Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The native owner creates the plane through the typed work-plane API and resolves the source solid through Martensite.",
+      "rust_tests": "offset_plane_native tests and application_scenarios_use_the_native_window: solid-projection-fixture-02 Prepare an outside work plane",
+      "oracle": "Pinned scenario, evaluated plane origin at 50 mm from XZ, and the new sketch placement references Work Plane1.",
+      "expected_result": "A healthy work plane 50 mm from XZ can host a sketch outside the 10 mm source solid."
     },
     {
       "id": "scenario:8e33de9afe785c47e09ab44ca77f92a73f0869a7491cd1787895cd09d803968b",

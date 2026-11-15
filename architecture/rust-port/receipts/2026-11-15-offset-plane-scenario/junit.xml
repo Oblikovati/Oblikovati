@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Projection Fixtures: tmp/obk-capsule-scenarios-current/features/solid-model/projection-fixtures/projection-fixtures.feature" package="testsuite/Feature: Projection Fixtures: tmp/obk-capsule-scenarios-current/features/solid-model/projection-fixtures/projection-fixtures.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T09:14:59.533287747Z" time="23.458461696"><testcase name="Scenario: solid-projection-fixture-02 Prepare an outside work plane: tmp/obk-capsule-scenarios-current/features/solid-model/projection-fixtures/projection-fixtures.feature:11:3" time="23.458461696"><system-out><![CDATA[  Scenario: solid-projection-fixture-02 Prepare an outside work plane
+   ✔  Given Part7 contains the rectangular source solid
+   ✔  When Offset from Plane is based on XZ Plane
+   ✔  And its offset is set to 50 mm and accepted
+   ✔  Then Work Plane1 is available for a sketch outside the source solid
+]]></system-out></testcase></testsuite></testsuites>
