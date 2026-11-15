@@ -14,6 +14,7 @@ pub(crate) enum RibbonPanel {
     UserCommands,
     Modify,
     SketchPattern,
+    Insert,
     Format,
     Parameters,
     ToolOptions,
@@ -54,6 +55,7 @@ impl RibbonPanel {
             Self::UserCommands => "User Commands",
             Self::Modify => "Modify",
             Self::SketchPattern => "Pattern",
+            Self::Insert => "Insert",
             Self::Format => "Format",
             Self::Parameters => "Parameters",
             Self::ToolOptions => "Options",
@@ -93,6 +95,7 @@ impl RibbonPanel {
                 GuiShellAction::Inspect(crate::GuiInspectAction::StartMeasure),
             ),
             Self::SketchPattern
+            | Self::Insert
             | Self::Create
             | Self::Constrain
             | Self::Layout
@@ -170,7 +173,9 @@ pub(crate) fn panels_for(tab: RibbonTab, state: &GuiCommandState) -> Vec<RibbonP
         RibbonTab::Annotate => vec![AnnotateDimension, AnnotateText, AnnotateSymbols],
         RibbonTab::Presentation => vec![PresentationModel],
         RibbonTab::Sketch => {
-            let mut panels = vec![Create, Constrain, Layout, Modify, Format, Parameters, Exit];
+            let mut panels = vec![
+                Create, Constrain, Layout, Modify, Insert, Format, Parameters, Exit,
+            ];
             if state.sketch_pattern_available {
                 panels.insert(4, SketchPattern);
             }

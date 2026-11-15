@@ -32,12 +32,16 @@ pub(crate) fn sketch_format_controls(
         }
     }
     icons.cursor(ui, origin, [0., 40.]);
-    if widget_abi::toggle_button(
+    let action = GuiShellAction::ToggleCenterPointFormat;
+    let disabled = ui.begin_disabled(!action.dispatchable(state));
+    let clicked = widget_abi::toggle_button(
         ui,
         "Center Point",
         icons.cell([108., 18.]),
         state.center_point_format,
-    ) {
-        actions.push(GuiShellAction::ToggleCenterPointFormat);
+    );
+    drop(disabled);
+    if clicked && action.dispatchable(state) {
+        actions.push(action);
     }
 }

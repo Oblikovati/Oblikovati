@@ -18,6 +18,8 @@
 
 ### Fixed
 
+- Kept sketch ribbon controls and the previous part tab available across sketch editing. (#3956)
+
 - Refused legacy cap-program staging when qualified sketch precision evidence is unavailable. (#3928)
 
 - Rejected ambiguous or forward legacy sketch and extrusion creation order before preparing a part candidate. (#3936)
