@@ -21,6 +21,50 @@ pub(crate) fn fit_about_selection(
     }
     fit_camera(camera, &points, region)
 }
+/// Frame explicit displayed points in a document area without changing their geometry.
+/// Example: `fit_selected_points(&camera, &points, extent, area, 0.85)?`.
+pub(crate) fn fit_selected_points(
+    camera: &ViewportCamera,
+    points: &[Vector],
+    extent: [u32; 2],
+    area: [u32; 4],
+    fill: f64,
+) -> Result<ViewportCamera, String> {
+    validate_selected_points(points, fill)?;
+    let region = region_fractions(extent, area)?;
+    if !camera.perspective {
+        return fit_orthographic_points(camera, points, region, fill);
+    }
+    let mut fitted = fit_camera(camera, points, region)?;
+    fitted.scale /= fill * FIT_MARGIN_FACTOR;
+    Ok(fitted)
+}
+fn validate_selected_points(points: &[Vector], fill: f64) -> Result<(), String> {
+    if points.is_empty() || points.iter().flatten().any(|value| !value.is_finite()) {
+        return Err(format!(
+            "selected points {points:?}: expected nonempty finite points"
+        ));
+    }
+    if !fill.is_finite() || !(0. ..=1.).contains(&fill) || fill == 0. {
+        return Err(format!("selection fill {fill}: expected a value in (0, 1]"));
+    }
+    Ok(())
+}
+fn fit_orthographic_points(
+    camera: &ViewportCamera,
+    points: &[Vector],
+    region: [f64; 2],
+    fill: f64,
+) -> Result<ViewportCamera, String> {
+    let (right, up, toward) = frame(camera);
+    let delta = relative(camera.eye, camera.target);
+    let distance = dot(delta, delta).sqrt();
+    let scale = required_scale(points, camera, [right, up, toward], distance, region)?;
+    Ok(ViewportCamera {
+        scale: scale / fill,
+        ..*camera
+    })
+}
 fn fit_camera(
     camera: &ViewportCamera,
     points: &[Vector],
@@ -157,6 +201,64 @@ fn point_radius(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn selected_points_fit_the_document_area_in_both_projections() {
+        for perspective in [false, true] {
+            assert_selected_point_fit(perspective);
+        }
+    }
+    fn assert_selected_point_fit(perspective: bool) {
+        let points = [[0., 0., 0.], [4., 3., 2.]];
+        let camera = ViewportCamera {
+            eye: [2., 1.5, 22.],
+            target: [2., 1.5, 2.],
+            perspective,
+            ..Default::default()
+        };
+        let fitted =
+            fit_selected_points(&camera, &points, [1000, 1000], [200, 100, 1000, 900], 0.85)
+                .unwrap();
+        if !perspective {
+            assert_eq!(fitted.eye, camera.eye);
+            assert_eq!(fitted.target, camera.target);
+        }
+        let needed = needed_for_region(&fitted, &points);
+        assert!((fitted.scale * 0.85 - needed).abs() <= needed * f64::EPSILON * 8.);
+    }
+    fn needed_for_region(fitted: &ViewportCamera, points: &[Vector]) -> f64 {
+        let distance = (dot(
+            relative(fitted.eye, fitted.target),
+            relative(fitted.eye, fitted.target),
+        ))
+        .sqrt();
+        required_scale(
+            points,
+            fitted,
+            [frame(fitted).0, frame(fitted).1, frame(fitted).2],
+            distance,
+            [0.8, 0.8],
+        )
+        .unwrap()
+    }
+    #[test]
+    fn selected_points_reject_invalid_input() {
+        let camera = ViewportCamera::default();
+        assert!(fit_selected_points(&camera, &[], [100, 100], [0, 0, 100, 100], 0.85).is_err());
+        assert!(
+            fit_selected_points(
+                &camera,
+                &[[f64::NAN, 0., 0.]],
+                [100, 100],
+                [0, 0, 100, 100],
+                0.85
+            )
+            .is_err()
+        );
+        assert!(
+            fit_selected_points(&camera, &[[0., 0., 0.]], [100, 100], [0, 0, 100, 100], 0.)
+                .is_err()
+        );
+    }
     #[test]
     fn fits_shifted_bounds_around_pivot_in_both_projections() {
         let bounds = [[[0., 0., 0.], [4., 3., 2.]]];

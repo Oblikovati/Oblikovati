@@ -249,24 +249,67 @@ pub(super) fn view_command(
         }
         ZoomSelected { extent } => {
             let edges = owner.selected_browser_outline();
-            frame_on_edges(window, &edges, *extent)
+            frame_selected_edges(window, &edges, *extent)
         }
         ZoomFaceAt { pixel, extent } => {
             let line = window.view_line(*pixel)?;
             let edges = owner.face_edges_on_line(line)?;
-            frame_on_edges(window, &edges, *extent)
+            frame_selected_edges(window, &edges, *extent)
         }
     }
 }
 /// How much of the view a framed face fills, leaving it a border.
 const FACE_FILL: f64 = 0.85;
-fn frame_on_edges(
+fn frame_selected_edges(
     window: &mut dyn HeadWindow,
     edges: &[[[f64; 3]; 2]],
     extent: [u32; 2],
 ) -> Result<bool, String> {
     let points: Vec<[f64; 3]> = edges.iter().flatten().copied().collect();
-    frame_view_on(window, &points, extent, FACE_FILL)
+    if points.is_empty() {
+        return Ok(false);
+    }
+    let current = window.view_camera()?;
+    let frame = window.orientation_fit_frame()?;
+    let fitted = selected_fit_camera(current, &points, extent, frame)?;
+    apply_selected_fit(window, current, fitted)
+}
+fn selected_fit_camera(
+    camera: oblikovati_viewport::ViewportCamera,
+    points: &[[f64; 3]],
+    extent: [u32; 2],
+    frame: crate::HeadOrientationFitFrame,
+) -> Result<oblikovati_viewport::ViewportCamera, String> {
+    if frame.extent != extent {
+        return Err(format!(
+            "zoom extent {extent:?}: expected current extent {:?}",
+            frame.extent
+        ));
+    }
+    let centered = crate::view_orientation::framed(&camera, points, extent, FACE_FILL);
+    crate::view_orientation::selection_fit::fit_selected_points(
+        &centered,
+        points,
+        frame.extent,
+        frame.area,
+        FACE_FILL,
+    )
+}
+fn apply_selected_fit(
+    window: &mut dyn HeadWindow,
+    current: oblikovati_viewport::ViewportCamera,
+    fitted: oblikovati_viewport::ViewportCamera,
+) -> Result<bool, String> {
+    window.navigate_view(oblikovati_viewport::ViewportNavigation::Fit { margin: 0.1 })?;
+    match window.set_view_camera(fitted) {
+        Ok(changed) => Ok(changed),
+        Err(cause) => match window.previous_view() {
+            Ok(_) => Err(cause),
+            Err(restore) => Err(format!(
+                "zoom selected failed: {cause}; camera restore failed: {restore}; original {current:?}"
+            )),
+        },
+    }
 }
 fn frame_view_on(
     window: &mut dyn HeadWindow,
@@ -375,3 +418,7 @@ mod browser_selection_tests {
         assert!(cause.contains("document 9") && cause.contains("selection owner"));
     }
 }
+
+#[cfg(test)]
+#[path = "gui_authoring_zoom_tests.rs"]
+mod zoom_tests;
