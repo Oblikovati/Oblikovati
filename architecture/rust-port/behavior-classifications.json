@@ -5234,8 +5234,11 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3889",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-open-existing-current-pin/receipt-233169e6ac19c7dd.json",
+        "sha256": "512947fc01bd8c142e5c3a92d29b26af97891f2e6753b2dda429e2caaf35c28b"
+      },
       "go_reference": "../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Activate an existing part without creating a duplicate.",
       "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
