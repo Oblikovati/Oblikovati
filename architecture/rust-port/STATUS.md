@@ -28,7 +28,7 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   its issue-scope duplication scan at 1.0269%. The two example packages now
   report 95.7% and 85.7% coverage; aggregate Go coverage is 84.6%. The branch
   is local and no release was published. The ledger also rejects stale receipts.
-- Scenario pin: `8ec8d2c1e569fbc5c8cd2ec85e9b9380c62c147f`, a local snapshot
+- Scenario pin: `05317bbb2d0809a532b29b7ff6f726a5722b865f`, a local snapshot
   of the unversioned source. It is not an upstream commit. The live feature
   inventory matched the pin at the source sync. The source tags 38 observations
   as capture-only and the remaining 34 document-creation cases as capture-host
@@ -67,7 +67,7 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 - Sketch extrusion lacks a certified solve precision bound (#3928). Analytic
   edge picking is blocked by [Martensite #462](https://github.com/Oblikovati/Martensite/issues/462).
 - The full gate needs a released API contract (#3965). Point cancellation needs
-  source sync and a fixture for its clarified preconditions (#3887).
+  native bindings and a fixture for its clarified preconditions (#3887).
 - Rectangle visibility now rejects obstructed observations (#3980). Focused
   native checks passed; the full gate is still required.
 - Authored work planes now display in part views (#3981). Viewport plane
