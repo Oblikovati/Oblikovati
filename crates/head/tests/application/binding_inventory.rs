@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Fast source coverage only. Matching a step does not establish native behavior.
-use super::{ApplicationWorld, feature_root, world};
+use super::{
+    ApplicationWorld, feature_root, gap_runner, report_destination, scenario_revision,
+    scenario_root, world,
+};
 use cucumber::{
     Parser as _, World as _,
     gherkin::{Background, Feature, Scenario, Step},
@@ -15,6 +18,7 @@ struct BindingInventory {
     scenarios: usize,
     steps: usize,
     unresolved: Vec<UnresolvedBinding>,
+    source_revision: Option<scenario_revision::ScenarioRevision>,
 }
 #[derive(Serialize)]
 struct UnresolvedBinding {
@@ -26,10 +30,16 @@ struct UnresolvedBinding {
 }
 #[test]
 fn application_step_bindings_cover_selected_source() {
+    let folder = world::reports_folder();
+    let output = folder.join("step-bindings.json");
+    let _reports = report_destination::reserve(&folder).unwrap_or_else(|error| panic!("{error}"));
+    let root = feature_root("application");
+    let before = scenario_revision::inspect(&root);
+    let sources = gap_runner::read_sources(&root);
     let parser = cucumber::parser::Basic::default();
     let features = futures::executor::block_on(
         parser
-            .parse(feature_root("application"), Default::default())
+            .parse(root.clone(), Default::default())
             .collect::<Vec<_>>(),
     );
     let mut report = BindingInventory::default();
@@ -44,13 +54,17 @@ fn application_step_bindings_cover_selected_source() {
         report.features > 0 && report.scenarios > 0,
         "expected nonempty application source coverage"
     );
-    let folder = world::reports_folder();
+    let after = scenario_revision::inspect(&root);
+    scenario_revision::require_pinned(&scenario_root(), &[&output]);
+    scenario_revision::require_unchanged(
+        &before,
+        &after,
+        sources != gap_runner::read_sources(&root),
+        &[&output],
+    );
+    report.source_revision = Some(before);
     fs::create_dir_all(&folder).unwrap();
-    fs::write(
-        folder.join("step-bindings.json"),
-        serde_json::to_vec_pretty(&report).unwrap(),
-    )
-    .unwrap();
+    report_destination::write_file(&output, &serde_json::to_vec_pretty(&report).unwrap()).unwrap();
     assert!(
         report.unresolved.is_empty(),
         "{} unresolved step bindings; see {:?}. This check does not run native behavior.",

@@ -309,10 +309,7 @@ fn squeezed(text: &str) -> String {
 }
 pub(super) fn reports_folder() -> std::path::PathBuf {
     let folder = std::env::var_os("OBK_BDD_REPORTS").map_or_else(
-        || {
-            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-                .join("../../target/benchmarks/application")
-        },
+        super::report_destination::default_folder,
         std::path::PathBuf::from,
     );
     assert!(
@@ -325,7 +322,7 @@ fn write_png(
     path: &std::path::Path,
     capture: &oblikovati_viewport::ViewportCapture,
 ) -> Result<(), png::EncodingError> {
-    let file = std::io::BufWriter::new(std::fs::File::create(path)?);
+    let file = std::io::BufWriter::new(super::report_destination::create_file(path)?);
     let mut encoder = png::Encoder::new(file, capture.extent[0], capture.extent[1]);
     encoder.set_color(png::ColorType::Rgba);
     encoder.set_depth(png::BitDepth::Eight);

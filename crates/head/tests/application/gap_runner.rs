@@ -49,9 +49,6 @@ struct StepReport {
 
 pub(super) fn run(root: &Path, keep: fn(&Feature) -> bool) {
     let report_path = world::reports_folder().join("gap-report.json");
-    if report_path.exists() {
-        fs::remove_file(&report_path).unwrap();
-    }
     let source = read_sources(root);
     let features = parse_sources(&source);
     let mut report = new_report(&source);
@@ -97,7 +94,8 @@ fn write_report(root: &Path, source: &BTreeMap<PathBuf, Vec<u8>>, path: &Path, r
         println!("{}: {}", scenario.classification, scenario.scenario);
     }
     fs::create_dir_all(path.parent().unwrap()).unwrap();
-    fs::write(path, serde_json::to_vec_pretty(report).unwrap()).unwrap();
+    super::report_destination::write_file(path, &serde_json::to_vec_pretty(report).unwrap())
+        .unwrap();
 }
 
 pub(super) fn read_sources(root: &Path) -> BTreeMap<PathBuf, Vec<u8>> {

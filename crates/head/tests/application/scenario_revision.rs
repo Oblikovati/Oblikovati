@@ -61,7 +61,27 @@ pub(super) fn save(
     let record =
         serde_json::json!({"before": before, "after": after, "source_changed": source_changed});
     std::fs::create_dir_all(path.parent().unwrap()).unwrap();
-    std::fs::write(path, serde_json::to_vec_pretty(&record).unwrap()).unwrap();
+    super::report_destination::write_file(path, &serde_json::to_vec_pretty(&record).unwrap())
+        .unwrap();
+}
+pub(super) fn require_pinned(root: &Path, results: &[&Path]) {
+    require_verified(super::verify_scenario_source(root), results);
+}
+fn require_verified(verification: Result<(), String>, results: &[&Path]) {
+    let Err(cause) = verification else {
+        return;
+    };
+    remove_results(results);
+    panic!("{cause}; scenario results discarded");
+}
+fn remove_results(results: &[&Path]) {
+    for result in results {
+        if result.exists() {
+            std::fs::remove_file(result).unwrap_or_else(|error| {
+                panic!("invalid scenario result {result:?}: expected removal: {error}")
+            });
+        }
+    }
 }
 pub(super) fn require_unchanged(
     before: &ScenarioRevision,
@@ -72,13 +92,7 @@ pub(super) fn require_unchanged(
     if !source_changed && before == after {
         return;
     }
-    for result in results {
-        if result.exists() {
-            std::fs::remove_file(result).unwrap_or_else(|error| {
-                panic!("invalid scenario result {result:?}: expected removal: {error}")
-            });
-        }
-    }
+    remove_results(results);
     panic!("scenario checkout changed during run; results discarded");
 }
 #[cfg(test)]

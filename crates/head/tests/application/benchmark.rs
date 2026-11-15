@@ -11,7 +11,9 @@ mod diagnostics;
 mod documents;
 mod gap_runner;
 mod refinements;
+mod report_destination;
 mod scenario_revision;
+mod scenario_source;
 mod solid_visibility;
 mod viewport_background;
 mod world;
@@ -167,6 +169,8 @@ fn application_scenarios_use_the_native_window() {
                 .as_deref()
                 .map(|value| value.to_str().expect("BDD area: expected UTF-8"));
             let area = selected_area(setting).unwrap();
+            let _reports = report_destination::reserve(&world::reports_folder())
+                .unwrap_or_else(|error| panic!("{error}"));
             run_scenarios(feature_root(area), |_| true);
         })
         .unwrap()
@@ -227,18 +231,15 @@ fn run_scenarios(root: PathBuf, keep_feature: fn(&cucumber::gherkin::Feature) ->
             &after,
             source_changed,
         );
-        scenario_revision::require_unchanged(
-            &before,
-            &after,
-            source_changed,
-            &[&world::reports_folder().join("gap-report.json")],
-        );
+        let result = world::reports_folder().join("gap-report.json");
+        scenario_revision::require_pinned(&scenario_root(), &[&result]);
+        scenario_revision::require_unchanged(&before, &after, source_changed, &[&result]);
         return;
     }
     let reports = world::reports_folder();
     fs::create_dir_all(&reports).unwrap();
-    let json = fs::File::create(reports.join("cucumber.json")).unwrap();
-    let junit = fs::File::create(reports.join("junit.xml")).unwrap();
+    let json = report_destination::create_file(&reports.join("cucumber.json")).unwrap();
+    let junit = report_destination::create_file(&reports.join("junit.xml")).unwrap();
     let writer = writer::Basic::stdout()
         .summarized()
         .tee::<ApplicationWorld, _>(writer::Json::for_tee(json))
@@ -272,12 +273,11 @@ fn run_scenarios(root: PathBuf, keep_feature: fn(&cucumber::gherkin::Feature) ->
         &after,
         source_changed,
     );
-    scenario_revision::require_unchanged(
-        &before,
-        &after,
-        source_changed,
-        &[&reports.join("cucumber.json"), &reports.join("junit.xml")],
-    );
+    let cucumber = reports.join("cucumber.json");
+    let junit = reports.join("junit.xml");
+    let results = [cucumber.as_path(), junit.as_path()];
+    scenario_revision::require_pinned(&scenario_root(), &results);
+    scenario_revision::require_unchanged(&before, &after, source_changed, &results);
     if result.execution_has_failed() {
         report_parser_errors(&root);
     }
@@ -333,16 +333,20 @@ fn scenario_filter_matches_expanded_outline_names() {
     assert!(scenario_matches("regular scenario", "regular"));
 }
 fn scenario_root() -> PathBuf {
-    std::env::var_os("OBK_BDD_ROOT").map_or_else(
-        || {
-            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-                .join("../../test-utilities/benchmarks/MCAD-Scenarios")
-        },
-        PathBuf::from,
-    )
+    scenario_root_from_override(std::env::var_os("OBK_BDD_ROOT"))
 }
+fn scenario_root_from_override(explicit: Option<std::ffi::OsString>) -> PathBuf {
+    scenario_source::root(explicit)
+}
+fn verify_scenario_source(root: &std::path::Path) -> Result<(), String> {
+    let strict = std::env::var_os("OBK_BDD_REQUIRE_PINNED").is_some();
+    scenario_source::validate_gate_filters(strict, &scenario_source::configured_filters())?;
+    scenario_source::verify_required(root, std::env::var_os("OBK_BDD_ROOT").is_some(), strict)
+}
+
 fn feature_root(area: &str) -> PathBuf {
     let root = scenario_root();
+    verify_scenario_source(&root).unwrap_or_else(|error| panic!("{error}"));
     assert!(
         root.is_absolute(),
         "scenario root {root:?}: expected an absolute path"
@@ -369,4 +373,14 @@ fn feature_root(area: &str) -> PathBuf {
         "BDD feature {feature:?}: expected an existing feature folder"
     );
     selected
+}
+
+#[test]
+fn default_scenario_source_is_the_pinned_checkout() {
+    let root = scenario_root_from_override(None);
+    assert!(
+        root.join(".git").is_dir(),
+        "scenario root {root:?}: expected the pinned Git checkout"
+    );
+    scenario_source::verify_required(&root, false, false).unwrap();
 }
