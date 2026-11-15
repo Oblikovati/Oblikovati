@@ -14,6 +14,7 @@ from typing import Callable, Mapping, TextIO
 
 from behavior_capture import CaptureRequest, capture_receipt
 from committed_build_source import materialize_source
+from capture_build_environment import capture_build_environment, reject_ancestor_cargo_configs
 from behavior_evidence import locked_revision
 from behavior_ledger import (
     CLASSIFICATIONS,
@@ -53,9 +54,11 @@ class NativeCargoRun:
     def _build_from_export(self, folder: Path, environment: dict[str, str], log: Path) -> int:
         source = folder / "source"
         materialize_source(self.root, self.commit, source)
-        build_environment = environment | {"CARGO_TARGET_DIR": str(folder / "target")}
+        reject_ancestor_cargo_configs(source)
+        build_environment = capture_build_environment(folder, environment)
         with tempfile.TemporaryFile(mode="w+", encoding="utf-8") as output:
             status = self._stream_native(source, build_environment, output)
+            reject_ancestor_cargo_configs(source)
             output.seek(0)
             with log.open("x", encoding="utf-8") as destination:
                 shutil.copyfileobj(output, destination)

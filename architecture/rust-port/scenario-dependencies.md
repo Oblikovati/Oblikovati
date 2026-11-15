@@ -74,6 +74,17 @@ concurrent writes remain unbounded. Runtime assets or add-ins that exist only in
 the original checkout or beside an old executable are not copied. A capture
 can fail when it depends on them; it must not be treated as verified evidence.
 
+The capture command also selects a fixed set of environment variables and
+uses a fresh Cargo home. It links the caller's registry and Git caches into
+that home, sets Cargo offline, and refuses Cargo configuration in directories
+above the exported source before and after the run. The committed source's
+Cargo configuration remains in effect. Display and renderer variables in the
+allowlist are passed through; the capture does not attest their values. The
+compiler and tools found on PATH, Rustup installation, shared dependency caches,
+source Cargo configuration, host files, and concurrent changes remain unproven.
+The checks do not prevent a configuration file from appearing and disappearing
+during a run. Cargo offline requires the locked dependencies to be cached.
+
 Issue #3978 tracks a bounded build and independently checked provenance.
 The experimental sealed runner bounds parts of execution; it does not prove
 how the runner was built and does not remove this limitation.

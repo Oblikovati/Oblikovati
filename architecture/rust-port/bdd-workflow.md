@@ -114,6 +114,13 @@ reuse of previous target artifacts, but it does not bound
 compiler settings or external build inputs. Captures remain historical evidence
 until issue #3978 is resolved. A full rebuild requires time and disk space.
 
+The CLI uses an offline Cargo home with the caller's Git and registry caches and
+passes only its supported environment variables to the build. It retains display
+and Vulkan driver selection variables. Compiler wrappers and flags supplied as
+environment variables are not passed through. The committed Cargo config still
+applies, and cached dependencies, tools, runtime settings, and system files are
+not attested. The dependencies must already be available offline.
+
 ## Record test evidence
 
 Each run uses a unique default report directory under

@@ -21,6 +21,7 @@ class FakeCargoProcess:
         assert isinstance(environment, dict)
         self.reports = Path(environment["OBK_BDD_REPORTS"])
         source = Path(str(options["cwd"]))
+        self.source = source
         assert (source / "tracked.txt").read_text() == "committed"
         assert not (source / "ignored.txt").exists()
         target = Path(environment["CARGO_TARGET_DIR"])
@@ -48,6 +49,14 @@ class FakeFailingCargoProcess(FakeCargoProcess):
 class FakeConcurrentLogProcess(FakeCargoProcess):
     def wait(self) -> int:
         (self.reports / "native-test.log").write_text("concurrent evidence\n")
+        return 0
+
+
+class FakeInjectedConfigProcess(FakeCargoProcess):
+    def wait(self) -> int:
+        config = self.source.parent / ".cargo"
+        config.mkdir()
+        (config / "config.toml").write_text("[build]\n")
         return 0
 
 
@@ -124,6 +133,27 @@ class NativeCargoRunTests(unittest.TestCase):
             self.assertEqual(status, 0, (reports / "native-test.log").read_text())
             self.assertIn("1 passed", (reports / "native-test.log").read_text())
 
+    @unittest.skipUnless(shutil.which("cargo"), "requires Cargo")
+    def test_real_cargo_ignores_caller_flags_and_home_config(self) -> None:
+        root = Path(self.repo.name)
+        self.ignored_include_commit()
+        (root / "src/lib.rs").write_text(
+            '#[test] fn application_scenarios_use_the_native_window() { '
+            'assert!(!cfg!(probe_override)); }\n'
+        )
+        self.git("add", "src/lib.rs")
+        self.git("-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "flags")
+        commit = self.git("rev-parse", "HEAD").strip()
+        with tempfile.TemporaryDirectory() as folder, contextlib.redirect_stdout(io.StringIO()):
+            reports = Path(folder) / "reports"
+            reports.mkdir()
+            home = Path(folder) / "caller-cargo"
+            home.mkdir()
+            (home / "config.toml").write_text('[build]\nrustc-wrapper = "/does-not-exist"\n')
+            env = dict(os.environ, CARGO_HOME=str(home), RUSTFLAGS="--cfg probe_override", RUSTC_WRAPPER="/does-not-exist")
+            status = NativeCargoRun(root, "application", commit)(reports, env)
+            self.assertEqual(status, 0, (reports / "native-test.log").read_text())
+
     def test_failed_child_output_is_still_recorded(self) -> None:
         with tempfile.TemporaryDirectory() as folder:
             reports = Path(folder)
@@ -154,6 +184,15 @@ class NativeCargoRunTests(unittest.TestCase):
                     reports, {"OBK_BDD_REPORTS": str(reports)}
                 )
             self.assertEqual(existing.read_text(), "prior evidence\n")
+            self.assertFalse((reports / "native-test.log").exists())
+
+    def test_new_ancestor_config_prevents_publication(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            reports = Path(folder)
+            runner = NativeCargoRun(Path(self.repo.name), "application", self.commit, FakeInjectedConfigProcess)
+            with contextlib.redirect_stdout(io.StringIO()):
+                with self.assertRaisesRegex(ValueError, "ancestor configuration"):
+                    runner(reports, {"OBK_BDD_REPORTS": str(reports)})
             self.assertFalse((reports / "native-test.log").exists())
 
     def test_existing_log_is_not_overwritten(self) -> None:
