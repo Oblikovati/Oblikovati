@@ -1,0 +1,124 @@
+# SPDX-License-Identifier: GPL-2.0-only
+"""Test partial Git vendor verification with independent committed fixtures."""
+
+import hashlib
+import json
+import os
+import tempfile
+import unittest
+from pathlib import Path
+
+from git_vendor_check import package_entries, verify_git_vendor
+from runtime_snapshot import snapshot_runtime
+from test_committed_build_source import SourceRepository
+from test_registry_vendor_check import COMMENT
+
+
+class GitVendorFixture:
+    """A committed crate and separately generated vendor manifest."""
+
+    def __init__(self, root: Path) -> None:
+        self.repo = root / "repo"
+        self.repo.mkdir()
+        self.git = SourceRepository(self.repo)
+        crate = self.repo / "crates" / "witness"
+        (crate / "src").mkdir(parents=True)
+        (crate / "Cargo.toml").write_text(
+            '[package]\nname="witness"\nversion="1.2.3"\n'
+        )
+        (crate / "src/lib.rs").write_text("committed\n")
+        self.git.git("add", ".")
+        self.git.git("commit", "-qm", "add witness")
+        revision = self.git.git("rev-parse", "HEAD")
+        self.source = f"git+https://example.invalid/repo?rev={revision}#{revision}"
+        self.lock = f'[[package]]\nname="witness"\nversion="1.2.3"\nsource="{self.source}"\n'.encode()
+        self.vendor = root / "vendor"
+        self.package = self.vendor / "witness"
+        (self.package / "src").mkdir(parents=True)
+        (self.package / "Cargo.toml").write_text(
+            '[package]\nname="witness"\nversion="1.2.3"\n# generated\n'
+        )
+        (self.package / "src/lib.rs").write_text("committed\n")
+        self.write_checksum()
+
+    def write_checksum(self) -> None:
+        """Write Cargo-like metadata; example: fixture.write_checksum()."""
+        names = ["Cargo.toml", "src/lib.rs"]
+        files = {
+            name: hashlib.sha256((self.package / name).read_bytes()).hexdigest()
+            for name in names
+        }
+        record = {"$comment": COMMENT, "files": files, "package": None}
+        (self.package / ".cargo-checksum.json").write_text(
+            json.dumps(record, sort_keys=True, separators=(",", ":"))
+        )
+
+    def verify(self) -> dict[str, object]:
+        """Check the fixture; example: fixture.verify()."""
+        return verify_git_vendor(
+            self.lock,
+            self.vendor,
+            snapshot_runtime(self.vendor),
+            {self.source: self.repo},
+        )
+
+
+@unittest.skipUnless(
+    os.name == "posix" and hasattr(os, "O_NOATIME"), "requires no-atime snapshots"
+)
+class GitVendorCheckTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.fixture = GitVendorFixture(Path(self.temp.name))
+
+    def test_git_content_matches_but_manifest_remains_unverified(self) -> None:
+        (self.fixture.repo / "crates/witness/src/lib.rs").write_text("dirty checkout")
+        result = self.fixture.verify()
+        self.assertEqual(result["git_files_checked"], 1)
+        self.assertEqual(result["git_manifests_unverified"], ["witness 1.2.3"])
+        self.assertFalse(result["complete"])
+        self.assertFalse(result["reusable"])
+
+    def test_forged_vendor_checksum_does_not_hide_modified_blob(self) -> None:
+        (self.fixture.package / "src/lib.rs").write_text("changed")
+        self.fixture.write_checksum()
+        with self.assertRaisesRegex(ValueError, "expected archive content"):
+            self.fixture.verify()
+
+    def test_generated_manifest_is_explicitly_not_verified(self) -> None:
+        with (self.fixture.package / "Cargo.toml").open("a") as manifest:
+            manifest.write('build="untrusted.rs"\n')
+        self.fixture.write_checksum()
+        self.assertFalse(self.fixture.verify()["complete"])
+
+    def test_missing_extra_or_executable_files_are_rejected(self) -> None:
+        source = self.fixture.package / "src/lib.rs"
+        for change in ("missing", "extra", "mode"):
+            with self.subTest(change=change):
+                if change == "missing":
+                    source.unlink()
+                elif change == "extra":
+                    (self.fixture.package / "extra").write_text("extra")
+                else:
+                    source.chmod(0o755)
+                with self.assertRaises(ValueError):
+                    self.fixture.verify()
+                source.write_text("committed\n")
+                source.chmod(0o644)
+                (self.fixture.package / "extra").unlink(missing_ok=True)
+
+    def test_missing_repository_and_unsupported_tree_object_fail(self) -> None:
+        with self.assertRaisesRegex(ValueError, "expected exactly"):
+            verify_git_vendor(
+                self.fixture.lock,
+                self.fixture.vendor,
+                snapshot_runtime(self.fixture.vendor),
+                {},
+            )
+        with self.assertRaisesRegex(ValueError, "regular tracked blob"):
+            package_entries({"crate/Cargo.toml": "120000:blob:bad"}, "crate")
+
+
+if __name__ == "__main__":
+    unittest.main()

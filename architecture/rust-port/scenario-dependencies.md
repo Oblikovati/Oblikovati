@@ -133,3 +133,18 @@ before and after cannot detect every transient change. The input inventory
 hashes identify observations, not independently checked build provenance.
 The result always says `reusable: false`; the normal receipt path does not use
 this probe. Do not use it to mark a BDD scenario verified. Track #3978.
+
+The separate `tools/bdd/git_vendor_check.py` compares Git-sourced vendor
+files to blobs at the full locked commits. Give each locked Git source and a
+local object repository with `--git-repo SOURCE REPOSITORY`. It checks the
+package file namespace, file bytes, executable bits, and Cargo checksum
+metadata. It reads Git objects, not checkout files. The check conservatively
+requires tracked package files, apart from Cargo's VCS metadata exclusions.
+A package that omits tracked files or inherits its version is refused.
+
+Cargo generates each vendored `Cargo.toml`; this check uses its observed hash
+and does not validate that generated manifest against the Git source. A passing
+result is therefore partial, does not bind a build, and cannot authorize reuse.
+It always reports `complete: false` and `reusable: false`. The recorded run
+matched 22,972 files in 18 Git packages, with all 18 manifests unverified; see
+[the observation](receipts/2026-11-15-git-vendor-check/observation.json).

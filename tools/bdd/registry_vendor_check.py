@@ -303,7 +303,9 @@ def locked_archive(
         os.close(parent)
 
 
-def checksum_metadata(files: Mapping[str, tuple[str, int]], checksum: str) -> str:
+def checksum_metadata(
+    files: Mapping[str, tuple[str, int]], checksum: str | None
+) -> str:
     """Derive Cargo's canonical metadata hash; example: checksum_metadata(files, checksum)."""
     # Cargo 1.99 writes this exact warning; a different encoding is refused, not trusted.
     record = {
@@ -324,12 +326,19 @@ def verify_registry_package(
     files: Mapping[str, tuple[str, int]],
     inventory: Mapping[str, object],
 ) -> None:
-    """Check the complete vendored package namespace; example: verify_registry_package(folder, package, files, inventory)."""
+    """Check the complete vendored registry package; example: verify_registry_package(folder, package, files, inventory)."""
+    verify_package_namespace(folder, files, package.checksum, inventory)
+
+
+def verify_package_namespace(
+    folder: str,
+    files: Mapping[str, tuple[str, int]],
+    checksum: str | None,
+    inventory: Mapping[str, object],
+) -> None:
+    """Compare package files, directories and metadata; example: verify_package_namespace(folder, files, checksum, inventory)."""
     expected = dict(files)
-    expected[".cargo-checksum.json"] = (
-        checksum_metadata(files, str(package.checksum)),
-        0,
-    )
+    expected[".cargo-checksum.json"] = (checksum_metadata(files, checksum), 0)
     directories = expected_directories(expected)
     actual = {
         "." if key == folder else key[len(folder) + 1 :]: value
@@ -339,7 +348,7 @@ def verify_registry_package(
     paths = set(expected) | directories
     if set(actual) != paths:
         raise ValueError(
-            f"vendor {folder!r} paths {sorted(set(actual) ^ paths)[:10]!r}: expected archive files and directories"
+            f"vendor {folder!r} paths {sorted(set(actual) ^ paths)[:10]!r}: expected package files and directories"
         )
     for name in directories:
         if (

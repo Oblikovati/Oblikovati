@@ -121,7 +121,7 @@ class RegistryVendorCheckTests(unittest.TestCase):
                     item.unlink()
                 if name == "empty":
                     (self.fixture.package / "empty").mkdir()
-                with self.assertRaisesRegex(ValueError, "expected archive files"):
+                with self.assertRaisesRegex(ValueError, "expected package files"):
                     self.fixture.verify()
                 if name == "extra":
                     (self.fixture.package / "extra").unlink()
