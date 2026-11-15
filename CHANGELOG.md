@@ -4,6 +4,8 @@
 
 ### Changed
 
+- Enabled analytic length measurements for named solid edges through the Analysis API. (#3967)
+
 - Saved assemblies can include a qualified display cache; save warnings explain when it cannot be created. Express loading remains unavailable. (#3949)
 
 - Exposed a shared assembly presentation traversal with explicit selection styling for the live scene; Express loading remains unavailable. (#3949)
