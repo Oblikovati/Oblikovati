@@ -149,7 +149,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     drawing_projection_access: oblikovati_drawing::DrawingProjectionService,
     drawing_view_preview: Option<drawing_projection::DrawingViewPreview>,
     extrusion_access: Option<crate::part_scene::extrusion::CertifiedExtrudeAccess>,
-    extrusion_preview: Option<(u64, u64, oblikovati_viewport::ViewportScene)>,
+    extrusion_preview: Option<(u64, u64, oblikovati_viewport::ViewportScene, bool)>,
     extrusion_distance_validation: Option<(u64, oblikovati_gui::GuiExtrudeDistanceValidation)>,
     component_preview: Option<ComponentPreview>,
     sketch_scenes: crate::sketch_scene::DesktopSketchScenes,

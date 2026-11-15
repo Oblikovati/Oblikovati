@@ -202,6 +202,11 @@ pub(super) fn dispatch_gui_action(
         window.reject_dimension_edit(value, cause);
     }
     if let Err(cause) = &result
+        && let GuiShellAction::EditExtrudeDistance(request) = action
+    {
+        window.reject_extrusion_edit(request, cause);
+    }
+    if let Err(cause) = &result
         && let GuiShellAction::Extrude {
             document,
             sketch,
@@ -295,6 +300,9 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::BrowserChoice { .. }
         | GuiShellAction::SetSketchLineStyle { .. }
         | GuiShellAction::EditFeature { .. }
+        | GuiShellAction::OpenExtrudeEdit(_)
+        | GuiShellAction::PreviewExtrudeEdit(_)
+        | GuiShellAction::EditExtrudeDistance(_)
         | GuiShellAction::ClickModel { .. }
         | GuiShellAction::InspectFile(_)
         | GuiShellAction::KeepDocumentPicture { .. }

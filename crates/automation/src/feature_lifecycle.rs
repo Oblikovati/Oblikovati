@@ -101,21 +101,7 @@ pub fn apply_feature_distance_edit(
     require_empty_repicks(request)?;
     let value = single_distance_edit(request)?;
     let distance = crate::extrusion::distance(snapshot, value)?;
-    let (feature, _) = locate(&snapshot.work_geometry, request.id)?;
-    let PartFeatureDefinition::SketchPrism(previous) = feature.definition() else {
-        return Err(Error(format!(
-            "features.edit id {}: expected a sketch prism feature",
-            request.id
-        )));
-    };
-    let mut displacement = previous.displacement();
-    displacement[2] = distance;
-    let definition = oblikovati_model::feature::sketch_prism::SketchPrismDefinition::new(
-        previous.sketch(),
-        previous.selection().clone(),
-        displacement,
-    )
-    .map_err(api_error)?;
+    let definition = revised_prism(snapshot, request.id, distance)?;
     let reads = definition.reads(snapshot).map_err(api_error)?;
     snapshot
         .work_geometry
@@ -126,6 +112,26 @@ pub fn apply_feature_distance_edit(
         )
         .map_err(api_error)?;
     Ok(())
+}
+fn revised_prism(
+    snapshot: &DocumentSnapshot,
+    id: u64,
+    distance: oblikovati_model::feature::work_geometry::DatumLength,
+) -> Result<oblikovati_model::feature::sketch_prism::SketchPrismDefinition, Error> {
+    let (feature, _) = locate(&snapshot.work_geometry, id)?;
+    let PartFeatureDefinition::SketchPrism(previous) = feature.definition() else {
+        return Err(Error(format!(
+            "features.edit id {id}: expected a sketch prism feature"
+        )));
+    };
+    let mut displacement = previous.displacement();
+    displacement[2] = distance;
+    oblikovati_model::feature::sketch_prism::SketchPrismDefinition::new(
+        previous.sketch(),
+        previous.selection().clone(),
+        displacement,
+    )
+    .map_err(api_error)
 }
 
 fn require_empty_repicks(request: &EditFeatureArgs) -> Result<(), Error> {

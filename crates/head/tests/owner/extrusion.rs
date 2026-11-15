@@ -495,43 +495,5 @@ mod policy;
 #[path = "extrusion_topology.rs"]
 mod topology;
 
-#[test]
-fn typed_distance_edit_accepts_literal_extrusions_without_editing_sketch_parameters() {
-    use oblikovati_api::wire::{EditFeatureArgs, FeatureRefArgs, ScalarEdit};
-    let (owner, _) = owner();
-    let mut owner = owner.with_extrusion_resolution(resolution()).unwrap();
-    let document = open_sketch(&mut owner);
-    let mut input = request();
-    input.distance = "10 mm".into();
-    let response = Client::new(owner.document_host())
-        .features()
-        .add_feature(&input)
-        .unwrap();
-    let id = response.0.unwrap()["id"].as_u64().unwrap();
-    let request = EditFeatureArgs {
-        id,
-        scalars: Some(vec![ScalarEdit {
-            index: 0,
-            value: "20 mm".into(),
-        }]),
-        ..Default::default()
-    };
-    Client::new(owner.document_host())
-        .features()
-        .edit(&request)
-        .unwrap();
-    let detail = Client::new(owner.document_host())
-        .features()
-        .get(&FeatureRefArgs { id })
-        .unwrap();
-    assert_eq!(detail.feature.scalars.unwrap()[0].value, 20.);
-    let session = owner.documents().workspace().session(document).unwrap();
-    let parameters = &session.snapshot().parameters;
-    assert_eq!(
-        parameters
-            .model_value(parameters.find("width").unwrap())
-            .unwrap()
-            .value,
-        1.
-    );
-}
+#[path = "extrusion_edit.rs"]
+mod edit;

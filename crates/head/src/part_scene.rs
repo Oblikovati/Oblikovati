@@ -430,6 +430,7 @@ pub(crate) fn render_part_scene(
     })
 }
 
+mod preview_edit;
 mod references;
 
 mod bodies;

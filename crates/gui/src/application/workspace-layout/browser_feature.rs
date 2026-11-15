@@ -127,7 +127,14 @@ fn feature_menu(
         return;
     };
     edit_sketch_row(ui, state, browser, feature, actions);
-    muted_menu_item(ui, "Edit Feature");
+    let edit = GuiShellAction::OpenExtrudeEdit(feature.id);
+    if ui
+        .menu_item_config("Edit Feature")
+        .enabled(edit.enabled(state))
+        .build()
+    {
+        actions.push(edit);
+    }
     if ui.menu_item("Show Dimensions") {
         actions.push(GuiShellAction::BrowserChoice {
             document: state.document.unwrap_or(0),
@@ -295,8 +302,11 @@ pub(crate) fn selection_toolbar(
     selection_toolbar_window(ui, corner, || {
         edit_sketch_row_button(ui, commands, browser, feature, actions);
         ui.same_line();
-        let _muted = ui.begin_disabled(true);
-        crate::widget_abi::button(ui, "Edit Feature", [0.; 2]);
+        let edit = GuiShellAction::OpenExtrudeEdit(feature.id);
+        let _muted = ui.begin_disabled(!edit.enabled(commands));
+        if crate::widget_abi::button(ui, "Edit Feature", [0.; 2]) && edit.enabled(commands) {
+            actions.push(edit);
+        }
     });
 }
 fn face_selection_toolbar(ui: &Ui, request: &GuiFrameRequest, actions: &mut Vec<GuiShellAction>) {

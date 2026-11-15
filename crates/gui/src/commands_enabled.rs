@@ -303,6 +303,25 @@ impl GuiShellAction {
                         .is_some_and(|browser| browser.sketches.iter().any(|row| row.id == *sketch))
             }
             Self::PreviewExtrude(None) => true,
+            Self::OpenExtrudeEdit(feature) => {
+                state.extrude_available
+                    && state.document.is_some()
+                    && state.authoring == GuiAuthoringContext::Part
+                    && !state.transaction_open
+                    && state
+                        .browser
+                        .as_ref()
+                        .is_some_and(|browser| browser.extrusion_edits.contains_key(feature))
+            }
+            Self::EditExtrudeDistance(request) | Self::PreviewExtrudeEdit(request) => {
+                state.extrude_available
+                    && state.document == Some(request.document)
+                    && !state.transaction_open
+                    && !request.distance.trim().is_empty()
+                    && state.browser.as_ref().is_some_and(|browser| {
+                        browser.extrusion_edits.contains_key(&request.feature)
+                    })
+            }
             Self::ValidateExtrudeDistance { document, .. } => {
                 state.document == Some(*document) && state.extrude_available
             }

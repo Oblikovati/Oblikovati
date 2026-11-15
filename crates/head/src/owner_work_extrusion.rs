@@ -43,5 +43,20 @@ macro_rules! desktop_extrusion_work {
         ) -> Result<bool, String> {
             self.validate_extrusion_distance_from_gui(document, distance)
         }
+        fn preview_extrusion_edit(
+            &mut self,
+            request: &oblikovati_gui::GuiExtrudeEditRequest,
+        ) -> Result<bool, String> {
+            if !self.feature_edit_is_current(request)? {
+                return Ok(false);
+            }
+            self.preview_edited_extrusion(request.document, request.feature.0, &request.distance)
+        }
+        fn commit_extrusion_edit(
+            &mut self,
+            request: &oblikovati_gui::GuiExtrudeEditRequest,
+        ) -> Result<bool, String> {
+            self.commit_edited_extrusion(request)
+        }
     };
 }

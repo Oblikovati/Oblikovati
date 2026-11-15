@@ -12,6 +12,21 @@ impl<
 {
     /// The chosen row's outline; worked out once per model state, then read every frame.
     pub(in crate::owner) fn current_browser_outline(&mut self) -> Vec<[[f64; 3]; 2]> {
+        if self
+            .extrusion_preview
+            .as_ref()
+            .is_some_and(|(document, generation, _, replace)| {
+                *replace
+                    && self.files.workspace().active_document() == Some(*document)
+                    && self
+                        .files
+                        .workspace()
+                        .session(*document)
+                        .is_ok_and(|session| session.generation() == *generation)
+            })
+        {
+            return Vec::new();
+        }
         let Some(source) = self.browser_outline_source() else {
             return Vec::new();
         };

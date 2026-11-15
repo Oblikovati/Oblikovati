@@ -105,6 +105,12 @@ pub trait HeadWindow {
     fn reject_dimension_edit(&mut self, _value: &oblikovati_gui::GuiDimensionValue, _cause: &str) {}
     /// Return an extrusion draft rejected by its owner; example: `window.reject_extrusion(&request, "profile missing")`.
     fn reject_extrusion(&mut self, _request: &oblikovati_gui::GuiExtrudePreview, _cause: &str) {}
+    fn reject_extrusion_edit(
+        &mut self,
+        _request: &oblikovati_gui::GuiExtrudeEditRequest,
+        _cause: &str,
+    ) {
+    }
 
     /// Replace the active document's committed sketches; example: `window.submit_sketch_scene(update)?` after Undo.
     fn submit_sketch_scene(&mut self, update: crate::HeadSketchSceneUpdate) -> Result<(), String> {

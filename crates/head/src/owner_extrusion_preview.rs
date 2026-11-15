@@ -143,7 +143,7 @@ impl<
             .session(document)
             .map_err(|cause| cause.to_string())?
             .generation();
-        self.extrusion_preview = Some((document, generation, scene));
+        self.extrusion_preview = Some((document, generation, scene, false));
         self.part_scenes.invalidate_presentation();
         Ok(true)
     }
@@ -153,6 +153,92 @@ impl<
         }
         self.part_scenes.invalidate_presentation();
         true
+    }
+    pub(super) fn preview_edited_extrusion(
+        &mut self,
+        document: u64,
+        feature: u64,
+        distance: &str,
+    ) -> Result<bool, String> {
+        self.clear_extrusion_preview();
+        let scene = self.edited_extrusion_scene(document, feature, distance)?;
+        let generation = self
+            .files
+            .workspace()
+            .session(document)
+            .map_err(|cause| cause.to_string())?
+            .generation();
+        self.extrusion_preview = Some((document, generation, scene, true));
+        self.part_scenes.invalidate_presentation();
+        Ok(true)
+    }
+    pub(super) fn edited_extrusion_scene(
+        &self,
+        document: u64,
+        feature: u64,
+        distance: &str,
+    ) -> Result<oblikovati_viewport::ViewportScene, String> {
+        self.require_browser_document(document)?;
+        let session = self
+            .files
+            .workspace()
+            .session(document)
+            .map_err(|cause| cause.to_string())?;
+        let request = feature_distance_request(feature, distance);
+        session
+            .preview_projected(
+                |candidate, _| {
+                    oblikovati_automation::apply_feature_distance_edit(candidate, &request)
+                },
+                |candidate, ()| self.project_edited_scene(document, feature, candidate),
+            )
+            .map_err(|cause| cause.to_string())
+    }
+    fn project_edited_scene(
+        &self,
+        document: u64,
+        feature: u64,
+        candidate: &oblikovati_model::history::DocumentSnapshot,
+    ) -> Result<oblikovati_viewport::ViewportScene, oblikovati_api::Error> {
+        self.part_scenes
+            .preview_feature_edit(
+                &self.files,
+                document,
+                candidate,
+                oblikovati_model::feature::FeatureId(feature),
+            )
+            .map_err(oblikovati_api::Error)
+    }
+    pub(super) fn feature_edit_is_current(
+        &self,
+        request: &oblikovati_gui::GuiExtrudeEditRequest,
+    ) -> Result<bool, String> {
+        let actual = self
+            .files
+            .workspace()
+            .session(request.document)
+            .map_err(|cause| cause.to_string())?
+            .generation();
+        Ok(request.generation.is_none_or(|expected| expected == actual))
+    }
+    pub(super) fn commit_edited_extrusion(
+        &mut self,
+        request: &oblikovati_gui::GuiExtrudeEditRequest,
+    ) -> Result<bool, String> {
+        if !self.feature_edit_is_current(request)? {
+            return Err(format!(
+                "extrusion edit generation {:?}: expected the current generation",
+                request.generation
+            ));
+        }
+        self.edited_extrusion_scene(request.document, request.feature.0, &request.distance)?;
+        let edit = feature_distance_request(request.feature.0, &request.distance);
+        oblikovati_api::client::Client::new(self.document_host())
+            .features()
+            .edit(&edit)
+            .map_err(|cause| cause.to_string())?;
+        self.clear_extrusion_preview();
+        Ok(true)
     }
     pub(super) fn take_scene_with_extrusion_preview(
         &mut self,
@@ -171,7 +257,7 @@ impl<
         if self
             .extrusion_preview
             .as_ref()
-            .is_some_and(|(document, generation, _)| Some((*document, *generation)) != current)
+            .is_some_and(|(document, generation, _, _)| Some((*document, *generation)) != current)
         {
             self.clear_extrusion_preview();
         }
@@ -194,11 +280,15 @@ impl<
         let Some(mut update) = self.part_scenes.refresh(&mut self.files)? else {
             return Ok(None);
         };
-        if let Some((_, _, preview)) = &self.extrusion_preview {
-            update
-                .scene
-                .triangles
-                .extend(preview.triangles.iter().copied());
+        if let Some((_, _, preview, replace)) = &self.extrusion_preview {
+            if *replace {
+                update.scene = preview.clone();
+            } else {
+                update
+                    .scene
+                    .triangles
+                    .extend(preview.triangles.iter().copied());
+            }
         }
         if let Some(preview) = &self.component_preview {
             update
@@ -245,5 +335,18 @@ impl<
                 },
             )
             .map_err(|cause| cause.to_string())
+    }
+}
+pub(super) fn feature_distance_request(
+    feature: u64,
+    distance: &str,
+) -> oblikovati_api::wire::EditFeatureArgs {
+    oblikovati_api::wire::EditFeatureArgs {
+        id: feature,
+        scalars: Some(vec![oblikovati_api::wire::ScalarEdit {
+            index: 0,
+            value: distance.into(),
+        }]),
+        ..Default::default()
     }
 }

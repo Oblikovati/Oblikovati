@@ -22,6 +22,8 @@
 
 ### Fixed
 
+- Reopened existing extrusions for distance editing from the browser, with a cancellable candidate preview. (#3968)
+
 - Edited extrusion distances without changing shared sketch parameters; literal distances can also be edited. (#3968)
 
 - Kept sketch ribbon controls and the previous part tab available across sketch editing. (#3956)
