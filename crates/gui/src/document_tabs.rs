@@ -327,7 +327,7 @@ fn tab_widths(ui: &Ui, tabs: &[StripTab<'_>]) -> Vec<f32> {
     tabs.iter()
         .map(|tab| match tab {
             StripTab::Home => ui.calc_text_size("Home")[0] + TAB_ROOM / 2.,
-            StripTab::Document(tab) => ui.calc_text_size(&tab_label(tab))[0] + TAB_ROOM,
+            StripTab::Document(tab) => ui.calc_text_size(tab_label(tab))[0] + TAB_ROOM,
         })
         .map(|width| width + spacing)
         .collect()

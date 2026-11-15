@@ -180,14 +180,16 @@ mod tests {
     }
     #[test]
     fn hidden_open_document_keeps_its_dragged_order() {
-        let mut state = crate::GuiCommandState::default();
-        state.documents = (1..=3)
-            .map(|id| oblikovati_api::wire::DocumentInfo {
-                id,
-                visible: true,
-                ..Default::default()
-            })
-            .collect();
+        let mut state = crate::GuiCommandState {
+            documents: (1..=3)
+                .map(|id| oblikovati_api::wire::DocumentInfo {
+                    id,
+                    visible: true,
+                    ..Default::default()
+                })
+                .collect(),
+            ..Default::default()
+        };
         let mut order = TabOrder::default();
         order.synchronize_state(&state);
         apply_positions(
