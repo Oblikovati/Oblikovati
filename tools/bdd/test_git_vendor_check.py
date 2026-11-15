@@ -126,6 +126,13 @@ class GitVendorCheckTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'metadata.*expected locked source'):
             self.fixture.verify()
 
+    def test_forged_license_file_with_updated_checksum_is_refused(self) -> None:
+        manifest = self.fixture.package / "Cargo.toml"
+        manifest.write_text(manifest.read_text().replace('[lib]', 'license-file="forged"\n[lib]'))
+        self.fixture.write_checksum()
+        with self.assertRaisesRegex(ValueError, 'license-file.*expected locked'):
+            self.fixture.verify()
+
     def test_forged_dependency_feature_and_target_are_refused(self) -> None:
         for section in (
             '[dependencies]\nforged="1"\n',

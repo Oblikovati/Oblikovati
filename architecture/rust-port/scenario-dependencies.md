@@ -293,12 +293,15 @@ root `badges` and `hints`, which the pinned Cargo parser
 A local Git fixture vendored with Cargo 1.99.0 passes these checks. Changed
 values and type substitutions are refused even if vendor checksums are updated.
 
-Path metadata is still unverified. Cargo [checks the filesystem](https://github.com/rust-lang/cargo/blob/5f94df4789f005f9a352888e8355ffc645b7ed0e/src/workspace/parser/mod.rs#L845-L879)
+The checker compares explicit package README strings and booleans, and direct
+or absent license-file declarations. Cargo maps README true to `README.md` and
+false to false. Three real Cargo-vendored Git fixtures exercised these cases.
+The default and inherited paths remain unverified. Cargo [checks the filesystem](https://github.com/rust-lang/cargo/blob/5f94df4789f005f9a352888e8355ffc645b7ed0e/src/workspace/parser/mod.rs#L845-L879)
 for default README names and rewrites inherited README and license-file paths.
 A locked Git tree alone does not prove the checkout contained no extra files
 or that workspace paths resolved to the same files. A future comparison must
 first bound the checkout namespace and path resolution, then test Cargo's
-normalization against explicit, inherited and default paths.
+normalization against inherited and default paths.
 
 The checks passed on 18 Git packages and 22,972 tracked vendor files; the
 [copied field observation](receipts/2026-11-15-git-copied-fields/README.md)

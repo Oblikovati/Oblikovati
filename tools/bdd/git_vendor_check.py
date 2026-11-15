@@ -12,6 +12,7 @@ from git_object_inventory import GitBlobReader, git_blob_bytes, locked_git_tree
 from git_manifest_declarations import check_git_manifest_declarations
 from git_manifest_library import check_git_manifest_library
 from git_manifest_metadata import check_git_manifest_metadata
+from git_manifest_path_metadata import check_git_manifest_path_metadata
 from git_manifest_targets import check_git_manifest_targets
 from registry_vendor_check import (
     ignored_vendor_path,
@@ -131,6 +132,7 @@ def verify_git_vendor(
                 check_git_manifest_library(original, generated, entries, folders[key])
                 check_git_manifest_targets(original, generated, entries, repository, tree, roots[key], folders[key])
                 check_git_manifest_metadata(original, generated, repository, tree, roots[key], folders[key])
+                check_git_manifest_path_metadata(original, generated, folders[key])
                 checked += check_package(folders[key], entries, inventory, reader, cache)
                 manifests.append(f"{key[0]} {key[1]}")
     return {
@@ -139,7 +141,7 @@ def verify_git_vendor(
         "git_manifest_declarations_checked": len(manifests),
         "git_manifest_check_scope": [
             "dependencies", "dev-dependencies", "build-dependencies",
-            "target", "features", "no-build-script", "conventional-library", "target-autodiscovery", "package-links", "bin-example-test-bench-targets", "selected-package-metadata", "lints", "package-default-run-resolver-metadata", "badges-hints",
+            "target", "features", "no-build-script", "conventional-library", "target-autodiscovery", "package-links", "bin-example-test-bench-targets", "selected-package-metadata", "lints", "package-default-run-resolver-metadata", "badges-hints", "explicit-readme-and-direct-license-file",
         ],
         "git_manifests_unverified": manifests,
         "complete": False,
