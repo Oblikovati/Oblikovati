@@ -280,12 +280,9 @@ impl ResidualSource for PreparedConstraint {
                 variables[2].minus(&variables[0])?.shifted(-offset[0])?,
                 variables[3].minus(&variables[1])?.shifted(-offset[1])?,
             ]),
-            PlanarEquation::Coincident => Ok(point(variables, 0)?
-                .minus(&point(variables, 2)?)?
-                .components()
-                .to_vec()),
+            PlanarEquation::Coincident => super::linear_equations::coincident(variables),
             PlanarEquation::Coordinate(axis) => {
-                Ok(vec![variables[axis].minus(&variables[axis + 2])?])
+                super::linear_equations::coordinate(variables, axis)
             }
             PlanarEquation::Fix(position) => {
                 super::ground_constraint::coordinate_residuals(variables, &[position])

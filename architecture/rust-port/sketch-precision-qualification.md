@@ -88,3 +88,21 @@ These binary64 values are observations, not enclosures of input uncertainty or
 error bounds. They neither establish conditioning nor qualify any operation.
 A future interval evaluator must bind the missing parameter targets, operand
 provenance, and projection uncertainty to the same solve before certification.
+
+## Conditional interval equation evaluation
+
+The sketch model can evaluate coincident and coordinate equations over a
+finite box in full solver-variable order. The point solver and interval path
+share those expressions. Results retain the source relation, equation number,
+residual enclosure, and a derivative enclosure for each input variable. Other
+relations, projected equation layouts, malformed boxes, and nonfinite results
+are refused. A caller-supplied box is not bound to a solve or to projected input
+uncertainty and does not imply a sketch certificate.
+
+The project-owned arithmetic boundary uses the pinned `maryada` 0.2.0 interval
+subtraction. Exact binary-rational tests cover representative endpoints,
+subnormal values, and overflow refusal on the test platform. This is not a
+cross-platform proof of the dependency's rounding contract. Qualification
+also needs validated input boxes, complete residual and Jacobian coverage,
+conditioning, existence and uniqueness checks, and a policy shared by every
+consumer. The interval evaluator does not enable that policy.
