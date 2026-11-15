@@ -15770,10 +15770,15 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-tab-keyboard/receipt-80019db99e64d943.json",
+        "sha256": "9ef724b261d2fd573376b7be94199f28394a30466c405c2f475580e3ff17f451"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:2eed412b4b58f5ab363cd4c59474a18a79d54375edac1346f77939fe0320ac2e",
@@ -16126,10 +16131,15 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-tab-keyboard/receipt-4aa49dc3280f879e.json",
+        "sha256": "0bf29cb76aca2367920a28630e910ec53dd5e7846968cc65ca0b0f2a413c3334"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:246b23753e36f71eb9da6e25409bff33eef6b0b78c4f6e4d2e9bd57c511f6146",
@@ -16347,10 +16357,15 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-tab-keyboard/receipt-7cf70010e612d36a.json",
+        "sha256": "5ce97ccfa60c99f57d3d9ddc154de52f90063010c7564b8895c09297c212d43f"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:9b503941bee878b650797db2cba8fcfb4480b70cb9c0bc579ace056866f47759",
@@ -16364,10 +16379,15 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-tab-keyboard/receipt-9b503941bee878b6.json",
+        "sha256": "a84cf885f3922a0a760c43255fe6cd3e9a9a42b7d107d3f1c0cc2b9d701db68f"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:02e282229b300df2bc15bd323eaeda5923c8974c577a73ac394cc7553ca58ce9",

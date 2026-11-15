@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:80019db99e64d943b5a7e3804214af5ad50c52bed6fd7f744d606d44072994bd",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "72d8f66e2919b71f4e56b6a4a0e106e882b79a9a073d25badb26c786bd7722fb",
+  "application_commit": "df87baea493c33badfe81ec4ebab3dfb9a250891",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "application_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-15-tab-keyboard/keyboard/cucumber.json",
+    "sha256": "5b54bcf1eb2b1a8c5bb59be6c1c45f6424bf1c163e8a877abb69e500c01a0290"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-15-tab-keyboard/keyboard/source-revision.json",
+    "sha256": "3b0c2408778ce77d9b430eba51bbc1819f45a84d68b7dfdd7663f805ee566634"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-15-tab-keyboard/keyboard/Switch-to-the-neighboring-part-with-the-keyboard.png",
+    "sha256": "c06a69d34ec1e0b589077a8e4191698dc97fe73a59ae2c447925e6f9491deeaf"
+  }
+}
