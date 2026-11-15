@@ -1,0 +1,41 @@
+   Compiling oblikovati-head v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/3975-rectangle-status/crates/head)
+    Finished `test` profile [unoptimized] target(s) in 22.85s
+     Running unittests src/lib.rs (/tmp/obk-3975-target/debug/deps/oblikovati_head-d4ccfccc04854620)
+
+running 1 test
+Not executed (capture only): rectangle-two-point-08 Commit typed sizes and restore through history
+Not executed (capture only): rectangle-two-point-09 Verify the numeric rectangle edge lengths
+Not executed (capture only): rectangle-two-point-11 Retain a numeric rectangle
+Not executed (capture only): rectangle-two-point-12 Cancel a rectangle height proposal
+Not executed (capture only): rectangle-two-point-13 Accept and undo a rectangle height edit
+Not executed (capture only): rectangle-two-point-14 Observe a zero second size
+Feature: Rectangle two point
+  Scenario: rectangle-two-point-10 Observe a zero first size
+   ✔  Given an empty editable metric sketch is Ready
+   ✔  When the user choose Two Point Rectangle and click a clear point in the sketch canvas
+   ✘  And the user enter 0 and press Tab
+      Step failed:
+      Defined: tmp/obk-3975-source/features/sketch/rectangle-two-point/scenario.feature:64:5
+      Matched: crates/head/src/../tests/application/../sketch/rectangle-two-point/steps.rs:351:1
+      Step panicked. Captured output: expected "Select opposite corner" in status "Sketchplacementfailed:rectangleedge[[2.2222222222222214,-1.5777777777777777], [2.2222222222222214,-1.5777777777777777]]:expectedafinitenonzerolength FullyConstrained"
+[Summary]
+1 feature
+1 scenario (1 failed)
+3 steps (2 passed, 1 failed)
+
+thread 'sketch-scenarios' (3881395) panicked at crates/head/src/../tests/application/benchmark.rs:289:5:
+scenario benchmark: expected no failed, undefined, or skipped steps
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window' (3881394) panicked at crates/head/src/../tests/application/../sketch/benchmark.rs:74:10:
+called `Result::unwrap()` on an `Err` value: Any { .. }
+test native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window ... FAILED
+
+failures:
+
+failures:
+    native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1005 filtered out; finished in 10.25s
+
+error: test failed, to rerun pass `-p oblikovati-head --lib`

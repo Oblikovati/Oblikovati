@@ -5,6 +5,8 @@ Issue #3975. Application commit: `a96424d63`. The earlier live screenshot in
 geometry error after entering zero and pressing Tab. `red.log` reproduces that
 status in the native scenario before the fix. That red run used the live,
 unversioned scenario source; its feature hash matched the pinned snapshot.
+A second negative control, `timing-red.log`, used the pinned source and shows
+that the error appears immediately after typing `0`, before Tab.
 
 The Go reference obtains an in-progress rectangle preview from
 `app/sketch_preview.go` through `RectangleTool.PendingRecipe`. This state does
