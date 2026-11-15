@@ -51,10 +51,16 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 - Document creation: the full diagnostic passed 29 of 39 scenarios. Named
   template assets and their catalog configuration are missing (#3899, #3951,
   #3952). The scenario owner's `BLOCKERS.md` lists the fixture requirements.
-- Document tabs: the diagnostic passed 9 of 38 scenarios (#3900). The four
-  keyboard scenarios were bound and passed before later source changes (#3950).
-- Quick access: the diagnostic passed 11 of 12 scenarios. Measure is available;
-  other expected commands and the recorded profile remain incomplete (#3955).
+- Document tabs: the diagnostic passed 9 of 38 scenarios (#3900). Two context
+  menu scenarios passed on the merged revision; see
+  `receipts/2026-11-15-tab-context-verified/`. Two Home menu scenarios need
+  source clarification in their `BLOCKERS.md`. The keyboard scenario receipts
+  predate later source changes (#3950).
+- Quick access: the diagnostic passed 11 of 12 scenarios. Measure and Clear
+  for one preselected body are available. Clear has confirmation, undo and
+  redo checks in `receipts/2026-11-15-clear-appearance/`; its wider selection
+  workflow remains open (#3962). The recorded profile remains incomplete
+  (#3955).
 - Body properties: all six pinned scenarios passed with checked setup, list
   scrolling and exact physical-value rows (#3954). Receipts become stale after
   relevant source changes; see `receipts/2026-11-15-body-properties-verified/`.
