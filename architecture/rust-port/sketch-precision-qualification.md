@@ -71,3 +71,17 @@ a choice of free-variable slice needs its own justified semantics. The
 describes the interval operator as a certificate rather than a point-residual
 check. Independent interval or exact-arithmetic oracles and cross-platform
 rounding tests are required before this can gate extrusion.
+
+## Accepted operand evidence
+
+Each raw residual row retains the prepared relation's source-level variable
+operands in original solver-column order. Point coordinates carry their point
+identity and axis; supplied grounded anchors are marked separately from active
+solver variables. Values come from the accepted solve after restoring eliminated
+anchors. Non-point identities are explicitly unknown. A relation can use only a
+subset of its source operands, and embedded target values are not included.
+
+These binary64 values are observations, not enclosures of input uncertainty or
+error bounds. They neither establish conditioning nor qualify any operation.
+A future interval evaluator must bind the missing parameter targets, operand
+provenance, and projection uncertainty to the same solve before certification.

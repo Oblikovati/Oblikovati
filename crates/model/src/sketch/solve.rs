@@ -20,12 +20,27 @@ pub struct SketchSolveOutcome {
     numerical: NonlinearResult,
     origins: Vec<SketchRelationId>,
     parameter_dependencies: Vec<u64>,
+    operands: Vec<Vec<SketchResidualOperand>>,
+}
+/// Identity and accepted value for a variable read by one prepared relation.
+#[derive(Clone, Debug, PartialEq)]
+pub struct SketchResidualOperand {
+    /// Column in the complete pre-elimination sketch variable layout.
+    pub column: usize,
+    /// A point coordinate when known; other variable kinds remain explicitly unidentified.
+    pub point: Option<(super::SketchEntityId, usize)>,
+    /// The accepted binary64 operand, not an uncertainty bound.
+    pub value: f64,
+    /// True when the solver took this point from the supplied grounded anchors.
+    pub externally_grounded: bool,
 }
 /// One raw solver equation with its relation and convergence domain, not a certified bound.
 #[derive(Clone, Debug, PartialEq)]
 pub struct SketchResidualRow {
     pub relation: SketchRelationId,
     pub equation: usize,
+    /// Source-level inputs; a row may use only a subset. Targets are not included.
+    pub operands: Vec<SketchResidualOperand>,
     pub value: f64,
     pub convergence_domain: oblikovati_solve::residual::ResidualTolerance,
     /// Physical unit of the raw value; unknown rows cannot be qualified by unit.
@@ -47,6 +62,7 @@ impl SketchSolveOutcome {
                     .map(move |(equation, index)| SketchResidualRow {
                         relation,
                         equation,
+                        operands: self.operands[source].clone(),
                         value: numerical.evaluation.values()[index],
                         convergence_domain: numerical.residual_domains[index],
                         unit: numerical.residual_units[index],
@@ -133,7 +149,9 @@ impl Sketch2D {
         )
         .map_err(|cause| source_failure(&prepared.origins, cause))?;
         let candidate = self.candidate_values(&prepared.restore(&result.solution.values)?)?;
+        let operands = residual_operands(self, &prepared, &result.solution.values, anchors)?;
         let outcome = SketchSolveOutcome {
+            operands,
             origins: prepared.origins,
             candidate,
             numerical: result.solution,
@@ -210,7 +228,9 @@ impl Sketch2D {
         )
         .map_err(|cause| source_failure(&prepared.origins, cause))?;
         let candidate = self.candidate_values(&prepared.restore(&numerical.values)?)?;
+        let operands = residual_operands(self, &prepared, &numerical.values, anchors)?;
         Ok(SketchSolveOutcome {
+            operands,
             origins: prepared.origins,
             candidate,
             numerical,
@@ -243,3 +263,58 @@ impl Sketch2D {
 #[cfg(test)]
 #[path = "../../tests/sketch/conflict_order.rs"]
 mod conflict_order_tests;
+
+fn residual_operands(
+    sketch: &Sketch2D,
+    prepared: &grounded::GroundedSketch,
+    values: &[f64],
+    anchors: &[SketchPoint2D],
+) -> Result<Vec<Vec<SketchResidualOperand>>, SketchError> {
+    let restored = prepared.restore(values)?;
+    Ok(prepared
+        .operand_columns()
+        .into_iter()
+        .map(|columns| {
+            columns
+                .into_iter()
+                .map(|column| residual_operand(sketch, &restored, anchors, column))
+                .collect()
+        })
+        .collect())
+}
+fn residual_operand(
+    sketch: &Sketch2D,
+    values: &[f64],
+    anchors: &[SketchPoint2D],
+    column: usize,
+) -> SketchResidualOperand {
+    let point = sketch
+        .points()
+        .get(column / 2)
+        .map(|point| (point.id, column % 2));
+    let externally_grounded =
+        point.is_some_and(|(id, _)| anchors.iter().any(|anchor| anchor.id == id));
+    SketchResidualOperand {
+        column,
+        point,
+        value: values[column],
+        externally_grounded,
+    }
+}
+
+#[cfg(test)]
+mod operand_tests {
+    use super::*;
+
+    #[test]
+    fn non_point_operand_is_explicitly_unidentified() {
+        let mut sketch = Sketch2D::default();
+        sketch
+            .add_point(super::super::SketchEntityId(1), [2.0, -3.0])
+            .unwrap();
+        let operand = residual_operand(&sketch, &[2.0, -3.0, 4.0], &[], 2);
+        assert_eq!(operand.point, None);
+        assert_eq!(operand.value, 4.0);
+        assert!(!operand.externally_grounded);
+    }
+}

@@ -31,6 +31,12 @@ impl GroundedSketch {
             })
             .collect()
     }
+    pub fn operand_columns(&self) -> Vec<Vec<usize>> {
+        self.sources
+            .iter()
+            .map(|source| source.original.variables.clone())
+            .collect()
+    }
     pub fn warm_start_values(&self, sketch: &Sketch2D) -> Vec<f64> {
         self.layout.active_values(&sketch.variable_values())
     }
