@@ -56,7 +56,9 @@ fn model_after_reset(world: &mut ApplicationWorld) {
         world.expect_text(label);
     }
 }
-#[then("the Tools ribbon displays its standard groups without Tutorials or User Commands")]
+#[then(
+    "the Tools ribbon displays its standard groups with Team Web visible and Tutorials and User Commands hidden"
+)]
 fn standard_tools_after_reset(world: &mut ApplicationWorld) {
     for label in [
         "Measure",
