@@ -4,6 +4,8 @@
 
 ### Changed
 
+- Displayed visible authored work planes with a translucent fill and themed border in part views. (#3981)
+
 - Enabled creation of offset work planes from the 3D Model ribbon, with document-unit validation and undo/redo. (#3977)
 
 - Enabled analytic length measurements for named solid edges through the Analysis API. (#3967)

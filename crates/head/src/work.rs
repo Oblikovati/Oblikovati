@@ -478,6 +478,10 @@ pub trait HeadWork: HeadSketchWork {
     fn take_command_notice(&mut self) -> Option<crate::DesktopCommandNotice> {
         None
     }
+    /// Read current reference overlays; example: `work.datum_planes()?` before presentation.
+    fn datum_planes(&mut self) -> Result<crate::HeadDatumPlaneUpdate, String> {
+        Ok(crate::HeadDatumPlaneUpdate::default())
+    }
     /// Consume a complete scene update after all owner services; example: `work.take_scene()?` before presentation.
     fn take_scene(&mut self) -> Result<Option<crate::HeadSceneUpdate>, String> {
         Ok(None)

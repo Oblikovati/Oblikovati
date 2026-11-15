@@ -25,6 +25,12 @@ impl WorkPlaneResolver for WorkGeometryEvaluation {
     }
 }
 impl WorkGeometryEvaluation {
+    /// Iterate successful current planes by identity; example: `evaluation.planes().count()`.
+    pub fn planes(&self) -> impl Iterator<Item = (FeatureId, SketchPlane)> + '_ {
+        self.datums
+            .iter()
+            .filter_map(|(&feature, &datum)| project_plane(datum).map(|plane| (feature, plane)))
+    }
     /// Resolve one current line by stable identity; example: `evaluation.axis(FeatureId(3))?`.
     pub fn axis(&self, feature: FeatureId) -> Result<WorkAxisLine, WorkPlaneError> {
         self.resolve_kind(feature, "axis", project_axis)
@@ -67,5 +73,32 @@ fn project_point(datum: WorkGeometryResult) -> Option<[f64; 3]> {
     match datum {
         WorkGeometryResult::Point(point) => Some(point),
         _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn planes_include_only_evaluated_plane_results_in_identity_order() {
+        let mut result = WorkGeometryEvaluation::default();
+        result
+            .datums
+            .insert(FeatureId(9), WorkGeometryResult::Plane(SketchPlane::xz()));
+        result
+            .datums
+            .insert(FeatureId(3), WorkGeometryResult::Point([0.; 3]));
+        result
+            .datums
+            .insert(FeatureId(2), WorkGeometryResult::Plane(SketchPlane::xy()));
+        let planes: Vec<_> = result.planes().collect();
+        assert_eq!(
+            planes,
+            vec![
+                (FeatureId(2), SketchPlane::xy()),
+                (FeatureId(9), SketchPlane::xz())
+            ]
+        );
     }
 }

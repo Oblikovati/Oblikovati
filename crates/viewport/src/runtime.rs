@@ -457,6 +457,14 @@ mod sketch_preview;
 mod sketch_display;
 
 impl Viewport {
+    /// Replace reference planes without modifying solid geometry; example: `view.set_datum_planes(&planes)?`.
+    pub fn set_datum_planes(
+        &mut self,
+        planes: &[crate::ViewportDatumPlane],
+    ) -> Result<bool, String> {
+        self.update_overlay(|render| render.datum_planes(planes))
+    }
+
     fn update_overlay(
         &mut self,
         replace: impl FnOnce(&mut RenderView) -> Result<bool, String>,

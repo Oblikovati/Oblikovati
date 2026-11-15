@@ -10,6 +10,8 @@ use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::W
 use std::time::Duration;
 #[path = "owner_commands.rs"]
 mod commands;
+#[path = "owner_datum_overlay.rs"]
+mod datum_overlay;
 #[path = "owner_documents.rs"]
 mod documents_gui;
 #[path = "owner_offset_plane.rs"]
@@ -138,6 +140,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
         Option<Box<dyn oblikovati_model::orientation_preferences::OrientationPreferenceAccess>>,
     theme_store: Option<Box<dyn oblikovati_model::theme::ThemeSelectionStore>>,
     themes: Option<oblikovati_model::theme::ThemeLibrary>,
+    datum_fallback_theme: Option<Result<oblikovati_model::theme::ThemeDefinition, String>>,
     window_captures: Option<crate::DesktopWindowCaptures>,
     files: FileWorkspace<O, W, F>,
     guids: G,
@@ -238,6 +241,7 @@ impl<
             orientation_store: None,
             theme_store: None,
             themes: None,
+            datum_fallback_theme: None,
             window_captures: None,
             files,
             guids,
