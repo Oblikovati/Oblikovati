@@ -1949,8 +1949,11 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-850db3b6578b8bc2.json",
+        "sha256": "a74eba670418a275342307c45f4d3e4dbc62005a12ceb08e6fd9f7a34797ccb0"
+      },
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency. Face picking is a dependent behavior where model geometry is selected.",
       "go_reference": "Go aa8297d1b: app/view_test.go and head/ui/viewcube_test.go and viewcube_arrows_test.go; see receipts/2026-11-14-go-orientation-baseline/README.md.",
       "go_test_premise": "Go default Home, face/corner hit testing, snap direction, roll and adjacent-view tests passed. They do not establish the complete native scenarios.",
@@ -1974,8 +1977,11 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-7bef0e59d8d04c35.json",
+        "sha256": "f3a947ef3ded4a108fe3d00756ea4f1f5d7f883a0be5d6b137f255611717c1cb"
+      },
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
       "go_reference": "Go aa8297d1b: app/view_test.go and head/ui/viewcube_test.go and viewcube_arrows_test.go; see receipts/2026-11-14-go-orientation-baseline/README.md.",
       "go_test_premise": "Go default Home, face/corner hit testing, snap direction, roll and adjacent-view tests passed. They do not establish the complete native scenarios.",
@@ -1999,8 +2005,11 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-aa29f8c72c9d56c6.json",
+        "sha256": "968fa609184587ce45363d174ad7b2601aaeb59d1b4ea6ff98bd076113c1f20c"
+      },
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
       "go_reference": "Go aa8297d1b: app/view_test.go and head/ui/viewcube_test.go and viewcube_arrows_test.go; see receipts/2026-11-14-go-orientation-baseline/README.md.",
       "go_test_premise": "Go default Home, face/corner hit testing, snap direction, roll and adjacent-view tests passed. They do not establish the complete native scenarios.",
@@ -2024,8 +2033,11 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-95ba01a785c74c7d.json",
+        "sha256": "b918810a8ea0ce94a9b49498df8af9194a5157a08aa164c7b8a6a880ce4ad2d7"
+      },
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
       "go_reference": "Go aa8297d1b: app/view_test.go and head/ui/viewcube_test.go and viewcube_arrows_test.go; see receipts/2026-11-14-go-orientation-baseline/README.md.",
       "go_test_premise": "Go default Home, face/corner hit testing, snap direction, roll and adjacent-view tests passed. They do not establish the complete native scenarios.",
@@ -2049,9 +2061,14 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-086b5824dec6ba07.json",
+        "sha256": "32896a8b8c194e16178adacc14c3782de063b8338aa293929bc1573a2ba86e19"
+      },
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:f398fd9e4f521e56584341adc094ffde02cb8deb31b95de61bbcdd96e76487fa",
@@ -2064,9 +2081,14 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-f398fd9e4f521e56.json",
+        "sha256": "7aaeb4711e4bbffe0b2ddb63a8f6950820e399c7f95da7a8b58a31638ac4e115"
+      },
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:4be0b6deff3b8c366641922b441d8f3b46f4ecad4a233e4bcf9274082f8d1fd7",
@@ -2079,9 +2101,14 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-4be0b6deff3b8c36.json",
+        "sha256": "b5cbcb8ffad33283087cf1bc271ca04f192046f13ec6a50fb4fb296ca921d777"
+      },
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:23f8ef84b30b00f65873806e853d2db7c9202d73f6a2eff32d9cac641da1597c",
@@ -2094,9 +2121,14 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-23f8ef84b30b00f6.json",
+        "sha256": "2182e393fddd3499815598c07ff10363d9ec8c0f7cac0791f9a743a65d6a91a4"
+      },
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:28010315b21fd5146fa2224e8080256dfe607ca18da797aca130d13550f08fc5",
@@ -2109,9 +2141,14 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-28010315b21fd514.json",
+        "sha256": "b8d32e221ddb8556e204f81427f08eb61b79c9c7222544d405b2e9faeacac5ee"
+      },
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:8bc8ccc922a08e9bc9119656a4291ac8a0b51efe31682ae50860f9d44bef6560",
@@ -2124,9 +2161,14 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-8bc8ccc922a08e9b.json",
+        "sha256": "d9a12b6bfe4f1681923f938a49be3c6350c997505fec67cb3abd626c0a8c8798"
+      },
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:da8c6a9eb2ac44c8a8e216bbd79c83f73a0ce0b1002337446dc822a6211e033a",
@@ -2139,9 +2181,14 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-da8c6a9eb2ac44c8.json",
+        "sha256": "155f78597cbfc34774e027dbd7034551e96e8c886d7ae326e1808da8a3002298"
+      },
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:93f4129513062b45bde2ccfa8d138522f0685ac9a0ae9e0068c64316cc5d824f",
@@ -2154,9 +2201,14 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-93f4129513062b45.json",
+        "sha256": "db0ee6b9875820c9d4871a7f5759f50229a6297082892a20abaf7d1dbff76ee4"
+      },
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:db4e530572d7fcea85192727af29240bd906d7c3335a30b142fac4c1abe8c204",
@@ -2169,9 +2221,14 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-db4e530572d7fcea.json",
+        "sha256": "85e18778b2b0de5fdf24d0984f13d0ff0da753723660e485cf49e7b6a4b8af61"
+      },
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:713a5b9cd069a960b64a9da39f0cc4f0304c4bb7118620001b30cedd70bf0c71",
@@ -2184,9 +2241,14 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-713a5b9cd069a960.json",
+        "sha256": "14e5a063740e354fd1fea2416f5a94af0347376eeac4587f5f9aa46ac3cbd74a"
+      },
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:1fcedf70e80d0e4231731b9a4f03d28547336c4bca8000c56f5a735c9bb75573",
@@ -2199,9 +2261,14 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-1fcedf70e80d0e42.json",
+        "sha256": "4cf4c36a335ab91ce11d2fbdb029b47164351e3c2aa84a68169b73608963e82f"
+      },
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:5dc28fc1fc27c43c7fb3491c7d535c60de2450049fee5bbc273477afe4af921f",
@@ -2214,9 +2281,14 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-5dc28fc1fc27c43c.json",
+        "sha256": "ab8c9737d32daec06133ef8c527479c4aa5277ac3b30b0f8dec759a9be45c2e4"
+      },
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:fabd09ea098f7cd5a899d3de75b5b519126fc60a0e414af5159f100db69a1a66",
@@ -2229,9 +2301,14 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-fabd09ea098f7cd5.json",
+        "sha256": "e0fd037eafa93c18107506bcc53a4a1125effc2dbb61d5cd728fe46f76e4f908"
+      },
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:b85e1d1835926b35730c4ba10e32f74d328ba8b2abef3bda6c902d453fba0d9d",
@@ -2246,8 +2323,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-15-orientation-selection-lock/receipt-b85e1d1835926b35.json",
-        "sha256": "d545dae425738ea44dbd1270603650d7f051886977ca057abbec2dab5fed9773"
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-b85e1d1835926b35.json",
+        "sha256": "74c55290f10639126c8fb4220bc90d292a51401af96568b310dbc74002b0f060"
       },
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency. Face picking is a dependent behavior where model geometry is selected.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
@@ -2258,7 +2335,14 @@
       "kernel_integration": "The selected pivot uses named B-rep bounds; the fit operation uses displayed bounds only for presentation.",
       "rust_tests": "application_scenarios_use_the_native_window: Toggle orientation lock for a selected face",
       "oracle": "Pinned native scenario assertions and reviewed final capture; separate native regression tests cover selection pivot and fit.",
-      "expected_result": "Lock is available for a selected face, toggles its indicator and check mark, and becomes unavailable when selection is cleared."
+      "expected_result": "Lock is available for a selected face, toggles its indicator and check mark, and becomes unavailable when selection is cleared.",
+      "historical_receipts": [
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-orientation-selection-lock/receipt-b85e1d1835926b35.json",
+          "sha256": "d545dae425738ea44dbd1270603650d7f051886977ca057abbec2dab5fed9773"
+        }
+      ]
     },
     {
       "id": "scenario:a4c3b2c129840d0d7e059a72934d14a0f90de9b3b1e8b59c872501f2ba3c7523",
@@ -2271,9 +2355,14 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-a4c3b2c129840d0d.json",
+        "sha256": "cc33a7797cabe559e9b2181fd8d339fb1b7e29766d1d4b23ee9df981d2f56d20"
+      },
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:73b06ab1c6f39f2b85d135952774a17c7772b5ff7102faeb467ffcfb56a9a12a",
@@ -2286,9 +2375,14 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-73b06ab1c6f39f2b.json",
+        "sha256": "142caa2ac3274241297191a3ad15354448cf54e9cae890c1f9bd0c11d05d9278"
+      },
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:f02c3c29dc2a2cf21cf6493e15fa73c1370f5c53eea3da44ee08d525de514047",
