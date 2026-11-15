@@ -112,6 +112,7 @@ fn another_start(world: &mut ApplicationWorld) {
 }
 // arc-three-point-02 and arc-three-point-16
 #[when("I select endpoints and then click their screen row between them")]
+#[when("the user select endpoints and then click their screen row between them")]
 fn collinear_third(world: &mut ApplicationWorld) {
     select_tool(world);
     world.sketch_click(ROW_START);
@@ -122,6 +123,7 @@ fn collinear_third(world: &mut ApplicationWorld) {
 #[then("Select point on arc remains active without an error dialog or new arc")]
 fn on_arc_stays(world: &mut ApplicationWorld) {
     world.expect_status("Select point on arc");
+    world.expect_no_text("Warning");
     assert_eq!(arcs(world), 0, "arcs");
 }
 #[given("I selected the start and end on the same screen row")]
