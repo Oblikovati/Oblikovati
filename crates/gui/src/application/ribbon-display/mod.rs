@@ -84,6 +84,7 @@ pub(crate) enum TemporaryPanel {
 #[derive(Debug)]
 pub(crate) struct RibbonDisplayState {
     pub mode: RibbonDisplay,
+    pub appearance: crate::ribbon_command_layout::RibbonAppearance,
     /// `None` cycles through every mode; a choice alternates between it and the full ribbon.
     minimized: Option<RibbonDisplay>,
     pub temporary: Option<TemporaryPanel>,
@@ -123,6 +124,7 @@ impl Default for RibbonDisplayState {
     fn default() -> Self {
         Self {
             mode: RibbonDisplay::Full,
+            appearance: Default::default(),
             minimized: Some(RibbonDisplay::Tabs),
             temporary: None,
             temporary_focus: false,
@@ -245,6 +247,7 @@ impl RibbonDisplayState {
         tab: RibbonTab,
         panels: &[RibbonPanel],
         customizable: bool,
+        customization: &mut crate::application::ribbon_customization::RibbonCustomization,
     ) {
         if std::mem::take(&mut self.context_requested) {
             ui.open_popup(CONTEXT_MENU);
@@ -261,7 +264,7 @@ impl RibbonDisplayState {
         };
         let submenu_open = self.submenu_bounds.is_some();
         self.capture_context_bounds(ui);
-        self.appearance_menu(ui, submenu_open);
+        self.appearance_menu(ui, submenu_open, customization);
         if self.context_command.is_some() {
             muted_context_item(ui, "Add to Quick Access Toolbar");
             muted_context_item(ui, "Move to Main Panel");

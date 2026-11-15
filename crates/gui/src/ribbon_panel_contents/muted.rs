@@ -60,7 +60,7 @@ fn muted_command_position(
     icons: &crate::icons::GuiRibbonIcons,
     index: usize,
 ) -> [f32; 2] {
-    let (position, size) = crate::ribbon_command_layout::RibbonAppearance::Normal.cell(index);
+    let (position, size) = icons.appearance.cell(index);
     icons.cursor(ui, origin, position);
     size
 }

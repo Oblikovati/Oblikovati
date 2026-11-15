@@ -1,11 +1,17 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Appearance commands are disclosed without suggesting unfinished layouts work.
-use super::{RibbonDisplayState, muted_context_item, submenu_row_pressed};
+use super::{RibbonDisplayState, submenu_row_pressed};
+use crate::ribbon_command_layout::RibbonAppearance;
 use imgui::Ui;
 
 const APPEARANCE_MENU: &str = "##ribbon-appearance";
 impl RibbonDisplayState {
-    pub(super) fn appearance_menu(&mut self, ui: &Ui, submenu_open: bool) {
+    pub(super) fn appearance_menu(
+        &mut self,
+        ui: &Ui,
+        submenu_open: bool,
+        customization: &mut crate::application::ribbon_customization::RibbonCustomization,
+    ) {
         if submenu_row_pressed(ui, "Ribbon Appearance", submenu_open) {
             ui.open_popup(APPEARANCE_MENU);
         }
@@ -15,14 +21,16 @@ impl RibbonDisplayState {
             return;
         };
         self.capture_submenu_bounds(ui);
-        if ui.menu_item_config("Normal").selected(true).build() {
-            self.close_context_menu = true;
-        }
-        for appearance in crate::ribbon_command_layout::RibbonAppearance::ALL
-            .into_iter()
-            .skip(1)
-        {
-            muted_context_item(ui, appearance.label());
+        for appearance in RibbonAppearance::ALL {
+            if ui
+                .menu_item_config(appearance.label())
+                .selected(customization.appearance() == appearance)
+                .enabled(appearance == RibbonAppearance::Normal)
+                .build()
+            {
+                customization.select_appearance(appearance);
+                self.close_context_menu = true;
+            }
         }
         if ui.menu_item("Reset Ribbon") {
             self.reset_requested = true;

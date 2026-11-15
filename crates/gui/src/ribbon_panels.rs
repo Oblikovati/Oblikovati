@@ -18,39 +18,12 @@ pub(crate) use catalog::{RibbonPanel, available_panels, panels_for};
 pub(crate) struct RibbonPanelLayout {
     widths: BTreeMap<(RibbonTab, RibbonPanel), f32>,
     scrollbar_shown: bool,
+    measured_appearance: Option<crate::ribbon_command_layout::RibbonAppearance>,
     pub pending_layout: bool,
     additional: additional::PanelExpansions,
 }
-impl RibbonPanelLayout {
-    pub(crate) fn scrollbar_height(&self, ui: &Ui) -> f32 {
-        if self.scrollbar_shown {
-            ui.clone_style().scrollbar_size
-        } else {
-            0.
-        }
-    }
-    fn record_width(&mut self, tab: RibbonTab, panel: RibbonPanel, width: f32) {
-        let old = self.widths.insert((tab, panel), width);
-        self.pending_layout |= old != Some(width);
-    }
-    fn expanded_count(
-        &self,
-        tab: RibbonTab,
-        panels: &[RibbonPanel],
-        collapsed: f32,
-        available: f32,
-    ) -> usize {
-        let widths: Vec<f32> = panels
-            .iter()
-            .map(|panel| self.widths.get(&(tab, *panel)).copied().unwrap_or(0.))
-            .collect();
-        crate::ribbon_fit::expanded_panel_count(&widths, 8., collapsed, available)
-    }
-    fn observe_scrollbar(&mut self, shown: bool) {
-        self.pending_layout |= self.scrollbar_shown != shown;
-        self.scrollbar_shown = shown;
-    }
-}
+#[path = "ribbon_panel_measurements.rs"]
+mod measurements;
 /// Editors and layout a ribbon panel's controls can change.
 pub(crate) struct RibbonPanelOwners<'a> {
     pub home_active: bool,
@@ -109,6 +82,7 @@ pub(crate) fn draw_panels(
     actions: &mut Vec<GuiShellAction>,
 ) {
     layout.pending_layout = false;
+    layout.use_appearance(display.appearance);
     layout.additional.use_document(state.document);
     layout.additional.use_mode(display.mode);
     layout
@@ -145,7 +119,9 @@ pub(crate) fn draw_panels(
 fn full_row(context: &mut PanelDrawContext<'_>, tab: RibbonTab, layout: &mut RibbonPanelLayout) {
     let ui = context.ui;
     let available = ui.content_region_avail()[0].max(1.);
-    let height = 80. * context.owners.icons.layout_factor() + layout.scrollbar_height(ui);
+    let height = (20. + context.owners.icons.appearance.command_height())
+        * context.owners.icons.layout_factor()
+        + layout.scrollbar_height(ui);
     let region = crate::widget_abi::scroll_region(ui, "##ribbon-panels", [available, height]);
     if region.visible {
         draw_row(context, tab, layout, available);
@@ -167,6 +143,7 @@ pub(crate) fn draw_side_groups(
     actions: &mut Vec<GuiShellAction>,
 ) {
     layout.pending_layout = false;
+    layout.use_appearance(display.appearance);
     layout.additional.use_document(state.document);
     layout.additional.use_mode(display.mode);
     layout
@@ -321,7 +298,7 @@ fn temporary_geometry(
     top: f32,
     factor: f32,
 ) -> ([f32; 2], [f32; 2]) {
-    let panel_height = 104. + 80. * (factor - 1.);
+    let panel_height = 24. + (20. + display.appearance.command_height()) * factor;
     let viewport = ui.io().display_size[0];
     let TemporaryPanel::Group(panel) = shown else {
         return ([8., top], [viewport - 16., panel_height]);
@@ -352,7 +329,8 @@ fn temporary_contents(
         "##temporary-contents",
         [
             available,
-            86. + 80. * (context.owners.icons.layout_factor() - 1.),
+            6. + (20. + context.owners.icons.appearance.command_height())
+                * context.owners.icons.layout_factor(),
         ],
     );
     if !region.visible {
@@ -398,7 +376,10 @@ fn draw_row(
     let mut x = 0.;
     let mut activated = false;
     for (index, panel) in panels.into_iter().enumerate() {
-        let width = if index < expanded {
+        let force_compact = context.owners.icons.appearance
+            == crate::ribbon_command_layout::RibbonAppearance::Compact
+            && panel == RibbonPanel::PartSimplification;
+        let width = if index < expanded && !force_compact {
             let (width, local_action) = draw_expanded(context, tab, panel, [x, 0.], layout);
             activated |= local_action;
             layout.record_width(tab, panel, width);
@@ -424,7 +405,8 @@ fn draw_expanded(
     let mut local_action = false;
     ui.group(|| {
         local_action = context.content(panel, origin);
-        context.owners.icons.cursor(ui, origin, [0., 66.]);
+        let title_y = context.owners.icons.appearance.command_height() + 6.;
+        context.owners.icons.cursor(ui, origin, [0., title_y]);
         let expandable = context.additional_allowed
             && (additional::available(tab, panel)
                 || builtin::is_expanded(panel, context.state, context.owners.customization)
@@ -441,7 +423,10 @@ fn draw_expanded(
             crate::widget_abi::dummy(ui, [0., ui.text_line_height()]);
             additional::trigger(ui, tab, panel, anchor, false, layout);
         }
-        if panel == RibbonPanel::Create {
+        if panel == RibbonPanel::Create
+            && context.owners.icons.appearance
+                == crate::ribbon_command_layout::RibbonAppearance::Normal
+        {
             // Preserve the existing Create grid's trailing space and wide-window command positions.
             crate::widget_abi::cursor_position(ui, origin);
             crate::widget_abi::dummy(ui, context.owners.icons.cell([364., 0.]));
@@ -463,7 +448,11 @@ fn draw_collapsed(
     if crate::widget_abi::button(
         ui,
         &format!("v{identity}"),
-        [width, 58. * context.owners.icons.layout_factor()],
+        [
+            width,
+            (context.owners.icons.appearance.command_height() - 2.).max(18.)
+                * context.owners.icons.layout_factor(),
+        ],
     ) {
         ui.open_popup(&identity);
     }
@@ -471,7 +460,8 @@ fn draw_collapsed(
     if ui.is_item_hovered() {
         ui.tooltip_text(format!("Show {} commands", panel.label()));
     }
-    context.owners.icons.cursor(ui, origin, [0., 66.]);
+    let title_y = context.owners.icons.appearance.command_height() + 6.;
+    context.owners.icons.cursor(ui, origin, [0., title_y]);
     // Collapsed buttons need their label even when expanded panel captions are hidden.
     ui.text(panel.label());
     draw_panel_popup(context, tab, panel, &identity, anchor, layout);
@@ -480,3 +470,7 @@ fn draw_collapsed(
 #[path = "ribbon_panel_flyout.rs"]
 mod flyout;
 use flyout::draw_panel_popup;
+
+#[cfg(test)]
+#[path = "../tests/ribbon/panel_appearance.rs"]
+mod appearance_tests;

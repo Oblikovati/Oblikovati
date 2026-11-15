@@ -80,6 +80,57 @@ fn tools_ribbon_submits_the_go_measure_icon() {
 }
 
 #[test]
+fn ribbon_appearance_controls_actual_work_feature_icon_size() {
+    use crate::ribbon_command_layout::RibbonAppearance;
+    let mut owner = GuiFrameEngine::new().unwrap();
+    let mut request = ribbon_request();
+    request.extent = [2880, 1800];
+    request.commands.document = Some(7);
+    request.commands.document_type = Some(oblikovati_api::types::DOCUMENT_PART);
+    request.commands.authoring = crate::GuiAuthoringContext::Part;
+    for (appearance, size, pixels) in [
+        (RibbonAppearance::Normal, IconSize::Small, 18.),
+        (RibbonAppearance::TextOff, IconSize::Large, 40.),
+        (RibbonAppearance::Small, IconSize::Small, 18.),
+        (RibbonAppearance::Compact, IconSize::Small, 18.),
+        (RibbonAppearance::Large, IconSize::Large, 40.),
+        (RibbonAppearance::Normal, IconSize::Small, 18.),
+    ] {
+        owner.ribbon.customization.select_appearance(appearance);
+        let frame = settled_frame(&mut owner, &request);
+        assert_named_icon(&owner, &frame, IconGlyph::WorkPlane, size, pixels);
+    }
+}
+
+#[test]
+fn sketch_appearance_keeps_create_and_constraint_icons_in_the_frame() {
+    use crate::ribbon_command_layout::RibbonAppearance;
+    let mut owner = GuiFrameEngine::new().unwrap();
+    let mut request = ribbon_request();
+    request.extent = [2880, 1800];
+    request.commands.document = Some(7);
+    request.commands.document_type = Some(oblikovati_api::types::DOCUMENT_PART);
+    request.commands.authoring = crate::GuiAuthoringContext::Sketch;
+    for (appearance, size, pixels) in [
+        (RibbonAppearance::TextOff, IconSize::Large, 40.),
+        (RibbonAppearance::Small, IconSize::Small, 18.),
+        (RibbonAppearance::Compact, IconSize::Small, 18.),
+        (RibbonAppearance::Large, IconSize::Large, 40.),
+    ] {
+        owner.ribbon.customization.select_appearance(appearance);
+        let frame = settled_frame(&mut owner, &request);
+        for glyph in [
+            IconGlyph::Rectangle,
+            IconGlyph::Circle,
+            IconGlyph::Horizontal,
+            IconGlyph::Dimension,
+        ] {
+            assert_named_icon(&owner, &frame, glyph, size, pixels);
+        }
+    }
+}
+
+#[test]
 fn model_ribbon_submits_go_icons_for_work_features_and_patterns() {
     let mut owner = GuiFrameEngine::new().unwrap();
     let mut request = ribbon_request();

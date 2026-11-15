@@ -122,6 +122,8 @@ fn side_groups(
     actions: &mut Vec<GuiShellAction>,
 ) {
     let ribbon = &mut *owners.ribbon;
+    let mut icons = owners.icons.clone();
+    icons.appearance = ribbon.display.appearance;
     ui.child_window("##ribbon-groups")
         .size([0., -32.])
         .build(|| {
@@ -131,7 +133,7 @@ fn side_groups(
                 &request.commands,
                 crate::ribbon_panels::RibbonPanelOwners {
                     home_active: owners.home_active,
-                    icons: owners.icons,
+                    icons: &icons,
                     parameters: owners.parameters,
                     preferences: owners.preferences,
                     editor: owners.theme_editor,

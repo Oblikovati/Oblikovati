@@ -34,6 +34,7 @@ impl IconSize {
 pub(crate) struct GuiRibbonIcons {
     keys: Vec<[GuiTextureKey; 2]>,
     pub logical: [[f32; 2]; 2],
+    pub appearance: crate::ribbon_command_layout::RibbonAppearance,
 }
 impl GuiRibbonIcons {
     pub(crate) fn key(&self, glyph: IconGlyph, size: IconSize) -> GuiTextureKey {
@@ -52,6 +53,7 @@ impl GuiRibbonIcons {
         Ok(Self {
             keys,
             logical: [[18.; 2], [40.; 2]],
+            appearance: Default::default(),
         })
     }
 }

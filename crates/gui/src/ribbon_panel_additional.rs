@@ -155,9 +155,21 @@ fn draw_window(
     let [viewport_width, viewport_height] = ui.io().display_size;
     let left = area.left.clamp(0., (viewport_width - 1.).max(0.));
     let right = area.right.clamp(left + 1., viewport_width.max(left + 1.));
-    let width = (ADDITIONAL_WIDTH * scale).min((right - left - VIEWPORT_MARGIN).max(1.));
+    let appearance = context.owners.icons.appearance;
+    let preferred_width = if appearance == crate::ribbon_command_layout::RibbonAppearance::Normal {
+        ADDITIONAL_WIDTH
+    } else {
+        let (position, size) = appearance.cell(2);
+        (position[0] + size[0] + 28.).max(88.)
+    };
+    let width = (preferred_width * scale).min((right - left - VIEWPORT_MARGIN).max(1.));
     let top = area.top.min((viewport_height - 1.).max(0.));
-    let height = (ADDITIONAL_HEIGHT * scale).min((viewport_height - top).max(1.));
+    let preferred_height = if appearance == crate::ribbon_command_layout::RibbonAppearance::Normal {
+        ADDITIONAL_HEIGHT
+    } else {
+        appearance.command_height() + 50.
+    };
+    let height = (preferred_height * scale).min((viewport_height - top).max(1.));
     let x = expansion.anchor[0].clamp(left, (right - width).max(left));
     expansion.bounds = [[x, top], [x + width, top + height]];
     crate::widget_abi::window_geometry(ui, [x, top], [width, height], imgui::Condition::Always);
@@ -285,6 +297,12 @@ fn commands(
         );
         return;
     }
+    if panel == RibbonPanel::PartModify
+        && context.owners.icons.appearance != crate::ribbon_command_layout::RibbonAppearance::Normal
+    {
+        modify_icons(context, tab, panel, display);
+        return;
+    }
     let disabled = ui.begin_disabled(true);
     let labels = match panel {
         RibbonPanel::PartModify => &["Move Bodies", "Bend Part", "Copy Object"][..],
@@ -311,6 +329,40 @@ fn commands(
         }
     }
     drop(disabled);
+}
+fn modify_icons(
+    context: &mut PanelDrawContext<'_>,
+    tab: RibbonTab,
+    panel: RibbonPanel,
+    display: &mut RibbonDisplayState,
+) {
+    use crate::icons::IconGlyph;
+    let ui = context.ui;
+    let icons = context.owners.icons;
+    let origin = ui.cursor_pos();
+    let disabled = ui.begin_disabled(true);
+    for (index, (label, glyph)) in [
+        ("Move Bodies", IconGlyph::MoveBodies),
+        ("Bend Part", IconGlyph::BendPart),
+        ("Copy Object", IconGlyph::Copy),
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        let (position, size) = icons.appearance.cell(index);
+        icons.cursor(ui, origin, position);
+        icons.button(ui, label, glyph, size);
+        if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
+            if ui.is_mouse_clicked(imgui::MouseButton::Right) {
+                display.request_expansion_command_context(tab, panel, label);
+            }
+            ui.tooltip_text(format!(
+                "{label}\nThis command is not available in this build."
+            ));
+        }
+    }
+    drop(disabled);
+    icons.cursor(ui, origin, [0., icons.appearance.command_height()]);
 }
 fn create_commands(
     ui: &Ui,

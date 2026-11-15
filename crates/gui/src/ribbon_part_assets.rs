@@ -7,6 +7,7 @@ pub(crate) fn draw(
     ui: &Ui,
     origin: [f32; 2],
     state: &GuiCommandState,
+    icons: &crate::icons::GuiRibbonIcons,
     actions: &mut Vec<GuiShellAction>,
 ) {
     let disabled = ui.begin_disabled(
@@ -14,7 +15,12 @@ pub(crate) fn draw(
     );
     if let Some(browser) = &state.browser {
         asset_row(ui, state, browser, GuiPartAssetKind::Material, actions);
-        crate::widget_abi::cursor_position(ui, [origin[0], origin[1] + 30.]);
+        let position = match icons.appearance {
+            crate::ribbon_command_layout::RibbonAppearance::Compact => [200., 0.],
+            crate::ribbon_command_layout::RibbonAppearance::Small => [0., 24.],
+            _ => [0., 30.],
+        };
+        icons.cursor(ui, origin, position);
         asset_row(ui, state, browser, GuiPartAssetKind::Appearance, actions);
     }
     drop(disabled);

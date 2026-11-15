@@ -23,7 +23,13 @@ impl GuiRibbonIcons {
         );
     }
     pub(crate) fn button(&self, ui: &Ui, label: &str, glyph: IconGlyph, size: [f32; 2]) -> bool {
-        crate::widget_abi::icon_button(ui, label, self.presentation(ui, label, glyph, size))
+        let presentation = self.presentation(ui, label, glyph, size);
+        let show_caption = presentation.show_caption;
+        let pressed = crate::widget_abi::icon_button(ui, label, presentation);
+        if !show_caption && ui.is_item_hovered() {
+            ui.tooltip_text(label);
+        }
+        pressed
     }
     fn presentation(
         &self,
@@ -32,18 +38,26 @@ impl GuiRibbonIcons {
         glyph: IconGlyph,
         size: [f32; 2],
     ) -> crate::widget_abi::IconButtonPresentation {
-        let style = IconSize::for_height(size[1]);
+        use crate::ribbon_command_layout::RibbonAppearance;
+        let style = match self.appearance {
+            RibbonAppearance::Normal => IconSize::for_height(size[1]),
+            RibbonAppearance::TextOff | RibbonAppearance::Large => IconSize::Large,
+            _ => IconSize::Small,
+        };
         let large = style == IconSize::Large;
         let icon = self.logical[style.index()];
         let mut cell = self.cell(size);
-        let caption = ui.calc_text_size(label)[0];
-        cell[0] = cell[0].max(caption + if large { 4. } else { icon[0] + 7. });
+        let show_caption = self.appearance == RibbonAppearance::Normal;
+        if show_caption {
+            let caption = ui.calc_text_size(label)[0];
+            cell[0] = cell[0].max(caption + if large { 4. } else { icon[0] + 7. });
+        }
         crate::widget_abi::IconButtonPresentation {
             texture: self.key(glyph, style),
             size: cell,
             icon,
             large,
-            show_caption: true,
+            show_caption,
         }
     }
     pub(crate) fn command_button(

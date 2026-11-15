@@ -61,18 +61,31 @@ pub(crate) fn draw(
     let right = owners
         .customization
         .builtin_draw(ui, &id, expanded, || match command {
-            Builtin::Copy => unavailable_copy(ui),
+            Builtin::Copy => unavailable_copy(ui, icons),
             Builtin::Measure => {
                 let action = GuiShellAction::Inspect(crate::GuiInspectAction::StartMeasure);
-                let size = if expanded { [108., 26.] } else { [108., 58.] };
+                let size = if expanded {
+                    icons.appearance.cell(0).1
+                } else {
+                    icons.appearance.single_cell()
+                };
                 icons.command_button(ui, "Measure", action, state, size, actions);
             }
         });
     owners.quick_access.command_took_right_click |= right;
 }
-fn unavailable_copy(ui: &Ui) {
+fn unavailable_copy(ui: &Ui, icons: &crate::icons::GuiRibbonIcons) {
     let disabled = ui.begin_disabled(true);
-    crate::widget_abi::button(ui, "Copy", [108., 26.]);
+    if icons.appearance == crate::ribbon_command_layout::RibbonAppearance::Normal {
+        crate::widget_abi::button(ui, "Copy", [108., 26.]);
+    } else {
+        icons.button(
+            ui,
+            "Copy",
+            crate::icons::IconGlyph::Copy,
+            icons.appearance.single_cell(),
+        );
+    }
     drop(disabled);
     if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
         ui.tooltip_text("This command is not available in this build.");

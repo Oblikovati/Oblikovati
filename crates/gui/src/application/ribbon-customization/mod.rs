@@ -29,6 +29,8 @@ pub(crate) struct RibbonCustomization {
     open: bool,
     draft: Draft,
     builtins: builtin::BuiltinLayout,
+    appearance: crate::ribbon_command_layout::RibbonAppearance,
+    staged_appearance: crate::ribbon_command_layout::RibbonAppearance,
     escape: crate::application::document_saving::folder_browser::DialogEscape,
     pub(crate) escape_consumed: bool,
     pub(crate) navigation_consumed: bool,
@@ -67,6 +69,7 @@ impl RibbonCustomization {
     pub(crate) fn open(&mut self, tab: RibbonTab) {
         self.draft.open(tab);
         self.builtins.open();
+        self.staged_appearance = self.appearance;
         self.keyboard_draft = None;
         self.keyboard_base = None;
         self.keyboard_selected = None;
@@ -165,6 +168,7 @@ impl RibbonCustomization {
         if let Some(settings) = self.settings.panel(ui, &document) {
             self.draft.import(settings.commands);
             self.builtins.import(settings.expanded_builtins);
+            self.staged_appearance = settings.appearance;
         }
     }
     fn tabs(&mut self, ui: &Ui) {
@@ -381,6 +385,7 @@ impl RibbonCustomization {
         ui.separator();
         let changed = self.draft.changed()
             || self.builtins.changed()
+            || self.staged_appearance != self.appearance
             || self.keyboard_changed()
             || self.marking_changed();
         let conflict = self.keyboard_conflict || self.marking_conflict;
