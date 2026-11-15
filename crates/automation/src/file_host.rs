@@ -16,6 +16,7 @@ mod attachments;
 mod document_update;
 pub use assembly_references::{AssemblyReferenceFailure, AssemblyReferenceReport};
 pub use document_update::DOCUMENT_UPDATE_METHODS;
+mod assembly_snapshots;
 mod close;
 mod derived_links;
 mod drawing_snapshots;

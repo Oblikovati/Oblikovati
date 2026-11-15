@@ -9,6 +9,8 @@ pub(super) struct ApplicationWorld {
     pub frame: diagnostics::RenderedFrame,
     pub previous_document: Option<u64>,
     pub observed_view_camera: Option<oblikovati_viewport::ViewportCamera>,
+    /// The picked face boundary before a Zoom Selected operation.
+    pub observed_zoom_face_edges: Vec<[[f64; 3]; 2]>,
     pub ribbon_height: f32,
     pub panel_selector_focus: Option<u32>,
     pub modify_title_anchor: Option<[f32; 2]>,
@@ -70,6 +72,7 @@ impl ApplicationWorld {
             frame: Default::default(),
             previous_document: None,
             observed_view_camera: None,
+            observed_zoom_face_edges: Vec::new(),
             ribbon_height: 0.,
             panel_selector_focus: None,
             modify_title_anchor: None,

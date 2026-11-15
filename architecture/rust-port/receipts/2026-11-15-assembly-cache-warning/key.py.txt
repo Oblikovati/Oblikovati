@@ -1,0 +1,17 @@
+import ctypes, os, re, subprocess, time
+x11=ctypes.CDLL('libX11.so.6'); xt=ctypes.CDLL('libXtst.so.6')
+x11.XOpenDisplay.argtypes=[ctypes.c_char_p]; x11.XOpenDisplay.restype=ctypes.c_void_p
+x11.XSetInputFocus.argtypes=[ctypes.c_void_p,ctypes.c_ulong,ctypes.c_int,ctypes.c_ulong]
+x11.XKeysymToKeycode.argtypes=[ctypes.c_void_p,ctypes.c_ulong]; x11.XKeysymToKeycode.restype=ctypes.c_ubyte
+x11.XFlush.argtypes=[ctypes.c_void_p]; x11.XCloseDisplay.argtypes=[ctypes.c_void_p]
+xt.XTestFakeKeyEvent.argtypes=[ctypes.c_void_p,ctypes.c_uint,ctypes.c_int,ctypes.c_ulong]
+display=x11.XOpenDisplay(None)
+if not display: raise RuntimeError('X display unavailable')
+result=subprocess.check_output(['xwininfo','-root','-tree'],text=True)
+windows=re.findall(r'^\s*(0x[0-9a-f]+)\s+\"[^\n]*Oblikovati[^\n]*',result,re.MULTILINE)
+if len(windows)!=1: raise RuntimeError(f'expected one Oblikovati window, got {windows!r}')
+window=int(windows[0],16); x11.XSetInputFocus(display,window,1,0)
+control=x11.XKeysymToKeycode(display,0xffe3); key=x11.XKeysymToKeycode(display,ord('s'))
+for code,pressed in [(control,1),(key,1),(key,0),(control,0)]: xt.XTestFakeKeyEvent(display,code,pressed,0)
+x11.XFlush(display); time.sleep(1); x11.XCloseDisplay(display)
+print('sent Ctrl+S to', windows[0])

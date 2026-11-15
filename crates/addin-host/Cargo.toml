@@ -8,7 +8,7 @@ license.workspace = true
 publish.workspace = true
 [dependencies]
 serde_json = "1"
-oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "f0943c724a6e07ec49533769c9e680137bb3d55c", version = "=0.159.0" }
+oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "21b18a952fa7548a31e7eac338f6c78a32e5cfe1", version = "=0.159.0" }
 [target.'cfg(target_os = "linux")'.dependencies]
 oblikovati-automation = { path = "../automation" }
 libc = "=0.2.190"

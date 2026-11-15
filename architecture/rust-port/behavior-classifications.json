@@ -1949,8 +1949,11 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-850db3b6578b8bc2.json",
+        "sha256": "a74eba670418a275342307c45f4d3e4dbc62005a12ceb08e6fd9f7a34797ccb0"
+      },
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency. Face picking is a dependent behavior where model geometry is selected.",
       "go_reference": "Go aa8297d1b: app/view_test.go and head/ui/viewcube_test.go and viewcube_arrows_test.go; see receipts/2026-11-14-go-orientation-baseline/README.md.",
       "go_test_premise": "Go default Home, face/corner hit testing, snap direction, roll and adjacent-view tests passed. They do not establish the complete native scenarios.",
@@ -1974,8 +1977,11 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-7bef0e59d8d04c35.json",
+        "sha256": "f3a947ef3ded4a108fe3d00756ea4f1f5d7f883a0be5d6b137f255611717c1cb"
+      },
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
       "go_reference": "Go aa8297d1b: app/view_test.go and head/ui/viewcube_test.go and viewcube_arrows_test.go; see receipts/2026-11-14-go-orientation-baseline/README.md.",
       "go_test_premise": "Go default Home, face/corner hit testing, snap direction, roll and adjacent-view tests passed. They do not establish the complete native scenarios.",
@@ -1999,8 +2005,11 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-aa29f8c72c9d56c6.json",
+        "sha256": "968fa609184587ce45363d174ad7b2601aaeb59d1b4ea6ff98bd076113c1f20c"
+      },
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
       "go_reference": "Go aa8297d1b: app/view_test.go and head/ui/viewcube_test.go and viewcube_arrows_test.go; see receipts/2026-11-14-go-orientation-baseline/README.md.",
       "go_test_premise": "Go default Home, face/corner hit testing, snap direction, roll and adjacent-view tests passed. They do not establish the complete native scenarios.",
@@ -2024,8 +2033,11 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-95ba01a785c74c7d.json",
+        "sha256": "b918810a8ea0ce94a9b49498df8af9194a5157a08aa164c7b8a6a880ce4ad2d7"
+      },
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
       "go_reference": "Go aa8297d1b: app/view_test.go and head/ui/viewcube_test.go and viewcube_arrows_test.go; see receipts/2026-11-14-go-orientation-baseline/README.md.",
       "go_test_premise": "Go default Home, face/corner hit testing, snap direction, roll and adjacent-view tests passed. They do not establish the complete native scenarios.",
@@ -2049,9 +2061,14 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-086b5824dec6ba07.json",
+        "sha256": "32896a8b8c194e16178adacc14c3782de063b8338aa293929bc1573a2ba86e19"
+      },
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:f398fd9e4f521e56584341adc094ffde02cb8deb31b95de61bbcdd96e76487fa",
@@ -2064,9 +2081,14 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-f398fd9e4f521e56.json",
+        "sha256": "7aaeb4711e4bbffe0b2ddb63a8f6950820e399c7f95da7a8b58a31638ac4e115"
+      },
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:4be0b6deff3b8c366641922b441d8f3b46f4ecad4a233e4bcf9274082f8d1fd7",
@@ -2079,9 +2101,14 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-4be0b6deff3b8c36.json",
+        "sha256": "b5cbcb8ffad33283087cf1bc271ca04f192046f13ec6a50fb4fb296ca921d777"
+      },
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:23f8ef84b30b00f65873806e853d2db7c9202d73f6a2eff32d9cac641da1597c",
@@ -2094,9 +2121,14 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-23f8ef84b30b00f6.json",
+        "sha256": "2182e393fddd3499815598c07ff10363d9ec8c0f7cac0791f9a743a65d6a91a4"
+      },
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:28010315b21fd5146fa2224e8080256dfe607ca18da797aca130d13550f08fc5",
@@ -2109,9 +2141,14 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-28010315b21fd514.json",
+        "sha256": "b8d32e221ddb8556e204f81427f08eb61b79c9c7222544d405b2e9faeacac5ee"
+      },
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:8bc8ccc922a08e9bc9119656a4291ac8a0b51efe31682ae50860f9d44bef6560",
@@ -2124,9 +2161,14 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-8bc8ccc922a08e9b.json",
+        "sha256": "d9a12b6bfe4f1681923f938a49be3c6350c997505fec67cb3abd626c0a8c8798"
+      },
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:da8c6a9eb2ac44c8a8e216bbd79c83f73a0ce0b1002337446dc822a6211e033a",
@@ -2139,9 +2181,14 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-da8c6a9eb2ac44c8.json",
+        "sha256": "155f78597cbfc34774e027dbd7034551e96e8c886d7ae326e1808da8a3002298"
+      },
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:93f4129513062b45bde2ccfa8d138522f0685ac9a0ae9e0068c64316cc5d824f",
@@ -2154,9 +2201,14 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-93f4129513062b45.json",
+        "sha256": "db0ee6b9875820c9d4871a7f5759f50229a6297082892a20abaf7d1dbff76ee4"
+      },
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:db4e530572d7fcea85192727af29240bd906d7c3335a30b142fac4c1abe8c204",
@@ -2169,9 +2221,14 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-db4e530572d7fcea.json",
+        "sha256": "85e18778b2b0de5fdf24d0984f13d0ff0da753723660e485cf49e7b6a4b8af61"
+      },
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:713a5b9cd069a960b64a9da39f0cc4f0304c4bb7118620001b30cedd70bf0c71",
@@ -2184,9 +2241,14 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-713a5b9cd069a960.json",
+        "sha256": "14e5a063740e354fd1fea2416f5a94af0347376eeac4587f5f9aa46ac3cbd74a"
+      },
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:1fcedf70e80d0e4231731b9a4f03d28547336c4bca8000c56f5a735c9bb75573",
@@ -2199,9 +2261,14 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-1fcedf70e80d0e42.json",
+        "sha256": "4cf4c36a335ab91ce11d2fbdb029b47164351e3c2aa84a68169b73608963e82f"
+      },
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:5dc28fc1fc27c43c7fb3491c7d535c60de2450049fee5bbc273477afe4af921f",
@@ -2214,9 +2281,14 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-5dc28fc1fc27c43c.json",
+        "sha256": "ab8c9737d32daec06133ef8c527479c4aa5277ac3b30b0f8dec759a9be45c2e4"
+      },
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:fabd09ea098f7cd5a899d3de75b5b519126fc60a0e414af5159f100db69a1a66",
@@ -2229,9 +2301,14 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-fabd09ea098f7cd5.json",
+        "sha256": "e0fd037eafa93c18107506bcc53a4a1125effc2dbb61d5cd728fe46f76e4f908"
+      },
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:b85e1d1835926b35730c4ba10e32f74d328ba8b2abef3bda6c902d453fba0d9d",
@@ -2246,8 +2323,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-15-orientation-selection-lock/receipt-b85e1d1835926b35.json",
-        "sha256": "d545dae425738ea44dbd1270603650d7f051886977ca057abbec2dab5fed9773"
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-b85e1d1835926b35.json",
+        "sha256": "74c55290f10639126c8fb4220bc90d292a51401af96568b310dbc74002b0f060"
       },
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency. Face picking is a dependent behavior where model geometry is selected.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
@@ -2258,7 +2335,14 @@
       "kernel_integration": "The selected pivot uses named B-rep bounds; the fit operation uses displayed bounds only for presentation.",
       "rust_tests": "application_scenarios_use_the_native_window: Toggle orientation lock for a selected face",
       "oracle": "Pinned native scenario assertions and reviewed final capture; separate native regression tests cover selection pivot and fit.",
-      "expected_result": "Lock is available for a selected face, toggles its indicator and check mark, and becomes unavailable when selection is cleared."
+      "expected_result": "Lock is available for a selected face, toggles its indicator and check mark, and becomes unavailable when selection is cleared.",
+      "historical_receipts": [
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-orientation-selection-lock/receipt-b85e1d1835926b35.json",
+          "sha256": "d545dae425738ea44dbd1270603650d7f051886977ca057abbec2dab5fed9773"
+        }
+      ]
     },
     {
       "id": "scenario:a4c3b2c129840d0d7e059a72934d14a0f90de9b3b1e8b59c872501f2ba3c7523",
@@ -2271,9 +2355,14 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-a4c3b2c129840d0d.json",
+        "sha256": "cc33a7797cabe559e9b2181fd8d339fb1b7e29766d1d4b23ee9df981d2f56d20"
+      },
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:73b06ab1c6f39f2b85d135952774a17c7772b5ff7102faeb467ffcfb56a9a12a",
@@ -2286,9 +2375,14 @@
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3881"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-73b06ab1c6f39f2b.json",
+        "sha256": "142caa2ac3274241297191a3ad15354448cf54e9cae890c1f9bd0c11d05d9278"
+      },
+      "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:f02c3c29dc2a2cf21cf6493e15fa73c1370f5c53eea3da44ee08d525de514047",
@@ -2415,20 +2509,32 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-zoom-1edb7a1739ca5af4-corrected/receipt-1edb7a1739ca5af4.json",
-        "sha256": "713492bd8618d61e7571c43a4c521a21b5550cfa28c85005a1c09a4ad52ec09f"
+        "path": "architecture/rust-port/receipts/2026-11-15-zoom-fixed/receipt-1edb7a1739ca5af4.json",
+        "sha256": "1d89ed8bf867fcddb1eb3cad73faa6fcebf7f40fada7989cf1af51020d4f23fc"
       },
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
       "go_reference": "Go aa8297d1b: head/ui/navigate.go and head/ui/navigate_test.go; see receipts/2026-11-14-go-zoom-baseline/README.md.",
       "go_test_premise": "Go wheel zoom and modal navigation tests pass. They do not cover the Zoom menu, selected-face paths, window selection or cancellation.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "api_revision": "21b18a952fa7548a31e7eac338f6c78a32e5cfe1",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "kernel_capabilities": "A visible solid fixture is required; zoom changes the camera and does not modify the B-rep.",
       "platforms": "Linux Xvfb with Vulkan Lavapipe. Windows and macOS not checked.",
       "kernel_integration": "A host-prepared solid is rendered in the native viewport; view setup uses camera controls and Zoom Selected uses a picked face.",
       "rust_tests": "Native scenario steps in crates/head/tests/application/viewport-zoom/steps.rs; face_selection_regression checks the preselected face fixture.",
       "oracle": "Pinned scenario steps, observed camera and solid extents, selected-face state and reviewed native capture; Go is a partial navigation reference.",
-      "expected_result": "Wheel zoom changes the block size in both directions while the part and orientation remain."
+      "expected_result": "Wheel zoom changes the block size in both directions while the part and orientation remain.",
+      "historical_receipts": [
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-14-zoom-1edb7a1739ca5af4-corrected/receipt-1edb7a1739ca5af4.json",
+          "sha256": "713492bd8618d61e7571c43a4c521a21b5550cfa28c85005a1c09a4ad52ec09f"
+        },
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-zoom-verified/receipt-1edb7a1739ca5af4.json",
+          "sha256": "5f16224f17395516b1d8b0ddc9a0b864abd38c007eeccf271db398a46035cdfd"
+        }
+      ]
     },
     {
       "id": "scenario:7a9612d5b55491de21d09d9b0c90e74706f4dedd0e807ac106feb6a58889ffb5",
@@ -2443,20 +2549,32 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-zoom-7a9612d5b55491de-corrected/receipt-7a9612d5b55491de.json",
-        "sha256": "a4b1ece4bfbad652e38baa6093759a183f015cf98d95d2adf8f6a3073bc72cfb"
+        "path": "architecture/rust-port/receipts/2026-11-15-zoom-fixed/receipt-7a9612d5b55491de.json",
+        "sha256": "5954c7ee76f5d3373f8a0417ee8caf5a72ac773cdbf2dbd062c5d82b7bc049dc"
       },
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
       "go_reference": "Go aa8297d1b: head/ui/navigate.go and head/ui/navigate_test.go; see receipts/2026-11-14-go-zoom-baseline/README.md.",
       "go_test_premise": "Go wheel zoom and modal navigation tests pass. They do not cover the Zoom menu, selected-face paths, window selection or cancellation.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "api_revision": "21b18a952fa7548a31e7eac338f6c78a32e5cfe1",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "kernel_capabilities": "A visible solid fixture is required; zoom changes the camera and does not modify the B-rep.",
       "platforms": "Linux Xvfb with Vulkan Lavapipe. Windows and macOS not checked.",
       "kernel_integration": "A host-prepared solid is rendered in the native viewport; view setup uses camera controls and Zoom Selected uses a picked face.",
       "rust_tests": "Native scenario steps in crates/head/tests/application/viewport-zoom/steps.rs; face_selection_regression checks the preselected face fixture.",
       "oracle": "Pinned scenario steps, observed camera and solid extents, selected-face state and reviewed native capture; Go is a partial navigation reference.",
-      "expected_result": "Zoom shows its active control and status; Escape restores Ready and retains the solid."
+      "expected_result": "Zoom shows its active control and status; Escape restores Ready and retains the solid.",
+      "historical_receipts": [
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-14-zoom-7a9612d5b55491de-corrected/receipt-7a9612d5b55491de.json",
+          "sha256": "a4b1ece4bfbad652e38baa6093759a183f015cf98d95d2adf8f6a3073bc72cfb"
+        },
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-zoom-verified/receipt-7a9612d5b55491de.json",
+          "sha256": "0a7024ff842f27287eedd5856d024eb44977133e4d8fffb861c1f3646561a62c"
+        }
+      ]
     },
     {
       "id": "scenario:cacbef09c9cf0fc9dc825085ff0caf312cba28201b83e1d898fa3adca6a4636e",
@@ -2471,20 +2589,32 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-zoom-cacbef09c9cf0fc9-corrected/receipt-cacbef09c9cf0fc9.json",
-        "sha256": "9dddbe78aa96bc9dc262c564527e4c285d78ed27e6eccf07c73ecbfafa8d16c8"
+        "path": "architecture/rust-port/receipts/2026-11-15-zoom-fixed/receipt-cacbef09c9cf0fc9.json",
+        "sha256": "391b5f55241c5d34facd906db24b16b26a9746ef3e49ab5143ac1d1ca4792591"
       },
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
       "go_reference": "Go aa8297d1b: head/ui/navigate.go and head/ui/navigate_test.go; see receipts/2026-11-14-go-zoom-baseline/README.md.",
       "go_test_premise": "Go wheel zoom and modal navigation tests pass. They do not cover the Zoom menu, selected-face paths, window selection or cancellation.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "api_revision": "21b18a952fa7548a31e7eac338f6c78a32e5cfe1",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "kernel_capabilities": "A visible solid fixture is required; zoom changes the camera and does not modify the B-rep.",
       "platforms": "Linux Xvfb with Vulkan Lavapipe. Windows and macOS not checked.",
       "kernel_integration": "A host-prepared solid is rendered in the native viewport; view setup uses camera controls and Zoom Selected uses a picked face.",
       "rust_tests": "Native scenario steps in crates/head/tests/application/viewport-zoom/steps.rs; face_selection_regression checks the preselected face fixture.",
       "oracle": "Pinned scenario steps, observed camera and solid extents, selected-face state and reviewed native capture; Go is a partial navigation reference.",
-      "expected_result": "Zoom All enlarges the block to fit, preserves orientation, and is marked in the menu."
+      "expected_result": "Zoom All enlarges the block to fit, preserves orientation, and is marked in the menu.",
+      "historical_receipts": [
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-14-zoom-cacbef09c9cf0fc9-corrected/receipt-cacbef09c9cf0fc9.json",
+          "sha256": "9dddbe78aa96bc9dc262c564527e4c285d78ed27e6eccf07c73ecbfafa8d16c8"
+        },
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-zoom-verified/receipt-cacbef09c9cf0fc9.json",
+          "sha256": "c61bd983ac4c2be8e08c30c2a68ee30907daac474266a72ac0072c470809cc50"
+        }
+      ]
     },
     {
       "id": "scenario:1aa20f23aa027d8ff52869e9b06987570819301f025a9b744199a86fed12c7a7",
@@ -2499,20 +2629,32 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-zoom-1aa20f23aa027d8f-corrected/receipt-1aa20f23aa027d8f.json",
-        "sha256": "d7b3091fe398e6b39df7c60b1c853f18f6ed92a36eb626a04b95c2713c5c3a28"
+        "path": "architecture/rust-port/receipts/2026-11-15-zoom-fixed/receipt-1aa20f23aa027d8f.json",
+        "sha256": "719ac672b61443a0b2209b6fe3fa54062745dfff12180f6303d9b5d3866b3ac4"
       },
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
       "go_reference": "Go aa8297d1b: head/ui/navigate.go and head/ui/navigate_test.go; see receipts/2026-11-14-go-zoom-baseline/README.md.",
       "go_test_premise": "Go wheel zoom and modal navigation tests pass. They do not cover the Zoom menu, selected-face paths, window selection or cancellation.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "api_revision": "21b18a952fa7548a31e7eac338f6c78a32e5cfe1",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "kernel_capabilities": "A visible solid fixture is required; zoom changes the camera and does not modify the B-rep.",
       "platforms": "Linux Xvfb with Vulkan Lavapipe. Windows and macOS not checked.",
       "kernel_integration": "A host-prepared solid is rendered in the native viewport; view setup uses camera controls and Zoom Selected uses a picked face.",
       "rust_tests": "Native scenario steps in crates/head/tests/application/viewport-zoom/steps.rs; face_selection_regression checks the preselected face fixture.",
       "oracle": "Pinned scenario steps, observed camera and solid extents, selected-face state and reviewed native capture; Go is a partial navigation reference.",
-      "expected_result": "Zoom Window enlarges the selected area, preserves orientation, and is marked in the menu."
+      "expected_result": "Zoom Window enlarges the selected area, preserves orientation, and is marked in the menu.",
+      "historical_receipts": [
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-14-zoom-1aa20f23aa027d8f-corrected/receipt-1aa20f23aa027d8f.json",
+          "sha256": "d7b3091fe398e6b39df7c60b1c853f18f6ed92a36eb626a04b95c2713c5c3a28"
+        },
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-zoom-verified/receipt-1aa20f23aa027d8f.json",
+          "sha256": "d51446108b099c98447b089194465f68e3237e90ed9bc02391419ee1eab5a4f3"
+        }
+      ]
     },
     {
       "id": "scenario:98a72eea29aa3836c6b46566331b7778eb238a64ceb9bc7a838cc7f0049254f0",
@@ -2527,20 +2669,27 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-zoom-98a72eea29aa3836-corrected/receipt-98a72eea29aa3836.json",
-        "sha256": "ea12b7a5a2d839cc4bced64cd4674d82d5d6d92c10f4974d13f4ab2be841493d"
+        "path": "architecture/rust-port/receipts/2026-11-15-zoom-fixed/receipt-98a72eea29aa3836.json",
+        "sha256": "d6011faead99867037ca02ed0596a11c35f927f83bb66fc639ed68cf3e12dcec"
       },
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency. Face picking is a dependent behavior where model geometry is selected.",
       "go_reference": "Go aa8297d1b: head/ui/navigate.go and head/ui/navigate_test.go; see receipts/2026-11-14-go-zoom-baseline/README.md.",
       "go_test_premise": "Go wheel zoom and modal navigation tests pass. They do not cover the Zoom menu, selected-face paths, window selection or cancellation.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "api_revision": "21b18a952fa7548a31e7eac338f6c78a32e5cfe1",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "kernel_capabilities": "A visible solid fixture is required; zoom changes the camera and does not modify the B-rep.",
       "platforms": "Linux Xvfb with Vulkan Lavapipe. Windows and macOS not checked.",
       "kernel_integration": "A host-prepared solid is rendered in the native viewport; view setup uses camera controls and Zoom Selected uses a picked face.",
       "rust_tests": "Native scenario steps in crates/head/tests/application/viewport-zoom/steps.rs; face_selection_regression checks the preselected face fixture.",
       "oracle": "Pinned scenario steps, observed camera and solid extents, selected-face state and reviewed native capture; Go is a partial navigation reference.",
-      "expected_result": "A preselected face fills the viewport after Zoom Selected, stays selected, and preserves orientation."
+      "expected_result": "A preselected face fills the viewport after Zoom Selected, stays selected, and preserves orientation.",
+      "historical_receipts": [
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-14-zoom-98a72eea29aa3836-corrected/receipt-98a72eea29aa3836.json",
+          "sha256": "ea12b7a5a2d839cc4bced64cd4674d82d5d6d92c10f4974d13f4ab2be841493d"
+        }
+      ]
     },
     {
       "id": "scenario:39b23c08b37cbdb0c150d74444384f1f534410f508a4959bf5c12cd801b96870",
@@ -2555,20 +2704,27 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-zoom-39b23c08b37cbdb0-corrected/receipt-39b23c08b37cbdb0.json",
-        "sha256": "e35d99d545458a55380a5a3b456f23f6cf67ebca71b6c7ef83a02eb6628c8df9"
+        "path": "architecture/rust-port/receipts/2026-11-15-zoom-fixed/receipt-39b23c08b37cbdb0.json",
+        "sha256": "9144fdb40a4912718c9d2c6f4376fe077b7289a70dab0037d39fa41911094cd3"
       },
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency. Face picking is a dependent behavior where model geometry is selected.",
       "go_reference": "Go aa8297d1b: head/ui/navigate.go and head/ui/navigate_test.go; see receipts/2026-11-14-go-zoom-baseline/README.md.",
       "go_test_premise": "Go wheel zoom and modal navigation tests pass. They do not cover the Zoom menu, selected-face paths, window selection or cancellation.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "api_revision": "21b18a952fa7548a31e7eac338f6c78a32e5cfe1",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "kernel_capabilities": "A visible solid fixture is required; zoom changes the camera and does not modify the B-rep.",
       "platforms": "Linux Xvfb with Vulkan Lavapipe. Windows and macOS not checked.",
       "kernel_integration": "A host-prepared solid is rendered in the native viewport; view setup uses camera controls and Zoom Selected uses a picked face.",
       "rust_tests": "Native scenario steps in crates/head/tests/application/viewport-zoom/steps.rs; face_selection_regression checks the preselected face fixture.",
       "oracle": "Pinned scenario steps, observed camera and solid extents, selected-face state and reviewed native capture; Go is a partial navigation reference.",
-      "expected_result": "Selecting a face after starting Zoom Selected fits it, clears its highlight, and restores Ready."
+      "expected_result": "Selecting a face after starting Zoom Selected fits it, clears its highlight, and restores Ready.",
+      "historical_receipts": [
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-14-zoom-39b23c08b37cbdb0-corrected/receipt-39b23c08b37cbdb0.json",
+          "sha256": "e35d99d545458a55380a5a3b456f23f6cf67ebca71b6c7ef83a02eb6628c8df9"
+        }
+      ]
     },
     {
       "id": "scenario:5a234ab74178128a9dd8e1e2f06b3811912bfc421c56013fe9a71ca2849999ee",
@@ -2583,20 +2739,32 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-zoom-5a234ab74178128a-corrected/receipt-5a234ab74178128a.json",
-        "sha256": "d7092d74c652a5f4a2640507accabd8ed0e3739eeff8b4fca2cd2260c49f9847"
+        "path": "architecture/rust-port/receipts/2026-11-15-zoom-fixed/receipt-5a234ab74178128a.json",
+        "sha256": "ce3dae348f819569d8fd1d1207cbdf2c02e9471688c14d81cb48f6b9e34f33a4"
       },
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
       "go_reference": "Go aa8297d1b: head/ui/navigate.go and head/ui/navigate_test.go; see receipts/2026-11-14-go-zoom-baseline/README.md.",
       "go_test_premise": "Go wheel zoom and modal navigation tests pass. They do not cover the Zoom menu, selected-face paths, window selection or cancellation.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "api_revision": "21b18a952fa7548a31e7eac338f6c78a32e5cfe1",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "kernel_capabilities": "A visible solid fixture is required; zoom changes the camera and does not modify the B-rep.",
       "platforms": "Linux Xvfb with Vulkan Lavapipe. Windows and macOS not checked.",
       "kernel_integration": "A host-prepared solid is rendered in the native viewport; view setup uses camera controls and Zoom Selected uses a picked face.",
       "rust_tests": "Native scenario steps in crates/head/tests/application/viewport-zoom/steps.rs; face_selection_regression checks the preselected face fixture.",
       "oracle": "Pinned scenario steps, observed camera and solid extents, selected-face state and reviewed native capture; Go is a partial navigation reference.",
-      "expected_result": "Cancelling after the first window corner preserves the prior face size, position and orientation."
+      "expected_result": "Cancelling after the first window corner preserves the prior face size, position and orientation.",
+      "historical_receipts": [
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-14-zoom-5a234ab74178128a-corrected/receipt-5a234ab74178128a.json",
+          "sha256": "d7092d74c652a5f4a2640507accabd8ed0e3739eeff8b4fca2cd2260c49f9847"
+        },
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-zoom-verified/receipt-5a234ab74178128a.json",
+          "sha256": "6a18f75f5780f7fc52276e1901f200f0f8d58c7a8e0bc40e60028ea62d509740"
+        }
+      ]
     },
     {
       "id": "scenario:0db0d6b60a17036c6ec52d0756fe476071bb6d443fe662428dda048a95b5ae57",

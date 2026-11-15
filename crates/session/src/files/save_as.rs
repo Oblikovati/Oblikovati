@@ -32,7 +32,10 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
             .ok_or_else(|| FileWorkspaceError::NonUtf8ResponsePath(destination.clone()))?
             .into();
         self.save_as_to(request.document, destination, version, source)?;
-        Ok(SaveDocumentResult { full_document_name })
+        Ok(SaveDocumentResult {
+            full_document_name,
+            warnings: None,
+        })
     }
 
     fn prepare_save_as(
@@ -57,11 +60,13 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         let file = self.retained.get_mut(&id).expect("validated binding");
         file.apply_picture();
         let name = name::saved_name(file, &destination);
+        let staged = take_assembly_view(file, &destination)?;
         let mut target =
             ParameterPackageTarget::new(&mut file.package, &destination, &mut self.files)
                 .with_display_name(name)
                 .with_assembly_references(references)
-                .with_drawing_views(file.drawing_views.clone());
+                .with_drawing_views(file.drawing_views.clone())
+                .with_assembly_view(staged);
         self.workspace
             .save(id, version, source, &mut target)
             .map_err(FileWorkspaceError::Save)?;

@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 use super::{
-    DocumentPackage, PackageCodecError, PackageSaveError, PackageSaveTarget, SavedDrawingViews,
+    DocumentPackage, PackageCodecError, PackageSaveError, PackageSaveTarget, SavedAssemblyView,
+    SavedDrawingViews,
 };
 use crate::atomic::AtomicFiles;
 use oblikovati_model::{
@@ -19,6 +20,7 @@ pub struct ParameterPackageTarget<'a, Files> {
     prepared: Option<DocumentPackage>,
     display_name: Option<String>,
     drawing_views: Option<SavedDrawingViews>,
+    assembly_view: Option<SavedAssemblyView>,
     assembly_references: Option<BTreeSet<String>>,
 }
 
@@ -45,6 +47,7 @@ impl<'a, Files: AtomicFiles> ParameterPackageTarget<'a, Files> {
             prepared: None,
             display_name: None,
             drawing_views: None,
+            assembly_view: None,
             assembly_references: None,
         }
     }
@@ -57,6 +60,13 @@ impl<'a, Files: AtomicFiles> ParameterPackageTarget<'a, Files> {
     /// Add saved drawing presentation to the same atomic candidate; example: `target.with_drawing_views(views)`.
     pub fn with_drawing_views(mut self, views: Option<SavedDrawingViews>) -> Self {
         self.drawing_views = views;
+        self.prepared = None;
+        self
+    }
+    /// Add a validated assembly presentation to the same atomic save candidate.
+    /// Example: `target.with_assembly_view(Some(view))`.
+    pub fn with_assembly_view(mut self, view: Option<SavedAssemblyView>) -> Self {
+        self.assembly_view = view;
         self.prepared = None;
         self
     }
@@ -99,6 +109,17 @@ impl<Files: AtomicFiles> DocumentSnapshotTarget for ParameterPackageTarget<'_, F
                 .with_saved_drawing_views(views)
                 .map_err(SnapshotPackageError::Codec)?,
             None => candidate,
+        };
+        let candidate = if snapshot.assembly.is_some() {
+            let clean = candidate.without_saved_assembly_view();
+            match &self.assembly_view {
+                Some(view) => clean
+                    .with_saved_assembly_view(view)
+                    .map_err(SnapshotPackageError::Codec)?,
+                None => clean,
+            }
+        } else {
+            candidate
         };
         require_current_properties(&candidate, snapshot)?;
         let digest = candidate
