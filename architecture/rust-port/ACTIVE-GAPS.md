@@ -71,6 +71,8 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
 - Document saving: seven basic save, reopen, cancel, and overwrite scenarios
   passed on the current source pin (#3888); their receipts are now stale. See
   `receipts/2026-11-15-save-r4-current-1/` through `-7/`. Input is frame-loop scripted.
+  A later full pinned diagnostic passed all 23 scenarios; see
+  `receipts/2026-11-15-document-saving-current/`. It is not verified acceptance.
 - Document opening: Express open and Load Full are in `rust-work` (#3949).
   The pinned journey passes 13 of 14 steps; Finish and Simplify still need
   implementation (#3963). The scenario owner clarified that
