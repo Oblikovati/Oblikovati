@@ -6,6 +6,7 @@ import subprocess
 from pathlib import Path
 from typing import Mapping
 
+from git_environment import git_environment
 from runtime_snapshot import snapshot_runtime
 
 VERSION = 1
@@ -17,7 +18,8 @@ def git_tree(root: Path, commit: str) -> dict[str, str]:
     if not re.fullmatch(r"[0-9a-f]{40}", commit):
         raise ValueError(f"commit {commit!r}: expected a full Git SHA-1")
     output = subprocess.check_output(
-        ["git", "-C", str(root), "ls-tree", "-rz", "--full-tree", commit]
+        ["git", "-C", str(root), "ls-tree", "-rz", "--full-tree", commit],
+        env=git_environment(),
     )
     return dict(parse_tree_entry(row) for row in output.split(b"\0") if row)
 
@@ -85,9 +87,23 @@ def scenario_records(inventory: Mapping[str, object]) -> dict[str, dict[str, obj
 def worktree_clean(root: Path) -> bool:
     """Detect tracked and untracked changes; example: worktree_clean(repo)."""
     output = subprocess.check_output(
-        ["git", "-C", str(root), "status", "--porcelain", "-z", "--untracked-files=all"]
+        [
+            "git",
+            "-C",
+            str(root),
+            "status",
+            "--porcelain",
+            "-z",
+            "--untracked-files=all",
+        ],
+        env=git_environment(),
     )
-    return not bool(output)
+    if output:
+        return False
+    flags = subprocess.check_output(
+        ["git", "-C", str(root), "ls-files", "-v", "-z"], env=git_environment()
+    )
+    return all(entry.startswith(b"H ") for entry in flags.split(b"\0") if entry)
 
 
 def build_map(
@@ -183,6 +199,7 @@ def require_ancestor(root: Path, tested: str, current: str) -> None:
     result = subprocess.run(
         ["git", "-C", str(root), "merge-base", "--is-ancestor", tested, current],
         capture_output=True,
+        env=git_environment(),
     )
     if result.returncode:
         raise ValueError(

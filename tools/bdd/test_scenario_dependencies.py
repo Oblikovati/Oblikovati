@@ -7,6 +7,7 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from dependency_cli import runtime_changes_for
 from scenario_dependencies import (
@@ -257,6 +258,40 @@ class ScenarioDependencyTests(unittest.TestCase):
             changed_dependencies(
                 self.fixture.root, mapping, self.inventory, "one", self.fixture.baseline
             )
+
+    def test_index_flags_cannot_hide_changed_tracked_inputs(self) -> None:
+        mapping = self.manifest()
+        path = "crates/head/src/lib.rs"
+        for flag in ("--assume-unchanged", "--skip-worktree"):
+            with self.subTest(flag=flag):
+                self.fixture.git("update-index", flag, path)
+                self.fixture.write(path, "hidden change")
+                with self.assertRaisesRegex(ValueError, "clean"):
+                    changed_dependencies(
+                        self.fixture.root,
+                        mapping,
+                        self.inventory,
+                        "one",
+                        self.fixture.baseline,
+                    )
+                self.fixture.git("update-index", "--no-assume-unchanged", path)
+                self.fixture.git("update-index", "--no-skip-worktree", path)
+                self.fixture.git("checkout", "--", path)
+
+    def test_git_environment_cannot_redirect_or_replace_history(self) -> None:
+        mapping = self.manifest()
+        self.fixture.write("crates/head/src/lib.rs", "changed")
+        current = self.fixture.commit("changed")
+        self.fixture.git("replace", current, self.fixture.baseline)
+        with tempfile.TemporaryDirectory() as other:
+            GitDependencyFixture(Path(other))
+            with patch.dict(
+                os.environ, {"GIT_DIR": str(Path(other) / ".git")}, clear=False
+            ):
+                changes = changed_dependencies(
+                    self.fixture.root, mapping, self.inventory, "one", current
+                )
+        self.assertEqual(changes, ["crates/head/src/lib.rs"])
 
     def test_divergent_history_is_not_accepted(self) -> None:
         mapping = self.manifest()
