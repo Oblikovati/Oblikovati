@@ -888,8 +888,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-15-rectangle-zero-current/receipt-4598b4de9868b116.json",
-        "sha256": "85ba83d437a2c55db61a9d74a0edd313933c3987af08f8fad47a11e636f7c065"
+        "path": "architecture/rust-port/receipts/2026-11-15-rectangle-status-current/receipt-4598b4de9868b116.json",
+        "sha256": "63705def468d05895268c6661f4518587733c43b4b325d21b9738b5166d144a7"
       },
       "go_reference": "../Oblikovati/model/sketch/recipe_rectangle.go; ../Oblikovati/app/sketch_tools.go",
       "mapping_reason": "The first size field and command state are part of the initial desktop sketch workflow.",
