@@ -106,9 +106,16 @@ python3 -B tools/bdd/sandbox_build_probe.py SOURCE VENDOR TOOLCHAIN CONFIG \
   EMPTY_TARGET EMPTY_LOGS BWRAP > /absolute/path/to/build-observation.json
 ```
 
-The tool does not prove that the supplied source matches a Git commit or that
-the vendor directory matches trusted registry content. The tool uses the host
-`/usr`, GCC, kernel, devices and clock. The read-only
+To compare the source snapshot with a Git commit before starting Cargo, add
+`--repository /absolute/path/to/repository --revision FULL_COMMIT_SHA` to that
+command. Both options are required together. The check creates a separate
+verified export, then compares the mounted source's complete file and directory
+set, file contents, file permissions and link counts. It reports the selected commit only
+when the comparison succeeds. Without those options, it does not perform this
+comparison.
+
+The tool does not prove that the vendor directory matches trusted registry
+content. It uses the host `/usr`, GCC, kernel, devices and clock. The read-only
 mounts do not stop host-side writes during the build, and comparing snapshots
 before and after cannot detect every transient change. The input inventory
 hashes identify observations, not independently checked build provenance.
