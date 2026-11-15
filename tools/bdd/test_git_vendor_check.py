@@ -86,11 +86,37 @@ class GitVendorCheckTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "expected archive content"):
             self.fixture.verify()
 
-    def test_generated_manifest_is_explicitly_not_verified(self) -> None:
+    def test_forged_generated_build_script_is_refused(self) -> None:
         with (self.fixture.package / "Cargo.toml").open("a") as manifest:
             manifest.write('build="untrusted.rs"\n')
         self.fixture.write_checksum()
-        self.assertFalse(self.fixture.verify()["complete"])
+        with self.assertRaisesRegex(ValueError, "expected no build script"):
+            self.fixture.verify()
+
+    def test_unchecked_manifest_metadata_remains_unverified(self) -> None:
+        with (self.fixture.package / "Cargo.toml").open("a") as manifest:
+            manifest.write('description="not independently checked"\n')
+        self.fixture.write_checksum()
+        result = self.fixture.verify()
+        self.assertEqual(result["git_manifest_declarations_checked"], 1)
+        self.assertFalse(result["complete"])
+        self.assertFalse(result["reusable"])
+
+    def test_forged_dependency_feature_and_target_are_refused(self) -> None:
+        for section in (
+            '[dependencies]\nforged="1"\n',
+            '[features]\nforged=[]\n',
+            '[target.\'cfg(unix)\'.dependencies]\nforged="1"\n',
+        ):
+            with self.subTest(section=section):
+                path = self.fixture.package / "Cargo.toml"
+                original = path.read_text()
+                path.write_text(original + section)
+                self.fixture.write_checksum()
+                with self.assertRaisesRegex(ValueError, "expected locked source declaration"):
+                    self.fixture.verify()
+                path.write_text(original)
+                self.fixture.write_checksum()
 
     def test_missing_extra_or_executable_files_are_rejected(self) -> None:
         source = self.fixture.package / "src/lib.rs"
