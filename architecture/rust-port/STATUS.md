@@ -52,8 +52,9 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   keyboard scenarios were bound and passed before later source changes (#3950).
 - Quick access: the diagnostic passed 11 of 12 scenarios. Measure is available;
   other expected commands and the recorded profile remain incomplete (#3955).
-- Body properties: unavailable-state and list-scroll checks are in place;
-  exact physical-value assertions are under review (#3954).
+- Body properties: all six pinned scenarios passed with checked setup, list
+  scrolling and exact physical-value rows (#3954). Receipts become stale after
+  relevant source changes; see `receipts/2026-11-15-body-properties-verified/`.
 - Sketch ribbon: inactive-sketch setup was unbound (#3956). The source's
   outside-edit Create availability conflicts with the Go gate; the scenario
   owner has an actionable blocker.
