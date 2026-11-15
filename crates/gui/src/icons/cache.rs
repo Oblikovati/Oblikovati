@@ -32,8 +32,9 @@ impl IconSize {
 }
 #[derive(Clone)]
 pub(crate) struct GuiRibbonIcons {
-    keys: Vec<[GuiTextureKey; 2]>,
+    keys: Arc<[[GuiTextureKey; 2]]>,
     pub logical: [[f32; 2]; 2],
+    pub appearance: crate::ribbon_command_layout::RibbonAppearance,
 }
 impl GuiRibbonIcons {
     pub(crate) fn key(&self, glyph: IconGlyph, size: IconSize) -> GuiTextureKey {
@@ -50,8 +51,9 @@ impl GuiRibbonIcons {
             })
             .collect::<Result<Vec<_>, String>>()?;
         Ok(Self {
-            keys,
+            keys: keys.into(),
             logical: [[18.; 2], [40.; 2]],
+            appearance: Default::default(),
         })
     }
 }

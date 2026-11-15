@@ -35,12 +35,14 @@ impl RibbonCustomization {
         SettingsDocument {
             commands: self.draft.snapshot().clone(),
             expanded_builtins: self.builtins.staged.clone(),
+            appearance: self.staged_appearance,
         }
     }
     pub(super) fn applied_document(&self) -> SettingsDocument {
         SettingsDocument {
             commands: self.draft.applied_snapshot().clone(),
             expanded_builtins: self.builtins.applied.clone(),
+            appearance: self.appearance,
         }
     }
 }
@@ -60,9 +62,36 @@ impl RibbonCustomization {
             }
             let document = settings_xml::decode(&bytes)?;
             self.builtins.load(document.expanded_builtins);
+            self.appearance = document.appearance;
+            self.staged_appearance = document.appearance;
             self.draft.load_applied(document.commands);
         }
         self.store = Some(store);
+        Ok(())
+    }
+    pub(crate) fn appearance(&self) -> crate::ribbon_command_layout::RibbonAppearance {
+        self.appearance
+    }
+    pub(crate) fn select_appearance(
+        &mut self,
+        appearance: crate::ribbon_command_layout::RibbonAppearance,
+    ) {
+        if let Err(error) = self.save_appearance(appearance) {
+            self.command_error = Some(error);
+            self.command_error_opening = true;
+        }
+    }
+    fn save_appearance(
+        &mut self,
+        appearance: crate::ribbon_command_layout::RibbonAppearance,
+    ) -> Result<(), String> {
+        let mut document = self.applied_document();
+        document.appearance = appearance;
+        Self::save_settings(&mut self.store, &document)?;
+        if self.staged_appearance == self.appearance {
+            self.staged_appearance = appearance;
+        }
+        self.appearance = appearance;
         Ok(())
     }
     pub(super) fn apply(&mut self) -> Result<(), String> {
@@ -70,6 +99,7 @@ impl RibbonCustomization {
         Self::save_settings(&mut self.store, &document)?;
         self.draft.apply();
         self.builtins.apply();
+        self.appearance = self.staged_appearance;
         Ok(())
     }
     /// Persist the default ribbon before replacing its applied settings.
@@ -79,6 +109,8 @@ impl RibbonCustomization {
         Self::save_settings(&mut self.store, &defaults)?;
         self.draft.load_applied(defaults.commands);
         self.builtins.load(defaults.expanded_builtins);
+        self.appearance = defaults.appearance;
+        self.staged_appearance = defaults.appearance;
         Ok(())
     }
     pub(super) fn save_settings(

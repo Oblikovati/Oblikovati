@@ -3,6 +3,14 @@
 use super::{ApplicationWorld, diagnostics};
 use crate::work::HeadWork;
 use cucumber::{given, then, when};
+#[path = "context_steps.rs"]
+mod context_steps;
+#[path = "icon_quads.rs"]
+mod icon_quads;
+#[path = "mode_steps.rs"]
+mod mode_steps;
+#[path = "modes_native.rs"]
+mod modes_native;
 #[path = "reset.rs"]
 mod reset;
 #[path = "submenu.rs"]

@@ -15,10 +15,10 @@ pub(crate) fn circular_tool_button(
         GuiSketchTool::ThreePointRectangle => Some(GuiSketchTool::ThreePointCenterRectangle),
         _ => None,
     };
-    let size = if alternate.is_some() {
-        [90., 18.]
-    } else {
-        [108., 18.]
+    let size = match icons.appearance {
+        crate::ribbon_command_layout::RibbonAppearance::Normal if alternate.is_some() => [90., 18.],
+        crate::ribbon_command_layout::RibbonAppearance::Normal => [108., 18.],
+        _ => icons.appearance.cell(0).1,
     };
     icons.command_button(
         ui,

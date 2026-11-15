@@ -342,9 +342,25 @@ impl WorkspaceLayout {
             bottom: display[1] - status_bar::STATUS_BAR_HEIGHT - EDGE_MARGIN,
         }
     }
-    /// Draw the View tab's panel checklist; example: `layout.user_interface_menu(ui, [108., 18.])`.
-    pub(crate) fn user_interface_menu(&mut self, ui: &Ui, size: [f32; 2]) {
-        if crate::widget_abi::button(ui, "User Interface", size) {
+    /// Draw the View tab's panel checklist; example: `layout.user_interface_menu(ui, [108., 18.], None)`.
+    pub(crate) fn user_interface_menu(
+        &mut self,
+        ui: &Ui,
+        size: [f32; 2],
+        icons: Option<&crate::icons::GuiRibbonIcons>,
+    ) {
+        let clicked = icons.map_or_else(
+            || crate::widget_abi::button(ui, "User Interface", size),
+            |icons| {
+                icons.button(
+                    ui,
+                    "User Interface",
+                    crate::icons::IconGlyph::UserInterface,
+                    size,
+                )
+            },
+        );
+        if clicked {
             ui.open_popup("##user-interface");
         }
         if let Some(_menu) = ui.begin_popup("##user-interface") {

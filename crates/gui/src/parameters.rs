@@ -28,7 +28,7 @@ impl GuiParameterEditor {
             ui,
             "Parameters",
             crate::icons::IconGlyph::Parameters,
-            [108., 58.],
+            icons.appearance.single_cell(),
         );
         if clicked {
             self.panel.set_open(!self.panel.is_open());

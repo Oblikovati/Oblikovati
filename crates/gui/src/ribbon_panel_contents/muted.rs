@@ -11,8 +11,8 @@ pub(super) fn muted_commands(
     reason: &str,
 ) {
     for (index, label) in labels.iter().enumerate() {
-        muted_command_position(ui, origin, icons, index);
-        muted_command(ui, label, reason, icons, None, false);
+        let size = muted_command_position(ui, origin, icons, index);
+        muted_command(ui, label, reason, icons, None, false, size);
     }
 }
 pub(super) fn part_modify_controls(
@@ -42,7 +42,7 @@ pub(super) fn muted_icon_commands(
     hole_tip: bool,
 ) {
     for (index, (label, glyph)) in commands.iter().enumerate() {
-        muted_command_position(ui, origin, icons, index);
+        let size = muted_command_position(ui, origin, icons, index);
         muted_command(
             ui,
             label,
@@ -50,6 +50,7 @@ pub(super) fn muted_icon_commands(
             icons,
             *glyph,
             hole_tip && *label == "Hole",
+            size,
         );
     }
 }
@@ -58,10 +59,10 @@ fn muted_command_position(
     origin: [f32; 2],
     icons: &crate::icons::GuiRibbonIcons,
     index: usize,
-) {
-    let column = (index / 2) as f32 * 116.;
-    let row = (index % 2) as f32 * 30.;
-    icons.cursor(ui, origin, [column, row]);
+) -> [f32; 2] {
+    let (position, size) = icons.appearance.cell(index);
+    icons.cursor(ui, origin, position);
+    size
 }
 fn muted_command(
     ui: &Ui,
@@ -70,11 +71,12 @@ fn muted_command(
     icons: &crate::icons::GuiRibbonIcons,
     icon: Option<crate::icons::IconGlyph>,
     hole_tip: bool,
+    size: [f32; 2],
 ) {
     let disabled = ui.begin_disabled(true);
     match icon {
-        Some(glyph) => icons.button(ui, label, glyph, [108., 26.]),
-        None => crate::widget_abi::button(ui, label, icons.cell([108., 26.])),
+        Some(glyph) => icons.button(ui, label, glyph, size),
+        None => crate::widget_abi::button(ui, label, icons.cell(size)),
     };
     drop(disabled);
     if hole_tip {

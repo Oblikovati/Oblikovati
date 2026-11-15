@@ -20,6 +20,16 @@ pub(crate) fn launcher(ui: &Ui, editor: &mut GuiThemeEditor) -> bool {
     editor.requested |= clicked;
     clicked
 }
+pub(crate) fn launcher_icon(
+    ui: &Ui,
+    editor: &mut GuiThemeEditor,
+    icons: &crate::icons::GuiRibbonIcons,
+    size: [f32; 2],
+) -> bool {
+    let clicked = icons.button(ui, "Edit Theme", crate::icons::IconGlyph::Preferences, size);
+    editor.requested |= clicked;
+    clicked
+}
 pub(crate) fn panel(
     ui: &Ui,
     theme: Option<&GuiThemeState>,

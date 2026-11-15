@@ -29,6 +29,7 @@ pub(crate) fn ribbon_band(
     mut owners: RibbonDrawOwners<'_>,
     actions: &mut Vec<GuiShellAction>,
 ) -> f32 {
+    owners.ribbon.display.appearance = owners.ribbon.customization.appearance();
     let width = request.extent[0] as f32 / request.layout_scale()[0];
     let height_total = request.extent[1] as f32 / request.layout_scale()[1];
     let scrollbar = owners.ribbon.panels.scrollbar_height(ui);
@@ -37,7 +38,9 @@ pub(crate) fn ribbon_band(
     let height = if placement == RibbonPlacement::Top {
         owners.ribbon.display.mode.band_height(scrollbar)
             + if owners.ribbon.display.mode == RibbonDisplay::Full {
-                80. * (owners.icons.layout_factor() - 1.)
+                (20. + owners.ribbon.display.appearance.command_height())
+                    * owners.icons.layout_factor()
+                    - 80.
             } else {
                 0.
             }
@@ -77,6 +80,7 @@ pub(crate) fn ribbon_band(
             tab,
             &panels,
             request.commands.document_type == Some(oblikovati_api::types::DOCUMENT_PART),
+            &mut owners.ribbon.customization,
         );
         if owners.ribbon.display.take_customization_request() {
             owners.ribbon.customization.open(tab);
@@ -243,13 +247,15 @@ fn ribbon_panel_row(
 ) {
     crate::widget_abi::cursor_position(ui, [16., 59.]);
     let ribbon = &mut *owners.ribbon;
+    let mut icons = owners.icons.clone();
+    icons.appearance = ribbon.display.appearance;
     crate::ribbon_panels::draw_panels(
         ui,
         ribbon.active,
         &request.commands,
         crate::ribbon_panels::RibbonPanelOwners {
             home_active: owners.home_active,
-            icons: owners.icons,
+            icons: &icons,
             parameters: owners.parameters,
             preferences: owners.preferences,
             editor: owners.theme_editor,
