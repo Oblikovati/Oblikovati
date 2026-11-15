@@ -56,7 +56,22 @@ fn other_groups_unavailable(world: &mut ApplicationWorld) {
     for (group, commands) in [
         ("Modify", &["Move", "Delete"][..]),
         ("Pattern", &["Rectangular", "Circular"]),
-        ("Constrain", &["Horizontal", "Vertical", "Dimension"]),
+        (
+            "Constrain",
+            &[
+                "Horizontal",
+                "Vertical",
+                "Coincident",
+                "Fix",
+                "Parallel",
+                "Perpendicular",
+                "Collinear",
+                "Equal",
+                "Concentric",
+                "Tangent",
+                "Dimension",
+            ],
+        ),
         ("Insert", &["Image", "Points"]),
         (
             "Format",
