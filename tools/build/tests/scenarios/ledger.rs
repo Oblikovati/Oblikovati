@@ -1,6 +1,30 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use std::{collections::BTreeMap, path::PathBuf};
+#[test]
+fn capture_only_is_inherited_from_feature_rule_and_scenario() {
+    let source = "@capture_only\nFeature: captured\n Scenario: a\n  Given a step\n";
+    let captured = inventory(Path::new("root"), REVISION, &mut fixture(source)).unwrap();
+    assert!(captured.scenarios[0].capture_only);
+    let source = "Feature: mixed\n @capture_only\n Scenario: a\n  Given a step\n Scenario: b\n  Given a step\n @capture_only\n Rule: archived\n  Scenario: c\n   Given a step\n";
+    let mixed = inventory(Path::new("root"), REVISION, &mut fixture(source)).unwrap();
+    assert_eq!(
+        mixed
+            .scenarios
+            .iter()
+            .map(|row| row.capture_only)
+            .collect::<Vec<_>>(),
+        [true, false, true]
+    );
+}
+#[test]
+fn capture_host_only_is_inherited_without_claiming_portability() {
+    let source = "@capture_host_only\nFeature: host\n @capture_only\n Scenario: unavailable\n  Given a step\n Scenario: host fixture\n  Given a step\n";
+    let ledger = inventory(Path::new("root"), REVISION, &mut fixture(source)).unwrap();
+    assert!(ledger.scenarios.iter().all(|row| row.capture_host_only));
+    assert!(ledger.scenarios[0].capture_only);
+    assert!(!ledger.scenarios[1].capture_only);
+}
 #[derive(Default)]
 struct FakeScenarioFiles {
     files: BTreeMap<PathBuf, Vec<u8>>,

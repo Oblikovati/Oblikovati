@@ -189,6 +189,14 @@ class CaptureTests(unittest.TestCase):
                 find_scenario(inventory, classifications, fixture.row["id"]),
                 fixture.row,
             )
+            fixture.row["capture_only"] = True
+            with self.assertRaisesRegex(ValueError, "non-blocked"):
+                find_scenario(inventory, classifications, fixture.row["id"])
+            del fixture.row["capture_only"]
+            fixture.row["capture_host_only"] = True
+            with self.assertRaisesRegex(ValueError, "non-blocked"):
+                find_scenario(inventory, classifications, fixture.row["id"])
+            del fixture.row["capture_host_only"]
             reviewed["source_sha256"] = "old"
             with self.assertRaisesRegex(ValueError, "source"):
                 find_scenario(inventory, classifications, fixture.row["id"])
@@ -250,7 +258,10 @@ class CaptureTests(unittest.TestCase):
                 outline = OutlineFixture()
                 fixture.row.update(outline.row)
                 fixture.report = outline.report
-                runner.captures = [example_capture_name(fixture.row, example) for example in fixture.row["examples"]]
+                runner.captures = [
+                    example_capture_name(fixture.row, example)
+                    for example in fixture.row["examples"]
+                ]
                 if missing:
                     fixture.report[0]["elements"].pop()
                     with self.assertRaises(ValueError):
@@ -268,7 +279,9 @@ class CaptureTests(unittest.TestCase):
             outline = OutlineFixture()
             fixture.row.update(outline.row)
             fixture.report = outline.report
-            runner.captures = [example_capture_name(fixture.row, fixture.row["examples"][0])]
+            runner.captures = [
+                example_capture_name(fixture.row, fixture.row["examples"][0])
+            ]
             with self.assertRaisesRegex(ValueError, "capture"):
                 capture_receipt(request, runner, state)
             self.assertFalse(request.destination.exists())

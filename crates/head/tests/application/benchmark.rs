@@ -7,6 +7,7 @@ use cucumber::{
 use futures::StreamExt as _;
 use std::{fmt, fs, path::PathBuf};
 mod binding_inventory;
+mod capture_only;
 mod diagnostics;
 mod documents;
 mod gap_runner;
@@ -261,7 +262,11 @@ fn run_scenarios(root: PathBuf, keep_feature: fn(&cucumber::gherkin::Feature) ->
                     }
                 })
             })
-            .filter_run(root.clone(), move |feature, _, scenario| {
+            .filter_run(root.clone(), move |feature, rule, scenario| {
+                if let Some(reason) = capture_only::reason(feature, rule, scenario) {
+                    println!("Not executed ({reason}): {}", scenario.name);
+                    return false;
+                }
                 keep_feature(feature) && scenario_selected(&scenario.name)
             }),
     );

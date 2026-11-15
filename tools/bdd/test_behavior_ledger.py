@@ -98,6 +98,41 @@ class LedgerFixture:
 
 
 class LedgerTests(unittest.TestCase):
+    def test_capture_host_only_is_blocked_without_host_attestation(self) -> None:
+        fixture = LedgerFixture()
+        fixture.inventory["scenarios"][0]["capture_host_only"] = True
+        with self.assertRaisesRegex(ValueError, "blocked classification"):
+            fixture.run([fixture.entry])
+        blocked = dict(
+            fixture.entry,
+            state="blocked",
+            reason="Capture host fixture required",
+            last_receipt=None,
+        )
+        row = fixture.run([blocked])["scenarios"][0]
+        self.assertEqual(row["state"], "blocked")
+        self.assertEqual(fixture.verifier.calls, [])
+
+    def test_capture_only_cannot_be_reported_verified(self) -> None:
+        fixture = LedgerFixture()
+        fixture.inventory["scenarios"][0]["capture_only"] = True
+        with self.assertRaisesRegex(ValueError, "excluded classification"):
+            fixture.run([fixture.entry])
+        excluded = dict(
+            fixture.entry,
+            state="excluded",
+            reason="Source requires the captured fixture",
+            last_receipt=None,
+        )
+        excluded["historical_receipts"] = [
+            {"source_revision": "old", "path": "prior", "sha256": "digest"}
+        ]
+        row = fixture.run([excluded])["scenarios"][0]
+        self.assertEqual(row["state"], "excluded")
+        self.assertEqual(row["historical_receipts"], excluded["historical_receipts"])
+        self.assertEqual(summarize([row], "area")["application"]["excluded"], 1)
+        self.assertEqual(fixture.verifier.calls, [])
+
     def test_unclassified_rows_are_not_verified_and_strict_check_fails(self) -> None:
         fixture = LedgerFixture()
         ledger = fixture.run([])

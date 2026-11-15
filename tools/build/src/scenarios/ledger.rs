@@ -25,6 +25,10 @@ struct ScenarioRow {
     background_steps: Vec<StepSignature>,
     scenario_steps: Vec<StepSignature>,
     outline: bool,
+    #[serde(skip_serializing_if = "is_false")]
+    capture_only: bool,
+    #[serde(skip_serializing_if = "is_false")]
+    capture_host_only: bool,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     examples: Vec<ExampleRow>,
     #[serde(skip_serializing_if = "is_false")]
@@ -181,6 +185,8 @@ struct Declaration {
     background_steps: Vec<StepSignature>,
     scenario_steps: Vec<StepSignature>,
     outline: bool,
+    capture_only: bool,
+    capture_host_only: bool,
     examples: Vec<ExampleRow>,
     outline_step_arguments: bool,
 }
@@ -192,6 +198,8 @@ fn parsed_declarations(feature: &Feature) -> Vec<Declaration> {
             None,
             feature.background.as_ref(),
             None,
+            capture_tag(&feature.tags),
+            host_tag(&feature.tags),
         ));
     }
     for rule in &feature.rules {
@@ -201,6 +209,8 @@ fn parsed_declarations(feature: &Feature) -> Vec<Declaration> {
                 Some(&rule.name),
                 feature.background.as_ref(),
                 rule.background.as_ref(),
+                capture_tag(&feature.tags) || capture_tag(&rule.tags),
+                host_tag(&feature.tags) || host_tag(&rule.tags),
             ));
         }
     }
@@ -211,6 +221,8 @@ fn parsed_declaration(
     rule: Option<&String>,
     feature_background: Option<&Background>,
     rule_background: Option<&Background>,
+    inherited_capture: bool,
+    inherited_host: bool,
 ) -> Declaration {
     let backgrounds = background_steps(feature_background).chain(background_steps(rule_background));
     Declaration {
@@ -224,6 +236,8 @@ fn parsed_declaration(
                 scenario.keyword.as_str(),
                 "Scenario Outline" | "Scenario Template"
             ),
+        capture_only: inherited_capture || capture_tag(&scenario.tags),
+        capture_host_only: inherited_host || host_tag(&scenario.tags),
         examples: example_rows(scenario),
         outline_step_arguments: !scenario.examples.is_empty()
             && scenario
@@ -233,6 +247,14 @@ fn parsed_declaration(
                 .chain(background_steps(rule_background))
                 .any(|step| step.docstring.is_some() || step.table.is_some()),
     }
+}
+fn capture_tag(tags: &[String]) -> bool {
+    tags.iter()
+        .any(|tag| tag.trim_start_matches('@') == "capture_only")
+}
+fn host_tag(tags: &[String]) -> bool {
+    tags.iter()
+        .any(|tag| tag.trim_start_matches('@') == "capture_host_only")
 }
 fn example_rows(scenario: &Scenario) -> Vec<ExampleRow> {
     scenario
@@ -312,6 +334,8 @@ fn fallback_declaration(line: &str, position: usize) -> Option<Declaration> {
                 background_steps: Vec::new(),
                 scenario_steps: Vec::new(),
                 outline,
+                capture_only: false,
+                capture_host_only: false,
                 examples: Vec::new(),
                 outline_step_arguments: false,
             });
@@ -351,6 +375,8 @@ fn describe_scenario(
         background_steps: scenario.background_steps.clone(),
         scenario_steps: scenario.scenario_steps.clone(),
         outline: scenario.outline,
+        capture_only: scenario.capture_only,
+        capture_host_only: scenario.capture_host_only,
         examples: scenario.examples.clone(),
         outline_step_arguments: scenario.outline_step_arguments,
         milestone: None,
