@@ -15,10 +15,10 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 - **R0 remains open.** The full gate, baseline fields and milestone exit audits
   are incomplete. Run `python3 -B tools/bdd/behavior_cli.py report` for current
   counts; source and application changes can make earlier receipts stale.
-- At `1b59174748ffe93aca0666a7424f4aad3cccd9b7`, the ledger reported zero
-  current verified scenarios, 178 stale receipts and 21 blocked scenarios
+- At `859744e96068ef79f00acc538aff5edbe809d09e`, the ledger reported two
+  current verified scenarios, 177 stale receipts and 21 blocked scenarios
   across 2,720 declarations. Application changes made prior receipts stale.
-  The gate also requires baseline fields for 2,580 scenarios.
+  The gate also requires baseline fields for 2,578 scenarios.
 - `rust-work` is local and has not passed the full pre-push gate. All 20 former
   application PR heads were merged locally and their PRs closed. Do not remove
   their remaining remote branches until the consolidated work is safely pushed.
@@ -58,6 +58,11 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   `receipts/2026-11-15-extrusion-history-diagnostic/`. General analytic curve
   picking is blocked by missing interior extrema in
   [Martensite #462](https://github.com/Oblikovati/Martensite/issues/462).
+- Extrusion entry: the new metric part and origin-plane selection scenario
+  passed; see `receipts/2026-11-15-extrusion-entry-refresh/`. This checks sketch
+  entry only. The solve precision certificate remains open (#3928).
+- Three-point arc: the collinear-input boundary scenario passed; see
+  `receipts/2026-11-15-arc-boundary-refresh/`.
 
 - Viewport orientation: all 20 pinned scenarios passed on the merged revision
   (#3961). See `receipts/2026-11-15-orientation-verified/`. The run uses

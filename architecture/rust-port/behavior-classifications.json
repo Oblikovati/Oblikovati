@@ -527,8 +527,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-15-extrusion-entry-verified/receipt-6d4a200f137644d4.json",
-        "sha256": "74fdea84b91e81c6a0c714077918da4c6d003e2f37ca0d5ae2aa93edd1118743"
+        "path": "architecture/rust-port/receipts/2026-11-15-extrusion-entry-refresh/receipt-6d4a200f137644d4.json",
+        "sha256": "6519fe3b910d452564cd8f14e603dc485f09fff995df9701c2b6b3bb9f4d824e"
       },
       "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
@@ -542,6 +542,11 @@
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-14-extrusion-6d4a200f137644d4-95b648eb/receipt-6d4a200f137644d4.json",
           "sha256": "eae534f7f3c6e82ebe3f3d648e3075d63bdb148931e5d03e69c58c166b16db56"
+        },
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-extrusion-entry-verified/receipt-6d4a200f137644d4.json",
+          "sha256": "74fdea84b91e81c6a0c714077918da4c6d003e2f37ca0d5ae2aa93edd1118743"
         }
       ],
       "go_reference": "../Oblikovati/app/commands_standard.go; ../Oblikovati/app/extrude_tool.go; ../Oblikovati/app/create_sketch_tool_test.go",
@@ -30654,8 +30659,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-15-arc-boundary-3910/receipt-6941106a8f1f7da8.json",
-        "sha256": "b927a9200b663bce67b10e35252956b0ea48a054742c097017fb3d64fccbe5ef"
+        "path": "architecture/rust-port/receipts/2026-11-15-arc-boundary-refresh/receipt-6941106a8f1f7da8.json",
+        "sha256": "4245fa512a881df13cb988506a968800f31d81933bac03e6d97131687bcae839"
       },
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
       "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
@@ -30667,7 +30672,14 @@
       "kernel_integration": "The desktop sends the pointer positions through sketch placement and owner operations.",
       "rust_tests": "sketch_scenarios_use_the_native_window with OBK_BDD_FEATURE=arc-three-point and OBK_BDD_SCENARIO=arc-three-point-02.",
       "oracle": "The native run checks the prompt, absence of committed arcs and Warning text; the final capture was reviewed for a visible dialog.",
-      "expected_result": "The point-on-arc prompt remains active without an arc or error dialog after a collinear third click."
+      "expected_result": "The point-on-arc prompt remains active without an arc or error dialog after a collinear third click.",
+      "historical_receipts": [
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-arc-boundary-3910/receipt-6941106a8f1f7da8.json",
+          "sha256": "b927a9200b663bce67b10e35252956b0ea48a054742c097017fb3d64fccbe5ef"
+        }
+      ]
     },
     {
       "id": "scenario:cabc86d68811640a059861efcd0d05ff88c2c70ad2552ca84279161e9e4d6d59",
