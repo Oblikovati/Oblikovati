@@ -5224,8 +5224,8 @@
     },
     {
       "id": "scenario:233169e6ac19c7ddb757045b4193b135178c2e3e5089bebbc1fc574f8784e861",
-      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
-      "source_sha256": "d7965f270ecc21d99f2ed9a0837f17a1996203fccf4d4d1966e7876ebb01464c",
+      "source_revision": "8ec8d2c1e569fbc5c8cd2ec85e9b9380c62c147f",
+      "source_sha256": "ce0be44dd1e0ded53c12de6a96465ffafca2307db3029351147c6d9606bf4b8b",
       "milestone": "R4",
       "owner": "desktop",
       "target_module": "crates/head, crates/gui, crates/session, crates/persistence, crates/drawing",
@@ -5234,11 +5234,8 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3889",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "verified",
-      "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-15-open-existing-refresh/receipt-233169e6ac19c7dd.json",
-        "sha256": "6d4080939093a3448c8d2db8f7648f117f6c301a781634464caaf8d85347d6b8"
-      },
+      "state": "inventoried",
+      "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Activate an existing part without creating a duplicate.",
       "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
@@ -5253,6 +5250,11 @@
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-open-existing-current/receipt-233169e6ac19c7dd.json",
           "sha256": "d45a05556743cd81412bcb9ba89c9df4c175173647c0661a34b6016b04057826"
+        },
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-open-existing-refresh/receipt-233169e6ac19c7dd.json",
+          "sha256": "6d4080939093a3448c8d2db8f7648f117f6c301a781634464caaf8d85347d6b8"
         }
       ],
       "go_test_premise": "Go aa8297d1b: package-store save/reopen, missing-path and MRU tests pass; they do not check this native dialog or saved-sketch scenario. See receipts/2026-11-14-go-save-open-baseline/README.md.",
