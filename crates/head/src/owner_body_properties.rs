@@ -121,7 +121,7 @@ impl<
         Ok(true)
     }
     /// Give a body its own appearance; an empty id clears it, back to the part's.
-    fn assign_body_appearance(
+    pub(super) fn assign_body_appearance(
         &mut self,
         document: u64,
         key: &str,

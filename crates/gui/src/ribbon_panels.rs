@@ -379,7 +379,8 @@ fn draw_row(
         let force_compact = context.owners.icons.appearance
             == crate::ribbon_command_layout::RibbonAppearance::Compact
             && panel == RibbonPanel::PartSimplification;
-        let width = if index < expanded && !force_compact {
+        // Keep Finish directly available when other groups collapse (#3956).
+        let width = if (index < expanded || panel == RibbonPanel::Exit) && !force_compact {
             let (width, local_action) = draw_expanded(context, tab, panel, [x, 0.], layout);
             activated |= local_action;
             layout.record_width(tab, panel, width);

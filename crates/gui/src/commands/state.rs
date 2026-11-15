@@ -34,6 +34,8 @@ pub struct GuiCommandState {
     pub color_scheme: Option<crate::GuiColorSchemeState>,
     pub theme: Option<crate::GuiThemeState>,
     pub browser: Option<crate::GuiModelBrowser>,
+    /// Exact stable key of the selected body in the active document.
+    pub selected_body_key: Option<String>,
     pub documents: Vec<oblikovati_api::wire::DocumentInfo>,
     /// Active model-state names, keyed by document identity.
     pub document_model_states: std::collections::BTreeMap<u64, String>,

@@ -35,7 +35,13 @@ impl RibbonPanelLayout {
             .iter()
             .map(|panel| self.widths.get(&(tab, *panel)).copied().unwrap_or(0.))
             .collect();
-        crate::ribbon_fit::expanded_panel_count(&widths, 8., collapsed, available)
+        let required = panels.iter().position(|panel| *panel == RibbonPanel::Exit);
+        if required.is_none() {
+            return crate::ribbon_fit::expanded_panel_count(&widths, 8., collapsed, available);
+        }
+        crate::ribbon_fit::expanded_panel_count_reserving(
+            &widths, 8., collapsed, available, required,
+        )
     }
     pub(super) fn observe_scrollbar(&mut self, shown: bool) {
         self.pending_layout |= self.scrollbar_shown != shown;

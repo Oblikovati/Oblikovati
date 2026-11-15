@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! The customizable command row: which commands each document kind shows, and where the row sits.
+mod clear_appearance;
 mod materials;
+mod standard_buttons;
 mod standard_commands;
 use standard_commands::{STANDARD, StandardCommand};
 #[path = "plane_selection.rs"]
@@ -143,6 +145,13 @@ impl QuickAccessToolbar {
             Some(StandardCommand::Home) => GuiShellAction::ShowHome,
             Some(StandardCommand::Update) => GuiShellAction::UpdatePart,
             Some(StandardCommand::IProperties) => GuiShellAction::OpenIProperties,
+            Some(StandardCommand::Return) => GuiShellAction::FinishSketch,
+            Some(StandardCommand::ClearAppearance) => {
+                let Some(action) = clear_appearance::action(state) else {
+                    return;
+                };
+                action
+            }
             Some(StandardCommand::Measure) => {
                 GuiShellAction::Inspect(crate::GuiInspectAction::StartMeasure)
             }
@@ -184,104 +193,6 @@ impl QuickAccessToolbar {
         };
         if action.enabled(state) {
             actions.push(action);
-        }
-    }
-    fn standard_button(
-        &mut self,
-        ui: &Ui,
-        command: StandardCommand,
-        state: &GuiCommandState,
-        actions: &mut Vec<GuiShellAction>,
-    ) {
-        let label = command.label();
-        match command {
-            StandardCommand::New => self.requests.new_document |= ui.button(label),
-            StandardCommand::Open => self.requests.open_document |= ui.button(label),
-            StandardCommand::Home => {
-                if ui.button(label) {
-                    actions.push(GuiShellAction::ShowHome);
-                }
-            }
-            StandardCommand::Projects => {
-                let disabled = ui.begin_disabled(state.transaction_open);
-                self.requests.open_projects |= ui.button(label);
-                drop(disabled);
-            }
-            StandardCommand::Save => crate::chrome::command_button(
-                ui,
-                label,
-                GuiShellAction::Save,
-                state,
-                [0.; 2],
-                actions,
-            ),
-            StandardCommand::Update => crate::chrome::command_button(
-                ui,
-                label,
-                GuiShellAction::UpdatePart,
-                state,
-                [0.; 2],
-                actions,
-            ),
-            StandardCommand::Select => {
-                selection::button(ui, state, actions, &mut self.open_selection)
-            }
-            StandardCommand::Undo => {
-                crate::chrome::command_button(
-                    ui,
-                    label,
-                    GuiShellAction::Undo,
-                    state,
-                    [0.; 2],
-                    actions,
-                );
-                self.undo_history(ui, state, actions);
-            }
-            StandardCommand::Redo => crate::chrome::command_button(
-                ui,
-                label,
-                GuiShellAction::Redo,
-                state,
-                [0.; 2],
-                actions,
-            ),
-            StandardCommand::MaterialBrowser => {
-                let disabled =
-                    ui.begin_disabled(state.authoring != crate::GuiAuthoringContext::Part);
-                self.requests.open_material_browser |= ui.button(label);
-                drop(disabled);
-            }
-            StandardCommand::Materials => {
-                materials::button(ui, state, actions, &mut self.open_materials)
-            }
-            StandardCommand::AppearanceBrowser => {
-                let disabled =
-                    ui.begin_disabled(state.authoring != crate::GuiAuthoringContext::Part);
-                self.requests.open_appearance_browser |= ui.button(label);
-                drop(disabled);
-            }
-            StandardCommand::Parameters => {
-                let disabled = ui.begin_disabled(state.document.is_none());
-                self.requests.open_parameters |= ui.button(label);
-                drop(disabled);
-            }
-            StandardCommand::Print => muted_button(ui, label),
-            StandardCommand::IProperties => crate::chrome::command_button(
-                ui,
-                label,
-                GuiShellAction::OpenIProperties,
-                state,
-                [0.; 2],
-                actions,
-            ),
-            StandardCommand::Measure => crate::chrome::command_button(
-                ui,
-                label,
-                GuiShellAction::Inspect(crate::GuiInspectAction::StartMeasure),
-                state,
-                [0.; 2],
-                actions,
-            ),
         }
     }
     /// Right-click on Undo reads what it would undo, latest first.

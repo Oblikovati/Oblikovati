@@ -105,6 +105,9 @@ impl<
             template_materials,
             prompts: self.prompt_frequencies,
             browser: Some(self.gui_browser_snapshot(document)?),
+            selected_body_key: session
+                .selected_browser_body()
+                .map(|(key, _)| key.to_owned()),
             document: Some(document),
             document_type: Some(
                 self.files

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: tmp/obk-tab-context-3900/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: tmp/obk-tab-context-3900/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T01:11:12.58999822Z" time="8.026877525"><testcase name="Scenario: Inspect a document tab&apos;s context menu: tmp/obk-tab-context-3900/features/application/document-tabs/document-tabs.feature:20:3" time="8.026877525"><system-out><![CDATA[  Scenario: Inspect a document tab's context menu
+   ✔  Given a part document is active in the MCAD Software
+   ✔  When the user opens the document tab's context menu
+   ✔  Then the menu offers Close, Close Tabs, Close All, Save and Properties
+   ✔  And it displays shortcuts for Close and Save
+   ✔  When the user dismisses the menu
+   ✔  Then the document remains active
+]]></system-out></testcase></testsuite></testsuites>

@@ -66,3 +66,20 @@ fn popup_anchor_moves_left_only_when_its_measured_width_needs_it() {
         assert_eq!(clamp_panel_flyout_x(anchor, width, viewport), expected);
     }
 }
+
+#[test]
+fn required_exit_width_is_reserved_when_other_panels_collapse() {
+    let widths = [100., 200., 150.];
+    assert_eq!(
+        expanded_panel_count_reserving(&widths, 10., 50., 320., Some(2)),
+        1
+    );
+    assert_eq!(
+        expanded_panel_count_reserving(&widths, 10., 50., 470., Some(2)),
+        3
+    );
+    assert_eq!(
+        expanded_panel_count_reserving(&widths, 10., 50., 100., Some(2)),
+        0
+    );
+}

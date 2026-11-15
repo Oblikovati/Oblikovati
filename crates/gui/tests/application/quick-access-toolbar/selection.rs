@@ -124,3 +124,36 @@ fn measure_is_optional_and_key_tip_uses_the_inspect_action() {
         )]
     ));
 }
+
+#[test]
+fn return_is_optional_and_only_acts_while_sketch_editing() {
+    let mut toolbar = QuickAccessToolbar::default();
+    let mut state = GuiCommandState {
+        document: Some(1),
+        document_type: Some(oblikovati_api::types::DOCUMENT_PART),
+        authoring: crate::GuiAuthoringContext::Part,
+        ..Default::default()
+    };
+    assert!(!toolbar.selection(&state).shows(StandardCommand::Return));
+    toolbar.selection(&state).toggle(StandardCommand::Return);
+    let mut actions = Vec::new();
+    toolbar.activate_tip(13, &state, &mut actions);
+    assert!(actions.is_empty());
+    state.authoring = crate::GuiAuthoringContext::Sketch;
+    toolbar.activate_tip(13, &state, &mut actions);
+    assert_eq!(actions, [GuiShellAction::FinishSketch]);
+}
+
+#[test]
+fn return_cannot_finish_while_a_transaction_is_open() {
+    let mut state = GuiCommandState {
+        authoring: crate::GuiAuthoringContext::Sketch,
+        transaction_open: true,
+        ..Default::default()
+    };
+    assert!(!GuiShellAction::FinishSketch.enabled(&state));
+    state.transaction_open = false;
+    assert!(GuiShellAction::FinishSketch.enabled(&state));
+    state.authoring = crate::GuiAuthoringContext::OtherDocument;
+    assert!(!GuiShellAction::FinishSketch.enabled(&state));
+}

@@ -99,6 +99,7 @@ fn second_tab_remains(world: &mut ApplicationWorld) {
     world.expect_tab(&name);
 }
 #[when("I open the document tab's context menu")]
+#[when("the user opens the document tab's context menu")]
 fn open_menu(world: &mut ApplicationWorld) {
     let id = world.active_id();
     world.open_tab_menu(id);
@@ -115,6 +116,7 @@ fn menu_shortcuts(world: &mut ApplicationWorld) {
     world.expect_text("Ctrl+S");
 }
 #[when("I dismiss the menu")]
+#[when("the user dismisses the menu")]
 fn dismiss_menu(world: &mut ApplicationWorld) {
     world.escape();
     world.expect_no_text("Close Tabs");
@@ -247,6 +249,7 @@ fn first_remains(world: &mut ApplicationWorld) {
     world.expect_active(first(world));
 }
 #[when("I choose Properties from the context menu")]
+#[when("the user chooses Properties from the context menu")]
 fn choose_properties(world: &mut ApplicationWorld) {
     world.click_text("Properties");
 }
@@ -270,6 +273,7 @@ fn general_page(world: &mut ApplicationWorld) {
     }
 }
 #[when("I close the properties dialog without making changes")]
+#[when("the user closes the properties dialog without making changes")]
 fn close_properties(world: &mut ApplicationWorld) {
     world.click_text("Close");
     world.expect_no_text("General");

@@ -42,6 +42,9 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 
 ## Active gaps
 
+- Viewport orientation: a full diagnostic passed 2 of 20 scenarios; 18 stopped
+  at unbound steps (#3961). See `receipts/2026-11-15-orientation-full-diagnostic/`.
+
 - Document opening: Express assembly loading, qualified cache and Load Full
   remain incomplete (#3949). A real saved assembly fixture and shared live
   presenter are in `rust-work`; cache and API work are in progress.

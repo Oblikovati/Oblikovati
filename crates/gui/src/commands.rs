@@ -125,6 +125,16 @@ pub enum GuiShellAction {
         id: String,
     },
     /// Give a solid its own appearance; an empty id clears it.
+    /// Stage a clear operation for one selected solid.
+    OpenClearBodyAppearance {
+        document: u64,
+        key: String,
+    },
+    /// Clear the selected solid's own appearance override.
+    ClearSelectedBodyAppearance {
+        document: u64,
+        key: String,
+    },
     SetBodyAppearance {
         document: u64,
         key: String,

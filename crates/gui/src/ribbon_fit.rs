@@ -8,9 +8,25 @@ pub(crate) fn expanded_panel_count(
     collapsed: f32,
     available: f32,
 ) -> usize {
+    expanded_panel_count_reserving(widths, separator, collapsed, available, None)
+}
+
+pub(crate) fn expanded_panel_count_reserving(
+    widths: &[f32],
+    separator: f32,
+    collapsed: f32,
+    available: f32,
+    required: Option<usize>,
+) -> usize {
     (1..=widths.len())
         .rev()
-        .find(|expanded| ribbon_row_width(widths, *expanded, separator, collapsed) <= available)
+        .find(|expanded| {
+            let reserved = required
+                .filter(|index| *index >= *expanded)
+                .and_then(|index| widths.get(index))
+                .map_or(0., |width| width - collapsed);
+            ribbon_row_width(widths, *expanded, separator, collapsed) + reserved <= available
+        })
         .unwrap_or(0)
 }
 

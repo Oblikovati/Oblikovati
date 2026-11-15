@@ -221,6 +221,19 @@ impl GuiShellAction {
                     && state.authoring == GuiAuthoringContext::Part
                     && !state.transaction_open
             }
+            Self::ClearSelectedBodyAppearance { document, key }
+            | Self::OpenClearBodyAppearance { document, key } => {
+                state.document == Some(*document)
+                    && state.authoring == GuiAuthoringContext::Part
+                    && !state.transaction_open
+                    && state.selected_body_key.as_deref() == Some(key.as_str())
+                    && state.browser.as_ref().is_some_and(|browser| {
+                        browser
+                            .bodies
+                            .iter()
+                            .any(|body| body.key == *key && !body.appearance.is_empty())
+                    })
+            }
             Self::SetBodyAppearance { document, .. } => {
                 state.document == Some(*document) && !state.transaction_open
             }

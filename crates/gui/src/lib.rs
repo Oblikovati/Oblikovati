@@ -122,3 +122,5 @@ mod sketch_options_ui;
 mod ui_scale;
 
 mod icons;
+
+mod clear_appearance;
