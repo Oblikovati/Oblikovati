@@ -13,6 +13,17 @@ impl Enclosure {
         }
         Ok(Self(Interval::new(bounds[0], bounds[1])))
     }
+    pub fn decimal(text: &str) -> Result<Self, String> {
+        let input = format!("[{text}]");
+        let value = input
+            .parse::<Interval>()
+            .map_err(|_| format!("decimal {text:?}: expected a finite decimal literal"))?;
+        Self::finite(Self(value), "decimal")
+    }
+    pub fn include(self, value: f64) -> Result<Self, String> {
+        let [lower, upper] = self.bounds();
+        Self::new([lower.min(value), upper.max(value)])
+    }
     pub fn difference(self, rhs: Self) -> Result<Self, String> {
         let result = Self(self.0 - rhs.0);
         let bounds = result.bounds();
@@ -183,5 +194,10 @@ mod tests {
                 }
             }
         }
+    }
+    #[test]
+    fn overflowing_decimal_source_is_refused() {
+        assert!(Enclosure::decimal("1e9999").is_err());
+        assert!(Enclosure::decimal("-1e9999").is_err());
     }
 }

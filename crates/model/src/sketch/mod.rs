@@ -213,4 +213,8 @@ mod interval_equations;
 mod linear_equations;
 pub use interval_equations::{SketchIntervalEquation, SketchIntervalError, SketchIntervalTarget};
 mod conditional_root;
-pub use conditional_root::ConditionalSketchRoot;
+pub use conditional_root::{ConditionalSketchRoot, FixedCoordinateAssumption};
+
+mod parameter_bound;
+mod parameter_stamp;
+pub use parameter_bound::{ConditionalParameterBound, conditional_parameter_bound};

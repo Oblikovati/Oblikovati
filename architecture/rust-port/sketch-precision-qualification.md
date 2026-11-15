@@ -129,10 +129,30 @@ For the supported continuously differentiable equations, the check evaluates
 requires strict inclusion of `K` in `X` and an upper infinity-norm bound below
 one for `I - C J(X, P)`. The result retains the accepted sketch and solve evidence, box, target
 assumptions, preconditioner, enclosure, and contraction bound. It does not
-carry a document identity or prove that a later document still matches it. Subject to the
-interval arithmetic contract and the supplied target assumptions, this is
+carry a document identity or prove that a later document still matches it.
+Subject to the interval arithmetic contract and the supplied target assumptions, this is
 conditional root evidence for each target in `P`.
 
 It does not establish source or projection uncertainty, cross-platform
 arithmetic conformance, general constraint coverage, or feature tolerance
 qualification. It does not change profile discovery or extrusion admission.
+
+## Authored parameter bounds
+
+A conditional source-bound path supports healthy nominal model or user length
+parameters whose source is an explicit decimal literal in `mm`, `cm`, or `m`,
+or a direct chain of parameter aliases. It requires the default centimetre
+working scale. It encloses the authored decimal and exact unit factor with
+interval arithmetic and includes the model's rounded binary64 value. The result
+retains parameter identities and source text. Fixed and grounded coordinate
+targets additionally require explicit caller-supplied exact-value assumptions;
+their stored binary64 values are not treated as proven physical inputs. Other
+formulas, units, scales, engineering-value selections, failed sources, and alias cycles decline.
+
+The source-bound root check compares the current parameter graph and input
+state with a snapshot captured by the accepted solve. A source edit therefore
+invalidates the check even if the rounded target remains equal. This is a
+solve-input check, not a document lifetime guarantee: document sketch health
+currently retains diagnostics rather than the full solve outcome. Projected
+anchors also remain unsupported; their source geometry and placement
+uncertainty are not yet bounded. Neither path enables feature admission.

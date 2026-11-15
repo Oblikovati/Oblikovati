@@ -668,3 +668,6 @@ mod interval_rectangle;
 
 #[path = "sketch/conditional_root.rs"]
 mod conditional_root;
+
+#[path = "sketch/parameter_bound.rs"]
+mod parameter_bound;

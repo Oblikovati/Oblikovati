@@ -20,6 +20,7 @@ pub struct SketchSolveOutcome {
     numerical: NonlinearResult,
     origins: Vec<SketchRelationId>,
     parameter_dependencies: Vec<u64>,
+    parameter_stamp: Option<super::parameter_stamp::ParameterStamp>,
     operands: Vec<Vec<SketchResidualOperand>>,
     equations: Vec<Vec<super::equation_evidence::EquationEvidence>>,
 }
@@ -76,6 +77,11 @@ impl SketchSolveOutcome {
                     })
             })
             .collect()
+    }
+    pub(super) fn source_stamp_current(&self, parameters: &ParameterCollection<u64>) -> bool {
+        self.parameter_stamp
+            .as_ref()
+            .is_some_and(|stamp| stamp.matches(parameters, &self.parameter_dependencies))
     }
     pub(super) fn verified_interval_center(
         &self,
@@ -180,7 +186,12 @@ impl Sketch2D {
         let candidate = self.candidate_values(&prepared.restore(&result.solution.values)?)?;
         let operands = residual_operands(self, &prepared, &result.solution.values, anchors)?;
         let equations = prepared.equation_evidence(self);
+        let parameter_stamp = super::parameter_stamp::ParameterStamp::capture(
+            parameters,
+            &prepared.parameter_dependencies,
+        );
         let outcome = SketchSolveOutcome {
+            parameter_stamp,
             equations,
             operands,
             origins: prepared.origins,
@@ -261,7 +272,12 @@ impl Sketch2D {
         let candidate = self.candidate_values(&prepared.restore(&numerical.values)?)?;
         let operands = residual_operands(self, &prepared, &numerical.values, anchors)?;
         let equations = prepared.equation_evidence(self);
+        let parameter_stamp = super::parameter_stamp::ParameterStamp::capture(
+            parameters,
+            &prepared.parameter_dependencies,
+        );
         Ok(SketchSolveOutcome {
+            parameter_stamp,
             equations,
             operands,
             origins: prepared.origins,

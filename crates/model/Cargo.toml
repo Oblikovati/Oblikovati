@@ -27,4 +27,5 @@ name = "sketch_revolve_recipe"
 path = "tests/sketch_revolve_recipe.rs"
 
 [dev-dependencies]
+num-bigint = "=0.4.6"
 num-rational = "=0.4.2"

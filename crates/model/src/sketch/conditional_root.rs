@@ -8,6 +8,13 @@ use super::{
 use crate::parameter::ParameterCollection;
 use oblikovati_solve::nonlinear::SolveTermination;
 
+/// An explicit point-value assumption for one authored fixed coordinate.
+#[derive(Clone, Debug, PartialEq)]
+pub struct FixedCoordinateAssumption {
+    pub relation: SketchRelationId,
+    pub equation: usize,
+    pub value: f64,
+}
 /// Conditional root enclosure, assuming the supplied target bounds and interval backend are valid.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ConditionalSketchRoot {
@@ -20,6 +27,8 @@ pub struct ConditionalSketchRoot {
     source_rows: Vec<super::SketchResidualRow>,
     preconditioner: Vec<Vec<f64>>,
     targets: Vec<SketchIntervalTarget>,
+    parameter_bounds: Option<Vec<super::ConditionalParameterBound>>,
+    fixed_assumptions: Vec<FixedCoordinateAssumption>,
     contraction_upper: f64,
 }
 impl ConditionalSketchRoot {
@@ -55,6 +64,14 @@ impl ConditionalSketchRoot {
     pub fn targets(&self) -> &[SketchIntervalTarget] {
         &self.targets
     }
+    /// Read source-derived target bounds, if this check used them; example: `root.parameter_bounds()`.
+    pub fn parameter_bounds(&self) -> Option<&[super::ConditionalParameterBound]> {
+        self.parameter_bounds.as_deref()
+    }
+    /// Read explicit fixed-coordinate assumptions; example: `root.fixed_assumptions()`.
+    pub fn fixed_assumptions(&self) -> &[FixedCoordinateAssumption] {
+        &self.fixed_assumptions
+    }
     /// Read the verified interval norm upper bound; example: `root.contraction_upper()`.
     pub fn contraction_upper(&self) -> f64 {
         self.contraction_upper
@@ -62,14 +79,36 @@ impl ConditionalSketchRoot {
 }
 
 impl SketchSolveOutcome {
+    /// Check with bounds derived from supported authored parameter sources.
+    /// Example: `outcome.conditional_root_from_sources(&parameters, &box_values, &fixed, &inverse)?`.
+    /// Source bounds and interval arithmetic remain conditional; this does not qualify a feature.
+    pub fn conditional_root_from_sources(
+        &self,
+        parameters: &ParameterCollection<u64>,
+        bounds: &[[f64; 2]],
+        fixed: &[FixedCoordinateAssumption],
+        preconditioner: &[Vec<f64>],
+    ) -> Result<ConditionalSketchRoot, String> {
+        if !self.source_stamp_current(parameters) {
+            return Err(
+                "parameter source graph: expected the unchanged accepted solve inputs".into(),
+            );
+        }
+        let (targets, evidence) = source_targets(self, parameters)?;
+        let mut root =
+            self.conditional_root(parameters, bounds, &targets, fixed, preconditioner)?;
+        root.parameter_bounds = Some(evidence);
+        Ok(root)
+    }
     /// Test a retained solve against a finite box and caller-supplied preconditioner.
-    /// Example: `outcome.conditional_root(&parameters, &box_values, &targets, &inverse)?`.
+    /// Example: `outcome.conditional_root(&parameters, &box_values, &targets, &fixed, &inverse)?`.
     /// This is conditional evidence only; it does not qualify a feature or validate input uncertainty.
     pub fn conditional_root(
         &self,
         parameters: &ParameterCollection<u64>,
         bounds: &[[f64; 2]],
         targets: &[SketchIntervalTarget],
+        fixed: &[FixedCoordinateAssumption],
         preconditioner: &[Vec<f64>],
     ) -> Result<ConditionalSketchRoot, String> {
         if self.numerical().termination != SolveTermination::Converged {
@@ -91,6 +130,7 @@ impl SketchSolveOutcome {
                 center.len()
             ));
         }
+        verify_fixed_assumptions(self, fixed)?;
         let point_box: Vec<_> = center.iter().map(|value| [*value, *value]).collect();
         let point_rows = self
             .candidate()
@@ -109,6 +149,8 @@ impl SketchSolveOutcome {
             source_rows: self.residual_rows(),
             preconditioner: preconditioner.to_vec(),
             targets: targets.to_vec(),
+            parameter_bounds: None,
+            fixed_assumptions: fixed.to_vec(),
             contraction_upper: result.contraction_upper,
         })
     }
@@ -128,6 +170,88 @@ fn validate_box(center: &[f64], bounds: &[[f64; 2]]) -> Result<(), String> {
                 "solve variable {index} value {value:?} and box {interval:?}: expected the accepted value inside the box"
             ));
         }
+    }
+    Ok(())
+}
+
+fn source_targets(
+    outcome: &SketchSolveOutcome,
+    parameters: &ParameterCollection<u64>,
+) -> Result<
+    (
+        Vec<SketchIntervalTarget>,
+        Vec<super::ConditionalParameterBound>,
+    ),
+    String,
+> {
+    let mut targets = Vec::new();
+    let mut evidence = Vec::new();
+    for row in outcome.residual_rows() {
+        let row_targets = row
+            .targets
+            .ok_or_else(|| format!("relation {:?}: expected attributed targets", row.relation))?;
+        for input in row_targets {
+            let super::SketchTargetSource::Parameter(id) = input.source else {
+                if matches!(input.source, super::SketchTargetSource::Unknown) {
+                    return Err(format!(
+                        "relation {:?}: expected a known target source",
+                        row.relation
+                    ));
+                }
+                continue;
+            };
+            if targets.iter().any(|target: &SketchIntervalTarget| {
+                target.relation == row.relation && target.parameter == id
+            }) {
+                continue;
+            }
+            let bound = super::conditional_parameter_bound(parameters, id)?;
+            targets.push(SketchIntervalTarget {
+                relation: row.relation,
+                parameter: id,
+                bounds: bound.bounds(),
+            });
+            evidence.push(bound);
+        }
+    }
+    Ok((targets, evidence))
+}
+
+fn verify_fixed_assumptions(
+    outcome: &SketchSolveOutcome,
+    assumptions: &[FixedCoordinateAssumption],
+) -> Result<(), String> {
+    let mut used = vec![false; assumptions.len()];
+    for row in outcome.residual_rows() {
+        let Some(targets) = row.targets else {
+            continue;
+        };
+        for target in targets {
+            if !matches!(target.source, super::SketchTargetSource::AuthoredPosition) {
+                continue;
+            }
+            let matches: Vec<_> = assumptions
+                .iter()
+                .enumerate()
+                .filter(|(_, value)| {
+                    value.relation == row.relation
+                        && value.equation == row.equation
+                        && value.value.to_bits() == target.value.to_bits()
+                })
+                .collect();
+            let [(index, _)] = matches.as_slice() else {
+                return Err(format!(
+                    "fixed target {:?} row {} value {:?}: expected one explicit exact-value assumption",
+                    row.relation, row.equation, target.value
+                ));
+            };
+            used[*index] = true;
+        }
+    }
+    if used.iter().any(|used| !used) {
+        return Err(format!(
+            "fixed assumptions {assumptions:?}: expected each assumption to match one fixed coordinate"
+        ));
     }
     Ok(())
 }

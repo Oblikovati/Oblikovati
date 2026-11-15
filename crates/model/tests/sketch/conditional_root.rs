@@ -13,6 +13,17 @@ fn inverse() -> Vec<Vec<f64>> {
         vec![0., 1., 0., 0., 0., 0., 0., 1.],
     ]
 }
+fn fixed() -> Vec<oblikovati_model::sketch::FixedCoordinateAssumption> {
+    (0..2)
+        .map(
+            |equation| oblikovati_model::sketch::FixedCoordinateAssumption {
+                relation: SketchRelationId::Authored(constraint(1)),
+                equation,
+                value: 0.,
+            },
+        )
+        .collect()
+}
 fn targets() -> Vec<SketchIntervalTarget> {
     vec![
         SketchIntervalTarget {
@@ -42,7 +53,7 @@ fn rectangle_conditionally_encloses_exact_analytic_root() {
         .unwrap();
     let bounds = box_for(&outcome);
     let result = outcome
-        .conditional_root(&parameters(), &bounds, &targets(), &inverse())
+        .conditional_root(&parameters(), &bounds, &targets(), &fixed(), &inverse())
         .unwrap();
     let exact = [0., 0., 5., 0., 5., 2.5, 0., 2.5];
     for (value, interval) in exact.into_iter().zip(result.enclosure()) {
@@ -66,7 +77,7 @@ fn stale_parameters_bad_boxes_and_forged_preconditioners_are_refused() {
     stale.set_expression(1, "60 mm").unwrap();
     assert!(
         outcome
-            .conditional_root(&stale, &bounds, &targets(), &inverse())
+            .conditional_root(&stale, &bounds, &targets(), &fixed(), &inverse())
             .unwrap_err()
             .contains("unchanged")
     );
@@ -77,13 +88,19 @@ fn stale_parameters_bad_boxes_and_forged_preconditioners_are_refused() {
     ];
     assert!(
         outcome
-            .conditional_root(&parameters(), &bad, &targets(), &inverse())
+            .conditional_root(&parameters(), &bad, &targets(), &fixed(), &inverse())
             .unwrap_err()
             .contains("inside")
     );
     assert!(
         outcome
-            .conditional_root(&parameters(), &bounds, &targets(), &vec![vec![0.; 8]; 8])
+            .conditional_root(
+                &parameters(),
+                &bounds,
+                &targets(),
+                &fixed(),
+                &vec![vec![0.; 8]; 8]
+            )
             .unwrap_err()
             .contains("contraction")
     );
@@ -91,7 +108,7 @@ fn stale_parameters_bad_boxes_and_forged_preconditioners_are_refused() {
     wrong[0].parameter = 2;
     assert!(
         outcome
-            .conditional_root(&parameters(), &bounds, &wrong, &inverse())
+            .conditional_root(&parameters(), &bounds, &wrong, &fixed(), &inverse())
             .is_err()
     );
 }
@@ -113,7 +130,7 @@ fn underdetermined_and_singular_systems_are_refused() {
         .unwrap();
     assert!(
         outcome
-            .conditional_root(&parameters(), &box_for(&outcome), &[], &[])
+            .conditional_root(&parameters(), &box_for(&outcome), &[], &fixed(), &[])
             .unwrap_err()
             .contains("square")
     );
@@ -140,6 +157,7 @@ fn underdetermined_and_singular_systems_are_refused() {
                 &parameters(),
                 &box_for(&outcome),
                 &[],
+                &fixed(),
                 &vec![vec![0.; 4]; 4]
             )
             .unwrap_err()
@@ -157,7 +175,7 @@ fn uncertain_targets_are_enclosed_and_overlarge_assumptions_decline() {
     input[0].bounds = [4.9999, 5.0001];
     input[1].bounds = [2.4999, 2.5001];
     let proof = outcome
-        .conditional_root(&parameters(), &bounds, &input, &inverse())
+        .conditional_root(&parameters(), &bounds, &input, &fixed(), &inverse())
         .unwrap();
     for width in input[0].bounds {
         for height in input[1].bounds {
@@ -170,7 +188,7 @@ fn uncertain_targets_are_enclosed_and_overlarge_assumptions_decline() {
     input[0].bounds = [4., 6.];
     assert!(
         outcome
-            .conditional_root(&parameters(), &bounds, &input, &inverse())
+            .conditional_root(&parameters(), &bounds, &input, &fixed(), &inverse())
             .unwrap_err()
             .contains("strict interior")
     );
@@ -188,9 +206,20 @@ fn projected_anchor_solve_is_not_misidentified_as_an_unprojected_solve() {
         .unwrap();
     assert!(
         outcome
-            .conditional_root(&parameters(), &box_for(&outcome), &targets(), &inverse())
+            .conditional_root(
+                &parameters(),
+                &box_for(&outcome),
+                &targets(),
+                &fixed(),
+                &inverse()
+            )
             .unwrap_err()
             .contains("unprojected")
+    );
+    assert!(
+        outcome
+            .conditional_root_from_sources(&parameters(), &box_for(&outcome), &fixed(), &inverse())
+            .is_err()
     );
 }
 #[test]
@@ -218,8 +247,74 @@ fn redundant_equation_system_is_refused_even_if_a_root_exists() {
         .unwrap();
     assert!(
         outcome
-            .conditional_root(&parameters(), &box_for(&outcome), &[], &[])
+            .conditional_root(&parameters(), &box_for(&outcome), &[], &fixed(), &[])
             .unwrap_err()
             .contains("square")
     );
+}
+
+#[test]
+fn source_bound_root_rejects_a_same_value_but_changed_expression() {
+    let mut parameters = parameters();
+    parameters.set_expression(2, "width").unwrap();
+    let outcome = rectangle()
+        .solve(&parameters, SolveOptions::default(), || false)
+        .unwrap();
+    let bounds = box_for(&outcome);
+    let root = outcome
+        .conditional_root_from_sources(&parameters, &bounds, &fixed(), &inverse())
+        .unwrap();
+    assert_eq!(root.parameter_bounds().unwrap().len(), 2);
+    assert_eq!(root.fixed_assumptions(), fixed());
+    assert_eq!(
+        root.parameter_bounds().unwrap()[1].sources(),
+        &[(2, "width".into()), (1, "50 mm".into())]
+    );
+    for (value, interval) in [0., 0., 5., 0., 5., 5., 0., 5.]
+        .into_iter()
+        .zip(root.enclosure())
+    {
+        assert!(interval[0] <= value && value <= interval[1]);
+    }
+    parameters.set_expression(1, "5 cm").unwrap();
+    assert_eq!(parameters.model_value(1).unwrap().value, 5.0);
+    assert!(
+        outcome
+            .conditional_root_from_sources(&parameters, &bounds, &fixed(), &inverse())
+            .unwrap_err()
+            .contains("unchanged accepted solve inputs")
+    );
+}
+
+#[test]
+fn authored_fixed_coordinates_need_explicit_exact_value_assumptions() {
+    let mut source_parameters = parameters();
+    source_parameters.set_expression(2, "width").unwrap();
+    let outcome = rectangle()
+        .solve(&source_parameters, SolveOptions::default(), || false)
+        .unwrap();
+    let bounds = box_for(&outcome);
+    assert!(
+        outcome
+            .conditional_root_from_sources(&source_parameters, &bounds, &[], &inverse())
+            .unwrap_err()
+            .contains("exact-value assumption")
+    );
+    let mut wrong = fixed();
+    wrong[0].value = 1.;
+    assert!(
+        outcome
+            .conditional_root_from_sources(&source_parameters, &bounds, &wrong, &inverse())
+            .is_err()
+    );
+    let mut duplicate = fixed();
+    duplicate.push(duplicate[0].clone());
+    assert!(
+        outcome
+            .conditional_root_from_sources(&source_parameters, &bounds, &duplicate, &inverse())
+            .is_err()
+    );
+    let root =
+        outcome.conditional_root_from_sources(&source_parameters, &bounds, &fixed(), &inverse());
+    assert!(root.is_ok());
 }
