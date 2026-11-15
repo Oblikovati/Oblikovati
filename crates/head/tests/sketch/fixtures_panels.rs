@@ -46,9 +46,14 @@ impl ApplicationWorld {
             ["X", "Angle"]
         }
     }
-    /// Open the toolbar through the ribbon's Format panel; it shows while a command takes points.
+    /// Open the toolbar through the Create panel while a command takes points.
     pub fn open_precise_input(&mut self) {
-        self.click_text("Precise Input");
+        super::super::super::ribbon_panel_expansion::click_expansion_arrow(self, "Create");
+        self.pump(Vec::new());
+        let button = self
+            .run_in_window("##ribbon-additional-Create", "PreciseInput")
+            .center();
+        self.click(diagnostics::pointer_pixels(button));
         self.pump(Vec::new());
     }
     /// Close it through its own options, the way the recording did.

@@ -1,0 +1,109 @@
+    Finished `test` profile [unoptimized] target(s) in 0.09s
+     Running unittests src/lib.rs (/tmp/obk-circle-diagnostic-E1AUBo/target/debug/deps/oblikovati_head-0c1a18eb5aa1b656)
+
+running 1 test
+Feature: Circle center point
+  Scenario: circle-center-point-10 Enter a diameter through circle creation
+   ✔  Given an editable metric sketch with a midpoint line
+   ✔  When the user invoke Center Point Circle using Ctrl+Shift+C
+   ✔  And the user select the recorded free center at (0.000, 6.553, -12.440) mm
+   ✔  Then the prompt requests a point on the circle
+   ✘  And the status displays a radius of 0.000 mm
+      Step failed:
+      Defined: tmp/obk-circle-diagnostic-E1AUBo/source/features/sketch/circle-center-point/scenario.feature:10:5
+      Matched: crates/head/src/../tests/application/../sketch/circle-center-point/steps.rs:102:1
+      Step panicked. Captured output: expected a zero size in "0.491mm"
+  Scenario: circle-center-point-11 Edit diameter while retaining the measured center
+   ✔  Given the recorded circle has a driving diameter dimension equal to 6 mm
+   ✔  And its displayed center is (0.000, 6.553, -12.440) mm
+   ✔  When the user open the diameter dimension and accept the value 8 mm
+   ✔  And the user exit General Dimension and measure the circle
+   ✔  Then diameter is 8.000 mm and radius is 4.000 mm
+   ✔  And its measured center remains (0.000, 6.553, -12.440) mm
+   ✔  When the user close Measure and undo the edit
+   ✔  Then the visible dimension and extent return to 6 mm
+   ✔  When the user redo the edit
+   ✔  Then the visible dimension and extent return to 8 mm
+   ✔  When the user undo once more
+   ✔  Then the 6 mm baseline is restored with the surrounding midpoint line retained
+  Scenario: circle-center-point-01 Commit the intended result
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch is active
+   ✔  When the user select Center Point Circle, click a center, then a distinct circumference point
+   ✔  Then one circle has the selected center and passes through the circumference point
+   ✔  And the command returns to Select center of circle
+  Scenario: circle-center-point-06 Cancel after choosing only the center
+   ✔  Given an editable sketch is Ready
+   ✔  When the user select Center Point Circle from the dropdown
+   ✔  And the user select a center
+   ✔  Then the prompt requests a point on the circle
+   ✔  When the user press Escape
+   ✔  Then the MCAD Software returns to Ready without a new circle
+test native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window has been running for over 60 seconds
+  Scenario: circle-center-point-07 Create a free circle and undo and redo it
+   ✔  Given an editable sketch is Ready
+   ✔  When the user invoke Center Point Circle
+   ✔  And the user select a center and a distinct circumference point
+   ✔  Then a circle appears and the command requests another center
+   ✔  When the user press Escape
+   ✔  Then the circle is retained
+   ✔  When the user undo
+   ✔  Then the circle is removed
+   ✔  When the user redo
+   ✔  Then the circle returns
+  Scenario: circle-center-point-08 Measure the restored mouse-created circle
+   ✔  Given the upper-right center-point circle has been restored by redo
+   ✔  When the user open Measure and select its circumference
+   ✔  Then Measure displays diameter 8.375 mm and radius 4.187 mm
+   ✔  And center X 0.000 mm, Y 27.574 mm, Z -85.283 mm
+  Scenario: circle-center-point-09 Keep selecting circumference after a same-position click
+   ✔  Given an editable sketch is Ready
+   ✔  When the user invoke Center Point Circle
+   ✔  And the user select a center
+   ✔  And the user click the same screen position for its circumference
+   ✔  Then Select point on circle remains active
+   ✔  And the displayed radius is 0.000 mm
+   ✔  And no error dialog or new circle appears
+   ✔  When the user press Escape
+   ✔  Then the MCAD Software returns to Ready
+  Scenario: circle-center-point-12 Reject zero advancement and cancel through two Escape states
+   ✔  Given an editable sketch contains the retained 6 mm circle and midpoint line
+   ✔  When Center Point Circle is invoked and a free center is selected
+   ✔  And the 0 key is pressed followed by Return
+   ✔  Then the size field remains red with 0 and Select point on circle remains active
+   ✔  And no modal error dialog appears
+   ✔  When Escape is pressed once
+   ✔  Then the numeric entry clears and a mouse-driven circle preview remains active
+   ✔  When Escape is pressed again
+   ✔  Then Ready appears and the preview disappears
+   ✔  And the retained circle and midpoint line remain visible
+  Scenario: circle-center-point-13 Cancel a proposed diameter and inspect the retained value
+   ✔  Given the retained circle has a driving diameter dimension equal to 6 mm
+   ✔  When General Dimension opens the diameter dimension and the selected expression is replaced with 9
+   ✔  And Escape cancels the editor
+   ✔  Then General Dimension remains active and the circle keeps its visible size
+   ✔  When the diameter annotation is clicked again
+   ✔  Then Edit Dimension displays the retained 6 mm expression
+   ✔  When Escape closes the editor and Escape exits General Dimension
+   ✔  Then Ready appears
+[Summary]
+1 feature
+9 scenarios (8 passed, 1 failed)
+69 steps (68 passed, 1 failed)
+
+thread 'sketch-scenarios' (1624723) panicked at crates/head/src/../tests/application/benchmark.rs:294:5:
+scenario benchmark: expected no failed, undefined, or skipped steps
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window' (1624722) panicked at crates/head/src/../tests/application/../sketch/benchmark.rs:74:10:
+called `Result::unwrap()` on an `Err` value: Any { .. }
+test native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window ... FAILED
+
+failures:
+
+failures:
+    native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1062 filtered out; finished in 134.28s
+
+error: test failed, to rerun pass `-p oblikovati-head --lib`

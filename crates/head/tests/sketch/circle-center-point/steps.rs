@@ -86,10 +86,26 @@ fn metric_sketch(world: &mut ApplicationWorld) {
     sketch_with_line(world);
 }
 #[when("I invoke Center Point Circle using Ctrl+Shift+C")]
+#[when("the user invoke Center Point Circle using Ctrl+Shift+C")]
 fn invoke_by_shortcut(world: &mut ApplicationWorld) {
     world.control_shift_key(ViewportPhysicalKey::C);
     world.pump(Vec::new());
     world.expect_status("Select center of circle");
+}
+#[when("the user select the recorded free center at (0.000, 6.553, -12.440) mm")]
+fn select_recorded_center(world: &mut ApplicationWorld) {
+    world.open_precise_input();
+    world.precise_point(RECORDED_CENTER);
+    let center = world.sketch_pixel_of(RECORDED_CENTER.map(|millimetres| millimetres / 10.));
+    world.hover(center);
+}
+#[then("the status displays a radius of 0.000 mm")]
+fn zero_radius_status(world: &mut ApplicationWorld) {
+    zero_shown(world);
+}
+#[when("the user enter 6 in the active size field")]
+fn enter_six(world: &mut ApplicationWorld) {
+    world.type_text("6");
 }
 #[when(
     "I select the recorded free center at (0.000, 6.553, -12.440) mm and enter 6 followed by Return"
@@ -103,6 +119,7 @@ fn back_to_center(world: &mut ApplicationWorld) {
     world.expect_annotation("6");
 }
 #[when("I exit and measure the circle")]
+#[when("the user exit and measure the circle")]
 fn exit_and_measure(world: &mut ApplicationWorld) {
     world.escape();
     world.pump(Vec::new());
@@ -131,6 +148,7 @@ fn displayed_center(world: &mut ApplicationWorld) {
     close_measure(world);
 }
 #[when("I open the diameter dimension and accept the value 8 mm")]
+#[when("the user open the diameter dimension and accept the value 8 mm")]
 fn accept_eight(world: &mut ApplicationWorld) {
     world.open_dimension_label("6");
     world.type_text("8");
@@ -138,6 +156,7 @@ fn accept_eight(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
 }
 #[when("I exit General Dimension and measure the circle")]
+#[when("the user exit General Dimension and measure the circle")]
 fn exit_dimension_and_measure(world: &mut ApplicationWorld) {
     world.escape();
     world.pump(Vec::new());
@@ -153,6 +172,7 @@ fn center_remains(world: &mut ApplicationWorld) {
     expect_center_row(world);
 }
 #[when("I close Measure and undo the edit")]
+#[when("the user close Measure and undo the edit")]
 fn close_and_undo(world: &mut ApplicationWorld) {
     close_measure(world);
     world.undo();
@@ -163,6 +183,7 @@ fn back_to_six(world: &mut ApplicationWorld) {
     expect_radius_cm(world, 0.3);
 }
 #[when("I redo the edit")]
+#[when("the user redo the edit")]
 fn redo_edit(world: &mut ApplicationWorld) {
     world.redo();
 }
@@ -172,6 +193,7 @@ fn back_to_eight(world: &mut ApplicationWorld) {
     expect_radius_cm(world, 0.4);
 }
 #[when("I undo once more")]
+#[when("the user undo once more")]
 fn undo_once_more(world: &mut ApplicationWorld) {
     world.undo();
 }
@@ -315,6 +337,7 @@ fn restored_upper_circle(world: &mut ApplicationWorld) {
     world.redo();
 }
 #[when("I open Measure and select its circumference")]
+#[when("the user open Measure and select its circumference")]
 fn measure_circumference(world: &mut ApplicationWorld) {
     measure_circle(world);
 }
@@ -416,7 +439,7 @@ fn click_annotation(world: &mut ApplicationWorld, value: &str) {
     "General Dimension opens the diameter dimension and the selected expression is replaced with 9"
 )]
 fn dimension_tool_edit(world: &mut ApplicationWorld) {
-    world.click_text("Dimension");
+    world.key(ViewportPhysicalKey::D, false);
     world.pump(Vec::new());
     click_annotation(world, "6");
     world.type_text("9");
