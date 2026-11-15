@@ -15,8 +15,8 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 - **R0 remains open.** The full gate, baseline fields and milestone exit audits
   are incomplete. Run `python3 -B tools/bdd/behavior_cli.py report` for current
   counts; source and application changes can make earlier receipts stale.
-- At `5ec2711433b1493b840808acade259507ae13890`, the ledger reported zero
-  current verified scenarios, 180 stale receipts and 21 blocked scenarios
+- At `0a0669cfcecfe98eb01d059e6aac248ca0330bb1`, the ledger reported four
+  current verified scenarios, 176 stale receipts and 21 blocked scenarios
   across 2,720 declarations. Application changes made prior receipts stale.
   The gate also requires baseline fields for 2,577 scenarios.
 - `rust-work` is local and has not passed the full pre-push gate. All 20 former
@@ -59,10 +59,9 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   picking is blocked by missing interior extrema in
   [Martensite #462](https://github.com/Oblikovati/Martensite/issues/462).
 - Extrusion entry: the new metric part and origin-plane selection scenario
-  passed before later changes; its receipt is stale. The following preview,
-  cancel/reopen and zero distance recovery scenarios also passed for a
-  converged rectangle with free variables (#3927, #3931, #3929), but their
-  receipts are now stale. The solve precision certificate remains open (#3928).
+  and the following preview, cancel/reopen and zero distance recovery scenarios
+  passed on the merged edit state (#3927, #3931, #3929). The solve precision
+  certificate remains open (#3928).
 - Three-point arc: the collinear-input boundary scenario passed; see
   `receipts/2026-11-15-arc-boundary-refresh/`. Its receipt is now stale.
 - Extrusion editing: browser distance editing, candidate preview, cancel,
