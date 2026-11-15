@@ -1,0 +1,116 @@
+{
+  "application_commit": "4bd62fc0531d89bcf18697077e1d462612c119b2",
+  "cargo": "cargo 1.99.0 (5f94df478 2026-08-27)",
+  "packages": [
+    {
+      "package": "martensite-cmath",
+      "first_sha256": "c6c7b75d257f6a3838496cb2bb0d313ff3c376310a2728ec8250cb3ce89c4cea",
+      "second_sha256": "c6c7b75d257f6a3838496cb2bb0d313ff3c376310a2728ec8250cb3ce89c4cea",
+      "equal": true
+    },
+    {
+      "package": "martensite-tkbo",
+      "first_sha256": "53038ad79e6de9a90f6dc74c7de5f3a93d350faf79e1d7e2ca2fcb574d0e8e68",
+      "second_sha256": "53038ad79e6de9a90f6dc74c7de5f3a93d350faf79e1d7e2ca2fcb574d0e8e68",
+      "equal": true
+    },
+    {
+      "package": "martensite-tkbrep",
+      "first_sha256": "1073866e2a98ec72a397b19ad71362ab4268b1f63a23d7c4207255a21cac3e3f",
+      "second_sha256": "1073866e2a98ec72a397b19ad71362ab4268b1f63a23d7c4207255a21cac3e3f",
+      "equal": true
+    },
+    {
+      "package": "martensite-tkernel",
+      "first_sha256": "b37d068185858d6e3d624de8fbfe27e7aca85fe1d98d82f1c8c7701e8bccbc4d",
+      "second_sha256": "b37d068185858d6e3d624de8fbfe27e7aca85fe1d98d82f1c8c7701e8bccbc4d",
+      "equal": true
+    },
+    {
+      "package": "martensite-tkg2d",
+      "first_sha256": "e928b37cffd22f880e5cef50213544fb4bcfd66b3c0369fb5383190435db2cfe",
+      "second_sha256": "e928b37cffd22f880e5cef50213544fb4bcfd66b3c0369fb5383190435db2cfe",
+      "equal": true
+    },
+    {
+      "package": "martensite-tkg3d",
+      "first_sha256": "b98fabc378ac87472f3669d8e3ee7078d4c730d5a0dab6fa135fecb416ae4e48",
+      "second_sha256": "b98fabc378ac87472f3669d8e3ee7078d4c730d5a0dab6fa135fecb416ae4e48",
+      "equal": true
+    },
+    {
+      "package": "martensite-tkgeomalgo",
+      "first_sha256": "c55cae4a0411149d2fe13d5a4a1c08af393fbb5731deffdb4272966ae3e98306",
+      "second_sha256": "c55cae4a0411149d2fe13d5a4a1c08af393fbb5731deffdb4272966ae3e98306",
+      "equal": true
+    },
+    {
+      "package": "martensite-tkgeombase",
+      "first_sha256": "2c72c3abefd6b6a4dc6b2289013428f89a6f2bf7a9f946e3c14ce7ea41b3d6ee",
+      "second_sha256": "2c72c3abefd6b6a4dc6b2289013428f89a6f2bf7a9f946e3c14ce7ea41b3d6ee",
+      "equal": true
+    },
+    {
+      "package": "martensite-tkhlr",
+      "first_sha256": "3ab6b086ea52a41ecf3398c647d7798ea81f30915ea422f562aa6a478c26a5f1",
+      "second_sha256": "3ab6b086ea52a41ecf3398c647d7798ea81f30915ea422f562aa6a478c26a5f1",
+      "equal": true
+    },
+    {
+      "package": "martensite-tkmath",
+      "first_sha256": "51fabec492843d83847234257ef5be4e31ff0f7ac36deb66f576e26848632d95",
+      "second_sha256": "51fabec492843d83847234257ef5be4e31ff0f7ac36deb66f576e26848632d95",
+      "equal": true
+    },
+    {
+      "package": "martensite-tkmesh",
+      "first_sha256": "3e0ec114e398f3007562a5d70244b355bd4847731bb20294e1b1f8fbe36c9052",
+      "second_sha256": "3e0ec114e398f3007562a5d70244b355bd4847731bb20294e1b1f8fbe36c9052",
+      "equal": true
+    },
+    {
+      "package": "martensite-tkprim",
+      "first_sha256": "ed4a75d1789da61280307663807ca6e16f089473d7ad9e7291a34b00fecb989c",
+      "second_sha256": "ed4a75d1789da61280307663807ca6e16f089473d7ad9e7291a34b00fecb989c",
+      "equal": true
+    },
+    {
+      "package": "martensite-tkservice",
+      "first_sha256": "f258b0b344c568b1f16e536e8323df40bb45282df8ff0a7e5f94c8f290d65050",
+      "second_sha256": "f258b0b344c568b1f16e536e8323df40bb45282df8ff0a7e5f94c8f290d65050",
+      "equal": true
+    },
+    {
+      "package": "martensite-tkshhealing",
+      "first_sha256": "a2d34e74f499fd1958609cf224530b5c1a45c0166d025ae7afa33eddfa5e0b2a",
+      "second_sha256": "a2d34e74f499fd1958609cf224530b5c1a45c0166d025ae7afa33eddfa5e0b2a",
+      "equal": true
+    },
+    {
+      "package": "martensite-tktopalgo",
+      "first_sha256": "2849d42f9d94ea639d8f170936fac228cbf7c60f67b13b91977d2375f4112c5d",
+      "second_sha256": "2849d42f9d94ea639d8f170936fac228cbf7c60f67b13b91977d2375f4112c5d",
+      "equal": true
+    },
+    {
+      "package": "martensite-tkv3d",
+      "first_sha256": "52b5cc3d5affc3abc7ec261971ca586d4174a83c6fc1c1d64d055c4fe067ad83",
+      "second_sha256": "52b5cc3d5affc3abc7ec261971ca586d4174a83c6fc1c1d64d055c4fe067ad83",
+      "equal": true
+    },
+    {
+      "package": "martensite-vulkan",
+      "first_sha256": "726413fe1b9105c01a1b517c1ca904b42e0cc349e746c8a9d3a8488ff1ca4fc3",
+      "second_sha256": "726413fe1b9105c01a1b517c1ca904b42e0cc349e746c8a9d3a8488ff1ca4fc3",
+      "equal": true
+    },
+    {
+      "package": "oblikovati-api",
+      "first_sha256": "4d4e55c150f75b0333363abb45aac0ff52e2f5ad10b72e6a69b1342e27aaf6d1",
+      "second_sha256": "4d4e55c150f75b0333363abb45aac0ff52e2f5ad10b72e6a69b1342e27aaf6d1",
+      "equal": true
+    }
+  ],
+  "reusable": false,
+  "limitations": "Copied Git object stores, toolchain, workspace and host were not independently authenticated; regeneration does not verify committed provenance."
+}

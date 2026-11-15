@@ -158,3 +158,7 @@ result is therefore partial, does not bind a build, and cannot authorize reuse.
 It always reports `complete: false` and `reusable: false`. The recorded run
 matched 22,972 files in 18 Git packages, with all 18 manifests unverified; see
 [the observation](receipts/2026-11-15-git-vendor-check/observation.json).
+An isolated Cargo-home regeneration produced the same 18 manifest bytes, but
+used copied Git caches and an unauthenticated workspace and toolchain. It is a
+repeatability observation, not manifest verification; see
+[the experiment](receipts/2026-11-15-git-manifest-reproduction/README.md).
