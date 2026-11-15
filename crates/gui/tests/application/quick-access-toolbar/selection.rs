@@ -103,3 +103,24 @@ fn plane_label_stays_inside_the_clickable_workspace() {
     assert_eq!(label_position(&above, [60., 16.], workspace), [280., 200.]);
     assert_eq!(label_position(&right, [60., 16.], workspace), [440., 384.]);
 }
+
+#[test]
+fn measure_is_optional_and_key_tip_uses_the_inspect_action() {
+    let mut toolbar = QuickAccessToolbar::default();
+    let state = GuiCommandState {
+        document: Some(1),
+        document_type: Some(oblikovati_api::types::DOCUMENT_PART),
+        authoring: crate::GuiAuthoringContext::Part,
+        ..Default::default()
+    };
+    assert!(!toolbar.selection(&state).shows(StandardCommand::Measure));
+    toolbar.selection(&state).toggle(StandardCommand::Measure);
+    let mut actions = Vec::new();
+    toolbar.activate_tip(13, &state, &mut actions);
+    assert!(matches!(
+        actions.as_slice(),
+        [GuiShellAction::Inspect(
+            crate::GuiInspectAction::StartMeasure
+        )]
+    ));
+}
