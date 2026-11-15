@@ -36,6 +36,17 @@ def parse_tree_entry(row: bytes) -> tuple[str, str]:
     return path, f"{mode}:{kind}:{object_id}"
 
 
+def require_no_submodules(tree: Mapping[str, str]) -> None:
+    """Refuse untracked submodule contents; example: require_no_submodules(git_tree(repo, sha))."""
+    submodules = sorted(
+        path for path, entry in tree.items() if entry.startswith("160000:commit:")
+    )
+    if submodules:
+        raise ValueError(
+            f"submodules {submodules!r}: expected fully inventoried inputs"
+        )
+
+
 def runner_for(area: object) -> str:
     """Select the native runner; example: runner_for('sketch')."""
     if area == "sketch":
@@ -115,13 +126,15 @@ def build_map(
 ) -> dict[str, object]:
     """Create a conservative map for a Git revision; example: build_map(repo, inventory, commit)."""
     revision = source_revision(inventory)
+    application_inputs = git_tree(root, commit)
+    require_no_submodules(application_inputs)
     return {
         "version": VERSION,
         "application_commit": commit,
         "source_revision": revision,
         "runtime_coverage": RUNTIME_COVERAGE,
         "worktree_clean": worktree_clean(root),
-        "application_inputs": git_tree(root, commit),
+        "application_inputs": application_inputs,
         "runtime_scenario": runtime_scenario,
         "runtime_inputs": snapshot_runtime(runtime_root) if runtime_root else None,
         "scenarios": records_with_runtime(inventory, runtime_scenario, runtime_root),
@@ -219,8 +232,9 @@ def changed_dependencies(
     scenarios = mapping.get("scenarios")
     if not isinstance(scenarios, dict) or scenario not in scenarios:
         raise ValueError(f"scenario {scenario!r}: expected a mapped scenario")
-    before = checked_application_tree(root, mapping, current)
     after = git_tree(root, current)
+    require_no_submodules(after)
+    before = checked_application_tree(root, mapping, current)
     return changed_paths(before, after)
 
 
@@ -237,6 +251,7 @@ def checked_application_tree(
     tested = str(mapping.get("application_commit"))
     require_ancestor(root, tested, current)
     before = git_tree(root, tested)
+    require_no_submodules(before)
     if mapping.get("application_inputs") != before:
         raise ValueError(
             "application input map: expected the complete recorded Git tree"

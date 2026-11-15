@@ -104,6 +104,44 @@ class ScenarioDependencyTests(unittest.TestCase):
             ["assets/theme.xml", "crates/head/src/lib.rs", "new/file"],
         )
 
+    def test_gitlink_is_refused_even_when_submodule_is_uninitialized(self) -> None:
+        mapping = self.manifest()
+        self.fixture.git(
+            "update-index",
+            "--add",
+            "--cacheinfo",
+            f"160000,{self.fixture.baseline},nested",
+        )
+        self.fixture.git("commit", "-qm", "add gitlink")
+        current = self.fixture.git("rev-parse", "HEAD")
+        with self.assertRaisesRegex(ValueError, "submodules.*nested"):
+            build_map(self.fixture.root, self.inventory, current)
+        with self.assertRaisesRegex(ValueError, "submodules.*nested"):
+            changed_dependencies(
+                self.fixture.root, mapping, self.inventory, "one", current
+            )
+
+    def test_ignored_dirty_submodule_is_not_treated_as_inventoried(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            dependency = GitDependencyFixture(Path(folder))
+            self.fixture.git(
+                "-c",
+                "protocol.file.allow=always",
+                "submodule",
+                "add",
+                "-q",
+                str(dependency.root),
+                "nested",
+            )
+            self.fixture.git(
+                "config", "-f", ".gitmodules", "submodule.nested.ignore", "all"
+            )
+            current = self.fixture.commit("add ignored submodule")
+            (self.fixture.root / "nested/assets/theme.xml").write_text("changed")
+            self.assertEqual(self.fixture.git("status", "--porcelain"), "")
+            with self.assertRaisesRegex(ValueError, "submodules.*nested"):
+                build_map(self.fixture.root, self.inventory, current)
+
     def test_missing_unknown_and_forged_scope_is_rejected(self) -> None:
         mapping = self.manifest()
         forged = copy.deepcopy(mapping)

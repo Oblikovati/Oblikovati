@@ -27,7 +27,9 @@ The optional runtime inventory requires Linux no-follow and no-atime file
 descriptors; unsupported platforms decline instead of claiming completeness.
 Git commands use a restricted environment and ignore replacement objects. The
 clean-worktree check also refuses index entries marked assume-unchanged or
-skip-worktree. Ignored files and host inputs remain outside this check. Unknown
+skip-worktree. Revisions containing Git submodules are refused because the map
+does not inventory their contents, including uninitialized or ignored changes.
+Ignored files and host inputs remain outside this check. Unknown
 schemas, scenario changes, missing records and divergent histories are refused. Keep output outside the worktree to avoid making the map dirty.
 
 The current map marks runtime coverage `unbounded`. It cannot authorize reuse
