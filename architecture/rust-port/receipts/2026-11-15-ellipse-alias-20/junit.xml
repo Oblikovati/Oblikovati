@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ellipse: tmp/oblikovati-bdd-NipwWW/checkout/features/sketch/ellipse/scenario.feature" package="testsuite/Feature: Ellipse: tmp/oblikovati-bdd-NipwWW/checkout/features/sketch/ellipse/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T22:25:25.901281188Z" time="24.841551593"><testcase name="Scenario: ellipse-20 Observe a digit immediately after fresh center selection: tmp/oblikovati-bdd-NipwWW/checkout/features/sketch/ellipse/scenario.feature:207:3" time="24.841551593"><system-out><![CDATA[  Scenario: ellipse-20 Observe a digit immediately after fresh center selection
+   ✔  Given an editable sketch with existing geometry is Ready
+   ✔  When the user open Circle dropdown and choose Ellipse
+   ✔  And the user select the fixture center
+   ✔  Then the prompt requests the first axis point
+   ✔  When the user press 6
+   ✔  Then Command alias input displays 6 instead of an axis-length editor
+   ✔  When the user press Escape
+   ✔  Then Ready returns with the previous geometry retained
+]]></system-out></testcase></testsuite></testsuites>

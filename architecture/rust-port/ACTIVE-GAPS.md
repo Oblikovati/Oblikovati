@@ -46,6 +46,9 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
   `receipts/2026-11-15-ellipse-measure-blocked/`. The five R4 ellipse scenarios
   passed a diagnostic; curvature display remains open in #3995. See
   `receipts/2026-11-15-ellipse-wording-diagnostic/`.
+- Ellipse alias input: the corrected `ellipse-20` wording passed all eight
+  native steps, including the absence of an axis editor. It remains diagnostic
+  evidence; see `receipts/2026-11-15-ellipse-alias-20/`.
 - Three-point arc: the collinear-input boundary scenario passed; see
   `receipts/2026-11-15-arc-boundary-refresh/`. Its receipt is now stale.
 - Extrusion editing: browser distance editing, candidate preview, cancel,
