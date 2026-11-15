@@ -31,6 +31,110 @@ fn faces(owner: &mut TestOwner, body: usize) -> Vec<String> {
         .map(|face| face.key.clone())
         .collect()
 }
+fn edges(owner: &mut TestOwner, body: usize) -> Vec<String> {
+    Client::new(owner.document_host())
+        .model()
+        .reference_keys()
+        .unwrap()
+        .bodies
+        .unwrap()[body]
+        .edges
+        .as_ref()
+        .unwrap()
+        .iter()
+        .map(|edge| edge.key.clone())
+        .collect()
+}
+fn lengths(owner: &mut TestOwner, keys: &[String]) -> Vec<i64> {
+    let mut values: Vec<_> = keys
+        .iter()
+        .map(|key| {
+            let result = measure(owner, 0, key, "length").unwrap();
+            assert_eq!(
+                (result.type_.as_str(), result.unit.as_str()),
+                ("length", "mm")
+            );
+            (result.value * 1_000_000.).round() as i64
+        })
+        .collect();
+    values.sort_unstable();
+    values
+}
+
+#[test]
+fn named_edge_lengths_survive_edit_history_and_reopen() {
+    let (owner, _) = owner();
+    let mut owner = owner
+        .with_extrusion_policy(crate::part_scene::resolution_policy::desktop_policy())
+        .unwrap();
+    let document = open_prism(&mut owner, false);
+    let keys = edges(&mut owner, 0);
+    assert_eq!(
+        lengths(&mut owner, &keys),
+        [
+            vec![20_000_000; 4],
+            vec![30_000_000; 4],
+            vec![40_000_000; 4]
+        ]
+        .concat()
+    );
+    set_parameter(&mut owner, "depth", "3 cm");
+    let edited = [vec![30_000_000; 8], vec![40_000_000; 4]].concat();
+    assert_eq!(lengths(&mut owner, &keys), edited);
+    owner.files.commands(document).unwrap().undo().unwrap();
+    assert_eq!(lengths(&mut owner, &keys)[0], 20_000_000);
+    owner.files.commands(document).unwrap().redo().unwrap();
+    assert_eq!(lengths(&mut owner, &keys), edited);
+    let path = "/memory/edge-length.opd";
+    Client::new(owner.document_host())
+        .documents()
+        .save_as(&SaveDocumentAsArgs {
+            document,
+            new_full_document_name: path.into(),
+        })
+        .unwrap();
+    Client::new(owner.document_host())
+        .documents()
+        .close(&CloseDocumentArgs {
+            id: document,
+            force: true,
+        })
+        .unwrap();
+    Client::new(owner.document_host())
+        .documents()
+        .open(&OpenDocumentArgs {
+            full_document_name: path.into(),
+            ..Default::default()
+        })
+        .unwrap();
+    assert_eq!(lengths(&mut owner, &keys), edited);
+}
+
+#[test]
+fn edge_length_rejects_wrong_or_deleted_reference_and_undo_restores_it() {
+    let (owner, _) = owner();
+    let mut owner = owner
+        .with_extrusion_policy(crate::part_scene::resolution_policy::desktop_policy())
+        .unwrap();
+    let document = open_prism(&mut owner, true);
+    let first = edges(&mut owner, 0);
+    let second = edges(&mut owner, 1);
+    let face = faces(&mut owner, 0);
+    let expected = measure(&mut owner, 0, &first[0], "length").unwrap();
+    assert!(measure(&mut owner, 0, &second[0], "length").is_err());
+    assert!(measure(&mut owner, 0, &face[0], "length").is_err());
+    assert!(measure(&mut owner, -1, &first[0], "length").is_err());
+    Client::new(owner.document_host())
+        .body()
+        .delete(&BodyIndexArgs { body_index: 0 })
+        .unwrap();
+    assert!(measure(&mut owner, 0, &first[0], "length").is_err());
+    owner.files.commands(document).unwrap().undo().unwrap();
+    assert_eq!(
+        measure(&mut owner, 0, &first[0], "length").unwrap(),
+        expected
+    );
+}
 fn areas(owner: &mut TestOwner, keys: &[String]) -> Vec<i64> {
     let mut values: Vec<_> = keys
         .iter()
@@ -115,14 +219,7 @@ fn face_area_rejects_other_bodies_bad_keys_and_unsupported_types() {
     assert!(measure(&mut owner, -1, &first[0], "area").is_err());
     assert!(measure(&mut owner, 2, &first[0], "area").is_err());
     assert!(measure(&mut owner, 0, "invalid", "area").is_err());
-    for kind in [
-        "length",
-        "distance",
-        "minDistance",
-        "angle",
-        "loopLength",
-        "other",
-    ] {
+    for kind in ["distance", "minDistance", "angle", "loopLength", "other"] {
         assert!(
             measure(&mut owner, 0, &first[0], kind)
                 .unwrap_err()
