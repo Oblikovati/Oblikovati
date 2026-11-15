@@ -75,6 +75,11 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   The runs did not create the parameter-driven cube. See
   `receipts/2026-11-15-live-os-extrusion/` and
   `receipts/2026-11-15-live-face-replay/`.
+- A later live XTest run created the zero-DOF, parameter-driven cube, edited
+  `size`, undid, redid, saved, reopened, and resolved its original face keys.
+  The per-face measurements and captures are in
+  `receipts/2026-11-15-live-parameter-cube/`. This does not close the solver
+  precision or full milestone gates (#3928, #3857).
 
 - Viewport orientation: all 20 pinned scenarios passed on the merged revision
   (#3961). See `receipts/2026-11-15-orientation-verified/`. The run uses
