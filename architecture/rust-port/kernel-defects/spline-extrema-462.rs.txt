@@ -1,0 +1,22 @@
+// SPDX-License-Identifier: GPL-2.0-only
+// Copy this test into crates/martensite/tests/planar_pick.rs and run the command in the report.
+#[test]
+fn investigation_native_parabolic_minima() {
+    use martensite_tkernel::{ncollection::Array1, standard::Handle};
+    use martensite_tkg2d::{geom2d::{Geom2dBSplineCurve, Geom2dCurve}, geom2d_adaptor::Geom2dAdaptorCurve};
+    use martensite_tkgeombase::extrema::ExtPC2d;
+    use martensite_tkmath::gp::Point2;
+    let (a, scale, eps) = (0.025_f64, 100.0_f64, 0.002_f64);
+    let y0 = scale*a*a;
+    let poles = [Point2::new(0.,y0), Point2::new(0.5,y0-scale*a), Point2::new(1.,scale*(1.-a).powi(2))];
+    let knots = [0., 1.];
+    let mults = [3, 3];
+    let spline = Geom2dBSplineCurve::new(&Array1::from_shared(&poles, 1), &Array1::from_shared(&knots, 1), &Array1::from_shared(&mults, 1), 2, false).unwrap();
+    let handle: Handle<dyn Geom2dCurve> = Handle::new(spline).cast();
+    let adaptor = Geom2dAdaptorCurve::with_curve(&handle).unwrap();
+    let height = (1.+2.*scale*scale*eps*eps)/(2.*scale);
+    let result = ExtPC2d::with_range(Point2::new(a,height), &adaptor, 0., 1., 1e-7).unwrap();
+    eprintln!("done {} count {}", result.is_done(), result.nb_ext().unwrap());
+    for i in 1..=result.nb_ext().unwrap() { eprintln!("root {} minimum {} distance {}", result.point(i).unwrap().parameter(), result.is_min(i).unwrap(), result.square_distance(i).unwrap().sqrt()); }
+    assert!((1..=result.nb_ext().unwrap()).any(|i| (result.point(i).unwrap().parameter() - 0.023).abs() < 1e-6 || (result.point(i).unwrap().parameter() - 0.027).abs() < 1e-6));
+}
