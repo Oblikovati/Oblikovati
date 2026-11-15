@@ -5296,8 +5296,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-menu-f0b61ad2/receipt-f0b61ad2f9a5655f.json",
-        "sha256": "21b86a6bc4a65f70afafd214e95cd1bbe41cb680e7b699816948e7dfa74d3523"
+        "path": "architecture/rust-port/receipts/2026-11-15-file-menu-full/receipt-f0b61ad2f9a5655f.json",
+        "sha256": "ef397ef3a1081516d3d50c9fbe1ca5a36ca5ef5f31fce5e243fa89562bdfbfd6"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go: drawFileMenu; legacy menu structure differs from the scenario",
       "mapping_reason": "Application shell menu, layout, and document-context interaction.",
@@ -5325,8 +5325,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-menu-a94ed06a/receipt-a94ed06a75a5dbb3.json",
-        "sha256": "2e8b66a0847dd7d8de08e2ea02a3c37ae152ad841a847e26259db98d45b306e2"
+        "path": "architecture/rust-port/receipts/2026-11-15-file-menu-full/receipt-a94ed06a75a5dbb3.json",
+        "sha256": "66f7c2d89ccf2d65fd00e45572266dc245e2f4bf84130169d68d3086037c7580"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go: drawFileMenu; legacy menu structure differs from the scenario",
       "mapping_reason": "Application shell menu, layout, and document-context interaction.",
@@ -5354,8 +5354,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-menu-dac29e7f/receipt-dac29e7f09893d1d.json",
-        "sha256": "3d81ac6e060f7258e10b40eb86f4f0142c4efca3456d9bcd4753498e92d97027"
+        "path": "architecture/rust-port/receipts/2026-11-15-file-menu-full/receipt-dac29e7f09893d1d.json",
+        "sha256": "9b16b09a544b40f24f948c7a61c82e4349505d7d8eae9f481256e109ce08d32d"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go: drawFileMenu; legacy menu structure differs from the scenario",
       "mapping_reason": "Application shell menu, layout, and document-context interaction.",
@@ -5383,8 +5383,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-menu-d5bc3120/receipt-d5bc3120a72a620b.json",
-        "sha256": "2be4a983435ef4c170849fee49666c48137a8220dc7608da06fdee407d11db3f"
+        "path": "architecture/rust-port/receipts/2026-11-15-file-menu-full/receipt-d5bc3120a72a620b.json",
+        "sha256": "8d315beb5d19cc91d6223ce8229923f77579d87c20bbe7e8fe5aea719b44642a"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go: drawFileMenu; legacy menu structure differs from the scenario",
       "mapping_reason": "Application shell menu, layout, and document-context interaction.",
@@ -5412,8 +5412,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-menu-210565d6/receipt-210565d68ab3712a.json",
-        "sha256": "cdba5ecced02f3431a99a11c1eb4e4b991fc84f6cb6a11972dd90ad72bee14d4"
+        "path": "architecture/rust-port/receipts/2026-11-15-file-menu-full/receipt-210565d68ab3712a.json",
+        "sha256": "ad6086871dbc174b9084d81077e36cf376734b6b67fb07e0f9aeb9f49e787d9d"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go: drawFileMenu; legacy menu structure differs from the scenario",
       "mapping_reason": "Application shell menu, layout, and document-context interaction.",
@@ -5441,8 +5441,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-menu-e6924835/receipt-e69248355099bdc9.json",
-        "sha256": "fd1c292c7d654038c4a9e715e6ad820b94f0947e154cc4e9fc64238c6031fb09"
+        "path": "architecture/rust-port/receipts/2026-11-15-file-menu-full/receipt-e69248355099bdc9.json",
+        "sha256": "f2ea09668d5481eeaf128d361031984efb81beb204c20667b3dc0f3302c191cf"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go: drawFileMenu; legacy menu structure differs from the scenario",
       "mapping_reason": "Application shell menu, layout, and document-context interaction.",
@@ -5470,8 +5470,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-menu-d703958d/receipt-d703958d1cb7a6f8.json",
-        "sha256": "8ef63899a53e5624a5cafc16704de9d3a8d3faebe012ed541a5c41e1128656cd"
+        "path": "architecture/rust-port/receipts/2026-11-15-file-menu-full/receipt-d703958d1cb7a6f8.json",
+        "sha256": "0743d6dc38c0bdc923278c8b885124dd05cd47cb7fa9f07806fdd56ef4e7fc44"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go: drawFileMenu; legacy menu structure differs from the scenario",
       "mapping_reason": "Application shell menu, layout, and document-context interaction.",
@@ -5499,8 +5499,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-menu-5c5237cc/receipt-5c5237cc9af7f034.json",
-        "sha256": "077a3833824065968620eed4fc903b8f184552ff7f376aed27062195d611cd9f"
+        "path": "architecture/rust-port/receipts/2026-11-15-file-menu-full/receipt-5c5237cc9af7f034.json",
+        "sha256": "d66c325fd3e7fbd4de8f4446f4c13d8f495696eae788c7dfeafd90c96fbc6dbc"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go: drawFileMenu; legacy menu structure differs from the scenario",
       "mapping_reason": "Application shell menu, layout, and document-context interaction.",
