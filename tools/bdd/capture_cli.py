@@ -17,6 +17,8 @@ from committed_build_source import materialize_source
 from capture_build_environment import capture_build_environment, reject_ancestor_cargo_configs
 from capture_inventory import isolated_inventory
 from capture_dependency_stage import stage_capture_dependencies
+from capture_source_config import read_capture_source_config, require_same_source_config
+from capture_manifest_check import read_capture_manifests, require_same_manifests
 from functools import partial
 from behavior_evidence import locked_revision
 from behavior_ledger import (
@@ -58,11 +60,15 @@ class NativeCargoRun:
         source = folder / "source"
         materialize_source(self.root, self.commit, source)
         reject_ancestor_cargo_configs(source)
+        source_config = read_capture_source_config(source)
+        manifests = read_capture_manifests(source)
         build_environment = capture_build_environment(folder, environment)
         stage_capture_dependencies(source, environment, build_environment)
         with tempfile.TemporaryFile(mode="w+", encoding="utf-8") as output:
             status = self._stream_native(source, build_environment, output)
             reject_ancestor_cargo_configs(source)
+            require_same_source_config(source, source_config)
+            require_same_manifests(source, manifests)
             output.seek(0)
             with log.open("x", encoding="utf-8") as destination:
                 shutil.copyfileobj(output, destination)

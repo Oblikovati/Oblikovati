@@ -60,6 +60,12 @@ class FakeInjectedConfigProcess(FakeCargoProcess):
         return 0
 
 
+class FakeChangedManifestProcess(FakeCargoProcess):
+    def wait(self) -> int:
+        (self.source / "Cargo.toml").write_text('[package]\nname="changed"\nversion="0.1.0"\n')
+        return 0
+
+
 class NativeCargoRunTests(unittest.TestCase):
     def setUp(self) -> None:
         self.repo = tempfile.TemporaryDirectory()
@@ -68,8 +74,9 @@ class NativeCargoRunTests(unittest.TestCase):
         subprocess.run(["git", "init", "-q", str(root)], check=True)
         (root / "tracked.txt").write_text("committed")
         (root / "Cargo.lock").write_text("version = 3\npackage = []\n")
+        (root / "Cargo.toml").write_text('[package]\nname="fixture"\nversion="0.1.0"\n')
         (root / ".gitignore").write_text("ignored.txt\n")
-        self.git("add", "tracked.txt", ".gitignore", "Cargo.lock")
+        self.git("add", "tracked.txt", ".gitignore", "Cargo.lock", "Cargo.toml")
         self.git("-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "fixture")
         self.commit = self.git("rev-parse", "HEAD").strip()
         (root / "ignored.txt").write_text("untracked build input")
@@ -201,6 +208,19 @@ class NativeCargoRunTests(unittest.TestCase):
             status = NativeCargoRun(root, "application", commit)(reports, env)
             self.assertEqual(status, 0, (reports / "native-test.log").read_text())
 
+    def test_capture_refuses_committed_compiler_redirect_before_launch(self) -> None:
+        root = Path(self.repo.name)
+        (root / ".cargo").mkdir()
+        (root / ".cargo/config.toml").write_text('[build]\nrustc-wrapper="/bad"\n')
+        self.git("add", ".cargo/config.toml")
+        self.git("-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "bad config")
+        commit = self.git("rev-parse", "HEAD").strip()
+        with tempfile.TemporaryDirectory() as folder:
+            reports = Path(folder)
+            with self.assertRaisesRegex(ValueError, "expected an approved capture setting"):
+                NativeCargoRun(root, "application", commit, FakeCargoProcess)(reports, {"OBK_BDD_REPORTS": str(reports)})
+            self.assertFalse((reports / "native-test.log").exists())
+
     def test_failed_child_output_is_still_recorded(self) -> None:
         with tempfile.TemporaryDirectory() as folder:
             reports = Path(folder)
@@ -239,6 +259,15 @@ class NativeCargoRunTests(unittest.TestCase):
             runner = NativeCargoRun(Path(self.repo.name), "application", self.commit, FakeInjectedConfigProcess)
             with contextlib.redirect_stdout(io.StringIO()):
                 with self.assertRaisesRegex(ValueError, "ancestor configuration"):
+                    runner(reports, {"OBK_BDD_REPORTS": str(reports)})
+            self.assertFalse((reports / "native-test.log").exists())
+
+    def test_changed_manifest_prevents_publication(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            reports = Path(folder)
+            runner = NativeCargoRun(Path(self.repo.name), "application", self.commit, FakeChangedManifestProcess)
+            with contextlib.redirect_stdout(io.StringIO()):
+                with self.assertRaisesRegex(ValueError, "expected unchanged capture manifests"):
                     runner(reports, {"OBK_BDD_REPORTS": str(reports)})
             self.assertFalse((reports / "native-test.log").exists())
 

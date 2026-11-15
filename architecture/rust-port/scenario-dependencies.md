@@ -74,24 +74,24 @@ concurrent writes remain unbounded. Runtime assets or add-ins that exist only in
 the original checkout or beside an old executable are not copied. A capture
 can fail when it depends on them; it must not be treated as verified evidence.
 
-The capture command also selects a fixed set of environment variables and
-uses a fresh Cargo home. It copies every locked crates.io archive from the
-caller cache after checking its SHA-256 against Cargo.lock; Cargo extracts those
-archives into a new source tree when the committed Cargo configuration selects
-those archives. It stages shallow Git databases for each locked commit and its
-recursive gitlinks, then checks their objects with Git fsck. Cargo creates fresh
-Git checkouts. Staging excludes caller Git configuration; the capture build
-also disables global and system Git configuration. Staging refuses ambiguous commits, alternate object stores, and shallow source
-databases. It links the caller's registry index, sets Cargo offline, and refuses
-Cargo configuration above the exported source before and after the run. The committed source's
-Cargo configuration remains in effect. Display and renderer variables in the
-allowlist are passed through; the capture does not attest their values. The
-compiler and tools found on PATH, Rustup installation, registry index, source
-Cargo configuration, host files, and concurrent changes remain unproven. Git
-object integrity depends on the host Git implementation and Git SHA-1. Other
-processes can modify staged files during a build.
-The checks do not prevent a configuration file from appearing and disappearing
-during a run. Cargo offline requires the locked dependencies to be cached.
+The capture command selects a fixed set of environment variables and uses a
+fresh Cargo home. It copies every locked crates.io archive after checking its
+SHA-256 against Cargo.lock. It copies the registry index into the temporary home;
+the index contents are not authenticated. It stages shallow Git databases for
+each locked commit and its recursive gitlinks, then checks their objects with
+Git fsck. Cargo creates fresh registry sources and Git checkouts when the
+committed source settings select them. Staging excludes caller Git config and
+refuses ambiguous commits, alternate object stores, and shallow source databases.
+
+The project Cargo config is restricted to the current xtask alias and Linux
+rpath setting. Other settings are refused until reviewed. Workspace manifests
+must not contain patch or replace tables, and their path fields must remain
+inside the export. The checks repeat after each build. Display and renderer
+variables are passed through and their values are not attested. Host tools,
+Git SHA-1, the registry index, external files, dependency build scripts, and
+concurrent changes remain unproven. Other processes can alter inputs during a
+build or make a change and revert it between checks. Cargo offline requires all
+locked dependencies in the local cache.
 
 Native capture builds the inventory generator from the selected committed
 source in a separate temporary offline target. The capture does not use the
