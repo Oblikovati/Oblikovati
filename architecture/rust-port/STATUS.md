@@ -66,6 +66,8 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 
 ## Open items
 
+- R4 document creation: a full diagnostic run passed 29 of 39 scenarios; ten stopped at unbound steps (#3899). Template navigation is tracked in #3951. See `receipts/2026-11-15-document-creation-diagnostic/`.
+
 - R4 document tabs: a full diagnostic run passed 9 of 38 scenarios; 29 stopped at unbound steps (#3900). Keyboard switching is tracked in #3950. See `receipts/2026-11-15-document-tabs-diagnostic/`.
 
 - R7 document opening: a full diagnostic run passed 26 of 27 scenarios; the express assembly scenario has an unbound setup step and remains open (#3949). See `receipts/2026-11-15-document-opening-diagnostic/`.
