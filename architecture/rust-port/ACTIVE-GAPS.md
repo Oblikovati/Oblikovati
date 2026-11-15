@@ -29,6 +29,11 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
   captures are in `receipts/2026-11-15-rectangle-zero-corrected/`. The raw
   status message was fixed and tested in #3975; see
   `receipts/2026-11-15-zero-size-status/`.
+- Center-point circle: five early scenarios passed a native diagnostic on the
+  current pin (#3910). The diameter-edit run passed its steps but used an
+  ordinary line for a midpoint-line fixture; #3996 tracks the correction.
+  See `receipts/2026-11-15-circle-portable-diagnostic/` and
+  `receipts/2026-11-15-circle-midpoint-fixture-gap/`.
 - Two-point rectangle: the four portable scenarios passed a diagnostic on the
   current pin (#3886). Six capture-only cases were not executed; the result
   is not verified acceptance. See
