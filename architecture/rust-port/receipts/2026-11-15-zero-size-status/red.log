@@ -1,0 +1,305 @@
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.26
+   Compiling cfg-if v1.0.5
+   Compiling libc v0.2.190
+   Compiling bitflags v2.13.2
+   Compiling smallvec v1.16.3
+   Compiling autocfg v1.5.1
+   Compiling rustix v1.1.5
+   Compiling linux-raw-sys v0.12.1
+   Compiling memchr v2.8.3
+   Compiling bytemuck v1.25.2
+   Compiling cfg_aliases v0.2.2
+   Compiling metallic v0.3.0
+   Compiling serde_core v1.0.229
+   Compiling rustc_apfloat v0.2.3+llvm-462a31f5a5ab
+   Compiling allocator-api2 v0.4.0
+   Compiling zmij v1.0.23
+   Compiling serde v1.0.229
+   Compiling itoa v1.0.18
+   Compiling version_check v0.9.5
+   Compiling time-core v0.1.9
+   Compiling num-conv v0.2.2
+   Compiling find-msvc-tools v0.1.14
+   Compiling shlex v2.0.1
+   Compiling serde_json v1.0.151
+   Compiling deranged v0.5.8
+   Compiling powerfmt v0.2.1
+   Compiling typenum v1.20.1
+   Compiling pkg-config v0.3.34
+   Compiling simd-adler32 v0.3.10
+   Compiling once_cell v1.21.4
+   Compiling nix v0.31.3
+   Compiling base64 v0.22.1
+   Compiling getrandom v0.4.3
+   Compiling stable_deref_trait v1.2.1
+   Compiling adler2 v2.0.1
+   Compiling crc32fast v1.5.2
+   Compiling regex-syntax v0.8.11
+   Compiling cpufeatures v0.2.17
+   Compiling cc v1.7.0
+   Compiling sha1_smol v1.0.1
+   Compiling fdeflate v0.3.7
+   Compiling time-macros v0.2.32
+   Compiling xml v1.4.0
+   Compiling oblikovati-solve v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/3975-rectangle-status/crates/solve)
+   Compiling miniz_oxide v0.9.1
+   Compiling miniz_oxide v0.8.9
+   Compiling log v0.4.34
+   Compiling writeable v0.6.4
+   Compiling generic-array v0.14.7
+   Compiling strsim v0.11.1
+   Compiling uuid v1.27.0
+   Compiling equivalent v1.0.2
+   Compiling num-traits v0.2.19
+   Compiling bitflags v1.3.2
+   Compiling unicode-segmentation v1.13.3
+   Compiling parking_lot_core v0.9.12
+   Compiling hashbrown v0.17.1
+   Compiling either v1.19.0
+   Compiling arrayvec v0.7.8
+   Compiling litemap v0.8.3
+   Compiling fastrand v2.5.0
+   Compiling aho-corasick v1.1.5
+   Compiling bstr v1.13.1
+   Compiling scopeguard v1.2.0
+   Compiling unicode-xid v0.2.6
+   Compiling color_quant v1.1.0
+   Compiling icu_locale_fallback_data v2.4.0
+   Compiling ryu v1.0.23
+   Compiling weezl v0.1.12
+   Compiling unsafe-libyaml v0.2.11
+   Compiling crossbeam-utils v0.8.23
+   Compiling x11-dl v2.21.0
+   Compiling zune-core v0.4.12
+   Compiling lock_api v0.4.14
+   Compiling float-cmp v0.9.0
+   Compiling icu_segmenter_data v2.4.0
+   Compiling heck v0.5.0
+   Compiling ident_case v1.0.1
+   Compiling convert_case v0.10.0
+   Compiling flate2 v1.1.10
+   Compiling crossbeam-epoch v0.9.21
+   Compiling utf_types v1.0.0
+   Compiling bytecount v0.6.9
+   Compiling byteorder-lite v0.1.0
+   Compiling zune-jpeg v0.4.21
+   Compiling syn v3.0.7
+   Compiling syn v2.0.119
+   Compiling gif v0.13.3
+   Compiling strict-num v0.1.1
+   Compiling polycool v0.4.0
+   Compiling ash v0.38.0+1.3.281
+   Compiling crossbeam-deque v0.8.8
+   Compiling futures-core v0.3.34
+   Compiling utf8parse v0.2.2
+   Compiling indexmap v2.14.2
+   Compiling utf8_iter v1.1.0
+   Compiling arrayref v0.3.9
+   Compiling futures-sink v0.3.34
+   Compiling anstyle-parse v1.0.0
+   Compiling nom v8.0.0
+   Compiling libloading v0.8.9
+   Compiling kurbo v0.13.1
+   Compiling png v0.17.16
+   Compiling futures-channel v0.3.34
+   Compiling tiny-skia-path v0.12.0
+   Compiling unicode-width v0.2.3
+   Compiling futures-io v0.3.34
+   Compiling anstyle-query v1.1.5
+   Compiling colorchoice v1.0.5
+   Compiling thiserror v2.0.21
+   Compiling anstyle v1.0.14
+   Compiling futures-task v0.3.34
+   Compiling slab v0.4.12
+   Compiling peg-runtime v0.6.3
+   Compiling pin-project-lite v0.2.17
+   Compiling siphasher v1.0.4
+   Compiling fast_polynomial v0.4.1
+   Compiling num-integer v0.1.47
+   Compiling num-complex v0.4.6
+   Compiling lua-src v551.0.2
+   Compiling same-file v1.0.6
+   Compiling is_terminal_polyfill v1.70.2
+   Compiling png v0.18.1
+   Compiling anstream v1.0.0
+   Compiling walkdir v2.5.0
+   Compiling peg-macros v0.6.3
+   Compiling roxmltree v0.21.2
+   Compiling time v0.3.55
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.7
+   Compiling num-bigint v0.4.6
+   Compiling simplecss v0.2.2
+   Compiling ref-cast v1.0.27
+   Compiling anyhow v1.0.104
+   Compiling digest v0.10.7
+   Compiling rustc-hash v2.1.3
+   Compiling x11rb-protocol v0.14.0
+   Compiling which v8.0.6
+   Compiling pico-args v0.5.0
+   Compiling smawk v0.3.3
+   Compiling chlorine v1.0.13
+   Compiling clap_lex v1.1.1
+   Compiling data-url v0.3.2
+   Compiling sha2 v0.10.9
+   Compiling imagesize v0.15.0
+   Compiling mint v0.5.9
+   Compiling itertools v0.14.0
+   Compiling quick-xml v0.41.0
+   Compiling rgb v0.8.53
+   Compiling inflections v1.1.1
+   Compiling luajit-src v210.7.4+c6ffc14
+   Compiling image v0.25.6
+   Compiling humantime v2.4.0
+   Compiling imgui-sys v0.12.0
+   Compiling errno v0.3.14
+   Compiling regex-automata v0.4.18
+   Compiling svgtypes v0.16.2
+   Compiling oblikovati-gui v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/3975-rectangle-status/crates/gui)
+   Compiling console v0.16.6
+   Compiling mlua-sys v0.13.0
+   Compiling tiny-skia v0.12.0
+   Compiling linked-hash-map v0.5.6
+   Compiling parking_lot v0.12.5
+   Compiling inventory v0.3.25
+   Compiling Inflector v0.11.4
+   Compiling martensite-cmath v0.3.5 (https://github.com/Oblikovati/Martensite?rev=d051ff699982faba4ec2df3ee9a47e14f38dedbd#d051ff69)
+   Compiling mime v0.3.18
+   Compiling usvg v0.49.0
+   Compiling peg v0.6.3
+   Compiling num-rational v0.4.2
+   Compiling nom_locate v5.0.0
+   Compiling resvg v0.49.0
+   Compiling globset v0.4.21
+   Compiling regex v1.13.1
+   Compiling synstructure v0.14.0
+   Compiling darling_core v0.24.1
+   Compiling derive_more-impl v2.1.1
+   Compiling sealed v0.6.0
+   Compiling typed-builder-macro v0.23.2
+   Compiling derive-getters v0.5.0
+   Compiling pin-project-internal v1.1.13
+   Compiling smart-default v0.7.1
+   Compiling ignore v0.4.34
+   Compiling synthez-core v0.4.0
+   Compiling junit-report v0.9.1
+   Compiling serde_derive v1.0.229
+   Compiling zerofrom-derive v0.1.8
+   Compiling yoke-derive v0.8.4
+   Compiling zerovec-derive v0.11.7
+   Compiling displaydoc v0.2.7
+   Compiling futures-macro v0.3.34
+   Compiling thiserror-impl v2.0.21
+   Compiling ref-cast-impl v1.0.27
+   Compiling clap_derive v4.6.7
+   Compiling pin-project v1.1.13
+   Compiling synthez-codegen v0.4.0
+   Compiling globwalk v0.9.1
+   Compiling futures-util v0.3.34
+   Compiling typed-builder v0.23.2
+   Compiling synthez v0.4.0
+   Compiling zerofrom v0.1.8
+   Compiling mlua v0.12.2
+   Compiling yoke v0.8.4
+   Compiling zerotrie v0.2.5
+   Compiling zerovec v0.11.9
+   Compiling xattr v1.6.1
+   Compiling tempfile v3.27.0
+   Compiling gethostname v1.1.0
+   Compiling terminal_size v0.4.4
+   Compiling x11rb v0.14.0
+   Compiling clap_builder v4.6.7
+   Compiling martensite-tkernel v0.4.4 (https://github.com/Oblikovati/Martensite?rev=d051ff699982faba4ec2df3ee9a47e14f38dedbd#d051ff69)
+   Compiling darling_macro v0.24.1
+   Compiling tinystr v0.8.5
+   Compiling potential_utf v0.1.6
+   Compiling icu_collections v2.4.0
+   Compiling darling v0.24.1
+   Compiling icu_locale_core v2.4.0
+   Compiling serde_with_macros v3.24.0
+   Compiling derive_more v2.1.1
+   Compiling cucumber-expressions v0.5.0
+   Compiling serde_with v3.24.0
+   Compiling cucumber-codegen v0.23.0
+   Compiling oblikovati-api v0.159.0 (https://github.com/Oblikovati/Oblikovati.API.git?rev=a8e651bc537e516953c7d9313792719e5b474a25#a8e651bc)
+   Compiling serde_yaml_ng v0.10.0
+   Compiling quick-xml v0.39.4
+   Compiling icu_provider v2.4.0
+   Compiling gherkin v0.16.0
+   Compiling oblikovati-cli v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/3975-rectangle-status/crates/cli)
+   Compiling futures-executor v0.3.34
+   Compiling icu_locale_fallback v2.4.0
+   Compiling futures v0.3.32
+   Compiling icu_segmenter v2.4.0
+   Compiling clap v4.6.7
+   Compiling textwrap v0.16.4
+   Compiling imgui v0.12.0
+   Compiling cucumber v0.23.0
+   Compiling martensite-tkmath v0.3.8 (https://github.com/Oblikovati/Martensite?rev=d051ff699982faba4ec2df3ee9a47e14f38dedbd#d051ff69)
+   Compiling martensite-tkg2d v0.3.7 (https://github.com/Oblikovati/Martensite?rev=d051ff699982faba4ec2df3ee9a47e14f38dedbd#d051ff69)
+   Compiling martensite-tkservice v0.4.1 (https://github.com/Oblikovati/Martensite?rev=d051ff699982faba4ec2df3ee9a47e14f38dedbd#d051ff69)
+   Compiling martensite-tkg3d v0.3.9 (https://github.com/Oblikovati/Martensite?rev=d051ff699982faba4ec2df3ee9a47e14f38dedbd#d051ff69)
+   Compiling martensite-vulkan v0.7.2 (https://github.com/Oblikovati/Martensite?rev=d051ff699982faba4ec2df3ee9a47e14f38dedbd#d051ff69)
+   Compiling martensite-tkgeombase v0.3.6 (https://github.com/Oblikovati/Martensite?rev=d051ff699982faba4ec2df3ee9a47e14f38dedbd#d051ff69)
+   Compiling martensite-tkbrep v0.3.10 (https://github.com/Oblikovati/Martensite?rev=d051ff699982faba4ec2df3ee9a47e14f38dedbd#d051ff69)
+   Compiling oblikovati-model v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/3975-rectangle-status/crates/model)
+   Compiling oblikovati-script v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/3975-rectangle-status/crates/script)
+   Compiling martensite-tkgeomalgo v0.3.8 (https://github.com/Oblikovati/Martensite?rev=d051ff699982faba4ec2df3ee9a47e14f38dedbd#d051ff69)
+   Compiling oblikovati-persistence v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/3975-rectangle-status/crates/persistence)
+   Compiling oblikovati-session v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/3975-rectangle-status/crates/session)
+   Compiling martensite-tktopalgo v0.4.3 (https://github.com/Oblikovati/Martensite?rev=d051ff699982faba4ec2df3ee9a47e14f38dedbd#d051ff69)
+   Compiling martensite-tkshhealing v0.3.9 (https://github.com/Oblikovati/Martensite?rev=d051ff699982faba4ec2df3ee9a47e14f38dedbd#d051ff69)
+   Compiling martensite-tkprim v0.3.10 (https://github.com/Oblikovati/Martensite?rev=d051ff699982faba4ec2df3ee9a47e14f38dedbd#d051ff69)
+   Compiling martensite-tkhlr v0.3.6 (https://github.com/Oblikovati/Martensite?rev=d051ff699982faba4ec2df3ee9a47e14f38dedbd#d051ff69)
+   Compiling martensite-tkmesh v0.3.8 (https://github.com/Oblikovati/Martensite?rev=d051ff699982faba4ec2df3ee9a47e14f38dedbd#d051ff69)
+   Compiling martensite-tkbo v0.8.1 (https://github.com/Oblikovati/Martensite?rev=d051ff699982faba4ec2df3ee9a47e14f38dedbd#d051ff69)
+   Compiling martensite-tkv3d v0.7.1 (https://github.com/Oblikovati/Martensite?rev=d051ff699982faba4ec2df3ee9a47e14f38dedbd#d051ff69)
+   Compiling oblikovati-martensite v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/3975-rectangle-status/crates/martensite)
+   Compiling oblikovati-automation v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/3975-rectangle-status/crates/automation)
+   Compiling oblikovati-viewport v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/3975-rectangle-status/crates/viewport)
+   Compiling oblikovati-drawing v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/3975-rectangle-status/crates/drawing)
+   Compiling oblikovati-addin-host v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/3975-rectangle-status/crates/addin-host)
+   Compiling oblikovati-head v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/3975-rectangle-status/crates/head)
+    Finished `test` profile [unoptimized] target(s) in 1m 16s
+     Running unittests src/lib.rs (/tmp/obk-3975-target/debug/deps/oblikovati_head-d4ccfccc04854620)
+
+running 1 test
+Not executed (capture only): rectangle-two-point-08 Commit typed sizes and restore through history
+Not executed (capture only): rectangle-two-point-09 Verify the numeric rectangle edge lengths
+Not executed (capture only): rectangle-two-point-11 Retain a numeric rectangle
+Not executed (capture only): rectangle-two-point-12 Cancel a rectangle height proposal
+Not executed (capture only): rectangle-two-point-13 Accept and undo a rectangle height edit
+Not executed (capture only): rectangle-two-point-14 Observe a zero second size
+Feature: Rectangle two point
+  Scenario: rectangle-two-point-10 Observe a zero first size
+   ✔  Given an empty editable metric sketch is Ready
+   ✔  When the user choose Two Point Rectangle and click a clear point in the sketch canvas
+   ✔  And the user enter 0 and press Tab
+   ✘  Then the first size is locked at 0.000 mm and the second field is focused
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/rectangle-two-point/scenario.feature:65:5
+      Matched: crates/head/src/../tests/application/../sketch/rectangle-two-point/steps.rs:356:1
+      Step panicked. Captured output: expected "Select opposite corner" in status "Sketchplacementfailed:rectangleedge[[2.2222222222222214,-1.5777777777777777], [2.2222222222222214,-1.5777777777777777]]:expectedafinitenonzerolength FullyConstrained"
+[Summary]
+1 feature
+1 scenario (1 failed)
+4 steps (3 passed, 1 failed)
+
+thread 'sketch-scenarios' (3871929) panicked at crates/head/src/../tests/application/benchmark.rs:289:5:
+scenario benchmark: expected no failed, undefined, or skipped steps
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window' (3871928) panicked at crates/head/src/../tests/application/../sketch/benchmark.rs:74:10:
+called `Result::unwrap()` on an `Err` value: Any { .. }
+test native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window ... FAILED
+
+failures:
+
+failures:
+    native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1004 filtered out; finished in 10.88s
+
+error: test failed, to rerun pass `-p oblikovati-head --lib`
