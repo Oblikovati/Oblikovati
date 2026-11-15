@@ -1,24 +1,35 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Guard text-only editor requests against concurrent changes to document properties.
+//! Guard typed editor requests against concurrent changes to document properties.
 use oblikovati_api::{types::VariantValue, wire::SetPropertyArgs};
 use oblikovati_model::property::DocumentProperties;
 
-pub(super) fn validate_text_property(
+pub(super) fn validate_typed_property(
     properties: &DocumentProperties,
     request: &SetPropertyArgs,
 ) -> Result<(), String> {
-    if !matches!(request.value.value, VariantValue::String(_)) {
-        return Err(format!(
-            "property {:?}/{:?}: expected a text value",
-            request.set, request.name
-        ));
+    match &request.value.value {
+        VariantValue::Uninitialized => {
+            return Err(format!(
+                "property {:?}/{:?}: expected a supported initialized value",
+                request.set, request.name
+            ));
+        }
+        VariantValue::Double(value) if !value.is_finite() => {
+            return Err(format!(
+                "property {:?}/{:?} value {value:?}: expected a finite number",
+                request.set, request.name
+            ));
+        }
+        _ => {}
     }
     let Some(property) = properties.get(&request.set, &request.name) else {
         return Ok(());
     };
-    if !property.from_parameter.is_empty() || !matches!(property.value, VariantValue::String(_)) {
+    if !property.from_parameter.is_empty()
+        || std::mem::discriminant(&property.value) != std::mem::discriminant(&request.value.value)
+    {
         return Err(format!(
-            "property {:?}/{:?}: expected an editable text property",
+            "property {:?}/{:?}: expected an editable property of the same type",
             request.set, request.name
         ));
     }
@@ -34,7 +45,7 @@ impl<
     S: super::DispatchWakeup,
 > super::DesktopOwner<O, W, F, G, R, S>
 {
-    pub(super) fn set_text_document_property(
+    pub(super) fn set_typed_document_property(
         &mut self,
         request: &SetPropertyArgs,
     ) -> Result<bool, String> {
@@ -49,7 +60,7 @@ impl<
             .workspace()
             .session(request.document)
             .map_err(|cause| cause.to_string())?;
-        validate_text_property(&session.snapshot().properties, request)?;
+        validate_typed_property(&session.snapshot().properties, request)?;
         oblikovati_api::client::Client::new(self.document_host())
             .documents()
             .set_property(request)
@@ -63,6 +74,56 @@ mod tests {
     use super::*;
     use oblikovati_api::types::Variant;
     use oblikovati_model::property::SUMMARY_INFORMATION;
+
+    #[test]
+    fn typed_edits_refuse_type_changes_parameter_sources_and_nonfinite_values() {
+        use oblikovati_api::{json::Bytes, types::Variant};
+        use oblikovati_model::property::DocumentProperty;
+        let values = [
+            VariantValue::Integer(1),
+            VariantValue::Double(1.5),
+            VariantValue::Boolean(true),
+            VariantValue::Bytes(Bytes(Some(vec![0, 255]))),
+            VariantValue::String("text".into()),
+        ];
+        for value in values {
+            let mut properties = DocumentProperties::default();
+            properties
+                .put(SUMMARY_INFORMATION, "value", value.clone())
+                .unwrap();
+            let request = SetPropertyArgs {
+                set: SUMMARY_INFORMATION.into(),
+                name: "value".into(),
+                value: Variant {
+                    value,
+                    unit: String::new(),
+                },
+                ..Default::default()
+            };
+            assert!(validate_typed_property(&properties, &request).is_ok());
+            properties
+                .restore_property(
+                    SUMMARY_INFORMATION,
+                    DocumentProperty {
+                        name: "value".into(),
+                        value: request.value.value.clone(),
+                        from_parameter: "source".into(),
+                    },
+                )
+                .unwrap();
+            assert!(validate_typed_property(&properties, &request).is_err());
+        }
+        for value in [VariantValue::Uninitialized, VariantValue::Double(f64::NAN)] {
+            let request = SetPropertyArgs {
+                value: Variant {
+                    value,
+                    unit: String::new(),
+                },
+                ..Default::default()
+            };
+            assert!(validate_typed_property(&DocumentProperties::default(), &request).is_err());
+        }
+    }
 
     #[test]
     fn stale_text_edit_does_not_replace_a_number() {
@@ -79,6 +140,6 @@ mod tests {
             },
             ..Default::default()
         };
-        assert!(validate_text_property(&properties, &request).is_err());
+        assert!(validate_typed_property(&properties, &request).is_err());
     }
 }

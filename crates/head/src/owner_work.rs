@@ -312,7 +312,7 @@ impl<
         &mut self,
         request: &oblikovati_api::wire::SetPropertyArgs,
     ) -> Result<bool, String> {
-        self.set_text_document_property(request)
+        self.set_typed_document_property(request)
     }
     fn activate_document_from_gui(
         &mut self,
