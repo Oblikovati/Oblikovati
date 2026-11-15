@@ -118,6 +118,8 @@ mod quick_access_toolbar;
 mod rectangle_visibility;
 #[path = "ribbon-appearance/steps.rs"]
 mod ribbon_appearance;
+#[path = "ribbon-command-availability/steps.rs"]
+mod ribbon_command_availability;
 #[path = "ribbon-customization/steps.rs"]
 mod ribbon_customization;
 #[path = "ribbon-display/steps.rs"]

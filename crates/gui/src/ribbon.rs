@@ -43,6 +43,8 @@ impl RibbonTab {
 #[derive(Default)]
 pub(crate) struct DocumentRibbon {
     previous: Option<(RibbonKey, bool, bool)>,
+    previous_document: Option<u64>,
+    pre_sketch_tab: Option<(u64, RibbonTab)>,
     pub active: RibbonTab,
     pub tips: crate::ribbon_key_tips::RibbonKeyTips,
     pub panels: crate::ribbon_panels::RibbonPanelLayout,
@@ -78,12 +80,11 @@ impl DocumentRibbon {
         if changed {
             // Dear ImGui lays a new tab out in its second frame, and GUI frames wait for an event.
             self.settling_frames = TAB_SETTLING_FRAMES;
-            if !self.keep_tab_after_sketch(&identity, &tabs) {
-                self.active = contextual_tab(&tabs, sketch);
-            }
+            self.update_contextual_tab(state.document, &identity, &tabs);
             self.previous = Some(identity);
             self.pending_tab = None;
         }
+        self.previous_document = state.document;
         RibbonFrame {
             tabs,
             select: if changed {
@@ -92,6 +93,35 @@ impl DocumentRibbon {
                 self.pending_tab.take()
             },
         }
+    }
+    fn update_contextual_tab(
+        &mut self,
+        document: Option<u64>,
+        identity: &(RibbonKey, bool, bool),
+        tabs: &[RibbonTab],
+    ) {
+        let was_sketch = self.previous.as_ref().is_some_and(|(_, sketch, _)| *sketch);
+        if identity.1 && !was_sketch && document == self.previous_document {
+            self.pre_sketch_tab = document.map(|id| (id, self.active));
+        }
+        if self.keep_tab_after_sketch(identity, tabs) {
+            return;
+        }
+        self.active = self
+            .restored_part_tab(document, identity, tabs)
+            .unwrap_or_else(|| contextual_tab(tabs, identity.1));
+    }
+    fn restored_part_tab(
+        &self,
+        document: Option<u64>,
+        identity: &(RibbonKey, bool, bool),
+        tabs: &[RibbonTab],
+    ) -> Option<RibbonTab> {
+        if identity.1 || !self.previous.as_ref().is_some_and(|(_, sketch, _)| *sketch) {
+            return None;
+        }
+        let (saved_document, tab) = self.pre_sketch_tab?;
+        (document == Some(saved_document) && tabs.contains(&tab)).then_some(tab)
     }
     fn keep_tab_after_sketch(
         &self,

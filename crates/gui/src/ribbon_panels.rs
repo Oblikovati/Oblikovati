@@ -44,7 +44,13 @@ impl RibbonPanelLayout {
             .iter()
             .map(|panel| self.widths.get(&(tab, *panel)).copied().unwrap_or(0.))
             .collect();
-        crate::ribbon_fit::expanded_panel_count(&widths, 8., collapsed, available)
+        let required = panels.iter().position(|panel| *panel == RibbonPanel::Exit);
+        if required.is_none() {
+            return crate::ribbon_fit::expanded_panel_count(&widths, 8., collapsed, available);
+        }
+        crate::ribbon_fit::expanded_panel_count_reserving(
+            &widths, 8., collapsed, available, required,
+        )
     }
     fn observe_scrollbar(&mut self, shown: bool) {
         self.pending_layout |= self.scrollbar_shown != shown;
@@ -398,7 +404,8 @@ fn draw_row(
     let mut x = 0.;
     let mut activated = false;
     for (index, panel) in panels.into_iter().enumerate() {
-        let width = if index < expanded {
+        // Keep Finish directly available when other groups collapse (#3956).
+        let width = if index < expanded || panel == RibbonPanel::Exit {
             let (width, local_action) = draw_expanded(context, tab, panel, [x, 0.], layout);
             activated |= local_action;
             layout.record_width(tab, panel, width);
