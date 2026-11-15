@@ -197,6 +197,33 @@ fn invalid_field_keeps_preview_and_history_until_corrected() {
     verify_dimensions(&owner, document, sketch);
 }
 #[test]
+fn zero_rectangle_sizes_keep_prompt_and_allow_a_later_valid_rectangle() {
+    for (width, height) in [("0", "4"), ("4", "0")] {
+        let (mut owner, document, sketch) = parameter_rectangle_owner();
+        begin_rectangle_preview(&mut owner);
+        enter_expression(&mut owner, width, ViewportPhysicalKey::Tab);
+        enter_expression(&mut owner, height, ViewportPhysicalKey::Tab);
+        assert!(matches!(
+            owner.take_command_notice(),
+            Some(DesktopCommandNotice::PlacementPrompt { .. })
+        ));
+        assert!(owner.sketch_preview().is_none());
+        enter_expression(&mut owner, "", ViewportPhysicalKey::Enter);
+        assert!(
+            rectangle_geometry(&owner, document, sketch)
+                .lines()
+                .is_empty()
+        );
+        begin_rectangle_preview(&mut owner);
+        enter_expression(&mut owner, "4", ViewportPhysicalKey::Tab);
+        enter_expression(&mut owner, "5", ViewportPhysicalKey::Enter);
+        assert_eq!(
+            rectangle_geometry(&owner, document, sketch).lines().len(),
+            4
+        );
+    }
+}
+#[test]
 fn solved_preview_has_commit_geometry_and_does_not_reserve_live_identities() {
     let (mut owner, document, sketch) = parameter_rectangle_owner();
     begin_rectangle_preview(&mut owner);

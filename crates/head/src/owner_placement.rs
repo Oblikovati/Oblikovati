@@ -33,6 +33,10 @@ impl<
         if !tool.fields_engaged() || !tool.at_finishing_stage() {
             return Ok(None);
         }
+        // #3975: zero size is an unfinished shape, so it has no valid preview.
+        if tool.typed_size_is_zero() {
+            return Ok(None);
+        }
         // The preview shows what Enter would commit: the shape at its typed sizes.
         let seeded = tool.typed_seed_recipe(&self.sketch_construction)?;
         let Some(recipe) = seeded.as_ref().or(tool.preview.as_ref()) else {

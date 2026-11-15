@@ -351,6 +351,7 @@ fn fixture_twenty_two(world: &mut ApplicationWorld) {
 #[when("the user enter 0 and press Tab")]
 fn lock_zero_first(world: &mut ApplicationWorld) {
     world.type_text("0");
+    world.expect_status("Select opposite corner");
     world.key(ViewportPhysicalKey::Tab, false);
 }
 #[then("the first size is locked at 0.000 mm and the second field is focused")]
@@ -363,6 +364,7 @@ fn zero_locked(world: &mut ApplicationWorld) {
         "expected the first size to be zero"
     );
     assert!(hud.fields[1].active, "expected focus on the second size");
+    world.expect_status("Select opposite corner");
     assert!(world.window_text("##sketch-hud").contains("0.000mm"));
 }
 #[when("I enter 4 and press Return")]
