@@ -15,8 +15,8 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 - **R0 remains open.** The full gate, baseline fields and milestone exit audits
   are incomplete. Run `python3 -B tools/bdd/behavior_cli.py report` for current
   counts; source and application changes can make earlier receipts stale.
-- At `e7d0230d17d606a0b70728a745d79345a57f3928`, the ledger reported zero
-  current verified scenarios, 155 stale receipts, 34 blocked and 38 excluded
+- At `936274fbba76b840134157ed07cfac7d325cc94e`, the ledger reported one
+  current verified scenario, 155 stale receipts, 34 blocked and 38 excluded
   across 2,720 declarations. The gate also requires missing baseline fields.
 - `rust-work` is local and has not passed the full pre-push gate. All 20 former
   application PR heads were merged locally and their PRs closed. Do not remove
@@ -72,6 +72,11 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   passed before later source and test changes (#3927, #3931, #3929); their
   receipts are stale. The solve precision certificate remains open (#3928); see
   `solver-precision-investigation.md`.
+- Rectangle zero-first-size: the corrected portable scenario passed eight
+  native steps and has a current receipt in
+  `receipts/2026-11-15-rectangle-zero-current/`. OS input and intermediate
+  captures are in `receipts/2026-11-15-rectangle-zero-corrected/`. A raw
+  status message remains tracked in #3975.
 - Three-point arc: the collinear-input boundary scenario passed; see
   `receipts/2026-11-15-arc-boundary-refresh/`. Its receipt is now stale.
 - Extrusion editing: browser distance editing, candidate preview, cancel,

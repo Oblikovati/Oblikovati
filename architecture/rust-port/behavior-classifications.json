@@ -886,10 +886,15 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3857",
         "https://github.com/Oblikovati/Oblikovati/issues/3886"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-rectangle-zero-current/receipt-4598b4de9868b116.json",
+        "sha256": "85ba83d437a2c55db61a9d74a0edd313933c3987af08f8fad47a11e636f7c065"
+      },
       "go_reference": "../Oblikovati/model/sketch/recipe_rectangle.go; ../Oblikovati/app/sketch_tools.go",
-      "mapping_reason": "The first size field and command state are part of the initial desktop sketch workflow."
+      "mapping_reason": "The first size field and command state are part of the initial desktop sketch workflow.",
+      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:be5c680262911cc108a8e69afe91ddb4a39ba915d4cdd36a6318c2b3e6ed960c",
