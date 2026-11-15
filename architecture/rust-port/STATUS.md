@@ -15,8 +15,8 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 - **R0 remains open.** The full gate, baseline fields and milestone exit audits
   are incomplete. Run `python3 -B tools/bdd/behavior_cli.py report` for current
   counts; source and application changes can make earlier receipts stale.
-- At `7fcec3bad870335d8877a7c4919dc5f67ffb4edc`, the ledger reported five
-  current verified scenarios, 173 stale receipts and 21 blocked scenarios
+- At `e14870c7f910eb9b692aaf5c94b54d2162671802`, the ledger reported six
+  current verified scenarios, 172 stale receipts and 21 blocked scenarios
   across 2,720 declarations. This is a checkpoint, not a permanent count.
   The gate also requires baseline fields for 2,580 scenarios.
 - `rust-work` is local and has not passed the full pre-push gate. All 20 former
@@ -24,7 +24,7 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   their remaining remote branches until the consolidated work is safely pushed.
 - The 2026-11-15 `make gate` stopped at the API pin check, before workspace
   tests: Express requires an unreleased API contract. Release and pin work is
-  tracked in #3965. The separate ledger check reports 178 stale receipts.
+  tracked in #3965. The separate ledger check also rejects stale receipts.
 - Scenario pin: `48987af7b5cbb06515bc6f30385f508382f34064`, a local snapshot
   of the unversioned source. It is not an upstream commit. The live feature
   inventory matched the pin at the last source check. Follow `bdd-workflow.md`
