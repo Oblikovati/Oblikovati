@@ -286,6 +286,13 @@ impl<
         .map_err(|cause| format!("Parameter {:?}: {cause}", request.name))?;
         Ok(true)
     }
+    fn clear_selected_face_appearance_from_gui(
+        &mut self,
+        document: u64,
+        key: &str,
+    ) -> Result<bool, String> {
+        self.clear_selected_face_appearance(document, key)
+    }
     fn clear_selected_body_appearances_from_gui(
         &mut self,
         document: u64,
