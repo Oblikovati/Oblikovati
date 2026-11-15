@@ -108,11 +108,12 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
 - Sketch ribbon: inactive-sketch setup was unbound (#3956). The scenario owner
   clarified that outside-edit cases check enabled states for one part and one
   sketch; compare that observation with the Go gate before changing behavior.
-- Ribbon appearance: 16 of 18 pinned scenarios passed in an earlier run (#3957).
-  The scenario owner clarified the Team Web and reset starting states and that
-  the test checks panel visibility, not command destinations. Reassess the two
-  remaining cases against the clarified fixture notes. See
-  `receipts/2026-11-15-ribbon-appearance/`.
+- Ribbon appearance: the clarified pinned feature ran with 15 of 18 scenarios
+  passing (#3957). Three stop at the required Team Web visibility setup; the
+  Tools panel list has no Team Web or Tutorials entry. The setup now operates
+  the real visibility controls and does not assume the captured state. See
+  `receipts/2026-11-15-ribbon-clarified/`. This is diagnostic evidence, not a
+  verified acceptance result (#3978).
 - Two-point rectangle: the scenario owner clarified that scenario 10 uses an
   empty metric sketch and does not require recorded whole-sketch counts. Its
   corrected eight-step native run passed, but its receipt is stale (#3953).
