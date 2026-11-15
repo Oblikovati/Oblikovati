@@ -527,18 +527,31 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-extrusion-6d4a200f137644d4-95b648eb/receipt-6d4a200f137644d4.json",
-        "sha256": "eae534f7f3c6e82ebe3f3d648e3075d63bdb148931e5d03e69c58c166b16db56"
+        "path": "architecture/rust-port/receipts/2026-11-15-extrusion-entry-verified/receipt-6d4a200f137644d4.json",
+        "sha256": "74fdea84b91e81c6a0c714077918da4c6d003e2f37ca0d5ae2aa93edd1118743"
       },
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "historical_receipts": [
         {
           "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
           "path": "architecture/rust-port/receipts/2026-11-14-command-rerun-6d4a200f137644d4/receipt-6d4a200f137644d4.json",
           "sha256": "341cc343679da037061f490af8a0ecb647347e95bd65da1bba1da0b58ad079cc"
+        },
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-14-extrusion-6d4a200f137644d4-95b648eb/receipt-6d4a200f137644d4.json",
+          "sha256": "eae534f7f3c6e82ebe3f3d648e3075d63bdb148931e5d03e69c58c166b16db56"
         }
-      ]
+      ],
+      "go_reference": "../Oblikovati/app/commands_standard.go; ../Oblikovati/app/extrude_tool.go; ../Oblikovati/app/create_sketch_tool_test.go",
+      "go_test_premise": "Go aa8297d1b plane-selection and Extrude availability tests passed; they do not establish the complete Extrude-to-sketch journey. See receipts/2026-11-15-go-extrusion-entry-baseline/README.md.",
+      "kernel_capabilities": "This scenario opens an empty sketch and does not perform a solid operation.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "No solid operation is requested during sketch entry.",
+      "rust_tests": "application_scenarios_use_the_native_window with OBK_BDD_AREA=solid-model and OBK_BDD_SCENARIO=extrusion-01.",
+      "oracle": "The native run checks metric part creation, an initially empty sketch list, sketch authoring state and a single Sketch1 browser entry; the capture was reviewed.",
+      "expected_result": "Selecting an origin plane after Extrude opens Sketch1 for profile creation."
     },
     {
       "id": "scenario:5c666abf06d3e4d293ac1364203a639772c5f754d85d32a48ddf497941590bbe",
