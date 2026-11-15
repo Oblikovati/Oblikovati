@@ -125,3 +125,28 @@ Official references: [Rustup installation](https://rust-lang.github.io/rustup/in
 [Homebrew installation](https://docs.brew.sh/Installation),
 [Microsoft C++ Build Tools](https://learn.microsoft.com/en-us/cpp/overview/acquire-msvc),
 and [Visual Studio installer parameters](https://learn.microsoft.com/en-us/visualstudio/install/use-command-line-parameters-to-install-visual-studio).
+
+## Commit message check
+
+Install the repository hook in each clone with Python 3.10 or later on `PATH`:
+
+```sh
+git config --local core.hooksPath .githooks
+```
+
+This sets the hook path for all worktrees in that clone. Check an existing
+`core.hooksPath` before changing it; Git supports one hook directory at a time.
+The hook needs a subject, a blank line, an explanatory body, and a separate
+`Refs #123` line. The same rule applies to merge commits. For example:
+
+```text
+Fix document selection
+
+Keep the selected document active after the tab closes.
+
+Refs #123
+```
+
+Run the hook tests with `python3 -B -m unittest discover -s tools/git`.
+The hook is local to each clone and Git permits explicit hook bypasses. It does
+not enforce server-side policy or validate that the issue exists.
