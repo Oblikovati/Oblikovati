@@ -15,9 +15,9 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 - **R0 remains open.** The full gate, baseline fields and milestone exit audits
   are incomplete. Run `python3 -B tools/bdd/behavior_cli.py report` for current
   counts; source and application changes can make earlier receipts stale.
-- At `7bf01a1789c3ee33b3eed7a11d12a662ba69d445`, the ledger reported 25
-  current verified scenarios, 153 stale receipts and 21 blocked scenarios
-  across 2,720 declarations. This is a checkpoint, not a permanent count.
+- At `1b59174748ffe93aca0666a7424f4aad3cccd9b7`, the ledger reported zero
+  current verified scenarios, 178 stale receipts and 21 blocked scenarios
+  across 2,720 declarations. Application changes made prior receipts stale.
   The gate also requires baseline fields for 2,580 scenarios.
 - `rust-work` is local and has not passed the full pre-push gate. All 20 former
   application PR heads were merged locally and their PRs closed. Do not remove
@@ -25,9 +25,9 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 - The 2026-11-15 `make gate` stopped at the API pin check, before workspace
   tests: Express requires an unreleased API contract. Release and pin work is
   tracked in #3965. API branch `agent/express-release-prep` passed its gate and
-  its issue-scope duplication scan at 1.0269%. Some example coverage remains
-  below 80%. The branch is local and no release was published. The ledger also
-  rejects stale receipts.
+  its issue-scope duplication scan at 1.0269%. The two example packages now
+  report 95.7% and 85.7% coverage; aggregate Go coverage is 84.6%. The branch
+  is local and no release was published. The ledger also rejects stale receipts.
 - Scenario pin: `48987af7b5cbb06515bc6f30385f508382f34064`, a local snapshot
   of the unversioned source. It is not an upstream commit. The live feature
   inventory matched the pin at the last source check. Follow `bdd-workflow.md`
@@ -51,6 +51,10 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 | 5 | Split over-limit Rust files | Done | Guard remains enforced (#3860) |
 
 ## Active gaps
+
+- Extrusion undo and redo: the native diagnostic passed three of four scenario
+  steps. Named edge lengths are available through the typed API; selecting and
+  measuring two edges in the viewport remains open (#3967).
 
 - Viewport orientation: all 20 pinned scenarios passed on the merged revision
   (#3961). See `receipts/2026-11-15-orientation-verified/`. The run uses
