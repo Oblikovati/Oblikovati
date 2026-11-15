@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ellipse: tmp/oblikovati-bdd-uPd2Ll/checkout/features/sketch/ellipse/scenario.feature" package="testsuite/Feature: Ellipse: tmp/oblikovati-bdd-uPd2Ll/checkout/features/sketch/ellipse/scenario.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-15T21:56:00.704864789Z" time="34.675078618"><testcase name="Scenario: ellipse-05 Measure the restored rotated ellipse: tmp/oblikovati-bdd-uPd2Ll/checkout/features/sketch/ellipse/scenario.feature:26:3" time="34.675078618"><failure type="Step Panicked" message="Step panicked. Captured output: expected &quot;Selection 1: Ellipse&quot; in Measure &quot;Measure Selectgeometrytomeasure Done&quot;"/><system-out><![CDATA[  Scenario: ellipse-05 Measure the restored rotated ellipse
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch
+   ✔  Given the rotated ellipse is restored by Redo
+   ✔  When the user open Measure, move its panel aside and select the curve
+   ✘  Then Selection 1 is identified as Ellipse
+      Step failed:
+      Defined: tmp/oblikovati-bdd-uPd2Ll/checkout/features/sketch/ellipse/scenario.feature:31:5
+      Matched: crates/head/src/../tests/application/../sketch/ellipse/measure.rs:54:1
+      Step panicked. Captured output: expected "Selection 1: Ellipse" in Measure "Measure Selectgeometrytomeasure Done"
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nRight\nSelectgeometrytomeasure\n5dimensionsneeded\nModel\n+\nModel\nMenu\nSearch\nPart2<Primary>\nRepresentations\nModelState\n<Primary>\n1\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nSketch1\n[DOF5]\nFeatures\nEndofPart\nHome\nPart1<Primary>*\nPart2<Primary>*\nDocuments\nFile\nTools\nNew\nOpen\nSave\nUndo\nRedo\nHome\nProjects\nUpdate\nSelect\nMaterialBrowser\nMaterials\nAppearanceBrowser\nParameters\n...\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nRibbonDisplay\nv\nv\nRectangle\nCircle\nv\nPoint\nCenterArcv\nEllipse\nCenterRect.\n3-PtRect.\nv\nLine\nProjectGeometry\nCreatev\nv\nConstrain\nv\nModify\nv\nPattern\nv\nInsert\nv\nFormat\nFinishSketch\nExit\nMeasure\nSelectgeometrytomeasure\nDone",
+          ..
+      }
+]]></system-out></testcase></testsuite></testsuites>

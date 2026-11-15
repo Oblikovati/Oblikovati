@@ -15,7 +15,7 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 - **R0 remains open.** The full gate, baseline fields and milestone exit audits
   are incomplete. Run `python3 -B tools/bdd/behavior_cli.py report` for current
   counts; source and application changes can make earlier receipts stale.
-- At the local source snapshot `e76cb749ed43c73a91c24854057da7c890041f51`, the ledger reports **0 verified**, 21 stale, 35 blocked and 39 excluded across 2,720 declarations. Earlier receipts remain historical. Native build provenance is not bounded (#3978); the gate also requires missing baseline fields.
+- At the local source snapshot `e76cb749ed43c73a91c24854057da7c890041f51`, the ledger reports **0 verified**, 21 stale, 36 blocked and 39 excluded across 2,720 declarations. Earlier receipts remain historical. Native build provenance is not bounded (#3978); the gate also requires missing baseline fields.
 - `rust-work` is local and has not passed the full pre-push gate. All 20 former
   application PR heads were merged locally and their PRs closed. Do not remove
   their remaining remote branches until the consolidated work is safely pushed.
