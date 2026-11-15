@@ -41,7 +41,11 @@ this work in #3974.
 inherited environment, starts Xvfb in a Bubblewrap namespace, hides the project
 checkout, and mounts the runtime and pinned source read-only. It snapshots the
 runtime and hashes the runner and sandbox executable before and after the run.
-It also verifies the source on both sides of the run. Its observation always
+It inventories the full source checkout, including Git metadata, and verifies
+the source on both sides of the run. Nested user namespaces are disabled.
+Read-only mounts and before-and-after inventories cannot prevent host-side
+changes during a run. The host kernel, devices, clock, random inputs and
+sandbox bootstrap dependencies also remain outside this inventory. Its observation always
 sets `reusable` to false: an independent proof checker, rebuilt runner identity,
 and complete host and device input policy are still needed. The ordinary native
 receipt path does not use this helper. See

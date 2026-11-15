@@ -341,11 +341,18 @@ def verify_inputs(root: Path, checkout: Path, inventory: Mapping[str, object]) -
         str(checkout.resolve()),
         str(metadata["snapshot_commit"]),
     ]
-    generated = subprocess.check_output(command, cwd=root, text=True)
+    generated = read_inventory_command(root, command)
     if json.loads(generated) != inventory:
         raise ValueError(
             "scenario inventory: expected all declarations from the current pinned source"
         )
+
+
+def read_inventory_command(root: Path, command: list[str]) -> str:
+    """Run inventory without Git index writes; example: read_inventory_command(root, command)."""
+    environment = os.environ.copy()
+    environment["GIT_OPTIONAL_LOCKS"] = "0"
+    return subprocess.check_output(command, cwd=root, text=True, env=environment)
 
 
 APPLICATION_PATHS = [
