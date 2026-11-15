@@ -19,6 +19,8 @@ mod files;
 mod model_state_journey;
 #[path = "native_gui_loop/parameters.rs"]
 mod parameters;
+#[path = "native_gui_loop/rectangle_visibility.rs"]
+mod rectangle_visibility;
 struct ScriptedGuiWindow {
     native: NativeHeadWindow,
     scripted: Vec<ViewportEvent>,
@@ -219,14 +221,8 @@ fn verify_browser_reentry_pixels(
 ) {
     move_pointer_away(window, owner);
     let before = capture_framebuffer(&mut window.native);
-    assert!(
-        before
-            .rgba
-            .as_chunks::<4>()
-            .0
-            .contains(&[160, 160, 160, 255]),
-        "expected visible committed sketch geometry before browser activation"
-    );
+    rectangle_visibility::assert_committed_rectangle_visible(window, owner, edit, &before);
+    rectangle_visibility::assert_hidden_rectangle_fails(window, owner, edit);
     // #3811: selection changes colour; isolate edit re-entry from that intended change.
     drive_pointer_clicks(
         window,

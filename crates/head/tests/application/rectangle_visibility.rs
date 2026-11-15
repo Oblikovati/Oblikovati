@@ -27,6 +27,67 @@ pub(super) fn rectangle_edges_visible(capture: &ViewportCapture, corners: [[i32;
     .all(|(start, end, normal)| edge_visible(capture, start, end, normal))
 }
 
+/// Check every rectangle edge only when its probe area is clear of UI.
+/// Example: `rectangle_visible_in_view(&capture, corners, area, &windows)`.
+pub(crate) fn rectangle_visible_in_view(
+    capture: &ViewportCapture,
+    corners: [[i32; 2]; 2],
+    area: [u32; 4],
+    occlusions: &[[f32; 4]],
+) -> bool {
+    let Some(probe) = rectangle_probe_bounds(corners) else {
+        return false;
+    };
+    if !probe_inside_area(probe, area, capture.extent) {
+        return false;
+    }
+    if occlusions
+        .iter()
+        .any(|window| probe_intersects_window(probe, *window))
+    {
+        return false;
+    }
+    rectangle_edges_visible(capture, corners)
+}
+
+fn rectangle_probe_bounds([[left, top], [right, bottom]]: [[i32; 2]; 2]) -> Option<[i64; 4]> {
+    if left >= right || top >= bottom {
+        return None;
+    }
+    Some([
+        i64::from(left) - i64::from(EDGE_SEARCH),
+        i64::from(top) - i64::from(EDGE_SEARCH),
+        i64::from(right) + i64::from(BACKGROUND_OFFSET) + 1,
+        i64::from(bottom) + i64::from(BACKGROUND_OFFSET) + 1,
+    ])
+}
+
+fn probe_inside_area(probe: [i64; 4], area: [u32; 4], extent: [u32; 2]) -> bool {
+    area[0] < area[2]
+        && area[1] < area[3]
+        && area[2] <= extent[0]
+        && area[3] <= extent[1]
+        && probe[2] <= i64::from(i32::MAX)
+        && probe[3] <= i64::from(i32::MAX)
+        && probe[0] >= i64::from(area[0])
+        && probe[1] >= i64::from(area[1])
+        && probe[2] <= i64::from(area[2])
+        && probe[3] <= i64::from(area[3])
+}
+
+fn probe_intersects_window(probe: [i64; 4], window: [f32; 4]) -> bool {
+    if window.iter().any(|value| !value.is_finite())
+        || window[0] >= window[2]
+        || window[1] >= window[3]
+    {
+        return true;
+    }
+    (probe[0] as f64) < f64::from(window[2])
+        && (probe[2] as f64) > f64::from(window[0])
+        && (probe[1] as f64) < f64::from(window[3])
+        && (probe[3] as f64) > f64::from(window[1])
+}
+
 fn edge_visible(
     capture: &ViewportCapture,
     start: [i32; 2],
@@ -34,8 +95,11 @@ fn edge_visible(
     normal: [i32; 2],
 ) -> bool {
     (1..16).all(|fraction| {
-        let point =
-            std::array::from_fn(|axis| start[axis] + (end[axis] - start[axis]) * fraction / 16);
+        let point = std::array::from_fn(|axis| {
+            let first = i64::from(start[axis]);
+            let last = i64::from(end[axis]);
+            (first + (last - first) * fraction / 16) as i32
+        });
         sample_contrast(capture, point, normal)
     })
 }
