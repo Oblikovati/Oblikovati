@@ -197,3 +197,28 @@ fn coupled_coordinate_angle_result() -> NonlinearResult {
     }];
     solve(&[4e6, 0.0], &blocks)
 }
+
+// #3928: a small dimensional residual and full local rank do not bound correction.
+struct WeakLengthConstraint;
+impl ResidualSource for WeakLengthConstraint {
+    fn tolerance_kind(&self) -> ResidualTolerance {
+        ResidualTolerance::ModelLength
+    }
+    fn equation_unit(&self, _: usize) -> ResidualValueUnit {
+        ResidualValueUnit::Length
+    }
+    fn evaluate(&self, variables: &[DualNumber]) -> Result<Vec<DualNumber>, ResidualError> {
+        Ok(vec![variables[0].scaled(1e-12)?])
+    }
+}
+#[test]
+fn convergence_and_rank_do_not_bound_geometric_correction() {
+    let source = WeakLengthConstraint;
+    let result = solve(&[1.], &[block(&source, &[0])]);
+    assert_eq!(result.termination, SolveTermination::Converged);
+    assert_eq!(result.structure.degrees_of_freedom, 0);
+    assert_eq!(result.residual_evidence.model_length, Some(1e-12));
+    assert_eq!(result.values[0], 1.);
+    // The only exact solution is x = 0: its distance is 1 model length unit.
+    assert_eq!((result.values[0] - 0.).abs(), 1.);
+}
