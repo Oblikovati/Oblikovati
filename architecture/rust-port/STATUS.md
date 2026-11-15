@@ -15,8 +15,8 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 - **R0 remains open.** The full gate, baseline fields and milestone exit audits
   are incomplete. Run `python3 -B tools/bdd/behavior_cli.py report` for current
   counts; source and application changes can make earlier receipts stale.
-- At `fdb5d9a7b71304d44607c1357f1150ab0a9c312f`, the ledger reported one
-  current verified scenario, 155 stale receipts, 34 blocked and 38 excluded
+- At `89f2df74b0f8355bda3344d49679c8750e2bc2be`, the ledger reported two
+  current verified scenarios, 154 stale receipts, 34 blocked and 38 excluded
   across 2,720 declarations. The gate also requires missing baseline fields.
 - `rust-work` is local and has not passed the full pre-push gate. All 20 former
   application PR heads were merged locally and their PRs closed. Do not remove
@@ -107,9 +107,8 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   frame-loop input; OS-level input and the full Go baseline remain open.
 
 - Document opening: the native scenario that activates an already open part
-  passed all nine steps at `8aa822fad` (#3889); see
-  `receipts/2026-11-15-open-existing-refresh/`. The receipt is now stale after
-  the Clear change. Input is frame-loop scripted.
+  passed all nine steps on the current source pin (#3889); see
+  `receipts/2026-11-15-open-existing-current-pin/`. Input is frame-loop scripted.
 - Document opening: Express open and Load Full are in `rust-work` (#3949).
   The pinned journey passes 13 of 14 steps; Finish and Simplify need the
   scenario clarification recorded in #3963. Saved views require matching source,
