@@ -14,8 +14,11 @@ def require_chain_paths(probe: BuildProbe, request: SealedRequest) -> None:
     """Keep runner inputs separate from the build output; example: require_chain_paths(probe, request)."""
     if probe.bwrap.resolve() != request.bwrap.resolve():
         raise ValueError(f"sandbox {request.bwrap}: expected build sandbox {probe.bwrap}")
-    for root in (request.runtime, request.checkout, request.reports):
-        require_disjoint(probe.target.resolve(), root.resolve())
+    for output in (probe.target, probe.logs):
+        for root in (request.runtime, request.checkout, request.reports):
+            require_disjoint(output.resolve(), root.resolve())
+        if request.log.resolve().is_relative_to(output.resolve()):
+            raise ValueError(f"execution log {request.log}: expected a path outside build output {output}")
 
 
 def checked_build_runner(probe: BuildProbe, request: SealedRequest, built: Mapping[str, object], revision: str) -> tuple[Path, str, str]:

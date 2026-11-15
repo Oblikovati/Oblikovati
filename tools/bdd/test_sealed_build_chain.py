@@ -65,6 +65,17 @@ class SealedBuildChainTests(unittest.TestCase):
             self.assertEqual(result["execution"]["runner_input"]["sha256"], result["build"]["runner_sha256"])
             self.assertEqual(fixture.log.read_text(), "executed")
 
+    def test_build_output_cannot_overlap_execution_reports(self) -> None:
+        from dataclasses import replace
+
+        with tempfile.TemporaryDirectory() as folder:
+            probe, fixture = self.fixture(Path(folder))
+            request = replace(fixture.request(), reports=probe.logs)
+            with patch("sealed_build_chain.run_committed_build_probe", FakeCommittedBuild()):
+                with self.assertRaisesRegex(ValueError, "expected disjoint directories"):
+                    run_sealed_build(probe, request, probe.source, "a" * 40, fixture.verify)
+            self.assertFalse((probe.target / "runner").exists())
+
     def test_changed_build_artifact_and_sandbox_are_refused(self) -> None:
         for change in ("runner", "sandbox"):
             with self.subTest(change=change), tempfile.TemporaryDirectory() as folder:

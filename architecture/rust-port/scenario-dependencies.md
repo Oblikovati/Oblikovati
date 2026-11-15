@@ -69,6 +69,32 @@ verify generated Git manifests. `tools/bdd/test_pinned_runner.py` exercises a
 real Rust test binary and path replacement; it does not run an Oblikovati UI
 scenario.
 
+Run the linked diagnostic with explicit, disjoint inputs. The source must be a
+verified export of the selected application commit. The vendor and Cargo
+configuration must be prepared as described under the offline build experiment.
+The target, build logs, and reports directories must be empty. The runtime must
+contain the slots required by the sealed runner, Xvfb, and its runtime files.
+The command needs Linux memfd sealing and Bubblewrap `--ro-bind-data` support.
+For example:
+
+```sh
+python3 -B tools/bdd/sealed_build_cli.py \
+  --source /absolute/source --vendor /absolute/vendor \
+  --toolchain /absolute/toolchain --config /absolute/config \
+  --target /absolute/empty-target --build-logs /absolute/empty-build-logs \
+  --bwrap /absolute/bwrap --repository /absolute/repository --revision FULL_SHA \
+  --runtime /absolute/runtime --checkout /absolute/pinned-scenarios \
+  --reports /absolute/empty-reports --run-log /absolute/new-native.log \
+  --area application --feature document-opening --scenario 'Open a part' \
+  > /absolute/diagnostic-observation.json
+```
+
+Add `--registry-archives /absolute/cache` to check registry packages and one
+`--git-repo SOURCE /absolute/repository` for each locked Git source to run the
+partial Git vendor checks. Omitting them leaves those checks unperformed. The
+scenario string is a filter; inspect the output report for the executed cases.
+The CLI writes an observation only. It does not publish or verify a receipt.
+
 ## Native build provenance
 
 Native capture receipts remain available as historical evidence, and their
