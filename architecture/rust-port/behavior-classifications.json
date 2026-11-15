@@ -518,7 +518,7 @@
     },
     {
       "id": "scenario:6d4a200f137644d4c6104d1e91aeb91aa8167a0ac26b27ae09cb219eb27fadd2",
-      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+      "source_revision": "8ec8d2c1e569fbc5c8cd2ec85e9b9380c62c147f",
       "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
       "milestone": "R4",
       "owner": "desktop",
@@ -528,11 +528,8 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3857",
         "https://github.com/Oblikovati/Oblikovati/issues/3870"
       ],
-      "state": "verified",
-      "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-15-extrusion-01-post-edit/receipt-6d4a200f137644d4.json",
-        "sha256": "0fe1cf97e4852a5c7346900caf4967ac54047c9e0196d6f514cf636d3651234d"
-      },
+      "state": "inventoried",
+      "last_receipt": null,
       "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "historical_receipts": [
@@ -555,6 +552,11 @@
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-extrusion-entry-refresh/receipt-6d4a200f137644d4.json",
           "sha256": "6519fe3b910d452564cd8f14e603dc485f09fff995df9701c2b6b3bb9f4d824e"
+        },
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-extrusion-01-post-edit/receipt-6d4a200f137644d4.json",
+          "sha256": "0fe1cf97e4852a5c7346900caf4967ac54047c9e0196d6f514cf636d3651234d"
         }
       ],
       "go_reference": "../Oblikovati/app/commands_standard.go; ../Oblikovati/app/extrude_tool.go; ../Oblikovati/app/create_sketch_tool_test.go",
@@ -568,7 +570,7 @@
     },
     {
       "id": "scenario:5c666abf06d3e4d293ac1364203a639772c5f754d85d32a48ddf497941590bbe",
-      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+      "source_revision": "8ec8d2c1e569fbc5c8cd2ec85e9b9380c62c147f",
       "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
       "milestone": "R4",
       "owner": "desktop",
@@ -580,11 +582,8 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3927",
         "https://github.com/Oblikovati/Oblikovati/issues/3928"
       ],
-      "state": "verified",
-      "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-15-extrusion-02-post-edit/receipt-5c666abf06d3e4d2.json",
-        "sha256": "ec9a454e35247ac3886fdceab4e913d506abe2004b7b9e3d440fe4cd8a68ad97"
-      },
+      "state": "inventoried",
+      "last_receipt": null,
       "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "go_reference": "../Oblikovati/app/extrude_tool.go; ../Oblikovati/head/ui/extrude_dialog.go",
@@ -605,12 +604,17 @@
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-extrusion-02-recovery/receipt-5c666abf06d3e4d2.json",
           "sha256": "8780b7639bc2522eb63ee94fa233fc85d1dc6f051bd6bfbee36362a870610f11"
+        },
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-extrusion-02-post-edit/receipt-5c666abf06d3e4d2.json",
+          "sha256": "ec9a454e35247ac3886fdceab4e913d506abe2004b7b9e3d440fe4cd8a68ad97"
         }
       ]
     },
     {
       "id": "scenario:c958310f71da6060fc96ec06b1a1f472e92cc4b966876db9962c792cb59f2f4f",
-      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+      "source_revision": "8ec8d2c1e569fbc5c8cd2ec85e9b9380c62c147f",
       "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
       "milestone": "R4",
       "owner": "desktop",
@@ -621,11 +625,8 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3870",
         "https://github.com/Oblikovati/Oblikovati/issues/3931"
       ],
-      "state": "verified",
-      "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-15-extrusion-04-post-edit/receipt-c958310f71da6060.json",
-        "sha256": "c23b58258afd3a8fafe766ed5d667e5365cf4fbf37876b9092613ff4626f2003"
-      },
+      "state": "inventoried",
+      "last_receipt": null,
       "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "go_reference": "../Oblikovati/app/commands_standard.go; ../Oblikovati/app/bindings_test.go; ../Oblikovati/app/extrude_tool.go",
@@ -646,12 +647,17 @@
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-extrusion-04-recovery/receipt-c958310f71da6060.json",
           "sha256": "9d6c4a00a66e876213f6825d9df8b367d71d1f1c4a8626549829386708b564d9"
+        },
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-extrusion-04-post-edit/receipt-c958310f71da6060.json",
+          "sha256": "c23b58258afd3a8fafe766ed5d667e5365cf4fbf37876b9092613ff4626f2003"
         }
       ]
     },
     {
       "id": "scenario:2fc85f94acd6cc5fba2c6fa3583808dd1d99608f49b07700761c67e95a66b61a",
-      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+      "source_revision": "8ec8d2c1e569fbc5c8cd2ec85e9b9380c62c147f",
       "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
       "milestone": "R4",
       "owner": "desktop",
@@ -663,11 +669,8 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3929",
         "https://github.com/Oblikovati/Oblikovati/issues/3930"
       ],
-      "state": "verified",
-      "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-15-extrusion-05-post-edit/receipt-2fc85f94acd6cc5f.json",
-        "sha256": "f1a95b6227837c07acf8f5fcbb4f8d56937d86d04bc35023a92c6d20f70a2aec"
-      },
+      "state": "inventoried",
+      "last_receipt": null,
       "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "go_test_premise": "Go aa8297d1b: generic extrusion readiness, point creation, and sketch creation undo tests pass; they do not directly test these native validation or point-history scenarios. See receipts/2026-11-14-go-validation-baseline/README.md.",
@@ -688,6 +691,11 @@
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-extrusion-05-recovery/receipt-2fc85f94acd6cc5f.json",
           "sha256": "9cd2bb475a65df41929238827dc4ef82d6469e100d2f8e1fd1737ef10dd8262a"
+        },
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-extrusion-05-post-edit/receipt-2fc85f94acd6cc5f.json",
+          "sha256": "f1a95b6227837c07acf8f5fcbb4f8d56937d86d04bc35023a92c6d20f70a2aec"
         }
       ]
     },
