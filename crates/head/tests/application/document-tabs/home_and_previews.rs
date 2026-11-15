@@ -319,18 +319,22 @@ fn preview_path_name(world: &mut ApplicationWorld) {
 #[given("documents are open in the tab strip")]
 fn documents_in_strip(world: &mut ApplicationWorld) {
     world.expect_tab("Home");
+    assert!(!world.parts.is_empty(), "expected open document tabs");
     for part in world.parts.clone() {
         let name = world.document_name(part);
         world.expect_tab(&name);
     }
 }
 #[when("I right-click the Home tab")]
+#[when("the user right-clicks the Home tab")]
 fn right_click_home(world: &mut ApplicationWorld) {
     world.right_click(home_tab_center(world));
     world.pump(Vec::new());
 }
 #[then("the context menu offers Close Tabs and Close All")]
 #[then("its context menu offers Close Tabs and Close All")]
+#[then("the context menu offers separate Close Tabs and Close All items")]
+#[then("its context menu offers separate Close Tabs and Close All items")]
 fn home_menu(world: &mut ApplicationWorld) {
     world.expect_text("Close Tabs");
     world.expect_text("Close All");
