@@ -241,3 +241,110 @@ fn iproperties_text_survives_save_and_reopen() {
     assert!(has_motor_title(&mut world));
     world.close();
 }
+
+fn add_typed_property(world: &mut ApplicationWorld, name: &str, kind: &str, value: &str) {
+    world.click(row_center(world, "iProperties"));
+    enter_parameter_field(world, "Name", name);
+    world.click_text("Text");
+    world.click_text(kind);
+    enter_parameter_field(world, "Value", value);
+    assert!(world.run_is_enabled("Set property"));
+    world.click_text("Set property");
+    world.pump(Vec::new());
+    close_title(world, "iProperties");
+}
+
+fn typed_property(
+    world: &mut ApplicationWorld,
+    name: &str,
+) -> Option<oblikovati_api::types::VariantValue> {
+    world
+        .state()
+        .document_properties
+        .into_iter()
+        .find(|property| property.name == name)
+        .map(|property| property.value.value)
+}
+
+#[test]
+fn iproperties_typed_values_undo_redo_and_reopen() {
+    use oblikovati_api::{json::Bytes, types::VariantValue};
+    let mut world = ApplicationWorld::new();
+    part_active(&mut world);
+    open_customization(&mut world);
+    world.click_text("iProperties");
+    for (name, kind, text, value) in [
+        ("Count", "Integer", "-12", VariantValue::Integer(-12)),
+        ("Factor", "Number", "1.25", VariantValue::Double(1.25)),
+        ("Approved", "Boolean", "true", VariantValue::Boolean(true)),
+        (
+            "Payload",
+            "Bytes (hex)",
+            "00af",
+            VariantValue::Bytes(Bytes(Some(vec![0, 175]))),
+        ),
+    ] {
+        add_typed_property(&mut world, name, kind, text);
+        assert_eq!(typed_property(&mut world, name), Some(value));
+    }
+    world.click(row_center(&world, "Undo"));
+    assert_eq!(typed_property(&mut world, "Payload"), None);
+    world.click(row_center(&world, "Redo"));
+    assert_eq!(
+        typed_property(&mut world, "Payload"),
+        Some(VariantValue::Bytes(Bytes(Some(vec![0, 175]))))
+    );
+    add_typed_property(&mut world, "Count", "Integer", "17");
+    assert_eq!(
+        typed_property(&mut world, "Count"),
+        Some(VariantValue::Integer(17))
+    );
+    world.click(row_center(&world, "Undo"));
+    assert_eq!(
+        typed_property(&mut world, "Count"),
+        Some(VariantValue::Integer(-12))
+    );
+    world.click(row_center(&world, "Redo"));
+    assert_eq!(
+        typed_property(&mut world, "Count"),
+        Some(VariantValue::Integer(17))
+    );
+    world.press_save_shortcut();
+    let path = world.accept_save_as();
+    world.close_active_tab();
+    world.reopen_through_dialog(&path);
+    assert_eq!(
+        typed_property(&mut world, "Count"),
+        Some(VariantValue::Integer(17))
+    );
+    assert_eq!(
+        typed_property(&mut world, "Factor"),
+        Some(VariantValue::Double(1.25))
+    );
+    assert_eq!(
+        typed_property(&mut world, "Approved"),
+        Some(VariantValue::Boolean(true))
+    );
+    assert_eq!(
+        typed_property(&mut world, "Payload"),
+        Some(VariantValue::Bytes(Bytes(Some(vec![0, 175]))))
+    );
+    world.close();
+}
+
+#[test]
+fn iproperties_refuses_invalid_numeric_input_without_an_edit() {
+    let mut world = ApplicationWorld::new();
+    part_active(&mut world);
+    open_customization(&mut world);
+    world.click_text("iProperties");
+    world.click(row_center(&world, "iProperties"));
+    enter_parameter_field(&mut world, "Name", "Invalid");
+    world.click_text("Text");
+    world.click_text("Number");
+    enter_parameter_field(&mut world, "Value", "NaN");
+    assert!(!world.run_is_enabled("Set property"));
+    world.expect_text("Enter a finite number.");
+    assert_eq!(typed_property(&mut world, "Invalid"), None);
+    world.close();
+}

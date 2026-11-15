@@ -2,6 +2,8 @@
 //! Document metadata, edited through the document owner's typed property API.
 use crate::{GuiCommandState, GuiShellAction, dockable_window::DockableWindow};
 use imgui::Ui;
+#[path = "metadata_value.rs"]
+mod metadata_value;
 use oblikovati_api::{
     types::{Variant, VariantValue},
     wire::SetPropertyArgs,
@@ -13,6 +15,7 @@ pub(crate) struct MetadataEditor {
     set: String,
     name: String,
     value: String,
+    kind: usize,
 }
 impl DockableWindow for MetadataEditor {}
 impl MetadataEditor {
@@ -21,6 +24,7 @@ impl MetadataEditor {
         self.set = "Summary Information".into();
         self.name.clear();
         self.value.clear();
+        self.kind = 0;
     }
     pub(crate) fn panel(
         &mut self,
@@ -36,7 +40,14 @@ impl MetadataEditor {
             return;
         }
         let mut open = true;
+        let width = ui.calc_text_size("Summary Information")[0]
+            + ui.calc_text_size("Property set")[0]
+            + ui.frame_height() * 15.;
         Self::dockable_window(ui, "iProperties", &mut open)
+            .size(
+                [width, ui.frame_height() * 16.],
+                imgui::Condition::FirstUseEver,
+            )
             .build(|| self.contents(ui, state, document, actions));
         if !open {
             self.document = None;
@@ -59,22 +70,25 @@ impl MetadataEditor {
             ));
         }
         ui.separator();
-        self.text_property_form(ui, state, document, actions);
+        self.property_form(ui, state, document, actions);
     }
-    fn text_property_form(
+    fn property_form(
         &mut self,
         ui: &Ui,
         state: &GuiCommandState,
         document: u64,
         actions: &mut Vec<GuiShellAction>,
     ) {
-        ui.text("Add or update a text property");
+        ui.text("Add or update a property");
         ui.input_text("Property set", &mut self.set).build();
         ui.input_text("Name", &mut self.name).build();
+        ui.combo_simple_string("Type", &mut self.kind, &metadata_value::TYPES);
         ui.input_text("Value", &mut self.value).build();
         let disabled = ui.begin_disabled(!self.can_set(state));
-        if ui.button("Set property") {
-            actions.push(self.set_action(document));
+        if ui.button("Set property")
+            && let Ok(action) = self.set_action(document)
+        {
+            actions.push(action);
         }
         drop(disabled);
         if let Some(reason) = self.block_reason(state) {
@@ -91,6 +105,10 @@ impl MetadataEditor {
         if state.transaction_open {
             return Some("Finish the active transaction before editing properties.");
         }
+        let value = match metadata_value::parse_value(self.kind, &self.value) {
+            Ok(value) => value,
+            Err(reason) => return Some(reason),
+        };
         let row = state
             .document_properties
             .iter()
@@ -98,21 +116,21 @@ impl MetadataEditor {
         if !row.from_parameter.is_empty() {
             return Some("Edit this property through its parameter.");
         }
-        if !matches!(row.value.value, VariantValue::String(_)) {
-            return Some("This editor cannot replace a non-text property.");
+        if std::mem::discriminant(&row.value.value) != std::mem::discriminant(&value) {
+            return Some("Select the existing property type.");
         }
         None
     }
-    fn set_action(&self, document: u64) -> GuiShellAction {
-        GuiShellAction::SetDocumentProperty(SetPropertyArgs {
+    fn set_action(&self, document: u64) -> Result<GuiShellAction, &'static str> {
+        Ok(GuiShellAction::SetDocumentProperty(SetPropertyArgs {
             document,
             set: self.set.clone(),
             name: self.name.clone(),
             value: Variant {
-                value: VariantValue::String(self.value.clone()),
+                value: metadata_value::parse_value(self.kind, &self.value)?,
                 unit: String::new(),
             },
-        })
+        }))
     }
 }
 
@@ -167,9 +185,35 @@ mod tests {
         let (editor, state) = title_editor();
         assert!(editor.can_set(&state));
         assert!(
-            matches!(editor.set_action(4), GuiShellAction::SetDocumentProperty(request) if request.name == "Title" && request.value.value == VariantValue::String("Motor".into()))
+            matches!(editor.set_action(4), Ok(GuiShellAction::SetDocumentProperty(request)) if request.name == "Title" && request.value.value == VariantValue::String("Motor".into()))
         );
     }
+    #[test]
+    fn typed_existing_property_requires_matching_type_and_valid_input() {
+        let (mut editor, mut state) = title_editor();
+        state
+            .document_properties
+            .push(existing_title(&editor, VariantValue::Integer(4)));
+        assert!(!editor.can_set(&state));
+        editor.kind = 1;
+        editor.value = "42".into();
+        assert!(editor.can_set(&state));
+        assert!(
+            matches!(editor.set_action(4), Ok(GuiShellAction::SetDocumentProperty(request)) if request.value.value == VariantValue::Integer(42))
+        );
+        editor.value = "wrong".into();
+        assert_eq!(
+            editor.block_reason(&state),
+            Some("Enter a whole number within the 64-bit range.")
+        );
+        state.document_properties[0].from_parameter = "source".into();
+        editor.value = "2".into();
+        assert_eq!(
+            editor.block_reason(&state),
+            Some("Edit this property through its parameter.")
+        );
+    }
+
     #[test]
     fn non_text_and_parameter_owned_properties_cannot_be_replaced() {
         let (editor, mut state) = title_editor();

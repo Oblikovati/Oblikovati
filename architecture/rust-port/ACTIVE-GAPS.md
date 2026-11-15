@@ -125,3 +125,15 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
   selected faces; see `receipts/2026-11-15-live-clear-faces/`. Mixed body and
   face selections now clear together; see
   `receipts/2026-11-15-live-clear-mixed/`. Assembly occurrences remain open (#3962).
+
+- iProperties: the desktop editor now creates and edits supported typed values,
+  rejects invalid input and type changes, and keeps parameter-owned properties
+  read-only (#3958). A native test covers the types and save/reopen; an OS-input
+  integer check is in `receipts/2026-11-15-live-typed-iproperties/`. The full
+  gate and current BDD acceptance remain open.
+
+- Assembly occurrence appearance overrides need durable, document-qualified
+  occurrence identities (#3986). The Go reference drops unknown assembly
+  fields and cannot safely round-trip the Rust schema-3 document shape. A Go
+  fail-closed guard is isolated at `work/occurrence-identity-go-3986`; durable
+  identity and cross-host migration remain unimplemented.
