@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
+mod tab_overflow;
+
 use crate::application::document_tabs::windows::{TabRow, activation, is_active_window, tab_rows};
 use crate::{GuiFrameRequest, GuiShellAction};
 use imgui::{Condition, TabItemFlags, Ui};
 use oblikovati_api::wire::{ActivateDocumentArgs, CloseDocumentArgs, DocumentInfo};
+use tab_overflow::{ARROWS_WIDTH, scroll_arrows, visible_tabs};
 
 const SETTLING_FRAMES: u8 = 2;
 /// How far below the ribbon a released tab has left the strip behind.
@@ -10,8 +13,6 @@ const DETACH_DISTANCE: f32 = 90.;
 const DRAWING_TYPE_NAME: &str = "drawing";
 /// The room the document list control takes at the end of the strip.
 const DOCUMENT_LIST_WIDTH: f32 = 92.;
-/// Room for the two scroll arrows, taken from the strip only when it overflows.
-const ARROWS_WIDTH: f32 = 52.;
 const TAB_ROOM: f32 = 40.;
 #[derive(Default)]
 pub(crate) struct DocumentTabs {
@@ -301,62 +302,6 @@ fn active_tab_index(
     tabs.iter()
         .position(|tab| crate::application::document_tabs::windows::is_active_window(state, tab))
         .map(|index| index + 1)
-}
-/// Which tabs fit from `first`; a tab just brought forward is scrolled into the strip.
-fn visible_tabs(
-    widths: &[f32],
-    room: f32,
-    first: usize,
-    active: Option<usize>,
-    reveal: bool,
-) -> (usize, usize) {
-    let mut first = first.min(widths.len().saturating_sub(1));
-    if let Some(active) = active.filter(|_| reveal) {
-        first = first.min(active);
-        while first < active && fitting(widths, first, room) + first <= active {
-            first += 1;
-        }
-    }
-    (first, fitting(widths, first, room))
-}
-fn fitting(widths: &[f32], first: usize, room: f32) -> usize {
-    let mut used = 0.;
-    let mut count = 0;
-    for width in &widths[first..] {
-        used += width;
-        if used > room && count > 0 {
-            break;
-        }
-        count += 1;
-    }
-    count
-}
-/// Scrolling only moves the strip: the active document stays what it is.
-fn scroll_arrows(
-    ui: &Ui,
-    available: f32,
-    first: &mut usize,
-    moved: &mut bool,
-    more_to_the_right: bool,
-) {
-    let start = ui.window_content_region_min()[0];
-    ui.set_cursor_pos([
-        start + available - ARROWS_WIDTH + 4.,
-        ui.window_content_region_min()[1],
-    ]);
-    {
-        let _at_start = ui.begin_disabled(*first == 0);
-        if ui.button("<##tabs-left") {
-            *first = first.saturating_sub(1);
-            *moved = true;
-        }
-    }
-    ui.same_line();
-    let _at_end = ui.begin_disabled(!more_to_the_right);
-    if ui.button(">##tabs-right") {
-        *first += 1;
-        *moved = true;
-    }
 }
 /// Home is a workspace, not a document: it has no close control and is chosen only by a click.
 fn home_tab(
