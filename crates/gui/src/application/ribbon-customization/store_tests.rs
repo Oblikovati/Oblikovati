@@ -100,12 +100,14 @@ fn moving_a_command_saves_atomically_without_committing_other_drafts() {
             .is_err()
     );
     assert!(!customization.has_expanded(RibbonTab::Tools));
+    assert_eq!(customization.expanded_command_count(RibbonTab::Tools), 0);
     assert!(customization.draft.changed());
     store.0.borrow_mut().fail_save = false;
     customization
         .relocate_command(RibbonTab::Tools, Command::Sketches, true)
         .unwrap();
     assert!(customization.has_expanded(RibbonTab::Tools));
+    assert_eq!(customization.expanded_command_count(RibbonTab::Tools), 1);
     assert!(customization.draft.changed());
     let mut reopened = RibbonCustomization::default();
     reopened.set_store(Box::new(store)).unwrap();

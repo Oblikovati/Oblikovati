@@ -80,6 +80,9 @@ impl GuiRibbonIcons {
 fn action_glyph(action: &GuiShellAction) -> Option<IconGlyph> {
     Some(match action {
         GuiShellAction::NewPart => IconGlyph::NewPart,
+        GuiShellAction::NewDocumentWindow => IconGlyph::NewWindow,
+        GuiShellAction::DeleteSketchSelection => IconGlyph::Delete,
+        GuiShellAction::SketchMove(crate::GuiSketchMoveAction::Start) => IconGlyph::Move,
         GuiShellAction::ChooseSketchPlane => IconGlyph::CreateSketch,
         GuiShellAction::FinishSketch => IconGlyph::FinishSketch,
         GuiShellAction::PlaceSketchTool(tool) => tool_glyph(*tool),

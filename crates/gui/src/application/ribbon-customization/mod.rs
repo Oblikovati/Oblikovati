@@ -93,6 +93,13 @@ impl RibbonCustomization {
             .iter()
             .any(|entry| entry.command != Command::Separator)
     }
+    pub(crate) fn expanded_command_count(&self, tab: RibbonTab) -> usize {
+        self.draft
+            .applied(tab)
+            .iter()
+            .filter(|entry| entry.expanded)
+            .count()
+    }
     pub(crate) fn has_expanded(&self, tab: RibbonTab) -> bool {
         self.draft
             .applied(tab)

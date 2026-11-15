@@ -116,6 +116,20 @@ impl PreciseInputBar {
             self.open = !self.open;
         }
     }
+    pub(crate) fn toggle_icon(&mut self, ui: &Ui, icons: &crate::icons::GuiRibbonIcons) {
+        let lit = ui.style_color(StyleColor::ButtonActive);
+        let _highlight = self
+            .open
+            .then(|| ui.push_style_color(StyleColor::Button, lit));
+        if icons.button(
+            ui,
+            "Precise Input",
+            crate::icons::IconGlyph::PreciseInput,
+            icons.appearance.cell(3).1,
+        ) {
+            self.open = !self.open;
+        }
+    }
     /// Draw while open and a command takes points; a command that ends drops what was typed.
     pub(crate) fn panel(
         &mut self,

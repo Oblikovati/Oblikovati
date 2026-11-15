@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Sketch commands in the shared appearance grid keep their existing actions and flyouts.
+use super::sketch::CONSTRAINT_CONTROLS;
 use super::*;
 
 pub(super) fn create(
@@ -35,6 +36,19 @@ pub(super) fn create(
         7,
         crate::GuiSketchTool::Line,
     );
+    let (position, size) = icons.appearance.flyout_cell(8);
+    icons.cursor(ui, origin, position);
+    let disabled = ui.begin_disabled(true);
+    icons.button(
+        ui,
+        "Project Geometry",
+        crate::icons::IconGlyph::ProjectGeometry,
+        size,
+    );
+    drop(disabled);
+    if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
+        ui.tooltip_text("This command is not available in this build.");
+    }
 }
 fn sketch_tool(
     ui: &Ui,
@@ -85,4 +99,27 @@ pub(super) fn constrain(
         size,
         actions,
     );
+}
+
+pub(super) fn modify(
+    ui: &Ui,
+    origin: [f32; 2],
+    state: &GuiCommandState,
+    icons: &crate::icons::GuiRibbonIcons,
+    actions: &mut Vec<GuiShellAction>,
+) {
+    for (index, (label, action)) in [
+        (
+            "Move",
+            GuiShellAction::SketchMove(crate::GuiSketchMoveAction::Start),
+        ),
+        ("Delete", GuiShellAction::DeleteSketchSelection),
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        let (position, size) = icons.appearance.cell(index);
+        icons.cursor(ui, origin, position);
+        icons.command_button(ui, label, action, state, size, actions);
+    }
 }

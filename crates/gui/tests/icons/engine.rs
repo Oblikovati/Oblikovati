@@ -124,6 +124,9 @@ fn sketch_appearance_keeps_create_and_constraint_icons_in_the_frame() {
             IconGlyph::Circle,
             IconGlyph::Horizontal,
             IconGlyph::Dimension,
+            IconGlyph::Construction,
+            IconGlyph::Centerline,
+            IconGlyph::CenterPoint,
         ] {
             assert_named_icon(&owner, &frame, glyph, size, pixels);
         }

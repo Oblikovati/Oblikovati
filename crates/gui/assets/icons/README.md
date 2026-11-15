@@ -1,6 +1,7 @@
 # Ribbon icon source
 
-Except for `template-document.svg` and `find.svg`, these SVG files are copied without changes from Go `head/icon/assets/` at
+Except for the Rust assets listed below, these SVG files are copied without
+changes from Go `head/icon/assets/` at
 `aa8297d1b0ac33c024f19e54821536d76e8a447a`. The application source uses
 GPL-2.0-only. No separate asset license or upstream attribution was found.
 
@@ -12,3 +13,7 @@ it does not claim the full 281-icon Go catalogue is ported. The generic
 dedicated Go glyph.
 
 The `find.svg` glyph is an Oblikovati Rust asset for the browser search command.
+The `delete.svg` and `precise-input.svg` glyphs identify sketch commands.
+The `coordinate-system.svg` glyph identifies the work coordinate system.
+The `insert-image.svg` glyph identifies image insertion.
+The `weld-symbol.svg` glyph identifies the weld annotation.

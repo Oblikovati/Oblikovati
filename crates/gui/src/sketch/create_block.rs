@@ -10,9 +10,20 @@ pub(crate) fn ribbon_button(
     dialog: &mut CreateBlockDialog,
     actions: &mut Vec<GuiShellAction>,
     size: [f32; 2],
+    icons: &crate::icons::GuiRibbonIcons,
 ) {
     let disabled = ui.begin_disabled(!state.sketch_at_ready || state.transaction_open);
-    if crate::widget_abi::button(ui, "Create Block", size) {
+    let clicked = if icons.appearance == crate::ribbon_command_layout::RibbonAppearance::Normal {
+        crate::widget_abi::button(ui, "Create Block", size)
+    } else {
+        icons.button(
+            ui,
+            "Create Block",
+            crate::icons::IconGlyph::CreateBlock,
+            size,
+        )
+    };
+    if clicked {
         dialog.open(state);
         actions.push(GuiShellAction::SelectBlockGeometry(true));
     }

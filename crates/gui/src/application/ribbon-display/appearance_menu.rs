@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Appearance commands are disclosed without suggesting unfinished layouts work.
+//! Appearance choices save the active ribbon layout.
 use super::{RibbonDisplayState, submenu_row_pressed};
 use crate::ribbon_command_layout::RibbonAppearance;
 use imgui::Ui;
@@ -25,7 +25,6 @@ impl RibbonDisplayState {
             if ui
                 .menu_item_config(appearance.label())
                 .selected(customization.appearance() == appearance)
-                .enabled(appearance == RibbonAppearance::Normal)
                 .build()
             {
                 customization.select_appearance(appearance);

@@ -88,15 +88,20 @@ pub(crate) struct WindowSwitcher {
     selected: Option<u64>,
 }
 impl WindowSwitcher {
-    /// Draw the Switch button; example: `switcher.menu(ui, [108., 26.], state, actions)`.
+    /// Draw the Switch button; example: `switcher.menu(ui, [108., 26.], state, actions, None)`.
     pub(crate) fn menu(
         &mut self,
         ui: &Ui,
         size: [f32; 2],
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
+        icons: Option<&crate::icons::GuiRibbonIcons>,
     ) {
-        if crate::widget_abi::button(ui, "Switch", size) {
+        let clicked = icons.map_or_else(
+            || crate::widget_abi::button(ui, "Switch", size),
+            |icons| icons.button(ui, "Switch", crate::icons::IconGlyph::SwitchWindow, size),
+        );
+        if clicked {
             ui.open_popup(SWITCH_MENU);
         }
         let Some(_menu) = ui.begin_popup(SWITCH_MENU) else {
