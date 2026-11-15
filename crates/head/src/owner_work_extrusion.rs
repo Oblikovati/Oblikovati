@@ -2,6 +2,21 @@
 //! Extrusion methods on the desktop work boundary.
 macro_rules! desktop_extrusion_work {
     () => {
+        fn create_offset_plane_from_gui(
+            &mut self,
+            document: u64,
+            base: oblikovati_gui::GuiOffsetPlaneBase,
+            offset: &str,
+        ) -> Result<bool, String> {
+            self.create_offset_plane_from_selection(document, base, offset)
+        }
+        fn validate_offset_plane_from_gui(
+            &mut self,
+            document: u64,
+            offset: &str,
+        ) -> Result<bool, String> {
+            self.publish_offset_plane_validation(document, offset)
+        }
         fn extrude_from_gui(
             &mut self,
             document: u64,

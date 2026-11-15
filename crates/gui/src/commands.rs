@@ -214,6 +214,19 @@ pub enum GuiShellAction {
     StartSketchOn(crate::GuiOriginPlaneKind),
     /// Start on a selected authored work plane.
     StartSketchOnWorkPlane(oblikovati_model::feature::FeatureId),
+    /// Open the offset-plane editor for the active part.
+    OpenOffsetPlane,
+    /// Validate an offset expression against the active document.
+    ValidateOffsetPlane {
+        document: u64,
+        offset: String,
+    },
+    /// Create an offset plane through the document owner.
+    CreateOffsetPlane {
+        document: u64,
+        base: GuiOffsetPlaneBase,
+        offset: String,
+    },
     /// Choose a solid face under the pointer, with an origin-plane fallback.
     StartSketchAt {
         document: u64,
@@ -277,6 +290,21 @@ pub enum GuiShellAction {
     Undo,
     Redo,
     Home,
+}
+/// The current selection used to define an offset plane.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GuiOffsetPlaneBase {
+    Origin(crate::GuiOriginPlaneKind),
+    WorkPlane(oblikovati_model::feature::FeatureId),
+    SelectedFace,
+}
+/// The owner-validated offset for one document generation.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GuiOffsetPlaneValidation {
+    pub generation: u64,
+    pub document: u64,
+    pub offset: String,
+    pub error: Option<String>,
 }
 /// The selection categories supported by the viewport's current pickers.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]

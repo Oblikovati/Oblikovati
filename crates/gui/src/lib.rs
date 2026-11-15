@@ -98,9 +98,9 @@ pub use application::ribbon_customization::GuiRibbonSettingsStore;
 pub use commands::{
     GuiAuthoringContext, GuiBaseViewRequest, GuiBrowserChoice, GuiCommandState, GuiDocumentStorage,
     GuiDrawingLine, GuiDrawingProjection, GuiExtrudeDistanceValidation, GuiExtrudeEditRequest,
-    GuiExtrudePreview, GuiFeatureCondition, GuiFeatureEdit, GuiParameterMutation, GuiPartAssetKind,
-    GuiPreviewImage, GuiProject, GuiProjectGroup, GuiSelectionMode, GuiShellAction,
-    GuiSketchLineStyle,
+    GuiExtrudePreview, GuiFeatureCondition, GuiFeatureEdit, GuiOffsetPlaneBase,
+    GuiOffsetPlaneValidation, GuiParameterMutation, GuiPartAssetKind, GuiPreviewImage, GuiProject,
+    GuiProjectGroup, GuiSelectionMode, GuiShellAction, GuiSketchLineStyle,
 };
 pub use engine::{GuiFrameEngine, GuiFrameOutput, GuiFrameRequest};
 pub use input::{GuiInputCapture, GuiInputEvent, GuiKey, GuiModifiers, GuiPointerButton};
@@ -114,6 +114,7 @@ pub use sketch_constraints::GuiSketchConstraint;
 
 mod dimensions;
 mod extrude_dialog;
+mod offset_plane;
 pub use dimensions::{GuiDimensionAction, GuiDimensionDraft};
 
 mod dimension_labels;

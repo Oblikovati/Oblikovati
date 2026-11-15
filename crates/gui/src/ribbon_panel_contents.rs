@@ -326,18 +326,24 @@ pub(crate) fn draw_panel_content(
         }
         RibbonPanel::PartWorkFeatures => {
             use crate::icons::IconGlyph;
-            muted_icon_commands(
-                ui,
-                origin,
-                owners.icons,
-                &[
-                    ("Plane", Some(IconGlyph::WorkPlane)),
-                    ("Axis", Some(IconGlyph::WorkAxis)),
-                    ("Point", Some(IconGlyph::WorkPoint)),
-                    ("UCS", Some(IconGlyph::WorkCoordinateSystem)),
-                ],
-                false,
-            );
+            let (position, size) = owners.icons.appearance.cell(0);
+            owners.icons.cursor(ui, origin, position);
+            let action = GuiShellAction::OpenOffsetPlane;
+            crate::chrome::command_control(ui, "Plane", action, state, actions, || {
+                owners.icons.button(ui, "Plane", IconGlyph::WorkPlane, size)
+            });
+            for (index, (label, icon)) in [
+                ("Axis", IconGlyph::WorkAxis),
+                ("Point", IconGlyph::WorkPoint),
+                ("UCS", IconGlyph::WorkCoordinateSystem),
+            ]
+            .into_iter()
+            .enumerate()
+            {
+                let (position, size) = owners.icons.appearance.cell(index + 1);
+                owners.icons.cursor(ui, origin, position);
+                muted::muted_command(ui, label, NOT_PORTED, owners.icons, Some(icon), false, size);
+            }
         }
         RibbonPanel::PresentationModel => {
             if crate::widget_abi::button(ui, "Insert Model", [108., 58.]) {

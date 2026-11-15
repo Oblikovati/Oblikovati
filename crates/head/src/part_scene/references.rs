@@ -3,6 +3,43 @@ use super::*;
 use oblikovati_automation::{PartTopologyAccess, PartUpdateAccess, TopologyEntityKind};
 use oblikovati_model::{feature::FeatureId, identity::ReferenceEnvelope};
 impl DesktopPartScenes {
+    /// Resolve a selected face to its current identity before it becomes a datum parent.
+    pub(crate) fn selected_face_reference<
+        O: TransactionObserver,
+        W: WorkspaceObserver,
+        F: DocumentFiles,
+    >(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+        feature: FeatureId,
+        role: oblikovati_martensite::PrismFaceRole,
+    ) -> Result<String, String> {
+        let key = self.selected_face_key(files, document, feature, role)?;
+        Ok(super::bodies::body_reference_text(&key))
+    }
+    fn selected_face_key<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+        feature: FeatureId,
+        role: oblikovati_martensite::PrismFaceRole,
+    ) -> Result<Vec<u8>, String> {
+        self.ensure_current(files, document)?;
+        let workspace = files.workspace();
+        let session = workspace
+            .session(document)
+            .map_err(|error| error.to_string())?;
+        let guid = workspace
+            .identity(document)
+            .map_err(|error| error.to_string())?
+            .internal_name;
+        let body = self
+            .current(session)?
+            .body(feature)
+            .ok_or_else(|| format!("selected feature {feature:?}: expected a current body"))?;
+        body.face_key_for_role(session.history(), guid, role)
+    }
     pub(crate) fn sketch_support_face<
         O: TransactionObserver,
         W: WorkspaceObserver,
@@ -17,19 +54,7 @@ impl DesktopPartScenes {
         let Some((feature, role)) = self.face_on_line(files, document, line)? else {
             return Ok(None);
         };
-        let workspace = files.workspace();
-        let session = workspace
-            .session(document)
-            .map_err(|error| error.to_string())?;
-        let guid = workspace
-            .identity(document)
-            .map_err(|error| error.to_string())?
-            .internal_name;
-        let body = self
-            .current(session)?
-            .body(feature)
-            .ok_or_else(|| format!("picked feature {feature:?}: expected a current body"))?;
-        let key = body.face_key_for_role(session.history(), guid, role)?;
+        let key = self.selected_face_key(files, document, feature, role)?;
         oblikovati_model::feature::work_plane::WorkPlaneFaceReference::new(key).map(Some)
     }
 }

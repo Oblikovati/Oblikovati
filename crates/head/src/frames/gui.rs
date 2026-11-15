@@ -197,6 +197,15 @@ pub(super) fn dispatch_gui_action(
     }
     let result = authoring::apply(owner, action);
     if let Err(cause) = &result
+        && let GuiShellAction::CreateOffsetPlane {
+            document,
+            base,
+            offset,
+        } = action
+    {
+        window.reject_offset_plane(*document, *base, offset, cause);
+    }
+    if let Err(cause) = &result
         && let GuiShellAction::EditDimensionValue(value) = action
     {
         window.reject_dimension_edit(value, cause);
@@ -341,6 +350,9 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::StartSketchAt { .. }
         | GuiShellAction::FinishSketch
         | GuiShellAction::OpenExtrude
+        | GuiShellAction::OpenOffsetPlane
+        | GuiShellAction::ValidateOffsetPlane { .. }
+        | GuiShellAction::CreateOffsetPlane { .. }
         | GuiShellAction::ValidateExtrudeDistance { .. }
         | GuiShellAction::PreviewExtrude(_)
         | GuiShellAction::Extrude { .. } => {
