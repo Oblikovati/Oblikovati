@@ -4,6 +4,8 @@
 
 ### Changed
 
+- Added an optional locked-registry comparison to the offline BDD build probe. (#3978)
+
 - Added an optional committed-source comparison to the offline BDD build probe. (#3978)
 
 - Enabled viewport selection of visible work planes for sketch and offset commands. (#3984)

@@ -1,0 +1,47 @@
+{
+  "artifacts_sha256": {
+    "cargo.jsonl": "3ebf06a3d21e96ef120471c0d42d95acaa9cf6624949ed6107204e254a0200de",
+    "cargo.log": "bb25b022c9e256324066969abf09b5be2d206b679ed42ca8873f230e16060752",
+    "config.toml": "c05b5d2cad44311e9c38738a80e7d2f582b92072bf2b5444091a82325fef5a8b"
+  },
+  "code_state": "The live build used the same implementation except a later equivalent manifest-read buffering change; the final registry comparison was rerun after that change.",
+  "input_inventories_retained": false,
+  "input_inventory_sha256": {
+    "config": "484cf7b780f573d26cb201bcf65f9822654b71a505fc027f371f2b7e7a4b5879",
+    "source": "76d7c140617527b55de135d4ca4da93fa1effb4d978eab71823df1c5629a9458",
+    "toolchain": "c58034b06325a420b6e9154fb32ce225f4159e991819fdebc5e104614c86866a",
+    "vendor": "3555d6507c8773fbbe5918918056dcccc4189d6f82af433ce0665f509ed19cd8"
+  },
+  "limitations": "Host system libraries, kernel, devices and concurrent host writes are not bounded.",
+  "negative_check": "A registry file and its local checksum metadata were both changed; the archive comparison rejected them before Cargo started and left target and log directories empty.",
+  "probe_code_commit": "1ee1f2182",
+  "registry_check": {
+    "complete": false,
+    "git_packages_unverified": [
+      "martensite-cmath 0.3.5",
+      "martensite-tkbo 0.8.1",
+      "martensite-tkbrep 0.3.10",
+      "martensite-tkernel 0.4.4",
+      "martensite-tkg2d 0.3.7",
+      "martensite-tkg3d 0.3.9",
+      "martensite-tkgeomalgo 0.3.8",
+      "martensite-tkgeombase 0.3.6",
+      "martensite-tkhlr 0.3.6",
+      "martensite-tkmath 0.3.8",
+      "martensite-tkmesh 0.3.8",
+      "martensite-tkprim 0.3.10",
+      "martensite-tkservice 0.4.1",
+      "martensite-tkshhealing 0.3.9",
+      "martensite-tktopalgo 0.4.3",
+      "martensite-tkv3d 0.7.1",
+      "martensite-vulkan 0.7.2",
+      "oblikovati-api 0.159.0"
+    ],
+    "registry_packages_checked": 280
+  },
+  "reusable": false,
+  "runner_retained": false,
+  "runner_sha256": "c04e5e07a02172a53b161d35654b68bfeb4ce11ae4b257df3f5a657a928e56f0",
+  "sandbox_sha256": "a6203eb2d9ebc2e0e9549c55cda170df85a4e269d4369db3f58dc6c2413d1ba3",
+  "source_commit": "f6f9462d646862d0bfca910c5a68955670edc1d5"
+}

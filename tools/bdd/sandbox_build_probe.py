@@ -7,13 +7,19 @@ import json
 import os
 import platform
 import subprocess
+import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 from functools import partial
 from typing import Callable, Mapping
 
 from committed_source_check import committed_reference, verify_source_inventory
-from runtime_snapshot import snapshot_runtime
+from registry_vendor_check import (
+    read_observed_file,
+    verify_registry_vendor,
+    verify_vendor_config,
+)
+from runtime_snapshot import open_flags, snapshot_runtime
 from sealed_execution import file_identity, require_disjoint
 
 
@@ -33,6 +39,7 @@ class BuildProbe:
 ProbeProcess = Callable[[list[str], Path, Path], int]
 Snapshot = Callable[[Path], Mapping[str, object]]
 SourceCheck = Callable[[Mapping[str, object]], None]
+VendorCheck = Callable[[Mapping[str, Mapping[str, object]]], dict[str, object]]
 
 
 def require_roots(probe: BuildProbe) -> None:
@@ -256,12 +263,14 @@ def run_build_probe(
     run: ProbeProcess = run_process,
     snapshot: Snapshot = snapshot_runtime,
     check_source: SourceCheck | None = None,
+    check_vendor: VendorCheck | None = None,
 ) -> dict[str, object]:
     """Run an observed build without claiming reuse; example: run_build_probe(probe)."""
     require_probe(probe)
     before, sandbox = snapshot_inputs(probe, snapshot), file_identity(probe.bwrap)
     if check_source is not None:
         check_source(before["source"])
+    registry = check_vendor(before) if check_vendor is not None else None
     messages, log = probe.logs / "cargo.jsonl", probe.logs / "cargo.log"
     code = run(sandbox_build_command(probe), messages, log)
     if code != 0:
@@ -273,7 +282,86 @@ def run_build_probe(
         raise ValueError(
             "build inputs changed: expected unchanged mounted inputs and sandbox"
         )
-    return probe_result(runner_path(messages, probe.target), before, sandbox)
+    result = probe_result(runner_path(messages, probe.target), before, sandbox)
+    if registry is not None:
+        result["registry_check"] = registry
+    return result
+
+
+def source_config_bytes(
+    probe: BuildProbe, observed: Mapping[str, object]
+) -> bytes | None:
+    """Read the project's Cargo config from the observed source; example: source_config_bytes(probe, observed)."""
+    if ".cargo/config" in observed:
+        raise ValueError("source .cargo/config: expected no legacy Cargo configuration")
+    if ".cargo/config.toml" not in observed:
+        return None
+    root = os.open(probe.source, open_flags(True))
+    try:
+        directory = os.open(".cargo", open_flags(True), dir_fd=root)
+        try:
+            return read_observed_file(
+                directory, "config.toml", observed[".cargo/config.toml"]
+            )
+        finally:
+            os.close(directory)
+    finally:
+        os.close(root)
+
+
+def check_source_cargo_config(
+    probe: BuildProbe, observed: Mapping[str, object]
+) -> None:
+    """Refuse project settings that redirect dependencies; example: check_source_cargo_config(probe, observed)."""
+    content = source_config_bytes(probe, observed)
+    if content is None:
+        return
+    config = tomllib.loads(content.decode("utf-8"))
+    denied = set(config) & {
+        "source",
+        "registry",
+        "registries",
+        "patch",
+        "replace",
+        "paths",
+    }
+    if denied:
+        raise ValueError(
+            f"source Cargo configuration {sorted(denied)!r}: expected no source overrides"
+        )
+
+
+def check_registry_inputs(
+    probe: BuildProbe, archives: Path, before: Mapping[str, Mapping[str, object]]
+) -> dict[str, object]:
+    """Check vendored registry packages against the observed lockfile; example: check_registry_inputs(probe, archives, before)."""
+    parent = os.open(probe.source, open_flags(True))
+    try:
+        lock = read_observed_file(
+            parent, "Cargo.lock", before["source"].get("Cargo.lock")
+        )
+    finally:
+        os.close(parent)
+    config_dir = os.open(probe.config, open_flags(True))
+    try:
+        config = read_observed_file(
+            config_dir, "config.toml", before["config"].get("config.toml")
+        )
+    finally:
+        os.close(config_dir)
+    check_source_cargo_config(probe, before["source"])
+    verify_vendor_config(lock, config)
+    return verify_registry_vendor(lock, probe.vendor, archives, before["vendor"])
+
+
+def require_archives(probe: BuildProbe, archives: Path) -> None:
+    """Keep the archive cache separate from build output; example: require_archives(probe, archives)."""
+    if not archives.is_absolute() or archives.is_symlink() or not archives.is_dir():
+        raise ValueError(
+            f"archive cache {archives}: expected an absolute real directory"
+        )
+    for output in (probe.target, probe.logs):
+        require_disjoint(archives.resolve(), output.resolve())
 
 
 def run_committed_build_probe(
@@ -282,12 +370,20 @@ def run_committed_build_probe(
     revision: str,
     run: ProbeProcess = run_process,
     snapshot: Snapshot = snapshot_runtime,
+    archives: Path | None = None,
 ) -> dict[str, object]:
     """Check the mounted source against a commit before a probe; example: run_committed_build_probe(probe, repo, sha)."""
     require_probe(probe)
+    if archives is not None:
+        require_archives(probe, archives)
     reference = committed_reference(repository, revision)
     check = partial(verify_source_inventory, reference=reference)
-    result = run_build_probe(probe, run, snapshot, check)
+    vendor_check = (
+        partial(check_registry_inputs, probe, archives)
+        if archives is not None
+        else None
+    )
+    result = run_build_probe(probe, run, snapshot, check, vendor_check)
     result["source_commit"] = reference.commit
     return result
 
@@ -299,14 +395,21 @@ def main() -> None:
         parser.add_argument(name, type=Path)
     parser.add_argument("--repository", type=Path)
     parser.add_argument("--revision")
+    parser.add_argument("--registry-archives", type=Path)
     args = parser.parse_args()
-    repository, revision = args.repository, args.revision
-    del args.repository, args.revision
+    repository, revision, archives = (
+        args.repository,
+        args.revision,
+        args.registry_archives,
+    )
+    del args.repository, args.revision, args.registry_archives
     if (repository is None) != (revision is None):
         parser.error("--repository and --revision must be supplied together")
+    if archives is not None and repository is None:
+        parser.error("--registry-archives requires --repository and --revision")
     probe = BuildProbe(**vars(args))
     result = (
-        run_committed_build_probe(probe, repository, revision)
+        run_committed_build_probe(probe, repository, revision, archives=archives)
         if repository is not None and revision is not None
         else run_build_probe(probe)
     )
