@@ -274,6 +274,71 @@ fn measure_closed(world: &mut ApplicationWorld) {
     );
 }
 // rectangle-two-point-10
+// The corrected fixture uses a real metric part and an empty editable sketch.
+#[given("an empty editable metric sketch is Ready")]
+fn empty_metric_sketch_ready(world: &mut ApplicationWorld) {
+    world.add_template(oblikovati_gui::GuiTemplateKind::Part);
+    let units = oblikovati_api::client::Client::new(world.app().owner.document_host())
+        .documents()
+        .get_units()
+        .unwrap();
+    assert_eq!(units.length_unit, "mm", "expected metric sketch units");
+    world.start_sketch();
+    world.remember_sketch_baseline();
+    world.expect_ready();
+    let sketch = world.edited_geometry();
+    assert!(sketch.lines().is_empty() && sketch.circles().is_empty());
+    assert!(sketch.arcs().is_empty() && sketch.ellipses().is_empty());
+    assert!(sketch.splines().is_empty() && sketch.offset_splines().is_empty());
+    world.record_initial_sketch();
+    let history = current_history(world);
+    world.observed_sketch.as_mut().unwrap().history = history;
+}
+fn current_history(world: &mut ApplicationWorld) -> [Vec<String>; 2] {
+    let document = world.active_id();
+    let session = world
+        .app()
+        .owner
+        .documents()
+        .workspace()
+        .session(document)
+        .unwrap();
+    [
+        session
+            .undo_labels()
+            .into_iter()
+            .map(str::to_owned)
+            .collect(),
+        session
+            .redo_labels()
+            .into_iter()
+            .map(str::to_owned)
+            .collect(),
+    ]
+}
+#[when("the user choose Two Point Rectangle and click a clear point in the sketch canvas")]
+fn clear_first_corner(world: &mut ApplicationWorld) {
+    first_corner(world);
+}
+#[then("Ready returns with no new rectangle visible")]
+fn corrected_ready_without_rectangle(world: &mut ApplicationWorld) {
+    world.expect_ready();
+    let geometry = world.edited_geometry();
+    let history = current_history(world);
+    let original = world
+        .observed_sketch
+        .as_ref()
+        .expect("expected the initial sketch");
+    assert!(
+        geometry.same_recipe(&original.geometry),
+        "expected unchanged sketch geometry and constraints"
+    );
+    assert_eq!(
+        history, original.history,
+        "expected unchanged undo and redo history"
+    );
+    world.expect_segment_absent(FIRST, [FIRST[0], FIRST[1] - 40]);
+}
 #[given("the recorded fixture sketch is Ready with 22 dimensions needed")]
 fn fixture_twenty_two(world: &mut ApplicationWorld) {
     world.start_sketch_on("YZ Plane");
@@ -290,12 +355,15 @@ fn lock_zero_first(world: &mut ApplicationWorld) {
 }
 #[then("the first size is locked at 0.000 mm and the second field is focused")]
 fn zero_locked(world: &mut ApplicationWorld) {
-    let text = world.window_text("##sketch-hud");
-    assert!(text.contains("0.000mm"), "expected zero in {text:?}");
+    let hud = world.state().sketch_hud.expect("expected rectangle fields");
+    assert_eq!(hud.fields.len(), 2, "expected two size fields");
+    assert!(hud.fields[0].locked, "expected the first size locked");
     assert!(
-        world.text_is_selected("0.000mm"),
-        "expected the second field selected"
+        hud.fields[0].text.contains("0.000"),
+        "expected the first size to be zero"
     );
+    assert!(hud.fields[1].active, "expected focus on the second size");
+    assert!(world.window_text("##sketch-hud").contains("0.000mm"));
 }
 #[when("I enter 4 and press Return")]
 #[when("the user enter 4 and press Return")]
