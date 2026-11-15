@@ -208,7 +208,7 @@ pub(crate) fn draw_panel_content(
             }
             return appearance_controls(ui, state, owners.editor, actions);
         }
-        RibbonPanel::Visibility => visibility_controls(ui, state, owners.icons, actions),
+        RibbonPanel::Visibility => sketch::visibility_controls(ui, state, owners.icons, actions),
         RibbonPanel::Windows => windows_controls(ui, origin, state, owners, actions),
         RibbonPanel::Component => {
             owners.icons.cursor(ui, origin, [0., 0.]);
@@ -454,48 +454,6 @@ fn windows_controls(
         state,
         [108., 26.],
         actions,
-    );
-}
-/// Show or hide every sketch at once through the owner's per-sketch command.
-fn visibility_controls(
-    ui: &Ui,
-    state: &GuiCommandState,
-    icons: &crate::icons::GuiRibbonIcons,
-    actions: &mut Vec<GuiShellAction>,
-) {
-    let sketches = state
-        .browser
-        .as_ref()
-        .map_or(&[][..], |browser| &browser.sketches);
-    let hide = sketches.iter().any(|row| row.visible);
-    let disabled = ui.begin_disabled(sketches.is_empty() || state.transaction_open);
-    let label = if hide {
-        "Hide Sketches"
-    } else {
-        "Show Sketches"
-    };
-    let pressed = if icons.appearance == crate::ribbon_command_layout::RibbonAppearance::Normal {
-        crate::widget_abi::button(ui, label, [108., 26.])
-    } else {
-        icons.button(
-            ui,
-            label,
-            crate::icons::IconGlyph::CreateSketch,
-            icons.appearance.single_cell(),
-        )
-    };
-    drop(disabled);
-    let Some(document) = state.document.filter(|_| pressed) else {
-        return;
-    };
-    actions.extend(
-        sketches
-            .iter()
-            .map(|row| GuiShellAction::SetSketchVisibility {
-                document,
-                sketch: row.id,
-                visible: !hide,
-            }),
     );
 }
 fn appearance_controls(

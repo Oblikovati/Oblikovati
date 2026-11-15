@@ -97,3 +97,46 @@ pub(super) fn sketch_create_controls(
     crate::widget_abi::button(ui, "Project Geometry", icons.cell([150., 18.]));
     drop(disabled);
 }
+
+/// Show or hide every sketch at once through the owner's per-sketch command.
+pub(super) fn visibility_controls(
+    ui: &Ui,
+    state: &GuiCommandState,
+    icons: &crate::icons::GuiRibbonIcons,
+    actions: &mut Vec<GuiShellAction>,
+) {
+    let sketches = state
+        .browser
+        .as_ref()
+        .map_or(&[][..], |browser| &browser.sketches);
+    let hide = sketches.iter().any(|row| row.visible);
+    let disabled = ui.begin_disabled(sketches.is_empty() || state.transaction_open);
+    let label = if hide {
+        "Hide Sketches"
+    } else {
+        "Show Sketches"
+    };
+    let pressed = if icons.appearance == crate::ribbon_command_layout::RibbonAppearance::Normal {
+        crate::widget_abi::button(ui, label, [108., 26.])
+    } else {
+        icons.button(
+            ui,
+            label,
+            crate::icons::IconGlyph::CreateSketch,
+            icons.appearance.single_cell(),
+        )
+    };
+    drop(disabled);
+    let Some(document) = state.document.filter(|_| pressed) else {
+        return;
+    };
+    actions.extend(
+        sketches
+            .iter()
+            .map(|row| GuiShellAction::SetSketchVisibility {
+                document,
+                sketch: row.id,
+                visible: !hide,
+            }),
+    );
+}
