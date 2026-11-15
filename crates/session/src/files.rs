@@ -2,6 +2,7 @@
 
 //! File bindings owned together with their document sessions.
 mod assembly_cache_validation;
+mod assembly_full_loading;
 mod assembly_placement;
 mod assembly_sources;
 mod asset_catalog;

@@ -253,3 +253,43 @@ fn express_open_does_not_reuse_a_fully_open_document() {
         "{error}"
     );
 }
+
+#[test]
+fn load_full_requires_attached_components_before_enabling_edits() {
+    let (saved, _, destination, _) = cached_graph();
+    let files = WorkspaceFiles {
+        contents: Rc::clone(&saved.files().contents),
+        ..Default::default()
+    };
+    let mut fresh = FileWorkspace::new(RecordingWorkspace::default(), files);
+    let mut guids = SequenceGuids(12000);
+    let root = fresh
+        .open_express_with_factory(&destination, || Ok(ContentObserver), "alpha", &mut guids)
+        .unwrap()
+        .session_id();
+    let error = fresh.finish_express_assembly(root).unwrap_err();
+    assert!(
+        error
+            .to_string()
+            .contains("expected a fully loaded component"),
+        "{error}"
+    );
+    assert!(fresh.express_assembly_view(root).unwrap().is_some());
+    let part = fresh
+        .open(
+            &path("a.obk"),
+            ContentObserver,
+            "alpha",
+            &mut guids,
+            OpenActivation::Background,
+        )
+        .unwrap()
+        .session_id();
+    fresh
+        .attach_document_reference(root, path("a.obk").to_str().unwrap().into(), part, true)
+        .unwrap();
+    assert!(fresh.finish_express_assembly(root).unwrap());
+    assert!(fresh.express_assembly_view(root).unwrap().is_none());
+    assert!(fresh.commands(root).is_ok());
+    assert!(!fresh.finish_express_assembly(root).unwrap());
+}
