@@ -254,6 +254,11 @@ def archive_entries(
     """Read allowed package file hashes and executable bits; example: archive_entries(tar, package)."""
     files: dict[str, tuple[str, int]] = {}
     for member in archive:
+        if (
+            member.isdir()
+            and member.name.rstrip("/") == f"{package.name}-{package.version}"
+        ):
+            continue
         name = archive_member_name(
             member.name.rstrip("/") if member.isdir() else member.name, package
         )

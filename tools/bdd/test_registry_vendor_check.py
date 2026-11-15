@@ -148,6 +148,20 @@ class RegistryVendorCheckTests(unittest.TestCase):
                 self.fixture.lock, self.fixture.vendor, self.fixture.archives, observed
             )
 
+    def test_archive_root_directory_is_allowed(self) -> None:
+        package = LockedPackage("witness", "1.2.3", "registry", "a" * 64)
+        with tempfile.TemporaryFile() as stream:
+            with tarfile.open(fileobj=stream, mode="w") as archive:
+                root = tarfile.TarInfo("witness-1.2.3/")
+                root.type = tarfile.DIRTYPE
+                archive.addfile(root)
+                member = tarfile.TarInfo("witness-1.2.3/file")
+                member.size = 1
+                archive.addfile(member, io.BytesIO(b"x"))
+            stream.seek(0)
+            with tarfile.open(fileobj=stream, mode="r:") as archive:
+                self.assertEqual(set(archive_entries(archive, package)), {"file"})
+
     def test_unsafe_archive_paths_and_links_are_rejected(self) -> None:
         package = LockedPackage("witness", "1.2.3", "registry", "a" * 64)
         for name, kind in (
