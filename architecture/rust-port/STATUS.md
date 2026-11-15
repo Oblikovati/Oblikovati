@@ -67,7 +67,9 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   unverified. See `receipts/2026-11-15-combined-build-probe/`. The observation
   does not prove the build. Capture now builds from a commit export with a fresh
   target, an isolated Cargo home and offline caches. Toolchain binaries, cached
-  dependencies, host inputs and the inventory preflight remain unbounded.
+  dependencies and host inputs remain unbounded. The inventory preflight now
+  also builds from a commit export with an isolated Cargo home and target; its
+  toolchain and host inputs remain unbounded.
   See `receipts/2026-11-15-provenance-config-3978-diagnostic/`. Receipt reuse
   is also open (#3974).
 - Sketch extrusion lacks a certified solve precision bound (#3928). Analytic
