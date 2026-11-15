@@ -279,9 +279,17 @@ and flags are refused. Ambiguous paths, explicit workspace selection and target
 normalizations that cannot be derived are declined. The generated package
 edition must match the locked source edition.
 
+The check also compares selected package metadata and lint tables with the
+locked manifest, resolving explicit inheritance from the nearest tracked
+workspace. The selected metadata is description, documentation, homepage,
+repository, license, rust-version, authors, keywords, categories and publish.
+The pinned Cargo parser normalizes [these package fields](https://github.com/rust-lang/cargo/blob/5f94df4789f005f9a352888e8355ffc645b7ed0e/src/workspace/parser/mod.rs#L694-L805)
+and [lint inheritance](https://github.com/rust-lang/cargo/blob/5f94df4789f005f9a352888e8355ffc645b7ed0e/src/workspace/parser/mod.rs#L570-L578).
+Unsupported inheritance forms and explicit workspace selection are refused.
+
 These checks passed on the current 18 Git packages and 22,972 tracked vendor
-files. They do not validate the entire generated manifest: most package metadata,
-lints and other fields remain unverified. A passing result is partial, does not
+files. They do not validate the entire generated manifest: path-based metadata,
+other package fields and other manifest sections remain unverified. A passing result is partial, does not
 independently bind a build, and cannot authorize reuse. It reports the checked scope but keeps all 18 full manifests
 in `git_manifests_unverified`, with `complete: false` and `reusable: false`.
 The prior [observation](receipts/2026-11-15-git-vendor-check/observation.json)
