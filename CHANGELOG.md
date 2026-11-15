@@ -24,6 +24,8 @@
 
 ### Fixed
 
+- Cleared a selected named face appearance with Cancel and undo support, while keeping other overrides. (#3962)
+
 - Kept Ctrl and Shift viewport body selections for Clear Appearance. (#3962)
 
 - Kept the rectangle placement prompt while a zero-size preview is incomplete. (#3975)

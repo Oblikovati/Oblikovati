@@ -175,6 +175,14 @@ impl<D: ScriptDocumentOwner> HeadWork for DesktopScripts<D> {
     ) -> Result<bool, String> {
         self.owner.edit_parameter_from_gui(mutation, request)
     }
+    fn clear_selected_face_appearance_from_gui(
+        &mut self,
+        document: u64,
+        key: &str,
+    ) -> Result<bool, String> {
+        self.owner
+            .clear_selected_face_appearance_from_gui(document, key)
+    }
     fn clear_selected_body_appearances_from_gui(
         &mut self,
         document: u64,
