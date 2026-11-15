@@ -143,6 +143,7 @@ impl QuickAccessToolbar {
             Some(StandardCommand::Home) => GuiShellAction::ShowHome,
             Some(StandardCommand::Update) => GuiShellAction::UpdatePart,
             Some(StandardCommand::IProperties) => GuiShellAction::OpenIProperties,
+            Some(StandardCommand::Return) => GuiShellAction::FinishSketch,
             Some(StandardCommand::Measure) => {
                 GuiShellAction::Inspect(crate::GuiInspectAction::StartMeasure)
             }
@@ -266,6 +267,21 @@ impl QuickAccessToolbar {
                 drop(disabled);
             }
             StandardCommand::Print => muted_button(ui, label),
+            StandardCommand::Return => {
+                crate::chrome::command_button(
+                    ui,
+                    label,
+                    GuiShellAction::FinishSketch,
+                    state,
+                    [0.; 2],
+                    actions,
+                );
+                if !GuiShellAction::FinishSketch.enabled(state)
+                    && ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED)
+                {
+                    ui.tooltip_text("Return requires an idle sketch edit.");
+                }
+            }
             StandardCommand::IProperties => crate::chrome::command_button(
                 ui,
                 label,
