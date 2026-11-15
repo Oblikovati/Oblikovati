@@ -1,14 +1,13 @@
 # Verification, compatibility, and release
 
-This document defines application acceptance gates. The branch now has a Rust
-build-tool workspace and the [local/CI gate](../../RELEASING.md). The CLI supports
-manifest inspection and version/help; the GUI is not yet ported. Tool tests and package-plan checks do not provide native
-application acceptance or R9 release evidence.
+This document defines application acceptance gates. The Rust workspace includes
+the CLI, desktop GUI, and [local/CI gate](../../RELEASING.md). Implemented paths
+have partial evidence in [status](STATUS.md); they do not establish full port or
+R9 release acceptance.
 
-Current work is focused on local Linux, as requested by the user. Windows and
-macOS testing and fixes are deferred. Their pipeline definitions remain enabled
-and failures stay visible; do not skip failing jobs or mark them successful.
-The broader platform acceptance requirements below remain outstanding.
+Recent native evidence is from Linux. Windows and macOS acceptance remains
+outstanding, and their pipeline failures must remain visible. The broader
+platform acceptance requirements below still apply.
 
 ## Behavior ledger
 
