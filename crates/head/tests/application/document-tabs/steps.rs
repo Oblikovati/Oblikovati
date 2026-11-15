@@ -15,6 +15,8 @@ mod home_and_previews;
 mod home_preview_native;
 #[path = "mixed_documents.rs"]
 mod mixed_documents;
+#[path = "offscreen_selection.rs"]
+mod offscreen_selection;
 #[path = "reordering.rs"]
 mod reordering;
 #[path = "second_windows.rs"]
