@@ -23,6 +23,8 @@ mod dimension_expression;
 mod ellipse;
 #[path = "fixtures.rs"]
 pub(super) mod fixtures;
+#[path = "fixtures_midpoint.rs"]
+mod fixtures_midpoint;
 #[path = "line/steps.rs"]
 mod line;
 #[path = "move/precise.rs"]

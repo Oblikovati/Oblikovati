@@ -1,0 +1,32 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.14s
+     Running unittests src/lib.rs (/tmp/rust-midpoint-3996-JM1wi6AQ/target/debug/deps/oblikovati_head-c865ed7d2d134d42)
+
+running 1 test
+Feature: Ellipse
+  Scenario: ellipse-20 Observe a digit immediately after fresh center selection
+   ✔  Given an editable sketch with existing geometry is Ready
+   ✘  When the user open Circle dropdown and choose Ellipse
+      Step failed:
+      Defined: tmp/rust-midpoint-3996-JM1wi6AQ/scenarios/features/sketch/ellipse/scenario.feature:209:5
+      Step doesn't match any function
+[Summary]
+1 feature
+1 scenario (1 failed)
+2 steps (1 passed, 1 failed)
+
+thread 'sketch-scenarios' (2608688) panicked at crates/head/src/../tests/application/benchmark.rs:294:5:
+scenario benchmark: expected no failed, undefined, or skipped steps
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window' (2608687) panicked at crates/head/src/../tests/application/../sketch/benchmark.rs:76:10:
+called `Result::unwrap()` on an `Err` value: Any { .. }
+test native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window ... FAILED
+
+failures:
+
+failures:
+    native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1063 filtered out; finished in 22.74s
+
+error: test failed, to rerun pass `-p oblikovati-head --lib`

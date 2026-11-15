@@ -4,7 +4,6 @@ use super::super::ApplicationWorld;
 use cucumber::{given, then, when};
 use oblikovati_viewport::ViewportPhysicalKey;
 
-const LINE: [[i32; 2]; 2] = [[420, 720], [600, 620]];
 const CENTER: [i32; 2] = [860, 520];
 const THROUGH: [i32; 2] = [940, 520];
 /// Recorded in millimetres, as sketch x then sketch y on the YZ plane.
@@ -55,11 +54,7 @@ fn expect_radius_cm(world: &mut ApplicationWorld, radius: f64) {
 }
 fn sketch_with_line(world: &mut ApplicationWorld) {
     world.start_sketch_on("YZ Plane");
-    world.select_line_tool();
-    for corner in LINE {
-        world.sketch_click(corner);
-    }
-    world.escape();
+    world.create_midpoint_line();
     world.pump(Vec::new());
 }
 fn typed_recorded_circle(world: &mut ApplicationWorld) {
@@ -76,6 +71,7 @@ fn retained_six_millimetre_circle(world: &mut ApplicationWorld) {
     world.escape();
     world.pump(Vec::new());
     world.expect_annotation("6");
+    world.remember_edited_sketch(Vec::new());
 }
 fn expect_center_row(world: &ApplicationWorld) {
     world.expect_measure("Center X 0.000 Y 6.553 Z -12.440 mm");
@@ -201,11 +197,8 @@ fn undo_once_more(world: &mut ApplicationWorld) {
 fn baseline_restored(world: &mut ApplicationWorld) {
     world.expect_annotation("6");
     expect_radius_cm(world, 0.3);
-    assert_eq!(
-        world.edited_geometry().lines().len(),
-        1,
-        "the midpoint line"
-    );
+    world.expect_midpoint_and_circle_restored();
+    world.save_capture("circle-center-point-11-midpoint-after-undo");
 }
 // circle-center-point-01
 #[when("I select Center Point Circle, click a center, then a distinct circumference point")]
