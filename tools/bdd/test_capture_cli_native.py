@@ -79,8 +79,7 @@ class NativeCargoRunTests(unittest.TestCase):
             self.assertEqual(status, 0)
             self.assertEqual((reports / "native-test.log").read_text(), "native output\n")
 
-    @unittest.skipUnless(shutil.which("cargo"), "requires Cargo")
-    def test_real_cargo_cannot_read_ignored_checkout_input(self) -> None:
+    def ignored_include_commit(self) -> str:
         root = Path(self.repo.name)
         (root / "Cargo.toml").write_text(
             '[package]\nname="oblikovati-head"\nversion="0.1.0"\nedition="2021"\n'
@@ -92,7 +91,12 @@ class NativeCargoRunTests(unittest.TestCase):
         (root / "src/lib.rs").write_text('const INPUT: &str = include_str!("../ignored.txt");\n')
         self.git("add", "Cargo.toml", "Cargo.lock", "src/lib.rs")
         self.git("-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "fixture crate")
-        commit = self.git("rev-parse", "HEAD").strip()
+        return self.git("rev-parse", "HEAD").strip()
+
+    @unittest.skipUnless(shutil.which("cargo"), "requires Cargo")
+    def test_real_cargo_cannot_read_ignored_checkout_input(self) -> None:
+        root = Path(self.repo.name)
+        commit = self.ignored_include_commit()
         with tempfile.TemporaryDirectory() as folder, contextlib.redirect_stdout(io.StringIO()):
             reports = Path(folder)
             env = dict(os.environ, CARGO_TARGET_DIR=str(root / "user-target"))
@@ -100,6 +104,25 @@ class NativeCargoRunTests(unittest.TestCase):
             self.assertNotEqual(status, 0)
             self.assertIn("ignored.txt", (reports / "native-test.log").read_text())
             self.assertFalse((root / "user-target").exists())
+
+    @unittest.skipUnless(shutil.which("cargo"), "requires Cargo")
+    def test_real_cargo_runs_with_exported_runtime_asset(self) -> None:
+        root = Path(self.repo.name)
+        self.ignored_include_commit()
+        (root / "src/lib.rs").write_text(
+            '#[test] fn application_scenarios_use_the_native_window() { '
+            'let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")); '
+            'assert_eq!(std::fs::read_to_string(dir.join("tracked.txt")).unwrap(), "committed"); '
+            'assert!(std::env::current_exe().unwrap().is_file()); }\n'
+        )
+        self.git("add", "src/lib.rs")
+        self.git("-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "runtime asset")
+        commit = self.git("rev-parse", "HEAD").strip()
+        with tempfile.TemporaryDirectory() as folder, contextlib.redirect_stdout(io.StringIO()):
+            reports = Path(folder)
+            status = NativeCargoRun(root, "application", commit)(reports, dict(os.environ))
+            self.assertEqual(status, 0, (reports / "native-test.log").read_text())
+            self.assertIn("1 passed", (reports / "native-test.log").read_text())
 
     def test_failed_child_output_is_still_recorded(self) -> None:
         with tempfile.TemporaryDirectory() as folder:

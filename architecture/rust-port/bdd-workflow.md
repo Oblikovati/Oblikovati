@@ -109,8 +109,8 @@ not passes. Use full area runs to report area totals; the default sketch gate
 only selects its accepted feature list, so it is not a full sketch run.
 
 The receipt capture CLI builds the selected commit from a temporary export with
-a new temporary target. It deletes both after the run. This prevents reuse of
-ignored checkout files and previous target artifacts, but it does not bound
+a new temporary target. It deletes both after the run. This excludes ignored checkout files from the initial build tree and prevents
+reuse of previous target artifacts, but it does not bound
 compiler settings or external build inputs. Captures remain historical evidence
 until issue #3978 is resolved. A full rebuild requires time and disk space.
 
