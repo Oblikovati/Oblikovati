@@ -90,7 +90,9 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
   a later diagnostic; see `receipts/2026-11-15-tabs-clarified/`.
 - Quick access: the diagnostic passed 11 of 12 scenarios. Clear can open
   before selection and can clear multiple browser-selected bodies in one edit
-  (#3962). Viewport multi-selection, faces, and occurrences remain open; see
+  (#3962). Viewport body multi-selection now passes frame-loop tests; named
+  faces, occurrences, and OS-level input remain open. See
+  `implementation-viewport-body-toggle.md` and
   `receipts/2026-11-15-clear-multiple-bodies/`. Clear has confirmation, undo and
   redo checks in `receipts/2026-11-15-clear-appearance/`; its wider selection
   workflow remains open (#3962). The recorded profile remains incomplete
