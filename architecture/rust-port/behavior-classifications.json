@@ -5296,8 +5296,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-15-file-menu-full/receipt-f0b61ad2f9a5655f.json",
-        "sha256": "ef397ef3a1081516d3d50c9fbe1ca5a36ca5ef5f31fce5e243fa89562bdfbfd6"
+        "path": "architecture/rust-port/receipts/2026-11-15-file-menu-rerun/receipt-f0b61ad2f9a5655f.json",
+        "sha256": "94390b8f3c58636f168db8151630a22a8e8dc55eb738f6ce0e18d439944883e4"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go: drawFileMenu; legacy menu structure differs from the scenario",
       "mapping_reason": "Application shell menu, layout, and document-context interaction.",
@@ -5309,7 +5309,14 @@
       "rust_tests": "application_scenarios_use_the_native_window: Open the file menu while a part is active",
       "oracle": "Pinned scenario steps and inspected native capture; this does not establish visual parity with Go.",
       "expected_result": "The File menu shows its commands, recent-document region, disclosure indicators, options, and exit while the part workspace remains visible.",
-      "go_test_premise": "Go aa8297d1b: no exact File menu presentation or dismissal test found; native drawFileMenu uses a different layout. head/ui/qat_test.go TestQATDispatchDisabled passes for quick-access dispatch only; it does not validate this menu scenario. See receipts/2026-11-14-go-file-menu-baseline/README.md."
+      "go_test_premise": "Go aa8297d1b: no exact File menu presentation or dismissal test found; native drawFileMenu uses a different layout. head/ui/qat_test.go TestQATDispatchDisabled passes for quick-access dispatch only; it does not validate this menu scenario. See receipts/2026-11-14-go-file-menu-baseline/README.md.",
+      "historical_receipts": [
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-file-menu-full/receipt-f0b61ad2f9a5655f.json",
+          "sha256": "ef397ef3a1081516d3d50c9fbe1ca5a36ca5ef5f31fce5e243fa89562bdfbfd6"
+        }
+      ]
     },
     {
       "id": "scenario:a94ed06a75a5dbb3cd0b18e6f3acc3aaeac44c4fcb78b38a6ba95505278d6516",
@@ -5325,8 +5332,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-15-file-menu-full/receipt-a94ed06a75a5dbb3.json",
-        "sha256": "66f7c2d89ccf2d65fd00e45572266dc245e2f4bf84130169d68d3086037c7580"
+        "path": "architecture/rust-port/receipts/2026-11-15-file-menu-rerun/receipt-a94ed06a75a5dbb3.json",
+        "sha256": "ea92e8abe73fd2455c4a05821cdecb569f3d60baf3510ba8935d3b8b47a2caac"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go: drawFileMenu; legacy menu structure differs from the scenario",
       "mapping_reason": "Application shell menu, layout, and document-context interaction.",
@@ -5338,7 +5345,14 @@
       "rust_tests": "application_scenarios_use_the_native_window: Dismiss the file menu with Escape",
       "oracle": "Pinned scenario assertions and inspected final native capture; Go visual parity is not established.",
       "expected_result": "All recorded steps pass, ending with: the same part document remains active",
-      "go_test_premise": "Go aa8297d1b: no exact File menu presentation or dismissal test found; native drawFileMenu uses a different layout. head/ui/qat_test.go TestQATDispatchDisabled passes for quick-access dispatch only; it does not validate this menu scenario. See receipts/2026-11-14-go-file-menu-baseline/README.md."
+      "go_test_premise": "Go aa8297d1b: no exact File menu presentation or dismissal test found; native drawFileMenu uses a different layout. head/ui/qat_test.go TestQATDispatchDisabled passes for quick-access dispatch only; it does not validate this menu scenario. See receipts/2026-11-14-go-file-menu-baseline/README.md.",
+      "historical_receipts": [
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-file-menu-full/receipt-a94ed06a75a5dbb3.json",
+          "sha256": "66f7c2d89ccf2d65fd00e45572266dc245e2f4bf84130169d68d3086037c7580"
+        }
+      ]
     },
     {
       "id": "scenario:dac29e7f09893d1df715332e0b2f9a58173d701cc962db26f626644246b5869a",
@@ -5354,8 +5368,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-15-file-menu-full/receipt-dac29e7f09893d1d.json",
-        "sha256": "9b16b09a544b40f24f948c7a61c82e4349505d7d8eae9f481256e109ce08d32d"
+        "path": "architecture/rust-port/receipts/2026-11-15-file-menu-rerun/receipt-dac29e7f09893d1d.json",
+        "sha256": "bebab642951411e69aef9208633c4312ccc3869ed1049e45977e58da91ae71da"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go: drawFileMenu; legacy menu structure differs from the scenario",
       "mapping_reason": "Application shell menu, layout, and document-context interaction.",
@@ -5367,7 +5381,14 @@
       "rust_tests": "application_scenarios_use_the_native_window: Dismiss the file menu by clicking outside",
       "oracle": "Pinned scenario assertions and inspected final native capture; Go visual parity is not established.",
       "expected_result": "All recorded steps pass, ending with: the same part document remains active",
-      "go_test_premise": "Go aa8297d1b: no exact File menu presentation or dismissal test found; native drawFileMenu uses a different layout. head/ui/qat_test.go TestQATDispatchDisabled passes for quick-access dispatch only; it does not validate this menu scenario. See receipts/2026-11-14-go-file-menu-baseline/README.md."
+      "go_test_premise": "Go aa8297d1b: no exact File menu presentation or dismissal test found; native drawFileMenu uses a different layout. head/ui/qat_test.go TestQATDispatchDisabled passes for quick-access dispatch only; it does not validate this menu scenario. See receipts/2026-11-14-go-file-menu-baseline/README.md.",
+      "historical_receipts": [
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-file-menu-full/receipt-dac29e7f09893d1d.json",
+          "sha256": "9b16b09a544b40f24f948c7a61c82e4349505d7d8eae9f481256e109ce08d32d"
+        }
+      ]
     },
     {
       "id": "scenario:d5bc3120a72a620b38cfce7f292e55f13491a9f04841e4238c56b4e215534fc2",
@@ -5383,8 +5404,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-15-file-menu-full/receipt-d5bc3120a72a620b.json",
-        "sha256": "8d315beb5d19cc91d6223ce8229923f77579d87c20bbe7e8fe5aea719b44642a"
+        "path": "architecture/rust-port/receipts/2026-11-15-file-menu-rerun/receipt-d5bc3120a72a620b.json",
+        "sha256": "78f41a49f144721e30eb84ce088542ce0f4825d44ef0b84ddfa7c5ed684f4c83"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go: drawFileMenu; legacy menu structure differs from the scenario",
       "mapping_reason": "Application shell menu, layout, and document-context interaction.",
@@ -5396,7 +5417,14 @@
       "rust_tests": "application_scenarios_use_the_native_window: Open and dismiss the file menu in a drawing",
       "oracle": "Pinned scenario assertions and inspected final native capture; Go visual parity is not established.",
       "expected_result": "All recorded steps pass, ending with: the same drawing document remains active",
-      "go_test_premise": "Go aa8297d1b: no exact File menu presentation or dismissal test found; native drawFileMenu uses a different layout. head/ui/qat_test.go TestQATDispatchDisabled passes for quick-access dispatch only; it does not validate this menu scenario. See receipts/2026-11-14-go-file-menu-baseline/README.md."
+      "go_test_premise": "Go aa8297d1b: no exact File menu presentation or dismissal test found; native drawFileMenu uses a different layout. head/ui/qat_test.go TestQATDispatchDisabled passes for quick-access dispatch only; it does not validate this menu scenario. See receipts/2026-11-14-go-file-menu-baseline/README.md.",
+      "historical_receipts": [
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-file-menu-full/receipt-d5bc3120a72a620b.json",
+          "sha256": "8d315beb5d19cc91d6223ce8229923f77579d87c20bbe7e8fe5aea719b44642a"
+        }
+      ]
     },
     {
       "id": "scenario:210565d68ab3712af8e53f19972c4a22e3a6fb8ca78e4c0c9c923fb948b2fae4",
@@ -5412,8 +5440,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-15-file-menu-full/receipt-210565d68ab3712a.json",
-        "sha256": "ad6086871dbc174b9084d81077e36cf376734b6b67fb07e0f9aeb9f49e787d9d"
+        "path": "architecture/rust-port/receipts/2026-11-15-file-menu-rerun/receipt-210565d68ab3712a.json",
+        "sha256": "3f56611d8962a8b51fdd848db522e1283a77ba6947fe56782061b2db43b998b6"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go: drawFileMenu; legacy menu structure differs from the scenario",
       "mapping_reason": "Application shell menu, layout, and document-context interaction.",
@@ -5425,7 +5453,14 @@
       "rust_tests": "application_scenarios_use_the_native_window: Inspect controls in the recent-documents region",
       "oracle": "Pinned scenario assertions and inspected final native capture; Go visual parity is not established.",
       "expected_result": "All recorded steps pass, ending with: the menu closes and the same part remains active",
-      "go_test_premise": "Go aa8297d1b: no exact File menu presentation or dismissal test found; native drawFileMenu uses a different layout. app/file_ui_hooks_test.go TestOpenDocumentFromMRUHonorsVetoAndRecords passes with a fake store; it validates MRU state and veto, not the recent-documents UI. See receipts/2026-11-14-go-file-menu-baseline/README.md."
+      "go_test_premise": "Go aa8297d1b: no exact File menu presentation or dismissal test found; native drawFileMenu uses a different layout. app/file_ui_hooks_test.go TestOpenDocumentFromMRUHonorsVetoAndRecords passes with a fake store; it validates MRU state and veto, not the recent-documents UI. See receipts/2026-11-14-go-file-menu-baseline/README.md.",
+      "historical_receipts": [
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-file-menu-full/receipt-210565d68ab3712a.json",
+          "sha256": "ad6086871dbc174b9084d81077e36cf376734b6b67fb07e0f9aeb9f49e787d9d"
+        }
+      ]
     },
     {
       "id": "scenario:e69248355099bdc95eb4c23727750ccba37f7f3cb04b9fd3a70b6baf9da7f9eb",
@@ -5441,8 +5476,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-15-file-menu-full/receipt-e69248355099bdc9.json",
-        "sha256": "f2ea09668d5481eeaf128d361031984efb81beb204c20667b3dc0f3302c191cf"
+        "path": "architecture/rust-port/receipts/2026-11-15-file-menu-rerun/receipt-e69248355099bdc9.json",
+        "sha256": "269ec23d7ed3db8f44b112510d75563986872e06a61d660b37675e69dcafc9da"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go: drawFileMenu; legacy menu structure differs from the scenario",
       "mapping_reason": "Application shell menu, layout, and document-context interaction.",
@@ -5454,7 +5489,14 @@
       "rust_tests": "application_scenarios_use_the_native_window: Inspect the Save As submenu for a saved part",
       "oracle": "Pinned scenario assertions and inspected final native capture; Go visual parity is not established.",
       "expected_result": "All recorded steps pass, ending with: the Save Copy As description says the original file remains open",
-      "go_test_premise": "Go aa8297d1b: no exact File menu presentation or dismissal test found; native drawFileMenu uses a different layout. head/ui/file_dialog_test.go TestFileDialogConfirmReturnsActionForMode passes on dialog state only; it does not test the Save As submenu. See receipts/2026-11-14-go-file-menu-baseline/README.md."
+      "go_test_premise": "Go aa8297d1b: no exact File menu presentation or dismissal test found; native drawFileMenu uses a different layout. head/ui/file_dialog_test.go TestFileDialogConfirmReturnsActionForMode passes on dialog state only; it does not test the Save As submenu. See receipts/2026-11-14-go-file-menu-baseline/README.md.",
+      "historical_receipts": [
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-file-menu-full/receipt-e69248355099bdc9.json",
+          "sha256": "f2ea09668d5481eeaf128d361031984efb81beb204c20667b3dc0f3302c191cf"
+        }
+      ]
     },
     {
       "id": "scenario:d703958d1cb7a6f8afc29bd7c8f1329cfddd6c762f405ed19855363a4866bbf8",
@@ -5470,8 +5512,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-15-file-menu-full/receipt-d703958d1cb7a6f8.json",
-        "sha256": "0743d6dc38c0bdc923278c8b885124dd05cd47cb7fa9f07806fdd56ef4e7fc44"
+        "path": "architecture/rust-port/receipts/2026-11-15-file-menu-rerun/receipt-d703958d1cb7a6f8.json",
+        "sha256": "c4b0997209ac424cdaa0acc0442ee7dd5def1d1fd9269ff387a4038851e86349"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go: drawFileMenu; legacy menu structure differs from the scenario",
       "mapping_reason": "Application shell menu, layout, and document-context interaction.",
@@ -5483,7 +5525,14 @@
       "rust_tests": "application_scenarios_use_the_native_window: Open the New submenu from the File menu",
       "oracle": "Pinned scenario assertions and inspected final native capture; Go visual parity is not established.",
       "expected_result": "All recorded steps pass, ending with: no document type has been activated",
-      "go_test_premise": "Go aa8297d1b: no exact File menu presentation or dismissal test found; native drawFileMenu uses a different layout. head/ui/qat_test.go TestQATDispatchDisabled passes for quick-access dispatch only; it does not validate this menu scenario. See receipts/2026-11-14-go-file-menu-baseline/README.md."
+      "go_test_premise": "Go aa8297d1b: no exact File menu presentation or dismissal test found; native drawFileMenu uses a different layout. head/ui/qat_test.go TestQATDispatchDisabled passes for quick-access dispatch only; it does not validate this menu scenario. See receipts/2026-11-14-go-file-menu-baseline/README.md.",
+      "historical_receipts": [
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-file-menu-full/receipt-d703958d1cb7a6f8.json",
+          "sha256": "0743d6dc38c0bdc923278c8b885124dd05cd47cb7fa9f07806fdd56ef4e7fc44"
+        }
+      ]
     },
     {
       "id": "scenario:5c5237cc9af7f0342c3472f734bbcd8a6970cbc2a66d7aee9e875d7f5e8a1a52",
@@ -5499,8 +5548,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-15-file-menu-full/receipt-5c5237cc9af7f034.json",
-        "sha256": "d66c325fd3e7fbd4de8f4446f4c13d8f495696eae788c7dfeafd90c96fbc6dbc"
+        "path": "architecture/rust-port/receipts/2026-11-15-file-menu-rerun/receipt-5c5237cc9af7f034.json",
+        "sha256": "76810f26b1038678ff1ce98e6ce8d4fefdaf336b4e708678085ed3bc2da4eec9"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go: drawFileMenu; legacy menu structure differs from the scenario",
       "mapping_reason": "Application shell menu, layout, and document-context interaction.",
@@ -5512,7 +5561,14 @@
       "rust_tests": "application_scenarios_use_the_native_window: Inspect the File menu from Home",
       "oracle": "Pinned scenario assertions and inspected final native capture; Go visual parity is not established.",
       "expected_result": "All recorded steps pass, ending with: the Home recent-documents view remains visible around the menu",
-      "go_test_premise": "Go aa8297d1b: no exact File menu presentation or dismissal test found; native drawFileMenu uses a different layout. head/ui/qat_test.go TestQATDispatchDisabled passes for quick-access dispatch only; it does not validate this menu scenario. See receipts/2026-11-14-go-file-menu-baseline/README.md."
+      "go_test_premise": "Go aa8297d1b: no exact File menu presentation or dismissal test found; native drawFileMenu uses a different layout. head/ui/qat_test.go TestQATDispatchDisabled passes for quick-access dispatch only; it does not validate this menu scenario. See receipts/2026-11-14-go-file-menu-baseline/README.md.",
+      "historical_receipts": [
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-file-menu-full/receipt-5c5237cc9af7f034.json",
+          "sha256": "d66c325fd3e7fbd4de8f4446f4c13d8f495696eae788c7dfeafd90c96fbc6dbc"
+        }
+      ]
     },
     {
       "id": "scenario:b389189024e3e0b0186faa06d389bfbd8b7f090e5b865ffe9d0cdc1265650c90",
