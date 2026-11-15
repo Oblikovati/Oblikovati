@@ -5213,8 +5213,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-15-open-existing-current/receipt-233169e6ac19c7dd.json",
-        "sha256": "d45a05556743cd81412bcb9ba89c9df4c175173647c0661a34b6016b04057826"
+        "path": "architecture/rust-port/receipts/2026-11-15-open-existing-refresh/receipt-233169e6ac19c7dd.json",
+        "sha256": "6d4080939093a3448c8d2db8f7648f117f6c301a781634464caaf8d85347d6b8"
       },
       "go_reference": "../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Activate an existing part without creating a duplicate.",
@@ -5225,6 +5225,11 @@
           "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
           "path": "architecture/rust-port/receipts/2026-11-14-open-existing-part/receipt-233169e6ac19c7dd.json",
           "sha256": "60fc10883c8241f659fab1e9a4d9bf3e05a9efa6de2e5c0f8146240221f89e94"
+        },
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-open-existing-current/receipt-233169e6ac19c7dd.json",
+          "sha256": "d45a05556743cd81412bcb9ba89c9df4c175173647c0661a34b6016b04057826"
         }
       ],
       "go_test_premise": "Go aa8297d1b: package-store save/reopen, missing-path and MRU tests pass; they do not check this native dialog or saved-sketch scenario. See receipts/2026-11-14-go-save-open-baseline/README.md.",
