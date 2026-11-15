@@ -105,6 +105,7 @@ impl<
                 &oblikovati_gui::GuiBrowserChoice::Body {
                     feature: *feature,
                     key: key.clone(),
+                    toggle: false,
                 },
             );
         }

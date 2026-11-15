@@ -28,7 +28,7 @@ impl ClearAppearance {
         let action = Self::action_for(state, document);
         let mut open = true;
         let mut done = false;
-        let width = ui.calc_text_size("Select a body with an appearance override to continue.")[0];
+        let width = ui.calc_text_size("Select bodies with an appearance override to continue.")[0];
         let size = [width + ui.frame_height() * 2., ui.frame_height() * 6.];
         Self::dockable_window(ui, "Clear Appearance", &mut open)
             .size(size, imgui::Condition::FirstUseEver)
@@ -40,7 +40,8 @@ impl ClearAppearance {
     fn action_for(state: &GuiCommandState, document: u64) -> Option<GuiShellAction> {
         Some(GuiShellAction::ClearSelectedBodyAppearance {
             document,
-            key: state.selected_body_key.clone()?,
+            keys: (!state.selected_body_keys.is_empty())
+                .then(|| state.selected_body_keys.clone())?,
         })
     }
 }
@@ -50,10 +51,10 @@ fn confirm_clear(
     action: Option<GuiShellAction>,
     actions: &mut Vec<GuiShellAction>,
 ) -> bool {
-    ui.text("Clear the selected body's appearance override?");
+    ui.text("Clear appearance overrides for the selected bodies?");
     let valid = action.as_ref().is_some_and(|value| value.enabled(state));
     if !valid {
-        ui.text_wrapped("Select a body with an appearance override to continue.");
+        ui.text_wrapped("Select bodies with an appearance override to continue.");
     }
     let disabled = ui.begin_disabled(!valid);
     let accepted = ui.button("OK");
@@ -74,22 +75,22 @@ mod tests {
     fn clear_target_tracks_current_body_selection() {
         let mut state = GuiCommandState::default();
         assert!(ClearAppearance::action_for(&state, 7).is_none());
-        state.selected_body_key = Some("first".into());
+        state.selected_body_keys = vec!["first".into()];
         let first = ClearAppearance::action_for(&state, 7).unwrap();
-        state.selected_body_key = Some("second".into());
+        state.selected_body_keys = vec!["second".into()];
         let second = ClearAppearance::action_for(&state, 7).unwrap();
         assert_eq!(
             first,
             GuiShellAction::ClearSelectedBodyAppearance {
                 document: 7,
-                key: "first".into(),
+                keys: vec!["first".into()],
             }
         );
         assert_eq!(
             second,
             GuiShellAction::ClearSelectedBodyAppearance {
                 document: 7,
-                key: "second".into(),
+                keys: vec!["second".into()],
             }
         );
     }

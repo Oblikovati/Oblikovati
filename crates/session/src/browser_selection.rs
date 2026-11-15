@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use crate::selection::{BrowserSketchPick, SelectionClickMode, SelectionSet};
+use crate::selection::{BrowserBodyPick, BrowserSketchPick, SelectionClickMode, SelectionSet};
 use crate::{DocumentSession, TransactionObserver};
 use oblikovati_model::{document_sketch::DocumentSketchId, sketch::SketchError};
 
@@ -41,23 +41,48 @@ impl<O: TransactionObserver> DocumentSession<O> {
             .map(|pick| pick.sketch())
             .collect()
     }
-    /// The body row chosen in the browser; example: to tint that body in the scene.
+    /// Read the selected body only when the selection is unambiguous.
+    /// Example: `session.selected_browser_body()` for single-target commands.
     pub fn selected_browser_body(&self) -> Option<(&str, oblikovati_model::feature::FeatureId)> {
-        let (key, feature) = self.browser_body.as_ref()?;
-        Some((key.as_str(), *feature))
+        let [body] = self.browser_body.items() else {
+            return None;
+        };
+        Some((&body.key, body.feature))
     }
-    /// Choose a body row; its shading follows, so the display changes without a model edit.
-    /// Example: `session.set_browser_body_selection(key, feature);`.
+    /// Read the exact selected body identities; example: `session.selected_browser_bodies()`.
+    pub fn selected_browser_bodies(&self) -> &[BrowserBodyPick] {
+        self.browser_body.items()
+    }
+    /// Replace the selected body; example: `session.set_browser_body_selection(key, feature)`.
     pub fn set_browser_body_selection(
         &mut self,
         key: &str,
         feature: oblikovati_model::feature::FeatureId,
     ) {
+        self.apply_browser_body_click(key, feature, SelectionClickMode::Replace);
+    }
+    /// Apply replace or toggle selection without editing history.
+    /// Example: `session.apply_browser_body_click(key, feature, SelectionClickMode::Toggle)`.
+    pub fn apply_browser_body_click(
+        &mut self,
+        key: &str,
+        feature: oblikovati_model::feature::FeatureId,
+        mode: SelectionClickMode,
+    ) {
         self.browser_selection.clear();
         self.browser_feature = None;
         self.browser_root = false;
-        self.browser_body = Some((key.to_owned(), feature));
-        self.body_visibility.note_display_change();
+        let pick = BrowserBodyPick {
+            key: key.to_owned(),
+            feature,
+        };
+        if self
+            .browser_body
+            .apply_click(Some(pick), mode, false)
+            .is_some()
+        {
+            self.body_visibility.note_display_change();
+        }
     }
     /// The document's own row is chosen; example: for its row's accent.
     pub fn browser_root_selected(&self) -> bool {
@@ -73,7 +98,8 @@ impl<O: TransactionObserver> DocumentSession<O> {
     }
     fn let_go_of_whole_rows(&mut self) {
         self.browser_root = false;
-        if self.browser_body.take().is_some() {
+        if !self.browser_body.items().is_empty() {
+            self.browser_body.clear();
             self.body_visibility.note_display_change();
         }
     }

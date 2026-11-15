@@ -213,7 +213,19 @@ impl<
                     .map_err(|cause| cause.to_string())?;
             }
             Root => commands.set_browser_root_selection(),
-            Body { key, feature } => commands.set_browser_body_selection(key, *feature),
+            Body {
+                key,
+                feature,
+                toggle,
+            } => commands.apply_browser_body_click(
+                key,
+                *feature,
+                if *toggle {
+                    SelectionClickMode::Toggle
+                } else {
+                    SelectionClickMode::Replace
+                },
+            ),
             BodyVisible { key, visible } => {
                 commands.set_body_visible(key, *visible)?;
             }

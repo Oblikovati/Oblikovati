@@ -225,7 +225,10 @@ impl DesktopPartScenes {
                 return Ok(None);
             }
             if mode == AssemblyViewMode::Live
-                && session.selected_browser_body().map(|(chosen, _)| chosen) == Some(key.as_str())
+                && session
+                    .selected_browser_bodies()
+                    .iter()
+                    .any(|body| body.key == key)
             {
                 return Ok(Some(CHOSEN_BODY_COLOR));
             }

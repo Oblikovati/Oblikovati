@@ -286,12 +286,12 @@ impl<
         .map_err(|cause| format!("Parameter {:?}: {cause}", request.name))?;
         Ok(true)
     }
-    fn clear_selected_body_appearance_from_gui(
+    fn clear_selected_body_appearances_from_gui(
         &mut self,
         document: u64,
-        key: &str,
+        keys: &[String],
     ) -> Result<bool, String> {
-        self.clear_selected_body_appearance(document, key)
+        self.clear_selected_body_appearances(document, keys)
     }
     fn set_document_property_from_gui(
         &mut self,

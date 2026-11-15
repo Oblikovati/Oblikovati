@@ -233,16 +233,21 @@ impl GuiShellAction {
                     && state.authoring == GuiAuthoringContext::Part
                     && !state.transaction_open
             }
-            Self::ClearSelectedBodyAppearance { document, key } => {
+            Self::ClearSelectedBodyAppearance { document, keys } => {
                 state.document == Some(*document)
                     && state.authoring == GuiAuthoringContext::Part
                     && !state.transaction_open
-                    && state.selected_body_key.as_deref() == Some(key.as_str())
+                    && !keys.is_empty()
+                    && state.selected_body_keys == *keys
                     && state.browser.as_ref().is_some_and(|browser| {
-                        browser
-                            .bodies
-                            .iter()
-                            .any(|body| body.key == *key && !body.appearance.is_empty())
+                        keys.iter()
+                            .all(|key| browser.bodies.iter().any(|body| body.key == *key))
+                            && keys.iter().any(|key| {
+                                browser
+                                    .bodies
+                                    .iter()
+                                    .any(|body| body.key == *key && !body.appearance.is_empty())
+                            })
                     })
             }
             Self::SetBodyAppearance { document, .. } => {

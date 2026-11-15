@@ -97,7 +97,7 @@ fn clear_cannot_apply_after_the_selection_changes() {
         world
             .app()
             .owner
-            .clear_selected_body_appearance_from_gui(document, &key)
+            .clear_selected_body_appearances_from_gui(document, std::slice::from_ref(&key))
             .is_err()
     );
     world.click_text("Cancel");
@@ -146,4 +146,151 @@ fn assign_part_appearance(world: &mut ApplicationWorld, id: &str) {
             appearance_id: id.into(),
         })
         .unwrap();
+}
+
+#[test]
+fn ctrl_select_two_bodies_and_clear_in_one_undo() {
+    let mut world = ApplicationWorld::new();
+    let keys = three_bodies_with_overrides(&mut world);
+    let part_intent = part_assets(&mut world);
+    world.click_text("Solid1");
+    ctrl_click(&mut world, "Solid2");
+    assert_eq!(world.state().selected_body_keys, keys[..2]);
+    assert!(world.row_accented_beside("Solid1", "Solid3"));
+    assert!(world.row_accented_beside("Solid2", "Solid3"));
+    enable_clear(&mut world);
+    verify_cancel(&mut world, &keys[0]);
+    assert_body_appearances(&mut world, &keys, ["abs-black"; 3]);
+    world.click(row_center(&world, "Clear"));
+    assert!(world.run_is_enabled("OK"));
+    world.save_capture("clear-two-selected-bodies");
+    world.click_text("OK");
+    assert_body_appearances(&mut world, &keys, ["", "", "abs-black"]);
+    verify_multi_body_history(&mut world, &keys);
+    verify_multi_body_reopen(&mut world, &keys);
+    assert_eq!(part_assets(&mut world), part_intent);
+    world.close();
+}
+fn verify_multi_body_history(world: &mut ApplicationWorld, keys: &[String]) {
+    world.click(row_center(world, "Undo"));
+    assert_body_appearances(world, keys, ["abs-black"; 3]);
+    world.click(row_center(world, "Redo"));
+    assert_body_appearances(world, keys, ["", "", "abs-black"]);
+}
+fn assert_body_appearances(world: &mut ApplicationWorld, keys: &[String], expected: [&str; 3]) {
+    for (key, appearance) in keys.iter().zip(expected) {
+        assert_eq!(selected_appearance(world, key), appearance);
+    }
+}
+fn verify_multi_body_reopen(world: &mut ApplicationWorld, keys: &[String]) {
+    let document = world.active_id();
+    let path = world.save_part_to_file(document, "clear-multi-reopen.opd");
+    let client = Client::new(world.app().owner.document_host());
+    client
+        .documents()
+        .close(&oblikovati_api::wire::CloseDocumentArgs {
+            id: document,
+            force: true,
+        })
+        .unwrap();
+    client
+        .documents()
+        .open(&oblikovati_api::wire::OpenDocumentArgs {
+            full_document_name: path.to_str().unwrap().into(),
+            visible: true,
+            ..Default::default()
+        })
+        .unwrap();
+    world.pump(Vec::new());
+    world.pump(Vec::new());
+    assert_body_appearances(world, keys, ["", "", "abs-black"]);
+}
+fn three_bodies_with_overrides(world: &mut ApplicationWorld) -> Vec<String> {
+    let path = world.scratch_folder().join("three-bodies.opd");
+    std::fs::write(&path, three_body_package()).unwrap();
+    Client::new(world.app().owner.document_host())
+        .documents()
+        .open(&oblikovati_api::wire::OpenDocumentArgs {
+            full_document_name: path.to_str().unwrap().into(),
+            visible: true,
+            ..Default::default()
+        })
+        .unwrap();
+    world.pump(Vec::new());
+    world.pump(Vec::new());
+    let bodies = world.state().browser.unwrap().bodies;
+    assert_eq!(bodies.len(), 3, "expected three solids in the test fixture");
+    let keys: Vec<_> = bodies.into_iter().map(|body| body.key).collect();
+    assign_part_assets(world);
+    for key in &keys {
+        assign_body_override(world, key);
+    }
+    world.pump(Vec::new());
+    click_branch_arrow(world, "Solid Bodies");
+    keys
+}
+fn assign_body_override(world: &mut ApplicationWorld, key: &str) {
+    Client::new(world.app().owner.document_host())
+        .appearances()
+        .assign(&AssignAppearanceArgs {
+            scope: "body".into(),
+            key: key.into(),
+            appearance_id: "abs-black".into(),
+        })
+        .unwrap();
+}
+fn three_body_package() -> Vec<u8> {
+    use oblikovati_model::{
+        feature::{AuthoredFeature, FeatureId},
+        units::UnitsOfMeasure,
+    };
+    use oblikovati_persistence::package::DocumentPackage;
+    let mut snapshot = crate::scene_fixture::selected_prism_document();
+    for (id, name) in [(2, "Second"), (3, "Third")] {
+        let feature = AuthoredFeature::sketch_prism(
+            FeatureId(id),
+            name,
+            crate::scene_fixture::selected_prism_definition(),
+            &snapshot,
+        )
+        .unwrap();
+        snapshot.work_geometry.append(feature).unwrap();
+    }
+    DocumentPackage::decode(b"schemaVersion: 2\ndocumentType: 1\n")
+        .unwrap()
+        .with_parameters(&snapshot.parameters, UnitsOfMeasure::default())
+        .unwrap()
+        .with_sketches(&snapshot.sketches, 1, 104)
+        .unwrap()
+        .with_work_geometry(&snapshot.work_geometry, 3)
+        .unwrap()
+        .encode()
+        .unwrap()
+}
+fn ctrl_click(world: &mut ApplicationWorld, text: &str) {
+    use oblikovati_viewport::{ViewportButton, ViewportEvent, ViewportInput, ViewportModifiers};
+    let position = world.run(text).center().map(|value| value as i32);
+    let modifiers = ViewportModifiers {
+        control: true,
+        ..Default::default()
+    };
+    world.pump(vec![
+        ViewportEvent::Input(ViewportInput::Motion {
+            position,
+            modifiers,
+        }),
+        ViewportEvent::Input(ViewportInput::Button {
+            button: ViewportButton::Left,
+            pressed: true,
+            position,
+            modifiers,
+        }),
+        ViewportEvent::Input(ViewportInput::Button {
+            button: ViewportButton::Left,
+            pressed: false,
+            position,
+            modifiers,
+        }),
+    ]);
+    world.pump(Vec::new());
 }

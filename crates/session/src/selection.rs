@@ -7,7 +7,7 @@ mod filter;
 mod set;
 mod sketch;
 pub use ambient::{AmbientSelectionFilter, SelectionPriority};
-pub use browser::BrowserSketchPick;
+pub use browser::{BrowserBodyPick, BrowserSketchPick};
 pub use click::SelectionClickMode;
 pub use filter::SelectionFilter;
 pub use set::{Selectable, SelectionSet};
