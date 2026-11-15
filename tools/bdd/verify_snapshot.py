@@ -5,8 +5,9 @@
 import argparse
 import hashlib
 import json
+import stat
 import subprocess
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Callable
 
 SNAPSHOT_FOLDER = (
@@ -28,18 +29,50 @@ def verify_artifact(path: Path, expected: str) -> None:
 
 def checkout_files(checkout: Path) -> dict[str, str]:
     """Hash the checkout files; for example, checkout_files(Path('/tmp/scenarios'))."""
+    files, _ = checkout_namespace(checkout)
+    return files
+
+
+def checkout_namespace(checkout: Path) -> tuple[dict[str, str], set[str]]:
+    """Read files and directories; for example, checkout_namespace(Path('/tmp/scenarios'))."""
     files: dict[str, str] = {}
+    directories: set[str] = set()
     for path in sorted(checkout.rglob("*")):
         relative = path.relative_to(checkout)
         if relative.parts[0] == ".git":
             continue
-        if path.is_symlink():
+        mode = path.lstat().st_mode
+        if stat.S_ISREG(mode):
+            files[relative.as_posix()] = sha256_file(path)
+        elif stat.S_ISDIR(mode):
+            directories.add(relative.as_posix())
+        else:
             raise ValueError(
                 f"snapshot path {path}: expected a regular file or directory"
             )
-        if path.is_file():
-            files[relative.as_posix()] = sha256_file(path)
-    return files
+    return files, directories
+
+
+def manifest_directories(manifest: dict[str, str]) -> set[str]:
+    """Derive tracked parents; for example, manifest_directories({'a/b': 'hash'})."""
+    directories: set[str] = set()
+    for name in manifest:
+        source = PurePosixPath(name)
+        if (
+            not source.parts
+            or source.is_absolute()
+            or ".." in source.parts
+            or "\\" in name
+            or source.as_posix() != name
+        ):
+            raise ValueError(
+                f"manifest path {name!r}: expected a normalized relative file path"
+            )
+        parent = source.parent
+        while parent != PurePosixPath("."):
+            directories.add(parent.as_posix())
+            parent = parent.parent
+    return directories
 
 
 def git_revision(checkout: Path) -> str:
@@ -69,7 +102,7 @@ def verify_checkout(
         raise ValueError(
             f"snapshot {checkout}: expected commit {metadata['snapshot_commit']}, got {revision}"
         )
-    actual = checkout_files(checkout)
+    actual, directories = checkout_namespace(checkout)
     changed = sorted(
         name
         for name in actual.keys() | manifest.keys()
@@ -78,6 +111,11 @@ def verify_checkout(
     if changed:
         raise ValueError(
             f"snapshot {checkout}: expected the pinned files; changed or missing: {changed[:10]}"
+        )
+    unexpected = sorted(directories - manifest_directories(manifest))
+    if unexpected:
+        raise ValueError(
+            f"snapshot {checkout}: expected only pinned directories; unexpected: {unexpected[:10]}"
         )
 
 

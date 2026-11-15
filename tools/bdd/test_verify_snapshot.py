@@ -2,13 +2,15 @@
 """Regression tests for scenario snapshot verification."""
 
 import hashlib
+import os
 import tempfile
 import subprocess
 import unittest
 from pathlib import Path
 
 from verify_snapshot import (
-    checkout_files, git_revision, restore_snapshot, verify_artifact, verify_checkout,
+    checkout_files, checkout_namespace, git_revision, manifest_directories,
+    read_snapshot_metadata, restore_snapshot, verify_artifact, verify_checkout,
 )
 
 
@@ -27,6 +29,10 @@ class SnapshotVerificationTests(unittest.TestCase):
             restore_snapshot(checkout)
             self.assertEqual(len(git_revision(checkout)), 40)
             self.assertTrue((checkout / "features/application").is_dir())
+            (checkout / "features/application/untracked-empty").mkdir()
+            metadata, manifest = read_snapshot_metadata()
+            with self.assertRaisesRegex(ValueError, "untracked-empty"):
+                verify_checkout(checkout, metadata, manifest, git_revision)
 
     def test_revision_rejects_a_dirty_checkout(self) -> None:
         with tempfile.TemporaryDirectory() as folder:
@@ -61,6 +67,63 @@ class SnapshotVerificationTests(unittest.TestCase):
             (root / "extra.feature").write_text("extra")
             with self.assertRaisesRegex(ValueError, "extra.feature"):
                 verify_checkout(root, metadata, manifest, FakeRevision("abc"))
+
+    def test_namespace_reports_files_and_parent_directories(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / "a" / "b").mkdir(parents=True)
+            (root / "a" / "b" / "case.feature").write_text("Feature: example\n")
+            files, directories = checkout_namespace(root)
+            self.assertEqual(set(files), {"a/b/case.feature"})
+            self.assertEqual(directories, {"a", "a/b"})
+            self.assertEqual(manifest_directories(files), directories)
+
+    def test_manifest_rejects_paths_outside_the_checkout(self) -> None:
+        for name in ("/absolute/file", "../escape", "a/../file", ".", "a//b", "a\\b"):
+            with self.subTest(name=name):
+                with self.assertRaisesRegex(ValueError, "normalized relative"):
+                    manifest_directories({name: "hash"})
+
+    def test_checkout_rejects_extra_empty_directories(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            nested = root / "features" / "application"
+            nested.mkdir(parents=True)
+            (nested / "case.feature").write_text("Feature: example\n")
+            manifest = checkout_files(root)
+            metadata = {"snapshot_commit": "abc"}
+            verify_checkout(root, metadata, manifest, FakeRevision("abc"))
+            extra = nested / "untracked-empty"
+            extra.mkdir()
+            with self.assertRaisesRegex(ValueError, "untracked-empty"):
+                verify_checkout(root, metadata, manifest, FakeRevision("abc"))
+
+    @unittest.skipUnless(hasattr(os, "mkfifo"), "requires named pipes")
+    def test_checkout_rejects_untracked_special_files(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / "case.feature").write_text("Feature: example\n")
+            manifest = checkout_files(root)
+            pipe = root / "untracked-pipe"
+            os.mkfifo(pipe)
+            with self.assertRaisesRegex(ValueError, "untracked-pipe"):
+                verify_checkout(
+                    root, {"snapshot_commit": "abc"}, manifest, FakeRevision("abc")
+                )
+
+    def test_checkout_rejects_symlink_entries(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / "case.feature").write_text("Feature: example\n")
+            manifest = checkout_files(root)
+            try:
+                (root / "alias").symlink_to("case.feature")
+            except OSError as cause:
+                self.skipTest(f"symlink creation unavailable: {cause}")
+            with self.assertRaisesRegex(ValueError, "alias"):
+                verify_checkout(
+                    root, {"snapshot_commit": "abc"}, manifest, FakeRevision("abc")
+                )
 
     def test_wrong_revision_and_artifact_hash_are_refused(self) -> None:
         with tempfile.TemporaryDirectory() as folder:
