@@ -158,7 +158,9 @@ window proof local until that host is ready. Do not waive the live-test gate.
 R0 must add **one command: `make gate`**. Its implementation derives the crate
 set from Cargo metadata and the fixture-module set from the tree. It includes
 the CLI, GUI, native bindings, examples, integration tests, and add-in test
-libraries; no default workspace subset may omit them.
+libraries; no default workspace subset may omit them. Source discovery excludes
+`.slim/worktrees` task checkouts, but includes nested modules and fixtures in the
+active checkout.
 
 The complete gate includes:
 

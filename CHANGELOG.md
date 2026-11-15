@@ -22,6 +22,8 @@
 
 ### Fixed
 
+- Excluded isolated task worktrees from source and documentation checks while retaining active nested modules. (#3971)
+
 - Reopened existing extrusions for distance editing from the browser, with a cancellable candidate preview. (#3968)
 
 - Edited extrusion distances without changing shared sketch parameters; literal distances can also be edited. (#3968)

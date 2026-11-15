@@ -119,3 +119,26 @@ fn retired_kernel_names_are_refused_at_the_adapter_boundary() {
             .contains("retired RustyCAD namespace")
     );
 }
+
+#[test]
+fn inventory_skips_foreign_worktrees_and_keeps_nested_fixture() {
+    let tree = FixtureTree::new();
+    for name in [
+        "Cargo.toml",
+        "Cargo.lock",
+        "fixtures/addin/Cargo.toml",
+        "fixtures/addin/Cargo.lock",
+        ".slim/worktrees/other/Cargo.toml",
+    ] {
+        tree.put(name, "");
+    }
+    let runner = FakeRunner::default();
+    for root in [tree.root().to_owned(), tree.root().join("fixtures/addin")] {
+        runner.replies.borrow_mut().push_back(Ok(
+            serde_json::json!({"workspace_root": root, "workspace_members": [], "packages": []})
+                .to_string(),
+        ));
+    }
+    assert_eq!(inventory(tree.root(), &runner).unwrap().len(), 2);
+    assert_eq!(runner.calls.borrow().len(), 2);
+}
