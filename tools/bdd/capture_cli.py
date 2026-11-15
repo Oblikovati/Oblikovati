@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Callable, Mapping, TextIO
 
 from behavior_capture import CaptureRequest, capture_receipt
+from committed_build_source import materialize_source
 from behavior_evidence import locked_revision
 from behavior_ledger import (
     CLASSIFICATIONS,
@@ -28,33 +29,42 @@ from behavior_ledger import (
 
 
 class NativeCargoRun:
-    """Run the real native Cucumber test and retain its output; example: NativeCargoRun(root, 'application')."""
+    """Run the real native Cucumber test and retain its output; example: NativeCargoRun(root, 'application', commit)."""
 
     def __init__(
         self,
         root: Path,
         area: str,
+        commit: str,
         launch: Callable[..., subprocess.Popen[str]] = subprocess.Popen,
     ) -> None:
         self.root = root
         self.area = area
+        self.commit = commit
         self.launch = launch
 
     def __call__(self, reports: Path, environment: dict[str, str]) -> int:
         log = reports / "native-test.log"
         if log.exists() or log.is_symlink():
             raise FileExistsError(f"native log {log}: expected a new file")
+        with tempfile.TemporaryDirectory(prefix="oblikovati-capture-build-") as folder:
+            return self._build_from_export(Path(folder), environment, log)
+
+    def _build_from_export(self, folder: Path, environment: dict[str, str], log: Path) -> int:
+        source = folder / "source"
+        materialize_source(self.root, self.commit, source)
+        build_environment = environment | {"CARGO_TARGET_DIR": str(folder / "target")}
         with tempfile.TemporaryFile(mode="w+", encoding="utf-8") as output:
-            status = self._stream_native(environment, output)
+            status = self._stream_native(source, build_environment, output)
             output.seek(0)
             with log.open("x", encoding="utf-8") as destination:
                 shutil.copyfileobj(output, destination)
         return status
 
-    def _stream_native(self, environment: dict[str, str], output: TextIO) -> int:
+    def _stream_native(self, source: Path, environment: dict[str, str], output: TextIO) -> int:
         with self.launch(
             native_command(self.area),
-            cwd=self.root,
+            cwd=source,
             env=environment,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -218,7 +228,7 @@ def main() -> None:
         args.checkout, args.scenario_id, args.output, args.renderer, args.capture
     )
     result = capture_receipt(
-        request, NativeCargoRun(ROOT, str(request.row["area"])), application_state
+        request, NativeCargoRun(ROOT, str(request.row["area"]), request.application_commit), application_state
     )
     print(
         json.dumps(

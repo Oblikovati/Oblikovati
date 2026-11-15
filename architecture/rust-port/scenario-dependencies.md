@@ -64,6 +64,16 @@ build the runner. A clean Git commit alone does not bound Cargo settings,
 compiler wrappers, ignored files, or external build inputs. The ledger reports
 this limitation as a stale reason and retains the historical receipt.
 
+Native capture now exports the selected commit into a temporary source tree and
+uses a fresh, temporary Cargo target. This excludes ignored checkout files from
+the initial source tree and prevents reuse of a caller's target. It makes each
+capture rebuild and removes the temporary source and target after the run. The
+export is not sealed during compilation. Cargo settings, compiler and linker
+selection, build scripts, external files, dependencies, system libraries and
+concurrent writes remain unbounded. Runtime assets or add-ins that exist only in
+the original checkout or beside an old executable are not copied. A capture
+can fail when it depends on them; it must not be treated as verified evidence.
+
 Issue #3978 tracks a bounded build and independently checked provenance.
 The experimental sealed runner bounds parts of execution; it does not prove
 how the runner was built and does not remove this limitation.
