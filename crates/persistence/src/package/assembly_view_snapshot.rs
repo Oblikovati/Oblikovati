@@ -53,6 +53,31 @@ impl SavedAssemblyView {
     pub fn validate_content(&self) -> Result<(), PackageCodecError> {
         validate_content(self)
     }
+
+    /// Check that the saved mesh meets the current display limits.
+    /// Example: `view.validate_display_quality(0.05, 0.5)?` before display.
+    pub fn validate_display_quality(
+        &self,
+        chord_limit: f64,
+        angular_limit: f64,
+    ) -> Result<(), PackageCodecError> {
+        for (name, actual, limit) in [
+            ("chord", self.chord_error, chord_limit),
+            ("angular", self.angular_error, angular_limit),
+        ] {
+            if !limit.is_finite()
+                || limit <= 0.
+                || !actual.is_finite()
+                || actual <= 0.
+                || actual > limit
+            {
+                return Err(PackageCodecError(format!(
+                    "assembly view {name} error {actual}: expected a positive finite value at most {limit} (positive and finite)"
+                )));
+            }
+        }
+        Ok(())
+    }
 }
 impl DocumentPackage {
     /// Store display data with its authored assembly; example: `package.with_saved_assembly_view(&view)?`.

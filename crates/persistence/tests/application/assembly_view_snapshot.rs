@@ -44,6 +44,31 @@ fn cache_round_trips_with_saved_recipe() {
 }
 
 #[test]
+fn saved_mesh_must_meet_both_current_display_limits() {
+    let (_, mut view) = sample();
+    assert!(view.validate_display_quality(0.05, 0.5).is_ok());
+    assert!(view.validate_display_quality(0.1, 1.0).is_ok());
+    assert!(
+        view.validate_display_quality(0.04, 0.5)
+            .unwrap_err()
+            .to_string()
+            .contains("chord")
+    );
+    assert!(
+        view.validate_display_quality(0.05, 0.4)
+            .unwrap_err()
+            .to_string()
+            .contains("angular")
+    );
+    for limit in [0.0, -1.0, f64::NAN, f64::INFINITY] {
+        assert!(view.validate_display_quality(limit, 0.5).is_err());
+        assert!(view.validate_display_quality(0.05, limit).is_err());
+    }
+    view.chord_error = f64::NAN;
+    assert!(view.validate_display_quality(0.05, 0.5).is_err());
+}
+
+#[test]
 fn cache_refuses_missing_duplicate_or_mismatched_source() {
     let (package, mut view) = sample();
     let source = view.sources[0].clone();
