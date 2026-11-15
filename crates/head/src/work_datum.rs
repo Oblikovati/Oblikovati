@@ -15,5 +15,9 @@ macro_rules! datum_work_methods {
         fn validate_offset_plane_from_gui(&mut self, document: u64, offset: &str) -> Result<bool, String> {
             Err(format!("offset {offset:?} in document {document}: expected a datum owner"))
         }
+        /// Read current reference overlays; example: `work.datum_planes()?` before presentation.
+        fn datum_planes(&mut self) -> Result<crate::HeadDatumPlaneUpdate, String> {
+            Ok(crate::HeadDatumPlaneUpdate::default())
+        }
     };
 }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Owner services for ambient selection settings.
+//! Owner services for selection settings and selected geometry.
 macro_rules! selection_work_methods {
     () => {
         /// Set the viewport selection mode; example: `work.set_selection_mode_from_gui(mode)?`.
@@ -32,6 +32,10 @@ macro_rules! selection_work_methods {
         /// Restore the default selection filter; example: `work.reset_selection_filter_from_gui()?`.
         fn reset_selection_filter_from_gui(&mut self) -> Result<bool, String> {
             Err("selection filter reset: expected a desktop selection owner".into())
+        }
+        /// The chosen row's outline, in model space; example: to draw it over the view.
+        fn selected_browser_outline(&mut self) -> Vec<[[f64; 3]; 2]> {
+            Vec::new()
         }
     };
 }

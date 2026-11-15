@@ -389,10 +389,6 @@ pub trait HeadWork: HeadSketchWork {
             None => self.click_model_from_gui(document, line),
         }
     }
-    /// The chosen row's outline, in model space; example: to draw it over the view.
-    fn selected_browser_outline(&mut self) -> Vec<[[f64; 3]; 2]> {
-        Vec::new()
-    }
     /// Observe the current drawable before admitting API capture requests.
     /// Example: `work.observe_window_capture_extent(Some([1440, 900]))` before polling.
     fn observe_window_capture_extent(&mut self, _: Option<[u32; 2]>) {}
@@ -477,10 +473,6 @@ pub trait HeadWork: HeadSketchWork {
     /// Consume the latest command result for display; example: `work.take_command_notice()` after Save.
     fn take_command_notice(&mut self) -> Option<crate::DesktopCommandNotice> {
         None
-    }
-    /// Read current reference overlays; example: `work.datum_planes()?` before presentation.
-    fn datum_planes(&mut self) -> Result<crate::HeadDatumPlaneUpdate, String> {
-        Ok(crate::HeadDatumPlaneUpdate::default())
     }
     /// Consume a complete scene update after all owner services; example: `work.take_scene()?` before presentation.
     fn take_scene(&mut self) -> Result<Option<crate::HeadSceneUpdate>, String> {
