@@ -10,6 +10,7 @@ use oblikovati_session::{
 };
 use oblikovati_viewport::{PartPresentationDecline, ViewportScene};
 mod assembly;
+use assembly::AssemblyViewMode;
 mod assembly_pick;
 pub(crate) mod extrusion;
 pub(crate) mod pick_candidates;
@@ -135,7 +136,7 @@ impl DesktopPartScenes {
         document: u64,
     ) -> Result<HeadSceneUpdate, String> {
         self.ensure_current(files, document)?;
-        self.present_current(files, document)
+        self.present_current(files, document, AssemblyViewMode::Live)
     }
     fn ensure_current<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
         &mut self,
@@ -192,6 +193,7 @@ impl DesktopPartScenes {
         &self,
         files: &FileWorkspace<O, W, F>,
         document: u64,
+        mode: AssemblyViewMode,
     ) -> Result<HeadSceneUpdate, String> {
         let session = files
             .workspace()
@@ -206,10 +208,12 @@ impl DesktopPartScenes {
         render_part_scene(evaluated, (document, session.generation()), |body| {
             let key =
                 bodies::body_reference_text(body.body_reference_key(session.history(), guid)?);
-            if !session.body_visible(&key) {
+            if mode == AssemblyViewMode::Live && !session.body_visible(&key) {
                 return Ok(None);
             }
-            if session.selected_browser_body().map(|(chosen, _)| chosen) == Some(key.as_str()) {
+            if mode == AssemblyViewMode::Live
+                && session.selected_browser_body().map(|(chosen, _)| chosen) == Some(key.as_str())
+            {
                 return Ok(Some(CHOSEN_BODY_COLOR));
             }
             Ok(Some(body_color(files, session.snapshot(), &key)?))
