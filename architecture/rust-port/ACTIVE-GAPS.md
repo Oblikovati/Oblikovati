@@ -7,8 +7,8 @@ acceptance evidence. The build-provenance gap in #3978 applies to every native
 BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
 
 - Point cancellation: the live point-11 source now defines a portable sketch
-  precondition. It retains `@needs_fixture` and awaits source sync, fixture
-  implementation and a native rerun (#3887). The previous sizing report in
+  precondition. The new snapshot includes it; it retains `@needs_fixture` and
+  awaits fixture implementation and a native rerun (#3887). The previous sizing report in
   `receipts/2026-11-15-point11-sizing/` is historical evidence.
 - Extrusion undo and redo: the native diagnostic passed three of four scenario
   steps. Named edge lengths are available through the typed API; selecting and
