@@ -28,6 +28,8 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   its issue-scope duplication scan at 1.0269%. The two example packages now
   report 95.7% and 85.7% coverage; aggregate Go coverage is 84.6%. The branch
   is local and no release was published. The ledger also rejects stale receipts.
+  A fresh API `make gate` passed at `276a401`; the local result is in
+  `receipts/2026-11-15-api-candidate-gate/`. It is not a release or hosted CI result.
 - Scenario pin: `05317bbb2d0809a532b29b7ff6f726a5722b865f`, a local snapshot
   of the unversioned source. It is not an upstream commit. The live feature
   inventory matched the pin at the source sync. The source tags 38 observations
