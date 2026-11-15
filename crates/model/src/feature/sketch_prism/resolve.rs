@@ -12,14 +12,14 @@ pub struct ResolvedSketchPrism<'a> {
     pub displacement: [f64; 3],
 }
 impl SketchPrismDefinition {
-    /// Require current placement, zero free variables and finite length inputs without side effects.
+    /// Require current converged geometry, placement and finite length inputs without side effects.
     /// Example: `let input = definition.resolve(&snapshot)?; input.sketch.plane`.
     pub fn resolve<'a>(
         &'a self,
         snapshot: &'a DocumentSnapshot,
     ) -> Result<ResolvedSketchPrism<'a>, SketchPrismError> {
         let sketch = snapshot
-            .require_resolved_sketch(self.sketch)
+            .require_converged_resolved_sketch(self.sketch)
             .map_err(|cause| self.decline(SketchPrismCause::Placement(cause)))?;
         self.resolve_current_sketch(snapshot, sketch)
     }
@@ -29,7 +29,7 @@ impl SketchPrismDefinition {
         datums: &crate::feature::work_geometry::WorkGeometryEvaluation,
     ) -> Result<ResolvedSketchPrism<'a>, SketchPrismError> {
         let sketch = snapshot
-            .require_sketch_with_datums(self.sketch, datums)
+            .require_converged_sketch_with_datums(self.sketch, datums)
             .map_err(|cause| self.decline(SketchPrismCause::Placement(cause)))?;
         self.resolve_current_sketch(snapshot, sketch)
     }

@@ -13,6 +13,18 @@ fn resolution() -> PrismResolution {
         maximum_tolerance: 1e-5,
     }
 }
+fn kernel_resolution() -> martensite_tkbo::profile_extrusion::Resolution {
+    martensite_tkbo::profile_extrusion::Resolution::new(
+        1e-6,
+        1e-7,
+        1e-9,
+        martensite_tkbo::profile_extrusion::DisplayTolerance {
+            chordal: 1e-3,
+            angular: 0.1,
+        },
+        martensite_tkbo::profile_extrusion::ToleranceCap::Refuse(1e-5),
+    )
+}
 fn ids(boundary: &[oblikovati_martensite::SketchRegionCurveUse]) -> Vec<u64> {
     let mut ids: Vec<_> = boundary.iter().map(|edge| edge.curve.0).collect();
     ids.sort_unstable();
@@ -34,20 +46,10 @@ fn closed_sketch_regions_preserve_boundary_curves_and_nested_holes() {
         [0., 0., 2.].map(oblikovati_model::feature::work_geometry::DatumLength::Constant),
     )
     .unwrap();
-    let kernel_resolution = martensite_tkbo::profile_extrusion::Resolution::new(
-        1e-6,
-        1e-7,
-        1e-9,
-        martensite_tkbo::profile_extrusion::DisplayTolerance {
-            chordal: 1e-3,
-            angular: 0.1,
-        },
-        martensite_tkbo::profile_extrusion::ToleranceCap::Refuse(1e-5),
-    );
     let body = oblikovati_martensite::retain_certified_sketch_prism(
         &document,
         &definition,
-        kernel_resolution,
+        kernel_resolution(),
     )
     .unwrap();
     assert_analytic_scalar(body.body.report().properties.volume, 24.);
@@ -172,4 +174,72 @@ fn profile_extent_excludes_distant_construction_curves() {
         (extent.minimum, extent.maximum, extent.diagonal),
         ([0., 0.], [4., 3.], 5.)
     );
+}
+
+fn free_rectangle_document() -> oblikovati_model::history::DocumentSnapshot {
+    let mut document = selected_sketch_document();
+    let mut recipe = document.sketches.get(SKETCH).unwrap().geometry().recipe();
+    recipe.constraints.clear();
+    document
+        .sketches
+        .replace_geometry(
+            SKETCH,
+            oblikovati_model::sketch::Sketch2D::from_recipe(&recipe).unwrap(),
+        )
+        .unwrap();
+    solve_selected_sketches(&mut document);
+    document
+}
+fn free_rectangle_definition(
+    document: &oblikovati_model::history::DocumentSnapshot,
+) -> oblikovati_model::feature::sketch_prism::SketchPrismDefinition {
+    let regions = certified_sketch_regions(document, SKETCH, resolution()).unwrap();
+    assert_eq!(regions.len(), 1);
+    assert_eq!(ids(&regions[0].outer), [101, 102, 103, 104]);
+    let geometry = document.sketches.get(SKETCH).unwrap().geometry();
+    let selection = regions[0].line_selection(geometry).unwrap();
+    oblikovati_model::feature::sketch_prism::SketchPrismDefinition::new(
+        SKETCH,
+        selection,
+        [0., 0., 2.].map(oblikovati_model::feature::work_geometry::DatumLength::Constant),
+    )
+    .unwrap()
+}
+#[test]
+fn converged_free_rectangle_keeps_source_topology_for_regions_and_extrusion() {
+    let document = free_rectangle_document();
+    let sketch = document.require_converged_resolved_sketch(SKETCH).unwrap();
+    assert!(sketch.verification.structure.degrees_of_freedom > 0);
+    let before = sketch.sketch.geometry().recipe();
+    let definition = free_rectangle_definition(&document);
+    let body = oblikovati_martensite::retain_certified_sketch_prism(
+        &document,
+        &definition,
+        kernel_resolution(),
+    )
+    .unwrap();
+    assert_analytic_scalar(body.body.report().properties.volume, 24.);
+    assert_eq!(
+        document.sketches.get(SKETCH).unwrap().geometry().recipe(),
+        before
+    );
+}
+
+#[test]
+fn free_open_profile_does_not_discover_a_bounded_region() {
+    let mut document = selected_sketch_document();
+    let mut recipe = document.sketches.get(SKETCH).unwrap().geometry().recipe();
+    recipe.constraints.clear();
+    recipe.lines.pop();
+    document
+        .sketches
+        .replace_geometry(
+            SKETCH,
+            oblikovati_model::sketch::Sketch2D::from_recipe(&recipe).unwrap(),
+        )
+        .unwrap();
+    solve_selected_sketches(&mut document);
+    let error = certified_sketch_regions(&document, SKETCH, resolution()).unwrap_err();
+    assert_eq!(error.sketch(), Some(SKETCH));
+    assert!(error.to_string().contains("OpenProfile"));
 }

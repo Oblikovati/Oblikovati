@@ -54,7 +54,7 @@ pub(crate) fn evaluate_feature(
         .map_err(|error| error.with_sketch_identity(sketch).for_feature(feature))
 }
 
-/// Evaluate a current, fully constrained saved prism with an explicit modelling resolution.
+/// Evaluate a current, converged saved prism with an explicit modelling resolution.
 /// Example: `retain_certified_sketch_prism(&document, &definition, resolution)?`.
 pub fn retain_certified_sketch_prism(
     document: &DocumentSnapshot,
