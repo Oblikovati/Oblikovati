@@ -143,7 +143,9 @@ environment overrides. The inventory generator and Git checks still depend on
 the host tools, local repository configuration, the registry index, and inputs
 that may change during execution. They are not independent attestation.
 
-Issue #3978 tracks a bounded build and independently checked provenance.
+The [provenance closure path](build-provenance-closure.md) describes the
+remaining trust boundary and end-to-end evidence gates. Issue #3978 tracks a
+bounded build and independently checked provenance.
 The experimental sealed runner bounds parts of execution; it does not prove
 how the runner was built and does not remove this limitation.
 
