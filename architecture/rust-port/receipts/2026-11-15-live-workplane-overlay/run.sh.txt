@@ -1,0 +1,10 @@
+#!/bin/bash
+set -eu
+printf '%s\n' "$DISPLAY" > /tmp/obk-live-3981/display
+printf '%s\n' "$XAUTHORITY" > /tmp/obk-live-3981/xauthority
+export OBK_ADDINS_DIR=/tmp/obk-live-3981/addins OBK_MCP_ADDR=127.0.0.1:17941 VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json XMODIFIERS=@im=none
+/tmp/obk-workplane-overlay-target/debug/oblikovati /tmp/obk-live-3981/cube.opd > /tmp/obk-live-3981/host.log 2>&1 &
+pid=$!
+cleanup() { kill "$pid" 2>/dev/null || true; wait "$pid" 2>/dev/null || true; }
+trap cleanup EXIT INT TERM
+wait "$pid"
