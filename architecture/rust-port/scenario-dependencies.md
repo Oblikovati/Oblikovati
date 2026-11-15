@@ -136,6 +136,26 @@ before and after the build and refuses a change. It finds the test executable
 from Cargo's artifact messages and records its hash. Both output directories
 must be empty and all input and output roots must be disjoint.
 
+The build probe requires Bubblewrap support for `--disable-userns` and disables
+nested user namespaces. Without that restriction, a
+build process on this Linux host could create a user and mount namespace, mount a
+new tmpfs over its read-only `/source`, and compile different content while the
+host source remained unchanged. The real Bubblewrap regression in
+`tools/bdd/test_sandbox_namespace_integration.py` reproduces the substitution
+without the restriction and verifies its refusal with the restriction. It skips
+when the host cannot reproduce nested namespaces.
+
+The build probe still mounts host `/usr` without inventorying it. A sandboxed
+process can read `/usr/bin/gcc` and `/proc/uptime`; the compiler, system files,
+kernel, devices, time, and concurrent host changes are not bounded. The Git
+vendor check also leaves generated manifests unverified. The probe does not
+feed the native capture command or independently verify the built executable.
+It remains non-reusable and does not change the receipt verifier. A safe
+end-to-end integration needs a separately checked immutable toolchain and
+system runtime, complete dependency and generated-manifest verification,
+controls for kernel and device inputs, a trusted sandbox and observation chain,
+and an independently verified link between that build and the executed runner.
+
 The configuration directory must contain `config.toml` with Cargo source
 replacement configured to use `/vendor`. Each input root and the Bubblewrap
 executable and its parent must support the no-atime checks. For example, use a
