@@ -15,6 +15,8 @@ from typing import Callable, Mapping, TextIO
 from behavior_capture import CaptureRequest, capture_receipt
 from committed_build_source import materialize_source
 from capture_build_environment import capture_build_environment, reject_ancestor_cargo_configs
+from capture_inventory import isolated_inventory
+from functools import partial
 from behavior_evidence import locked_revision
 from behavior_ledger import (
     CLASSIFICATIONS,
@@ -201,17 +203,19 @@ def verified_run_inputs(
     checkout: Path, identifier: str
 ) -> tuple[dict[str, object], dict[str, object], str]:
     """Pin source, lockfile and clean application state; example: verified_run_inputs(checkout, scenario_id)."""
-    inventory = require_object(read_json(INVENTORY), "inventory")
-    verify_inputs(ROOT, checkout, inventory)
-    classifications = require_object(read_json(CLASSIFICATIONS), "classifications")
-    row = find_scenario(inventory, classifications, identifier)
-    row["api_revision"] = locked_revision(ROOT, "oblikovati-api")
-    row["kernel_revision"] = locked_revision(ROOT, "martensite-tkernel")
     commit, clean = application_state(ROOT)
     if not clean:
         raise ValueError(
             f"application commit {commit}: expected clean application inputs before a native run"
         )
+    inventory = require_object(read_json(INVENTORY), "inventory")
+    verify_inputs(ROOT, checkout, inventory, partial(isolated_inventory, commit=commit))
+    classifications = require_object(read_json(CLASSIFICATIONS), "classifications")
+    row = find_scenario(inventory, classifications, identifier)
+    row["api_revision"] = locked_revision(ROOT, "oblikovati-api")
+    row["kernel_revision"] = locked_revision(ROOT, "martensite-tkernel")
+    if application_state(ROOT) != (commit, True):
+        raise ValueError(f"application commit {commit}: expected unchanged clean inputs after inventory")
     return inventory, row, commit
 
 

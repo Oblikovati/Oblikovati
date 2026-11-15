@@ -11,6 +11,8 @@ import subprocess
 from pathlib import Path, PurePosixPath
 from typing import Callable
 
+from git_environment import checkout_git_environment
+
 SNAPSHOT_FOLDER = (
     Path(__file__).resolve().parents[2] / "test-utilities/benchmarks/scenario-snapshots"
 )
@@ -80,8 +82,7 @@ def git_revision(checkout: Path) -> str:
     """Read a checkout revision; for example, git_revision(Path('/tmp/scenarios'))."""
     if not (checkout / ".git").exists():
         raise ValueError(f"snapshot {checkout}: expected its own Git checkout")
-    environment = os.environ.copy()
-    environment["GIT_OPTIONAL_LOCKS"] = "0"
+    environment = checkout_git_environment() | {"GIT_OPTIONAL_LOCKS": "0"}
     status = subprocess.check_output(
         ["git", "-C", str(checkout), "status", "--porcelain", "--untracked-files=all"],
         text=True,
@@ -92,7 +93,7 @@ def git_revision(checkout: Path) -> str:
             f"snapshot {checkout}: expected clean Git status, got {status!r}"
         )
     return subprocess.check_output(
-        ["git", "-C", str(checkout), "rev-parse", "HEAD"], text=True
+        ["git", "-C", str(checkout), "rev-parse", "HEAD"], text=True, env=environment
     ).strip()
 
 
