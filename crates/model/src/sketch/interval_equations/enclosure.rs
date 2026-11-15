@@ -3,7 +3,7 @@
 use maryada::{Interval, IntervalOps};
 
 #[derive(Clone, Copy)]
-pub(super) struct Enclosure(Interval);
+pub(in crate::sketch) struct Enclosure(Interval);
 impl Enclosure {
     pub fn new(bounds: [f64; 2]) -> Result<Self, String> {
         if !bounds[0].is_finite() || !bounds[1].is_finite() || bounds[0] > bounds[1] {
@@ -22,6 +22,9 @@ impl Enclosure {
             ));
         }
         Ok(result)
+    }
+    pub fn product(self, rhs: Self) -> Result<Self, String> {
+        Self::finite(Self(self.0 * rhs.0), "product")
     }
     pub fn sum(self, rhs: Self) -> Result<Self, String> {
         Self::finite(Self(self.0 + rhs.0), "sum")
@@ -123,6 +126,61 @@ mod tests {
                 };
                 let [lower, upper] = result.bounds();
                 assert!(rational(lower) <= exact && exact <= rational(upper));
+            }
+        }
+    }
+    #[test]
+    fn directed_product_contains_exact_binary_rationals() {
+        let values = [
+            -f64::MAX,
+            -1.,
+            -0.1,
+            -f64::MIN_POSITIVE,
+            -f64::from_bits(1),
+            0.,
+            f64::from_bits(1),
+            f64::MIN_POSITIVE,
+            0.1,
+            1.,
+            f64::MAX,
+        ];
+        for left in values {
+            for right in values {
+                let exact = rational(left) * rational(right);
+                let result = Enclosure::new([left, left])
+                    .unwrap()
+                    .product(Enclosure::new([right, right]).unwrap());
+                let Ok(result) = result else {
+                    assert!(exact > rational(f64::MAX) || exact < -rational(f64::MAX));
+                    continue;
+                };
+                let [lower, upper] = result.bounds();
+                assert!(rational(lower) <= exact && exact <= rational(upper));
+            }
+        }
+    }
+    #[test]
+    fn directed_interval_products_contain_all_exact_corners() {
+        let intervals = [
+            [-2., -1.],
+            [-0.1, 0.3],
+            [0., f64::from_bits(1)],
+            [0.1, 2.],
+            [-f64::MIN_POSITIVE, f64::MIN_POSITIVE],
+        ];
+        for left in intervals {
+            for right in intervals {
+                let [lower, upper] = Enclosure::new(left)
+                    .unwrap()
+                    .product(Enclosure::new(right).unwrap())
+                    .unwrap()
+                    .bounds();
+                for a in left {
+                    for b in right {
+                        let exact = rational(a) * rational(b);
+                        assert!(rational(lower) <= exact && exact <= rational(upper));
+                    }
+                }
             }
         }
     }

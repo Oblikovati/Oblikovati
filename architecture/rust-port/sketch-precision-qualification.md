@@ -114,3 +114,25 @@ cross-platform proof of the dependency's rounding contract. Qualification
 also needs validated input boxes, complete residual and Jacobian coverage,
 conditioning, existence and uniqueness checks, and a policy shared by every
 consumer. The interval evaluator does not enable that policy.
+
+## Conditional root inclusion
+
+A retained converged solve can be checked with a caller-provided finite box,
+target bounds, and a finite square preconditioner. The check verifies that the
+candidate values, point identities, relation inputs, and prepared targets match
+the retained solve. Externally grounded inputs, unsupported equations,
+non-square systems, and boxes that do not contain the accepted candidate are
+refused.
+
+For the supported continuously differentiable equations, the check evaluates
+`K = x0 - C f(x0, P) + (I - C J(X, P))(X - x0)` with interval arithmetic. It
+requires strict inclusion of `K` in `X` and an upper infinity-norm bound below
+one for `I - C J(X, P)`. The result retains the accepted sketch and solve evidence, box, target
+assumptions, preconditioner, enclosure, and contraction bound. It does not
+carry a document identity or prove that a later document still matches it. Subject to the
+interval arithmetic contract and the supplied target assumptions, this is
+conditional root evidence for each target in `P`.
+
+It does not establish source or projection uncertainty, cross-platform
+arithmetic conformance, general constraint coverage, or feature tolerance
+qualification. It does not change profile discovery or extrusion admission.

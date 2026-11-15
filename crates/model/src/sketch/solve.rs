@@ -77,6 +77,28 @@ impl SketchSolveOutcome {
             })
             .collect()
     }
+    pub(super) fn verified_interval_center(
+        &self,
+        parameters: &ParameterCollection<u64>,
+    ) -> Result<Vec<f64>, String> {
+        let prepared =
+            super::compile::prepare(&self.candidate, parameters).map_err(|e| e.to_string())?;
+        let values = self.candidate.variable_values();
+        if values.len() != self.numerical.values.len() || prepared.origins != self.origins {
+            return Err("interval solve inputs: expected the same unprojected variable and relation identities".into());
+        }
+        if !values
+            .iter()
+            .zip(&self.numerical.values)
+            .all(|(a, b)| a.to_bits() == b.to_bits())
+        {
+            return Err("interval solve values: expected the exact accepted candidate".into());
+        }
+        for (index, source) in prepared.sources.iter().enumerate() {
+            verify_relation(self, source, index, &values)?;
+        }
+        Ok(values)
+    }
     /// Inspect accepted numerical values without changing the input sketch; example: `outcome.candidate()`.
     pub fn candidate(&self) -> &Sketch2D {
         &self.candidate
@@ -313,6 +335,70 @@ fn residual_operand(
     }
 }
 
+fn verify_relation(
+    outcome: &SketchSolveOutcome,
+    source: &super::residual::PreparedConstraint,
+    index: usize,
+    values: &[f64],
+) -> Result<(), String> {
+    let operands = &outcome.operands[index];
+    if operands.len() != source.variables.len()
+        || operands
+            .iter()
+            .zip(&source.variables)
+            .any(|(operand, &column)| {
+                operand.externally_grounded
+                    || operand.column != column
+                    || operand.point
+                        != outcome
+                            .candidate
+                            .points()
+                            .get(column / 2)
+                            .map(|point| (point.id, column % 2))
+                    || operand.value.to_bits() != values[column].to_bits()
+            })
+    {
+        return Err(format!(
+            "interval relation {:?}: expected unchanged unprojected operands",
+            outcome.origins[index]
+        ));
+    }
+    let current =
+        super::equation_evidence::rows(&outcome.candidate, outcome.origins[index], source);
+    if !same_equation_evidence(&outcome.equations[index], &current) {
+        return Err(format!(
+            "interval relation {:?}: expected unchanged equation inputs and targets",
+            outcome.origins[index]
+        ));
+    }
+    Ok(())
+}
+fn same_equation_evidence(
+    first: &[super::equation_evidence::EquationEvidence],
+    second: &[super::equation_evidence::EquationEvidence],
+) -> bool {
+    first.len() == second.len()
+        && first
+            .iter()
+            .zip(second)
+            .all(|(a, b)| a.operands == b.operands && same_targets(&a.targets, &b.targets))
+}
+fn same_targets(
+    first: &Option<Vec<super::SketchResidualTarget>>,
+    second: &Option<Vec<super::SketchResidualTarget>>,
+) -> bool {
+    match (first, second) {
+        (None, None) => true,
+        (Some(a), Some(b)) => {
+            a.len() == b.len()
+                && a.iter()
+                    .zip(b)
+                    .all(|(a, b)| a.source == b.source && a.value.to_bits() == b.value.to_bits())
+        }
+        _ => false,
+    }
+}
+
 #[cfg(test)]
 mod operand_tests {
     use super::*;
@@ -327,5 +413,41 @@ mod operand_tests {
         assert_eq!(operand.point, None);
         assert_eq!(operand.value, 4.0);
         assert!(!operand.externally_grounded);
+    }
+    #[test]
+    fn forged_solve_values_and_point_identity_are_refused() {
+        let mut sketch = Sketch2D::default();
+        let id = super::super::SketchEntityId(1);
+        sketch.add_point(id, [2., 3.]).unwrap();
+        sketch
+            .add_constraint(
+                super::super::SketchConstraintId(1),
+                super::super::PlanarConstraint::Fix {
+                    point: id,
+                    position: [2., 3.],
+                },
+            )
+            .unwrap();
+        let parameters = ParameterCollection::new(crate::units::UnitsOfMeasure::default());
+        let outcome = sketch
+            .solve(&parameters, SolveOptions::default(), || false)
+            .unwrap();
+        assert!(outcome.verified_interval_center(&parameters).is_ok());
+        let mut forged = outcome.clone();
+        forged.numerical.values[0] = 9.;
+        assert!(
+            forged
+                .verified_interval_center(&parameters)
+                .unwrap_err()
+                .contains("accepted candidate")
+        );
+        let mut forged = outcome.clone();
+        forged.operands[0][0].point = Some((super::super::SketchEntityId(99), 0));
+        assert!(
+            forged
+                .verified_interval_center(&parameters)
+                .unwrap_err()
+                .contains("unprojected operands")
+        );
     }
 }

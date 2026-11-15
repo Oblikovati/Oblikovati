@@ -212,3 +212,5 @@ pub use equation_evidence::{SketchResidualTarget, SketchTargetSource};
 mod interval_equations;
 mod linear_equations;
 pub use interval_equations::{SketchIntervalEquation, SketchIntervalError, SketchIntervalTarget};
+mod conditional_root;
+pub use conditional_root::ConditionalSketchRoot;

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Conditional equation enclosures; these results do not certify a solve.
 mod dual;
-mod enclosure;
+pub(super) mod enclosure;
 use self::{dual::IntervalDual, enclosure::Enclosure};
 use super::{
     DistanceMeasure, Sketch2D, SketchError, SketchRelationId, compile, linear_equations,

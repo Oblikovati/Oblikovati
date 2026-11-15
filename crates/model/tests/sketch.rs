@@ -665,3 +665,6 @@ fn interval_equations_decline_unsupported_and_unbounded_inputs() {
 
 #[path = "sketch/interval_rectangle.rs"]
 mod interval_rectangle;
+
+#[path = "sketch/conditional_root.rs"]
+mod conditional_root;
