@@ -17,3 +17,9 @@ xvfb-run -a cargo test --locked -p oblikovati-head --lib -- \
   --test-threads=1 --skip application_scenarios_use_the_native_window \
   --skip sketch_scenarios_use_the_native_window
 ```
+
+The binding inventory was reproduced independently on `7c2de1494`: it found
+13 undefined steps in two populated drawing-layout scenarios. The default
+source was an older bundled copy, not the pinned snapshot. The report and log
+are retained here; source selection is tracked in #3972, and the missing
+behavior remains in #3899. This result does not count as pinned BDD evidence.
