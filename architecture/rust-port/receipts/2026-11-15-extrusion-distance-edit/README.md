@@ -17,6 +17,6 @@ The run passed one test. It used the browser context menu to open a literal-dist
 The screenshot shows the orange candidate preview and the distance draft. The viewport is front-facing; the image alone does not show the edited depth. `native-test.log` contains the test output. Their SHA-256 values are:
 
 - `extrusion-distance-edit-preview.png`: `fa450619fe72a9e09f158cb6948f114bab10423165a50fd8f3591140041e8615`
-- `native-test.log`: `cb135634f62af3ede2c6aa134e614783addd83fa26cd41395f2e61f3c2f751ed`
+- `native-test.log`: `b6a5e0ad699e69ca9503c3ce73d6698eebd8180770f5713229acac0046518daa`
 
 Sketch solve precision qualification remains open under [#3928](https://github.com/Oblikovati/Oblikovati/issues/3928).
