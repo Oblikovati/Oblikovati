@@ -22,6 +22,9 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 - `rust-work` is local and has not passed the full pre-push gate. All 20 former
   application PR heads were merged locally and their PRs closed. Do not remove
   their remaining remote branches until the consolidated work is safely pushed.
+- The 2026-11-15 `make gate` stopped at the API pin check, before workspace
+  tests: Express requires an unreleased API contract. Release and pin work is
+  tracked in #3965. The separate ledger check reports 178 stale receipts.
 - Scenario pin: `48987af7b5cbb06515bc6f30385f508382f34064`, a local snapshot
   of the unversioned source. It is not an upstream commit. The live feature
   inventory matched the pin at the last source check. Follow `bdd-workflow.md`
