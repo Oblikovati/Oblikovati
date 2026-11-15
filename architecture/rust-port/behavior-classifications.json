@@ -16170,8 +16170,8 @@
     },
     {
       "id": "scenario:c65b58f2636efdbae8aab3b6ced9134833b1e8361bac7549e42c023bd95463fb",
-      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
-      "source_sha256": "72d8f66e2919b71f4e56b6a4a0e106e882b79a9a073d25badb26c786bd7722fb",
+      "source_revision": "8ec8d2c1e569fbc5c8cd2ec85e9b9380c62c147f",
+      "source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f",
       "milestone": "R4",
       "owner": "desktop",
       "target_module": "crates/head, crates/gui, crates/session",
@@ -16180,11 +16180,8 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "verified",
-      "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-15-tabs-switch-current/receipt-c65b58f2636efdba.json",
-        "sha256": "da5e30971b337e27257afa514175194586517a5a761d45b900eb4250f3415b6c"
-      },
+      "state": "inventoried",
+      "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
       "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
@@ -16195,7 +16192,14 @@
       "kernel_integration": "The desktop owner switches document state and submits the selected sketch scene to the viewport.",
       "rust_tests": "application_scenarios_use_the_native_window: Switch between open parts",
       "oracle": "Pinned native input and document-state assertions; all four rectangle edges are sampled in the second viewport and absent after returning to the first.",
-      "expected_result": "Tab clicks activate each part, update the browser and title, show the second rectangle only in its viewport, and retain both tabs."
+      "expected_result": "Tab clicks activate each part, update the browser and title, show the second rectangle only in its viewport, and retain both tabs.",
+      "historical_receipts": [
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-tabs-switch-current/receipt-c65b58f2636efdba.json",
+          "sha256": "da5e30971b337e27257afa514175194586517a5a761d45b900eb4250f3415b6c"
+        }
+      ]
     },
     {
       "id": "scenario:06a79598b0a30395a860234d8084fca485a0a5345986c10f0faecf520a28908f",
@@ -16299,8 +16303,8 @@
     },
     {
       "id": "scenario:50f02a102ce485626f02cec5e7d0d7056dcf7d994e11e8c2a7e4f295bc32eb0e",
-      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
-      "source_sha256": "72d8f66e2919b71f4e56b6a4a0e106e882b79a9a073d25badb26c786bd7722fb",
+      "source_revision": "8ec8d2c1e569fbc5c8cd2ec85e9b9380c62c147f",
+      "source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f",
       "milestone": "R4",
       "owner": "desktop",
       "target_module": "crates/head, crates/gui, crates/session",
@@ -16309,11 +16313,8 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "verified",
-      "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-15-tabs-close-saved-current/receipt-50f02a102ce48562.json",
-        "sha256": "65e8f5e6ae1dee7d2c36a913b9d6e6275c4f719dd2b6ba777b6a3fde3bca7de0"
-      },
+      "state": "inventoried",
+      "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
       "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
@@ -16324,12 +16325,19 @@
       "kernel_integration": "The desktop owner closes the selected inactive document and retains the first active document.",
       "rust_tests": "application_scenarios_use_the_native_window: Close a saved inactive document with its tab close button",
       "oracle": "Pinned native steps, active-document state, saved-file byte comparison and reviewed final capture.",
-      "expected_result": "The inactive saved part closes without a prompt; the first part stays active and the saved file remains unchanged."
+      "expected_result": "The inactive saved part closes without a prompt; the first part stays active and the saved file remains unchanged.",
+      "historical_receipts": [
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-tabs-close-saved-current/receipt-50f02a102ce48562.json",
+          "sha256": "65e8f5e6ae1dee7d2c36a913b9d6e6275c4f719dd2b6ba777b6a3fde3bca7de0"
+        }
+      ]
     },
     {
       "id": "scenario:8d403d738cd321445aca38ac0a89be55e8e04f9adaad81f2ce25984fdee63f70",
-      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
-      "source_sha256": "72d8f66e2919b71f4e56b6a4a0e106e882b79a9a073d25badb26c786bd7722fb",
+      "source_revision": "8ec8d2c1e569fbc5c8cd2ec85e9b9380c62c147f",
+      "source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f",
       "milestone": "R4",
       "owner": "desktop",
       "target_module": "crates/head, crates/gui, crates/session",
@@ -16338,11 +16346,8 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "verified",
-      "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-15-tabs-close-empty-current/receipt-8d403d738cd32144.json",
-        "sha256": "367362c23252ca037752cd1ca7da65656156b77f5a2e53b3f533ee5056c938f5"
-      },
+      "state": "inventoried",
+      "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
       "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
@@ -16353,12 +16358,19 @@
       "kernel_integration": "The desktop owner controls document activation, sketch environment and close prompts.",
       "rust_tests": "application_scenarios_use_the_native_window: Close a newly created empty active part",
       "oracle": "Pinned native scenario assertions and reviewed final capture; Go dialog parity is not established.",
-      "expected_result": "the new part's tab disappears without a save prompt; the previously active part is displayed again; its model browser and viewport are restored"
+      "expected_result": "the new part's tab disappears without a save prompt; the previously active part is displayed again; its model browser and viewport are restored",
+      "historical_receipts": [
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-tabs-close-empty-current/receipt-8d403d738cd32144.json",
+          "sha256": "367362c23252ca037752cd1ca7da65656156b77f5a2e53b3f533ee5056c938f5"
+        }
+      ]
     },
     {
       "id": "scenario:244278b44b0bbbfb43fe5022599facac564f99fa33ff9179ae0fa739bf4a29be",
-      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
-      "source_sha256": "72d8f66e2919b71f4e56b6a4a0e106e882b79a9a073d25badb26c786bd7722fb",
+      "source_revision": "8ec8d2c1e569fbc5c8cd2ec85e9b9380c62c147f",
+      "source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f",
       "milestone": "R4",
       "owner": "desktop",
       "target_module": "crates/head, crates/gui, crates/session",
@@ -16367,11 +16379,8 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "verified",
-      "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-15-tabs-cancel-sketch-current/receipt-244278b44b0bbbfb.json",
-        "sha256": "a9228afd3c06bcf6b8324ed3b00b176896c8f89a107eba7ced075900eeca0597"
-      },
+      "state": "inventoried",
+      "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
       "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
@@ -16382,12 +16391,19 @@
       "kernel_integration": "The desktop owner controls document activation, sketch environment and close prompts.",
       "rust_tests": "application_scenarios_use_the_native_window: Cancel closing a part while editing its sketch",
       "oracle": "Pinned native scenario assertions and reviewed final capture; Go dialog parity is not established.",
-      "expected_result": "the user chooses Cancel; the part remains open; the sketch editing environment remains active"
+      "expected_result": "the user chooses Cancel; the part remains open; the sketch editing environment remains active",
+      "historical_receipts": [
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-tabs-cancel-sketch-current/receipt-244278b44b0bbbfb.json",
+          "sha256": "a9228afd3c06bcf6b8324ed3b00b176896c8f89a107eba7ced075900eeca0597"
+        }
+      ]
     },
     {
       "id": "scenario:d6614d03f57eca8a9235ca75f1928bcfe4cab64cfd94ef9c7475e3f7a7b17aa7",
-      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
-      "source_sha256": "72d8f66e2919b71f4e56b6a4a0e106e882b79a9a073d25badb26c786bd7722fb",
+      "source_revision": "8ec8d2c1e569fbc5c8cd2ec85e9b9380c62c147f",
+      "source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f",
       "milestone": "R4",
       "owner": "desktop",
       "target_module": "crates/head, crates/gui, crates/session",
@@ -16396,11 +16412,8 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "verified",
-      "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-15-tabs-cancel-save-prompt-current/receipt-d6614d03f57eca8a.json",
-        "sha256": "ca271c49c575f4dcbac442e5ceb25861e3148a6d6714e588a7a3603c8dba8215"
-      },
+      "state": "inventoried",
+      "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
       "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
@@ -16411,12 +16424,19 @@
       "kernel_integration": "The desktop owner controls document activation, sketch environment and close prompts.",
       "rust_tests": "application_scenarios_use_the_native_window: Cancel the save prompt after leaving sketch editing to close",
       "oracle": "Pinned native scenario assertions and reviewed final capture; Go dialog parity is not established.",
-      "expected_result": "the part remains open; its sketch remains listed in the model browser; the part modeling environment is active"
+      "expected_result": "the part remains open; its sketch remains listed in the model browser; the part modeling environment is active",
+      "historical_receipts": [
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-tabs-cancel-save-prompt-current/receipt-d6614d03f57eca8a.json",
+          "sha256": "ca271c49c575f4dcbac442e5ceb25861e3148a6d6714e588a7a3603c8dba8215"
+        }
+      ]
     },
     {
       "id": "scenario:f2e3989ecad9628f74927889e4a0a261d6ea1e2c7b24416df00fcf4e07c8a09f",
-      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
-      "source_sha256": "72d8f66e2919b71f4e56b6a4a0e106e882b79a9a073d25badb26c786bd7722fb",
+      "source_revision": "8ec8d2c1e569fbc5c8cd2ec85e9b9380c62c147f",
+      "source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f",
       "milestone": "R4",
       "owner": "desktop",
       "target_module": "crates/head, crates/gui, crates/session",
@@ -16425,11 +16445,8 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "verified",
-      "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-15-tabs-cancel-first-save-current/receipt-f2e3989ecad9628f.json",
-        "sha256": "7728b40617344871bc801b072fac24c955f1c2340466a52a0d4298e82bb1cd37"
-      },
+      "state": "inventoried",
+      "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
       "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
@@ -16440,12 +16457,19 @@
       "kernel_integration": "The desktop owner controls document close, save, reopen and sketch state.",
       "rust_tests": "application_scenarios_use_the_native_window: Cancel the first save while closing an unsaved part",
       "oracle": "Pinned native scenario assertions, document and file state, and reviewed final capture; Go dialog parity is not established.",
-      "expected_result": "the user cancels the Save As dialog; the part remains open and active; its sketch remains listed in the model browser"
+      "expected_result": "the user cancels the Save As dialog; the part remains open and active; its sketch remains listed in the model browser",
+      "historical_receipts": [
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-tabs-cancel-first-save-current/receipt-f2e3989ecad9628f.json",
+          "sha256": "7728b40617344871bc801b072fac24c955f1c2340466a52a0d4298e82bb1cd37"
+        }
+      ]
     },
     {
       "id": "scenario:d6f09550bb0cdb933bc28a078c90f0070a2d54aa07b17c7067039b25d2a98912",
-      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
-      "source_sha256": "72d8f66e2919b71f4e56b6a4a0e106e882b79a9a073d25badb26c786bd7722fb",
+      "source_revision": "8ec8d2c1e569fbc5c8cd2ec85e9b9380c62c147f",
+      "source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f",
       "milestone": "R4",
       "owner": "desktop",
       "target_module": "crates/head, crates/gui, crates/session",
@@ -16454,11 +16478,8 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "verified",
-      "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-15-tabs-save-new-current/receipt-d6f09550bb0cdb93.json",
-        "sha256": "a8059ebcf12d5f15e0bb05bec657f9df4a18d68d321cc920d612b9fdf0b75aa4"
-      },
+      "state": "inventoried",
+      "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
       "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
@@ -16469,12 +16490,19 @@
       "kernel_integration": "The desktop owner controls document close, save, reopen and sketch state.",
       "rust_tests": "application_scenarios_use_the_native_window: Save a new part while closing its tab",
       "oracle": "Pinned native scenario assertions, document and file state, and reviewed final capture; Go dialog parity is not established.",
-      "expected_result": "the user reopens the saved part file; the reopened part is active; its sketch is listed in the model browser"
+      "expected_result": "the user reopens the saved part file; the reopened part is active; its sketch is listed in the model browser",
+      "historical_receipts": [
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-tabs-save-new-current/receipt-d6f09550bb0cdb93.json",
+          "sha256": "a8059ebcf12d5f15e0bb05bec657f9df4a18d68d321cc920d612b9fdf0b75aa4"
+        }
+      ]
     },
     {
       "id": "scenario:8f2c33b398b731b4c57b8fe973d59a15b162d40f6da04290cd34e0d21a8c4911",
-      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
-      "source_sha256": "72d8f66e2919b71f4e56b6a4a0e106e882b79a9a073d25badb26c786bd7722fb",
+      "source_revision": "8ec8d2c1e569fbc5c8cd2ec85e9b9380c62c147f",
+      "source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f",
       "milestone": "R4",
       "owner": "desktop",
       "target_module": "crates/head, crates/gui, crates/session",
@@ -16483,11 +16511,8 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "verified",
-      "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-15-tabs-close-menu-current/receipt-8f2c33b398b731b4.json",
-        "sha256": "d0b1637f9efe0721e8c9ce226e72ca0fee81cd5dd40b2e12823a7443cb6ac727"
-      },
+      "state": "inventoried",
+      "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
       "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
@@ -16498,7 +16523,14 @@
       "kernel_integration": "The desktop owner closes the selected inactive document and retains the first active document.",
       "rust_tests": "application_scenarios_use_the_native_window: Close an inactive saved document from its tab menu",
       "oracle": "Pinned native steps, active-document state, saved-file byte comparison and reviewed final capture.",
-      "expected_result": "The inactive saved part closes without a prompt; the first part stays active and the saved file remains unchanged."
+      "expected_result": "The inactive saved part closes without a prompt; the first part stays active and the saved file remains unchanged.",
+      "historical_receipts": [
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-tabs-close-menu-current/receipt-8f2c33b398b731b4.json",
+          "sha256": "d0b1637f9efe0721e8c9ce226e72ca0fee81cd5dd40b2e12823a7443cb6ac727"
+        }
+      ]
     },
     {
       "id": "scenario:5013bf3ef372b4cd2c855cce963620205fbadf3431e771ee3b03b5f6240bbb03",
