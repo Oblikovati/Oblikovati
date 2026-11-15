@@ -2,16 +2,21 @@
 """Test the deliberately non-reusable offline build probe."""
 
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+
+from committed_build_source import materialize_source
+from test_committed_build_source import SourceRepository
 
 from sandbox_build_probe import (
     BuildProbe,
     build_environment,
     require_probe,
     run_build_probe,
+    run_committed_build_probe,
     runner_path,
     sandbox_build_command,
 )
@@ -60,6 +65,9 @@ class FakeInputSnapshot:
         }
 
 
+@unittest.skipUnless(
+    os.name == "posix" and hasattr(os, "O_NOATIME"), "requires Linux no-atime snapshots"
+)
 class SandboxBuildProbeTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
@@ -91,6 +99,22 @@ class SandboxBuildProbeTests(unittest.TestCase):
         self.assertIn("--offline", process.command)
         self.assertNotIn("RUSTFLAGS", build_environment())
         self.assertIn("/config/config.toml", sandbox_build_command(self.probe))
+
+    def test_committed_source_is_checked_before_the_build(self) -> None:
+        repo = self.probe.source.parent / "repository"
+        repo.mkdir()
+        fixture = SourceRepository(repo)
+        self.probe.source.rmdir()
+        materialize_source(repo, fixture.commit, self.probe.source)
+        (self.probe.source / "source.rs").write_text("tampered")
+        process = FakeBuildProcess(self.probe.target)
+        with self.assertRaisesRegex(ValueError, "expected committed content"):
+            run_committed_build_probe(self.probe, repo, fixture.commit, process)
+        self.assertEqual(process.command, [])
+        (self.probe.source / "source.rs").write_text("committed")
+        result = run_committed_build_probe(self.probe, repo, fixture.commit, process)
+        self.assertEqual(result["source_commit"], fixture.commit)
+        self.assertFalse(result["reusable"])
 
     def test_changed_inputs_and_failed_build_are_rejected(self) -> None:
         with self.assertRaisesRegex(ValueError, "inputs changed"):

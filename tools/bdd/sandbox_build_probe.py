@@ -9,8 +9,10 @@ import platform
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
+from functools import partial
 from typing import Callable, Mapping
 
+from committed_source_check import committed_reference, verify_source_inventory
 from runtime_snapshot import snapshot_runtime
 from sealed_execution import file_identity, require_disjoint
 
@@ -30,6 +32,7 @@ class BuildProbe:
 
 ProbeProcess = Callable[[list[str], Path, Path], int]
 Snapshot = Callable[[Path], Mapping[str, object]]
+SourceCheck = Callable[[Mapping[str, object]], None]
 
 
 def require_roots(probe: BuildProbe) -> None:
@@ -252,10 +255,13 @@ def run_build_probe(
     probe: BuildProbe,
     run: ProbeProcess = run_process,
     snapshot: Snapshot = snapshot_runtime,
+    check_source: SourceCheck | None = None,
 ) -> dict[str, object]:
     """Run an observed build without claiming reuse; example: run_build_probe(probe)."""
     require_probe(probe)
     before, sandbox = snapshot_inputs(probe, snapshot), file_identity(probe.bwrap)
+    if check_source is not None:
+        check_source(before["source"])
     messages, log = probe.logs / "cargo.jsonl", probe.logs / "cargo.log"
     code = run(sandbox_build_command(probe), messages, log)
     if code != 0:
@@ -270,13 +276,41 @@ def run_build_probe(
     return probe_result(runner_path(messages, probe.target), before, sandbox)
 
 
+def run_committed_build_probe(
+    probe: BuildProbe,
+    repository: Path,
+    revision: str,
+    run: ProbeProcess = run_process,
+    snapshot: Snapshot = snapshot_runtime,
+) -> dict[str, object]:
+    """Check the mounted source against a commit before a probe; example: run_committed_build_probe(probe, repo, sha)."""
+    require_probe(probe)
+    reference = committed_reference(repository, revision)
+    check = partial(verify_source_inventory, reference=reference)
+    result = run_build_probe(probe, run, snapshot, check)
+    result["source_commit"] = reference.commit
+    return result
+
+
 def main() -> None:
     """Run an experimental build probe; run `python3 sandbox_build_probe.py --help`."""
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("source", "vendor", "toolchain", "config", "target", "logs", "bwrap"):
         parser.add_argument(name, type=Path)
+    parser.add_argument("--repository", type=Path)
+    parser.add_argument("--revision")
     args = parser.parse_args()
-    print(json.dumps(run_build_probe(BuildProbe(**vars(args))), sort_keys=True))
+    repository, revision = args.repository, args.revision
+    del args.repository, args.revision
+    if (repository is None) != (revision is None):
+        parser.error("--repository and --revision must be supplied together")
+    probe = BuildProbe(**vars(args))
+    result = (
+        run_committed_build_probe(probe, repository, revision)
+        if repository is not None and revision is not None
+        else run_build_probe(probe)
+    )
+    print(json.dumps(result, sort_keys=True))
 
 
 if __name__ == "__main__":
