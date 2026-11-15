@@ -220,7 +220,12 @@ def main() -> None:
     result = capture_receipt(
         request, NativeCargoRun(ROOT, str(request.row["area"])), application_state
     )
-    print(json.dumps({"receipt": result, "review_required": True}, indent=2))
+    print(
+        json.dumps(
+            {"receipt": result, "review_required": True, "historical_only": True},
+            indent=2,
+        )
+    )
 
 
 if __name__ == "__main__":

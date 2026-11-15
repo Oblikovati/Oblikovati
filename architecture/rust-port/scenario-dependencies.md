@@ -50,3 +50,16 @@ sets `reusable` to false: an independent proof checker, rebuilt runner identity,
 and complete host and device input policy are still needed. The ordinary native
 receipt path does not use this helper. See
 `receipts/2026-11-15-sealed-runner-probe/` for the live probe.
+
+## Native build provenance
+
+Native capture receipts remain available as historical evidence, and their
+contents and artifact hashes are still checked. They do not count as verified
+BDD scenarios: the current capture path does not prove the inputs used to
+build the runner. A clean Git commit alone does not bound Cargo settings,
+compiler wrappers, ignored files, or external build inputs. The ledger reports
+this limitation as a stale reason and retains the historical receipt.
+
+Issue #3978 tracks a bounded build and independently checked provenance.
+The experimental sealed runner bounds parts of execution; it does not prove
+how the runner was built and does not remove this limitation.

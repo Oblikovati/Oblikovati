@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-only
-"""Run and verify a real native receipt; use Xvfb or an active desktop display."""
+"""Run and check a historical native capture; use Xvfb or an active desktop display."""
 
 import argparse
 import subprocess
@@ -9,7 +9,7 @@ import tempfile
 from pathlib import Path
 
 from behavior_capture import artifact, receipt_path
-from behavior_evidence import verify_receipt
+from behavior_evidence import check_capture_receipt
 from behavior_ledger import ROOT
 from capture_cli import prepare_request
 from verify_snapshot import restore_snapshot
@@ -26,9 +26,9 @@ def run_native_receipt(checkout: Path, output: Path, renderer: str, scenario: st
         cwd=ROOT, check=True,
     )
     receipt = receipt_path(request, request.destination)
-    verify_receipt(ROOT, artifact(ROOT, receipt), request.row, request.source_revision,
+    check_capture_receipt(ROOT, artifact(ROOT, receipt), request.row, request.source_revision,
                    request.application_commit)
-    print(f"Verified native capture receipt: {receipt}")
+    print(f"Checked historical native capture receipt: {receipt}")
 
 
 def main() -> None:

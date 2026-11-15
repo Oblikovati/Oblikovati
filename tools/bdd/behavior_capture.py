@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Mapping
 
-from behavior_evidence import example_capture_name, verify_receipt
+from behavior_evidence import check_capture_receipt, example_capture_name
 
 
 @dataclass(frozen=True)
@@ -254,8 +254,8 @@ def copy_staged_files(
 
 
 def verify_stored_receipt(request: CaptureRequest, result: dict[str, str]) -> None:
-    """Apply the existing receipt checker; example: verify_stored_receipt(request, result)."""
-    verify_receipt(
+    """Check historical capture content; example: verify_stored_receipt(request, result)."""
+    check_capture_receipt(
         request.root,
         result,
         request.row,
