@@ -1122,12 +1122,15 @@
       "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
       "acceptance_test": "application_scenarios_use_the_native_window: extrusion-06 Accepted creation supports Undo and Redo",
       "issues": [
-        "https://github.com/Oblikovati/Oblikovati/issues/3857"
+        "https://github.com/Oblikovati/Oblikovati/issues/3857",
+        "https://github.com/Oblikovati/Oblikovati/issues/3967",
+        "https://github.com/Oblikovati/Martensite/issues/462"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
       "go_reference": "../Oblikovati/model/feature/extrude_extent.go; ../Oblikovati/model/feature/extrude_modes_test.go; ../Oblikovati/head/ui/extrude_dialog.go",
-      "mapping_reason": "Creation and undo/redo of the initial extrusion are part of the integrated desktop workflow."
+      "mapping_reason": "Creation and undo/redo of the initial extrusion are part of the integrated desktop workflow.",
+      "reason": "The desktop Measure workflow cannot select and report two solid edges. General analytic edge picking depends on the unresolved Martensite point-to-curve extrema completeness issue; see #3967 and Martensite #462."
     },
     {
       "id": "scenario:1404f9981fb54fee10e3c77ed7fadf3b835e8550d09f1e1bd8543909d57e8e25",
