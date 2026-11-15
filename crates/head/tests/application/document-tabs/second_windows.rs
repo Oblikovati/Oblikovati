@@ -2,6 +2,7 @@
 //! A second window on one part: numbered tabs, separate views, closing without a prompt.
 use super::super::ApplicationWorld;
 use crate::HeadWindow;
+use crate::work::HeadWork;
 use cucumber::{given, then, when};
 use oblikovati_model::sketch::SketchPlane;
 use oblikovati_viewport::{ViewportEvent, ViewportInput, ViewportPhysicalKey};
@@ -222,6 +223,55 @@ fn hidden_tabs_survive_closing_a_window_and_show_the_survivor_preview() {
     world.pump(Vec::new());
     assert!(super::super::diagnostics::window_geometry("##tab-preview").is_some());
     world.save_capture("hidden-tab-surviving-window-preview");
+    world.close();
+}
+
+#[test]
+fn scaled_preview_avoids_the_tab_when_ribbon_is_minimized() {
+    let mut world = ApplicationWorld::new();
+    let part = world.add_part();
+    super::super::ribbon_display::click_display_menu(&mut world);
+    world.click_text("Minimize to Tabs");
+    let scale = oblikovati_model::ui_scale::UiScaleOptions::new(2., 1.).unwrap();
+    world.app().owner.set_ui_scale_from_gui(scale).unwrap();
+    world.pump(Vec::new());
+    let name = world.document_name(part);
+    let tab = world.expect_tab(&name);
+    world.hover(super::super::diagnostics::pointer_pixels(tab.center()));
+    world.pump(Vec::new());
+    let (position, size) = super::super::diagnostics::window_geometry("##tab-preview")
+        .expect("expected preview with enlarged text");
+    let (strip, strip_size) = super::super::diagnostics::window_geometry("##open-document-tabs")
+        .expect("expected document tabs");
+    assert!(
+        position[1] >= strip[1] + strip_size[1],
+        "preview {position:?} / {size:?} overlaps strip {strip:?} / {strip_size:?}"
+    );
+    let [width, height] = world.extent();
+    assert!(position[0] >= 0. && position[1] >= 0.);
+    assert!(position[0] + size[0] <= width as f32 / 2.);
+    assert!(position[1] + size[1] <= height as f32 / 2.);
+    world.save_capture("scaled-minimized-tab-preview");
+    world.hover([width as i32 - 80, height as i32 - 80]);
+    world.pump(Vec::new());
+    assert!(super::super::diagnostics::window_geometry("##tab-preview").is_none());
+    world.expect_active(part);
+    world.close();
+}
+
+#[test]
+fn full_ribbon_keeps_the_preview_above_the_tab() {
+    let mut world = ApplicationWorld::new();
+    let part = world.add_part();
+    let name = world.document_name(part);
+    let tab = world.expect_tab(&name);
+    world.hover(super::super::diagnostics::pointer_pixels(tab.center()));
+    world.pump(Vec::new());
+    let (position, size) = super::super::diagnostics::window_geometry("##tab-preview")
+        .expect("expected preview on full ribbon");
+    let (strip, _) = super::super::diagnostics::window_geometry("##open-document-tabs")
+        .expect("expected document tabs");
+    assert!(position[1] + size[1] <= strip[1]);
     world.close();
 }
 // Separate zoom
