@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Point: tmp/obk-point11-snapshot-3887/features/sketch/point/scenario.feature" package="testsuite/Feature: Point: tmp/obk-point11-snapshot-3887/features/sketch/point/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T11:07:15.548849562Z" time="10.676131971"><testcase name="Scenario: point-11 Cancel a center-point command with one Escape: tmp/obk-point11-snapshot-3887/features/sketch/point/scenario.feature:92:3" time="10.676131971"><system-out><![CDATA[  Scenario: point-11 Cancel a center-point command with one Escape
+   ✔  Given an editable planar sketch has no active selection and Center Point is enabled in Format
+   ✔  And Point is active with Select center point
+   ✔  When the user press Escape without placing a point
+   ✔  And the user right-click empty canvas to inspect the refreshed state
+   ✔  Then Ready is displayed and the menu offers Repeat Point, Center Point
+   ✔  And no new point marker is visible
+   ✔  When the user press Escape
+   ✔  Then the menu closes and Ready remains displayed
+]]></system-out></testcase></testsuite></testsuites>

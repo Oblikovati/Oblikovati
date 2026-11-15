@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Point: tmp/oblikovati-bdd-OVQ0MF/checkout/features/sketch/point/scenario.feature" package="testsuite/Feature: Point: tmp/oblikovati-bdd-OVQ0MF/checkout/features/sketch/point/scenario.feature" tests="9" errors="0" failures="6" hostname="localhost" timestamp="2026-11-15T11:04:31.929861728Z" time="89.095663701"><testcase name="Scenario: point-03 Cancel before placing a point: tmp/oblikovati-bdd-OVQ0MF/checkout/features/sketch/point/scenario.feature:5:3" time="10.748655359"><system-out><![CDATA[  Scenario: point-03 Cancel before placing a point
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch is active
+   ✔  And Point is active with Select center point
+   ✔  When the user press Escape twice without clicking the canvas
+   ✔  And the user right-click empty canvas to inspect state
+   ✔  Then the status is Ready and the menu offers Repeat Point, Center Point
+   ✔  And no new point marker is retained
+   ✔  When the user press Escape
+   ✔  Then the Ready-state menu closes
+]]></system-out></testcase><testcase name="Scenario: point-04 Undo and redo the recorded placement: tmp/oblikovati-bdd-OVQ0MF/checkout/features/sketch/point/scenario.feature:17:3" time="10.657195846"><system-out><![CDATA[  Scenario: point-04 Undo and redo the recorded placement
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch is active
+   ✔  And a center point remains after placement and Escape
+   ✔  When the user press Ctrl+Z
+   ✔  Then the point cross disappears
+   ✔  When the user press Ctrl+Y
+   ✔  Then the point cross returns at its prior visible location
+]]></system-out></testcase><testcase name="Scenario: point-05 Continue regular point placement without restarting Point: tmp/oblikovati-bdd-OVQ0MF/checkout/features/sketch/point/scenario.feature:27:3" time="8.638364797"><failure type="Step Panicked" message="Step panicked. Captured output: expected the toggle off"/><system-out><![CDATA[  Scenario: point-05 Continue regular point placement without restarting Point
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch is active
+   ✘  And the Format Center Point toggle is off
+      Step failed:
+      Defined: tmp/oblikovati-bdd-OVQ0MF/checkout/features/sketch/point/scenario.feature:30:5
+      Matched: crates/head/src/../tests/application/../sketch/point/steps.rs:133:1
+      Step panicked. Captured output: expected the toggle off
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nFront\nReady\nFullyConstrained\nHome\nPart1<Primary>*\nDocuments\nFile\nTools\nNew\nOpen\nSave\nUndo\nRedo\nHome\nProjects\nUpdate\nSelect\nMaterialBrowser\nMaterials\nAppearanceBrowser\nParameters\n...\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nRibbonDisplay\nv\nv\nRectangle\nCircle\nv\nPoint\nCenterArcv\nEllipse\nCenterRect.\n3-PtRect.\nv\nLine\nProjectGeometry\nCreatev\nv\nConstrain\nv\nModify\nv\nPattern\nv\nInsert\nv\nFormat\nFinishSketch\nExit\nModel\n+\nModel\nMenu\nSearch\nPart1<Primary>\nRepresentations\nModelState\n<Primary>\n1\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nSketch1\n[DOF0]\nFeatures\nEndofPart",
+          ..
+      }
+]]></system-out></testcase><testcase name="Scenario: point-06 Convert a regular sketch point to a center point and back: tmp/oblikovati-bdd-OVQ0MF/checkout/features/sketch/point/scenario.feature:40:3" time="10.24044318"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: point-06 Convert a regular sketch point to a center point and back
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch is active
+   ✔  And a regular dot-style sketch point and a separate unchanged point
+   ✘  When the user right-click the first point and choose Center Point
+      Step failed:
+      Defined: tmp/oblikovati-bdd-OVQ0MF/checkout/features/sketch/point/scenario.feature:44:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: point-07 Undo and redo point-type conversion: tmp/oblikovati-bdd-OVQ0MF/checkout/features/sketch/point/scenario.feature:52:3" time="8.108286142"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: point-07 Undo and redo point-type conversion
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch is active
+   ✘  And the user have converted a regular sketch point to Center Point
+      Step failed:
+      Defined: tmp/oblikovati-bdd-OVQ0MF/checkout/features/sketch/point/scenario.feature:55:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: point-08 Create a center point using the Format toggle: tmp/oblikovati-bdd-OVQ0MF/checkout/features/sketch/point/scenario.feature:64:3" time="12.168271804"><failure type="Step Panicked" message="Step panicked. Captured output: assertion `left == right` failed: point mark at [980, 640]
+  left: Cross
+ right: Dot"/><system-out><![CDATA[  Scenario: point-08 Create a center point using the Format toggle
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch is active
+   ✔  And no geometry is selected and Center Point is enabled in Format
+   ✔  When the user invoke Point
+   ✔  Then the prompt is Select center point
+   ✔  When the user click empty canvas and press Escape
+   ✔  Then a center point remains at that location
+   ✘  And existing regular points retain their dot-style type
+      Step failed:
+      Defined: tmp/oblikovati-bdd-OVQ0MF/checkout/features/sketch/point/scenario.feature:72:5
+      Matched: crates/head/src/../tests/application/../sketch/point/steps.rs:248:1
+      Step panicked. Captured output: assertion `left == right` failed: point mark at [980, 640]
+        left: Cross
+       right: Dot
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nFront\nReady\n4dimensionsneeded\nHome\nPart1<Primary>*\nDocuments\nModel\n+\nModel\nMenu\nSearch\nPart1<Primary>\nRepresentations\nModelState\n<Primary>\n1\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nSketch1\n[DOF4]\nFeatures\nEndofPart\nFile\nTools\nNew\nOpen\nSave\nUndo\nRedo\nHome\nProjects\nUpdate\nSelect\nMaterialBrowser\nMaterials\nAppearanceBrowser\nParameters\n...\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nRibbonDisplay\nv\nv\nRectangle\nCircle\nv\nPoint\nCenterArcv\nEllipse\nCenterRect.\n3-PtRect.\nv\nLine\nProjectGeometry\nCreatev\nv\nConstrain\nv\nModify\nv\nPattern\nv\nInsert\nv\nFormat\nFinishSketch\nExit",
+          ..
+      }
+]]></system-out></testcase><testcase name="Scenario: point-10 Resolve repeated center-point placement at the same coordinates: tmp/oblikovati-bdd-OVQ0MF/checkout/features/sketch/point/scenario.feature:75:3" time="9.330080541"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: point-10 Resolve repeated center-point placement at the same coordinates
+   ✔  Given Point is active with Select center point
+   ✔  And the observed sketch fixture shows 208 dimensions needed
+   ✘  When the user click the same canvas location twice and press Escape
+      Step failed:
+      Defined: tmp/oblikovati-bdd-OVQ0MF/checkout/features/sketch/point/scenario.feature:78:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: point-11 Cancel a center-point command with one Escape: tmp/oblikovati-bdd-OVQ0MF/checkout/features/sketch/point/scenario.feature:92:3" time="10.59704518"><system-out><![CDATA[  Scenario: point-11 Cancel a center-point command with one Escape
+   ✔  Given an editable planar sketch has no active selection and Center Point is enabled in Format
+   ✔  And Point is active with Select center point
+   ✔  When the user press Escape without placing a point
+   ✔  And the user right-click empty canvas to inspect the refreshed state
+   ✔  Then Ready is displayed and the menu offers Repeat Point, Center Point
+   ✔  And no new point marker is visible
+   ✔  When the user press Escape
+   ✔  Then the menu closes and Ready remains displayed
+]]></system-out></testcase><testcase name="Scenario: point-12 Inspect Precise Input while Point is active: tmp/oblikovati-bdd-OVQ0MF/checkout/features/sketch/point/scenario.feature:103:3" time="8.607320852"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: point-12 Inspect Precise Input while Point is active
+   ✔  Given Point is active in an editable sketch
+   ✘  When the user expand the Create panel
+      Step failed:
+      Defined: tmp/oblikovati-bdd-OVQ0MF/checkout/features/sketch/point/scenario.feature:105:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>
