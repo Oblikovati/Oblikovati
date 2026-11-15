@@ -37,7 +37,7 @@ impl PickTarget {
 pub(crate) enum PickCoverage {
     NearestFacePerBody,
     NearestFacePerOccurrenceBody,
-    NearestFaceAndVisibleWorkPlanes,
+    VisiblePlanesAndNearestFaces,
 }
 
 #[derive(Debug)]
@@ -60,7 +60,7 @@ impl PickCandidates {
     }
 
     pub(crate) fn include_visible_planes(&mut self) {
-        self.coverage = PickCoverage::NearestFaceAndVisibleWorkPlanes;
+        self.coverage = PickCoverage::VisiblePlanesAndNearestFaces;
     }
 
     pub(crate) fn push(&mut self, target: PickTarget, line_parameter: f64) -> Result<(), String> {
@@ -240,7 +240,7 @@ mod tests {
     #[test]
     fn plane_hits_respect_category_priority_and_reject_equal_identity_ambiguity() {
         use oblikovati_session::selection::{AmbientSelectionFilter, SelectionFilter};
-        let mut batch = PickCandidates::new(PickCoverage::NearestFaceAndVisibleWorkPlanes);
+        let mut batch = PickCandidates::new(PickCoverage::VisiblePlanesAndNearestFaces);
         batch
             .push(
                 PickTarget::WorkPlane(oblikovati_model::feature::FeatureId(1)),
@@ -258,7 +258,7 @@ mod tests {
                 .unwrap(),
             Some(PickTarget::Face(..))
         ));
-        let mut batch = PickCandidates::new(PickCoverage::NearestFaceAndVisibleWorkPlanes);
+        let mut batch = PickCandidates::new(PickCoverage::VisiblePlanesAndNearestFaces);
         batch
             .push(
                 PickTarget::WorkPlane(oblikovati_model::feature::FeatureId(1)),

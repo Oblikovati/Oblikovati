@@ -67,11 +67,12 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 - Sketch extrusion lacks a certified solve precision bound (#3928). Analytic
   edge picking is blocked by [Martensite #462](https://github.com/Oblikovati/Martensite/issues/462).
 - The full gate needs a released API contract (#3965). Point cancellation needs
-  a supplied sketch fixture (#3887).
+  source sync and a fixture for its clarified preconditions (#3887).
 - Rectangle visibility now rejects obstructed observations (#3980). Focused
   native checks passed; the full gate is still required.
 - Authored work planes now display in part views (#3981). Viewport plane
-  picking and assembly overlays remain open; visibility editing needs the
+  picking now supports sketch and offset-plane creation (#3984); assembly
+  overlays and picking remain open. Visibility editing needs the
   document-qualified datum reference work (#3982, #3983). Tested drafts remain
   unmerged: Rust `work/datum-visible-3982` at `2c0601be1` and API
   `work/datum-reference-contract-3982` at `c053e98`. Public compatibility,
