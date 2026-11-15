@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+#[path = "captured_catalog.rs"]
+mod captured_catalog;
 #[path = "chooser_details.rs"]
 mod chooser_details;
+#[path = "chooser_navigation_regressions.rs"]
+mod chooser_navigation_regressions;
 #[path = "gallery_folder_keyboard.rs"]
 mod gallery_folder_keyboard;
 #[path = "gallery_icons.rs"]

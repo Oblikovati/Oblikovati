@@ -244,9 +244,27 @@ fn part_group_expanded(world: &mut ApplicationWorld) {
 fn toggle_part_group(world: &mut ApplicationWorld) {
     world.click_text("Part");
 }
+fn assert_part_template_tile(world: &ApplicationWorld, title: &str, visible: bool) {
+    let details_x = world.run("Template details").minimum[0];
+    let expected = title.replace(' ', "");
+    let found = world
+        .frame
+        .runs
+        .iter()
+        .any(|run| run.minimum[0] < details_x && run.text == expected);
+    assert_eq!(
+        found,
+        visible,
+        "template {title:?} visibility in {:?}",
+        world.text()
+    );
+}
+
 #[then("its template tiles are hidden")]
 fn tiles_hidden(world: &mut ApplicationWorld) {
-    world.expect_no_text(METRIC_PART);
+    for title in [METRIC_PART, METRIC_SHEET_METAL] {
+        assert_part_template_tile(world, title, false);
+    }
 }
 #[then("the assembly and drawing groups remain visible")]
 fn other_groups(world: &mut ApplicationWorld) {

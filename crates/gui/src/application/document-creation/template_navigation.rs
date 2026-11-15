@@ -32,6 +32,10 @@ impl TemplateChooser {
         {
             return;
         }
+        if scroll_gallery(ui) {
+            self.gallery_scroll_frames = 2;
+            return;
+        }
         let Some(movement) = pressed_move(ui) else {
             return;
         };
@@ -93,6 +97,19 @@ impl TemplateChooser {
             .flat_map(|(_, kinds)| kinds.iter().copied())
             .collect()
     }
+}
+fn scroll_gallery(ui: &Ui) -> bool {
+    let direction = if ui.is_key_pressed_no_repeat(Key::DownArrow) {
+        1.
+    } else if ui.is_key_pressed_no_repeat(Key::UpArrow) {
+        -1.
+    } else {
+        return false;
+    };
+    let next = (ui.scroll_y() + direction * ui.text_line_height_with_spacing())
+        .clamp(0., ui.scroll_max_y());
+    ui.set_scroll_y(next);
+    true
 }
 fn pressed_move(ui: &Ui) -> Option<GalleryMove> {
     [
