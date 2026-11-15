@@ -2,6 +2,35 @@
 use super::*;
 use cucumber::{given, then, when};
 
+#[test]
+fn capture_only_is_reported_without_creating_a_window() {
+    let feature = Feature::parse(
+        "Feature: test\n @capture_only\n Scenario: historical\n  Given missing binding\n",
+        Default::default(),
+    )
+    .unwrap();
+    let mut report = new_report(&BTreeMap::new());
+    inspect_feature(&feature, &mut report);
+    assert_eq!(report.scenarios.len(), 1);
+    assert_eq!(report.scenarios[0].classification, "excluded: capture only");
+    assert_eq!(report.scenarios[0].steps[0].result, "not executed");
+}
+#[test]
+fn capture_host_only_is_reported_as_blocked_without_a_window() {
+    let feature = Feature::parse(
+        "@capture_host_only\nFeature: host\n Scenario: host fixture\n  Given missing\n",
+        Default::default(),
+    )
+    .unwrap();
+    let mut report = new_report(&BTreeMap::new());
+    inspect_feature(&feature, &mut report);
+    assert_eq!(
+        report.scenarios[0].classification,
+        "blocked: capture host only"
+    );
+    assert_eq!(report.scenarios[0].steps[0].result, "not executed");
+}
+
 #[derive(Debug, Default, cucumber::World)]
 struct DiagnosticWorld {
     actions: usize,

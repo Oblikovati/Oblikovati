@@ -1,11 +1,11 @@
 {
-  "snapshot_commit": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "snapshot_commit": "8ec8d2c1e569fbc5c8cd2ec85e9b9380c62c147f",
   "branch": "snapshot",
-  "bundle": "mcad-scenarios-2026-11-14-48987af.bundle",
-  "bundle_sha256": "d57642846ee052be6d36d3229a9da85cd115e721db70d9f38a321746974ae8eb",
-  "manifest": "mcad-scenarios-2026-11-14-48987af.sha256.json",
-  "manifest_sha256": "f4065f98108eb5eec50c5f73865ce5cfb00ee356e1620a8c26db2f36ae7001d5",
-  "file_count": 1287,
-  "captured_utc_date": "2026-11-14",
-  "provenance": "Local snapshot of the unversioned MCAD-Scenarios source; the arc and UCS feature changes were reviewed and their hashes matched live source before and after copying. This is not an upstream commit."
+  "bundle": "mcad-scenarios-2026-11-15-8ec8d2c.bundle",
+  "bundle_sha256": "008924578b0b26f65978be2a5c1cd9eb78f5a6246a05e8d6318ef49139040dbc",
+  "manifest": "mcad-scenarios-2026-11-15-8ec8d2c.sha256.json",
+  "manifest_sha256": "a151b4bd87d1ab4ff927bf47d06b69344bd7b394376eb23ef94ac648a0470c0e",
+  "file_count": 1292,
+  "captured_utc_date": "2026-11-15",
+  "provenance": "Local snapshot of the unversioned MCAD-Scenarios source. Feature, Markdown and SVG files were hashed before copying and compared with the live source after copying; BLOCKERS.md and capture media are excluded. This is not an upstream commit."
 }

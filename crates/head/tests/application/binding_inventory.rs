@@ -6,7 +6,7 @@ use super::{
 };
 use cucumber::{
     Parser as _, World as _,
-    gherkin::{Background, Feature, Scenario, Step},
+    gherkin::{Background, Feature, Rule, Scenario, Step},
 };
 use futures::StreamExt as _;
 use serde::Serialize;
@@ -16,6 +16,8 @@ use std::{fs, path::PathBuf};
 struct BindingInventory {
     features: usize,
     scenarios: usize,
+    excluded_capture_only: usize,
+    blocked_capture_host_only: usize,
     steps: usize,
     unresolved: Vec<UnresolvedBinding>,
     source_revision: Option<scenario_revision::ScenarioRevision>,
@@ -66,6 +68,10 @@ fn application_step_bindings_cover_selected_source() {
     fs::create_dir_all(&folder).unwrap();
     report_destination::write_file(&output, &serde_json::to_vec_pretty(&report).unwrap()).unwrap();
     assert!(
+        report.steps > 0,
+        "expected at least one runnable step; capture-only and capture-host-only cases did not execute"
+    );
+    assert!(
         report.unresolved.is_empty(),
         "{} unresolved step bindings; see {:?}. This check does not run native behavior.",
         report.unresolved.len(),
@@ -84,20 +90,30 @@ impl BindingInventory {
         }
         for rule in &feature.rules {
             for scenario in &rule.scenarios {
-                self.inspect_scenario(feature, rule.background.as_ref(), scenario, bindings);
+                self.inspect_scenario(feature, Some(rule), scenario, bindings);
             }
         }
     }
     fn inspect_scenario(
         &mut self,
         feature: &Feature,
-        background: Option<&Background>,
+        rule: Option<&Rule>,
         scenario: &Scenario,
         bindings: &cucumber::step::Collection<ApplicationWorld>,
     ) {
         self.scenarios += 1;
+        if let Some(reason) = super::capture_only::reason(feature, rule, scenario) {
+            if reason == "capture only" {
+                self.excluded_capture_only += 1;
+            } else {
+                self.blocked_capture_host_only += 1;
+            }
+            return;
+        }
         let steps = background_steps(feature.background.as_ref())
-            .chain(background_steps(background))
+            .chain(background_steps(
+                rule.and_then(|value| value.background.as_ref()),
+            ))
             .chain(scenario.steps.iter());
         for step in steps {
             self.inspect_step(feature, scenario, step, bindings);

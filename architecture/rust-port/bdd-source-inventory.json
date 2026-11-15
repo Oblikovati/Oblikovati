@@ -8,12 +8,12 @@
     "features/application/document-creation/document-creation.feature": {
       "outlines": 0,
       "scenario_declarations": 39,
-      "sha256": "e9a93d4c096090667952b8080a0cad01c48f480022a4b8ac72ae210607ca138d"
+      "sha256": "c6211904fc75d1a044949a77a5e1cd089522b4e8951d9ab2e66c2fa72da223a3"
     },
     "features/application/document-opening/document-opening.feature": {
       "outlines": 0,
       "scenario_declarations": 27,
-      "sha256": "d7965f270ecc21d99f2ed9a0837f17a1996203fccf4d4d1966e7876ebb01464c"
+      "sha256": "ce0be44dd1e0ded53c12de6a96465ffafca2307db3029351147c6d9606bf4b8b"
     },
     "features/application/document-saving/document-saving.feature": {
       "outlines": 0,
@@ -23,7 +23,7 @@
     "features/application/document-tabs/document-tabs.feature": {
       "outlines": 0,
       "scenario_declarations": 38,
-      "sha256": "72d8f66e2919b71f4e56b6a4a0e106e882b79a9a073d25badb26c786bd7722fb"
+      "sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     "features/application/file-menu/file-menu.feature": {
       "outlines": 0,
@@ -48,17 +48,17 @@
     "features/application/quick-access-toolbar/quick-access-toolbar.feature": {
       "outlines": 0,
       "scenario_declarations": 12,
-      "sha256": "e7546a712fe3f42b2c6f9885e47292b69cb3ef0ebe3105a9ad9a26bbed40bbbd"
+      "sha256": "b41c73273ab305e213f8ec983680c59d6e219015f085071e2756dd7ceb0a512e"
     },
     "features/application/ribbon-appearance/ribbon-appearance.feature": {
       "outlines": 0,
       "scenario_declarations": 18,
-      "sha256": "846aff6433de2b69e222aa0580140c53adb7fdbe3aeba04ccab2a69ddc8c9438"
+      "sha256": "7ebd05f3a8b347bd7eee5a132e7782ba9731a16f1bb0e8ac26a756fe5da312fa"
     },
     "features/application/ribbon-command-availability/ribbon-command-availability.feature": {
       "outlines": 0,
       "scenario_declarations": 3,
-      "sha256": "6d929998fec183a7df203e81cb5425c9e41130ec606c5e21406a298115420c7e"
+      "sha256": "59959ff37cf45000a2fc634c665c70a0b784ae721f6fe8db1dd7d4399d659a0d"
     },
     "features/application/ribbon-customization/ribbon-customization.feature": {
       "outlines": 3,
@@ -128,7 +128,7 @@
     "features/sketch/arc-center-point/scenario.feature": {
       "outlines": 0,
       "scenario_declarations": 10,
-      "sha256": "395c6bb1eaeb785f3eb934a29ed2084ad46adcccb67e8d3ec0d1348de5384f50"
+      "sha256": "35d69dce04958b8bb0b086450fce097d2cc8c99ca367600311c1b6284599469f"
     },
     "features/sketch/arc-tangent/scenario.feature": {
       "outlines": 0,
@@ -138,7 +138,7 @@
     "features/sketch/arc-three-point/scenario.feature": {
       "outlines": 0,
       "scenario_declarations": 16,
-      "sha256": "68f40e74e5d62f64072ce4cd9dd4277304810848c41acf0c4bfd7a5d5fb375c2"
+      "sha256": "8903f946c37beaed357b59f483346bab8d5d72af3ae86afafc6a8a99ca7dfc44"
     },
     "features/sketch/auto-dimension/scenario.feature": {
       "outlines": 0,
@@ -348,7 +348,7 @@
     "features/sketch/line/scenario.feature": {
       "outlines": 0,
       "scenario_declarations": 28,
-      "sha256": "e6a69fa7b7e300fa7683a52a09abaf7396e2550c1ab19aaab2dbdb6a06ca46ea"
+      "sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0"
     },
     "features/sketch/mirror/scenario.feature": {
       "outlines": 0,
@@ -408,7 +408,7 @@
     "features/sketch/precise-input/scenario.feature": {
       "outlines": 0,
       "scenario_declarations": 7,
-      "sha256": "655b02bd9241f192dd9bcd1eaa38263b0cbb7cb4db934c6738396a894b5ea6c3"
+      "sha256": "c899c48604a4310e5c0734482f8a436f5545f66db1fcbf365acf51fd733f1b44"
     },
     "features/sketch/project-cut-edges/scenario.feature": {
       "outlines": 0,
@@ -453,7 +453,7 @@
     "features/sketch/rectangle-two-point/scenario.feature": {
       "outlines": 0,
       "scenario_declarations": 10,
-      "sha256": "130621bae0d8b2196d399a885f76d6f3bb4c5050a41257459a9f02cd0ec4de17"
+      "sha256": "c5b51038c64283e9ec2a81e892ea8f912a06264a80eee7e42d65932f3146aa59"
     },
     "features/sketch/region-properties/scenario.feature": {
       "outlines": 0,

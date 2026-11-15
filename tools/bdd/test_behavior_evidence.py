@@ -103,6 +103,24 @@ class EvidenceFixture:
 
 
 class EvidenceTests(unittest.TestCase):
+    def test_capture_host_only_cannot_validate_without_attestation(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            fixture = EvidenceFixture(Path(folder))
+            fixture.row["capture_host_only"] = True
+            with self.assertRaisesRegex(ValueError, "capture_host_only"):
+                verify_receipt(
+                    fixture.root, fixture.receipt(), fixture.row, "source", "app"
+                )
+
+    def test_capture_only_source_cannot_validate_a_receipt(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            fixture = EvidenceFixture(Path(folder))
+            fixture.row["capture_only"] = True
+            with self.assertRaisesRegex(ValueError, "capture_only"):
+                verify_receipt(
+                    fixture.root, fixture.receipt(), fixture.row, "source", "app"
+                )
+
     def test_complete_scenario_receipt_is_accepted(self) -> None:
         with tempfile.TemporaryDirectory() as folder:
             fixture = EvidenceFixture(Path(folder))

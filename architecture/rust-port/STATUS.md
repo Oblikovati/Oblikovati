@@ -28,9 +28,11 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   its issue-scope duplication scan at 1.0269%. The two example packages now
   report 95.7% and 85.7% coverage; aggregate Go coverage is 84.6%. The branch
   is local and no release was published. The ledger also rejects stale receipts.
-- Scenario pin: `48987af7b5cbb06515bc6f30385f508382f34064`, a local snapshot
+- Scenario pin: `8ec8d2c1e569fbc5c8cd2ec85e9b9380c62c147f`, a local snapshot
   of the unversioned source. It is not an upstream commit. The live feature
-  inventory matched the pin at the last source check. Follow `bdd-workflow.md`
+  inventory matched the pin at the source sync. The source tags 38 observations
+  as capture-only and the remaining 34 document-creation cases as capture-host
+  only; these are excluded or blocked, not passing. Follow `bdd-workflow.md`
   when source files change; use a unique Cargo target for each active worktree.
 - The native harness injects input into the window frame loop. It does not prove
   OS-level key and mouse delivery. Close test windows and retain receipts.
@@ -109,11 +111,10 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   mesh quality and producer identity. Cache creation is unavailable on macOS
   and Windows until the running executable can be verified (#3964). See
   `receipts/2026-11-15-express-contract/` for the diagnostic run.
-- Document creation: the current full diagnostic passed 28 of 39 scenarios;
-  four stopped at undefined steps and seven at explicit fixture blockers. See
-  `receipts/2026-11-15-document-creation-current/`. Named template assets and
-  catalog configuration are missing (#3899, #3951, #3952); the scenario
-  owner's `BLOCKERS.md` lists the fixture requirements.
+- Document creation: the earlier diagnostic passed 28 of 39 scenarios; its
+  receipt is historical. The updated feature is capture-host only, and five
+  cases are also capture-only. The portable gate cannot claim these as passes;
+  see #3899, #3951, and #3952.
 - Document tabs: the diagnostic passed 9 of 38 scenarios (#3900). Two context
   menu scenarios passed on the merged revision; see
   `receipts/2026-11-15-tab-context-verified/`. Two Home menu scenarios need

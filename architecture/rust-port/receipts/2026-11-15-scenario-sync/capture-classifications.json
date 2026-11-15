@@ -1,0 +1,3362 @@
+{
+  "kind": "diagnostic only; not acceptance",
+  "source_files": {
+    "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature": "@application @documents @capture_host_only\r\nFeature: Create a document from a template\r\n\r\n  @needs_fixture\r\n  Scenario: Inspect metric and inch part templates\r\n    Given a document is open in the MCAD Software\r\n    And template grouping by document type is enabled\r\n    When the user presses Control+N\r\n    Then the new-document template chooser opens\r\n    And templates are grouped by document type\r\n    When the user selects the metric template folder\r\n    And the user selects the standard metric part template\r\n    Then the template details identify a part with millimeter units\r\n    When the user selects the English template folder\r\n    And the user selects the standard inch part template\r\n    Then the template details identify a part with inch units\r\n\r\n  Scenario: Cancel the template chooser\r\n    Given a document is open in the MCAD Software\r\n    And the new-document template chooser is open\r\n    When the user cancels the chooser\r\n    Then the chooser closes\r\n    And the previously active document remains displayed\r\n\r\n  @needs_fixture\r\n  Scenario: Inspect the current session's initial template selection\r\n    Given a part with an active sketch is displayed in the MCAD Software\r\n    When the user presses Control+N\r\n    Then the Create New File chooser opens over the part\r\n    And the template gallery is grouped by document type\r\n    And Metric is selected in the template folder tree\r\n    And Standard (mm).ipt is selected in the Part group\r\n    And the details identify a Part with millimeter units and Generic material\r\n    And Create and Cancel are available\r\n    And the existing part and sketch remain visible behind the chooser\r\n    When the user presses Escape\r\n    Then the chooser closes without creating a document\r\n    And the same part and sketch remain active\r\n\r\n  @needs_fixture\r\n  Scenario: Create a standard metric part\r\n    Given the new-document template chooser is open in the MCAD Software\r\n    When the user selects the metric template folder\r\n    And the user selects the standard metric part template\r\n    And the user chooses Create\r\n    Then a new part document becomes active\r\n    And its viewport contains no visible model geometry\r\n    And its model browser displays an origin and an end-of-part marker\r\n    And a new document tab is visible\r\n\r\n  @needs_fixture\r\n  Scenario: Create a standard metric assembly\r\n    Given the new-document template chooser is open in the MCAD Software\r\n    When the user selects the metric template folder\r\n    And the user selects the standard metric assembly template\r\n    Then the template details identify an assembly with millimeter units\r\n    When the user chooses Create\r\n    Then a new assembly document becomes active\r\n    And its viewport contains no visible components\r\n    And its model browser shows representations, relationships and origin entries\r\n    And the assembly ribbon offers commands to place and create components\r\n    And a new document tab is visible\r\n\r\n  @needs_fixture\r\n  Scenario: Create a drawing from a sheet template\r\n    Given the new-document template chooser is open in the MCAD Software\r\n    And a drawing template with a border and title block is available\r\n    When the user selects the drawing template\r\n    And the user chooses its Use Template preview\r\n    And the user chooses Create\r\n    Then a new drawing document becomes active\r\n    And its viewport displays a sheet with a border and title block\r\n    And the drawing browser lists the sheet and its border\r\n    And the ribbon offers drawing view commands\r\n    And a new document tab is visible\r\n\r\n  @needs_fixture\r\n  Scenario: Create a metric sheet-metal part\r\n    Given the new-document template chooser is open in the MCAD Software\r\n    When the user selects the metric template folder\r\n    And the user selects the metric sheet-metal part template\r\n    Then the template details identify a part with millimeter units\r\n    When the user chooses Create\r\n    Then a new part document becomes active\r\n    And its viewport contains no visible model geometry\r\n    And the browser shows a folded model and its origin\r\n    And the sheet-metal ribbon is active\r\n    And a new document tab is visible\r\n\r\n  @needs_fixture\r\n  Scenario: Collapse and expand a template group\r\n    Given the new-document template chooser is open in the MCAD Software\r\n    And the metric part template group is expanded\r\n    And a sheet-metal part template is selected\r\n    When the user collapses the part template group\r\n    Then its template tiles are hidden\r\n    And the assembly and drawing groups remain visible\r\n    And the selected template's details remain displayed\r\n    When the user expands the part template group\r\n    Then its template tiles are visible again\r\n    And the sheet-metal template remains selected\r\n\r\n  @needs_fixture\r\n  Scenario: Change template folders before selecting a new template\r\n    Given the new-document template chooser is open in the MCAD Software\r\n    And the metric sheet-metal template is selected\r\n    And its details show millimeter units\r\n    When the user selects the English template folder\r\n    Then the gallery shows the English folder's templates\r\n    And the details still identify the previously selected metric sheet-metal template\r\n    When the user selects the inch sheet-metal template\r\n    Then the template details identify a part with inch units\r\n\r\n  @needs_fixture\r\n  Scenario: Create a presentation and cancel initial model insertion\r\n    Given the new-document template chooser is open in the MCAD Software\r\n    When the user selects the metric presentation template\r\n    And the user chooses Create\r\n    Then a new presentation document becomes active\r\n    And an Insert dialog opens for an assembly file\r\n    When the user cancels the Insert dialog\r\n    Then the presentation remains open with an empty viewport\r\n    And the browser shows a scene\r\n    And the workspace displays a storyboard timeline and snapshot views panel\r\n    And the presentation ribbon offers Insert Model\r\n\r\n  @needs_fixture\r\n  Scenario: Display templates as details\r\n    Given the new-document template chooser is open in the MCAD Software\r\n    And the selected template folder contains templates\r\n    When the user opens the template display menu\r\n    Then the menu offers icon sizes, List, Details, and Grouped by Type\r\n    When the user chooses Details\r\n    Then the template gallery displays rows with Name, Size, and Type columns\r\n    And the template details pane remains visible\r\n\r\n  @needs_fixture\r\n  Scenario: Toggle template grouping by document type\r\n    Given the new-document template chooser is open in the MCAD Software\r\n    And the metric template folder is selected\r\n    And a standard metric part template's details are displayed\r\n    And templates are grouped by type\r\n    When the user clears Grouped by Type in the template display menu\r\n    Then the template gallery displays a flat collection without type group headings\r\n    And the details pane continues to display the metric part template information\r\n    When the user selects Grouped by Type in the template display menu\r\n    Then the gallery displays part, assembly and drawing group headings\r\n    And the details pane continues to display the metric part template information\r\n\r\n  @needs_fixture\r\n  Scenario: Select an assembly template in list view\r\n    Given the new-document template chooser is open in the MCAD Software\r\n    And the metric template folder is selected\r\n    And templates are grouped by type\r\n    When the user chooses List in the template display menu\r\n    Then the gallery displays compact template entries under type headings\r\n    And the template details pane remains visible\r\n    When the user selects the standard metric assembly template in the list\r\n    Then the details pane identifies an assembly with millimeter units\r\n    When the user chooses Medium icons in the template display menu\r\n    Then the gallery displays medium-sized template icons\r\n    And the details pane continues to identify the metric assembly template\r\n\r\n  @needs_fixture\r\n  Scenario: Navigate backward and forward through template folders\r\n    Given the new-document template chooser is open in the MCAD Software\r\n    And the selected template folder is not the English folder\r\n    When the user selects the English template folder\r\n    And the user selects the metric template folder\r\n    And the user chooses Back in the chooser navigation bar\r\n    Then the English folder is selected\r\n    And the gallery displays its inch templates\r\n    When the user chooses Forward in the chooser navigation bar\r\n    Then the metric folder is selected\r\n    And the gallery displays its metric templates\r\n\r\n  @needs_fixture\r\n  Scenario: Reopen the chooser after canceling a selected template\r\n    Given the new-document template chooser is open in the MCAD Software\r\n    And the metric folder and standard metric assembly template are selected\r\n    When the user cancels the chooser\r\n    And the user reopens the new-document chooser during the same session\r\n    Then the metric folder is selected\r\n    And the standard metric assembly template is selected\r\n    And its details identify an assembly with millimeter units\r\n\r\n  @needs_fixture\r\n  Scenario: Navigate home from a template folder\r\n    Given the new-document template chooser is open in the MCAD Software\r\n    And the metric template folder is selected\r\n    And the standard metric assembly template details are displayed\r\n    And the template root has no templates directly in it\r\n    When the user selects Home in the chooser navigation bar\r\n    Then the template root is selected in the folder tree\r\n    And the gallery type sections contain no template entries\r\n    And the metric assembly template details remain displayed\r\n    When the user chooses Back in the chooser navigation bar\r\n    Then the metric template folder and its gallery are displayed again\r\n\r\n  @needs_fixture\r\n  Scenario: Change template icon size\r\n    Given the new-document template chooser is open in the MCAD Software\r\n    And the metric folder is selected and templates are grouped by type\r\n    And the standard metric assembly template details are displayed\r\n    When the user chooses Extra large icons in the template display menu\r\n    Then the template gallery displays extra-large tiles\r\n    And the metric assembly template details remain displayed\r\n    When the user chooses Small icons in the template display menu\r\n    Then the template gallery displays small icons\r\n    And the metric assembly template details remain displayed\r\n    When the user chooses Medium icons in the template display menu\r\n    Then the template gallery displays medium-sized icons\r\n    And the metric assembly template details remain displayed\r\n\r\n  @needs_fixture\r\n  Scenario: Create a part by double-clicking its template\r\n    Given a part document is open in the MCAD Software\r\n    And the new-document template chooser is open\r\n    And the metric template folder is selected\r\n    When the user double-clicks the standard metric part template\r\n    Then the chooser closes\r\n    And a new part document becomes active\r\n    And its viewport contains no visible model geometry\r\n    And its model browser displays an origin and an end-of-part marker\r\n    And a new document tab is visible\r\n\r\n  @needs_fixture\r\n  Scenario: Create a selected part template with Enter\r\n    Given the new-document template chooser is open in the MCAD Software\r\n    And the metric template folder is selected\r\n    When the user selects the standard metric part template\r\n    And the user presses Enter\r\n    Then the chooser closes\r\n    And a new empty part document becomes active\r\n    And its model browser displays an origin and an end-of-part marker\r\n    And a new document tab is visible\r\n\r\n  Scenario: Dismiss the template chooser with Escape\r\n    Given a part document is active in the MCAD Software\r\n    And the new-document template chooser is open\r\n    When the user presses Escape\r\n    Then the chooser closes\r\n    And the original part remains active\r\n    And its viewport and browser are displayed\r\n    And no new document tab is created\r\n\r\n  @needs_fixture\r\n  Scenario: Inspect projects from the template chooser\r\n    Given the new-document template chooser is open in the MCAD Software\r\n    And a project is active\r\n    And a template is selected and its details are displayed\r\n    When the user chooses Projects in the chooser\r\n    Then a Projects dialog opens above the chooser\r\n    And it lists project names and locations\r\n    And the active project is marked\r\n    And the dialog displays a project settings tree\r\n    When the user chooses Done without changing the project\r\n    Then the Projects dialog closes\r\n    And the template chooser is displayed again\r\n    And the previously selected template details remain displayed\r\n\r\n  @needs_fixture\r\n  Scenario: Reverse an ascending template size sort in Details view\r\n    Given the new-document template chooser is open in the MCAD Software\r\n    And the metric template folder is selected\r\n    And the gallery is grouped by template type and displayed in Details view\r\n    And Size is the active sort with visible part templates ordered by increasing file size\r\n    And the standard metric part template details are displayed\r\n    When the user clicks the Size column header\r\n    Then the visible part templates are ordered by decreasing file size\r\n    And the standard metric part template details remain displayed\r\n    And the gallery remains grouped by template type\r\n\r\n  @needs_fixture\r\n  Scenario: Retain template sort order when reopening the chooser\r\n    Given the new-document template chooser is open in the MCAD Software\r\n    And the metric gallery is grouped by template type in Details view\r\n    And the visible part templates are sorted by decreasing file size\r\n    When the user chooses Medium icons in the template display menu\r\n    And the user cancels the chooser\r\n    And the user reopens the chooser in the same session\r\n    Then the metric template folder and medium icon view are displayed\r\n    When the user chooses Details in the template display menu\r\n    Then the visible part templates are ordered by decreasing file size\r\n    And the Size column indicates descending order\r\n\r\n  @needs_fixture\r\n  Scenario: Create a part after navigating to an empty template root\r\n    Given the new-document template chooser is open in the MCAD Software\r\n    And the standard metric part template is selected\r\n    And the template root contains no direct template entries\r\n    When the user chooses Home in the template chooser\r\n    Then the root is selected and its template groups are empty\r\n    And the standard metric part template details remain displayed\r\n    When the user chooses Create\r\n    Then the chooser closes\r\n    And a new empty part document becomes active\r\n    And its model browser displays an origin and an end-of-part marker\r\n    And a new document tab is visible\r\n\r\n  @needs_fixture\r\n  Scenario: Enable creation by selecting a template\r\n    Given the new-document template chooser is open in the MCAD Software\r\n    And no template is selected\r\n    And the selected template root has no direct template entries\r\n    And the template details are blank\r\n    And Create is disabled\r\n    When the user selects the metric template folder\r\n    Then template tiles are displayed\r\n    And Create remains disabled\r\n    When the user selects the standard metric assembly template\r\n    Then its assembly details are displayed\r\n    And Create is enabled\r\n\r\n  @needs_fixture\r\n  Scenario: Create the retained template after changing folders\r\n    Given the new-document template chooser is open in the MCAD Software\r\n    And the standard metric assembly template is selected\r\n    When the user selects the English template folder without selecting another template\r\n    Then the gallery displays the English folder templates\r\n    And the details still identify the metric assembly template\r\n    When the user chooses Create\r\n    Then the chooser closes\r\n    And a new empty assembly document becomes active\r\n    And its browser displays representations, relationships and origin entries\r\n    And a new document tab is visible\r\n\r\n  @needs_fixture @capture_only\r\n  Scenario: Cancel component selection for a drawing layout\r\n    Given a part document is active in the MCAD Software\r\n    And the new-document template chooser is open\r\n    And an inch drawing template with a populated assembly layout preview is available\r\n    When the user selects the inch drawing template\r\n    Then the chooser displays the template sheet and available layout previews\r\n    When the user selects the populated assembly layout preview\r\n    And the user chooses Create\r\n    Then the template chooser closes\r\n    And a component-selection dialog opens for a drawing view\r\n    And the dialog displays a document name field and a browse control\r\n    And it offers OK and Cancel\r\n    When the user cancels component selection\r\n    Then the component-selection dialog closes\r\n    And the original part document remains active\r\n    And no new drawing tab is displayed\r\n\r\n  @needs_fixture @capture_only\r\n  # Capture-only: no portable equivalent of this component and layout is supplied.\r\n  Scenario: Create a populated drawing layout with a component that needs updating\r\n    Given a part document is active in the MCAD Software\r\n    And a drawing template provides a populated layout with a parts list and a view\r\n    And the component-selection dialog will initially propose a part requiring an update\r\n    When the user selects the drawing template and populated layout\r\n    And the user chooses Create\r\n    Then the component-selection dialog displays the proposed component\r\n    When the user confirms that component in the component-selection dialog\r\n    Then a message identifies the component as needing an update\r\n    And the message says the drawing reflects the model's non-updated state\r\n    And the message includes a display preference and an OK control\r\n    When the user acknowledges the message\r\n    Then a new drawing document becomes active\r\n    And its sheet displays a border, title block and parts list\r\n    And the drawing browser lists a parts list and a view referencing the component\r\n    And a new document tab is visible\r\n\r\n  @needs_fixture @capture_only\r\n  Scenario: Cancel browsing for a drawing-layout component\r\n    Given a populated drawing layout is being created in the MCAD Software\r\n    And the component-selection dialog displays a document name\r\n    When the user chooses Browse beside the document name\r\n    Then a file-selection dialog opens above component selection\r\n    And it displays a folder and file list, a file name field and a file-type filter\r\n    And it displays a preview area and Open and Cancel controls\r\n    When the user cancels the file-selection dialog\r\n    Then the component-selection dialog is displayed again\r\n    And its previous document name remains displayed\r\n    When the user cancels component selection\r\n    Then the original document remains active\r\n    And no new drawing tab is displayed\r\n\r\n  @needs_fixture @capture_only\r\n  Scenario: Browse to a different component for a populated drawing layout\r\n    Given a populated drawing layout is being created in the MCAD Software\r\n    And the component-selection dialog displays an initial component\r\n    And the file-selection dialog can access the folder containing a different part file\r\n    And a different part file that needs updating is available\r\n    When the user chooses Browse beside the document name\r\n    And the user selects the different part file and choose Open\r\n    Then the component-selection dialog displays the selected file name\r\n    When the user confirms the selected component\r\n    Then a message identifies the selected component as needing an update\r\n    When the user acknowledges the message\r\n    Then a new drawing becomes active\r\n    And its parts list identifies the selected component\r\n    And its browser contains a view referencing the selected component\r\n\r\n\r\n\r\n\r\n  @needs_fixture @capture_only\r\n  Scenario: Display the observed drawing layout for the captured component\r\n    Given a part document is active in the MCAD Software\r\n    And the captured populated drawing layout and its component requiring an update are available\r\n    When the user selects the layout and chooses Create\r\n    Then the component-selection dialog displays the captured component\r\n    When the user confirms that component\r\n    Then an update-needed message says the drawing reflects the component's non-updated state\r\n    And the message includes a display preference and an OK control\r\n    When the user acknowledges the message\r\n    Then a drawing opens with a border, title block, and parts list\r\n    And the drawing browser lists a parts list and a view referencing that component\r\n    And no model geometry is visible on the sheet\r\n\r\n  @needs_fixture\r\n  Scenario: Reverse the template name order in grouped Details view\r\n    Given a part is active in the MCAD Software\r\n    And the new-document template chooser shows the metric folder in grouped Details view\r\n    And the previously selected standard inch part is displayed in the details pane\r\n    And the visible part section lists two Sheet Metal entries before two Standard entries\r\n    When the user clicks the Name column header\r\n    Then the visible part section lists the Standard entries before the Sheet Metal entries\r\n    And the details pane still identifies the standard inch part and inch units\r\n    When the user clicks the Name column header again\r\n    Then the visible part section lists the Sheet Metal entries before the Standard entries\r\n    And the details pane still identifies the standard inch part and inch units\r\n    When the user restores Medium icons and cancels the chooser\r\n    Then the chooser closes and the original part remains active\r\n\r\n  @needs_fixture\r\n  Scenario: Navigate adjacent part templates with arrow keys\r\n    Given a part is active in the MCAD Software\r\n    And the new-document chooser shows the metric folder grouped by type using Medium icons\r\n    And the part group displays Sheet Metal (mm) immediately before Standard (DIN)\r\n    When the user selects the Sheet Metal (mm) part template\r\n    Then its tile is selected and its details identify millimeter units\r\n    When the user presses Right\r\n    Then the Standard (DIN) part tile is selected\r\n    And the details identify Standard (DIN) and millimeter units\r\n    When the user presses Left\r\n    Then the Sheet Metal (mm) part tile is selected again\r\n    And its sheet-metal details are displayed\r\n    When the user presses Down\r\n    Then the template gallery scrolls down\r\n    And Sheet Metal (mm) remains selected with its details displayed\r\n    When the user presses Escape\r\n    Then the chooser closes and the original part remains active\r\n\r\n  @needs_fixture\r\n  Scenario: Navigate to template group endpoints with Home and End\r\n    Given a part is active in the MCAD Software\r\n    And the template chooser shows the metric folder grouped by type using Medium icons\r\n    And the Part group begins with Sheet Metal (DIN) and ends with Standard (mm)\r\n    And the Assembly group begins with Mold Design (DIN) and ends with Weldment (JIS)\r\n    When the user selects Sheet Metal (mm) in the Part group\r\n    And the user presses Home\r\n    Then Sheet Metal (DIN) is selected and identified in the details pane\r\n    When the user presses End\r\n    Then Standard (mm) is selected and identified in the details pane\r\n    When the user selects Mold Design (mm) in the Assembly group\r\n    And the user presses End\r\n    Then Weldment (JIS) is selected and identified in the details pane\r\n    When the user presses Home\r\n    Then Mold Design (DIN) is selected and identified in the details pane\r\n    When the user presses Escape\r\n    Then the chooser closes and the original part remains active\r\n\r\n  @needs_fixture\r\n  Scenario: Use horizontal arrows at Part template group boundaries\r\n    Given a part is active in the MCAD Software\r\n    And the template chooser shows the metric folder grouped by type using Medium icons\r\n    And the gallery has a horizontal scrollbar and is at its leftmost position\r\n    And the Part group begins with Sheet Metal (DIN) and ends with Standard (mm)\r\n    When the user selects Standard (mm) and presses Right\r\n    Then Standard (mm) remains selected and identified in the details pane\r\n    And the gallery scroll position advances within the Part group\r\n    When the user presses Left\r\n    Then Standard (DIN) is selected and identified in the details pane\r\n    When the user presses Home and then Left\r\n    Then Sheet Metal (DIN) remains selected and identified in the details pane\r\n    And the gallery returns to its leftmost horizontal position\r\n    When the user presses Escape\r\n    Then the chooser closes and the original part remains active\r\n\r\n  @needs_fixture\r\n  Scenario: Create from a selected template in a collapsed group\r\n    Given a part is active in the MCAD Software\r\n    And the template chooser shows the metric folder grouped by type\r\n    And Standard (mm) is selected in the expanded Part group\r\n    When the user collapses the Part group\r\n    Then its template tiles are hidden\r\n    And the details pane still identifies Standard (mm) as a millimeter part template\r\n    And Create remains enabled\r\n    When the user chooses Create\r\n    Then the chooser closes and a new empty part becomes active\r\n    And a new document tab is visible alongside the original part\r\n    When the user closes the new unedited part\r\n    Then the original part becomes active\r\n    When the user reopens the template chooser in the same session\r\n    Then the Part group remains collapsed\r\n    And the details pane identifies Standard (mm) and Create is enabled\r\n    When the user expands the Part group\r\n    Then Standard (mm) is shown as the selected template\r\n    When the user cancels the chooser\r\n    Then the original part remains active\r\n\r\n  @needs_fixture\r\n  Scenario: Press Enter after moving the template folder highlight with Up\r\n    Given a part is active in the MCAD Software\r\n    And the template chooser shows the metric folder and its grouped templates\r\n    And the details pane identifies the selected Standard (mm) part template\r\n    When the user clicks the Metric folder in the folder tree\r\n    And the user presses Up\r\n    Then the English folder is highlighted in the tree\r\n    And the metric template gallery remains visible\r\n    And the details pane still identifies Standard (mm)\r\n    When the user presses Enter\r\n    Then the chooser closes and a new empty part becomes active\r\n    And a new document tab appears alongside the original part\r\n    When the user closes the new unedited part\r\n    Then the original part becomes active\r\n\r\n  @needs_fixture\r\n  Scenario: Select templates with the secondary mouse button\r\n    Given a part is active in the MCAD Software\r\n    And the template chooser shows the English folder grouped by type using Medium icons\r\n    And the Part group contains Standard (in) and Sheet Metal (in)\r\n    When the user right-clicks the Standard (in) part template\r\n    Then Standard (in) is selected and its details show inch units\r\n    And no context menu is visible\r\n    When the user right-clicks the Sheet Metal (in) part template\r\n    Then Sheet Metal (in) is selected and its details show inch units\r\n    And no context menu is visible\r\n    When the user right-clicks empty space in the Part gallery\r\n    Then Sheet Metal (in) remains selected and its details remain displayed\r\n    And no context menu is visible\r\n    When the user presses Escape\r\n    Then the chooser closes and the original part remains active\r\n\r\n  @needs_fixture\r\n  Scenario: Click a folder highlighted by keyboard navigation\r\n    Given a part is active in the MCAD Software\r\n    And the template chooser shows the metric folder and its grouped templates\r\n    And the details pane identifies the selected Standard (mm) part template\r\n    When the user clicks Metric in the folder tree and presses Up\r\n    Then English is highlighted in the tree\r\n    And the metric gallery and Standard (mm) details remain visible\r\n    When the user clicks the highlighted English folder\r\n    Then the gallery displays the English folder templates\r\n    And the details pane still identifies Standard (mm) with millimeter units\r\n    When the user cancels the chooser\r\n    Then the original part remains active\r\n"
+  },
+  "scenarios": [
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Inspect metric and inch part templates",
+      "line": 5,
+      "classification": "blocked: capture host only",
+      "setup_error": "capture host only",
+      "steps": [
+        {
+          "line": 6,
+          "step": "a document is open in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "template grouping by document type is enabled",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 8,
+          "step": "the user presses Control+N",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 9,
+          "step": "the new-document template chooser opens",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 10,
+          "step": "templates are grouped by document type",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 11,
+          "step": "the user selects the metric template folder",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 12,
+          "step": "the user selects the standard metric part template",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 13,
+          "step": "the template details identify a part with millimeter units",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 14,
+          "step": "the user selects the English template folder",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 15,
+          "step": "the user selects the standard inch part template",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 16,
+          "step": "the template details identify a part with inch units",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Cancel the template chooser",
+      "line": 18,
+      "classification": "blocked: capture host only",
+      "setup_error": "capture host only",
+      "steps": [
+        {
+          "line": 19,
+          "step": "a document is open in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 20,
+          "step": "the new-document template chooser is open",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 21,
+          "step": "the user cancels the chooser",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 22,
+          "step": "the chooser closes",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 23,
+          "step": "the previously active document remains displayed",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Inspect the current session's initial template selection",
+      "line": 26,
+      "classification": "blocked: capture host only",
+      "setup_error": "capture host only",
+      "steps": [
+        {
+          "line": 27,
+          "step": "a part with an active sketch is displayed in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 28,
+          "step": "the user presses Control+N",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 29,
+          "step": "the Create New File chooser opens over the part",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 30,
+          "step": "the template gallery is grouped by document type",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 31,
+          "step": "Metric is selected in the template folder tree",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 32,
+          "step": "Standard (mm).ipt is selected in the Part group",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 33,
+          "step": "the details identify a Part with millimeter units and Generic material",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 34,
+          "step": "Create and Cancel are available",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 35,
+          "step": "the existing part and sketch remain visible behind the chooser",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 36,
+          "step": "the user presses Escape",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 37,
+          "step": "the chooser closes without creating a document",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 38,
+          "step": "the same part and sketch remain active",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Create a standard metric part",
+      "line": 41,
+      "classification": "blocked: capture host only",
+      "setup_error": "capture host only",
+      "steps": [
+        {
+          "line": 42,
+          "step": "the new-document template chooser is open in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 43,
+          "step": "the user selects the metric template folder",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 44,
+          "step": "the user selects the standard metric part template",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 45,
+          "step": "the user chooses Create",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 46,
+          "step": "a new part document becomes active",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 47,
+          "step": "its viewport contains no visible model geometry",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 48,
+          "step": "its model browser displays an origin and an end-of-part marker",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 49,
+          "step": "a new document tab is visible",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Create a standard metric assembly",
+      "line": 52,
+      "classification": "blocked: capture host only",
+      "setup_error": "capture host only",
+      "steps": [
+        {
+          "line": 53,
+          "step": "the new-document template chooser is open in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 54,
+          "step": "the user selects the metric template folder",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 55,
+          "step": "the user selects the standard metric assembly template",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 56,
+          "step": "the template details identify an assembly with millimeter units",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 57,
+          "step": "the user chooses Create",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 58,
+          "step": "a new assembly document becomes active",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 59,
+          "step": "its viewport contains no visible components",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 60,
+          "step": "its model browser shows representations, relationships and origin entries",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 61,
+          "step": "the assembly ribbon offers commands to place and create components",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 62,
+          "step": "a new document tab is visible",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Create a drawing from a sheet template",
+      "line": 65,
+      "classification": "blocked: capture host only",
+      "setup_error": "capture host only",
+      "steps": [
+        {
+          "line": 66,
+          "step": "the new-document template chooser is open in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 67,
+          "step": "a drawing template with a border and title block is available",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 68,
+          "step": "the user selects the drawing template",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 69,
+          "step": "the user chooses its Use Template preview",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 70,
+          "step": "the user chooses Create",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 71,
+          "step": "a new drawing document becomes active",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 72,
+          "step": "its viewport displays a sheet with a border and title block",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 73,
+          "step": "the drawing browser lists the sheet and its border",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 74,
+          "step": "the ribbon offers drawing view commands",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 75,
+          "step": "a new document tab is visible",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Create a metric sheet-metal part",
+      "line": 78,
+      "classification": "blocked: capture host only",
+      "setup_error": "capture host only",
+      "steps": [
+        {
+          "line": 79,
+          "step": "the new-document template chooser is open in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 80,
+          "step": "the user selects the metric template folder",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 81,
+          "step": "the user selects the metric sheet-metal part template",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 82,
+          "step": "the template details identify a part with millimeter units",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 83,
+          "step": "the user chooses Create",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 84,
+          "step": "a new part document becomes active",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 85,
+          "step": "its viewport contains no visible model geometry",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 86,
+          "step": "the browser shows a folded model and its origin",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 87,
+          "step": "the sheet-metal ribbon is active",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 88,
+          "step": "a new document tab is visible",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Collapse and expand a template group",
+      "line": 91,
+      "classification": "blocked: capture host only",
+      "setup_error": "capture host only",
+      "steps": [
+        {
+          "line": 92,
+          "step": "the new-document template chooser is open in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 93,
+          "step": "the metric part template group is expanded",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 94,
+          "step": "a sheet-metal part template is selected",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 95,
+          "step": "the user collapses the part template group",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 96,
+          "step": "its template tiles are hidden",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 97,
+          "step": "the assembly and drawing groups remain visible",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 98,
+          "step": "the selected template's details remain displayed",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 99,
+          "step": "the user expands the part template group",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 100,
+          "step": "its template tiles are visible again",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 101,
+          "step": "the sheet-metal template remains selected",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Change template folders before selecting a new template",
+      "line": 104,
+      "classification": "blocked: capture host only",
+      "setup_error": "capture host only",
+      "steps": [
+        {
+          "line": 105,
+          "step": "the new-document template chooser is open in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 106,
+          "step": "the metric sheet-metal template is selected",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 107,
+          "step": "its details show millimeter units",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 108,
+          "step": "the user selects the English template folder",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 109,
+          "step": "the gallery shows the English folder's templates",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 110,
+          "step": "the details still identify the previously selected metric sheet-metal template",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 111,
+          "step": "the user selects the inch sheet-metal template",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 112,
+          "step": "the template details identify a part with inch units",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Create a presentation and cancel initial model insertion",
+      "line": 115,
+      "classification": "blocked: capture host only",
+      "setup_error": "capture host only",
+      "steps": [
+        {
+          "line": 116,
+          "step": "the new-document template chooser is open in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 117,
+          "step": "the user selects the metric presentation template",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 118,
+          "step": "the user chooses Create",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 119,
+          "step": "a new presentation document becomes active",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 120,
+          "step": "an Insert dialog opens for an assembly file",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 121,
+          "step": "the user cancels the Insert dialog",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 122,
+          "step": "the presentation remains open with an empty viewport",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 123,
+          "step": "the browser shows a scene",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 124,
+          "step": "the workspace displays a storyboard timeline and snapshot views panel",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 125,
+          "step": "the presentation ribbon offers Insert Model",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Display templates as details",
+      "line": 128,
+      "classification": "blocked: capture host only",
+      "setup_error": "capture host only",
+      "steps": [
+        {
+          "line": 129,
+          "step": "the new-document template chooser is open in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 130,
+          "step": "the selected template folder contains templates",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 131,
+          "step": "the user opens the template display menu",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 132,
+          "step": "the menu offers icon sizes, List, Details, and Grouped by Type",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 133,
+          "step": "the user chooses Details",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 134,
+          "step": "the template gallery displays rows with Name, Size, and Type columns",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 135,
+          "step": "the template details pane remains visible",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Toggle template grouping by document type",
+      "line": 138,
+      "classification": "blocked: capture host only",
+      "setup_error": "capture host only",
+      "steps": [
+        {
+          "line": 139,
+          "step": "the new-document template chooser is open in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 140,
+          "step": "the metric template folder is selected",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 141,
+          "step": "a standard metric part template's details are displayed",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 142,
+          "step": "templates are grouped by type",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 143,
+          "step": "the user clears Grouped by Type in the template display menu",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 144,
+          "step": "the template gallery displays a flat collection without type group headings",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 145,
+          "step": "the details pane continues to display the metric part template information",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 146,
+          "step": "the user selects Grouped by Type in the template display menu",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 147,
+          "step": "the gallery displays part, assembly and drawing group headings",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 148,
+          "step": "the details pane continues to display the metric part template information",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Select an assembly template in list view",
+      "line": 151,
+      "classification": "blocked: capture host only",
+      "setup_error": "capture host only",
+      "steps": [
+        {
+          "line": 152,
+          "step": "the new-document template chooser is open in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 153,
+          "step": "the metric template folder is selected",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 154,
+          "step": "templates are grouped by type",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 155,
+          "step": "the user chooses List in the template display menu",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 156,
+          "step": "the gallery displays compact template entries under type headings",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 157,
+          "step": "the template details pane remains visible",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 158,
+          "step": "the user selects the standard metric assembly template in the list",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 159,
+          "step": "the details pane identifies an assembly with millimeter units",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 160,
+          "step": "the user chooses Medium icons in the template display menu",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 161,
+          "step": "the gallery displays medium-sized template icons",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 162,
+          "step": "the details pane continues to identify the metric assembly template",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Navigate backward and forward through template folders",
+      "line": 165,
+      "classification": "blocked: capture host only",
+      "setup_error": "capture host only",
+      "steps": [
+        {
+          "line": 166,
+          "step": "the new-document template chooser is open in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 167,
+          "step": "the selected template folder is not the English folder",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 168,
+          "step": "the user selects the English template folder",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 169,
+          "step": "the user selects the metric template folder",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 170,
+          "step": "the user chooses Back in the chooser navigation bar",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 171,
+          "step": "the English folder is selected",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 172,
+          "step": "the gallery displays its inch templates",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 173,
+          "step": "the user chooses Forward in the chooser navigation bar",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 174,
+          "step": "the metric folder is selected",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 175,
+          "step": "the gallery displays its metric templates",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Reopen the chooser after canceling a selected template",
+      "line": 178,
+      "classification": "blocked: capture host only",
+      "setup_error": "capture host only",
+      "steps": [
+        {
+          "line": 179,
+          "step": "the new-document template chooser is open in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 180,
+          "step": "the metric folder and standard metric assembly template are selected",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 181,
+          "step": "the user cancels the chooser",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 182,
+          "step": "the user reopens the new-document chooser during the same session",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 183,
+          "step": "the metric folder is selected",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 184,
+          "step": "the standard metric assembly template is selected",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 185,
+          "step": "its details identify an assembly with millimeter units",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Navigate home from a template folder",
+      "line": 188,
+      "classification": "blocked: capture host only",
+      "setup_error": "capture host only",
+      "steps": [
+        {
+          "line": 189,
+          "step": "the new-document template chooser is open in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 190,
+          "step": "the metric template folder is selected",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 191,
+          "step": "the standard metric assembly template details are displayed",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 192,
+          "step": "the template root has no templates directly in it",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 193,
+          "step": "the user selects Home in the chooser navigation bar",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 194,
+          "step": "the template root is selected in the folder tree",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 195,
+          "step": "the gallery type sections contain no template entries",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 196,
+          "step": "the metric assembly template details remain displayed",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 197,
+          "step": "the user chooses Back in the chooser navigation bar",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 198,
+          "step": "the metric template folder and its gallery are displayed again",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Change template icon size",
+      "line": 201,
+      "classification": "blocked: capture host only",
+      "setup_error": "capture host only",
+      "steps": [
+        {
+          "line": 202,
+          "step": "the new-document template chooser is open in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 203,
+          "step": "the metric folder is selected and templates are grouped by type",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 204,
+          "step": "the standard metric assembly template details are displayed",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 205,
+          "step": "the user chooses Extra large icons in the template display menu",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 206,
+          "step": "the template gallery displays extra-large tiles",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 207,
+          "step": "the metric assembly template details remain displayed",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 208,
+          "step": "the user chooses Small icons in the template display menu",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 209,
+          "step": "the template gallery displays small icons",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 210,
+          "step": "the metric assembly template details remain displayed",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 211,
+          "step": "the user chooses Medium icons in the template display menu",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 212,
+          "step": "the template gallery displays medium-sized icons",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 213,
+          "step": "the metric assembly template details remain displayed",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Create a part by double-clicking its template",
+      "line": 216,
+      "classification": "blocked: capture host only",
+      "setup_error": "capture host only",
+      "steps": [
+        {
+          "line": 217,
+          "step": "a part document is open in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 218,
+          "step": "the new-document template chooser is open",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 219,
+          "step": "the metric template folder is selected",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 220,
+          "step": "the user double-clicks the standard metric part template",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 221,
+          "step": "the chooser closes",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 222,
+          "step": "a new part document becomes active",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 223,
+          "step": "its viewport contains no visible model geometry",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 224,
+          "step": "its model browser displays an origin and an end-of-part marker",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 225,
+          "step": "a new document tab is visible",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Create a selected part template with Enter",
+      "line": 228,
+      "classification": "blocked: capture host only",
+      "setup_error": "capture host only",
+      "steps": [
+        {
+          "line": 229,
+          "step": "the new-document template chooser is open in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 230,
+          "step": "the metric template folder is selected",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 231,
+          "step": "the user selects the standard metric part template",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 232,
+          "step": "the user presses Enter",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 233,
+          "step": "the chooser closes",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 234,
+          "step": "a new empty part document becomes active",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 235,
+          "step": "its model browser displays an origin and an end-of-part marker",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 236,
+          "step": "a new document tab is visible",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Dismiss the template chooser with Escape",
+      "line": 238,
+      "classification": "blocked: capture host only",
+      "setup_error": "capture host only",
+      "steps": [
+        {
+          "line": 239,
+          "step": "a part document is active in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 240,
+          "step": "the new-document template chooser is open",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 241,
+          "step": "the user presses Escape",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 242,
+          "step": "the chooser closes",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 243,
+          "step": "the original part remains active",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 244,
+          "step": "its viewport and browser are displayed",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 245,
+          "step": "no new document tab is created",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Inspect projects from the template chooser",
+      "line": 248,
+      "classification": "blocked: capture host only",
+      "setup_error": "capture host only",
+      "steps": [
+        {
+          "line": 249,
+          "step": "the new-document template chooser is open in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 250,
+          "step": "a project is active",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 251,
+          "step": "a template is selected and its details are displayed",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 252,
+          "step": "the user chooses Projects in the chooser",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 253,
+          "step": "a Projects dialog opens above the chooser",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 254,
+          "step": "it lists project names and locations",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 255,
+          "step": "the active project is marked",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 256,
+          "step": "the dialog displays a project settings tree",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 257,
+          "step": "the user chooses Done without changing the project",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 258,
+          "step": "the Projects dialog closes",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 259,
+          "step": "the template chooser is displayed again",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 260,
+          "step": "the previously selected template details remain displayed",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Reverse an ascending template size sort in Details view",
+      "line": 263,
+      "classification": "blocked: capture host only",
+      "setup_error": "capture host only",
+      "steps": [
+        {
+          "line": 264,
+          "step": "the new-document template chooser is open in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 265,
+          "step": "the metric template folder is selected",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 266,
+          "step": "the gallery is grouped by template type and displayed in Details view",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 267,
+          "step": "Size is the active sort with visible part templates ordered by increasing file size",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 268,
+          "step": "the standard metric part template details are displayed",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 269,
+          "step": "the user clicks the Size column header",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 270,
+          "step": "the visible part templates are ordered by decreasing file size",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 271,
+          "step": "the standard metric part template details remain displayed",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 272,
+          "step": "the gallery remains grouped by template type",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Retain template sort order when reopening the chooser",
+      "line": 275,
+      "classification": "blocked: capture host only",
+      "setup_error": "capture host only",
+      "steps": [
+        {
+          "line": 276,
+          "step": "the new-document template chooser is open in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 277,
+          "step": "the metric gallery is grouped by template type in Details view",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 278,
+          "step": "the visible part templates are sorted by decreasing file size",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 279,
+          "step": "the user chooses Medium icons in the template display menu",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 280,
+          "step": "the user cancels the chooser",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 281,
+          "step": "the user reopens the chooser in the same session",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 282,
+          "step": "the metric template folder and medium icon view are displayed",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 283,
+          "step": "the user chooses Details in the template display menu",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 284,
+          "step": "the visible part templates are ordered by decreasing file size",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 285,
+          "step": "the Size column indicates descending order",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Create a part after navigating to an empty template root",
+      "line": 288,
+      "classification": "blocked: capture host only",
+      "setup_error": "capture host only",
+      "steps": [
+        {
+          "line": 289,
+          "step": "the new-document template chooser is open in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 290,
+          "step": "the standard metric part template is selected",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 291,
+          "step": "the template root contains no direct template entries",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 292,
+          "step": "the user chooses Home in the template chooser",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 293,
+          "step": "the root is selected and its template groups are empty",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 294,
+          "step": "the standard metric part template details remain displayed",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 295,
+          "step": "the user chooses Create",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 296,
+          "step": "the chooser closes",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 297,
+          "step": "a new empty part document becomes active",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 298,
+          "step": "its model browser displays an origin and an end-of-part marker",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 299,
+          "step": "a new document tab is visible",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Enable creation by selecting a template",
+      "line": 302,
+      "classification": "blocked: capture host only",
+      "setup_error": "capture host only",
+      "steps": [
+        {
+          "line": 303,
+          "step": "the new-document template chooser is open in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 304,
+          "step": "no template is selected",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 305,
+          "step": "the selected template root has no direct template entries",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 306,
+          "step": "the template details are blank",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 307,
+          "step": "Create is disabled",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 308,
+          "step": "the user selects the metric template folder",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 309,
+          "step": "template tiles are displayed",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 310,
+          "step": "Create remains disabled",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 311,
+          "step": "the user selects the standard metric assembly template",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 312,
+          "step": "its assembly details are displayed",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 313,
+          "step": "Create is enabled",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Create the retained template after changing folders",
+      "line": 316,
+      "classification": "blocked: capture host only",
+      "setup_error": "capture host only",
+      "steps": [
+        {
+          "line": 317,
+          "step": "the new-document template chooser is open in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 318,
+          "step": "the standard metric assembly template is selected",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 319,
+          "step": "the user selects the English template folder without selecting another template",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 320,
+          "step": "the gallery displays the English folder templates",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 321,
+          "step": "the details still identify the metric assembly template",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 322,
+          "step": "the user chooses Create",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 323,
+          "step": "the chooser closes",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 324,
+          "step": "a new empty assembly document becomes active",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 325,
+          "step": "its browser displays representations, relationships and origin entries",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 326,
+          "step": "a new document tab is visible",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Cancel component selection for a drawing layout",
+      "line": 329,
+      "classification": "excluded: capture only",
+      "setup_error": "capture only",
+      "steps": [
+        {
+          "line": 330,
+          "step": "a part document is active in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 331,
+          "step": "the new-document template chooser is open",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 332,
+          "step": "an inch drawing template with a populated assembly layout preview is available",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 333,
+          "step": "the user selects the inch drawing template",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 334,
+          "step": "the chooser displays the template sheet and available layout previews",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 335,
+          "step": "the user selects the populated assembly layout preview",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 336,
+          "step": "the user chooses Create",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 337,
+          "step": "the template chooser closes",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 338,
+          "step": "a component-selection dialog opens for a drawing view",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 339,
+          "step": "the dialog displays a document name field and a browse control",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 340,
+          "step": "it offers OK and Cancel",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 341,
+          "step": "the user cancels component selection",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 342,
+          "step": "the component-selection dialog closes",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 343,
+          "step": "the original part document remains active",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 344,
+          "step": "no new drawing tab is displayed",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Create a populated drawing layout with a component that needs updating",
+      "line": 348,
+      "classification": "excluded: capture only",
+      "setup_error": "capture only",
+      "steps": [
+        {
+          "line": 349,
+          "step": "a part document is active in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 350,
+          "step": "a drawing template provides a populated layout with a parts list and a view",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 351,
+          "step": "the component-selection dialog will initially propose a part requiring an update",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 352,
+          "step": "the user selects the drawing template and populated layout",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 353,
+          "step": "the user chooses Create",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 354,
+          "step": "the component-selection dialog displays the proposed component",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 355,
+          "step": "the user confirms that component in the component-selection dialog",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 356,
+          "step": "a message identifies the component as needing an update",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 357,
+          "step": "the message says the drawing reflects the model's non-updated state",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 358,
+          "step": "the message includes a display preference and an OK control",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 359,
+          "step": "the user acknowledges the message",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 360,
+          "step": "a new drawing document becomes active",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 361,
+          "step": "its sheet displays a border, title block and parts list",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 362,
+          "step": "the drawing browser lists a parts list and a view referencing the component",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 363,
+          "step": "a new document tab is visible",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Cancel browsing for a drawing-layout component",
+      "line": 366,
+      "classification": "excluded: capture only",
+      "setup_error": "capture only",
+      "steps": [
+        {
+          "line": 367,
+          "step": "a populated drawing layout is being created in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 368,
+          "step": "the component-selection dialog displays a document name",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 369,
+          "step": "the user chooses Browse beside the document name",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 370,
+          "step": "a file-selection dialog opens above component selection",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 371,
+          "step": "it displays a folder and file list, a file name field and a file-type filter",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 372,
+          "step": "it displays a preview area and Open and Cancel controls",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 373,
+          "step": "the user cancels the file-selection dialog",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 374,
+          "step": "the component-selection dialog is displayed again",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 375,
+          "step": "its previous document name remains displayed",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 376,
+          "step": "the user cancels component selection",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 377,
+          "step": "the original document remains active",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 378,
+          "step": "no new drawing tab is displayed",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Browse to a different component for a populated drawing layout",
+      "line": 381,
+      "classification": "excluded: capture only",
+      "setup_error": "capture only",
+      "steps": [
+        {
+          "line": 382,
+          "step": "a populated drawing layout is being created in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 383,
+          "step": "the component-selection dialog displays an initial component",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 384,
+          "step": "the file-selection dialog can access the folder containing a different part file",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 385,
+          "step": "a different part file that needs updating is available",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 386,
+          "step": "the user chooses Browse beside the document name",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 387,
+          "step": "the user selects the different part file and choose Open",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 388,
+          "step": "the component-selection dialog displays the selected file name",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 389,
+          "step": "the user confirms the selected component",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 390,
+          "step": "a message identifies the selected component as needing an update",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 391,
+          "step": "the user acknowledges the message",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 392,
+          "step": "a new drawing becomes active",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 393,
+          "step": "its parts list identifies the selected component",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 394,
+          "step": "its browser contains a view referencing the selected component",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Display the observed drawing layout for the captured component",
+      "line": 400,
+      "classification": "excluded: capture only",
+      "setup_error": "capture only",
+      "steps": [
+        {
+          "line": 401,
+          "step": "a part document is active in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 402,
+          "step": "the captured populated drawing layout and its component requiring an update are available",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 403,
+          "step": "the user selects the layout and chooses Create",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 404,
+          "step": "the component-selection dialog displays the captured component",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 405,
+          "step": "the user confirms that component",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 406,
+          "step": "an update-needed message says the drawing reflects the component's non-updated state",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 407,
+          "step": "the message includes a display preference and an OK control",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 408,
+          "step": "the user acknowledges the message",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 409,
+          "step": "a drawing opens with a border, title block, and parts list",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 410,
+          "step": "the drawing browser lists a parts list and a view referencing that component",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 411,
+          "step": "no model geometry is visible on the sheet",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Reverse the template name order in grouped Details view",
+      "line": 414,
+      "classification": "blocked: capture host only",
+      "setup_error": "capture host only",
+      "steps": [
+        {
+          "line": 415,
+          "step": "a part is active in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 416,
+          "step": "the new-document template chooser shows the metric folder in grouped Details view",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 417,
+          "step": "the previously selected standard inch part is displayed in the details pane",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 418,
+          "step": "the visible part section lists two Sheet Metal entries before two Standard entries",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 419,
+          "step": "the user clicks the Name column header",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 420,
+          "step": "the visible part section lists the Standard entries before the Sheet Metal entries",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 421,
+          "step": "the details pane still identifies the standard inch part and inch units",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 422,
+          "step": "the user clicks the Name column header again",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 423,
+          "step": "the visible part section lists the Sheet Metal entries before the Standard entries",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 424,
+          "step": "the details pane still identifies the standard inch part and inch units",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 425,
+          "step": "the user restores Medium icons and cancels the chooser",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 426,
+          "step": "the chooser closes and the original part remains active",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Navigate adjacent part templates with arrow keys",
+      "line": 429,
+      "classification": "blocked: capture host only",
+      "setup_error": "capture host only",
+      "steps": [
+        {
+          "line": 430,
+          "step": "a part is active in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 431,
+          "step": "the new-document chooser shows the metric folder grouped by type using Medium icons",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 432,
+          "step": "the part group displays Sheet Metal (mm) immediately before Standard (DIN)",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 433,
+          "step": "the user selects the Sheet Metal (mm) part template",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 434,
+          "step": "its tile is selected and its details identify millimeter units",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 435,
+          "step": "the user presses Right",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 436,
+          "step": "the Standard (DIN) part tile is selected",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 437,
+          "step": "the details identify Standard (DIN) and millimeter units",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 438,
+          "step": "the user presses Left",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 439,
+          "step": "the Sheet Metal (mm) part tile is selected again",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 440,
+          "step": "its sheet-metal details are displayed",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 441,
+          "step": "the user presses Down",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 442,
+          "step": "the template gallery scrolls down",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 443,
+          "step": "Sheet Metal (mm) remains selected with its details displayed",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 444,
+          "step": "the user presses Escape",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 445,
+          "step": "the chooser closes and the original part remains active",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Navigate to template group endpoints with Home and End",
+      "line": 448,
+      "classification": "blocked: capture host only",
+      "setup_error": "capture host only",
+      "steps": [
+        {
+          "line": 449,
+          "step": "a part is active in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 450,
+          "step": "the template chooser shows the metric folder grouped by type using Medium icons",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 451,
+          "step": "the Part group begins with Sheet Metal (DIN) and ends with Standard (mm)",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 452,
+          "step": "the Assembly group begins with Mold Design (DIN) and ends with Weldment (JIS)",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 453,
+          "step": "the user selects Sheet Metal (mm) in the Part group",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 454,
+          "step": "the user presses Home",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 455,
+          "step": "Sheet Metal (DIN) is selected and identified in the details pane",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 456,
+          "step": "the user presses End",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 457,
+          "step": "Standard (mm) is selected and identified in the details pane",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 458,
+          "step": "the user selects Mold Design (mm) in the Assembly group",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 459,
+          "step": "the user presses End",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 460,
+          "step": "Weldment (JIS) is selected and identified in the details pane",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 461,
+          "step": "the user presses Home",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 462,
+          "step": "Mold Design (DIN) is selected and identified in the details pane",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 463,
+          "step": "the user presses Escape",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 464,
+          "step": "the chooser closes and the original part remains active",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Use horizontal arrows at Part template group boundaries",
+      "line": 467,
+      "classification": "blocked: capture host only",
+      "setup_error": "capture host only",
+      "steps": [
+        {
+          "line": 468,
+          "step": "a part is active in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 469,
+          "step": "the template chooser shows the metric folder grouped by type using Medium icons",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 470,
+          "step": "the gallery has a horizontal scrollbar and is at its leftmost position",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 471,
+          "step": "the Part group begins with Sheet Metal (DIN) and ends with Standard (mm)",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 472,
+          "step": "the user selects Standard (mm) and presses Right",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 473,
+          "step": "Standard (mm) remains selected and identified in the details pane",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 474,
+          "step": "the gallery scroll position advances within the Part group",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 475,
+          "step": "the user presses Left",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 476,
+          "step": "Standard (DIN) is selected and identified in the details pane",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 477,
+          "step": "the user presses Home and then Left",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 478,
+          "step": "Sheet Metal (DIN) remains selected and identified in the details pane",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 479,
+          "step": "the gallery returns to its leftmost horizontal position",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 480,
+          "step": "the user presses Escape",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 481,
+          "step": "the chooser closes and the original part remains active",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Create from a selected template in a collapsed group",
+      "line": 484,
+      "classification": "blocked: capture host only",
+      "setup_error": "capture host only",
+      "steps": [
+        {
+          "line": 485,
+          "step": "a part is active in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 486,
+          "step": "the template chooser shows the metric folder grouped by type",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 487,
+          "step": "Standard (mm) is selected in the expanded Part group",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 488,
+          "step": "the user collapses the Part group",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 489,
+          "step": "its template tiles are hidden",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 490,
+          "step": "the details pane still identifies Standard (mm) as a millimeter part template",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 491,
+          "step": "Create remains enabled",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 492,
+          "step": "the user chooses Create",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 493,
+          "step": "the chooser closes and a new empty part becomes active",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 494,
+          "step": "a new document tab is visible alongside the original part",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 495,
+          "step": "the user closes the new unedited part",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 496,
+          "step": "the original part becomes active",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 497,
+          "step": "the user reopens the template chooser in the same session",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 498,
+          "step": "the Part group remains collapsed",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 499,
+          "step": "the details pane identifies Standard (mm) and Create is enabled",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 500,
+          "step": "the user expands the Part group",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 501,
+          "step": "Standard (mm) is shown as the selected template",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 502,
+          "step": "the user cancels the chooser",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 503,
+          "step": "the original part remains active",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Press Enter after moving the template folder highlight with Up",
+      "line": 506,
+      "classification": "blocked: capture host only",
+      "setup_error": "capture host only",
+      "steps": [
+        {
+          "line": 507,
+          "step": "a part is active in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 508,
+          "step": "the template chooser shows the metric folder and its grouped templates",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 509,
+          "step": "the details pane identifies the selected Standard (mm) part template",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 510,
+          "step": "the user clicks the Metric folder in the folder tree",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 511,
+          "step": "the user presses Up",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 512,
+          "step": "the English folder is highlighted in the tree",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 513,
+          "step": "the metric template gallery remains visible",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 514,
+          "step": "the details pane still identifies Standard (mm)",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 515,
+          "step": "the user presses Enter",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 516,
+          "step": "the chooser closes and a new empty part becomes active",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 517,
+          "step": "a new document tab appears alongside the original part",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 518,
+          "step": "the user closes the new unedited part",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 519,
+          "step": "the original part becomes active",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Select templates with the secondary mouse button",
+      "line": 522,
+      "classification": "blocked: capture host only",
+      "setup_error": "capture host only",
+      "steps": [
+        {
+          "line": 523,
+          "step": "a part is active in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 524,
+          "step": "the template chooser shows the English folder grouped by type using Medium icons",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 525,
+          "step": "the Part group contains Standard (in) and Sheet Metal (in)",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 526,
+          "step": "the user right-clicks the Standard (in) part template",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 527,
+          "step": "Standard (in) is selected and its details show inch units",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 528,
+          "step": "no context menu is visible",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 529,
+          "step": "the user right-clicks the Sheet Metal (in) part template",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 530,
+          "step": "Sheet Metal (in) is selected and its details show inch units",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 531,
+          "step": "no context menu is visible",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 532,
+          "step": "the user right-clicks empty space in the Part gallery",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 533,
+          "step": "Sheet Metal (in) remains selected and its details remain displayed",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 534,
+          "step": "no context menu is visible",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 535,
+          "step": "the user presses Escape",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 536,
+          "step": "the chooser closes and the original part remains active",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-scenario-sync-checkout/features/application/document-creation/document-creation.feature",
+      "scenario": "Click a folder highlighted by keyboard navigation",
+      "line": 539,
+      "classification": "blocked: capture host only",
+      "setup_error": "capture host only",
+      "steps": [
+        {
+          "line": 540,
+          "step": "a part is active in the MCAD Software",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 541,
+          "step": "the template chooser shows the metric folder and its grouped templates",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 542,
+          "step": "the details pane identifies the selected Standard (mm) part template",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 543,
+          "step": "the user clicks Metric in the folder tree and presses Up",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 544,
+          "step": "English is highlighted in the tree",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 545,
+          "step": "the metric gallery and Standard (mm) details remain visible",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 546,
+          "step": "the user clicks the highlighted English folder",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 547,
+          "step": "the gallery displays the English folder templates",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 548,
+          "step": "the details pane still identifies Standard (mm) with millimeter units",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 549,
+          "step": "the user cancels the chooser",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 550,
+          "step": "the original part remains active",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    }
+  ]
+}

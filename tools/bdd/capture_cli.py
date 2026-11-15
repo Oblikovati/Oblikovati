@@ -31,7 +31,10 @@ class NativeCargoRun:
     """Run the real native Cucumber test and retain its output; example: NativeCargoRun(root, 'application')."""
 
     def __init__(
-        self, root: Path, area: str, launch: Callable[..., subprocess.Popen[str]] = subprocess.Popen
+        self,
+        root: Path,
+        area: str,
+        launch: Callable[..., subprocess.Popen[str]] = subprocess.Popen,
     ) -> None:
         self.root = root
         self.area = area
@@ -50,8 +53,12 @@ class NativeCargoRun:
 
     def _stream_native(self, environment: dict[str, str], output: TextIO) -> int:
         with self.launch(
-            native_command(self.area), cwd=self.root, env=environment,
-            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+            native_command(self.area),
+            cwd=self.root,
+            env=environment,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
         ) as child:
             if child.stdout is None:
                 raise ValueError("native runner stdout: expected a readable pipe")
@@ -105,7 +112,12 @@ def require_current_classification(
 ) -> None:
     """Refuse blocked or stale reviewed source; example: require_current_classification(inventory, row, classification, id)."""
     validate_classification(classification)
-    if row.get("source_error") or classification["state"] in ("blocked", "excluded"):
+    if (
+        row.get("capture_only")
+        or row.get("capture_host_only")
+        or row.get("source_error")
+        or classification["state"] in ("blocked", "excluded")
+    ):
         raise ValueError(f"scenario {identifier!r}: expected valid, non-blocked source")
     expected = (inventory.get("source_revision"), row.get("source_sha256"))
     actual = (
@@ -198,7 +210,8 @@ def main() -> None:
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--renderer", required=True)
     parser.add_argument(
-        "--capture", help="PNG filename for an ordinary scenario when the run creates multiple captures"
+        "--capture",
+        help="PNG filename for an ordinary scenario when the run creates multiple captures",
     )
     args = parser.parse_args()
     request = prepare_request(

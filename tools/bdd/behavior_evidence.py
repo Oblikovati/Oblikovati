@@ -161,7 +161,9 @@ def example_capture_name(row: Mapping[str, object], example: object) -> str:
     line, _ = example_values(example)
     path = row.get("path")
     if not isinstance(path, str) or not path.startswith("features/"):
-        raise ValueError(f"outline feature path {path!r}: expected a features/ relative path")
+        raise ValueError(
+            f"outline feature path {path!r}: expected a features/ relative path"
+        )
     digest = hashlib.sha256(path.encode("utf-8")).hexdigest()
     return f"example-{digest}-{line}.png"
 
@@ -269,13 +271,17 @@ def check_capture(root: Path, artifact: object) -> None:
 
 
 def check_outline_captures(
-    root: Path, receipt: Mapping[str, object], row: Mapping[str, object],
+    root: Path,
+    receipt: Mapping[str, object],
+    row: Mapping[str, object],
     folder: Path | None = None,
 ) -> None:
     """Require one matching image per example; for example, check_outline_captures(root, receipt, row)."""
     captures, examples = receipt.get("captures"), row.get("examples")
     if not isinstance(captures, list) or not isinstance(examples, list) or not examples:
-        raise ValueError(f"outline captures {captures!r}: expected one per source example")
+        raise ValueError(
+            f"outline captures {captures!r}: expected one per source example"
+        )
     expected = {
         example_values(example)[0]: example_capture_name(row, example)
         for example in examples
@@ -284,11 +290,15 @@ def check_outline_captures(
         raise ValueError(f"outline captures {captures!r}: expected unique source lines")
     actual = dict(capture_identity(root, capture, folder) for capture in captures)
     if len(actual) != len(captures):
-        raise ValueError(f"outline captures {captures!r}: expected unique capture lines")
+        raise ValueError(
+            f"outline captures {captures!r}: expected unique capture lines"
+        )
     require_equal("outline capture identities", actual, expected)
 
 
-def capture_identity(root: Path, capture: object, folder: Path | None) -> tuple[int, str]:
+def capture_identity(
+    root: Path, capture: object, folder: Path | None
+) -> tuple[int, str]:
     """Check a capture's line and file; for example, capture_identity(root, entry, folder)."""
     if not isinstance(capture, dict) or set(capture) != {"line", "artifact"}:
         raise ValueError(f"outline capture {capture!r}: expected line and artifact")
@@ -297,7 +307,9 @@ def capture_identity(root: Path, capture: object, folder: Path | None) -> tuple[
         raise ValueError(f"outline capture line {line!r}: expected a positive integer")
     path = check_artifact(root, artifact)
     if folder is not None and path.parent != folder.resolve():
-        raise ValueError(f"outline capture {path}: expected inside receipt folder {folder}")
+        raise ValueError(
+            f"outline capture {path}: expected inside receipt folder {folder}"
+        )
     check_capture(root, artifact)
     return line, path.name
 
@@ -377,6 +389,14 @@ def verify_receipt(
     compatible: Callable[[Path, str, str], bool] | None = None,
 ) -> None:
     """Verify current native evidence; for example, verify_receipt(root, name, row, source, commit)."""
+    if row.get("capture_only"):
+        raise ValueError(
+            f"scenario {row.get('id')!r}: expected a runnable source, got @capture_only"
+        )
+    if row.get("capture_host_only"):
+        raise ValueError(
+            f"scenario {row.get('id')!r}: expected verified capture-host fixture, got @capture_host_only"
+        )
     receipt_path, receipt, report_path = check_receipt_integrity(root, artifact)
     name = str(receipt_path.relative_to(root.resolve()))
     expected = {

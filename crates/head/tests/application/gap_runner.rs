@@ -4,7 +4,7 @@ use super::{ApplicationWorld, scenario_selected, world};
 use cucumber::{
     World as _,
     feature::Ext as _,
-    gherkin::{Background, Feature, Scenario, Step},
+    gherkin::{Background, Feature, Rule, Scenario, Step},
 };
 use futures::FutureExt as _;
 use serde::Serialize;
@@ -145,13 +145,13 @@ fn inspect_feature(feature: &Feature, report: &mut GapReport) {
     }
     for rule in &feature.rules {
         for scenario in &rule.scenarios {
-            inspect_scenario(feature, rule.background.as_ref(), scenario, report);
+            inspect_scenario(feature, Some(rule), scenario, report);
         }
     }
 }
 fn inspect_scenario(
     feature: &Feature,
-    background: Option<&Background>,
+    rule: Option<&Rule>,
     scenario: &Scenario,
     report: &mut GapReport,
 ) {
@@ -159,8 +159,25 @@ fn inspect_scenario(
         return;
     }
     let steps = background_steps(feature.background.as_ref())
-        .chain(background_steps(background))
+        .chain(background_steps(
+            rule.and_then(|value| value.background.as_ref()),
+        ))
         .chain(scenario.steps.iter());
+    if let Some(reason) = super::capture_only::reason(feature, rule, scenario) {
+        report.scenarios.push(ScenarioReport {
+            source: feature.path.clone(),
+            scenario: scenario.name.clone(),
+            line: scenario.position.line,
+            classification: if reason == "capture only" {
+                "excluded: capture only"
+            } else {
+                "blocked: capture host only"
+            },
+            setup_error: Some(reason.into()),
+            steps: unexecuted_steps(steps),
+        });
+        return;
+    }
     let (outcomes, setup_error) = run_native_steps(steps);
     let classification = if setup_error.is_some() {
         "setup failed"

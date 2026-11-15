@@ -141,6 +141,18 @@ def reconcile_row(
     if classification is None:
         return result
     validate_classification(classification)
+    if source.get("capture_only") and classification["state"] != "excluded":
+        raise ValueError(
+            f"scenario {source.get('id')!r}: expected excluded classification for @capture_only"
+        )
+    if (
+        source.get("capture_host_only")
+        and not source.get("capture_only")
+        and classification["state"] != "blocked"
+    ):
+        raise ValueError(
+            f"scenario {source.get('id')!r}: expected blocked classification for @capture_host_only"
+        )
     if classification["state"] == "verified":
         integrity_check(root, classification.get("last_receipt"))
     for field in (
@@ -162,6 +174,8 @@ def reconcile_row(
     ):
         result[field] = classification.get(field)
     result["classified"] = True
+    if classification.get("historical_receipts"):
+        result["historical_receipts"] = classification["historical_receipts"]
     stale = (
         classification["source_revision"] != revision
         or classification["source_sha256"] != source["source_sha256"]
@@ -248,6 +262,7 @@ def summarize(rows: list[object], key: str) -> dict[str, dict[str, int]]:
         groups[group]["total"] += 1
         groups[group]["verified"] += int(row.get("state") == "verified")
         groups[group]["blocked"] += int(row.get("state") == "blocked")
+        groups[group]["excluded"] += int(row.get("state") == "excluded")
         groups[group]["unclassified"] += int(not row.get("classified"))
         groups[group]["stale"] += int(bool(row.get("stale")))
     return {

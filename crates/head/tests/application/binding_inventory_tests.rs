@@ -2,6 +2,32 @@
 use super::*;
 use cucumber::feature::Ext as _;
 #[test]
+fn capture_only_is_counted_but_not_checked_as_an_executable_binding() {
+    let feature = Feature::parse("Feature: source\n @capture_only\n Scenario: historical\n  Given a missing binding\n Scenario: live\n  Given another missing binding\n", Default::default()).unwrap();
+    let mut report = BindingInventory::default();
+    report.inspect_feature(&feature, &cucumber::step::Collection::new());
+    assert_eq!(
+        (report.scenarios, report.excluded_capture_only, report.steps),
+        (2, 1, 1)
+    );
+    assert_eq!(report.unresolved.len(), 1);
+}
+#[test]
+fn capture_host_only_is_counted_as_blocked_without_host_attestation() {
+    let feature = Feature::parse("@capture_host_only\nFeature: host\n @capture_only\n Scenario: archived\n  Given missing\n Scenario: host fixture\n  Given missing\n", Default::default()).unwrap();
+    let mut report = BindingInventory::default();
+    report.inspect_feature(&feature, &cucumber::step::Collection::new());
+    assert_eq!(
+        (
+            report.scenarios,
+            report.excluded_capture_only,
+            report.blocked_capture_host_only,
+            report.steps
+        ),
+        (2, 1, 1, 0)
+    );
+}
+#[test]
 fn outlines_and_both_backgrounds_count_as_executable_steps() {
     let feature = Feature::parse("Feature: source\n  Background: shared\n    Given source setup\n  Rule: rules\n    Background: rule setup\n      Given rule setup\n    Scenario Outline: values\n      When value <value>\n      Then result\n      Examples:\n        | value |\n        | one |\n        | two |\n", Default::default()).unwrap().expand_examples().unwrap();
     let mut report = BindingInventory::default();
