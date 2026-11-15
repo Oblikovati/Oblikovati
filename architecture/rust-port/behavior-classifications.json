@@ -6096,8 +6096,11 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3856",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-ribbon-edit-verified/receipt-c7a7f9038a6c19bf.json",
+        "sha256": "0b8b02b84789b901f08b7105ad1bea0e0e9e9ceee9ac5767625c98d5d6bc2628"
+      },
       "go_reference": "Go aa8297d1b: app/ribbon_registry_test.go and app/ribbon_alignment_test.go; see receipts/2026-11-14-go-sketch-ribbon-baseline/README.md.",
       "mapping_reason": "Ribbon or quick-access UI behavior in the active document and sketch context.",
       "go_test_premise": "Go contextual-tab, panel-alignment, button-style and in-sketch variant tests passed. Go hides Sketch outside sketch edit, unlike the pinned scenarios; these tests do not establish native availability or tooltips.",
