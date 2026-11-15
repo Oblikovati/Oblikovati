@@ -22,7 +22,9 @@ fn current_selected(world: &mut ApplicationWorld) {
     );
 }
 #[when("I clear the show-on-window-creation option")]
+#[when("the user clears the show-on-window-creation option")]
 #[when("I enable the show-on-window-creation option")]
+#[when("the user enables the show-on-window-creation option")]
 fn toggle_new_window(world: &mut ApplicationWorld) {
     click_row(world, NEW_WINDOW);
 }
@@ -43,6 +45,7 @@ fn scope_on(world: &mut ApplicationWorld) {
     assert!(world.run_is_enabled(CURRENT_VIEW), "{CURRENT_VIEW}");
 }
 #[when("I select All 3D Views")]
+#[when("the user selects All 3D Views")]
 fn select_all(world: &mut ApplicationWorld) {
     click_row(world, ALL_VIEWS);
 }
@@ -55,6 +58,7 @@ fn all_selected(world: &mut ApplicationWorld) {
     );
 }
 #[when("I select Only in Current View")]
+#[when("the user selects Only in Current View")]
 fn select_current(world: &mut ApplicationWorld) {
     click_row(world, CURRENT_VIEW);
 }
@@ -70,6 +74,7 @@ fn current_only(world: &mut ApplicationWorld) {
     );
 }
 #[when("I cancel the options")]
+#[when("the user cancels the options")]
 fn cancel_options(world: &mut ApplicationWorld) {
     click_row(world, "Cancel");
 }
@@ -77,6 +82,7 @@ fn cancel_options(world: &mut ApplicationWorld) {
 fn options_closed(world: &mut ApplicationWorld) {
     world.expect_no_text(OPTIONS_TITLE);
     control_geometry();
+    world.expect_blank_region([400, 600], [250, 300]);
 }
 
 #[test]
@@ -115,6 +121,7 @@ fn starting_planes(world: &mut ApplicationWorld) {
     expect_planes(world, "XY(+Z)", "XZ(+Y)");
 }
 #[when("I open the Front View Plane list")]
+#[when("the user opens the Front View Plane list")]
 fn open_front_list(world: &mut ApplicationWorld) {
     choose_list_row(world, "Front View Plane", "");
 }
@@ -125,6 +132,7 @@ fn plane_rows(world: &mut ApplicationWorld) {
     }
 }
 #[when("I select XZ(+Y) as the Front View Plane")]
+#[when("the user selects XZ(+Y) as the Front View Plane")]
 fn select_front_plane(world: &mut ApplicationWorld) {
     // The list's row, over the field behind it that shows the same words.
     click_row(world, "XZ(+Y)");
@@ -138,6 +146,7 @@ fn top_now_front(world: &mut ApplicationWorld) {
     expect_plane(world, "Top View Plane", "XY(+Z)");
 }
 #[when("I cancel the options and reopen them")]
+#[when("the user cancels the options and reopens them")]
 fn cancel_and_reopen(world: &mut ApplicationWorld) {
     click_row(world, "Cancel");
     open_options(world);

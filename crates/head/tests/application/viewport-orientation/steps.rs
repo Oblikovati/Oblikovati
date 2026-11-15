@@ -159,6 +159,7 @@ fn press_at_front(world: &mut ApplicationWorld) {
     press_at(world, position, parts.center);
 }
 fn open_options(world: &mut ApplicationWorld) {
+    world.observed_view_camera = Some(super::viewport_pan::camera(world));
     world.observed_rows = Some(control_letters(world));
     let (position, parts) = layout();
     world.right_click([
@@ -264,6 +265,7 @@ fn expect_on_right(_: &mut ApplicationWorld) {
     assert!(control[0] > 700. && bar[0] > 700., "{control:?} {bar:?}");
 }
 #[when("I open the on-screen position list")]
+#[when("the user opens the on-screen position list")]
 fn open_position_list(world: &mut ApplicationWorld) {
     choose_list_row(world, "On-screen Position", "");
 }
@@ -274,6 +276,7 @@ fn position_rows(world: &mut ApplicationWorld) {
     }
 }
 #[when("I choose Top Left and confirm the options")]
+#[when("the user chooses Top Left and confirms the options")]
 fn choose_top_left(world: &mut ApplicationWorld) {
     world.click_text("Top Left");
     world.pump(Vec::new());
@@ -297,6 +300,12 @@ fn existing_view(world: &mut ApplicationWorld) {
         .clone()
         .expect("expected the earlier view");
     assert_eq!(control_letters(world), earlier, "control's label");
+    assert_eq!(
+        super::viewport_pan::camera(world),
+        world.observed_view_camera.unwrap(),
+        "view camera"
+    );
+    world.expect_blank_region([400, 600], [250, 300]);
 }
 #[then("the orientation control and navigation bar return to the right side")]
 fn returned_right(world: &mut ApplicationWorld) {
@@ -309,6 +318,7 @@ fn automatic_size(world: &mut ApplicationWorld) {
     world.observed_counts = vec![size[0] as usize];
 }
 #[when("I open the orientation control options and expand the size list")]
+#[when("the user opens the orientation control options and expands the size list")]
 fn expand_size(world: &mut ApplicationWorld) {
     open_options(world);
     choose_list_row(world, "Size", "");
@@ -320,6 +330,7 @@ fn size_rows(world: &mut ApplicationWorld) {
     }
 }
 #[when("I choose Large and confirm the options")]
+#[when("the user chooses Large and confirms the options")]
 fn choose_large(world: &mut ApplicationWorld) {
     world.click_text("Large");
     world.pump(Vec::new());
@@ -341,6 +352,7 @@ fn earlier_size(world: &mut ApplicationWorld) {
     assert_eq!(size[0] as usize, world.observed_counts[0], "side");
 }
 #[when("I reopen the options")]
+#[when("the user reopens the options")]
 fn reopen_options(world: &mut ApplicationWorld) {
     open_options(world);
 }
@@ -349,6 +361,7 @@ fn position_top_left(world: &mut ApplicationWorld) {
     world.expect_text("Top Left");
 }
 #[when("I choose Top Right and confirm")]
+#[when("the user chooses Top Right and confirms")]
 fn choose_top_right(world: &mut ApplicationWorld) {
     choose_list_row(world, "On-screen Position", "Top Right");
     confirm(world);
@@ -358,6 +371,7 @@ fn size_large(world: &mut ApplicationWorld) {
     world.expect_text("Large");
 }
 #[when("I choose Automatic and confirm")]
+#[when("the user chooses Automatic and confirms")]
 fn choose_automatic(world: &mut ApplicationWorld) {
     choose_list_row(world, "Size", "Automatic");
     confirm(world);
