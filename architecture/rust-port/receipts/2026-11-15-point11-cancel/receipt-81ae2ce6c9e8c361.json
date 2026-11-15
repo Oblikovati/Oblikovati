@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:81ae2ce6c9e8c3611be3c774e04953bcf5baabc693486e5a3ab43dd524703629",
+  "scenario_revision": "05317bbb2d0809a532b29b7ff6f726a5722b865f",
+  "source_sha256": "c0b6827af861c35ed71f715077fe24911a883571d12a5a760f5738958de22d9b",
+  "application_commit": "6866c0268ba07dc2bb1ef11bcb195d7b4c21235f",
+  "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-15-point11-cancel/cucumber.json",
+    "sha256": "a428019e28d1a2c92ab417e5332db6d978aebdab989c563c8c9005ea66b4a46c"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-15-point11-cancel/source-revision.json",
+    "sha256": "e43e6f05b778ee4b21b0db0469664dbd81ac12089dc2b480516d0a6b5f307c95"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-15-point11-cancel/point-11-Cancel-a-center-point-command-with-one-Escape.png",
+    "sha256": "fecdd29001c0fa0df1b83d92a62625318368adb4334702dbc3da5470422bb07e"
+  }
+}

@@ -4455,7 +4455,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
-      "mapping_reason": "Cancel point creation in an editable planar sketch."
+      "mapping_reason": "Cancel point creation in an editable planar sketch.",
+      "historical_receipts": [
+        {
+          "source_revision": "05317bbb2d0809a532b29b7ff6f726a5722b865f",
+          "path": "architecture/rust-port/receipts/2026-11-15-point11-cancel/receipt-81ae2ce6c9e8c361.json",
+          "sha256": "546d57edccd50724c056cf0347c998d4f298947c6ec19af95408578989191f5d"
+        }
+      ]
     },
     {
       "id": "scenario:858dc2bc227f70bfe665f1da2b23c5d37c4fb30d00e40fecfbc6b1be8105cc93",

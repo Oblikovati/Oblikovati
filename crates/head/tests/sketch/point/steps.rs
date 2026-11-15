@@ -46,6 +46,35 @@ fn expect_placed_points(world: &mut ApplicationWorld, count: usize) {
 fn sketch_active(world: &mut ApplicationWorld) {
     world.start_empty_sketch();
 }
+#[given("an editable planar sketch has no active selection and Center Point is enabled in Format")]
+fn empty_center_point_fixture(world: &mut ApplicationWorld) {
+    world.start_empty_sketch();
+    assert!(world.state().sketch_selection.entities.is_empty());
+    if !world.state().center_point_format {
+        toggle_center_point_format(world);
+    }
+    assert!(
+        world.state().center_point_format,
+        "expected Center Point enabled"
+    );
+    world.remember_edited_sketch(Vec::new());
+}
+#[when("the user press Escape without placing a point")]
+fn cancel_unplaced_point(world: &mut ApplicationWorld) {
+    world.escape();
+    world.pump(Vec::new());
+}
+#[then("no new point marker is visible")]
+fn no_marker_after_cancel(world: &mut ApplicationWorld) {
+    world.expect_edited_sketch_retained();
+    world.expect_point_mark(FIRST, PointMark::Absent);
+    world.expect_point_mark(SECOND, PointMark::Absent);
+}
+#[then("the menu closes and Ready remains displayed")]
+fn menu_closed_and_ready(world: &mut ApplicationWorld) {
+    world.expect_no_text("Repeat Point");
+    world.expect_ready();
+}
 // point-03
 #[given("Point is active with Select center point")]
 fn point_active(world: &mut ApplicationWorld) {
@@ -62,11 +91,13 @@ fn escape_twice(world: &mut ApplicationWorld) {
     world.escape();
     world.pump(Vec::new());
 }
+#[when("the user right-click empty canvas to inspect the refreshed state")]
 #[when("I right-click empty canvas to inspect state")]
 #[when("the user right-click empty canvas to inspect state")]
 fn right_click_empty(world: &mut ApplicationWorld) {
     open_context_menu(world, EMPTY);
 }
+#[then("Ready is displayed and the menu offers Repeat Point, Center Point")]
 #[then("the status is Ready and the menu offers Repeat Point, Center Point")]
 fn ready_with_menu(world: &mut ApplicationWorld) {
     world.expect_ready();
