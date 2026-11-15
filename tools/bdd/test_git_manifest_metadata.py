@@ -64,6 +64,19 @@ class MetadataCheckTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'publish'):
             self.fixture.verify(source=src, generated=forged)
 
+    def test_copied_metadata_and_sections_reject_changes(self) -> None:
+        src = (b'[package]\ndefault-run="tool"\nresolver="2"\n'
+               b'[package.metadata.custom]\nflag=true\n'
+               b'[badges.maintenance]\nstatus="actively-developed"\n'
+               b'[hints]\nmost-used-features=["a"]\n')
+        self.fixture.verify(source=src, generated=src)
+        for old, new in ((b'tool', b'other'), (b'"2"', b'"1"'),
+                         (b'true', b'1'), (b'actively-developed', b'none'),
+                         (b'["a"]', b'["b"]')):
+            with self.subTest(old=old):
+                with self.assertRaisesRegex(ValueError, 'expected locked source'):
+                    self.fixture.verify(source=src, generated=src.replace(old, new))
+
     def test_invalid_inheritance_fails_closed(self) -> None:
         for value in ({"workspace": 1}, {"workspace": True, "extra": True}):
             with self.subTest(value=value):
