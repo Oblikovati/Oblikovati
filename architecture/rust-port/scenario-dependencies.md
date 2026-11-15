@@ -78,14 +78,18 @@ The capture command also selects a fixed set of environment variables and
 uses a fresh Cargo home. It copies every locked crates.io archive from the
 caller cache after checking its SHA-256 against Cargo.lock; Cargo extracts those
 archives into a new source tree when the committed Cargo configuration selects
-those archives. It links the caller's registry index and Git
-caches, sets Cargo offline, and refuses Cargo configuration in directories
-above the exported source before and after the run. The committed source's
+those archives. It stages shallow Git databases for each locked commit and its
+recursive gitlinks, then checks their objects with Git fsck. Cargo creates fresh
+Git checkouts. The staging copies object stores without caller Git configuration
+and refuses ambiguous commits, alternate object stores, and shallow source
+databases. It links the caller's registry index, sets Cargo offline, and refuses
+Cargo configuration above the exported source before and after the run. The committed source's
 Cargo configuration remains in effect. Display and renderer variables in the
 allowlist are passed through; the capture does not attest their values. The
-compiler and tools found on PATH, Rustup installation, shared Git caches and
-registry index, source Cargo configuration, host files, and concurrent changes
-remain unproven. Other processes can modify staged files during a build.
+compiler and tools found on PATH, Rustup installation, registry index, source
+Cargo configuration, host files, and concurrent changes remain unproven. Git
+object integrity depends on the host Git implementation and Git SHA-1. Other
+processes can modify staged files during a build.
 The checks do not prevent a configuration file from appearing and disappearing
 during a run. Cargo offline requires the locked dependencies to be cached.
 
@@ -94,8 +98,8 @@ source in a separate temporary offline target. The capture does not use the
 caller-provided `OBK_SCENARIO_LEDGER_TOOL`; other ledger commands retain that
 option. Snapshot and application Git identity checks discard caller Git
 environment overrides. The inventory generator and Git checks still depend on
-the host tools, local repository configuration, shared dependency caches, and
-inputs that may change during execution. They are not independent attestation.
+the host tools, local repository configuration, the registry index, and inputs
+that may change during execution. They are not independent attestation.
 
 Issue #3978 tracks a bounded build and independently checked provenance.
 The experimental sealed runner bounds parts of execution; it does not prove

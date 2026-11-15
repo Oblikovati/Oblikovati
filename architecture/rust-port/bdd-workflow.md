@@ -114,16 +114,20 @@ reuse of previous target artifacts, but it does not bound
 compiler settings or external build inputs. Captures remain historical evidence
 until issue #3978 is resolved. A full rebuild requires time and disk space.
 
-The CLI uses an offline Cargo home with the caller's Git cache and registry index.
+The CLI uses an offline Cargo home with the caller's registry index.
 It copies locked registry archives after checking their SHA-256 and extracts them
 into a fresh source cache when the committed Cargo config selects those archives.
-It passes only its supported environment variables
+It stages isolated Git databases for locked commits and recursive submodules,
+checks them with Git fsck, and lets Cargo create new checkouts. It passes only
+its supported environment variables
 to the build. It retains display
 and Vulkan driver selection variables. Compiler wrappers and flags supplied as
 environment variables are not passed through. The committed Cargo config still
 applies, and cached dependencies, tools, runtime settings, and system files are
 not attested. All locked registry archives must already be available offline,
-including archives for platforms other than the host.
+including archives for platforms other than the host. Every locked Git and
+submodule commit must be available in exactly one complete local Git database.
+The build uses temporary disk space for Git objects and checkouts.
 
 Native capture also builds its inventory generator from the selected commit in
 a separate temporary offline target. `OBK_SCENARIO_LEDGER_TOOL` does not select

@@ -10,10 +10,9 @@ from typing import Mapping
 from capture_build_environment import (
     capture_build_environment,
     reject_ancestor_cargo_configs,
-    source_cargo_home,
 )
 from committed_build_source import materialize_source
-from capture_registry_cache import stage_registry_cache
+from capture_dependency_stage import stage_capture_dependencies
 
 
 def inventory_command(checkout: Path, revision: str) -> list[str]:
@@ -48,10 +47,7 @@ def isolated_inventory(
         reject_ancestor_cargo_configs(source)
         host_environment = os.environ if environment is None else environment
         settings = inventory_environment(folder, host_environment)
-        stage_registry_cache(
-            (source / "Cargo.lock").read_bytes(), source_cargo_home(host_environment),
-            Path(settings["CARGO_HOME"]),
-        )
+        stage_capture_dependencies(source, host_environment, settings)
         output = subprocess.check_output(
             inventory_command(checkout, revision), cwd=source, env=settings, text=True,
         )
