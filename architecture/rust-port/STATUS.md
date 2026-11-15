@@ -60,7 +60,9 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   [Martensite #462](https://github.com/Oblikovati/Martensite/issues/462).
 - Extrusion entry: the new metric part and origin-plane selection scenario
   passed; see `receipts/2026-11-15-extrusion-entry-refresh/`. This checks sketch
-  entry only. The solve precision certificate remains open (#3928).
+  entry only. The following preview scenario fails on an unconstrained
+  rectangle (#3927); see `receipts/2026-11-15-extrusion-02-diagnostic/`. The
+  solve precision certificate remains open (#3928).
 - Three-point arc: the collinear-input boundary scenario passed; see
   `receipts/2026-11-15-arc-boundary-refresh/`.
 
