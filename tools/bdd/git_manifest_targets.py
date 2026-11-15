@@ -7,7 +7,7 @@ from pathlib import Path, PurePosixPath
 from typing import Mapping
 
 from git_manifest_declarations import same_toml_value
-from git_object_inventory import git_blob_bytes
+from git_manifest_workspace import locked_workspace
 
 
 TARGET_KINDS = {"bin": ("src/bin", "autobins"), "example": ("examples", "autoexamples"), "test": ("tests", "autotests"), "bench": ("benches", "autobenches")}
@@ -15,23 +15,11 @@ TARGET_KINDS = {"bin": ("src/bin", "autobins"), "example": ("examples", "autoexa
 
 def workspace_edition(repository: Path, tree: Mapping[str, str], root: str, label: str) -> str:
     """Read the closest tracked workspace edition; example: workspace_edition(repo, tree, root, label)."""
-    parent = PurePosixPath(root).parent
-    while True:
-        path = (parent / "Cargo.toml").as_posix()
-        identity = tree.get(path)
-        if identity is not None:
-            if not identity.startswith(("100644:blob:", "100755:blob:")):
-                raise ValueError(f"workspace manifest {path}: expected a regular tracked file")
-            document = tomllib.loads(git_blob_bytes(repository, identity.split(":")[-1]).decode("utf-8"))
-            workspace = document.get("workspace")
-            if isinstance(workspace, dict):
-                package = workspace.get("package")
-                if not isinstance(package, dict) or not isinstance(package.get("edition"), str):
-                    raise ValueError(f"manifest {label} workspace edition: expected an explicit string")
-                return package["edition"]
-        if parent == PurePosixPath("."):
-            raise ValueError(f"manifest {label} workspace: expected a tracked workspace root")
-        parent = parent.parent
+    workspace = locked_workspace(repository, tree, root, label)
+    package = workspace.get("package")
+    if not isinstance(package, dict) or not isinstance(package.get("edition"), str):
+        raise ValueError(f"manifest {label} workspace edition: expected an explicit string")
+    return package["edition"]
 
 
 def target_edition(source: Mapping[str, object], repository: Path, tree: Mapping[str, str], root: str, label: str) -> str:

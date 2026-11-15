@@ -97,12 +97,27 @@ class GitVendorCheckTests(unittest.TestCase):
 
     def test_unchecked_manifest_metadata_remains_unverified(self) -> None:
         manifest = self.fixture.package / "Cargo.toml"
-        manifest.write_text(manifest.read_text().replace('[lib]', 'description="not independently checked"\n[lib]'))
+        manifest.write_text(manifest.read_text().replace('[lib]', 'readme="not independently checked"\n[lib]'))
         self.fixture.write_checksum()
         result = self.fixture.verify()
         self.assertEqual(result["git_manifest_declarations_checked"], 1)
         self.assertFalse(result["complete"])
         self.assertFalse(result["reusable"])
+
+    def test_forged_metadata_and_lints_are_refused_with_updated_checksum(self) -> None:
+        manifest = self.fixture.package / "Cargo.toml"
+        for change in ('description="forged"\n[lib]', '[lib]'):
+            with self.subTest(change=change):
+                original = manifest.read_text()
+                updated = original.replace('[lib]', change)
+                if change == '[lib]':
+                    updated += '[lints.rust]\nunsafe_code="allow"\n'
+                manifest.write_text(updated)
+                self.fixture.write_checksum()
+                with self.assertRaisesRegex(ValueError, "expected locked source"):
+                    self.fixture.verify()
+                manifest.write_text(original)
+                self.fixture.write_checksum()
 
     def test_forged_dependency_feature_and_target_are_refused(self) -> None:
         for section in (
