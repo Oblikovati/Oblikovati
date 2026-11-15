@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect files before opening a document: scenario/features/application/document-opening/document-opening.feature" package="testsuite/Feature: Inspect files before opening a document: scenario/features/application/document-opening/document-opening.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T16:23:26.259781897Z" time="13.229892129"><testcase name="Scenario: Inspect a part file before opening it: scenario/features/application/document-opening/document-opening.feature:6:3" time="13.229892129"><system-out><![CDATA[  Scenario: Inspect a part file before opening it
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And a folder contains a saved part with a preview and recorded metadata
+   ✔  When the user presses Control+O and navigates to that folder
+   ✔  And the user selects the saved part
+   ✔  Then the part row is selected and the file name field identifies it
+   ✔  And the preview displays the part
+   ✔  And the Options pane displays Model State and Design View controls
+   ✔  When the user chooses Details
+   ✔  Then the preview remains visible
+   ✔  And the details include the file type, modification date, size, author and part number
+   ✔  When the user cancels the Open dialog
+   ✔  Then the previously active part document remains displayed
+]]></system-out></testcase></testsuite></testsuites>

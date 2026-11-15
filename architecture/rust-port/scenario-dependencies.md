@@ -67,7 +67,9 @@ kernel and device inputs, trusted sandbox identity, concurrent modifications,
 and the rest of the runtime remain unproven. The optional vendor checks do not
 verify generated Git manifests. `tools/bdd/test_pinned_runner.py` exercises a
 real Rust test binary and path replacement; it does not run an Oblikovati UI
-scenario.
+scenario. A real pinned Oblikovati build and native scenario also passed through
+the CLI; see the [sealed build chain diagnostic](receipts/2026-11-15-sealed-build-chain-diagnostic/README.md).
+That run remains non-reusable and does not close these gaps.
 
 Run the linked diagnostic with explicit, disjoint inputs. The source must be a
 verified export of the selected application commit. The vendor and Cargo
