@@ -63,9 +63,10 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 ## Active gaps
 
 - Native captures cannot establish the runner build inputs (#3978). The
-  sandbox probe compares source and registry packages. A separate check matched
-  22,972 Git-sourced files; generated manifests remain unverified. These checks
-  do not prove the build. Receipt reuse is also open (#3974).
+  sandbox probe compared committed source, 280 registry packages and 22,972
+  Git-sourced files in one build. Generated Git manifests and host inputs remain
+  unverified. See `receipts/2026-11-15-combined-build-probe/`. The observation
+  does not prove the build. Receipt reuse is also open (#3974).
 - Sketch extrusion lacks a certified solve precision bound (#3928). Analytic
   edge picking is blocked by [Martensite #462](https://github.com/Oblikovati/Martensite/issues/462).
 - The full gate needs a released API contract (#3965). The Point feature passed

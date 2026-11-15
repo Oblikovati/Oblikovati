@@ -1,0 +1,15 @@
+[source.crates-io]
+replace-with = "vendored-sources"
+
+[source."git+https://github.com/Oblikovati/Martensite?rev=d051ff699982faba4ec2df3ee9a47e14f38dedbd"]
+git = "https://github.com/Oblikovati/Martensite"
+rev = "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
+replace-with = "vendored-sources"
+
+[source."git+https://github.com/Oblikovati/Oblikovati.API.git?rev=a8e651bc537e516953c7d9313792719e5b474a25"]
+git = "https://github.com/Oblikovati/Oblikovati.API.git"
+rev = "a8e651bc537e516953c7d9313792719e5b474a25"
+replace-with = "vendored-sources"
+
+[source.vendored-sources]
+directory = "/vendor"
