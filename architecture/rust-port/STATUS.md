@@ -70,6 +70,9 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   a supplied sketch fixture (#3887).
 - Rectangle visibility now rejects obstructed observations (#3980). Focused
   native checks passed; the full gate is still required.
+- Authored work planes now display in part views (#3981). Viewport plane
+  picking and assembly overlays remain open; visibility editing needs the
+  document-qualified datum reference work (#3982, #3983).
 - See [ACTIVE-GAPS.md](ACTIVE-GAPS.md) for individual scenario diagnostics,
   source clarifications, and remaining UI work. Those run results are historical.
 
