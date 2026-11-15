@@ -61,7 +61,7 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 - Extrusion entry: the new metric part and origin-plane selection scenario
   and the following preview, cancel/reopen and zero distance recovery scenarios
   passed on the merged edit state (#3927, #3931, #3929). The solve precision
-  certificate remains open (#3928).
+  certificate remains open (#3928); see `solver-precision-investigation.md`.
 - Three-point arc: the collinear-input boundary scenario passed; see
   `receipts/2026-11-15-arc-boundary-refresh/`. Its receipt is now stale.
 - Extrusion editing: browser distance editing, candidate preview, cancel,
