@@ -1,0 +1,25 @@
+{
+  "artifacts_sha256": {
+    "cargo.jsonl": "ee8e1642d413c98b2061eb3d7e8d6b01475e15cc3bebc82e02b5ff4e68efcbc3",
+    "cargo.log": "8c751db62e621bd5ffc510d20e1dbdd4d3fdc2c284b3732bc252cdc9c5aef7ef",
+    "config.toml": "c05b5d2cad44311e9c38738a80e7d2f582b92072bf2b5444091a82325fef5a8b",
+    "obk-build-probe-first-3978.log": "6c4da17307297cdb5c321b6be5efd1fcfd80a913268eaaa1d683ea1d4343aca2"
+  },
+  "cargo_version": "1.99.0 (5f94df478 2026-08-27)",
+  "first_attempt": "The first sandbox attempt failed because /usr/bin/cc required an unmounted /etc/alternatives link. The successful probe used explicit /usr/bin/gcc and an empty target.",
+  "input_inventories_retained": false,
+  "input_inventory_sha256": {
+    "config": "b9761ee2401f2b374a1de41e8b262f6688442edb31b4e26c3999fe91e8f58d8e",
+    "source": "2134fe78ed38f313bcf7f8471d5df52368ee5300936f821e13835301b63ea714",
+    "toolchain": "c58034b06325a420b6e9154fb32ce225f4159e991819fdebc5e104614c86866a",
+    "vendor": "c9c04de17fba66f1450cdec5d12d85433e0cb9b3efc25faf87726fd0ffd550db"
+  },
+  "limitations": "Host system libraries, kernel, devices and concurrent host writes are not bounded.",
+  "probe_code": "The live probe used the working-tree code before the executable permission and no-atime artifact checks. The final command was compared unchanged, and the final artifact checks passed separately.",
+  "reusable": false,
+  "runner_retained": false,
+  "runner_sha256": "c04e5e07a02172a53b161d35654b68bfeb4ce11ae4b257df3f5a657a928e56f0",
+  "rustc_version": "1.99.0 (b940084d7 2026-09-28)",
+  "sandbox_sha256": "a6203eb2d9ebc2e0e9549c55cda170df85a4e269d4369db3f58dc6c2413d1ba3",
+  "source_commit": "f5dfb71b7a038b2cbd0ceb522e1d341393a232d8"
+}
