@@ -84,3 +84,33 @@ compiler and linker binaries, build scripts, environment, system libraries,
 or host changes during a build. It is a source preparation experiment, not a
 build or receipt proof. It is not connected to the native capture path. #3978
 remains open until those inputs and the built runner are independently checked.
+
+## Offline sandbox build experiment
+
+`tools/bdd/sandbox_build_probe.py` runs a fixed Linux x86-64 head-test build
+with an empty target, an empty Cargo home, no inherited environment, and an
+isolated network namespace. It mounts source, vendored packages, the supplied
+Rust toolchain and Cargo configuration read-only. It inventories those inputs
+before and after the build and refuses a change. It finds the test executable
+from Cargo's artifact messages and records its hash. Both output directories
+must be empty and all input and output roots must be disjoint.
+
+The configuration directory must contain `config.toml` with Cargo source
+replacement configured to use `/vendor`. Each input root and the Bubblewrap
+executable and its parent must support the no-atime checks. For example, use a
+task-owned Bubblewrap copy.
+Invoke the probe with seven absolute paths:
+
+```sh
+python3 -B tools/bdd/sandbox_build_probe.py SOURCE VENDOR TOOLCHAIN CONFIG \
+  EMPTY_TARGET EMPTY_LOGS BWRAP > /absolute/path/to/build-observation.json
+```
+
+The tool does not prove that the supplied source matches a Git commit or that
+the vendor directory matches trusted registry content. The tool uses the host
+`/usr`, GCC, kernel, devices and clock. The read-only
+mounts do not stop host-side writes during the build, and comparing snapshots
+before and after cannot detect every transient change. The input inventory
+hashes identify observations, not independently checked build provenance.
+The result always says `reusable: false`; the normal receipt path does not use
+this probe. Do not use it to mark a BDD scenario verified. Track #3978.

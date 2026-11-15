@@ -63,8 +63,8 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 ## Active gaps
 
 - Native captures cannot establish the runner build inputs (#3978). The
-  experimental committed-source exporter checks tracked blobs but does not
-  prove a build. Scenario dependencies cannot authorize receipt reuse (#3974).
+  experimental source exporter and offline sandbox probe do not prove a build.
+  Scenario dependencies cannot authorize receipt reuse (#3974).
 - Sketch extrusion lacks a certified solve precision bound (#3928). Analytic
   edge picking is blocked by [Martensite #462](https://github.com/Oblikovati/Martensite/issues/462).
 - The full gate needs a released API contract (#3965). The Point feature passed
