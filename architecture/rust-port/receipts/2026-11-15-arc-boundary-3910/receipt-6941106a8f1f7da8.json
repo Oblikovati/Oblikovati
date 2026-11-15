@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:6941106a8f1f7da814471472f86415063d31b05c0ce80bdac803eab691d8933b",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "68f40e74e5d62f64072ce4cd9dd4277304810848c41acf0c4bfd7a5d5fb375c2",
+  "application_commit": "383122d08c4637d7ebc349649f63156838f9b0d1",
+  "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan Lavapipe on Xvfb, Linux"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-15-arc-boundary-3910/cucumber.json",
+    "sha256": "95f2e3556cca54a36b58d7669f147ebe6c47b929482adf958f54c9369e9bae82"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-15-arc-boundary-3910/source-revision.json",
+    "sha256": "9e5ed24b3717cb297907e1092647920a4f12aed3edd7ab23fcb23ce0a34bb140"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-15-arc-boundary-3910/arc-three-point-02-Exercise-feature-specific-boundary-behavior.png",
+    "sha256": "5788dc02b599442a16b84fd50eb1f20af159a99528dbf75c10cb7a78ac91830a"
+  }
+}

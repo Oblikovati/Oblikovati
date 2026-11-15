@@ -30639,10 +30639,22 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-arc-boundary-3910/receipt-6941106a8f1f7da8.json",
+        "sha256": "b927a9200b663bce67b10e35252956b0ea48a054742c097017fb3d64fccbe5ef"
+      },
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "go_test_premise": "Go aa8297d1b rejects collinear points in ArcTool.Commit; the recorded Go point-order tests do not establish its native no-dialog behavior. See receipts/2026-11-14-go-arc3-baseline/README.md.",
+      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "The sketch tool rejects a collinear third point; this scenario performs no solid operation.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The desktop sends the pointer positions through sketch placement and owner operations.",
+      "rust_tests": "sketch_scenarios_use_the_native_window with OBK_BDD_FEATURE=arc-three-point and OBK_BDD_SCENARIO=arc-three-point-02.",
+      "oracle": "The native run checks the prompt, absence of committed arcs and Warning text; the final capture was reviewed for a visible dialog.",
+      "expected_result": "The point-on-arc prompt remains active without an arc or error dialog after a collinear third click."
     },
     {
       "id": "scenario:cabc86d68811640a059861efcd0d05ff88c2c70ad2552ca84279161e9e4d6d59",
