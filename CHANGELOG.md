@@ -36,6 +36,8 @@
 
 ### Fixed
 
+- Kept document tab previews clear of the tab at large UI scales and near window edges. (#3988)
+
 - Cleared selected body and face appearance overrides together in one undoable edit. (#3962)
 
 - Cleared multiple selected named face appearances in one undoable edit. (#3962)

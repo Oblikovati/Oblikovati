@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! The picture and label shown above a hovered tab, kept from each window's last frame.
+use super::preview_placement::preview_placement;
 use crate::GuiPreviewImage;
 use imgui::Ui;
 use std::collections::{BTreeMap, BTreeSet};
@@ -14,13 +15,12 @@ pub(crate) enum PreviewKey {
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct HoveredTab {
     pub key: PreviewKey,
-    pub corner: [f32; 2],
+    pub bounds: [[f32; 2]; 2],
     pub labels: Vec<String>,
 }
 const CELLS: [u32; 2] = [64, 36];
 const CELL_SIZE: f32 = 3.;
-const LABEL_ROW: f32 = 18.;
-const CHROME: f32 = 16.;
+const ASPECT: f32 = CELLS[0] as f32 / CELLS[1] as f32;
 /// One small picture per window, replaced each time that window is presented.
 #[derive(Default)]
 pub(crate) struct TabPreviews {
@@ -34,10 +34,15 @@ pub(crate) struct TabPreviews {
     /// What is in front, and where, as of the last drawn frame.
     pub showing: Option<(PreviewKey, [[f32; 2]; 2])>,
     revisions: BTreeMap<u64, u64>,
+    preview_visible: bool,
 }
 impl TabPreviews {
     /// Keep what the workspace shows now; the area is in window pixels.
     pub(crate) fn note_frame(&mut self, extent: [u32; 2], rgba: &[u8]) {
+        // A preview below the strip is inside the workspace being captured.
+        if self.preview_visible {
+            return;
+        }
         let Some((key, [minimum, maximum])) = self.showing else {
             return;
         };
@@ -80,6 +85,7 @@ impl TabPreviews {
     }
     /// Drop closed views before sending pending pictures; example: `previews.synchronize(state)`.
     pub(crate) fn synchronize(&mut self, state: &crate::GuiCommandState) {
+        self.preview_visible = false;
         let current = open_windows(state);
         let revisions = identity_revisions(state);
         let collapsed = changed_window_identities(&self.revisions, &revisions);
@@ -125,44 +131,47 @@ impl TabPreviews {
             self.showing_document = None;
         }
     }
-    /// Draw above the hovered tab; it takes no input, so moving away simply ends it.
-    pub(crate) fn panel(&self, ui: &Ui, hovered: Option<&HoveredTab>) {
+    /// Keep the preview in the viewport without covering the hovered tab.
+    pub(crate) fn panel(&mut self, ui: &Ui, hovered: Option<&HoveredTab>) {
         let Some(tab) = hovered else {
             return;
         };
-        let height = CELLS[1] as f32 * CELL_SIZE + tab.labels.len() as f32 * LABEL_ROW + CHROME;
-        let position = [tab.corner[0], (tab.corner[1] - height - 4.).max(0.)];
+        let Some((placement, image_size)) = preview_dimensions(ui, tab) else {
+            return;
+        };
+        self.preview_visible = true;
         ui.window("##tab-preview")
-            .position(position, imgui::Condition::Always)
+            .position(placement.position, imgui::Condition::Always)
+            .size(placement.size, imgui::Condition::Always)
             .flags(
                 imgui::WindowFlags::NO_DECORATION
-                    | imgui::WindowFlags::ALWAYS_AUTO_RESIZE
                     | imgui::WindowFlags::NO_INPUTS
                     | imgui::WindowFlags::NO_SAVED_SETTINGS
                     | imgui::WindowFlags::NO_FOCUS_ON_APPEARING
+                    | imgui::WindowFlags::NO_SCROLLBAR
                     | imgui::WindowFlags::NO_NAV,
             )
             .build(|| {
                 for label in &tab.labels {
-                    ui.text(label);
+                    ui.text_wrapped(label);
                 }
-                self.picture(ui, tab.key);
+                self.picture(ui, tab.key, image_size);
             });
     }
-    fn picture(&self, ui: &Ui, key: PreviewKey) {
+    fn picture(&self, ui: &Ui, key: PreviewKey, size: [f32; 2]) {
         let [x, y] = ui.cursor_screen_pos();
-        let size = [CELLS[0] as f32 * CELL_SIZE, CELLS[1] as f32 * CELL_SIZE];
+        let cell_size = [size[0] / CELLS[0] as f32, size[1] / CELLS[1] as f32];
         let list = ui.get_window_draw_list();
         if let Some(image) = self.images.get(&key) {
             for (index, color) in image.rgb.iter().enumerate() {
                 let cell = [
-                    x + (index as u32 % CELLS[0]) as f32 * CELL_SIZE,
-                    y + (index as u32 / CELLS[0]) as f32 * CELL_SIZE,
+                    x + (index as u32 % CELLS[0]) as f32 * cell_size[0],
+                    y + (index as u32 / CELLS[0]) as f32 * cell_size[1],
                 ];
                 let rgba = color.map(|channel| f32::from(channel) / 255.);
                 list.add_rect(
                     cell,
-                    [cell[0] + CELL_SIZE, cell[1] + CELL_SIZE],
+                    [cell[0] + cell_size[0], cell[1] + cell_size[1]],
                     [rgba[0], rgba[1], rgba[2], 1.],
                 )
                 .filled(true)
@@ -173,6 +182,63 @@ impl TabPreviews {
         ui.dummy(size);
     }
 }
+fn preview_dimensions(
+    ui: &Ui,
+    tab: &HoveredTab,
+) -> Option<(super::preview_placement::PreviewPlacement, [f32; 2])> {
+    let viewport = ui.io().display_size;
+    let style = ui.clone_style();
+    if viewport[0] < style.window_min_size[0] || viewport[1] < style.window_min_size[1] {
+        return None;
+    }
+    let (width, chrome, image_width) = preview_metrics(ui, tab, viewport[0], &style)?;
+    let desired = [
+        width,
+        (chrome + image_width / ASPECT).max(style.window_min_size[1]),
+    ];
+    let minimum = (chrome + CELLS[1] as f32).max(style.window_min_size[1]);
+    let placement = preview_placement(viewport, tab.bounds, desired, minimum)?;
+    let width = image_width.min((placement.size[1] - chrome) * ASPECT);
+    Some((placement, [width, width / ASPECT]))
+}
+
+fn preview_metrics(
+    ui: &Ui,
+    tab: &HoveredTab,
+    viewport_width: f32,
+    style: &imgui::Style,
+) -> Option<(f32, f32, f32)> {
+    let width = preview_width(ui, &tab.labels, viewport_width, style);
+    let inner_width = width - 2. * style.window_padding[0];
+    // Keep at least one logical pixel for each source cell in the thumbnail.
+    if inner_width < CELLS[0] as f32 {
+        return None;
+    }
+    let label_height = wrapped_labels_height(ui, &tab.labels, inner_width, style.item_spacing[1]);
+    Some((
+        width,
+        2. * style.window_padding[1] + label_height,
+        (CELLS[0] as f32 * CELL_SIZE).min(inner_width),
+    ))
+}
+
+fn preview_width(ui: &Ui, labels: &[String], viewport: f32, style: &imgui::Style) -> f32 {
+    let widest = labels
+        .iter()
+        .map(|label| ui.calc_text_size(label)[0])
+        .fold(0., f32::max);
+    (widest.max(CELLS[0] as f32 * CELL_SIZE) + 2. * style.window_padding[0])
+        .max(style.window_min_size[0])
+        .min(viewport)
+}
+
+fn wrapped_labels_height(ui: &Ui, labels: &[String], width: f32, spacing: f32) -> f32 {
+    labels
+        .iter()
+        .map(|label| ui.calc_text_size_with_opts(label, false, width)[1] + spacing)
+        .sum()
+}
+
 fn open_windows(state: &crate::GuiCommandState) -> BTreeMap<u64, BTreeSet<u64>> {
     state
         .documents

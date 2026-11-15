@@ -11,6 +11,41 @@ fn frame() -> Vec<u8> {
     }
     rgba
 }
+
+#[test]
+fn narrow_viewport_wraps_a_long_label_and_scales_the_picture() {
+    let mut context = crate::test_context::create();
+    context.set_ini_filename(None);
+    context.io_mut().display_size = [150., 400.];
+    context.fonts().build_rgba32_texture();
+    let ui = context.frame();
+    let tab = HoveredTab {
+        key: PreviewKey::Home,
+        bounds: [[120., 10.], [170., 30.]],
+        labels: vec!["Long document name with spaces and a saved location".into()],
+    };
+    let (placement, picture) = preview_dimensions(ui, &tab).expect("labels and picture fit");
+    assert!(placement.position[0] >= 0. && placement.position[0] + placement.size[0] <= 150.);
+    assert!(placement.position[1] >= tab.bounds[1][1]);
+    assert!(placement.position[1] + placement.size[1] <= 400.);
+    assert!(picture[0] > 0. && picture[0] < CELLS[0] as f32 * CELL_SIZE);
+    assert!(wrapped_labels_height(ui, &tab.labels, 130., 0.) > ui.calc_text_size("A")[1]);
+}
+
+#[test]
+fn impossible_viewport_omits_the_preview_instead_of_covering_the_tab() {
+    let mut context = crate::test_context::create();
+    context.set_ini_filename(None);
+    context.io_mut().display_size = [50., 50.];
+    context.fonts().build_rgba32_texture();
+    let ui = context.frame();
+    let tab = HoveredTab {
+        key: PreviewKey::Home,
+        bounds: [[0., 20.], [40., 30.]],
+        labels: vec!["a long label that cannot fit".into()],
+    };
+    assert!(preview_dimensions(ui, &tab).is_none());
+}
 #[test]
 fn a_picture_comes_only_from_the_given_area() {
     let image = cropped_picture([4, 2], &frame(), [2., 0.], [4., 2.]).unwrap();
@@ -33,6 +68,26 @@ fn each_window_keeps_its_own_last_picture() {
     previews.note_frame([4, 2], &frame());
     assert_eq!(previews.images[&PreviewKey::Window(7)].rgb[0], [200, 0, 0]);
     assert_eq!(previews.images[&PreviewKey::Home].rgb[0], [0, 0, 200]);
+}
+
+#[test]
+fn visible_preview_is_not_captured_inside_its_own_picture() {
+    let mut previews = TabPreviews {
+        showing: Some((PreviewKey::Window(7), [[0., 0.], [2., 2.]])),
+        showing_document: Some(7),
+        ..Default::default()
+    };
+    previews.note_frame([2, 2], &[9; 16]);
+    let original = previews.images[&PreviewKey::Window(7)].clone();
+    previews.preview_visible = true;
+    previews.note_frame([2, 2], &[200; 16]);
+    assert_eq!(previews.images[&PreviewKey::Window(7)], original);
+    previews.synchronize(&crate::GuiCommandState {
+        documents: vec![document(7, true)],
+        ..Default::default()
+    });
+    previews.note_frame([2, 2], &[200; 16]);
+    assert_ne!(previews.images[&PreviewKey::Window(7)], original);
 }
 #[test]
 fn an_unchanged_picture_is_told_once() {

@@ -374,7 +374,7 @@ fn home_tab(
     if ui.is_item_hovered() {
         owner.hovered = Some(HoveredTab {
             key: PreviewKey::Home,
-            corner: ui.item_rect_min(),
+            bounds: [ui.item_rect_min(), ui.item_rect_max()],
             labels: vec!["Home".to_owned()],
         });
     }
@@ -450,7 +450,7 @@ fn note_hovered_tab(
         .and_then(|storage| storage.path.clone());
     owner.hovered = Some(HoveredTab {
         key: PreviewKey::Window(tab.window),
-        corner: ui.item_rect_min(),
+        bounds: [ui.item_rect_min(), ui.item_rect_max()],
         labels: saved.into_iter().chain([tab.name.clone()]).collect(),
     });
 }

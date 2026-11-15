@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Reaching open documents without the tab strip, and the commands on a tab.
+#[path = "preview_placement.rs"]
+mod preview_placement;
 #[path = "previews.rs"]
 pub(crate) mod previews;
 #[path = "properties.rs"]
