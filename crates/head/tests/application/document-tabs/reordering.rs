@@ -46,6 +46,7 @@ fn drawing_tab_visible(world: &mut ApplicationWorld) {
     tab_x(world, drawing);
 }
 #[when("I drag the drawing tab left across several neighboring tabs")]
+#[when("the user drags the drawing tab left across several neighboring tabs")]
 fn drag_drawing_tab_left(world: &mut ApplicationWorld) {
     drag_tab_to_first_place(world, drawing_of(world));
 }
@@ -58,6 +59,7 @@ fn sheet_and_browser(world: &mut ApplicationWorld) {
     expect_drawing_shown(world);
 }
 #[when("I drag the drawing tab back to its earlier position")]
+#[when("the user drags the drawing tab back to its earlier position")]
 fn drag_drawing_tab_back(world: &mut ApplicationWorld) {
     let name = world.document_name(drawing_of(world));
     let from = world.expect_tab(&name).center().map(|value| value as i32);
@@ -77,6 +79,7 @@ fn inactive_part_visible(world: &mut ApplicationWorld) {
     tab_x(world, part);
 }
 #[when("I drag the inactive part tab left across several neighboring tabs")]
+#[when("the user drags the inactive part tab left across several neighboring tabs")]
 fn drag_part_tab_left(world: &mut ApplicationWorld) {
     drag_tab_to_first_place(world, world.parts[NEIGHBOR_PARTS - 1]);
 }
@@ -97,7 +100,9 @@ fn part_tab_moved(world: &mut ApplicationWorld) {
 }
 #[then("the part viewport and model browser are displayed")]
 fn dragged_part_shown(world: &mut ApplicationWorld) {
-    world.expect_active(world.parts[NEIGHBOR_PARTS - 1]);
+    let part = world.parts[NEIGHBOR_PARTS - 1];
+    world.expect_active(part);
+    world.expect_browser_of(part);
     world.expect_blank_region(
         super::super::documents::VIEWPORT_X,
         super::super::documents::VIEWPORT_Y,
