@@ -1,0 +1,41 @@
+{
+  "application_commit": "421b06a7418ce7abfb3d10a3b7e1ed846a4cd723",
+  "cargo": "cargo 1.99.0 (5f94df478 2026-08-27)",
+  "lock_sha256": "3e4636962747b157c0283b41f5ddaade0b5f0aad35b8da55b485ca591de4d20d",
+  "result": {
+    "git_packages_partially_checked": 18,
+    "git_files_checked": 22972,
+    "git_manifest_declarations_checked": 18,
+    "git_manifest_check_scope": [
+      "dependencies",
+      "dev-dependencies",
+      "build-dependencies",
+      "target",
+      "features",
+      "no-build-script"
+    ],
+    "git_manifests_unverified": [
+      "martensite-cmath 0.3.5",
+      "martensite-tkbo 0.8.1",
+      "martensite-tkbrep 0.3.10",
+      "martensite-tkernel 0.4.4",
+      "martensite-tkg2d 0.3.7",
+      "martensite-tkg3d 0.3.9",
+      "martensite-tkgeomalgo 0.3.8",
+      "martensite-tkgeombase 0.3.6",
+      "martensite-tkhlr 0.3.6",
+      "martensite-tkmath 0.3.8",
+      "martensite-tkmesh 0.3.8",
+      "martensite-tkprim 0.3.10",
+      "martensite-tkservice 0.4.1",
+      "martensite-tkshhealing 0.3.9",
+      "martensite-tktopalgo 0.4.3",
+      "martensite-tkv3d 0.7.1",
+      "martensite-vulkan 0.7.2",
+      "oblikovati-api 0.159.0"
+    ],
+    "complete": false,
+    "reusable": false
+  },
+  "adversarial_case": "generated API manifest build=false changed to build=forged.rs and checksum updated; rejected before build"
+}

@@ -253,13 +253,21 @@ metadata. It reads Git objects, not checkout files. The check conservatively
 requires tracked package files, apart from Cargo's VCS metadata exclusions.
 A package that omits tracked files or inherits its version is refused.
 
-Cargo generates each vendored `Cargo.toml`; this check uses its observed hash
-and does not validate that generated manifest against the Git source. A passing
-result is therefore partial, does not bind a build, and cannot authorize reuse.
-It always reports `complete: false` and `reusable: false`. The recorded run
-matched 22,972 files in 18 Git packages, with all 18 manifests unverified; see
-[the observation](receipts/2026-11-15-git-vendor-check/observation.json).
-An isolated Cargo-home regeneration produced the same 18 manifest bytes, but
-used copied Git caches and an unauthenticated workspace and toolchain. It is a
-repeatability observation, not manifest verification; see
-[the experiment](receipts/2026-11-15-git-manifest-reproduction/README.md).
+Cargo 1.99.0 [normalizes Git vendor manifests](https://github.com/rust-lang/cargo/blob/5f94df4789f005f9a352888e8355ffc645b7ed0e/src/ops/cargo_vendor.rs#L454-L466)
+after resolving workspace inheritance and filtering build scripts and targets.
+The Git check now independently compares the parsed dependency, development and
+build dependency, target, and feature declarations with the locked source
+manifest. It also refuses a generated build script when the locked source has
+none. It refuses source build scripts and declaration transformations it cannot
+compare exactly, including workspace-inherited dependencies; this is a deliberate
+compatibility limit. Boolean and integer TOML values are compared by type.
+
+These checks passed on the current 18 Git packages and 22,972 tracked vendor
+files. They do not validate the entire generated manifest: package metadata,
+normalized targets, library flags, lints and other fields remain unverified. A
+passing result is partial, does not independently bind a build, and cannot
+authorize reuse. It reports the checked scope but keeps all 18 full manifests
+in `git_manifests_unverified`, with `complete: false` and `reusable: false`.
+The prior [observation](receipts/2026-11-15-git-vendor-check/observation.json)
+and [regeneration experiment](receipts/2026-11-15-git-manifest-reproduction/README.md)
+record earlier results.

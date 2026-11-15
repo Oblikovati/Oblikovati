@@ -9,8 +9,10 @@ from pathlib import Path, PurePosixPath
 from typing import Mapping
 
 from git_object_inventory import GitBlobReader, git_blob_bytes, locked_git_tree
+from git_manifest_declarations import check_git_manifest_declarations
 from registry_vendor_check import (
     ignored_vendor_path,
+    read_observed_manifest,
     locked_packages,
     vendor_packages,
     verify_package_namespace,
@@ -119,17 +121,20 @@ def verify_git_vendor(
         with GitBlobReader(repository) as reader:
             cache: dict[str, str] = {}
             for key in sorted(wanted):
-                checked += check_package(
-                    folders[key],
-                    package_entries(tree, roots[key]),
-                    inventory,
-                    reader,
-                    cache,
-                )
+                entries = package_entries(tree, roots[key])
+                original = git_blob_bytes(repository, entries["Cargo.toml"].split(":")[-1])
+                generated = read_observed_manifest(vendor, folders[key], inventory)
+                check_git_manifest_declarations(original, generated, entries, folders[key])
+                checked += check_package(folders[key], entries, inventory, reader, cache)
                 manifests.append(f"{key[0]} {key[1]}")
     return {
         "git_packages_partially_checked": len(manifests),
         "git_files_checked": checked,
+        "git_manifest_declarations_checked": len(manifests),
+        "git_manifest_check_scope": [
+            "dependencies", "dev-dependencies", "build-dependencies",
+            "target", "features", "no-build-script",
+        ],
         "git_manifests_unverified": manifests,
         "complete": False,
         "reusable": False,
