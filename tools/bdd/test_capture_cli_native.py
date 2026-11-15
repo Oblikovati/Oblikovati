@@ -21,6 +21,7 @@ class FakeCargoProcess:
         assert isinstance(environment, dict)
         self.reports = Path(environment["OBK_BDD_REPORTS"])
         source = Path(str(options["cwd"]))
+        self.source = source
         assert (source / "tracked.txt").read_text() == "committed"
         assert not (source / "ignored.txt").exists()
         target = Path(environment["CARGO_TARGET_DIR"])
@@ -48,6 +49,14 @@ class FakeFailingCargoProcess(FakeCargoProcess):
 class FakeConcurrentLogProcess(FakeCargoProcess):
     def wait(self) -> int:
         (self.reports / "native-test.log").write_text("concurrent evidence\n")
+        return 0
+
+
+class FakeInjectedConfigProcess(FakeCargoProcess):
+    def wait(self) -> int:
+        config = self.source.parent / ".cargo"
+        config.mkdir()
+        (config / "config.toml").write_text("[build]\n")
         return 0
 
 
@@ -175,6 +184,15 @@ class NativeCargoRunTests(unittest.TestCase):
                     reports, {"OBK_BDD_REPORTS": str(reports)}
                 )
             self.assertEqual(existing.read_text(), "prior evidence\n")
+            self.assertFalse((reports / "native-test.log").exists())
+
+    def test_new_ancestor_config_prevents_publication(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            reports = Path(folder)
+            runner = NativeCargoRun(Path(self.repo.name), "application", self.commit, FakeInjectedConfigProcess)
+            with contextlib.redirect_stdout(io.StringIO()):
+                with self.assertRaisesRegex(ValueError, "ancestor configuration"):
+                    runner(reports, {"OBK_BDD_REPORTS": str(reports)})
             self.assertFalse((reports / "native-test.log").exists())
 
     def test_existing_log_is_not_overwritten(self) -> None:

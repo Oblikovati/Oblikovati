@@ -15,11 +15,12 @@ class CaptureBuildEnvironmentTests(unittest.TestCase):
             environment = {
                 "HOME": str(root), "PATH": "/bin", "DISPLAY": ":7",
                 "XDG_RUNTIME_DIR": "/run/user/7", "VK_ICD_FILENAMES": "/gpu.json",
+                "DRI_PRIME": "1", "WINIT_UNIX_BACKEND": "wayland",
                 "OBK_BDD_FEATURE": "create", "RUSTFLAGS": "--cfg injected",
                 "CARGO_BUILD_RUSTC_WRAPPER": "/bad", "ARBITRARY_BUILD_FLAG": "bad",
             }
             result = capture_build_environment(root, environment)
-            for name in ("DISPLAY", "XDG_RUNTIME_DIR", "VK_ICD_FILENAMES", "OBK_BDD_FEATURE"):
+            for name in ("DISPLAY", "XDG_RUNTIME_DIR", "VK_ICD_FILENAMES", "OBK_BDD_FEATURE", "DRI_PRIME", "WINIT_UNIX_BACKEND"):
                 self.assertEqual(result[name], environment[name])
             for name in ("RUSTFLAGS", "CARGO_BUILD_RUSTC_WRAPPER", "ARBITRARY_BUILD_FLAG"):
                 self.assertNotIn(name, result)
