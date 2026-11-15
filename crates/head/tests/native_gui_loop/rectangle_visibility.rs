@@ -120,6 +120,7 @@ fn visible_in_view(
         area,
         &application_bdd::window_occlusions(),
     )
+    .expect("expected an unobstructed rectangle probe")
 }
 fn document_area(window: &ScriptedGuiWindow, extent: [u32; 2]) -> [u32; 4] {
     window

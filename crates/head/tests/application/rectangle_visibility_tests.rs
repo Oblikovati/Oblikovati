@@ -66,38 +66,40 @@ fn rejects_a_gap_in_an_otherwise_visible_edge() {
 fn rejects_rectangle_overlapping_gui_or_outside_document_area() {
     let capture = rectangle_capture(None);
     let corners = [[10, 10], [50, 50]];
-    assert!(rectangle_visible_in_view(
-        &capture,
-        corners,
-        [0, 0, 64, 64],
-        &[]
-    ));
+    assert_eq!(
+        rectangle_visible_in_view(&capture, corners, [0, 0, 64, 64], &[]),
+        Ok(true)
+    );
     for edge in 0..4 {
-        assert!(!rectangle_visible_in_view(
-            &rectangle_capture(Some(edge)),
-            corners,
-            [0, 0, 64, 64],
-            &[]
-        ));
+        assert_eq!(
+            rectangle_visible_in_view(&rectangle_capture(Some(edge)), corners, [0, 0, 64, 64], &[]),
+            Ok(false)
+        );
     }
-    assert!(!rectangle_visible_in_view(
-        &capture,
-        corners,
-        [12, 0, 64, 64],
-        &[]
-    ));
-    assert!(!rectangle_visible_in_view(
-        &capture,
-        corners,
-        [0, 0, 64, 64],
-        &[[8., 8., 12., 52.]]
-    ));
-    assert!(rectangle_visible_in_view(
-        &capture,
-        corners,
-        [0, 0, 64, 64],
-        &[[0., 0., 5., 64.]]
-    ));
+    assert!(rectangle_visible_in_view(&capture, corners, [12, 0, 64, 64], &[]).is_err());
+    assert!(
+        rectangle_visible_in_view(&capture, corners, [0, 0, 64, 64], &[[8., 8., 12., 52.]])
+            .is_err()
+    );
+    assert_eq!(
+        rectangle_visible_in_view(&capture, corners, [0, 0, 64, 64], &[[0., 0., 5., 64.]]),
+        Ok(true)
+    );
+}
+
+#[test]
+fn occlusion_cannot_claim_the_rectangle_is_absent() {
+    let mut capture = rectangle_capture(None);
+    capture.rgba.fill(40);
+    let corners = [[10, 10], [50, 50]];
+    assert_eq!(
+        rectangle_visible_in_view(&capture, corners, [0, 0, 64, 64], &[]),
+        Ok(false)
+    );
+    assert!(
+        rectangle_visible_in_view(&capture, corners, [0, 0, 64, 64], &[[8., 8., 52., 52.]])
+            .is_err()
+    );
 }
 
 #[test]
@@ -113,12 +115,15 @@ fn isolated_matching_ui_pixel_cannot_stand_in_for_rectangle() {
             .0
             .contains(&[160, 160, 160, 255])
     );
-    assert!(!rectangle_visible_in_view(
-        &capture,
-        [[10, 10], [50, 50]],
-        [0, 0, 64, 64],
-        &[[0., 0., 8., 64.]]
-    ));
+    assert_eq!(
+        rectangle_visible_in_view(
+            &capture,
+            [[10, 10], [50, 50]],
+            [0, 0, 64, 64],
+            &[[0., 0., 8., 64.]]
+        ),
+        Ok(false)
+    );
 }
 
 #[test]
@@ -126,22 +131,15 @@ fn rejects_invalid_window_bounds_and_document_area() {
     let capture = rectangle_capture(None);
     let corners = [[10, 10], [50, 50]];
     for area in [[0, 0, 0, 64], [0, 0, 65, 64], [60, 0, 50, 64]] {
-        assert!(!rectangle_visible_in_view(&capture, corners, area, &[]));
+        assert!(rectangle_visible_in_view(&capture, corners, area, &[]).is_err());
     }
     for window in [[f32::NAN, 0., 1., 1.], [5., 5., 4., 6.]] {
-        assert!(!rectangle_visible_in_view(
-            &capture,
-            corners,
-            [0, 0, 64, 64],
-            &[window]
-        ));
+        assert!(rectangle_visible_in_view(&capture, corners, [0, 0, 64, 64], &[window]).is_err());
     }
     let mut huge = capture;
     huge.extent = [u32::MAX, 64];
-    assert!(!rectangle_visible_in_view(
-        &huge,
-        [[10, 10], [i32::MAX, 50]],
-        [0, 0, u32::MAX, 64],
-        &[]
-    ));
+    assert!(
+        rectangle_visible_in_view(&huge, [[10, 10], [i32::MAX, 50]], [0, 0, u32::MAX, 64], &[])
+            .is_err()
+    );
 }

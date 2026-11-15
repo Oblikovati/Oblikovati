@@ -9,7 +9,22 @@ const MIN_CHANNEL_DIFFERENCE: u8 = 24;
 
 pub(super) fn current_rectangle_visible(world: &mut ApplicationWorld) -> bool {
     let capture = super::capture_framebuffer(&mut world.app().window.native);
-    rectangle_edges_visible(&capture, super::documents::RECTANGLE)
+    let area = world
+        .app()
+        .window
+        .native
+        .gui
+        .as_ref()
+        .expect("expected a native GUI")
+        .document_area(capture.extent)
+        .expect("expected the current document area");
+    rectangle_visible_in_view(
+        &capture,
+        super::documents::RECTANGLE,
+        area,
+        &super::diagnostics::window_occlusions(),
+    )
+    .expect("expected an unobstructed rectangle probe")
 }
 
 pub(super) fn rectangle_edges_visible(capture: &ViewportCapture, corners: [[i32; 2]; 2]) -> bool {
@@ -34,20 +49,24 @@ pub(crate) fn rectangle_visible_in_view(
     corners: [[i32; 2]; 2],
     area: [u32; 4],
     occlusions: &[[f32; 4]],
-) -> bool {
-    let Some(probe) = rectangle_probe_bounds(corners) else {
-        return false;
-    };
+) -> Result<bool, String> {
+    let probe = rectangle_probe_bounds(corners)
+        .ok_or_else(|| format!("rectangle corners {corners:?}: expected ordered corners"))?;
     if !probe_inside_area(probe, area, capture.extent) {
-        return false;
+        return Err(format!(
+            "rectangle probe {probe:?}: expected inside document area {area:?} of {:?}",
+            capture.extent
+        ));
     }
-    if occlusions
+    if let Some(window) = occlusions
         .iter()
-        .any(|window| probe_intersects_window(probe, *window))
+        .find(|window| probe_intersects_window(probe, **window))
     {
-        return false;
+        return Err(format!(
+            "rectangle probe {probe:?}: expected no overlap with window {window:?}"
+        ));
     }
-    rectangle_edges_visible(capture, corners)
+    Ok(rectangle_edges_visible(capture, corners))
 }
 
 fn rectangle_probe_bounds([[left, top], [right, bottom]]: [[i32; 2]; 2]) -> Option<[i64; 4]> {
