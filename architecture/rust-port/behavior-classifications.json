@@ -15922,12 +15922,12 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-tabs-c65b58f2636efdba-e9e7c584/receipt-c65b58f2636efdba.json",
-        "sha256": "b1a2bfac5f6c2c502c21263066a4db7330d378231f2029a676382ad6b84e9339"
+        "path": "architecture/rust-port/receipts/2026-11-15-tabs-switch-current/receipt-c65b58f2636efdba.json",
+        "sha256": "da5e30971b337e27257afa514175194586517a5a761d45b900eb4250f3415b6c"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "go_test_premise": "Go aa8297d1b: tab-label identity and per-document history tests pass; neither verifies mouse activation or rendered sketch edges. See receipts/2026-11-14-go-tab-baseline/README.md.",
       "kernel_capabilities": "A planar rectangle sketch is displayed; no solid modeling operation is required.",
@@ -16051,12 +16051,12 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-tabs-50f02a102ce48562-e9e7c584/receipt-50f02a102ce48562.json",
-        "sha256": "65f08a5f57765fc9c5bc5dbf7d0b0996b9092c9321c28d0527045277a5c254f4"
+        "path": "architecture/rust-port/receipts/2026-11-15-tabs-close-saved-current/receipt-50f02a102ce48562.json",
+        "sha256": "65e8f5e6ae1dee7d2c36a913b9d6e6275c4f719dd2b6ba777b6a3fde3bca7de0"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "go_test_premise": "Go aa8297d1b: the background-close session test preserves the active sketch and tool; it does not test tab clicks or file bytes. See receipts/2026-11-14-go-tab-baseline/README.md.",
       "kernel_capabilities": "No solid modeling operation is required for the saved empty-part close scenario.",
@@ -16080,12 +16080,12 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-tabs-8d403d738cd32144-e9e7c584/receipt-8d403d738cd32144.json",
-        "sha256": "1f02c5e3cea2b4235c43a2aac6f168ddbb1bddb46ea877501e696266cb0ba016"
+        "path": "architecture/rust-port/receipts/2026-11-15-tabs-close-empty-current/receipt-8d403d738cd32144.json",
+        "sha256": "367362c23252ca037752cd1ca7da65656156b77f5a2e53b3f533ee5056c938f5"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "go_test_premise": "Go aa8297d1b: session close cleanup and dirty-document prompt guard tests pass; they do not cover these native tab-cancellation journeys. See receipts/2026-11-14-go-tab-baseline/README.md.",
       "kernel_capabilities": "The scenarios use empty parts or sketches; no solid modeling operation is required.",
@@ -16109,12 +16109,12 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-tabs-244278b44b0bbbfb-e9e7c584/receipt-244278b44b0bbbfb.json",
-        "sha256": "51cbf06889918999173e2f6183b9bcf3cff8eabcf2299a6a82f7a22e8fa3c9ca"
+        "path": "architecture/rust-port/receipts/2026-11-15-tabs-cancel-sketch-current/receipt-244278b44b0bbbfb.json",
+        "sha256": "a9228afd3c06bcf6b8324ed3b00b176896c8f89a107eba7ced075900eeca0597"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "go_test_premise": "Go aa8297d1b: session close cleanup and dirty-document prompt guard tests pass; they do not cover these native tab-cancellation journeys. See receipts/2026-11-14-go-tab-baseline/README.md.",
       "kernel_capabilities": "The scenarios use empty parts or sketches; no solid modeling operation is required.",
@@ -16138,12 +16138,12 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-tabs-d6614d03f57eca8a-e9e7c584/receipt-d6614d03f57eca8a.json",
-        "sha256": "4e7491abe9e36808897f97bf287af34b937298ad463548d809ed4b93781e189d"
+        "path": "architecture/rust-port/receipts/2026-11-15-tabs-cancel-save-prompt-current/receipt-d6614d03f57eca8a.json",
+        "sha256": "ca271c49c575f4dcbac442e5ceb25861e3148a6d6714e588a7a3603c8dba8215"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "go_test_premise": "Go aa8297d1b: session close cleanup and dirty-document prompt guard tests pass; they do not cover these native tab-cancellation journeys. See receipts/2026-11-14-go-tab-baseline/README.md.",
       "kernel_capabilities": "The scenarios use empty parts or sketches; no solid modeling operation is required.",
@@ -16167,12 +16167,12 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-tabs-f2e3989ecad9628f-e9e7c584/receipt-f2e3989ecad9628f.json",
-        "sha256": "fe160bb1af61f96e0cd84416fa078855b08bb14ff5f69a2bccb5a996dbf2adf4"
+        "path": "architecture/rust-port/receipts/2026-11-15-tabs-cancel-first-save-current/receipt-f2e3989ecad9628f.json",
+        "sha256": "7728b40617344871bc801b072fac24c955f1c2340466a52a0d4298e82bb1cd37"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "go_test_premise": "Go aa8297d1b: package-store save/reopen and dirty-close guard tests pass; they do not verify these native tab journeys. See receipts/2026-11-14-go-save-open-baseline/README.md and receipts/2026-11-14-go-tab-baseline/README.md.",
       "kernel_capabilities": "The scenarios use a finished empty sketch and do not require a solid modeling operation.",
@@ -16196,12 +16196,12 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-tabs-d6f09550bb0cdb93-e9e7c584/receipt-d6f09550bb0cdb93.json",
-        "sha256": "22403606dbf1052dec0215896f1b14d7c89331fe5255fd44f1f76c3e1403ed98"
+        "path": "architecture/rust-port/receipts/2026-11-15-tabs-save-new-current/receipt-d6f09550bb0cdb93.json",
+        "sha256": "a8059ebcf12d5f15e0bb05bec657f9df4a18d68d321cc920d612b9fdf0b75aa4"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "go_test_premise": "Go aa8297d1b: package-store save/reopen and dirty-close guard tests pass; they do not verify these native tab journeys. See receipts/2026-11-14-go-save-open-baseline/README.md and receipts/2026-11-14-go-tab-baseline/README.md.",
       "kernel_capabilities": "The scenarios use a finished empty sketch and do not require a solid modeling operation.",
@@ -16225,12 +16225,12 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-tabs-8f2c33b398b731b4-e9e7c584/receipt-8f2c33b398b731b4.json",
-        "sha256": "fd7c02db457f6642ee54377f656317722369c8e0c8455aef349bd3cc2de81724"
+        "path": "architecture/rust-port/receipts/2026-11-15-tabs-close-menu-current/receipt-8f2c33b398b731b4.json",
+        "sha256": "d0b1637f9efe0721e8c9ce226e72ca0fee81cd5dd40b2e12823a7443cb6ac727"
       },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "go_test_premise": "Go aa8297d1b: the background-close session test preserves the active sketch and tool; it does not test tab clicks or file bytes. See receipts/2026-11-14-go-tab-baseline/README.md.",
       "kernel_capabilities": "No solid modeling operation is required for the saved empty-part close scenario.",
