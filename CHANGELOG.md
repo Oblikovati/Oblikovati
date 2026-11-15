@@ -24,6 +24,8 @@
 
 ### Fixed
 
+- Kept Ctrl and Shift viewport body selections for Clear Appearance. (#3962)
+
 - Kept the rectangle placement prompt while a zero-size preview is incomplete. (#3975)
 
 - Excluded isolated task worktrees from source and documentation checks while retaining active nested modules. (#3971)
