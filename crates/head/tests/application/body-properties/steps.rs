@@ -123,6 +123,7 @@ fn expect_selector_reads(world: &ApplicationWorld, name: &str) {
 fn given_part(world: &mut ApplicationWorld) {
     part_with_body(world);
 }
+// Nothing has asked for the values yet, in a session that has just opened the part.
 #[given("the body's physical properties are unavailable in the current session")]
 fn unavailable(world: &mut ApplicationWorld) {
     let state = world.state();
