@@ -365,3 +365,105 @@ mod sketch_journey;
 
 #[path = "face_plane/direct_sketch.rs"]
 mod direct_sketch;
+
+#[test]
+fn offset_plane_rejects_non_plane_with_matching_name() {
+    use crate::HeadWork;
+    use oblikovati_gui::GuiOffsetPlaneBase;
+    let (mut owner, _) = owner();
+    let document = open_prism(&mut owner, false);
+    let plane = Client::new(owner.document_host())
+        .work_planes()
+        .create(&CreateWorkPlaneArgs {
+            kind: "plane-offset".into(),
+            refs: Some(vec![oblikovati_api::types::WORK_REF_XY_PLANE.into()]),
+            offset: "5 mm".into(),
+            ..Default::default()
+        })
+        .unwrap();
+    owner
+        .files
+        .commands(document)
+        .unwrap()
+        .run("Duplicate label", |snapshot, _| {
+            snapshot.work_geometry.rename(FeatureId(1), &plane.name)
+        })
+        .unwrap();
+    let before = owner
+        .files
+        .workspace()
+        .session(document)
+        .unwrap()
+        .snapshot()
+        .work_geometry
+        .features()
+        .len();
+    assert!(
+        owner
+            .create_offset_plane_from_gui(
+                document,
+                GuiOffsetPlaneBase::WorkPlane(FeatureId(1)),
+                "5 mm"
+            )
+            .is_err()
+    );
+    let after = owner
+        .files
+        .workspace()
+        .session(document)
+        .unwrap()
+        .snapshot()
+        .work_geometry
+        .features()
+        .len();
+    assert_eq!(before, after);
+}
+
+#[test]
+fn offset_plane_selects_feature_id_when_plane_labels_match() {
+    use crate::HeadWork;
+    use oblikovati_gui::GuiOffsetPlaneBase;
+    use oblikovati_model::feature::{
+        work_geometry::WorkGeometryDefinition, work_plane::WorkPlaneReference,
+    };
+    let (mut owner, _) = owner();
+    let document = open_prism(&mut owner, false);
+    let request = CreateWorkPlaneArgs {
+        kind: "plane-offset".into(),
+        refs: Some(vec![oblikovati_api::types::WORK_REF_XY_PLANE.into()]),
+        offset: "5 mm".into(),
+        ..Default::default()
+    };
+    let first = Client::new(owner.document_host())
+        .work_planes()
+        .create(&request)
+        .unwrap();
+    Client::new(owner.document_host())
+        .work_planes()
+        .create(&request)
+        .unwrap();
+    owner
+        .files
+        .commands(document)
+        .unwrap()
+        .run("Duplicate labels", |snapshot, _| {
+            snapshot.work_geometry.rename(FeatureId(3), &first.name)
+        })
+        .unwrap();
+    owner
+        .create_offset_plane_from_gui(
+            document,
+            GuiOffsetPlaneBase::WorkPlane(FeatureId(3)),
+            "5 mm",
+        )
+        .unwrap();
+    let session = owner.files.workspace().session(document).unwrap();
+    let feature = session.snapshot().work_geometry.get(FeatureId(4)).unwrap();
+    assert!(matches!(
+        feature.definition(),
+        WorkGeometryDefinition::Offset {
+            base: WorkPlaneReference::Feature(FeatureId(3)),
+            ..
+        }
+    ));
+}
