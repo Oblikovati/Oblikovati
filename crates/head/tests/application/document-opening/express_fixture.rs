@@ -138,6 +138,7 @@ fn no_load_full(world: &mut ApplicationWorld) {
     world.expect_no_text("Load Full");
 }
 #[then("the Finish and Simplify commands are available")]
+#[then("Finish and Simplify are visible and enabled as ribbon commands; neither is invoked")]
 fn full_commands(world: &mut ApplicationWorld) {
     for label in ["Finish", "Simplify"] {
         world.expect_text(label);
