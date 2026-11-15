@@ -2,6 +2,7 @@
 //! A versioned exchange format for the customization draft.
 use super::state::{COMMANDS, Command, Entry};
 use crate::ribbon::RibbonTab;
+use crate::ribbon_command_layout::RibbonAppearance;
 use std::collections::{BTreeMap, BTreeSet};
 use xml::reader::XmlEvent;
 use xml::writer::{EmitterConfig, XmlEvent as WriteEvent};
@@ -11,6 +12,7 @@ pub(super) type RibbonSettings = BTreeMap<RibbonTab, Vec<Entry>>;
 pub(super) struct SettingsDocument {
     pub commands: RibbonSettings,
     pub expanded_builtins: BTreeSet<String>,
+    pub appearance: RibbonAppearance,
 }
 
 pub(super) const MAX_SETTINGS_BYTES: usize = 1024 * 1024;
@@ -28,7 +30,11 @@ pub(super) fn encode(settings: &SettingsDocument) -> Result<Vec<u8>, String> {
         .perform_indent(true)
         .create_writer(Vec::new());
     writer
-        .write(WriteEvent::start_element("ribbon-customization").attr("version", "3"))
+        .write(
+            WriteEvent::start_element("ribbon-customization")
+                .attr("version", "4")
+                .attr("appearance", settings.appearance.id()),
+        )
         .map_err(|error| format!("XML root: expected writable settings: {error}"))?;
     for (tab, entries) in &settings.commands {
         let id = TABS
@@ -89,6 +95,7 @@ pub(super) fn decode(bytes: &[u8]) -> Result<SettingsDocument, String> {
     Ok(SettingsDocument {
         commands: decoder.settings,
         expanded_builtins: decoder.expanded_builtins,
+        appearance: decoder.appearance,
     })
 }
 #[derive(Default)]
@@ -99,6 +106,7 @@ struct SettingsDecoder {
     current: Option<RibbonTab>,
     root: bool,
     version: u8,
+    appearance: RibbonAppearance,
 }
 impl SettingsDecoder {
     fn event(&mut self, event: XmlEvent) -> Result<(), String> {
@@ -136,15 +144,10 @@ impl SettingsDecoder {
     }
     fn start(&mut self, tag: String, attrs: &[(&str, &str)]) -> Result<(), String> {
         match (self.path.as_slice(), tag.as_str()) {
-            ([], "ribbon-customization")
-                if !self.root && matches!(attrs, [("version", "1" | "2" | "3")]) =>
-            {
-                self.root = true;
-                self.version = attrs[0].1.parse().expect("validated settings version");
-            }
+            ([], "ribbon-customization") if !self.root => self.root_element(attrs)?,
             ([parent], "tab") if parent == "ribbon-customization" => self.tab(attrs)?,
             ([parent], "expanded-builtin")
-                if parent == "ribbon-customization" && self.version == 3 =>
+                if parent == "ribbon-customization" && self.version >= 3 =>
             {
                 self.builtin(attrs)?
             }
@@ -153,11 +156,31 @@ impl SettingsDecoder {
             }
             _ => {
                 return Err(format!(
-                    "XML element {tag:?}: expected version 1, 2 or 3 ribbon settings"
+                    "XML element {tag:?}: expected version 1, 2, 3 or 4 ribbon settings"
                 ));
             }
         }
         self.path.push(tag);
+        Ok(())
+    }
+    fn root_element(&mut self, attrs: &[(&str, &str)]) -> Result<(), String> {
+        let version = attrs
+            .iter()
+            .find(|(name, _)| *name == "version")
+            .map(|(_, value)| *value);
+        self.version = match version {
+            Some("1") => 1,
+            Some("2") => 2,
+            Some("3") => 3,
+            Some("4") => 4,
+            _ => return Err(format!("ribbon version {version:?}: expected 1, 2, 3 or 4")),
+        };
+        let count = if self.version == 4 { 2 } else { 1 };
+        attribute(attrs, "version", count)?;
+        if self.version == 4 {
+            self.appearance = RibbonAppearance::from_id(attribute(attrs, "appearance", count)?)?;
+        }
+        self.root = true;
         Ok(())
     }
     fn builtin(&mut self, attrs: &[(&str, &str)]) -> Result<(), String> {
@@ -277,6 +300,7 @@ mod tests {
         let settings = SettingsDocument {
             commands,
             expanded_builtins: BTreeSet::from(["part.tools.clipboard.copy".into()]),
+            appearance: RibbonAppearance::Compact,
         };
         assert_eq!(decode(&encode(&settings).unwrap()).unwrap(), settings);
     }
@@ -301,6 +325,23 @@ mod tests {
             "<ribbon-customization version=\"3\"><expanded-builtin id=\"bad id\"/></ribbon-customization>",
             "<ribbon-customization version=\"3\"><expanded-builtin id=\"part.tools.clipboard.copy\"/><expanded-builtin id=\"part.tools.clipboard.copy\"/></ribbon-customization>",
             "<ribbon-customization version=\"2\"><expanded-builtin id=\"part.tools.clipboard.copy\"/></ribbon-customization>",
+        ] {
+            assert!(decode(xml.as_bytes()).is_err(), "{xml}");
+        }
+    }
+    #[test]
+    fn legacy_settings_default_to_normal_and_invalid_appearances_fail() {
+        for version in ["1", "2", "3"] {
+            let xml = format!("<ribbon-customization version=\"{version}\"/>");
+            assert_eq!(
+                decode(xml.as_bytes()).unwrap().appearance,
+                RibbonAppearance::Normal
+            );
+        }
+        for xml in [
+            "<ribbon-customization version=\"4\"/>",
+            "<ribbon-customization version=\"4\" appearance=\"unknown\"/>",
+            "<ribbon-customization version=\"3\" appearance=\"normal\"/>",
         ] {
             assert!(decode(xml.as_bytes()).is_err(), "{xml}");
         }

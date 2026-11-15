@@ -16,22 +16,30 @@ impl RibbonCustomization {
     ) -> bool {
         let entries = self.draft.applied(tab).to_vec();
         let mut right_clicked = false;
+        let origin = ui.cursor_pos();
+        let normal = icons.appearance == crate::ribbon_command_layout::RibbonAppearance::Normal;
         for (count, (index, entry)) in entries
             .iter()
             .enumerate()
             .filter(|(_, entry)| expanded.is_none_or(|shown| entry.expanded == shown))
             .enumerate()
         {
-            if count > 0 {
+            if normal && count > 0 {
                 ui.same_line();
+            } else if !normal {
+                icons.cursor(ui, origin, icons.appearance.cell(count).0);
             }
             let _id = ui.push_id(format!("custom-command-{index}"));
-            let label = if entry.text {
+            let label = if entry.text || !normal {
                 entry.command.label()
             } else {
                 "##icon-only"
             };
-            let size = if entry.large { [90., 58.] } else { [90., 26.] };
+            let size = if normal {
+                if entry.large { [90., 58.] } else { [90., 26.] }
+            } else {
+                icons.appearance.cell(count).1
+            };
             match entry.command {
                 Command::Sketches => sketch_visibility(ui, label, size, state, icons, actions),
                 Command::Tool(tool) => icons.command_button(
@@ -68,10 +76,14 @@ impl RibbonCustomization {
                 ),
                 Command::Annotations => {
                     let disabled = ui.begin_disabled(true);
-                    ui.button(label);
+                    if normal {
+                        ui.button(label);
+                    } else {
+                        icons.button(ui, label, crate::icons::IconGlyph::Annotation, size);
+                    }
                     drop(disabled);
                 }
-                Command::Separator => separator(ui),
+                Command::Separator => separator(ui, if normal { [8., 58.] } else { size }),
             }
             if entry.command != Command::Separator {
                 right_clicked |= self.command_menu(ui, tab, entry.command, entry.expanded);
@@ -107,16 +119,16 @@ impl RibbonCustomization {
         right
     }
 }
-fn separator(ui: &Ui) {
+fn separator(ui: &Ui, size: [f32; 2]) {
     let [x, y] = ui.cursor_screen_pos();
     ui.get_window_draw_list()
         .add_line(
             [x + 3., y + 2.],
-            [x + 3., y + 56.],
+            [x + 3., y + size[1] - 2.],
             ui.style_color(imgui::StyleColor::Separator),
         )
         .build();
-    ui.dummy([8., 58.]);
+    ui.dummy([8., size[1]]);
 }
 fn sketch_visibility(
     ui: &Ui,

@@ -16,8 +16,10 @@ pub(super) fn draw_panel_popup(
         ui,
         anchor,
         width,
-        158. + layout.scrollbar_height(ui) + 80. * (factor - 1.),
+        78. + layout.scrollbar_height(ui)
+            + (20. + context.owners.icons.appearance.command_height()) * factor,
         factor,
+        context.owners.icons.appearance,
     );
     let Some(_popup) = ui.begin_popup(identity) else {
         return;
@@ -33,12 +35,19 @@ pub(super) fn draw_panel_popup(
         ui.close_current_popup();
     }
 }
-fn popup_geometry(ui: &Ui, anchor: f32, width: f32, band_height: f32, factor: f32) -> [f32; 2] {
+fn popup_geometry(
+    ui: &Ui,
+    anchor: f32,
+    width: f32,
+    band_height: f32,
+    factor: f32,
+    appearance: crate::ribbon_command_layout::RibbonAppearance,
+) -> [f32; 2] {
     let viewport = ui.io().display_size[0];
     let content_width = width.min((viewport - 32.).max(1.));
     let padding = ui.clone_style().window_padding;
     let outer_width = content_width + 2. * padding[0];
-    let height = 80. * factor
+    let height = (20. + appearance.command_height()) * factor
         + if content_width < width {
             ui.clone_style().scrollbar_size
         } else {

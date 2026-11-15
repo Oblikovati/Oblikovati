@@ -100,12 +100,14 @@ fn moving_a_command_saves_atomically_without_committing_other_drafts() {
             .is_err()
     );
     assert!(!customization.has_expanded(RibbonTab::Tools));
+    assert_eq!(customization.expanded_command_count(RibbonTab::Tools), 0);
     assert!(customization.draft.changed());
     store.0.borrow_mut().fail_save = false;
     customization
         .relocate_command(RibbonTab::Tools, Command::Sketches, true)
         .unwrap();
     assert!(customization.has_expanded(RibbonTab::Tools));
+    assert_eq!(customization.expanded_command_count(RibbonTab::Tools), 1);
     assert!(customization.draft.changed());
     let mut reopened = RibbonCustomization::default();
     reopened.set_store(Box::new(store)).unwrap();
@@ -138,4 +140,40 @@ fn built_in_relocation_is_atomic_and_survives_reload_and_reset() {
     let mut reset = RibbonCustomization::default();
     reset.set_store(Box::new(store)).unwrap();
     assert!(!reset.builtin_expanded(id));
+}
+
+#[test]
+fn appearance_is_saved_atomically_and_reloaded_with_other_ribbon_settings() {
+    use crate::ribbon_command_layout::RibbonAppearance;
+    let store = FakeRibbonStore::default();
+    let mut customization = RibbonCustomization::default();
+    customization.set_store(Box::new(store.clone())).unwrap();
+    customization.staged_appearance = RibbonAppearance::Compact;
+    store.0.borrow_mut().fail_save = true;
+    assert!(customization.apply().is_err());
+    assert_eq!(customization.appearance, RibbonAppearance::Normal);
+    store.0.borrow_mut().fail_save = false;
+    customization.apply().unwrap();
+    let mut reopened = RibbonCustomization::default();
+    reopened.set_store(Box::new(store)).unwrap();
+    assert_eq!(reopened.appearance, RibbonAppearance::Compact);
+    reopened.reset().unwrap();
+    assert_eq!(reopened.appearance, RibbonAppearance::Normal);
+}
+
+#[test]
+fn selecting_an_appearance_keeps_applied_state_when_saving_fails() {
+    use crate::ribbon_command_layout::RibbonAppearance;
+    let store = FakeRibbonStore::default();
+    let mut customization = RibbonCustomization::default();
+    customization.set_store(Box::new(store.clone())).unwrap();
+    store.0.borrow_mut().fail_save = true;
+    customization.select_appearance(RibbonAppearance::Small);
+    assert_eq!(customization.appearance(), RibbonAppearance::Normal);
+    assert!(customization.command_error.is_some());
+    store.0.borrow_mut().fail_save = false;
+    customization.select_appearance(RibbonAppearance::Compact);
+    let mut reopened = RibbonCustomization::default();
+    reopened.set_store(Box::new(store)).unwrap();
+    assert_eq!(reopened.appearance(), RibbonAppearance::Compact);
 }

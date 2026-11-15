@@ -155,16 +155,37 @@ fn draw_window(
     let [viewport_width, viewport_height] = ui.io().display_size;
     let left = area.left.clamp(0., (viewport_width - 1.).max(0.));
     let right = area.right.clamp(left + 1., viewport_width.max(left + 1.));
-    let width = (ADDITIONAL_WIDTH * scale).min((right - left - VIEWPORT_MARGIN).max(1.));
+    let appearance = context.owners.icons.appearance;
+    let preferred_width = if appearance == crate::ribbon_command_layout::RibbonAppearance::Normal {
+        ADDITIONAL_WIDTH
+    } else {
+        let count = if panel == RibbonPanel::UserCommands {
+            context.owners.customization.expanded_command_count(tab)
+        } else {
+            3
+        };
+        let (position, size) = appearance.cell(count.saturating_sub(1));
+        (position[0] + size[0] + 28.).max(88.)
+    };
+    let width = (preferred_width * scale).min((right - left - VIEWPORT_MARGIN).max(1.));
     let top = area.top.min((viewport_height - 1.).max(0.));
-    let height = (ADDITIONAL_HEIGHT * scale).min((viewport_height - top).max(1.));
+    let preferred_height = if appearance == crate::ribbon_command_layout::RibbonAppearance::Normal {
+        ADDITIONAL_HEIGHT
+    } else {
+        appearance.command_height() + 50.
+    };
+    let height = (preferred_height * scale).min((viewport_height - top).max(1.));
     let x = expansion.anchor[0].clamp(left, (right - width).max(left));
     expansion.bounds = [[x, top], [x + width, top + height]];
     crate::widget_abi::window_geometry(ui, [x, top], [width, height], imgui::Condition::Always);
     let mut close = false;
     let focus = std::mem::take(&mut expansion.focus);
     ui.window(format!("##ribbon-additional-{panel:?}"))
-        .flags(imgui::WindowFlags::NO_DOCKING | imgui::WindowFlags::NO_SAVED_SETTINGS)
+        .flags(
+            imgui::WindowFlags::NO_DOCKING
+                | imgui::WindowFlags::NO_SAVED_SETTINGS
+                | imgui::WindowFlags::HORIZONTAL_SCROLLBAR,
+        )
         .title_bar(false)
         .movable(false)
         .resizable(false)
@@ -281,8 +302,15 @@ fn commands(
             context.state,
             context.owners.precise_input,
             context.owners.create_block,
+            context.owners.icons,
             context.actions,
         );
+        return;
+    }
+    if context.owners.icons.appearance != crate::ribbon_command_layout::RibbonAppearance::Normal
+        && let Some(entries) = additional_icon_entries(panel)
+    {
+        additional_icons(context, tab, panel, display, entries);
         return;
     }
     let disabled = ui.begin_disabled(true);
@@ -296,32 +324,97 @@ fn commands(
     };
     for &label in labels {
         ui.button(label);
-        if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
-            if ui.is_mouse_clicked(imgui::MouseButton::Right) {
-                display.request_expansion_command_context(tab, panel, label);
-            }
-            let help = if label == "Edit Coordinate System" {
-                "Change the sketch origin and coordinate axes.\n"
-            } else {
-                ""
-            };
-            ui.tooltip_text(format!(
-                "{label}\n{help}This command is not available in this build."
-            ));
-        }
+        unavailable_tooltip(ui, tab, panel, label, display);
     }
     drop(disabled);
+}
+fn additional_icons(
+    context: &mut PanelDrawContext<'_>,
+    tab: RibbonTab,
+    panel: RibbonPanel,
+    display: &mut RibbonDisplayState,
+    entries: &'static [(&'static str, crate::icons::IconGlyph)],
+) {
+    let ui = context.ui;
+    let icons = context.owners.icons;
+    let origin = ui.cursor_pos();
+    let disabled = ui.begin_disabled(true);
+    for (index, &(label, glyph)) in entries.iter().enumerate() {
+        let (position, size) = icons.appearance.cell(index);
+        icons.cursor(ui, origin, position);
+        icons.button(ui, label, glyph, size);
+        unavailable_tooltip(ui, tab, panel, label, display);
+    }
+    drop(disabled);
+    icons.cursor(ui, origin, [0., icons.appearance.command_height()]);
+}
+fn additional_icon_entries(
+    panel: RibbonPanel,
+) -> Option<&'static [(&'static str, crate::icons::IconGlyph)]> {
+    use crate::icons::IconGlyph as Glyph;
+    Some(match panel {
+        RibbonPanel::PartModify => &[
+            ("Move Bodies", Glyph::MoveBodies),
+            ("Bend Part", Glyph::BendPart),
+            ("Copy Object", Glyph::Copy),
+        ],
+        RibbonPanel::PartSimplification => &[
+            ("Remove Details", Glyph::Simplify),
+            ("Fill Voids", Glyph::FillVoids),
+            ("Define Envelopes", Glyph::Envelope),
+        ],
+        RibbonPanel::Constrain => &[
+            ("Edit Coordinate System", Glyph::WorkCoordinateSystem),
+            ("Constraint Inference Scope", Glyph::ConstraintScope),
+        ],
+        _ => return None,
+    })
+}
+fn unavailable_tooltip(
+    ui: &Ui,
+    tab: RibbonTab,
+    panel: RibbonPanel,
+    label: &'static str,
+    display: &mut RibbonDisplayState,
+) {
+    if !ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
+        return;
+    }
+    if ui.is_mouse_clicked(imgui::MouseButton::Right) {
+        display.request_expansion_command_context(tab, panel, label);
+    }
+    let help = if label == "Edit Coordinate System" {
+        "Change the sketch origin and coordinate axes.\n"
+    } else {
+        ""
+    };
+    ui.tooltip_text(format!(
+        "{label}\n{help}This command is not available in this build."
+    ));
 }
 fn create_commands(
     ui: &Ui,
     state: &GuiCommandState,
     precise_input: &mut crate::sketch::precise_input::PreciseInputBar,
     create_block: &mut crate::sketch::create_block::CreateBlockDialog,
+    icons: &crate::icons::GuiRibbonIcons,
     actions: &mut Vec<GuiShellAction>,
 ) {
-    crate::sketch::create_block::ribbon_button(ui, state, create_block, actions, [0., 0.]);
+    let size = if icons.appearance == crate::ribbon_command_layout::RibbonAppearance::Normal {
+        [0., 0.]
+    } else {
+        icons.appearance.cell(0).1
+    };
+    let origin = ui.cursor_pos();
+    crate::sketch::create_block::ribbon_button(ui, state, create_block, actions, size, icons);
     let disabled = ui.begin_disabled(state.precise_target.is_none() || state.transaction_open);
-    precise_input.toggle(ui);
+    if icons.appearance == crate::ribbon_command_layout::RibbonAppearance::Normal {
+        precise_input.toggle(ui);
+    } else {
+        icons.cursor(ui, origin, icons.appearance.cell(1).0);
+        precise_input.toggle_icon(ui, icons);
+        icons.cursor(ui, origin, [0., icons.appearance.command_height()]);
+    }
     drop(disabled);
 }
 fn inside(point: [f32; 2], bounds: [[f32; 2]; 2]) -> bool {

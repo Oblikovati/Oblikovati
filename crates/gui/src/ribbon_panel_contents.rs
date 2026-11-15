@@ -3,7 +3,12 @@
 use crate::ribbon_panels::RibbonPanel;
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::Ui;
+mod appearance_other;
+mod appearance_sketch;
+mod appearance_tools;
+mod appearance_view;
 mod muted;
+mod sketch;
 use muted::{muted_commands, muted_icon_commands, part_modify_controls};
 
 /// Beside the format toggles, which fill the panel's height.
@@ -19,8 +24,17 @@ pub(crate) fn draw_panel_content(
     additional_allowed: bool,
 ) -> bool {
     crate::widget_abi::cursor_position(ui, origin);
+    if owners.icons.appearance != crate::ribbon_command_layout::RibbonAppearance::Normal
+        && appearance_other::draw(ui, panel, origin, state, owners)
+    {
+        return false;
+    }
     match panel {
         RibbonPanel::Modify => {
+            if owners.icons.appearance != crate::ribbon_command_layout::RibbonAppearance::Normal {
+                appearance_sketch::modify(ui, origin, state, owners.icons, actions);
+                return false;
+            }
             let start = GuiShellAction::SketchMove(crate::GuiSketchMoveAction::Start);
             crate::chrome::command_control(ui, "Move", start, state, actions, || {
                 owners
@@ -34,36 +48,67 @@ pub(crate) fn draw_panel_content(
             });
         }
         RibbonPanel::SketchPattern => {
-            let opened =
-                crate::sketch::rectangular_pattern::ribbon_button(ui, state, owners.sketch_pattern);
-            owners.icons.cursor(ui, origin, [0., 30.]);
+            let opened = crate::sketch::rectangular_pattern::ribbon_button(
+                ui,
+                state,
+                owners.sketch_pattern,
+                owners.icons,
+            );
+            let (position, size) = owners.icons.appearance.cell(1);
+            owners.icons.cursor(ui, origin, position);
             let unavailable = ui.begin_disabled(true);
-            crate::widget_abi::button(ui, "Circular", [108., 26.]);
+            if owners.icons.appearance == crate::ribbon_command_layout::RibbonAppearance::Normal {
+                crate::widget_abi::button(ui, "Circular", size);
+            } else {
+                owners.icons.button(
+                    ui,
+                    "Circular",
+                    crate::icons::IconGlyph::CircularPattern,
+                    size,
+                );
+            }
             drop(unavailable);
             return opened;
         }
-        RibbonPanel::Insert => {
-            muted_commands(ui, origin, owners.icons, &["Image", "Points"], NOT_PORTED)
+        RibbonPanel::Insert => muted_icon_commands(
+            ui,
+            origin,
+            owners.icons,
+            &[
+                ("Image", Some(crate::icons::IconGlyph::InsertImage)),
+                ("Points", Some(crate::icons::IconGlyph::Point)),
+            ],
+            false,
+        ),
+        RibbonPanel::Create => {
+            sketch::sketch_create_controls(ui, origin, state, owners.icons, actions)
         }
-        RibbonPanel::Create => sketch_create_controls(ui, origin, state, owners.icons, actions),
         RibbonPanel::Constrain => {
-            sketch_constraint_controls(ui, origin, state, owners.icons, actions)
+            sketch::sketch_constraint_controls(ui, origin, state, owners.icons, actions)
         }
         RibbonPanel::Layout => {
-            muted_commands(
+            muted_icon_commands(
                 ui,
                 origin,
                 owners.icons,
-                &["Make Part", "Make Components"],
-                NOT_PORTED,
+                &[
+                    ("Make Part", Some(crate::icons::IconGlyph::NewPart)),
+                    (
+                        "Make Components",
+                        Some(crate::icons::IconGlyph::NewAssembly),
+                    ),
+                ],
+                false,
             );
-            owners.icons.cursor(ui, origin, [116., 0.]);
+            let (position, size) = owners.icons.appearance.cell(2);
+            owners.icons.cursor(ui, origin, position);
             crate::sketch::create_block::ribbon_button(
                 ui,
                 state,
                 owners.create_block,
                 actions,
-                [108., 26.],
+                size,
+                owners.icons,
             );
         }
         RibbonPanel::UserCommands => {
@@ -79,13 +124,27 @@ pub(crate) fn draw_panel_content(
         }
         RibbonPanel::Format => {
             crate::sketch_formats::sketch_format_controls(ui, origin, state, owners.icons, actions);
-            owners.icons.cursor(ui, origin, [PRECISE_INPUT_COLUMN, 0.]);
+            let position = if owners.icons.appearance
+                == crate::ribbon_command_layout::RibbonAppearance::Normal
+            {
+                [PRECISE_INPUT_COLUMN, 0.]
+            } else {
+                owners.icons.appearance.cell(3).0
+            };
+            owners.icons.cursor(ui, origin, position);
             let disabled = ui.begin_disabled(state.authoring != crate::GuiAuthoringContext::Sketch);
-            owners.precise_input.toggle(ui);
+            if owners.icons.appearance == crate::ribbon_command_layout::RibbonAppearance::Normal {
+                owners.precise_input.toggle(ui);
+            } else {
+                owners.precise_input.toggle_icon(ui, owners.icons);
+            }
             drop(disabled);
         }
         RibbonPanel::Parameters => return owners.parameters.toolbar(ui, state, owners.icons),
         RibbonPanel::ToolOptions => {
+            if owners.icons.appearance != crate::ribbon_command_layout::RibbonAppearance::Normal {
+                return appearance_tools::options(ui, origin, state, owners);
+            }
             owners.icons.cursor(ui, origin, [156., 0.]);
             let disabled = ui.begin_disabled(
                 state.document_type != Some(oblikovati_api::types::DOCUMENT_PART)
@@ -113,11 +172,17 @@ pub(crate) fn draw_panel_content(
             }
             return application || document;
         }
-        RibbonPanel::ToolAssets => crate::ribbon_part_assets::draw(ui, origin, state, actions),
+        RibbonPanel::ToolAssets => {
+            crate::ribbon_part_assets::draw(ui, origin, state, owners.icons, actions)
+        }
         RibbonPanel::ToolClipboard | RibbonPanel::ToolMeasure => {
             crate::ribbon_panels::builtin::draw(ui, panel, state, owners, actions, false);
         }
         RibbonPanel::ToolFind => {
+            if owners.icons.appearance != crate::ribbon_command_layout::RibbonAppearance::Normal {
+                appearance_tools::find(ui, state, owners);
+                return false;
+            }
             let disabled = ui.begin_disabled(
                 owners.home_active
                     || state
@@ -130,8 +195,20 @@ pub(crate) fn draw_panel_content(
             }
             drop(disabled);
         }
-        RibbonPanel::Appearance => return appearance_controls(ui, state, owners.editor, actions),
-        RibbonPanel::Visibility => visibility_controls(ui, state, actions),
+        RibbonPanel::Appearance => {
+            if owners.icons.appearance != crate::ribbon_command_layout::RibbonAppearance::Normal {
+                return appearance_view::theme(
+                    ui,
+                    origin,
+                    state,
+                    owners.editor,
+                    owners.icons,
+                    actions,
+                );
+            }
+            return appearance_controls(ui, state, owners.editor, actions);
+        }
+        RibbonPanel::Visibility => visibility_controls(ui, state, owners.icons, actions),
         RibbonPanel::Windows => windows_controls(ui, origin, state, owners, actions),
         RibbonPanel::Component => {
             owners.icons.cursor(ui, origin, [0., 0.]);
@@ -238,7 +315,7 @@ pub(crate) fn draw_panel_content(
                     ("Plane", Some(IconGlyph::WorkPlane)),
                     ("Axis", Some(IconGlyph::WorkAxis)),
                     ("Point", Some(IconGlyph::WorkPoint)),
-                    ("UCS", None),
+                    ("UCS", Some(IconGlyph::WorkCoordinateSystem)),
                 ],
                 false,
             );
@@ -264,12 +341,13 @@ fn part_create_controls(
     actions: &mut Vec<GuiShellAction>,
 ) {
     use crate::application::quick_access_toolbar::{EXTRUDE, extrude_can_start};
-    crate::widget_abi::cursor_position(ui, origin);
+    let (position, size) = owners.icons.appearance.cell(0);
+    owners.icons.cursor(ui, origin, position);
     {
         let _muted = ui.begin_disabled(!extrude_can_start(state));
         if owners
             .icons
-            .button(ui, EXTRUDE, crate::icons::IconGlyph::Extrude, [108., 26.])
+            .button(ui, EXTRUDE, crate::icons::IconGlyph::Extrude, size)
         {
             actions.push(crate::extrude_dialog::start_action(state));
         }
@@ -283,12 +361,13 @@ fn part_create_controls(
         ui.tooltip_text(NOT_PORTED);
     }
     owners.quick_access.ribbon_command_menu(ui, EXTRUDE, state);
-    crate::widget_abi::cursor_position(ui, [origin[0], origin[1] + 30.]);
+    let (position, size) = owners.icons.appearance.cell(1);
+    owners.icons.cursor(ui, origin, position);
     {
         let _muted = ui.begin_disabled(true);
         owners
             .icons
-            .button(ui, "Revolve", crate::icons::IconGlyph::Revolve, [108., 26.]);
+            .button(ui, "Revolve", crate::icons::IconGlyph::Revolve, size);
     }
     if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
         ui.tooltip_text(NOT_PORTED);
@@ -321,7 +400,14 @@ fn single_command(
     actions: &mut Vec<GuiShellAction>,
 ) {
     if let Some((label, action)) = panel.command() {
-        icons.command_button(ui, label, action, state, [108., 58.], actions);
+        icons.command_button(
+            ui,
+            label,
+            action,
+            state,
+            icons.appearance.single_cell(),
+            actions,
+        );
     }
 }
 fn windows_controls(
@@ -331,12 +417,16 @@ fn windows_controls(
     owners: &mut crate::ribbon_panels::RibbonPanelOwners<'_>,
     actions: &mut Vec<GuiShellAction>,
 ) {
-    owners.workspace.user_interface_menu(ui, [108., 26.]);
+    if owners.icons.appearance != crate::ribbon_command_layout::RibbonAppearance::Normal {
+        appearance_view::windows(ui, origin, state, owners, actions);
+        return;
+    }
+    owners.workspace.user_interface_menu(ui, [108., 26.], None);
     crate::widget_abi::cursor_position(ui, [origin[0], origin[1] + 30.]);
     owners
         .workspace
         .switcher
-        .menu(ui, [108., 26.], state, actions);
+        .menu(ui, [108., 26.], state, actions, None);
     crate::widget_abi::cursor_position(ui, [origin[0] + 116., origin[1]]);
     crate::chrome::command_button(
         ui,
@@ -348,7 +438,12 @@ fn windows_controls(
     );
 }
 /// Show or hide every sketch at once through the owner's per-sketch command.
-fn visibility_controls(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
+fn visibility_controls(
+    ui: &Ui,
+    state: &GuiCommandState,
+    icons: &crate::icons::GuiRibbonIcons,
+    actions: &mut Vec<GuiShellAction>,
+) {
     let sketches = state
         .browser
         .as_ref()
@@ -360,7 +455,16 @@ fn visibility_controls(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiSh
     } else {
         "Show Sketches"
     };
-    let pressed = crate::widget_abi::button(ui, label, [108., 26.]);
+    let pressed = if icons.appearance == crate::ribbon_command_layout::RibbonAppearance::Normal {
+        crate::widget_abi::button(ui, label, [108., 26.])
+    } else {
+        icons.button(
+            ui,
+            label,
+            crate::icons::IconGlyph::CreateSketch,
+            icons.appearance.single_cell(),
+        )
+    };
     drop(disabled);
     let Some(document) = state.document.filter(|_| pressed) else {
         return;
@@ -388,91 +492,4 @@ fn appearance_controls(
         palette.controls(ui, actions);
     }
     state.theme.is_some() && crate::theme_editor::launcher(ui, editor)
-}
-use crate::GuiSketchConstraint::{
-    Coincident, Collinear, Concentric, Equal, Fix, Horizontal, Parallel, Perpendicular, Tangent,
-    Vertical,
-};
-const CONSTRAINT_CONTROLS: [(crate::GuiSketchConstraint, [f32; 2]); 10] = [
-    (Horizontal, [0.0, 0.0]),
-    (Vertical, [0.0, 20.0]),
-    (Coincident, [0.0, 40.0]),
-    (Fix, [116.0, 60.0]),
-    (Parallel, [232.0, 0.0]),
-    (Perpendicular, [232.0, 20.0]),
-    (Collinear, [232.0, 40.0]),
-    (Equal, [348.0, 0.0]),
-    (Concentric, [348.0, 20.0]),
-    (Tangent, [348.0, 40.0]),
-];
-fn sketch_constraint_controls(
-    ui: &Ui,
-    origin: [f32; 2],
-    state: &GuiCommandState,
-    icons: &crate::icons::GuiRibbonIcons,
-    actions: &mut Vec<GuiShellAction>,
-) {
-    for (choice, position) in CONSTRAINT_CONTROLS {
-        icons.cursor(ui, origin, position);
-        icons.command_button(
-            ui,
-            choice.label(),
-            GuiShellAction::ConstrainSketch(choice),
-            state,
-            [108., 18.],
-            actions,
-        );
-    }
-    icons.cursor(ui, origin, [116., 0.]);
-    icons.command_button(
-        ui,
-        "Dimension",
-        GuiShellAction::Dimension(crate::GuiDimensionAction::Start),
-        state,
-        [108., 58.],
-        actions,
-    );
-}
-fn sketch_create_controls(
-    ui: &Ui,
-    origin: [f32; 2],
-    state: &GuiCommandState,
-    icons: &crate::icons::GuiRibbonIcons,
-    actions: &mut Vec<GuiShellAction>,
-) {
-    crate::widget_abi::cursor_position(ui, origin);
-    let rectangle = crate::GuiSketchTool::Rectangle;
-    icons.command_button(
-        ui,
-        rectangle.label(),
-        GuiShellAction::PlaceSketchTool(rectangle),
-        state,
-        [108., 58.],
-        actions,
-    );
-    let secondary = crate::sketch_tools::SECONDARY_SKETCH_TOOLS;
-    for (index, tool) in secondary.into_iter().enumerate() {
-        icons.cursor(
-            ui,
-            origin,
-            [124. + (index % 2) as f32 * 116., (index / 2) as f32 * 20.],
-        );
-        crate::sketch_flyouts::circular_tool_button(ui, state, actions, tool, icons);
-    }
-    icons.cursor(ui, origin, [124., 60.]);
-    icons.command_button(
-        ui,
-        "Line",
-        GuiShellAction::PlaceSketchTool(crate::GuiSketchTool::Line),
-        state,
-        [108., 18.],
-        actions,
-    );
-    if ui.is_item_hovered() {
-        ui.tooltip_text("Draw connected line segments. For arcs, choose Center Arc.");
-    }
-    icons.cursor(ui, origin, [240., 60.]);
-    let disabled = ui.begin_disabled(true);
-    crate::widget_abi::button(ui, "Project Geometry", icons.cell([150., 18.]));
-    drop(disabled);
 }
