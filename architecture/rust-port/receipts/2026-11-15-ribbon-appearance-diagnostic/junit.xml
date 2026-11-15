@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon appearance: tmp/obk-ribbon-appearance-pinned-20261115/features/application/ribbon-appearance/ribbon-appearance.feature" package="testsuite/Feature: Ribbon appearance: tmp/obk-ribbon-appearance-pinned-20261115/features/application/ribbon-appearance/ribbon-appearance.feature" tests="18" errors="0" failures="11" hostname="localhost" timestamp="2026-11-15T00:40:34.260379224Z" time="95.493396196"><testcase name="Scenario: Inspect the appearance menu: tmp/obk-ribbon-appearance-pinned-20261115/features/application/ribbon-appearance/ribbon-appearance.feature:5:3" time="4.838129719"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Inspect the appearance menu
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon uses the Normal appearance
+   ✘  When the user right-clicks a ribbon panel title and opens "Ribbon Appearance"
+      Step failed:
+      Defined: tmp/obk-ribbon-appearance-pinned-20261115/features/application/ribbon-appearance/ribbon-appearance.feature:8:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Hide command labels: tmp/obk-ribbon-appearance-pinned-20261115/features/application/ribbon-appearance/ribbon-appearance.feature:13:3" time="4.779146776"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Hide command labels
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon uses the Normal appearance
+   ✘  When the user selects "Text Off" from the Ribbon Appearance submenu
+      Step failed:
+      Defined: tmp/obk-ribbon-appearance-pinned-20261115/features/application/ribbon-appearance/ribbon-appearance.feature:16:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Use small ribbon commands: tmp/obk-ribbon-appearance-pinned-20261115/features/application/ribbon-appearance/ribbon-appearance.feature:23:3" time="2.523820917"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Use small ribbon commands
+   ✔  Given a part is active in the MCAD Software
+   ✘  And the full 3D Model ribbon uses the Text Off appearance
+      Step failed:
+      Defined: tmp/obk-ribbon-appearance-pinned-20261115/features/application/ribbon-appearance/ribbon-appearance.feature:25:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Use compact ribbon commands: tmp/obk-ribbon-appearance-pinned-20261115/features/application/ribbon-appearance/ribbon-appearance.feature:32:3" time="2.57052581"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Use compact ribbon commands
+   ✔  Given a part is active in the MCAD Software
+   ✘  And the full 3D Model ribbon uses the Small appearance
+      Step failed:
+      Defined: tmp/obk-ribbon-appearance-pinned-20261115/features/application/ribbon-appearance/ribbon-appearance.feature:34:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Use large ribbon commands and restore normal appearance: tmp/obk-ribbon-appearance-pinned-20261115/features/application/ribbon-appearance/ribbon-appearance.feature:41:3" time="2.55638328"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Use large ribbon commands and restore normal appearance
+   ✔  Given a part is active in the MCAD Software
+   ✘  And the full 3D Model ribbon uses the Compact appearance
+      Step failed:
+      Defined: tmp/obk-ribbon-appearance-pinned-20261115/features/application/ribbon-appearance/ribbon-appearance.feature:43:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Retain compact appearance when switching tabs and cycling display modes: tmp/obk-ribbon-appearance-pinned-20261115/features/application/ribbon-appearance/ribbon-appearance.feature:53:3" time="2.555995643"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Retain compact appearance when switching tabs and cycling display modes
+   ✔  Given a part is active in the MCAD Software
+   ✘  And the full 3D Model ribbon uses the Compact appearance
+      Step failed:
+      Defined: tmp/obk-ribbon-appearance-pinned-20261115/features/application/ribbon-appearance/ribbon-appearance.feature:55:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Dismiss the appearance submenu without changing the ribbon: tmp/obk-ribbon-appearance-pinned-20261115/features/application/ribbon-appearance/ribbon-appearance.feature:63:3" time="7.528932871"><system-out><![CDATA[  Scenario: Dismiss the appearance submenu without changing the ribbon
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full Tools ribbon uses the Normal appearance
+   ✔  When the user right-clicks the Options panel title and opens "Ribbon Appearance"
+   ✔  And the user presses Escape
+   ✔  Then the appearance submenu closes and the panel context menu remains open
+   ✔  When the user presses Escape again
+   ✔  Then the panel context menu closes
+   ✔  And the Tools ribbon remains in the Normal appearance
+]]></system-out></testcase><testcase name="Scenario: Change appearance while additional commands are expanded: tmp/obk-ribbon-appearance-pinned-20261115/features/application/ribbon-appearance/ribbon-appearance.feature:73:3" time="5.461712924"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Change appearance while additional commands are expanded
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon uses the Normal appearance
+   ✔  And the Modify additional command area is open
+   ✘  When the user selects "Text Off" from Ribbon Appearance
+      Step failed:
+      Defined: tmp/obk-ribbon-appearance-pinned-20261115/features/application/ribbon-appearance/ribbon-appearance.feature:77:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Hide panel titles while retaining access to additional commands: tmp/obk-ribbon-appearance-pinned-20261115/features/application/ribbon-appearance/ribbon-appearance.feature:87:3" time="7.38666075"><system-out><![CDATA[  Scenario: Hide panel titles while retaining access to additional commands
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon shows panel titles
+   ✔  When the user opens the 3D Model tab context menu
+   ✔  And the user clears Show Panel Titles
+   ✔  Then the ribbon panel titles are hidden
+   ✔  And the main panel commands remain visible
+   ✔  And the Modify panel expansion arrow remains visible
+   ✔  When the user clicks the Modify panel expansion arrow
+   ✔  Then the Modify additional-command area opens
+   ✔  And the area shows Move Bodies, Bend Part, and Copy Object
+   ✔  When the user opens the 3D Model tab context menu
+   ✔  Then Show Panel Titles is unchecked
+   ✔  When the user selects Show Panel Titles
+   ✔  Then the panel titles return
+   ✔  And the additional-command area closes
+]]></system-out></testcase><testcase name="Scenario: Share the panel-title setting between two ribbon tabs: tmp/obk-ribbon-appearance-pinned-20261115/features/application/ribbon-appearance/ribbon-appearance.feature:104:3" time="7.182748568"><system-out><![CDATA[  Scenario: Share the panel-title setting between two ribbon tabs
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon shows panel titles
+   ✔  When the user clears Show Panel Titles from the 3D Model tab context menu
+   ✔  And the user selects the Tools tab
+   ✔  Then the Tools panel titles are hidden
+   ✔  When the user opens the Tools tab context menu
+   ✔  Then Show Panel Titles is unchecked
+   ✔  When the user selects Show Panel Titles from that menu
+   ✔  Then the Tools panel titles appear
+   ✔  When the user returns to 3D Model
+   ✔  Then the 3D Model panel titles are visible
+]]></system-out></testcase><testcase name="Scenario: Switch tabs while the appearance submenu is open: tmp/obk-ribbon-appearance-pinned-20261115/features/application/ribbon-appearance/ribbon-appearance.feature:117:3" time="6.945901354"><system-out><![CDATA[  Scenario: Switch tabs while the appearance submenu is open
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon uses the Normal appearance
+   ✔  And the Ribbon Appearance submenu is open from a panel context menu
+   ✔  When the user clicks the Tools tab
+   ✔  Then the appearance submenu and panel context menu close
+   ✔  And the Tools ribbon is displayed
+   ✔  And the part remains visible
+]]></system-out></testcase><testcase name="Scenario: Switch between appearance and panel visibility submenus: tmp/obk-ribbon-appearance-pinned-20261115/features/application/ribbon-appearance/ribbon-appearance.feature:126:3" time="5.668585614"><failure type="Step Panicked" message="Step panicked. Captured output: expected &quot;Team Web&quot; in rendered text &quot;W\nP\nZ\nv\nO\nv\nFront\nReady\nModel\n+\nModel\nMenu\nSearch\nPart1&lt;Primary&gt;\nRepresentations\nModelState\n&lt;Primary&gt;\n1\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nEndofPart\nHome\nPart1&lt;Primary&gt;*\nDocuments\nFile\nTools\nNew\nOpen\nSave\nUndo\nRedo\nHome\nProjects\nUpdate\nSelect\nMaterialBrowser\nMaterials\nAppearanceBrowser\nParameters\n...\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nRibbonDisplay\nv\nv\nMeasure\nMeasure\nDefault\nMaterial\nDefault\nAppearance\nMaterialandAppearance\nCustomize\nApplicationOptions\nDocumentSettings\nOptions\nCopy\nClipboard\nFind\nFind\nRibbonAppearance\nShowPanels\nShowPanelTitles\nCustomizeUserCommands\nDockingPositions\n&gt;\nUndockRibbon\nMeasure\nMaterialandAppearance\nOptions\nClipboard\nFind&quot;"/><system-out><![CDATA[  Scenario: Switch between appearance and panel visibility submenus
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full Tools ribbon uses the Normal appearance
+   ✔  When the user right-clicks the Options panel title
+   ✔  And the user opens the Ribbon Appearance submenu
+   ✔  Then Normal is marked as selected
+   ✔  When the user opens Show Panels from the same context menu
+   ✔  Then the appearance submenu closes
+   ✘  And the Show Panels submenu lists Measure, Material and Appearance, Options, Clipboard, Find, Team Web, Tutorials, and User Commands with visibility checks
+      Step failed:
+      Defined: tmp/obk-ribbon-appearance-pinned-20261115/features/application/ribbon-appearance/ribbon-appearance.feature:134:5
+      Matched: crates/head/src/../tests/application/ribbon-appearance/submenu.rs:22:1
+      Step panicked. Captured output: expected "Team Web" in rendered text "W\nP\nZ\nv\nO\nv\nFront\nReady\nModel\n+\nModel\nMenu\nSearch\nPart1<Primary>\nRepresentations\nModelState\n<Primary>\n1\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nEndofPart\nHome\nPart1<Primary>*\nDocuments\nFile\nTools\nNew\nOpen\nSave\nUndo\nRedo\nHome\nProjects\nUpdate\nSelect\nMaterialBrowser\nMaterials\nAppearanceBrowser\nParameters\n...\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nRibbonDisplay\nv\nv\nMeasure\nMeasure\nDefault\nMaterial\nDefault\nAppearance\nMaterialandAppearance\nCustomize\nApplicationOptions\nDocumentSettings\nOptions\nCopy\nClipboard\nFind\nFind\nRibbonAppearance\nShowPanels\nShowPanelTitles\nCustomizeUserCommands\nDockingPositions\n>\nUndockRibbon\nMeasure\nMaterialandAppearance\nOptions\nClipboard\nFind"
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nFront\nReady\nModel\n+\nModel\nMenu\nSearch\nPart1<Primary>\nRepresentations\nModelState\n<Primary>\n1\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nEndofPart\nHome\nPart1<Primary>*\nDocuments\nFile\nTools\nNew\nOpen\nSave\nUndo\nRedo\nHome\nProjects\nUpdate\nSelect\nMaterialBrowser\nMaterials\nAppearanceBrowser\nParameters\n...\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nRibbonDisplay\nv\nv\nMeasure\nMeasure\nDefault\nMaterial\nDefault\nAppearance\nMaterialandAppearance\nCustomize\nApplicationOptions\nDocumentSettings\nOptions\nCopy\nClipboard\nFind\nFind\nRibbonAppearance\nShowPanels\nShowPanelTitles\nCustomizeUserCommands\nDockingPositions\n>\nUndockRibbon\nMeasure\nMaterialandAppearance\nOptions\nClipboard\nFind",
+          ..
+      }
+]]></system-out></testcase><testcase name="Scenario: Keep Text Off appearance when switching ribbon tabs: tmp/obk-ribbon-appearance-pinned-20261115/features/application/ribbon-appearance/ribbon-appearance.feature:143:3" time="2.63962942"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Keep Text Off appearance when switching ribbon tabs
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon visible
+   ✘  And the ribbon appearance is Normal
+      Step failed:
+      Defined: tmp/obk-ribbon-appearance-pinned-20261115/features/application/ribbon-appearance/ribbon-appearance.feature:145:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Change panel title visibility from an inactive tab: tmp/obk-ribbon-appearance-pinned-20261115/features/application/ribbon-appearance/ribbon-appearance.feature:162:3" time="7.072676049"><system-out><![CDATA[  Scenario: Change panel title visibility from an inactive tab
+   ✔  Given a part is active in the MCAD Software with the full 3D Model ribbon selected
+   ✔  And panel titles are visible
+   ✔  When the user opens the inactive Sketch tab context menu
+   ✔  Then 3D Model remains selected and Show Panel Titles is checked
+   ✔  When the user clears Show Panel Titles
+   ✔  Then the menu closes and the 3D Model panel titles are hidden
+   ✔  And 3D Model remains selected
+   ✔  When the user selects Tools
+   ✔  Then the Tools panel titles are also hidden
+   ✔  When the user opens the Tools tab context menu
+   ✔  Then Show Panel Titles is unchecked and Tools remains selected
+   ✔  When the user selects Show Panel Titles
+   ✔  Then the menu closes and the Tools panel titles are visible
+   ✔  And Tools remains selected
+   ✔  When the user returns to 3D Model
+   ✔  Then the 3D Model panel titles are visible
+]]></system-out></testcase><testcase name="Scenario: Cancel the Reset Ribbon confirmation: tmp/obk-ribbon-appearance-pinned-20261115/features/application/ribbon-appearance/ribbon-appearance.feature:180:3" time="4.282418074"><system-out><![CDATA[  Scenario: Cancel the Reset Ribbon confirmation
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon selected
+   ✔  When the user right-clicks the Options panel title
+   ✔  And the user opens Ribbon Appearance
+   ✔  And the user selects Reset Ribbon
+   ✔  Then a confirmation says ribbon customizations will be removed
+   ✔  And the confirmation offers Yes and No
+   ✔  When the user selects No
+   ✔  Then the confirmation closes without resetting the ribbon
+   ✔  And the full Tools ribbon and active part remain visible
+]]></system-out></testcase><testcase name="Scenario: Apply Reset Ribbon after confirming: tmp/obk-ribbon-appearance-pinned-20261115/features/application/ribbon-appearance/ribbon-appearance.feature:191:3" time="4.866185264"><failure type="Step Panicked" message="Step panicked. Captured output: expected &quot;Team Web&quot; in rendered text &quot;W\nP\nZ\nv\nO\nv\nFront\nReady\nModel\n+\nModel\nMenu\nSearch\nPart1&lt;Primary&gt;\nRepresentations\nModelState\n&lt;Primary&gt;\n1\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nEndofPart\nHome\nPart1&lt;Primary&gt;*\nDocuments\nFile\nTools\nNew\nOpen\nSave\nUndo\nRedo\nHome\nProjects\nUpdate\nSelect\nMaterialBrowser\nMaterials\nAppearanceBrowser\nParameters\n...\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nRibbonDisplay\nv\nv\nMeasure\nMeasure\nDefault\nMaterial\nDefault\nAppearance\nMaterialandAppearance\nCustomize\nApplicationOptions\nDocumentSettings\nOptions\nCopy\nClipboard\nFind\nFind&quot;"/><system-out><![CDATA[  Scenario: Apply Reset Ribbon after confirming
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon selected
+   ✔  When the user right-clicks the Options panel title
+   ✔  And the user opens Ribbon Appearance
+   ✔  And the user selects Reset Ribbon
+   ✔  Then a confirmation says ribbon customizations will be removed
+   ✔  And the confirmation offers Yes and No
+   ✔  When the user selects Yes
+   ✔  Then the confirmation closes
+   ✔  And the 3D Model tab becomes active with its full command groups
+   ✔  When the user selects Tools
+   ✘  Then the Tools ribbon displays its standard groups without Tutorials or User Commands
+      Step failed:
+      Defined: tmp/obk-ribbon-appearance-pinned-20261115/features/application/ribbon-appearance/ribbon-appearance.feature:202:5
+      Matched: crates/head/src/../tests/application/ribbon-appearance/reset.rs:59:1
+      Step panicked. Captured output: expected "Team Web" in rendered text "W\nP\nZ\nv\nO\nv\nFront\nReady\nModel\n+\nModel\nMenu\nSearch\nPart1<Primary>\nRepresentations\nModelState\n<Primary>\n1\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nEndofPart\nHome\nPart1<Primary>*\nDocuments\nFile\nTools\nNew\nOpen\nSave\nUndo\nRedo\nHome\nProjects\nUpdate\nSelect\nMaterialBrowser\nMaterials\nAppearanceBrowser\nParameters\n...\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nRibbonDisplay\nv\nv\nMeasure\nMeasure\nDefault\nMaterial\nDefault\nAppearance\nMaterialandAppearance\nCustomize\nApplicationOptions\nDocumentSettings\nOptions\nCopy\nClipboard\nFind\nFind"
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nFront\nReady\nModel\n+\nModel\nMenu\nSearch\nPart1<Primary>\nRepresentations\nModelState\n<Primary>\n1\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nEndofPart\nHome\nPart1<Primary>*\nDocuments\nFile\nTools\nNew\nOpen\nSave\nUndo\nRedo\nHome\nProjects\nUpdate\nSelect\nMaterialBrowser\nMaterials\nAppearanceBrowser\nParameters\n...\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nRibbonDisplay\nv\nv\nMeasure\nMeasure\nDefault\nMaterial\nDefault\nAppearance\nMaterialandAppearance\nCustomize\nApplicationOptions\nDocumentSettings\nOptions\nCopy\nClipboard\nFind\nFind",
+          ..
+      }
+]]></system-out></testcase><testcase name="Scenario: Change ribbon command size modes while editing a sketch: tmp/obk-ribbon-appearance-pinned-20261115/features/application/ribbon-appearance/ribbon-appearance.feature:205:3" time="4.787930129"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Change ribbon command size modes while editing a sketch
+   ✔  Given a part has an active editable sketch in the MCAD Software
+   ✘  And Ribbon Appearance is set to Normal
+      Step failed:
+      Defined: tmp/obk-ribbon-appearance-pinned-20261115/features/application/ribbon-appearance/ribbon-appearance.feature:207:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Close the appearance menu by switching tabs during sketch editing: tmp/obk-ribbon-appearance-pinned-20261115/features/application/ribbon-appearance/ribbon-appearance.feature:225:3" time="11.846013034"><system-out><![CDATA[  Scenario: Close the appearance menu by switching tabs during sketch editing
+   ✔  Given a part has an active editable sketch in the MCAD Software
+   ✔  And the Sketch ribbon uses Normal appearance
+   ✔  When the user opens Ribbon Appearance from the Create panel title context menu
+   ✔  And the user clicks the Tools tab while the submenu is open
+   ✔  Then the appearance submenu and panel context menu close
+   ✔  And the Tools ribbon is displayed
+   ✔  And the part and editable sketch remain active and unchanged
+   ✔  When the user selects the Sketch tab
+   ✔  Then the Sketch ribbon is displayed
+   ✔  And sketch editing remains active and unchanged
+]]></system-out></testcase></testsuite></testsuites>
