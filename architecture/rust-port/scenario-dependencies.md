@@ -55,6 +55,20 @@ and complete host and device input policy are still needed. The ordinary native
 receipt path does not use this helper. See
 `receipts/2026-11-15-sealed-runner-probe/` for the live probe.
 
+The experimental `sealed_build_chain.py` connects a committed build probe to a
+sealed execution in one process. It checks the observed runner and Bubblewrap
+hashes, copies the runner into a Linux memfd, seals it against writes and resizing,
+and supplies it to Bubblewrap using `--ro-bind-data`. The execution observation
+must match the build observation. This prevents a later path replacement from
+selecting different runner bytes, assuming the kernel and Bubblewrap behave as
+expected. It always returns `reusable: false` and is not connected to native
+receipt verification. Host tools and system files, dependency manifests,
+kernel and device inputs, trusted sandbox identity, concurrent modifications,
+and the rest of the runtime remain unproven. The optional vendor checks do not
+verify generated Git manifests. `tools/bdd/test_pinned_runner.py` exercises a
+real Rust test binary and path replacement; it does not run an Oblikovati UI
+scenario.
+
 ## Native build provenance
 
 Native capture receipts remain available as historical evidence, and their

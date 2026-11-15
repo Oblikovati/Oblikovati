@@ -1,0 +1,75 @@
+# SPDX-License-Identifier: GPL-2.0-only
+"""Check the in-process link from an observed build to a sealed run."""
+
+import hashlib
+import os
+import tempfile
+import unittest
+from pathlib import Path
+from unittest.mock import patch
+
+from sandbox_build_probe import BuildProbe
+from sealed_build_chain import run_sealed_build
+from sealed_execution import file_identity
+from test_sealed_execution import SealedFixture
+
+
+class FakeCommittedBuild:
+    """Produce one runner and optionally change it or the sandbox after observation."""
+
+    def __init__(self, change: str = "") -> None:
+        self.change = change
+
+    def __call__(self, probe: BuildProbe, repository: Path, revision: str, **options: object) -> dict[str, object]:
+        runner = probe.target / "runner"
+        runner.write_bytes(b"built runner")
+        runner.chmod(0o755)
+        digest = hashlib.sha256(b"built runner").hexdigest()
+        sandbox = file_identity(probe.bwrap)["sha256"]
+        if self.change == "runner":
+            runner.write_bytes(b"changed runner")
+        if self.change == "sandbox":
+            probe.bwrap.write_bytes(b"changed sandbox")
+        return {"runner": str(runner), "runner_sha256": digest, "sandbox_sha256": sandbox, "source_commit": revision, "reusable": True}
+
+
+class FakePinnedExecution:
+    """Record the expected build digest and produce one successful run log."""
+
+    def __init__(self, runner: Path, digest: str) -> None:
+        self.runner, self.digest = runner, digest
+
+    def __call__(self, command: list[str], log: Path) -> int:
+        if hashlib.sha256(self.runner.read_bytes()).hexdigest() != self.digest:
+            raise ValueError("runner digest: expected build bytes")
+        log.write_text("executed")
+        return 0
+
+
+@unittest.skipUnless(os.name == "posix" and hasattr(os, "O_NOATIME"), "requires Linux snapshots")
+class SealedBuildChainTests(unittest.TestCase):
+    def fixture(self, root: Path) -> tuple[BuildProbe, SealedFixture]:
+        """Prepare distinct build and execution roots; example: self.fixture(root)."""
+        fixture = SealedFixture(root)
+        paths = [root / name for name in ("build-source", "vendor", "toolchain", "config", "target", "build-logs")]
+        for path in paths:
+            path.mkdir()
+        return BuildProbe(*paths, fixture.bwrap), fixture
+
+    def test_chain_uses_build_artifact_and_never_claims_reuse(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            probe, fixture = self.fixture(Path(folder))
+            with patch("sealed_build_chain.run_committed_build_probe", FakeCommittedBuild()), patch("sealed_build_chain.PinnedRunnerProcess", FakePinnedExecution):
+                result = run_sealed_build(probe, fixture.request(), probe.source, "a" * 40, fixture.verify)
+            self.assertFalse(result["reusable"])
+            self.assertEqual(result["execution"]["runner_input"]["sha256"], result["build"]["runner_sha256"])
+            self.assertEqual(fixture.log.read_text(), "executed")
+
+    def test_changed_build_artifact_and_sandbox_are_refused(self) -> None:
+        for change in ("runner", "sandbox"):
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as folder:
+                probe, fixture = self.fixture(Path(folder))
+                with patch("sealed_build_chain.run_committed_build_probe", FakeCommittedBuild(change)):
+                    with self.assertRaisesRegex(ValueError, "expected build SHA-256"):
+                        run_sealed_build(probe, fixture.request(), probe.source, "a" * 40, fixture.verify)
+                self.assertFalse(fixture.log.exists())
