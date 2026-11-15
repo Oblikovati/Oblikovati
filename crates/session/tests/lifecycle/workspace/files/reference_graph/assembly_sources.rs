@@ -200,3 +200,6 @@ fn staged_cache_cannot_follow_a_changed_save_destination() {
     );
     assert!(!host.files().contents.borrow().contains_key(&other));
 }
+
+#[path = "assembly_cache_validation.rs"]
+mod cache_validation;
