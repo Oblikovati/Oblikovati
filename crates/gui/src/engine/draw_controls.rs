@@ -114,6 +114,28 @@ impl GuiFrameEngine {
             band_height,
             &mut selected,
         );
+        let open_offset = selected.contains(&GuiShellAction::OpenOffsetPlane);
+        selected.retain(|action| !matches!(action, GuiShellAction::OpenOffsetPlane));
+        if open_offset || self.offset_plane.active() {
+            let base = self
+                .workspace
+                .take_selected_origin_plane()
+                .map(crate::GuiOffsetPlaneBase::Origin)
+                .or_else(|| {
+                    selected_work_plane(&request.commands).map(crate::GuiOffsetPlaneBase::WorkPlane)
+                })
+                .or_else(|| {
+                    request
+                        .commands
+                        .model_face_chosen
+                        .then_some(crate::GuiOffsetPlaneBase::SelectedFace)
+                });
+            if open_offset && let Some(document) = request.commands.document {
+                self.offset_plane.open(document, base);
+            } else if let Some(base) = base {
+                self.offset_plane.choose(base);
+            }
+        }
         for action in &selected {
             if let GuiShellAction::OpenSketchPattern { sketch, pattern } = action {
                 self.sketch_pattern
@@ -181,6 +203,8 @@ impl GuiFrameEngine {
             self.plane_selection.active,
             &mut selected,
         );
+        self.offset_plane
+            .panel(ui, &request.commands, &mut selected);
         self.ribbon
             .customization
             .panel(ui, &request.commands, &mut selected);

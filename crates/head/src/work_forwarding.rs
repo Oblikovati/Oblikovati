@@ -81,6 +81,22 @@ macro_rules! forward_owner_view_work {
         ) -> Result<bool, String> {
             self.$owner.preview_component_file_from_gui(assembly, path)
         }
+        fn create_offset_plane_from_gui(
+            &mut self,
+            document: u64,
+            base: oblikovati_gui::GuiOffsetPlaneBase,
+            offset: &str,
+        ) -> Result<bool, String> {
+            self.$owner
+                .create_offset_plane_from_gui(document, base, offset)
+        }
+        fn validate_offset_plane_from_gui(
+            &mut self,
+            document: u64,
+            offset: &str,
+        ) -> Result<bool, String> {
+            self.$owner.validate_offset_plane_from_gui(document, offset)
+        }
         fn extrude_from_gui(
             &mut self,
             document: u64,

@@ -170,6 +170,15 @@ fn sketch(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, Str
         }
         GuiShellAction::FinishSketch => owner.edit_sketch_from_gui(false),
         GuiShellAction::OpenExtrude => Ok(false),
+        GuiShellAction::OpenOffsetPlane => Ok(false),
+        GuiShellAction::ValidateOffsetPlane { document, offset } => {
+            owner.validate_offset_plane_from_gui(*document, offset)
+        }
+        GuiShellAction::CreateOffsetPlane {
+            document,
+            base,
+            offset,
+        } => owner.create_offset_plane_from_gui(*document, *base, offset),
         GuiShellAction::OpenExtrudeEdit(_) => Ok(false),
         GuiShellAction::PreviewExtrudeEdit(request) => owner.preview_extrusion_edit(request),
         GuiShellAction::EditExtrudeDistance(request) => owner.commit_extrusion_edit(request),

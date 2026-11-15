@@ -49,6 +49,17 @@ impl NativeGui {
         self.engine.reject_extrusion(request, cause);
         self.deadline = Some(Duration::ZERO);
     }
+    pub(super) fn reject_offset_plane(
+        &mut self,
+        document: u64,
+        base: oblikovati_gui::GuiOffsetPlaneBase,
+        offset: &str,
+        cause: &str,
+    ) {
+        self.engine
+            .reject_offset_plane(document, base, offset, cause);
+        self.deadline = Some(Duration::ZERO);
+    }
     pub(super) fn reject_extrusion_edit(
         &mut self,
         request: &oblikovati_gui::GuiExtrudeEditRequest,

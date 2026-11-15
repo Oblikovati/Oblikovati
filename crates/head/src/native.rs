@@ -178,6 +178,17 @@ impl HeadWindow for NativeHeadWindow {
             gui.reject_extrusion(request, cause);
         }
     }
+    fn reject_offset_plane(
+        &mut self,
+        document: u64,
+        base: oblikovati_gui::GuiOffsetPlaneBase,
+        offset: &str,
+        cause: &str,
+    ) {
+        if let Some(gui) = self.gui.as_mut() {
+            gui.reject_offset_plane(document, base, offset, cause);
+        }
+    }
     fn reject_extrusion_edit(
         &mut self,
         request: &oblikovati_gui::GuiExtrudeEditRequest,

@@ -45,6 +45,7 @@ pub struct GuiFrameEngine {
     raster_scale: f32,
     preferences: crate::ui_scale::GuiScalePreferences,
     extrude_dialog: crate::extrude_dialog::ExtrudeDialog,
+    offset_plane: crate::offset_plane::OffsetPlaneDialog,
     pending_extrusion_shortcut: bool,
     dimension_value_editor: crate::sketch::dimension_edit::GuiDimensionValueEditor,
     precise_input: crate::sketch::precise_input::PreciseInputBar,
@@ -111,6 +112,7 @@ impl GuiFrameEngine {
             raster_scale: 1.,
             preferences: Default::default(),
             extrude_dialog: Default::default(),
+            offset_plane: Default::default(),
             pending_extrusion_shortcut: false,
             dimension_value_editor: Default::default(),
             precise_input: Default::default(),
@@ -230,6 +232,17 @@ impl GuiFrameEngine {
     /// Restore an extrusion draft when the owner rejects it; example: `engine.reject_extrusion(&request, "profile missing")`.
     pub fn reject_extrusion(&mut self, request: &crate::GuiExtrudePreview, cause: &str) {
         self.extrude_dialog.reject(request, cause);
+    }
+    /// Restore an offset-plane draft rejected by the document owner.
+    /// Example: `engine.reject_offset_plane(document, base, "bad", "invalid")`.
+    pub fn reject_offset_plane(
+        &mut self,
+        document: u64,
+        base: crate::GuiOffsetPlaneBase,
+        offset: &str,
+        cause: &str,
+    ) {
+        self.offset_plane.reject(document, base, offset, cause);
     }
     /// Restore a rejected extrusion edit draft; example: `engine.reject_extrusion_edit(&request, "invalid")`.
     pub fn reject_extrusion_edit(&mut self, request: &crate::GuiExtrudeEditRequest, cause: &str) {

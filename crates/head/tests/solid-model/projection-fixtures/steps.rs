@@ -3,6 +3,7 @@
 use super::ApplicationWorld;
 use cucumber::{given, then, when};
 use oblikovati_viewport::ViewportPhysicalKey;
+mod offset;
 
 #[given("a standard millimetre part template is selected")]
 fn select_metric_template(world: &mut ApplicationWorld) {

@@ -3,6 +3,7 @@ use crate::{HeadSketchWork, HeadWorkStatus};
 /// Owner-thread services borrow model state only while the window loop polls them.
 pub trait HeadWork: HeadSketchWork {
     orientation_work_methods!();
+    datum_work_methods!();
     appearance_work_methods!();
     selection_work_methods!();
     /// Move a document's transaction cursor.

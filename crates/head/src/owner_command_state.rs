@@ -151,6 +151,13 @@ impl<
                     *generation == session.generation() && validation.document == document
                 })
                 .map(|(_, validation)| validation.clone()),
+            offset_plane_validation: self
+                .offset_plane_validation
+                .as_ref()
+                .filter(|validation| {
+                    validation.generation == session.generation() && validation.document == document
+                })
+                .cloned(),
             extrude_preview_active: self.extrusion_preview.as_ref().is_some_and(
                 |(id, generation, _, _)| *id == document && *generation == session.generation(),
             ),

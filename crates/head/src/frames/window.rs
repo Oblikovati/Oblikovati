@@ -103,6 +103,15 @@ pub trait HeadWindow {
     fn request_extrusion(&mut self) {}
     /// Return a rejected draft and its reason; example: `window.reject_dimension_edit(&value, "invalid")`.
     fn reject_dimension_edit(&mut self, _value: &oblikovati_gui::GuiDimensionValue, _cause: &str) {}
+    /// Restore a rejected offset-plane draft; example: `window.reject_offset_plane(document, base, offset, cause)`.
+    fn reject_offset_plane(
+        &mut self,
+        _document: u64,
+        _base: oblikovati_gui::GuiOffsetPlaneBase,
+        _offset: &str,
+        _cause: &str,
+    ) {
+    }
     /// Return an extrusion draft rejected by its owner; example: `window.reject_extrusion(&request, "profile missing")`.
     fn reject_extrusion(&mut self, _request: &oblikovati_gui::GuiExtrudePreview, _cause: &str) {}
     fn reject_extrusion_edit(

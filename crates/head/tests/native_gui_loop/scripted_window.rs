@@ -119,6 +119,16 @@ impl HeadWindow for ScriptedGuiWindow {
     fn reject_extrusion(&mut self, request: &oblikovati_gui::GuiExtrudePreview, cause: &str) {
         self.native.reject_extrusion(request, cause);
     }
+    fn reject_offset_plane(
+        &mut self,
+        document: u64,
+        base: oblikovati_gui::GuiOffsetPlaneBase,
+        offset: &str,
+        cause: &str,
+    ) {
+        self.native
+            .reject_offset_plane(document, base, offset, cause);
+    }
     fn capture_window_preview(&mut self) -> Result<bool, String> {
         self.native.capture_window_preview()
     }

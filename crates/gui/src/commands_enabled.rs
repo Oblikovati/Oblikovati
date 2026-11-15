@@ -286,6 +286,48 @@ impl GuiShellAction {
                         .as_ref()
                         .is_some_and(|browser| browser.sketches.iter().any(|row| row.id == *sketch))
             }
+            Self::OpenOffsetPlane => {
+                state.authoring == GuiAuthoringContext::Part
+                    && !state.transaction_open
+                    && state.document.is_some()
+                    && state.browser.is_some()
+            }
+            Self::ValidateOffsetPlane { document, .. } => {
+                state.authoring == GuiAuthoringContext::Part
+                    && !state.transaction_open
+                    && state.document == Some(*document)
+            }
+            Self::CreateOffsetPlane {
+                document,
+                base,
+                offset,
+            } => {
+                state.authoring == GuiAuthoringContext::Part
+                    && !state.transaction_open
+                    && state.document == Some(*document)
+                    && !offset.trim().is_empty()
+                    && !offset.contains('\0')
+                    && state
+                        .offset_plane_validation
+                        .as_ref()
+                        .is_some_and(|result| {
+                            result.document == *document
+                                && result.offset == *offset
+                                && result.error.is_none()
+                        })
+                    && match base {
+                        crate::GuiOffsetPlaneBase::Origin(_) => true,
+                        crate::GuiOffsetPlaneBase::WorkPlane(id) => {
+                            state.browser.as_ref().is_some_and(|browser| {
+                                browser
+                                    .features
+                                    .iter()
+                                    .any(|row| row.id == *id && row.kind == "Work Plane")
+                            })
+                        }
+                        crate::GuiOffsetPlaneBase::SelectedFace => state.model_face_chosen,
+                    }
+            }
             Self::OpenExtrude => {
                 state.extrude_available
                     && state.authoring == GuiAuthoringContext::Part

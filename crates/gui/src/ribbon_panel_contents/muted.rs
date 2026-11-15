@@ -64,7 +64,7 @@ fn muted_command_position(
     icons.cursor(ui, origin, position);
     size
 }
-fn muted_command(
+pub(super) fn muted_command(
     ui: &Ui,
     label: &str,
     reason: &str,

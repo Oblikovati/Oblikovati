@@ -47,6 +47,9 @@ mod window_capture;
 mod orientation_work;
 #[cfg(target_os = "linux")]
 #[macro_use]
+mod work_datum;
+#[cfg(target_os = "linux")]
+#[macro_use]
 mod work_metadata;
 #[cfg(target_os = "linux")]
 #[macro_use]

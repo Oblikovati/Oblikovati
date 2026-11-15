@@ -12,6 +12,8 @@ use std::time::Duration;
 mod commands;
 #[path = "owner_documents.rs"]
 mod documents_gui;
+#[path = "owner_offset_plane.rs"]
+mod offset_plane;
 #[path = "owner_sketch_tools.rs"]
 mod sketch_tools_gui;
 use sketch_tools_gui::gui_placement_tool;
@@ -151,6 +153,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     extrusion_access: Option<crate::part_scene::extrusion::CertifiedExtrudeAccess>,
     extrusion_preview: Option<(u64, u64, oblikovati_viewport::ViewportScene, bool)>,
     extrusion_distance_validation: Option<(u64, oblikovati_gui::GuiExtrudeDistanceValidation)>,
+    offset_plane_validation: Option<oblikovati_gui::GuiOffsetPlaneValidation>,
     component_preview: Option<ComponentPreview>,
     sketch_scenes: crate::sketch_scene::DesktopSketchScenes,
     command_notice: Option<DesktopCommandNotice>,
@@ -250,6 +253,7 @@ impl<
             extrusion_access: None,
             extrusion_preview: None,
             extrusion_distance_validation: None,
+            offset_plane_validation: None,
             component_preview: None,
             sketch_scenes: Default::default(),
             command_notice: None,

@@ -73,6 +73,8 @@ pub struct GuiCommandState {
     pub extrude_preview_active: bool,
     /// The owner-validated distance for the current document generation.
     pub extrude_distance_validation: Option<crate::GuiExtrudeDistanceValidation>,
+    /// The owner-validated offset for the current document generation.
+    pub offset_plane_validation: Option<crate::GuiOffsetPlaneValidation>,
     /// The running Line command reads the keyboard before any GUI widget does.
     pub sketch_tool_keyboard: bool,
     pub dimension_tool_active: bool,
