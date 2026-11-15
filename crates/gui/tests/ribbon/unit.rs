@@ -156,3 +156,28 @@ fn finishing_sketch_keeps_a_manually_selected_tab_or_returns_from_sketch() {
         assert_eq!(ribbon.prepare(&state).select, Some(expected));
     }
 }
+
+#[test]
+fn finishing_sketch_restores_the_previously_selected_part_tab() {
+    let mut ribbon = DocumentRibbon::default();
+    let mut state = part_state();
+    ribbon.prepare(&state);
+    ribbon.active = RibbonTab::Tools;
+    state.authoring = GuiAuthoringContext::Sketch;
+    assert_eq!(ribbon.prepare(&state).select, Some(RibbonTab::Sketch));
+    state.authoring = GuiAuthoringContext::Part;
+    assert_eq!(ribbon.prepare(&state).select, Some(RibbonTab::Tools));
+}
+
+#[test]
+fn sketch_tab_restoration_does_not_cross_documents() {
+    let mut ribbon = DocumentRibbon::default();
+    let mut state = part_state();
+    ribbon.prepare(&state);
+    ribbon.active = RibbonTab::Tools;
+    state.authoring = GuiAuthoringContext::Sketch;
+    ribbon.prepare(&state);
+    state.document = Some(8);
+    state.authoring = GuiAuthoringContext::Part;
+    assert_eq!(ribbon.prepare(&state).select, Some(RibbonTab::Model));
+}
