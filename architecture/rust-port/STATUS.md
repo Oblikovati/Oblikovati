@@ -70,9 +70,11 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   The pinned profile-extrusion contract has no taper input; kernel work is
   tracked in [Martensite #463](https://github.com/Oblikovati/Martensite/issues/463).
 - A manual XTest and MCPBridge run created a part and free rectangle, extruded,
-  undid, redid, saved and reopened it. It measured a face after reopen; it did
-  not compare a pre-save key or create the parameter-driven cube. See
-  `receipts/2026-11-15-live-os-extrusion/`.
+  undid, redid, saved and reopened it. A second run compared pre-save and
+  reopened topology keys and measured a pre-save face key after reopening.
+  The runs did not create the parameter-driven cube. See
+  `receipts/2026-11-15-live-os-extrusion/` and
+  `receipts/2026-11-15-live-face-replay/`.
 
 - Viewport orientation: all 20 pinned scenarios passed on the merged revision
   (#3961). See `receipts/2026-11-15-orientation-verified/`. The run uses
