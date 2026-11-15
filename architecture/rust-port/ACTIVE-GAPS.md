@@ -29,6 +29,10 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
   captures are in `receipts/2026-11-15-rectangle-zero-corrected/`. The raw
   status message was fixed and tested in #3975; see
   `receipts/2026-11-15-zero-size-status/`.
+- Two-point rectangle: the four portable scenarios passed a diagnostic on the
+  current pin (#3886). Six capture-only cases were not executed; the result
+  is not verified acceptance. See
+  `receipts/2026-11-15-rectangle-portable-diagnostic/`.
 - Three-point arc: the collinear-input boundary scenario passed; see
   `receipts/2026-11-15-arc-boundary-refresh/`. Its receipt is now stale.
 - Extrusion editing: browser distance editing, candidate preview, cancel,

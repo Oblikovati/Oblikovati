@@ -1,0 +1,609 @@
+{
+  "kind": "diagnostic only; not acceptance",
+  "source_files": {
+    "/tmp/oblikovati-bdd-F4q7JW/checkout/features/sketch/rectangle-two-point/scenario.feature": "@sketch\r\nFeature: Rectangle two point\r\n\r\n  @acceptance @documented_observation @needs_fixture\r\n  Scenario: rectangle-two-point-01 Create a rectangle from opposite corners\r\n    Given the MCAD Software is running\r\n    And an editable planar sketch\r\n    When the user select Two Point Rectangle and click diagonally opposite corners\r\n    Then four connected sides form an axis-aligned closed rectangle\r\n    When the user press Escape\r\n    Then the rectangle remains and the sketch is Ready\r\n\r\n\r\n\r\n\r\n\r\n  @needs_fixture\r\n  Scenario: rectangle-two-point-06 Cancel before the opposite corner\r\n    Given an editable sketch is Ready\r\n    When the user choose Rectangle Two Point and click the fixture first corner\r\n    Then the prompt requests the opposite corner\r\n    When the user press Escape\r\n    Then the MCAD Software returns to Ready without a new rectangle\r\n\r\n  @needs_fixture\r\n  Scenario: rectangle-two-point-07 Keep selecting after identical corner clicks\r\n    Given an editable sketch is Ready\r\n    When the user invoke Two Point Rectangle\r\n    And the user click the same fixture position for both corners\r\n    Then Select opposite corner remains active\r\n    And both dynamic size fields display 0,000 mm\r\n    And no error dialog or rectangle appears\r\n    When the user press Escape\r\n    Then the MCAD Software returns to Ready\r\n\r\n  @documented_observation @needs_fixture @numeric_input @undo_redo @capture_only\r\n  Scenario: rectangle-two-point-08 Commit typed sizes and restore through history\r\n    Given an editable sketch in RIGHT view with the required fixture\r\n    When the user start Two Point Rectangle and select a first corner\r\n    And the user press 1 and then 0\r\n    And the user press Tab\r\n    And the user press 6 and then Enter\r\n    Then a rectangle with size annotations 10 and 6 is committed\r\n    And the command returns to Select first corner\r\n    When the user press Escape and then Ctrl+Z\r\n    Then the rectangle and its two size annotations disappear\r\n    When the user press Ctrl+Y\r\n    Then the rectangle and both annotations return\r\n\r\n  @documented_observation @measurement @needs_fixture @capture_only\r\n  Scenario: rectangle-two-point-09 Verify the numeric rectangle edge lengths\r\n    Given the recorded numeric rectangle in RIGHT view has been restored\r\n    When the user open Measure and select its vertical edge away from endpoints\r\n    Then Selection 1 is a Curve with Length 10.000 mm\r\n    When the user click empty canvas and select its horizontal edge away from endpoints\r\n    Then Selection 1 is a Curve with Length 6.000 mm\r\n    When the user click Done\r\n    Then Measure closes and the rectangle remains\r\n\r\n  @needs_fixture\r\n  Scenario: rectangle-two-point-10 Observe a zero first size\r\n    Given an empty editable metric sketch is Ready\r\n    When the user choose Two Point Rectangle and click a clear point in the sketch canvas\r\n    And the user enter 0 and press Tab\r\n    Then the first size is locked at 0.000 mm and the second field is focused\r\n    When the user enter 4 and press Return\r\n    Then the command returns to Select first corner without a warning dialog\r\n    When the user press Escape\r\n    Then Ready returns with no new rectangle visible\r\n\r\n  @needs_fixture @capture_only\r\n  Scenario: rectangle-two-point-11 Retain a numeric rectangle\r\n    Given a fresh Two Point Rectangle command in the recorded sketch view\r\n    And the existing ellipse from the recorded fixture is visible\r\n    When the user select the fixture first corner, enter 6, press Tab, enter 4 and press Return\r\n    Then the rectangle shows height 6 and width 4\r\n    And the rectangle extends upward and rightward in the recorded view\r\n    And it overlaps part of the existing ellipse\r\n    When the user press Escape\r\n    Then the rectangle remains and Ready returns\r\n\r\n  @needs_fixture @capture_only\r\n  Scenario: rectangle-two-point-12 Cancel a rectangle height proposal\r\n    Given the rectangle height editor is open with 6 mm selected\r\n    When the user enter 8 and press Escape\r\n    And the user reopen the height annotation\r\n    Then the height editor still contains 6 mm\r\n\r\n  @needs_fixture @capture_only\r\n  Scenario: rectangle-two-point-13 Accept and undo a rectangle height edit\r\n    Given the recorded Right-view sketch contains the overlapping ellipse and a rectangle annotated 6 mm high by 4 mm wide, with its height edit active\r\n    When the user accepts height 8 mm and exits General Dimension\r\n    Then the height annotation shows 8 and the width annotation remains 4\r\n    When the user opens Measure and selects the left edge\r\n    Then Measure reports the selected left edge length as 8.000 mm\r\n    When the user closes Measure and undoes the height edit\r\n    Then the visible height annotation returns to 6\r\n    When the user redoes the height edit\r\n    Then the visible height annotation returns to 8\r\n    And width annotation 4 remains\r\n\r\n  @needs_fixture @capture_only\r\n  Scenario: rectangle-two-point-14 Observe a zero second size\r\n    Given the recorded sketch is Ready with the 4-by-8 rectangle retained\r\n    When the user start Two Point Rectangle and click the fixture first corner\r\n    And the user enter 4, press Tab, enter 0 and press Return\r\n    Then Select first corner returns without a warning or a visible new rectangle\r\n    When the user press Escape\r\n    Then Ready returns and the prior rectangle remains\r\n\r\n\r\n\r\n\r\n\r\n"
+  },
+  "scenarios": [
+    {
+      "source": "/tmp/oblikovati-bdd-F4q7JW/checkout/features/sketch/rectangle-two-point/scenario.feature",
+      "scenario": "rectangle-two-point-01 Create a rectangle from opposite corners",
+      "line": 5,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is running",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "an editable planar sketch",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 8,
+          "step": "the user select Two Point Rectangle and click diagonally opposite corners",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 9,
+          "step": "four connected sides form an axis-aligned closed rectangle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 10,
+          "step": "the user press Escape",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 11,
+          "step": "the rectangle remains and the sketch is Ready",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-bdd-F4q7JW/checkout/features/sketch/rectangle-two-point/scenario.feature",
+      "scenario": "rectangle-two-point-06 Cancel before the opposite corner",
+      "line": 18,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 19,
+          "step": "an editable sketch is Ready",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 20,
+          "step": "the user choose Rectangle Two Point and click the fixture first corner",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 21,
+          "step": "the prompt requests the opposite corner",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 22,
+          "step": "the user press Escape",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 23,
+          "step": "the MCAD Software returns to Ready without a new rectangle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-bdd-F4q7JW/checkout/features/sketch/rectangle-two-point/scenario.feature",
+      "scenario": "rectangle-two-point-07 Keep selecting after identical corner clicks",
+      "line": 26,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 27,
+          "step": "an editable sketch is Ready",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 28,
+          "step": "the user invoke Two Point Rectangle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 29,
+          "step": "the user click the same fixture position for both corners",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 30,
+          "step": "Select opposite corner remains active",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 31,
+          "step": "both dynamic size fields display 0,000 mm",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 32,
+          "step": "no error dialog or rectangle appears",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 33,
+          "step": "the user press Escape",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 34,
+          "step": "the MCAD Software returns to Ready",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-bdd-F4q7JW/checkout/features/sketch/rectangle-two-point/scenario.feature",
+      "scenario": "rectangle-two-point-08 Commit typed sizes and restore through history",
+      "line": 37,
+      "classification": "excluded: capture only",
+      "setup_error": "capture only",
+      "steps": [
+        {
+          "line": 38,
+          "step": "an editable sketch in RIGHT view with the required fixture",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 39,
+          "step": "the user start Two Point Rectangle and select a first corner",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 40,
+          "step": "the user press 1 and then 0",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 41,
+          "step": "the user press Tab",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 42,
+          "step": "the user press 6 and then Enter",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 43,
+          "step": "a rectangle with size annotations 10 and 6 is committed",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 44,
+          "step": "the command returns to Select first corner",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 45,
+          "step": "the user press Escape and then Ctrl+Z",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 46,
+          "step": "the rectangle and its two size annotations disappear",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 47,
+          "step": "the user press Ctrl+Y",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 48,
+          "step": "the rectangle and both annotations return",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-bdd-F4q7JW/checkout/features/sketch/rectangle-two-point/scenario.feature",
+      "scenario": "rectangle-two-point-09 Verify the numeric rectangle edge lengths",
+      "line": 51,
+      "classification": "excluded: capture only",
+      "setup_error": "capture only",
+      "steps": [
+        {
+          "line": 52,
+          "step": "the recorded numeric rectangle in RIGHT view has been restored",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 53,
+          "step": "the user open Measure and select its vertical edge away from endpoints",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 54,
+          "step": "Selection 1 is a Curve with Length 10.000 mm",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 55,
+          "step": "the user click empty canvas and select its horizontal edge away from endpoints",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 56,
+          "step": "Selection 1 is a Curve with Length 6.000 mm",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 57,
+          "step": "the user click Done",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 58,
+          "step": "Measure closes and the rectangle remains",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-bdd-F4q7JW/checkout/features/sketch/rectangle-two-point/scenario.feature",
+      "scenario": "rectangle-two-point-10 Observe a zero first size",
+      "line": 61,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 62,
+          "step": "an empty editable metric sketch is Ready",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 63,
+          "step": "the user choose Two Point Rectangle and click a clear point in the sketch canvas",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 64,
+          "step": "the user enter 0 and press Tab",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 65,
+          "step": "the first size is locked at 0.000 mm and the second field is focused",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 66,
+          "step": "the user enter 4 and press Return",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 67,
+          "step": "the command returns to Select first corner without a warning dialog",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 68,
+          "step": "the user press Escape",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 69,
+          "step": "Ready returns with no new rectangle visible",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-bdd-F4q7JW/checkout/features/sketch/rectangle-two-point/scenario.feature",
+      "scenario": "rectangle-two-point-11 Retain a numeric rectangle",
+      "line": 72,
+      "classification": "excluded: capture only",
+      "setup_error": "capture only",
+      "steps": [
+        {
+          "line": 73,
+          "step": "a fresh Two Point Rectangle command in the recorded sketch view",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 74,
+          "step": "the existing ellipse from the recorded fixture is visible",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 75,
+          "step": "the user select the fixture first corner, enter 6, press Tab, enter 4 and press Return",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 76,
+          "step": "the rectangle shows height 6 and width 4",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 77,
+          "step": "the rectangle extends upward and rightward in the recorded view",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 78,
+          "step": "it overlaps part of the existing ellipse",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 79,
+          "step": "the user press Escape",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 80,
+          "step": "the rectangle remains and Ready returns",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-bdd-F4q7JW/checkout/features/sketch/rectangle-two-point/scenario.feature",
+      "scenario": "rectangle-two-point-12 Cancel a rectangle height proposal",
+      "line": 83,
+      "classification": "excluded: capture only",
+      "setup_error": "capture only",
+      "steps": [
+        {
+          "line": 84,
+          "step": "the rectangle height editor is open with 6 mm selected",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 85,
+          "step": "the user enter 8 and press Escape",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 86,
+          "step": "the user reopen the height annotation",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 87,
+          "step": "the height editor still contains 6 mm",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-bdd-F4q7JW/checkout/features/sketch/rectangle-two-point/scenario.feature",
+      "scenario": "rectangle-two-point-13 Accept and undo a rectangle height edit",
+      "line": 90,
+      "classification": "excluded: capture only",
+      "setup_error": "capture only",
+      "steps": [
+        {
+          "line": 91,
+          "step": "the recorded Right-view sketch contains the overlapping ellipse and a rectangle annotated 6 mm high by 4 mm wide, with its height edit active",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 92,
+          "step": "the user accepts height 8 mm and exits General Dimension",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 93,
+          "step": "the height annotation shows 8 and the width annotation remains 4",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 94,
+          "step": "the user opens Measure and selects the left edge",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 95,
+          "step": "Measure reports the selected left edge length as 8.000 mm",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 96,
+          "step": "the user closes Measure and undoes the height edit",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 97,
+          "step": "the visible height annotation returns to 6",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 98,
+          "step": "the user redoes the height edit",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 99,
+          "step": "the visible height annotation returns to 8",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 100,
+          "step": "width annotation 4 remains",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-bdd-F4q7JW/checkout/features/sketch/rectangle-two-point/scenario.feature",
+      "scenario": "rectangle-two-point-14 Observe a zero second size",
+      "line": 103,
+      "classification": "excluded: capture only",
+      "setup_error": "capture only",
+      "steps": [
+        {
+          "line": 104,
+          "step": "the recorded sketch is Ready with the 4-by-8 rectangle retained",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 105,
+          "step": "the user start Two Point Rectangle and click the fixture first corner",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 106,
+          "step": "the user enter 4, press Tab, enter 0 and press Return",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 107,
+          "step": "Select first corner returns without a warning or a visible new rectangle",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 108,
+          "step": "the user press Escape",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 109,
+          "step": "Ready returns and the prior rectangle remains",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    }
+  ]
+}
