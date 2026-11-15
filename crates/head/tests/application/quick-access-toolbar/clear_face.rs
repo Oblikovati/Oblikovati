@@ -150,7 +150,10 @@ fn clear_mixed_body_and_face_through_native_window() {
     super::super::workspace_layout::browser_feature::click_branch_arrow(&mut world, "Solid Bodies");
     clear_appearance::ctrl_click(&mut world, "Solid1");
     let state = world.state();
-    assert_eq!(state.selected_body_keys, [body.clone()]);
+    assert_eq!(
+        state.selected_body_keys.as_slice(),
+        std::slice::from_ref(&body)
+    );
     assert_eq!(state.selected_face_appearances[0].0, face);
     assert!(world.run_is_enabled("OK"));
     world.click_text("Cancel");
