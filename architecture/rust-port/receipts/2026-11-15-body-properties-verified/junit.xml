@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Body properties dialog: tmp/obk-3954-snapshot/features/application/body-properties/body-properties.feature" package="testsuite/Feature: Body properties dialog: tmp/obk-3954-snapshot/features/application/body-properties/body-properties.feature" tests="6" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T00:46:14.072937385Z" time="116.025800287"><testcase name="Scenario: Update unavailable physical properties for a solid body: tmp/obk-3954-snapshot/features/application/body-properties/body-properties.feature:5:3" time="15.451878998"><system-out><![CDATA[  Scenario: Update unavailable physical properties for a solid body
+   ✔  Given a part containing one visible solid body is active in the MCAD Software
+   ✔  And the body's physical properties are unavailable in the current session
+   ✔  When the user right-clicks the body in the model browser
+   ✔  And the user chooses Properties
+   ✔  Then the Body Properties dialog opens with the body name
+   ✔  And mass, area, volume, and the X, Y, and Z coordinates of the center of gravity show N/A
+   ✔  And the dialog displays a body appearance selector and OK and Cancel buttons
+   ✔  When the user chooses Update
+   ✔  Then mass, area, volume, and the center of gravity coordinates display calculated values
+   ✔  And the solid remains highlighted behind the dialog
+   ✔  When the user chooses Cancel
+   ✔  Then the dialog closes
+   ✔  And the solid remains visible
+   ✔  When the user reopens Body Properties for the same body in the same session
+   ✔  Then the calculated physical properties remain displayed
+   ✔  When the user chooses Cancel
+   ✔  Then the dialog closes
+]]></system-out></testcase><testcase name="Scenario: Cancel a body appearance selection: tmp/obk-3954-snapshot/features/application/body-properties/body-properties.feature:25:3" time="28.802787083"><system-out><![CDATA[  Scenario: Cancel a body appearance selection
+   ✔  Given a part with a visible solid body is active in the MCAD Software
+   ✔  And the body appearance is set to As Part
+   ✔  When the user opens Body Properties for the body from the model browser
+   ✔  And the user opens the Body Appearance list
+   ✔  Then a scrollable list of named appearances is displayed
+   ✔  When the user chooses Black
+   ✔  Then Body Appearance displays Black
+   ✔  When the user chooses Cancel
+   ✔  And the user reopens Body Properties for the same body
+   ✔  Then Body Appearance displays As Part
+   ✔  And the solid remains visible
+   ✔  When the user chooses Cancel
+   ✔  Then the dialog closes
+]]></system-out></testcase><testcase name="Scenario: Apply and restore a body appearance: tmp/obk-3954-snapshot/features/application/body-properties/body-properties.feature:41:3" time="24.491959927"><system-out><![CDATA[  Scenario: Apply and restore a body appearance
+   ✔  Given a part with a visible solid body is active in the MCAD Software
+   ✔  And the body appearance is set to As Part
+   ✔  When the user opens Body Properties for the body from the model browser
+   ✔  And the user selects Black in Body Appearance
+   ✔  And the user chooses OK
+   ✔  Then the dialog closes
+   ✔  And the solid is displayed with the Black appearance
+   ✔  When the user reopens Body Properties for the same body
+   ✔  Then Body Appearance displays Black
+   ✔  When the user selects As Part in Body Appearance
+   ✔  And the user chooses OK
+   ✔  Then the dialog closes
+   ✔  And the solid is displayed with the part appearance
+]]></system-out></testcase><testcase name="Scenario: Dismiss body properties with Escape: tmp/obk-3954-snapshot/features/application/body-properties/body-properties.feature:57:3" time="8.337826581"><system-out><![CDATA[  Scenario: Dismiss body properties with Escape
+   ✔  Given a part with a visible solid body is active in the MCAD Software
+   ✔  And Body Properties is open for the body
+   ✔  When the user presses Escape
+   ✔  Then the dialog closes
+   ✔  And the body row remains selected in the model browser
+   ✔  And the solid remains highlighted in the viewport
+]]></system-out></testcase><testcase name="Scenario: Discard a pending appearance with Escape: tmp/obk-3954-snapshot/features/application/body-properties/body-properties.feature:66:3" time="18.29485281"><system-out><![CDATA[  Scenario: Discard a pending appearance with Escape
+   ✔  Given a part with a visible solid body is active in the MCAD Software
+   ✔  And the body appearance is set to As Part
+   ✔  And Body Properties is open for the body
+   ✔  When the user selects Black in Body Appearance
+   ✔  And the user presses Escape
+   ✔  Then the dialog closes
+   ✔  When the user reopens Body Properties for the same body
+   ✔  Then Body Appearance displays As Part
+   ✔  When the user chooses Cancel
+   ✔  Then the dialog closes
+]]></system-out></testcase><testcase name="Scenario: Discard a pending appearance using the title-bar close control: tmp/obk-3954-snapshot/features/application/body-properties/body-properties.feature:79:3" time="20.646494888"><system-out><![CDATA[  Scenario: Discard a pending appearance using the title-bar close control
+   ✔  Given a part with a visible solid body is active in the MCAD Software
+   ✔  And the body appearance is set to As Part
+   ✔  And Body Properties is open for the body
+   ✔  When the user selects Black in Body Appearance
+   ✔  And the user closes the dialog using its title-bar close control
+   ✔  Then the dialog closes
+   ✔  When the user reopens Body Properties for the same body
+   ✔  Then Body Appearance displays As Part
+   ✔  When the user chooses Cancel
+   ✔  Then the dialog closes
+]]></system-out></testcase></testsuite></testsuites>
