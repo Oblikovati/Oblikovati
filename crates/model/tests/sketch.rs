@@ -625,8 +625,9 @@ fn interval_equations_decline_unsupported_and_unbounded_inputs() {
     assert_eq!(
         sketch
             .interval_equations(&parameters(), &bounds)
-            .unwrap_err(),
-        SketchIntervalError::Unsupported(SketchRelationId::Authored(constraint(1)))
+            .unwrap()
+            .len(),
+        2
     );
     assert!(matches!(
         sketch.interval_equations(&parameters(), &[[0.0, f64::INFINITY], [0.0, 0.0]]),
@@ -661,3 +662,6 @@ fn interval_equations_decline_unsupported_and_unbounded_inputs() {
         Err(SketchIntervalError::Arithmetic { relation: SketchRelationId::Authored(id), .. }) if id == constraint(2))
     );
 }
+
+#[path = "sketch/interval_rectangle.rs"]
+mod interval_rectangle;

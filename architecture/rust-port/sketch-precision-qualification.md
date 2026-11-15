@@ -91,17 +91,25 @@ provenance, and projection uncertainty to the same solve before certification.
 
 ## Conditional interval equation evaluation
 
-The sketch model can evaluate coincident and coordinate equations over a
-finite box in full solver-variable order. The point solver and interval path
-share those expressions. Results retain the source relation, equation number,
+The sketch model can evaluate coincident, coordinate, fixed, grounded,
+midpoint, and horizontal or vertical distance equations over a finite box in
+full solver-variable order. Dimensional targets require caller-supplied bounds
+that name the relation and parameter and contain the prepared target. The
+caller is responsible for proving that these bounds enclose the true target.
+Absolute-distance boxes that touch or cross zero are refused. Fixed and grounded
+targets are treated as their stored binary64 values; this does not enclose
+uncertainty from external sources. The point solver and interval path share
+those expressions. Results retain the source relation, equation number,
 residual enclosure, and a derivative enclosure for each input variable. Other
-relations, projected equation layouts, malformed boxes, and nonfinite results
-are refused. A caller-supplied box is not bound to a solve or to projected input
-uncertainty and does not imply a sketch certificate.
+relations, including aligned distances, projected equation layouts, malformed
+boxes, and nonfinite results are refused. A caller-supplied box is not bound to
+a solve or to projected input uncertainty and does not imply a sketch
+certificate.
 
-The project-owned arithmetic boundary uses the pinned `maryada` 0.2.0 interval
-subtraction. Exact binary-rational tests cover representative endpoints,
-subnormal values, and overflow refusal on the test platform. This is not a
+The project-owned arithmetic boundary uses pinned `maryada` 0.2.0 interval
+subtraction, addition, and multiplication by one half. Exact binary-rational
+tests cover representative endpoints, subnormal values, and overflow refusal
+on the test platform. This is not a
 cross-platform proof of the dependency's rounding contract. Qualification
 also needs validated input boxes, complete residual and Jacobian coverage,
 conditioning, existence and uniqueness checks, and a policy shared by every

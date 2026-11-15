@@ -62,9 +62,10 @@ pub(super) fn coordinate_residuals(
     variables: &[DualNumber],
     positions: &[[f64; 2]],
 ) -> Result<Vec<DualNumber>, ResidualError> {
-    variables
+    let targets = positions
         .iter()
-        .zip(positions.iter().flatten())
-        .map(|(coordinate, target)| coordinate.shifted(-target).map_err(ResidualError::from))
-        .collect()
+        .flatten()
+        .map(|target| DualNumber::constant(*target))
+        .collect::<Result<Vec<_>, _>>()?;
+    super::linear_equations::fixed(variables, &targets)
 }

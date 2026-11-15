@@ -23,6 +23,24 @@ impl Enclosure {
         }
         Ok(result)
     }
+    pub fn sum(self, rhs: Self) -> Result<Self, String> {
+        Self::finite(Self(self.0 + rhs.0), "sum")
+    }
+    pub fn half(self) -> Result<Self, String> {
+        Self::finite(Self(self.0 * Interval::new(0.5, 0.5)), "half")
+    }
+    pub fn negate(self) -> Self {
+        Self(-self.0)
+    }
+    fn finite(value: Self, operation: &str) -> Result<Self, String> {
+        let bounds = value.bounds();
+        if !bounds.iter().all(|item| item.is_finite()) {
+            return Err(format!(
+                "{operation} {bounds:?}: expected finite enclosing endpoints"
+            ));
+        }
+        Ok(value)
+    }
     pub fn bounds(self) -> [f64; 2] {
         let (lower, upper) = self.0.bounds();
         [lower, upper]
@@ -68,6 +86,43 @@ mod tests {
                     rational(lo) <= exact && exact <= rational(hi),
                     "{left:?} - {right:?}: [{lo:?}, {hi:?}]"
                 );
+            }
+        }
+    }
+    #[test]
+    fn directed_sum_and_half_contain_exact_binary_rationals() {
+        let values = [
+            -f64::MAX,
+            -1.,
+            -0.1,
+            -f64::MIN_POSITIVE,
+            -f64::from_bits(1),
+            0.,
+            f64::from_bits(1),
+            f64::MIN_POSITIVE,
+            0.1,
+            1.,
+            f64::MAX,
+        ];
+        for left in values {
+            let half = Enclosure::new([left, left])
+                .unwrap()
+                .half()
+                .unwrap()
+                .bounds();
+            let exact_half = rational(left) / rational(2.);
+            assert!(rational(half[0]) <= exact_half && exact_half <= rational(half[1]));
+            for right in values {
+                let exact = rational(left) + rational(right);
+                let result = Enclosure::new([left, left])
+                    .unwrap()
+                    .sum(Enclosure::new([right, right]).unwrap());
+                let Ok(result) = result else {
+                    assert!(exact > rational(f64::MAX) || exact < -rational(f64::MAX));
+                    continue;
+                };
+                let [lower, upper] = result.bounds();
+                assert!(rational(lower) <= exact && exact <= rational(upper));
             }
         }
     }
