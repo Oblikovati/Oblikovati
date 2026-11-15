@@ -48,7 +48,8 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 
 - Document opening: Express assembly loading, qualified cache and Load Full
   remain incomplete (#3949). A real saved assembly fixture and shared live
-  presenter are in `rust-work`; cache and API work are in progress.
+  presenter are in `rust-work`. The cache producer and saved-source validator
+  are present; Express open and Load Full are not yet wired.
 - Document creation: the full diagnostic passed 29 of 39 scenarios. Named
   template assets and their catalog configuration are missing (#3899, #3951,
   #3952). The scenario owner's `BLOCKERS.md` lists the fixture requirements.
