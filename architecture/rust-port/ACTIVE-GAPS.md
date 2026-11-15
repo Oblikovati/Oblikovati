@@ -109,7 +109,9 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
   Switch menu scenarios passed focused frame-loop diagnostics (#3900); see
   `receipts/2026-11-15-sketch-switch/`. Two drawing and part tab reordering
   scenarios also passed focused diagnostics; see
-  `receipts/2026-11-15-tab-reorder/`.
+  `receipts/2026-11-15-tab-reorder/`. The drawing and active-sketch switch
+  scenario passed a focused diagnostic; see
+  `receipts/2026-11-15-mixed-document-switch/`.
 - Quick access: the diagnostic passed 11 of 12 scenarios. Clear can open
   before selection and can clear multiple browser-selected bodies in one edit
   (#3962). Viewport body multi-selection now passes frame-loop tests; named
