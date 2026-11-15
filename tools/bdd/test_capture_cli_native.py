@@ -124,6 +124,27 @@ class NativeCargoRunTests(unittest.TestCase):
             self.assertEqual(status, 0, (reports / "native-test.log").read_text())
             self.assertIn("1 passed", (reports / "native-test.log").read_text())
 
+    @unittest.skipUnless(shutil.which("cargo"), "requires Cargo")
+    def test_real_cargo_ignores_caller_flags_and_home_config(self) -> None:
+        root = Path(self.repo.name)
+        self.ignored_include_commit()
+        (root / "src/lib.rs").write_text(
+            '#[test] fn application_scenarios_use_the_native_window() { '
+            'assert!(!cfg!(probe_override)); }\n'
+        )
+        self.git("add", "src/lib.rs")
+        self.git("-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "flags")
+        commit = self.git("rev-parse", "HEAD").strip()
+        with tempfile.TemporaryDirectory() as folder, contextlib.redirect_stdout(io.StringIO()):
+            reports = Path(folder) / "reports"
+            reports.mkdir()
+            home = Path(folder) / "caller-cargo"
+            home.mkdir()
+            (home / "config.toml").write_text('[build]\nrustc-wrapper = "/does-not-exist"\n')
+            env = dict(os.environ, CARGO_HOME=str(home), RUSTFLAGS="--cfg probe_override", RUSTC_WRAPPER="/does-not-exist")
+            status = NativeCargoRun(root, "application", commit)(reports, env)
+            self.assertEqual(status, 0, (reports / "native-test.log").read_text())
+
     def test_failed_child_output_is_still_recorded(self) -> None:
         with tempfile.TemporaryDirectory() as folder:
             reports = Path(folder)
