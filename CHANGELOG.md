@@ -121,6 +121,8 @@
 
 ### Added
 
+- Added an experimental offline sandbox build probe for native BDD investigations. (#3978)
+
 - Added an experimental committed-source exporter for native BDD build investigations. (#3978)
 
 - Added a native scenario receipt command that checks its artifacts before publication. (#3865)
