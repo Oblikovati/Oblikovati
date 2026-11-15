@@ -15,7 +15,7 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 - **R0 remains open.** The full gate, baseline fields and milestone exit audits
   are incomplete. Run `python3 -B tools/bdd/behavior_cli.py report` for current
   counts; source and application changes can make earlier receipts stale.
-- At `3c94ce536ccd66df459a1b5fc3a0eea73b38bed2`, the ledger reported five
+- At `7fcec3bad870335d8877a7c4919dc5f67ffb4edc`, the ledger reported five
   current verified scenarios, 173 stale receipts and 21 blocked scenarios
   across 2,720 declarations. This is a checkpoint, not a permanent count.
   The gate also requires baseline fields for 2,580 scenarios.
@@ -33,6 +33,9 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   OS-level key and mouse delivery. Close test windows and retain receipts.
 - Martensite work is owned separately. Report validated kernel gaps in
   `Oblikovati/Martensite`; do not modify the kernel in this lane.
+- GUI unit tests isolate the shared ImGui context under parallel execution
+  (#3878). The final eight-thread run passed 495 tests; the production context
+  ownership check still rejects a second active owner.
 
 ## Queue
 
