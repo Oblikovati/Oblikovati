@@ -1,0 +1,13 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.15s
+     Running unittests src/lib.rs (/tmp/rust-midpoint-3996-JM1wi6AQ/target/debug/deps/oblikovati_head-c865ed7d2d134d42)
+
+running 1 test
+
+thread 'native::gui_loop_tests::application_bdd::sketch::fixtures_midpoint::midpoint_check_rejects_a_plain_line' (2614242) panicked at crates/head/src/../tests/application/../sketch/fixtures_midpoint.rs:92:5:
+assertion `left == right` failed: expected one midpoint relation
+  left: 0
+ right: 1
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test native::gui_loop_tests::application_bdd::sketch::fixtures_midpoint::midpoint_check_rejects_a_plain_line - should panic ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1063 filtered out; finished in 0.00s

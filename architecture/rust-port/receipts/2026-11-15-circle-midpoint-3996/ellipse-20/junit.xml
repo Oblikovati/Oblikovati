@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ellipse: tmp/rust-midpoint-3996-JM1wi6AQ/scenarios/features/sketch/ellipse/scenario.feature" package="testsuite/Feature: Ellipse: tmp/rust-midpoint-3996-JM1wi6AQ/scenarios/features/sketch/ellipse/scenario.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-15T22:17:55.047544123Z" time="22.312285716"><testcase name="Scenario: ellipse-20 Observe a digit immediately after fresh center selection: tmp/rust-midpoint-3996-JM1wi6AQ/scenarios/features/sketch/ellipse/scenario.feature:207:3" time="22.312285716"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: ellipse-20 Observe a digit immediately after fresh center selection
+   ✔  Given an editable sketch with existing geometry is Ready
+   ✘  When the user open Circle dropdown and choose Ellipse
+      Step failed:
+      Defined: tmp/rust-midpoint-3996-JM1wi6AQ/scenarios/features/sketch/ellipse/scenario.feature:209:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

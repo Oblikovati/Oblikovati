@@ -3,46 +3,19 @@
 use super::super::super::ApplicationWorld;
 use super::{CENTER, choose_ellipse};
 use cucumber::{given, then, when};
-use oblikovati_model::sketch::{
-    PlanarConstraint, SketchGeometricConstraintCreation, SketchPointInput, SketchPrimitiveCreation,
-};
+use oblikovati_model::sketch::{SketchPointInput, SketchPrimitiveCreation};
 
 #[given("the fixture sketch is Ready with the retained circle and midpoint line")]
 #[given("an editable sketch with existing geometry is Ready")]
 fn retained_fixture(world: &mut ApplicationWorld) {
     world.start_empty_sketch();
-    create_midpoint_line(world);
+    world.create_midpoint_line();
     create_retained_circle(world);
     world.pump(Vec::new());
     let line = world.line_point(0, 0.3);
     let circle = world.sketch_pixel_of([3.5, -3.]);
     world.remember_edited_sketch(vec![line, circle]);
     world.expect_ready();
-}
-fn create_midpoint_line(world: &mut ApplicationWorld) {
-    let origin = world.edited_geometry().points()[0].id;
-    let edit = world.app().owner.active_sketch_edit().unwrap();
-    let mut commands = world.app().owner.document_commands(edit.document);
-    let line = commands
-        .create_sketch_primitive(edit.sketch, &midpoint_line_creation())
-        .unwrap();
-    let relation = SketchGeometricConstraintCreation::Relation(PlanarConstraint::Midpoint {
-        point: origin,
-        line: line.entity,
-    });
-    commands
-        .create_sketch_geometric_constraint(edit.sketch, &relation)
-        .unwrap();
-}
-fn midpoint_line_creation() -> SketchPrimitiveCreation {
-    SketchPrimitiveCreation::Line {
-        endpoints: [
-            SketchPointInput::New([-2., 1.5]),
-            SketchPointInput::New([2., -1.5]),
-        ],
-        construction: false,
-        centerline: false,
-    }
 }
 fn create_retained_circle(world: &mut ApplicationWorld) {
     let edit = world.app().owner.active_sketch_edit().unwrap();
