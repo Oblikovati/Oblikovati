@@ -46,9 +46,9 @@ the graph-aware provenance and snapshot staging above in addition. The current
 separate host load path that does not call that full reference resolution before
 its cached scene is displayed. `DesktopPartScenes::evaluate_assembly` currently
 owns traversal and presentation in the head crate, while save routes live in
-the automation and file-workspace layers. Extract one shared assembly
-presentation service and inject it into the common save path; do not copy the
-renderer or cache only GUI saves. Viewport triangles already exist; no external
+the automation and file-workspace layers. The live scene now uses a shared assembly presentation traversal; the common
+save path still needs an injected presentation adapter with selection disabled.
+Do not copy the renderer or cache only GUI saves. Viewport triangles already exist; no external
 kernel capability has been identified as necessary for this cache.
 
 The pinned scenario also expects enabled Finish and Simplify controls after
