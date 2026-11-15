@@ -1,0 +1,91 @@
+    Finished `test` profile [unoptimized] target(s) in 0.13s
+     Running unittests src/lib.rs (target/debug/deps/oblikovati_head-3cb4b9d43a19d60b)
+
+running 1 test
+Feature: Circle center point
+  Scenario: circle-center-point-10 Enter a diameter through circle creation
+   ✔  Given an editable metric sketch with a midpoint line
+   ✘  When the user invoke Center Point Circle using Ctrl+Shift+C
+      Step failed:
+      Defined: tmp/obk-circle-diagnostic-E1AUBo/source/features/sketch/circle-center-point/scenario.feature:7:5
+      Step doesn't match any function
+  Scenario: circle-center-point-11 Edit diameter while retaining the measured center
+   ✘  Given the recorded circle has a driving diameter dimension equal to 6 mm
+      Step failed:
+      Defined: tmp/obk-circle-diagnostic-E1AUBo/source/features/sketch/circle-center-point/scenario.feature:20:5
+      Matched: crates/head/src/../tests/application/../sketch/circle-center-point/steps.rs:121:1
+      Step panicked. Captured output: expected "Precise Input" in rendered text "W\nP\nZ\nv\nO\nv\nRight\nSelectcenterofcircle\n4dimensionsneeded\nModel\n+\nModel\nMenu\nSearch\nPart1<Primary>\nRepresentations\nModelState\n<Primary>\n1\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nSketch1\n[DOF4]\nFeatures\nEndofPart\nHome\nPart1<Primary>*\nDocuments\nFile\nTools\nNew\nOpen\nSave\nUndo\nRedo\nHome\nProjects\nUpdate\nSelect\nMaterialBrowser\nMaterials\nAppearanceBrowser\nParameters\n...\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nRibbonDisplay\nv\nv\nRectangle\nCircle\nv\nPoint\nCenterArcv\nEllipse\nCenterRect.\n3-PtRect.\nv\nLine\nProjectGeometry\nCreatev\nv\nConstrain\nv\nModify\nv\nPattern\nv\nInsert\nv\nFormat\nFinishSketch\nExit"
+  Scenario: circle-center-point-01 Commit the intended result
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch is active
+   ✔  When the user select Center Point Circle, click a center, then a distinct circumference point
+   ✔  Then one circle has the selected center and passes through the circumference point
+   ✔  And the command returns to Select center of circle
+  Scenario: circle-center-point-06 Cancel after choosing only the center
+   ✔  Given an editable sketch is Ready
+   ✔  When the user select Center Point Circle from the dropdown
+   ✔  And the user select a center
+   ✔  Then the prompt requests a point on the circle
+   ✔  When the user press Escape
+   ✔  Then the MCAD Software returns to Ready without a new circle
+  Scenario: circle-center-point-07 Create a free circle and undo and redo it
+   ✔  Given an editable sketch is Ready
+   ✔  When the user invoke Center Point Circle
+   ✔  And the user select a center and a distinct circumference point
+   ✔  Then a circle appears and the command requests another center
+   ✔  When the user press Escape
+   ✔  Then the circle is retained
+   ✔  When the user undo
+   ✔  Then the circle is removed
+   ✔  When the user redo
+   ✔  Then the circle returns
+test native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window has been running for over 60 seconds
+  Scenario: circle-center-point-08 Measure the restored mouse-created circle
+   ✘  Given the upper-right center-point circle has been restored by redo
+      Step failed:
+      Defined: tmp/obk-circle-diagnostic-E1AUBo/source/features/sketch/circle-center-point/scenario.feature:65:5
+      Matched: crates/head/src/../tests/application/../sketch/circle-center-point/steps.rs:302:1
+      Step panicked. Captured output: expected "Precise Input" in rendered text "W\nP\nZ\nv\nO\nv\nRight\nSelectcenterofcircle\nFullyConstrained\nModel\n+\nModel\nMenu\nSearch\nPart1<Primary>\nRepresentations\nModelState\n<Primary>\n1\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nSketch1\n[DOF0]\nFeatures\nEndofPart\nHome\nPart1<Primary>*\nDocuments\nFile\nTools\nNew\nOpen\nSave\nUndo\nRedo\nHome\nProjects\nUpdate\nSelect\nMaterialBrowser\nMaterials\nAppearanceBrowser\nParameters\n...\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nRibbonDisplay\nv\nv\nRectangle\nCircle\nv\nPoint\nCenterArcv\nEllipse\nCenterRect.\n3-PtRect.\nv\nLine\nProjectGeometry\nCreatev\nv\nConstrain\nv\nModify\nv\nPattern\nv\nInsert\nv\nFormat\nFinishSketch\nExit"
+  Scenario: circle-center-point-09 Keep selecting circumference after a same-position click
+   ✔  Given an editable sketch is Ready
+   ✔  When the user invoke Center Point Circle
+   ✔  And the user select a center
+   ✔  And the user click the same screen position for its circumference
+   ✔  Then Select point on circle remains active
+   ✔  And the displayed radius is 0.000 mm
+   ✔  And no error dialog or new circle appears
+   ✔  When the user press Escape
+   ✔  Then the MCAD Software returns to Ready
+  Scenario: circle-center-point-12 Reject zero advancement and cancel through two Escape states
+   ✘  Given an editable sketch contains the retained 6 mm circle and midpoint line
+      Step failed:
+      Defined: tmp/obk-circle-diagnostic-E1AUBo/source/features/sketch/circle-center-point/scenario.feature:84:5
+      Matched: crates/head/src/../tests/application/../sketch/circle-center-point/steps.rs:123:1
+      Step panicked. Captured output: expected "Precise Input" in rendered text "W\nP\nZ\nv\nO\nv\nRight\nSelectcenterofcircle\n4dimensionsneeded\nModel\n+\nModel\nMenu\nSearch\nPart1<Primary>\nRepresentations\nModelState\n<Primary>\n1\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nSketch1\n[DOF4]\nFeatures\nEndofPart\nHome\nPart1<Primary>*\nDocuments\nFile\nTools\nNew\nOpen\nSave\nUndo\nRedo\nHome\nProjects\nUpdate\nSelect\nMaterialBrowser\nMaterials\nAppearanceBrowser\nParameters\n...\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nRibbonDisplay\nv\nv\nRectangle\nCircle\nv\nPoint\nCenterArcv\nEllipse\nCenterRect.\n3-PtRect.\nv\nLine\nProjectGeometry\nCreatev\nv\nConstrain\nv\nModify\nv\nPattern\nv\nInsert\nv\nFormat\nFinishSketch\nExit"
+  Scenario: circle-center-point-13 Cancel a proposed diameter and inspect the retained value
+   ✘  Given the retained circle has a driving diameter dimension equal to 6 mm
+      Step failed:
+      Defined: tmp/obk-circle-diagnostic-E1AUBo/source/features/sketch/circle-center-point/scenario.feature:97:5
+      Matched: crates/head/src/../tests/application/../sketch/circle-center-point/steps.rs:122:1
+      Step panicked. Captured output: expected "Precise Input" in rendered text "W\nP\nZ\nv\nO\nv\nRight\nSelectcenterofcircle\n4dimensionsneeded\nModel\n+\nModel\nMenu\nSearch\nPart1<Primary>\nRepresentations\nModelState\n<Primary>\n1\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nSketch1\n[DOF4]\nFeatures\nEndofPart\nHome\nPart1<Primary>*\nDocuments\nFile\nTools\nNew\nOpen\nSave\nUndo\nRedo\nHome\nProjects\nUpdate\nSelect\nMaterialBrowser\nMaterials\nAppearanceBrowser\nParameters\n...\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nRibbonDisplay\nv\nv\nRectangle\nCircle\nv\nPoint\nCenterArcv\nEllipse\nCenterRect.\n3-PtRect.\nv\nLine\nProjectGeometry\nCreatev\nv\nConstrain\nv\nModify\nv\nPattern\nv\nInsert\nv\nFormat\nFinishSketch\nExit"
+[Summary]
+1 feature
+9 scenarios (4 passed, 5 failed)
+36 steps (31 passed, 5 failed)
+
+thread 'sketch-scenarios' (1583174) panicked at crates/head/src/../tests/application/benchmark.rs:294:5:
+scenario benchmark: expected no failed, undefined, or skipped steps
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window' (1583173) panicked at crates/head/src/../tests/application/../sketch/benchmark.rs:74:10:
+called `Result::unwrap()` on an `Err` value: Any { .. }
+test native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window ... FAILED
+
+failures:
+
+failures:
+    native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1062 filtered out; finished in 97.69s
+
+error: test failed, to rerun pass `-p oblikovati-head --lib`
