@@ -68,9 +68,9 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 
 - R7 sketch ribbon availability: all three scenarios stopped at an unbound inactive-sketch setup step (#3956). See `receipts/2026-11-15-ribbon-availability-diagnostic/`.
 
-- R7 quick access: a full diagnostic run passed 11 of 12 scenarios; the command-choice scenario is incomplete (#3955). See `receipts/2026-11-15-quick-access-diagnostic/`.
+- R7 quick access: a full diagnostic run passed 11 of 12 scenarios; Measure is now available, but other command choices remain incomplete (#3955). See `receipts/2026-11-15-quick-access-diagnostic/`.
 
-- R7 body properties: a full run reported 6 passes, but an empty unavailable-properties setup step prevents feature acceptance (#3954). See `receipts/2026-11-15-body-properties-diagnostic/`.
+- R7 body properties: the unavailable-properties setup and list-scroll checks are fixed; exact physical-value assertions are under review before acceptance (#3954). See `receipts/2026-11-15-body-properties-diagnostic/`.
 
 - R4 two-point rectangle: a configured full diagnostic run passed 9 of 10 scenarios; scenario 10 needs its recorded fixture to assess the transient-count gap (#3953). A substitute-fixture diagnosis is in `receipts/2026-11-15-rectangle-zero-diagnosis/`. See `receipts/2026-11-15-rectangle-diagnostic/`.
 
@@ -78,7 +78,7 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 
 - R4 document tabs: a full diagnostic run passed 9 of 38 scenarios; 29 stopped at unbound steps (#3900). Keyboard switching is tracked in #3950. See `receipts/2026-11-15-document-tabs-diagnostic/`.
 
-- R7 document opening: a full diagnostic run passed 26 of 27 scenarios; the express assembly scenario has an unbound setup step and remains open (#3949). See `receipts/2026-11-15-document-opening-diagnostic/`.
+- R7 document opening: a full diagnostic run passed 26 of 27 scenarios; the express assembly fixture is bound, but Express loading and Load Full remain open (#3949). See `receipts/2026-11-15-document-opening-diagnostic/`.
 
 - R7 navigation wheel: the remaining six menu, Home and preference scenarios passed with reviewed captures in `receipts/2026-11-14-wheel-remaining-*-final/` (#3944, #3945).
 
