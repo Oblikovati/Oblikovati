@@ -200,12 +200,12 @@ def reconcile_row(
             receipt_check(root, result["last_receipt"], result, revision, app_commit)
             if not app_clean:
                 raise StaleEvidence("uncommitted application inputs")
-        except StaleEvidence:
+        except StaleEvidence as error:
             result.update(
                 {
                     "state": "inventoried",
                     "stale": True,
-                    "stale_reason": "application inputs changed",
+                    "stale_reason": str(error),
                     "historical_receipt": result["last_receipt"],
                     "last_receipt": None,
                 }

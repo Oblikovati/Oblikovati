@@ -9,7 +9,12 @@ from pathlib import Path
 from unittest.mock import patch
 
 from behavior_capture import CaptureRequest, capture_receipt
-from behavior_evidence import example_capture_name, verify_receipt
+from behavior_evidence import (
+    StaleEvidence,
+    check_capture_receipt,
+    example_capture_name,
+    verify_receipt,
+)
 from capture_cli import (
     find_scenario,
     native_command,
@@ -104,11 +109,13 @@ class CaptureTests(unittest.TestCase):
         )
         return fixture, request, FakeNativeRun(fixture), FakeApplicationState("a" * 40)
 
-    def test_success_publishes_a_receipt_the_existing_checker_accepts(self) -> None:
+    def test_success_publishes_a_checked_historical_receipt(self) -> None:
         with tempfile.TemporaryDirectory() as folder:
             fixture, request, runner, state = self.fixture(folder)
             artifact = capture_receipt(request, runner, state)
-            verify_receipt(request.root, artifact, fixture.row, "source", "a" * 40)
+            check_capture_receipt(request.root, artifact, fixture.row, "source", "a" * 40)
+            with self.assertRaisesRegex(StaleEvidence, "build provenance is unproven"):
+                verify_receipt(request.root, artifact, fixture.row, "source", "a" * 40)
             self.assertEqual(runner.environment["OBK_BDD_FEATURE"], "a")
             self.assertEqual(runner.environment["OBK_BDD_SCENARIO"], "First")
             self.assertTrue((request.destination / "native-test.log.gz").is_file())
@@ -241,7 +248,7 @@ class CaptureTests(unittest.TestCase):
             runner.captures = ["First.png", "Other.png"]
             selected = CaptureRequest(**{**vars(request), "capture_name": "First.png"})
             artifact = capture_receipt(selected, runner, state)
-            verify_receipt(request.root, artifact, fixture.row, "source", "a" * 40)
+            check_capture_receipt(request.root, artifact, fixture.row, "source", "a" * 40)
         with tempfile.TemporaryDirectory() as folder:
             _, request, runner, state = self.fixture(folder)
             escaped = CaptureRequest(
@@ -269,7 +276,7 @@ class CaptureTests(unittest.TestCase):
                     self.assertFalse(request.destination.exists())
                 else:
                     result = capture_receipt(request, runner, state)
-                    verify_receipt(
+                    check_capture_receipt(
                         request.root, result, fixture.row, "source", "a" * 40
                     )
 

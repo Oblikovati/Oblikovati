@@ -8,7 +8,14 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from behavior_evidence import check_scenario, verify_receipt
+from behavior_evidence import (
+    StaleEvidence,
+    check_capture_receipt,
+    check_receipt_integrity,
+    check_scenario,
+    verify_receipt,
+)
+from behavior_ledger import reconcile_row, summarize
 
 
 class EvidenceFixture:
@@ -121,12 +128,52 @@ class EvidenceTests(unittest.TestCase):
                     fixture.root, fixture.receipt(), fixture.row, "source", "app"
                 )
 
-    def test_complete_scenario_receipt_is_accepted(self) -> None:
+    def test_complete_receipt_is_historical_until_build_provenance_is_proven(self) -> None:
         with tempfile.TemporaryDirectory() as folder:
             fixture = EvidenceFixture(Path(folder))
-            verify_receipt(
-                fixture.root, fixture.receipt(), fixture.row, "source", "app"
+            receipt = fixture.receipt()
+            check_capture_receipt(fixture.root, receipt, fixture.row, "source", "app")
+            with self.assertRaisesRegex(StaleEvidence, "build provenance is unproven"):
+                verify_receipt(fixture.root, receipt, fixture.row, "source", "app")
+
+    def test_self_asserted_provenance_cannot_authorize_a_receipt(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            fixture = EvidenceFixture(Path(folder))
+            fixture.receipt()
+            receipt = json.loads((fixture.root / "receipt.json").read_text())
+            receipt["build_provenance"] = {"verified": True}
+            artifact = fixture.store("receipt.json", receipt)
+            with self.assertRaisesRegex(StaleEvidence, "build provenance is unproven"):
+                verify_receipt(fixture.root, artifact, fixture.row, "source", "app")
+
+    def test_ledger_retains_historical_receipt_without_counting_it(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            fixture = EvidenceFixture(Path(folder))
+            receipt = fixture.receipt()
+            source = dict(fixture.row, source_error=None)
+            classification = {
+                "id": source["id"],
+                "source_revision": "source",
+                "source_sha256": source["source_sha256"],
+                "milestone": "R3",
+                "owner": "desktop",
+                "target_module": "crates/head",
+                "acceptance_test": "native",
+                "state": "verified",
+                "issues": ["https://github.com/Oblikovati/Oblikovati/issues/3978"],
+                "api_revision": "a" * 40,
+                "kernel_revision": "b" * 40,
+                "last_receipt": receipt,
+            }
+            result = reconcile_row(
+                source, classification, "source", "app", True, fixture.root,
+                verify_receipt, check_receipt_integrity,
             )
+            self.assertEqual(result["state"], "inventoried")
+            self.assertEqual(result["historical_receipt"], receipt)
+            self.assertIsNone(result["last_receipt"])
+            self.assertIn("build provenance is unproven", result["stale_reason"])
+            self.assertEqual(summarize([result], "area")["application"]["verified"], 0)
 
     def test_partial_or_failed_steps_and_wrong_source_are_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as folder:

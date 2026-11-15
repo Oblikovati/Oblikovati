@@ -380,7 +380,7 @@ def check_receipt_integrity(
     return path, receipt, report
 
 
-def verify_receipt(
+def check_capture_receipt(
     root: Path,
     artifact: object,
     row: Mapping[str, object],
@@ -388,7 +388,7 @@ def verify_receipt(
     app_commit: str,
     compatible: Callable[[Path, str, str], bool] | None = None,
 ) -> None:
-    """Verify current native evidence; for example, verify_receipt(root, name, row, source, commit)."""
+    """Check capture integrity and content; for example, check_capture_receipt(root, name, row, source, commit)."""
     if row.get("capture_only"):
         raise ValueError(
             f"scenario {row.get('id')!r}: expected a runnable source, got @capture_only"
@@ -436,3 +436,17 @@ def verify_receipt(
         raise StaleEvidence(
             f"receipt {name!r} application_commit {tested!r}: expected unchanged application inputs at {app_commit!r}"
         )
+
+
+def verify_receipt(
+    root: Path,
+    artifact: object,
+    row: Mapping[str, object],
+    source_revision: str,
+    app_commit: str,
+    compatible: Callable[[Path, str, str], bool] | None = None,
+) -> None:
+    """Require acceptance evidence; for example, verify_receipt(root, receipt, row, source, commit)."""
+    check_capture_receipt(root, artifact, row, source_revision, app_commit, compatible)
+    # Issue #3978: a clean commit does not bound the inputs used to build the runner.
+    raise StaleEvidence("native runner build provenance is unproven (issue #3978)")
