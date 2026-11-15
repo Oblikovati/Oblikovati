@@ -16,8 +16,7 @@ from behavior_capture import CaptureRequest, capture_receipt
 from committed_build_source import materialize_source
 from capture_build_environment import capture_build_environment, reject_ancestor_cargo_configs
 from capture_inventory import isolated_inventory
-from capture_registry_cache import stage_registry_cache
-from capture_build_environment import source_cargo_home
+from capture_dependency_stage import stage_capture_dependencies
 from functools import partial
 from behavior_evidence import locked_revision
 from behavior_ledger import (
@@ -60,10 +59,7 @@ class NativeCargoRun:
         materialize_source(self.root, self.commit, source)
         reject_ancestor_cargo_configs(source)
         build_environment = capture_build_environment(folder, environment)
-        stage_registry_cache(
-            (source / "Cargo.lock").read_bytes(), source_cargo_home(environment),
-            Path(build_environment["CARGO_HOME"]),
-        )
+        stage_capture_dependencies(source, environment, build_environment)
         with tempfile.TemporaryFile(mode="w+", encoding="utf-8") as output:
             status = self._stream_native(source, build_environment, output)
             reject_ancestor_cargo_configs(source)

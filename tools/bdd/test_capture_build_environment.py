@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-only
 """Check the explicit build environment and Cargo configuration boundary."""
 
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -25,6 +26,8 @@ class CaptureBuildEnvironmentTests(unittest.TestCase):
             for name in ("RUSTFLAGS", "CARGO_BUILD_RUSTC_WRAPPER", "ARBITRARY_BUILD_FLAG"):
                 self.assertNotIn(name, result)
             self.assertEqual(result["CARGO_NET_OFFLINE"], "true")
+            self.assertEqual(result["GIT_CONFIG_NOSYSTEM"], "1")
+            self.assertEqual(result["GIT_CONFIG_GLOBAL"], os.devnull)
             self.assertNotEqual(result["CARGO_HOME"], str(root / ".cargo"))
 
     def test_only_dependency_caches_are_exposed(self) -> None:

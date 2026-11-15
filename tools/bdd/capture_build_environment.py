@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-only
 """Constrain capture build settings without claiming complete provenance."""
 
+import os
 from pathlib import Path
 from typing import Mapping
 
@@ -47,11 +48,6 @@ def isolate_cargo_home(folder: Path, environment: Mapping[str, str]) -> Path:
         if not index.is_dir():
             raise ValueError(f"Cargo index {index}: expected a directory")
         (registry / "index").symlink_to(index.resolve(), target_is_directory=True)
-    git = source / "git"
-    if git.exists():
-        if not git.is_dir():
-            raise ValueError(f"Cargo Git cache {git}: expected a directory")
-        (home / "git").symlink_to(git.resolve(), target_is_directory=True)
     return home
 
 
@@ -65,5 +61,9 @@ def capture_build_environment(folder: Path, environment: Mapping[str, str]) -> d
         "CARGO_BUILD_JOBS": "2",
         "CARGO_PROFILE_TEST_DEBUG": "0",
         "CARGO_PROFILE_DEV_DEBUG": "0",
+        "GIT_CONFIG_NOSYSTEM": "1",
+        "GIT_CONFIG_GLOBAL": os.devnull,
+        "GIT_NO_REPLACE_OBJECTS": "1",
+        "GIT_OPTIONAL_LOCKS": "0",
     })
     return result
