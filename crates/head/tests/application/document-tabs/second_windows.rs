@@ -41,6 +41,7 @@ fn two_windows(world: &mut ApplicationWorld) {
     open_second_window(world);
 }
 #[when("I choose New in the View tab's Windows group")]
+#[when("the user chooses New in the View tab's Windows group")]
 fn choose_new(world: &mut ApplicationWorld) {
     open_second_window(world);
 }
@@ -69,6 +70,7 @@ fn original_listed(world: &mut ApplicationWorld) {
     world.expect_text(SECOND);
 }
 #[when("I select the original part window")]
+#[when("the user selects the original part window")]
 fn select_original(world: &mut ApplicationWorld) {
     world.click_text(FIRST);
     world.pump(Vec::new());
