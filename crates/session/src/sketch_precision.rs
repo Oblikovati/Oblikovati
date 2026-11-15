@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Session-borrowed conditional evidence; no feature admission.
+mod prism;
 use crate::{DocumentSession, TransactionObserver};
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
     history::{ConditionalOriginProjection, DocumentSnapshot},
     sketch::{SketchEntityId, SketchSolveOutcome},
 };
+pub use prism::PrismPrecisionObligation;
 
 /// A fresh solve retained only while its owning session is immutably borrowed.
 /// Derived numeric bounds can be copied and do not carry this lifetime.

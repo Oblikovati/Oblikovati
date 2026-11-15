@@ -316,3 +316,170 @@ fn changed_candidate_is_refused_without_changing_session_or_dirty_state() {
     assert_eq!(after.redo_labels(), redo);
     assert_eq!(workspace.needs_save(document).unwrap(), dirty);
 }
+
+#[test]
+fn real_prism_feature_reports_non_admitting_precision_obligations_across_history() {
+    use oblikovati_model::feature::{
+        sketch_prism::{SketchDirectedCurve, SketchPrismDefinition, SketchPrismSelection},
+        work_geometry::DatumLength,
+    };
+    let mut host = host(RecordingWorkspace::default());
+    let mut source = SequenceGuids(2000);
+    let doc = open_file(&mut host, "a.obk", &mut source, OpenActivation::Activate);
+    let (sketch, anchor) = host
+        .commands(doc)
+        .unwrap()
+        .run("Rectangle", add_rectangle)
+        .unwrap();
+    let lines = host
+        .workspace()
+        .session(doc)
+        .unwrap()
+        .snapshot()
+        .sketches
+        .get(sketch)
+        .unwrap()
+        .geometry()
+        .lines()
+        .iter()
+        .map(|line| SketchDirectedCurve {
+            curve: line.id,
+            reversed: false,
+        })
+        .collect();
+    let definition = SketchPrismDefinition::new(
+        sketch,
+        SketchPrismSelection {
+            outer: lines,
+            holes: vec![],
+        },
+        [
+            DatumLength::Constant(0.),
+            DatumLength::Constant(0.),
+            DatumLength::Parameter(1),
+        ],
+    )
+    .unwrap();
+    let feature = host
+        .commands(doc)
+        .unwrap()
+        .create_sketch_prism("Cube", definition)
+        .unwrap();
+    assert_prism_obligations(&mut host, doc, sketch, anchor, feature);
+    host.commands(doc)
+        .unwrap()
+        .run("Size", |snapshot, _| {
+            snapshot.parameters.set_expression(1, "20 mm")
+        })
+        .unwrap();
+    assert_prism_obligations(&mut host, doc, sketch, anchor, feature);
+    host.commands(doc).unwrap().undo().unwrap();
+    assert_prism_obligations(&mut host, doc, sketch, anchor, feature);
+    host.commands(doc).unwrap().redo().unwrap();
+    host.save(doc, "alpha", &mut source).unwrap();
+    host.close_discarding_changes(doc).unwrap();
+    let reopened = open_file(&mut host, "a.obk", &mut source, OpenActivation::Activate);
+    assert_prism_obligations(&mut host, reopened, sketch, anchor, feature);
+}
+fn assert_prism_obligations(
+    host: &mut Host,
+    doc: u64,
+    sketch: DocumentSketchId,
+    anchor: SketchEntityId,
+    feature: oblikovati_model::feature::FeatureId,
+) {
+    use oblikovati_session::PrismPrecisionObligation::*;
+    let mut commands = host.commands(doc).unwrap();
+    let evidence = commands
+        .conditional_canonical_sketch(sketch, anchor)
+        .unwrap();
+    let projection = evidence.projection().unwrap();
+    let points = projection
+        .snapshot()
+        .sketches
+        .get(sketch)
+        .unwrap()
+        .geometry()
+        .points();
+    let bounds = points
+        .iter()
+        .flat_map(|p| p.position)
+        .map(|v| [v - 0.01, v + 0.01])
+        .collect::<Vec<_>>();
+    let result = evidence
+        .prism_precision_obligations(feature, &bounds)
+        .unwrap();
+    assert_eq!(
+        result,
+        [
+            ArithmeticPlatform,
+            ExtrusionSource,
+            OperandToleranceBudget,
+            AdmissionCoverage
+        ]
+    );
+    assert!(
+        evidence
+            .prism_precision_obligations(oblikovati_model::feature::FeatureId(u64::MAX), &bounds)
+            .is_err()
+    );
+    assert!(evidence.prism_precision_obligations(feature, &[]).is_err());
+}
+
+#[test]
+fn prism_obligations_refuse_a_selected_non_line_identity() {
+    use oblikovati_model::feature::{
+        sketch_prism::{SketchDirectedCurve, SketchPrismDefinition, SketchPrismSelection},
+        work_geometry::DatumLength,
+    };
+    let mut host = host(RecordingWorkspace::default());
+    let mut source = SequenceGuids(3000);
+    let doc = open_file(&mut host, "a.obk", &mut source, OpenActivation::Activate);
+    let (sketch, anchor) = host
+        .commands(doc)
+        .unwrap()
+        .run("Rectangle", add_rectangle)
+        .unwrap();
+    let definition = SketchPrismDefinition::new(
+        sketch,
+        SketchPrismSelection {
+            outer: vec![SketchDirectedCurve {
+                curve: anchor,
+                reversed: false,
+            }],
+            holes: vec![],
+        },
+        [
+            DatumLength::Constant(0.),
+            DatumLength::Constant(0.),
+            DatumLength::Parameter(1),
+        ],
+    )
+    .unwrap();
+    let feature = host
+        .commands(doc)
+        .unwrap()
+        .create_sketch_prism("Invalid selection", definition)
+        .unwrap();
+    let mut commands = host.commands(doc).unwrap();
+    let evidence = commands
+        .conditional_canonical_sketch(sketch, anchor)
+        .unwrap();
+    let projection = evidence.projection().unwrap();
+    let points = projection
+        .snapshot()
+        .sketches
+        .get(sketch)
+        .unwrap()
+        .geometry()
+        .points();
+    let bounds = points
+        .iter()
+        .flat_map(|p| p.position)
+        .map(|v| [v - 0.01, v + 0.01])
+        .collect::<Vec<_>>();
+    let error = evidence
+        .prism_precision_obligations(feature, &bounds)
+        .unwrap_err();
+    assert!(error.contains("expected a supported line"), "{error}");
+}
