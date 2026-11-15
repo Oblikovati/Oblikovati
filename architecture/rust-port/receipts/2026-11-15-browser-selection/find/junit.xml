@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/obk-browser-selection-EUiUnv/source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/obk-browser-selection-EUiUnv/source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T18:20:35.396267494Z" time="11.921572786"><testcase name="Scenario: Find a browser feature in the viewport: tmp/obk-browser-selection-EUiUnv/source/features/application/model-browser/model-browser.feature:175:3" time="11.921572786"><system-out><![CDATA[  Scenario: Find a browser feature in the viewport
+   ✔  Given an active part in the MCAD Software contains a single extrusion forming a rectangular block
+   ✔  And the block appears small in the viewport
+   ✔  When the user right-clicks the extrusion row in the model browser
+   ✔  And the user chooses Find in Window
+   ✔  Then the block appears larger and fits within the viewport
+   ✔  And the extrusion row remains selected
+   ✔  And the visible block edges remain highlighted
+   ✔  And the apparent orientation is unchanged
+]]></system-out></testcase></testsuite></testsuites>
