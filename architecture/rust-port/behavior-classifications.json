@@ -568,10 +568,25 @@
       "acceptance_test": "application_scenarios_use_the_native_window with OBK_BDD_AREA=solid-model: extrusion-02 Finish profile returns to waiting extrusion",
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3857",
-        "https://github.com/Oblikovati/Oblikovati/issues/3870"
+        "https://github.com/Oblikovati/Oblikovati/issues/3870",
+        "https://github.com/Oblikovati/Oblikovati/issues/3927",
+        "https://github.com/Oblikovati/Oblikovati/issues/3928"
       ],
-      "state": "inventoried",
-      "last_receipt": null
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-extrusion-02-free/receipt-5c666abf06d3e4d2.json",
+        "sha256": "150abbda556790c02992523914c2e4221beb61783e6a0d260f3571162e7a719c"
+      },
+      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_reference": "../Oblikovati/app/extrude_tool.go; ../Oblikovati/head/ui/extrude_dialog.go",
+      "go_test_premise": "Go aa8297d1b plane-selection and Extrude availability tests pass but do not establish automatic preview after the requested sketch. See receipts/2026-11-15-go-extrusion-entry-baseline/README.md.",
+      "kernel_capabilities": "The current converged sketch is checked for a closed profile and passed to the analytic extrusion operation; solve precision qualification remains open in #3928.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The native frame loop uses the shared profile discovery and preview operations with the Martensite adapter.",
+      "rust_tests": "application_scenarios_use_the_native_window with OBK_BDD_AREA=solid-model and OBK_BDD_SCENARIO=extrusion-02; model, adapter and native owner tests.",
+      "oracle": "The native run checks the selected profile, 10 mm field, no committed feature and shaded preview; the screenshot was reviewed.",
+      "expected_result": "Finishing the requested rectangle sketch resumes Extrude with one selected profile and a 10 mm solid preview."
     },
     {
       "id": "scenario:c958310f71da6060fc96ec06b1a1f472e92cc4b966876db9962c792cb59f2f4f",

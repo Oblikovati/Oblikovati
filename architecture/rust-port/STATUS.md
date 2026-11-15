@@ -15,10 +15,10 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 - **R0 remains open.** The full gate, baseline fields and milestone exit audits
   are incomplete. Run `python3 -B tools/bdd/behavior_cli.py report` for current
   counts; source and application changes can make earlier receipts stale.
-- At `859744e96068ef79f00acc538aff5edbe809d09e`, the ledger reported two
-  current verified scenarios, 177 stale receipts and 21 blocked scenarios
+- At `7cc438243449ce461ef37580916afc432719a144`, the ledger reported one
+  current verified scenario, 179 stale receipts and 21 blocked scenarios
   across 2,720 declarations. Application changes made prior receipts stale.
-  The gate also requires baseline fields for 2,578 scenarios.
+  The gate also requires baseline fields for 2,577 scenarios.
 - `rust-work` is local and has not passed the full pre-push gate. All 20 former
   application PR heads were merged locally and their PRs closed. Do not remove
   their remaining remote branches until the consolidated work is safely pushed.
@@ -59,12 +59,12 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   picking is blocked by missing interior extrema in
   [Martensite #462](https://github.com/Oblikovati/Martensite/issues/462).
 - Extrusion entry: the new metric part and origin-plane selection scenario
-  passed; see `receipts/2026-11-15-extrusion-entry-refresh/`. This checks sketch
-  entry only. The following preview scenario fails on an unconstrained
-  rectangle (#3927); see `receipts/2026-11-15-extrusion-02-diagnostic/`. The
-  solve precision certificate remains open (#3928).
+  passed before later changes; its receipt is stale. The following preview
+  scenario now passes for a converged rectangle with free variables (#3927);
+  see `receipts/2026-11-15-extrusion-02-free/`. The solve precision certificate
+  remains open (#3928).
 - Three-point arc: the collinear-input boundary scenario passed; see
-  `receipts/2026-11-15-arc-boundary-refresh/`.
+  `receipts/2026-11-15-arc-boundary-refresh/`. Its receipt is now stale.
 
 - Viewport orientation: all 20 pinned scenarios passed on the merged revision
   (#3961). See `receipts/2026-11-15-orientation-verified/`. The run uses
