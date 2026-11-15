@@ -31,6 +31,18 @@ impl GroundedSketch {
             })
             .collect()
     }
+    pub fn equation_evidence(
+        &self,
+        sketch: &Sketch2D,
+    ) -> Vec<Vec<super::equation_evidence::EquationEvidence>> {
+        self.sources
+            .iter()
+            .zip(&self.origins)
+            .map(|(source, origin)| {
+                super::equation_evidence::rows(sketch, *origin, &source.original)
+            })
+            .collect()
+    }
     pub fn operand_columns(&self) -> Vec<Vec<usize>> {
         self.sources
             .iter()

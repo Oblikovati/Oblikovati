@@ -205,3 +205,6 @@ pub use entity_geometry::OwnedSketchGeometry;
 pub use read_index::SketchReadIndex;
 
 mod frozen;
+
+mod equation_evidence;
+pub use equation_evidence::{SketchResidualTarget, SketchTargetSource};

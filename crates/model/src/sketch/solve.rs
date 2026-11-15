@@ -21,6 +21,7 @@ pub struct SketchSolveOutcome {
     origins: Vec<SketchRelationId>,
     parameter_dependencies: Vec<u64>,
     operands: Vec<Vec<SketchResidualOperand>>,
+    equations: Vec<Vec<super::equation_evidence::EquationEvidence>>,
 }
 /// Identity and accepted value for a variable read by one prepared relation.
 #[derive(Clone, Debug, PartialEq)]
@@ -41,6 +42,10 @@ pub struct SketchResidualRow {
     pub equation: usize,
     /// Source-level inputs; a row may use only a subset. Targets are not included.
     pub operands: Vec<SketchResidualOperand>,
+    /// Indices into `operands`; None means the equation layout is not yet attributed.
+    pub operand_indices: Option<Vec<usize>>,
+    /// Complete numeric target list, or None if target attribution is unsupported.
+    pub targets: Option<Vec<super::SketchResidualTarget>>,
     pub value: f64,
     pub convergence_domain: oblikovati_solve::residual::ResidualTolerance,
     /// Physical unit of the raw value; unknown rows cannot be qualified by unit.
@@ -63,6 +68,8 @@ impl SketchSolveOutcome {
                         relation,
                         equation,
                         operands: self.operands[source].clone(),
+                        operand_indices: self.equations[source][equation].operands.clone(),
+                        targets: self.equations[source][equation].targets.clone(),
                         value: numerical.evaluation.values()[index],
                         convergence_domain: numerical.residual_domains[index],
                         unit: numerical.residual_units[index],
@@ -150,7 +157,9 @@ impl Sketch2D {
         .map_err(|cause| source_failure(&prepared.origins, cause))?;
         let candidate = self.candidate_values(&prepared.restore(&result.solution.values)?)?;
         let operands = residual_operands(self, &prepared, &result.solution.values, anchors)?;
+        let equations = prepared.equation_evidence(self);
         let outcome = SketchSolveOutcome {
+            equations,
             operands,
             origins: prepared.origins,
             candidate,
@@ -229,7 +238,9 @@ impl Sketch2D {
         .map_err(|cause| source_failure(&prepared.origins, cause))?;
         let candidate = self.candidate_values(&prepared.restore(&numerical.values)?)?;
         let operands = residual_operands(self, &prepared, &numerical.values, anchors)?;
+        let equations = prepared.equation_evidence(self);
         Ok(SketchSolveOutcome {
+            equations,
             operands,
             origins: prepared.origins,
             candidate,

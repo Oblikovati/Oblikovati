@@ -485,3 +485,77 @@ mod planes;
 
 #[path = "sketch/collinear_incidence.rs"]
 mod collinear_incidence;
+
+#[test]
+fn prepared_dimension_evidence_keeps_its_target_and_row_inputs() {
+    use oblikovati_model::sketch::{SketchRelationId, SketchTargetSource};
+    let outcome = rectangle()
+        .solve(&parameters(), SolveOptions::default(), || false)
+        .unwrap();
+    let rows = outcome.residual_rows();
+    let width = rows
+        .iter()
+        .find(|row| row.relation == SketchRelationId::Authored(constraint(6)))
+        .unwrap();
+    assert_eq!(width.operand_indices.as_deref(), Some(&[0, 2][..]));
+    let target = &width.targets.as_ref().unwrap()[0];
+    assert_eq!(target.source, SketchTargetSource::Parameter(1));
+    assert_eq!(target.value, 5.0);
+    let a = width.operands[0].value;
+    let b = width.operands[2].value;
+    assert_eq!(width.value, (a - b).abs() - 5.0);
+    let height = rows
+        .iter()
+        .find(|row| row.relation == SketchRelationId::Authored(constraint(7)))
+        .unwrap();
+    assert_eq!(height.operand_indices.as_deref(), Some(&[1, 3][..]));
+    assert_eq!(
+        height.targets.as_ref().unwrap()[0].source,
+        SketchTargetSource::Parameter(2)
+    );
+    assert_eq!(height.targets.as_ref().unwrap()[0].value, 2.5);
+}
+
+#[test]
+fn unsupported_equation_inputs_are_explicitly_unknown() {
+    let mut sketch = Sketch2D::default();
+    for (id, point) in [(1, [0., 0.]), (2, [2., 0.]), (3, [1., 0.])] {
+        sketch.add_point(entity(id), point).unwrap();
+    }
+    sketch.add_line(entity(4), [entity(1), entity(2)]).unwrap();
+    relation(
+        &mut sketch,
+        1,
+        PlanarConstraint::PointOnLine {
+            point: entity(3),
+            line: entity(4),
+        },
+    );
+    let outcome = sketch
+        .solve(&parameters(), SolveOptions::default(), || false)
+        .unwrap();
+    assert!(outcome.numerical().structure.degrees_of_freedom > 0);
+    let rows = outcome.residual_rows();
+    assert_eq!(rows.len(), 1);
+    assert_eq!(rows[0].operand_indices, None);
+    assert_eq!(rows[0].targets, None);
+}
+
+#[test]
+fn projected_radius_keeps_its_target_but_not_an_invented_operand_mapping() {
+    use oblikovati_model::sketch::{SketchRelationId, SketchTargetSource};
+    let outcome = arcs::driven_arc(1.0, true)
+        .solve(&parameters(), SolveOptions::default(), || false)
+        .unwrap();
+    let rows = outcome.residual_rows();
+    let radius = rows
+        .iter()
+        .find(|row| row.relation == SketchRelationId::Authored(constraint(4)))
+        .unwrap();
+    assert_eq!(radius.operand_indices, None);
+    assert_eq!(
+        radius.targets.as_ref().unwrap()[0].source,
+        SketchTargetSource::Parameter(1)
+    );
+    assert_eq!(radius.targets.as_ref().unwrap()[0].value, 5.0);
+}

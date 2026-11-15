@@ -125,6 +125,9 @@ fn coincident_to_projected_anchor_is_bitwise_exact_after_solve() {
     assert_eq!(rows[0].value, operands[0].value - operands[2].value);
     assert_eq!(rows[1].value, operands[1].value - operands[3].value);
     assert_eq!(rows[0].operands, rows[1].operands);
+    assert_eq!(rows[0].operand_indices.as_deref(), Some(&[0, 2][..]));
+    assert_eq!(rows[1].operand_indices.as_deref(), Some(&[1, 3][..]));
+    assert_eq!(rows[0].targets.as_ref().unwrap().len(), 0);
     let (preferred, _) = sketch
         .solve_with_point_preferences(&parameters, &[anchor], &[], Default::default(), || false)
         .unwrap();

@@ -78,8 +78,11 @@ Each raw residual row retains the prepared relation's source-level variable
 operands in original solver-column order. Point coordinates carry their point
 identity and axis; supplied grounded anchors are marked separately from active
 solver variables. Values come from the accepted solve after restoring eliminated
-anchors. Non-point identities are explicitly unknown. A relation can use only a
-subset of its source operands, and embedded target values are not included.
+anchors. Non-point identities are explicitly unknown. For coincident, coordinate,
+fixed, grounded, midpoint, distance, and scalar length equations, each row
+records the indices it reads and its prepared
+numeric target with the authored parameter identity where applicable. Other
+rows and projected transformations explicitly remain unattributed.
 
 These binary64 values are observations, not enclosures of input uncertainty or
 error bounds. They neither establish conditioning nor qualify any operation.
