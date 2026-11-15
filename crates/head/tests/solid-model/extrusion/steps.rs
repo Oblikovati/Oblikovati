@@ -3,6 +3,7 @@
 use super::ApplicationWorld;
 use cucumber::{given, then, when};
 use oblikovati_viewport::ViewportPhysicalKey;
+mod acceptance;
 
 #[given("a new Standard (mm) part with no sketch")]
 fn new_metric_part(world: &mut ApplicationWorld) {
