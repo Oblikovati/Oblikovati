@@ -129,6 +129,14 @@ is not itself a security mechanism; it is checked against the archive instead.
 Git packages are listed as unverified. This check does not establish the whole
 vendor directory as trusted.
 
+To include the partial Git blob check in the same probe, also pass
+`--git-repo SOURCE REPOSITORY` for every locked Git source. `SOURCE` is the
+complete `git+...#commit` value from `Cargo.lock`; `REPOSITORY` is an absolute
+local object repository. The probe refuses missing, duplicate or unexpected
+source mappings and checks the vendor inventory before running Cargo. Its
+`vendor_check` result contains both registry and Git observations. The Git
+manifests remain unverified, and the combined result cannot authorize reuse.
+
 The tool uses the host `/usr`, GCC, kernel, devices and clock. The read-only
 mounts do not stop host-side writes during the build, and comparing snapshots
 before and after cannot detect every transient change. The input inventory

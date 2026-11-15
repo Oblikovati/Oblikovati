@@ -12,6 +12,7 @@ from unittest.mock import patch
 from committed_build_source import materialize_source
 from test_committed_build_source import SourceRepository
 from test_registry_vendor_check import RegistryVendorFixture
+from test_git_vendor_check import GitVendorFixture
 from runtime_snapshot import snapshot_runtime
 
 from sandbox_build_probe import (
@@ -166,6 +167,73 @@ class SandboxBuildProbeTests(unittest.TestCase):
         self.assertEqual(result["registry_check"]["registry_packages_checked"], 1)
         self.assertEqual(
             result["registry_check"]["git_packages_unverified"], ["git-dep 0.1.0"]
+        )
+        self.assertFalse(result["reusable"])
+
+    def test_forged_git_vendor_blob_stops_combined_build(self) -> None:
+        root = self.probe.source.parent
+        fixture_root = root / "git-fixture"
+        fixture_root.mkdir()
+        vendor = GitVendorFixture(fixture_root)
+        archives = root / "archives"
+        archives.mkdir()
+        revision_selector = vendor.source.split("?rev=")[1].split("#")[0]
+        (self.probe.config / "config.toml").write_text(
+            f'[source."git+https://example.invalid/repo?rev={revision_selector}"]\n'
+            f'git="https://example.invalid/repo"\nrev="{revision_selector}"\n'
+            'replace-with="vendored-sources"\n'
+            '[source.vendored-sources]\ndirectory="/vendor"\n'
+        )
+        repo = root / "repository"
+        repo.mkdir()
+        git = SourceRepository(repo)
+        (repo / "Cargo.lock").write_bytes(vendor.lock)
+        git.git("add", "Cargo.lock")
+        git.git("commit", "-qm", "lock Git source")
+        revision = git.git("rev-parse", "HEAD")
+        self.probe.source.rmdir()
+        materialize_source(repo, revision, self.probe.source)
+        probe = replace(self.probe, vendor=vendor.vendor)
+        process = FakeBuildProcess(probe.target)
+        with self.assertRaisesRegex(ValueError, "expected registry archives"):
+            run_committed_build_probe(
+                probe,
+                repo,
+                revision,
+                process,
+                git_repositories={vendor.source: vendor.repo},
+            )
+        with self.assertRaisesRegex(ValueError, "expected exactly"):
+            run_committed_build_probe(
+                probe, repo, revision, process, archives=archives, git_repositories={}
+            )
+        self.assertEqual(process.command, [])
+        source = vendor.package / "src/lib.rs"
+        source.write_text("forged")
+        vendor.write_checksum()
+        with self.assertRaisesRegex(ValueError, "expected archive content"):
+            run_committed_build_probe(
+                probe,
+                repo,
+                revision,
+                process,
+                archives=archives,
+                git_repositories={vendor.source: vendor.repo},
+            )
+        self.assertEqual(process.command, [])
+        source.write_text("committed\n")
+        vendor.write_checksum()
+        result = run_committed_build_probe(
+            probe,
+            repo,
+            revision,
+            process,
+            archives=archives,
+            git_repositories={vendor.source: vendor.repo},
+        )
+        self.assertEqual(result["vendor_check"]["git"]["git_files_checked"], 1)
+        self.assertEqual(
+            result["vendor_check"]["git"]["git_manifests_unverified"], ["witness 1.2.3"]
         )
         self.assertFalse(result["reusable"])
 

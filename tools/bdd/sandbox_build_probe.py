@@ -14,6 +14,7 @@ from functools import partial
 from typing import Callable, Mapping
 
 from committed_source_check import committed_reference, verify_source_inventory
+from git_vendor_check import verify_git_vendor
 from registry_vendor_check import (
     read_observed_file,
     verify_registry_vendor,
@@ -270,7 +271,7 @@ def run_build_probe(
     before, sandbox = snapshot_inputs(probe, snapshot), file_identity(probe.bwrap)
     if check_source is not None:
         check_source(before["source"])
-    registry = check_vendor(before) if check_vendor is not None else None
+    vendor_report = check_vendor(before) if check_vendor is not None else None
     messages, log = probe.logs / "cargo.jsonl", probe.logs / "cargo.log"
     code = run(sandbox_build_command(probe), messages, log)
     if code != 0:
@@ -283,8 +284,9 @@ def run_build_probe(
             "build inputs changed: expected unchanged mounted inputs and sandbox"
         )
     result = probe_result(runner_path(messages, probe.target), before, sandbox)
-    if registry is not None:
-        result["registry_check"] = registry
+    if vendor_report is not None:
+        key = "vendor_check" if "git" in vendor_report else "registry_check"
+        result[key] = vendor_report
     return result
 
 
@@ -354,6 +356,35 @@ def check_registry_inputs(
     return verify_registry_vendor(lock, probe.vendor, archives, before["vendor"])
 
 
+def check_git_inputs(
+    probe: BuildProbe,
+    repositories: Mapping[str, Path],
+    before: Mapping[str, Mapping[str, object]],
+) -> dict[str, object]:
+    """Check Git vendor blobs against locked commits; example: check_git_inputs(probe, repositories, before)."""
+    parent = os.open(probe.source, open_flags(True))
+    try:
+        lock = read_observed_file(
+            parent, "Cargo.lock", before["source"].get("Cargo.lock")
+        )
+    finally:
+        os.close(parent)
+    return verify_git_vendor(lock, probe.vendor, before["vendor"], repositories)
+
+
+def check_all_vendor_inputs(
+    probe: BuildProbe,
+    archives: Path,
+    repositories: Mapping[str, Path],
+    before: Mapping[str, Mapping[str, object]],
+) -> dict[str, object]:
+    """Check registry and Git inputs before a build; example: check_all_vendor_inputs(probe, archives, repositories, before)."""
+    return {
+        "registry": check_registry_inputs(probe, archives, before),
+        "git": check_git_inputs(probe, repositories, before),
+    }
+
+
 def require_archives(probe: BuildProbe, archives: Path) -> None:
     """Keep the archive cache separate from build output; example: require_archives(probe, archives)."""
     if not archives.is_absolute() or archives.is_symlink() or not archives.is_dir():
@@ -364,6 +395,23 @@ def require_archives(probe: BuildProbe, archives: Path) -> None:
         require_disjoint(archives.resolve(), output.resolve())
 
 
+def require_git_repositories(
+    probe: BuildProbe, repositories: Mapping[str, Path]
+) -> None:
+    """Keep Git object stores outside build output; example: require_git_repositories(probe, repositories)."""
+    for source, repository in repositories.items():
+        if (
+            not repository.is_absolute()
+            or repository.is_symlink()
+            or not repository.is_dir()
+        ):
+            raise ValueError(
+                f"Git repository {source!r}: expected an absolute real directory, got {repository}"
+            )
+        for output in (probe.target, probe.logs):
+            require_disjoint(repository.resolve(), output.resolve())
+
+
 def run_committed_build_probe(
     probe: BuildProbe,
     repository: Path,
@@ -371,18 +419,27 @@ def run_committed_build_probe(
     run: ProbeProcess = run_process,
     snapshot: Snapshot = snapshot_runtime,
     archives: Path | None = None,
+    git_repositories: Mapping[str, Path] | None = None,
 ) -> dict[str, object]:
     """Check the mounted source against a commit before a probe; example: run_committed_build_probe(probe, repo, sha)."""
     require_probe(probe)
     if archives is not None:
         require_archives(probe, archives)
+    if git_repositories is not None and archives is None:
+        raise ValueError(
+            "Git repositories: expected registry archives for a combined vendor check"
+        )
+    if git_repositories is not None:
+        require_git_repositories(probe, git_repositories)
     reference = committed_reference(repository, revision)
     check = partial(verify_source_inventory, reference=reference)
-    vendor_check = (
-        partial(check_registry_inputs, probe, archives)
-        if archives is not None
-        else None
-    )
+    vendor_check = None
+    if archives is not None:
+        vendor_check = partial(check_registry_inputs, probe, archives)
+    if archives is not None and git_repositories is not None:
+        vendor_check = partial(
+            check_all_vendor_inputs, probe, archives, git_repositories
+        )
     result = run_build_probe(probe, run, snapshot, check, vendor_check)
     result["source_commit"] = reference.commit
     return result
@@ -396,20 +453,39 @@ def main() -> None:
     parser.add_argument("--repository", type=Path)
     parser.add_argument("--revision")
     parser.add_argument("--registry-archives", type=Path)
+    parser.add_argument(
+        "--git-repo", nargs=2, action="append", metavar=("SOURCE", "REPO")
+    )
     args = parser.parse_args()
     repository, revision, archives = (
         args.repository,
         args.revision,
         args.registry_archives,
     )
-    del args.repository, args.revision, args.registry_archives
+    git_entries = args.git_repo
+    del args.repository, args.revision, args.registry_archives, args.git_repo
     if (repository is None) != (revision is None):
         parser.error("--repository and --revision must be supplied together")
     if archives is not None and repository is None:
         parser.error("--registry-archives requires --repository and --revision")
+    if git_entries is not None and archives is None:
+        parser.error("--git-repo requires --registry-archives")
+    git_repositories = (
+        None
+        if git_entries is None
+        else {source: Path(path) for source, path in git_entries}
+    )
+    if git_entries is not None and len(git_repositories) != len(git_entries):
+        parser.error("--git-repo: expected each source exactly once")
     probe = BuildProbe(**vars(args))
     result = (
-        run_committed_build_probe(probe, repository, revision, archives=archives)
+        run_committed_build_probe(
+            probe,
+            repository,
+            revision,
+            archives=archives,
+            git_repositories=git_repositories,
+        )
         if repository is not None and revision is not None
         else run_build_probe(probe)
     )
