@@ -36,7 +36,7 @@ class GitVendorFixture:
         self.package = self.vendor / "witness"
         (self.package / "src").mkdir(parents=True)
         (self.package / "Cargo.toml").write_text(
-            '[package]\nname="witness"\nversion="1.2.3"\n'
+            '[package]\nname="witness"\nversion="1.2.3"\nedition="2015"\n'
             'autolib=false\nautobins=false\nautoexamples=false\nautotests=false\nautobenches=false\n'
             '[lib]\nname="witness"\npath="src/lib.rs"\n'
         )
@@ -125,6 +125,13 @@ class GitVendorCheckTests(unittest.TestCase):
         manifest.write_text(manifest.read_text() + 'proc-macro=true\n')
         self.fixture.write_checksum()
         with self.assertRaisesRegex(ValueError, "expected .*src/lib.rs"):
+            self.fixture.verify()
+
+    def test_forged_normalized_target_with_updated_checksum_is_refused(self) -> None:
+        manifest = self.fixture.package / "Cargo.toml"
+        manifest.write_text(manifest.read_text() + '[[test]]\nname="forged"\npath="src/lib.rs"\n')
+        self.fixture.write_checksum()
+        with self.assertRaisesRegex(ValueError, "expected locked targets"):
             self.fixture.verify()
 
     def test_missing_extra_or_executable_files_are_rejected(self) -> None:
