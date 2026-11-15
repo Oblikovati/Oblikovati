@@ -150,3 +150,71 @@ fn a_hidden_plane_stays_hidden_after_reopen() {
     assert_eq!(pixel(&capture(&mut world), point), pixel(&before, point));
     world.close();
 }
+
+fn select_plane_from_view(world: &mut ApplicationWorld) -> oblikovati_model::feature::FeatureId {
+    let feature = world
+        .state()
+        .browser
+        .unwrap()
+        .features
+        .into_iter()
+        .find(|feature| feature.name == "Work Plane1")
+        .unwrap()
+        .id;
+    let point = center(world);
+    world.click(point);
+    world.pump(Vec::new());
+    assert_eq!(
+        world.state().browser.unwrap().selected_feature,
+        Some(feature)
+    );
+    feature
+}
+
+#[test]
+fn viewport_selected_work_plane_starts_a_sketch() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    camera(&mut world);
+    create_plane(&mut world);
+    select_plane_from_view(&mut world);
+    world.click_text("Start 2D Sketch");
+    world.pump(Vec::new());
+    assert_eq!(
+        world.state().authoring,
+        oblikovati_gui::GuiAuthoringContext::Sketch
+    );
+    let edit = world
+        .app()
+        .owner
+        .active_sketch_edit()
+        .expect("expected active sketch");
+    assert!((edit.plane.recipe().origin[2] - 1.).abs() < 1e-9);
+    world.close();
+}
+
+#[test]
+fn viewport_selected_work_plane_is_an_offset_base() {
+    use oblikovati_api::client::Client;
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    camera(&mut world);
+    create_plane(&mut world);
+    select_plane_from_view(&mut world);
+    world.click_text("Plane");
+    world.expect_text("1 Plane");
+    world.click_text("OK");
+    world.pump(Vec::new());
+    let planes = Client::new(world.app().owner.document_host())
+        .work_planes()
+        .list()
+        .unwrap()
+        .planes
+        .unwrap();
+    let second = planes
+        .iter()
+        .find(|plane| plane.name == "Work Plane2")
+        .unwrap();
+    assert!((second.origin.as_ref().unwrap()[2] - 2.).abs() < 1e-9);
+    world.close();
+}

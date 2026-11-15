@@ -134,4 +134,4 @@ pub mod planar_curve;
 pub mod sketch_region;
 
 mod sketch_projection;
-pub use sketch_projection::sketch_projection;
+pub use sketch_projection::{SKETCH_PROJECTION_MIN_NORMAL_COSINE, sketch_projection};

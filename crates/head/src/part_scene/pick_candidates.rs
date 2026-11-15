@@ -20,6 +20,7 @@ pub(crate) enum PickTarget {
     ),
     Body(oblikovati_model::feature::FeatureId, String),
     Occurrence(oblikovati_gui::GuiOccurrencePath),
+    WorkPlane(oblikovati_model::feature::FeatureId),
 }
 impl PickTarget {
     fn kind(&self) -> SelectionKind {
@@ -27,6 +28,7 @@ impl PickTarget {
             Self::Face(..) => SelectionKind::Face,
             Self::Body(..) => SelectionKind::Body,
             Self::Occurrence(..) => SelectionKind::Occurrence,
+            Self::WorkPlane(..) => SelectionKind::WorkPlane,
         }
     }
 }
@@ -35,6 +37,7 @@ impl PickTarget {
 pub(crate) enum PickCoverage {
     NearestFacePerBody,
     NearestFacePerOccurrenceBody,
+    NearestFaceAndVisibleWorkPlanes,
 }
 
 #[derive(Debug)]
@@ -54,6 +57,10 @@ impl PickCandidates {
             coverage,
             candidates: Vec::new(),
         }
+    }
+
+    pub(crate) fn include_visible_planes(&mut self) {
+        self.coverage = PickCoverage::NearestFaceAndVisibleWorkPlanes;
     }
 
     pub(crate) fn push(&mut self, target: PickTarget, line_parameter: f64) -> Result<(), String> {
@@ -229,6 +236,50 @@ mod tests {
             .push(PickTarget::Occurrence(vec![(1, 1, 0)]), 3.)
             .unwrap();
         assert!(batch.nearest().unwrap_err().contains("camera-derived"));
+    }
+    #[test]
+    fn plane_hits_respect_category_priority_and_reject_equal_identity_ambiguity() {
+        use oblikovati_session::selection::{AmbientSelectionFilter, SelectionFilter};
+        let mut batch = PickCandidates::new(PickCoverage::NearestFaceAndVisibleWorkPlanes);
+        batch
+            .push(
+                PickTarget::WorkPlane(oblikovati_model::feature::FeatureId(1)),
+                2.,
+            )
+            .unwrap();
+        batch.push(face(2), 2.01).unwrap();
+        assert!(matches!(
+            batch
+                .resolve(
+                    &SelectionFilter::All,
+                    &AmbientSelectionFilter::default(),
+                    0.1
+                )
+                .unwrap(),
+            Some(PickTarget::Face(..))
+        ));
+        let mut batch = PickCandidates::new(PickCoverage::NearestFaceAndVisibleWorkPlanes);
+        batch
+            .push(
+                PickTarget::WorkPlane(oblikovati_model::feature::FeatureId(1)),
+                2.,
+            )
+            .unwrap();
+        batch
+            .push(
+                PickTarget::WorkPlane(oblikovati_model::feature::FeatureId(2)),
+                2.,
+            )
+            .unwrap();
+        assert!(
+            batch
+                .resolve(
+                    &SelectionFilter::All,
+                    &AmbientSelectionFilter::default(),
+                    0.1
+                )
+                .is_err()
+        );
     }
     #[test]
     fn camera_depth_window_limits_when_rank_can_override_nearness() {

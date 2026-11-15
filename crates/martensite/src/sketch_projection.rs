@@ -3,6 +3,9 @@ use martensite_tkgeombase::int_ana::IntConicQuad;
 use martensite_tkmath::gp::{Direction3, Line3, Plane3, Point3};
 use oblikovati_model::sketch::SketchPlane;
 
+/// Minimum view/normal cosine used for UI projection, matching Go aa8297d1. // tol:angular
+pub const SKETCH_PROJECTION_MIN_NORMAL_COSINE: f64 = 1e-9;
+
 /// Intersect an unbounded camera line with an authored sketch frame, without snapping.
 /// Example: `sketch_projection(plane, [0.,0.,20.], [0.,0.,-1.], 1e-9)?`.
 /// The positive cosine threshold is a UI conditioning limit, not a modelling tolerance.

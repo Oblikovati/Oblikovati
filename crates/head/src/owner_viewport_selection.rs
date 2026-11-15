@@ -68,14 +68,17 @@ impl<
         let Some(allowed) = self.part_pick_filter(document, depth_window.is_some()) else {
             return Ok(false);
         };
-        let picked = self
+        let mut candidates = self
             .part_scenes
-            .part_candidates(&self.files, document, line)?
-            .resolve(
-                &allowed,
-                &self.ambient_selection,
-                depth_window.unwrap_or(0.),
-            );
+            .part_candidates(&self.files, document, line)?;
+        if allowed.accepts(oblikovati_session::selection::SelectionKind::WorkPlane) {
+            self.append_visible_plane_hits(document, line, &mut candidates)?;
+        }
+        let picked = candidates.resolve(
+            &allowed,
+            &self.ambient_selection,
+            depth_window.unwrap_or(0.),
+        );
         let picked = match picked {
             Ok(picked) => picked,
             Err(cause) => {
@@ -104,8 +107,10 @@ impl<
         } else {
             self.ambient_selection.filter()
         };
-        (allowed.accepts(SelectionKind::Face) || allowed.accepts(SelectionKind::Body))
-            .then_some(allowed)
+        (allowed.accepts(SelectionKind::Face)
+            || allowed.accepts(SelectionKind::Body)
+            || allowed.accepts(SelectionKind::WorkPlane))
+        .then_some(allowed)
     }
     fn apply_part_candidate(
         &mut self,
@@ -113,6 +118,12 @@ impl<
         picked: Option<crate::part_scene::pick_candidates::PickTarget>,
         toggle: bool,
     ) -> Result<bool, String> {
+        if let Some(crate::part_scene::pick_candidates::PickTarget::WorkPlane(feature)) = &picked {
+            if toggle {
+                return self.unsupported_selection_toggle("work plane");
+            }
+            return self.select_browser_feature(document, *feature);
+        }
         if let Some(crate::part_scene::pick_candidates::PickTarget::Body(feature, key)) = &picked {
             return self.browser_choice(
                 document,
