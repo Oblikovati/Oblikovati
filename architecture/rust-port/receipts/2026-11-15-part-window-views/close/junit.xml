@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: tmp/obk-window-views-source/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: tmp/obk-window-views-source/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T16:22:41.060505783Z" time="12.676784852"><testcase name="Scenario: Close an additional window without closing the part: tmp/obk-window-views-source/features/application/document-tabs/document-tabs.feature:440:3" time="12.676784852"><system-out><![CDATA[  Scenario: Close an additional window without closing the part
+   ✔  Given a part has two numbered windows in the MCAD Software
+   ✔  And the first window has an active sketch editing environment
+   ✔  And the second window is active after switching from Home
+   ✔  When the user presses Control+F4
+   ✔  Then the second window closes without a save prompt
+   ✔  And the Home workspace becomes active
+   ✔  And the remaining part tab no longer has a window number
+   ✔  When the user selects the remaining part tab
+   ✔  Then the original sketch viewport and model browser are displayed
+   ✔  And the sketch editing environment remains active
+]]></system-out></testcase></testsuite></testsuites>
