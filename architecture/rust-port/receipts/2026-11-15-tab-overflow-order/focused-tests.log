@@ -1,0 +1,12 @@
+    Finished `test` profile [unoptimized] target(s) in 0.13s
+     Running unittests src/lib.rs (/tmp/obk-tab-order-3993-target/debug/deps/oblikovati_head-d4ccfccc04854620)
+
+running 4 tests
+test native::gui_loop_tests::application_bdd::document_tabs::overflow_order::deliberate_document_order_survives_scrolling_and_close_open ... ok
+test native::gui_loop_tests::application_bdd::document_tabs::overflow_order::overflow_scroll_preserves_document_order_in_both_directions ... ok
+test native::gui_loop_tests::application_bdd::document_tabs::overflow_order::home_drag_order_survives_scrolling has been running for over 60 seconds
+test native::gui_loop_tests::application_bdd::document_tabs::overflow_order::surviving_extra_window_keeps_its_dragged_position has been running for over 60 seconds
+test native::gui_loop_tests::application_bdd::document_tabs::overflow_order::home_drag_order_survives_scrolling ... ok
+test native::gui_loop_tests::application_bdd::document_tabs::overflow_order::surviving_extra_window_keeps_its_dragged_position ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 1058 filtered out; finished in 78.62s

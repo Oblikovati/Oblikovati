@@ -4,8 +4,6 @@
 
 ### Changed
 
-- Preserved document and Home tab order when scrolling and closing windows. (#3993)
-
 - Discarded closed document-window preview images and stale pending updates. (#3987)
 
 - Added type-preserving integer, number, boolean, and byte property editing to iProperties. (#3958)
@@ -37,6 +35,8 @@
 - Split sketch frame operations into `HeadSketchWork`; custom `HeadWork` owners must implement that interface. (#3860)
 
 ### Fixed
+
+- Preserved document and Home tab order when scrolling and closing windows. (#3993)
 
 - Kept off-screen document selection from highlighting a different visible tab. (#3992)
 
