@@ -2,11 +2,13 @@
 """Check conservative, per-scenario dependency records."""
 
 import copy
+import os
 import subprocess
 import tempfile
 import unittest
 from pathlib import Path
 
+from dependency_cli import runtime_changes_for
 from scenario_dependencies import (
     build_map,
     changed_dependencies,
@@ -173,8 +175,39 @@ class ScenarioDependencyTests(unittest.TestCase):
             self.assertEqual(
                 changed_runtime_dependencies(mapping, "one", root), ["runtime"]
             )
+            self.assertEqual(
+                reuse_decision(mapping, [], ["runtime"])["reason"],
+                "runtime inputs changed",
+            )
             with self.assertRaisesRegex(ValueError, "recorded runtime"):
                 changed_runtime_dependencies(mapping, "two", root)
+
+    def test_runtime_cli_only_compares_the_scenarios_own_capsule(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            mapping = build_map(
+                self.fixture.root,
+                self.inventory,
+                self.fixture.baseline,
+                runtime_scenario="one",
+                runtime_root=root,
+            )
+            self.assertIsNone(runtime_changes_for(mapping, "two", None))
+            with self.assertRaisesRegex(ValueError, "runtime root None"):
+                runtime_changes_for(mapping, "one", None)
+            self.assertEqual(runtime_changes_for(mapping, "one", root), [])
+
+    @unittest.skipUnless(os.name == "posix", "requires Git file modes")
+    def test_file_mode_change_is_reported(self) -> None:
+        mapping = self.manifest()
+        (self.fixture.root / "crates/head/src/lib.rs").chmod(0o755)
+        current = self.fixture.commit("change mode")
+        self.assertEqual(
+            changed_dependencies(
+                self.fixture.root, mapping, self.inventory, "one", current
+            ),
+            ["crates/head/src/lib.rs"],
+        )
 
     def test_runtime_snapshot_cannot_be_assigned_to_an_unknown_scenario(self) -> None:
         with tempfile.TemporaryDirectory() as folder:

@@ -63,13 +63,7 @@ def compare(mapping_path: Path, scenario: str, runtime_root: Path | None) -> Non
     mapping = require_object(read_json(mapping_path), "dependency map")
     current, _ = application_state(ROOT)
     changes = changed_dependencies(ROOT, mapping, inventory, scenario, current)
-    runtime_changes = None
-    if mapping.get("runtime_scenario") == scenario:
-        if runtime_root is None:
-            raise ValueError(
-                "runtime root None: expected the recorded scenario runtime"
-            )
-        runtime_changes = changed_runtime_dependencies(mapping, scenario, runtime_root)
+    runtime_changes = runtime_changes_for(mapping, scenario, runtime_root)
     print(
         json.dumps(
             {
@@ -77,15 +71,43 @@ def compare(mapping_path: Path, scenario: str, runtime_root: Path | None) -> Non
                 "changed_inputs": changes,
                 "runtime_coverage": mapping["runtime_coverage"],
                 "changed_runtime_inputs": runtime_changes,
-                "receipt_reuse": reuse_decision(mapping, changes),
+                "receipt_reuse": reuse_decision(mapping, changes, runtime_changes),
             },
             indent=2,
         )
     )
 
 
+def runtime_changes_for(
+    mapping: dict[str, object],
+    scenario: str,
+    runtime_root: Path | None,
+) -> list[str] | None:
+    """Compare a runtime only for its own scenario; example: runtime_changes_for(mapping, id, root)."""
+    if mapping.get("runtime_scenario") != scenario:
+        return None
+    if runtime_root is None:
+        raise ValueError("runtime root None: expected the recorded scenario runtime")
+    return changed_runtime_dependencies(mapping, scenario, runtime_root)
+
+
 def main() -> None:
     """Run the mapping CLI; example: dependency_cli.py generate --output /tmp/map.json."""
+    args = parse_arguments()
+    if args.action == "compare":
+        compare(args.map, args.scenario, args.runtime_root)
+        return
+    if args.checkout is not None:
+        generate(args.checkout, args.output, args.scenario, args.runtime_root)
+        return
+    with tempfile.TemporaryDirectory(prefix="oblikovati-dependencies-") as folder:
+        checkout = Path(folder) / "checkout"
+        restore_snapshot(checkout)
+        generate(checkout, args.output, args.scenario, args.runtime_root)
+
+
+def parse_arguments() -> argparse.Namespace:
+    """Read a generate or compare request; example: parse_arguments()."""
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="action", required=True)
     create = subparsers.add_parser("generate")
@@ -97,17 +119,7 @@ def main() -> None:
     inspect.add_argument("--map", type=Path, required=True)
     inspect.add_argument("--scenario", required=True)
     inspect.add_argument("--runtime-root", type=Path)
-    args = parser.parse_args()
-    if args.action == "compare":
-        compare(args.map, args.scenario, args.runtime_root)
-        return
-    if args.checkout is not None:
-        generate(args.checkout, args.output, args.scenario, args.runtime_root)
-        return
-    with tempfile.TemporaryDirectory(prefix="oblikovati-dependencies-") as folder:
-        checkout = Path(folder) / "checkout"
-        restore_snapshot(checkout)
-        generate(checkout, args.output, args.scenario, args.runtime_root)
+    return parser.parse_args()
 
 
 if __name__ == "__main__":

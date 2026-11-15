@@ -98,10 +98,7 @@ def build_map(
     runtime_root: Path | None = None,
 ) -> dict[str, object]:
     """Create a conservative map for a Git revision; example: build_map(repo, inventory, commit)."""
-    revision = inventory.get("source_revision")
-    if not isinstance(revision, str) or not re.fullmatch(r"[0-9a-f]{40}", revision):
-        raise ValueError(f"source revision {revision!r}: expected a full Git SHA-1")
-    scenarios = records_with_runtime(inventory, runtime_scenario, runtime_root)
+    revision = source_revision(inventory)
     return {
         "version": VERSION,
         "application_commit": commit,
@@ -111,8 +108,16 @@ def build_map(
         "application_inputs": git_tree(root, commit),
         "runtime_scenario": runtime_scenario,
         "runtime_inputs": snapshot_runtime(runtime_root) if runtime_root else None,
-        "scenarios": scenarios,
+        "scenarios": records_with_runtime(inventory, runtime_scenario, runtime_root),
     }
+
+
+def source_revision(inventory: Mapping[str, object]) -> str:
+    """Require the source commit identity; example: source_revision(inventory)."""
+    revision = inventory.get("source_revision")
+    if not isinstance(revision, str) or not re.fullmatch(r"[0-9a-f]{40}", revision):
+        raise ValueError(f"source revision {revision!r}: expected a full Git SHA-1")
+    return revision
 
 
 def records_with_runtime(
@@ -145,6 +150,14 @@ def validate_map(
         )
     if mapping.get("source_revision") != inventory.get("source_revision"):
         raise ValueError("source revision: expected the inventoried scenario revision")
+    validate_runtime_record(mapping, inventory)
+
+
+def validate_runtime_record(
+    mapping: Mapping[str, object],
+    inventory: Mapping[str, object],
+) -> None:
+    """Check scenario/runtime links; example: validate_runtime_record(mapping, inventory)."""
     runtime_scenario = mapping.get("runtime_scenario")
     runtime_inputs = mapping.get("runtime_inputs")
     if runtime_scenario is not None and not isinstance(runtime_scenario, str):
@@ -189,8 +202,17 @@ def changed_dependencies(
     scenarios = mapping.get("scenarios")
     if not isinstance(scenarios, dict) or scenario not in scenarios:
         raise ValueError(f"scenario {scenario!r}: expected a mapped scenario")
-    if mapping.get("runtime_coverage") != RUNTIME_COVERAGE:
-        raise ValueError("runtime coverage: expected an unbounded conservative scope")
+    before = checked_application_tree(root, mapping, current)
+    after = git_tree(root, current)
+    return changed_paths(before, after)
+
+
+def checked_application_tree(
+    root: Path,
+    mapping: Mapping[str, object],
+    current: str,
+) -> dict[str, str]:
+    """Verify the recorded shared input tree; example: checked_application_tree(root, mapping, head)."""
     if mapping.get("worktree_clean") is not True or not worktree_clean(root):
         raise ValueError(
             "application inputs: expected clean recorded and current worktrees"
@@ -202,7 +224,13 @@ def changed_dependencies(
         raise ValueError(
             "application input map: expected the complete recorded Git tree"
         )
-    after = git_tree(root, current)
+    return before
+
+
+def changed_paths(
+    before: Mapping[str, object], after: Mapping[str, object]
+) -> list[str]:
+    """List every added, removed, or modified input; example: changed_paths(old, new)."""
     return sorted(
         path
         for path in before.keys() | after.keys()
@@ -220,19 +248,19 @@ def changed_runtime_dependencies(
     if mapping.get("runtime_scenario") != scenario or not isinstance(before, dict):
         raise ValueError(f"scenario {scenario!r}: expected its recorded runtime")
     after = snapshot_runtime(root)
-    return sorted(
-        path
-        for path in before.keys() | after.keys()
-        if before.get(path) != after.get(path)
-    )
+    return changed_paths(before, after)
 
 
 def reuse_decision(
-    mapping: Mapping[str, object], changes: list[str]
+    mapping: Mapping[str, object],
+    changes: list[str],
+    runtime_changes: list[str] | None = None,
 ) -> dict[str, object]:
     """Refuse unproven reuse; example: reuse_decision(mapping, [])."""
     if mapping.get("runtime_coverage") != RUNTIME_COVERAGE:
         raise ValueError("runtime coverage: expected the supported conservative scope")
     if changes:
         return {"reusable": False, "reason": "tracked application inputs changed"}
+    if runtime_changes:
+        return {"reusable": False, "reason": "runtime inputs changed"}
     return {"reusable": False, "reason": "runtime inputs are not bounded"}
