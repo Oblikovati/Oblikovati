@@ -1,0 +1,13 @@
+{
+  "after": {
+    "commit": "05317bbb2d0809a532b29b7ff6f726a5722b865f",
+    "dirty": false,
+    "root": "/tmp/obk-browser-find-MoCBwC/source"
+  },
+  "before": {
+    "commit": "05317bbb2d0809a532b29b7ff6f726a5722b865f",
+    "dirty": false,
+    "root": "/tmp/obk-browser-find-MoCBwC/source"
+  },
+  "source_changed": false
+}
