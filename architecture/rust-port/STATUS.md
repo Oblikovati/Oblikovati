@@ -68,7 +68,8 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   edge picking is blocked by [Martensite #462](https://github.com/Oblikovati/Martensite/issues/462).
 - The full gate needs a released API contract (#3965). Point cancellation needs
   a supplied sketch fixture (#3887).
-- Some rectangle visibility assertions can accept UI occlusion (#3980).
+- Rectangle visibility now rejects obstructed observations (#3980). Focused
+  native checks passed; the full gate is still required.
 - See [ACTIVE-GAPS.md](ACTIVE-GAPS.md) for individual scenario diagnostics,
   source clarifications, and remaining UI work. Those run results are historical.
 
