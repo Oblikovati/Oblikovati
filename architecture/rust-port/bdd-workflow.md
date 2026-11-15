@@ -20,7 +20,7 @@ For a reproducible focused run, restore and verify the checkout explicitly:
 
 ```sh
 git clone -c core.autocrlf=false --branch snapshot \
-  "$PWD/test-utilities/benchmarks/scenario-snapshots/mcad-scenarios-2026-11-14-48987af.bundle" \
+  "$PWD/test-utilities/benchmarks/scenario-snapshots/mcad-scenarios-2026-11-15-8ec8d2c.bundle" \
   /absolute/path/to/scenario-checkout
 python3 tools/bdd/verify_snapshot.py /absolute/path/to/scenario-checkout
 export OBK_BDD_ROOT=/absolute/path/to/scenario-checkout
@@ -95,6 +95,13 @@ Use these states:
 - **Verified**: native scenario evidence is recorded for the current inputs.
 - **Needs rerun**: source, application code, dependencies, or relevant runtime
   changed after the recorded run.
+
+The source tag `@capture_only` excludes a recorded observation until its
+fixture is available. The tag `@capture_host_only` blocks execution until the
+named capture host and its installed fixture can be verified; there is no
+host-attestation bypass yet. Neither state is a passing scenario. The native
+runner reports them as not executed, and the diagnostic report records their
+classification.
 
 Do not mark a full feature verified from a subset of its scenarios. Record the
 exact filter and cases run. Unbound, skipped, filtered, or unexecuted cases are
@@ -187,7 +194,7 @@ After restoring and verifying the pinned checkout, generate the source inventory
 
 ```sh
 cargo xtask scenario-ledger "$OBK_BDD_ROOT" \
-  48987af7b5cbb06515bc6f30385f508382f34064 > /absolute/path/to/source-inventory.json
+  8ec8d2c1e569fbc5c8cd2ec85e9b9380c62c147f > /absolute/path/to/source-inventory.json
 ```
 
 The command requires a clean checkout at the requested commit and reads its
