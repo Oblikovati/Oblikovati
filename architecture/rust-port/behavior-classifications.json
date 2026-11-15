@@ -4358,6 +4358,11 @@
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-14-point-436f15ab31b13b1d-941dd9bf/receipt-436f15ab31b13b1d.json",
           "sha256": "53f3f71f8b0944ed214a1500b68f8b8879f9c2853b84db44cab1bfa79213d363"
+        },
+        {
+          "source_revision": "05317bbb2d0809a532b29b7ff6f726a5722b865f",
+          "path": "architecture/rust-port/receipts/2026-11-15-point05-regular/receipt-436f15ab31b13b1d.json",
+          "sha256": "5b062760ec5f1f6252dd5be773c16f913568b92332333d76562935fcd41d1ef4"
         }
       ],
       "last_receipt": null
@@ -4425,6 +4430,11 @@
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-14-point-545eaee5fec75147-941dd9bf/receipt-545eaee5fec75147.json",
           "sha256": "ddf030002ee184d0a1b2a161fda9c0308e231c468f6be3fa697c5716662688a8"
+        },
+        {
+          "source_revision": "05317bbb2d0809a532b29b7ff6f726a5722b865f",
+          "path": "architecture/rust-port/receipts/2026-11-15-point08-center/receipt-545eaee5fec75147.json",
+          "sha256": "211cae179bf2b535e44a9fe77126d8907953c0d91db69cf5a79804067d223683"
         }
       ],
       "last_receipt": null
