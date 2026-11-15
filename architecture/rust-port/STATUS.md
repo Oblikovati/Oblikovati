@@ -15,8 +15,8 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 - **R0 remains open.** The full gate, baseline fields and milestone exit audits
   are incomplete. Run `python3 -B tools/bdd/behavior_cli.py report` for current
   counts; source and application changes can make earlier receipts stale.
-- At `6d0432f09d89c887951b5f22698b49ecd09f68b7`, the ledger reported zero
-  current verified scenarios, 178 stale receipts and 21 blocked scenarios
+- At `3c94ce536ccd66df459a1b5fc3a0eea73b38bed2`, the ledger reported five
+  current verified scenarios, 173 stale receipts and 21 blocked scenarios
   across 2,720 declarations. This is a checkpoint, not a permanent count.
   The gate also requires baseline fields for 2,580 scenarios.
 - `rust-work` is local and has not passed the full pre-push gate. All 20 former
