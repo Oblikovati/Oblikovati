@@ -2509,8 +2509,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-zoom-1edb7a1739ca5af4-corrected/receipt-1edb7a1739ca5af4.json",
-        "sha256": "713492bd8618d61e7571c43a4c521a21b5550cfa28c85005a1c09a4ad52ec09f"
+        "path": "architecture/rust-port/receipts/2026-11-15-zoom-verified/receipt-1edb7a1739ca5af4.json",
+        "sha256": "5f16224f17395516b1d8b0ddc9a0b864abd38c007eeccf271db398a46035cdfd"
       },
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
       "go_reference": "Go aa8297d1b: head/ui/navigate.go and head/ui/navigate_test.go; see receipts/2026-11-14-go-zoom-baseline/README.md.",
@@ -2522,7 +2522,14 @@
       "kernel_integration": "A host-prepared solid is rendered in the native viewport; view setup uses camera controls and Zoom Selected uses a picked face.",
       "rust_tests": "Native scenario steps in crates/head/tests/application/viewport-zoom/steps.rs; face_selection_regression checks the preselected face fixture.",
       "oracle": "Pinned scenario steps, observed camera and solid extents, selected-face state and reviewed native capture; Go is a partial navigation reference.",
-      "expected_result": "Wheel zoom changes the block size in both directions while the part and orientation remain."
+      "expected_result": "Wheel zoom changes the block size in both directions while the part and orientation remain.",
+      "historical_receipts": [
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-14-zoom-1edb7a1739ca5af4-corrected/receipt-1edb7a1739ca5af4.json",
+          "sha256": "713492bd8618d61e7571c43a4c521a21b5550cfa28c85005a1c09a4ad52ec09f"
+        }
+      ]
     },
     {
       "id": "scenario:7a9612d5b55491de21d09d9b0c90e74706f4dedd0e807ac106feb6a58889ffb5",
@@ -2537,8 +2544,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-zoom-7a9612d5b55491de-corrected/receipt-7a9612d5b55491de.json",
-        "sha256": "a4b1ece4bfbad652e38baa6093759a183f015cf98d95d2adf8f6a3073bc72cfb"
+        "path": "architecture/rust-port/receipts/2026-11-15-zoom-verified/receipt-7a9612d5b55491de.json",
+        "sha256": "0a7024ff842f27287eedd5856d024eb44977133e4d8fffb861c1f3646561a62c"
       },
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
       "go_reference": "Go aa8297d1b: head/ui/navigate.go and head/ui/navigate_test.go; see receipts/2026-11-14-go-zoom-baseline/README.md.",
@@ -2550,7 +2557,14 @@
       "kernel_integration": "A host-prepared solid is rendered in the native viewport; view setup uses camera controls and Zoom Selected uses a picked face.",
       "rust_tests": "Native scenario steps in crates/head/tests/application/viewport-zoom/steps.rs; face_selection_regression checks the preselected face fixture.",
       "oracle": "Pinned scenario steps, observed camera and solid extents, selected-face state and reviewed native capture; Go is a partial navigation reference.",
-      "expected_result": "Zoom shows its active control and status; Escape restores Ready and retains the solid."
+      "expected_result": "Zoom shows its active control and status; Escape restores Ready and retains the solid.",
+      "historical_receipts": [
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-14-zoom-7a9612d5b55491de-corrected/receipt-7a9612d5b55491de.json",
+          "sha256": "a4b1ece4bfbad652e38baa6093759a183f015cf98d95d2adf8f6a3073bc72cfb"
+        }
+      ]
     },
     {
       "id": "scenario:cacbef09c9cf0fc9dc825085ff0caf312cba28201b83e1d898fa3adca6a4636e",
@@ -2565,8 +2579,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-zoom-cacbef09c9cf0fc9-corrected/receipt-cacbef09c9cf0fc9.json",
-        "sha256": "9dddbe78aa96bc9dc262c564527e4c285d78ed27e6eccf07c73ecbfafa8d16c8"
+        "path": "architecture/rust-port/receipts/2026-11-15-zoom-verified/receipt-cacbef09c9cf0fc9.json",
+        "sha256": "c61bd983ac4c2be8e08c30c2a68ee30907daac474266a72ac0072c470809cc50"
       },
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
       "go_reference": "Go aa8297d1b: head/ui/navigate.go and head/ui/navigate_test.go; see receipts/2026-11-14-go-zoom-baseline/README.md.",
@@ -2578,7 +2592,14 @@
       "kernel_integration": "A host-prepared solid is rendered in the native viewport; view setup uses camera controls and Zoom Selected uses a picked face.",
       "rust_tests": "Native scenario steps in crates/head/tests/application/viewport-zoom/steps.rs; face_selection_regression checks the preselected face fixture.",
       "oracle": "Pinned scenario steps, observed camera and solid extents, selected-face state and reviewed native capture; Go is a partial navigation reference.",
-      "expected_result": "Zoom All enlarges the block to fit, preserves orientation, and is marked in the menu."
+      "expected_result": "Zoom All enlarges the block to fit, preserves orientation, and is marked in the menu.",
+      "historical_receipts": [
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-14-zoom-cacbef09c9cf0fc9-corrected/receipt-cacbef09c9cf0fc9.json",
+          "sha256": "9dddbe78aa96bc9dc262c564527e4c285d78ed27e6eccf07c73ecbfafa8d16c8"
+        }
+      ]
     },
     {
       "id": "scenario:1aa20f23aa027d8ff52869e9b06987570819301f025a9b744199a86fed12c7a7",
@@ -2593,8 +2614,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-zoom-1aa20f23aa027d8f-corrected/receipt-1aa20f23aa027d8f.json",
-        "sha256": "d7b3091fe398e6b39df7c60b1c853f18f6ed92a36eb626a04b95c2713c5c3a28"
+        "path": "architecture/rust-port/receipts/2026-11-15-zoom-verified/receipt-1aa20f23aa027d8f.json",
+        "sha256": "d51446108b099c98447b089194465f68e3237e90ed9bc02391419ee1eab5a4f3"
       },
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
       "go_reference": "Go aa8297d1b: head/ui/navigate.go and head/ui/navigate_test.go; see receipts/2026-11-14-go-zoom-baseline/README.md.",
@@ -2606,7 +2627,14 @@
       "kernel_integration": "A host-prepared solid is rendered in the native viewport; view setup uses camera controls and Zoom Selected uses a picked face.",
       "rust_tests": "Native scenario steps in crates/head/tests/application/viewport-zoom/steps.rs; face_selection_regression checks the preselected face fixture.",
       "oracle": "Pinned scenario steps, observed camera and solid extents, selected-face state and reviewed native capture; Go is a partial navigation reference.",
-      "expected_result": "Zoom Window enlarges the selected area, preserves orientation, and is marked in the menu."
+      "expected_result": "Zoom Window enlarges the selected area, preserves orientation, and is marked in the menu.",
+      "historical_receipts": [
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-14-zoom-1aa20f23aa027d8f-corrected/receipt-1aa20f23aa027d8f.json",
+          "sha256": "d7b3091fe398e6b39df7c60b1c853f18f6ed92a36eb626a04b95c2713c5c3a28"
+        }
+      ]
     },
     {
       "id": "scenario:98a72eea29aa3836c6b46566331b7778eb238a64ceb9bc7a838cc7f0049254f0",
@@ -2677,8 +2705,8 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-zoom-5a234ab74178128a-corrected/receipt-5a234ab74178128a.json",
-        "sha256": "d7092d74c652a5f4a2640507accabd8ed0e3739eeff8b4fca2cd2260c49f9847"
+        "path": "architecture/rust-port/receipts/2026-11-15-zoom-verified/receipt-5a234ab74178128a.json",
+        "sha256": "6a18f75f5780f7fc52276e1901f200f0f8d58c7a8e0bc40e60028ea62d509740"
       },
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
       "go_reference": "Go aa8297d1b: head/ui/navigate.go and head/ui/navigate_test.go; see receipts/2026-11-14-go-zoom-baseline/README.md.",
@@ -2690,7 +2718,14 @@
       "kernel_integration": "A host-prepared solid is rendered in the native viewport; view setup uses camera controls and Zoom Selected uses a picked face.",
       "rust_tests": "Native scenario steps in crates/head/tests/application/viewport-zoom/steps.rs; face_selection_regression checks the preselected face fixture.",
       "oracle": "Pinned scenario steps, observed camera and solid extents, selected-face state and reviewed native capture; Go is a partial navigation reference.",
-      "expected_result": "Cancelling after the first window corner preserves the prior face size, position and orientation."
+      "expected_result": "Cancelling after the first window corner preserves the prior face size, position and orientation.",
+      "historical_receipts": [
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-14-zoom-5a234ab74178128a-corrected/receipt-5a234ab74178128a.json",
+          "sha256": "d7092d74c652a5f4a2640507accabd8ed0e3739eeff8b4fca2cd2260c49f9847"
+        }
+      ]
     },
     {
       "id": "scenario:0db0d6b60a17036c6ec52d0756fe476071bb6d443fe662428dda048a95b5ae57",
