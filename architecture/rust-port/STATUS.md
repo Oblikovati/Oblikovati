@@ -67,7 +67,7 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 - Sketch extrusion lacks a certified solve precision bound (#3928). Analytic
   edge picking is blocked by [Martensite #462](https://github.com/Oblikovati/Martensite/issues/462).
 - The full gate needs a released API contract (#3965). The Point feature passed
-  5 of 9 native scenarios; four remain open (#3887).
+  7 of 9 native scenarios; two remain open (#3887).
 - Rectangle visibility now rejects obstructed observations (#3980). Focused
   native checks passed; the full gate is still required.
 - Authored work planes now display in part views (#3981). Viewport plane
