@@ -38,6 +38,22 @@ fn surviving_window_retains_its_identity_across_close_and_reopen() {
     assert!(owner.document_windows.is_empty());
 }
 #[test]
+fn closing_an_inactive_window_keeps_the_active_window_and_sketch() {
+    let (mut owner, awake) = owner();
+    let document = create(&mut owner, &awake);
+    owner.new_document_window().unwrap();
+    owner.new_document_window().unwrap();
+    let active = owner.active_window.unwrap();
+    let sketch = owner
+        .create_sketch_for_edit(document, &sketch_edit::request(SketchPlane::xy()))
+        .unwrap();
+    owner.close_document_window(document).unwrap();
+    let state = owner.gui_command_state().unwrap();
+    assert_eq!(state.active_window, Some(active));
+    assert_eq!(state.document, Some(document));
+    assert_eq!(owner.active_sketch_edit().unwrap().sketch, sketch);
+}
+#[test]
 fn closing_an_inactive_original_window_keeps_the_other_document_active() {
     let (mut owner, awake) = owner();
     let first = create(&mut owner, &awake);

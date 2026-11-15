@@ -117,16 +117,21 @@ impl<
                 window.document
             ));
         }
-        if self.active_view_slot() == id {
+        let was_active = self.active_view_slot() == id;
+        if was_active {
             // Its edit has no window left; it was a view, so nothing in the recipe changes.
             self.park_active_sketch_edit()?;
         }
         self.parked_sketch_edits.remove(&id);
         self.document_windows.retain(|known| known.id != id);
-        self.settle_after_window_close(window.document)
+        self.settle_after_window_close(window.document, was_active)
     }
     /// The next window comes forward; a lone window leaves the numbered list again.
-    fn settle_after_window_close(&mut self, document: u64) -> Result<bool, String> {
+    fn settle_after_window_close(
+        &mut self,
+        document: u64,
+        was_active: bool,
+    ) -> Result<bool, String> {
         let remaining: Vec<u64> = self
             .document_windows
             .iter()
@@ -134,22 +139,21 @@ impl<
             .map(|known| known.id)
             .collect();
         let next = remaining[0];
-        if remaining.len() == 1 {
-            if next == document {
-                self.document_windows
-                    .retain(|known| known.document != document);
-            }
-            if self.files.workspace().active_document() != Some(document) {
-                return Ok(true);
-            }
-            self.active_window = (next != document).then_some(next);
-            self.resume_parked_sketch_edit(next, document)?;
-            return Ok(true);
+        let implicit = remaining.len() == 1 && next == document;
+        if implicit {
+            self.document_windows
+                .retain(|known| known.document != document);
         }
         if self.files.workspace().active_document() != Some(document) {
             return Ok(true);
         }
-        self.active_window = Some(next);
+        if !was_active {
+            if implicit {
+                self.active_window = None;
+            }
+            return Ok(true);
+        }
+        self.active_window = (!implicit).then_some(next);
         self.resume_parked_sketch_edit(next, document)?;
         Ok(true)
     }
