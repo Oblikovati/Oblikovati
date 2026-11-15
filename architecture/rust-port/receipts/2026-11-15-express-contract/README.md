@@ -13,7 +13,7 @@ are retained rather than treated as equivalent; API duplication tracking is in
 [Oblikovati.API #301](https://github.com/Oblikovati/Oblikovati.API/issues/301).
 
 The native pinned Express journey ran on the host branch using the published API
-commit above, after the display-quality check and ribbon appearance merge. It passed 13 of 14 steps: open a real cached assembly, display
+commit above, after the display-quality, producer identity, and ribbon merges. It passed 13 of 14 steps: open a real cached assembly, display
 its geometry, and load its components. The final step failed because Finish and
 Simplify were absent from the full assembly ribbon; see
 [issue #3963](https://github.com/Oblikovati/Oblikovati/issues/3963). This is a
@@ -27,8 +27,11 @@ Focused persistence, session, API-host, and cached-to-full scene tests passed.
 The desktop test also confirms a missing saved view reports an error and leaves
 the existing document active. The scenario source was clean at
 `48987af7b5cbb06515bc6f30385f508382f34064` and its document-opening feature
-matched the current shared source by SHA-256. Producer provenance remains open
-in [issue #3964](https://github.com/Oblikovati/Oblikovati/issues/3964).
+matched the current shared source by SHA-256. Producer identity is checked on new open and reuse;
+[issue #3964](https://github.com/Oblikovati/Oblikovati/issues/3964) remains
+open until the work is integrated and published. Express cache creation is
+currently unavailable on macOS and Windows because their running executable
+identity is not yet verified.
 
 After integration with the ribbon branch, the GUI library suite passed 492
 serial tests and strict Clippy passed for the GUI and head targets. The suite
