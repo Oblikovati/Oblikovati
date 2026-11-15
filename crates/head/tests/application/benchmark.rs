@@ -120,6 +120,8 @@ mod home_recent_documents;
 mod model_browser;
 #[path = "project-dialog/steps.rs"]
 mod project_dialog;
+#[path = "../solid-model/projection-fixtures/steps.rs"]
+mod projection_fixtures;
 #[path = "quick-access-toolbar/steps.rs"]
 mod quick_access_toolbar;
 pub(crate) mod rectangle_visibility;
