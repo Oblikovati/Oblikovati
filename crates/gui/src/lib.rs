@@ -50,6 +50,7 @@ pub use parameter_snapshot::{
 };
 mod parameters;
 mod ribbon;
+mod ribbon_command_layout;
 mod ribbon_fit;
 mod ribbon_key_tips;
 mod ribbon_panel_contents;

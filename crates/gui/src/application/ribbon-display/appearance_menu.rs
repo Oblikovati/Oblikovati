@@ -18,8 +18,11 @@ impl RibbonDisplayState {
         if ui.menu_item_config("Normal").selected(true).build() {
             self.close_context_menu = true;
         }
-        for label in ["Text Off", "Small", "Compact", "Large"] {
-            muted_context_item(ui, label);
+        for appearance in crate::ribbon_command_layout::RibbonAppearance::ALL
+            .into_iter()
+            .skip(1)
+        {
+            muted_context_item(ui, appearance.label());
         }
         if ui.menu_item("Reset Ribbon") {
             self.reset_requested = true;
