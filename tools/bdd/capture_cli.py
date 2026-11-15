@@ -5,10 +5,12 @@
 import argparse
 import json
 import platform
+import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
-from typing import Mapping
+from typing import Callable, Mapping, TextIO
 
 from behavior_capture import CaptureRequest, capture_receipt
 from behavior_evidence import locked_revision
@@ -28,27 +30,35 @@ from behavior_ledger import (
 class NativeCargoRun:
     """Run the real native Cucumber test and retain its output; example: NativeCargoRun(root, 'application')."""
 
-    def __init__(self, root: Path, area: str) -> None:
+    def __init__(
+        self, root: Path, area: str, launch: Callable[..., subprocess.Popen[str]] = subprocess.Popen
+    ) -> None:
         self.root = root
         self.area = area
+        self.launch = launch
 
     def __call__(self, reports: Path, environment: dict[str, str]) -> int:
-        command = native_command(self.area)
-        with (reports / "native-test.log").open("w", encoding="utf-8") as output:
-            with subprocess.Popen(
-                command,
-                cwd=self.root,
-                env=environment,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-            ) as child:
-                if child.stdout is None:
-                    raise ValueError("native runner stdout: expected a readable pipe")
-                for line in child.stdout:
-                    output.write(line)
-                    print(line, end="", flush=True)
-                return child.wait()
+        log = reports / "native-test.log"
+        if log.exists() or log.is_symlink():
+            raise FileExistsError(f"native log {log}: expected a new file")
+        with tempfile.TemporaryFile(mode="w+", encoding="utf-8") as output:
+            status = self._stream_native(environment, output)
+            output.seek(0)
+            with log.open("x", encoding="utf-8") as destination:
+                shutil.copyfileobj(output, destination)
+        return status
+
+    def _stream_native(self, environment: dict[str, str], output: TextIO) -> int:
+        with self.launch(
+            native_command(self.area), cwd=self.root, env=environment,
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+        ) as child:
+            if child.stdout is None:
+                raise ValueError("native runner stdout: expected a readable pipe")
+            for line in child.stdout:
+                output.write(line)
+                print(line, end="", flush=True)
+            return child.wait()
 
 
 def native_command(area: str) -> list[str]:

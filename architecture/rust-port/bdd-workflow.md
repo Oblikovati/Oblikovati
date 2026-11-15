@@ -142,6 +142,26 @@ are lost, the run remains historical context, not current acceptance evidence.
 Do not sum reports from different revisions, changed scenario files, or
 overlapping filters as a current total.
 
+## Check the capture pipeline
+
+Use the real native capture check to exercise report reservation, the capture
+CLI, receipt publication, and receipt validation together. Select a new output
+directory under `architecture/rust-port/receipts` and run on a configured
+display. For example, on Linux with Lavapipe:
+
+```sh
+VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json \
+xvfb-run -a -s '-screen 0 1600x1200x24' \
+  python3 -B tools/bdd/live_capture_check.py \
+  --output architecture/rust-port/receipts/UNIQUE_RUN \
+  --renderer 'Vulkan Lavapipe under Xvfb'
+```
+
+The check restores a temporary pinned checkout, runs the native scenario,
+publishes the receipt, and validates it again. Review the capture before
+marking the scenario verified. The optional `--scenario-id` selects another
+reviewed declaration.
+
 ## Diagnose a feature
 
 Set `OBK_BDD_DIAGNOSTIC=1` on the focused command to write `gap-report.json`.
