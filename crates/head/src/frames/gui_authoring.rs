@@ -143,6 +143,11 @@ fn sketch(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, Str
         GuiShellAction::ClearSelectedFaceAppearance { document, keys } => {
             owner.clear_selected_face_appearances_from_gui(*document, keys)
         }
+        GuiShellAction::ClearSelectedMixedAppearance {
+            document,
+            body_keys,
+            face_keys,
+        } => owner.clear_selected_mixed_appearance_from_gui(*document, body_keys, face_keys),
         GuiShellAction::ClearSelectedBodyAppearance { document, keys } => {
             owner.clear_selected_body_appearances_from_gui(*document, keys)
         }

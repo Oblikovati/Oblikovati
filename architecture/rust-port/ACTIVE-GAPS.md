@@ -123,4 +123,5 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
   cleared in one edit. Owner and native-window tests cover selection, Cancel,
   undo, redo and reopen. An OS-input and MCPBridge check also covered two
   selected faces; see `receipts/2026-11-15-live-clear-faces/`. Mixed body and
-  face selections and assembly occurrences remain open (#3962).
+  face selections now clear together; see
+  `receipts/2026-11-15-live-clear-mixed/`. Assembly occurrences remain open (#3962).

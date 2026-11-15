@@ -267,7 +267,7 @@ fn three_body_package() -> Vec<u8> {
         .encode()
         .unwrap()
 }
-fn ctrl_click(world: &mut ApplicationWorld, text: &str) {
+pub(super) fn ctrl_click(world: &mut ApplicationWorld, text: &str) {
     let position = world.run(text).center().map(|value| value as i32);
     modified_viewport_click(world, position, true, false);
 }

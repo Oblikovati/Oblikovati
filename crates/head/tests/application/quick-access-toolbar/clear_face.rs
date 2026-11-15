@@ -128,3 +128,49 @@ fn clear_two_named_faces_through_viewport_and_undo() {
     assert_eq!(face_overrides(&mut world), before);
     world.close();
 }
+
+#[test]
+fn clear_mixed_body_and_face_through_native_window() {
+    let mut world = ApplicationWorld::new();
+    prepare_face_tool(&mut world);
+    let body = world.state().browser.unwrap().bodies[0].key.clone();
+    Client::new(world.app().owner.document_host())
+        .appearances()
+        .assign(&AssignAppearanceArgs {
+            scope: "body".into(),
+            key: body.clone(),
+            appearance_id: "abs-black".into(),
+        })
+        .unwrap();
+    world.pump(Vec::new());
+    let before = face_overrides(&mut world);
+    let point = world.app().window.model_pixel([2., 1.5, 2.]).unwrap();
+    world.click(point);
+    let face = world.state().selected_face_appearances[0].0.clone();
+    super::super::workspace_layout::browser_feature::click_branch_arrow(&mut world, "Solid Bodies");
+    clear_appearance::ctrl_click(&mut world, "Solid1");
+    let state = world.state();
+    assert_eq!(state.selected_body_keys, [body.clone()]);
+    assert_eq!(state.selected_face_appearances[0].0, face);
+    assert!(world.run_is_enabled("OK"));
+    world.click_text("Cancel");
+    assert_eq!(face_overrides(&mut world), before);
+    world.click(row_center(&world, "Clear"));
+    world.click_text("OK");
+    let cleared = face_overrides(&mut world);
+    let mut expected = before.clone();
+    let body_ref = oblikovati_model::assets::AssignmentReference::new(&body, vec![]).unwrap();
+    let face_ref = oblikovati_model::assets::AssignmentReference::new(&face, vec![]).unwrap();
+    expected
+        .assignments
+        .set_body_appearance(&body_ref, "")
+        .unwrap();
+    expected
+        .assignments
+        .set_face_appearance(&face_ref, "")
+        .unwrap();
+    assert_eq!(cleared, expected);
+    world.click(row_center(&world, "Undo"));
+    assert_eq!(face_overrides(&mut world), before);
+    world.close();
+}

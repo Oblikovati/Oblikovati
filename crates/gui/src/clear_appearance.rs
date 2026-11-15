@@ -39,6 +39,17 @@ impl ClearAppearance {
         }
     }
     fn action_for(state: &GuiCommandState, document: u64) -> Option<GuiShellAction> {
+        if !state.selected_face_appearances.is_empty() && !state.selected_body_keys.is_empty() {
+            return Some(GuiShellAction::ClearSelectedMixedAppearance {
+                document,
+                body_keys: state.selected_body_keys.clone(),
+                face_keys: state
+                    .selected_face_appearances
+                    .iter()
+                    .map(|(key, _)| key.clone())
+                    .collect(),
+            });
+        }
         if !state.selected_face_appearances.is_empty() {
             return Some(GuiShellAction::ClearSelectedFaceAppearance {
                 document,
@@ -56,6 +67,76 @@ impl ClearAppearance {
         })
     }
 }
+/// Check an exact current clear selection; example: `clear_action_enabled(&action, &state)`.
+pub(crate) fn clear_action_enabled(action: &GuiShellAction, state: &GuiCommandState) -> bool {
+    let Some((document, bodies, faces)) = clear_action_targets(action) else {
+        return false;
+    };
+    if state.document != Some(document)
+        || state.authoring != crate::GuiAuthoringContext::Part
+        || state.transaction_open
+        || !clear_selection_matches(state, bodies, faces)
+    {
+        return false;
+    }
+    let Some(body_assigned) = body_assignment_status(state, bodies) else {
+        return false;
+    };
+    body_assigned
+        || (!faces.is_empty()
+            && state
+                .selected_face_appearances
+                .iter()
+                .any(|(_, assigned)| *assigned))
+}
+
+fn clear_action_targets(action: &GuiShellAction) -> Option<(u64, &[String], &[String])> {
+    match action {
+        GuiShellAction::ClearSelectedFaceAppearance { document, keys } if !keys.is_empty() => {
+            Some((*document, &[], keys))
+        }
+        GuiShellAction::ClearSelectedBodyAppearance { document, keys } if !keys.is_empty() => {
+            Some((*document, keys, &[]))
+        }
+        GuiShellAction::ClearSelectedMixedAppearance {
+            document,
+            body_keys,
+            face_keys,
+        } if !body_keys.is_empty() && !face_keys.is_empty() => {
+            Some((*document, body_keys, face_keys))
+        }
+        _ => None,
+    }
+}
+
+fn clear_selection_matches(state: &GuiCommandState, bodies: &[String], faces: &[String]) -> bool {
+    state.selected_body_keys == bodies
+        && state
+            .selected_face_appearances
+            .iter()
+            .map(|(key, _)| key)
+            .eq(faces.iter())
+}
+
+fn body_assignment_status(state: &GuiCommandState, keys: &[String]) -> Option<bool> {
+    if keys.is_empty() {
+        return Some(false);
+    }
+    let browser = state.browser.as_ref()?;
+    if !keys
+        .iter()
+        .all(|key| browser.bodies.iter().any(|body| body.key == *key))
+    {
+        return None;
+    }
+    Some(keys.iter().any(|key| {
+        browser
+            .bodies
+            .iter()
+            .any(|body| body.key == *key && !body.appearance.is_empty())
+    }))
+}
+
 fn confirm_clear(
     ui: &Ui,
     state: &GuiCommandState,
@@ -63,7 +144,13 @@ fn confirm_clear(
     actions: &mut Vec<GuiShellAction>,
 ) -> bool {
     ui.text("Clear appearance overrides for the selected bodies or faces?");
-    if state.selected_face_appearances.len() > 1 {
+    if !state.selected_body_keys.is_empty() && !state.selected_face_appearances.is_empty() {
+        ui.text(format!(
+            "Selected bodies: {}; faces: {}",
+            state.selected_body_keys.len(),
+            state.selected_face_appearances.len()
+        ));
+    } else if state.selected_face_appearances.len() > 1 {
         ui.text(format!(
             "{} faces selected",
             state.selected_face_appearances.len()
@@ -130,6 +217,46 @@ mod tests {
                 .unwrap()
                 .enabled(&state)
         );
+    }
+
+    #[test]
+    fn mixed_clear_requires_current_known_body_and_face() {
+        let body = crate::GuiBrowserBody {
+            name: "Solid1".into(),
+            feature: oblikovati_model::feature::FeatureId(1),
+            key: "body".into(),
+            index: 0,
+            visible: true,
+            faces: 6,
+            appearance: String::new(),
+            physical: None,
+        };
+        let mut state = GuiCommandState {
+            document: Some(7),
+            authoring: crate::GuiAuthoringContext::Part,
+            selected_body_keys: vec!["body".into()],
+            selected_face_appearances: vec![("face".into(), true)],
+            browser: Some(crate::GuiModelBrowser {
+                bodies: vec![body],
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        let action = ClearAppearance::action_for(&state, 7).unwrap();
+        assert!(matches!(
+            action,
+            GuiShellAction::ClearSelectedMixedAppearance { .. }
+        ));
+        assert!(action.enabled(&state));
+        let partial = GuiShellAction::ClearSelectedFaceAppearance {
+            document: 7,
+            keys: vec!["face".into()],
+        };
+        assert!(!partial.enabled(&state));
+        state.browser.as_mut().unwrap().bodies.clear();
+        assert!(!action.enabled(&state));
+        state.selected_face_appearances.clear();
+        assert!(!action.enabled(&state));
     }
 
     #[test]

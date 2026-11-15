@@ -32,6 +32,8 @@
 
 ### Fixed
 
+- Cleared selected body and face appearance overrides together in one undoable edit. (#3962)
+
 - Cleared multiple selected named face appearances in one undoable edit. (#3962)
 
 - Cleared a selected named face appearance with Cancel and undo support, while keeping other overrides. (#3962)

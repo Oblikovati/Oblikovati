@@ -78,15 +78,31 @@ impl<
         document: u64,
         keys: &[String],
     ) -> Result<bool, String> {
-        let references = self.validate_face_clear_selection(document, keys)?;
-        if !self.selection_has_face_override(document, &references)? {
+        self.clear_selected_appearances(document, &[], keys)
+    }
+    pub(super) fn clear_selected_appearances(
+        &mut self,
+        document: u64,
+        body_keys: &[String],
+        face_keys: &[String],
+    ) -> Result<bool, String> {
+        if body_keys.is_empty() && face_keys.is_empty() {
+            return Err("clear selection []: expected at least one body or face".into());
+        }
+        let bodies = self.validate_optional_body_selection(document, body_keys)?;
+        let faces = self.validate_optional_face_selection(document, face_keys)?;
+        self.validate_optional_body_selection(document, body_keys)?;
+        if !self.selection_has_body_override(document, &bodies)?
+            && !self.selection_has_face_override(document, &faces)?
+        {
             return Ok(false);
         }
         self.files
             .commands(document)
             .map_err(|cause| cause.to_string())?
             .run("Clear appearance", |snapshot, _| {
-                for reference in &references {
+                clear_body_overrides(snapshot, &bodies)?;
+                for reference in &faces {
                     snapshot
                         .assets
                         .assignments
@@ -96,6 +112,34 @@ impl<
             })
             .map_err(|cause| cause.to_string())?;
         Ok(true)
+    }
+    fn validate_optional_face_selection(
+        &mut self,
+        document: u64,
+        keys: &[String],
+    ) -> Result<Vec<AssignmentReference>, String> {
+        if keys.is_empty() && self.current_face_appearance_picks(document).is_empty() {
+            return Ok(Vec::new());
+        }
+        self.validate_face_clear_selection(document, keys)
+    }
+    fn validate_optional_body_selection(
+        &self,
+        document: u64,
+        keys: &[String],
+    ) -> Result<Vec<AssignmentReference>, String> {
+        if keys.is_empty() {
+            self.require_browser_document(document)?;
+            let session = self
+                .files
+                .workspace()
+                .session(document)
+                .map_err(|cause| cause.to_string())?;
+            if session.selected_browser_bodies().is_empty() {
+                return Ok(Vec::new());
+            }
+        }
+        self.validate_clear_body_selection(document, keys)
     }
     fn validate_face_clear_selection(
         &mut self,
@@ -159,18 +203,7 @@ impl<
         document: u64,
         keys: &[String],
     ) -> Result<bool, String> {
-        let references = self.validate_clear_body_selection(document, keys)?;
-        if !self.selection_has_body_override(document, &references)? {
-            return Ok(false);
-        }
-        self.files
-            .commands(document)
-            .map_err(|cause| cause.to_string())?
-            .run("Clear appearance", |snapshot, _| {
-                clear_body_overrides(snapshot, &references)
-            })
-            .map_err(|cause| cause.to_string())?;
-        Ok(true)
+        self.clear_selected_appearances(document, keys, &[])
     }
     fn selection_has_body_override(
         &self,

@@ -145,53 +145,61 @@ fn face_toggle_removes_only_that_face_and_updates_its_outline() {
 }
 
 #[test]
-fn modified_face_click_refuses_a_mixed_body_selection() {
-    let (mut owner, document, _, _) = face_fixture();
+fn modified_face_click_keeps_the_body_selection() {
+    let (mut owner, document, end, _) = face_fixture();
     let body = super::assignments::entity_key(&owner, document, 1, "body");
-    owner
-        .browser_choice(
-            document,
-            &oblikovati_gui::GuiBrowserChoice::Body {
-                feature: oblikovati_model::feature::FeatureId(1),
-                key: body.clone(),
-                toggle: false,
-            },
-        )
-        .unwrap();
+    select_body(&mut owner, document, &body, false);
     owner
         .click_model_with_modifiers(document, [[1., 1., 10.], [0., 0., -1.]], None, true)
         .unwrap();
-    assert!(
-        matches!(owner.take_command_notice(), Some(crate::DesktopCommandNotice::SelectionFailed { cause }) if cause.contains("mixed body and face"))
-    );
-    assert_eq!(
-        owner.gui_command_state().unwrap().selected_body_keys,
-        [body]
-    );
-    assert!(
-        owner
-            .gui_command_state()
-            .unwrap()
-            .selected_face_appearances
-            .is_empty()
-    );
+    let state = owner.gui_command_state().unwrap();
+    assert_eq!(state.selected_body_keys, [body]);
+    assert_eq!(state.selected_face_appearances[0].0, end);
 }
 
 #[test]
-fn modified_body_click_refuses_a_mixed_face_selection() {
+fn modified_body_click_keeps_the_face_selection() {
     use oblikovati_session::selection::SelectionKind;
     let (mut owner, document, end, _) = face_fixture();
+    let body = super::assignments::entity_key(&owner, document, 1, "body");
     let rank = owner.ambient_selection.rank(SelectionKind::Body);
     owner.ambient_selection.move_kind(rank, 0);
     owner
         .click_model_with_modifiers(document, [[1., 1., 10.], [0., 0., -1.]], Some(0.1), true)
         .unwrap();
+    let state = owner.gui_command_state().unwrap();
+    assert_eq!(state.selected_face_appearances[0].0, end);
+    assert_eq!(state.selected_body_keys, [body]);
+}
+
+fn select_body(owner: &mut TestOwner, document: u64, key: &str, toggle: bool) {
+    owner
+        .browser_choice(
+            document,
+            &oblikovati_gui::GuiBrowserChoice::Body {
+                feature: oblikovati_model::feature::FeatureId(1),
+                key: key.into(),
+                toggle,
+            },
+        )
+        .unwrap();
+}
+
+#[test]
+fn browser_toggle_rejects_an_unresolved_face_selection() {
+    let (mut owner, document, _, _) = face_fixture();
+    let body = super::assignments::entity_key(&owner, document, 1, "body");
+    owner.face_appearance_picks.clear();
+    let choice = oblikovati_gui::GuiBrowserChoice::Body {
+        feature: oblikovati_model::feature::FeatureId(1),
+        key: body,
+        toggle: true,
+    };
     assert!(
-        matches!(owner.take_command_notice(), Some(crate::DesktopCommandNotice::SelectionFailed { cause }) if cause.contains("mixed body and face"))
-    );
-    assert_eq!(
-        owner.gui_command_state().unwrap().selected_face_appearances[0].0,
-        end
+        owner
+            .browser_choice(document, &choice)
+            .unwrap_err()
+            .contains("named face")
     );
     assert!(
         owner
@@ -200,6 +208,83 @@ fn modified_body_click_refuses_a_mixed_face_selection() {
             .selected_body_keys
             .is_empty()
     );
+}
+
+#[test]
+fn mixed_body_and_face_clear_is_one_reversible_edit() {
+    let (mut owner, document, end, start) = face_fixture();
+    let body = super::assignments::entity_key(&owner, document, 1, "body");
+    let face_outline = owner.current_browser_outline();
+    select_body(&mut owner, document, &body, true);
+    assert!(owner.current_browser_outline().len() > face_outline.len());
+    let bodies = vec![body.clone()];
+    let faces = vec![end.clone()];
+    let before = assets(&owner, document);
+    let history = history_count(&owner, document);
+    assert!(
+        owner
+            .clear_selected_appearances(document, &bodies, &faces)
+            .unwrap()
+    );
+    let cleared = assets(&owner, document);
+    let mut expected = before.clone();
+    for (key, face) in [(&body, false), (&end, true)] {
+        let reference = oblikovati_model::assets::AssignmentReference::new(key, vec![]).unwrap();
+        if face {
+            expected
+                .assignments
+                .set_face_appearance(&reference, "")
+                .unwrap();
+        } else {
+            expected
+                .assignments
+                .set_body_appearance(&reference, "")
+                .unwrap();
+        }
+    }
+    assert_eq!(cleared, expected);
+    assert!(
+        cleared
+            .assignments
+            .face_appearances()
+            .any(|(key, _)| key.reference_key() == start)
+    );
+    assert_eq!(history_count(&owner, document), history + 1);
+    owner.files.commands(document).unwrap().undo().unwrap();
+    assert_eq!(assets(&owner, document), before);
+    owner.files.commands(document).unwrap().redo().unwrap();
+    assert_eq!(assets(&owner, document), cleared);
+    let reopened = save_and_reopen(&mut owner, document);
+    assert_eq!(assets(&owner, reopened), cleared);
+}
+
+#[test]
+fn mixed_clear_rejects_missing_forged_and_stale_keys_without_edits() {
+    let (mut owner, document, end, _) = face_fixture();
+    let body = super::assignments::entity_key(&owner, document, 1, "body");
+    select_body(&mut owner, document, &body, true);
+    let before = assets(&owner, document);
+    for (bodies, faces) in [
+        (vec![], vec![end.clone()]),
+        (vec![body.clone()], vec![]),
+        (vec!["forged".into()], vec![end.clone()]),
+        (vec![body.clone()], vec!["forged".into()]),
+    ] {
+        assert!(
+            owner
+                .clear_selected_appearances(document, &bodies, &faces)
+                .is_err()
+        );
+        assert_eq!(assets(&owner, document), before);
+    }
+    set_parameter(&mut owner, "depth", "3 cm");
+    let after = assets(&owner, document);
+    assert!(
+        owner
+            .clear_selected_appearances(document, &[body], &[end])
+            .is_err()
+    );
+    assert_eq!(assets(&owner, document), after);
 }
 
 #[test]
