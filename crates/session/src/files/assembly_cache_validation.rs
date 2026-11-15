@@ -6,6 +6,15 @@ use oblikovati_persistence::package::{AssemblySourceRecord, SavedAssemblyView};
 use std::collections::BTreeSet;
 
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspace<O, W, F> {
+    /// Borrow the validated presentation of an express assembly, if it is open in that mode.
+    /// Example: `files.express_assembly_view(id)?` before drawing the saved view.
+    pub fn express_assembly_view(
+        &self,
+        id: u64,
+    ) -> Result<Option<&SavedAssemblyView>, FileWorkspaceError> {
+        Ok(self.retained_file(id)?.express_view.as_ref())
+    }
+
     /// Validate the cached presentation against the files and catalog used to create it.
     /// Example: `files.validated_assembly_view(path, &package)?` before Express open.
     pub fn validated_assembly_view(

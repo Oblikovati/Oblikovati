@@ -56,6 +56,7 @@ struct RetainedFile {
     picture: Option<FilePicture>,
     drawing_views: Option<oblikovati_persistence::package::SavedDrawingViews>,
     assembly_view: Option<(PathBuf, oblikovati_persistence::package::SavedAssemblyView)>,
+    express_view: Option<oblikovati_persistence::package::SavedAssemblyView>,
     deferred_views: Option<oblikovati_persistence::package::SavedDrawingViews>,
 }
 /// A picture for the next save of a file, or none in it.
@@ -65,6 +66,13 @@ pub enum FilePicture {
     Remove,
 }
 impl RetainedFile {
+    fn require_full_content(&self, id: u64) -> Result<(), FileWorkspaceError> {
+        if self.express_view.is_some() {
+            return Err(FileWorkspaceError::ExpressMode(id, false));
+        }
+        Ok(())
+    }
+
     /// A save writes what is latest; keeping it apart stops a redraw encoding a package.
     fn apply_picture(&mut self) {
         match self.picture.take() {
@@ -171,6 +179,13 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
 
     /// Route edits without allowing replacement of the document owner; example: `host.commands(id)?.undo()?`.
     pub fn commands(&mut self, id: u64) -> Result<SessionCommands<'_, O>, WorkspaceError> {
+        if self
+            .retained
+            .get(&id)
+            .is_some_and(|file| file.express_view.is_some())
+        {
+            return Err(WorkspaceError::ExpressReadOnly(id));
+        }
         self.workspace.commands(id)
     }
 
@@ -344,6 +359,7 @@ fn bound_target<'a, F: DocumentFiles>(
     let file = retained
         .get_mut(&id)
         .ok_or(FileWorkspaceError::MissingFile(id))?;
+    file.require_full_content(id)?;
     file.apply_picture();
     let path = file
         .path

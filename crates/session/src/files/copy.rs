@@ -15,7 +15,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         version: &str,
         source: &mut dyn GuidSource,
     ) -> Result<FileIdentity, FileWorkspaceError> {
-        self.retained_file(id)?;
+        self.retained_file(id)?.require_full_content(id)?;
         let destination = self.unowned_destination(requested)?;
         let references = self.owned_assembly_references(id);
         let original = self.retained.get_mut(&id).expect("validated binding");

@@ -43,6 +43,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         id: u64,
         requested: &Path,
     ) -> Result<PathBuf, FileWorkspaceError> {
+        self.retained_file(id)?.require_full_content(id)?;
         self.retained_file(id)?;
         let destination = checked_path(requested, self.files.save_path(requested))?;
         self.require_available_destination(id, &destination)?;

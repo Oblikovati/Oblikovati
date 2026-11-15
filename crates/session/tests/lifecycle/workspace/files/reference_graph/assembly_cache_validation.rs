@@ -139,3 +139,117 @@ fn rejects_changed_resolution_and_source_identity() {
         .unwrap_err();
     assert!(error.contains("expected saved identity"), "{error}");
 }
+
+#[test]
+fn express_open_keeps_components_unloaded_and_rejects_mode_changes() {
+    let (saved, _, destination, _) = cached_graph();
+    let files = WorkspaceFiles {
+        contents: Rc::clone(&saved.files().contents),
+        ..Default::default()
+    };
+    let mut fresh = FileWorkspace::new(RecordingWorkspace::default(), files);
+    let mut guids = SequenceGuids(8000);
+    let id = fresh
+        .open_express_with_factory(&destination, || Ok(ContentObserver), "alpha", &mut guids)
+        .unwrap()
+        .session_id();
+    assert_eq!(fresh.workspace().documents(), &[id]);
+    assert!(fresh.express_assembly_view(id).unwrap().is_some());
+    assert!(
+        matches!(fresh.commands(id), Err(WorkspaceError::ExpressReadOnly(found)) if found == id)
+    );
+    let original = fresh.files().contents.borrow()[&destination].clone();
+    assert!(fresh.save(id, "alpha", &mut guids).is_err());
+    assert!(
+        fresh
+            .save_as(id, &path("copy.oad"), "alpha", &mut guids)
+            .is_err()
+    );
+    assert!(
+        fresh
+            .save_copy(id, &path("copy.oad"), None, "alpha", &mut guids)
+            .is_err()
+    );
+    assert_eq!(fresh.files().contents.borrow()[&destination], original);
+    let error = fresh
+        .open(
+            &destination,
+            ContentObserver,
+            "alpha",
+            &mut guids,
+            OpenActivation::Activate,
+        )
+        .unwrap_err();
+    assert!(
+        error.to_string().contains("expected express mode false"),
+        "{error}"
+    );
+}
+
+#[test]
+fn express_open_of_stale_cache_does_not_register_a_document() {
+    let (saved, _, destination, _) = cached_graph();
+    saved
+        .files()
+        .contents
+        .borrow_mut()
+        .insert(path("a.obk"), fixture(2));
+    let files = WorkspaceFiles {
+        contents: Rc::clone(&saved.files().contents),
+        ..Default::default()
+    };
+    let mut fresh = FileWorkspace::new(RecordingWorkspace::default(), files);
+    let error = fresh
+        .open_express_with_factory(
+            &destination,
+            || Ok(ContentObserver),
+            "alpha",
+            &mut SequenceGuids(9000),
+        )
+        .unwrap_err();
+    assert!(
+        error.to_string().contains("expected saved content digest"),
+        "{error}"
+    );
+    assert!(fresh.workspace().documents().is_empty());
+}
+
+#[test]
+fn express_open_without_cache_is_refused_without_changing_the_workspace() {
+    let files = WorkspaceFiles::default();
+    files
+        .contents
+        .borrow_mut()
+        .insert(path("plain.obk"), fixture(1));
+    let mut host = FileWorkspace::new(RecordingWorkspace::default(), files);
+    let error = host
+        .open_express_with_factory(
+            &path("plain.obk"),
+            || Ok(ContentObserver),
+            "alpha",
+            &mut SequenceGuids(10000),
+        )
+        .unwrap_err();
+    assert!(
+        error.to_string().contains("expected a saved assembly view"),
+        "{error}"
+    );
+    assert!(host.workspace().documents().is_empty());
+}
+
+#[test]
+fn express_open_does_not_reuse_a_fully_open_document() {
+    let (mut host, _, destination, _) = cached_graph();
+    let error = host
+        .open_express_with_factory(
+            &destination,
+            || Ok(ContentObserver),
+            "alpha",
+            &mut SequenceGuids(11000),
+        )
+        .unwrap_err();
+    assert!(
+        error.to_string().contains("expected express mode true"),
+        "{error}"
+    );
+}
