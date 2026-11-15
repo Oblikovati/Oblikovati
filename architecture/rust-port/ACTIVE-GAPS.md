@@ -79,6 +79,10 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
   mesh quality and producer identity. Cache creation is unavailable on macOS
   and Windows until the running executable can be verified (#3964). See
   `receipts/2026-11-15-express-contract/` for the diagnostic run.
+  On the current scenario pin, the full opening feature passed 26 of 27
+  scenarios. The clarified final Express step is now bound and fails because
+  Finish is absent (#3963); see
+  `receipts/2026-11-15-document-opening-current/`.
 - Document creation: the earlier diagnostic passed 28 of 39 scenarios; its
   receipt is historical. The updated feature is capture-host only, and five
   cases are also capture-only. The portable gate cannot claim these as passes;
