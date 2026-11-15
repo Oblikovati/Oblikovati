@@ -41,6 +41,14 @@ class GitManifestDeclarationsTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "expected locked source declaration"):
             check_git_manifest_declarations(source, generated, {}, "demo")
 
+    def test_metabuild_declarations_are_refused(self) -> None:
+        plain = b'[package]\nname="demo"\n'
+        declared = b'[package]\nname="demo"\nmetabuild=["forged"]\n'
+        for source, generated in ((plain, declared), (declared, plain)):
+            with self.subTest(source=source, generated=generated):
+                with self.assertRaisesRegex(ValueError, "expected no source or generated metabuild"):
+                    check_git_manifest_declarations(source, generated, {}, "demo")
+
     def test_duplicate_dependency_alias_is_declined(self) -> None:
         source = b'[package]\nname="demo"\n'
         generated = b'[package]\nname="demo"\n[dev-dependencies]\n[dev_dependencies]\n'

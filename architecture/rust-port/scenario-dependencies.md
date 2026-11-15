@@ -262,11 +262,20 @@ none. It refuses source build scripts and declaration transformations it cannot
 compare exactly, including workspace-inherited dependencies; this is a deliberate
 compatibility limit. Boolean and integer TOML values are compared by type.
 
+The check also validates the conventional inferred library target when the
+locked source has no explicit `[lib]`, autodiscovery is enabled, and
+`src/lib.rs` is tracked. Cargo's [pinned target normalizer](https://github.com/rust-lang/cargo/blob/5f94df4789f005f9a352888e8355ffc645b7ed0e/src/workspace/parser/targets.rs#L139-L180)
+derives its name from the package name and uses that path. The generated library
+must contain exactly those two fields. The check also requires normalized target
+autodiscovery switches to be false, compares `package.links`, and refuses
+`metabuild`. Explicit libraries and other layouts are declined until their
+normalization can be checked.
+
 These checks passed on the current 18 Git packages and 22,972 tracked vendor
 files. They do not validate the entire generated manifest: package metadata,
-normalized targets, library flags, lints and other fields remain unverified. A
-passing result is partial, does not independently bind a build, and cannot
-authorize reuse. It reports the checked scope but keeps all 18 full manifests
+explicit binary, example, test and bench targets, lints and other fields remain
+unverified. A passing result is partial, does not independently bind a build,
+and cannot authorize reuse. It reports the checked scope but keeps all 18 full manifests
 in `git_manifests_unverified`, with `complete: false` and `reusable: false`.
 The prior [observation](receipts/2026-11-15-git-vendor-check/observation.json)
 and [regeneration experiment](receipts/2026-11-15-git-manifest-reproduction/README.md)

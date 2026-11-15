@@ -48,6 +48,8 @@ def require_no_added_build_script(source: Mapping[str, object], generated: Mappi
     output = generated.get("package")
     if not isinstance(original, dict) or not isinstance(output, dict):
         raise ValueError(f"manifest {label} package: expected source and generated package tables")
+    if original.get("metabuild") is not None or output.get("metabuild") is not None:
+        raise ValueError(f"manifest {label} metabuild: expected no source or generated metabuild")
     build = original.get("build")
     if build is not None and build is not False:
         raise ValueError(f"manifest {label} source build {build!r}: expected no authored build script")
