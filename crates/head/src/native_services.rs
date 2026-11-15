@@ -247,6 +247,14 @@ impl<D: ScriptDocumentOwner, W: DispatchWakeup + 'static> HeadWork
     ) -> Result<bool, String> {
         self.owner.edit_parameter_from_gui(mutation, request)
     }
+    fn clear_selected_body_appearance_from_gui(
+        &mut self,
+        document: u64,
+        key: &str,
+    ) -> Result<bool, String> {
+        self.owner
+            .clear_selected_body_appearance_from_gui(document, key)
+    }
     fn set_document_property_from_gui(
         &mut self,
         request: &oblikovati_api::wire::SetPropertyArgs,

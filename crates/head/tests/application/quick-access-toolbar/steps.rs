@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{ApplicationWorld, diagnostics::window_geometry};
 use cucumber::{given, then, when};
+mod clear_appearance;
 mod dockable_windows;
 mod material_browser;
 mod menu_choices;

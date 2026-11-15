@@ -44,6 +44,9 @@ mod orientation_work;
 #[macro_use]
 mod work_metadata;
 #[cfg(target_os = "linux")]
+#[macro_use]
+mod work_appearance;
+#[cfg(target_os = "linux")]
 mod work;
 mod work_forwarding;
 #[path = "work_idle.rs"]

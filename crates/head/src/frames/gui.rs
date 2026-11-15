@@ -304,6 +304,8 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::UpdateBodyProperties { .. }
         | GuiShellAction::AssignPartAsset { .. }
         | GuiShellAction::SetBodyAppearance { .. }
+        | GuiShellAction::ClearSelectedBodyAppearance { .. }
+        | GuiShellAction::OpenClearBodyAppearance { .. }
         | GuiShellAction::EditSketch { .. }
         | GuiShellAction::Dimension(_)
         | GuiShellAction::PreviewSketchPattern(_)

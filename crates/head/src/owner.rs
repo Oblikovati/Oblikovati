@@ -23,6 +23,8 @@ mod body_properties;
 mod browser_selection;
 #[path = "owner_browser_visibility.rs"]
 mod browser_visibility;
+#[path = "owner_clear_appearance.rs"]
+mod clear_appearance;
 #[path = "owner_dimension_annotations.rs"]
 mod dimension_annotations;
 #[path = "owner_dimension_query.rs"]
