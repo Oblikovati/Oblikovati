@@ -4,6 +4,8 @@
 
 ### Changed
 
+- Exposed a shared assembly presentation traversal with explicit selection styling for the live scene; Express loading remains unavailable. (#3949)
+
 - Extended staged legacy part replay to face-offset planes with independently witnessed side lineage; production precision qualification remains required. (#3882, #3928)
 
 - Added a shared resolver that matches witnessed Go profile boundaries to current certified regions, with precision qualification required. Automatic Go profile witnessing remains open. (#3882, #3928)

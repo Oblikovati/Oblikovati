@@ -66,3 +66,5 @@ pub use sketch_display::{
 
 mod sketch_palette;
 pub use sketch_palette::ViewportSketchPalette;
+
+pub mod assembly_presentation;

@@ -50,7 +50,7 @@ fn place_dimension_labels(snapshot: &mut oblikovati_model::history::DocumentSnap
         .unwrap();
 }
 /// The fixture profile, stored with one 20 mm extrusion; this build has no command that makes one.
-fn extruded_part_bytes(name: &str, source_name: &str, depth: f64) -> Vec<u8> {
+pub(in super::super) fn extruded_part_bytes(name: &str, source_name: &str, depth: f64) -> Vec<u8> {
     let mut recipe = fixture::selected_prism_definition().recipe();
     recipe.displacement[2] = DatumLength::Constant(depth);
     let definition = SketchPrismDefinition::from_recipe(&recipe).unwrap();

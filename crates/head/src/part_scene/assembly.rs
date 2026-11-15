@@ -2,7 +2,7 @@
 //! Compose referenced component scenes in occurrence order.
 use super::*;
 use oblikovati_model::assembly::AssemblyOccurrenceRecipe;
-pub(super) const MAX_ASSEMBLY_DEPTH: usize = 128;
+pub(super) use oblikovati_viewport::assembly_presentation::MAX_ASSEMBLY_DEPTH;
 
 #[derive(PartialEq, Eq)]
 pub(super) struct SceneSource {
@@ -168,85 +168,83 @@ impl DesktopPartScenes {
         files: &mut FileWorkspace<O, W, F>,
         document: u64,
     ) -> Result<HeadSceneUpdate, String> {
-        let mut result = self.empty();
-        let generation = files
-            .workspace()
-            .session(document)
-            .map_err(|error| error.to_string())?
-            .generation();
+        let generation = match files.workspace().session(document) {
+            Ok(session) => session.generation(),
+            Err(error) => {
+                let _ = self.empty();
+                return Err(error.to_string());
+            }
+        };
+        let selection = self.occurrence_selection.clone();
+        let mut source = AssemblySceneSource {
+            scenes: self,
+            files,
+        };
+        let mut result = oblikovati_viewport::assembly_presentation::present_assembly(
+            &mut source,
+            document,
+            selection.as_deref(),
+        )?;
         result.status.source = Some((document, generation));
-        self.append_assembly(files, document, &mut result, &[])?;
         Ok(result)
     }
+}
 
-    fn append_assembly<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
-        &mut self,
-        files: &mut FileWorkspace<O, W, F>,
-        document: u64,
-        result: &mut HeadSceneUpdate,
-        parent: &[(u64, u64, usize)],
-    ) -> Result<(), String> {
-        if parent.len() > MAX_ASSEMBLY_DEPTH {
-            return Err(format!(
-                "assembly document {document}: expected at most 128 nested levels"
-            ));
-        }
-        let session = files
+struct AssemblySceneSource<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> {
+    scenes: &'a mut DesktopPartScenes,
+    files: &'a mut FileWorkspace<O, W, F>,
+}
+impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>
+    oblikovati_viewport::assembly_presentation::AssemblyPresentationSource
+    for AssemblySceneSource<'_, O, W, F>
+{
+    type Output = HeadSceneUpdate;
+    fn empty(&mut self) -> Self::Output {
+        self.scenes.empty()
+    }
+    fn occurrences(&self, owner: u64) -> Result<(u64, Vec<AssemblyOccurrenceRecipe>), String> {
+        let session = self
+            .files
             .workspace()
-            .session(document)
+            .session(owner)
             .map_err(|error| error.to_string())?;
-        let generation = session.generation();
         let occurrences = session
             .snapshot()
             .assembly
             .clone()
-            .ok_or_else(|| format!("document {document}: expected an assembly"))?;
-        for (ordinal, occurrence) in occurrences
-            .iter()
-            .enumerate()
-            .filter(|(_, item)| !item.suppressed && !item.virtual_)
-        {
-            let mut path = parent.to_vec();
-            path.push((document, generation, ordinal));
-            if let Err(error) = self.append_occurrence(files, document, occurrence, result, &path) {
-                result
-                    .status
-                    .scene_errors
-                    .push(format!("occurrence {:?}: {error}", occurrence.name));
-            }
-        }
-        Ok(())
+            .ok_or_else(|| format!("document {owner}: expected an assembly"))?;
+        Ok((session.generation(), occurrences))
     }
-
-    fn append_occurrence<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
-        &mut self,
-        files: &mut FileWorkspace<O, W, F>,
-        owner: u64,
-        occurrence: &AssemblyOccurrenceRecipe,
-        result: &mut HeadSceneUpdate,
-        path: &[(u64, u64, usize)],
-    ) -> Result<(), String> {
-        let component = component_document(files, owner, occurrence)?;
-        let nested = files
+    fn component(&self, owner: u64, occurrence: &AssemblyOccurrenceRecipe) -> Result<u64, String> {
+        component_document(self.files, owner, occurrence)
+    }
+    fn is_assembly(&self, component: u64) -> Result<bool, String> {
+        Ok(self
+            .files
             .workspace()
             .session(component)
             .map_err(|error| error.to_string())?
             .snapshot()
             .assembly
-            .is_some();
-        let mut scene = if nested {
-            let mut child = self.empty();
-            self.append_assembly(files, component, &mut child, path)?;
-            child
-        } else {
-            self.evaluate(files, component)?
-        };
+            .is_some())
+    }
+    fn part(&mut self, component: u64) -> Result<Self::Output, String> {
+        self.scenes.evaluate(self.files, component)
+    }
+    fn place(
+        &self,
+        scene: &mut Self::Output,
+        occurrence: &AssemblyOccurrenceRecipe,
+    ) -> Result<(), String> {
         scene.scene = scene.scene.placed(&occurrence.placement()?)?;
-        if self.occurrence_selection.as_deref() == Some(path) {
-            for triangle in &mut scene.scene.triangles {
-                triangle.color = CHOSEN_BODY_COLOR;
-            }
+        Ok(())
+    }
+    fn select(&self, scene: &mut Self::Output) {
+        for triangle in &mut scene.scene.triangles {
+            triangle.color = CHOSEN_BODY_COLOR;
         }
+    }
+    fn append(&self, result: &mut Self::Output, scene: Self::Output) {
         result.scene.triangles.extend(scene.scene.triangles);
         result.status.visible_bodies += scene.status.visible_bodies;
         result.status.health.extend(scene.status.health);
@@ -255,6 +253,8 @@ impl DesktopPartScenes {
             .status
             .presentation_declines
             .extend(scene.status.presentation_declines);
-        Ok(())
+    }
+    fn fail(&self, result: &mut Self::Output, message: String) {
+        result.status.scene_errors.push(message);
     }
 }
