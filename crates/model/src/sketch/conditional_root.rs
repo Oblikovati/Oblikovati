@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Conditional Krawczyk check on a retained solve, not an operation gate.
 mod krawczyk;
+mod preconditioner;
 use super::{
     SketchIntervalTarget, SketchRelationId, SketchSolveOutcome,
     interval_equations::enclosure::Enclosure,
@@ -270,7 +271,7 @@ impl SketchSolveOutcome {
         parameters: &ParameterCollection<u64>,
         bounds: &[[f64; 2]],
         fixed: &[FixedCoordinateAssumption],
-        preconditioner: &[Vec<f64>],
+        preconditioner: Option<&[Vec<f64>]>,
         anchor: super::SketchPoint2D,
         origin_bounds: [[f64; 2]; 2],
     ) -> Result<ConditionalSketchRoot, String> {
@@ -330,7 +331,15 @@ impl SketchSolveOutcome {
                 center.len(),
             )?);
         }
-        let result = krawczyk::evaluate(&center, bounds, &box_input, &point_input, preconditioner)?;
+        let generated;
+        let matrix = match preconditioner {
+            Some(matrix) => matrix,
+            None => {
+                generated = preconditioner::from_rows(&point_input)?;
+                &generated
+            }
+        };
+        let result = krawczyk::evaluate(&center, bounds, &box_input, &point_input, matrix)?;
         Ok(ConditionalSketchRoot {
             sketch: self.candidate().clone(),
             center,
@@ -341,7 +350,7 @@ impl SketchSolveOutcome {
                 .map(|row| (row.relation, row.equation))
                 .collect(),
             source_rows: self.residual_rows(),
-            preconditioner: preconditioner.to_vec(),
+            preconditioner: matrix.to_vec(),
             targets,
             parameter_bounds: Some(evidence),
             fixed_assumptions: fixed.to_vec(),

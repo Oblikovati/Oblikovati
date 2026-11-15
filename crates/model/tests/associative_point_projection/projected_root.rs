@@ -356,3 +356,36 @@ fn canonical_origin_rejects_stale_same_value_parameter_source() {
             .is_err()
     );
 }
+
+#[test]
+fn generated_preconditioner_checks_the_actual_canonical_rectangle() {
+    let (snapshot, outcome) = rectangle_document(false, false);
+    let projection = snapshot
+        .canonical_origin_projection(SKETCH, ANCHOR, &outcome)
+        .unwrap();
+    let result = projection
+        .conditional_root_auto(&full_box(&outcome), &[])
+        .unwrap();
+    let q = |v| BigRational::from_float(v).unwrap();
+    for (exact, bounds) in [0., 0., 0., 0., 1., 0., 1., 1., 0., 1.]
+        .into_iter()
+        .zip(result.root().enclosure())
+    {
+        assert!(q(bounds[0]) <= q(exact) && q(exact) <= q(bounds[1]));
+    }
+    assert!(result.root().contraction_upper() < 1.0);
+}
+#[test]
+fn generated_preconditioner_rejects_non_square_rectangle() {
+    for (omit, duplicate) in [(true, false), (false, true), (true, true)] {
+        let (snapshot, outcome) = rectangle_document(omit, duplicate);
+        let projection = snapshot
+            .canonical_origin_projection(SKETCH, ANCHOR, &outcome)
+            .unwrap();
+        assert!(
+            projection
+                .conditional_root_auto(&full_box(&outcome), &[])
+                .is_err()
+        );
+    }
+}

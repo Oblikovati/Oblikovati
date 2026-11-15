@@ -97,6 +97,24 @@ impl<'s> ConditionalOriginProjection<'s> {
         fixed: &[crate::sketch::FixedCoordinateAssumption],
         preconditioner: &[Vec<f64>],
     ) -> Result<ConditionalProjectedSketchRoot<'e, 's>, String> {
+        self.check_root(bounds, fixed, Some(preconditioner))
+    }
+    /// Derive a candidate inverse and check it using directed interval inclusion.
+    /// Example: `projection.conditional_root_auto(&box_values, &fixed)?`.
+    /// This is conditional evidence and does not qualify a feature.
+    pub fn conditional_root_auto<'e>(
+        &'e self,
+        bounds: &[[f64; 2]],
+        fixed: &[crate::sketch::FixedCoordinateAssumption],
+    ) -> Result<ConditionalProjectedSketchRoot<'e, 's>, String> {
+        self.check_root(bounds, fixed, None)
+    }
+    fn check_root<'e>(
+        &'e self,
+        bounds: &[[f64; 2]],
+        fixed: &[crate::sketch::FixedCoordinateAssumption],
+        preconditioner: Option<&[Vec<f64>]>,
+    ) -> Result<ConditionalProjectedSketchRoot<'e, 's>, String> {
         let points = self
             .snapshot
             .resolve_sketch_projected_points(self.sketch)
