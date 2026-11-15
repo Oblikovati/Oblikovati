@@ -8,7 +8,6 @@ pub(super) use oblikovati_viewport::assembly_presentation::MAX_ASSEMBLY_DEPTH;
 pub(super) enum AssemblyViewMode {
     Live,
     // This only removes transient view state; #3949 must qualify the source before saving.
-    #[allow(dead_code)]
     Persisted,
 }
 

@@ -2,6 +2,7 @@
 
 //! File bindings owned together with their document sessions.
 mod assembly_placement;
+mod assembly_sources;
 mod asset_catalog;
 pub use asset_catalog::WorkspaceAssetCatalogSource;
 mod batch;
@@ -53,6 +54,7 @@ struct RetainedFile {
     /// What the next save stores as the file's picture; nothing asked leaves it as it is.
     picture: Option<FilePicture>,
     drawing_views: Option<oblikovati_persistence::package::SavedDrawingViews>,
+    assembly_view: Option<(PathBuf, oblikovati_persistence::package::SavedAssemblyView)>,
     deferred_views: Option<oblikovati_persistence::package::SavedDrawingViews>,
 }
 /// A picture for the next save of a file, or none in it.
@@ -347,10 +349,29 @@ fn bound_target<'a, F: DocumentFiles>(
         .as_deref()
         .ok_or(FileWorkspaceError::UnboundDocument(id))?;
     let name = name::saved_name(file, path);
+    let destination = path.to_owned();
+    let staged = take_assembly_view(file, &destination)?;
+    let path = file.path.as_deref().expect("validated destination");
     Ok(ParameterPackageTarget::new(&mut file.package, path, files)
         .with_display_name(name)
         .with_assembly_references(references)
-        .with_drawing_views(file.drawing_views.clone()))
+        .with_drawing_views(file.drawing_views.clone())
+        .with_assembly_view(staged))
+}
+
+fn take_assembly_view(
+    file: &mut RetainedFile,
+    destination: &Path,
+) -> Result<Option<oblikovati_persistence::package::SavedAssemblyView>, FileWorkspaceError> {
+    let Some((expected, view)) = file.assembly_view.take() else {
+        return Ok(None);
+    };
+    if expected != destination {
+        return Err(FileWorkspaceError::ReferenceGraph(format!(
+            "assembly save destination {destination:?}: expected staged destination {expected:?}"
+        )));
+    }
+    Ok(Some(view))
 }
 
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspace<O, W, F> {

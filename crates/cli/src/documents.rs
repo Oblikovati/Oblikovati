@@ -76,9 +76,12 @@ fn save_as<F: DocumentFiles>(
     let destination = paths::with_extension(&args[1], extension);
     let mut factory = observations::CliObservationFactory;
     let projection = oblikovati_drawing::DrawingProjectionService;
-    owned_host::host(owner, source, version, &mut factory, &projection)
+    let warnings = owned_host::host(owner, source, version, &mut factory, &projection)
         .save_as_path(document, &destination)
         .map_err(|error| format!("save-as: {error}"))?;
+    for warning in warnings {
+        write_line(output, &format!("Save warning: {}", warning.detail))?;
+    }
     report_saved(owner, document, &destination, output)
 }
 fn report_saved<F: DocumentFiles>(

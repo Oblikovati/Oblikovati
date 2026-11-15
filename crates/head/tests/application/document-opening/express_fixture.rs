@@ -119,3 +119,162 @@ fn saved_assembly_fixture_opens_its_real_visible_component() {
     assembly_components(&mut world);
     world.close();
 }
+
+#[test]
+fn saving_assembly_stages_unselected_cache_and_reports_stale_source() {
+    use oblikovati_api::wire::{SAVE_WARNING_ASSEMBLY_CACHE_UNAVAILABLE, SaveDocumentArgs};
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    let folder = models_folder(&mut world);
+    write_assembly(&folder);
+    open_dialog(&mut world);
+    look_in(&mut world, &folder);
+    select_row(&mut world, ASSEMBLY_FILE);
+    choose_open(&mut world);
+    settle(&mut world);
+    let assembly = world.active_id();
+    let part = world
+        .app()
+        .owner
+        .documents()
+        .document_reference(assembly, COMPONENT)
+        .unwrap();
+    Client::new(world.app().owner.document_host())
+        .documents()
+        .save(&SaveDocumentArgs { document: part })
+        .unwrap();
+    world.click_text(OCCURRENCE);
+    let result = Client::new(world.app().owner.document_host())
+        .documents()
+        .save(&SaveDocumentArgs { document: assembly })
+        .unwrap();
+    assert!(result.warnings.unwrap_or_default().is_empty());
+    let saved = std::fs::read(folder.join(ASSEMBLY_FILE)).unwrap();
+    let package = oblikovati_persistence::package::DocumentPackage::decode(&saved).unwrap();
+    let view = package
+        .restore_saved_assembly_view()
+        .unwrap()
+        .expect("expected a qualified saved view");
+    assert!(!view.triangles.is_empty());
+    assert!(
+        view.triangles
+            .iter()
+            .all(|triangle| triangle.color != [0.05, 0.32, 1., 1.])
+    );
+    assert_eq!(view.sources.len(), 1);
+    std::fs::write(
+        folder.join(COMPONENT),
+        b"schemaVersion: 2\ndocumentType: 1\n",
+    )
+    .unwrap();
+    let result = Client::new(world.app().owner.document_host())
+        .documents()
+        .save(&SaveDocumentArgs { document: assembly })
+        .unwrap();
+    let warning = result.warnings.unwrap().pop().unwrap();
+    assert_eq!(warning.code, SAVE_WARNING_ASSEMBLY_CACHE_UNAVAILABLE);
+    assert!(warning.detail.contains("expected the package loaded"));
+    let saved = std::fs::read(folder.join(ASSEMBLY_FILE)).unwrap();
+    let package = oblikovati_persistence::package::DocumentPackage::decode(&saved).unwrap();
+    assert_eq!(package.restore_saved_assembly_view().unwrap(), None);
+    world.key(ViewportPhysicalKey::S, true);
+    settle(&mut world);
+    assert!(
+        matches!(world.app().window.native.command_notice.as_ref(), Some(crate::DesktopCommandNotice::SavedWithWarning { detail, .. }) if detail.contains("expected the package loaded"))
+    );
+    world.click_text("+");
+    world.click_text("Log Panel");
+    settle(&mut world);
+    world.expect_text("Application messages");
+    let visible: String = world
+        .text()
+        .chars()
+        .filter(|ch| !ch.is_whitespace())
+        .collect();
+    let expected: String = warning
+        .detail
+        .chars()
+        .filter(|ch| !ch.is_whitespace())
+        .collect();
+    assert!(
+        visible.contains(&expected),
+        "expected the complete warning in the rendered log: {:?}",
+        world.text()
+    );
+    world.close();
+}
+
+fn assert_qualified_cache(path: &Path) {
+    let bytes = std::fs::read(path).unwrap();
+    let package = oblikovati_persistence::package::DocumentPackage::decode(&bytes).unwrap();
+    let view = package
+        .restore_saved_assembly_view()
+        .unwrap()
+        .expect("expected cached presentation");
+    assert!(!view.triangles.is_empty());
+    assert_eq!(view.sources.len(), 1);
+}
+
+#[test]
+fn save_as_copy_and_batch_store_a_qualified_assembly_cache() {
+    use oblikovati_api::wire::{
+        BatchSaveArgs, BatchSaveItem, SaveCopyAsArgs, SaveDocumentArgs, SaveDocumentAsArgs,
+    };
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    let folder = models_folder(&mut world);
+    write_assembly(&folder);
+    open_dialog(&mut world);
+    look_in(&mut world, &folder);
+    select_row(&mut world, ASSEMBLY_FILE);
+    choose_open(&mut world);
+    settle(&mut world);
+    let id = world.active_id();
+    let part = world
+        .app()
+        .owner
+        .documents()
+        .document_reference(id, COMPONENT)
+        .unwrap();
+    Client::new(world.app().owner.document_host())
+        .documents()
+        .save(&SaveDocumentArgs { document: part })
+        .unwrap();
+    let copy = folder.join("copy.oad");
+    let response = Client::new(world.app().owner.document_host())
+        .documents()
+        .save_copy_as(&SaveCopyAsArgs {
+            document: id,
+            target_file_name: copy.to_str().unwrap().into(),
+            metadata: None,
+        })
+        .unwrap();
+    assert!(response.warnings.unwrap_or_default().is_empty());
+    assert_qualified_cache(&copy);
+    let renamed = folder.join("renamed.oad");
+    let response = Client::new(world.app().owner.document_host())
+        .documents()
+        .save_as(&SaveDocumentAsArgs {
+            document: id,
+            new_full_document_name: renamed.to_str().unwrap().into(),
+        })
+        .unwrap();
+    assert!(response.warnings.unwrap_or_default().is_empty());
+    assert_qualified_cache(&renamed);
+    let batch_copy = folder.join("batch-copy.oad");
+    let response = Client::new(world.app().owner.document_host())
+        .documents()
+        .batch_save(&BatchSaveArgs {
+            operation: "saveCopyAs".into(),
+            items: Some(vec![BatchSaveItem {
+                document: id,
+                target_file_name: batch_copy.to_str().unwrap().into(),
+            }]),
+        })
+        .unwrap();
+    let item = response.results.unwrap().pop().unwrap();
+    assert!(item.ok, "{}", item.error);
+    assert!(item.warnings.unwrap_or_default().is_empty());
+    assert_qualified_cache(&batch_copy);
+    world.close();
+}

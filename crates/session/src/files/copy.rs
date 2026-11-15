@@ -18,11 +18,13 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         self.retained_file(id)?;
         let destination = self.unowned_destination(requested)?;
         let references = self.owned_assembly_references(id);
-        let original = &self.retained[&id];
+        let original = self.retained.get_mut(&id).expect("validated binding");
+        let staged = take_assembly_view(original, &destination)?;
         let mut package = copy_package(original, metadata);
         let mut target = ParameterPackageTarget::new(&mut package, &destination, &mut self.files)
             .with_assembly_references(references)
-            .with_drawing_views(original.drawing_views.clone());
+            .with_drawing_views(original.drawing_views.clone())
+            .with_assembly_view(staged);
         self.workspace
             .save_copy(id, version, source, &mut target)
             .map_err(FileWorkspaceError::Save)

@@ -1,0 +1,30 @@
+package main
+import (
+ "context"
+ "encoding/json"
+ "fmt"
+ "os"
+ "os/exec"
+ "strings"
+ "time"
+ "github.com/modelcontextprotocol/go-sdk/mcp"
+)
+func call(ctx context.Context, session *mcp.ClientSession, name string, args map[string]any) (*mcp.CallToolResult, error) {
+ r,err:=session.CallTool(ctx,&mcp.CallToolParams{Name:name,Arguments:args}); if err!=nil{return nil,err}; if r.IsError{return nil,fmt.Errorf("%s returned tool error: %v",name,r.Content)}; return r,nil
+}
+func main(){
+ ctx,cancel:=context.WithTimeout(context.Background(),45*time.Second); defer cancel()
+ client:=mcp.NewClient(&mcp.Implementation{Name:"assembly-save-check",Version:"1"},nil)
+ session,err:=client.Connect(ctx,&mcp.StreamableClientTransport{Endpoint:"http://127.0.0.1:17893/mcp"},nil); if err!=nil {panic(err)}; defer session.Close()
+ docs,err:=call(ctx,session,"list_documents",map[string]any{}); if err!=nil {panic(err)}
+ var active uint64
+ for _,c:=range docs.Content {if t,ok:=c.(*mcp.TextContent);ok {fmt.Println("documents:",t.Text); var v struct{Documents []struct{ID uint64 `json:"id"`; Active bool `json:"active"`} `json:"documents"`}; if json.Unmarshal([]byte(t.Text),&v)==nil {for _,d:=range v.Documents {if d.Active {active=d.ID}}}}}
+ if active==0 {panic("no active document")}
+ save,err:=call(ctx,session,"documents_save",map[string]any{"document":active}); if err!=nil {panic(err)}
+ found:=false; for _,c:=range save.Content {if t,ok:=c.(*mcp.TextContent);ok {fmt.Println("save:",t.Text); found=strings.Contains(t.Text,"assemblyCacheUnavailable") && strings.Contains(t.Text,"missing-component.opd")}}
+ if !found {panic("expected missing-component warning")}
+ cmd:=exec.Command("python3","/tmp/obk-express-live/key.py"); cmd.Stdout=os.Stdout; cmd.Stderr=os.Stderr; if err=cmd.Run();err!=nil {panic(err)}
+ image,err:=call(ctx,session,"capture_window",map[string]any{"path":"/tmp/obk-express-live/window.png"}); if err!=nil {panic(err)}
+ found=false; for _,c:=range image.Content {switch v:=c.(type){case *mcp.ImageContent: if v.MIMEType=="image/png" && len(v.Data)>100 {found=true}; case *mcp.TextContent: fmt.Println("capture:",v.Text)}}
+ if !found {panic("expected MCP PNG capture")}; fmt.Println("MCP save warning and window capture passed")
+}

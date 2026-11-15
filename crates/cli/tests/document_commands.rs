@@ -82,10 +82,14 @@ fn assert_save_as_kind(numeric: &str, extension: &str) {
     )
     .unwrap();
     let destination = format!("/renamed{extension}");
-    assert_eq!(
-        String::from_utf8(output).unwrap(),
-        format!("saved \"renamed\" as {destination}\n")
-    );
+    let output = String::from_utf8(output).unwrap();
+    if numeric == "2" {
+        assert!(output.contains("Save warning: Express assembly cache unavailable:"));
+        assert!(output.contains("expected a presentation service"));
+    } else {
+        assert!(!output.contains("Save warning:"));
+    }
+    assert!(output.ends_with(&format!("saved \"renamed\" as {destination}\n")));
     let package = saved(&store, &destination);
     assert_eq!(package.manifest().display_name, "renamed");
     assert_eq!(store.borrow().files[Path::new("/source.opd")], before);

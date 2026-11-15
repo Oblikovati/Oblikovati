@@ -1562,7 +1562,7 @@ dependencies = [
 [[package]]
 name = "oblikovati-api"
 version = "0.159.0"
-source = "git+https://github.com/Oblikovati/Oblikovati.API.git?rev=f0943c724a6e07ec49533769c9e680137bb3d55c#f0943c724a6e07ec49533769c9e680137bb3d55c"
+source = "git+https://github.com/Oblikovati/Oblikovati.API.git?rev=21b18a952fa7548a31e7eac338f6c78a32e5cfe1#21b18a952fa7548a31e7eac338f6c78a32e5cfe1"
 dependencies = [
  "base64",
  "serde",
@@ -1753,6 +1753,7 @@ dependencies = [
  "oblikovati-persistence",
  "oblikovati-solve",
  "serde",
+ "serde_json",
  "tempfile",
 ]
 

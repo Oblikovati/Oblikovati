@@ -94,10 +94,15 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
 
     fn batch_save(&mut self, request: BatchSaveArgs) -> Result<Vec<u8>, Error> {
         let backend = self.drawing_views;
+        let topology = &mut self.part_topology;
         let response = self
             .files
-            .batch_save_with(request, self.version, self.source, |files, id| {
-                drawing_snapshots::stage(files, backend, id)
+            .batch_save_with_report(request, self.version, self.source, |files, id, path| {
+                drawing_snapshots::stage(files, backend, id)?;
+                let access = topology.as_deref_mut();
+                Ok(assembly_snapshots::stage(files, access, id, path)?
+                    .into_iter()
+                    .collect())
             })
             .map_err(|error| Error(error.to_string()))?;
         encode(&response)
@@ -115,46 +120,79 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
         let path = self
             .files
             .path(request.document)
-            .map_err(|error| Error(error.to_string()))?;
-        let name = path.to_str().ok_or_else(|| {
-            Error(format!(
-                "save path {path:?}: expected a UTF-8 path for the canonical API response"
-            ))
-        })?;
-        let response = encode(&SaveDocumentResult {
-            full_document_name: name.into(),
-        })?;
+            .map_err(|error| Error(error.to_string()))?
+            .to_owned();
+        let name = path
+            .to_str()
+            .ok_or_else(|| {
+                Error(format!(
+                    "save path {path:?}: expected a UTF-8 path for the canonical API response"
+                ))
+            })?
+            .to_owned();
         self.stage_drawing_views(request.document)?;
-        self.files
+        let warnings = self.stage_assembly_view(request.document, &path)?;
+        let response = encode(&SaveDocumentResult {
+            full_document_name: name,
+            warnings,
+        })?;
+        let result = self
+            .files
             .save(request.document, self.version, self.source)
-            .map_err(|error| Error(error.to_string()))?;
+            .map_err(|error| Error(error.to_string()));
+        self.files.clear_assembly_view(request.document);
+        result?;
         Ok(response)
     }
 
     fn save_as(&mut self, request: SaveDocumentAsArgs) -> Result<Vec<u8>, Error> {
         self.stage_drawing_views(request.document)?;
-        let response = self
+        let document = request.document;
+        let warnings = self.stage_assembly_view(
+            document,
+            std::path::Path::new(&request.new_full_document_name),
+        )?;
+        let result = self
             .files
             .save_as_report(request, self.version, self.source)
-            .map_err(|error| Error(error.to_string()))?;
+            .map_err(|error| Error(error.to_string()));
+        self.files.clear_assembly_view(document);
+        let mut response = result?;
+        response.warnings = warnings;
         encode(&response)
     }
 
     fn save_copy(&mut self, request: SaveCopyAsArgs) -> Result<Vec<u8>, Error> {
+        self.stage_drawing_views(request.document)?;
+        let destination = std::path::Path::new(&request.target_file_name);
+        let warnings = self.stage_assembly_view(request.document, destination)?;
         let response = encode(&SaveDocumentResult {
             full_document_name: request.target_file_name.clone(),
+            warnings,
         })?;
-        self.stage_drawing_views(request.document)?;
-        self.files
+        let result = self
+            .files
             .save_copy(
                 request.document,
-                std::path::Path::new(&request.target_file_name),
+                destination,
                 request.metadata.as_deref(),
                 self.version,
                 self.source,
             )
-            .map_err(|error| Error(error.to_string()))?;
+            .map_err(|error| Error(error.to_string()));
+        self.files.clear_assembly_view(request.document);
+        result?;
         Ok(response)
+    }
+    pub(super) fn stage_assembly_view(
+        &mut self,
+        document: u64,
+        destination: &std::path::Path,
+    ) -> Result<Option<Vec<SaveWarning>>, Error> {
+        let access = self.part_topology.as_deref_mut();
+        let warning =
+            assembly_snapshots::stage(self.files, access, document, destination).map_err(Error)?;
+        Ok(warning.map(|warning| vec![warning]))
     }
     pub(super) fn stage_drawing_views(&mut self, document: u64) -> Result<(), Error> {
         drawing_snapshots::stage(self.files, self.drawing_views, document).map_err(Error)

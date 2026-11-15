@@ -12,6 +12,20 @@ pub enum TopologyEntityKind {
 pub trait PartTopologyAccess<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>:
     crate::PartUpdateAccess<O, W, F>
 {
+    /// Present an assembly without transient selection or visibility.
+    /// Example: `access.assembly_view(files, document)?` before qualifying its cache.
+    fn assembly_view(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<
+        (
+            Vec<oblikovati_persistence::package::SavedAssemblyTriangle>,
+            f64,
+            f64,
+        ),
+        String,
+    >;
     /// Enumerate current native bodies; example: `access.list_bodies(files, document)?`.
     fn list_bodies(
         &mut self,

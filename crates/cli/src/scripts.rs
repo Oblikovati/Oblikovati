@@ -121,7 +121,7 @@ impl<'a, F: DocumentFiles> ScriptSession<'a, F> {
             .ok_or("script run: save requested with no active document")?;
         let mut factory = observations::CliObservationFactory;
         let projection = oblikovati_drawing::DrawingProjectionService;
-        owned_host::host(
+        let warnings = owned_host::host(
             &mut self.documents,
             self.guids,
             &self.version,
@@ -130,6 +130,9 @@ impl<'a, F: DocumentFiles> ScriptSession<'a, F> {
         )
         .save_as_path(active, path)
         .map_err(|error| format!("script run: save {path:?}: {error}"))?;
+        for warning in warnings {
+            write_line(output, &format!("Save warning: {}", warning.detail))?;
+        }
         write_line(
             output,
             &format!("saved active document to {}", path.display()),

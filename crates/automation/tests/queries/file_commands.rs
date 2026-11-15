@@ -362,3 +362,6 @@ mod file_themes;
 
 #[path = "file_color_schemes.rs"]
 mod file_color_schemes;
+
+#[path = "file_assembly_cache.rs"]
+mod assembly_cache;

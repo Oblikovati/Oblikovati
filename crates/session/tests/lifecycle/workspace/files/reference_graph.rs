@@ -380,3 +380,6 @@ fn failures_are_local_to_each_reference_and_clear_on_recovery() {
     assert_eq!(host.document_reference_error(owner, "c"), None);
     assert!(host.workspace().documents().contains(&model));
 }
+
+#[path = "reference_graph/assembly_sources.rs"]
+mod assembly_sources;
