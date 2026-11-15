@@ -4,8 +4,6 @@
 
 ### Changed
 
-- Kept off-screen document selection from highlighting a different visible tab. (#3992)
-
 - Discarded closed document-window preview images and stale pending updates. (#3987)
 
 - Added type-preserving integer, number, boolean, and byte property editing to iProperties. (#3958)
@@ -37,6 +35,8 @@
 - Split sketch frame operations into `HeadSketchWork`; custom `HeadWork` owners must implement that interface. (#3860)
 
 ### Fixed
+
+- Kept off-screen document selection from highlighting a different visible tab. (#3992)
 
 - Kept document tab previews clear of the tab at large UI scales and near window edges. (#3988)
 
