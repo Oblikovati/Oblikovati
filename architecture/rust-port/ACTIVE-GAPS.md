@@ -105,7 +105,9 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
   Home preview capture now waits for a clean presented workspace frame (#3989).
   Four corrected preview scenarios passed focused diagnostics; see
   `receipts/2026-11-15-tab-previews-corrected/`. The OS-input and MCPBridge
-  check is in `receipts/2026-11-15-live-home-preview/`.
+  check is in `receipts/2026-11-15-live-home-preview/`. Two sketch-preserving
+  Switch menu scenarios passed focused frame-loop diagnostics (#3900); see
+  `receipts/2026-11-15-sketch-switch/`.
 - Quick access: the diagnostic passed 11 of 12 scenarios. Clear can open
   before selection and can clear multiple browser-selected bodies in one edit
   (#3962). Viewport body multi-selection now passes frame-loop tests; named

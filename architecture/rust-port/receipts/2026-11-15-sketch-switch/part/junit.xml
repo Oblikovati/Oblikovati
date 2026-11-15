@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: tmp/obk-sketch-switch-source/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: tmp/obk-sketch-switch-source/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T15:34:25.920908024Z" time="10.453304059"><testcase name="Scenario: Activate an open sketch from the Switch menu: tmp/obk-sketch-switch-source/features/application/document-tabs/document-tabs.feature:272:3" time="10.453304059"><system-out><![CDATA[  Scenario: Activate an open sketch from the Switch menu
+   ✔  Given two parts are open in the MCAD Software
+   ✔  And the first part is displayed in the workspace
+   ✔  And the second part has an active sketch editing environment
+   ✔  When the user opens the Switch menu on the View tab
+   ✔  And the user selects the second part from the menu
+   ✔  Then the second part becomes active
+   ✔  And its sketch viewport and model browser are displayed
+   ✔  And its sketch editing environment remains active
+   ✔  And the first part remains open
+]]></system-out></testcase></testsuite></testsuites>
