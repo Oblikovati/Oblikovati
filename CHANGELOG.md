@@ -22,6 +22,8 @@
 
 ### Fixed
 
+- Kept the rectangle placement prompt while a zero-size preview is incomplete. (#3975)
+
 - Excluded isolated task worktrees from source and documentation checks while retaining active nested modules. (#3971)
 
 - Reopened existing extrusions for distance editing from the browser, with a cancellable candidate preview. (#3968)
