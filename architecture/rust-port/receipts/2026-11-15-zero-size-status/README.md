@@ -1,6 +1,7 @@
 # Zero-size preview status
 
-Issue #3975. Application commit: `a96424d63`. The earlier live screenshot in
+Issue #3975. Application commit: `a96424d63`. The final pinned run includes
+the before-Tab assertion at commit `4f6be0ca7`. The earlier live screenshot in
 `../2026-11-15-rectangle-zero-corrected/zero_locked.png` shows the internal
 geometry error after entering zero and pressing Tab. `red.log` reproduces that
 status in the native scenario before the fix. That red run used the live,
@@ -16,10 +17,11 @@ keeps the placement prompt. It does not suppress other preview errors.
 The pinned run used clean scenario commit
 `8ec8d2c1e569fbc5c8cd2ec85e9b9380c62c147f` and passed one scenario with eight
 steps. `owner.log` covers both zero dimensions and a later valid rectangle.
+`valid-preview.log` verifies that a valid preview still matches its commit.
 Only the selected scenario was run.
 
 ```sh
-OBK_BDD_ROOT=/tmp/obk-3975-source OBK_BDD_REPORTS=/tmp/obk-3975-pinned \
+OBK_BDD_ROOT=/tmp/obk-3975-source OBK_BDD_REPORTS=/tmp/obk-3975-final \
 OBK_BDD_FEATURE=rectangle-two-point OBK_BDD_SCENARIO=rectangle-two-point-10 \
 CARGO_TARGET_DIR=/tmp/obk-3975-target \
 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 CARGO_INCREMENTAL=0 \

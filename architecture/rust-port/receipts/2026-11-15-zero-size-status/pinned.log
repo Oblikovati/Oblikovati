@@ -1,4 +1,5 @@
-    Finished `test` profile [unoptimized] target(s) in 0.16s
+   Compiling oblikovati-head v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/3975-rectangle-status/crates/head)
+    Finished `test` profile [unoptimized] target(s) in 23.41s
      Running unittests src/lib.rs (/tmp/obk-3975-target/debug/deps/oblikovati_head-d4ccfccc04854620)
 
 running 1 test
@@ -24,5 +25,5 @@ Feature: Rectangle two point
 8 steps (8 passed)
 test native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window ... ok
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1005 filtered out; finished in 12.10s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1005 filtered out; finished in 11.73s
 
