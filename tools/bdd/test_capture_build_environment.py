@@ -36,7 +36,9 @@ class CaptureBuildEnvironmentTests(unittest.TestCase):
             (external / "config.toml").write_text('[build]\nrustc-wrapper="/bad"\n')
             result = capture_build_environment(folder, {"CARGO_HOME": str(external)})
             home = Path(result["CARGO_HOME"])
-            self.assertEqual((home / "registry").resolve(), (external / "registry").resolve())
+            self.assertTrue((home / "registry").is_dir())
+            self.assertFalse((home / "registry").is_symlink())
+            self.assertFalse((home / "registry" / "src").exists())
             self.assertFalse((home / "config.toml").exists())
 
     def test_ancestor_config_is_rejected(self) -> None:

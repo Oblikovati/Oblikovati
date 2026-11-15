@@ -40,12 +40,18 @@ def isolate_cargo_home(folder: Path, environment: Mapping[str, str]) -> Path:
     home = folder / "cargo-home"
     home.mkdir()
     source = source_cargo_home(environment)
-    for name in ("registry", "git"):
-        cache = source / name
-        if cache.exists():
-            if not cache.is_dir():
-                raise ValueError(f"Cargo cache {cache}: expected a directory")
-            (home / name).symlink_to(cache.resolve(), target_is_directory=True)
+    registry = home / "registry"
+    registry.mkdir()
+    index = source / "registry" / "index"
+    if index.exists():
+        if not index.is_dir():
+            raise ValueError(f"Cargo index {index}: expected a directory")
+        (registry / "index").symlink_to(index.resolve(), target_is_directory=True)
+    git = source / "git"
+    if git.exists():
+        if not git.is_dir():
+            raise ValueError(f"Cargo Git cache {git}: expected a directory")
+        (home / "git").symlink_to(git.resolve(), target_is_directory=True)
     return home
 
 
