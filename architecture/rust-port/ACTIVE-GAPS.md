@@ -88,7 +88,9 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
   `receipts/2026-11-15-tabs-r4-current-1/` through `-8/`. The earlier full-file
   diagnostic passed 9 of 38 scenarios. The scenario owner clarified that the
   Home menu cases inspect labels and dismiss the menu; keyboard receipts are
-  stale (#3950). Three clarified Home-tab and window-list scenarios passed
+  stale (#3950). A later XTest and MCPBridge check covered neighboring tabs
+  and Home wrap; it is manual evidence, not a scenario receipt. See
+  `receipts/2026-11-15-live-tab-keyboard/`. Three clarified Home-tab and window-list scenarios passed
   a later diagnostic; see `receipts/2026-11-15-tabs-clarified/`.
 - Quick access: the diagnostic passed 11 of 12 scenarios. Clear can open
   before selection and can clear multiple browser-selected bodies in one edit
