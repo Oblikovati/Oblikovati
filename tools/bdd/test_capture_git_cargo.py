@@ -14,7 +14,8 @@ from capture_inventory import isolated_inventory
 class FakeGitCargo:
     """Create a local Git dependency and populate one disposable Cargo cache."""
 
-    def __init__(self, root: Path) -> None:
+    def __init__(self, root: Path, selector: str = "rev") -> None:
+        self.selector = selector
         self.root = root
         self.home = root / "cargo"
         self.home.mkdir()
@@ -43,13 +44,16 @@ class FakeGitCargo:
         (self.dependency / "Cargo.toml").write_text('[package]\nname="witness"\nversion="1.0.0"\nedition="2021"\n')
         (self.dependency / "src/lib.rs").write_text('pub fn value() -> u32 { 42 }\n')
         self.dependency_commit = self.commit(self.dependency)
+        if self.selector in ("tag", "branch"):
+            subprocess.run(["git", "-C", str(self.dependency), self.selector, "test-ref"], check=True)
 
     def populate_tool(self) -> None:
         """Create the inventory tool with a locked local dependency; example: fixture.populate_tool()."""
         (self.tool / "src").mkdir()
+        value = self.dependency_commit if self.selector == "rev" else "test-ref"
         (self.tool / "Cargo.toml").write_text(
             '[package]\nname="oblikovati-build"\nversion="0.1.0"\nedition="2021"\n'
-            f'[dependencies]\nwitness={{git="{self.dependency.as_uri()}",rev="{self.dependency_commit}"}}\n'
+            f'[dependencies]\nwitness={{git="{self.dependency.as_uri()}",{self.selector}="{value}"}}\n'
         )
         (self.tool / "src/main.rs").write_text('fn main() { println!("{}", witness::value()); }\n')
 
@@ -64,10 +68,11 @@ class FakeGitCargo:
 class CaptureGitCargoTests(unittest.TestCase):
     @unittest.skipUnless(shutil.which("cargo"), "requires Cargo")
     def test_real_cargo_ignores_forged_shared_git_checkout(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            fixture = FakeGitCargo(Path(directory))
-            fixture.poison_shared_checkout()
-            result = isolated_inventory(
-                fixture.tool, fixture.tool, "1" * 40, fixture.tool_commit, fixture.environment,
-            )
-            self.assertEqual(result, "42\n")
+        for selector in ("rev", "tag", "branch"):
+            with self.subTest(selector=selector), tempfile.TemporaryDirectory() as directory:
+                fixture = FakeGitCargo(Path(directory), selector)
+                fixture.poison_shared_checkout()
+                result = isolated_inventory(
+                    fixture.tool, fixture.tool, "1" * 40, fixture.tool_commit, fixture.environment,
+                )
+                self.assertEqual(result, "42\n")

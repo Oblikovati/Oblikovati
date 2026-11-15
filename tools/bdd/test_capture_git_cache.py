@@ -90,6 +90,14 @@ class CaptureGitCacheTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "expected"):
                     isolated_git_source(objects.parent, fixture.destination / "mirror")
 
+    def test_shallow_source_database_is_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            fixture = GitCacheFixture(Path(folder))
+            source = fixture.home / "git/db/parent-cache"
+            (source / "shallow").write_text(fixture.parent_commit + "\n")
+            with self.assertRaisesRegex(ValueError, "complete non-shallow source"):
+                isolated_git_source(source, fixture.destination / "mirror")
+
     def test_corrupt_git_blob_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as folder:
             fixture = GitCacheFixture(Path(folder))

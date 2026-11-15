@@ -23,18 +23,6 @@ def inventory_command(checkout: Path, revision: str) -> list[str]:
     ]
 
 
-def inventory_environment(folder: Path, environment: Mapping[str, str]) -> dict[str, str]:
-    """Restrict Cargo and Git settings; example: inventory_environment(folder, env)."""
-    settings = capture_build_environment(folder, environment)
-    settings.update({
-        "GIT_OPTIONAL_LOCKS": "0",
-        "GIT_CONFIG_NOSYSTEM": "1",
-        "GIT_CONFIG_GLOBAL": os.devnull,
-        "GIT_NO_REPLACE_OBJECTS": "1",
-    })
-    return settings
-
-
 def isolated_inventory(
     root: Path, checkout: Path, revision: str, commit: str,
     environment: Mapping[str, str] | None = None,
@@ -46,7 +34,7 @@ def isolated_inventory(
         materialize_source(root, commit, source)
         reject_ancestor_cargo_configs(source)
         host_environment = os.environ if environment is None else environment
-        settings = inventory_environment(folder, host_environment)
+        settings = capture_build_environment(folder, host_environment)
         stage_capture_dependencies(source, host_environment, settings)
         output = subprocess.check_output(
             inventory_command(checkout, revision), cwd=source, env=settings, text=True,

@@ -176,6 +176,31 @@ class NativeCargoRunTests(unittest.TestCase):
                 NativeCargoRun(root, "application", commit, FakeCargoProcess)(reports, env)
             self.assertFalse((reports / "native-test.log").exists())
 
+    def git_config_fixture_commit(self) -> str:
+        root = Path(self.repo.name)
+        self.ignored_include_commit()
+        (root / "src/lib.rs").write_text('#[test] fn application_scenarios_use_the_native_window() {}\n')
+        (root / "build.rs").write_text(
+            'fn main() { let output = std::process::Command::new("git").args(["config", "--global", "--get", "probe.value"]).output().unwrap(); assert!(!output.status.success()); }\n'
+        )
+        self.git("add", "src/lib.rs", "build.rs")
+        self.git("-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "Git config fixture")
+        return self.git("rev-parse", "HEAD").strip()
+
+    @unittest.skipUnless(shutil.which("cargo") and shutil.which("git"), "requires Cargo and Git")
+    def test_real_capture_build_cannot_read_caller_global_git_config(self) -> None:
+        root = Path(self.repo.name)
+        commit = self.git_config_fixture_commit()
+        with tempfile.TemporaryDirectory() as directory, contextlib.redirect_stdout(io.StringIO()):
+            folder = Path(directory)
+            reports, home = folder / "reports", folder / "home"
+            reports.mkdir()
+            home.mkdir()
+            (home / ".gitconfig").write_text('[probe]\n value = injected\n')
+            env = dict(os.environ, HOME=str(home), RUSTUP_HOME=os.environ.get("RUSTUP_HOME", str(Path.home() / ".rustup")))
+            status = NativeCargoRun(root, "application", commit)(reports, env)
+            self.assertEqual(status, 0, (reports / "native-test.log").read_text())
+
     def test_failed_child_output_is_still_recorded(self) -> None:
         with tempfile.TemporaryDirectory() as folder:
             reports = Path(folder)

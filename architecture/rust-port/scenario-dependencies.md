@@ -80,8 +80,8 @@ caller cache after checking its SHA-256 against Cargo.lock; Cargo extracts those
 archives into a new source tree when the committed Cargo configuration selects
 those archives. It stages shallow Git databases for each locked commit and its
 recursive gitlinks, then checks their objects with Git fsck. Cargo creates fresh
-Git checkouts. The staging copies object stores without caller Git configuration
-and refuses ambiguous commits, alternate object stores, and shallow source
+Git checkouts. Staging excludes caller Git configuration; the capture build
+also disables global and system Git configuration. Staging refuses ambiguous commits, alternate object stores, and shallow source
 databases. It links the caller's registry index, sets Cargo offline, and refuses
 Cargo configuration above the exported source before and after the run. The committed source's
 Cargo configuration remains in effect. Display and renderer variables in the
