@@ -15,8 +15,8 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 - **R0 remains open.** The full gate, baseline fields and milestone exit audits
   are incomplete. Run `python3 -B tools/bdd/behavior_cli.py report` for current
   counts; source and application changes can make earlier receipts stale.
-- At `8aa822fad5b0505f55371cc461e393d6041f92ed`, the ledger reported one
-  current verified scenario, 179 stale receipts and 21 blocked scenarios
+- At `6fde7ee56762469a2b39270ff19b04110fe96793`, the ledger reported zero
+  current verified scenarios, 180 stale receipts and 21 blocked scenarios
   across 2,720 declarations. Application changes made prior receipts stale.
   The gate also requires baseline fields for 2,577 scenarios.
 - `rust-work` is local and has not passed the full pre-push gate. All 20 former
@@ -40,7 +40,9 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   `Oblikovati/Martensite`; do not modify the kernel in this lane.
 - GUI unit tests isolate the shared ImGui context under parallel execution
   (#3878). The final eight-thread run passed 495 tests; the production context
-  ownership check still rejects a second active owner.
+  ownership check still rejects a second active owner. Two native head tests
+  still race under parallel execution; the clean-base comparison is in
+  `receipts/2026-11-15-clear-context-comparison/`.
 
 ## Queue
 
@@ -95,7 +97,8 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 
 - Document opening: the native scenario that activates an already open part
   passed all nine steps at `8aa822fad` (#3889); see
-  `receipts/2026-11-15-open-existing-refresh/`. Input is frame-loop scripted.
+  `receipts/2026-11-15-open-existing-refresh/`. The receipt is now stale after
+  the Clear change. Input is frame-loop scripted.
 - Document opening: Express open and Load Full are in `rust-work` (#3949).
   The pinned journey passes 13 of 14 steps; Finish and Simplify need the
   scenario clarification recorded in #3963. Saved views require matching source,
@@ -113,7 +116,8 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   source clarification in their `BLOCKERS.md`. The keyboard scenario receipts
   predate later source changes (#3950).
 - Quick access: the diagnostic passed 11 of 12 scenarios. Measure and Clear
-  for one preselected body are available. Clear has confirmation, undo and
+  for one body are available; Clear can open before body selection (#3962).
+  Clear has confirmation, undo and
   redo checks in `receipts/2026-11-15-clear-appearance/`; its wider selection
   workflow remains open (#3962). The recorded profile remains incomplete
   (#3955).
