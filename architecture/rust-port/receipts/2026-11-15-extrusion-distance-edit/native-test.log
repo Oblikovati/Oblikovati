@@ -1,0 +1,8 @@
+    Finished `test` profile [unoptimized] target(s) in 0.15s
+     Running unittests src/lib.rs (/tmp/obk-extrusion-edit-3968/debug/deps/oblikovati_head-d4ccfccc04854620)
+
+running 1 test
+test native::gui_loop_tests::application_bdd::solid_extrusion::acceptance::browser_distance_edit_previews_cancels_commits_and_reopens ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 982 filtered out; finished in 24.93s
+
