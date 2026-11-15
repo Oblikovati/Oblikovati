@@ -51,12 +51,23 @@ def inherited_workspace_values(repository: Path, tree: Mapping[str, str], root: 
     return package, workspace_root
 
 
-def check_inherited_path(actual: object, name: str, workspace: Mapping[str, object], workspace_root: str, root: str, label: str) -> None:
-    """Compare an explicit inherited path; example: check_inherited_path(actual, name, workspace, '.', 'crate', label)."""
+def locked_highest_priority_readme(tree: Mapping[str, str], root: str) -> str | None:
+    """Find a tracked regular highest-priority default; example: locked_highest_priority_readme(tree, 'crate')."""
+    path = posixpath.join(root, "README.md") if root != "." else "README.md"
+    identity = tree.get(path, "")
+    if identity.startswith(("100644:blob:", "100755:blob:")):
+        return "README.md"
+    return None
+
+
+def check_inherited_path(actual: object, name: str, workspace: Mapping[str, object], workspace_root: str, root: str, label: str, tree: Mapping[str, str]) -> None:
+    """Compare an explicit inherited path; example: check_inherited_path(actual, name, workspace, '.', 'crate', label, tree)."""
     names = ("license-file", "license_file") if name == "license-file" else ("readme",)
     expected = declaration(workspace, names, label)
     if name == "readme" and expected is None:
-        return
+        expected = locked_highest_priority_readme(tree, workspace_root)
+        if expected is None:
+            return
     if name == "readme" and expected is True:
         expected = "README.md"
     path = relative_workspace_path(expected, workspace_root, root, label, name)
@@ -72,9 +83,9 @@ def check_workspace_paths(original: Mapping[str, object], output: Mapping[str, o
         return
     workspace, workspace_root = inherited_workspace_values(repository, tree, root, label)
     if readme:
-        check_inherited_path(output.get("readme"), "readme", workspace, workspace_root, root, label)
+        check_inherited_path(output.get("readme"), "readme", workspace, workspace_root, root, label, tree)
     if license_file:
-        check_inherited_path(declaration(output, names, label), "license-file", workspace, workspace_root, root, label)
+        check_inherited_path(declaration(output, names, label), "license-file", workspace, workspace_root, root, label, tree)
 
 
 def check_git_manifest_path_metadata(source: bytes, generated: bytes, repository: Path, tree: Mapping[str, str], root: str, label: str) -> None:
@@ -85,6 +96,8 @@ def check_git_manifest_path_metadata(source: bytes, generated: bytes, repository
         raise ValueError(f"manifest {label} packages {(original, output)!r}: expected two tables")
     readme = original.get("readme")
     readme_inherited = inherited_path(readme, label, "readme")
+    if readme is None:
+        readme = locked_highest_priority_readme(tree, root)
     if readme is not None and not readme_inherited:
         compare_path_value(output.get("readme"), explicit_readme(readme, label), label, "readme")
     names = ("license-file", "license_file")
