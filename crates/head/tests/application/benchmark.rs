@@ -19,6 +19,10 @@ use world::ApplicationWorld;
 pub(super) fn window_geometry(title: &str) -> Option<([f32; 2], [f32; 2])> {
     diagnostics::window_geometry(title)
 }
+/// Read GUI window bounds; example: `window_occlusions()` before a viewport pixel check.
+pub(super) fn window_occlusions() -> Vec<[f32; 4]> {
+    diagnostics::window_occlusions()
+}
 pub(super) fn pointer_pixels(position: [f32; 2]) -> [i32; 2] {
     diagnostics::pointer_pixels(position)
 }
@@ -115,7 +119,7 @@ mod model_browser;
 mod project_dialog;
 #[path = "quick-access-toolbar/steps.rs"]
 mod quick_access_toolbar;
-mod rectangle_visibility;
+pub(crate) mod rectangle_visibility;
 #[path = "ribbon-appearance/steps.rs"]
 mod ribbon_appearance;
 #[path = "ribbon-command-availability/steps.rs"]
