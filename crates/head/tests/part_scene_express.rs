@@ -55,6 +55,7 @@ fn save_qualified_assembly(
             .unwrap(),
         sources: files.assembly_saved_sources(assembly, &path).unwrap(),
         catalog_digest: files.assembly_view_catalog_digest().unwrap(),
+        producer_digest: crate::assembly_producer::current_executable_digest().unwrap(),
         chord_error: 0.05,
         angular_error: 0.5,
         triangles: triangles.clone(),
@@ -78,6 +79,7 @@ fn express_scene_uses_saved_triangles_and_full_load_replaces_it() {
             "test",
             &mut guids,
             (DISPLAY_MESH.chord_error, DISPLAY_MESH.angular_error),
+            &crate::assembly_producer::current_executable_digest().unwrap(),
         )
         .unwrap()
         .session_id();

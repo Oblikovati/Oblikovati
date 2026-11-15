@@ -12,6 +12,10 @@ pub enum TopologyEntityKind {
 pub trait PartTopologyAccess<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>:
     crate::PartUpdateAccess<O, W, F>
 {
+    /// Identify the code and dependencies that produce persisted assembly views.
+    /// Example: `access.assembly_view_producer()?` before staging a cache.
+    fn assembly_view_producer(&mut self) -> Result<String, String>;
+
     /// Present an assembly without transient selection or visibility.
     /// Example: `access.assembly_view(files, document)?` before qualifying its cache.
     fn assembly_view(

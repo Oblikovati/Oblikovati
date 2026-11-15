@@ -144,6 +144,7 @@ fn typed_express_open_and_load_full_keep_the_document_identity() {
         occurrences: Vec::new(),
         sources: Vec::new(),
         catalog_digest: files.assembly_view_catalog_digest().unwrap(),
+        producer_digest: "c".repeat(64),
         chord_error: 0.05,
         angular_error: 0.5,
         triangles: Vec::new(),
@@ -175,10 +176,25 @@ fn typed_express_open_and_load_full_keep_the_document_identity() {
             .contains("display policy")
     );
     assert!(files.workspace().documents().is_empty());
+    let no_producer = Client::new(
+        FileHost::new(&mut files, &mut source, "test")
+            .with_observer_factory(&mut factory)
+            .with_assembly_display_limits((0.05, 0.5)),
+    );
+    assert!(
+        no_producer
+            .documents()
+            .open(&request)
+            .unwrap_err()
+            .to_string()
+            .contains("producer identity")
+    );
+    assert!(files.workspace().documents().is_empty());
     let strict_policy = Client::new(
         FileHost::new(&mut files, &mut source, "test")
             .with_observer_factory(&mut factory)
-            .with_assembly_display_limits((0.01, 0.5)),
+            .with_assembly_display_limits((0.01, 0.5))
+            .with_assembly_producer(Ok("c".repeat(64))),
     );
     assert!(
         strict_policy
@@ -192,7 +208,8 @@ fn typed_express_open_and_load_full_keep_the_document_identity() {
     let client = Client::new(
         FileHost::new(&mut files, &mut source, "test")
             .with_observer_factory(&mut factory)
-            .with_assembly_display_limits((0.05, 0.5)),
+            .with_assembly_display_limits((0.05, 0.5))
+            .with_assembly_producer(Ok("c".repeat(64))),
     );
     let opened = client.documents().open(&request).unwrap();
     assert!(opened.express);
@@ -253,6 +270,7 @@ fn assembly_with_saved_component() -> (DiscoveryWorkspace, QueryGuids, PathBuf, 
             .unwrap(),
         sources: files.assembly_saved_sources(root, &destination).unwrap(),
         catalog_digest: files.assembly_view_catalog_digest().unwrap(),
+        producer_digest: "c".repeat(64),
         chord_error: 0.05,
         angular_error: 0.5,
         triangles: vec![SavedAssemblyTriangle {
@@ -279,7 +297,8 @@ fn failed_load_full_keeps_express_mode_until_components_resolve() {
         let client = Client::new(
             FileHost::new(&mut files, &mut source, "test")
                 .with_observer_factory(&mut factory)
-                .with_assembly_display_limits((0.05, 0.5)),
+                .with_assembly_display_limits((0.05, 0.5))
+                .with_assembly_producer(Ok("c".repeat(64))),
         );
         client
             .documents()
@@ -298,7 +317,8 @@ fn failed_load_full_keeps_express_mode_until_components_resolve() {
         let client = Client::new(
             FileHost::new(&mut files, &mut source, "test")
                 .with_observer_factory(&mut factory)
-                .with_assembly_display_limits((0.05, 0.5)),
+                .with_assembly_display_limits((0.05, 0.5))
+                .with_assembly_producer(Ok("c".repeat(64))),
         );
         assert!(
             client
@@ -313,7 +333,8 @@ fn failed_load_full_keeps_express_mode_until_components_resolve() {
         let client = Client::new(
             FileHost::new(&mut files, &mut source, "test")
                 .with_observer_factory(&mut factory)
-                .with_assembly_display_limits((0.05, 0.5)),
+                .with_assembly_display_limits((0.05, 0.5))
+                .with_assembly_producer(Ok("c".repeat(64))),
         );
         client
             .documents()

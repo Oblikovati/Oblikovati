@@ -41,13 +41,14 @@ pub struct SavedAssemblyView {
     pub occurrences: Vec<AssemblyOccurrenceRecipe>,
     pub sources: Vec<AssemblySourceRecord>,
     pub catalog_digest: String,
+    pub producer_digest: String,
     pub chord_error: f64,
     pub angular_error: f64,
     pub triangles: Vec<SavedAssemblyTriangle>,
 }
 impl SavedAssemblyView {
     /// Current format; example: `view.version == SavedAssemblyView::VERSION`.
-    pub const VERSION: u32 = 1;
+    pub const VERSION: u32 = 2;
     /// Validate the display data and manifest shape before a save is attempted.
     /// Example: `view.validate_content()?` before staging a cache.
     pub fn validate_content(&self) -> Result<(), PackageCodecError> {
@@ -75,6 +76,18 @@ impl SavedAssemblyView {
                     "assembly view {name} error {actual}: expected a positive finite value at most {limit} (positive and finite)"
                 )));
             }
+        }
+        Ok(())
+    }
+
+    /// Require the producer that generated this display cache.
+    /// Example: `view.validate_producer(expected_digest)?` before display.
+    pub fn validate_producer(&self, expected: &str) -> Result<(), PackageCodecError> {
+        if !is_sha256(expected) || self.producer_digest != expected {
+            return Err(PackageCodecError(format!(
+                "assembly view producer {:?}: expected SHA-256 digest {expected:?}",
+                self.producer_digest
+            )));
         }
         Ok(())
     }
@@ -162,10 +175,11 @@ fn validate_content(view: &SavedAssemblyView) -> Result<(), PackageCodecError> {
         || !view.angular_error.is_finite()
         || view.angular_error <= 0.
         || !is_sha256(&view.catalog_digest)
+        || !is_sha256(&view.producer_digest)
     {
         return Err(PackageCodecError(format!(
-            "assembly view version {}, mesh and catalog {:?}: expected a supported version, finite positive mesh limits and a SHA-256 digest",
-            view.version, view.catalog_digest
+            "assembly view version {}, mesh, catalog {:?} and producer {:?}: expected a supported version, finite positive mesh limits and SHA-256 digests",
+            view.version, view.catalog_digest, view.producer_digest
         )));
     }
     for occurrence in &view.occurrences {

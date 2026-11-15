@@ -438,7 +438,9 @@ fn borrowed_host<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFi
     construction: &'a dyn oblikovati_model::sketch::SketchCircleConstruction,
     captures: &'a mut Option<crate::DesktopWindowCaptures>,
 ) -> FileHost<'a, O, W, F> {
+    let producer = scenes.assembly_producer_digest();
     let host = FileHost::new(files, guids, version)
+        .with_assembly_producer(producer)
         .with_observer_factory(factory)
         .with_part_topology(scenes)
         .with_assembly_display_limits((

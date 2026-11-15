@@ -61,6 +61,14 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
         let limits = self.assembly_display_limits.ok_or_else(|| {
             Error("express assembly display limits: expected an injected display policy".into())
         })?;
+        let producer = self
+            .assembly_producer
+            .as_ref()
+            .ok_or_else(|| {
+                Error("express assembly producer: expected an injected producer identity".into())
+            })?
+            .as_ref()
+            .map_err(|error| Error(error.clone()))?;
         let observers = &mut self.observers;
         let outcome = self
             .files
@@ -70,6 +78,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
                 self.version,
                 self.source,
                 limits,
+                producer,
             )
             .map_err(|error| Error(error.to_string()))?;
         let id = outcome.session_id();

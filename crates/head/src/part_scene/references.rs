@@ -106,6 +106,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartTopologyAccess<O, W, F>
     for DesktopPartScenes
 {
+    fn assembly_view_producer(&mut self) -> Result<String, String> {
+        self.assembly_producer_digest()
+    }
     fn assembly_view(
         &mut self,
         files: &mut FileWorkspace<O, W, F>,

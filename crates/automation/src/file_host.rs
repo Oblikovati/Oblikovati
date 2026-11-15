@@ -78,6 +78,7 @@ struct FileContext<'a, O: TransactionObserver, W, F> {
     sketch_construction: Option<SketchConstructionAccess<'a>>,
     part_topology: Option<&'a mut dyn crate::PartTopologyAccess<O, W, F>>,
     assembly_display_limits: Option<(f64, f64)>,
+    assembly_producer: Option<Result<String, String>>,
     part_update: Option<&'a mut dyn crate::PartUpdateAccess<O, W, F>>,
     extrusion: Option<&'a dyn crate::ExtrudeRegionAccess>,
     drawing_views: Option<&'a dyn crate::DrawingViewProjectionAccess>,
@@ -85,6 +86,12 @@ struct FileContext<'a, O: TransactionObserver, W, F> {
         Option<&'a mut dyn oblikovati_model::application_options::SketchPreferenceAccess>,
 }
 impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHost<'a, O, W, F> {
+    /// Set the current display producer identity.
+    /// Example: `host.with_assembly_producer(Ok(digest))`.
+    pub fn with_assembly_producer(mut self, producer: Result<String, String>) -> Self {
+        self.context.get_mut().assembly_producer = Some(producer);
+        self
+    }
     /// Set the active display quality for saved assembly views.
     /// Example: `host.with_assembly_display_limits((0.05, 0.5))`.
     pub fn with_assembly_display_limits(mut self, limits: (f64, f64)) -> Self {
@@ -197,6 +204,7 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHos
                 sketch_preferences: None,
                 part_topology: None,
                 assembly_display_limits: None,
+                assembly_producer: None,
                 part_update: None,
                 extrusion: None,
                 drawing_views: None,

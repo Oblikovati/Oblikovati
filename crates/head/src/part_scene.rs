@@ -71,6 +71,7 @@ pub struct HeadSceneUpdate {
 }
 #[derive(Default)]
 pub(crate) struct DesktopPartScenes {
+    producer_digest: Option<Result<String, String>>,
     source: Option<assembly::SceneSource>,
     scene_failure: Option<(u64, u64, String)>,
     presentation_invalidated: bool,
@@ -79,6 +80,12 @@ pub(crate) struct DesktopPartScenes {
     slot: PartEvaluationSlot<NamedPrismSnapshot, oblikovati_martensite::EvaluationFailure>,
 }
 impl DesktopPartScenes {
+    pub(crate) fn assembly_producer_digest(&mut self) -> Result<String, String> {
+        self.producer_digest
+            .get_or_insert_with(crate::assembly_producer::current_executable_digest)
+            .clone()
+    }
+
     pub(crate) fn sketch_continuity_resolver<
         O: TransactionObserver,
         W: WorkspaceObserver,

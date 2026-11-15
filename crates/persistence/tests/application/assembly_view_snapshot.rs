@@ -25,6 +25,7 @@ fn sample() -> (DocumentPackage, SavedAssemblyView) {
             digest: "a".repeat(64),
         }],
         catalog_digest: "b".repeat(64),
+        producer_digest: "c".repeat(64),
         chord_error: 0.05,
         angular_error: 0.5,
         triangles: vec![SavedAssemblyTriangle {
@@ -66,6 +67,34 @@ fn saved_mesh_must_meet_both_current_display_limits() {
     }
     view.chord_error = f64::NAN;
     assert!(view.validate_display_quality(0.05, 0.5).is_err());
+}
+
+#[test]
+fn cache_requires_the_same_nonempty_producer_identity() {
+    let (_, view) = sample();
+    assert!(view.validate_producer(&"c".repeat(64)).is_ok());
+    for producer in [String::new(), "d".repeat(64), "z".repeat(64)] {
+        let error = view.validate_producer(&producer).unwrap_err();
+        assert!(error.to_string().contains("producer"), "{error}");
+    }
+}
+
+#[test]
+fn old_cache_without_producer_identity_is_refused() {
+    let (package, view) = sample();
+    let saved = package.with_saved_assembly_view(&view).unwrap();
+    let bytes = saved.streams().get(SECTION).unwrap();
+    let mut envelope: AssemblyViewEnvelope = serde_yaml_ng::from_slice(bytes).unwrap();
+    let mut old: serde_yaml_ng::Value = serde_yaml_ng::from_str(&envelope.content).unwrap();
+    let mapping = old.as_mapping_mut().unwrap();
+    mapping.remove(serde_yaml_ng::Value::String("producerDigest".into()));
+    mapping.insert("version".into(), 1.into());
+    envelope.content = serde_yaml_ng::to_string(&old).unwrap();
+    envelope.digest = RecipeDigest::of_recipe(envelope.content.as_bytes()).to_string();
+    let encoded = serde_yaml_ng::to_string(&envelope).unwrap();
+    let old_package = saved.with_stream(SECTION, encoded.as_bytes());
+    let error = old_package.restore_saved_assembly_view().unwrap_err();
+    assert!(error.to_string().contains("producerDigest"), "{error}");
 }
 
 #[test]
