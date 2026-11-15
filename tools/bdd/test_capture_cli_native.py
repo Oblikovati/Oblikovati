@@ -221,6 +221,23 @@ class NativeCargoRunTests(unittest.TestCase):
                 NativeCargoRun(root, "application", commit, FakeCargoProcess)(reports, {"OBK_BDD_REPORTS": str(reports)})
             self.assertFalse((reports / "native-test.log").exists())
 
+    @unittest.skipUnless(shutil.which("cargo"), "requires Cargo")
+    def test_real_capture_refuses_build_script_lockfile_change(self) -> None:
+        root = Path(self.repo.name)
+        self.ignored_include_commit()
+        (root / "src/lib.rs").write_text('#[test] fn application_scenarios_use_the_native_window() {}\n')
+        (root / "build.rs").write_text(
+            'fn main() { std::fs::write(concat!(env!("CARGO_MANIFEST_DIR"), "/Cargo.lock"), "changed").unwrap(); }\n'
+        )
+        self.git("add", "src/lib.rs", "build.rs")
+        self.git("-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "lock fixture")
+        commit = self.git("rev-parse", "HEAD").strip()
+        with tempfile.TemporaryDirectory() as folder, contextlib.redirect_stdout(io.StringIO()):
+            reports = Path(folder)
+            with self.assertRaisesRegex(ValueError, "expected unchanged capture lockfile"):
+                NativeCargoRun(root, "application", commit)(reports, dict(os.environ))
+            self.assertFalse((reports / "native-test.log").exists())
+
     def test_failed_child_output_is_still_recorded(self) -> None:
         with tempfile.TemporaryDirectory() as folder:
             reports = Path(folder)

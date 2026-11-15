@@ -31,6 +31,7 @@ class CaptureDependencyStageTests(unittest.TestCase):
             registry, git = FakeDependencyStage(root, True), FakeDependencyStage(root)
             env, settings = {"CARGO_HOME": str(root / "host")}, {"CARGO_HOME": str(root / "local")}
             with patch("capture_dependency_stage.stage_registry_cache", registry), patch("capture_dependency_stage.stage_git_cache", git):
-                stage_capture_dependencies(root, env, settings)
+                with self.assertRaisesRegex(ValueError, "expected unchanged capture lockfile"):
+                    stage_capture_dependencies(root, env, settings)
             self.assertEqual(registry.calls, [(b"original", root / "host", root / "local")])
             self.assertEqual(git.calls, registry.calls)

@@ -120,9 +120,9 @@ locked commits and recursive submodules with Git fsck. Cargo uses fresh source
 and checkout directories. The copied index is not authenticated.
 
 The source Cargo config may contain only the current xtask alias and Linux
-rpath setting. Other settings are refused until reviewed. Workspace manifests
+rpath setting. Other settings are refused until reviewed. All exported Cargo manifests
 cannot contain patch or replace tables or paths outside the export. These files
-are checked before and after the build. Tools, dependency build scripts, host
+and the lockfile are checked before and after the build. Tools, dependency build scripts, host
 files, runtime settings, and changes during the build remain unproven. All locked
 registry archives and Git commits, including submodules, must be available in
 the local cache. The build needs temporary disk space for these inputs.

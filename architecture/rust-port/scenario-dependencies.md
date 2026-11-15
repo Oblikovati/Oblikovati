@@ -84,9 +84,9 @@ committed source settings select them. Staging excludes caller Git config and
 refuses ambiguous commits, alternate object stores, and shallow source databases.
 
 The project Cargo config is restricted to the current xtask alias and Linux
-rpath setting. Other settings are refused until reviewed. Workspace manifests
+rpath setting. Other settings are refused until reviewed. All exported Cargo manifests
 must not contain patch or replace tables, and their path fields must remain
-inside the export. The checks repeat after each build. Display and renderer
+inside the export. The config, manifests, and lockfile are checked again after each build. Display and renderer
 variables are passed through and their values are not attested. Host tools,
 Git SHA-1, the registry index, external files, dependency build scripts, and
 concurrent changes remain unproven. Other processes can alter inputs during a
