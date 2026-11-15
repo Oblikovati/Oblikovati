@@ -43,8 +43,10 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   ownership check still rejects a second active owner. Native windows and
   headless diagnostics now share a test-only lease (#3878). Two Clear tests
   passed twice with two threads, and a mixed group of 15 passed with eight;
-  the full native head suite remains unverified. A later partial serial run
-  recorded two failures; see `receipts/2026-11-15-head-partial/`.
+  the full native head suite remains unverified. A partial serial run
+  recorded two failures; see `receipts/2026-11-15-head-partial/`. The native
+  composition test passes with the sized Xvfb setup (#3973); use
+  `make gate-xvfb` to run the actual gate on a suitable virtual display.
 
 ## Queue
 
