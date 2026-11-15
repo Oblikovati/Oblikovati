@@ -115,6 +115,9 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
   part window and returning to the first passed a focused diagnostic; see
   `receipts/2026-11-15-second-part-window/`. Three focused window view, zoom
   and close diagnostics passed; see `receipts/2026-11-15-part-window-views/`.
+  A later full pinned run passed all 38 scenarios, but its overflow capture
+  revealed an incorrect active-tab highlight (#3992). See
+  `receipts/2026-11-15-document-tabs-full-final/`. The result is diagnostic.
 - Quick access: the diagnostic passed 11 of 12 scenarios. Clear can open
   before selection and can clear multiple browser-selected bodies in one edit
   (#3962). Viewport body multi-selection now passes frame-loop tests; named
