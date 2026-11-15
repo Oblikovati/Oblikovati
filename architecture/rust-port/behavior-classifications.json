@@ -4453,7 +4453,7 @@
     },
     {
       "id": "scenario:d0dc7b66959fc4df19efd5d8ab6d2537215ebd05bf9e5e4b6c25906beb719df1",
-      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+      "source_revision": "8ec8d2c1e569fbc5c8cd2ec85e9b9380c62c147f",
       "source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2",
       "milestone": "R4",
       "owner": "desktop",
@@ -4463,11 +4463,8 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "verified",
-      "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-15-document-saving-full/receipt-d0dc7b66959fc4df.json",
-        "sha256": "478e6359d8810abe0a4fcba516d2af714ac078c5e7f0ee7567af9631792877cd"
-      },
+      "state": "inventoried",
+      "last_receipt": null,
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Native document save, close, or reopen lifecycle.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
@@ -4477,6 +4474,11 @@
           "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
           "path": "architecture/rust-port/receipts/2026-11-14-save-cancel-notice/receipt-d0dc7b66959fc4df.json",
           "sha256": "446003c9336ee9a625d51e948f80d1ad0f2fdfec82af997a60aee04d5a048fd7"
+        },
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-document-saving-full/receipt-d0dc7b66959fc4df.json",
+          "sha256": "478e6359d8810abe0a4fcba516d2af714ac078c5e7f0ee7567af9631792877cd"
         }
       ],
       "go_test_premise": "Go aa8297d1b: package-store save/reopen, missing-path and MRU tests pass; they do not check this native dialog or saved-sketch scenario. See receipts/2026-11-14-go-save-open-baseline/README.md.",
@@ -4489,7 +4491,7 @@
     },
     {
       "id": "scenario:14f48e698bd03b3faf10660cc4dddccfa827d553243c2c8f76d8a0089380b700",
-      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+      "source_revision": "8ec8d2c1e569fbc5c8cd2ec85e9b9380c62c147f",
       "source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2",
       "milestone": "R4",
       "owner": "desktop",
@@ -4499,11 +4501,8 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "verified",
-      "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-15-document-saving-full/receipt-14f48e698bd03b3f.json",
-        "sha256": "09e85bb5a9bfa900325846e88a6bbf44235d8cd2528573ffb57cca052fd0f9e7"
-      },
+      "state": "inventoried",
+      "last_receipt": null,
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Native document save, close, or reopen lifecycle.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
@@ -4513,6 +4512,11 @@
           "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
           "path": "architecture/rust-port/receipts/2026-11-14-empty-part-reopen/receipt-14f48e698bd03b3f.json",
           "sha256": "ae978c36a5dc7738ad77deee53d63a68602d6e73498b514c1ba1bb403ac6b35d"
+        },
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-document-saving-full/receipt-14f48e698bd03b3f.json",
+          "sha256": "09e85bb5a9bfa900325846e88a6bbf44235d8cd2528573ffb57cca052fd0f9e7"
         }
       ],
       "go_test_premise": "Go aa8297d1b: package-store save/reopen, missing-path and MRU tests pass; they do not check this native dialog or saved-sketch scenario. See receipts/2026-11-14-go-save-open-baseline/README.md.",
@@ -4525,7 +4529,7 @@
     },
     {
       "id": "scenario:cb5f795341d33e8781b661f83c644b2437997cfcbb69421d51fa51155c7ce1ed",
-      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+      "source_revision": "8ec8d2c1e569fbc5c8cd2ec85e9b9380c62c147f",
       "source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2",
       "milestone": "R4",
       "owner": "desktop",
@@ -4535,11 +4539,8 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "verified",
-      "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-15-document-saving-full/receipt-cb5f795341d33e87.json",
-        "sha256": "2b9310cde59ef726410d723836a7f69fb4232b06f55749911f785880877e14d8"
-      },
+      "state": "inventoried",
+      "last_receipt": null,
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Native document save, close, or reopen lifecycle.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
@@ -4549,6 +4550,11 @@
           "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
           "path": "architecture/rust-port/receipts/2026-11-14-save-sketch-edges/receipt-cb5f795341d33e87.json",
           "sha256": "91cc453e4f883d12a6dee3747b5330a9fc7c7b9ce77a979f6bbb9131d6810b1d"
+        },
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-document-saving-full/receipt-cb5f795341d33e87.json",
+          "sha256": "2b9310cde59ef726410d723836a7f69fb4232b06f55749911f785880877e14d8"
         }
       ],
       "go_test_premise": "Go aa8297d1b: package-store save/reopen, missing-path and MRU tests pass; they do not check this native dialog or saved-sketch scenario. See receipts/2026-11-14-go-save-open-baseline/README.md.",
@@ -4634,7 +4640,7 @@
     },
     {
       "id": "scenario:52a88b77aefd086f7782feb68b7421f2f95dcd54958176983fc77f5b2e1a1b66",
-      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+      "source_revision": "8ec8d2c1e569fbc5c8cd2ec85e9b9380c62c147f",
       "source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2",
       "milestone": "R4",
       "owner": "desktop",
@@ -4644,11 +4650,8 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "verified",
-      "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-15-document-saving-full/receipt-52a88b77aefd086f.json",
-        "sha256": "c1c5bbda2b75c5dca7fd254a48443098238dd8ff49099a8694d1c83710513965"
-      },
+      "state": "inventoried",
+      "last_receipt": null,
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Native document save, close, or reopen lifecycle.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
@@ -4659,11 +4662,18 @@
       "kernel_integration": "The desktop owner retains the part and sketch after the canceled close; no B-rep operation is asserted.",
       "rust_tests": "application_scenarios_use_the_native_window: Cancel closing a modified unsaved part",
       "oracle": "Pinned native scenario assertions and reviewed final capture; Go dialog parity is not established.",
-      "expected_result": "the user chooses Cancel; the part remains active; its sketch remains in the model browser"
+      "expected_result": "the user chooses Cancel; the part remains active; its sketch remains in the model browser",
+      "historical_receipts": [
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-document-saving-full/receipt-52a88b77aefd086f.json",
+          "sha256": "c1c5bbda2b75c5dca7fd254a48443098238dd8ff49099a8694d1c83710513965"
+        }
+      ]
     },
     {
       "id": "scenario:93af71b702f4432ad324512d976b8c68d1cbc9c11e2f0bf5514abe81fedbdb3e",
-      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+      "source_revision": "8ec8d2c1e569fbc5c8cd2ec85e9b9380c62c147f",
       "source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2",
       "milestone": "R4",
       "owner": "desktop",
@@ -4673,11 +4683,8 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "verified",
-      "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-15-document-saving-full/receipt-93af71b702f4432a.json",
-        "sha256": "8cd08b7584ce4c5f7d3ba2292ccff442d2f721bdae7e293b916d4555a5e40f1e"
-      },
+      "state": "inventoried",
+      "last_receipt": null,
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Native document save, close, or reopen lifecycle.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
@@ -4688,7 +4695,14 @@
       "kernel_integration": "The desktop owner retains the part and sketch after the canceled close; no B-rep operation is asserted.",
       "rust_tests": "application_scenarios_use_the_native_window: Cancel the first save requested while closing a part",
       "oracle": "Pinned native scenario assertions and reviewed final capture; Go dialog parity is not established.",
-      "expected_result": "the user cancels Save As; the part remains active; its sketch remains in the model browser"
+      "expected_result": "the user cancels Save As; the part remains active; its sketch remains in the model browser",
+      "historical_receipts": [
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-document-saving-full/receipt-93af71b702f4432a.json",
+          "sha256": "8cd08b7584ce4c5f7d3ba2292ccff442d2f721bdae7e293b916d4555a5e40f1e"
+        }
+      ]
     },
     {
       "id": "scenario:688d756622cc25dc4d9bdef3efe4aba56339ba73f01748fc67987a5b1327c3bf",
@@ -4714,7 +4728,7 @@
     },
     {
       "id": "scenario:f9b64673e9d0caa73b8c69814bde87fbec67e340d1d4877052120439c06e62b2",
-      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+      "source_revision": "8ec8d2c1e569fbc5c8cd2ec85e9b9380c62c147f",
       "source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2",
       "milestone": "R4",
       "owner": "desktop",
@@ -4724,11 +4738,8 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "verified",
-      "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-15-document-saving-full/receipt-f9b64673e9d0caa7.json",
-        "sha256": "2d19add13dd93998e22cb64ce98797c3ffe82fa9046d9bdd2bf169b6eb6e62a8"
-      },
+      "state": "inventoried",
+      "last_receipt": null,
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Native document save, close, or reopen lifecycle.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
@@ -4738,6 +4749,11 @@
           "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
           "path": "architecture/rust-port/receipts/2026-11-14-save-on-close/receipt-f9b64673e9d0caa7.json",
           "sha256": "b291288fd1379ded0de35cf70bd473fb2995999dabca6fdb2db70095cb6ebc0d"
+        },
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-document-saving-full/receipt-f9b64673e9d0caa7.json",
+          "sha256": "2d19add13dd93998e22cb64ce98797c3ffe82fa9046d9bdd2bf169b6eb6e62a8"
         }
       ],
       "go_test_premise": "Go aa8297d1b: package-store save/reopen, missing-path and MRU tests pass; they do not check this native dialog or saved-sketch scenario. See receipts/2026-11-14-go-save-open-baseline/README.md.",
@@ -4976,7 +4992,7 @@
     },
     {
       "id": "scenario:9eede5804b59d06f5535a48596c3a86031cc80da50203c62cc669fdc794babf2",
-      "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+      "source_revision": "8ec8d2c1e569fbc5c8cd2ec85e9b9380c62c147f",
       "source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2",
       "milestone": "R4",
       "owner": "desktop",
@@ -4986,11 +5002,8 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "verified",
-      "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-15-document-saving-full/receipt-9eede5804b59d06f.json",
-        "sha256": "a0660a0a45a42e143bcb4a5e7adba7c1dd4e8370ecbf36b19f7f0a93de2ead68"
-      },
+      "state": "inventoried",
+      "last_receipt": null,
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Native document save, close, or reopen lifecycle.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
@@ -5001,7 +5014,14 @@
       "kernel_integration": "The desktop owner retains the unsaved part; the test checks existing file bytes after No.",
       "rust_tests": "application_scenarios_use_the_native_window: Decline replacing an existing part during first save",
       "oracle": "Pinned native scenario assertions, existing-file byte comparison, and reviewed final capture; Go dialog parity is not established.",
-      "expected_result": "No closes the replacement confirmation, preserves the existing file and Save As dialog; cancel leaves the new unsaved part active."
+      "expected_result": "No closes the replacement confirmation, preserves the existing file and Save As dialog; cancel leaves the new unsaved part active.",
+      "historical_receipts": [
+        {
+          "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+          "path": "architecture/rust-port/receipts/2026-11-15-document-saving-full/receipt-9eede5804b59d06f.json",
+          "sha256": "a0660a0a45a42e143bcb4a5e7adba7c1dd4e8370ecbf36b19f7f0a93de2ead68"
+        }
+      ]
     },
     {
       "id": "scenario:29faf9bb78c1fe481e8278f78bf88fded3506448069ee2778bb73ba656f93fd8",
