@@ -51,6 +51,7 @@ glyph_catalog! {
     Fillet => "fillet",
     Chamfer => "chamfer",
     Move => "move",
+    Measure => "measure",
     RectangularPattern => "rectangular-pattern",
     CircularPattern => "circular-pattern",
     Simplify => "simplify",
