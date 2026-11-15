@@ -30,12 +30,12 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
   status message was fixed and tested in #3975; see
   `receipts/2026-11-15-zero-size-status/`.
 - Center-point circle: five early scenarios passed a native diagnostic on the
-  current pin (#3910). The diameter-edit run passed its steps but used an
-  ordinary line for a midpoint-line fixture; #3996 tracks the correction.
+  current pin (#3910). The diameter-edit scenario passed with a corrected
+  midpoint-line fixture (#3996); the earlier plain-line result is historical.
   The measurement fixture for scenario 08 uses precise input even though its
   title says mouse-created; the scenario folder requests clarification.
   See `receipts/2026-11-15-circle-portable-diagnostic/` and
-  `receipts/2026-11-15-circle-midpoint-fixture-gap/`.
+  `receipts/2026-11-15-circle-midpoint-3996/`.
 - Two-point rectangle: the four portable scenarios passed a diagnostic on the
   current pin (#3886). Six capture-only cases were not executed; the result
   is not verified acceptance. See
