@@ -4,6 +4,8 @@
 
 ### Changed
 
+- Discarded closed document-window preview images and stale pending updates. (#3987)
+
 - Added type-preserving integer, number, boolean, and byte property editing to iProperties. (#3958)
 
 - Added an optional locked-registry comparison to the offline BDD build probe. (#3978)

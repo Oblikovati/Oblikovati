@@ -2,6 +2,43 @@
 use super::*;
 use oblikovati_model::sketch::SketchPlane;
 #[test]
+fn implicit_window_identity_changes_only_when_the_original_window_closes() {
+    let (mut owner, awake) = owner();
+    let document = create(&mut owner, &awake);
+    owner.new_document_window().unwrap();
+    let extra = owner.active_window.unwrap();
+    owner.close_document_window(extra).unwrap();
+    assert!(
+        owner
+            .gui_command_state()
+            .unwrap()
+            .document_window_identity_revisions
+            .is_empty()
+    );
+
+    // No GUI state is sampled between creating a view and closing the original.
+    owner.new_document_window().unwrap();
+    owner.close_document_window(document).unwrap();
+    let first = owner
+        .gui_command_state()
+        .unwrap()
+        .document_window_identity_revisions[&document];
+    owner.new_document_window().unwrap();
+    owner.close_document_window(document).unwrap();
+    let second = owner
+        .gui_command_state()
+        .unwrap()
+        .document_window_identity_revisions[&document];
+    assert!(first > 0 && second > first);
+    owner
+        .close_document_from_gui(&CloseDocumentArgs {
+            id: document,
+            force: true,
+        })
+        .unwrap();
+    assert!(!owner.window_identity_revisions.contains_key(&document));
+}
+#[test]
 fn document_snapshot_and_gui_activation_follow_the_same_file_owner() {
     let (mut owner, awake) = owner();
     let first = create(&mut owner, &awake);

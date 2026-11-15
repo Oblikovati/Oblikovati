@@ -67,6 +67,7 @@ impl GuiFrameEngine {
             self.command_alias.text(),
         );
         let over_fields = crate::sketch::line::hud_panel(ui, request);
+        self.document_tabs.previews.synchronize(&request.commands);
         self.document_tabs.panel(
             ui,
             request,
@@ -265,12 +266,7 @@ impl GuiFrameEngine {
         if popup_open {
             self.document_tabs.previews.showing = None;
         }
-        selected.extend(self.document_tabs.previews.take_changed_picture().map(
-            |(document, picture)| GuiShellAction::KeepDocumentPicture {
-                document,
-                picture: Some(picture),
-            },
-        ));
+        self.document_tabs.previews.enqueue_picture(&mut selected);
         let snapshot = capture_frame(self.context.render(), request.extent, &self.resources)?;
         let mut activity = frame_activity()?;
         let mut capture = input_capture(self.context.io());

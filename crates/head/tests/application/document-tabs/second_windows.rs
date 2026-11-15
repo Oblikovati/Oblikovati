@@ -203,6 +203,27 @@ fn no_number(world: &mut ApplicationWorld) {
         run.text
     );
 }
+
+#[test]
+fn hidden_tabs_survive_closing_a_window_and_show_the_survivor_preview() {
+    let mut world = ApplicationWorld::new();
+    two_windows(&mut world);
+    let part = world.previous_document.unwrap();
+    super::toggle_tabs_option(&mut world);
+    assert!(super::super::diagnostics::window_geometry("##open-document-tabs").is_none());
+    control_f4(&mut world);
+    assert!(world.state().document_windows.is_empty());
+    assert!(world.document_is_open(part));
+    super::toggle_tabs_option(&mut world);
+    world.pump(Vec::new());
+    let name = world.document_name(part);
+    let at = world.expect_tab(&name).center().map(|value| value as i32);
+    world.hover(at);
+    world.pump(Vec::new());
+    assert!(super::super::diagnostics::window_geometry("##tab-preview").is_some());
+    world.save_capture("hidden-tab-surviving-window-preview");
+    world.close();
+}
 // Separate zoom
 #[given("the first window displays an active sketch")]
 fn first_active_sketch(world: &mut ApplicationWorld) {

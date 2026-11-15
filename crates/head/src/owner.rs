@@ -196,6 +196,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     /// The last outlined browser row, keyed by what it was worked out from.
     browser_outline: Option<(browser_selection::BrowserOutlineSource, Vec<[[f64; 3]; 2]>)>,
     document_windows: Vec<oblikovati_gui::GuiDocumentWindow>,
+    window_identity_revisions: std::collections::BTreeMap<u64, u64>,
     active_window: Option<u64>,
     window_serial: u64,
     recent_documents: Vec<oblikovati_model::application_recent::RecentDocument>,
@@ -279,6 +280,7 @@ impl<
             body_physical: Default::default(),
             browser_outline: None,
             document_windows: Vec::new(),
+            window_identity_revisions: Default::default(),
             active_window: None,
             window_serial: 0,
             recent_documents: Vec::new(),
@@ -465,38 +467,33 @@ fn borrowed_host<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFi
         None => host,
     }
 }
-#[path = "owner_marking_menu.rs"]
-mod marking_menu;
-#[path = "owner_shortcuts.rs"]
-mod owner_shortcuts;
-#[path = "owner_placement.rs"]
-mod placement;
-#[path = "owner_point_preview.rs"]
-mod point_preview;
-#[cfg(test)]
-#[path = "../tests/owner.rs"]
-pub(crate) mod tests;
-
-#[path = "owner_placement_input.rs"]
-mod placement_input;
-
-#[path = "owner_sketch_edit.rs"]
-mod sketch_environment;
-
 #[path = "owner_themes.rs"]
 mod application_themes;
-
+#[path = "owner_marking_menu.rs"]
+mod marking_menu;
 #[path = "owner_orientation_selection.rs"]
 mod orientation_selection;
 #[path = "owner_command_state.rs"]
 mod owner_command_state;
-#[path = "owner_prompts.rs"]
-mod owner_prompts;
-#[path = "owner_ui_scale.rs"]
-mod ui_scale;
-
 #[path = "owner_extrusion.rs"]
 mod owner_extrusion;
+#[path = "owner_prompts.rs"]
+mod owner_prompts;
+#[path = "owner_shortcuts.rs"]
+mod owner_shortcuts;
+#[path = "owner_placement.rs"]
+mod placement;
+#[path = "owner_placement_input.rs"]
+mod placement_input;
+#[path = "owner_point_preview.rs"]
+mod point_preview;
+#[path = "owner_sketch_edit.rs"]
+mod sketch_environment;
+#[cfg(test)]
+#[path = "../tests/owner.rs"]
+pub(crate) mod tests;
+#[path = "owner_ui_scale.rs"]
+mod ui_scale;
 
 #[path = "owner_extrusion_preview.rs"]
 mod owner_extrusion_preview;
