@@ -67,7 +67,7 @@ fn line_uses(
         })
         .collect()
 }
-/// Resolve a current fully constrained sketch to all bounded analytic regions.
+/// Resolve a current converged sketch to all bounded analytic regions.
 /// Example: `certified_sketch_regions(&document, sketch_id, resolution)?` before choosing a profile.
 pub fn certified_sketch_regions(
     document: &DocumentSnapshot,
@@ -88,7 +88,7 @@ pub fn certified_sketch_regions_with_policy(
     policy: crate::PrismResolutionPolicy,
 ) -> Result<Vec<SketchRegionBoundary>, EvaluationFailure> {
     let sketch = document
-        .require_resolved_sketch(sketch_id)
+        .require_converged_resolved_sketch(sketch_id)
         .map_err(|cause| {
             Phase::Input
                 .refused(Kind::InvalidInput, Entity::Body, cause.to_string())

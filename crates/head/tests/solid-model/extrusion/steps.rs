@@ -210,3 +210,14 @@ fn extrusion_reopens_for_sketch(world: &mut ApplicationWorld) {
     world.run_in_window("Extrude", "Sketch1");
     world.expect_text("Profiles");
 }
+
+#[test]
+fn unconstrained_rectangle_resumes_waiting_extrusion_with_preview() {
+    let mut world = ApplicationWorld::new();
+    rectangle_for_waiting_extrusion(&mut world);
+    finish_requested_profile(&mut world);
+    world.pump(Vec::new());
+    waiting_extrusion_shows_profile(&mut world);
+    waiting_extrusion_shows_default_preview(&mut world);
+    world.close();
+}

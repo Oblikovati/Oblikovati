@@ -113,3 +113,52 @@ fn extrusion_acceptance_and_history_restore_a_visible_solid() {
     restored_solid_is_visible(&mut world);
     world.close();
 }
+
+#[test]
+fn free_rectangle_extrusion_survives_undo_and_redo() {
+    let mut world = ApplicationWorld::new();
+    super::rectangle_for_waiting_extrusion(&mut world);
+    super::finish_requested_profile(&mut world);
+    world.pump(Vec::new());
+    super::waiting_extrusion_shows_profile(&mut world);
+    super::replace_extrusion_distance(&mut world, "8");
+    world.pump(Vec::new());
+    accept_and_replay(&mut world);
+    restored_solid_is_visible(&mut world);
+    let directory = tempfile::tempdir().unwrap();
+    save_and_reopen(&mut world, &directory.path().join("free-rectangle.opd"));
+    world.pump(Vec::new());
+    restored_solid_is_visible(&mut world);
+    world.close();
+}
+
+fn save_and_reopen(world: &mut ApplicationWorld, path: &std::path::Path) {
+    use oblikovati_api::{
+        client::Client,
+        wire::{CloseDocumentArgs, OpenDocumentArgs, SaveDocumentAsArgs},
+    };
+    let document = world.active_id();
+    let path = path.to_str().unwrap().to_owned();
+    let client = Client::new(world.app().owner.document_host());
+    client
+        .documents()
+        .save_as(&SaveDocumentAsArgs {
+            document,
+            new_full_document_name: path.clone(),
+        })
+        .unwrap();
+    client
+        .documents()
+        .close(&CloseDocumentArgs {
+            id: document,
+            force: true,
+        })
+        .unwrap();
+    client
+        .documents()
+        .open(&OpenDocumentArgs {
+            full_document_name: path,
+            ..Default::default()
+        })
+        .unwrap();
+}

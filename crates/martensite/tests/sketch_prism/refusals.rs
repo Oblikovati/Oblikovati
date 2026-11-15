@@ -11,7 +11,7 @@ fn refusal(
         .unwrap()
 }
 #[test]
-fn absent_free_and_failed_verification_never_reuse_a_previous_body() {
+fn absent_and_failed_verification_never_reuse_a_previous_body() {
     let mut document = selected_sketch_document();
     let mut recipe = document.sketches.get(SKETCH).unwrap().geometry().recipe();
     recipe.constraints.pop();
@@ -21,7 +21,10 @@ fn absent_free_and_failed_verification_never_reuse_a_previous_body() {
         .unwrap();
     assert!(refusal(&document, &selected_sketch_boundary()).contains("verification absent"));
     solve_selected_sketches(&mut document);
-    assert!(refusal(&document, &selected_sketch_boundary()).contains("degrees of freedom"));
+    let body =
+        retain_selected_sketch_prism(&document, SKETCH, &selected_sketch_boundary(), [0., 0., 2.])
+            .unwrap();
+    assert_analytic_scalar(body.report().properties.volume, 24.);
     document.parameters.set_expression(1, "missing").unwrap();
     solve_selected_sketches(&mut document);
     assert!(refusal(&document, &selected_sketch_boundary()).contains("verification failed"));

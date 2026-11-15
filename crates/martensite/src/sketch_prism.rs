@@ -17,7 +17,7 @@ pub use oblikovati_model::feature::sketch_prism::{SketchDirectedCurve, SketchPri
 use oblikovati_model::feature::{sketch_prism::SketchPrismDefinition, work_geometry::DatumLength};
 use oblikovati_model::{document_sketch::DocumentSketchId, history::DocumentSnapshot};
 pub use profile_extent::{SketchProfileExtent, sketch_profile_extent};
-/// Consume current fully constrained geometry and placement before retaining a diagnostic prism.
+/// Consume current converged geometry and placement before retaining a diagnostic prism.
 /// Example: `retain_selected_sketch_prism(&snapshot, sketch_id, &selection, [0., 0., 2.])?`.
 pub fn retain_selected_sketch_prism(
     snapshot: &DocumentSnapshot,

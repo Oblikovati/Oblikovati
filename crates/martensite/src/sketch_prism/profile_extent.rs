@@ -22,7 +22,7 @@ pub fn sketch_profile_extent(
     sketch_id: DocumentSketchId,
 ) -> Result<SketchProfileExtent, EvaluationFailure> {
     let sketch = document
-        .require_resolved_sketch(sketch_id)
+        .require_converged_resolved_sketch(sketch_id)
         .map_err(|cause| {
             Phase::Input
                 .refused(Kind::InvalidInput, Entity::Body, cause.to_string())

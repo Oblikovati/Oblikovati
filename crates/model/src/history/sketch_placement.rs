@@ -20,6 +20,10 @@ pub struct ResolvedDocumentSketch<'a> {
     pub plane: SketchPlane,
     pub verification: &'a SketchSolveDiagnostics,
 }
+enum RequiredSolve {
+    FullyConstrained,
+    Converged,
+}
 /// A local placement or verification decline retains the source failure.
 #[derive(Clone, Debug, PartialEq)]
 pub enum DocumentSketchPlacementError {
@@ -118,9 +122,21 @@ impl DocumentSnapshot {
         let points = self
             .resolve_sketch_projected_points(id)
             .map_err(DocumentSketchPlacementError::Sketch)?;
-        self.verified_sketch(id, plane, points)
+        self.verified_sketch(id, plane, points, RequiredSolve::FullyConstrained)
     }
-    pub(crate) fn require_sketch_with_datums(
+    /// Resolve current solved geometry for profile use, including free variables.
+    /// Example: `snapshot.require_converged_resolved_sketch(id)?` before region discovery.
+    pub fn require_converged_resolved_sketch(
+        &self,
+        id: DocumentSketchId,
+    ) -> Result<ResolvedDocumentSketch<'_>, DocumentSketchPlacementError> {
+        let plane = self.resolve_sketch_plane(id)?;
+        let points = self
+            .resolve_sketch_projected_points(id)
+            .map_err(DocumentSketchPlacementError::Sketch)?;
+        self.verified_sketch(id, plane, points, RequiredSolve::Converged)
+    }
+    pub(crate) fn require_converged_sketch_with_datums(
         &self,
         id: DocumentSketchId,
         datums: &WorkPlaneEvaluation,
@@ -129,21 +145,28 @@ impl DocumentSnapshot {
         let points = self
             .projected_points_with_datums(id, datums)
             .map_err(DocumentSketchPlacementError::Sketch)?;
-        self.verified_sketch(id, plane, points)
+        self.verified_sketch(id, plane, points, RequiredSolve::Converged)
     }
     fn verified_sketch(
         &self,
         id: DocumentSketchId,
         plane: SketchPlane,
         points: Vec<crate::sketch::SketchPoint2D>,
+        requirement: RequiredSolve,
     ) -> Result<ResolvedDocumentSketch<'_>, DocumentSketchPlacementError> {
         let sketch = self
             .sketches
             .get(id)
             .map_err(DocumentSketchPlacementError::Sketch)?;
-        let verification = sketch
-            .require_fully_constrained_with_projection_inputs(&self.parameters, &Ok(points))
-            .map_err(DocumentSketchPlacementError::Verification)?;
+        let projections = Ok(points);
+        let verification = match requirement {
+            RequiredSolve::FullyConstrained => sketch
+                .require_fully_constrained_with_projection_inputs(&self.parameters, &projections),
+            RequiredSolve::Converged => {
+                sketch.require_converged_with_projection_inputs(&self.parameters, &projections)
+            }
+        }
+        .map_err(DocumentSketchPlacementError::Verification)?;
         Ok(ResolvedDocumentSketch {
             sketch,
             plane,
