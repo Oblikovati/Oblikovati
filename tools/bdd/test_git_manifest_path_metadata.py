@@ -3,7 +3,7 @@
 
 import unittest
 
-from git_manifest_path_metadata import check_git_manifest_path_metadata, explicit_readme, inherited_path, relative_workspace_path
+from git_manifest_path_metadata import check_git_manifest_path_metadata, explicit_readme, inherited_path, relative_workspace_path, locked_highest_priority_readme
 from test_git_manifest_metadata import MetadataRepository
 from git_object_inventory import locked_git_tree
 from pathlib import Path
@@ -56,6 +56,25 @@ class PathMetadataTests(unittest.TestCase):
             with self.subTest(name=name):
                 with self.assertRaisesRegex(ValueError, 'expected locked source'):
                     self.check(source, generated.replace(name, 'forged'))
+
+    def test_locked_highest_priority_defaults_reject_changed_values(self) -> None:
+        (self.fixture.repository / 'README.md').write_text('workspace')
+        (self.fixture.repository / 'crate/README.md').write_text('crate')
+        self.fixture.git.git('add', '.')
+        self.fixture.git.git('commit', '-qm', 'default readmes')
+        self.fixture.tree = locked_git_tree(self.fixture.repository, self.fixture.git.git('rev-parse', 'HEAD'))
+        self.check('', 'readme="README.md"\n')
+        self.check('readme.workspace=true\n', 'readme="../README.md"\n')
+        for source in ('', 'readme.workspace=true\n'):
+            with self.subTest(source=source):
+                with self.assertRaisesRegex(ValueError, 'readme.*expected locked'):
+                    self.check(source, 'readme="README.txt"\n')
+
+    def test_submodule_symlink_and_lower_priority_are_not_inferred(self) -> None:
+        for identity in ('160000:commit:' + 'a' * 40, '120000:blob:' + 'a' * 40, ''):
+            with self.subTest(identity=identity):
+                tree = {'crate/README.md': identity, 'crate/README.txt': '100644:blob:' + 'b' * 40}
+                self.assertIsNone(locked_highest_priority_readme(tree, 'crate'))
 
     def test_workspace_path_resolution_and_rejections(self) -> None:
         self.assertEqual(relative_workspace_path('doc/README.md', '.', 'crates/a', 'fixture', 'readme'), '../../doc/README.md')

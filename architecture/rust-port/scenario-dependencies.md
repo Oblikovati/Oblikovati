@@ -299,10 +299,12 @@ false to false. Three real Cargo-vendored Git fixtures exercised these cases.
 Explicit workspace README and license-file paths are also checked when they use
 portable relative path components. The pinned Cargo parser uses a [lexical path
 calculation](https://github.com/rust-lang/cargo/blob/5f94df4789f005f9a352888e8355ffc645b7ed0e/src/workspace/workspace.rs#L2134-L2158).
-Other inherited path syntax is declined. Inherited README without an explicit
-workspace value remains unverified: Cargo [checks the filesystem](https://github.com/rust-lang/cargo/blob/5f94df4789f005f9a352888e8355ffc645b7ed0e/src/workspace/parser/mod.rs#L845-L879)
-for default README names. A locked Git tree alone does not prove the checkout
-contained no extra files. Full manifest and runtime provenance remain unproven.
+Other inherited path syntax is declined. For default README discovery, the checker compares a tracked regular
+`README.md`, the highest-priority candidate, in the package or workspace root.
+Other default cases remain unverified: Cargo [checks the filesystem](https://github.com/rust-lang/cargo/blob/5f94df4789f005f9a352888e8355ffc645b7ed0e/src/workspace/parser/mod.rs#L845-L879)
+for default README names. Lower-priority names can be shadowed by files that
+are absent from the locked tree. Symlinks and submodule paths are not used for
+this inference, and Git trees alone do not bound their checkout contents. Full manifest and runtime provenance remain unproven.
 
 The checks passed on 18 Git packages and 22,972 tracked vendor files; the
 [copied field observation](receipts/2026-11-15-git-copied-fields/README.md)
