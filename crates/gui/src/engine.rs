@@ -340,18 +340,13 @@ fn workspace_front(
     crate::application::document_tabs::previews::PreviewKey,
     [[f32; 2]; 2],
 )> {
-    use crate::application::document_tabs::previews::PreviewKey;
+    use crate::application::document_tabs::previews::front_key;
     let scale = request.layout_scale();
     let bounds = [
         [area.left * scale[0], area.top * scale[1]],
         [area.right * scale[0], area.bottom * scale[1]],
     ];
-    if home_active {
-        return Some((PreviewKey::Home, bounds));
-    }
-    let document = request.commands.document?;
-    let window = request.commands.active_window.unwrap_or(document);
-    Some((PreviewKey::Window(window), bounds))
+    front_key(&request.commands, home_active).map(|key| (key, bounds))
 }
 impl GuiFrameEngine {
     /// Keep a window's picture for its tab; example: after each completed presentation.

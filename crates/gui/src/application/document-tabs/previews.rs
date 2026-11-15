@@ -11,6 +11,16 @@ pub(crate) enum PreviewKey {
     Home,
     Window(u64),
 }
+/// Identify the workspace that the next frame will present.
+/// Example: `front_key(&state, true)` selects Home.
+pub(crate) fn front_key(state: &crate::GuiCommandState, home_active: bool) -> Option<PreviewKey> {
+    if home_active {
+        return Some(PreviewKey::Home);
+    }
+    state
+        .document
+        .map(|document| PreviewKey::Window(state.active_window.unwrap_or(document)))
+}
 /// The tab under the pointer in this frame.
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct HoveredTab {
@@ -35,6 +45,9 @@ pub(crate) struct TabPreviews {
     pub showing: Option<(PreviewKey, [[f32; 2]; 2])>,
     revisions: BTreeMap<u64, u64>,
     preview_visible: bool,
+    deferred_preview: bool,
+    // #3989: multiple draws can precede presentation; only a captured frame clears the guard.
+    captured_front: Option<PreviewKey>,
 }
 impl TabPreviews {
     /// Keep what the workspace shows now; the area is in window pixels.
@@ -47,6 +60,7 @@ impl TabPreviews {
             return;
         };
         if let Some(image) = cropped_picture(extent, rgba, minimum, maximum) {
+            self.captured_front = Some(key);
             if let Some(document) = self.showing_document {
                 self.document_picture = Some((document, key, image.clone()));
             }
@@ -86,6 +100,7 @@ impl TabPreviews {
     /// Drop closed views before sending pending pictures; example: `previews.synchronize(state)`.
     pub(crate) fn synchronize(&mut self, state: &crate::GuiCommandState) {
         self.preview_visible = false;
+        self.deferred_preview = false;
         let current = open_windows(state);
         let revisions = identity_revisions(state);
         let collapsed = changed_window_identities(&self.revisions, &revisions);
@@ -93,6 +108,10 @@ impl TabPreviews {
             PreviewKey::Home => true,
             PreviewKey::Window(id) => !collapsed.contains(id) && has_window(&current, *id),
         });
+        if matches!(self.captured_front, Some(PreviewKey::Window(id)) if collapsed.contains(&id) || !has_window(&current, id))
+        {
+            self.captured_front = None;
+        }
         self.forget_closed_picture(&current, &collapsed);
         self.forget_closed_front(&current, &collapsed);
         self.revisions = revisions;
@@ -132,10 +151,19 @@ impl TabPreviews {
         }
     }
     /// Keep the preview in the viewport without covering the hovered tab.
-    pub(crate) fn panel(&mut self, ui: &Ui, hovered: Option<&HoveredTab>) {
+    pub(crate) fn panel(
+        &mut self,
+        ui: &Ui,
+        hovered: Option<&HoveredTab>,
+        front: Option<PreviewKey>,
+    ) {
         let Some(tab) = hovered else {
             return;
         };
+        if self.needs_clean_front_capture(front) {
+            self.deferred_preview = true;
+            return;
+        }
         let Some((placement, image_size)) = preview_dimensions(ui, tab) else {
             return;
         };
@@ -157,6 +185,14 @@ impl TabPreviews {
                 }
                 self.picture(ui, tab.key, image_size);
             });
+    }
+    fn needs_clean_front_capture(&self, front: Option<PreviewKey>) -> bool {
+        front.is_some() && self.captured_front != front
+    }
+    /// Request the deferred preview frame after the clean capture.
+    /// Example: `previews.needs_frame()` after drawing a changed front.
+    pub(crate) fn needs_frame(&self) -> bool {
+        self.deferred_preview
     }
     fn picture(&self, ui: &Ui, key: PreviewKey, size: [f32; 2]) {
         let [x, y] = ui.cursor_screen_pos();

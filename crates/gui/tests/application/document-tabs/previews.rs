@@ -89,6 +89,69 @@ fn visible_preview_is_not_captured_inside_its_own_picture() {
     previews.note_frame([2, 2], &[200; 16]);
     assert_ne!(previews.images[&PreviewKey::Window(7)], original);
 }
+
+#[test]
+fn changed_front_gets_a_clean_frame_before_the_preview() {
+    let mut previews = TabPreviews {
+        showing: Some((PreviewKey::Window(7), [[0., 0.], [2., 2.]])),
+        showing_document: Some(7),
+        ..Default::default()
+    };
+    assert!(previews.needs_clean_front_capture(Some(PreviewKey::Home)));
+    previews.showing = Some((PreviewKey::Home, [[0., 0.], [2., 2.]]));
+    previews.showing_document = None;
+    previews.note_frame([2, 2], &[9; 16]);
+    assert!(previews.images.contains_key(&PreviewKey::Home));
+    assert!(!previews.needs_clean_front_capture(Some(PreviewKey::Home)));
+    previews.preview_visible = true;
+    previews.note_frame([2, 2], &[200; 16]);
+    assert_eq!(previews.images[&PreviewKey::Home].rgb[0], [9, 9, 9]);
+}
+
+#[test]
+fn front_key_uses_home_or_the_active_document_window() {
+    let mut state = crate::GuiCommandState {
+        document: Some(7),
+        ..Default::default()
+    };
+    assert_eq!(front_key(&state, true), Some(PreviewKey::Home));
+    assert_eq!(front_key(&state, false), Some(PreviewKey::Window(7)));
+    state.active_window = Some(90);
+    assert_eq!(front_key(&state, false), Some(PreviewKey::Window(90)));
+    state.document = None;
+    assert_eq!(front_key(&state, false), None);
+}
+
+#[test]
+fn deferred_preview_requests_another_frame() {
+    let mut context = crate::test_context::create();
+    context.set_ini_filename(None);
+    context.io_mut().display_size = [800., 600.];
+    context.fonts().build_rgba32_texture();
+    let ui = context.frame();
+    let tab = HoveredTab {
+        key: PreviewKey::Home,
+        bounds: [[50., 300.], [150., 325.]],
+        labels: vec!["Home".into()],
+    };
+    let mut previews = TabPreviews {
+        showing: Some((PreviewKey::Window(7), [[0., 0.], [2., 2.]])),
+        ..Default::default()
+    };
+    previews.panel(ui, Some(&tab), Some(PreviewKey::Home));
+    assert!(previews.needs_frame());
+    assert!(!previews.preview_visible);
+    previews.synchronize(&crate::GuiCommandState::default());
+    previews.showing = Some((PreviewKey::Home, [[0., 0.], [2., 2.]]));
+    previews.panel(ui, Some(&tab), Some(PreviewKey::Home));
+    assert!(previews.needs_frame());
+    assert!(!previews.preview_visible);
+    previews.note_frame([2, 2], &[9; 16]);
+    previews.synchronize(&crate::GuiCommandState::default());
+    previews.panel(ui, Some(&tab), Some(PreviewKey::Home));
+    assert!(!previews.needs_frame());
+    assert!(previews.preview_visible);
+}
 #[test]
 fn an_unchanged_picture_is_told_once() {
     let mut previews = TabPreviews {
@@ -145,6 +208,7 @@ fn closed_document_loses_picture_and_pending_notification() {
     assert!(previews.images.contains_key(&PreviewKey::Home));
     assert!(previews.take_changed_picture().is_none());
     assert!(previews.showing.is_none());
+    assert_eq!(previews.captured_front, None);
 }
 
 #[test]
@@ -195,6 +259,7 @@ fn collapsing_windows_discards_ambiguous_original_identity() {
     state.document_window_identity_revisions.insert(1, 1);
     previews.synchronize(&state);
     assert!(!previews.images.contains_key(&PreviewKey::Window(1)));
+    assert_eq!(previews.captured_front, None);
     assert!(previews.take_changed_picture().is_none());
     capture(&mut previews, 1, 1);
     assert!(previews.take_changed_picture().is_some());
