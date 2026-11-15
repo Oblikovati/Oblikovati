@@ -121,6 +121,8 @@
 
 ### Added
 
+- Added an experimental committed-source exporter for native BDD build investigations. (#3978)
+
 - Added a native scenario receipt command that checks its artifacts before publication. (#3865)
 
 - Added a diagnostic mode to report native BDD step gaps after failures. (#3863)

@@ -63,3 +63,24 @@ this limitation as a stale reason and retains the historical receipt.
 Issue #3978 tracks a bounded build and independently checked provenance.
 The experimental sealed runner bounds parts of execution; it does not prove
 how the runner was built and does not remove this limitation.
+
+## Committed build source experiment
+
+On POSIX hosts, `tools/bdd/committed_build_source.py` exports a Git commit to a new directory
+outside the checkout. It checks every archive file against its tracked Git blob,
+rejects links and submodules, and refuses missing, extra, duplicate or altered
+files. Ignored, untracked and dirty worktree files are not copied. It uses a
+restricted Git environment. For example:
+
+```sh
+python3 -B tools/bdd/committed_build_source.py "$PWD" FULL_COMMIT_SHA \
+  /absolute/path/to/new-source > /absolute/path/to/source-inventory.json
+```
+
+The inventory includes SHA-256 hashes and always reports `reusable: false`.
+The output directory is writable; changes after export are not prevented or
+checked by this command. The command does not bound Cargo dependencies,
+compiler and linker binaries, build scripts, environment, system libraries,
+or host changes during a build. It is a source preparation experiment, not a
+build or receipt proof. It is not connected to the native capture path. #3978
+remains open until those inputs and the built runner are independently checked.
