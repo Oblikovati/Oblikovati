@@ -32,6 +32,7 @@ fn recorded_control_points() -> [[f64; 2]; 3] {
     ]
 }
 #[when("I open Measure, move its panel aside and select the curve")]
+#[when("the user open Measure, move its panel aside and select the curve")]
 fn measure_rotated_ellipse(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::M, false);
     let (position, _) = diagnostics::window_geometry("Measure").expect("expected Measure");
@@ -47,6 +48,7 @@ fn measure_rotated_ellipse(world: &mut ApplicationWorld) {
     let center = geometry.point(ellipse.center()).unwrap().position;
     let point = ellipse.evaluate(center, 0.7).unwrap().position;
     let pixel = world.sketch_pixel_of(point);
+    world.expect_segment_drawn(pixel, pixel);
     world.sketch_click(pixel);
 }
 #[then("Selection 1 is identified as Ellipse")]

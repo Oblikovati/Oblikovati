@@ -5,7 +5,7 @@ use super::*;
 const TOOLBAR: &str = "##selection-toolbar";
 /// Well inside the block's outline, in the home view.
 const SMALL_VIEW_FACTOR: f64 = 4.;
-/// A shaded face in the accent colour fills many times what an outline does.
+// A shaded face in the accent colour fills many times what an outline does.
 
 fn expect_toolbar(shown: bool) {
     assert_eq!(

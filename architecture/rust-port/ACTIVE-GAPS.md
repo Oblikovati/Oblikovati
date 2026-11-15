@@ -33,6 +33,12 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
   current pin (#3886). Six capture-only cases were not executed; the result
   is not verified acceptance. See
   `receipts/2026-11-15-rectangle-portable-diagnostic/`.
+- Ellipse measurement: the updated step now reaches the visible ellipse, but
+  the analytic pick returns a distant boundary. `ellipse-05` is blocked by
+  [Martensite #406](https://github.com/Oblikovati/Martensite/issues/406); see
+  `receipts/2026-11-15-ellipse-measure-blocked/`. The five R4 ellipse scenarios
+  passed a diagnostic; curvature display remains open in #3995. See
+  `receipts/2026-11-15-ellipse-wording-diagnostic/`.
 - Three-point arc: the collinear-input boundary scenario passed; see
   `receipts/2026-11-15-arc-boundary-refresh/`. Its receipt is now stale.
 - Extrusion editing: browser distance editing, candidate preview, cancel,
