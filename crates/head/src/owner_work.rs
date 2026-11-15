@@ -405,6 +405,15 @@ impl<
     ) -> Result<bool, String> {
         self.click_model_with_window(document, line, Some(window))
     }
+    fn click_model_with_modifiers(
+        &mut self,
+        document: u64,
+        line: [[f64; 3]; 2],
+        window: Option<f64>,
+        toggle: bool,
+    ) -> Result<bool, String> {
+        self.click_model_with_modifiers(document, line, window, toggle)
+    }
     fn selected_browser_outline(&mut self) -> Vec<[[f64; 3]; 2]> {
         self.current_browser_outline()
     }

@@ -165,15 +165,20 @@ pub(super) fn dispatch_gui_action(
         GuiShellAction::ViewCommand(command) => {
             return authoring::view_command(window, owner, command);
         }
-        GuiShellAction::ClickModel { document, pixel } => {
+        GuiShellAction::ClickModel {
+            document,
+            pixel,
+            toggle,
+        } => {
             let line = window.view_line(*pixel)?;
-            let Some([_, height]) = window.window_capture_extent()? else {
-                return owner.click_model_from_gui(*document, line);
+            let depth_window = match window.window_capture_extent()? {
+                Some([_, height]) => Some(crate::part_scene::pick_candidates::depth_window(
+                    window.view_camera()?.scale,
+                    height,
+                )?),
+                None => None,
             };
-            let camera = window.view_camera()?;
-            let depth_window =
-                crate::part_scene::pick_candidates::depth_window(camera.scale, height)?;
-            return owner.click_model_with_window(*document, line, depth_window);
+            return owner.click_model_with_modifiers(*document, line, depth_window, *toggle);
         }
         GuiShellAction::StartSketchAt {
             document,

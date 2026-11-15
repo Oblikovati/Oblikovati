@@ -97,3 +97,99 @@ fn viewport_ray_from_inside_a_solid_selects_the_forward_face() {
         .unwrap();
     assert_eq!(picked.1, oblikovati_martensite::PrismFaceRole::End);
 }
+
+#[test]
+fn viewport_toggle_preserves_other_selected_bodies_and_can_remove_the_pick() {
+    use oblikovati_session::selection::SelectionClickMode::Replace;
+    let (mut owner, _) = owner();
+    let document = super::super::part_scene::open_prism(&mut owner, false);
+    owner.take_scene().unwrap();
+    let body = owner
+        .gui_browser_snapshot(document)
+        .unwrap()
+        .bodies
+        .remove(0);
+    owner
+        .files
+        .commands(document)
+        .unwrap()
+        .apply_browser_body_click(
+            "other-body",
+            oblikovati_model::feature::FeatureId(99),
+            Replace,
+        );
+    let ray = [[1., 1., 10.], [0., 0., -1.]];
+    owner
+        .click_model_with_modifiers(document, ray, Some(0.1), true)
+        .unwrap();
+    let selection = owner
+        .documents()
+        .workspace()
+        .session(document)
+        .unwrap()
+        .selected_browser_bodies();
+    assert_eq!(
+        selection
+            .iter()
+            .map(|item| item.key.as_str())
+            .collect::<Vec<_>>(),
+        ["other-body", body.key.as_str()]
+    );
+    owner
+        .click_model_with_modifiers(document, ray, Some(0.1), true)
+        .unwrap();
+    let selection = owner
+        .documents()
+        .workspace()
+        .session(document)
+        .unwrap()
+        .selected_browser_bodies();
+    assert_eq!(
+        selection
+            .iter()
+            .map(|item| item.key.as_str())
+            .collect::<Vec<_>>(),
+        ["other-body"]
+    );
+}
+
+#[test]
+fn unsupported_face_toggle_reports_failure_and_preserves_body_selection() {
+    use oblikovati_session::selection::SelectionKind;
+    let (mut owner, _) = owner();
+    let document = super::super::part_scene::open_prism(&mut owner, false);
+    owner.take_scene().unwrap();
+    let ray = [[1., 1., 10.], [0., 0., -1.]];
+    owner
+        .click_model_with_window(document, ray, Some(0.1))
+        .unwrap();
+    let key = owner
+        .documents()
+        .workspace()
+        .session(document)
+        .unwrap()
+        .selected_browser_body()
+        .unwrap()
+        .0
+        .to_owned();
+    owner
+        .ambient_selection
+        .move_kind(owner.ambient_selection.rank(SelectionKind::Face), 0);
+    owner
+        .click_model_with_modifiers(document, ray, Some(0.1), true)
+        .unwrap();
+    assert!(
+        matches!(owner.take_command_notice(), Some(crate::DesktopCommandNotice::SelectionFailed { cause }) if cause.contains("face viewport toggle"))
+    );
+    assert_eq!(
+        owner
+            .documents()
+            .workspace()
+            .session(document)
+            .unwrap()
+            .selected_browser_body()
+            .unwrap()
+            .0,
+        key
+    );
+}

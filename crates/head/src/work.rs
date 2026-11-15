@@ -372,6 +372,23 @@ pub trait HeadWork: HeadSketchWork {
     ) -> Result<bool, String> {
         self.click_model_from_gui(document, line)
     }
+    /// Apply a viewport click with its selection modifier.
+    /// Example: `work.click_model_with_modifiers(document, ray, Some(0.1), true)?`.
+    fn click_model_with_modifiers(
+        &mut self,
+        document: u64,
+        line: [[f64; 3]; 2],
+        window: Option<f64>,
+        toggle: bool,
+    ) -> Result<bool, String> {
+        if toggle {
+            return Err("viewport toggle: expected a selection owner with modifier support".into());
+        }
+        match window {
+            Some(window) => self.click_model_with_window(document, line, window),
+            None => self.click_model_from_gui(document, line),
+        }
+    }
     /// The chosen row's outline, in model space; example: to draw it over the view.
     fn selected_browser_outline(&mut self) -> Vec<[[f64; 3]; 2]> {
         Vec::new()

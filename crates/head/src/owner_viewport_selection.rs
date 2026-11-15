@@ -25,6 +25,15 @@ impl<
         line: [[f64; 3]; 2],
         depth_window: Option<f64>,
     ) -> Result<bool, String> {
+        self.click_model_with_modifiers(document, line, depth_window, false)
+    }
+    pub(in crate::owner) fn click_model_with_modifiers(
+        &mut self,
+        document: u64,
+        line: [[f64; 3]; 2],
+        depth_window: Option<f64>,
+        toggle: bool,
+    ) -> Result<bool, String> {
         self.require_browser_document(document)?;
         if self
             .files
@@ -42,15 +51,19 @@ impl<
             {
                 return Ok(false);
             }
+            if toggle {
+                return self.unsupported_selection_toggle("assembly occurrence");
+            }
             return self.click_assembly(document, line);
         }
-        self.click_part_with_window(document, line, depth_window)
+        self.click_part_with_window(document, line, depth_window, toggle)
     }
     fn click_part_with_window(
         &mut self,
         document: u64,
         line: [[f64; 3]; 2],
         depth_window: Option<f64>,
+        toggle: bool,
     ) -> Result<bool, String> {
         let Some(allowed) = self.part_pick_filter(document, depth_window.is_some()) else {
             return Ok(false);
@@ -70,7 +83,7 @@ impl<
                 return Ok(true);
             }
         };
-        self.apply_part_candidate(document, picked)
+        self.apply_part_candidate(document, picked, toggle)
     }
     fn part_pick_filter(
         &self,
@@ -98,6 +111,7 @@ impl<
         &mut self,
         document: u64,
         picked: Option<crate::part_scene::pick_candidates::PickTarget>,
+        toggle: bool,
     ) -> Result<bool, String> {
         if let Some(crate::part_scene::pick_candidates::PickTarget::Body(feature, key)) = &picked {
             return self.browser_choice(
@@ -105,9 +119,15 @@ impl<
                 &oblikovati_gui::GuiBrowserChoice::Body {
                     feature: *feature,
                     key: key.clone(),
-                    toggle: false,
+                    toggle,
                 },
             );
+        }
+        if toggle && picked.is_some() {
+            return self.unsupported_selection_toggle("face");
+        }
+        if toggle {
+            return Ok(false);
         }
         self.selected_occurrence = None;
         self.files
@@ -127,6 +147,12 @@ impl<
             document,
             feature,
             role,
+        });
+        Ok(true)
+    }
+    fn unsupported_selection_toggle(&mut self, kind: &str) -> Result<bool, String> {
+        self.command_notice = Some(crate::DesktopCommandNotice::SelectionFailed {
+            cause: format!("{kind} viewport toggle: expected multiple selection support"),
         });
         Ok(true)
     }

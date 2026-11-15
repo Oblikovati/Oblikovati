@@ -162,6 +162,7 @@ pub enum GuiShellAction {
     ClickModel {
         document: u64,
         pixel: [i32; 2],
+        toggle: bool,
     },
     SelectBrowserSketch {
         document: u64,

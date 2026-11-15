@@ -192,6 +192,7 @@ pub(crate) fn follow_view_click(
     actions.push(GuiShellAction::ClickModel {
         document: state.document.unwrap_or(0),
         pixel: [(x * scale[0]) as i32, (y * scale[1]) as i32],
+        toggle: ui.io().key_ctrl || ui.io().key_shift,
     });
 }
 /// Show the chosen origin row in the view, in the accent, and those made visible, muted.
