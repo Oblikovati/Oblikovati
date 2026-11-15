@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: tmp/oblikovati-bdd-qZuj2X/checkout/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: tmp/oblikovati-bdd-qZuj2X/checkout/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T13:59:49.528282652Z" time="14.973306556"><testcase name="Scenario: Open the extended window list when tabs are hidden: tmp/oblikovati-bdd-qZuj2X/checkout/features/application/document-tabs/document-tabs.feature:40:3" time="14.973306556"><system-out><![CDATA[  Scenario: Open the extended window list when tabs are hidden
+   ✔  Given multiple documents are open in the MCAD Software
+   ✔  And document tabs are hidden
+   ✔  When the user opens the Switch menu on the View tab
+   ✔  Then the menu lists open windows and offers More Windows
+   ✔  When the user chooses More Windows
+   ✔  Then a Select Window dialog displays a scrollable list of open documents
+   ✔  And the dialog offers OK and cancels
+]]></system-out></testcase></testsuite></testsuites>
