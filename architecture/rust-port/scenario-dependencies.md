@@ -75,13 +75,17 @@ the original checkout or beside an old executable are not copied. A capture
 can fail when it depends on them; it must not be treated as verified evidence.
 
 The capture command also selects a fixed set of environment variables and
-uses a fresh Cargo home. It links the caller's registry and Git caches into
-that home, sets Cargo offline, and refuses Cargo configuration in directories
+uses a fresh Cargo home. It copies every locked crates.io archive from the
+caller cache after checking its SHA-256 against Cargo.lock; Cargo extracts those
+archives into a new source tree when the committed Cargo configuration selects
+those archives. It links the caller's registry index and Git
+caches, sets Cargo offline, and refuses Cargo configuration in directories
 above the exported source before and after the run. The committed source's
 Cargo configuration remains in effect. Display and renderer variables in the
 allowlist are passed through; the capture does not attest their values. The
-compiler and tools found on PATH, Rustup installation, shared dependency caches,
-source Cargo configuration, host files, and concurrent changes remain unproven.
+compiler and tools found on PATH, Rustup installation, shared Git caches and
+registry index, source Cargo configuration, host files, and concurrent changes
+remain unproven. Other processes can modify staged files during a build.
 The checks do not prevent a configuration file from appearing and disappearing
 during a run. Cargo offline requires the locked dependencies to be cached.
 

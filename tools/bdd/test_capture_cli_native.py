@@ -67,8 +67,9 @@ class NativeCargoRunTests(unittest.TestCase):
         root = Path(self.repo.name)
         subprocess.run(["git", "init", "-q", str(root)], check=True)
         (root / "tracked.txt").write_text("committed")
+        (root / "Cargo.lock").write_text("version = 3\npackage = []\n")
         (root / ".gitignore").write_text("ignored.txt\n")
-        self.git("add", "tracked.txt", ".gitignore")
+        self.git("add", "tracked.txt", ".gitignore", "Cargo.lock")
         self.git("-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "fixture")
         self.commit = self.git("rev-parse", "HEAD").strip()
         (root / "ignored.txt").write_text("untracked build input")
@@ -153,6 +154,27 @@ class NativeCargoRunTests(unittest.TestCase):
             env = dict(os.environ, CARGO_HOME=str(home), RUSTFLAGS="--cfg probe_override", RUSTC_WRAPPER="/does-not-exist")
             status = NativeCargoRun(root, "application", commit)(reports, env)
             self.assertEqual(status, 0, (reports / "native-test.log").read_text())
+
+    def test_capture_rejects_forged_registry_archive_before_launch(self) -> None:
+        root = Path(self.repo.name)
+        (root / "Cargo.lock").write_text(
+            'version=3\n[[package]]\nname="example"\nversion="1.0.0"\n'
+            'source="registry+https://github.com/rust-lang/crates.io-index"\n'
+            'checksum="' + "0" * 64 + '"\n'
+        )
+        self.git("add", "Cargo.lock")
+        self.git("-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "registry fixture")
+        commit = self.git("rev-parse", "HEAD").strip()
+        with tempfile.TemporaryDirectory() as folder:
+            reports = Path(folder) / "reports"
+            reports.mkdir()
+            cache = Path(folder) / "home/registry/cache/index"
+            cache.mkdir(parents=True)
+            (cache / "example-1.0.0.crate").write_bytes(b"forged")
+            env = {"CARGO_HOME": str(Path(folder) / "home"), "OBK_BDD_REPORTS": str(reports)}
+            with self.assertRaisesRegex(ValueError, "expected locked SHA-256"):
+                NativeCargoRun(root, "application", commit, FakeCargoProcess)(reports, env)
+            self.assertFalse((reports / "native-test.log").exists())
 
     def test_failed_child_output_is_still_recorded(self) -> None:
         with tempfile.TemporaryDirectory() as folder:
