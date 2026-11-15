@@ -76,6 +76,10 @@ impl GuiFrameEngine {
             &mut selected,
         );
         selected.retain(|action| {
+            if let GuiShellAction::OpenClearBodyAppearance { document, key } = action {
+                self.clear_appearance.open(*document, key.clone());
+                return false;
+            }
             if matches!(action, GuiShellAction::OpenIProperties) {
                 self.metadata.open(&request.commands);
                 return false;
@@ -91,6 +95,8 @@ impl GuiFrameEngine {
             true
         });
         self.metadata.panel(ui, &request.commands, &mut selected);
+        self.clear_appearance
+            .panel(ui, &request.commands, &mut selected);
         self.selection_filter
             .draw(ui, &request.commands, &mut selected);
         self.history_browser

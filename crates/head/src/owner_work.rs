@@ -283,6 +283,13 @@ impl<
         .map_err(|cause| format!("Parameter {:?}: {cause}", request.name))?;
         Ok(true)
     }
+    fn clear_selected_body_appearance_from_gui(
+        &mut self,
+        document: u64,
+        key: &str,
+    ) -> Result<bool, String> {
+        self.clear_selected_body_appearance(document, key)
+    }
     fn set_document_property_from_gui(
         &mut self,
         request: &oblikovati_api::wire::SetPropertyArgs,
