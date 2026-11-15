@@ -53,7 +53,13 @@ fn clear_body_override_requires_ok_and_supports_undo_redo() {
     assert_eq!(selected_appearance(&mut world, &key), "abs-black");
     let unchanged = part_assets(&mut world);
     verify_cancel(&mut world, &key);
+    world.click_text("Extrude1");
     world.click(row_center(&world, "Clear"));
+    assert!(window_geometry("Clear Appearance").is_some());
+    assert!(!world.run_is_enabled("OK"));
+    world.click_text("Solid1");
+    world.pump(Vec::new());
+    assert!(world.run_is_enabled("OK"));
     world.click_text("OK");
     assert_eq!(selected_appearance(&mut world, &key), "");
     assert_eq!(part_assets(&mut world), unchanged);

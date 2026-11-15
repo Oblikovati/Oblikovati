@@ -76,8 +76,8 @@ impl GuiFrameEngine {
             &mut selected,
         );
         selected.retain(|action| {
-            if let GuiShellAction::OpenClearBodyAppearance { document, key } = action {
-                self.clear_appearance.open(*document, key.clone());
+            if let GuiShellAction::OpenClearBodyAppearance { document } = action {
+                self.clear_appearance.open(*document);
                 return false;
             }
             if matches!(action, GuiShellAction::OpenIProperties) {
