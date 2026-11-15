@@ -436,6 +436,7 @@ fn body_nests(world: &mut ApplicationWorld) {
     assert_eq!(runs_reading(world, SKETCH), 2, "{SKETCH} rows");
 }
 #[when("I right-click Solid Bodies and choose Collapse All Children")]
+#[when("the user right-clicks Solid Bodies and chooses Collapse All Children")]
 fn collapse_bodies(world: &mut ApplicationWorld) {
     right_click_bodies(world);
     choose_menu_row(world, "Collapse All Children");

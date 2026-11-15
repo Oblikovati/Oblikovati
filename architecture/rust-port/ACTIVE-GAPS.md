@@ -159,6 +159,10 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
 - Martensite closest-point behavior is tracked separately in
   [Martensite #406](https://github.com/Oblikovati/Martensite/issues/406).
 
+- Model-browser collapse: four focused pinned scenarios passed after missing
+  bindings and child-row assertions were corrected (#3896). See
+  `receipts/2026-11-15-browser-collapse/`; this is diagnostic evidence.
+
 - Clear Appearance: multiple exact face overrides can now be selected and
   cleared in one edit. Owner and native-window tests cover selection, Cancel,
   undo, redo and reopen. An OS-input and MCPBridge check also covered two
