@@ -193,6 +193,27 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartTopolog
         let body = super::physical::selected_body(&bodies, index)?;
         Ok(body.face_report(session.history(), guid, key)?.area)
     }
+    fn edge_length(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+        index: i64,
+        key: &[u8],
+    ) -> Result<f64, String> {
+        self.ensure_current(files, document)?;
+        let workspace = files.workspace();
+        let session = workspace
+            .session(document)
+            .map_err(|cause| cause.to_string())?;
+        let guid = workspace
+            .identity(document)
+            .map_err(|cause| cause.to_string())?
+            .internal_name;
+        let evaluation = self.current(session)?;
+        let bodies: Vec<_> = evaluation.ordered_bodies().collect();
+        let body = super::physical::selected_body(&bodies, index)?;
+        body.edge_length(session.history(), guid, key)
+    }
     fn model_health(
         &mut self,
         files: &mut FileWorkspace<O, W, F>,

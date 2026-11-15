@@ -58,6 +58,14 @@ pub trait PartTopologyAccess<O: TransactionObserver, W: WorkspaceObserver, F: Do
         index: i64,
         key: &[u8],
     ) -> Result<f64, String>;
+    /// Integrate a named edge of the selected body; example: `access.edge_length(files, document, 0, &key)?`.
+    fn edge_length(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+        index: i64,
+        key: &[u8],
+    ) -> Result<f64, String>;
     /// Read current replay health; example: `access.model_health(files, document)?`.
     fn model_health(
         &mut self,

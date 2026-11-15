@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Exact document-scoped names for copied extrusion edges and vertices.
 use super::*;
+use martensite_tkbrep::{brep::BRepTool, topods};
+use martensite_tkgeombase::gprop::GProps;
+use martensite_tktopalgo::brep_gprop::BRepGProp;
 use oblikovati_model::identity::{ReferenceEnvelope, SemanticReferenceName};
 
 pub(super) struct BoundSubentity {
@@ -8,6 +11,21 @@ pub(super) struct BoundSubentity {
     shape: Shape,
 }
 impl NamedPrismSnapshot {
+    /// Measure the current named edge using its analytic curve, in database centimeters.
+    /// Example: `body.edge_length(history, document, &key)?`.
+    pub fn edge_length(
+        &self,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        key: &[u8],
+    ) -> Result<f64, String> {
+        let bindings = self
+            .subentity_bindings
+            .as_ref()
+            .ok_or("prism subentities: expected certified copied topology for edge measurement")?;
+        let bound = bindings.bind(history, document, key, 2)?;
+        analytic_edge_length(&bound.shape)
+    }
     pub(super) fn bind_subentities(
         &mut self,
         history: &DocumentEditHistory,
@@ -85,6 +103,23 @@ impl NamedPrismSnapshot {
         }
         Ok(&bindings.bind(history, document, key, kind)?.provenance)
     }
+}
+
+fn analytic_edge_length(shape: &Shape) -> Result<f64, String> {
+    let edge = topods::edge(shape).map_err(|cause| cause.to_string())?;
+    if !BRepTool::is_geometric_edge(&edge).map_err(|cause| cause.to_string())? {
+        return Err("edge: expected an analytic curve for length measurement".into());
+    }
+    let mut properties = GProps::default();
+    BRepGProp::linear_properties(shape, &mut properties, false, false)
+        .map_err(|cause| cause.to_string())?;
+    let length = properties.mass();
+    if !length.is_finite() || length <= 0. {
+        return Err(format!(
+            "edge length {length}: expected finite positive centimeters"
+        ));
+    }
+    Ok(length)
 }
 fn subentity_key(
     document: DocumentGuid,
