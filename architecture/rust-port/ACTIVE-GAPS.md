@@ -6,10 +6,10 @@ The reports below describe individual runs. They are not current verified
 acceptance evidence. The build-provenance gap in #3978 applies to every native
 BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
 
-- Point cancellation: point-11 requires a recorded sketch that was not supplied.
-  The scenario owner's `features/sketch/point/BLOCKERS.md` requests the sketch
-  or the properties of an acceptable substitute (#3887). The sizing report is
-  in `receipts/2026-11-15-point11-sizing/` and is not acceptance evidence.
+- Point cancellation: the live point-11 source now defines a portable sketch
+  precondition. It retains `@needs_fixture` and awaits source sync, fixture
+  implementation and a native rerun (#3887). The previous sizing report in
+  `receipts/2026-11-15-point11-sizing/` is historical evidence.
 - Extrusion undo and redo: the native diagnostic passed three of four scenario
   steps. Named edge lengths are available through the typed API; selecting and
   measuring two edges in the viewport remains open (#3967). See

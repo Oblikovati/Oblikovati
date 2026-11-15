@@ -13,29 +13,27 @@ pub struct ViewportDatumPlane {
 impl ViewportDatumPlane {
     /// Refuse non-finite overlay inputs; example: `plane.validate()?` before rendering.
     pub fn validate(&self) -> Result<(), String> {
-        self.validate_corners()?;
+        Self::validate_corners(&self.corners)?;
         self.validate_colors()?;
         Ok(())
     }
-    fn validate_corners(&self) -> Result<(), String> {
-        if self
-            .corners
+    /// Reject degenerate or unrepresentable geometry; example: `ViewportDatumPlane::validate_corners(&plane.corners)?`.
+    pub fn validate_corners(corners: &[[f64; 3]; 4]) -> Result<(), String> {
+        if corners
             .iter()
             .flatten()
             .any(|value| !(*value as f32).is_finite())
         {
             return Err(format!(
                 "datum corners {:?}: expected finite f32 coordinates",
-                self.corners
+                corners
             ));
         }
-        let points = self
-            .corners
-            .map(|point| point.map(|coordinate| coordinate as f32));
+        let points = corners.map(|point| point.map(|coordinate| coordinate as f32));
         if crate::render_normal::triangle_normal([points[0], points[1], points[2]]) == [0.; 3] {
             return Err(format!(
                 "datum corners {:?}: expected a nondegenerate display rectangle",
-                self.corners
+                corners
             ));
         }
         Ok(())

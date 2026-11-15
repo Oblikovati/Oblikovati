@@ -17,7 +17,12 @@ impl Viewport {
             .convert_with_proj(pixel[0], pixel[1])
             .map_err(|cause| format!("viewport pixel {pixel:?}: {cause}"))?;
         // UI conditioning only: retain Go aa8297d1 screenToSketch's DefaultTolerance.
-        oblikovati_martensite::sketch_projection(plane, [x, y, z], [dx, dy, dz], 1e-9)
+        oblikovati_martensite::sketch_projection(
+            plane,
+            [x, y, z],
+            [dx, dy, dz],
+            oblikovati_martensite::SKETCH_PROJECTION_MIN_NORMAL_COSINE,
+        )
     }
     /// The line of sight through a pixel: a point on it, and its direction into the view.
     /// Example: `view.view_line([320, 240])?` to find what lies under the pointer.

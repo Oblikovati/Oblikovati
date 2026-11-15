@@ -12,6 +12,8 @@ use std::time::Duration;
 mod commands;
 #[path = "owner_datum_overlay.rs"]
 mod datum_overlay;
+#[path = "owner_datum_pick.rs"]
+mod datum_pick;
 #[path = "owner_documents.rs"]
 mod documents_gui;
 #[path = "owner_offset_plane.rs"]

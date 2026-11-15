@@ -112,7 +112,7 @@ fn plane_for_feature(
     Ok(plane)
 }
 
-fn feature_corners(
+pub(super) fn feature_corners(
     snapshot: &DocumentSnapshot,
     feature: &oblikovati_model::feature::AuthoredFeature<
         oblikovati_model::feature::work_geometry::WorkGeometryDefinition,

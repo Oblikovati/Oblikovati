@@ -193,3 +193,96 @@ fn unsupported_face_toggle_reports_failure_and_preserves_body_selection() {
         key
     );
 }
+
+fn plane_request(visible: bool) -> oblikovati_api::wire::CreateWorkPlaneArgs {
+    oblikovati_api::wire::CreateWorkPlaneArgs {
+        kind: "plane-offset".into(),
+        refs: Some(vec![oblikovati_api::types::WORK_REF_XY_PLANE.into()]),
+        offset: "3 cm".into(),
+        visible: Some(Box::new(visible)),
+        ..Default::default()
+    }
+}
+
+fn add_plane(owner: &mut TestOwner, visible: bool) {
+    oblikovati_api::client::Client::new(owner.document_host())
+        .work_planes()
+        .create(&plane_request(visible))
+        .unwrap();
+    owner.take_scene().unwrap();
+}
+
+fn chosen_feature(
+    owner: &TestOwner,
+    document: u64,
+) -> Option<oblikovati_model::feature::FeatureId> {
+    owner
+        .files
+        .workspace()
+        .session(document)
+        .unwrap()
+        .selected_browser_feature()
+}
+
+#[test]
+fn visible_plane_hits_respect_selection_filter() {
+    use oblikovati_session::selection::SelectionKind;
+    let (mut owner, _) = owner();
+    let document = super::super::part_scene::open_prism(&mut owner, false);
+    add_plane(&mut owner, true);
+    let plane = owner
+        .gui_browser_snapshot(document)
+        .unwrap()
+        .features
+        .into_iter()
+        .find(|feature| feature.name == "Work Plane1")
+        .unwrap()
+        .id;
+    let ray = [[4., 4., 10.], [0., 0., -1.]];
+    owner
+        .click_model_with_window(document, ray, Some(0.1))
+        .unwrap();
+    assert_eq!(chosen_feature(&owner, document), Some(plane));
+    owner
+        .ambient_selection
+        .set_enabled(SelectionKind::WorkPlane, false);
+    owner
+        .click_model_with_window(document, ray, Some(0.1))
+        .unwrap();
+    assert_eq!(chosen_feature(&owner, document), None);
+}
+
+#[test]
+fn overlapping_planes_are_ambiguous_and_preserve_selection() {
+    let (mut owner, _) = owner();
+    let document = super::super::part_scene::open_prism(&mut owner, false);
+    add_plane(&mut owner, true);
+    add_plane(&mut owner, true);
+    let plane = owner
+        .gui_browser_snapshot(document)
+        .unwrap()
+        .features
+        .into_iter()
+        .find(|feature| feature.name == "Work Plane1")
+        .unwrap()
+        .id;
+    owner.select_browser_feature(document, plane).unwrap();
+    owner
+        .click_model_with_window(document, [[4., 4., 10.], [0., 0., -1.]], Some(0.1))
+        .unwrap();
+    assert!(
+        matches!(owner.take_command_notice(), Some(crate::DesktopCommandNotice::SelectionFailed { cause }) if cause.contains("unambiguous"))
+    );
+    assert_eq!(chosen_feature(&owner, document), Some(plane));
+}
+
+#[test]
+fn hidden_planes_are_not_pick_candidates() {
+    let (mut owner, _) = owner();
+    let document = super::super::part_scene::open_prism(&mut owner, false);
+    add_plane(&mut owner, false);
+    owner
+        .click_model_with_window(document, [[4., 4., 10.], [0., 0., -1.]], Some(0.1))
+        .unwrap();
+    assert_eq!(chosen_feature(&owner, document), None);
+}
