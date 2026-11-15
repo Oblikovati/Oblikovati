@@ -118,8 +118,6 @@ pub struct GuiCommandState {
     /// How the view looks at the model, for the orientation control.
     pub view_axes: Option<crate::GuiViewAxes>,
     pub document_windows: Vec<crate::GuiDocumentWindow>,
-    /// Changes when a surviving view takes over its document's implicit window identity.
-    pub document_window_identity_revisions: std::collections::BTreeMap<u64, u64>,
     pub active_window: Option<u64>,
     pub recent_documents: Vec<crate::GuiRecentDocument>,
     pub measure: Option<crate::GuiMeasurePanel>,

@@ -4,6 +4,8 @@
 
 ### Changed
 
+- Preserved document and Home tab order when scrolling and closing windows. (#3993)
+
 - Discarded closed document-window preview images and stale pending updates. (#3987)
 
 - Added type-preserving integer, number, boolean, and byte property editing to iProperties. (#3958)

@@ -120,8 +120,8 @@ impl<
         if self.active_view_slot() == id {
             // Its edit has no window left; it was a view, so nothing in the recipe changes.
             self.park_active_sketch_edit()?;
-            self.parked_sketch_edits.remove(&id);
         }
+        self.parked_sketch_edits.remove(&id);
         self.document_windows.retain(|known| known.id != id);
         self.settle_after_window_close(window.document)
     }
@@ -134,18 +134,19 @@ impl<
             .map(|known| known.id)
             .collect();
         let next = remaining[0];
-        self.active_window = None;
         if remaining.len() == 1 {
-            if next != document {
-                self.window_identity_revisions
-                    .insert(document, self.window_serial);
+            if next == document {
+                self.document_windows
+                    .retain(|known| known.document != document);
             }
-            self.document_windows
-                .retain(|known| known.document != document);
-            if let Some(sketch) = self.parked_sketch_edits.remove(&next) {
-                self.parked_sketch_edits.insert(document, sketch);
+            if self.files.workspace().active_document() != Some(document) {
+                return Ok(true);
             }
-            self.resume_parked_sketch_edit(document, document)?;
+            self.active_window = (next != document).then_some(next);
+            self.resume_parked_sketch_edit(next, document)?;
+            return Ok(true);
+        }
+        if self.files.workspace().active_document() != Some(document) {
             return Ok(true);
         }
         self.active_window = Some(next);
@@ -154,7 +155,6 @@ impl<
     }
     /// A closed document takes all its windows with it.
     pub(super) fn forget_document_windows(&mut self, document: u64) {
-        self.window_identity_revisions.remove(&document);
         let ids: Vec<u64> = self
             .document_windows
             .iter()

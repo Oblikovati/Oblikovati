@@ -3,7 +3,7 @@
 use crate::{GuiCommandState, GuiShellAction};
 use oblikovati_api::wire::{ActivateDocumentArgs, DocumentInfo};
 
-/// One extra view of a document; a document with a single view lists nothing here.
+/// A document view; a surviving extra window keeps its identity when it is alone.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct GuiDocumentWindow {
     pub id: u64,
@@ -21,8 +21,15 @@ pub(crate) struct TabRow<'a> {
 }
 /// Every open window in strip order.
 pub(crate) fn tab_rows(state: &GuiCommandState) -> Vec<TabRow<'_>> {
+    all_tab_rows(state)
+        .into_iter()
+        .filter(|tab| tab.row.visible)
+        .collect()
+}
+/// Include hidden open windows to preserve their order; example: `all_tab_rows(&state)`.
+pub(crate) fn all_tab_rows(state: &GuiCommandState) -> Vec<TabRow<'_>> {
     let mut rows = Vec::new();
-    for row in state.documents.iter().filter(|row| row.visible) {
+    for row in &state.documents {
         let windows: Vec<&GuiDocumentWindow> = state
             .document_windows
             .iter()

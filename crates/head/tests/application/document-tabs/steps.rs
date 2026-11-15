@@ -17,6 +17,8 @@ mod home_preview_native;
 mod mixed_documents;
 #[path = "offscreen_selection.rs"]
 mod offscreen_selection;
+#[path = "overflow_order.rs"]
+mod overflow_order;
 #[path = "reordering.rs"]
 mod reordering;
 #[path = "second_windows.rs"]

@@ -43,7 +43,6 @@ pub(crate) struct TabPreviews {
     told_picture: Option<(u64, GuiPreviewImage)>,
     /// What is in front, and where, as of the last drawn frame.
     pub showing: Option<(PreviewKey, [[f32; 2]; 2])>,
-    revisions: BTreeMap<u64, u64>,
     preview_visible: bool,
     deferred_preview: bool,
     // #3989: multiple draws can precede presentation; only a captured frame clears the guard.
@@ -102,29 +101,22 @@ impl TabPreviews {
         self.preview_visible = false;
         self.deferred_preview = false;
         let current = open_windows(state);
-        let revisions = identity_revisions(state);
-        let collapsed = changed_window_identities(&self.revisions, &revisions);
         self.images.retain(|key, _| match key {
             PreviewKey::Home => true,
-            PreviewKey::Window(id) => !collapsed.contains(id) && has_window(&current, *id),
+            PreviewKey::Window(id) => has_window(&current, *id),
         });
-        if matches!(self.captured_front, Some(PreviewKey::Window(id)) if collapsed.contains(&id) || !has_window(&current, id))
+        if matches!(self.captured_front, Some(PreviewKey::Window(id)) if !has_window(&current, id))
         {
             self.captured_front = None;
         }
-        self.forget_closed_picture(&current, &collapsed);
-        self.forget_closed_front(&current, &collapsed);
-        self.revisions = revisions;
+        self.forget_closed_picture(&current);
+        self.forget_closed_front(&current);
     }
-    fn forget_closed_picture(
-        &mut self,
-        current: &BTreeMap<u64, BTreeSet<u64>>,
-        collapsed: &BTreeSet<u64>,
-    ) {
+    fn forget_closed_picture(&mut self, current: &BTreeMap<u64, BTreeSet<u64>>) {
         if self
             .document_picture
             .as_ref()
-            .is_some_and(|(doc, key, _)| !picture_window_open(current, collapsed, *doc, *key))
+            .is_some_and(|(doc, key, _)| !picture_window_open(current, *doc, *key))
         {
             self.document_picture = None;
         }
@@ -136,15 +128,11 @@ impl TabPreviews {
             self.told_picture = None;
         }
     }
-    fn forget_closed_front(
-        &mut self,
-        current: &BTreeMap<u64, BTreeSet<u64>>,
-        collapsed: &BTreeSet<u64>,
-    ) {
+    fn forget_closed_front(&mut self, current: &BTreeMap<u64, BTreeSet<u64>>) {
         if let Some((key, _)) = self.showing
             && self
                 .showing_document
-                .is_some_and(|doc| !picture_window_open(current, collapsed, doc, key))
+                .is_some_and(|doc| !picture_window_open(current, doc, key))
         {
             self.showing = None;
             self.showing_document = None;
@@ -293,49 +281,16 @@ fn open_windows(state: &crate::GuiCommandState) -> BTreeMap<u64, BTreeSet<u64>> 
         })
         .collect()
 }
-fn identity_revisions(state: &crate::GuiCommandState) -> BTreeMap<u64, u64> {
-    state
-        .documents
-        .iter()
-        .map(|document| {
-            (
-                document.id,
-                state
-                    .document_window_identity_revisions
-                    .get(&document.id)
-                    .copied()
-                    .unwrap_or(0),
-            )
-        })
-        .collect()
-}
-fn changed_window_identities(
-    before: &BTreeMap<u64, u64>,
-    after: &BTreeMap<u64, u64>,
-) -> BTreeSet<u64> {
-    before
-        .iter()
-        .filter_map(|(document, revision)| {
-            after
-                .get(document)
-                .filter(|current| *current != revision)
-                .map(|_| *document)
-        })
-        .collect()
-}
 fn has_window(windows: &BTreeMap<u64, BTreeSet<u64>>, id: u64) -> bool {
     windows.values().any(|ids| ids.contains(&id))
 }
 fn picture_window_open(
     windows: &BTreeMap<u64, BTreeSet<u64>>,
-    collapsed: &BTreeSet<u64>,
     document: u64,
     key: PreviewKey,
 ) -> bool {
     match key {
-        PreviewKey::Window(id) => {
-            !collapsed.contains(&id) && windows.get(&document).is_some_and(|ids| ids.contains(&id))
-        }
+        PreviewKey::Window(id) => windows.get(&document).is_some_and(|ids| ids.contains(&id)),
         PreviewKey::Home => false,
     }
 }

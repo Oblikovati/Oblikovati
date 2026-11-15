@@ -2,7 +2,7 @@
 use super::*;
 use oblikovati_model::sketch::SketchPlane;
 #[test]
-fn implicit_window_identity_changes_only_when_the_original_window_closes() {
+fn surviving_window_retains_its_identity_across_close_and_reopen() {
     let (mut owner, awake) = owner();
     let document = create(&mut owner, &awake);
     owner.new_document_window().unwrap();
@@ -12,31 +12,50 @@ fn implicit_window_identity_changes_only_when_the_original_window_closes() {
         owner
             .gui_command_state()
             .unwrap()
-            .document_window_identity_revisions
+            .document_windows
             .is_empty()
     );
 
     // No GUI state is sampled between creating a view and closing the original.
     owner.new_document_window().unwrap();
+    let first = owner.active_window.unwrap();
     owner.close_document_window(document).unwrap();
-    let first = owner
-        .gui_command_state()
-        .unwrap()
-        .document_window_identity_revisions[&document];
+    let state = owner.gui_command_state().unwrap();
+    assert_eq!(state.document_windows[0].id, first);
+    assert_eq!(state.active_window, Some(first));
     owner.new_document_window().unwrap();
-    owner.close_document_window(document).unwrap();
-    let second = owner
-        .gui_command_state()
-        .unwrap()
-        .document_window_identity_revisions[&document];
-    assert!(first > 0 && second > first);
+    let second = owner.active_window.unwrap();
+    owner.close_document_window(first).unwrap();
+    let state = owner.gui_command_state().unwrap();
+    assert_eq!(state.document_windows[0].id, second);
+    assert_eq!(state.active_window, Some(second));
     owner
         .close_document_from_gui(&CloseDocumentArgs {
             id: document,
             force: true,
         })
         .unwrap();
-    assert!(!owner.window_identity_revisions.contains_key(&document));
+    assert!(owner.document_windows.is_empty());
+}
+#[test]
+fn closing_an_inactive_original_window_keeps_the_other_document_active() {
+    let (mut owner, awake) = owner();
+    let first = create(&mut owner, &awake);
+    owner.new_document_window().unwrap();
+    let survivor = owner.active_window.unwrap();
+    let second = create(&mut owner, &awake);
+    owner.close_document_window(first).unwrap();
+    let state = owner.gui_command_state().unwrap();
+    assert_eq!(state.document, Some(second));
+    assert_eq!(state.active_window, Some(second));
+    assert_eq!(state.document_windows[0].id, survivor);
+    owner
+        .activate_document_from_gui(&ActivateDocumentArgs { id: first })
+        .unwrap();
+    assert_eq!(
+        owner.gui_command_state().unwrap().active_window,
+        Some(survivor)
+    );
 }
 #[test]
 fn document_snapshot_and_gui_activation_follow_the_same_file_owner() {

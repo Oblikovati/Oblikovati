@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
+mod tab_order;
 mod tab_overflow;
 
 use crate::application::document_tabs::windows::{TabRow, activation, is_active_window, tab_rows};
 use crate::{GuiFrameRequest, GuiShellAction};
 use imgui::{Condition, TabItemFlags, Ui};
 use oblikovati_api::wire::{ActivateDocumentArgs, CloseDocumentArgs, DocumentInfo};
+use tab_order::{TabKey, TabOrder};
 use tab_overflow::{ARROWS_WIDTH, scroll_arrows, visible_tabs};
 
 const SETTLING_FRAMES: u8 = 2;
@@ -19,6 +21,7 @@ pub(crate) struct DocumentTabs {
     previous: Option<u64>,
     /// The first tab shown; earlier ones wait behind the left arrow.
     first_tab: usize,
+    order: TabOrder,
     pub previews: crate::application::document_tabs::previews::TabPreviews,
     pub menu: crate::application::document_tabs::TabMenu,
     /// The labels of the last frame; a change needs the frames below to finish its layout.
@@ -47,6 +50,7 @@ impl DocumentTabs {
         self.previous = request.commands.document;
         let any_document = request.commands.documents.iter().any(|row| row.visible);
         if !layout.tabs_visible || !(any_document || home.active) {
+            self.order.cancel_input();
             return;
         }
         let width = request.extent[0] as f32 / request.layout_scale()[0];
@@ -57,6 +61,7 @@ impl DocumentTabs {
             detached: &self.detached,
             pressed: &mut self.pressed_tab,
             first_tab: &mut self.first_tab,
+            order: &mut self.order,
             layout_changed: false,
             reveal_active,
             hovered: None,
@@ -114,10 +119,24 @@ struct StripOwner<'a> {
     detached: &'a [u64],
     pressed: &'a mut Option<u64>,
     first_tab: &'a mut usize,
+    order: &'a mut TabOrder,
     layout_changed: bool,
     reveal_active: bool,
     hovered: Option<crate::application::document_tabs::previews::HoveredTab>,
     home: &'a mut crate::application::home_recent_documents::HomeWorkspace,
+}
+
+enum StripTab<'a> {
+    Home,
+    Document(TabRow<'a>),
+}
+impl StripTab<'_> {
+    fn key(&self) -> TabKey {
+        match self {
+            Self::Home => TabKey::Home,
+            Self::Document(tab) => TabKey::Window(tab.window),
+        }
+    }
 }
 impl DocumentTabs {
     fn forget_closed_detached(&mut self, state: &crate::GuiCommandState) {
@@ -241,10 +260,18 @@ fn document_strip(
     actions: &mut Vec<GuiShellAction>,
 ) {
     let state = &request.commands;
-    let tabs: Vec<TabRow<'_>> = tab_rows(state)
-        .into_iter()
-        .filter(|tab| !owner.detached.contains(&tab.row.id))
+    owner
+        .order
+        .begin_input(ui.is_mouse_clicked(imgui::MouseButton::Left));
+    let mut tabs: Vec<StripTab<'_>> = std::iter::once(StripTab::Home)
+        .chain(tab_rows(state).into_iter().map(StripTab::Document))
         .collect();
+    owner.order.synchronize_state(state);
+    tabs.retain(|tab| match tab {
+        StripTab::Home => true,
+        StripTab::Document(tab) => !owner.detached.contains(&tab.row.id),
+    });
+    tabs.sort_by_key(|tab| owner.order.rank(tab.key()));
     let widths = tab_widths(ui, &tabs);
     let available = ui.content_region_avail()[0];
     let overflow = widths.iter().sum::<f32>() > available;
@@ -256,21 +283,33 @@ fn document_strip(
     let active = active_tab_index(state, &tabs, owner.home.active);
     let (first, count) = visible_tabs(&widths, room, *owner.first_tab, active, owner.reveal_active);
     // A tab reappearing in the strip lays out on its second frame, as a new one does.
-    owner.layout_changed = first != *owner.first_tab;
+    let shown = &tabs[first..first + count];
+    let keys: Vec<_> = shown.iter().map(StripTab::key).collect();
+    let subset_changed = owner.order.subset(&keys);
+    owner.layout_changed = first != *owner.first_tab || subset_changed;
     *owner.first_tab = first;
     let offscreen = active.is_none_or(|index| !(first..first + count).contains(&index));
     let _neutral = offscreen.then(|| tab_overflow::neutral_selection(ui));
-    let flags = imgui::TabBarFlags::REORDERABLE;
+    let flags = if owner.order.reorderable() {
+        imgui::TabBarFlags::REORDERABLE
+    } else {
+        imgui::TabBarFlags::empty()
+    };
     if let Some(_bar) = ui.tab_bar_with_flags("##visible-documents", flags) {
         let _disabled = ui.begin_disabled(state.transaction_open);
-        if first == 0 {
-            home_tab(ui, owner, state, actions);
-        }
-        let shown = first.saturating_sub(1)..(first + count).saturating_sub(1);
-        for tab in &tabs[shown.start.min(tabs.len())..shown.end.min(tabs.len())] {
-            document_tab(ui, request, tab, owner, actions);
+        for tab in shown {
+            match tab {
+                StripTab::Home => home_tab(ui, owner, state, actions),
+                StripTab::Document(tab) => document_tab(ui, request, tab, owner, actions),
+            }
         }
     }
+    let delta = ui.mouse_drag_delta();
+    let dragging =
+        ui.is_mouse_dragging(imgui::MouseButton::Left) && delta[0].abs() > delta[1].abs();
+    owner.layout_changed |= owner
+        .order
+        .observe_drag(dragging, ui.is_mouse_released(imgui::MouseButton::Left));
     if overflow {
         let more_to_the_right = first + count < widths.len();
         scroll_arrows(
@@ -283,27 +322,25 @@ fn document_strip(
     }
 }
 /// Home first, then one width per window, as they will be drawn.
-fn tab_widths(ui: &Ui, tabs: &[TabRow<'_>]) -> Vec<f32> {
+fn tab_widths(ui: &Ui, tabs: &[StripTab<'_>]) -> Vec<f32> {
     let spacing = ui.clone_style().item_inner_spacing[0];
-    std::iter::once(ui.calc_text_size("Home")[0] + TAB_ROOM / 2.)
-        .chain(tabs.iter().map(|tab| {
-            let label = tab_label(tab);
-            ui.calc_text_size(&label)[0] + TAB_ROOM
-        }))
+    tabs.iter()
+        .map(|tab| match tab {
+            StripTab::Home => ui.calc_text_size("Home")[0] + TAB_ROOM / 2.,
+            StripTab::Document(tab) => ui.calc_text_size(&tab_label(tab))[0] + TAB_ROOM,
+        })
         .map(|width| width + spacing)
         .collect()
 }
 fn active_tab_index(
     state: &crate::GuiCommandState,
-    tabs: &[TabRow<'_>],
+    tabs: &[StripTab<'_>],
     home_active: bool,
 ) -> Option<usize> {
-    if home_active {
-        return Some(0);
-    }
-    tabs.iter()
-        .position(|tab| crate::application::document_tabs::windows::is_active_window(state, tab))
-        .map(|index| index + 1)
+    tabs.iter().position(|tab| match tab {
+        StripTab::Home => home_active,
+        StripTab::Document(tab) => !home_active && is_active_window(state, tab),
+    })
 }
 /// Home is a workspace, not a document: it has no close control and is chosen only by a click.
 fn home_tab(
@@ -319,6 +356,11 @@ fn home_tab(
         TabItemFlags::empty()
     };
     let shown = ui.tab_item_with_flags("Home###home-workspace-tab", None, flags);
+    owner.order.note(
+        TabKey::Home,
+        ui.item_rect_min()[0],
+        ui.is_item_active() && ui.is_mouse_clicked(imgui::MouseButton::Left),
+    );
     let clicked = ui.is_item_clicked();
     if ui.is_item_hovered() {
         owner.hovered = Some(HoveredTab {
@@ -363,6 +405,11 @@ fn document_tab(
             .is_some_and(|id| owner.detached.contains(&id));
     let selected = !behind && is_active_window(state, tab);
     let keep = draw_document_tab(ui, tab, selected);
+    owner.order.note(
+        TabKey::Window(tab.window),
+        ui.item_rect_min()[0],
+        ui.is_item_active() && ui.is_mouse_clicked(imgui::MouseButton::Left),
+    );
     let clicked = ui.is_item_clicked();
     note_hovered_tab(ui, request, tab, owner);
     owner.menu.popup(ui, state, tab.row, actions);
