@@ -5,6 +5,7 @@ use super::viewport_orientation::{
     expect_same_part, open_block, solid_bounds, solid_extent, whole_block_visible,
 };
 use super::viewport_pan::{camera, expect_part_and_solid, press_bar};
+use crate::{HeadWindow, HeadWork};
 use cucumber::{given, then, when};
 use oblikovati_viewport::{ViewportCamera, ViewportEvent, ViewportInput, ViewportNavigation};
 
@@ -82,12 +83,30 @@ fn face_middle(world: &mut ApplicationWorld) -> [i32; 2] {
 /// Ensure the click is on the rendered fixture, not merely its bounding rectangle.
 fn visible_face_middle(world: &mut ApplicationWorld) -> [i32; 2] {
     let middle = face_middle(world);
+    face_selection_regression::assert_unoccluded(middle);
     let pixel = world.pixel_at(middle.map(|coordinate| coordinate as usize));
     assert!(
         super::solid_visibility::neutral_fixture_hue(&pixel),
         "face center {middle:?} has pixel {pixel:?}: expected visible fixture fill"
     );
     middle
+}
+fn remember_face_hit(world: &mut ApplicationWorld, point: [i32; 2]) {
+    let line = world
+        .app()
+        .window
+        .view_line(point)
+        .expect("expected the visible pixel's view ray");
+    let edges = world
+        .app()
+        .owner
+        .face_edges_on_line(line)
+        .expect("expected a face pick");
+    assert!(
+        !edges.is_empty(),
+        "pixel {point:?}: expected a visible face boundary"
+    );
+    world.observed_zoom_face_edges = edges;
 }
 /// Part of the face, a quarter of its extent each way from its middle.
 fn window_corner(world: &mut ApplicationWorld, side: i32) -> [i32; 2] {
@@ -274,8 +293,14 @@ fn select_face(world: &mut ApplicationWorld) {
         oblikovati_gui::GuiSelectionMode::Faces
     );
     let at = visible_face_middle(world);
+    remember_face_hit(world, at);
     click_pump(world, at);
     assert!(world.state().model_face_chosen, "expected the face chosen");
+    let selected = world.app().owner.selected_browser_outline();
+    assert_eq!(
+        selected, world.observed_zoom_face_edges,
+        "expected the clicked face"
+    );
 }
 #[when("I choose Zoom Selected from the navigation bar Zoom menu")]
 #[when("the user chooses Zoom Selected from the navigation bar Zoom menu")]
@@ -291,6 +316,9 @@ fn expect_fills_view(world: &mut ApplicationWorld) {
 #[then("the face appears larger and fills most of the viewport")]
 fn fills_view(world: &mut ApplicationWorld) {
     expect_fills_view(world);
+    let edges = world.observed_zoom_face_edges.clone();
+    assert!(!edges.is_empty(), "expected the clicked face boundary");
+    face_selection_regression::assert_face_is_framed(world, &edges);
 }
 #[then("the face remains selected")]
 fn stays_selected(world: &mut ApplicationWorld) {
@@ -316,6 +344,7 @@ fn entity_prompt(world: &mut ApplicationWorld) {
 #[when("the user clicks the visible planar face")]
 fn click_face(world: &mut ApplicationWorld) {
     let at = visible_face_middle(world);
+    remember_face_hit(world, at);
     click_pump(world, at);
 }
 // A cancelled window
