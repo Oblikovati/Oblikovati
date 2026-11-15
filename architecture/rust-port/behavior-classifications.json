@@ -16180,8 +16180,11 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-tabs-r4-current-1/receipt-c65b58f2636efdba.json",
+        "sha256": "f4f1eb95b91f8e38de91dcadf6bc07c10e9df17d91a2dbf8295d64125dbc6a62"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
       "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
@@ -16313,8 +16316,11 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-tabs-r4-current-2/receipt-50f02a102ce48562.json",
+        "sha256": "eca5322f4f80bd227bf44354254e80a6e90794d36831b350cac0c83dc2b608cf"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
       "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
@@ -16346,8 +16352,11 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-tabs-r4-current-3/receipt-8d403d738cd32144.json",
+        "sha256": "34f893b7fb3e375f6df93dde52196202aec4a2572e9308422ff34d09b7f08b64"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
       "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
@@ -16379,8 +16388,11 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-tabs-r4-current-4/receipt-244278b44b0bbbfb.json",
+        "sha256": "c2a1447379aee160c34c34ebdbd27d222b7dcdb98fed41c12b508dbacf98ff95"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
       "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
@@ -16412,8 +16424,11 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-tabs-r4-current-5/receipt-d6614d03f57eca8a.json",
+        "sha256": "6cb8f39093618020877c07222855c7c81a3acc8b39fbd30bcebac7dc7643f1ad"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
       "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
@@ -16445,8 +16460,11 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-tabs-r4-current-6/receipt-f2e3989ecad9628f.json",
+        "sha256": "7d84c476a26a2cb5513d32f66887296512e286b41975dd3637e469e5e27eea79"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
       "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
@@ -16478,8 +16496,11 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-tabs-r4-current-7/receipt-d6f09550bb0cdb93.json",
+        "sha256": "f55dd8a9aac8e4aaca3cad9750d14e0a527dd783814838dc1e9b3135d4340b13"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
       "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
@@ -16511,8 +16532,11 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-tabs-r4-current-8/receipt-8f2c33b398b731b4.json",
+        "sha256": "dc75fd40dd67c18b439efd7dcef054853b9da9768b6317b1bf4cd70cd3cfa764"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
       "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",

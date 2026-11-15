@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:50f02a102ce485626f02cec5e7d0d7056dcf7d994e11e8c2a7e4f295bc32eb0e",
+  "scenario_revision": "8ec8d2c1e569fbc5c8cd2ec85e9b9380c62c147f",
+  "source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f",
+  "application_commit": "0d89e351e10bcedf6ef8e707b67ad4863e27c7ca",
+  "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "application_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-15-tabs-r4-current-2/cucumber.json",
+    "sha256": "70013c859a2a8a7b42625041ef2b079e138756057b94fa78607e8ec983746202"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-15-tabs-r4-current-2/source-revision.json",
+    "sha256": "af3e2b275f435c6da2b921135e66fae7ec16302fdcecfb00e3b00b9f6692e381"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-15-tabs-r4-current-2/Close-a-saved-inactive-document-with-its-tab-close-button.png",
+    "sha256": "e2549c8f56e418d21f1668d15ac9f6b807f505265e33a1d4b8becb37f8938659"
+  }
+}
