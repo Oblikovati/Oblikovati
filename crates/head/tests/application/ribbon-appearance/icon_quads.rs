@@ -23,7 +23,7 @@ pub(super) fn icon_quads_inside(bounds: Rectangle) -> Vec<Rectangle> {
             }
             let indices = &list.idx_buffer()[cmd_params.idx_offset..cmd_params.idx_offset + count];
             let vertices = &list.vtx_buffer()[cmd_params.vtx_offset..];
-            for quad in indices.chunks_exact(6) {
+            for quad in indices.as_chunks::<6>().0 {
                 let rectangle = (
                     vertices[quad[0] as usize].pos,
                     vertices[quad[2] as usize].pos,
