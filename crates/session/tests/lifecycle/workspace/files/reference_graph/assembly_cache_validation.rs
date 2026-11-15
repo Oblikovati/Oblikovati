@@ -22,7 +22,7 @@ fn cached_graph() -> (ReferenceHost, u64, PathBuf, DocumentPackage) {
 fn validates_unchanged_sources_and_rejects_changed_or_missing_bytes() {
     let (mut host, _, destination, package) = cached_graph();
     assert!(
-        host.validated_assembly_view(&destination, &package)
+        host.validated_assembly_view(&destination, &package, &"c".repeat(64))
             .unwrap()
             .is_some()
     );
@@ -31,14 +31,23 @@ fn validates_unchanged_sources_and_rejects_changed_or_missing_bytes() {
         .borrow_mut()
         .insert(path("a.obk"), fixture(2));
     let error = host
-        .validated_assembly_view(&destination, &package)
+        .validated_assembly_view(&destination, &package, &"c".repeat(64))
         .unwrap_err();
     assert!(error.contains("expected saved content digest"), "{error}");
     host.files().contents.borrow_mut().remove(&path("a.obk"));
     let error = host
-        .validated_assembly_view(&destination, &package)
+        .validated_assembly_view(&destination, &package, &"c".repeat(64))
         .unwrap_err();
     assert!(error.contains("expected an existing source"), "{error}");
+}
+
+#[test]
+fn saved_assembly_view_rejects_another_producer() {
+    let (mut host, _, destination, package) = cached_graph();
+    let error = host
+        .validated_assembly_view(&destination, &package, &"d".repeat(64))
+        .unwrap_err();
+    assert!(error.contains("producer"), "{error}");
 }
 
 #[test]
@@ -51,7 +60,7 @@ fn rejects_dirty_open_component_and_a_changed_catalog() {
         })
         .unwrap();
     let error = host
-        .validated_assembly_view(&destination, &package)
+        .validated_assembly_view(&destination, &package, &"c".repeat(64))
         .unwrap_err();
     assert!(
         error.contains("expected a saved committed document"),
@@ -61,7 +70,7 @@ fn rejects_dirty_open_component_and_a_changed_catalog() {
     view.catalog_digest = "b".repeat(64);
     let stale = package.with_saved_assembly_view(&view).unwrap();
     let error = host
-        .validated_assembly_view(&destination, &stale)
+        .validated_assembly_view(&destination, &stale, &"c".repeat(64))
         .unwrap_err();
     assert!(error.contains("current catalog"), "{error}");
 }
@@ -71,7 +80,8 @@ fn absent_cache_is_distinct_from_an_invalid_cache() {
     let (mut host, _, destination, _) = cached_graph();
     let plain = DocumentPackage::decode(&fixture(1)).unwrap();
     assert_eq!(
-        host.validated_assembly_view(&destination, &plain).unwrap(),
+        host.validated_assembly_view(&destination, &plain, &"c".repeat(64))
+            .unwrap(),
         None
     );
 }
@@ -100,7 +110,7 @@ fn nested_cache_rejects_a_changed_leaf_and_an_incomplete_graph() {
         .unwrap();
     let package = DocumentPackage::decode(&host.files().contents.borrow()[&destination]).unwrap();
     assert!(
-        host.validated_assembly_view(&destination, &package)
+        host.validated_assembly_view(&destination, &package, &"c".repeat(64))
             .unwrap()
             .is_some()
     );
@@ -108,7 +118,7 @@ fn nested_cache_rejects_a_changed_leaf_and_an_incomplete_graph() {
     incomplete.sources.pop();
     let tampered = package.with_saved_assembly_view(&incomplete).unwrap();
     let error = host
-        .validated_assembly_view(&destination, &tampered)
+        .validated_assembly_view(&destination, &tampered, &"c".repeat(64))
         .unwrap_err();
     assert!(error.contains("expected a source record"), "{error}");
     host.files()
@@ -116,7 +126,7 @@ fn nested_cache_rejects_a_changed_leaf_and_an_incomplete_graph() {
         .borrow_mut()
         .insert(path("a.obk"), fixture(2));
     let error = host
-        .validated_assembly_view(&destination, &package)
+        .validated_assembly_view(&destination, &package, &"c".repeat(64))
         .unwrap_err();
     assert!(error.contains("expected saved content digest"), "{error}");
 }
@@ -128,14 +138,14 @@ fn rejects_changed_resolution_and_source_identity() {
     view.sources[0].resolved_path = path("other.obk");
     let moved = package.with_saved_assembly_view(&view).unwrap();
     let error = host
-        .validated_assembly_view(&destination, &moved)
+        .validated_assembly_view(&destination, &moved, &"c".repeat(64))
         .unwrap_err();
     assert!(error.contains("expected saved path"), "{error}");
     view.sources[0].resolved_path = path("a.obk");
     view.sources[0].identity = guid(2).to_string();
     let changed = package.with_saved_assembly_view(&view).unwrap();
     let error = host
-        .validated_assembly_view(&destination, &changed)
+        .validated_assembly_view(&destination, &changed, &"c".repeat(64))
         .unwrap_err();
     assert!(error.contains("expected saved identity"), "{error}");
 }

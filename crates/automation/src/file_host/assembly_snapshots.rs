@@ -52,12 +52,14 @@ fn capture<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
         .ok_or_else(|| format!("document {document}: expected an assembly"))?;
     let backend =
         backend.ok_or_else(|| format!("assembly {document}: expected a presentation service"))?;
+    let producer_digest = backend.assembly_view_producer()?;
     let (triangles, chord_error, angular_error) = backend.assembly_view(files, document)?;
     let view = SavedAssemblyView {
         version: SavedAssemblyView::VERSION,
         occurrences,
         sources,
         catalog_digest,
+        producer_digest,
         chord_error,
         angular_error,
         triangles,

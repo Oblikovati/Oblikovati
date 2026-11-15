@@ -155,6 +155,12 @@ fn saving_assembly_stages_unselected_cache_and_reports_stale_source() {
         .restore_saved_assembly_view()
         .unwrap()
         .expect("expected a qualified saved view");
+    use sha2::Digest;
+    let executable = std::fs::read("/proc/self/exe").unwrap();
+    assert_eq!(
+        view.producer_digest,
+        format!("{:x}", sha2::Sha256::digest(executable))
+    );
     assert!(!view.triangles.is_empty());
     assert!(
         view.triangles
