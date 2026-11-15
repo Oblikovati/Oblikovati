@@ -228,8 +228,12 @@ impl GuiShellAction {
                     && state.authoring == GuiAuthoringContext::Part
                     && !state.transaction_open
             }
-            Self::ClearSelectedBodyAppearance { document, key }
-            | Self::OpenClearBodyAppearance { document, key } => {
+            Self::OpenClearBodyAppearance { document } => {
+                state.document == Some(*document)
+                    && state.authoring == GuiAuthoringContext::Part
+                    && !state.transaction_open
+            }
+            Self::ClearSelectedBodyAppearance { document, key } => {
                 state.document == Some(*document)
                     && state.authoring == GuiAuthoringContext::Part
                     && !state.transaction_open

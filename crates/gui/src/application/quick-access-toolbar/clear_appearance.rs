@@ -5,7 +5,6 @@ use super::*;
 pub(super) fn action(state: &GuiCommandState) -> Option<GuiShellAction> {
     Some(GuiShellAction::OpenClearBodyAppearance {
         document: state.document?,
-        key: state.selected_body_key.clone()?,
     })
 }
 
@@ -16,7 +15,7 @@ pub(super) fn button(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShel
     let clicked = ui.button("Clear");
     drop(disabled);
     if !enabled && ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
-        ui.tooltip_text("Select a body with its own appearance override to clear it.");
+        ui.tooltip_text("Open Clear Appearance to select a body.");
     }
     if clicked && let Some(action) = action {
         actions.push(action);
@@ -50,9 +49,19 @@ mod tests {
         }
     }
     #[test]
+    fn clear_can_open_before_selecting_a_body() {
+        let mut state = selected_body();
+        state.selected_body_key = None;
+        let open = action(&state).expect("Clear should open without preselection");
+        assert!(open.enabled(&state));
+    }
+    #[test]
     fn clear_requires_the_exact_current_body_and_its_own_override() {
         let mut state = selected_body();
-        let action = action(&state).unwrap();
+        let action = GuiShellAction::ClearSelectedBodyAppearance {
+            document: state.document.unwrap(),
+            key: state.selected_body_key.clone().unwrap(),
+        };
         assert!(action.enabled(&state));
         state.selected_body_key = Some("another".into());
         assert!(!action.enabled(&state));
