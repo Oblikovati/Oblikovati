@@ -262,6 +262,17 @@ pub trait HeadWindow {
         ))
     }
 
+    /// Replace work-plane overlays; example: `window.set_datum_planes(&planes)?`.
+    fn set_datum_planes(&mut self, update: &crate::HeadDatumPlaneUpdate) -> Result<bool, String> {
+        if update.planes.is_empty() && update.declines.is_empty() {
+            return Ok(false);
+        }
+        Err(format!(
+            "datum planes {}: expected a window with datum presentation",
+            update.planes.len()
+        ))
+    }
+
     /// Replace the current scene before presenting; example: `window.submit_scene(update)?`.
     fn submit_scene(&mut self, update: crate::HeadSceneUpdate) -> Result<(), String> {
         Err(format!(

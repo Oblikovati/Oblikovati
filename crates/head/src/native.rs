@@ -21,6 +21,7 @@ pub struct NativeHeadWindow {
     current_scene: Option<ViewportScene>,
     preview_background: Option<oblikovati_viewport::ViewportBackground>,
     sketch_scene: Option<crate::HeadSketchSceneUpdate>,
+    datum_declines: Vec<(oblikovati_model::feature::FeatureId, String)>,
     navigation: crate::navigation::DesktopNavigation,
     sketch_view: Option<(crate::HeadSketchEdit, oblikovati_viewport::ViewportCamera)>,
     /// The window of a document in front; each keeps its own view while another is shown.
@@ -197,6 +198,15 @@ impl HeadWindow for NativeHeadWindow {
         if let Some(gui) = self.gui.as_mut() {
             gui.reject_extrusion_edit(request, cause);
         }
+    }
+    fn set_datum_planes(&mut self, update: &crate::HeadDatumPlaneUpdate) -> Result<bool, String> {
+        let changed = self.view.set_datum_planes(&update.planes)?;
+        let declined = self.datum_declines != update.declines;
+        if declined {
+            self.datum_declines.clone_from(&update.declines);
+            self.refresh_title()?;
+        }
+        Ok(changed || declined)
     }
     fn submit_sketch_scene(&mut self, update: crate::HeadSketchSceneUpdate) -> Result<(), String> {
         self.view.set_sketch_display(&update.sketches)?;

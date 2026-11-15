@@ -120,6 +120,7 @@ mod home_recent_documents;
 mod model_browser;
 #[cfg(test)]
 mod offset_plane_native;
+mod offset_plane_overlay;
 #[path = "project-dialog/steps.rs"]
 mod project_dialog;
 #[path = "../solid-model/projection-fixtures/steps.rs"]

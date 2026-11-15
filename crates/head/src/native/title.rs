@@ -12,6 +12,9 @@ impl NativeHeadWindow {
             title = format!("{document} - {title}");
         }
         title.push_str(&self.sketch_display_title()?);
+        if let Some((feature, cause)) = self.datum_declines.first() {
+            title.push_str(&format!(" - work plane {}: {cause}", feature.0));
+        }
         if let Some(notice) = &self.command_notice {
             title.push_str(&format!(" - {}", notice.message()));
         }

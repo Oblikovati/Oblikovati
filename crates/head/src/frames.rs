@@ -158,6 +158,7 @@ fn run_owner_frame(
     control.pending |= activity.changed;
     control.pending |= publish_owner_sketches(window, owner)?;
     control.pending |= publish_owner_scene(window, owner)?;
+    control.pending |= window.set_datum_planes(&owner.datum_planes()?)?;
     control.pending |= synchronize_sketch_view(window, owner)?;
     control.pending |= publish_sketch_preview(window, owner)?;
     let closing = inputs.contains(&ViewportEvent::CloseRequested);

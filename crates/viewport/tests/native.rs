@@ -8,6 +8,8 @@ use oblikovati_viewport::{
 use std::time::{Duration, Instant};
 #[path = "native/background.rs"]
 mod background;
+#[path = "native/datum_plane.rs"]
+mod datum_plane;
 #[path = "native/lighting.rs"]
 mod lighting;
 #[path = "native/navigation.rs"]

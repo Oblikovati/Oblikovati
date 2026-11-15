@@ -458,6 +458,9 @@ impl<
             wake_after: None,
         })
     }
+    fn datum_planes(&mut self) -> Result<crate::HeadDatumPlaneUpdate, String> {
+        self.datum_planes_for_view()
+    }
     fn take_scene(&mut self) -> Result<Option<crate::HeadSceneUpdate>, String> {
         self.take_scene_with_extrusion_preview()
     }

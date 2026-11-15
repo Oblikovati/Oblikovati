@@ -281,6 +281,9 @@ macro_rules! forward_owner_view_work {
         fn select_block_geometry_from_gui(&mut self, active: bool) -> Result<bool, String> {
             self.$owner.select_block_geometry_from_gui(active)
         }
+        fn datum_planes(&mut self) -> Result<$crate::HeadDatumPlaneUpdate, String> {
+            self.$owner.datum_planes()
+        }
         fn take_scene(&mut self) -> Result<Option<$crate::HeadSceneUpdate>, String> {
             self.$owner.take_scene()
         }

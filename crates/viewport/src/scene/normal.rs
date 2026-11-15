@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-pub(super) fn triangle_normal(points: [[f32; 3]; 3]) -> [f32; 3] {
+pub(crate) fn triangle_normal(points: [[f32; 3]; 3]) -> [f32; 3] {
     let [a, b, c] = points.map(|point| point.map(f64::from));
     let u: [f64; 3] = std::array::from_fn(|axis| b[axis] - a[axis]);
     let v: [f64; 3] = std::array::from_fn(|axis| c[axis] - a[axis]);

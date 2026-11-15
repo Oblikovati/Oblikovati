@@ -159,6 +159,8 @@ pub use sketch_edit::HeadSketchEdit;
 mod placement_tool;
 pub use placement_tool::SketchPlacementTool;
 
+mod datum_scene;
+pub use datum_scene::HeadDatumPlaneUpdate;
 mod sketch_scene;
 pub use sketch_scene::HeadSketchSceneUpdate;
 

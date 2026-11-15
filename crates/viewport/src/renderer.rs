@@ -12,6 +12,7 @@ use martensite_tkservice::{
 use martensite_tkv3d::v3d::{V3dViewSource, V3dViewer};
 use martensite_vulkan::{Graphic3dRenderDriver, Graphic3dRenderView};
 mod background;
+mod datum_plane;
 mod lighting;
 #[path = "renderer/navigation.rs"]
 mod navigation;
@@ -35,6 +36,7 @@ pub(crate) struct RenderView {
     pub view: Handle<dyn V3dViewSource>,
     pub renderer: Handle<Graphic3dRenderView>,
     structures: Vec<Handle<Graphic3dStructure>>,
+    datums: datum_plane::DatumOverlay,
     status: status_text::StatusTextOverlay,
     preview: sketch_preview::SketchPreviewOverlay,
     sketches: sketch_display::SketchDisplayOverlay,
@@ -63,6 +65,7 @@ impl RenderView {
                 &oblikovati_model::theme::ThemeDefinition::dark()?,
             ),
             structures: Vec::new(),
+            datums: Default::default(),
             status: Default::default(),
             preview: Default::default(),
             sketches: Default::default(),
@@ -144,6 +147,7 @@ impl Drop for RenderView {
         self.status.clear();
         self.preview.clear();
         self.sketches.clear();
+        self.datums.clear();
         self.view.remove();
     }
 }

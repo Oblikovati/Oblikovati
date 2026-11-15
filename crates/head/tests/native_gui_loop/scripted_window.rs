@@ -147,6 +147,9 @@ impl HeadWindow for ScriptedGuiWindow {
         self.passed.push(*event);
         self.native.process_view_input(event)
     }
+    fn set_datum_planes(&mut self, update: &crate::HeadDatumPlaneUpdate) -> Result<bool, String> {
+        self.native.set_datum_planes(update)
+    }
     fn submit_scene(&mut self, update: crate::HeadSceneUpdate) -> Result<(), String> {
         self.scene_triangles = update.scene.triangles.clone();
         self.scene_colors = update

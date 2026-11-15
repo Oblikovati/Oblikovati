@@ -3,7 +3,6 @@ use crate::ViewportTriangle;
 use martensite_tkernel::{quantity::ColorRgba, standard::Handle};
 use martensite_tkservice::graphic3d::*;
 use martensite_tkv3d::v3d::V3dViewer;
-mod normal;
 pub(crate) fn build_scene(
     viewer: &V3dViewer,
     triangles: &[ViewportTriangle],
@@ -45,7 +44,7 @@ fn triangle_vertices(
         )
         .map_err(|error| error.to_string())?,
     );
-    let normal = normal::triangle_normal(triangle.positions);
+    let normal = crate::render_normal::triangle_normal(triangle.positions);
     for point in triangle.positions {
         vertices
             .add_vertex_normal(point, normal)
