@@ -125,6 +125,9 @@ impl<
             return self.select_browser_feature(document, *feature);
         }
         if let Some(crate::part_scene::pick_candidates::PickTarget::Body(feature, key)) = &picked {
+            if toggle && !self.current_face_appearance_picks(document).is_empty() {
+                return self.unsupported_selection_toggle("mixed body and face");
+            }
             return self.browser_choice(
                 document,
                 &oblikovati_gui::GuiBrowserChoice::Body {
@@ -134,11 +137,19 @@ impl<
                 },
             );
         }
-        if toggle && picked.is_some() {
-            return self.unsupported_selection_toggle("face");
-        }
-        if toggle {
+        if toggle && picked.is_none() {
             return Ok(false);
+        }
+        if toggle
+            && !self
+                .files
+                .workspace()
+                .session(document)
+                .map_err(|cause| cause.to_string())?
+                .selected_browser_bodies()
+                .is_empty()
+        {
+            return self.unsupported_selection_toggle("mixed body and face");
         }
         self.selected_occurrence = None;
         self.files
@@ -159,8 +170,26 @@ impl<
             feature,
             role,
         });
-        self.face_appearance_pick = self.capture_face_appearance_pick(document, selected);
-        self.model_face = selected;
+        let previous = self.current_face_appearance_picks(document).to_vec();
+        let picked = self.capture_face_appearance_pick(document, selected);
+        let unresolved_face = if !toggle && picked.is_none() {
+            selected
+        } else {
+            None
+        };
+        let mut selected_faces = if toggle { previous } else { Vec::new() };
+        if let Some(pick) = picked {
+            if let Some(index) = selected_faces.iter().position(|item| item.key == pick.key) {
+                selected_faces.remove(index);
+            } else {
+                selected_faces.push(pick);
+            }
+        }
+        self.model_face = selected_faces
+            .last()
+            .map(|pick| pick.face)
+            .or(unresolved_face);
+        self.face_appearance_picks = selected_faces;
         Ok(true)
     }
     fn unsupported_selection_toggle(&mut self, kind: &str) -> Result<bool, String> {

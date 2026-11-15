@@ -105,17 +105,23 @@ impl<
             template_materials,
             prompts: self.prompt_frequencies,
             browser: Some(self.gui_browser_snapshot(document)?),
-            selected_face_appearance: self.current_face_appearance_pick(document).map(|pick| {
-                let assigned = session
-                    .snapshot()
-                    .assets
-                    .assignments
-                    .face_appearances()
-                    .any(|(key, _)| {
-                        key.reference_key() == pick.key && key.occurrence_path().is_empty()
-                    });
-                (pick.key.clone(), assigned)
-            }),
+            selected_face_appearances: self
+                .current_face_appearance_picks(document)
+                .iter()
+                .map(|pick| {
+                    (
+                        pick.key.clone(),
+                        session
+                            .snapshot()
+                            .assets
+                            .assignments
+                            .face_appearances()
+                            .any(|(key, _)| {
+                                key.reference_key() == pick.key && key.occurrence_path().is_empty()
+                            }),
+                    )
+                })
+                .collect(),
             selected_body_key: session
                 .selected_browser_body()
                 .map(|(key, _)| key.to_owned()),

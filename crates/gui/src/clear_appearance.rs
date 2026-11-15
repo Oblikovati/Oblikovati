@@ -28,8 +28,8 @@ impl ClearAppearance {
         let action = Self::action_for(state, document);
         let mut open = true;
         let mut done = false;
-        let width = ui
-            .calc_text_size("Select bodies or a face with an appearance override to continue.")[0];
+        let width =
+            ui.calc_text_size("Select bodies or faces with an appearance override to continue.")[0];
         let size = [width + ui.frame_height() * 2., ui.frame_height() * 6.];
         Self::dockable_window(ui, "Clear Appearance", &mut open)
             .size(size, imgui::Condition::FirstUseEver)
@@ -39,10 +39,14 @@ impl ClearAppearance {
         }
     }
     fn action_for(state: &GuiCommandState, document: u64) -> Option<GuiShellAction> {
-        if let Some((key, _)) = &state.selected_face_appearance {
+        if !state.selected_face_appearances.is_empty() {
             return Some(GuiShellAction::ClearSelectedFaceAppearance {
                 document,
-                key: key.clone(),
+                keys: state
+                    .selected_face_appearances
+                    .iter()
+                    .map(|(key, _)| key.clone())
+                    .collect(),
             });
         }
         Some(GuiShellAction::ClearSelectedBodyAppearance {
@@ -58,10 +62,16 @@ fn confirm_clear(
     action: Option<GuiShellAction>,
     actions: &mut Vec<GuiShellAction>,
 ) -> bool {
-    ui.text("Clear appearance overrides for the selected bodies or face?");
+    ui.text("Clear appearance overrides for the selected bodies or faces?");
+    if state.selected_face_appearances.len() > 1 {
+        ui.text(format!(
+            "{} faces selected",
+            state.selected_face_appearances.len()
+        ));
+    }
     let valid = action.as_ref().is_some_and(|value| value.enabled(state));
     if !valid {
-        ui.text_wrapped("Select bodies or a face with an appearance override to continue.");
+        ui.text_wrapped("Select bodies or faces with an appearance override to continue.");
     }
     let disabled = ui.begin_disabled(!valid);
     let accepted = ui.button("OK");
@@ -83,7 +93,7 @@ mod tests {
         let mut state = GuiCommandState {
             document: Some(7),
             authoring: crate::GuiAuthoringContext::Part,
-            selected_face_appearance: Some(("face-key".into(), true)),
+            selected_face_appearances: vec![("face-key".into(), true)],
             ..Default::default()
         };
         let action = ClearAppearance::action_for(&state, 7).unwrap();
@@ -91,14 +101,35 @@ mod tests {
             action,
             GuiShellAction::ClearSelectedFaceAppearance {
                 document: 7,
-                key: "face-key".into(),
+                keys: vec!["face-key".into()],
             }
         );
         assert!(action.enabled(&state));
-        state.selected_face_appearance = Some(("face-key".into(), false));
+        state.selected_face_appearances = vec![("face-key".into(), false)];
         assert!(!action.enabled(&state));
-        state.selected_face_appearance = Some(("other".into(), true));
+        state.selected_face_appearances = vec![("other".into(), true)];
         assert!(!action.enabled(&state));
+    }
+
+    #[test]
+    fn clear_target_checks_the_complete_face_selection() {
+        let mut state = GuiCommandState {
+            document: Some(7),
+            authoring: crate::GuiAuthoringContext::Part,
+            selected_face_appearances: vec![("first".into(), true), ("second".into(), false)],
+            ..Default::default()
+        };
+        let action = ClearAppearance::action_for(&state, 7).unwrap();
+        assert!(action.enabled(&state));
+        state.selected_face_appearances.swap(0, 1);
+        assert!(!action.enabled(&state));
+        state.selected_face_appearances[0].1 = false;
+        state.selected_face_appearances[1].1 = false;
+        assert!(
+            !ClearAppearance::action_for(&state, 7)
+                .unwrap()
+                .enabled(&state)
+        );
     }
 
     #[test]

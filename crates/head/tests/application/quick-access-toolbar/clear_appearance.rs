@@ -439,7 +439,7 @@ fn separate_rectangle() -> oblikovati_model::sketch::Sketch2D {
     geometry
 }
 
-fn modified_viewport_click(
+pub(super) fn modified_viewport_click(
     world: &mut ApplicationWorld,
     position: [i32; 2],
     control: bool,

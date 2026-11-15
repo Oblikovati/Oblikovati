@@ -36,7 +36,7 @@ impl<
             return outline.clone();
         }
         // A row that cannot be outlined is reported where its body or sketch shows; it has no mark.
-        let outline = self.browser_outline_of(source).unwrap_or_default();
+        let outline = self.browser_outline_of(&source).unwrap_or_default();
         self.browser_outline = Some((source, outline.clone()));
         outline
     }
@@ -53,8 +53,17 @@ impl<
             }
             (Some(feature), _) => BrowserOutlineRow::Feature(feature),
             (None, None) => {
-                let face = self.chosen_model_face(document)?;
-                BrowserOutlineRow::Face(face.feature, face.role)
+                let picks = self.current_face_appearance_picks(document);
+                let faces = if picks.is_empty() {
+                    let face = self.chosen_model_face(document)?;
+                    vec![(face.feature, face.role)]
+                } else {
+                    picks
+                        .iter()
+                        .map(|pick| (pick.face.feature, pick.face.role))
+                        .collect()
+                };
+                BrowserOutlineRow::Faces(faces)
             }
             // A sketch in view already reads as chosen by its colour; only a hidden one needs this.
             (None, Some(sketch))
@@ -90,39 +99,49 @@ impl<
     }
     fn browser_outline_of(
         &self,
-        source: BrowserOutlineSource,
+        source: &BrowserOutlineSource,
     ) -> Result<Vec<[[f64; 3]; 2]>, String> {
         let session = self
             .files
             .workspace()
             .session(source.document)
             .map_err(|cause| cause.to_string())?;
-        match source.row {
+        match &source.row {
             BrowserOutlineRow::Feature(feature) => {
-                self.part_scenes.feature_edges(session, feature, None)
+                self.part_scenes.feature_edges(session, *feature, None)
             }
             BrowserOutlineRow::Root => self.outline_of_every_feature(session),
-            BrowserOutlineRow::Face(feature, role) => {
-                self.part_scenes.feature_edges(session, feature, Some(role))
+            BrowserOutlineRow::Faces(faces) => {
+                let mut outline = Vec::new();
+                for (feature, role) in faces {
+                    outline.extend(self.part_scenes.feature_edges(
+                        session,
+                        *feature,
+                        Some(*role),
+                    )?);
+                }
+                Ok(outline)
             }
-            BrowserOutlineRow::Sketch(sketch) => sketch_outline(session.snapshot(), sketch),
+            BrowserOutlineRow::Sketch(sketch) => sketch_outline(session.snapshot(), *sketch),
         }
     }
 }
 /// Which row an outline shows, and the model state it was worked out from.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub(in crate::owner) struct BrowserOutlineSource {
     document: u64,
     generation: u64,
     row: BrowserOutlineRow,
 }
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 enum BrowserOutlineRow {
     Root,
     Feature(oblikovati_model::feature::FeatureId),
-    Face(
-        oblikovati_model::feature::FeatureId,
-        oblikovati_martensite::PrismFaceRole,
+    Faces(
+        Vec<(
+            oblikovati_model::feature::FeatureId,
+            oblikovati_martensite::PrismFaceRole,
+        )>,
     ),
     Sketch(DocumentSketchId),
 }

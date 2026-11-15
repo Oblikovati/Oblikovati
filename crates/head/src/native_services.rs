@@ -247,13 +247,13 @@ impl<D: ScriptDocumentOwner, W: DispatchWakeup + 'static> HeadWork
     ) -> Result<bool, String> {
         self.owner.edit_parameter_from_gui(mutation, request)
     }
-    fn clear_selected_face_appearance_from_gui(
+    fn clear_selected_face_appearances_from_gui(
         &mut self,
         document: u64,
-        key: &str,
+        keys: &[String],
     ) -> Result<bool, String> {
         self.owner
-            .clear_selected_face_appearance_from_gui(document, key)
+            .clear_selected_face_appearances_from_gui(document, keys)
     }
     fn clear_selected_body_appearances_from_gui(
         &mut self,

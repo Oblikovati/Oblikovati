@@ -130,10 +130,10 @@ pub enum GuiShellAction {
     OpenClearBodyAppearance {
         document: u64,
     },
-    /// Clear the exact currently selected face override.
+    /// Clear the exact currently selected face overrides.
     ClearSelectedFaceAppearance {
         document: u64,
-        key: String,
+        keys: Vec<String>,
     },
     /// Clear the selected solids' own appearance overrides.
     ClearSelectedBodyAppearance {

@@ -233,11 +233,20 @@ impl GuiShellAction {
                     && state.authoring == GuiAuthoringContext::Part
                     && !state.transaction_open
             }
-            Self::ClearSelectedFaceAppearance { document, key } => {
+            Self::ClearSelectedFaceAppearance { document, keys } => {
                 state.document == Some(*document)
                     && state.authoring == GuiAuthoringContext::Part
                     && !state.transaction_open
-                    && state.selected_face_appearance.as_ref() == Some(&(key.clone(), true))
+                    && !keys.is_empty()
+                    && state
+                        .selected_face_appearances
+                        .iter()
+                        .map(|(key, _)| key)
+                        .eq(keys.iter())
+                    && state
+                        .selected_face_appearances
+                        .iter()
+                        .any(|(_, assigned)| *assigned)
             }
             Self::ClearSelectedBodyAppearance { document, keys } => {
                 state.document == Some(*document)
