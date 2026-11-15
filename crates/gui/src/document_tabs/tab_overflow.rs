@@ -1,9 +1,20 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Fit and scroll the document tab strip when it overflows.
-use imgui::Ui;
+use imgui::{ColorStackToken, StyleColor, Ui};
 
 /// Room for the two scroll arrows, taken from the strip only when it overflows.
 pub(super) const ARROWS_WIDTH: f32 = 52.;
+
+/// Keep ImGui's automatic visible selection neutral; example: `neutral_selection(ui)`.
+pub(super) fn neutral_selection(ui: &Ui) -> [ColorStackToken<'_>; 2] {
+    [
+        ui.push_style_color(StyleColor::TabActive, ui.style_color(StyleColor::Tab)),
+        ui.push_style_color(
+            StyleColor::TabUnfocusedActive,
+            ui.style_color(StyleColor::TabUnfocused),
+        ),
+    ]
+}
 
 /// Which tabs fit from `first`; a tab just brought forward is scrolled into the strip.
 pub(super) fn visible_tabs(

@@ -258,6 +258,8 @@ fn document_strip(
     // A tab reappearing in the strip lays out on its second frame, as a new one does.
     owner.layout_changed = first != *owner.first_tab;
     *owner.first_tab = first;
+    let offscreen = active.is_none_or(|index| !(first..first + count).contains(&index));
+    let _neutral = offscreen.then(|| tab_overflow::neutral_selection(ui));
     let flags = imgui::TabBarFlags::REORDERABLE;
     if let Some(_bar) = ui.tab_bar_with_flags("##visible-documents", flags) {
         let _disabled = ui.begin_disabled(state.transaction_open);

@@ -4,6 +4,8 @@
 
 ### Changed
 
+- Kept off-screen document selection from highlighting a different visible tab. (#3992)
+
 - Discarded closed document-window preview images and stale pending updates. (#3987)
 
 - Added type-preserving integer, number, boolean, and byte property editing to iProperties. (#3958)
