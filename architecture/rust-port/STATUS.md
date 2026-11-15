@@ -66,6 +66,9 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   precision certificate remains open (#3928).
 - Three-point arc: the collinear-input boundary scenario passed; see
   `receipts/2026-11-15-arc-boundary-refresh/`. Its receipt is now stale.
+- Extrusion editing: browser access to distance editing is open (#3968).
+  The pinned profile-extrusion contract has no taper input; kernel work is
+  tracked in [Martensite #463](https://github.com/Oblikovati/Martensite/issues/463).
 
 - Viewport orientation: all 20 pinned scenarios passed on the merged revision
   (#3961). See `receipts/2026-11-15-orientation-verified/`. The run uses
