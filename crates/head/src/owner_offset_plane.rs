@@ -101,29 +101,8 @@ impl<
             .workspace()
             .session(document)
             .map_err(|e| e.to_string())?;
-        let name = session
-            .snapshot()
-            .work_geometry
-            .get(id)
-            .map_err(|e| e.to_string())?
-            .name()
-            .to_owned();
-        let planes = oblikovati_api::client::Client::new(self.document_host())
-            .work_planes()
-            .list()
-            .map_err(|e| e.to_string())?;
-        let matching: Vec<_> = planes
-            .planes
-            .unwrap_or_default()
-            .into_iter()
-            .filter(|plane| plane.name == name && !plane.is_origin)
-            .collect();
-        let [plane] = matching.as_slice() else {
-            return Err(format!(
-                "work plane {id:?} named {name:?}: expected exactly one API reference"
-            ));
-        };
-        Ok(plane.ref_.clone())
+        oblikovati_automation::work_plane_reference(session.snapshot(), id)
+            .map_err(|error| error.to_string())
     }
 }
 fn origin_reference(plane: GuiOriginPlaneKind) -> &'static str {

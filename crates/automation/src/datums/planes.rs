@@ -40,6 +40,15 @@ pub fn requires_part_replay(snapshot: &DocumentSnapshot) -> bool {
         )
     })
 }
+/// Resolve a selected plane by identity, independent of its display label.
+/// Example: `work_plane_reference(&snapshot, selected_id)?`.
+pub fn work_plane_reference(snapshot: &DocumentSnapshot, id: FeatureId) -> Result<String, Error> {
+    let feature = snapshot.work_geometry.get(id).map_err(api_error)?;
+    if !DatumCollection::Planes.contains(feature.definition()) {
+        return Err(Error(format!("feature {id:?}: expected a work plane")));
+    }
+    reference::encode_reference(snapshot, id)
+}
 pub(super) fn current_info(
     snapshot: &DocumentSnapshot,
     id: FeatureId,

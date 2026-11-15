@@ -5,7 +5,9 @@ mod datums;
 pub mod legacy_profile;
 mod part_owner;
 mod reference_bytes;
-pub use datums::{DATUM_COMMAND_METHODS, DATUM_QUERY_METHODS, requires_part_replay};
+pub use datums::{
+    DATUM_COMMAND_METHODS, DATUM_QUERY_METHODS, requires_part_replay, work_plane_reference,
+};
 mod clients;
 pub use clients::CLIENT_COMMAND_METHODS;
 mod attachments;

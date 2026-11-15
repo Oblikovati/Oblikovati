@@ -194,3 +194,33 @@ fn list_requests_accept_sdk_defaults_and_null_but_refuse_malformed_shapes() {
 
 #[path = "tests/part_inputs.rs"]
 mod part_inputs;
+
+#[test]
+fn work_plane_reference_uses_identity_and_rejects_other_kinds() {
+    let mut snapshot = snapshot();
+    for id in [1, 2] {
+        let plane = WorkGeometryDefinition::Fixed(SketchPlane::xy());
+        snapshot
+            .work_geometry
+            .append(AuthoredFeature::datum(FeatureId(id), "Shared", plane))
+            .unwrap();
+    }
+    add_point(&mut snapshot, 3);
+    snapshot
+        .work_geometry
+        .rename(FeatureId(3), "Shared")
+        .unwrap();
+    let first = work_plane_reference(&snapshot, FeatureId(1)).unwrap();
+    let second = work_plane_reference(&snapshot, FeatureId(2)).unwrap();
+    assert_ne!(first, second);
+    snapshot
+        .work_geometry
+        .rename(FeatureId(2), "Renamed")
+        .unwrap();
+    assert_eq!(
+        second,
+        work_plane_reference(&snapshot, FeatureId(2)).unwrap()
+    );
+    assert!(work_plane_reference(&snapshot, FeatureId(3)).is_err());
+    assert!(work_plane_reference(&snapshot, FeatureId(99)).is_err());
+}
