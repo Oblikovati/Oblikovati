@@ -98,8 +98,10 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
   A full diagnostic before those corrections passed 18 of 38 scenarios; 20
   stopped at undefined steps. See `receipts/2026-11-15-tabs-full-current/`.
   Window preview lifecycle is fixed and has an OS-input check (#3987); see
-  `receipts/2026-11-15-live-tab-preview/`. Preview placement with insufficient
-  space remains open (#3988).
+  `receipts/2026-11-15-live-tab-preview/`. Preview placement now avoids the tab
+  when space above is limited (#3988); an OS-input check is in
+  `receipts/2026-11-15-live-preview-placement/`. Extremely small windows omit
+  the preview when its labels and a usable thumbnail cannot fit.
 - Quick access: the diagnostic passed 11 of 12 scenarios. Clear can open
   before selection and can clear multiple browser-selected bodies in one edit
   (#3962). Viewport body multi-selection now passes frame-loop tests; named
