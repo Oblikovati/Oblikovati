@@ -191,6 +191,7 @@ fn part_sketch_and_browser(world: &mut ApplicationWorld) {
     let part = world.previous_document.expect("expected a remembered part");
     world.expect_browser_of(part);
     expect_sketch_environment(world);
+    world.expect_blank_region([400, 600], [250, 300]);
 }
 // Previews
 #[given("the first part is active and the second has an empty sketch visible")]
