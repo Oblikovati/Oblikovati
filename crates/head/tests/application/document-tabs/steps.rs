@@ -91,6 +91,7 @@ fn first_is_active(world: &mut ApplicationWorld) {
 fn browser_and_viewport(world: &mut ApplicationWorld) {
     let id = world.active_id();
     world.expect_browser_of(id);
+    world.expect_blank_region([400, 600], [250, 300]);
 }
 #[then("the second part remains available as an open tab")]
 fn second_tab_remains(world: &mut ApplicationWorld) {
@@ -222,6 +223,7 @@ fn ok_and_cancel(world: &mut ApplicationWorld) {
     world.expect_text("Cancel");
 }
 #[when("I press Control+Tab")]
+#[when("the user presses Control+Tab")]
 fn control_tab(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::Tab, true);
 }
@@ -341,6 +343,7 @@ fn right_active(world: &mut ApplicationWorld) {
     assert_eq!(world.state().document, Some(world.parts[1]));
 }
 #[when("I press Control+Shift+Tab")]
+#[when("the user presses Control+Shift+Tab")]
 fn control_shift_tab(world: &mut ApplicationWorld) {
     world.control_shift_key(ViewportPhysicalKey::Tab);
 }
@@ -356,6 +359,7 @@ fn right_active_again(world: &mut ApplicationWorld) {
 fn viewport_and_browser(world: &mut ApplicationWorld) {
     let id = world.active_id();
     world.expect_browser_of(id);
+    world.expect_blank_region([400, 600], [250, 300]);
 }
 
 #[given("one part document is active")]
