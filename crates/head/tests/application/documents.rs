@@ -326,15 +326,6 @@ impl ApplicationWorld {
     pub fn expect_active_by_id(&mut self, id: u64) {
         assert_eq!(self.active_id(), id, "active document");
     }
-    /// The last captured frame's colour, where a step only reads.
-    pub fn frame_pixel(&self, position: [usize; 2]) -> [u8; 4] {
-        let capture = self
-            .last_capture
-            .as_ref()
-            .expect("expected a captured frame");
-        let at = (position[1] * capture.extent[0] as usize + position[0]) * 4;
-        std::array::from_fn(|channel| capture.rgba[at + channel])
-    }
     pub fn pixel_at(&mut self, position: [usize; 2]) -> [u8; 4] {
         let capture = super::capture_framebuffer(&mut self.app().window.native);
         let at = (position[1] * capture.extent[0] as usize + position[0]) * 4;

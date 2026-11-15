@@ -3,6 +3,8 @@
 use super::super::ApplicationWorld;
 use super::super::diagnostics::window_geometry;
 use cucumber::{given, then, when};
+#[path = "preview_probe.rs"]
+mod preview_probe;
 
 const PREVIEW: &str = "##tab-preview";
 /// Enough open documents to overflow the strip at the scenario window's width.
@@ -35,7 +37,6 @@ fn expect_home_hidden() {
 }
 fn expect_preview_above(world: &mut ApplicationWorld, label: &str) {
     let capture = super::super::capture_framebuffer(&mut world.app().window.native);
-    world.last_capture = Some(capture);
     let (position, size) = window_geometry(PREVIEW).expect("expected a tab preview");
     let tab = world.expect_tab(label);
     assert!(
@@ -44,16 +45,36 @@ fn expect_preview_above(world: &mut ApplicationWorld, label: &str) {
         position[1] + size[1],
         tab.minimum[1]
     );
-    // The picture differs from the preview window's plain ground somewhere in its lower half.
-    let ground = world.frame_pixel([position[0] as usize + 2, position[1] as usize + 2]);
-    let [left, top] = [position[0] as usize, (position[1] + size[1] * 0.5) as usize];
-    let drawn = (0..size[0] as usize).step_by(3).any(|x| {
-        (0..(size[1] * 0.45) as usize)
-            .step_by(3)
-            .any(|y| world.frame_pixel([left + x, top + y]) != ground)
-    });
-    assert!(drawn, "expected a picture over the preview ground");
+    let image_top = preview_label_bottom(world, label, position, size) + 4.;
+    assert!(
+        preview_probe::picture_has_detail(&capture, position, size, image_top),
+        "expected varied pixels inside the preview picture"
+    );
+    world.last_capture = Some(capture);
 }
+
+fn preview_label_bottom(
+    world: &ApplicationWorld,
+    label: &str,
+    position: [f32; 2],
+    size: [f32; 2],
+) -> f32 {
+    world
+        .frame
+        .runs
+        .iter()
+        .rev()
+        .find(|run| {
+            run.text.starts_with(label)
+                && (0..2).all(|axis| {
+                    run.minimum[axis] >= position[axis]
+                        && run.maximum[axis] <= position[axis] + size[axis]
+                })
+        })
+        .unwrap_or_else(|| panic!("preview label {label:?}: expected a row inside the preview"))
+        .maximum[1]
+}
+
 fn preview_text(world: &ApplicationWorld) -> String {
     world.window_text(PREVIEW)
 }
@@ -209,6 +230,7 @@ fn hover_tab(world: &mut ApplicationWorld, id: u64) {
     world.pump(Vec::new());
 }
 #[when("I hover over the second part's document tab")]
+#[when("the user hovers over the second part's document tab")]
 fn hover_second(world: &mut ApplicationWorld) {
     let second = world.parts[1];
     hover_tab(world, second);
@@ -235,6 +257,7 @@ fn first_active_still(world: &mut ApplicationWorld) {
     world.expect_active(first);
 }
 #[when("I move the pointer away from the tab")]
+#[when("the user moves the pointer away from the tab")]
 fn move_away(world: &mut ApplicationWorld) {
     world.hover([900, 500]);
     world.pump(Vec::new());
@@ -249,15 +272,17 @@ fn thumbnail_gone(_: &mut ApplicationWorld) {
 #[given("the Home workspace is available in the document tab strip")]
 fn home_in_strip(world: &mut ApplicationWorld) {
     world.expect_tab("Home");
-}
-#[when("I hover over the Home tab")]
-fn hover_home(world: &mut ApplicationWorld) {
     // Home has a picture only once it has been in front.
     world.click(home_tab_center(world));
     world.pump(Vec::new());
     let part = world.previous_document.expect("expected a remembered part");
     world.click_tab(part);
     world.pump(Vec::new());
+    world.expect_active(part);
+}
+#[when("I hover over the Home tab")]
+#[when("the user hovers over the Home tab")]
+fn hover_home(world: &mut ApplicationWorld) {
     world.hover(home_tab_center(world));
     world.pump(Vec::new());
 }
@@ -293,6 +318,7 @@ fn part_in_edit(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
 }
 #[when("I hover over the active part's document tab")]
+#[when("the user hovers over the active part's document tab")]
 fn hover_active(world: &mut ApplicationWorld) {
     let part = world.previous_document.expect("expected a remembered part");
     hover_tab(world, part);

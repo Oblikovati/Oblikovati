@@ -11,6 +11,8 @@ mod closing;
 mod detached;
 #[path = "home_and_previews.rs"]
 mod home_and_previews;
+#[path = "home_preview_native.rs"]
+mod home_preview_native;
 #[path = "mixed_documents.rs"]
 mod mixed_documents;
 #[path = "reordering.rs"]

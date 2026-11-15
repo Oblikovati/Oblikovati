@@ -102,6 +102,10 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
   when space above is limited (#3988); an OS-input check is in
   `receipts/2026-11-15-live-preview-placement/`. Extremely small windows omit
   the preview when its labels and a usable thumbnail cannot fit.
+  Home preview capture now waits for a clean presented workspace frame (#3989).
+  Four corrected preview scenarios passed focused diagnostics; see
+  `receipts/2026-11-15-tab-previews-corrected/`. The OS-input and MCPBridge
+  check is in `receipts/2026-11-15-live-home-preview/`.
 - Quick access: the diagnostic passed 11 of 12 scenarios. Clear can open
   before selection and can clear multiple browser-selected bodies in one edit
   (#3962). Viewport body multi-selection now passes frame-loop tests; named

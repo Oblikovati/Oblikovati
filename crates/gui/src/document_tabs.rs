@@ -68,7 +68,9 @@ impl DocumentTabs {
         if strip_owner.layout_changed {
             self.settling_frames = SETTLING_FRAMES;
         }
-        self.previews.panel(ui, hovered.as_ref());
+        let front =
+            crate::application::document_tabs::previews::front_key(&request.commands, home.active);
+        self.previews.panel(ui, hovered.as_ref(), front);
         self.detach_on_release(ui, request, band_height, actions);
         self.detached_windows(ui, &request.commands, actions);
         crate::application::document_tabs::document_list_control(
@@ -102,7 +104,7 @@ impl DocumentTabs {
         }
     }
     pub(crate) fn needs_frame(&self) -> bool {
-        self.settling_frames > 0
+        self.settling_frames > 0 || self.previews.needs_frame()
     }
 }
 /// The strip's borrows of its owner, for the frame's tab bar closure.
