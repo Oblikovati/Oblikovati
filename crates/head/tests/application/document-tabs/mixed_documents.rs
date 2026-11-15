@@ -18,12 +18,20 @@ fn drawing_active_collapsed(world: &mut ApplicationWorld) {
 }
 #[when("I select the part document tab")]
 #[when("I select the part document tab again")]
+#[when("the user selects the part document tab")]
+#[when("the user selects the part document tab again")]
 fn select_part_tab(world: &mut ApplicationWorld) {
     world.click_tab(part_of(world));
 }
 #[then("the part sketch viewport and model browser are displayed")]
 fn part_sketch_shown(world: &mut ApplicationWorld) {
-    world.expect_active(part_of(world));
+    let part = part_of(world);
+    world.expect_active(part);
+    world.expect_browser_of(part);
+    assert_eq!(
+        world.state().authoring,
+        oblikovati_gui::GuiAuthoringContext::Sketch
+    );
     let centre = world.pixel_at([700, 450]);
     assert!(
         centre[..3].iter().all(|channel| *channel < 150),
@@ -35,6 +43,7 @@ fn sketch_ribbon(world: &mut ApplicationWorld) {
     world.expect_text("Finish Sketch");
 }
 #[when("I select the drawing document tab")]
+#[when("the user selects the drawing document tab")]
 fn select_drawing_tab(world: &mut ApplicationWorld) {
     world.click_tab(drawing_of(world));
 }
