@@ -15781,10 +15781,15 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-tab-context-verified/context/receipt.json",
+        "sha256": "7ecab57897944f3c8ab86869c3a50b87f18fc6c19a4abced764923093f526a28"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:fee8e12a0a8914a03bf9e5266f3e4f04c37b0f09027ec0f1621b75789fa63797",
@@ -15854,10 +15859,15 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-tab-context-verified/properties/receipt.json",
+        "sha256": "553a36c08837823a5df09a2747d9341909023324af1231c3ddb7009e6217d533"
+      },
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd"
     },
     {
       "id": "scenario:50f02a102ce485626f02cec5e7d0d7056dcf7d994e11e8c2a7e4f295bc32eb0e",
