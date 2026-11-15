@@ -125,8 +125,11 @@ impl<
             return self.select_browser_feature(document, *feature);
         }
         if let Some(crate::part_scene::pick_candidates::PickTarget::Body(feature, key)) = &picked {
-            if toggle && !self.current_face_appearance_picks(document).is_empty() {
-                return self.unsupported_selection_toggle("mixed body and face");
+            if toggle
+                && self.chosen_model_face(document).is_some()
+                && self.current_face_appearance_picks(document).is_empty()
+            {
+                return self.unsupported_selection_toggle("unresolved face");
             }
             return self.browser_choice(
                 document,
@@ -140,23 +143,21 @@ impl<
         if toggle && picked.is_none() {
             return Ok(false);
         }
-        if toggle
-            && !self
-                .files
-                .workspace()
-                .session(document)
-                .map_err(|cause| cause.to_string())?
-                .selected_browser_bodies()
-                .is_empty()
-        {
-            return self.unsupported_selection_toggle("mixed body and face");
-        }
         self.selected_occurrence = None;
-        self.files
-            .commands(document)
+        let bodies_selected = !self
+            .files
+            .workspace()
+            .session(document)
             .map_err(|cause| cause.to_string())?
-            .set_browser_sketch_selection(None, SelectionClickMode::Replace, false)
-            .map_err(|cause| cause.to_string())?;
+            .selected_browser_bodies()
+            .is_empty();
+        if !toggle || !bodies_selected {
+            self.files
+                .commands(document)
+                .map_err(|cause| cause.to_string())?
+                .set_browser_sketch_selection(None, SelectionClickMode::Replace, false)
+                .map_err(|cause| cause.to_string())?;
+        }
         let picked = match picked {
             Some(crate::part_scene::pick_candidates::PickTarget::Face(feature, role)) => {
                 Some((feature, role))

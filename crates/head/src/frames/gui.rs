@@ -328,6 +328,7 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::AssignPartAsset { .. }
         | GuiShellAction::SetBodyAppearance { .. }
         | GuiShellAction::ClearSelectedFaceAppearance { .. }
+        | GuiShellAction::ClearSelectedMixedAppearance { .. }
         | GuiShellAction::ClearSelectedBodyAppearance { .. }
         | GuiShellAction::OpenClearBodyAppearance { .. }
         | GuiShellAction::EditSketch { .. }

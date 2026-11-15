@@ -145,6 +145,14 @@ impl<
             SketchDimensionsShown, ToggleModelStateEditScope,
         };
         self.require_browser_document(document)?;
+        if matches!(choice, Body { toggle: true, .. })
+            && self.chosen_model_face(document).is_some()
+            && self.current_face_appearance_picks(document).is_empty()
+        {
+            return Err(format!(
+                "document {document}: expected a named face before extending the selection"
+            ));
+        }
         if let SetOccurrenceSuppressed { path, suppressed } = choice {
             self.document_host()
                 .set_occurrence_suppressed(document, path, *suppressed)
@@ -234,7 +242,7 @@ impl<
                 commands.set_body_visible(key, *visible)?;
             }
         }
-        if matches!(choice, Nothing | Root | Body { .. }) {
+        if matches!(choice, Nothing | Root | Body { toggle: false, .. }) {
             self.model_face = None;
             self.face_appearance_picks.clear();
             self.selected_occurrence = None;

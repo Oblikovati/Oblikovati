@@ -233,37 +233,10 @@ impl GuiShellAction {
                     && state.authoring == GuiAuthoringContext::Part
                     && !state.transaction_open
             }
-            Self::ClearSelectedFaceAppearance { document, keys } => {
-                state.document == Some(*document)
-                    && state.authoring == GuiAuthoringContext::Part
-                    && !state.transaction_open
-                    && !keys.is_empty()
-                    && state
-                        .selected_face_appearances
-                        .iter()
-                        .map(|(key, _)| key)
-                        .eq(keys.iter())
-                    && state
-                        .selected_face_appearances
-                        .iter()
-                        .any(|(_, assigned)| *assigned)
-            }
-            Self::ClearSelectedBodyAppearance { document, keys } => {
-                state.document == Some(*document)
-                    && state.authoring == GuiAuthoringContext::Part
-                    && !state.transaction_open
-                    && !keys.is_empty()
-                    && state.selected_body_keys == *keys
-                    && state.browser.as_ref().is_some_and(|browser| {
-                        keys.iter()
-                            .all(|key| browser.bodies.iter().any(|body| body.key == *key))
-                            && keys.iter().any(|key| {
-                                browser
-                                    .bodies
-                                    .iter()
-                                    .any(|body| body.key == *key && !body.appearance.is_empty())
-                            })
-                    })
+            Self::ClearSelectedFaceAppearance { .. }
+            | Self::ClearSelectedMixedAppearance { .. }
+            | Self::ClearSelectedBodyAppearance { .. } => {
+                crate::clear_appearance::clear_action_enabled(self, state)
             }
             Self::SetBodyAppearance { document, .. } => {
                 state.document == Some(*document) && !state.transaction_open

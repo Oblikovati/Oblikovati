@@ -47,6 +47,22 @@ impl<
             session.selected_browser_feature(),
             session.selected_browser_sketches().first(),
         ) {
+            _ if !session.selected_browser_bodies().is_empty()
+                && !self.current_face_appearance_picks(document).is_empty() =>
+            {
+                BrowserOutlineRow::Mixed {
+                    bodies: session
+                        .selected_browser_bodies()
+                        .iter()
+                        .map(|body| body.feature)
+                        .collect(),
+                    faces: self
+                        .current_face_appearance_picks(document)
+                        .iter()
+                        .map(|pick| (pick.face.feature, pick.face.role))
+                        .collect(),
+                }
+            }
             _ if session.browser_root_selected() => BrowserOutlineRow::Root,
             _ if session.selected_browser_body().is_some() => {
                 BrowserOutlineRow::Feature(session.selected_browser_body()?.1)
@@ -122,6 +138,20 @@ impl<
                 }
                 Ok(outline)
             }
+            BrowserOutlineRow::Mixed { bodies, faces } => {
+                let mut outline = Vec::new();
+                for feature in bodies {
+                    outline.extend(self.part_scenes.feature_edges(session, *feature, None)?);
+                }
+                for (feature, role) in faces {
+                    outline.extend(self.part_scenes.feature_edges(
+                        session,
+                        *feature,
+                        Some(*role),
+                    )?);
+                }
+                Ok(outline)
+            }
             BrowserOutlineRow::Sketch(sketch) => sketch_outline(session.snapshot(), *sketch),
         }
     }
@@ -136,6 +166,13 @@ pub(in crate::owner) struct BrowserOutlineSource {
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum BrowserOutlineRow {
     Root,
+    Mixed {
+        bodies: Vec<oblikovati_model::feature::FeatureId>,
+        faces: Vec<(
+            oblikovati_model::feature::FeatureId,
+            oblikovati_martensite::PrismFaceRole,
+        )>,
+    },
     Feature(oblikovati_model::feature::FeatureId),
     Faces(
         Vec<(

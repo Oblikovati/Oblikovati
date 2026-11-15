@@ -293,6 +293,14 @@ impl<
     ) -> Result<bool, String> {
         self.clear_selected_face_appearances(document, keys)
     }
+    fn clear_selected_mixed_appearance_from_gui(
+        &mut self,
+        document: u64,
+        bodies: &[String],
+        faces: &[String],
+    ) -> Result<bool, String> {
+        self.clear_selected_appearances(document, bodies, faces)
+    }
     fn clear_selected_body_appearances_from_gui(
         &mut self,
         document: u64,

@@ -135,6 +135,12 @@ pub enum GuiShellAction {
         document: u64,
         keys: Vec<String>,
     },
+    /// Clear selected body and face overrides together.
+    ClearSelectedMixedAppearance {
+        document: u64,
+        body_keys: Vec<String>,
+        face_keys: Vec<String>,
+    },
     /// Clear the selected solids' own appearance overrides.
     ClearSelectedBodyAppearance {
         document: u64,
