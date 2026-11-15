@@ -1,0 +1,183 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use super::*;
+use oblikovati_model::{
+    document_sketch::SketchPointProjection,
+    feature::{work_geometry::WorkPointReference, work_plane::WorkPlaneOrigin},
+    sketch::{DistanceMeasure, SketchEntityId},
+};
+
+fn add_rectangle(
+    snapshot: &mut DocumentSnapshot,
+    ids: &mut RecipeReservations<'_>,
+) -> Result<(DocumentSketchId, SketchEntityId), String> {
+    let sketch = ids.allocate_sketch().map_err(|e| e.to_string())?;
+    let points = (0..5)
+        .map(|_| ids.allocate_sketch_entity().unwrap())
+        .collect::<Vec<_>>();
+    let mut shape = Sketch2D::default();
+    for (id, xy) in points
+        .iter()
+        .zip([[0., 0.], [0., 0.], [1., 0.], [1., 1.], [0., 1.]])
+    {
+        shape.add_point(*id, xy).unwrap();
+    }
+    for [a, b] in [[1, 2], [2, 3], [3, 4], [4, 1]] {
+        shape
+            .add_line(
+                ids.allocate_sketch_entity().unwrap(),
+                [points[a], points[b]],
+            )
+            .unwrap();
+    }
+    let relations = [
+        PlanarConstraint::Coincident {
+            points: [points[0], points[1]],
+        },
+        PlanarConstraint::Horizontal {
+            points: [points[1], points[2]],
+        },
+        PlanarConstraint::Horizontal {
+            points: [points[3], points[4]],
+        },
+        PlanarConstraint::Vertical {
+            points: [points[2], points[3]],
+        },
+        PlanarConstraint::Vertical {
+            points: [points[4], points[1]],
+        },
+        PlanarConstraint::Distance {
+            points: [points[1], points[2]],
+            measure: DistanceMeasure::Horizontal,
+            parameter: 1,
+        },
+        PlanarConstraint::Distance {
+            points: [points[1], points[4]],
+            measure: DistanceMeasure::Vertical,
+            parameter: 1,
+        },
+    ];
+    for relation in relations {
+        shape
+            .add_constraint(ids.allocate_sketch_constraint(sketch).unwrap(), relation)
+            .unwrap();
+    }
+    snapshot
+        .sketches
+        .add_on_origin_plane(sketch, "Rectangle", WorkPlaneOrigin::XY, shape)
+        .map_err(|e| e.to_string())?;
+    snapshot
+        .sketches
+        .set_point_projections(
+            sketch,
+            vec![SketchPointProjection {
+                anchor: points[0],
+                reference: WorkPointReference::Origin,
+            }],
+        )
+        .map_err(|e| e.to_string())?;
+    Ok((sketch, points[0]))
+}
+fn assert_current(
+    host: &mut Host,
+    document: u64,
+    sketch: DocumentSketchId,
+    anchor: SketchEntityId,
+    size: f64,
+) {
+    let before = host.workspace().session(document).unwrap();
+    let recipe = before.snapshot().sketches.recipe();
+    let generation = before.generation();
+    let labels = before
+        .undo_labels()
+        .into_iter()
+        .map(str::to_owned)
+        .collect::<Vec<_>>();
+    let dirty = host.workspace().needs_save(document).unwrap();
+    {
+        let mut commands = host.commands(document).unwrap();
+        let evidence = commands
+            .conditional_canonical_sketch(sketch, anchor)
+            .unwrap();
+        let projection = evidence.projection().unwrap();
+        let points = projection
+            .snapshot()
+            .sketches
+            .get(sketch)
+            .unwrap()
+            .geometry()
+            .points();
+        let bounds = points
+            .iter()
+            .flat_map(|p| p.position)
+            .map(|v| [v - 0.01, v + 0.01])
+            .collect::<Vec<_>>();
+        let root = projection.conditional_root_auto(&bounds, &[]).unwrap();
+        let values = [0., 0., 0., 0., size, 0., size, size, 0., size];
+        for (value, bound) in values.into_iter().zip(root.root().enclosure()) {
+            assert!(bound[0] <= value && value <= bound[1]);
+        }
+        assert_eq!(root.canonical_segment_errors().unwrap().len(), 4);
+    }
+    let after = host.workspace().session(document).unwrap();
+    assert_eq!(after.snapshot().sketches.recipe(), recipe);
+    assert_eq!(after.generation(), generation);
+    assert_eq!(after.undo_labels(), labels);
+    assert_eq!(host.workspace().needs_save(document).unwrap(), dirty);
+}
+#[test]
+fn session_rederives_evidence_after_edit_history_and_reopen() {
+    let mut host = host(RecordingWorkspace::default());
+    let mut source = SequenceGuids(1000);
+    let doc = open_file(&mut host, "a.obk", &mut source, OpenActivation::Activate);
+    let (sketch, anchor) = host
+        .commands(doc)
+        .unwrap()
+        .run("Rectangle", add_rectangle)
+        .unwrap();
+    assert_current(&mut host, doc, sketch, anchor, 1.);
+    host.commands(doc)
+        .unwrap()
+        .run("Edit size", |snapshot, _| {
+            snapshot.parameters.set_expression(1, "20 mm")
+        })
+        .unwrap();
+    assert_current(&mut host, doc, sketch, anchor, 2.);
+    host.commands(doc).unwrap().undo().unwrap();
+    assert_current(&mut host, doc, sketch, anchor, 1.);
+    host.commands(doc).unwrap().redo().unwrap();
+    assert_current(&mut host, doc, sketch, anchor, 2.);
+    host.save(doc, "alpha", &mut source).unwrap();
+    host.close_discarding_changes(doc).unwrap();
+    let reopened = open_file(&mut host, "a.obk", &mut source, OpenActivation::Activate);
+    assert_current(&mut host, reopened, sketch, anchor, 2.);
+    host.commands(reopened)
+        .unwrap()
+        .run("Same size source", |snapshot, _| {
+            snapshot.parameters.set_expression(1, "2 cm")
+        })
+        .unwrap();
+    assert_current(&mut host, reopened, sketch, anchor, 2.);
+    let other = open_file(&mut host, "b.obk", &mut source, OpenActivation::Activate);
+    assert!(
+        host.commands(other)
+            .unwrap()
+            .conditional_canonical_sketch(sketch, anchor)
+            .is_err()
+    );
+    assert_current(&mut host, reopened, sketch, anchor, 2.);
+    host.save_copy(
+        reopened,
+        &path("precision-copy.obk"),
+        None,
+        "alpha",
+        &mut source,
+    )
+    .unwrap();
+    let copy = open_file(
+        &mut host,
+        "precision-copy.obk",
+        &mut source,
+        OpenActivation::Background,
+    );
+    assert_current(&mut host, copy, sketch, anchor, 2.);
+}

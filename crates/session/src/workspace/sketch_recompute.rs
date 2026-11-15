@@ -16,6 +16,15 @@ impl<O: TransactionObserver> SessionCommands<'_, O> {
         self.session
             .solve_sketch_projected(sketch, cancelled, project)
     }
+    /// Solve and borrow conditional evidence for this document's canonical sketch.
+    /// Example: `commands.conditional_canonical_sketch(sketch, anchor)?`.
+    pub fn conditional_canonical_sketch(
+        &mut self,
+        sketch: DocumentSketchId,
+        anchor: oblikovati_model::sketch::SketchEntityId,
+    ) -> Result<crate::SessionConditionalSketch<'_, O>, String> {
+        self.session.conditional_canonical_sketch(sketch, anchor)
+    }
     /// Solve only this document's selected sketch; example: `commands.solve_sketch(id, || false)?`.
     pub fn solve_sketch(
         &mut self,
