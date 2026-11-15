@@ -4429,10 +4429,11 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3887",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
-      "mapping_reason": "Cancel point creation in the recorded fixture."
+      "mapping_reason": "Cancel point creation in the recorded fixture.",
+      "reason": "The recorded starting sketch is not supplied. The scenario owner has been asked to provide it or define an acceptable portable substitute in features/sketch/point/BLOCKERS.md."
     },
     {
       "id": "scenario:858dc2bc227f70bfe665f1da2b23c5d37c4fb30d00e40fecfbc6b1be8105cc93",

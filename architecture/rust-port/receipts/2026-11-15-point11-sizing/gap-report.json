@@ -1,0 +1,66 @@
+{
+  "kind": "diagnostic only; not acceptance",
+  "source_files": {
+    "/tmp/obk-capsule-scenarios-current/features/sketch/point/scenario.feature": "@sketch\r\nFeature: Point\r\n\r\n  @cancel @documented_observation @needs_fixture\r\n  Scenario: point-03 Cancel before placing a point\r\n    Given the MCAD Software is running\r\n    And an editable planar sketch is active\r\n    And Point is active with Select center point\r\n    When the user press Escape twice without clicking the canvas\r\n    And the user right-click empty canvas to inspect state\r\n    Then the status is Ready and the menu offers Repeat Point, Center Point\r\n    And no new point marker is retained\r\n    When the user press Escape\r\n    Then the Ready-state menu closes\r\n\r\n  @documented_observation @needs_fixture @undo_redo\r\n  Scenario: point-04 Undo and redo the recorded placement\r\n    Given the MCAD Software is running\r\n    And an editable planar sketch is active\r\n    And a center point remains after placement and Escape\r\n    When the user press Ctrl+Z\r\n    Then the point cross disappears\r\n    When the user press Ctrl+Y\r\n    Then the point cross returns at its prior visible location\r\n\r\n  @documented_observation @needs_fixture @repeatability\r\n  Scenario: point-05 Continue regular point placement without restarting Point\r\n    Given the MCAD Software is running\r\n    And an editable planar sketch is active\r\n    And the Format Center Point toggle is off\r\n    When the user invoke Point\r\n    Then the prompt is Select Sketch Point\r\n    When the user click two separate canvas positions\r\n    Then both dot-style markers appear\r\n    And Point remains available after each placement\r\n    When the user press Escape\r\n    Then Ready is displayed with both point markers retained\r\n\r\n  @conversion @documented_observation @needs_fixture\r\n  Scenario: point-06 Convert a regular sketch point to a center point and back\r\n    Given the MCAD Software is running\r\n    And an editable planar sketch is active\r\n    And a regular dot-style sketch point and a separate unchanged point\r\n    When the user right-click the first point and choose Center Point\r\n    Then its selected marker is a cross\r\n    And reopening its context menu shows Center Point checked\r\n    When the user choose Center Point again\r\n    Then the first point returns to a dot marker\r\n    And the separate point retains its dot marker at its displayed location\r\n\r\n  @conversion_undo_redo @documented_observation @needs_fixture\r\n  Scenario: point-07 Undo and redo point-type conversion\r\n    Given the MCAD Software is running\r\n    And an editable planar sketch is active\r\n    And the user have converted a regular sketch point to Center Point\r\n    When the user press Ctrl+Z\r\n    Then the point returns to its dot marker\r\n    When the user press Ctrl+Y\r\n    Then the point is a Center Point again\r\n    When the user reopen the point context menu\r\n    Then Center Point is checked\r\n\r\n  @creation_mode @documented_observation @needs_fixture\r\n  Scenario: point-08 Create a center point using the Format toggle\r\n    Given the MCAD Software is running\r\n    And an editable planar sketch is active\r\n    And no geometry is selected and Center Point is enabled in Format\r\n    When the user invoke Point\r\n    Then the prompt is Select center point\r\n    When the user click empty canvas and press Escape\r\n    Then a center point remains at that location\r\n    And existing regular points retain their dot-style type\r\n\r\n  @documented_observation @edge_case @needs_fixture @undo_redo\r\n  Scenario: point-10 Resolve repeated center-point placement at the same coordinates\r\n    Given Point is active with Select center point\r\n    And the observed sketch fixture shows 208 dimensions needed\r\n    When the user click the same canvas location twice and press Escape\r\n    Then no validation dialog appears\r\n    And the coordinate HUD displays sketch X -21.229 mm and Y 10.444 mm for both clicks\r\n    And the sketch shows 210 dimensions needed\r\n    When the user undo the most recent placement\r\n    Then the sketch still shows 210 dimensions needed\r\n    When the user undo the earlier placement\r\n    Then the sketch shows 208 dimensions needed\r\n    When the user redo each placement separately\r\n    Then the count changes to 210 and remains at 210\r\n    When the user open Select Other at the overlapping location and expand its candidate list\r\n    Then the list contains two point candidates\r\n\r\n  @needs_fixture\r\n  Scenario: point-11 Cancel a center-point command with one Escape in the later fixture\r\n    Given Point is active with Select center point in the recorded sketch\r\n    When the user press Escape without placing a point\r\n    And the user right-click empty canvas to inspect the refreshed state\r\n    Then Ready is displayed and the menu offers Repeat Point, Center Point\r\n    And no new point marker is visible\r\n    When the user press Escape\r\n    Then the menu closes and Ready remains displayed\r\n\r\n  @needs_fixture\r\n  Scenario: point-12 Inspect Precise Input while Point is active\r\n    Given Point is active in an editable sketch\r\n    When the user expand the Create panel\r\n    Then Precise Input is available\r\n\r\n"
+  },
+  "scenarios": [
+    {
+      "source": "/tmp/obk-capsule-scenarios-current/features/sketch/point/scenario.feature",
+      "scenario": "point-11 Cancel a center-point command with one Escape in the later fixture",
+      "line": 92,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 93,
+          "step": "Point is active with Select center point in the recorded sketch",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 94,
+          "step": "the user press Escape without placing a point",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 95,
+          "step": "the user right-click empty canvas to inspect the refreshed state",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 96,
+          "step": "Ready is displayed and the menu offers Repeat Point, Center Point",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 97,
+          "step": "no new point marker is visible",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 98,
+          "step": "the user press Escape",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected an active document"
+        },
+        {
+          "line": 99,
+          "step": "the menu closes and Ready remains displayed",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    }
+  ]
+}
