@@ -74,6 +74,12 @@ source hash changes. The discovery inventory is not evidence that features are
 implemented. Check the live source again before committing: it can change while
 work is in progress.
 
+Run `python3 -B tools/bdd/behavior_cli.py report` after updating the pin. This
+regenerates the scenario inventory from the pinned checkout and compares every
+field, including inherited capture tags, with the checked-in inventory. A
+successful discovery inventory alone does not check those fields. Regenerate
+the behavior ledger from the same inputs before committing.
+
 ## Select and implement work
 
 Choose the next ready item in milestone order. Record its scope, problem, and
