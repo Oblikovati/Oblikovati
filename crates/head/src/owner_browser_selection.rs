@@ -34,6 +34,7 @@ impl<
             .map(|count| count.is_some())
             .map_err(|cause| cause.to_string())?;
         self.model_face = None;
+        self.face_appearance_picks.clear();
         self.selected_occurrence = None;
         Ok(changed)
     }
@@ -49,6 +50,7 @@ impl<
             .set_browser_feature_selection(feature)
             .map_err(|cause| cause.to_string())?;
         self.model_face = None;
+        self.face_appearance_picks.clear();
         self.selected_occurrence = None;
         Ok(true)
     }
@@ -149,6 +151,7 @@ impl<
                 .map_err(|cause| cause.to_string())?;
             self.selected_occurrence = None;
             self.model_face = None;
+            self.face_appearance_picks.clear();
             return Ok(true);
         }
         if let Occurrence(path) = choice {
@@ -165,6 +168,7 @@ impl<
                 .map_err(|cause| cause.to_string())?;
             self.selected_occurrence = Some((document, path.clone()));
             self.model_face = None;
+            self.face_appearance_picks.clear();
             return Ok(true);
         }
         if let RenameModelState { id, name } = choice {
@@ -232,6 +236,7 @@ impl<
         }
         if matches!(choice, Nothing | Root | Body { .. }) {
             self.model_face = None;
+            self.face_appearance_picks.clear();
             self.selected_occurrence = None;
         }
         Ok(true)

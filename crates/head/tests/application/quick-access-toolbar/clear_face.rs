@@ -64,7 +64,7 @@ fn verify_face_clear_input(world: &mut ApplicationWorld) {
     let before = face_overrides(world);
     let point = world.app().window.model_pixel([2., 1.5, 2.]).unwrap();
     world.click(point);
-    let (key, has_override) = world.state().selected_face_appearance.unwrap();
+    let (key, has_override) = world.state().selected_face_appearances.pop().unwrap();
     assert!(has_override);
     assert!(world.run_is_enabled("OK"));
     world.click_text("Cancel");
@@ -85,4 +85,46 @@ fn apply_face_clear(world: &mut ApplicationWorld, key: &str) {
         .collect();
     assert_eq!(keys.len(), 5);
     assert!(!keys.contains(&key));
+}
+
+#[test]
+fn clear_two_named_faces_through_viewport_and_undo() {
+    let mut world = ApplicationWorld::new();
+    prepare_face_tool(&mut world);
+    let before = face_overrides(&mut world);
+    let first = world.app().window.model_pixel([2., 1.5, 2.]).unwrap();
+    world.click(first);
+    world
+        .app()
+        .window
+        .navigate_view(oblikovati_viewport::ViewportNavigation::Orbit {
+            yaw: std::f64::consts::PI,
+            pitch: 0.,
+        })
+        .unwrap();
+    world.pump(Vec::new());
+    let second = world.app().window.model_pixel([2., 1.5, 0.]).unwrap();
+    clear_appearance::modified_viewport_click(&mut world, second, true, false);
+    let selected = world.state().selected_face_appearances;
+    assert_eq!(
+        selected.len(),
+        2,
+        "expected two selected faces: {selected:?}"
+    );
+    assert!(selected.iter().all(|(_, assigned)| *assigned));
+    assert!(world.run_is_enabled("OK"));
+    world.click_text("Cancel");
+    assert_eq!(face_overrides(&mut world), before);
+    world.click(row_center(&world, "Clear"));
+    world.click_text("OK");
+    assert_eq!(
+        face_overrides(&mut world)
+            .assignments
+            .face_appearances()
+            .count(),
+        4
+    );
+    world.click(row_center(&world, "Undo"));
+    assert_eq!(face_overrides(&mut world), before);
+    world.close();
 }

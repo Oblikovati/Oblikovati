@@ -32,6 +32,8 @@
 
 ### Fixed
 
+- Cleared multiple selected named face appearances in one undoable edit. (#3962)
+
 - Cleared a selected named face appearance with Cancel and undo support, while keeping other overrides. (#3962)
 
 - Kept Ctrl and Shift viewport body selections for Clear Appearance. (#3962)

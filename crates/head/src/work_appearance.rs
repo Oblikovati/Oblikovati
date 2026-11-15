@@ -2,15 +2,15 @@
 //! Owner service for selected-body appearance clearing.
 macro_rules! appearance_work_methods {
     () => {
-        /// Clear a selected face's exact override.
-        /// Example: `work.clear_selected_face_appearance_from_gui(document, key)?`.
-        fn clear_selected_face_appearance_from_gui(
+        /// Clear selected faces' exact overrides.
+        /// Example: `work.clear_selected_face_appearances_from_gui(document, keys)?`.
+        fn clear_selected_face_appearances_from_gui(
             &mut self,
             document: u64,
-            key: &str,
+            keys: &[String],
         ) -> Result<bool, String> {
             Err(format!(
-                "face {key:?} in document {document}: expected a selection owner"
+                "faces {keys:?} in document {document}: expected a selection owner"
             ))
         }
         /// Clear selected bodies' own appearance overrides in one edit.

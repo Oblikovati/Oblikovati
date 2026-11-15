@@ -140,8 +140,8 @@ fn sketch(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, Str
             owner.assign_part_asset_from_gui(*document, *kind, id)
         }
         GuiShellAction::OpenClearBodyAppearance { .. } => Ok(false),
-        GuiShellAction::ClearSelectedFaceAppearance { document, key } => {
-            owner.clear_selected_face_appearance_from_gui(*document, key)
+        GuiShellAction::ClearSelectedFaceAppearance { document, keys } => {
+            owner.clear_selected_face_appearances_from_gui(*document, keys)
         }
         GuiShellAction::ClearSelectedBodyAppearance { document, keys } => {
             owner.clear_selected_body_appearances_from_gui(*document, keys)

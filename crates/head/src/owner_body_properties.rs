@@ -118,6 +118,7 @@ impl<
             .set_browser_sketch_selection(None, SelectionClickMode::Replace, false)
             .map_err(|cause| cause.to_string())?;
         self.model_face = None;
+        self.face_appearance_picks.clear();
         Ok(true)
     }
     /// Give a body its own appearance; an empty id clears it, back to the part's.

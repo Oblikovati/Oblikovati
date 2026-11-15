@@ -58,7 +58,7 @@ fn clear_selected_named_face_is_one_reversible_edit() {
     let history = history_count(&owner, document);
     assert!(
         owner
-            .clear_selected_face_appearance(document, &end)
+            .clear_selected_face_appearances(document, std::slice::from_ref(&end))
             .unwrap()
     );
     let cleared = assets(&owner, document);
@@ -71,6 +71,158 @@ fn clear_selected_named_face_is_one_reversible_edit() {
     let reopened = save_and_reopen(&mut owner, document);
     assert_eq!(assets(&owner, reopened), cleared);
 }
+#[test]
+fn clear_two_selected_faces_is_atomic_and_reversible() {
+    let (mut owner, document, end, start) = face_fixture();
+    owner
+        .click_model_with_modifiers(document, [[1., 1., -10.], [0., 0., 1.]], None, true)
+        .unwrap();
+    let keys = vec![end.clone(), start.clone()];
+    assert_eq!(
+        owner
+            .gui_command_state()
+            .unwrap()
+            .selected_face_appearances
+            .len(),
+        2
+    );
+    let before = assets(&owner, document);
+    let history = history_count(&owner, document);
+    assert!(
+        owner
+            .clear_selected_face_appearances(document, &keys)
+            .unwrap()
+    );
+    let cleared = assets(&owner, document);
+    let mut expected = before.clone();
+    for key in &keys {
+        let reference = oblikovati_model::assets::AssignmentReference::new(key, vec![]).unwrap();
+        expected
+            .assignments
+            .set_face_appearance(&reference, "")
+            .unwrap();
+    }
+    assert_eq!(cleared, expected);
+    assert_eq!(history_count(&owner, document), history + 1);
+    owner.files.commands(document).unwrap().undo().unwrap();
+    assert_eq!(assets(&owner, document), before);
+    owner.files.commands(document).unwrap().redo().unwrap();
+    assert_eq!(assets(&owner, document), cleared);
+    let reopened = save_and_reopen(&mut owner, document);
+    assert_eq!(assets(&owner, reopened), cleared);
+}
+
+#[test]
+fn face_toggle_removes_only_that_face_and_updates_its_outline() {
+    let (mut owner, document, end, start) = face_fixture();
+    let first_outline = owner.current_browser_outline();
+    assert!(!first_outline.is_empty());
+    owner
+        .click_model_with_modifiers(document, [[1., 1., -10.], [0., 0., 1.]], None, true)
+        .unwrap();
+    let both = owner.current_browser_outline();
+    assert!(both.len() > first_outline.len());
+    let selected = owner.gui_command_state().unwrap().selected_face_appearances;
+    assert_eq!(
+        selected
+            .iter()
+            .map(|(key, _)| key.as_str())
+            .collect::<Vec<_>>(),
+        [end.as_str(), start.as_str()]
+    );
+    owner
+        .click_model_with_modifiers(document, [[1., 1., -10.], [0., 0., 1.]], None, true)
+        .unwrap();
+    assert_eq!(owner.current_browser_outline(), first_outline);
+    let selected = owner.gui_command_state().unwrap().selected_face_appearances;
+    assert_eq!(
+        selected
+            .iter()
+            .map(|(key, _)| key.as_str())
+            .collect::<Vec<_>>(),
+        [end.as_str()]
+    );
+}
+
+#[test]
+fn modified_face_click_refuses_a_mixed_body_selection() {
+    let (mut owner, document, _, _) = face_fixture();
+    let body = super::assignments::entity_key(&owner, document, 1, "body");
+    owner
+        .browser_choice(
+            document,
+            &oblikovati_gui::GuiBrowserChoice::Body {
+                feature: oblikovati_model::feature::FeatureId(1),
+                key: body.clone(),
+                toggle: false,
+            },
+        )
+        .unwrap();
+    owner
+        .click_model_with_modifiers(document, [[1., 1., 10.], [0., 0., -1.]], None, true)
+        .unwrap();
+    assert!(
+        matches!(owner.take_command_notice(), Some(crate::DesktopCommandNotice::SelectionFailed { cause }) if cause.contains("mixed body and face"))
+    );
+    assert_eq!(
+        owner.gui_command_state().unwrap().selected_body_keys,
+        [body]
+    );
+    assert!(
+        owner
+            .gui_command_state()
+            .unwrap()
+            .selected_face_appearances
+            .is_empty()
+    );
+}
+
+#[test]
+fn modified_body_click_refuses_a_mixed_face_selection() {
+    use oblikovati_session::selection::SelectionKind;
+    let (mut owner, document, end, _) = face_fixture();
+    let rank = owner.ambient_selection.rank(SelectionKind::Body);
+    owner.ambient_selection.move_kind(rank, 0);
+    owner
+        .click_model_with_modifiers(document, [[1., 1., 10.], [0., 0., -1.]], Some(0.1), true)
+        .unwrap();
+    assert!(
+        matches!(owner.take_command_notice(), Some(crate::DesktopCommandNotice::SelectionFailed { cause }) if cause.contains("mixed body and face"))
+    );
+    assert_eq!(
+        owner.gui_command_state().unwrap().selected_face_appearances[0].0,
+        end
+    );
+    assert!(
+        owner
+            .gui_command_state()
+            .unwrap()
+            .selected_body_keys
+            .is_empty()
+    );
+}
+
+#[test]
+fn multiple_face_clear_rejects_partial_and_forged_selection() {
+    let (mut owner, document, end, start) = face_fixture();
+    owner
+        .click_model_with_modifiers(document, [[1., 1., -10.], [0., 0., 1.]], None, true)
+        .unwrap();
+    let before = assets(&owner, document);
+    for keys in [
+        vec![end.clone()],
+        vec![end.clone(), "forged".into()],
+        vec![start.clone(), end.clone()],
+    ] {
+        assert!(
+            owner
+                .clear_selected_face_appearances(document, &keys)
+                .is_err()
+        );
+        assert_eq!(assets(&owner, document), before);
+    }
+}
+
 fn history_count(owner: &TestOwner, document: u64) -> usize {
     owner
         .files
@@ -107,7 +259,7 @@ fn clear_selected_named_face_rejects_forged_and_stale_selection() {
     let before = assets(&owner, document);
     assert!(
         owner
-            .clear_selected_face_appearance(document, &start)
+            .clear_selected_face_appearances(document, std::slice::from_ref(&start))
             .is_err()
     );
     assert_eq!(assets(&owner, document), before);
@@ -115,7 +267,7 @@ fn clear_selected_named_face_rejects_forged_and_stale_selection() {
     let after_edit = assets(&owner, document);
     assert!(
         owner
-            .clear_selected_face_appearance(document, &end)
+            .clear_selected_face_appearances(document, std::slice::from_ref(&end))
             .is_err()
     );
     assert_eq!(assets(&owner, document), after_edit);

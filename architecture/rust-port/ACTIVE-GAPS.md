@@ -118,3 +118,9 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
   corrected eight-step native run passed, but its receipt is stale (#3953).
 - Martensite closest-point behavior is tracked separately in
   [Martensite #406](https://github.com/Oblikovati/Martensite/issues/406).
+
+- Clear Appearance: multiple exact face overrides can now be selected and
+  cleared in one edit. Owner and native-window tests cover selection, Cancel,
+  undo, redo and reopen. An OS-input and MCPBridge check also covered two
+  selected faces; see `receipts/2026-11-15-live-clear-faces/`. Mixed body and
+  face selections and assembly occurrences remain open (#3962).
