@@ -2,7 +2,7 @@
 //! The picture and label shown above a hovered tab, kept from each window's last frame.
 use crate::GuiPreviewImage;
 use imgui::Ui;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 /// What a hovered tab shows: the Home workspace, or one window of a document.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -28,11 +28,12 @@ pub(crate) struct TabPreviews {
     /// The document in front, whose picture its next save stores.
     pub showing_document: Option<u64>,
     /// The picture its save should store, until the owner has been told.
-    document_picture: Option<(u64, GuiPreviewImage)>,
+    document_picture: Option<(u64, PreviewKey, GuiPreviewImage)>,
     /// The last one told: an unchanged picture must not wake the owner on each frame.
     told_picture: Option<(u64, GuiPreviewImage)>,
     /// What is in front, and where, as of the last drawn frame.
     pub showing: Option<(PreviewKey, [[f32; 2]; 2])>,
+    revisions: BTreeMap<u64, u64>,
 }
 impl TabPreviews {
     /// Keep what the workspace shows now; the area is in window pixels.
@@ -42,19 +43,87 @@ impl TabPreviews {
         };
         if let Some(image) = cropped_picture(extent, rgba, minimum, maximum) {
             if let Some(document) = self.showing_document {
-                self.document_picture = Some((document, image.clone()));
+                self.document_picture = Some((document, key, image.clone()));
             }
             self.images.insert(key, image);
         }
     }
     /// A changed picture of the front document, once; example: each frame, for the owner.
     pub(crate) fn take_changed_picture(&mut self) -> Option<(u64, GuiPreviewImage)> {
-        let picture = self.document_picture.take()?;
+        let (document, _, image) = self.document_picture.take()?;
+        let picture = (document, image);
         if self.told_picture.as_ref() == Some(&picture) {
             return None;
         }
         self.told_picture = Some(picture.clone());
         Some(picture)
+    }
+    /// Send a captured picture before a close consumes its source; example: `previews.enqueue_picture(&mut actions)`.
+    pub(crate) fn enqueue_picture(&mut self, actions: &mut Vec<crate::GuiShellAction>) {
+        let close = self.pending_close_position(actions);
+        let Some((document, picture)) = self.take_changed_picture() else {
+            return;
+        };
+        let action = crate::GuiShellAction::KeepDocumentPicture {
+            document,
+            picture: Some(picture),
+        };
+        actions.insert(close.unwrap_or(actions.len()), action);
+    }
+    fn pending_close_position(&self, actions: &[crate::GuiShellAction]) -> Option<usize> {
+        let (document, key, _) = self.document_picture.as_ref()?;
+        actions.iter().position(|action| match action {
+            crate::GuiShellAction::CloseDocument(args) => args.id == *document,
+            crate::GuiShellAction::CloseDocumentWindow(id) => *key == PreviewKey::Window(*id),
+            _ => false,
+        })
+    }
+    /// Drop closed views before sending pending pictures; example: `previews.synchronize(state)`.
+    pub(crate) fn synchronize(&mut self, state: &crate::GuiCommandState) {
+        let current = open_windows(state);
+        let revisions = identity_revisions(state);
+        let collapsed = changed_window_identities(&self.revisions, &revisions);
+        self.images.retain(|key, _| match key {
+            PreviewKey::Home => true,
+            PreviewKey::Window(id) => !collapsed.contains(id) && has_window(&current, *id),
+        });
+        self.forget_closed_picture(&current, &collapsed);
+        self.forget_closed_front(&current, &collapsed);
+        self.revisions = revisions;
+    }
+    fn forget_closed_picture(
+        &mut self,
+        current: &BTreeMap<u64, BTreeSet<u64>>,
+        collapsed: &BTreeSet<u64>,
+    ) {
+        if self
+            .document_picture
+            .as_ref()
+            .is_some_and(|(doc, key, _)| !picture_window_open(current, collapsed, *doc, *key))
+        {
+            self.document_picture = None;
+        }
+        if self
+            .told_picture
+            .as_ref()
+            .is_some_and(|(doc, _)| !current.contains_key(doc))
+        {
+            self.told_picture = None;
+        }
+    }
+    fn forget_closed_front(
+        &mut self,
+        current: &BTreeMap<u64, BTreeSet<u64>>,
+        collapsed: &BTreeSet<u64>,
+    ) {
+        if let Some((key, _)) = self.showing
+            && self
+                .showing_document
+                .is_some_and(|doc| !picture_window_open(current, collapsed, doc, key))
+        {
+            self.showing = None;
+            self.showing_document = None;
+        }
     }
     /// Draw above the hovered tab; it takes no input, so moving away simply ends it.
     pub(crate) fn panel(&self, ui: &Ui, hovered: Option<&HoveredTab>) {
@@ -102,6 +171,70 @@ impl TabPreviews {
         }
         drop(list);
         ui.dummy(size);
+    }
+}
+fn open_windows(state: &crate::GuiCommandState) -> BTreeMap<u64, BTreeSet<u64>> {
+    state
+        .documents
+        .iter()
+        .map(|document| {
+            let mut windows: BTreeSet<u64> = state
+                .document_windows
+                .iter()
+                .filter(|window| window.document == document.id)
+                .map(|window| window.id)
+                .collect();
+            if windows.is_empty() {
+                windows.insert(document.id);
+            }
+            (document.id, windows)
+        })
+        .collect()
+}
+fn identity_revisions(state: &crate::GuiCommandState) -> BTreeMap<u64, u64> {
+    state
+        .documents
+        .iter()
+        .map(|document| {
+            (
+                document.id,
+                state
+                    .document_window_identity_revisions
+                    .get(&document.id)
+                    .copied()
+                    .unwrap_or(0),
+            )
+        })
+        .collect()
+}
+fn changed_window_identities(
+    before: &BTreeMap<u64, u64>,
+    after: &BTreeMap<u64, u64>,
+) -> BTreeSet<u64> {
+    before
+        .iter()
+        .filter_map(|(document, revision)| {
+            after
+                .get(document)
+                .filter(|current| *current != revision)
+                .map(|_| *document)
+        })
+        .collect()
+}
+fn has_window(windows: &BTreeMap<u64, BTreeSet<u64>>, id: u64) -> bool {
+    windows.values().any(|ids| ids.contains(&id))
+}
+fn picture_window_open(
+    windows: &BTreeMap<u64, BTreeSet<u64>>,
+    collapsed: &BTreeSet<u64>,
+    document: u64,
+    key: PreviewKey,
+) -> bool {
+    match key {
+        PreviewKey::Window(id) => {
+            !collapsed.contains(&id) && windows.get(&document).is_some_and(|ids| ids.contains(&id))
+        }
+        PreviewKey::Home => false,
     }
 }
 /// Nearest cell centres inside the area: a tab preview shows a window's look, not its detail.

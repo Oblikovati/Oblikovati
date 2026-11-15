@@ -136,6 +136,10 @@ impl<
         let next = remaining[0];
         self.active_window = None;
         if remaining.len() == 1 {
+            if next != document {
+                self.window_identity_revisions
+                    .insert(document, self.window_serial);
+            }
             self.document_windows
                 .retain(|known| known.document != document);
             if let Some(sketch) = self.parked_sketch_edits.remove(&next) {
@@ -150,6 +154,7 @@ impl<
     }
     /// A closed document takes all its windows with it.
     pub(super) fn forget_document_windows(&mut self, document: u64) {
+        self.window_identity_revisions.remove(&document);
         let ids: Vec<u64> = self
             .document_windows
             .iter()
