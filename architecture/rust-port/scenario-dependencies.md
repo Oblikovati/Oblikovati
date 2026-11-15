@@ -271,11 +271,18 @@ autodiscovery switches to be false, compares `package.links`, and refuses
 `metabuild`. Explicit libraries and other layouts are declined until their
 normalization can be checked.
 
+The check compares normalized binary, example, test and benchmark target sets
+against explicit locked declarations and Cargo's conventional tracked paths. It
+uses the locked edition, including the nearest tracked workspace edition, for
+Cargo's edition-dependent discovery rules. Added, removed or changed targets
+and flags are refused. Ambiguous paths, explicit workspace selection and target
+normalizations that cannot be derived are declined. The generated package
+edition must match the locked source edition.
+
 These checks passed on the current 18 Git packages and 22,972 tracked vendor
-files. They do not validate the entire generated manifest: package metadata,
-explicit binary, example, test and bench targets, lints and other fields remain
-unverified. A passing result is partial, does not independently bind a build,
-and cannot authorize reuse. It reports the checked scope but keeps all 18 full manifests
+files. They do not validate the entire generated manifest: most package metadata,
+lints and other fields remain unverified. A passing result is partial, does not
+independently bind a build, and cannot authorize reuse. It reports the checked scope but keeps all 18 full manifests
 in `git_manifests_unverified`, with `complete: false` and `reusable: false`.
 The prior [observation](receipts/2026-11-15-git-vendor-check/observation.json)
 and [regeneration experiment](receipts/2026-11-15-git-manifest-reproduction/README.md)
