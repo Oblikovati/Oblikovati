@@ -71,6 +71,7 @@ fn action_glyph(action: &GuiShellAction) -> Option<IconGlyph> {
         GuiShellAction::PlaceSketchTool(tool) => tool_glyph(*tool),
         GuiShellAction::ConstrainSketch(constraint) => constraint_glyph(*constraint),
         GuiShellAction::Dimension(crate::GuiDimensionAction::Start) => IconGlyph::Dimension,
+        GuiShellAction::Inspect(crate::GuiInspectAction::StartMeasure) => IconGlyph::Measure,
         GuiShellAction::Home => IconGlyph::Home,
         GuiShellAction::Save => IconGlyph::Save,
         GuiShellAction::Undo => IconGlyph::Undo,

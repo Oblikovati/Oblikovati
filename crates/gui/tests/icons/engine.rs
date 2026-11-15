@@ -63,6 +63,23 @@ fn modeling_and_sketch_ribbons_submit_the_go_extrude_and_move_icons() {
 }
 
 #[test]
+fn tools_ribbon_submits_the_go_measure_icon() {
+    let mut owner = GuiFrameEngine::new().unwrap();
+    let mut request = ribbon_request();
+    request.extent = [2880, 1800];
+    request.commands.document = Some(7);
+    request.commands.document_type = Some(oblikovati_api::types::DOCUMENT_PART);
+    request.commands.authoring = crate::GuiAuthoringContext::Part;
+    settled_frame(&mut owner, &request);
+    owner.ribbon.select_tab(crate::ribbon::RibbonTab::Tools);
+    for _ in 0..4 {
+        owner.frame(&request).unwrap();
+    }
+    let frame = settled_frame(&mut owner, &request);
+    assert_named_icon(&owner, &frame, IconGlyph::Measure, IconSize::Large, 40.);
+}
+
+#[test]
 fn model_ribbon_submits_go_icons_for_work_features_and_patterns() {
     let mut owner = GuiFrameEngine::new().unwrap();
     let mut request = ribbon_request();
