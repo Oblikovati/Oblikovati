@@ -333,3 +333,6 @@ mod sketches;
 
 #[path = "part_scene/face_plane.rs"]
 mod face_plane;
+
+#[path = "part_scene/clear_face.rs"]
+mod clear_face;

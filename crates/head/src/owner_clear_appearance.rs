@@ -1,7 +1,14 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Clear current exact body overrides in one reversible edit.
+//! Clear current exact body and face overrides in reversible edits.
 use super::*;
 use oblikovati_model::assets::AssignmentReference;
+
+#[derive(Clone, Debug)]
+pub(super) struct SelectedFaceAppearance {
+    pub face: browser_selection::ChosenModelFace,
+    pub key: String,
+    pub generation: u64,
+}
 
 impl<
     O: TransactionObserver,
@@ -12,6 +19,130 @@ impl<
     S: DispatchWakeup,
 > DesktopOwner<O, W, F, G, R, S>
 {
+    pub(super) fn capture_face_appearance_pick(
+        &mut self,
+        document: u64,
+        face: Option<browser_selection::ChosenModelFace>,
+    ) -> Option<SelectedFaceAppearance> {
+        let face = face?;
+        let key = self.pick_face_key(document, face)?;
+        let generation = self.files.workspace().session(document).ok()?.generation();
+        Some(SelectedFaceAppearance {
+            face,
+            key,
+            generation,
+        })
+    }
+    fn pick_face_key(
+        &mut self,
+        document: u64,
+        face: browser_selection::ChosenModelFace,
+    ) -> Option<String> {
+        match self.part_scenes.selected_face_reference(
+            &mut self.files,
+            document,
+            face.feature,
+            face.role,
+        ) {
+            Ok(key) => Some(key),
+            Err(cause) => {
+                self.command_notice = Some(crate::DesktopCommandNotice::SelectionFailed { cause });
+                None
+            }
+        }
+    }
+    pub(super) fn current_face_appearance_pick(
+        &self,
+        document: u64,
+    ) -> Option<&SelectedFaceAppearance> {
+        let pick = self.face_appearance_pick.as_ref()?;
+        let session = self.files.workspace().session(document).ok()?;
+        (self.chosen_model_face(document) == Some(pick.face)
+            && session.generation() == pick.generation)
+            .then_some(pick)
+    }
+    pub(super) fn clear_selected_face_appearance(
+        &mut self,
+        document: u64,
+        key: &str,
+    ) -> Result<bool, String> {
+        let pick = self.validate_face_clear_selection(document, key)?;
+        self.verify_current_face_key(document, key, &pick)?;
+        self.clear_face_override(document, &AssignmentReference::new(key, vec![])?)
+    }
+    fn validate_face_clear_selection(
+        &self,
+        document: u64,
+        key: &str,
+    ) -> Result<SelectedFaceAppearance, String> {
+        self.require_browser_document(document)?;
+        let pick = self
+            .current_face_appearance_pick(document)
+            .ok_or_else(|| format!("face {key:?}: expected the current named face selection"))?;
+        if pick.key != key {
+            return Err(format!(
+                "face {key:?}: expected the selected reference {:?}",
+                pick.key
+            ));
+        }
+        Ok(pick.clone())
+    }
+    fn verify_current_face_key(
+        &mut self,
+        document: u64,
+        key: &str,
+        pick: &SelectedFaceAppearance,
+    ) -> Result<(), String> {
+        let current = self.part_scenes.selected_face_reference(
+            &mut self.files,
+            document,
+            pick.face.feature,
+            pick.face.role,
+        )?;
+        if current != key || self.current_face_appearance_pick(document).is_none() {
+            return Err(format!(
+                "face {key:?}: expected the unchanged unique reference {current:?}"
+            ));
+        }
+        Ok(())
+    }
+    fn clear_face_override(
+        &mut self,
+        document: u64,
+        reference: &AssignmentReference,
+    ) -> Result<bool, String> {
+        if !self.face_has_override(document, reference)? {
+            return Ok(false);
+        }
+        self.files
+            .commands(document)
+            .map_err(|cause| cause.to_string())?
+            .run("Clear appearance", |snapshot, _| {
+                snapshot
+                    .assets
+                    .assignments
+                    .set_face_appearance(reference, "")
+            })
+            .map_err(|cause| cause.to_string())?;
+        Ok(true)
+    }
+    fn face_has_override(
+        &self,
+        document: u64,
+        reference: &AssignmentReference,
+    ) -> Result<bool, String> {
+        let session = self
+            .files
+            .workspace()
+            .session(document)
+            .map_err(|cause| cause.to_string())?;
+        Ok(session
+            .snapshot()
+            .assets
+            .assignments
+            .face_appearances()
+            .any(|(key, _)| key == reference))
+    }
     pub(super) fn clear_selected_body_appearances(
         &mut self,
         document: u64,

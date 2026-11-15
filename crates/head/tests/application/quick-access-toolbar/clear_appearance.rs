@@ -39,7 +39,7 @@ fn selected_appearance(world: &mut ApplicationWorld, key: &str) -> String {
         .unwrap()
         .appearance
 }
-fn enable_clear(world: &mut ApplicationWorld) {
+pub(super) fn enable_clear(world: &mut ApplicationWorld) {
     open_customization(world);
     world.click_text("Clear");
     world.pump(Vec::new());

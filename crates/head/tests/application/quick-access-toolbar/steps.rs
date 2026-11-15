@@ -2,6 +2,7 @@
 use super::{ApplicationWorld, diagnostics::window_geometry};
 use cucumber::{given, then, when};
 mod clear_appearance;
+mod clear_face;
 mod dockable_windows;
 mod material_browser;
 mod menu_choices;

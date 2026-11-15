@@ -38,6 +38,8 @@ pub struct GuiCommandState {
     pub selected_body_key: Option<String>,
     /// Exact keys of all selected bodies, in selection order.
     pub selected_body_keys: Vec<String>,
+    /// The current unique named face and whether it has its own appearance.
+    pub selected_face_appearance: Option<(String, bool)>,
     pub documents: Vec<oblikovati_api::wire::DocumentInfo>,
     /// Active model-state names, keyed by document identity.
     pub document_model_states: std::collections::BTreeMap<u64, String>,

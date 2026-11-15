@@ -143,11 +143,13 @@ impl<
             Some(other) => return Err(format!("part hit {other:?}: expected a face or body")),
         };
         self.measure_part_face(document, picked)?;
-        self.model_face = picked.map(|(feature, role)| ChosenModelFace {
+        let selected = picked.map(|(feature, role)| ChosenModelFace {
             document,
             feature,
             role,
         });
+        self.face_appearance_pick = self.capture_face_appearance_pick(document, selected);
+        self.model_face = selected;
         Ok(true)
     }
     fn unsupported_selection_toggle(&mut self, kind: &str) -> Result<bool, String> {
