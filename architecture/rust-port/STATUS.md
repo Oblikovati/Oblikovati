@@ -66,6 +66,8 @@ Last checked: 2026-11-14. Update this file from current evidence at each checkpo
 
 ## Open items
 
+- R7 ribbon appearance: a full diagnostic run passed 7 of 18 scenarios; unbound steps and missing Team Web remain (#3957). See `receipts/2026-11-15-ribbon-appearance-diagnostic/`.
+
 - R7 sketch ribbon availability: all three scenarios stopped at an unbound inactive-sketch setup step (#3956). See `receipts/2026-11-15-ribbon-availability-diagnostic/`.
 
 - R7 quick access: a full diagnostic run passed 11 of 12 scenarios; Measure is now available, but other command choices remain incomplete (#3955). See `receipts/2026-11-15-quick-access-diagnostic/`.
