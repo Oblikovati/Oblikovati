@@ -41,7 +41,7 @@ fn additional_closed(_: &mut ApplicationWorld) {
 fn open_modify(world: &mut ApplicationWorld) {
     click_expansion_arrow(world, "Modify");
 }
-fn click_expansion_arrow(world: &mut ApplicationWorld, label: &str) {
+pub(super) fn click_expansion_arrow(world: &mut ApplicationWorld, label: &str) {
     let title = world.run(label);
     if title.text.ends_with('v') {
         let at = [title.maximum[0] - 2., title.center()[1]];

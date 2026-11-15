@@ -290,13 +290,6 @@ fn regular_retained(world: &mut ApplicationWorld) {
     }
 }
 // point-10
-#[given("the observed sketch fixture shows 208 dimensions needed")]
-fn seeded_208(world: &mut ApplicationWorld) {
-    world.seed_dimensions_needed(208);
-    // Seeding is an edit of its own, which retires a running command.
-    world.select_point_tool();
-    world.expect_status("Select center point");
-}
 #[when("I click the same canvas location twice and press Escape")]
 fn click_twice(world: &mut ApplicationWorld) {
     world.sketch_click(FIRST);
@@ -352,4 +345,17 @@ fn two_candidates(world: &mut ApplicationWorld) {
         .filter(|run| run.minimum[1] > row.minimum[1] - CANDIDATE_LIST_ABOVE_ROW)
         .count();
     assert_eq!(candidates, 2, "candidates in {:?}", world.text());
+}
+
+// point-12
+#[when("the user expand the Create panel")]
+fn expand_create_for_point(world: &mut ApplicationWorld) {
+    super::super::ribbon_panel_expansion::click_expansion_arrow(world, "Create");
+    world.pump(Vec::new());
+}
+#[then("Precise Input is available")]
+fn precise_input_available_for_point(world: &mut ApplicationWorld) {
+    let command = world.run_in_window("##ribbon-additional-Create", "PreciseInput");
+    assert_eq!(command.alpha, u8::MAX, "expected Precise Input enabled");
+    world.expect_status("Select center point");
 }
