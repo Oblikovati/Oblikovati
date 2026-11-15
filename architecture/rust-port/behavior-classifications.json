@@ -218,10 +218,10 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-new-sketch-63f029b9f7034030-4f765cc1/receipt-63f029b9f7034030.json",
-        "sha256": "31c2adb03d00b26ea22b7e67c3d0f3d31ec4b9158bf2c8280d939df24831448a"
+        "path": "architecture/rust-port/receipts/2026-11-15-sketch-plane-current/receipt-63f029b9f7034030.json",
+        "sha256": "1f4e064dcd960fa42ec892d4b9e1a075192f820dcf8f2e922d5eb88788494dd1"
       },
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "go_reference": "Go aa8297d1b: app/commands_standard.go modelTabCommands, app/create_sketch_tool.go, app/sketch_env.go; face labels follow camera orientation in head/ui/viewcube_text.go.",
       "go_test_premise": "Go TestCreateSketchToolFlow uses a fake viewport picker and checks XZ normal and editing; TestCreateSketchToolPicksViaBrowser checks a YZ browser pick. Neither checks this exact XZ browser flow, cube label, or empty-sketch status.",
@@ -252,10 +252,10 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-new-sketch-4e511ca586195d67-4f765cc1/receipt-4e511ca586195d67.json",
-        "sha256": "6932f775323fc6ff4651bb9bf551b256652a8afcdf73dbec228283dd3d895717"
+        "path": "architecture/rust-port/receipts/2026-11-15-sketch-cancel-plane-current/receipt-4e511ca586195d67.json",
+        "sha256": "5b2d9e5957f1b19ce864840f6147cbde4d629ab7aef6072a5de3eab7a6123779"
       },
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "go_reference": "Go aa8297d1b: app/commands_standard.go modelTabCommands, app/create_sketch_tool.go, app/sketch_env.go; face labels follow camera orientation in head/ui/viewcube_text.go.",
       "go_test_premise": "Go TestCreateSketchToolCancelRestoresFilter checks filter restoration, not visible previews or preservation of an existing browser row.",
@@ -286,10 +286,10 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-new-sketch-adfaa180b248a094-4f765cc1/receipt-adfaa180b248a094.json",
-        "sha256": "cb0eb2a47910aefdd437f445dc376e8a22e0bf581873b7d2d195c15dfa49589d"
+        "path": "architecture/rust-port/receipts/2026-11-15-sketch-escape-current/receipt-adfaa180b248a094.json",
+        "sha256": "ceb0336c64cb3a3ccb1468bc8139aaf45d8c29806aac9fa81f12f13b0116b485"
       },
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "go_reference": "Go aa8297d1b: app/commands_standard.go modelTabCommands, app/create_sketch_tool.go, app/sketch_env.go; face labels follow camera orientation in head/ui/viewcube_text.go.",
       "go_test_premise": "No Go test in the selected set proves Escape after host acceptance; the scenario is the behavioral oracle.",
@@ -321,10 +321,10 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-new-sketch-cd9561e7b2b4f475-4f765cc1/receipt-cd9561e7b2b4f475.json",
-        "sha256": "96a837de97f1341c2518bb250b0bde42553510e62736213587c11df103889912"
+        "path": "architecture/rust-port/receipts/2026-11-15-sketch-history-current/receipt-cd9561e7b2b4f475.json",
+        "sha256": "5283893943711b1061fee114215bd96c1bc4b536ec62d590ecd6d09119413711"
       },
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "go_reference": "Go aa8297d1b: app/commands_standard.go modelTabCommands, app/create_sketch_tool.go, app/sketch_env.go; face labels follow camera orientation in head/ui/viewcube_text.go.",
       "go_test_premise": "Go TestSketchCreationIsUndoable covers creation history, but the selected Go tests do not establish separate empty Finish and creation undo steps. The Go recipe no-op policy differs from this scenario; see #3880.",
@@ -356,10 +356,10 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-new-sketch-4ba58b431dc847ae-4f765cc1/receipt-4ba58b431dc847ae.json",
-        "sha256": "d8bc7478ee01ce80b2e05266b5ddd79f96f15a9882cc70a1c0c317d27ce23fbc"
+        "path": "architecture/rust-port/receipts/2026-11-15-sketch-preselect-current/receipt-4ba58b431dc847ae.json",
+        "sha256": "47d7720e79c6bfdbf5f9965c7cde19d3efa81060e17318f0a955cba31ad679ff"
       },
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "go_reference": "Go aa8297d1b: app/commands_standard.go modelTabCommands, app/create_sketch_tool.go, app/sketch_env.go; face labels follow camera orientation in head/ui/viewcube_text.go.",
       "go_test_premise": "Go TestCreate2DSketchUsesPreselectedPlane uses XZ and checks immediate entry, not YZ, cube label, or status.",

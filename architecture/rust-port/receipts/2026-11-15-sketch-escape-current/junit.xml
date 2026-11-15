@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: New sketch: tmp/obk-quick-access-3955-source/features/sketch/new-sketch/scenario.feature" package="testsuite/Feature: New sketch: tmp/obk-quick-access-3955-source/features/sketch/new-sketch/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T03:27:03.677798427Z" time="10.288827081"><testcase name="Scenario: new-sketch-03 Escape after accepting the support plane: tmp/obk-quick-access-3955-source/features/sketch/new-sketch/scenario.feature:20:3" time="10.288827081"><system-out><![CDATA[  Scenario: new-sketch-03 Escape after accepting the support plane
+   ✔  Given selecting XZ Plane has created empty Sketch2
+   ✔  When the user press Escape
+   ✔  Then Sketch2 remains active in the Sketch editing environment
+   ✔  And creation is not rolled back
+]]></system-out></testcase></testsuite></testsuites>
