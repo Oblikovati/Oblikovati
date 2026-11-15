@@ -198,3 +198,68 @@ fn disjoint_collinear_values_and_derivatives_keep_the_original_bits() {
         }
     }
 }
+
+// #3928: fixed near-parallel lines amplify position error; a separately fixed
+// 10,000-unit coordinate supplies the shared solver scale. This exercises the
+// real point-on-line residual, not the complete document sketch compilation.
+struct FixedLinePointConstraint(f64);
+impl oblikovati_solve::residual::ResidualSource for FixedLinePointConstraint {
+    fn evaluate(&self, variables: &[DualNumber]) -> Result<Vec<DualNumber>, ResidualError> {
+        let zero = DualNumber::constant(0.)?;
+        let one = DualNumber::constant(1.)?;
+        let rise = DualNumber::constant(self.0)?;
+        point_on_line(&[
+            variables[0].clone(),
+            variables[1].clone(),
+            zero.clone(),
+            zero,
+            one,
+            rise,
+        ])
+    }
+}
+struct FixedLargeCoordinate;
+impl oblikovati_solve::residual::ResidualSource for FixedLargeCoordinate {
+    fn evaluate(&self, variables: &[DualNumber]) -> Result<Vec<DualNumber>, ResidualError> {
+        Ok(vec![variables[0].shifted(-10_000.)?])
+    }
+}
+#[test]
+fn near_parallel_real_line_constraints_need_a_conditioned_position_bound() {
+    use oblikovati_solve::{
+        nonlinear::{SolveOptions, SolveTermination, solve_constraints},
+        residual::ResidualBlock,
+    };
+    let (first, second, fixed) = (
+        FixedLinePointConstraint(0.),
+        FixedLinePointConstraint(1e-7),
+        FixedLargeCoordinate,
+    );
+    let blocks = [
+        ResidualBlock {
+            source: &first,
+            variables: &[0, 1],
+            equations: 1,
+        },
+        ResidualBlock {
+            source: &second,
+            variables: &[0, 1],
+            equations: 1,
+        },
+        ResidualBlock {
+            source: &fixed,
+            variables: &[2],
+            equations: 1,
+        },
+    ];
+    let result = solve_constraints(&[1., 0., 10_000.], &blocks, SolveOptions::default(), || {
+        false
+    })
+    .unwrap();
+    assert_eq!(result.termination, SolveTermination::Converged);
+    assert_eq!(result.structure.degrees_of_freedom, 0);
+    assert!(result.relative_residual < 1e-10);
+    assert!((result.evaluation.values()[1].abs() - 1e-7).abs() < 1e-20);
+    // The two exact nonparallel lines intersect only at (0, 0).
+    assert_eq!(result.values[0].hypot(result.values[1]), 1.);
+}
