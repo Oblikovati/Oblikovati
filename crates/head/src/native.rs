@@ -40,6 +40,9 @@ pub struct NativeHeadWindow {
     ribbon_settings_directory: Option<std::path::PathBuf>,
     gui_epoch: std::time::Instant,
     clipboard: std::rc::Rc<clipboard::NativeClipboardChannel>,
+    // Last so the GUI context drops before another test acquires the lease.
+    #[cfg(test)]
+    _context_lease: crate::test_context::TestContextLease,
 }
 mod open;
 mod scene_status;

@@ -1,24 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use imgui::{Condition, Context};
-use std::sync::Mutex;
-// Dear ImGui allows one active context per process.
-static HEADLESS_CONTEXT: Mutex<()> = Mutex::new(());
+use imgui::Condition;
 #[test]
 fn pointer_pixels_follow_framebuffer_scale_on_each_axis() {
-    let _exclusive = HEADLESS_CONTEXT
-        .lock()
-        .unwrap_or_else(|error| error.into_inner());
-    let mut context = Context::create();
+    let mut context = crate::test_context::create();
     context.io_mut().display_framebuffer_scale = [1.5, 2.];
     assert_eq!(pointer_pixels([20., 30.]), [30, 60]);
 }
 /// Draw one headless frame with the named widgets; returns runs from its draw data.
 fn runs_of(build: impl FnOnce(&imgui::Ui), scale: f32) -> Vec<RenderedRun> {
-    let _exclusive = HEADLESS_CONTEXT
-        .lock()
-        .unwrap_or_else(|poison| poison.into_inner());
-    let mut context = Context::create();
+    let mut context = crate::test_context::create();
     context.set_ini_filename(None);
     context.fonts().build_rgba32_texture();
     let io = context.io_mut();
@@ -108,10 +99,7 @@ fn separate_buttons_are_separate_runs() {
 #[test]
 fn a_checked_box_has_a_mark_and_a_cleared_one_has_none() {
     let marks = |mut value: bool| {
-        let _exclusive = HEADLESS_CONTEXT
-            .lock()
-            .unwrap_or_else(|poison| poison.into_inner());
-        let mut context = Context::create();
+        let mut context = crate::test_context::create();
         context.set_ini_filename(None);
         context.fonts().build_rgba32_texture();
         context.io_mut().display_size = [400., 300.];
@@ -135,10 +123,7 @@ fn a_checked_box_has_a_mark_and_a_cleared_one_has_none() {
 
 #[test]
 fn window_occlusions_identifies_real_ui_rectangles() {
-    let _exclusive = HEADLESS_CONTEXT
-        .lock()
-        .unwrap_or_else(|poison| poison.into_inner());
-    let mut context = Context::create();
+    let mut context = crate::test_context::create();
     context.set_ini_filename(None);
     context.fonts().build_rgba32_texture();
     context.io_mut().display_size = [400., 300.];

@@ -5,6 +5,9 @@ mod assembly_producer;
 #[cfg(target_os = "linux")]
 #[allow(unsafe_code)]
 mod native_services;
+#[cfg(all(test, target_os = "linux"))]
+#[path = "../../gui/src/test_context.rs"]
+mod test_context;
 #[cfg(target_os = "linux")]
 mod view_orientation;
 #[cfg(target_os = "linux")]
