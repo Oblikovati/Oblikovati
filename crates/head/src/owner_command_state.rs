@@ -108,6 +108,11 @@ impl<
             selected_body_key: session
                 .selected_browser_body()
                 .map(|(key, _)| key.to_owned()),
+            selected_body_keys: session
+                .selected_browser_bodies()
+                .iter()
+                .map(|body| body.key.clone())
+                .collect(),
             document: Some(document),
             document_type: Some(
                 self.files

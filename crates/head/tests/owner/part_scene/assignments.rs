@@ -74,7 +74,7 @@ fn visible_body_uses_material_appearance_and_restores_it_after_undo() {
             .all(|triangle| triangle.color == original)
     );
 }
-fn entity_key(owner: &TestOwner, document: u64, feature: u64, role: &str) -> String {
+pub(super) fn entity_key(owner: &TestOwner, document: u64, feature: u64, role: &str) -> String {
     let guid = owner
         .documents()
         .workspace()

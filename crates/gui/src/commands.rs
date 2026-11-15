@@ -133,7 +133,7 @@ pub enum GuiShellAction {
     /// Clear the selected solid's own appearance override.
     ClearSelectedBodyAppearance {
         document: u64,
-        key: String,
+        keys: Vec<String>,
     },
     SetBodyAppearance {
         document: u64,
@@ -389,6 +389,7 @@ pub enum GuiBrowserChoice {
     Body {
         key: String,
         feature: oblikovati_model::feature::FeatureId,
+        toggle: bool,
     },
     BodyVisible {
         key: String,

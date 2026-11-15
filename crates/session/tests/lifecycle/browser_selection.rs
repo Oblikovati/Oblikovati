@@ -199,3 +199,40 @@ fn a_feature_row_must_name_a_feature_of_the_current_program() {
     assert!(error.to_string().contains("FeatureId(99)"), "{error}");
     assert_eq!(session.selected_browser_feature(), None);
 }
+
+#[test]
+fn body_clicks_replace_and_toggle_exact_identities_without_history() {
+    use oblikovati_model::feature::FeatureId;
+    let mut session = selection_session(None);
+    session.apply_browser_body_click("body-a", FeatureId(1), Replace);
+    session.apply_browser_body_click("body-b", FeatureId(2), Toggle);
+    assert_eq!(session.selected_browser_bodies().len(), 2);
+    assert!(session.selected_browser_body().is_none());
+    session.apply_browser_body_click("body-a", FeatureId(9), Toggle);
+    assert_eq!(
+        session.selected_browser_body(),
+        Some(("body-b", FeatureId(2)))
+    );
+    session.apply_browser_body_click("body-c", FeatureId(3), Replace);
+    assert_eq!(
+        session.selected_browser_body(),
+        Some(("body-c", FeatureId(3)))
+    );
+    assert!(session.undo_labels().is_empty());
+}
+
+#[test]
+fn choosing_root_or_sketch_retires_all_body_picks() {
+    use oblikovati_model::feature::FeatureId;
+    let mut session = selection_session(None);
+    session.apply_browser_body_click("body-a", FeatureId(1), Replace);
+    session.apply_browser_body_click("body-b", FeatureId(2), Toggle);
+    session.set_browser_root_selection();
+    assert!(session.selected_browser_bodies().is_empty());
+    session.apply_browser_body_click("body-a", FeatureId(1), Replace);
+    session
+        .set_browser_sketch_selection(Some(BROWSER_SKETCH), Replace, false)
+        .unwrap();
+    assert!(session.selected_browser_bodies().is_empty());
+    assert_eq!(session.selected_browser_sketches(), [BROWSER_SKETCH]);
+}

@@ -135,6 +135,16 @@ impl<O: TransactionObserver> SessionCommands<'_, O> {
     ) {
         self.session.set_browser_body_selection(key, feature);
     }
+    /// Apply a modified body click without a history step.
+    /// Example: `commands.apply_browser_body_click(key, feature, mode)`.
+    pub fn apply_browser_body_click(
+        &mut self,
+        key: &str,
+        feature: oblikovati_model::feature::FeatureId,
+        mode: crate::selection::SelectionClickMode,
+    ) {
+        self.session.apply_browser_body_click(key, feature, mode);
+    }
     /// Choose the document's own row; a transient choice, so it makes no undo step.
     /// Example: `commands.set_browser_root_selection();`.
     pub fn set_browser_root_selection(&mut self) {

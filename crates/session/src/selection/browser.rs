@@ -19,3 +19,21 @@ impl Selectable for BrowserSketchPick {
         SelectionKind::Sketch
     }
 }
+
+/// A selected body keeps its exact reference and its producing feature.
+#[derive(Clone, Debug)]
+pub struct BrowserBodyPick {
+    pub key: String,
+    pub feature: oblikovati_model::feature::FeatureId,
+}
+impl PartialEq for BrowserBodyPick {
+    fn eq(&self, other: &Self) -> bool {
+        self.key == other.key
+    }
+}
+impl Eq for BrowserBodyPick {}
+impl Selectable for BrowserBodyPick {
+    fn selection_kind(&self) -> SelectionKind {
+        SelectionKind::Body
+    }
+}

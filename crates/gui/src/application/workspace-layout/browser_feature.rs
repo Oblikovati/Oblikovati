@@ -166,14 +166,14 @@ fn feature_menu(
 pub(crate) fn body_row<'ui>(
     ui: &'ui Ui,
     state: &GuiCommandState,
-    browser: &GuiModelBrowser,
+    _browser: &GuiModelBrowser,
     body: &crate::GuiBrowserBody,
     expansion: Option<bool>,
     view: &mut BrowserView,
     actions: &mut Vec<GuiShellAction>,
 ) -> Option<imgui::TreeNodeToken<'ui>> {
     let mut flags = TreeNodeFlags::OPEN_ON_ARROW | TreeNodeFlags::SPAN_AVAIL_WIDTH;
-    if browser.selected_body == Some(body.feature) {
+    if state.selected_body_keys.contains(&body.key) {
         flags |= TreeNodeFlags::SELECTED;
     }
     let node = ui.tree_node_config(&body.name).flags(flags);
@@ -195,6 +195,7 @@ pub(crate) fn body_row<'ui>(
             choice: GuiBrowserChoice::Body {
                 key: body.key.clone(),
                 feature: body.feature,
+                toggle: !asks_menu && (ui.io().key_ctrl || ui.io().key_shift),
             },
         });
     }

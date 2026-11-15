@@ -32,6 +32,7 @@ mod tests {
             document: Some(7),
             authoring: crate::GuiAuthoringContext::Part,
             selected_body_key: Some("body-key".into()),
+            selected_body_keys: vec!["body-key".into()],
             browser: Some(crate::GuiModelBrowser {
                 bodies: vec![crate::GuiBrowserBody {
                     name: "Body".into(),
@@ -52,6 +53,7 @@ mod tests {
     fn clear_can_open_before_selecting_a_body() {
         let mut state = selected_body();
         state.selected_body_key = None;
+        state.selected_body_keys.clear();
         let open = action(&state).expect("Clear should open without preselection");
         assert!(open.enabled(&state));
     }
@@ -60,12 +62,12 @@ mod tests {
         let mut state = selected_body();
         let action = GuiShellAction::ClearSelectedBodyAppearance {
             document: state.document.unwrap(),
-            key: state.selected_body_key.clone().unwrap(),
+            keys: state.selected_body_keys.clone(),
         };
         assert!(action.enabled(&state));
-        state.selected_body_key = Some("another".into());
+        state.selected_body_keys = vec!["another".into()];
         assert!(!action.enabled(&state));
-        state.selected_body_key = Some("body-key".into());
+        state.selected_body_keys = vec!["body-key".into()];
         state.browser.as_mut().unwrap().bodies[0].appearance.clear();
         assert!(!action.enabled(&state));
         state.browser.as_mut().unwrap().bodies[0].appearance = "black".into();
