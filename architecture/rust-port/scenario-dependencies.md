@@ -25,8 +25,10 @@ the current pinned inventory, and an untampered complete recorded Git tree.
 Added, removed, renamed, changed and mode-changed tracked inputs are reported.
 The optional runtime inventory requires Linux no-follow and no-atime file
 descriptors; unsupported platforms decline instead of claiming completeness.
-Unknown schemas, scenario changes, missing records and divergent histories are
-refused. Keep output outside the worktree to avoid making the map dirty.
+Git commands use a restricted environment and ignore replacement objects. The
+clean-worktree check also refuses index entries marked assume-unchanged or
+skip-worktree. Ignored files and host inputs remain outside this check. Unknown
+schemas, scenario changes, missing records and divergent histories are refused. Keep output outside the worktree to avoid making the map dirty.
 
 The current map marks runtime coverage `unbounded`. It cannot authorize reuse
 of a receipt even when its tracked input list has no changes. The normal ledger

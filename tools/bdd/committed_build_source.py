@@ -13,18 +13,8 @@ import tempfile
 from pathlib import Path, PurePosixPath
 from typing import BinaryIO, Mapping
 
+from git_environment import git_environment
 from scenario_dependencies import parse_tree_entry
-
-
-def git_environment() -> dict[str, str]:
-    """Keep Git configuration out of the export; example: git_environment()."""
-    return {
-        "PATH": "/usr/bin:/bin",
-        "LC_ALL": "C",
-        "GIT_CONFIG_NOSYSTEM": "1",
-        "GIT_CONFIG_GLOBAL": "/dev/null",
-        "GIT_NO_REPLACE_OBJECTS": "1",
-    }
 
 
 def validate_path(name: str) -> None:
