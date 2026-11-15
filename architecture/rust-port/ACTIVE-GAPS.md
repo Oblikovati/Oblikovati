@@ -6,7 +6,6 @@ The reports below describe individual runs. They are not current verified
 acceptance evidence. The build-provenance gap in #3978 applies to every native
 BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
 
-
 - Point cancellation: point-11 requires a recorded sketch that was not supplied.
   The scenario owner's `features/sketch/point/BLOCKERS.md` requests the sketch
   or the properties of an acceptable substitute (#3887). The sizing report is
@@ -113,4 +112,3 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
   corrected eight-step native run passed, but its receipt is stale (#3953).
 - Martensite closest-point behavior is tracked separately in
   [Martensite #406](https://github.com/Oblikovati/Martensite/issues/406).
-
