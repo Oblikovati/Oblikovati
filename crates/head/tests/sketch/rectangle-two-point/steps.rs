@@ -363,6 +363,7 @@ fn zero_locked(world: &mut ApplicationWorld) {
         "expected the first size to be zero"
     );
     assert!(hud.fields[1].active, "expected focus on the second size");
+    world.expect_status("Select opposite corner");
     assert!(world.window_text("##sketch-hud").contains("0.000mm"));
 }
 #[when("I enter 4 and press Return")]
