@@ -44477,12 +44477,25 @@
       "acceptance_test": "application_scenarios_use_the_native_window with OBK_BDD_AREA=solid-model: solid-projection-fixture-01 Prepare a rectangular source",
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3857",
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/3976"
       ],
-      "state": "inventoried",
-      "last_receipt": null,
-      "go_reference": "../Oblikovati/app/commands_sketch.go; exact per-feature Go baseline review remains open.",
-      "mapping_reason": "Initial part and extrusion fixture."
+      "state": "verified",
+      "last_receipt": {
+        "path": "architecture/rust-port/receipts/2026-11-15-projection-rectangular-source/receipt-ed2d6daead2bcf0e.json",
+        "sha256": "c1a70cc2dc9fd0e0e5e4cd74921f39d1c194b1d870a93c5d44530c6b34757bb9"
+      },
+      "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/extrude_session_test.go",
+      "mapping_reason": "Initial part and extrusion fixture.",
+      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_test_premise": "Go rectangle and extrusion code was inspected; no Go test was run for this scenario.",
+      "kernel_capabilities": "Straight rectangular prism with six faces and measurable named edges; tapered extrusion is outside this scenario.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "kernel_integration": "The native owner creates the extrusion through the Martensite-backed host and resolves named edges through the typed API.",
+      "rust_tests": "projection_fixture_creates_a_visible_source_solid and application_scenarios_use_the_native_window: solid-projection-fixture-01 Prepare a rectangular source",
+      "oracle": "Native scenario, six-face body, visible solid capture, and four named edges measuring 10 mm. The square size is a chosen fixture because the recording omitted dimensions.",
+      "expected_result": "One visible Solid1 with six faces from a closed rectangular profile and a 10 mm straight extrusion."
     },
     {
       "id": "scenario:f8753aa4f36b0a5e3650ad02406ad9e098fbb8f5dd85b6bc147724db2d52e070",

@@ -15,8 +15,8 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 - **R0 remains open.** The full gate, baseline fields and milestone exit audits
   are incomplete. Run `python3 -B tools/bdd/behavior_cli.py report` for current
   counts; source and application changes can make earlier receipts stale.
-- At `0d89e351e10bcedf6ef8e707b67ad4863e27c7ca`, the ledger reported 17
-  current verified scenarios, 139 stale receipts, 34 blocked and 38 excluded
+- At `ec2b3fdc8ed8f5c045f9cb3e4dc909cee47449f6`, the ledger reported one
+  current verified scenario, 156 stale receipts, 34 blocked and 38 excluded
   across 2,720 declarations. The gate also requires missing baseline fields.
 - `rust-work` is local and has not passed the full pre-push gate. All 20 former
   application PR heads were merged locally and their PRs closed. Do not remove
@@ -73,7 +73,7 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   receipts are stale. The solve precision certificate remains open (#3928); see
   `solver-precision-investigation.md`.
 - Rectangle zero-first-size: the corrected portable scenario passed eight
-  native steps after the status fix; see
+  native steps after the status fix; its receipt is now stale. See
   `receipts/2026-11-15-rectangle-status-current/`. OS input and intermediate
   captures are in `receipts/2026-11-15-rectangle-zero-corrected/`. The raw
   status message was fixed and tested in #3975; see
@@ -98,6 +98,9 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   The per-face measurements and captures are in
   `receipts/2026-11-15-live-parameter-cube/`. This does not close the solver
   precision or full milestone gates (#3928, #3857).
+- Projection fixture: the native rectangular source scenario passed on the
+  current pin (#3976); see `receipts/2026-11-15-projection-rectangular-source/`.
+  The chosen 10 mm square is a fixture; the source did not record its size.
 - The native cube test now checks the projected rectangle edges and proves the
   check fails when the sketch is hidden (#3969); see
   `receipts/2026-11-15-rectangle-visibility/`.
@@ -107,10 +110,11 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   frame-loop input; OS-level input and the full Go baseline remain open.
 
 - Document opening: the native scenario that activates an already open part
-  passed all nine steps on the current source pin (#3889); see
+  passed all nine steps on the current source pin (#3889); its receipt is now
+  stale. See
   `receipts/2026-11-15-open-existing-current-pin/`. Input is frame-loop scripted.
 - Document saving: seven basic save, reopen, cancel, and overwrite scenarios
-  passed on the current source pin (#3888). Their reviewed receipts are in
+  passed on the current source pin (#3888); their receipts are now stale. See
   `receipts/2026-11-15-save-r4-current-1/` through `-7/`. Input is frame-loop scripted.
 - Document opening: Express open and Load Full are in `rust-work` (#3949).
   The pinned journey passes 13 of 14 steps; Finish and Simplify need the
@@ -123,7 +127,7 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   cases are also capture-only. The portable gate cannot claim these as passes;
   see #3899, #3951, and #3952.
 - Document tabs: eight R4 tab and close scenarios passed on the current source
-  pin (#3900). Their reviewed receipts are in
+  pin (#3900); their receipts are now stale. See
   `receipts/2026-11-15-tabs-r4-current-1/` through `-8/`. The earlier full-file
   diagnostic passed 9 of 38 scenarios. Two Home menu scenarios need source
   clarification in their `BLOCKERS.md`; keyboard receipts are stale (#3950).
