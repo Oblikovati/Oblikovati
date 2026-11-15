@@ -5,8 +5,10 @@ pub(super) fn picture_has_detail(
     capture: &oblikovati_viewport::ViewportCapture,
     position: [f32; 2],
     size: [f32; 2],
+    image_top: f32,
 ) -> bool {
-    let Some([left, top, right, bottom]) = picture_probe_bounds(capture, position, size) else {
+    let Some([left, top, right, bottom]) = picture_probe_bounds(capture, position, size, image_top)
+    else {
         return false;
     };
     let pixel = |x: usize, y: usize| {
@@ -27,10 +29,10 @@ fn picture_probe_bounds(
     capture: &oblikovati_viewport::ViewportCapture,
     position: [f32; 2],
     size: [f32; 2],
+    image_top: f32,
 ) -> Option<[usize; 4]> {
     let left = position[0] as usize + 8;
-    // The pinned 1440×900 fixture uses at most two unwrapped label rows.
-    let top = (position[1] + size[1] * 0.35) as usize;
+    let top = image_top.max(position[1]) as usize;
     let right = ((position[0] + size[0]) as usize).saturating_sub(8);
     let bottom = ((position[1] + size[1]) as usize).saturating_sub(8);
     if left >= right
@@ -57,10 +59,10 @@ fn preview_detail_check_rejects_a_blank_interior() {
     let position = [0., 0.];
     let size = [64., 64.];
     capture.rgba[0] = 255;
-    assert!(!picture_has_detail(&capture, position, size));
-    capture.rgba[(25 * 64 + 11) * 4] = 255;
-    assert!(picture_has_detail(&capture, position, size));
-    assert!(!picture_has_detail(&capture, position, [80., 64.]));
+    assert!(!picture_has_detail(&capture, position, size, 20.));
+    capture.rgba[(23 * 64 + 11) * 4] = 255;
+    assert!(picture_has_detail(&capture, position, size, 20.));
+    assert!(!picture_has_detail(&capture, position, [80., 64.], 20.));
     capture.rgba.clear();
-    assert!(!picture_has_detail(&capture, position, size));
+    assert!(!picture_has_detail(&capture, position, size, 20.));
 }

@@ -45,11 +45,34 @@ fn expect_preview_above(world: &mut ApplicationWorld, label: &str) {
         position[1] + size[1],
         tab.minimum[1]
     );
+    let image_top = preview_label_bottom(world, label, position, size) + 4.;
     assert!(
-        preview_probe::picture_has_detail(&capture, position, size),
+        preview_probe::picture_has_detail(&capture, position, size, image_top),
         "expected varied pixels inside the preview picture"
     );
     world.last_capture = Some(capture);
+}
+
+fn preview_label_bottom(
+    world: &ApplicationWorld,
+    label: &str,
+    position: [f32; 2],
+    size: [f32; 2],
+) -> f32 {
+    world
+        .frame
+        .runs
+        .iter()
+        .rev()
+        .find(|run| {
+            run.text.starts_with(label)
+                && (0..2).all(|axis| {
+                    run.minimum[axis] >= position[axis]
+                        && run.maximum[axis] <= position[axis] + size[axis]
+                })
+        })
+        .unwrap_or_else(|| panic!("preview label {label:?}: expected a row inside the preview"))
+        .maximum[1]
 }
 
 fn preview_text(world: &ApplicationWorld) -> String {
