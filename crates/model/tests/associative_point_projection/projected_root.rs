@@ -389,3 +389,62 @@ fn generated_preconditioner_rejects_non_square_rectangle() {
         );
     }
 }
+
+#[test]
+fn canonical_point_displacements_cover_exact_rectangle_corners_in_all_origin_frames() {
+    use oblikovati_model::{
+        document_sketch::DocumentSketches, feature::work_plane::WorkPlaneOrigin,
+    };
+    let q = |v| BigRational::from_float(v).unwrap();
+    for origin in [
+        WorkPlaneOrigin::XY,
+        WorkPlaneOrigin::XZ,
+        WorkPlaneOrigin::YZ,
+    ] {
+        let (mut snapshot, _) = rectangle_document(false, false);
+        let mut recipe = snapshot.sketches.recipe();
+        recipe.sketches[0].plane_origin = Some(origin);
+        snapshot.sketches = DocumentSketches::from_recipe(&recipe).unwrap();
+        let batch = snapshot
+            .solve_one_document_sketch(SKETCH, SolveOptions::default(), || false)
+            .unwrap();
+        let outcome = batch.report.reports[0].result.as_ref().unwrap().clone();
+        snapshot.sketches = batch.candidate;
+        let projection = snapshot
+            .canonical_origin_projection(SKETCH, ANCHOR, &outcome)
+            .unwrap();
+        let result = projection
+            .conditional_root_auto(&full_box(&outcome), &[])
+            .unwrap();
+        let distances = result.canonical_point_displacements().unwrap();
+        for (index, (point, distance)) in outcome
+            .candidate()
+            .points()
+            .iter()
+            .zip(distances)
+            .enumerate()
+        {
+            assert_eq!(point.id, distance.point);
+            let exact = [[0., 0.], [0., 0.], [1., 0.], [1., 1.], [0., 1.]][index];
+            let dx = q(point.position[0]) - q(exact[0]);
+            let dy = q(point.position[1]) - q(exact[1]);
+            assert!(&dx * &dx + &dy * &dy <= q(distance.upper) * q(distance.upper));
+        }
+    }
+}
+#[test]
+fn assumed_frame_cannot_claim_canonical_point_displacements() {
+    let (snapshot, outcome) = rectangle_document(false, false);
+    let projection = snapshot
+        .conditional_origin_projection(SKETCH, ANCHOR, &outcome, assumptions())
+        .unwrap();
+    let result = projection
+        .conditional_root_auto(&full_box(&outcome), &[])
+        .unwrap();
+    assert!(
+        result
+            .canonical_point_displacements()
+            .unwrap_err()
+            .contains("canonical origin plane")
+    );
+}
