@@ -52,6 +52,8 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
 - Projection fixture: the native rectangular source scenario passed on the
   current pin (#3976); its receipt is now stale. The offset-plane scenario
   passed in an earlier run (#3977); see `receipts/2026-11-15-offset-plane-scenario/`.
+  A later live OS-input run shows the plane overlay and undo/redo (#3981); see
+  `receipts/2026-11-15-live-workplane-overlay/`.
   The chosen 10 mm square is a fixture; the source did not record its size.
   OS input and MCPBridge evidence is in `receipts/2026-11-15-live-offset-plane/`.
 - The native cube test now checks the projected rectangle edges and proves the
