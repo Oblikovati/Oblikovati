@@ -72,7 +72,10 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   native checks passed; the full gate is still required.
 - Authored work planes now display in part views (#3981). Viewport plane
   picking and assembly overlays remain open; visibility editing needs the
-  document-qualified datum reference work (#3982, #3983).
+  document-qualified datum reference work (#3982, #3983). Tested drafts remain
+  unmerged: Rust `work/datum-visible-3982` at `2c0601be1` and API
+  `work/datum-reference-contract-3982` at `c053e98`. Public compatibility,
+  Go host migration, origin visibility and axis reporting remain open.
 - See [ACTIVE-GAPS.md](ACTIVE-GAPS.md) for individual scenario diagnostics,
   source clarifications, and remaining UI work. Those run results are historical.
 
