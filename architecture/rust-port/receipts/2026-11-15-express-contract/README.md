@@ -29,3 +29,10 @@ the existing document active. The scenario source was clean at
 `48987af7b5cbb06515bc6f30385f508382f34064` and its document-opening feature
 matched the current shared source by SHA-256. Producer provenance remains open
 in [issue #3964](https://github.com/Oblikovati/Oblikovati/issues/3964).
+
+After integration with the ribbon branch, the GUI library suite passed 492
+serial tests and strict Clippy passed for the GUI and head targets. The suite
+failed when run in parallel because GUI contexts are shared; this existing test
+isolation issue is tracked in [#3878](https://github.com/Oblikovati/Oblikovati/issues/3878).
+The session lifecycle suite passed 453 tests and automation queries passed 755.
+The documentation gate passed after splitting the combined ribbon file.
