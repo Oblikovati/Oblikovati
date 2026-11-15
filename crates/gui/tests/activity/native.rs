@@ -7,6 +7,7 @@ struct FakeActivityWindows {
 }
 #[test]
 fn native_activity_reads_require_owned_context_and_window_entries() {
+    let _lease = crate::test_context::acquire();
     assert!(
         frame_activity()
             .unwrap_err()

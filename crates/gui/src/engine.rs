@@ -37,6 +37,8 @@ pub struct GuiFrameOutput {
 /// ```
 pub struct GuiFrameEngine {
     context: Context,
+    #[cfg(test)]
+    _test_context_lease: crate::test_context::TestContextLease,
     atlas: GuiAtlas,
     resources: crate::GuiTextureResources,
     icons: crate::icons::GuiIconCache,
@@ -92,6 +94,8 @@ impl GuiFrameEngine {
     }
     /// Create the GUI owner on its UI thread without automatic file I/O; example: `GuiFrameEngine::new()?`.
     pub fn new() -> Result<Self, String> {
+        #[cfg(test)]
+        let test_context_lease = crate::test_context::acquire();
         require_vacant_context()?;
         let mut context = Context::create();
         let atlas = configure_owner_context(&mut context);
@@ -99,6 +103,8 @@ impl GuiFrameEngine {
         let icons = crate::icons::GuiIconCache::new(atlas.clone())?;
         Ok(Self {
             context,
+            #[cfg(test)]
+            _test_context_lease: test_context_lease,
             atlas,
             resources,
             icons,

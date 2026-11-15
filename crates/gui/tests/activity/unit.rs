@@ -30,7 +30,7 @@ fn each_activity_reason_keeps_the_next_frame_due() {
 }
 #[test]
 fn real_window_layout_settles_without_a_fixed_number_of_warmup_frames() {
-    let mut context = imgui::Context::create();
+    let mut context = crate::test_context::create();
     context.set_ini_filename(None);
     context.io_mut().display_size = [400., 240.];
     context.io_mut().delta_time = 1. / 60.;

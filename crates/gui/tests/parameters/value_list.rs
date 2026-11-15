@@ -158,13 +158,13 @@ fn owned_value_list_packets_refuse_invalid_targets_and_unsafe_widget_text() {
     }
 }
 struct ValueListWidgetFixture {
-    context: imgui::Context,
+    context: crate::test_context::TestContext,
     editor: ParameterValueListEditor,
     ok_position: [f32; 2],
 }
 impl ValueListWidgetFixture {
     fn new() -> Self {
-        let mut context = imgui::Context::create();
+        let mut context = crate::test_context::create();
         context.set_ini_filename(None);
         context.io_mut().display_size = [500., 350.];
         context.io_mut().delta_time = 1. / 60.;

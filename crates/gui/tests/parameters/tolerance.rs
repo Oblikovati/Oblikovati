@@ -162,13 +162,13 @@ fn tolerance_enqueue_keeps_declines_local_and_publishes_one_owned_edit() {
     ));
 }
 struct ToleranceScalarWidgetFixture {
-    context: imgui::Context,
+    context: crate::test_context::TestContext,
     editor: ParameterToleranceEditor,
     ok_position: [f32; 2],
 }
 impl ToleranceScalarWidgetFixture {
     fn new() -> Self {
-        let mut context = imgui::Context::create();
+        let mut context = crate::test_context::create();
         context.set_ini_filename(None);
         context.io_mut().display_size = [500., 350.];
         context.io_mut().delta_time = 1. / 60.;

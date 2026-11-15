@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use crate::{GuiInputEvent, input::apply_input};
-use imgui::Context;
 struct ParameterCellWidgetFixture {
-    context: Context,
+    context: crate::test_context::TestContext,
     drafts: GuiParameterDrafts,
     target: GuiParameterTextTarget,
 }
 impl ParameterCellWidgetFixture {
     fn new() -> Self {
-        let mut context = Context::create();
+        let mut context = crate::test_context::create();
         context.set_ini_filename(None);
         context.io_mut().display_size = [400., 240.];
         context.io_mut().delta_time = 1. / 60.;
@@ -148,7 +147,7 @@ fn choice_labels_retain_the_current_custom_expression_after_a_list_changes() {
     assert_eq!(choice_labels(&row), vec!["one", "two", "custom"]);
 }
 struct ParameterRowMenuWidgetFixture {
-    context: Context,
+    context: crate::test_context::TestContext,
     last_item: [f32; 2],
     menu_stride: f32,
     value_row: Option<GuiParameterRow>,
@@ -157,7 +156,7 @@ struct ParameterRowMenuWidgetFixture {
 }
 impl ParameterRowMenuWidgetFixture {
     fn new() -> Self {
-        let mut context = Context::create();
+        let mut context = crate::test_context::create();
         context.set_ini_filename(None);
         context.io_mut().display_size = [500., 300.];
         context.io_mut().delta_time = 1. / 60.;

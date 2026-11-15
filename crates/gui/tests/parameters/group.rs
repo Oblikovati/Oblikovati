@@ -105,13 +105,13 @@ fn group_enqueue_keeps_local_errors_and_uses_the_common_request_lifecycle() {
     assert!(matches!(actions.as_slice(), [GuiParameterAction::Group(_)]));
 }
 struct GroupWidgetFixture {
-    context: imgui::Context,
+    context: crate::test_context::TestContext,
     editor: ParameterGroupEditor,
     ok_position: [f32; 2],
 }
 impl GroupWidgetFixture {
     fn new() -> Self {
-        let mut context = imgui::Context::create();
+        let mut context = crate::test_context::create();
         context.set_ini_filename(None);
         context.io_mut().display_size = [500., 300.];
         context.io_mut().delta_time = 1. / 60.;
