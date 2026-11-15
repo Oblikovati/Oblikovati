@@ -32,12 +32,8 @@ ProbeProcess = Callable[[list[str], Path, Path], int]
 Snapshot = Callable[[Path], Mapping[str, object]]
 
 
-def require_probe(probe: BuildProbe) -> None:
-    """Refuse unsupported hosts and overlapping roots; example: require_probe(probe)."""
-    if platform.system() != "Linux" or platform.machine() != "x86_64":
-        raise ValueError(
-            f"platform {platform.system()}/{platform.machine()}: expected Linux x86_64"
-        )
+def require_roots(probe: BuildProbe) -> None:
+    """Require disjoint real input and output directories; example: require_roots(probe)."""
     roots = (
         probe.source,
         probe.vendor,
@@ -56,6 +52,15 @@ def require_probe(probe: BuildProbe) -> None:
         raise ValueError(
             f"target {probe.target} and logs {probe.logs}: expected empty directories"
         )
+
+
+def require_probe(probe: BuildProbe) -> None:
+    """Refuse unsupported hosts and inputs; example: require_probe(probe)."""
+    if platform.system() != "Linux" or platform.machine() != "x86_64":
+        raise ValueError(
+            f"platform {platform.system()}/{platform.machine()}: expected Linux x86_64"
+        )
+    require_roots(probe)
     if (
         not probe.bwrap.is_absolute()
         or probe.bwrap.is_symlink()
@@ -86,28 +91,45 @@ def build_environment() -> dict[str, str]:
     }
 
 
+SANDBOX_PREFIX = (
+    "--unshare-all",
+    "--unshare-user",
+    "--die-with-parent",
+    "--new-session",
+    "--clearenv",
+    "--ro-bind",
+    "/usr",
+    "/usr",
+    "--symlink",
+    "usr/bin",
+    "/bin",
+    "--symlink",
+    "usr/lib",
+    "/lib",
+    "--symlink",
+    "usr/lib64",
+    "/lib64",
+)
+BUILD_PROGRAM = (
+    "--chdir",
+    "/source",
+    "/toolchain/bin/cargo",
+    "--config",
+    "/config/config.toml",
+    "test",
+    "--locked",
+    "--offline",
+    "-p",
+    "oblikovati-head",
+    "--lib",
+    "--no-run",
+    "--message-format=json-render-diagnostics",
+)
+
+
 def sandbox_build_command(probe: BuildProbe) -> list[str]:
     """Build the fixed offline command; example: sandbox_build_command(probe)."""
-    command = [
-        str(probe.bwrap),
-        "--unshare-all",
-        "--unshare-user",
-        "--die-with-parent",
-        "--new-session",
-        "--clearenv",
-        "--ro-bind",
-        "/usr",
-        "/usr",
-        "--symlink",
-        "usr/bin",
-        "/bin",
-        "--symlink",
-        "usr/lib",
-        "/lib",
-        "--symlink",
-        "usr/lib64",
-        "/lib64",
-    ]
+    command = [str(probe.bwrap), *SANDBOX_PREFIX]
     for host, guest in (
         (probe.source, "/source"),
         (probe.vendor, "/vendor"),
@@ -130,24 +152,7 @@ def sandbox_build_command(probe: BuildProbe) -> list[str]:
     )
     for name, value in build_environment().items():
         command.extend(["--setenv", name, value])
-    command.extend(
-        [
-            "--chdir",
-            "/source",
-            "/toolchain/bin/cargo",
-            "--config",
-            "/config/config.toml",
-            "test",
-            "--locked",
-            "--offline",
-            "-p",
-            "oblikovati-head",
-            "--lib",
-            "--no-run",
-            "--message-format=json-render-diagnostics",
-        ]
-    )
-    return command
+    return command + list(BUILD_PROGRAM)
 
 
 def run_process(command: list[str], messages: Path, log: Path) -> int:
@@ -162,26 +167,27 @@ def run_process(command: list[str], messages: Path, log: Path) -> int:
         ).returncode
 
 
-def runner_path(messages: Path, target: Path) -> Path:
-    """Find the unique native head test artifact; example: runner_path(messages, target)."""
-    matches: list[Path] = []
-    for line in messages.read_text(encoding="utf-8").splitlines():
-        record = json.loads(line)
-        if (
-            record.get("reason") != "compiler-artifact"
-            or record.get("target", {}).get("name") != "oblikovati_head"
-            or not record.get("profile", {}).get("test")
-            or not record.get("executable")
-        ):
-            continue
-        guest = Path(record["executable"])
-        if (
-            not guest.is_absolute()
-            or not guest.is_relative_to("/build")
-            or ".." in guest.parts
-        ):
-            raise ValueError(f"runner {guest}: expected an absolute path inside /build")
-        matches.append(target / guest.relative_to("/build"))
+def artifact_candidate(record: dict[str, object], target: Path) -> Path | None:
+    """Read one matching Cargo artifact; example: artifact_candidate(record, target)."""
+    if (
+        record.get("reason") != "compiler-artifact"
+        or record.get("target", {}).get("name") != "oblikovati_head"
+        or not record.get("profile", {}).get("test")
+        or not record.get("executable")
+    ):
+        return None
+    guest = Path(record["executable"])
+    if (
+        not guest.is_absolute()
+        or not guest.is_relative_to("/build")
+        or ".." in guest.parts
+    ):
+        raise ValueError(f"runner {guest}: expected an absolute path inside /build")
+    return target / guest.relative_to("/build")
+
+
+def require_runner(matches: list[Path], target: Path) -> Path:
+    """Require a single contained executable; example: require_runner(matches, target)."""
     if (
         len(matches) != 1
         or matches[0].is_symlink()
@@ -200,6 +206,19 @@ def runner_path(messages: Path, target: Path) -> Path:
     return result
 
 
+def runner_path(messages: Path, target: Path) -> Path:
+    """Find the unique native head test artifact; example: runner_path(messages, target)."""
+    records = (
+        json.loads(line) for line in messages.read_text(encoding="utf-8").splitlines()
+    )
+    matches = [
+        path
+        for record in records
+        if (path := artifact_candidate(record, target)) is not None
+    ]
+    return require_runner(matches, target)
+
+
 def snapshot_inputs(
     probe: BuildProbe, snapshot: Snapshot
 ) -> dict[str, Mapping[str, object]]:
@@ -210,6 +229,25 @@ def snapshot_inputs(
     }
 
 
+def probe_result(
+    runner: Path,
+    before: Mapping[str, Mapping[str, object]],
+    sandbox: Mapping[str, object],
+) -> dict[str, object]:
+    """Describe observed inputs without claiming proof; example: probe_result(runner, before, sandbox)."""
+    return {
+        "runner": str(runner),
+        "runner_sha256": file_identity(runner)["sha256"],
+        "input_inventory_sha256": {
+            name: hashlib.sha256(json.dumps(value, sort_keys=True).encode()).hexdigest()
+            for name, value in before.items()
+        },
+        "sandbox_sha256": sandbox["sha256"],
+        "reusable": False,
+        "limitations": "Host system libraries, kernel, devices and concurrent host writes are not bounded.",
+    }
+
+
 def run_build_probe(
     probe: BuildProbe,
     run: ProbeProcess = run_process,
@@ -217,32 +255,19 @@ def run_build_probe(
 ) -> dict[str, object]:
     """Run an observed build without claiming reuse; example: run_build_probe(probe)."""
     require_probe(probe)
-    before = snapshot_inputs(probe, snapshot)
-    sandbox_before = file_identity(probe.bwrap)
+    before, sandbox = snapshot_inputs(probe, snapshot), file_identity(probe.bwrap)
     messages, log = probe.logs / "cargo.jsonl", probe.logs / "cargo.log"
     code = run(sandbox_build_command(probe), messages, log)
     if code != 0:
         raise ValueError(f"build exit {code}: expected success; inspect {log}")
     if (
         snapshot_inputs(probe, snapshot) != before
-        or file_identity(probe.bwrap) != sandbox_before
+        or file_identity(probe.bwrap) != sandbox
     ):
         raise ValueError(
             "build inputs changed: expected unchanged mounted inputs and sandbox"
         )
-    runner = runner_path(messages, probe.target)
-    runner_identity = file_identity(runner)
-    return {
-        "runner": str(runner),
-        "runner_sha256": runner_identity["sha256"],
-        "input_inventory_sha256": {
-            name: hashlib.sha256(json.dumps(value, sort_keys=True).encode()).hexdigest()
-            for name, value in before.items()
-        },
-        "sandbox_sha256": sandbox_before["sha256"],
-        "reusable": False,
-        "limitations": "Host system libraries, kernel, devices and concurrent host writes are not bounded.",
-    }
+    return probe_result(runner_path(messages, probe.target), before, sandbox)
 
 
 def main() -> None:
