@@ -20,7 +20,7 @@ For a reproducible focused run, restore and verify the checkout explicitly:
 
 ```sh
 git clone -c core.autocrlf=false --branch snapshot \
-  "$PWD/test-utilities/benchmarks/scenario-snapshots/mcad-scenarios-2026-11-15-05317bb.bundle" \
+  "$PWD/test-utilities/benchmarks/scenario-snapshots/mcad-scenarios-2026-11-15-e76cb74.bundle" \
   /absolute/path/to/scenario-checkout
 python3 tools/bdd/verify_snapshot.py /absolute/path/to/scenario-checkout
 export OBK_BDD_ROOT=/absolute/path/to/scenario-checkout
@@ -218,7 +218,7 @@ After restoring and verifying the pinned checkout, generate the source inventory
 
 ```sh
 cargo xtask scenario-ledger "$OBK_BDD_ROOT" \
-  05317bbb2d0809a532b29b7ff6f726a5722b865f > /absolute/path/to/source-inventory.json
+  e76cb749ed43c73a91c24854057da7c890041f51 > /absolute/path/to/source-inventory.json
 ```
 
 The command requires a clean checkout at the requested commit and reads its

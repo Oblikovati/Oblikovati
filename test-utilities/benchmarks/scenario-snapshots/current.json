@@ -1,11 +1,11 @@
 {
-  "snapshot_commit": "05317bbb2d0809a532b29b7ff6f726a5722b865f",
+  "snapshot_commit": "e76cb749ed43c73a91c24854057da7c890041f51",
   "branch": "snapshot",
-  "bundle": "mcad-scenarios-2026-11-15-05317bb.bundle",
-  "bundle_sha256": "daecde1e979ff3001cde8d7e32f12536dd1ffc4d07909295315ecb1e54e5139f",
-  "manifest": "mcad-scenarios-2026-11-15-05317bb.sha256.json",
-  "manifest_sha256": "c9c92fe92e1c16892db25d38373fbfa7de8aa520e8f9582f3f8f6004686415bc",
+  "bundle": "mcad-scenarios-2026-11-15-e76cb74.bundle",
+  "bundle_sha256": "05f27934b2ef56192123244de4d011034046a03a1fb5a26f7b4cd9e12a4c004a",
+  "manifest": "mcad-scenarios-2026-11-15-e76cb74.sha256.json",
+  "manifest_sha256": "0dfdbd9bfe5aa0c4cae04060dcf8860eba49ed4275b0ec67af21e816d74f8fe2",
   "file_count": 1292,
   "captured_utc_date": "2026-11-15",
-  "provenance": "Local snapshot of unversioned MCAD-Scenarios. The previous pinned files were compared with live source; the two changed Point files were reviewed and copied. BLOCKERS.md and capture media are excluded. This is not an upstream commit."
+  "provenance": "Local snapshot of unversioned MCAD-Scenarios. The Point capture-only tag was reviewed and copied from the live source. BLOCKERS.md and capture media are excluded. This is not an upstream commit."
 }

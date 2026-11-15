@@ -15,10 +15,7 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 - **R0 remains open.** The full gate, baseline fields and milestone exit audits
   are incomplete. Run `python3 -B tools/bdd/behavior_cli.py report` for current
   counts; source and application changes can make earlier receipts stale.
-- At `3974546c5`, the ledger reports **0 verified**, 156 stale, 36 blocked
-  and 38 excluded across 2,720 declarations. Native build provenance is not
-  bounded (#3978); prior captures remain historical evidence. The gate also
-  requires missing baseline fields.
+- At the local source snapshot `e76cb749ed43c73a91c24854057da7c890041f51`, the ledger reports **0 verified**, 21 stale, 35 blocked and 39 excluded across 2,720 declarations. Earlier receipts remain historical. Native build provenance is not bounded (#3978); the gate also requires missing baseline fields.
 - `rust-work` is local and has not passed the full pre-push gate. All 20 former
   application PR heads were merged locally and their PRs closed. Do not remove
   their remaining remote branches until the consolidated work is safely pushed.
@@ -30,9 +27,9 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   is local and no release was published. The ledger also rejects stale receipts.
   A fresh API `make gate` passed at `276a401`; the local result is in
   `receipts/2026-11-15-api-candidate-gate/`. It is not a release or hosted CI result.
-- Scenario pin: `05317bbb2d0809a532b29b7ff6f726a5722b865f`, a local snapshot
+- Scenario pin: `e76cb749ed43c73a91c24854057da7c890041f51`, a local snapshot
   of the unversioned source. It is not an upstream commit. The live feature
-  inventory matched the pin at the source sync. The source tags 38 observations
+  inventory matched the pin at the source sync. The source tags 39 observations
   as capture-only and the remaining 34 document-creation cases as capture-host
   only; these are excluded or blocked, not passing. Follow `bdd-workflow.md`
   when source files change; use a unique Cargo target for each active worktree.
@@ -76,7 +73,7 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 - Sketch extrusion lacks a certified solve precision bound (#3928). Analytic
   edge picking is blocked by [Martensite #462](https://github.com/Oblikovati/Martensite/issues/462).
 - The full gate needs a released API contract (#3965). The Point feature passed
-  8 of 9 native scenarios; point-10 needs its recorded fixture (#3887).
+  8 of 9 native scenarios; point-10 is excluded until its recorded fixture is supplied (#3887).
 - Rectangle visibility now rejects obstructed observations (#3980). Focused
   native checks passed; the full gate is still required.
 - Authored work planes now display in part views (#3981). Viewport plane

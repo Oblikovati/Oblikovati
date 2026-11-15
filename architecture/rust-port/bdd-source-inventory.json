@@ -393,7 +393,7 @@
     "features/sketch/point/scenario.feature": {
       "outlines": 0,
       "scenario_declarations": 9,
-      "sha256": "c0b6827af861c35ed71f715077fe24911a883571d12a5a760f5738958de22d9b"
+      "sha256": "d35dc30890fa50b930dcb1b19fd91396c0302ceed365290f5ded0f30b00af3c2"
     },
     "features/sketch/points-import/scenario.feature": {
       "outlines": 0,

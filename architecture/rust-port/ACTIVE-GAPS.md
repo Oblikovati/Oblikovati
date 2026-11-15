@@ -8,7 +8,7 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
 
 - Point cancellation: point-11 passed a focused native run and the full Point
   feature run (#3887). The latest full run passed 8 of 9 scenarios; point-10
-  needs the recorded sketch fixture. See `receipts/2026-11-15-point-fixture-full/`.
+  is excluded until the recorded sketch fixture is supplied. See `receipts/2026-11-15-point-fixture-full/`.
   Captures remain historical (#3978).
 - Extrusion undo and redo: the native diagnostic passed three of four scenario
   steps. Named edge lengths are available through the typed API; selecting and
