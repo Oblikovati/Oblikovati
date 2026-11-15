@@ -247,7 +247,24 @@ fn lower_right(_: &mut ApplicationWorld) {
 }
 #[then("the part view remains visible")]
 fn view_remains(world: &mut ApplicationWorld) {
-    world.expect_text("Origin");
+    expect_empty_part_view(world);
+}
+// The shared Given creates an empty part. The gradient is its visible viewport, not a solid.
+fn expect_empty_part_view(world: &mut ApplicationWorld) {
+    expect_same_part(world);
+    let browser = world
+        .state()
+        .browser
+        .expect("expected the active part browser");
+    assert!(browser.bodies.is_empty(), "expected the empty part fixture");
+    let before = world
+        .observed_view_camera
+        .expect("expected the view before opening options");
+    assert_eq!(
+        super::super::viewport_pan::camera(world),
+        before,
+        "expected the same view camera"
+    );
     world.expect_blank_region([400, 600], [250, 300]);
 }
 #[then("the position is Bottom Right")]
@@ -451,8 +468,7 @@ fn apparent_size(world: &mut ApplicationWorld) {
 }
 #[then("the same part view remains visible")]
 fn same_view(world: &mut ApplicationWorld) {
-    expect_same_part(world);
-    world.expect_blank_region([400, 600], [250, 300]);
+    expect_empty_part_view(world);
 }
 
 #[test]
