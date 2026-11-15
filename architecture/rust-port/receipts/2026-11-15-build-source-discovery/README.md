@@ -22,3 +22,7 @@ After integrating the source-size repair and the walker fix, `make docs-lint`
 passed at `f2c7aea0f78b96ded6501701a69d8dba92ce031c`, while an unrelated task
 worktree was present. `docs-lint.log` records that partial gate; it is not a
 full `make gate` result.
+
+After the rectangle visibility fix, `make docs-lint` passed again at
+`180ecccd09c045c1dbd823eefcebbd1ca99c0328`. The output is in
+`docs-lint-after-visibility.log`.

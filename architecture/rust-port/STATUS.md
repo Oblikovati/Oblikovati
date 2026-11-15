@@ -15,8 +15,8 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 - **R0 remains open.** The full gate, baseline fields and milestone exit audits
   are incomplete. Run `python3 -B tools/bdd/behavior_cli.py report` for current
   counts; source and application changes can make earlier receipts stale.
-- At `0a0669cfcecfe98eb01d059e6aac248ca0330bb1`, the ledger reported four
-  current verified scenarios, 176 stale receipts and 21 blocked scenarios
+- At `180ecccd09c045c1dbd823eefcebbd1ca99c0328`, the ledger reported zero
+  current verified scenarios, 180 stale receipts and 21 blocked scenarios
   across 2,720 declarations. Application changes made prior receipts stale.
   The gate also requires baseline fields for 2,577 scenarios.
 - `rust-work` is local and has not passed the full pre-push gate. All 20 former
@@ -34,6 +34,8 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   when source files change; use a unique Cargo target for each active worktree.
 - The native harness injects input into the window frame loop. It does not prove
   OS-level key and mouse delivery. Close test windows and retain receipts.
+- `make docs-lint` passed after the source-size and worktree-discovery fixes
+  (#3970, #3971). The full `make gate` remains open.
 - Martensite work is owned separately. Report validated kernel gaps in
   `Oblikovati/Martensite`; do not modify the kernel in this lane.
 - GUI unit tests isolate the shared ImGui context under parallel execution
@@ -60,8 +62,9 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   [Martensite #462](https://github.com/Oblikovati/Martensite/issues/462).
 - Extrusion entry: the new metric part and origin-plane selection scenario
   and the following preview, cancel/reopen and zero distance recovery scenarios
-  passed on the merged edit state (#3927, #3931, #3929). The solve precision
-  certificate remains open (#3928); see `solver-precision-investigation.md`.
+  passed before later source and test changes (#3927, #3931, #3929); their
+  receipts are stale. The solve precision certificate remains open (#3928); see
+  `solver-precision-investigation.md`.
 - Three-point arc: the collinear-input boundary scenario passed; see
   `receipts/2026-11-15-arc-boundary-refresh/`. Its receipt is now stale.
 - Extrusion editing: browser distance editing, candidate preview, cancel,
@@ -82,6 +85,9 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   The per-face measurements and captures are in
   `receipts/2026-11-15-live-parameter-cube/`. This does not close the solver
   precision or full milestone gates (#3928, #3857).
+- The native cube test now checks the projected rectangle edges and proves the
+  check fails when the sketch is hidden (#3969); see
+  `receipts/2026-11-15-rectangle-visibility/`.
 
 - Viewport orientation: all 20 pinned scenarios passed on the merged revision
   (#3961). See `receipts/2026-11-15-orientation-verified/`. The run uses
