@@ -113,7 +113,8 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
   scenario passed a focused diagnostic; see
   `receipts/2026-11-15-mixed-document-switch/`. Opening a second numbered
   part window and returning to the first passed a focused diagnostic; see
-  `receipts/2026-11-15-second-part-window/`.
+  `receipts/2026-11-15-second-part-window/`. Three focused window view, zoom
+  and close diagnostics passed; see `receipts/2026-11-15-part-window-views/`.
 - Quick access: the diagnostic passed 11 of 12 scenarios. Clear can open
   before selection and can clear multiple browser-selected bodies in one edit
   (#3962). Viewport body multi-selection now passes frame-loop tests; named
