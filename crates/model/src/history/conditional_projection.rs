@@ -20,6 +20,7 @@ pub struct SketchFrameInputBounds {
 /// Conditional enclosure of the model origin in one borrowed document snapshot.
 pub struct ConditionalOriginProjection<'a> {
     snapshot: &'a DocumentSnapshot,
+    outcome: &'a SketchSolveOutcome,
     sketch: DocumentSketchId,
     anchor: SketchEntityId,
     frame: SketchPlaneRecipe,
@@ -56,6 +57,59 @@ impl ConditionalOriginProjection<'_> {
         self.local
     }
 }
+/// Conditional projected-root evidence retaining its snapshot-bound origin input.
+pub struct ConditionalProjectedSketchRoot<'e, 's> {
+    projection: &'e ConditionalOriginProjection<'s>,
+    root: crate::sketch::ConditionalSketchRoot,
+}
+impl<'e, 's> ConditionalProjectedSketchRoot<'e, 's> {
+    /// Read the snapshot-bound origin evidence; example: `result.projection()`.
+    pub fn projection(&self) -> &'e ConditionalOriginProjection<'s> {
+        self.projection
+    }
+    /// Read the retained full-to-active variable mapping; example: `result.full_to_active()`.
+    pub fn full_to_active(&self) -> &[Option<usize>] {
+        self.projection.outcome.full_to_active_slots()
+    }
+    /// Read the conditional root calculation; example: `result.root()`.
+    pub fn root(&self) -> &crate::sketch::ConditionalSketchRoot {
+        &self.root
+    }
+}
+impl<'s> ConditionalOriginProjection<'s> {
+    /// Check the full system with two origin-anchor equations and source-derived targets.
+    /// Example: `projection.conditional_root(&box_values, &fixed, &inverse)?`.
+    /// Frame bounds remain caller assumptions and the result is not feature qualification.
+    pub fn conditional_root<'e>(
+        &'e self,
+        bounds: &[[f64; 2]],
+        fixed: &[crate::sketch::FixedCoordinateAssumption],
+        preconditioner: &[Vec<f64>],
+    ) -> Result<ConditionalProjectedSketchRoot<'e, 's>, String> {
+        let points = self
+            .snapshot
+            .resolve_sketch_projected_points(self.sketch)
+            .map_err(|e| e.to_string())?;
+        if points.len() != 1 || points[0].id != self.anchor {
+            return Err(format!(
+                "projection points {points:?}: expected only the retained origin anchor {:?}",
+                self.anchor
+            ));
+        }
+        let root = self.outcome.conditional_root_with_origin(
+            &self.snapshot.parameters,
+            bounds,
+            fixed,
+            preconditioner,
+            points[0],
+            self.local,
+        )?;
+        Ok(ConditionalProjectedSketchRoot {
+            projection: self,
+            root,
+        })
+    }
+}
 impl DocumentSnapshot {
     /// Bound an origin binding under explicit resolved-frame assumptions and a current solve.
     /// Example: `snapshot.conditional_origin_projection(sketch, anchor, &outcome, bounds)?`.
@@ -64,7 +118,7 @@ impl DocumentSnapshot {
         &'a self,
         sketch: DocumentSketchId,
         anchor: SketchEntityId,
-        outcome: &SketchSolveOutcome,
+        outcome: &'a SketchSolveOutcome,
         assumptions: SketchFrameInputBounds,
     ) -> Result<ConditionalOriginProjection<'a>, String> {
         let view = self
@@ -112,6 +166,7 @@ impl DocumentSnapshot {
         let local = project_bounds(assumptions, current.local_position)?;
         Ok(ConditionalOriginProjection {
             snapshot: self,
+            outcome,
             sketch,
             anchor,
             frame,

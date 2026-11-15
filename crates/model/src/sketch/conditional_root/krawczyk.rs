@@ -1,6 +1,19 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Interval Krawczyk inclusion and infinity-norm contraction test.
-use super::{super::SketchIntervalEquation, Enclosure};
+use super::Enclosure;
+
+pub(super) struct RootRow {
+    pub value: [f64; 2],
+    pub jacobian: Vec<[f64; 2]>,
+}
+impl From<&super::super::SketchIntervalEquation> for RootRow {
+    fn from(row: &super::super::SketchIntervalEquation) -> Self {
+        Self {
+            value: row.value,
+            jacobian: row.jacobian.clone(),
+        }
+    }
+}
 
 pub(super) struct RootCheck {
     pub enclosure: Vec<[f64; 2]>,
@@ -9,8 +22,8 @@ pub(super) struct RootCheck {
 pub(super) fn evaluate(
     center: &[f64],
     bounds: &[[f64; 2]],
-    box_rows: &[SketchIntervalEquation],
-    point_rows: &[SketchIntervalEquation],
+    box_rows: &[RootRow],
+    point_rows: &[RootRow],
     matrix: &[Vec<f64>],
 ) -> Result<RootCheck, String> {
     let n = center.len();
@@ -49,10 +62,7 @@ fn point(value: f64) -> Result<Enclosure, String> {
 fn zero() -> Result<Enclosure, String> {
     point(0.0)
 }
-fn coefficients(
-    rows: &[SketchIntervalEquation],
-    c: &[Vec<f64>],
-) -> Result<Vec<Vec<Enclosure>>, String> {
+fn coefficients(rows: &[RootRow], c: &[Vec<f64>]) -> Result<Vec<Vec<Enclosure>>, String> {
     let n = rows.len();
     (0..n)
         .map(|i| {
@@ -81,7 +91,7 @@ fn contraction(coefficient: &[Vec<Enclosure>]) -> Result<f64, String> {
 fn image(
     center: &[f64],
     bounds: &[[f64; 2]],
-    rows: &[SketchIntervalEquation],
+    rows: &[RootRow],
     c: &[Vec<f64>],
     coefficient: &[Vec<Enclosure>],
 ) -> Result<Vec<[f64; 2]>, String> {

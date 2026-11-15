@@ -177,3 +177,6 @@ mod recipes;
 
 #[path = "associative_point_projection/conditional_origin.rs"]
 mod conditional_origin;
+
+#[path = "associative_point_projection/projected_root.rs"]
+mod projected_root;

@@ -29,6 +29,7 @@ pub struct ConditionalSketchRoot {
     targets: Vec<SketchIntervalTarget>,
     parameter_bounds: Option<Vec<super::ConditionalParameterBound>>,
     fixed_assumptions: Vec<FixedCoordinateAssumption>,
+    projected_anchor: Option<(super::SketchPoint2D, [[f64; 2]; 2])>,
     contraction_upper: f64,
 }
 impl ConditionalSketchRoot {
@@ -71,6 +72,10 @@ impl ConditionalSketchRoot {
     /// Read explicit fixed-coordinate assumptions; example: `root.fixed_assumptions()`.
     pub fn fixed_assumptions(&self) -> &[FixedCoordinateAssumption] {
         &self.fixed_assumptions
+    }
+    /// Read the conditional projected-anchor input, when present; example: `root.projected_anchor()`.
+    pub fn projected_anchor(&self) -> Option<(super::SketchPoint2D, [[f64; 2]; 2])> {
+        self.projected_anchor
     }
     /// Read the verified interval norm upper bound; example: `root.contraction_upper()`.
     pub fn contraction_upper(&self) -> f64 {
@@ -136,7 +141,9 @@ impl SketchSolveOutcome {
             .candidate()
             .interval_equations_with_targets(parameters, &point_box, targets)
             .map_err(|e| e.to_string())?;
-        let result = krawczyk::evaluate(&center, bounds, &box_rows, &point_rows, preconditioner)?;
+        let box_input: Vec<_> = box_rows.iter().map(krawczyk::RootRow::from).collect();
+        let point_input: Vec<_> = point_rows.iter().map(krawczyk::RootRow::from).collect();
+        let result = krawczyk::evaluate(&center, bounds, &box_input, &point_input, preconditioner)?;
         Ok(ConditionalSketchRoot {
             sketch: self.candidate().clone(),
             center,
@@ -151,6 +158,7 @@ impl SketchSolveOutcome {
             targets: targets.to_vec(),
             parameter_bounds: None,
             fixed_assumptions: fixed.to_vec(),
+            projected_anchor: None,
             contraction_upper: result.contraction_upper,
         })
     }
@@ -254,4 +262,117 @@ fn verify_fixed_assumptions(
         ));
     }
     Ok(())
+}
+
+impl SketchSolveOutcome {
+    pub(crate) fn conditional_root_with_origin(
+        &self,
+        parameters: &ParameterCollection<u64>,
+        bounds: &[[f64; 2]],
+        fixed: &[FixedCoordinateAssumption],
+        preconditioner: &[Vec<f64>],
+        anchor: super::SketchPoint2D,
+        origin_bounds: [[f64; 2]; 2],
+    ) -> Result<ConditionalSketchRoot, String> {
+        if self.numerical().termination != SolveTermination::Converged
+            || !self.source_stamp_current(parameters)
+        {
+            return Err(
+                "projected root: expected a converged solve with unchanged parameter sources"
+                    .into(),
+            );
+        }
+        let (center, columns) = self.verified_projected_center(parameters, anchor)?;
+        validate_box(&center, bounds)?;
+        for axis in 0..2 {
+            let interval = Enclosure::new(origin_bounds[axis])?.bounds();
+            if interval[0] < bounds[columns[axis]][0] || interval[1] > bounds[columns[axis]][1] {
+                return Err(format!(
+                    "origin anchor {anchor:?} bounds {interval:?}: expected the entire anchor bound inside its variable box"
+                ));
+            }
+        }
+        verify_fixed_assumptions(self, fixed)?;
+        let (targets, evidence) = source_targets(self, parameters)?;
+        let box_rows = self
+            .candidate()
+            .interval_equations_with_targets(parameters, bounds, &targets)
+            .map_err(|e| e.to_string())?;
+        let active = self.numerical().values.len();
+        if box_rows.len() != active
+            || self.numerical().evaluation.values().len() != active
+            || center.len() != active + 2
+        {
+            return Err(format!(
+                "projected system: expected {active} original equations and two eliminated coordinates, got {} equations and {} variables",
+                box_rows.len(),
+                center.len()
+            ));
+        }
+        let point_box: Vec<_> = center.iter().map(|value| [*value, *value]).collect();
+        let point_rows = self
+            .candidate()
+            .interval_equations_with_targets(parameters, &point_box, &targets)
+            .map_err(|e| e.to_string())?;
+        let mut box_input: Vec<_> = box_rows.iter().map(krawczyk::RootRow::from).collect();
+        let mut point_input: Vec<_> = point_rows.iter().map(krawczyk::RootRow::from).collect();
+        for axis in 0..2 {
+            box_input.push(anchor_equation(
+                bounds[columns[axis]],
+                origin_bounds[axis],
+                columns[axis],
+                center.len(),
+            )?);
+            point_input.push(anchor_equation(
+                point_box[columns[axis]],
+                origin_bounds[axis],
+                columns[axis],
+                center.len(),
+            )?);
+        }
+        let result = krawczyk::evaluate(&center, bounds, &box_input, &point_input, preconditioner)?;
+        Ok(ConditionalSketchRoot {
+            sketch: self.candidate().clone(),
+            center,
+            input_box: bounds.to_vec(),
+            enclosure: result.enclosure,
+            relations: box_rows
+                .iter()
+                .map(|row| (row.relation, row.equation))
+                .collect(),
+            source_rows: self.residual_rows(),
+            preconditioner: preconditioner.to_vec(),
+            targets,
+            parameter_bounds: Some(evidence),
+            fixed_assumptions: fixed.to_vec(),
+            projected_anchor: Some((anchor, origin_bounds)),
+            contraction_upper: result.contraction_upper,
+        })
+    }
+}
+fn anchor_equation(
+    variable: [f64; 2],
+    source: [f64; 2],
+    column: usize,
+    count: usize,
+) -> Result<krawczyk::RootRow, String> {
+    let value = Enclosure::new(variable)?
+        .difference(Enclosure::new(source)?)?
+        .bounds();
+    let mut jacobian = vec![[0., 0.]; count];
+    jacobian[column] = [1., 1.];
+    Ok(krawczyk::RootRow { value, jacobian })
+}
+
+#[cfg(test)]
+mod projected_equation_tests {
+    use super::*;
+    #[test]
+    fn anchor_equation_contains_input_uncertainty_and_identity_jacobian() {
+        let row = anchor_equation([-0.2, 0.4], [-0.1, 0.3], 1, 3).unwrap();
+        let q = |value| num_rational::BigRational::from_float(value).unwrap();
+        assert!(q(row.value[0]) <= q(-0.2) - q(0.3));
+        assert!(q(row.value[1]) >= q(0.4) - q(-0.1));
+        assert_eq!(row.jacobian, [[0., 0.], [1., 1.], [0., 0.]]);
+    }
 }

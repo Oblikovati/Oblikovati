@@ -16,13 +16,15 @@ use oblikovati_solve::{
 /// Immutable solve candidate; callers decide how document health permits adoption.
 #[derive(Clone, Debug)]
 pub struct SketchSolveOutcome {
-    candidate: Sketch2D,
-    numerical: NonlinearResult,
-    origins: Vec<SketchRelationId>,
+    pub(super) candidate: Sketch2D,
+    pub(super) numerical: NonlinearResult,
+    pub(super) origins: Vec<SketchRelationId>,
     parameter_dependencies: Vec<u64>,
     parameter_stamp: Option<super::parameter_stamp::ParameterStamp>,
-    operands: Vec<Vec<SketchResidualOperand>>,
-    equations: Vec<Vec<super::equation_evidence::EquationEvidence>>,
+    pub(super) active_slots: Vec<Option<usize>>,
+    pub(super) grounded_inputs: Vec<SketchPoint2D>,
+    pub(super) operands: Vec<Vec<SketchResidualOperand>>,
+    pub(super) equations: Vec<Vec<super::equation_evidence::EquationEvidence>>,
 }
 /// Identity and accepted value for a variable read by one prepared relation.
 #[derive(Clone, Debug, PartialEq)]
@@ -77,6 +79,9 @@ impl SketchSolveOutcome {
                     })
             })
             .collect()
+    }
+    pub(crate) fn full_to_active_slots(&self) -> &[Option<usize>] {
+        &self.active_slots
     }
     pub(crate) fn source_stamp_current(&self, parameters: &ParameterCollection<u64>) -> bool {
         self.parameter_stamp
@@ -190,7 +195,10 @@ impl Sketch2D {
             parameters,
             &prepared.parameter_dependencies,
         );
+        let active_slots = prepared.active_slots();
         let outcome = SketchSolveOutcome {
+            active_slots,
+            grounded_inputs: anchors.to_vec(),
             parameter_stamp,
             equations,
             operands,
@@ -276,7 +284,10 @@ impl Sketch2D {
             parameters,
             &prepared.parameter_dependencies,
         );
+        let active_slots = prepared.active_slots();
         Ok(SketchSolveOutcome {
+            active_slots,
+            grounded_inputs: anchors.to_vec(),
             parameter_stamp,
             equations,
             operands,
@@ -389,7 +400,7 @@ fn verify_relation(
     }
     Ok(())
 }
-fn same_equation_evidence(
+pub(super) fn same_equation_evidence(
     first: &[super::equation_evidence::EquationEvidence],
     second: &[super::equation_evidence::EquationEvidence],
 ) -> bool {

@@ -43,6 +43,9 @@ impl GroundedSketch {
             })
             .collect()
     }
+    pub fn active_slots(&self) -> Vec<Option<usize>> {
+        self.layout.active_slots()
+    }
     pub fn operand_columns(&self) -> Vec<Vec<usize>> {
         self.sources
             .iter()

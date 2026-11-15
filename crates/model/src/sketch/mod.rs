@@ -218,3 +218,5 @@ pub use conditional_root::{ConditionalSketchRoot, FixedCoordinateAssumption};
 mod parameter_bound;
 mod parameter_stamp;
 pub use parameter_bound::{ConditionalParameterBound, conditional_parameter_bound};
+
+mod projected_center;

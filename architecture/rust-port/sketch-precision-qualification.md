@@ -171,5 +171,10 @@ The evidence borrows the immutable snapshot and checks current sketch health,
 accepted solve diagnostics and geometry, the solve-time frame, and the retained
 parameter-source stamp. This catches changed projected inputs and same-value
 expression edits. It does not prove a document or session identity across
-snapshots. The reduced projected-anchor solver is not yet connected to the
-Krawczyk check, and this evidence does not enable feature admission.
+snapshots. For a single origin anchor, the conditional root check retains the
+original full-to-active variable mapping. It checks the original reduced equation count,
+then appends two full-coordinate anchor equations using the projected bounds.
+The anchor source identity and bounds remain available with the result. A
+non-square or singular augmented system declines. This equivalence holds under
+the supplied frame bounds; it does not validate those assumptions or enable
+feature admission.

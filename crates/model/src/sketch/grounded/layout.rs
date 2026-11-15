@@ -31,6 +31,15 @@ impl GroundedLayout {
             active_count,
         }
     }
+    pub fn active_slots(&self) -> Vec<Option<usize>> {
+        self.slots
+            .iter()
+            .map(|slot| match slot {
+                GroundedSlot::Active(index) => Some(*index),
+                GroundedSlot::Constant(_) => None,
+            })
+            .collect()
+    }
     pub fn active_values(&self, original: &[f64]) -> Vec<f64> {
         self.slots
             .iter()
