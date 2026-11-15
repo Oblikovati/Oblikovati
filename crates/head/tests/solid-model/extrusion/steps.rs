@@ -87,8 +87,6 @@ fn waiting_extrusion_shows_default_preview(world: &mut ApplicationWorld) {
 #[given("Default direction with a selected profile")]
 fn selected_rectangle_preview(world: &mut ApplicationWorld) {
     rectangle_for_waiting_extrusion(world);
-    let document = world.active_id();
-    super::extrude_resume_native::constrain_rectangle(world, document);
     finish_requested_profile(world);
     world.pump(Vec::new());
     waiting_extrusion_shows_profile(world);
