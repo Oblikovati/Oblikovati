@@ -181,3 +181,138 @@ fn session_rederives_evidence_after_edit_history_and_reopen() {
     );
     assert_current(&mut host, copy, sketch, anchor, 2.);
 }
+
+#[test]
+fn changed_candidate_is_refused_without_changing_session_or_dirty_state() {
+    use oblikovati_model::{history::DocumentEditHistory, identity::RecipeIdAllocator};
+    let mut host = host(RecordingWorkspace::default());
+    let mut source = SequenceGuids(1000);
+    let id = open_file(&mut host, "a.obk", &mut source, OpenActivation::Activate);
+    let (sketch, anchor) = host
+        .commands(id)
+        .unwrap()
+        .run("Rectangle", add_rectangle)
+        .unwrap();
+    let mut snapshot = host.workspace().session(id).unwrap().snapshot().clone();
+    let placed = snapshot.sketches.get(sketch).unwrap();
+    let mut geometry = placed.geometry().clone();
+    let point = geometry.points()[2].id;
+    geometry.set_position(point, [1.01, 0.]).unwrap();
+    snapshot
+        .sketches
+        .replace_geometry(sketch, geometry)
+        .unwrap();
+    let loose = SolveOptions {
+        relative_tolerance: 0.1,
+        ..Default::default()
+    };
+    let loose_solve = snapshot
+        .solve_one_document_sketch(sketch, loose, || false)
+        .unwrap();
+    snapshot.sketches = loose_solve.candidate;
+    snapshot.require_converged_resolved_sketch(sketch).unwrap();
+    assert_eq!(
+        snapshot
+            .sketches
+            .get(sketch)
+            .unwrap()
+            .geometry()
+            .point(point)
+            .unwrap()
+            .position,
+        [1.01, 0.]
+    );
+    let strict = snapshot
+        .solve_one_document_sketch(sketch, SolveOptions::default(), || false)
+        .unwrap();
+    let strict_x = strict
+        .candidate
+        .get(sketch)
+        .unwrap()
+        .geometry()
+        .point(point)
+        .unwrap()
+        .position[0];
+    assert!(
+        (strict_x - 1.0).abs() < 1e-8,
+        "candidate x={strict_x:?}, expected 1 cm"
+    );
+    assert!(!snapshot.sketches.same_recipe(&strict.candidate));
+    let allocator = RecipeIdAllocator::restore(Some(1), &[1]).unwrap();
+    let history = DocumentEditHistory::new(snapshot, allocator).unwrap();
+    let mut workspace = TestWorkspace::new(RecordingWorkspace::default());
+    let mut guid = WorkspaceGuidSource {
+        result: Ok(guid(999)),
+        calls: 0,
+    };
+    let document = workspace
+        .register(
+            history,
+            identity(998),
+            RecordingObserver::default(),
+            &mut guid,
+            OpenActivation::Activate,
+        )
+        .unwrap()
+        .session_id;
+    workspace
+        .commands(document)
+        .unwrap()
+        .set_sketch_visibility(sketch, false)
+        .unwrap();
+    workspace
+        .commands(document)
+        .unwrap()
+        .set_sketch_visibility(sketch, true)
+        .unwrap();
+    workspace.commands(document).unwrap().undo().unwrap();
+    assert!(workspace.needs_save(document).unwrap());
+    assert_eq!(workspace.session(document).unwrap().undo_labels().len(), 1);
+    assert_eq!(workspace.session(document).unwrap().redo_labels().len(), 1);
+    let before = workspace.session(document).unwrap();
+    let recipe = before.snapshot().sketches.recipe();
+    let evaluated = before.snapshot().sketches.clone();
+    let generation = before.generation();
+    let high_water = before.high_water();
+    let undo = before
+        .undo_labels()
+        .into_iter()
+        .map(str::to_owned)
+        .collect::<Vec<_>>();
+    let redo = before
+        .redo_labels()
+        .into_iter()
+        .map(str::to_owned)
+        .collect::<Vec<_>>();
+    let dirty = workspace.needs_save(document).unwrap();
+    let result = workspace
+        .commands(document)
+        .unwrap()
+        .conditional_canonical_sketch(sketch, anchor)
+        .err()
+        .unwrap();
+    assert!(
+        result.contains("fresh solve changed authored geometry; explicit recompute required"),
+        "unexpected decline: {result}"
+    );
+    let after = workspace.session(document).unwrap();
+    assert_eq!(after.snapshot().sketches.recipe(), recipe);
+    assert!(after.snapshot().sketches.same_evaluated_state(&evaluated));
+    assert_eq!(after.high_water(), high_water);
+    assert_eq!(
+        after
+            .snapshot()
+            .sketches
+            .get(sketch)
+            .unwrap()
+            .geometry()
+            .point(point)
+            .unwrap()
+            .position,
+        [1.01, 0.]
+    );
+    assert_eq!(after.generation(), generation);
+    assert_eq!(after.undo_labels(), undo);
+    assert_eq!(after.redo_labels(), redo);
+    assert_eq!(workspace.needs_save(document).unwrap(), dirty);
+}
