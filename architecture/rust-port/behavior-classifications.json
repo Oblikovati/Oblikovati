@@ -218,10 +218,10 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-new-sketch-63f029b9f7034030-4f765cc1/receipt-63f029b9f7034030.json",
-        "sha256": "31c2adb03d00b26ea22b7e67c3d0f3d31ec4b9158bf2c8280d939df24831448a"
+        "path": "architecture/rust-port/receipts/2026-11-15-sketch-plane-current/receipt-63f029b9f7034030.json",
+        "sha256": "1f4e064dcd960fa42ec892d4b9e1a075192f820dcf8f2e922d5eb88788494dd1"
       },
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "go_reference": "Go aa8297d1b: app/commands_standard.go modelTabCommands, app/create_sketch_tool.go, app/sketch_env.go; face labels follow camera orientation in head/ui/viewcube_text.go.",
       "go_test_premise": "Go TestCreateSketchToolFlow uses a fake viewport picker and checks XZ normal and editing; TestCreateSketchToolPicksViaBrowser checks a YZ browser pick. Neither checks this exact XZ browser flow, cube label, or empty-sketch status.",
@@ -252,10 +252,10 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-new-sketch-4e511ca586195d67-4f765cc1/receipt-4e511ca586195d67.json",
-        "sha256": "6932f775323fc6ff4651bb9bf551b256652a8afcdf73dbec228283dd3d895717"
+        "path": "architecture/rust-port/receipts/2026-11-15-sketch-cancel-plane-current/receipt-4e511ca586195d67.json",
+        "sha256": "5b2d9e5957f1b19ce864840f6147cbde4d629ab7aef6072a5de3eab7a6123779"
       },
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "go_reference": "Go aa8297d1b: app/commands_standard.go modelTabCommands, app/create_sketch_tool.go, app/sketch_env.go; face labels follow camera orientation in head/ui/viewcube_text.go.",
       "go_test_premise": "Go TestCreateSketchToolCancelRestoresFilter checks filter restoration, not visible previews or preservation of an existing browser row.",
@@ -286,10 +286,10 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-new-sketch-adfaa180b248a094-4f765cc1/receipt-adfaa180b248a094.json",
-        "sha256": "cb0eb2a47910aefdd437f445dc376e8a22e0bf581873b7d2d195c15dfa49589d"
+        "path": "architecture/rust-port/receipts/2026-11-15-sketch-escape-current/receipt-adfaa180b248a094.json",
+        "sha256": "ceb0336c64cb3a3ccb1468bc8139aaf45d8c29806aac9fa81f12f13b0116b485"
       },
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "go_reference": "Go aa8297d1b: app/commands_standard.go modelTabCommands, app/create_sketch_tool.go, app/sketch_env.go; face labels follow camera orientation in head/ui/viewcube_text.go.",
       "go_test_premise": "No Go test in the selected set proves Escape after host acceptance; the scenario is the behavioral oracle.",
@@ -321,10 +321,10 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-new-sketch-cd9561e7b2b4f475-4f765cc1/receipt-cd9561e7b2b4f475.json",
-        "sha256": "96a837de97f1341c2518bb250b0bde42553510e62736213587c11df103889912"
+        "path": "architecture/rust-port/receipts/2026-11-15-sketch-history-current/receipt-cd9561e7b2b4f475.json",
+        "sha256": "5283893943711b1061fee114215bd96c1bc4b536ec62d590ecd6d09119413711"
       },
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "go_reference": "Go aa8297d1b: app/commands_standard.go modelTabCommands, app/create_sketch_tool.go, app/sketch_env.go; face labels follow camera orientation in head/ui/viewcube_text.go.",
       "go_test_premise": "Go TestSketchCreationIsUndoable covers creation history, but the selected Go tests do not establish separate empty Finish and creation undo steps. The Go recipe no-op policy differs from this scenario; see #3880.",
@@ -356,10 +356,10 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-new-sketch-4ba58b431dc847ae-4f765cc1/receipt-4ba58b431dc847ae.json",
-        "sha256": "d8bc7478ee01ce80b2e05266b5ddd79f96f15a9882cc70a1c0c317d27ce23fbc"
+        "path": "architecture/rust-port/receipts/2026-11-15-sketch-preselect-current/receipt-4ba58b431dc847ae.json",
+        "sha256": "47d7720e79c6bfdbf5f9965c7cde19d3efa81060e17318f0a955cba31ad679ff"
       },
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "go_reference": "Go aa8297d1b: app/commands_standard.go modelTabCommands, app/create_sketch_tool.go, app/sketch_env.go; face labels follow camera orientation in head/ui/viewcube_text.go.",
       "go_test_premise": "Go TestCreate2DSketchUsesPreselectedPlane uses XZ and checks immediate entry, not YZ, cube label, or status.",
@@ -390,10 +390,10 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-cb85314818ef73da-f590e14d/receipt-cb85314818ef73da.json",
-        "sha256": "54860776bf94698ae51b4aab6cf71f27b86870c6db27650fc09dfd2385a69aba"
+        "path": "architecture/rust-port/receipts/2026-11-15-rect-corners-current/receipt-cb85314818ef73da.json",
+        "sha256": "37e322a6d1dee5c20232927ea6ffe8c566d00241512c8ad6f347a3e96ad79d05"
       },
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "historical_receipts": [
         {
@@ -424,10 +424,10 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-a661d2ccfbdfc85a-f590e14d/receipt-a661d2ccfbdfc85a.json",
-        "sha256": "304dc79f1ac19d7e6e772813a3b04f82d476149b58684bb979454b1120423d21"
+        "path": "architecture/rust-port/receipts/2026-11-15-rect-cancel-current/receipt-a661d2ccfbdfc85a.json",
+        "sha256": "1b6332ab984ad3e55791e4001493152afabe08c23a89aa254b10b231c594e86a"
       },
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "historical_receipts": [
         {
@@ -458,10 +458,10 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-1e7472ca669ac6f4-f590e14d/receipt-1e7472ca669ac6f4.json",
-        "sha256": "f8e6abcec8530e54f7fd12e0503d250ecb41fab71f8791d8fab6b4fa053189de"
+        "path": "architecture/rust-port/receipts/2026-11-15-rect-identical-current/receipt-1e7472ca669ac6f4.json",
+        "sha256": "59c7b6895d3f498ce1cd9258684139a521e4c103976b6cd2ce582bfa2bd78c47"
       },
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "historical_receipts": [
         {
@@ -492,10 +492,10 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-c7961c524b21f4e1-f590e14d/receipt-c7961c524b21f4e1.json",
-        "sha256": "015865f24f1b0dc869a9e7e50242a13fed53a99ecc2dea1dad79b5b986daa589"
+        "path": "architecture/rust-port/receipts/2026-11-15-rect-history-current/receipt-c7961c524b21f4e1.json",
+        "sha256": "f142f34f5ec42333a286157704dd010ff5d2ad18ef04685b282f2c85a558d36b"
       },
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "historical_receipts": [
         {
@@ -824,12 +824,12 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-be5c680262911cc1-f590e14d/receipt-be5c680262911cc1.json",
-        "sha256": "a02e32c4f413e6460dc3ced7d96329e4cdb432ce2d458ecd735cb2487468f65a"
+        "path": "architecture/rust-port/receipts/2026-11-15-rect-numeric-current/receipt-be5c680262911cc1.json",
+        "sha256": "97abcf9a59303fc0a110bd78425d075a47bc9824bb3f02137309025c6d5350a3"
       },
       "go_reference": "Go aa8297d1b: app/sketch_tools_test.go and model/sketch/recipe_rectangle_test.go cover two-corner construction and sketch degrees of freedom.",
       "mapping_reason": "Numeric two-point rectangle creation belongs to the initial desktop sketch workflow.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "historical_receipts": [
         {
@@ -930,12 +930,12 @@
       ],
       "state": "verified",
       "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-rectangle-841bc6eecc0f2262-f590e14d/receipt-841bc6eecc0f2262.json",
-        "sha256": "9a02fae502fbe0b5a2182a99b3b8358ab27840f3e8806ee33400c490be96484c"
+        "path": "architecture/rust-port/receipts/2026-11-15-rect-zero-height-current/receipt-841bc6eecc0f2262.json",
+        "sha256": "b8a2869a3c2881354eba17dcd96fe9d7cb8c7786cd36c4cdaaee9e8097686755"
       },
       "go_reference": "Go aa8297d1b: app/sketch_tools_test.go and model/sketch/recipe_rectangle_test.go cover two-corner construction and sketch degrees of freedom.",
       "mapping_reason": "The second size field and command state are part of the initial desktop sketch workflow.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
       "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
       "historical_receipts": [
         {

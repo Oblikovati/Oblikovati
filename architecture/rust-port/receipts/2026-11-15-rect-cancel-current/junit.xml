@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Rectangle two point: tmp/obk-quick-access-3955-source/features/sketch/rectangle-two-point/scenario.feature" package="testsuite/Feature: Rectangle two point: tmp/obk-quick-access-3955-source/features/sketch/rectangle-two-point/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T03:43:00.90957184Z" time="9.034803682"><testcase name="Scenario: rectangle-two-point-06 Cancel before the opposite corner: tmp/obk-quick-access-3955-source/features/sketch/rectangle-two-point/scenario.feature:18:3" time="9.034803682"><system-out><![CDATA[  Scenario: rectangle-two-point-06 Cancel before the opposite corner
+   ✔  Given an editable sketch is Ready
+   ✔  When the user choose Rectangle Two Point and click the fixture first corner
+   ✔  Then the prompt requests the opposite corner
+   ✔  When the user press Escape
+   ✔  Then the MCAD Software returns to Ready without a new rectangle
+]]></system-out></testcase></testsuite></testsuites>
