@@ -369,20 +369,17 @@ fn accept(
         }
     };
     if let Some(name) = requested {
-        if draft.choices.express_unavailable(&name) {
-            return None;
-        }
         return Some(open_one(browser, draft, name, actions));
-    }
-    let express_unavailable = several.is_empty() && draft.choices.express_unavailable(&draft.name);
-    if express_unavailable {
-        ui.text_disabled("Express assembly loading is not available");
     }
     let can_open = browser.highlighted_folder().is_some()
         || !several.is_empty()
         || (!draft.name.is_empty()
-            && !express_unavailable
-            && open_action(&full_path(&browser.folder, &draft.name), false).dispatchable(state));
+            && open_action(
+                &full_path(&browser.folder, &draft.name),
+                false,
+                draft.choices.express_for(&draft.name),
+            )
+            .dispatchable(state));
     match dialog_buttons(ui, "Open", can_open, entered, &mut draft.escape)? {
         DialogEnd::Cancelled => Some(DialogOutcome::Cancelled),
         DialogEnd::Accepted => opened(browser, draft, &several, state, actions),
@@ -403,7 +400,7 @@ fn opened(
         return Some(open_one(browser, draft, draft.name.clone(), actions));
     }
     for path in in_opening_order(browser, several, state) {
-        actions.push(open_action(&path, false));
+        actions.push(open_action(&path, false, draft.choices.express_for(&path)));
     }
     Some(DialogOutcome::Opened {
         name: several[0].clone(),
@@ -417,7 +414,11 @@ fn open_one(
     actions: &mut Vec<GuiShellAction>,
 ) -> DialogOutcome {
     let deferred = draft.choices.defers() && FileKind::of(&name) == FileKind::Drawing;
-    let action = open_action(&full_path(&browser.folder, &name), deferred);
+    let action = open_action(
+        &full_path(&browser.folder, &name),
+        deferred,
+        draft.choices.express_for(&name),
+    );
     if deferred {
         return DialogOutcome::Opened {
             name,
@@ -446,7 +447,7 @@ fn in_opening_order(
     paths.sort_by_key(|path| !is_open(path));
     paths
 }
-fn open_action(path: &str, defer_content: bool) -> GuiShellAction {
+fn open_action(path: &str, defer_content: bool, express: bool) -> GuiShellAction {
     if defer_content {
         return GuiShellAction::OpenDeferredDrawing(path.to_owned());
     }
@@ -454,6 +455,7 @@ fn open_action(path: &str, defer_content: bool) -> GuiShellAction {
         full_document_name: path.to_string(),
         visible: true,
         defer_content: false,
+        express,
     })
 }
 #[cfg(test)]

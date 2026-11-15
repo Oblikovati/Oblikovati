@@ -66,12 +66,19 @@ fn occurrence_row<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles
     path.push((owner, identity.0, identity.1));
     let reference = (!occurrence.virtual_).then_some(occurrence.component.as_str());
     let target = reference.and_then(|name| files.document_reference(owner, name));
-    let error = reference.filter(|_| target.is_none()).map(|name| {
-        files
-            .document_reference_error(owner, name)
-            .unwrap_or("reference is not resolved")
-            .to_owned()
-    });
+    let deferred = reference.is_some()
+        && files
+            .express_assembly_view(owner)
+            .map_err(|e| e.to_string())?
+            .is_some();
+    let error = reference
+        .filter(|_| target.is_none() && !deferred)
+        .map(|name| {
+            files
+                .document_reference_error(owner, name)
+                .unwrap_or("reference is not resolved")
+                .to_owned()
+        });
     let children = match target {
         Some(id) => occurrence_rows(files, id, &path)?,
         None => Vec::new(),
@@ -82,6 +89,7 @@ fn occurrence_row<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles
         component: occurrence.component.clone(),
         suppressed: occurrence.suppressed,
         virtual_: occurrence.virtual_,
+        deferred,
         error,
         children,
     })

@@ -36,8 +36,8 @@ impl FileChoices {
     pub(super) fn defers(&self) -> bool {
         self.defer
     }
-    /// Express loading must not silently open the full assembly.
-    pub(super) fn express_unavailable(&self, path: &str) -> bool {
+    /// Apply the express choice only to an assembly file.
+    pub(super) fn express_for(&self, path: &str) -> bool {
         self.express && FileKind::of(path) == FileKind::Assembly
     }
     pub(super) fn panel(&mut self, ui: &Ui, kind: FileKind, views: &[String]) {
@@ -89,11 +89,11 @@ mod tests {
         assert_eq!(FileKind::of("/a/notes.txt"), FileKind::Other);
     }
     #[test]
-    fn express_loading_is_refused_only_for_an_assembly_with_the_option_selected() {
+    fn express_loading_applies_only_to_an_assembly_with_the_option_selected() {
         let mut choices = FileChoices::default();
-        assert!(!choices.express_unavailable("gearbox.oad"));
+        assert!(!choices.express_for("gearbox.oad"));
         choices.express = true;
-        assert!(choices.express_unavailable("gearbox.oad"));
-        assert!(!choices.express_unavailable("part.opd"));
+        assert!(choices.express_for("gearbox.oad"));
+        assert!(!choices.express_for("part.opd"));
     }
 }

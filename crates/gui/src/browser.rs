@@ -139,6 +139,10 @@ impl BrowserTree<'_> {
             self.select_occurrence(row, actions);
         }
         self.occurrence_menu(row, actions);
+        if row.deferred {
+            self.ui.same_line();
+            self.ui.text_disabled("[Express]");
+        }
         if let Some(error) = &row.error {
             self.ui.same_line();
             self.ui.text_colored([1., 0.35, 0.25, 1.], "[unresolved]");

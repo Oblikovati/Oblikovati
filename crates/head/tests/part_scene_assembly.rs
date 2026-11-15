@@ -447,3 +447,6 @@ fn persisted_view_ignores_transient_occurrence_and_body_state() {
             .all(|triangle| triangle.color == CHOSEN_BODY_COLOR)
     );
 }
+
+#[path = "part_scene_express.rs"]
+mod express;

@@ -18,8 +18,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         }
         self.require_committed_source(&source)?;
         let values = self.derived_source_values(&source, target)?;
-        self.workspace
-            .commands(target)
+        self.commands(target)
             .map_err(FileWorkspaceError::Workspace)?
             .refresh_derived_table(table, values.as_ref())
             .map_err(|error| FileWorkspaceError::DerivedRefresh(error.to_string()))

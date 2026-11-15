@@ -4,11 +4,11 @@ use super::*;
 use oblikovati_model::history::DocumentSnapshot;
 use oblikovati_persistence::load::{PreparedParameterPackage, read_parameter_package};
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq)]
 enum OpenContentMode {
     Full,
     Deferred,
-    Express,
+    Express((f64, f64)),
 }
 
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspace<O, W, F> {
@@ -46,13 +46,14 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
     }
 
     /// Open an assembly from a validated saved view without loading its components.
-    /// Example: `files.open_express_with_factory(path, factory, version, source)?`.
+    /// Example: `files.open_express_with_factory(path, factory, version, source, (0.05, 0.5))?`.
     pub fn open_express_with_factory(
         &mut self,
         path: &Path,
         factory: impl FnOnce() -> Result<O, String>,
         version: &str,
         source: &mut dyn GuidSource,
+        display_limits: (f64, f64),
     ) -> Result<FileOpenOutcome, FileWorkspaceError> {
         self.open_in_mode(
             path,
@@ -60,7 +61,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
             version,
             source,
             OpenActivation::Activate,
-            OpenContentMode::Express,
+            OpenContentMode::Express(display_limits),
         )
     }
 
@@ -109,11 +110,25 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         id: u64,
         mode: OpenContentMode,
     ) -> Result<(), FileWorkspaceError> {
-        if self.retained_file(id)?.express_view.is_some() != (mode == OpenContentMode::Express) {
+        if self.retained_file(id)?.express_view.is_some()
+            != matches!(mode, OpenContentMode::Express(_))
+        {
             return Err(FileWorkspaceError::ExpressMode(
                 id,
-                mode == OpenContentMode::Express,
+                matches!(mode, OpenContentMode::Express(_)),
             ));
+        }
+        if let OpenContentMode::Express((chord, angular)) = mode {
+            let retained = self.retained_file(id)?;
+            if let Some(view) = &retained.express_view {
+                view.validate_display_quality(chord, angular)
+                    .map_err(|reason| {
+                        FileWorkspaceError::ExpressOpen(
+                            retained.path.clone().unwrap_or_default(),
+                            reason.to_string(),
+                        )
+                    })?;
+            }
         }
         if mode == OpenContentMode::Deferred && self.deferred_drawing_views(id)?.is_none() {
             return Err(FileWorkspaceError::DeferredDrawing(
@@ -147,17 +162,21 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         mode: OpenContentMode,
     ) -> Result<FileOpenOutcome, FileWorkspaceError> {
         let prepared = self.prepare_open(&path, version, source)?;
-        let express_view = if mode == OpenContentMode::Express {
-            Some(
-                self.validated_assembly_view(&path, &prepared.package)
-                    .map_err(|reason| FileWorkspaceError::ExpressOpen(path.clone(), reason))?
-                    .ok_or_else(|| {
-                        FileWorkspaceError::ExpressOpen(
-                            path.clone(),
-                            "expected a saved assembly view".into(),
-                        )
-                    })?,
-            )
+        let express_view = if let OpenContentMode::Express((chord, angular)) = mode {
+            let view = self
+                .validated_assembly_view(&path, &prepared.package)
+                .map_err(|reason| FileWorkspaceError::ExpressOpen(path.clone(), reason))?
+                .ok_or_else(|| {
+                    FileWorkspaceError::ExpressOpen(
+                        path.clone(),
+                        "expected a saved assembly view".into(),
+                    )
+                })?;
+            view.validate_display_quality(chord, angular)
+                .map_err(|reason| {
+                    FileWorkspaceError::ExpressOpen(path.clone(), reason.to_string())
+                })?;
+            Some(view)
         } else {
             None
         };

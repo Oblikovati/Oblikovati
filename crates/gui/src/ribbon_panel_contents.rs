@@ -135,6 +135,25 @@ pub(crate) fn draw_panel_content(
         RibbonPanel::Windows => windows_controls(ui, origin, state, owners, actions),
         RibbonPanel::Component => {
             owners.icons.cursor(ui, origin, [0., 0.]);
+            if state.active_express() {
+                if let Some(id) = state.document {
+                    crate::chrome::command_control(
+                        ui,
+                        "Load Full",
+                        GuiShellAction::LoadFullDocument(id),
+                        state,
+                        actions,
+                        || {
+                            crate::widget_abi::button(
+                                ui,
+                                "Load Full",
+                                owners.icons.cell([108., 58.]),
+                            )
+                        },
+                    );
+                }
+                return false;
+            }
             let disabled = ui.begin_disabled(owners.home_active || state.transaction_open);
             if crate::widget_abi::button(ui, "Place", owners.icons.cell([108., 26.])) {
                 owners.workspaces.request_assembly_place();

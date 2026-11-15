@@ -15,6 +15,7 @@ pub(super) enum AssemblyViewMode {
 pub(super) struct SceneSource {
     pub document: u64,
     pub is_assembly: bool,
+    express: bool,
     revisions: Vec<(u64, u64, u64)>,
     failures: Vec<String>,
 }
@@ -36,6 +37,10 @@ pub(super) fn active_scene_source<
     let mut source = SceneSource {
         document,
         is_assembly: session.snapshot().assembly.is_some(),
+        express: files
+            .express_assembly_view(document)
+            .map_err(|e| e.to_string())?
+            .is_some(),
         revisions: Vec::new(),
         failures: Vec::new(),
     };
@@ -63,6 +68,13 @@ fn collect_revisions<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFi
         session.generation(),
         session.body_visibility_revision(),
     ));
+    if files
+        .express_assembly_view(document)
+        .map_err(|e| e.to_string())?
+        .is_some()
+    {
+        return Ok(());
+    }
     if let Some(occurrences) = &session.snapshot().assembly {
         for occurrence in occurrences
             .iter()
@@ -195,6 +207,24 @@ impl DesktopPartScenes {
                 return Err(error.to_string());
             }
         };
+        if mode == AssemblyViewMode::Live
+            && let Some(view) = files
+                .express_assembly_view(document)
+                .map_err(|e| e.to_string())?
+        {
+            let mut result = self.empty();
+            result.scene.triangles = view
+                .triangles
+                .iter()
+                .map(|triangle| oblikovati_viewport::ViewportTriangle {
+                    positions: triangle.positions,
+                    color: triangle.color,
+                })
+                .collect();
+            result.status.source = Some((document, generation));
+            result.status.cached_assembly = true;
+            return Ok(result);
+        }
         let selection = match mode {
             AssemblyViewMode::Live => self.occurrence_selection.clone(),
             AssemblyViewMode::Persisted => None,

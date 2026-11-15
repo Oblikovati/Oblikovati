@@ -90,6 +90,8 @@ pub enum GuiShellAction {
     ActivateDocument(oblikovati_api::wire::ActivateDocumentArgs),
     CloseDocument(oblikovati_api::wire::CloseDocumentArgs),
     OpenDocument(oblikovati_api::wire::OpenDocumentArgs),
+    /// Load the components of an express assembly.
+    LoadFullDocument(u64),
     /// Open a drawing with its saved views and deferred updates.
     OpenDeferredDrawing(String),
     SaveDocumentAs(oblikovati_api::wire::SaveDocumentAsArgs),

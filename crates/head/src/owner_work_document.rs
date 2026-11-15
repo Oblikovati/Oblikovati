@@ -2,6 +2,13 @@
 //! Document lifecycle methods on the desktop work boundary.
 macro_rules! desktop_document_work {
     () => {
+        fn load_full_from_gui(&mut self, id: u64) -> Result<bool, String> {
+            oblikovati_api::client::Client::new(self.document_host())
+                .documents()
+                .load_full(&oblikovati_api::wire::LoadFullDocumentArgs { id })
+                .map_err(|cause| cause.to_string())?;
+            Ok(true)
+        }
         fn open_document_from_gui(
             &mut self,
             request: &oblikovati_api::wire::OpenDocumentArgs,

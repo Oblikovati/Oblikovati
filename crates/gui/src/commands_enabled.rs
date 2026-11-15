@@ -87,6 +87,7 @@ impl GuiShellAction {
             Self::PreviewDrawingBaseView(None) => true,
             Self::PlaceComponent { assembly, request } => {
                 state.document == Some(*assembly)
+                    && !state.active_express()
                     && state.document_type == Some(oblikovati_api::types::DOCUMENT_ASSEMBLY)
                     && !state.transaction_open
                     && request.document != *assembly
@@ -106,6 +107,7 @@ impl GuiShellAction {
                 name,
             } => {
                 state.document == Some(*assembly)
+                    && !state.active_express()
                     && state.document_type == Some(oblikovati_api::types::DOCUMENT_ASSEMBLY)
                     && !state.transaction_open
                     && !path.trim().is_empty()
@@ -200,13 +202,18 @@ impl GuiShellAction {
             Self::OpenDocument(_) | Self::OpenDeferredDrawing(_) | Self::CreateDocument(_) => {
                 !state.transaction_open
             }
+            Self::LoadFullDocument(id) => {
+                state.document == Some(*id) && state.active_express() && !state.transaction_open
+            }
             Self::CloseDocument(request) => {
                 (state.document == Some(request.id)
                     || state.documents.iter().any(|row| row.id == request.id))
                     && !state.transaction_open
             }
             Self::SaveDocumentAs(request) => {
-                state.document == Some(request.document) && !state.transaction_open
+                state.document == Some(request.document)
+                    && !state.transaction_open
+                    && !state.active_express()
             }
             Self::OrientView { .. }
             | Self::SetViewProjection(_)
@@ -342,8 +349,9 @@ impl GuiShellAction {
                         )
                     )
             }
-            Self::Undo => state.undo_label.is_some(),
-            Self::Redo => state.redo_label.is_some(),
+            Self::Undo => state.undo_label.is_some() && !state.active_express(),
+            Self::Redo => state.redo_label.is_some() && !state.active_express(),
+            Self::Save => !state.active_express(),
             Self::ChooseSketchPlane
             | Self::ChooseSketchPlaneForExtrude
             | Self::StartSketchOn(_)
@@ -384,11 +392,7 @@ impl GuiShellAction {
             Self::FinishSketch => {
                 state.authoring == GuiAuthoringContext::Sketch && !state.transaction_open
             }
-            Self::SetMarkingMenu(_)
-            | Self::SetKeymap(_)
-            | Self::NewPart
-            | Self::Save
-            | Self::Home => true,
+            Self::SetMarkingMenu(_) | Self::SetKeymap(_) | Self::NewPart | Self::Home => true,
         }
     }
     /// Keep available history controls inert during an edit; example: `action.dispatchable(&state)` after a click.

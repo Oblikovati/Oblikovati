@@ -15,6 +15,42 @@ fn write_assembly(folder: &Path) {
     );
     std::fs::write(folder.join(ASSEMBLY_FILE), assembly).unwrap();
 }
+
+fn qualify_saved_assembly(world: &mut ApplicationWorld, folder: &Path, drawing: u64) {
+    use oblikovati_api::wire::{CloseDocumentArgs, SaveDocumentArgs};
+    open_dialog(world);
+    look_in(world, folder);
+    select_row(world, ASSEMBLY_FILE);
+    choose_open(world);
+    settle(world);
+    let assembly = world.active_id();
+    let part = world
+        .app()
+        .owner
+        .documents()
+        .document_reference(assembly, COMPONENT)
+        .unwrap();
+    for id in [part, assembly] {
+        let result = Client::new(world.app().owner.document_host())
+            .documents()
+            .save(&SaveDocumentArgs { document: id })
+            .unwrap();
+        assert!(result.warnings.unwrap_or_default().is_empty());
+    }
+    Client::new(world.app().owner.document_host())
+        .documents()
+        .close(&CloseDocumentArgs {
+            id: assembly,
+            force: true,
+        })
+        .unwrap();
+    world.activate_through_tab(drawing);
+    let package = oblikovati_persistence::package::DocumentPackage::decode(
+        &std::fs::read(folder.join(ASSEMBLY_FILE)).unwrap(),
+    )
+    .unwrap();
+    assert!(package.restore_saved_assembly_view().unwrap().is_some());
+}
 #[given("a saved assembly with visible components is available and not already open")]
 fn saved_assembly(world: &mut ApplicationWorld) {
     let drawing = world.active_id();
@@ -24,6 +60,7 @@ fn saved_assembly(world: &mut ApplicationWorld) {
     );
     let folder = models_folder(world);
     write_assembly(&folder);
+    qualify_saved_assembly(world, &folder, drawing);
     let path = folder.join(ASSEMBLY_FILE);
     let state = world.state();
     assert!(
@@ -61,7 +98,10 @@ fn assembly_opens(world: &mut ApplicationWorld) {
 #[then("its component geometry is visible in the viewport")]
 fn component_visible(world: &mut ApplicationWorld) {
     let status = world.app().window.native.scene_status().unwrap();
-    assert_eq!(status.visible_bodies, 1, "scene {status:?}");
+    assert!(
+        status.cached_assembly || status.visible_bodies == 1,
+        "scene {status:?}"
+    );
     assert!(
         status.scene_errors.is_empty(),
         "scene errors {:?}",

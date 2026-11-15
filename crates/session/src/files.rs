@@ -300,6 +300,21 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         if self.has_reference_dependents(id) {
             return Err(FileWorkspaceError::ReferencedModel(id));
         }
+        if self.retained_file(id)?.express_view.is_some() {
+            let session = self
+                .workspace
+                .session(id)
+                .map_err(FileWorkspaceError::Workspace)?;
+            if session.in_transaction()
+                || self
+                    .workspace
+                    .needs_save(id)
+                    .map_err(FileWorkspaceError::Workspace)?
+            {
+                return Err(FileWorkspaceError::ExpressMode(id, false));
+            }
+            return self.close_discarding_changes(id);
+        }
         let references = self.owned_assembly_references(id);
         let mut target = bound_target(&mut self.retained, &mut self.files, id, references)?;
         let observer = self

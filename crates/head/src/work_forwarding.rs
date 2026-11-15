@@ -123,6 +123,9 @@ macro_rules! forward_owner_view_work {
         ) -> Result<bool, String> {
             self.$owner.open_document_from_gui(request)
         }
+        fn load_full_from_gui(&mut self, id: u64) -> Result<bool, String> {
+            self.$owner.load_full_from_gui(id)
+        }
         fn open_deferred_drawing_from_gui(&mut self, path: &str) -> Result<bool, String> {
             self.$owner.open_deferred_drawing_from_gui(path)
         }

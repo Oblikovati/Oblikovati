@@ -21,6 +21,7 @@ mod update;
 #[derive(Clone, Debug)]
 pub struct HeadSceneStatus {
     pub source: Option<(u64, u64)>,
+    pub cached_assembly: bool,
     pub visible_bodies: usize,
     pub health:
         Vec<FeatureHealthRecord<PartFeatureFailure<oblikovati_martensite::EvaluationFailure>>>,
@@ -33,6 +34,11 @@ impl HeadSceneStatus {
         let Some((document, generation)) = self.source else {
             return "Oblikovati".into();
         };
+        if self.cached_assembly {
+            return format!(
+                "Oblikovati - document {document} generation {generation} - express assembly"
+            );
+        }
         let unavailable = self.unavailable_count();
         let title = format!(
             "Oblikovati - document {document} generation {generation} - {} solids, {unavailable} unavailable features",
@@ -228,6 +234,7 @@ impl DesktopPartScenes {
             },
             status: HeadSceneStatus {
                 source: None,
+                cached_assembly: false,
                 visible_bodies: 0,
                 health: Vec::new(),
                 presentation_declines: Vec::new(),
@@ -407,6 +414,7 @@ pub(crate) fn render_part_scene(
         scene: presentation.scene,
         status: HeadSceneStatus {
             source: Some(source),
+            cached_assembly: false,
             visible_bodies: presentation.visible_bodies,
             health: evaluated.health().to_vec(),
             presentation_declines: presentation.declines,

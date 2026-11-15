@@ -130,6 +130,7 @@ fn created_part_edits_saves_and_reopens_through_the_typed_client() {
             full_document_name: "/fixtures/bracket.opd".into(),
             visible: true,
             defer_content: false,
+            express: false,
         })
         .unwrap();
     assert_ne!(reopened.id, created.id);

@@ -284,6 +284,7 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::ResetSelectionFilter
         | GuiShellAction::ActivateDocument(_)
         | GuiShellAction::OpenDocument(_)
+        | GuiShellAction::LoadFullDocument(_)
         | GuiShellAction::OpenDeferredDrawing(_)
         | GuiShellAction::CloseDocument(_)
         | GuiShellAction::SaveDocumentAs(_)

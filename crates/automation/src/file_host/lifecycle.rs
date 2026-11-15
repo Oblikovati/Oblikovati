@@ -12,6 +12,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
         method: &str,
         request: &[u8],
     ) -> Result<Vec<u8>, Error> {
+        if method == METHOD_DOCUMENTS_LOAD_FULL {
+            return self.load_full(decode(method, request)?);
+        }
         let before = self.source_bindings()?;
         let response = self.command(method, request);
         if before == self.source_bindings()? {

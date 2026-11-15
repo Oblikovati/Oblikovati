@@ -150,13 +150,28 @@ fn express_open_keeps_components_unloaded_and_rejects_mode_changes() {
     let mut fresh = FileWorkspace::new(RecordingWorkspace::default(), files);
     let mut guids = SequenceGuids(8000);
     let id = fresh
-        .open_express_with_factory(&destination, || Ok(ContentObserver), "alpha", &mut guids)
+        .open_express_with_factory(
+            &destination,
+            || Ok(ContentObserver),
+            "alpha",
+            &mut guids,
+            (0.05, 0.5),
+        )
         .unwrap()
         .session_id();
     assert_eq!(fresh.workspace().documents(), &[id]);
     assert!(fresh.express_assembly_view(id).unwrap().is_some());
     assert!(
         matches!(fresh.commands(id), Err(WorkspaceError::ExpressReadOnly(found)) if found == id)
+    );
+    let derived = fresh.add_derived_table(id, "missing.opd", &[]).unwrap_err();
+    assert!(derived.to_string().contains("expected express mode false"));
+    let inference = fresh.set_sketch_inference_options_projected(
+        &oblikovati_api::wire::InferenceOptionsView::default(),
+        |_| Ok::<(), String>(()),
+    );
+    assert!(
+        matches!(inference, Err(oblikovati_session::workspace::SketchInferenceCommandError::Workspace(WorkspaceError::ExpressReadOnly(found))) if found == id)
     );
     let original = fresh.files().contents.borrow()[&destination].clone();
     assert!(fresh.save(id, "alpha", &mut guids).is_err());
@@ -184,6 +199,9 @@ fn express_open_keeps_components_unloaded_and_rejects_mode_changes() {
         error.to_string().contains("expected express mode false"),
         "{error}"
     );
+    fresh.close_saving_changes(id, "alpha", &mut guids).unwrap();
+    assert!(fresh.workspace().documents().is_empty());
+    assert_eq!(fresh.files().contents.borrow()[&destination], original);
 }
 
 #[test]
@@ -205,6 +223,7 @@ fn express_open_of_stale_cache_does_not_register_a_document() {
             || Ok(ContentObserver),
             "alpha",
             &mut SequenceGuids(9000),
+            (0.05, 0.5),
         )
         .unwrap_err();
     assert!(
@@ -212,6 +231,29 @@ fn express_open_of_stale_cache_does_not_register_a_document() {
         "{error}"
     );
     assert!(fresh.workspace().documents().is_empty());
+}
+
+#[test]
+fn express_open_refuses_insufficient_mesh_quality_before_registration_or_reuse() {
+    let (saved, _, destination, _) = cached_graph();
+    let files = WorkspaceFiles {
+        contents: Rc::clone(&saved.files().contents),
+        ..Default::default()
+    };
+    let mut fresh = FileWorkspace::new(RecordingWorkspace::default(), files);
+    let mut guids = SequenceGuids(9500);
+    let open = |host: &mut ReferenceHost, guids: &mut SequenceGuids, limits| {
+        host.open_express_with_factory(&destination, || Ok(ContentObserver), "alpha", guids, limits)
+    };
+    for limits in [(0.001, 0.5), (0.05, 0.001), (f64::NAN, 0.5)] {
+        assert!(open(&mut fresh, &mut guids, limits).is_err());
+        assert!(fresh.workspace().documents().is_empty());
+    }
+    let id = open(&mut fresh, &mut guids, (0.05, 0.5))
+        .unwrap()
+        .session_id();
+    assert!(open(&mut fresh, &mut guids, (0.001, 0.5)).is_err());
+    assert_eq!(fresh.workspace().documents(), &[id]);
 }
 
 #[test]
@@ -228,6 +270,7 @@ fn express_open_without_cache_is_refused_without_changing_the_workspace() {
             || Ok(ContentObserver),
             "alpha",
             &mut SequenceGuids(10000),
+            (0.05, 0.5),
         )
         .unwrap_err();
     assert!(
@@ -246,6 +289,7 @@ fn express_open_does_not_reuse_a_fully_open_document() {
             || Ok(ContentObserver),
             "alpha",
             &mut SequenceGuids(11000),
+            (0.05, 0.5),
         )
         .unwrap_err();
     assert!(
@@ -264,7 +308,13 @@ fn load_full_requires_attached_components_before_enabling_edits() {
     let mut fresh = FileWorkspace::new(RecordingWorkspace::default(), files);
     let mut guids = SequenceGuids(12000);
     let root = fresh
-        .open_express_with_factory(&destination, || Ok(ContentObserver), "alpha", &mut guids)
+        .open_express_with_factory(
+            &destination,
+            || Ok(ContentObserver),
+            "alpha",
+            &mut guids,
+            (0.05, 0.5),
+        )
         .unwrap()
         .session_id();
     let error = fresh.finish_express_assembly(root).unwrap_err();

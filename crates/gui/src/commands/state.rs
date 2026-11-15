@@ -121,6 +121,12 @@ pub struct GuiCommandState {
     pub sketch_formats: oblikovati_api::types::SketchFormatModes,
 }
 impl GuiCommandState {
+    pub(crate) fn active_express(&self) -> bool {
+        self.documents
+            .iter()
+            .any(|row| Some(row.id) == self.document && row.express)
+    }
+
     pub(crate) fn validate(&self) -> Result<(), String> {
         crate::history_browser::validate_histories(&self.histories)?;
         crate::dimensions::validate_dimension_draft(self)?;

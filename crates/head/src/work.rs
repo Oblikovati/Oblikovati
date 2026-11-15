@@ -272,6 +272,10 @@ pub trait HeadWork: HeadSketchWork {
             request.full_document_name
         ))
     }
+    /// Load the full components of an express assembly; example: `work.load_full_from_gui(id)?`.
+    fn load_full_from_gui(&mut self, id: u64) -> Result<bool, String> {
+        Err(format!("document {id}: expected an assembly loading owner"))
+    }
     /// Open a drawing with deferred updates; example: `work.open_deferred_drawing_from_gui(path)?`.
     fn open_deferred_drawing_from_gui(&mut self, path: &str) -> Result<bool, String> {
         Err(format!(

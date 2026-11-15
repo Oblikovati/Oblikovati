@@ -133,3 +133,194 @@ fn close_all_reports_warnings_for_each_saved_assembly() {
         |item| item.document == second && item.code == SAVE_WARNING_ASSEMBLY_CACHE_UNAVAILABLE
     ));
 }
+
+#[test]
+fn typed_express_open_and_load_full_keep_the_document_identity() {
+    use oblikovati_persistence::package::SavedAssemblyView;
+    let (mut files, original, mut source) = assembly_without_presenter();
+    let destination = files.path(original).unwrap().to_owned();
+    let view = SavedAssemblyView {
+        version: SavedAssemblyView::VERSION,
+        occurrences: Vec::new(),
+        sources: Vec::new(),
+        catalog_digest: files.assembly_view_catalog_digest().unwrap(),
+        chord_error: 0.05,
+        angular_error: 0.5,
+        triangles: Vec::new(),
+    };
+    files
+        .stage_assembly_view(original, &destination, view)
+        .unwrap();
+    files.save(original, "test", &mut source).unwrap();
+    files.close_discarding_changes(original).unwrap();
+    let mut factory = QueryObserverFactory {
+        created: 0,
+        limit: 2,
+    };
+    let request = OpenDocumentArgs {
+        full_document_name: destination.to_string_lossy().into_owned(),
+        visible: true,
+        express: true,
+        ..Default::default()
+    };
+    let no_policy = Client::new(
+        FileHost::new(&mut files, &mut source, "test").with_observer_factory(&mut factory),
+    );
+    assert!(
+        no_policy
+            .documents()
+            .open(&request)
+            .unwrap_err()
+            .to_string()
+            .contains("display policy")
+    );
+    assert!(files.workspace().documents().is_empty());
+    let strict_policy = Client::new(
+        FileHost::new(&mut files, &mut source, "test")
+            .with_observer_factory(&mut factory)
+            .with_assembly_display_limits((0.01, 0.5)),
+    );
+    assert!(
+        strict_policy
+            .documents()
+            .open(&request)
+            .unwrap_err()
+            .to_string()
+            .contains("chord")
+    );
+    assert!(files.workspace().documents().is_empty());
+    let client = Client::new(
+        FileHost::new(&mut files, &mut source, "test")
+            .with_observer_factory(&mut factory)
+            .with_assembly_display_limits((0.05, 0.5)),
+    );
+    let opened = client.documents().open(&request).unwrap();
+    assert!(opened.express);
+    let full = client
+        .documents()
+        .load_full(&LoadFullDocumentArgs { id: opened.id })
+        .unwrap();
+    assert_eq!(full.id, opened.id);
+    assert!(!full.express);
+}
+
+fn assembly_with_saved_component() -> (DiscoveryWorkspace, QueryGuids, PathBuf, PathBuf) {
+    use oblikovati_persistence::package::{SavedAssemblyTriangle, SavedAssemblyView};
+    let (mut files, root, mut source) = assembly_without_presenter();
+    let part_path = fixture_native_path(Path::new("/fixtures/component.opd"));
+    let part = files
+        .create(
+            &part_path,
+            DocumentPackage::empty(DOCUMENT_PART, "Component"),
+            QueryObserver::default(),
+            "test",
+            &mut source,
+        )
+        .unwrap()
+        .session_id;
+    files.save(part, "test", &mut source).unwrap();
+    let name = part_path.to_string_lossy().into_owned();
+    files
+        .commands(root)
+        .unwrap()
+        .run("Place component", |snapshot, ids| -> Result<(), ()> {
+            snapshot
+                .assembly
+                .as_mut()
+                .unwrap()
+                .push(AssemblyOccurrenceRecipe {
+                    session_id: ids.allocate_occurrence().unwrap(),
+                    name: "Component:1".into(),
+                    component: name.clone(),
+                    ..Default::default()
+                });
+            Ok(())
+        })
+        .unwrap();
+    files
+        .attach_document_reference(root, name, part, false)
+        .unwrap();
+    let destination = files.path(root).unwrap().to_owned();
+    let view = SavedAssemblyView {
+        version: SavedAssemblyView::VERSION,
+        occurrences: files
+            .workspace()
+            .session(root)
+            .unwrap()
+            .snapshot()
+            .assembly
+            .clone()
+            .unwrap(),
+        sources: files.assembly_saved_sources(root, &destination).unwrap(),
+        catalog_digest: files.assembly_view_catalog_digest().unwrap(),
+        chord_error: 0.05,
+        angular_error: 0.5,
+        triangles: vec![SavedAssemblyTriangle {
+            positions: [[0., 0., 0.], [1., 0., 0.], [0., 1., 0.]],
+            color: [0.5, 0.5, 0.5, 1.],
+        }],
+    };
+    files.stage_assembly_view(root, &destination, view).unwrap();
+    files.save(root, "test", &mut source).unwrap();
+    files.close_discarding_changes(root).unwrap();
+    files.close_discarding_changes(part).unwrap();
+    (files, source, destination, part_path)
+}
+
+#[test]
+fn failed_load_full_keeps_express_mode_until_components_resolve() {
+    let (mut files, mut source, destination, part_path) = assembly_with_saved_component();
+    let storage = Rc::clone(&files.files().packages);
+    let mut factory = QueryObserverFactory {
+        created: 0,
+        limit: 5,
+    };
+    let opened = {
+        let client = Client::new(
+            FileHost::new(&mut files, &mut source, "test")
+                .with_observer_factory(&mut factory)
+                .with_assembly_display_limits((0.05, 0.5)),
+        );
+        client
+            .documents()
+            .open(&OpenDocumentArgs {
+                full_document_name: destination.to_string_lossy().into_owned(),
+                visible: true,
+                express: true,
+                ..Default::default()
+            })
+            .unwrap()
+    };
+    assert!(opened.express);
+    assert_eq!(files.workspace().documents(), &[opened.id]);
+    let part_bytes = storage.borrow_mut().remove(&part_path).unwrap();
+    {
+        let client = Client::new(
+            FileHost::new(&mut files, &mut source, "test")
+                .with_observer_factory(&mut factory)
+                .with_assembly_display_limits((0.05, 0.5)),
+        );
+        assert!(
+            client
+                .documents()
+                .load_full(&LoadFullDocumentArgs { id: opened.id })
+                .is_err()
+        );
+    }
+    assert!(files.express_assembly_view(opened.id).unwrap().is_some());
+    storage.borrow_mut().insert(part_path, part_bytes);
+    let full = {
+        let client = Client::new(
+            FileHost::new(&mut files, &mut source, "test")
+                .with_observer_factory(&mut factory)
+                .with_assembly_display_limits((0.05, 0.5)),
+        );
+        client
+            .documents()
+            .load_full(&LoadFullDocumentArgs { id: opened.id })
+            .unwrap()
+    };
+    assert_eq!(full.id, opened.id);
+    assert!(!full.express);
+    assert_eq!(files.workspace().documents().len(), 2);
+}

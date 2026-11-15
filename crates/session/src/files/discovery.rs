@@ -40,6 +40,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
                 .map_err(FileWorkspaceError::Workspace)?,
             visible: file.visible,
             active: self.workspace.active_document() == Some(id),
+            express: file.express_view.is_some(),
         })
     }
 }
