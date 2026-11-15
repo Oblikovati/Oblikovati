@@ -151,7 +151,14 @@ fn path_and_name_lines(world: &mut ApplicationWorld) {
         .frame
         .runs
         .iter()
-        .find(|run| run.text == name && run.minimum[1] > path_row.maximum[1] - 1.)
+        .find(|run| {
+            run.list == path_row.list
+                && run
+                    .text
+                    .strip_prefix(&name)
+                    .is_some_and(|suffix| suffix.is_empty() || suffix.starts_with('<'))
+                && run.minimum[1] > path_row.maximum[1] - 1.
+        })
         .cloned()
         .unwrap_or_else(|| panic!("expected {name} below the path"));
     assert!(
