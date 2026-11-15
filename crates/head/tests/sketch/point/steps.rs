@@ -175,11 +175,25 @@ fn ready_with_both(world: &mut ApplicationWorld) {
     world.expect_point_mark(FIRST, PointMark::Dot);
     world.expect_point_mark(SECOND, PointMark::Dot);
 }
+fn expect_point_role(world: &mut ApplicationWorld, at: [i32; 2], center: bool) {
+    let geometry = world.edited_geometry();
+    let point = geometry
+        .points()
+        .iter()
+        .find(|point| world.sketch_pixel_of(point.position) == at)
+        .unwrap_or_else(|| panic!("point at {at:?}: expected an authored point"));
+    assert_eq!(
+        geometry.is_center_point(point.id),
+        center,
+        "point role at {at:?}"
+    );
+}
 // point-06 and point-07
 #[given("a regular dot-style sketch point and a separate unchanged point")]
 fn two_regular(world: &mut ApplicationWorld) {
     place_regular_points(world, &[FIRST, SECOND]);
 }
+#[when("the user right-click the first point and choose Center Point")]
 #[when("I right-click the first point and choose Center Point")]
 fn convert_first(world: &mut ApplicationWorld) {
     open_context_menu(world, FIRST);
@@ -189,6 +203,7 @@ fn convert_first(world: &mut ApplicationWorld) {
 #[then("the point is a Center Point again")]
 fn first_is_cross(world: &mut ApplicationWorld) {
     world.expect_point_mark(FIRST, PointMark::Cross);
+    expect_point_role(world, FIRST, true);
 }
 #[then("reopening its context menu shows Center Point checked")]
 fn reopened_checked(world: &mut ApplicationWorld) {
@@ -198,6 +213,7 @@ fn reopened_checked(world: &mut ApplicationWorld) {
         "expected Center Point checked"
     );
 }
+#[when("the user choose Center Point again")]
 #[when("I choose Center Point again")]
 fn choose_again(world: &mut ApplicationWorld) {
     choose_center_point(world);
@@ -206,17 +222,21 @@ fn choose_again(world: &mut ApplicationWorld) {
 #[then("the point returns to its dot marker")]
 fn first_is_dot(world: &mut ApplicationWorld) {
     world.expect_point_mark(FIRST, PointMark::Dot);
+    expect_point_role(world, FIRST, false);
 }
 #[then("the separate point retains its dot marker at its displayed location")]
 fn second_is_dot(world: &mut ApplicationWorld) {
     world.expect_point_mark(SECOND, PointMark::Dot);
+    expect_point_role(world, SECOND, false);
 }
+#[given("the user have converted a regular sketch point to Center Point")]
 #[given("I have converted a regular sketch point to Center Point")]
 fn converted(world: &mut ApplicationWorld) {
     place_regular_points(world, &[FIRST]);
     convert_first(world);
     world.expect_point_mark(FIRST, PointMark::Cross);
 }
+#[when("the user reopen the point context menu")]
 #[when("I reopen the point context menu")]
 fn reopen_menu(world: &mut ApplicationWorld) {
     open_context_menu(world, FIRST);

@@ -4382,7 +4382,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
-      "mapping_reason": "Convert a selected point between regular and center types."
+      "mapping_reason": "Convert a selected point between regular and center types.",
+      "historical_receipts": [
+        {
+          "source_revision": "05317bbb2d0809a532b29b7ff6f726a5722b865f",
+          "path": "architecture/rust-port/receipts/2026-11-15-point06-convert/receipt-b808d9e7aa5c4536.json",
+          "sha256": "009e8d5774a4df181936346952698909d437c27c1f71ac3f54c7e894cab09b9e"
+        }
+      ]
     },
     {
       "id": "scenario:60e427c5b6f98f42341fd47f716bbc7733e555153ea62a9b58e26d2885209183",
@@ -4399,7 +4406,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_format.go",
-      "mapping_reason": "Restore point type conversion through history."
+      "mapping_reason": "Restore point type conversion through history.",
+      "historical_receipts": [
+        {
+          "source_revision": "05317bbb2d0809a532b29b7ff6f726a5722b865f",
+          "path": "architecture/rust-port/receipts/2026-11-15-point07-history/receipt-60e427c5b6f98f42.json",
+          "sha256": "ac1047da064019ec85019a5a8cb3e5b93cb7dc348316e4a9a45bd608cec311b7"
+        }
+      ]
     },
     {
       "id": "scenario:545eaee5fec751471341c0834211f05d9377ece3ddc1bbc54c6cbcead3a10f12",

@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:b808d9e7aa5c4536ff4c80934a19febf1c6819957d1b0c9175d5fee7b467b11d",
+  "scenario_revision": "05317bbb2d0809a532b29b7ff6f726a5722b865f",
+  "source_sha256": "c0b6827af861c35ed71f715077fe24911a883571d12a5a760f5738958de22d9b",
+  "application_commit": "00a506b9cebd6a16ada32ef290ac380ada064f9f",
+  "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-15-point06-convert/cucumber.json",
+    "sha256": "6c364acf69a31531b4afc4227a31b864fd81958937613422efd7c484942fe336"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-15-point06-convert/source-revision.json",
+    "sha256": "9e05dbb30142f6a0b607a569368a526e634fdea7e15b4d3bed61522f6193456f"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-15-point06-convert/point-06-Convert-a-regular-sketch-point-to-a-center-point-and-back.png",
+    "sha256": "478156d7bac77b25aeaf2b6b1d8e6a347acf90151fabcde36fb98a24a3756faa"
+  }
+}
