@@ -55,6 +55,7 @@ fn type_eight(world: &mut ApplicationWorld) {
     world.type_text("8");
 }
 #[when("I press 6")]
+#[when("the user press 6")]
 fn type_six(world: &mut ApplicationWorld) {
     world.type_text("6");
 }
@@ -70,6 +71,8 @@ fn alias_six(world: &mut ApplicationWorld) {
     world.expect_status("Command alias input: 6");
     world.save_capture("ellipse-20-alias-status");
     assert!(world.state().takes_command_alias);
+    assert!(world.state().sketch_hud.is_none(), "unexpected axis editor");
+    assert!(world.window_text("##sketch-hud").is_empty());
     world.expect_edited_sketch_retained();
 }
 #[when("Escape is pressed")]

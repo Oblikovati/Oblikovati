@@ -79,6 +79,7 @@ fn cancel_after_axis(world: &mut ApplicationWorld) {
 #[when("I invoke Ellipse")]
 #[when("the user invoke Ellipse")]
 #[when("I open Circle dropdown and choose Ellipse")]
+#[when("the user open Circle dropdown and choose Ellipse")]
 fn invoke_ellipse(world: &mut ApplicationWorld) {
     choose_ellipse(world);
 }
