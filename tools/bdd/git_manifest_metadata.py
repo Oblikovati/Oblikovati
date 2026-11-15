@@ -13,6 +13,9 @@ METADATA = (("description",), ("documentation",), ("homepage",), ("repository",)
             ("license",), ("rust-version", "rust_version"), ("authors",),
             ("keywords",), ("categories",), ("publish",))
 
+COPIED_PACKAGE = (("default-run", "default_run"), ("resolver",), ("metadata",))
+COPIED_SECTIONS = (("badges",), ("hints",))
+
 
 def inherited_value(value: object, workspace: Mapping[str, object], section: str, names: tuple[str, ...], label: str) -> object:
     """Resolve an explicit workspace field; example: inherited_value(value, workspace, 'package', ('license',), label)."""
@@ -57,6 +60,15 @@ def expected_lints(value: object, workspace: Mapping[str, object], label: str) -
     return result
 
 
+def check_copied_fields(source: Mapping[str, object], generated: Mapping[str, object], fields: tuple[tuple[str, ...], ...], label: str) -> None:
+    """Compare fields Cargo copies without inheritance; example: check_copied_fields(src, dst, fields, label)."""
+    for names in fields:
+        expected = declaration(source, names, label)
+        actual = declaration(generated, names, label)
+        if not same_toml_value(actual, expected):
+            raise ValueError(f"manifest {label} {names[0]} {actual!r}: expected locked source value {expected!r}")
+
+
 def check_git_manifest_metadata(source: bytes, generated: bytes, repository: Path, tree: Mapping[str, str], root: str, label: str) -> None:
     """Check independent package fields and lints; example: check_git_manifest_metadata(src, dst, repo, tree, root, label)."""
     original, output = tomllib.loads(source.decode("utf-8")), tomllib.loads(generated.decode("utf-8"))
@@ -69,6 +81,8 @@ def check_git_manifest_metadata(source: bytes, generated: bytes, repository: Pat
         actual = declaration(package, names, label)
         if not same_toml_value(actual, expected):
             raise ValueError(f"manifest {label} {names[0]} {actual!r}: expected locked source value {expected!r}")
+    check_copied_fields(original["package"], package, COPIED_PACKAGE, label)
+    check_copied_fields(original, output, COPIED_SECTIONS, label)
     expected = expected_lints(original.get("lints"), workspace, label)
     if not same_toml_value(output.get("lints"), expected):
         raise ValueError(f"manifest {label} lints {output.get('lints')!r}: expected locked source lints {expected!r}")

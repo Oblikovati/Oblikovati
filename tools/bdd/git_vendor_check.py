@@ -139,7 +139,7 @@ def verify_git_vendor(
         "git_manifest_declarations_checked": len(manifests),
         "git_manifest_check_scope": [
             "dependencies", "dev-dependencies", "build-dependencies",
-            "target", "features", "no-build-script", "conventional-library", "target-autodiscovery", "package-links", "bin-example-test-bench-targets", "selected-package-metadata", "lints",
+            "target", "features", "no-build-script", "conventional-library", "target-autodiscovery", "package-links", "bin-example-test-bench-targets", "selected-package-metadata", "lints", "package-default-run-resolver-metadata", "badges-hints",
         ],
         "git_manifests_unverified": manifests,
         "complete": False,

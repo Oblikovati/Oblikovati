@@ -119,6 +119,13 @@ class GitVendorCheckTests(unittest.TestCase):
                 manifest.write_text(original)
                 self.fixture.write_checksum()
 
+    def test_forged_copied_metadata_with_updated_checksum_is_refused(self) -> None:
+        manifest = self.fixture.package / "Cargo.toml"
+        manifest.write_text(manifest.read_text() + '[package.metadata.attack]\nflag=true\n')
+        self.fixture.write_checksum()
+        with self.assertRaisesRegex(ValueError, 'metadata.*expected locked source'):
+            self.fixture.verify()
+
     def test_forged_dependency_feature_and_target_are_refused(self) -> None:
         for section in (
             '[dependencies]\nforged="1"\n',

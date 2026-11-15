@@ -286,9 +286,23 @@ repository, license, rust-version, authors, keywords, categories and publish.
 The pinned Cargo parser normalizes [these package fields](https://github.com/rust-lang/cargo/blob/5f94df4789f005f9a352888e8355ffc645b7ed0e/src/workspace/parser/mod.rs#L694-L805)
 and [lint inheritance](https://github.com/rust-lang/cargo/blob/5f94df4789f005f9a352888e8355ffc645b7ed0e/src/workspace/parser/mod.rs#L570-L578).
 Unsupported inheritance forms and explicit workspace selection are refused.
+The check also compares package `default-run`, `resolver` and `metadata`, plus
+root `badges` and `hints`, which the pinned Cargo parser
+[copies](https://github.com/rust-lang/cargo/blob/5f94df4789f005f9a352888e8355ffc645b7ed0e/src/workspace/parser/mod.rs#L570-L583)
+[without inheritance](https://github.com/rust-lang/cargo/blob/5f94df4789f005f9a352888e8355ffc645b7ed0e/src/workspace/parser/mod.rs#L725-L833).
+A local Git fixture vendored with Cargo 1.99.0 passes these checks. Changed
+values and type substitutions are refused even if vendor checksums are updated.
 
-These checks passed on the current 18 Git packages and 22,972 tracked vendor
-files. They do not validate the entire generated manifest: path-based metadata,
+Path metadata is still unverified. Cargo [checks the filesystem](https://github.com/rust-lang/cargo/blob/5f94df4789f005f9a352888e8355ffc645b7ed0e/src/workspace/parser/mod.rs#L845-L879)
+for default README names and rewrites inherited README and license-file paths.
+A locked Git tree alone does not prove the checkout contained no extra files
+or that workspace paths resolved to the same files. A future comparison must
+first bound the checkout namespace and path resolution, then test Cargo's
+normalization against explicit, inherited and default paths.
+
+The checks passed on 18 Git packages and 22,972 tracked vendor files; the
+[copied field observation](receipts/2026-11-15-git-copied-fields/README.md)
+records the current run. They do not validate the entire generated manifest: path-based metadata,
 other package fields and other manifest sections remain unverified. A passing result is partial, does not
 independently bind a build, and cannot authorize reuse. It reports the checked scope but keeps all 18 full manifests
 in `git_manifests_unverified`, with `complete: false` and `reusable: false`.
