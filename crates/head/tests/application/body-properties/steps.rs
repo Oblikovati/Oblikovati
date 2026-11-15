@@ -6,6 +6,7 @@ use super::workspace_layout::browser_feature::{
 use super::{ApplicationWorld, diagnostics};
 use cucumber::{given, then, when};
 use oblikovati_api::{client::Client, wire::CreateAppearanceArgs};
+use oblikovati_viewport::{ViewportEvent, ViewportInput};
 
 const TITLE: &str = "Body Properties";
 const BODY: &str = "Solid1";
@@ -122,9 +123,19 @@ fn expect_selector_reads(world: &ApplicationWorld, name: &str) {
 fn given_part(world: &mut ApplicationWorld) {
     part_with_body(world);
 }
-// Nothing has asked for the values yet, in a session that has just opened the part.
 #[given("the body's physical properties are unavailable in the current session")]
-fn unavailable(_: &mut ApplicationWorld) {}
+fn unavailable(world: &mut ApplicationWorld) {
+    let state = world.state();
+    let browser = state.browser.expect("expected the active part browser");
+    assert_eq!(browser.bodies.len(), 1, "expected one solid body");
+    let body = &browser.bodies[0];
+    assert_eq!(body.name, BODY);
+    assert!(body.visible, "expected the solid body to be visible");
+    assert!(
+        body.physical.is_none(),
+        "expected unavailable physical properties"
+    );
+}
 #[given("the body appearance is set to As Part")]
 fn as_part(world: &mut ApplicationWorld) {
     open_dialog(world);
@@ -203,6 +214,34 @@ fn open_list(world: &mut ApplicationWorld) {
 fn named_list(world: &mut ApplicationWorld) {
     world.expect_text(BLACK);
     world.expect_text(AS_PART);
+    let first = world.run(BLACK).clone();
+    let row = world
+        .frame
+        .runs
+        .iter()
+        .find(|run| run.list == first.list && run.center()[1] > first.center()[1] + 90.)
+        .expect("expected a second visible appearance below Black")
+        .clone();
+    let before = row.center();
+    let position = before.map(|value| value as i32);
+    scroll_appearance_list(world, position, -1);
+    let after = world.run(&row.text).center();
+    assert!(
+        after[1] < before[1],
+        "appearance row {before:?}, {after:?}: expected scrolling"
+    );
+    scroll_appearance_list(world, position, 1);
+    world.expect_text(BLACK);
+}
+fn scroll_appearance_list(world: &mut ApplicationWorld, position: [i32; 2], notches: i32) {
+    world.pump(vec![ViewportEvent::Input(ViewportInput::Motion {
+        position,
+        modifiers: Default::default(),
+    })]);
+    world.pump(vec![ViewportEvent::Input(ViewportInput::Wheel {
+        notches,
+        position,
+    })]);
 }
 #[when("I choose Black")]
 #[when("the user chooses Black")]
@@ -318,6 +357,26 @@ fn body_properties_closes_when_the_active_document_changes() {
     world.click_tab(original);
     open_dialog(&mut world);
     displays_as_part(&mut world);
+    close_control(&mut world);
+    world.close();
+}
+
+#[test]
+fn body_properties_invalidates_calculated_values_after_an_edit() {
+    let mut world = ApplicationWorld::new();
+    part_with_body(&mut world);
+    unavailable(&mut world);
+    open_dialog(&mut world);
+    choose_update(&mut world);
+    expect_physical_calculated(&world);
+    let body = world.state().browser.unwrap().bodies.remove(0);
+    assert!(body.physical.is_some());
+    select_appearance(&mut world, BLACK);
+    choose_ok(&mut world);
+    unavailable(&mut world);
+    assert_eq!(world.state().browser.unwrap().bodies[0].key, body.key);
+    open_dialog(&mut world);
+    shows_not_available(&mut world);
     close_control(&mut world);
     world.close();
 }
