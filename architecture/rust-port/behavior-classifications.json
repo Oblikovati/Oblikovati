@@ -15545,12 +15545,15 @@
       "acceptance_test": "application_scenarios_use_the_native_window: Navigate adjacent part templates with arrow keys",
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3899",
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/3951",
+        "https://github.com/Oblikovati/Oblikovati/issues/3952"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_menubar.go; ../Oblikovati/head/ui/file_dialog.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "reason": "The configured named template assets and folder catalog are unavailable; see document-creation/BLOCKERS.md and issue #3952."
     },
     {
       "id": "scenario:fcee3505a4286769bb5d1c41dba15c601507e6ebd61742cfeb83b932b1c6b5d5",
@@ -15659,13 +15662,12 @@
       "acceptance_test": "application_scenarios_use_the_native_window: Click a folder highlighted by keyboard navigation",
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3899",
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/3951",
+        "https://github.com/Oblikovati/Oblikovati/issues/3952"
       ],
-      "state": "verified",
-      "last_receipt": {
-        "path": "architecture/rust-port/receipts/2026-11-14-gate-create-3984b010/receipt-3984b0108067a0d2.json",
-        "sha256": "20f55575ea991773af8300fec768d8efca02975c4c1b397dccc148a1c4365b0a"
-      },
+      "state": "blocked",
+      "last_receipt": null,
       "go_reference": "Go aa8297d1b: head/ui/chrome_menubar.go invokes app/session.go NewPart or NewAssembly directly; no equivalent chooser was found in head/ui.",
       "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
       "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
@@ -15676,7 +15678,8 @@
       "kernel_integration": "The native viewport is initialized for a part; the chooser does not request solid geometry.",
       "rust_tests": "application_scenarios_use_the_native_window: Click a folder highlighted by keyboard navigation",
       "oracle": "Pinned scenario assertions and reviewed final native capture; Go chooser or visual parity is not established.",
-      "expected_result": "the details pane still identifies Standard (mm) with millimeter units; the user cancels the chooser; the original part remains active"
+      "expected_result": "the details pane still identifies Standard (mm) with millimeter units; the user cancels the chooser; the original part remains active",
+      "reason": "The configured named template assets and folder catalog are unavailable; see document-creation/BLOCKERS.md and issue #3952."
     },
     {
       "id": "scenario:c65b58f2636efdbae8aab3b6ced9134833b1e8361bac7549e42c023bd95463fb",
