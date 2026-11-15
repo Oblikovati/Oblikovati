@@ -71,16 +71,7 @@ fn fold_extrusion(world: &mut ApplicationWorld) {
 #[then("the sketch row is hidden and the extrusion row remains visible")]
 fn sketch_folded(world: &mut ApplicationWorld) {
     world.expect_text(FEATURE);
-    assert!(
-        world
-            .frame
-            .runs
-            .iter()
-            .filter(|run| run.text.contains(SKETCH))
-            .count()
-            <= 1,
-        "expected one less sketch row"
-    );
+    world.expect_no_text(SKETCH);
 }
 #[then("the sketch row appears beneath the extrusion")]
 fn sketch_back(world: &mut ApplicationWorld) {
@@ -290,6 +281,16 @@ fn body_folded(world: &mut ApplicationWorld) {
         .filter(|run| run.text == FEATURE)
         .count();
     assert_eq!(feature_rows, 1, "expected only the Features branch's row");
+    assert_eq!(
+        world
+            .frame
+            .runs
+            .iter()
+            .filter(|run| run.text == SKETCH)
+            .count(),
+        1,
+        "expected only the Features branch's sketch row"
+    );
 }
 #[then("the body's extrusion and nested sketch rows are visible again")]
 fn body_open(world: &mut ApplicationWorld) {
@@ -300,6 +301,16 @@ fn body_open(world: &mut ApplicationWorld) {
         .filter(|run| run.text == FEATURE)
         .count();
     assert_eq!(feature_rows, 2, "expected the row under the body as well");
+    assert_eq!(
+        world
+            .frame
+            .runs
+            .iter()
+            .filter(|run| run.text == SKETCH)
+            .count(),
+        2,
+        "expected the sketch row under the body as well"
+    );
 }
 #[given("the Solid Bodies folder is visible in the model browser")]
 fn folder_visible(world: &mut ApplicationWorld) {

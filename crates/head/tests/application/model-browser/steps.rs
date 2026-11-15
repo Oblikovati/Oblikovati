@@ -143,6 +143,14 @@ fn block_part(world: &mut ApplicationWorld) {
 fn origin_rows_shown(world: &mut ApplicationWorld) {
     expect_origin_rows(world);
 }
+#[given("its browser has expanded representation, origin and extrusion branches")]
+fn expanded_browser_branches(world: &mut ApplicationWorld) {
+    expect_rows(
+        world,
+        &["Representations", "Model State", "Origin", FEATURE, SKETCH],
+    );
+    expect_origin_rows(world);
+}
 #[when("I click the Origin branch expansion control")]
 #[when("the user clicks the Origin branch expansion control")]
 #[when("I click the Origin branch expansion control again")]
