@@ -1,0 +1,13 @@
+{
+  "after": {
+    "commit": "8ec8d2c1e569fbc5c8cd2ec85e9b9380c62c147f",
+    "dirty": false,
+    "root": "/tmp/oblikovati-bdd-PmnG2m/checkout"
+  },
+  "before": {
+    "commit": "8ec8d2c1e569fbc5c8cd2ec85e9b9380c62c147f",
+    "dirty": false,
+    "root": "/tmp/oblikovati-bdd-PmnG2m/checkout"
+  },
+  "source_changed": false
+}
