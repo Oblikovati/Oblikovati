@@ -3,7 +3,7 @@
 use maryada::{Interval, IntervalOps};
 
 #[derive(Clone, Copy)]
-pub(in crate::sketch) struct Enclosure(Interval);
+pub(crate) struct Enclosure(Interval);
 impl Enclosure {
     pub fn new(bounds: [f64; 2]) -> Result<Self, String> {
         if !bounds[0].is_finite() || !bounds[1].is_finite() || bounds[0] > bounds[1] {

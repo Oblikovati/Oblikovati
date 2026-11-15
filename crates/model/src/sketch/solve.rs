@@ -78,7 +78,7 @@ impl SketchSolveOutcome {
             })
             .collect()
     }
-    pub(super) fn source_stamp_current(&self, parameters: &ParameterCollection<u64>) -> bool {
+    pub(crate) fn source_stamp_current(&self, parameters: &ParameterCollection<u64>) -> bool {
         self.parameter_stamp
             .as_ref()
             .is_some_and(|stamp| stamp.matches(parameters, &self.parameter_dependencies))

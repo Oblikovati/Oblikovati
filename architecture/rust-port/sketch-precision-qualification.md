@@ -156,3 +156,20 @@ solve-input check, not a document lifetime guarantee: document sketch health
 currently retains diagnostics rather than the full solve outcome. Projected
 anchors also remain unsupported; their source geometry and placement
 uncertainty are not yet bounded. Neither path enables feature admission.
+
+## Conditional origin projection
+
+A current document snapshot can produce a conditional bound for an origin
+projection on a fixed sketch frame. The caller supplies bounds for the resolved
+frame origin and axes; the operation checks that they contain the resolved
+binary64 frame, then encloses the analytic origin projection and the current
+rounded result. The bounds are assumptions, not bounds proven from the frame's
+source. Feature-point projections, derived frames and derived orientations
+decline.
+
+The evidence borrows the immutable snapshot and checks current sketch health,
+accepted solve diagnostics and geometry, the solve-time frame, and the retained
+parameter-source stamp. This catches changed projected inputs and same-value
+expression edits. It does not prove a document or session identity across
+snapshots. The reduced projected-anchor solver is not yet connected to the
+Krawczyk check, and this evidence does not enable feature admission.

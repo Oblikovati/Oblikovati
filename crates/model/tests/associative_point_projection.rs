@@ -174,3 +174,6 @@ mod guards;
 mod placement;
 #[path = "associative_point_projection/recipes.rs"]
 mod recipes;
+
+#[path = "associative_point_projection/conditional_origin.rs"]
+mod conditional_origin;
