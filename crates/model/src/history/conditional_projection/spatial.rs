@@ -58,6 +58,49 @@ impl ConditionalProjectedSketchRoot<'_, '_> {
             })
             .collect()
     }
+
+    /// Bound each swept point over the common parameter range from zero to one.
+    /// Example: `root.canonical_swept_point_displacements(center, bounds)?`.
+    /// Bounds are conditional input assumptions, not a kernel tolerance certificate.
+    pub fn canonical_swept_point_displacements(
+        &self,
+        center: [f64; 3],
+        bounds: [[f64; 2]; 3],
+    ) -> Result<Vec<ConditionalPointDisplacement>, String> {
+        self.canonical_point_displacements()?
+            .into_iter()
+            .map(|point| {
+                Ok(ConditionalPointDisplacement {
+                    point: point.point,
+                    upper: swept_displacement(point.upper, center, bounds)?,
+                })
+            })
+            .collect()
+    }
+}
+fn swept_displacement(
+    point_error: f64,
+    center: [f64; 3],
+    bounds: [[f64; 2]; 3],
+) -> Result<f64, String> {
+    if !point_error.is_finite() || point_error < 0. {
+        return Err(format!(
+            "point displacement {point_error:?}: expected a finite nonnegative bound"
+        ));
+    }
+    let mut sum = Enclosure::new([point_error, point_error])?;
+    for (value, interval) in center.into_iter().zip(bounds) {
+        let range = Enclosure::new(interval)?;
+        if !value.is_finite() || value < interval[0] || value > interval[1] {
+            return Err(format!(
+                "displacement value {value:?}, bounds {interval:?}: expected a finite value within the bounds"
+            ));
+        }
+        let [low, high] = range.difference(Enclosure::new([value, value])?)?.bounds();
+        let maximum = low.abs().max(high.abs());
+        sum = sum.sum(Enclosure::new([maximum, maximum])?)?;
+    }
+    Ok(sum.bounds()[1])
 }
 fn displacement(center: [f64; 2], bounds: [[f64; 2]; 2]) -> Result<f64, String> {
     let mut sum = Enclosure::new([0., 0.])?;
@@ -98,5 +141,38 @@ mod tests {
     fn unbounded_and_overflowing_inputs_decline() {
         assert!(displacement([0., 0.], [[f64::NEG_INFINITY, 1.], [0., 0.]]).is_err());
         assert!(displacement([-f64::MAX, 0.], [[f64::MAX, f64::MAX], [0., 0.]]).is_err());
+    }
+
+    #[test]
+    fn swept_bound_encloses_exact_three_dimensional_offsets() {
+        for (point_error, center, bounds) in [
+            (0.25, [0.1, -0.2, 1.], [[0., 0.2], [-0.3, -0.1], [0.9, 1.1]]),
+            (0., [0., 0., 1.], [[0., 0.], [0., 0.], [1., 1.]]),
+        ] {
+            let upper = q(swept_displacement(point_error, center, bounds).unwrap());
+            let error = q(point_error);
+            for x in bounds[0] {
+                for y in bounds[1] {
+                    for z in bounds[2] {
+                        let dx = q(x) - q(center[0]);
+                        let dy = q(y) - q(center[1]);
+                        let dz = q(z) - q(center[2]);
+                        let available = &upper - &error;
+                        assert!(available >= q(0.));
+                        assert!(&dx * &dx + &dy * &dy + &dz * &dz <= &available * &available);
+                        for t in [q(0.), q(0.5), q(1.)] {
+                            for sign in [-1., 1.] {
+                                let vx = &t * &dx + q(sign) * &error;
+                                let vy = &t * &dy;
+                                let vz = &t * &dz;
+                                assert!(&vx * &vx + &vy * &vy + &vz * &vz <= &upper * &upper);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        assert!(swept_displacement(0., [0., 0., 1.], [[0., 0.], [0., 0.], [-1., 0.]]).is_err());
+        assert!(swept_displacement(-1., [0., 0., 1.], [[0., 0.], [0., 0.], [1., 1.]]).is_err());
     }
 }
