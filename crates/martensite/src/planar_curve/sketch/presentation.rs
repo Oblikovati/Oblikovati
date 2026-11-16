@@ -50,6 +50,17 @@ pub fn sample_sketch_display(
     }
     Ok(report)
 }
+/// Sample one entity for transient display without resampling its sketch.
+/// Example: `sample_sketch_entity(&sketch, id, options)?` for pointer feedback.
+pub fn sample_sketch_entity(
+    sketch: &Sketch2D,
+    entity: SketchEntityId,
+    options: SketchSamplingOptionsV1,
+) -> Result<SketchDisplayEntity, String> {
+    sampling::require_sampling_options(options)?;
+    display_entity(&sketch.read_index(), entity, options)
+}
+
 fn display_entity(
     index: &SketchReadIndex<'_>,
     entity: SketchEntityId,

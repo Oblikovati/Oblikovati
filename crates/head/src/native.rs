@@ -29,6 +29,8 @@ pub struct NativeHeadWindow {
     current_scene: Option<ViewportScene>,
     preview_background: Option<oblikovati_viewport::ViewportBackground>,
     sketch_scene: Option<crate::HeadSketchSceneUpdate>,
+    glyph_hover: Option<oblikovati_viewport::ViewportSketchHover>,
+    tool_hover: Option<oblikovati_viewport::ViewportSketchHover>,
     datum_declines: Vec<(oblikovati_model::feature::FeatureId, String)>,
     navigation: crate::navigation::DesktopNavigation,
     sketch_view: Option<SketchCameraState>,
@@ -143,6 +145,12 @@ impl HeadWindow for NativeHeadWindow {
         self.capture_requests = requests;
         Ok(())
     }
+    fn set_tool_candidate(
+        &mut self,
+        hover: Option<&oblikovati_viewport::ViewportSketchHover>,
+    ) -> Result<bool, String> {
+        self.update_tool_hover(hover)
+    }
     fn gui_frame(
         &mut self,
         event: Option<&ViewportEvent>,
@@ -164,19 +172,7 @@ impl HeadWindow for NativeHeadWindow {
         let selection_changed = self.synchronize_sketch_highlights(commands)?;
         let mut update = self.advance_native_gui(event, commands)?;
         if let Some(hover) = &update.constraint_hover {
-            let matching = self
-                .sketch_scene
-                .as_ref()
-                .and_then(|scene| scene.source)
-                .map(|(document, _)| document)
-                == commands.document;
-            let hover = hover.as_ref().filter(|_| matching).map(|value| {
-                oblikovati_viewport::ViewportSketchHover {
-                    sketch: value.sketch,
-                    entities: value.related.clone(),
-                }
-            });
-            update.changed |= self.view.set_sketch_hover(hover.as_ref())?;
+            update.changed |= self.update_glyph_hover(hover.as_ref(), commands.document)?;
         }
         update.changed |= changed || sketch_changed || selection_changed;
         Ok(update)
@@ -226,9 +222,7 @@ impl HeadWindow for NativeHeadWindow {
         Ok(changed || declined)
     }
     fn submit_sketch_scene(&mut self, update: crate::HeadSketchSceneUpdate) -> Result<(), String> {
-        self.view.set_sketch_display(&update.sketches)?;
-        self.sketch_scene = Some(update);
-        self.refresh_title()
+        self.update_sketch_scene(update)
     }
     fn set_sketch_edit(&mut self, edit: Option<crate::HeadSketchEdit>) -> Result<bool, String> {
         self.synchronize_sketch_camera(edit)
@@ -268,6 +262,13 @@ impl HeadWindow for NativeHeadWindow {
         self.navigation.captures_pointer()
     }
 
+    fn sketch_pixels(
+        &self,
+        plane: oblikovati_model::sketch::SketchPlane,
+        points: &[[f64; 2]],
+    ) -> Result<Vec<[i32; 2]>, String> {
+        self.view.sketch_pixels(plane, points)
+    }
     fn sketch_pixel(
         &self,
         plane: oblikovati_model::sketch::SketchPlane,

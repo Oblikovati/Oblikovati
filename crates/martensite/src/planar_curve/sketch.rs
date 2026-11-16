@@ -95,7 +95,7 @@ mod presentation;
 pub(crate) mod sampling;
 pub use presentation::{
     SketchDisplayDecline, SketchDisplayEntity, SketchDisplayPrimitive, SketchDisplayReport,
-    sample_sketch_display,
+    sample_sketch_display, sample_sketch_entity,
 };
 
 mod measure;

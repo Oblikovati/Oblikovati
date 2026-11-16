@@ -1,6 +1,49 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::NativeHeadWindow;
 impl NativeHeadWindow {
+    pub(super) fn update_tool_hover(
+        &mut self,
+        hover: Option<&oblikovati_viewport::ViewportSketchHover>,
+    ) -> Result<bool, String> {
+        let next = hover.cloned();
+        let changed = self
+            .view
+            .set_sketch_hover(self.glyph_hover.as_ref().or(next.as_ref()))?;
+        self.tool_hover = next;
+        Ok(changed)
+    }
+    pub(super) fn update_sketch_scene(
+        &mut self,
+        update: crate::HeadSketchSceneUpdate,
+    ) -> Result<(), String> {
+        if self.sketch_scene.as_ref().and_then(|scene| scene.source) != update.source {
+            self.view.set_sketch_hover(None)?;
+            self.glyph_hover = None;
+            self.tool_hover = None;
+        }
+        self.view.set_sketch_display(&update.sketches)?;
+        self.sketch_scene = Some(update);
+        self.refresh_title()
+    }
+    pub(super) fn update_glyph_hover(
+        &mut self,
+        hover: Option<&oblikovati_gui::GuiConstraintHover>,
+        document: Option<u64>,
+    ) -> Result<bool, String> {
+        let source = self.sketch_scene.as_ref().and_then(|scene| scene.source);
+        let next = hover
+            .filter(|_| source.map(|value| value.0) == document)
+            .map(|value| oblikovati_viewport::ViewportSketchHover {
+                sketch: value.sketch,
+                entities: value.related.clone(),
+            });
+        let changed = self
+            .view
+            .set_sketch_hover(next.as_ref().or(self.tool_hover.as_ref()))?;
+        self.glyph_hover = next;
+        Ok(changed)
+    }
+
     /// Inspect the authoring source and plane failures; example: `window.sketch_scene_status()` for a health panel.
     pub fn sketch_scene_status(&self) -> Option<&crate::HeadSketchSceneUpdate> {
         self.sketch_scene.as_ref()

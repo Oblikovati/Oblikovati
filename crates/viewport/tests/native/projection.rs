@@ -55,12 +55,20 @@ fn verify_mapping(view: &mut Viewport) {
             assert!((a - b).abs() <= 1, "{restored:?} != {pixel:?}");
         }
     }
+    let points = [[0., 0.], [1., -2.], [-3., 4.]];
+    let expected: Vec<_> = points
+        .iter()
+        .map(|point| view.sketch_pixel(plane, *point).unwrap())
+        .collect();
+    assert_eq!(view.sketch_pixels(plane, &points).unwrap(), expected);
+    assert!(view.sketch_pixels(plane, &[]).unwrap().is_empty());
     assert_eq!(view.capture().unwrap(), capture);
 }
 fn verify_rejections(view: &Viewport) {
     assert!(view.sketch_point([0, i32::MIN], SketchPlane::xy()).is_err());
     for point in [[f64::NAN, 0.], [f64::MAX, 0.], [1e12, 0.]] {
         assert!(view.sketch_pixel(SketchPlane::xy(), point).is_err());
+        assert!(view.sketch_pixels(SketchPlane::xy(), &[point]).is_err());
     }
 }
 #[test]

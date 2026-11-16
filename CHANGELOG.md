@@ -141,6 +141,8 @@
 
 ### Added
 
+- Added transient candidate feedback for sketch constraint and dimension tools. (#4034)
+
 - Added an experimental offline sandbox build probe for native BDD investigations. (#3978)
 
 - Added an experimental committed-source exporter for native BDD build investigations. (#3978)

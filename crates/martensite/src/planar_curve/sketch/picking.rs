@@ -101,6 +101,16 @@ impl<'a> SketchPickQuery<'a> {
             options,
         })
     }
+    /// Classify an entity with the same immutable index used for its witness.
+    /// Example: `query.entity_kind(id)?` before asking for a candidate.
+    pub fn entity_kind(
+        &self,
+        entity: SketchEntityId,
+    ) -> Result<oblikovati_api::types::SketchEntityKind, SketchCurveFailure> {
+        self.index
+            .entity_kind(entity)
+            .map_err(|cause| SketchCurveFailure::model(entity, cause))
+    }
     /// Resolve one current model identity with the shared index and numeric policy.
     /// Example: `query.candidate(line_id)?` for a finite segment hit witness.
     pub fn candidate(

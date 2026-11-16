@@ -105,3 +105,26 @@ fn hovering_survives_geometry_refresh_and_clears_when_sketch_is_removed() {
     assert!(!view.set_sketch_hover(None).unwrap());
     super::sketch_display::close_display(&runtime, &mut view);
 }
+
+#[test]
+fn one_curved_candidate_uses_the_transient_theme_color_and_clears() {
+    let (runtime, mut view) = super::sketch_display::open_display("Curve candidate");
+    let mut packet = parallel_lines(0.);
+    packet.geometry.add_defining_point(Id(7), [0., 2.]).unwrap();
+    packet.geometry.add_circle(Id(8), Id(7), 2.).unwrap();
+    view.set_sketch_display(&[packet]).unwrap();
+    view.set_sketch_palette(&candidate_palette()).unwrap();
+    let baseline = view.redraw().unwrap();
+    assert!(!green_near(&view, &baseline, [0., 4.]));
+    let hover = ViewportSketchHover {
+        sketch: DocumentSketchId(1),
+        entities: vec![Id(8)],
+    };
+    assert!(view.set_sketch_hover(Some(&hover)).unwrap());
+    let highlighted = view.redraw().unwrap();
+    assert!(green_near(&view, &highlighted, [0., 4.]));
+    assert!(!view.set_sketch_hover(Some(&hover)).unwrap());
+    assert!(view.set_sketch_hover(None).unwrap());
+    assert_eq!(view.redraw().unwrap().rgba, baseline.rgba);
+    super::sketch_display::close_display(&runtime, &mut view);
+}

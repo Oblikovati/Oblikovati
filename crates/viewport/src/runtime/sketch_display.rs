@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 impl Viewport {
-    /// Show transient candidate lines without changing selection; example: `viewport.set_sketch_hover(None)?`.
+    /// Show transient candidate entities without changing selection; example: `viewport.set_sketch_hover(None)?`.
     pub fn set_sketch_hover(
         &mut self,
         hover: Option<&crate::ViewportSketchHover>,

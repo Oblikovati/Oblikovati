@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! A small transient overlay for the lines named by a hovered constraint.
-use super::{RenderView, sketch_display::curve_role_line_style, sketch_structure};
+//! Transient feedback for sketch entities without changing selection.
+use super::{RenderView, sketch_display::build_entity, sketch_structure};
 use crate::{ViewportSketchDisplay, ViewportSketchHover};
 use martensite_tkservice::graphic3d::Graphic3dStructureSource;
+use oblikovati_martensite::planar_curve::sketch::{SketchSamplingOptionsV1, sample_sketch_entity};
 
 #[derive(Default)]
 pub(super) struct SketchHoverOverlay {
@@ -67,52 +68,28 @@ impl RenderView {
         let sketch = find_sketch(sketches, hover)?;
         let mut structures = Vec::with_capacity(hover.entities.len());
         for id in &hover.entities {
-            structures.push(self.hover_line(sketch, *id, palette)?);
+            structures.push(self.hover_entity(sketch, *id, palette)?);
         }
         Ok(SketchHoverOverlay {
             hover: Some(hover.clone()),
             structures,
         })
     }
-    fn hover_line(
+    fn hover_entity(
         &self,
         sketch: &ViewportSketchDisplay,
         id: oblikovati_model::sketch::SketchEntityId,
         palette: &crate::ViewportSketchPalette,
     ) -> Result<sketch_structure::SketchStructure, String> {
-        let line = sketch
-            .geometry
-            .line(id)
-            .map_err(|error| error.to_string())?;
-        let [a, b] = line.endpoints;
-        let a = sketch
-            .geometry
-            .point(a)
-            .map_err(|error| error.to_string())?
-            .position;
-        let b = sketch
-            .geometry
-            .point(b)
-            .map_err(|error| error.to_string())?
-            .position;
-        let style = curve_role_line_style(
-            sketch
-                .geometry
-                .is_construction(id)
-                .map_err(|error| error.to_string())?,
-            sketch
-                .geometry
-                .is_centerline(id)
-                .map_err(|error| error.to_string())?,
-        );
-        sketch_structure::curve(
-            &self.viewer,
-            sketch.plane,
-            &[a, b],
-            &palette.candidate,
-            style,
-            true,
-        )
+        let entity = sample_sketch_entity(
+            &sketch.geometry,
+            id,
+            SketchSamplingOptionsV1 {
+                deflection: self.sketch_deflection()?,
+                maximum_curve_points: 4096,
+            },
+        )?;
+        build_entity(&self.viewer, sketch, &entity, &palette.candidate, true)
     }
 }
 
@@ -121,7 +98,7 @@ fn hover_still_valid(sketches: &[ViewportSketchDisplay], hover: &ViewportSketchH
         hover
             .entities
             .iter()
-            .all(|id| sketch.geometry.line(*id).is_ok())
+            .all(|id| sketch.geometry.entity_kind(*id).is_ok())
     })
 }
 
@@ -129,9 +106,10 @@ fn find_sketch<'a>(
     sketches: &'a [ViewportSketchDisplay],
     hover: &ViewportSketchHover,
 ) -> Result<&'a ViewportSketchDisplay, String> {
-    if hover.entities.len() != 2 || hover.entities[0] == hover.entities[1] {
+    let mut distinct = std::collections::BTreeSet::new();
+    if hover.entities.is_empty() || !hover.entities.iter().all(|id| distinct.insert(*id)) {
         return Err(format!(
-            "constraint hover {:?}: expected two distinct line identities",
+            "sketch hover {:?}: expected distinct entity identities",
             hover.entities
         ));
     }
