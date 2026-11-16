@@ -404,3 +404,48 @@ fn open_modify_panel(world: &mut ApplicationWorld) {
         .center();
     world.click(diagnostics::pointer_pixels(button));
 }
+
+#[given("the precise ellipse Move has been accepted and Move closed")]
+fn accepted_precise_move(world: &mut ApplicationWorld) {
+    select_ellipse(world);
+    choose_base(world);
+    type_x(world);
+    type_y(world);
+    move_ready(world);
+    ellipse_moved(world);
+    done(world);
+}
+
+#[when("the user undoes")]
+fn undo_move(world: &mut ApplicationWorld) {
+    world.undo();
+}
+
+#[when("the user redoes")]
+fn redo_move(world: &mut ApplicationWorld) {
+    world.redo();
+}
+
+#[then("the ellipse returns to its original screen position")]
+#[then("the original fixture position is restored again")]
+fn original_precise_position(world: &mut ApplicationWorld) {
+    original_only(world);
+    world.expect_segment_drawn(EDGE, EDGE);
+}
+
+#[then("the ellipse returns to its displaced screen position")]
+fn displaced_precise_position(world: &mut ApplicationWorld) {
+    ellipse_moved(world);
+    let before = &world.observed_sketch.as_ref().unwrap().geometry;
+    let original = before
+        .point(before.ellipses()[0].center())
+        .unwrap()
+        .position;
+    let old_pixel = world.sketch_pixel_of(original);
+    let new_pixel = world.observed_view.unwrap();
+    let edge = [
+        EDGE[0] + new_pixel[0] - old_pixel[0],
+        EDGE[1] + new_pixel[1] - old_pixel[1],
+    ];
+    world.expect_segment_drawn(edge, edge);
+}
