@@ -189,6 +189,11 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
   was repositioned through the UI. A separate OS-input check showed reset and
   cancellation; the full Move diagnostic passed 12 of 27 scenarios, with 15
   unbound. See `receipts/2026-11-16-move-triad-reset-4022/` (#4022).
+- Mixed Move coordinates: `move-19` and `move-20` passed focused diagnostics,
+  including displacement, visible geometry, mode retention and Undo. A
+  separate OS-input run covered both. The full Move diagnostic passed 14 of
+  27 scenarios, with 13 unbound. See `receipts/2026-11-16-move-mixed-4023/`
+  (#4023); these are not verified acceptance.
 - Circle zero radius: same-position mouse clicks and Escape passed a focused
   OS-input diagnostic, with bridge queries confirming no new circle. See
   `receipts/2026-11-16-live-circle-zero/`; pinned BDD acceptance remains

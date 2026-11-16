@@ -33,6 +33,8 @@ mod move_cancel;
 mod move_close;
 #[path = "move/fade.rs"]
 mod move_fade;
+#[path = "move/mixed.rs"]
+mod move_mixed;
 #[path = "move/pin.rs"]
 mod move_pin;
 #[path = "move/polar.rs"]
