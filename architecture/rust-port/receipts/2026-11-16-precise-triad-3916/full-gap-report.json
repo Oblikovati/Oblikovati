@@ -1,0 +1,463 @@
+{
+  "kind": "diagnostic only; not acceptance",
+  "source_files": {
+    "/tmp/obk-precise-triad-scenarios/features/sketch/precise-input/scenario.feature": "@sketch\r\nFeature: Precise input\r\n\r\n  @needs_fixture @capture_only\r\n  Scenario: precise-input-06 Inspect and switch reference modes\r\n    Given Point is active in an editable sketch\r\n    And the reference triad is at the origin\r\n    When the user open Precise Input and its reference-mode dropdown\r\n    Then Relative and Absolute are listed\r\n    When the user select Absolute\r\n    Then its icon is displayed in the toolbar\r\n    When the user enter X 5 and Y 6 and press Return\r\n    Then a point marker appears and the coordinate fields reset for repeat entry\r\n    When the user select Relative and enter the same pair and press Return\r\n    Then no validation dialog appears and no distinct offset marker is visible\r\n    And the origin triad remains at its prior visible position\r\n    When the user restore Absolute and press Escape\r\n    Then Point and Precise Input close and Ready reports 35 dimensions needed\r\n\r\n  @needs_fixture @capture_only\r\n  Scenario: precise-input-07 Measure the retained reference-mode trial marker\r\n    Given the point marker from the paired input trial remains visible\r\n    When the user open Measure and select that marker\r\n    Then it is identified as Selection 1 Point\r\n    And its global position is X 5.000 Y 0.500 Z -6.000 mm\r\n    When the user click Done\r\n    Then Measure closes and the marker remains\r\n\r\n  @needs_fixture @point @capture_only\r\n  Scenario: precise-input-01 Create a point with X and Y input\r\n    Given Point is active in an editable sketch\r\n    When the user open Precise Input in X and Y coordinate mode\r\n    And the user focus X, press 5, press Tab, press 6, and press Return\r\n    And the user press Escape and measure the created point\r\n    Then its global position is X=0.000 mm, Y=5.000 mm, Z=6.000 mm in the specified sketch-plane fixture\r\n\r\n\r\n  @invalid @needs_fixture\r\n  Scenario: precise-input-03 Reject an alphabetic coordinate\r\n    Given X and Y coordinate mode is active with numeric fields\r\n    When the user focus X, select its value, and enter the single character a\r\n    Then a is displayed in Red\r\n    When the user press Return\r\n    Then the Red value remains and no visible point is committed\r\n    When the user press Escape and restart Point\r\n    Then Precise Input reopens with numeric fields\r\n\r\n  @mode @needs_fixture @capture_only\r\n  Scenario: precise-input-04 Measure points created with coordinate modes\r\n    Given Precise Input is in X and Y coordinate mode\r\n    When the user open the coordinate-mode dropdown\r\n    Then it offers X and Y coordinate\r\n    And it offers X coordinate and X axis angle\r\n    And it offers Y coordinate and X axis angle\r\n    And it offers Distance and X axis angle\r\n    When the user create a point in each mode using the original triad and the following inputs\r\n    And the user measure each point in the specified sketch-plane fixture\r\n    Then Measure reports these global positions to 0.001 mm\r\n    | mode                              | first value | second value | global X | global Y | global Z |\r\n    | X and Y coordinate                | 5           | 6            | 0.000    | 5.000    | 6.000    |\r\n    | Distance and X axis angle         | 10          | 45 degrees   | 0.000    | 7.071    | 7.071    |\r\n    | X coordinate and X axis angle     | 8           | 30 degrees   | 0.000    | 8.000    | 4.619    |\r\n    | Y coordinate and X axis angle     | 8           | 60 degrees   | 0.000    | 4.619    | 8.000    |\r\n\r\n  @needs_fixture @undo_redo\r\n  Scenario: precise-input-05 Undo and redo a committed point\r\n    Given a point committed through Precise Input\r\n    When the user exit Point and undo and redo\r\n    Then the point marker disappears and returns\r\n\r\n  @documented_observation @needs_fixture\r\n  Scenario: precise-input-08 Relocate reset and close the triad toolbar\r\n    Given Point and Precise Input are active in an editable sketch\r\n    When the user activate Reposition Triad\r\n    And click the displayed origin then the isolated line endpoint\r\n    Then the triad visibly moves to that endpoint\r\n    And Select center point is restored\r\n    When the user choose Reset to Origin\r\n    Then the triad returns to its prior origin position\r\n    When the user open toolbar options\r\n    Then Pin Mini-Toolbar Position, Auto Fade and Close are listed\r\n    When the user choose Close\r\n    Then the toolbar and triad disappear while Point remains active\r\n    When the user press Escape\r\n    Then Point ends and Ready is displayed\r\n"
+  },
+  "scenarios": [
+    {
+      "source": "/tmp/obk-precise-triad-scenarios/features/sketch/precise-input/scenario.feature",
+      "scenario": "precise-input-06 Inspect and switch reference modes",
+      "line": 5,
+      "classification": "excluded: capture only",
+      "setup_error": "capture only",
+      "steps": [
+        {
+          "line": 6,
+          "step": "Point is active in an editable sketch",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "the reference triad is at the origin",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 8,
+          "step": "the user open Precise Input and its reference-mode dropdown",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 9,
+          "step": "Relative and Absolute are listed",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 10,
+          "step": "the user select Absolute",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 11,
+          "step": "its icon is displayed in the toolbar",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 12,
+          "step": "the user enter X 5 and Y 6 and press Return",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 13,
+          "step": "a point marker appears and the coordinate fields reset for repeat entry",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 14,
+          "step": "the user select Relative and enter the same pair and press Return",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 15,
+          "step": "no validation dialog appears and no distinct offset marker is visible",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 16,
+          "step": "the origin triad remains at its prior visible position",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 17,
+          "step": "the user restore Absolute and press Escape",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 18,
+          "step": "Point and Precise Input close and Ready reports 35 dimensions needed",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-precise-triad-scenarios/features/sketch/precise-input/scenario.feature",
+      "scenario": "precise-input-07 Measure the retained reference-mode trial marker",
+      "line": 21,
+      "classification": "excluded: capture only",
+      "setup_error": "capture only",
+      "steps": [
+        {
+          "line": 22,
+          "step": "the point marker from the paired input trial remains visible",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 23,
+          "step": "the user open Measure and select that marker",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 24,
+          "step": "it is identified as Selection 1 Point",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 25,
+          "step": "its global position is X 5.000 Y 0.500 Z -6.000 mm",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 26,
+          "step": "the user click Done",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 27,
+          "step": "Measure closes and the marker remains",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-precise-triad-scenarios/features/sketch/precise-input/scenario.feature",
+      "scenario": "precise-input-01 Create a point with X and Y input",
+      "line": 30,
+      "classification": "excluded: capture only",
+      "setup_error": "capture only",
+      "steps": [
+        {
+          "line": 31,
+          "step": "Point is active in an editable sketch",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 32,
+          "step": "the user open Precise Input in X and Y coordinate mode",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 33,
+          "step": "the user focus X, press 5, press Tab, press 6, and press Return",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 34,
+          "step": "the user press Escape and measure the created point",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 35,
+          "step": "its global position is X=0.000 mm, Y=5.000 mm, Z=6.000 mm in the specified sketch-plane fixture",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-precise-triad-scenarios/features/sketch/precise-input/scenario.feature",
+      "scenario": "precise-input-03 Reject an alphabetic coordinate",
+      "line": 39,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 40,
+          "step": "X and Y coordinate mode is active with numeric fields",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 41,
+          "step": "the user focus X, select its value, and enter the single character a",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 42,
+          "step": "a is displayed in Red",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 43,
+          "step": "the user press Return",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 44,
+          "step": "the Red value remains and no visible point is committed",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 45,
+          "step": "the user press Escape and restart Point",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 46,
+          "step": "Precise Input reopens with numeric fields",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-precise-triad-scenarios/features/sketch/precise-input/scenario.feature",
+      "scenario": "precise-input-04 Measure points created with coordinate modes",
+      "line": 49,
+      "classification": "excluded: capture only",
+      "setup_error": "capture only",
+      "steps": [
+        {
+          "line": 50,
+          "step": "Precise Input is in X and Y coordinate mode",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 51,
+          "step": "the user open the coordinate-mode dropdown",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 52,
+          "step": "it offers X and Y coordinate",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 53,
+          "step": "it offers X coordinate and X axis angle",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 54,
+          "step": "it offers Y coordinate and X axis angle",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 55,
+          "step": "it offers Distance and X axis angle",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 56,
+          "step": "the user create a point in each mode using the original triad and the following inputs",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 57,
+          "step": "the user measure each point in the specified sketch-plane fixture",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 58,
+          "step": "Measure reports these global positions to 0.001 mm",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-precise-triad-scenarios/features/sketch/precise-input/scenario.feature",
+      "scenario": "precise-input-05 Undo and redo a committed point",
+      "line": 66,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 67,
+          "step": "a point committed through Precise Input",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 68,
+          "step": "the user exit Point and undo and redo",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 69,
+          "step": "the point marker disappears and returns",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-precise-triad-scenarios/features/sketch/precise-input/scenario.feature",
+      "scenario": "precise-input-08 Relocate reset and close the triad toolbar",
+      "line": 72,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 73,
+          "step": "Point and Precise Input are active in an editable sketch",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 74,
+          "step": "the user activate Reposition Triad",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 75,
+          "step": "click the displayed origin then the isolated line endpoint",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 76,
+          "step": "the triad visibly moves to that endpoint",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 77,
+          "step": "Select center point is restored",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 78,
+          "step": "the user choose Reset to Origin",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 79,
+          "step": "the triad returns to its prior origin position",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 80,
+          "step": "the user open toolbar options",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 81,
+          "step": "Pin Mini-Toolbar Position, Auto Fade and Close are listed",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 82,
+          "step": "the user choose Close",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 83,
+          "step": "the toolbar and triad disappear while Point remains active",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 84,
+          "step": "the user press Escape",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 85,
+          "step": "Point ends and Ready is displayed",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    }
+  ]
+}

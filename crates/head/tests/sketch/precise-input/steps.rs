@@ -387,10 +387,13 @@ fn with_line_and_toolbar(world: &mut ApplicationWorld) {
     }
     world.escape();
     world.pump(Vec::new());
+    world.remember_edited_sketch(Vec::new());
     world.select_point_tool();
     world.open_precise_input();
+    choose_reference(world, "Relative");
 }
 #[when("I activate Reposition Triad")]
+#[when("the user activate Reposition Triad")]
 fn activate_reposition(world: &mut ApplicationWorld) {
     world.click_text("Reposition Triad");
     world.pump(Vec::new());
@@ -404,6 +407,8 @@ fn click_origin_then_end(world: &mut ApplicationWorld) {
 }
 #[then("the triad visibly moves to that endpoint")]
 fn triad_moved(world: &mut ApplicationWorld) {
+    let at = world.app().owner.precise_triad_position().unwrap().1;
+    assert_eq!(world.sketch_pixel_of(at), LINE[1]);
     expect_triad_at(world, LINE[1]);
     let origin = origin_pixel(world);
     world.expect_segment_absent(origin, [origin[0] + TRIAD_SAMPLE, origin[1]]);
@@ -413,16 +418,22 @@ fn prompt_restored(world: &mut ApplicationWorld) {
     world.expect_status("Select center point");
 }
 #[when("I choose Reset to Origin")]
+#[when("the user choose Reset to Origin")]
 fn choose_reset(world: &mut ApplicationWorld) {
     world.click_text("Reset to Origin");
     world.pump(Vec::new());
 }
 #[then("the triad returns to its prior origin position")]
 fn triad_back(world: &mut ApplicationWorld) {
+    assert_eq!(
+        world.app().owner.precise_triad_position().unwrap().1,
+        [0., 0.]
+    );
     let origin = origin_pixel(world);
     expect_triad_at(world, origin);
 }
 #[when("I open toolbar options")]
+#[when("the user open toolbar options")]
 fn open_options(world: &mut ApplicationWorld) {
     let at = world
         .run_in_window(TOOLBAR, "...")
@@ -437,6 +448,11 @@ fn options_listed(world: &mut ApplicationWorld) {
     world.expect_text("Auto Fade");
     world.expect_text("Close");
 }
+#[when("the user choose Close")]
+fn choose_close(world: &mut ApplicationWorld) {
+    world.click_text("Close");
+    world.pump(Vec::new());
+}
 #[then("the toolbar and triad disappear while Point remains active")]
 fn toolbar_gone(world: &mut ApplicationWorld) {
     assert!(!toolbar_shows(world), "expected the toolbar to close");
@@ -447,6 +463,7 @@ fn toolbar_gone(world: &mut ApplicationWorld) {
 #[then("Point ends and Ready is displayed")]
 fn point_ended(world: &mut ApplicationWorld) {
     world.expect_ready();
+    world.expect_edited_sketch_retained();
 }
 
 fn require_recorded_fixture(scenario: &str) {
