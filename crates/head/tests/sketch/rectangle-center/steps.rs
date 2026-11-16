@@ -218,6 +218,7 @@ fn ready_with_rectangle(world: &mut ApplicationWorld) {
 #[when("I choose Two Point Center Rectangle and select the fixture center")]
 #[when("I start a fresh Two Point Center Rectangle and select the fixture center")]
 #[when("I start Two Point Center Rectangle and select the fixture center")]
+#[when("the user start Two Point Center Rectangle and select the fixture center")]
 fn start_and_center(world: &mut ApplicationWorld) {
     select_tool(world);
     world.sketch_click(CENTER);
@@ -311,6 +312,7 @@ fn previous_retained(world: &mut ApplicationWorld) {
     world.expect_edited_sketch_retained();
 }
 #[when("I enter 6, press Tab, enter 4 and press Return")]
+#[when("the user enter 6, press Tab, enter 4 and press Return")]
 fn six_four_typed(world: &mut ApplicationWorld) {
     type_sizes(world, "6", "4");
 }
@@ -319,6 +321,7 @@ fn six_four(world: &mut ApplicationWorld) {
     world.expect_annotation("6");
     world.expect_annotation("4");
     expect_shape(world);
+    shape::expect_axis_sizes(&world.edited_geometry(), [0.6, 0.4]);
 }
 #[then("Ready returns")]
 fn ready_returns(world: &mut ApplicationWorld) {

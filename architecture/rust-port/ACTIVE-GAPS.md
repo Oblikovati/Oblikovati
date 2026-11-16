@@ -40,7 +40,10 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
   current pin (#3886). Six capture-only cases were not executed; the result
   is not verified acceptance. See
   `receipts/2026-11-15-rectangle-portable-diagnostic/`.
-- Centered rectangle: six early scenarios passed focused diagnostics, including
+- Centered rectangle: a focused six-by-four diagnostic passed with a generated
+  YZ sketch and checked axis extents; the recorded fixture is unavailable. See
+  `receipts/2026-11-16-center-six-four-4024/` (#4024). This is not verified
+  acceptance. Six early scenarios passed focused diagnostics, including
   construction diagonal topology and typed 8 by 4 mm side lengths. Separate
   OS-input runs covered creation, undo/redo and typed input. The full feature
   diagnostic passed 9 of 15 scenarios, with six unbound. Measurement of the
