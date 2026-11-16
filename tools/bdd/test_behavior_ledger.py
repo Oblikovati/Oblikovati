@@ -275,6 +275,35 @@ class ApplicationInputsTests(unittest.TestCase):
             self.assertFalse(application_inputs_match(fixture.root, initial, changed))
 
 
+    def test_replacement_object_cannot_hide_changed_application_inputs(self) -> None:
+        import tempfile
+        from behavior_ledger import application_inputs_match
+
+        with tempfile.TemporaryDirectory() as folder:
+            fixture = GitRepositoryFixture(Path(folder))
+            original = fixture.git("rev-parse", "HEAD")
+            (fixture.root / "crates/code.rs").write_text("changed")
+            fixture.git("add", ".")
+            fixture.git("commit", "-qm", "changed")
+            changed = fixture.git("rev-parse", "HEAD")
+            tree = fixture.git("rev-parse", f"{original}^{{tree}}")
+            replacement = fixture.git("commit-tree", tree, "-p", original, "-m", "replacement")
+            fixture.git("replace", changed, replacement)
+            self.assertFalse(application_inputs_match(fixture.root, original, changed))
+
+    def test_caller_git_environment_cannot_redirect_input_comparison(self) -> None:
+        import os
+        import tempfile
+        from unittest.mock import patch
+        from behavior_ledger import application_inputs_match
+
+        with tempfile.TemporaryDirectory() as folder:
+            fixture = GitRepositoryFixture(Path(folder))
+            original = fixture.git("rev-parse", "HEAD")
+            with patch.dict(os.environ, {"GIT_DIR": str(fixture.root / "missing")}):
+                self.assertTrue(application_inputs_match(fixture.root, original, original))
+
+
 class BaselineCompletenessTests(unittest.TestCase):
     def test_full_classification_still_requires_r0_evidence_fields(self) -> None:
         fixture = LedgerFixture()
