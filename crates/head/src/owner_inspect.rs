@@ -413,10 +413,11 @@ fn measure_point(
     if let Some(point) = first_near(plane, pixel, VERTEX_REACH, points, window)? {
         return Ok(Some(MeasurePick::Point(point)));
     }
+    let index = geometry.read_index();
     let lines = geometry
         .lines()
         .iter()
-        .map(|line| line_middle(geometry, line))
+        .map(|line| line_middle(&index, line))
         .collect();
     if let Some(point) = first_near(plane, pixel, MIDPOINT_REACH, lines, window)? {
         return Ok(Some(MeasurePick::Middle(point)));
@@ -424,26 +425,26 @@ fn measure_point(
     let arcs = geometry
         .arcs()
         .iter()
-        .map(|arc| arc_middle(geometry, arc))
+        .map(|arc| arc_middle(&index, arc))
         .collect();
     Ok(first_near(plane, pixel, MIDPOINT_REACH, arcs, window)?.map(MeasurePick::Middle))
 }
 fn line_middle(
-    geometry: &oblikovati_model::sketch::Sketch2D,
+    index: &oblikovati_model::sketch::SketchReadIndex<'_>,
     line: &oblikovati_model::sketch::SketchLine2D,
 ) -> Result<[f64; 2], String> {
-    let [start, end] = line.endpoints.map(|point| geometry.point(point));
+    let [start, end] = line.endpoints.map(|point| index.point(point));
     let start = start.map_err(|cause| cause.to_string())?.position;
     let end = end.map_err(|cause| cause.to_string())?.position;
     Ok([(start[0] + end[0]) * 0.5, (start[1] + end[1]) * 0.5])
 }
 /// The point halfway along an arc, the way it runs.
 fn arc_middle(
-    geometry: &oblikovati_model::sketch::Sketch2D,
+    index: &oblikovati_model::sketch::SketchReadIndex<'_>,
     arc: &oblikovati_model::sketch::SketchArc2D,
 ) -> Result<[f64; 2], String> {
     let position = |point| {
-        geometry
+        index
             .point(point)
             .map(|point| point.position)
             .map_err(|cause| cause.to_string())

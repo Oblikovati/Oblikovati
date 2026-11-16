@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Pick sketch entities in Measure: mnt/vininas-projects/MCAD-Scenarios/features/sketch/measure-entity-picking/measure-entity-picking.feature" package="testsuite/Feature: Pick sketch entities in Measure: mnt/vininas-projects/MCAD-Scenarios/features/sketch/measure-entity-picking/measure-entity-picking.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-16T15:32:15.619205974Z" time="28.581989763"><testcase name="Scenario: Distinguish an arc midpoint pick from a curve pick: mnt/vininas-projects/MCAD-Scenarios/features/sketch/measure-entity-picking/measure-entity-picking.feature:9:3" time="28.581989763"><system-out><![CDATA[  Scenario: Distinguish an arc midpoint pick from a curve pick
+   ✔> Given the MCAD Software is displaying an editable sketch
+   ✔> And the viewport pointer is idle
+   ✔  Given an arc with a selectable midpoint is available in Measure
+   ✔  When the user selects the arc midpoint
+   ✔  Then the selection is identified as a Middle Point
+   ✔  When the user clears the selection and selects the arc near its start
+   ✔  Then the selection is identified as a Curve
+]]></system-out></testcase></testsuite></testsuites>
