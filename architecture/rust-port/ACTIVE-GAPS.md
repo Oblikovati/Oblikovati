@@ -43,7 +43,9 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
 - Centered rectangle: six early scenarios passed focused diagnostics, including
   construction diagonal topology and typed 8 by 4 mm side lengths. Separate
   OS-input runs covered creation, undo/redo and typed input. The full feature
-  diagnostic passed 8 of 15 scenarios, with seven unbound. See
+  diagnostic passed 9 of 15 scenarios, with six unbound. Measurement of the
+  typed rectangle also passed a focused diagnostic and OS-input check; see
+  `receipts/2026-11-16-center-measure-4024/`. The earlier group evidence is in
   `receipts/2026-11-16-center-rectangle-4024/` (#4024); these are not verified
   acceptance.
 - Ellipse measurement: the updated step now reaches the visible ellipse, but
