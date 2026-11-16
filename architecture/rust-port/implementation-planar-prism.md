@@ -79,3 +79,16 @@ application geometry engine fills these gaps.
 
 Placed profiles on validated model planes are checked in
 [sketch-plane prism evidence](implementation-prism-placement.md).
+
+## Presentation face orientation
+
+Face-history entries preserve identity but may carry a different orientation
+from the face in the result solid. The adapter resolves each entry against a
+single indexed map of the copied body's faces before it reads triangulation.
+It refuses missing or duplicate body-face identities and uses the body's
+orientation for winding. The index does not change lineage order or keys.
+
+Positive and oblique negative prism tests check every triangle against the
+body interior. Named-face plane tests cover edit, undo, redo, and reopen. See
+`receipts/2026-11-16-prism-body-winding-4044/`. This corrects face winding; it
+does not resolve the separate triangular shading observation in #4044.

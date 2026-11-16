@@ -94,3 +94,17 @@ fn displacement_ignores_large_origins_and_declines_overflow() {
     );
     assert!(error.to_string().contains("inf"));
 }
+
+#[test]
+fn body_face_resolution_preserves_identity_and_refuses_foreign_faces() {
+    let body = retained_fixture();
+    let other = retained_fixture();
+    for (role, lineage) in &body.faces {
+        let resolved = snapshot::unique_body_face(&body.shape, lineage).unwrap();
+        assert!(
+            resolved.is_same(lineage),
+            "face {role:?}: expected same identity"
+        );
+    }
+    assert!(snapshot::unique_body_face(&body.shape, &other.faces[0].1).is_err());
+}

@@ -1,15 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Read analytic geometry from one current named face.
 use super::*;
-use martensite_tkbrep::{
-    brep_adaptor::BRepAdaptorSurface,
-    topexp::Explorer,
-    topods::{self, Shape},
-};
-use martensite_tkg3d::{
-    adaptor3d::Adaptor3dSurface,
-    top_abs::{Orientation, ShapeEnum},
-};
+use martensite_tkbrep::{brep_adaptor::BRepAdaptorSurface, topods};
+use martensite_tkg3d::{adaptor3d::Adaptor3dSurface, top_abs::Orientation};
 use martensite_tkmath::geom_abs::SurfaceType;
 
 /// Surface classifications represented by the public topology contract.
@@ -43,7 +36,7 @@ impl NamedPrismSnapshot {
             .bind(history, document, key, 1)?
             .ok_or_else(|| "face reference: expected a face construction role".to_string())?;
         let lineage = unique_face(&self.snapshot, role)?;
-        let face = unique_body_face(&self.snapshot.shape, lineage)?;
+        let face = super::super::snapshot::unique_body_face(&self.snapshot.shape, lineage)?;
         let native = topods::face(&face).map_err(|cause| cause.to_string())?;
         let adaptor =
             BRepAdaptorSurface::with_face(&native, false).map_err(|cause| cause.to_string())?;
@@ -121,20 +114,6 @@ fn projected_plane(
         Default::default(),
     )
     .map_err(|cause| cause.to_string())
-}
-
-fn unique_body_face(body: &Shape, lineage: &Shape) -> Result<Shape, String> {
-    let mut faces = Explorer::new(body, ShapeEnum::Face, ShapeEnum::Shape)
-        .map_err(|cause| cause.to_string())?;
-    let mut found = None;
-    while faces.more() {
-        let face = faces.current();
-        if face.is_same(lineage) && found.replace(face.clone()).is_some() {
-            return Err("named face: expected exactly one face in the current body".into());
-        }
-        faces.next().map_err(|cause| cause.to_string())?;
-    }
-    found.ok_or_else(|| "named face: expected exactly one face in the current body".into())
 }
 
 #[cfg(test)]
