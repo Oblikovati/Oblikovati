@@ -288,6 +288,12 @@ fn owner_batch_budget(budget: usize, active: bool) -> Result<usize, String> {
         .ok_or_else(|| format!("desktop frame budget {budget}, script active={active}: expected capacity for owner work and one active script event"))
 }
 impl<D: ScriptDocumentOwner> crate::HeadSketchWork for DesktopScripts<D> {
+    fn set_part_options_from_gui(
+        &mut self,
+        options: oblikovati_model::application_options::PartApplicationOptions,
+    ) -> Result<bool, String> {
+        self.owner.set_part_options_from_gui(options)
+    }
     fn accept_sketch_alias(
         &mut self,
         event: oblikovati_viewport::ViewportEvent,

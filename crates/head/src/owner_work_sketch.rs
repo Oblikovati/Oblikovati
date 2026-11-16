@@ -9,6 +9,19 @@ impl<
     S: DispatchWakeup,
 > crate::HeadSketchWork for DesktopOwner<O, W, F, G, R, S>
 {
+    fn set_part_options_from_gui(
+        &mut self,
+        options: oblikovati_model::application_options::PartApplicationOptions,
+    ) -> Result<bool, String> {
+        let store = self.part_store.as_mut().ok_or_else(|| {
+            format!("part options {options:?}: expected an application preference owner")
+        })?;
+        if store.part_options() == options {
+            return Ok(false);
+        }
+        store.set_part_options(options)?;
+        Ok(true)
+    }
     fn accept_sketch_alias(
         &mut self,
         event: oblikovati_viewport::ViewportEvent,

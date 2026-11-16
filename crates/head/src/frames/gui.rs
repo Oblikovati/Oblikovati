@@ -272,6 +272,7 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::PreviewComponentFile { .. }
         | GuiShellAction::PreviewDrawingBaseView(_)
         | GuiShellAction::SetSketchOptions(_)
+        | GuiShellAction::SetPartOptions(_)
         | GuiShellAction::LineCommand(_)
         | GuiShellAction::PrecisePoint(_)
         | GuiShellAction::PreciseTriad(_)

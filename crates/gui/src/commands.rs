@@ -41,6 +41,7 @@ pub enum GuiShellAction {
         frequency: oblikovati_model::application_prompts::PromptFrequency,
     },
     SetSketchOptions(oblikovati_model::application_options::SketchApplicationOptions),
+    SetPartOptions(oblikovati_model::application_options::PartApplicationOptions),
     SketchMove(crate::GuiSketchMoveAction),
     PreviewSketchPattern(Option<oblikovati_model::history::SketchRectangularPatternRequest>),
     CreateSketchPattern(oblikovati_model::history::SketchRectangularPatternRequest),
