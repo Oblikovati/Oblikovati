@@ -75,7 +75,7 @@ impl<Files: PackageFileReader + AtomicFiles> MarkingMenuPreferenceAccess
     fn save(&mut self, menus: &MarkingMenus) -> Result<(), String> {
         let mut candidate = self.document.clone();
         candidate.menus = menus.all().iter().map(to_stored).collect();
-        let bytes = serde_yaml_ng::to_string(&candidate)
+        let bytes = crate::preference_yaml_guard::encode(&candidate)
             .map_err(|error| failure(&self.path, error).to_string())?;
         replace_file(&self.path, bytes.as_bytes(), &mut self.files)
             .map_err(|error| failure(&self.path, error).to_string())?;

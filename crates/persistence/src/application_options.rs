@@ -81,7 +81,7 @@ impl<Files: PackageFileReader + AtomicFiles> ApplicationPreferenceFile<Files> {
         let ui_scale = candidate
             .ui_options()
             .map_err(|cause| preference_failure(&self.path, cause))?;
-        let encoded = serde_yaml_ng::to_string(&candidate)
+        let encoded = crate::preference_yaml_guard::encode(&candidate)
             .map_err(|cause| preference_failure(&self.path, cause))?;
         replace_file(&self.path, encoded.as_bytes(), &mut self.files).map_err(io::Error::other)?;
         self.recipe = candidate;

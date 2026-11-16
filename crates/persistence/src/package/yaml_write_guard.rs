@@ -8,7 +8,7 @@ pub(crate) fn reject_ambiguous_merge_keys(root: &Mapping) -> Result<(), PackageC
     validate_pending(pending)
 }
 
-pub(super) fn reject_ambiguous_merge_value(value: &Value) -> Result<(), PackageCodecError> {
+pub(crate) fn reject_ambiguous_merge_value(value: &Value) -> Result<(), PackageCodecError> {
     validate_pending(vec![value])
 }
 

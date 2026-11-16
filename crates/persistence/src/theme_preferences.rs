@@ -53,7 +53,7 @@ impl<Files: PackageFileReader + AtomicFiles> ThemePreferenceFile<Files> {
     pub fn save_active(&mut self, theme: &ThemeDefinition) -> io::Result<()> {
         let mut candidate = self.recipe.clone();
         candidate.active_theme = theme.name().into();
-        let encoded = serde_yaml_ng::to_string(&candidate)
+        let encoded = crate::preference_yaml_guard::encode(&candidate)
             .map_err(|cause| theme_preference_failure(&self.path, cause))?;
         replace_file(&self.path, encoded.as_bytes(), &mut self.files).map_err(io::Error::other)?;
         self.recipe = candidate;
