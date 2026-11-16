@@ -121,9 +121,17 @@ fn append_entity(geometry: &mut Sketch2D, entity: LegacyEntity) -> Result<(), Pa
             entity.kind
         )));
     }
+    let id = SketchEntityId(entity.id);
     geometry
-        .add_line(SketchEntityId(entity.id), pair("line", entity.points)?)
-        .map_err(failure)
+        .add_line(id, pair("line", entity.points)?)
+        .map_err(failure)?;
+    geometry
+        .set_curve_construction(&[id], entity.construction)
+        .map_err(failure)?;
+    geometry
+        .set_line_centerline(id, entity.centerline)
+        .map_err(failure)?;
+    Ok(())
 }
 fn append_relation(
     geometry: &mut Sketch2D,

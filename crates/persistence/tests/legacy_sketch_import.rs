@@ -30,6 +30,84 @@ fn go_cube_sketch_import_preserves_dimensions_and_is_fully_constrained() {
 }
 
 #[test]
+fn legacy_line_roles_survive_import_and_recipe_round_trip() {
+    use oblikovati_model::sketch::{Sketch2D, SketchEntityId};
+    for (construction, centerline) in [(false, false), (true, false), (false, true), (true, true)] {
+        let fields = format!(
+            "kind: line\n              construction: {construction}\n              centerline: {centerline}"
+        );
+        let input = std::str::from_utf8(GO_CUBE)
+            .unwrap()
+            .replacen("kind: line", &fields, 1);
+        let package = DocumentPackage::decode(input.as_bytes()).unwrap();
+        let candidate = package.prepare_legacy_sketch_candidate().unwrap();
+        let geometry = candidate
+            .sketches
+            .get(DocumentSketchId(1))
+            .unwrap()
+            .geometry();
+        let mut restored = Sketch2D::from_recipe(&geometry.recipe()).unwrap();
+        let line = SketchEntityId(6);
+        assert_eq!(restored.is_centerline(line).unwrap(), centerline);
+        assert_eq!(
+            restored.is_construction(line).unwrap(),
+            construction || centerline
+        );
+        assert_eq!(
+            restored.profile_curve_ids().contains(&line),
+            !(construction || centerline)
+        );
+        restored.set_line_centerline(line, false).unwrap();
+        assert_eq!(restored.is_construction(line).unwrap(), construction);
+    }
+}
+
+#[test]
+fn go_saved_line_roles_match_reopened_go_observations() {
+    use oblikovati_model::sketch::SketchEntityId;
+    let source = include_bytes!(
+        "../../../architecture/rust-port/receipts/2026-11-16-go-line-roles-3882/line-roles.obk"
+    );
+    let observations = include_str!(
+        "../../../architecture/rust-port/receipts/2026-11-16-go-line-roles-3882/observations.json"
+    );
+    let rows: serde_yaml_ng::Value = serde_yaml_ng::from_str(observations).unwrap();
+    let package = DocumentPackage::decode(source).unwrap();
+    let candidate = package.prepare_legacy_sketch_candidate().unwrap();
+    let sketch = candidate
+        .sketches
+        .get(DocumentSketchId(1))
+        .unwrap()
+        .geometry();
+    for row in rows.as_sequence().unwrap() {
+        let id = SketchEntityId(row["id"].as_u64().unwrap());
+        let centerline = row["centerline"].as_bool().unwrap();
+        let construction = row["effectiveConstruction"].as_bool().unwrap();
+        assert_eq!(sketch.is_centerline(id).unwrap(), centerline);
+        assert_eq!(sketch.is_construction(id).unwrap(), construction);
+        let mut copy = sketch.clone();
+        copy.set_line_centerline(id, false).unwrap();
+        assert_eq!(
+            copy.is_construction(id).unwrap(),
+            row["explicitConstruction"].as_bool().unwrap()
+        );
+    }
+}
+
+#[test]
+fn malformed_legacy_line_role_is_refused_without_changing_package() {
+    let input = std::str::from_utf8(GO_CUBE).unwrap().replacen(
+        "kind: line",
+        "kind: line\n              construction: not-a-boolean",
+        1,
+    );
+    let package = DocumentPackage::decode(input.as_bytes()).unwrap();
+    let original = package.clone();
+    assert!(package.prepare_legacy_sketch_candidate().is_err());
+    assert_eq!(package, original);
+}
+
+#[test]
 fn unsupported_legacy_entity_is_refused_without_mutating_the_package() {
     let input =
         std::str::from_utf8(GO_CUBE)
