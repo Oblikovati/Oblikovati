@@ -28,4 +28,3 @@ test native::gui_loop_tests::application_bdd::application_scenarios_use_the_nati
 test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... ok
 
 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1092 filtered out; finished in 61.11s
-

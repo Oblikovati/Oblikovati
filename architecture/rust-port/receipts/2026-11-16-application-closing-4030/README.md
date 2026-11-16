@@ -11,5 +11,5 @@ XTEST mouse click. Fixture setup used frame-loop input. The source marks clean
 and no-document exit as reference capture gaps. Build provenance and receipt
 reuse remain open in #3978.
 
-The dirty prompt capture was inspected. The run log, source copy, Cucumber and
+The dirty prompt capture was inspected. The run log, compressed source copy, Cucumber and
 JUnit output, source observation, and artifact hashes are retained here.
