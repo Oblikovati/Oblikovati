@@ -98,6 +98,28 @@ class LedgerFixture:
 
 
 class LedgerTests(unittest.TestCase):
+    def test_stale_capture_only_remains_excluded(self) -> None:
+        fixture = LedgerFixture()
+        fixture.inventory["scenarios"][0]["capture_only"] = True
+        entry = dict(
+            fixture.entry, state="excluded", reason="Capture only",
+            source_sha256="old", last_receipt=None,
+        )
+        row = fixture.run([entry])["scenarios"][0]
+        self.assertEqual(row["state"], "excluded")
+        self.assertTrue(row["stale"])
+
+    def test_stale_capture_host_only_remains_blocked(self) -> None:
+        fixture = LedgerFixture()
+        fixture.inventory["scenarios"][0]["capture_host_only"] = True
+        entry = dict(
+            fixture.entry, state="blocked", reason="Capture host required",
+            source_sha256="old", last_receipt=None,
+        )
+        row = fixture.run([entry])["scenarios"][0]
+        self.assertEqual(row["state"], "blocked")
+        self.assertTrue(row["stale"])
+
     def test_capture_host_only_is_blocked_without_host_attestation(self) -> None:
         fixture = LedgerFixture()
         fixture.inventory["scenarios"][0]["capture_host_only"] = True

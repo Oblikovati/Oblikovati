@@ -3,6 +3,8 @@
 `tools/bdd/dependency_cli.py` generates one record for each pinned scenario.
 Each record names the exact feature hash and runner. The shared map stores the
 complete tracked Git tree, including file modes and symlink object identities.
+Sketch3D records have a null runner until a native runner exists. They cannot
+be bound to a runtime inventory.
 It also records whether the worktree was clean. An optional runtime inventory
 can be attached to one scenario; its files, directory entries, symlinks,
 metadata and contents are checked without following symlinks. The map does not
