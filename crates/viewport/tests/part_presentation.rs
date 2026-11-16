@@ -107,3 +107,98 @@ fn a_body_style_failure_does_not_hide_other_valid_bodies() {
     assert_eq!(result.declines[0].feature, FeatureId(1));
     assert_eq!(result.declines[0].cause, "missing appearance");
 }
+
+#[test]
+fn real_named_fillet_replay_produces_a_viewport_scene() {
+    use oblikovati_martensite::{CertifiedNamedSolidEvaluator, PrismResolution};
+    use oblikovati_model::{
+        feature::FeatureId,
+        history::DocumentEditHistory,
+        identity::{DocumentGuid, RecipeIdAllocator},
+    };
+    let mut snapshot = fixture::selected_prism_document();
+    fixture::solve_selected_sketches(&mut snapshot);
+    let ids = RecipeIdAllocator::restore(None, snapshot.parameters.ids()).unwrap();
+    let mut history = DocumentEditHistory::new(snapshot, ids).unwrap();
+    let document: DocumentGuid = "11111111-2222-3333-4444-555555555555".parse().unwrap();
+    let resolution = PrismResolution {
+        version: 1,
+        weld: 1e-6,
+        sew: 1e-7,
+        angular: 1e-9,
+        display_chordal: 1e-3,
+        display_angular: 0.1,
+        maximum_tolerance: 1e-5,
+    };
+    let prism = oblikovati_martensite::retain_certified_named_sketch_prism(
+        &history,
+        document,
+        FeatureId(1),
+        resolution,
+    )
+    .unwrap();
+    let edge = prism
+        .subentity_reference_keys(&history, document)
+        .unwrap()
+        .into_iter()
+        .find(|key| {
+            oblikovati_model::identity::ReferenceEnvelope::decode(key)
+                .unwrap()
+                .kind
+                == 2
+        })
+        .unwrap();
+    let body = prism
+        .body_reference_key(&history, document)
+        .unwrap()
+        .to_vec();
+    append_fillet_for_viewport(&mut history, body, edge);
+    let mut evaluator = CertifiedNamedSolidEvaluator::new(&history, document, resolution);
+    let replay = history
+        .snapshot()
+        .evaluate_part_features(&mut evaluator)
+        .unwrap();
+    let scene = ViewportScene::from_part_evaluation(
+        &replay,
+        oblikovati_martensite::PrismMeshOptions {
+            chord_error: 0.02,
+            angular_error: 0.2,
+        },
+        [0.; 3],
+        [0.4, 0.5, 0.6, 1.],
+    )
+    .unwrap();
+    assert_eq!(scene.visible_bodies, 1);
+    assert!(scene.declines.is_empty());
+    assert!(!scene.scene.triangles.is_empty());
+}
+
+fn append_fillet_for_viewport(
+    history: &mut oblikovati_model::history::DocumentEditHistory,
+    body: Vec<u8>,
+    edge: Vec<u8>,
+) {
+    use oblikovati_model::feature::{
+        AuthoredFeature, fillet::FilletDefinition, part::PartFeatureDefinition,
+        work_geometry::DatumLength,
+    };
+    let definition = FilletDefinition::new(body, vec![edge], DatumLength::Constant(0.1)).unwrap();
+    let reads = definition.reads();
+    let token = history.begin("Fillet").unwrap();
+    history
+        .edit(&token, |snapshot, ids| {
+            let id = ids.allocate_feature().map_err(|cause| cause.to_string())?;
+            snapshot
+                .work_geometry
+                .append(AuthoredFeature::new(
+                    id,
+                    "Fillet",
+                    PartFeatureDefinition::Fillet(Box::new(definition)),
+                    reads,
+                ))
+                .map_err(|cause| cause.to_string())?;
+            Ok::<(), String>(())
+        })
+        .unwrap();
+    history.commit(&token, false).unwrap();
+}

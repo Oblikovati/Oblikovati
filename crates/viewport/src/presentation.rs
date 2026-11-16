@@ -54,7 +54,7 @@ pub struct PartPresentation {
 impl ViewportScene {
     /// Convert successful current bodies and retain local display failures.
     /// Example: `ViewportScene::from_part_evaluation(&evaluated, mesh_options, background, color)`.
-    pub fn from_part_evaluation<Failure, Body: oblikovati_martensite::PrismPresentationSource>(
+    pub fn from_part_evaluation<Failure, Body: oblikovati_martensite::BodyPresentationSource>(
         evaluation: &oblikovati_model::feature::part::PartFeatureEvaluation<Body, Failure>,
         options: oblikovati_martensite::PrismMeshOptions,
         background: [f64; 3],
@@ -68,7 +68,7 @@ impl ViewportScene {
     /// Example: `ViewportScene::from_part_evaluation_with_visibility(&evaluated, options, background, color, visible)`.
     pub fn from_part_evaluation_with_visibility<
         Failure,
-        Body: oblikovati_martensite::PrismPresentationSource,
+        Body: oblikovati_martensite::BodyPresentationSource,
     >(
         evaluation: &oblikovati_model::feature::part::PartFeatureEvaluation<Body, Failure>,
         options: oblikovati_martensite::PrismMeshOptions,
@@ -84,7 +84,7 @@ impl ViewportScene {
     /// Example: `ViewportScene::from_part_evaluation_styled(&evaluated, options, background, style)`.
     pub fn from_part_evaluation_styled<
         Failure,
-        Body: oblikovati_martensite::PrismPresentationSource,
+        Body: oblikovati_martensite::BodyPresentationSource,
     >(
         evaluation: &oblikovati_model::feature::part::PartFeatureEvaluation<Body, Failure>,
         options: oblikovati_martensite::PrismMeshOptions,
@@ -117,7 +117,7 @@ impl ViewportScene {
     }
 }
 impl PartPresentation {
-    fn append_body<Body: oblikovati_martensite::PrismPresentationSource>(
+    fn append_body<Body: oblikovati_martensite::BodyPresentationSource>(
         &mut self,
         feature: oblikovati_model::feature::FeatureId,
         body: &Body,
@@ -125,8 +125,8 @@ impl PartPresentation {
         color: [f32; 4],
     ) {
         let scene = body
-            .presentation(options)
-            .and_then(|mesh| ViewportScene::from_prism(&mesh, self.scene.background, color));
+            .body_triangles(options)
+            .and_then(|triangles| body_scene(triangles, self.scene.background, color));
         match scene {
             Ok(mut scene) => {
                 self.scene.triangles.append(&mut scene.triangles);
@@ -137,6 +137,23 @@ impl PartPresentation {
                 .push(PartPresentationDecline { feature, cause }),
         }
     }
+}
+
+fn body_scene(
+    triangles: Vec<[[f64; 3]; 3]>,
+    background: [f64; 3],
+    color: [f32; 4],
+) -> Result<ViewportScene, String> {
+    let triangles = triangles
+        .into_iter()
+        .map(|triangle| display_triangle(triangle, color))
+        .collect::<Result<_, _>>()?;
+    let scene = ViewportScene {
+        background,
+        triangles,
+    };
+    scene.validate()?;
+    Ok(scene)
 }
 
 #[cfg(test)]
