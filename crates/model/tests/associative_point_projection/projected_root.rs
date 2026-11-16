@@ -380,6 +380,37 @@ fn generated_preconditioner_checks_the_actual_canonical_rectangle() {
     }
     assert!(result.root().contraction_upper() < 1.0);
 }
+
+#[test]
+fn canonical_origin_root_tracks_formula_sources_across_solves() {
+    let (mut snapshot, _) = rectangle_document(false, false);
+    snapshot.parameters.set_expression(1, "20 mm / 2").unwrap();
+    let batch = snapshot
+        .solve_one_document_sketch(SKETCH, SolveOptions::default(), || false)
+        .unwrap();
+    let outcome = batch.report.reports[0].result.as_ref().unwrap().clone();
+    snapshot.sketches = batch.candidate;
+    let projection = snapshot
+        .canonical_origin_projection(SKETCH, ANCHOR, &outcome)
+        .unwrap();
+    let root = projection
+        .conditional_root_auto(&full_box(&outcome), &[])
+        .unwrap();
+    let exact = [0., 0., 0., 0., 1., 0., 1., 1., 0., 1.];
+    for (coordinate, bounds) in exact.into_iter().zip(root.root().enclosure()) {
+        assert!(bounds[0] <= coordinate && coordinate <= bounds[1]);
+    }
+    assert_eq!(
+        root.root().parameter_bounds().unwrap()[0].sources(),
+        &[(1, "20 mm / 2".into())]
+    );
+    snapshot.parameters.set_expression(1, "10 mm").unwrap();
+    assert!(
+        snapshot
+            .canonical_origin_projection(SKETCH, ANCHOR, &outcome)
+            .is_err()
+    );
+}
 #[test]
 fn generated_preconditioner_rejects_non_square_rectangle() {
     for (omit, duplicate) in [(true, false), (false, true), (true, true)] {
