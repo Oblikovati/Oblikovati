@@ -85,14 +85,16 @@ def require_no_submodules(tree: Mapping[str, str]) -> None:
         )
 
 
-def runner_for(area: object) -> str:
+def runner_for(area: object) -> str | None:
     """Select the native runner; example: runner_for('sketch')."""
     if area == "sketch":
         return "sketch_scenarios_use_the_native_window"
     if area in ("application", "solid-model"):
         return "application_scenarios_use_the_native_window"
+    if area == "sketch3d":
+        return None
     raise ValueError(
-        f"scenario area {area!r}: expected application, sketch, or solid-model"
+        f"scenario area {area!r}: expected application, sketch, sketch3d, or solid-model"
     )
 
 
@@ -221,6 +223,8 @@ def records_with_runtime(
     if scenario is not None:
         if scenario not in records:
             raise ValueError(f"scenario {scenario!r}: expected a mapped scenario")
+        if records[scenario]["runner"] is None:
+            raise ValueError(f"scenario {scenario!r}: expected an available native runner")
         records[scenario]["runtime"] = "runtime_inputs"
     return records
 

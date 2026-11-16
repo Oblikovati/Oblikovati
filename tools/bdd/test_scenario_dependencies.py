@@ -108,6 +108,19 @@ class ScenarioDependencyTests(unittest.TestCase):
         """Build the baseline map; example: self.manifest()."""
         return build_map(self.fixture.root, self.inventory, self.fixture.baseline)
 
+    def test_sketch3d_is_mapped_without_claiming_a_runner(self) -> None:
+        row = source_row("three", "line")
+        row["area"] = "sketch3d"
+        self.inventory["scenarios"].append(row)
+        mapping = self.manifest()
+        self.assertIsNone(mapping["scenarios"]["three"]["runner"])
+        with tempfile.TemporaryDirectory() as folder:
+            with self.assertRaisesRegex(ValueError, "available native runner"):
+                build_map(
+                    self.fixture.root, self.inventory, self.fixture.baseline,
+                    runtime_scenario="three", runtime_root=Path(folder),
+                )
+
     def test_build_rejects_head_change_during_tree_read(self) -> None:
         writer = CommitAfterTreeRead(self.fixture)
         with patch("scenario_dependencies.git_tree", writer):

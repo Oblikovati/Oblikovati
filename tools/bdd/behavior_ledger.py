@@ -183,9 +183,15 @@ def reconcile_row(
     )
     result["stale"] = stale
     if stale or source["source_error"] is not None:
-        result["state"] = (
-            "blocked" if source["source_error"] is not None else "inventoried"
-        )
+        if source["source_error"] is not None:
+            result["state"] = "blocked"
+        elif source.get("capture_only"):
+            result["state"] = "excluded"
+        elif source.get("capture_host_only"):
+            result["state"] = "blocked"
+        else:
+            result["state"] = "inventoried"
+        result["reason"] = classification.get("reason")
         result["stale"] = stale or classification["state"] == "verified"
         result["stale_reason"] = (
             "source changed or is invalid" if result["stale"] else None

@@ -1,5 +1,10 @@
 {
   "features": {
+    "features/application/application-closing/application-closing.feature": {
+      "outlines": 0,
+      "scenario_declarations": 3,
+      "sha256": "d87eaf041fc93701e0de5c911dd3b4c0622386d184f05954a8409400e412c0d0"
+    },
     "features/application/body-properties/body-properties.feature": {
       "outlines": 0,
       "scenario_declarations": 6,
@@ -163,7 +168,7 @@
     "features/sketch/chamfer/scenario.feature": {
       "outlines": 0,
       "scenario_declarations": 14,
-      "sha256": "015dd18c0b09fd202c047ef24216fb87729fcbb7dac64f4203739232d6b12885"
+      "sha256": "dce1044d773cf1682908291dffa569ebd8c8a647a7919049a36715bd07976675"
     },
     "features/sketch/circle-center-point/scenario.feature": {
       "outlines": 0,
@@ -189,6 +194,11 @@
       "outlines": 0,
       "scenario_declarations": 8,
       "sha256": "8734f8e6fdffb5a01385f3637fa4778e9db22581a6b65bcd25eb73eac6114a3c"
+    },
+    "features/sketch/constraint-glyph-hover/constraint-glyph-hover.feature": {
+      "outlines": 0,
+      "scenario_declarations": 1,
+      "sha256": "5d30dc6745bfc4bf6415c21558d7d6ff3cae1df3b50862583a87ebd4e38f2926"
     },
     "features/sketch/constraint-inference-scope/scenario.feature": {
       "outlines": 0,
@@ -347,8 +357,13 @@
     },
     "features/sketch/line/scenario.feature": {
       "outlines": 0,
-      "scenario_declarations": 28,
-      "sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0"
+      "scenario_declarations": 29,
+      "sha256": "da19a8fdf28b30b343b963d0da5b05a00d305254d07797cfc74cf19544425aae"
+    },
+    "features/sketch/measure-entity-picking/measure-entity-picking.feature": {
+      "outlines": 0,
+      "scenario_declarations": 2,
+      "sha256": "a4f61db6185add10d22ac01f80259578cc85a68abb9301454ddf8b7c9f6a23af"
     },
     "features/sketch/mirror/scenario.feature": {
       "outlines": 0,
@@ -453,7 +468,7 @@
     "features/sketch/rectangle-two-point/scenario.feature": {
       "outlines": 0,
       "scenario_declarations": 10,
-      "sha256": "c5b51038c64283e9ec2a81e892ea8f912a06264a80eee7e42d65932f3146aa59"
+      "sha256": "76882454042afe7a01b2a43ebfb7b83d95e9f25d8fcfa75ebe4cf1a373ec783e"
     },
     "features/sketch/region-properties/scenario.feature": {
       "outlines": 0,
@@ -565,20 +580,45 @@
       "scenario_declarations": 14,
       "sha256": "662dd235f803483916bdb0d04c8424ca6a1daa0736d4e4004845cfff84bfdba1"
     },
+    "features/sketch/viewport-entity-interaction/viewport-entity-interaction.feature": {
+      "outlines": 0,
+      "scenario_declarations": 8,
+      "sha256": "b026f6a89824c1c50b8d6d2f7d9ae4c6fecd5c25f0cb6f87fa05063b205841d7"
+    },
+    "features/sketch3d/arc/arc.feature": {
+      "outlines": 0,
+      "scenario_declarations": 2,
+      "sha256": "fcd1324aa9693faa6643ec83225fefe91a59e4636d6a14fb75e85a5f90530796"
+    },
+    "features/sketch3d/helical-curve/helical-curve.feature": {
+      "outlines": 0,
+      "scenario_declarations": 4,
+      "sha256": "79cad9a48314b8c12d83ac13be4da7963abcedadc22a3370dc0936243a9b5f05"
+    },
+    "features/sketch3d/line/line.feature": {
+      "outlines": 0,
+      "scenario_declarations": 1,
+      "sha256": "5bb14c2437708738603572a315eb8be666ee9655d51840e8080c624abd75fa8e"
+    },
+    "features/sketch3d/shared-tool-lifecycle/shared-tool-lifecycle.feature": {
+      "outlines": 1,
+      "scenario_declarations": 3,
+      "sha256": "1be38d8680a6dcf5dbcc75fc44026a25d42aba70ec1ee099c821168e8b7317d0"
+    },
     "features/solid-model/bend-part/bend-part.feature": {
       "outlines": 0,
       "scenario_declarations": 7,
-      "sha256": "0e057713d45b17c83f450525a82f31b23f8a2ec4a4ebc63204a8e0d2c7389be6"
+      "sha256": "fd5acdcd636ef73a7a5fabe8bd7d28f31a011a9ec4242225b29f170e30f2dc68"
     },
     "features/solid-model/boundary-patch/boundary-patch.feature": {
       "outlines": 0,
       "scenario_declarations": 6,
-      "sha256": "3e9bf4b214c8ba68735594fe015a4394ceb5cd2484a20fd1b776b2054eab1767"
+      "sha256": "14c466ffd579a4acca7c2573eba2db625aa08c945481f66f8e1f7c25fc415ecb"
     },
     "features/solid-model/chamfer/chamfer.feature": {
       "outlines": 0,
       "scenario_declarations": 9,
-      "sha256": "3f6f7f2a470749d2098ea7e314a435509671e3801f46569c82a7986386522747"
+      "sha256": "ff93ecfc751384091e485ea672340224e5eefb35fbadeb36785c8b26a7f45fd6"
     },
     "features/solid-model/circular-pattern/circular-pattern.feature": {
       "outlines": 0,
@@ -603,7 +643,7 @@
     "features/solid-model/copy-object/copy-object.feature": {
       "outlines": 0,
       "scenario_declarations": 6,
-      "sha256": "5c35419d1a76371eec13938df83639b5fe9d35786799e3e42fdd9f200bb79dbc"
+      "sha256": "2f602c768e06783d438992934561e38603c3942772068b1e14cf130cd76e7843"
     },
     "features/solid-model/create-ipart/create-ipart.feature": {
       "outlines": 0,
@@ -662,8 +702,8 @@
     },
     "features/solid-model/extrusion/extrusion.feature": {
       "outlines": 0,
-      "scenario_declarations": 30,
-      "sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126"
+      "scenario_declarations": 31,
+      "sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821"
     },
     "features/solid-model/fillet/fillet.feature": {
       "outlines": 0,
@@ -959,6 +999,16 @@
       "outlines": 0,
       "scenario_declarations": 5,
       "sha256": "50cff3509170d176c23a7cc0d429f4df9257c8b8184034214ed837917651a2a3"
+    },
+    "features/solid-model/viewport-feature-interaction/viewport-feature-interaction.feature": {
+      "outlines": 0,
+      "scenario_declarations": 8,
+      "sha256": "75678c715f07c208dcabf9e60a81194b01b5a6c2f95dcc13e231ea5cf45b5229"
+    },
+    "features/solid-model/viewport-feature-picking/viewport-feature-picking.feature": {
+      "outlines": 0,
+      "scenario_declarations": 6,
+      "sha256": "af7517e1bcfb924b4da96f4e5d09490bb063d81e0a870c0db0eb1c2b93f36bd0"
     },
     "features/solid-model/work-axis/work-axis.feature": {
       "outlines": 0,
