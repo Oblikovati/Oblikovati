@@ -1,0 +1,98 @@
+schemaVersion: 2
+documentType: 1
+displayName: line-roles
+identity:
+    internalName: 4ad99509-a7dc-4b25-9044-29de8a29b22b
+    revisionId: fba1103e-1617-4663-8bd2-3cb28fbab6d4
+    databaseRevisionId: 24c50e27-d30b-49d7-9486-41b33a61617f
+    saveCounter: 1
+    versionCreated: dev
+    versionSaved: dev
+    modelDigest: d72be19d263629ac7ab9e5ba9b347e9650fc12cf4db0780a890de6b675f039c0
+model:
+    units:
+        angle: deg
+        angleFormat: decimal
+        anglePrecision: "2"
+        area: mm^2
+        length: mm
+        lengthFormat: decimal
+        lengthPrecision: "3"
+        mass: kg
+        time: s
+        volume: mm^3
+    sketches:
+        - id: 1
+          name: Sketch1
+          seq: 1
+          plane:
+            origin:
+                - 0
+                - 0
+                - 0
+            xAxis:
+                - 1
+                - 0
+                - 0
+            yAxis:
+                - 0
+                - 1
+                - 0
+          points:
+            - id: 2
+              x: 0
+              "y": 0
+              standalone: true
+            - id: 3
+              x: 0
+              "y": 1
+              standalone: true
+            - id: 5
+              x: 1
+              "y": 0
+              standalone: true
+            - id: 6
+              x: 1
+              "y": 1
+              standalone: true
+            - id: 8
+              x: 2
+              "y": 0
+              standalone: true
+            - id: 9
+              x: 2
+              "y": 1
+              standalone: true
+            - id: 11
+              x: 3
+              "y": 0
+              standalone: true
+            - id: 12
+              x: 3
+              "y": 1
+              standalone: true
+          entities:
+            - id: 4
+              kind: line
+              points:
+                - 2
+                - 3
+            - id: 7
+              kind: line
+              points:
+                - 5
+                - 6
+              construction: true
+            - id: 10
+              kind: line
+              points:
+                - 8
+                - 9
+              centerline: true
+            - id: 13
+              kind: line
+              points:
+                - 11
+                - 12
+              construction: true
+              centerline: true

@@ -40,6 +40,10 @@ pub(super) struct LegacyEntity {
     pub id: u64,
     pub kind: String,
     pub points: Vec<u64>,
+    #[serde(default)]
+    pub construction: bool,
+    #[serde(default)]
+    pub centerline: bool,
 }
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
