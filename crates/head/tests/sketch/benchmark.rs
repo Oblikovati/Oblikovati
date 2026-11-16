@@ -39,6 +39,8 @@ mod move_pin;
 mod move_polar;
 #[path = "move/precise.rs"]
 mod move_precise;
+#[path = "move/reset.rs"]
+mod move_reset;
 #[path = "new-sketch/steps.rs"]
 mod new_sketch;
 #[path = "new-sketch/face.rs"]
