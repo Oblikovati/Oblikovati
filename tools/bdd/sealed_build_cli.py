@@ -13,6 +13,7 @@ from typing import Callable
 from sandbox_build_probe import BuildProbe
 from sealed_build_chain import run_sealed_build
 from sealed_execution import SealedRequest, require_request
+from sealed_report_check import check_sealed_report, committed_inventory, require_scenario_source, selected_row
 from verify_snapshot import git_revision, read_snapshot_metadata, verify_checkout
 
 
@@ -30,6 +31,7 @@ def parse_arguments(arguments: list[str] | None = None) -> argparse.Namespace:
         parser.add_argument(f"--{name}", required=True, type=Path)
     for name in ("revision", "area", "feature", "scenario"):
         parser.add_argument(f"--{name}", required=True)
+    parser.add_argument("--capture", help="one PNG filename when a scenario produced multiple captures")
     parser.add_argument("--registry-archives", type=Path)
     parser.add_argument("--git-repo", nargs=2, action="append", metavar=("SOURCE", "REPOSITORY"))
     args = parser.parse_args(arguments)
@@ -53,16 +55,21 @@ def main(
     arguments: list[str] | None = None,
     invoke: Callable[..., dict[str, object]] = run_sealed_build,
     verify: Callable[[Path], str] = pinned_scenario_revision,
+    inventory_reader: Callable[[Path, str], dict[str, object]] = committed_inventory,
+    report_checker: Callable[..., dict[str, object]] = check_sealed_report,
 ) -> None:
     """Run the linked diagnostic; example: main(['--help'])."""
     args = parse_arguments(arguments)
     probe, request = requests(args)
     require_request(request)
-    verify(request.checkout)
+    source_revision = verify(request.checkout)
+    row = selected_row(inventory_reader(args.repository, args.revision), request, source_revision)
+    require_scenario_source(request.checkout, row)
     repositories = None if not args.git_repo else {source: Path(path) for source, path in args.git_repo}
     result = invoke(probe, request, args.repository, args.revision, verify, archives=args.registry_archives, git_repositories=repositories)
     if result.get("reusable") is not False:
         raise ValueError(f"chain reusable {result.get('reusable')!r}: expected false")
+    result["report_check"] = report_checker(request, row, source_revision, args.capture)
     print(json.dumps(result, sort_keys=True))
 
 

@@ -142,6 +142,7 @@ class EvidenceTests(unittest.TestCase):
             fixture.receipt()
             receipt = json.loads((fixture.root / "receipt.json").read_text())
             receipt["build_provenance"] = {"verified": True}
+            receipt["report_check"] = {"content_checked": True, "reusable": True}
             artifact = fixture.store("receipt.json", receipt)
             with self.assertRaisesRegex(StaleEvidence, "build provenance is unproven"):
                 verify_receipt(fixture.root, artifact, fixture.row, "source", "app")

@@ -94,8 +94,12 @@ python3 -B tools/bdd/sealed_build_cli.py \
 Add `--registry-archives /absolute/cache` to check registry packages and one
 `--git-repo SOURCE /absolute/repository` for each locked Git source to run the
 partial Git vendor checks. Omitting them leaves those checks unperformed. The
-scenario string is a filter; inspect the output report for the executed cases.
-The CLI writes an observation only. It does not publish or verify a receipt.
+scenario must exactly match one row in the tested commit's pinned inventory. The
+CLI checks the selected source hash, exact Cucumber steps, cleanup, JUnit, and
+captures using the receipt checks. Use `--capture NAME.png` when a single
+scenario emits more than one PNG. Outline cases require one capture per example.
+The CLI writes a diagnostic observation only; it does not publish or authorize a
+receipt. The builder and reports remain unauthenticated and `reusable` stays false.
 
 ## Native build provenance
 
