@@ -360,3 +360,73 @@ mod centerlines;
 
 #[path = "package_sketches/line_constraints.rs"]
 mod line_constraints;
+
+#[test]
+fn unsupported_go_3d_sketches_cannot_be_silently_omitted() {
+    for section in [
+        "[{id: 7, entities: [{kind: spline, handles: [{id: 9, endId: 10}]}]}]",
+        "{}",
+        "false",
+    ] {
+        let source =
+            format!("schemaVersion: 2\ndocumentType: 1\nmodel:\n  sketches3D: {section}\n");
+        let package = DocumentPackage::decode(source.as_bytes()).unwrap();
+        let original = package.encode().unwrap();
+        assert!(
+            package
+                .restore_sketches()
+                .unwrap_err()
+                .to_string()
+                .contains("sketches3D")
+        );
+        assert!(package.with_sketches(&sketches(), 3, 7).is_err());
+        assert_eq!(package.encode().unwrap(), original);
+    }
+    for section in ["[]", "null"] {
+        let source =
+            format!("schemaVersion: 2\ndocumentType: 1\nmodel:\n  sketches3D: {section}\n");
+        let package = DocumentPackage::decode(source.as_bytes()).unwrap();
+        assert!(
+            package
+                .restore_sketches()
+                .unwrap()
+                .sketches
+                .sketches()
+                .is_empty()
+        );
+    }
+}
+
+#[test]
+fn merged_go_sketch_sections_cannot_bypass_the_import_guard() {
+    for model in [
+        "{<<: {sketches3D: [{id: 7}]}}",
+        "{<<: {sketches: [{id: 1}]}}",
+        "{<<: {<<: {sketches3D: [{id: 7}]}}}",
+        "{<<: [{sketches3D: [{id: 7}]}, {sketches3D: []}]}",
+        "{<<: 42}",
+    ] {
+        let source = format!("schemaVersion: 2\ndocumentType: 1\nmodel: {model}\n");
+        let package = DocumentPackage::decode(source.as_bytes()).unwrap();
+        assert!(package.restore_sketches().is_err(), "{model}");
+        assert!(package.with_sketches(&sketches(), 3, 7).is_err(), "{model}");
+    }
+    let native = b"schemaVersion: 3\ndocumentType: 1\nmodel: {<<: {planarSketches: {recipe: {version: 1, sketches: []}, sketchHighWater: 0, entityHighWater: 0}}}\n";
+    let package = DocumentPackage::decode(native).unwrap();
+    assert!(
+        package
+            .restore_sketches()
+            .unwrap_err()
+            .to_string()
+            .contains("model.<<")
+    );
+    let source = b"schemaVersion: 2\ndocumentType: 1\nmodel:\n  <<: &defaults {sketches3D: [{id: 7}]}\n  sketches3D: []\n";
+    let package = DocumentPackage::decode(source).unwrap();
+    assert!(
+        package
+            .restore_sketches()
+            .unwrap_err()
+            .to_string()
+            .contains("model.<<")
+    );
+}
