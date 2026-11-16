@@ -25,6 +25,12 @@ pub(super) fn advance_gui(
 ) -> Result<HeadGuiUpdate, String> {
     let metadata_changed = window.gui_parameters_open() && publish_parameter_view(window, owner)?;
     let mut commands = owner.gui_command_state()?;
+    if let Some(cue) = commands.sketch_pick_cue.as_mut() {
+        match window.sketch_pixel(cue.plane, cue.position) {
+            Ok(pixel) => cue.pixel = pixel,
+            Err(_) => commands.sketch_pick_cue = None,
+        }
+    }
     commands.dimension_labels = dimension_labels::projected_dimension_labels(window, owner)?;
     commands.origin_planes = dimension_labels::origin_plane_outlines(window, &commands);
     commands.feature_edges = dimension_labels::projected_browser_outline(window, owner);

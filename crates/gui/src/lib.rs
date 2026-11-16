@@ -104,6 +104,8 @@ pub use commands::{
     GuiProjectGroup, GuiSelectionMode, GuiShellAction, GuiSketchLineStyle,
 };
 pub use engine::{GuiFrameEngine, GuiFrameOutput, GuiFrameRequest};
+pub use sketch_pick_cue::GuiSketchPickCue;
+mod sketch_pick_cue;
 pub use input::{GuiInputCapture, GuiInputEvent, GuiKey, GuiModifiers, GuiPointerButton};
 pub use oblikovati_viewport::{
     GuiAtlas, GuiBatch, GuiFrame, GuiTextureKey, GuiTextureResources, GuiTextureSource, GuiVertex,

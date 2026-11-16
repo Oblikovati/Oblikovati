@@ -82,6 +82,9 @@ impl<
         event: ViewportEvent,
         window: &dyn HeadWindow,
     ) -> bool {
+        if self.sketch_tool.is_some() || window.navigation_active() {
+            self.sketch_pick_cue = None;
+        }
         // #3816: one press belongs to one tool, including the press that completes it.
         match self.sketch_tool.take() {
             Some(SketchToolState::Block(tool)) => self.process_block_placement(tool, event, window),
@@ -102,7 +105,10 @@ impl<
                 .and_then(|()| self.sketch_ready_key(event))
             {
                 Ok(true) => true,
-                Ok(false) => self.process_sketch_pick(event, window),
+                Ok(false) => {
+                    let changed = self.process_sketch_pick(event, window);
+                    self.update_sketch_pick_cue(event, changed, window) || changed
+                }
                 Err(cause) => {
                     self.command_notice = Some(DesktopCommandNotice::AuthoringFailed { cause });
                     true

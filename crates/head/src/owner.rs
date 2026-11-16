@@ -83,6 +83,8 @@ mod sketch_interaction;
 pub(crate) mod sketch_move;
 #[path = "owner_sketch_pattern.rs"]
 mod sketch_pattern;
+#[path = "owner_sketch_pick_cue.rs"]
+mod sketch_pick_cue;
 #[path = "owner_sketch_picking.rs"]
 mod sketch_picking;
 #[path = "owner_sketch_relation_context.rs"]
@@ -180,6 +182,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     dimension_serial: u64,
     sketch_formats: oblikovati_api::types::SketchFormatModes,
     sketch_memory: owner_precise_input::SketchCommandMemory,
+    sketch_pick_cue: Option<sketch_pick_cue::SketchPickCue>,
     block_selection: Option<crate::HeadSketchEdit>,
     block_created: Option<String>,
     opened_hidden_sketch: Option<oblikovati_model::document_sketch::DocumentSketchId>,
@@ -268,6 +271,7 @@ impl<
             sketch_construction: Default::default(),
             sketch_formats: Default::default(),
             sketch_memory: Default::default(),
+            sketch_pick_cue: None,
             block_selection: None,
             block_created: None,
             opened_hidden_sketch: None,

@@ -143,6 +143,8 @@
 
 ### Added
 
+- Show the picked sketch entity type and sketch name near the pointer. (#4042)
+
 - Added Move and Measure pointer feedback for sketch curves, points, and midpoints. (#4034)
 
 - Added transient candidate feedback for sketch constraint and dimension tools. (#4034)
