@@ -59,3 +59,23 @@ pub trait SketchPreferenceAccess {
     /// Example: `preferences.set_sketch_options(updated)?`.
     fn set_sketch_options(&mut self, options: SketchApplicationOptions) -> Result<(), String>;
 }
+
+/// Part defaults shared by desktop and automation, independent of document history.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PartApplicationOptions {
+    pub look_at_sketch_plane: bool,
+}
+impl Default for PartApplicationOptions {
+    fn default() -> Self {
+        Self {
+            look_at_sketch_plane: true,
+        }
+    }
+}
+/// Access the application-owned Part settings.
+pub trait PartPreferenceAccess {
+    /// Read accepted Part settings; example: `preferences.part_options()`.
+    fn part_options(&self) -> PartApplicationOptions;
+    /// Persist before publication; example: `preferences.set_part_options(options)?`.
+    fn set_part_options(&mut self, options: PartApplicationOptions) -> Result<(), String>;
+}
