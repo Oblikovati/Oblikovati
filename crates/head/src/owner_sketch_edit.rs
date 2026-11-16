@@ -306,6 +306,10 @@ impl<
             document,
             sketch,
             plane,
+            look_at_plane: self
+                .part_store
+                .as_ref()
+                .is_none_or(|store| store.part_options().look_at_sketch_plane),
         })
     }
     pub(super) fn require_edit_document(&self, document: u64) -> Result<(), String> {

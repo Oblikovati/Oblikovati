@@ -205,6 +205,15 @@ impl<
         self.sketch_store = Some(store);
         self
     }
+
+    /// Attach accepted Part settings; example: `owner.with_part_preferences(Box::new(file))`.
+    pub fn with_part_preferences(
+        mut self,
+        store: Box<dyn oblikovati_model::application_options::PartPreferenceAccess>,
+    ) -> Self {
+        self.part_store = Some(store);
+        self
+    }
     /// Persist first, so a failed write leaves the options in effect unchanged.
     pub(crate) fn change_sketch_options(
         &mut self,

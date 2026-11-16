@@ -8,6 +8,14 @@ mod preferences;
 use oblikovati_viewport::{
     Viewport, ViewportEvent, ViewportPresentation, ViewportRuntime, ViewportScene, ViewportWake,
 };
+type SketchCameraState = (
+    crate::HeadSketchEdit,
+    Option<oblikovati_viewport::ViewportCamera>,
+);
+type SavedWindowView = (
+    oblikovati_viewport::ViewportCamera,
+    Option<SketchCameraState>,
+);
 pub struct NativeHeadWindow {
     capture_files: Box<dyn crate::WindowCaptureFiles>,
     capture_requests: Vec<crate::WindowCaptureJob>,
@@ -23,18 +31,12 @@ pub struct NativeHeadWindow {
     sketch_scene: Option<crate::HeadSketchSceneUpdate>,
     datum_declines: Vec<(oblikovati_model::feature::FeatureId, String)>,
     navigation: crate::navigation::DesktopNavigation,
-    sketch_view: Option<(crate::HeadSketchEdit, oblikovati_viewport::ViewportCamera)>,
+    sketch_view: Option<SketchCameraState>,
     /// The window of a document in front; each keeps its own view while another is shown.
     /// What the title bar names: the active document, with its window number when it has one.
     document_title: Option<String>,
     view_slot: u64,
-    saved_views: std::collections::BTreeMap<
-        u64,
-        (
-            oblikovati_viewport::ViewportCamera,
-            Option<(crate::HeadSketchEdit, oblikovati_viewport::ViewportCamera)>,
-        ),
-    >,
+    saved_views: std::collections::BTreeMap<u64, SavedWindowView>,
     command_notice: Option<crate::DesktopCommandNotice>,
     gui: Option<gui_loop::NativeGui>,
     injected_events: std::collections::VecDeque<ViewportEvent>,

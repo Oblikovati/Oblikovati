@@ -15,6 +15,7 @@ fn unsupported_window_declines_edit_framing_without_mutation() {
         document: 1,
         sketch: oblikovati_model::document_sketch::DocumentSketchId(2),
         plane: oblikovati_model::sketch::SketchPlane::xy(),
+        look_at_plane: true,
     };
     assert!(
         window

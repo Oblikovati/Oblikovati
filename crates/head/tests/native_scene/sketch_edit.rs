@@ -67,6 +67,7 @@ fn native_sketch_camera_update_and_failed_entry_preserve_return_view() {
         document: 1,
         sketch: fixture::SKETCH,
         plane: SketchPlane::xy(),
+        look_at_plane: true,
     };
     assert!(window.set_sketch_edit(Some(edit)).unwrap());
     edit.plane =
@@ -139,6 +140,86 @@ fn native_unframeable_sketch_declines_edit_and_keeps_created_document() {
             .get(sketch)
             .is_ok()
     );
+    owner.finish().unwrap();
+    window.finish().unwrap();
+}
+
+#[test]
+fn disabled_sketch_framing_preserves_view_through_entry_navigation_and_finish() {
+    let mut window = NativeHeadWindow::open().unwrap();
+    let original = window.view.camera_state().unwrap().isometric();
+    window.view.set_camera(original).unwrap();
+    let edit = crate::HeadSketchEdit {
+        document: 1,
+        sketch: fixture::SKETCH,
+        plane: SketchPlane::xy(),
+        look_at_plane: false,
+    };
+    assert!(!window.set_sketch_edit(Some(edit)).unwrap());
+    assert_eq!(window.view.camera_state().unwrap(), original);
+    window
+        .view
+        .navigate(ViewportNavigation::Pan([20, 10]))
+        .unwrap();
+    let navigated = window.view.camera_state().unwrap();
+    assert!(!window.set_sketch_edit(Some(edit)).unwrap());
+    assert!(!window.set_sketch_edit(None).unwrap());
+    assert_eq!(window.view.camera_state().unwrap(), navigated);
+    let framed = crate::HeadSketchEdit {
+        look_at_plane: true,
+        ..edit
+    };
+    assert!(window.set_sketch_edit(Some(framed)).unwrap());
+    assert_ne!(window.view.camera_state().unwrap(), navigated);
+    assert!(window.set_sketch_edit(None).unwrap());
+    assert_eq!(window.view.camera_state().unwrap(), navigated);
+    window.finish().unwrap();
+}
+
+struct FixedPartPreference(bool);
+impl oblikovati_model::application_options::PartPreferenceAccess for FixedPartPreference {
+    fn part_options(&self) -> oblikovati_model::application_options::PartApplicationOptions {
+        oblikovati_model::application_options::PartApplicationOptions {
+            look_at_sketch_plane: self.0,
+        }
+    }
+    fn set_part_options(
+        &mut self,
+        options: oblikovati_model::application_options::PartApplicationOptions,
+    ) -> Result<(), String> {
+        self.0 = options.look_at_sketch_plane;
+        Ok(())
+    }
+}
+#[test]
+fn accepted_part_setting_reaches_the_created_sketch_camera() {
+    let directory = tempfile::tempdir().unwrap();
+    let mut window = NativeHeadWindow::open().unwrap();
+    let mut owner = native_owner(window.wake.clone())
+        .unwrap()
+        .with_part_preferences(Box::new(FixedPartPreference(false)));
+    let document = open_native_part(&mut owner, &directory.path().join("no-face.opd"));
+    publish_native_scene(&mut owner, &mut window);
+    crate::frames::run_frames(&mut window, HeadOptions { frames: Some(1) }, &mut owner).unwrap();
+    let original = window.view.camera_state().unwrap().isometric();
+    window.view.set_camera(original).unwrap();
+    owner
+        .create_sketch_for_edit(
+            document,
+            &DocumentSketchCreation {
+                name: "Sketch".into(),
+                placement: SketchPlacement::Fixed(SketchPlane::xy()),
+                orientation: None,
+                project_origin: true,
+            },
+        )
+        .unwrap();
+    assert!(!owner.sketch_edit().unwrap().look_at_plane);
+    crate::frames::run_frames(&mut window, HeadOptions { frames: Some(1) }, &mut owner).unwrap();
+    assert_eq!(window.view.camera_state().unwrap(), original);
+    owner.finish_sketch_edit().unwrap();
+    crate::frames::run_frames(&mut window, HeadOptions { frames: Some(1) }, &mut owner).unwrap();
+    assert_eq!(window.view.camera_state().unwrap(), original);
     owner.finish().unwrap();
     window.finish().unwrap();
 }

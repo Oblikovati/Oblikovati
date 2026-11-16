@@ -115,6 +115,7 @@ fn seed_browser_sketch(owner: &mut NativeDesktopOwner) -> crate::HeadSketchEdit 
         document,
         sketch,
         plane: SketchPlane::xy(),
+        look_at_plane: true,
     }
 }
 #[test]
