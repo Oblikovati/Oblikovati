@@ -1,6 +1,6 @@
 # Rust port status
 
-Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
+Last checked: 2026-11-16 at application commit `c714736c7`. Refresh from current evidence at each checkpoint.
 
 ## Start here
 
@@ -15,7 +15,12 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
 - **R0 remains open.** The full gate, baseline fields and milestone exit audits
   are incomplete. Run `python3 -B tools/bdd/behavior_cli.py report` for current
   counts; source and application changes can make earlier receipts stale.
-- At the local source snapshot `e76cb749ed43c73a91c24854057da7c890041f51`, the ledger reports **0 verified**, 21 stale, 37 blocked and 39 excluded across 2,720 declarations. Earlier receipts remain historical. Native build provenance is not bounded (#3978); the gate also requires missing baseline fields.
+- At the local source snapshot `e76cb749ed43c73a91c24854057da7c890041f51`, the ledger reports **0 verified**, 21 stale, 38 blocked and 39 excluded across 2,720 declarations. Earlier receipts remain historical. Native build provenance is not bounded (#3978); the gate also requires missing baseline fields.
+- Startup sketches on XY, YZ and XZ are integrated (#4009). The full pinned
+  New Sketch diagnostic passed nine scenarios and found one unbound; its
+  evidence is in `receipts/2026-11-16-startup-sketch-4009/`. The zero-radius
+  circle OS-input check passed (#4012); see `receipts/2026-11-16-circle-os-4012/`.
+  These are diagnostics and supporting observations, not verified acceptance.
 - `rust-work` is local and has not passed the full pre-push gate. All 20 former
   application PR heads were merged locally and their PRs closed. Do not remove
   their remaining remote branches until the consolidated work is safely pushed.
@@ -71,9 +76,14 @@ Last checked: 2026-11-15. Refresh from current evidence at each checkpoint.
   also builds from a commit export with an isolated Cargo home and target; its
   toolchain and host inputs remain unbounded.
   See `receipts/2026-11-15-provenance-config-3978-diagnostic/`. Receipt reuse
-  is also open (#3974).
+  is also open (#3974). The experimental sandbox now inventories an explicit
+  system tree before and after the build; the tree is not authenticated or
+  immutable, so the probe still cannot authorize a receipt.
 - Sketch extrusion lacks a certified solve precision bound (#3928). Analytic
-  edge picking is blocked by [Martensite #462](https://github.com/Oblikovati/Martensite/issues/462).
+  edge picking is blocked by [Martensite #462](https://github.com/Oblikovati/Martensite/issues/462),
+  which is marked high priority. The unmerged curvature branch
+  `work/sketch-curvature-3995` is blocked by the high-priority conic extrema
+  issue [Martensite #406](https://github.com/Oblikovati/Martensite/issues/406).
 - The full gate needs a released API contract (#3965). The Point feature passed
   8 of 9 native scenarios; point-10 is excluded until its recorded fixture is supplied (#3887).
 - Rectangle visibility now rejects obstructed observations (#3980). Focused
