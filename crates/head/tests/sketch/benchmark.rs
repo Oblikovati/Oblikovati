@@ -68,6 +68,9 @@ mod rectangle_three_point_center;
 #[path = "rectangle-two-point/steps.rs"]
 mod rectangle_two_point;
 
+#[path = "viewport-entity-interaction/steps.rs"]
+mod viewport_entity_interaction;
+
 /// Features the gate requires; each is one finished folder under `features/sketch`.
 const ACCEPTED_FEATURES: &[&str] = &[
     "arc-three-point",
