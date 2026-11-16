@@ -35,12 +35,12 @@ fn pin_unchecked(world: &mut ApplicationWorld) {
     assert!(!world.checked(PIN));
 }
 
-fn open_settings(world: &mut ApplicationWorld) {
+pub(super) fn open_settings(world: &mut ApplicationWorld) {
     let button = world.run_in_window(BAR, "...").center();
     world.click(diagnostics::pointer_pixels(button));
 }
 
-fn bar_position() -> [f32; 2] {
+pub(super) fn bar_position() -> [f32; 2] {
     diagnostics::window_geometry(BAR)
         .expect("expected precise input")
         .0

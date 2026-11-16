@@ -2,7 +2,7 @@
 //! The Precise Input toolbar: exact coordinates for the running command's next point.
 use crate::dockable_window::DockableWindow;
 use crate::{GuiCommandState, GuiShellAction};
-use imgui::{StyleColor, Ui, WindowFlags};
+use imgui::{StyleColor, Ui, WindowFlags, WindowHoveredFlags};
 
 /// How the two typed values name a point.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -108,6 +108,9 @@ pub(crate) struct PreciseInputBar {
     mode: GuiPreciseMode,
     relative: bool,
     pinned: bool,
+    auto_fade: bool,
+    popup_open: bool,
+    expanded_width: f32,
 }
 impl DockableWindow for PreciseInputBar {}
 impl PreciseInputBar {
@@ -141,6 +144,7 @@ impl PreciseInputBar {
         let Some(target) = state.precise_target.as_ref() else {
             self.first = PreciseField::default();
             self.second = PreciseField::default();
+            self.popup_open = false;
             return;
         };
         if !self.open {
@@ -149,26 +153,55 @@ impl PreciseInputBar {
         draw_triad(ui, target, self.relative);
         let [width, _] = ui.io().display_size;
         let mut open = self.open;
-        Self::dockable_window(ui, "Precise Input", &mut open)
+        let window = Self::dockable_window(ui, "Precise Input", &mut open)
             .position([width * 0.5, 200.], imgui::Condition::FirstUseEver)
-            .flags(self.window_flags())
-            .build(|| {
+            .flags(self.window_flags());
+        let window = if self.auto_fade && self.expanded_width > 0. {
+            window.size_constraints([self.expanded_width, 0.], [f32::MAX, f32::MAX])
+        } else {
+            window
+        };
+        window.build(|| {
+            if !self.auto_fade {
+                self.expanded_width = ui.window_size()[0];
+            }
+            let hovered = ui.is_window_hovered_with_flags(
+                WindowHoveredFlags::ALLOW_WHEN_BLOCKED_BY_ACTIVE_ITEM,
+            );
+            let expanded = self.show_full_controls(hovered);
+            self.popup_open = false;
+            if expanded {
                 self.reference_control(ui);
                 ui.same_line();
                 self.mode_control(ui);
                 ui.same_line();
-                self.fields(ui, target, actions);
-                triad_controls(ui, actions);
+            }
+            self.fields(ui, target, actions);
+            if expanded {
                 ui.same_line();
-                self.options(ui);
-                let second_unit = if self.mode == GuiPreciseMode::XAndY {
-                    &target.units[0]
-                } else {
-                    &target.units[1]
-                };
-                ui.text_disabled(format!("{} / {}", target.units[0], second_unit));
-            });
+                self.expanded_controls(ui, target, actions);
+            }
+        });
         self.open &= open;
+    }
+    fn show_full_controls(&self, hovered: bool) -> bool {
+        !self.auto_fade || hovered || self.popup_open || self.first.active || self.second.active
+    }
+    fn expanded_controls(
+        &mut self,
+        ui: &Ui,
+        target: &GuiPreciseTarget,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        triad_controls(ui, actions);
+        ui.same_line();
+        self.options(ui);
+        let second_unit = if self.mode == GuiPreciseMode::XAndY {
+            &target.units[0]
+        } else {
+            &target.units[1]
+        };
+        ui.text_disabled(format!("{} / {}", target.units[0], second_unit));
     }
     fn window_flags(&self) -> WindowFlags {
         let mut flags = WindowFlags::ALWAYS_AUTO_RESIZE
@@ -198,7 +231,6 @@ impl PreciseInputBar {
         let first = coordinate_field(ui, first_label, &mut self.first);
         ui.same_line();
         let second = coordinate_field(ui, second_label, &mut self.second);
-        ui.same_line();
         if (first || second) && valid_number(&self.first.text) && valid_number(&self.second.text) {
             actions.push(GuiShellAction::PrecisePoint(GuiPrecisePoint {
                 first: std::mem::take(&mut self.first.text),
@@ -217,6 +249,7 @@ impl PreciseInputBar {
         let Some(_list) = ui.begin_popup(REFERENCE) else {
             return;
         };
+        self.popup_open = true;
         if ui
             .menu_item_config("Relative")
             .selected(self.relative)
@@ -247,6 +280,7 @@ impl PreciseInputBar {
         let Some(_list) = ui.begin_popup(MODES) else {
             return;
         };
+        self.popup_open = true;
         for mode in GuiPreciseMode::ALL {
             if ui
                 .menu_item_config(mode.label())
@@ -266,6 +300,7 @@ impl PreciseInputBar {
         let Some(_menu) = ui.begin_popup(OPTIONS) else {
             return;
         };
+        self.popup_open = true;
         if ui
             .menu_item_config("Pin Mini-Toolbar Position")
             .selected(self.pinned)
@@ -273,8 +308,13 @@ impl PreciseInputBar {
         {
             self.pinned = !self.pinned;
         }
-        // Keep Auto Fade visible, but unavailable until it has behavior.
-        ui.menu_item_config("Auto Fade").enabled(false).build();
+        if ui
+            .menu_item_config("Auto Fade")
+            .selected(self.auto_fade)
+            .build()
+        {
+            self.auto_fade = !self.auto_fade;
+        }
         if ui.menu_item("Close") {
             self.open = false;
         }
@@ -365,6 +405,26 @@ mod tests {
         };
         assert_eq!(target.displayed_triad(true), Some(reference));
         assert_eq!(target.displayed_triad(false), Some(origin));
+    }
+    #[test]
+    fn auto_fade_keeps_active_editing_and_open_menus_expanded() {
+        let mut bar = PreciseInputBar {
+            auto_fade: true,
+            ..Default::default()
+        };
+        assert!(!bar.show_full_controls(false));
+        assert!(bar.show_full_controls(true));
+        bar.first.active = true;
+        assert!(bar.show_full_controls(false));
+        bar.first.active = false;
+        bar.second.active = true;
+        assert!(bar.show_full_controls(false));
+        bar.second.active = false;
+        bar.popup_open = true;
+        assert!(bar.show_full_controls(false));
+        bar.popup_open = false;
+        bar.auto_fade = false;
+        assert!(bar.show_full_controls(false));
     }
     #[test]
     fn pin_locks_only_the_toolbar_position() {

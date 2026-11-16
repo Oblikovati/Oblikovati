@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Move: tmp/obk-auto-fade-source/features/sketch/move/scenario.feature" package="testsuite/Feature: Move: tmp/obk-auto-fade-source/features/sketch/move/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-16T04:45:10.328096699Z" time="29.689041337"><testcase name="Scenario: move-22 Auto Fade reduces toolbar and hover restores it: tmp/obk-auto-fade-source/features/sketch/move/scenario.feature:197:3" time="29.689041337"><system-out><![CDATA[  Scenario: move-22 Auto Fade reduces toolbar and hover restores it
+   ✔  Given an editable sketch with eligible geometry
+   ✔  Given the mini-toolbar is visible with Pin checked and Auto Fade unchecked
+   ✔  When Auto Fade is enabled and the pointer remains away
+   ✔  Then the mode selector and lower toolbar row disappear while numeric fields remain
+   ✔  When the pointer hovers over the Y input
+   ✔  Then the full toolbar reappears
+   ✔  And reopened Settings shows Auto Fade checked
+   ✔  When Auto Fade is disabled and Settings is reopened
+   ✔  Then Auto Fade is unchecked
+]]></system-out></testcase></testsuite></testsuites>
