@@ -1,0 +1,54 @@
+diff --git a/crates/head/tests/sketch/move/cancel.rs b/crates/head/tests/sketch/move/cancel.rs
+index 5e8e07057..b40d122d3 100644
+--- a/crates/head/tests/sketch/move/cancel.rs
++++ b/crates/head/tests/sketch/move/cancel.rs
+@@ -101,3 +101,49 @@ fn request_base_point(world: &mut ApplicationWorld) {
+ fn cancel_before_base(world: &mut ApplicationWorld) {
+     world.escape();
+ }
++
++#[given("the ellipse is selected with optimization on and Copy and Precise Input off")]
++fn selected_without_copy_or_precise(world: &mut ApplicationWorld) {
++    world.remember_edited_sketch(vec![move_precise::EDGE]);
++    move_precise::open_move(world);
++    assert!(!world.state().sketch_move.unwrap().copy);
++    if !world.state().sketch_move.unwrap().optimize_single {
++        toggle_single_selection(world);
++    }
++    world.sketch_click(move_precise::EDGE);
++    assert_eq!(
++        world.state().sketch_move.unwrap().stage,
++        GuiSketchMoveStage::Base
++    );
++    assert!(diagnostics::window_geometry("Precise Input").is_none());
++}
++
++#[when("the user chooses a canvas location as base point")]
++fn select_zero_move_base(world: &mut ApplicationWorld) {
++    world.sketch_click(move_precise::CENTER);
++    assert_eq!(
++        world.state().sketch_move.unwrap().stage,
++        GuiSketchMoveStage::Target
++    );
++}
++
++#[when("the user chooses the same location again as endpoint")]
++fn select_same_move_endpoint(world: &mut ApplicationWorld) {
++    world.sketch_click(move_precise::CENTER);
++}
++
++#[then("Move reports that the selected geometry could not be moved")]
++fn expect_move_failure_dialog(world: &mut ApplicationWorld) {
++    world
++        .expect_status("Command failed: move vector [0, 0]: expected distinct base and end points");
++    assert_eq!(
++        world.state().sketch_move.unwrap().stage,
++        GuiSketchMoveStage::Target
++    );
++    assert!(crate::HeadSketchWork::sketch_preview(&world.app().owner).is_none());
++}
++
++#[then("the message refers to Constraint Settings for Sketch Edit Tools")]
++fn expect_constraint_policy_message(world: &mut ApplicationWorld) {
++    world.expect_text("Constraint Settings for Sketch Edit Tools");
++}
