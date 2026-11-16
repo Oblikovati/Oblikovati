@@ -423,6 +423,9 @@ fn next_generation(current: u64) -> Result<u64, String> {
         .ok_or_else(|| format!("viewport generation {current}: expected an incrementable u64"))
 }
 
+#[cfg(all(test, target_os = "linux"))]
+#[path = "../tests/render_capture_timing.rs"]
+mod render_capture_timing;
 #[cfg(test)]
 #[path = "../tests/recorded.rs"]
 mod tests;
