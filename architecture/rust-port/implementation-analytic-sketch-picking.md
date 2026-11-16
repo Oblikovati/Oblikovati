@@ -35,6 +35,15 @@ in point-first order. Select Other carries each entity identity to the owner and
 refuses choices from an old menu, sketch, document, or generation (#4041).
 This is not a claim that a native overlap scenario has passed.
 
+## Projection reuse
+
+The viewport retains up to two bounded batches of successful sketch-point
+projections (#4035). A hit requires the same plane recipe, point bits, camera
+generation and surface generation. Drawable extent is checked before and after
+each batch, including a hit. Camera operations clear the cache before they
+can mutate or fail. This changes neither analytic candidates nor selection
+order; it does not use tessellation for picking.
+
 ## Ready-state pointer feedback
 
 In an editable sketch, pointer motion resolves the same analytic candidates as

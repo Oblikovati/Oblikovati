@@ -8,8 +8,13 @@ use crate::{
 };
 use martensite_tkernel::standard::Handle;
 use martensite_vulkan::Graphic3dRenderDriver;
-use std::{cell::Cell, collections::VecDeque, rc::Rc};
+use std::{
+    cell::{Cell, RefCell},
+    collections::VecDeque,
+    rc::Rc,
+};
 mod fit;
+mod projection_cache;
 #[path = "view_history.rs"]
 mod view_history;
 struct RuntimeState {
@@ -76,6 +81,7 @@ impl ViewportRuntime {
             overlay: 0,
             gui_surface: None,
             view_history: VecDeque::new(),
+            projection_cache: RefCell::new(projection_cache::ProjectionCache::default()),
         })
     }
     /// Name the selected device; example: `runtime.device_name()` for diagnostics.
@@ -109,6 +115,7 @@ pub struct Viewport {
     overlay: u64,
     gui_surface: Option<u64>,
     view_history: VecDeque<crate::renderer::SavedViewCamera>,
+    projection_cache: RefCell<projection_cache::ProjectionCache>,
 }
 impl Viewport {
     /// Read this runtime's view identity; example: `viewport.id()` tags captures.
@@ -155,6 +162,7 @@ impl Viewport {
         self.refresh_extent()?;
         let next = next_generation(self.camera)?;
         let extent = self.extent;
+        self.projection_cache.get_mut().clear();
         self.render
             .as_mut()
             .expect("live view")
@@ -196,6 +204,7 @@ impl Viewport {
     fn resized(&mut self, extent: [u32; 2]) -> Result<(), String> {
         let camera = next_generation(self.camera)?;
         let surface = next_generation(self.surface)?;
+        self.projection_cache.get_mut().clear();
         self.live()?.resized(extent);
         self.camera = camera;
         self.surface = surface;
@@ -397,6 +406,7 @@ impl Viewport {
     }
     /// Retire kernel views before releasing the native window; example: `viewport.close()` is idempotent.
     pub fn close(&mut self) {
+        self.projection_cache.get_mut().clear();
         self.completed = None;
         self.render.take();
         self.target.take();

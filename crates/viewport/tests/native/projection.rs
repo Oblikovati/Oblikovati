@@ -61,6 +61,7 @@ fn verify_mapping(view: &mut Viewport) {
         .map(|point| view.sketch_pixel(plane, *point).unwrap())
         .collect();
     assert_eq!(view.sketch_pixels(plane, &points).unwrap(), expected);
+    assert_eq!(view.sketch_pixels(plane, &points).unwrap(), expected);
     assert!(view.sketch_pixels(plane, &[]).unwrap().is_empty());
     let outcomes = view
         .sketch_pixel_results(plane, &[[1., -2.], [f64::NAN, 0.], [-3., 4.]])
