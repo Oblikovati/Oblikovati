@@ -14,6 +14,7 @@ pub enum EvaluationPhase {
     Placement,
     Profile,
     Prism,
+    Fillet,
     Validation,
     History,
     Copy,

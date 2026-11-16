@@ -6,7 +6,7 @@ use martensite_tktopalgo::int_curves_face::IntCurvesFaceShapeIntersector;
 use std::{marker::PhantomData, rc::Rc};
 /// How near a face's boundary a line of sight still lands on the face.
 const PICK_TOLERANCE: f64 = 1e-7; // tol:pick
-fn sight_line([x, y, z]: [f64; 3], [dx, dy, dz]: [f64; 3]) -> Result<Line3, String> {
+pub(super) fn sight_line([x, y, z]: [f64; 3], [dx, dy, dz]: [f64; 3]) -> Result<Line3, String> {
     let direction = Direction3::new(dx, dy, dz).map_err(|cause| {
         format!(
             "line direction {:?}: expected a nonzero vector: {cause}",
@@ -240,16 +240,8 @@ impl PrismProbeSnapshot {
         let line = sight_line(point, direction)?;
         let mut nearest: Option<(PrismFaceRole, f64)> = None;
         for (role, face) in &self.faces {
-            let mut intersector = IntCurvesFaceShapeIntersector::new();
-            let reach = (|| -> Result<Option<f64>, martensite_tkernel::standard::Failure> {
-                intersector.load(face, PICK_TOLERANCE)?;
-                intersector.perform_nearest(&line, 0., f64::MAX / 2.)?;
-                if intersector.nb_pnt() == 0 {
-                    return Ok(None);
-                }
-                intersector.w_parameter(1).map(Some)
-            })()
-            .map_err(|cause| format!("face on line {point:?} {direction:?}: {cause}"))?;
+            let reach = nearest_face_distance(face, &line)
+                .map_err(|cause| format!("face on line {point:?} {direction:?}: {cause}"))?;
             if let Some(reach) = reach
                 && nearest.is_none_or(|(_, best)| reach < best)
             {
@@ -261,6 +253,19 @@ impl PrismProbeSnapshot {
     pub fn presentation(&self, options: PrismMeshOptions) -> Result<PrismPresentation, String> {
         mesh::derive_presentation(self, options)
     }
+}
+
+pub(super) fn nearest_face_distance(
+    face: &Shape,
+    line: &Line3,
+) -> Result<Option<f64>, martensite_tkernel::standard::Failure> {
+    let mut intersector = IntCurvesFaceShapeIntersector::new();
+    intersector.load(face, PICK_TOLERANCE)?;
+    intersector.perform_nearest(line, 0., f64::MAX / 2.)?;
+    if intersector.nb_pnt() == 0 {
+        return Ok(None);
+    }
+    intersector.w_parameter(1).map(Some)
 }
 impl PrismProbeSnapshot {
     /// Integrate this retained diagnostic solid; example: `snapshot.physical_properties()?` uses no display mesh.

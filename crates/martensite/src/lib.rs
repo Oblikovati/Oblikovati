@@ -94,17 +94,19 @@ pub use evaluation_failure::{
 };
 mod prism;
 pub use prism::{
-    CertifiedNamedPrismEvaluator, CertifiedPrismEvidence, CertifiedPrismSnapshot,
-    DrawingBaseProjection, DrawingProjectedCurve, DrawingProjection, DrawingProjectionCurveKind,
-    DrawingProjectionFrame, FaceProbe, NamedPrismEvaluator, NamedPrismSnapshot, PlanarProfileLoop,
-    PrismAchievedTolerance, PrismFaceMesh, PrismFaceProbe, PrismFaceRole, PrismFaceTopology,
-    PrismHistoryRelation, PrismHistorySource, PrismMeshOptions, PrismPresentation,
-    PrismPresentationSource, PrismProbeDefinition, PrismProbeLoop, PrismProbeReport,
-    PrismProbeSnapshot, PrismResolution, PrismResolutionPolicy, PrismSubentityHistory,
-    PrismSubentityProvenance, PrismSubentityRole, PrismSurfaceKind, PrismTopologySummary,
-    TopologySummary, drawing_base_view_bodies, drawing_projection_bodies, named_part_properties,
-    probe_planar_prism, retain_certified_named_sketch_prism, retain_certified_profile_prism,
-    retain_named_sketch_prism, retain_planar_prism, retain_prism_on_plane,
+    BodyPresentationSource, CertifiedNamedPrismEvaluator, CertifiedNamedSolidEvaluator,
+    CertifiedPrismEvidence, CertifiedPrismSnapshot, DrawingBaseProjection, DrawingProjectedCurve,
+    DrawingProjection, DrawingProjectionCurveKind, DrawingProjectionFrame, FaceProbe,
+    FilletCandidate, FilletHistoryRecord, FilletNamedTopology, NamedEdgeHit, NamedPrismEvaluator,
+    NamedPrismSnapshot, NamedSolid, PlanarProfileLoop, PrismAchievedTolerance, PrismFaceMesh,
+    PrismFaceProbe, PrismFaceRole, PrismFaceTopology, PrismHistoryRelation, PrismHistorySource,
+    PrismMeshOptions, PrismPresentation, PrismPresentationSource, PrismProbeDefinition,
+    PrismProbeLoop, PrismProbeReport, PrismProbeSnapshot, PrismResolution, PrismResolutionPolicy,
+    PrismSubentityHistory, PrismSubentityProvenance, PrismSubentityRole, PrismSurfaceKind,
+    PrismTopologySummary, TopologySummary, drawing_base_view_bodies, drawing_projection_bodies,
+    named_part_properties, named_solid_part_properties, probe_planar_prism,
+    retain_certified_named_sketch_prism, retain_certified_profile_prism, retain_named_sketch_prism,
+    retain_planar_prism, retain_prism_on_plane,
 };
 mod revolve;
 pub use revolve::{

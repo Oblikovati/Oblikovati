@@ -42,6 +42,97 @@ fn fillet_face_history_covers_a_valid_box_result() {
     report_edge_history(&mut fillet, &edges, &shapes(&result, ShapeEnum::Edge));
 }
 
+#[test]
+fn fillet_result_edges_can_be_distinguished_by_named_face_neighbors() {
+    let original = BRepPrimAPIMakeBox::from_sizes(10., 10., 10.)
+        .unwrap()
+        .shape()
+        .unwrap()
+        .clone();
+    let input_edges = shapes(&original, ShapeEnum::Edge);
+    let input_faces = shapes(&original, ShapeEnum::Face);
+    let mut fillet = BRepFilletAPIMakeFillet::new(&original, FilletShape::Rational).unwrap();
+    fillet
+        .add_with_radius(2., &topods::edge(&input_edges[0]).unwrap())
+        .unwrap();
+    let result = fillet.shape().unwrap().clone();
+    let faces = shapes(&result, ShapeEnum::Face);
+    let parents = face_parent_indices(&mut fillet, &input_edges[0], &input_faces, &faces);
+    let output_edges = shapes(&result, ShapeEnum::Edge);
+    assert!(
+        output_edges
+            .iter()
+            .all(|edge| !edge.is_same(&input_edges[0]))
+    );
+    assert!(fillet.modified(&input_edges[0]).unwrap().is_empty());
+    assert_unique_edge_neighbors(&result, &faces, &parents);
+}
+
+fn face_parent_indices(
+    fillet: &mut BRepFilletAPIMakeFillet,
+    selected: &Shape,
+    input: &[Shape],
+    output: &[Shape],
+) -> Vec<usize> {
+    let generated = fillet
+        .generated(selected)
+        .unwrap()
+        .iter()
+        .cloned()
+        .collect::<Vec<_>>();
+    let mut histories = Vec::new();
+    for face in input {
+        let mut modified = fillet
+            .modified(face)
+            .unwrap()
+            .iter()
+            .cloned()
+            .collect::<Vec<_>>();
+        modified.push(face.clone());
+        histories.push(modified);
+    }
+    histories.push(generated);
+    output
+        .iter()
+        .map(|face| {
+            let parents = histories
+                .iter()
+                .enumerate()
+                .filter_map(|(id, history)| {
+                    history
+                        .iter()
+                        .any(|candidate| candidate.is_same(face))
+                        .then_some(id)
+                })
+                .collect::<Vec<_>>();
+            assert_eq!(parents.len(), 1, "result face: expected one history parent");
+            parents[0]
+        })
+        .collect()
+}
+
+fn assert_unique_edge_neighbors(result: &Shape, faces: &[Shape], parents: &[usize]) {
+    let mut names = std::collections::BTreeSet::new();
+    for edge in shapes(result, ShapeEnum::Edge) {
+        let mut neighbors = faces
+            .iter()
+            .zip(parents)
+            .filter_map(|(face, parent)| {
+                shapes(face, ShapeEnum::Edge)
+                    .iter()
+                    .any(|item| item.is_same(&edge))
+                    .then_some(*parent)
+            })
+            .collect::<Vec<_>>();
+        neighbors.sort_unstable();
+        assert_eq!(neighbors.len(), 2, "edge: expected two face neighbors");
+        assert!(
+            names.insert(neighbors.clone()),
+            "duplicate face neighbors {neighbors:?}"
+        );
+    }
+}
+
 fn verify_validity_and_volume(result: &Shape) {
     assert!(
         BRepCheckAnalyzer::new(result, true, false, true)

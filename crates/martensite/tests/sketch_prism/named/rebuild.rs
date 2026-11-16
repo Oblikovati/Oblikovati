@@ -55,13 +55,20 @@ fn hole_and_oblique_negative_sweep_names_ignore_traversal_order() {
     }
 }
 fn package(snapshot: &DocumentSnapshot) -> DocumentPackage {
+    let high_water = snapshot
+        .work_geometry
+        .features()
+        .iter()
+        .map(|feature| feature.id().0)
+        .max()
+        .unwrap_or(0);
     DocumentPackage::decode(b"schemaVersion: 3\ndocumentType: 1\n")
         .unwrap()
         .with_parameters(&snapshot.parameters, snapshot.parameters.units().clone())
         .unwrap()
         .with_sketches(&snapshot.sketches, 1, 104)
         .unwrap()
-        .with_work_geometry(&snapshot.work_geometry, 1)
+        .with_work_geometry(&snapshot.work_geometry, high_water)
         .unwrap()
 }
 fn restored_owner(snapshot: &DocumentSnapshot) -> DocumentEditHistory {
@@ -202,6 +209,10 @@ fn subentity_keys(history: &DocumentEditHistory) -> Vec<Vec<u8>> {
     }
     keys
 }
+
+#[path = "fillet_replay.rs"]
+mod fillet_replay;
+
 #[test]
 fn one_size_parameter_drives_certified_cube_replay_and_saved_names() {
     let mut history = owner(cube_document());

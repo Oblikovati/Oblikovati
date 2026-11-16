@@ -33,7 +33,7 @@ impl NamedPrismSnapshot {
     }
 }
 
-fn shape_bounds_center(shape: &Shape) -> Result<[f64; 3], String> {
+pub(super) fn shape_bounds_center(shape: &Shape) -> Result<[f64; 3], String> {
     let mut bounds = BoundingBox3::default();
     BRepBndLib::add_optimal(shape, &mut bounds, false, false)
         .map_err(|cause| format!("selection bounds: expected analytic B-rep bounds: {cause}"))?;

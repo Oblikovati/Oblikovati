@@ -36,15 +36,7 @@ impl NamedPrismSnapshot {
             .bind(history, document, key, 1)?
             .ok_or_else(|| "face reference: expected a face construction role".to_string())?;
         let lineage = unique_face(&self.snapshot, role)?;
-        let face = super::super::snapshot::unique_body_face(&self.snapshot.shape, lineage)?;
-        let native = topods::face(&face).map_err(|cause| cause.to_string())?;
-        let adaptor =
-            BRepAdaptorSurface::with_face(&native, false).map_err(|cause| cause.to_string())?;
-        if adaptor.get_type().map_err(|cause| cause.to_string())? != SurfaceType::Plane {
-            return Err(format!("face {role:?}: expected a planar surface"));
-        }
-        let plane = adaptor.plane().map_err(|cause| cause.to_string())?;
-        projected_plane(plane, face.orientation())
+        planar_shape_frame(&self.snapshot.shape, lineage)
     }
 
     /// Resolve a face key to its analytic range-box center and surface type.
@@ -60,17 +52,37 @@ impl NamedPrismSnapshot {
             .bind(history, document, key, 1)?
             .ok_or_else(|| "face reference: expected a face construction role".to_string())?;
         let face = unique_face(&self.snapshot, role)?;
-        let point = super::super::provenance::representative(face, &format!("face {role:?}"))
-            .map_err(|cause| cause.to_string())?;
-        let native = topods::face(face).map_err(|cause| cause.to_string())?;
-        let adaptor =
-            BRepAdaptorSurface::with_face(&native, false).map_err(|cause| cause.to_string())?;
-        let surface = adaptor.get_type().map_err(|cause| cause.to_string())?;
-        Ok(PrismFaceTopology {
-            point,
-            surface: surface_kind(surface)?,
-        })
+        face_topology_from_shape(face)
     }
+}
+pub(super) fn face_topology_from_shape(face: &Shape) -> Result<PrismFaceTopology, String> {
+    let point = super::super::provenance::representative(face, "named face")
+        .map_err(|cause| cause.to_string())?;
+    let native = topods::face(face).map_err(|cause| cause.to_string())?;
+    let adaptor =
+        BRepAdaptorSurface::with_face(&native, false).map_err(|cause| cause.to_string())?;
+    let surface = adaptor.get_type().map_err(|cause| cause.to_string())?;
+    Ok(PrismFaceTopology {
+        point,
+        surface: surface_kind(surface)?,
+    })
+}
+pub(super) fn planar_shape_frame(
+    body: &Shape,
+    lineage: &Shape,
+) -> Result<oblikovati_model::sketch::SketchPlane, String> {
+    let face = super::super::snapshot::unique_body_face(body, lineage)?;
+    let native = topods::face(&face).map_err(|cause| cause.to_string())?;
+    let adaptor =
+        BRepAdaptorSurface::with_face(&native, false).map_err(|cause| cause.to_string())?;
+    let surface = adaptor.get_type().map_err(|cause| cause.to_string())?;
+    if surface != SurfaceType::Plane {
+        return Err(format!(
+            "face surface {surface:?}: expected a planar surface"
+        ));
+    }
+    let plane = adaptor.plane().map_err(|cause| cause.to_string())?;
+    projected_plane(plane, face.orientation())
 }
 fn surface_kind(surface: SurfaceType) -> Result<PrismSurfaceKind, String> {
     Ok(match surface {

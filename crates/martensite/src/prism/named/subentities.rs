@@ -8,7 +8,7 @@ use oblikovati_model::identity::{ReferenceEnvelope, SemanticReferenceName};
 
 pub(super) struct BoundSubentity {
     provenance: PrismSubentityProvenance,
-    shape: Shape,
+    pub(super) shape: Shape,
 }
 impl NamedPrismSnapshot {
     /// Measure the current named edge using its analytic curve, in database centimeters.
@@ -105,7 +105,7 @@ impl NamedPrismSnapshot {
     }
 }
 
-fn analytic_edge_length(shape: &Shape) -> Result<f64, String> {
+pub(super) fn analytic_edge_length(shape: &Shape) -> Result<f64, String> {
     let edge = topods::edge(shape).map_err(|cause| cause.to_string())?;
     if !BRepTool::is_geometric_edge(&edge).map_err(|cause| cause.to_string())? {
         return Err("edge: expected an analytic curve for length measurement".into());

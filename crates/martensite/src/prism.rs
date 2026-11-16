@@ -10,11 +10,12 @@ pub use certified::{
 };
 mod named;
 pub use named::{
-    CertifiedNamedPrismEvaluator, CertifiedPrismEvidence, DrawingBaseProjection,
-    DrawingProjectedCurve, DrawingProjection, DrawingProjectionCurveKind, DrawingProjectionFrame,
-    NamedPrismEvaluator, NamedPrismSnapshot, PrismFaceTopology, PrismSurfaceKind,
-    drawing_base_view_bodies, drawing_projection_bodies, named_part_properties,
-    retain_certified_named_sketch_prism, retain_named_sketch_prism,
+    CertifiedNamedPrismEvaluator, CertifiedNamedSolidEvaluator, CertifiedPrismEvidence,
+    DrawingBaseProjection, DrawingProjectedCurve, DrawingProjection, DrawingProjectionCurveKind,
+    DrawingProjectionFrame, FilletCandidate, FilletHistoryRecord, FilletNamedTopology,
+    NamedEdgeHit, NamedPrismEvaluator, NamedPrismSnapshot, NamedSolid, PrismFaceTopology,
+    PrismSurfaceKind, drawing_base_view_bodies, drawing_projection_bodies, named_part_properties,
+    named_solid_part_properties, retain_certified_named_sketch_prism, retain_named_sketch_prism,
 };
 mod mesh;
 pub(crate) mod placement;
@@ -90,6 +91,22 @@ fn completed_prism(
 pub trait PrismPresentationSource {
     /// Discretize retained geometry for display; example: `body.presentation(options)?`.
     fn presentation(&self, options: PrismMeshOptions) -> Result<PrismPresentation, String>;
+}
+
+/// Display-only triangles for a current solid body.
+pub trait BodyPresentationSource {
+    /// Tessellate the body for display; example: `body.body_triangles(options)?`.
+    fn body_triangles(&self, options: PrismMeshOptions) -> Result<Vec<[[f64; 3]; 3]>, String>;
+}
+impl<T: PrismPresentationSource> BodyPresentationSource for T {
+    fn body_triangles(&self, options: PrismMeshOptions) -> Result<Vec<[[f64; 3]; 3]>, String> {
+        Ok(self
+            .presentation(options)?
+            .faces
+            .into_iter()
+            .flat_map(|face| face.triangles)
+            .collect())
+    }
 }
 impl PrismPresentationSource for PrismProbeSnapshot {
     fn presentation(&self, options: PrismMeshOptions) -> Result<PrismPresentation, String> {
