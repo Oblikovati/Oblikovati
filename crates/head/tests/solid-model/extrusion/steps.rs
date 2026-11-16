@@ -4,6 +4,8 @@ use super::ApplicationWorld;
 use cucumber::{given, then, when};
 use oblikovati_viewport::ViewportPhysicalKey;
 mod acceptance;
+#[cfg(target_os = "linux")]
+mod viewport_interaction;
 
 #[given("a new Standard (mm) part with no sketch")]
 fn new_metric_part(world: &mut ApplicationWorld) {
@@ -39,6 +41,10 @@ fn first_sketch_is_open(world: &mut ApplicationWorld) {
 #[given("a rectangle was drawn in the sketch requested by Extrude")]
 fn rectangle_for_waiting_extrusion(world: &mut ApplicationWorld) {
     new_metric_part(world);
+    rectangle_in_waiting_extrusion(world);
+}
+
+fn rectangle_in_waiting_extrusion(world: &mut ApplicationWorld) {
     extrude_on_origin_plane(world);
     first_sketch_is_open(world);
     world.draw_rectangle();
