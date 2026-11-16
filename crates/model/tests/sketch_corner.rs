@@ -365,3 +365,97 @@ fn existing_coincidence_cannot_be_removed_while_a_blend_depends_on_it() {
         .unwrap();
     assert!(geometry.arc(blend.entity).is_err());
 }
+#[test]
+fn corner_dependency_map_follows_pattern_point_offsets_and_radius_links() {
+    use oblikovati_model::sketch::{
+        SketchPatternOffset, SketchPatternOffsetTerm, SketchPatternPointLink,
+        SketchPatternRadiusLink,
+    };
+    let mut history = fixture();
+    let token = history.begin("Fillet").unwrap();
+    let blend = history
+        .edit(&token, |snapshot, ids| {
+            snapshot.create_sketch_corner(
+                DocumentSketchId(1),
+                &input(true),
+                &FakeCornerConstruction,
+                0.,
+                ids,
+            )
+        })
+        .unwrap();
+    let mut geometry = history
+        .snapshot()
+        .sketches
+        .get(DocumentSketchId(1))
+        .unwrap()
+        .geometry()
+        .clone();
+    geometry.add_point(id(50), [-1., 0.]).unwrap();
+    geometry
+        .add_pattern_point_link(SketchPatternPointLink {
+            source: id(50),
+            member: id(2),
+            offset: [5., 0.],
+        })
+        .unwrap();
+    geometry
+        .set_pattern_offset(SketchPatternOffset {
+            member: id(2),
+            terms: vec![SketchPatternOffsetTerm {
+                parameter: 7,
+                coefficient: [1., 0.],
+            }],
+        })
+        .unwrap();
+    geometry.add_point(id(51), [20., 0.]).unwrap();
+    geometry.add_point(id(52), [21., 0.]).unwrap();
+    geometry
+        .add_pattern_point_link(SketchPatternPointLink {
+            source: id(51),
+            member: id(52),
+            offset: [1., 0.],
+        })
+        .unwrap();
+    geometry
+        .set_pattern_offset(SketchPatternOffset {
+            member: id(52),
+            terms: vec![SketchPatternOffsetTerm {
+                parameter: 8,
+                coefficient: [1., 0.],
+            }],
+        })
+        .unwrap();
+    geometry.add_circle(id(53), id(51), 2.).unwrap();
+    geometry.add_circle(id(54), id(2), 2.).unwrap();
+    geometry
+        .add_constraint(
+            SketchConstraintId(98),
+            PlanarConstraint::EqualRadius {
+                curves: [blend.entity, id(54)],
+            },
+        )
+        .unwrap();
+    geometry
+        .add_pattern_radius_link(SketchPatternRadiusLink {
+            source: id(53),
+            member: id(54),
+        })
+        .unwrap();
+    geometry
+        .add_constraint(
+            SketchConstraintId(99),
+            PlanarConstraint::Radius {
+                curve: id(53),
+                parameter: 9,
+            },
+        )
+        .unwrap();
+    let related = geometry.corner_related_parameters().unwrap();
+    assert!(related.contains(&7));
+    assert!(related.contains(&9));
+    assert!(!related.contains(&8));
+    let points = geometry.corner_related_points().unwrap();
+    assert!(points.contains(&id(2)));
+    assert!(!points.contains(&id(52)));
+}

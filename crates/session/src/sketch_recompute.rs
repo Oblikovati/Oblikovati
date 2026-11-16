@@ -185,10 +185,27 @@ fn corner_inputs_changed(
     if !before_sketch.geometry().same_recipe(after_geometry) {
         return Ok(true);
     }
-    Ok(after_geometry
+    if after_geometry
         .corner_related_parameters()?
         .into_iter()
-        .any(|id| before.parameters.model_value(id) != after.parameters.model_value(id)))
+        .any(|id| before.parameters.model_value(id) != after.parameters.model_value(id))
+    {
+        return Ok(true);
+    }
+    let points = after_geometry.corner_related_points()?;
+    Ok(relevant_projections(before, sketch, &points)
+        != relevant_projections(after, sketch, &points))
+}
+fn relevant_projections(
+    snapshot: &DocumentSnapshot,
+    sketch: DocumentSketchId,
+    points: &[oblikovati_model::sketch::SketchEntityId],
+) -> Result<Vec<oblikovati_model::sketch::SketchPoint2D>, SketchError> {
+    Ok(snapshot
+        .resolve_sketch_projected_points(sketch)?
+        .into_iter()
+        .filter(|point| points.contains(&point.id))
+        .collect())
 }
 fn error_belongs_to_corner(
     geometry: &oblikovati_model::sketch::Sketch2D,

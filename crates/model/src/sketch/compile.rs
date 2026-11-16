@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: GPL-2.0-only
+mod corner;
 use super::{
-    PlanarConstraint, Sketch2D, SketchConstraint, SketchEntityId, SketchError, SketchRelationId,
+    PlanarConstraint, Sketch2D, SketchConstraint, SketchError, SketchRelationId,
     residual::{PlanarEquation, PreparedConstraint},
 };
 use crate::{
     parameter::ParameterCollection,
     quantity::{Dimension, Quantity},
 };
+use corner::{corner_tangent_source, corner_trimmed_first};
 
 pub(super) struct PreparedSketch {
     pub values: Vec<f64>,
@@ -89,11 +91,7 @@ fn append_pattern_point_sources(
     prepared: &mut PreparedSketch,
 ) -> Result<(), SketchError> {
     for link in &sketch.pattern_point_links {
-        let variables = sketch
-            .point_variables(&[link.source, link.member])
-            .into_iter()
-            .map(|variable| sketch.variable_column(variable))
-            .collect::<Result<_, _>>()?;
+        let variables = pattern_point_columns(sketch, link)?;
         prepared.sources.push(PreparedConstraint {
             equation: PlanarEquation::PatternPointLink(
                 match sketch
@@ -119,12 +117,8 @@ fn append_pattern_radius_sources(
     sketch: &Sketch2D,
     prepared: &mut PreparedSketch,
 ) -> Result<(), SketchError> {
-    use super::variables::SketchVariable;
     for link in &sketch.pattern_radius_links {
-        let variables = [link.source, link.member]
-            .into_iter()
-            .map(|circle| sketch.variable_column(SketchVariable::Radius(circle)))
-            .collect::<Result<_, _>>()?;
+        let variables = pattern_radius_columns(sketch, link)?;
         prepared.sources.push(PreparedConstraint {
             equation: PlanarEquation::EqualRadius,
             projection: None,
@@ -137,6 +131,25 @@ fn append_pattern_radius_sources(
     Ok(())
 }
 
+pub(super) fn pattern_point_columns(
+    sketch: &Sketch2D,
+    link: &super::SketchPatternPointLink,
+) -> Result<Vec<usize>, SketchError> {
+    sketch
+        .point_variables(&[link.source, link.member])
+        .into_iter()
+        .map(|variable| sketch.variable_column(variable))
+        .collect()
+}
+pub(super) fn pattern_radius_columns(
+    sketch: &Sketch2D,
+    link: &super::SketchPatternRadiusLink,
+) -> Result<Vec<usize>, SketchError> {
+    [link.source, link.member]
+        .into_iter()
+        .map(|circle| sketch.variable_column(super::variables::SketchVariable::Radius(circle)))
+        .collect()
+}
 fn prepared_source(
     sketch: &Sketch2D,
     constraint: &SketchConstraint,
@@ -149,63 +162,6 @@ fn prepared_source(
     super::circular_compile::prepare_relation(sketch, &constraint.relation, equation)
 }
 
-fn corner_tangent_source(
-    sketch: &Sketch2D,
-    constraint: &SketchConstraint,
-) -> Result<Option<PreparedConstraint>, SketchError> {
-    let Some(owner) = sketch.owned_relations.get(&constraint.id) else {
-        return Ok(None);
-    };
-    let PlanarConstraint::LineTangent { line, curve, side } = constraint.relation else {
-        return Ok(None);
-    };
-    if curve != *owner {
-        return Err(SketchError::Definition(format!(
-            "owned tangent {constraint:?}: expected its curve to own the relation"
-        )));
-    }
-    let corner = sketch
-        .constraints
-        .iter()
-        .find_map(|row| {
-            if sketch.owned_relations.get(&row.id) != Some(owner) {
-                return None;
-            }
-            match row.relation {
-                PlanarConstraint::PointOnLine {
-                    point,
-                    line: source,
-                } if source == line => Some(point),
-                _ => None,
-            }
-        })
-        .ok_or_else(|| {
-            SketchError::Definition(format!(
-                "owned tangent {constraint:?}: expected a corresponding virtual corner"
-            ))
-        })?;
-    let line_points = sketch.line(line)?.endpoints;
-    let first = corner_trimmed_first(sketch, line, *owner)?;
-    let (trim, far) = if first {
-        (line_points[0], line_points[1])
-    } else {
-        (line_points[1], line_points[0])
-    };
-    let center = sketch.arc(curve)?.center;
-    let variables = sketch
-        .point_variables(&[corner, far, trim, center])
-        .into_iter()
-        .map(|variable| sketch.variable_column(variable))
-        .collect::<Result<_, _>>()?;
-    Ok(Some(PreparedConstraint {
-        equation: PlanarEquation::CornerTangent {
-            side,
-            trimmed_first: first,
-        },
-        projection: None,
-        variables,
-    }))
-}
 fn equation(
     sketch: &Sketch2D,
     constraint: &SketchConstraint,
@@ -329,25 +285,6 @@ fn equation(
             target: length_target(constraint, parameter, parameters)?,
         },
     })
-}
-fn corner_trimmed_first(
-    sketch: &Sketch2D,
-    line: SketchEntityId,
-    owner: SketchEntityId,
-) -> Result<bool, SketchError> {
-    let endpoints = sketch.line(line)?.endpoints;
-    let blend = if let Ok(arc) = sketch.arc(owner) {
-        [arc.start, arc.end]
-    } else {
-        sketch.line(owner)?.endpoints
-    };
-    match [blend.contains(&endpoints[0]), blend.contains(&endpoints[1])] {
-        [true, false] => Ok(true),
-        [false, true] => Ok(false),
-        _ => Err(SketchError::Definition(format!(
-            "corner line {line:?}, owner {owner:?}: expected exactly one shared blend endpoint"
-        ))),
-    }
 }
 fn signed_length_target(
     constraint: &SketchConstraint,

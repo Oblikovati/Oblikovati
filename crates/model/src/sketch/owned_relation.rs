@@ -17,30 +17,7 @@ impl Sketch2D {
     /// Find dimension sources connected to an entity-owned corner through sketch relations.
     /// Example: `sketch.corner_related_parameters()?` before accepting an edit.
     pub fn corner_related_parameters(&self) -> Result<Vec<u64>, SketchError> {
-        let mut reached = std::collections::BTreeSet::new();
-        for row in &self.constraints {
-            if self.owned_relations.contains_key(&row.id) {
-                reached.extend(self.relation_columns(&row.relation)?);
-            }
-        }
-        loop {
-            let count = reached.len();
-            for row in &self.constraints {
-                let columns = self.relation_columns(&row.relation)?;
-                if columns.iter().any(|column| reached.contains(column)) {
-                    reached.extend(columns);
-                }
-            }
-            for arc in &self.arcs {
-                let columns = self.arc_columns(arc)?;
-                if columns.iter().any(|column| reached.contains(column)) {
-                    reached.extend(columns);
-                }
-            }
-            if reached.len() == count {
-                break;
-            }
-        }
+        let reached = self.corner_related_columns()?;
         let mut parameters = Vec::new();
         for row in &self.constraints {
             let connected = self.owned_relations.contains_key(&row.id)
@@ -55,14 +32,114 @@ impl Sketch2D {
                 parameters.push(parameter);
             }
         }
+        self.append_corner_pattern_parameters(&reached, &mut parameters)?;
         Ok(parameters)
+    }
+    /// Find point identities connected to a corner's solver variables.
+    /// Example: `sketch.corner_related_points()?` before checking projected anchors.
+    pub fn corner_related_points(&self) -> Result<Vec<SketchEntityId>, SketchError> {
+        let reached = self.corner_related_columns()?;
+        let mut points = Vec::new();
+        for point in &self.points {
+            let columns = self
+                .point_variables(&[point.id])
+                .into_iter()
+                .map(|variable| self.variable_column(variable))
+                .collect::<Result<Vec<_>, _>>()?;
+            if columns.iter().any(|column| reached.contains(column)) {
+                points.push(point.id);
+            }
+        }
+        Ok(points)
+    }
+    fn corner_related_columns(&self) -> Result<std::collections::BTreeSet<usize>, SketchError> {
+        let mut reached = std::collections::BTreeSet::new();
+        for row in &self.constraints {
+            if self.owned_relations.contains_key(&row.id) {
+                reached.extend(self.relation_columns(&row.relation)?);
+            }
+        }
+        loop {
+            let count = reached.len();
+            for row in &self.constraints {
+                let columns = self.relation_columns(&row.relation)?;
+                if columns.iter().any(|column| reached.contains(column)) {
+                    reached.extend(columns);
+                }
+            }
+            for columns in self.corner_implicit_columns()? {
+                if columns.iter().any(|column| reached.contains(column)) {
+                    reached.extend(columns);
+                }
+            }
+            if reached.len() == count {
+                break;
+            }
+        }
+        Ok(reached)
+    }
+    fn corner_implicit_columns(&self) -> Result<Vec<Vec<usize>>, SketchError> {
+        let mut sources = Vec::new();
+        for arc in &self.arcs {
+            sources.push(self.arc_columns(arc)?);
+        }
+        for link in &self.pattern_point_links {
+            sources.push(super::compile::pattern_point_columns(self, link)?);
+        }
+        for link in &self.pattern_radius_links {
+            sources.push(super::compile::pattern_radius_columns(self, link)?);
+        }
+        Ok(sources)
+    }
+    fn append_corner_pattern_parameters(
+        &self,
+        reached: &std::collections::BTreeSet<usize>,
+        parameters: &mut Vec<u64>,
+    ) -> Result<(), SketchError> {
+        for offset in &self.pattern_offsets {
+            let columns = self
+                .point_variables(&[offset.member])
+                .into_iter()
+                .map(|variable| self.variable_column(variable))
+                .collect::<Result<Vec<_>, _>>()?;
+            if !columns.iter().any(|column| reached.contains(column)) {
+                continue;
+            }
+            for term in &offset.terms {
+                if !parameters.contains(&term.parameter) {
+                    parameters.push(term.parameter);
+                }
+            }
+        }
+        Ok(())
     }
     fn relation_columns(
         &self,
         relation: &super::PlanarConstraint,
     ) -> Result<Vec<usize>, SketchError> {
-        let (_, columns) = super::circular_compile::relation_projection(self, relation, None)?;
-        Ok(columns)
+        match relation {
+            super::PlanarConstraint::Radius { curve, .. }
+            | super::PlanarConstraint::Diameter { curve, .. } => self.radius_columns(*curve),
+            super::PlanarConstraint::EqualRadius { curves } => {
+                let mut columns = self.radius_columns(curves[0])?;
+                columns.extend(self.radius_columns(curves[1])?);
+                Ok(columns)
+            }
+            _ => super::circular_compile::relation_projection(self, relation, None)
+                .map(|(_, columns)| columns),
+        }
+    }
+    fn radius_columns(&self, curve: SketchEntityId) -> Result<Vec<usize>, SketchError> {
+        use super::circular_frame::CircularRadius;
+        let frame = self.circular_frame(curve)?;
+        let variables = match frame.radius {
+            CircularRadius::Independent(id) => vec![super::variables::SketchVariable::Radius(id)],
+            CircularRadius::Derived(start) => self.point_variables(&[frame.center, start]),
+        };
+        variables
+            .into_iter()
+            .map(|variable| self.variable_column(variable))
+            .collect()
     }
     /// Check whether a constraint belongs to an entity.
     /// Example: `sketch.owns_relation(id)` before classifying a solve failure.
