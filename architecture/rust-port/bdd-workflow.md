@@ -74,6 +74,12 @@ source hash changes. The discovery inventory is not evidence that features are
 implemented. Check the live source again before committing: it can change while
 work is in progress.
 
+A reviewed assignment can use the new source hash while its baseline remains
+historical. Set `baseline_source_sha256` to the source that baseline describes;
+the baseline-field check treats a mismatch as missing evidence. Keep the old
+baseline details and review record for inspection. Update the baseline hash
+only after checking the evidence against the current source.
+
 Run `python3 -B tools/bdd/behavior_cli.py report` after updating the pin. This
 regenerates the scenario inventory from the pinned checkout and compares every
 field, including inherited capture tags, with the checked-in inventory. A

@@ -5,7 +5,9 @@ import copy
 import unittest
 from pathlib import Path
 
-from behavior_ledger import reconcile, require_classified, summarize
+from behavior_ledger import (
+    BASELINE_FIELDS, missing_baseline_fields, reconcile, require_classified, summarize,
+)
 from behavior_evidence import StaleEvidence
 
 
@@ -98,6 +100,24 @@ class LedgerFixture:
 
 
 class LedgerTests(unittest.TestCase):
+    def test_changed_baseline_source_remains_missing_after_classification_review(self) -> None:
+        fixture = LedgerFixture()
+        entry = dict(
+            fixture.entry, state="inventoried", last_receipt=None,
+            baseline_source_sha256="previous-hash",
+        )
+        for field in BASELINE_FIELDS:
+            entry[field] = "recorded for the previous source"
+        row = fixture.run([entry])["scenarios"][0]
+        self.assertFalse(row["stale"])
+        self.assertEqual(missing_baseline_fields(row), list(BASELINE_FIELDS))
+        self.assertEqual(row["state"], "inventoried")
+
+    def test_matching_baseline_source_keeps_its_evidence_fields(self) -> None:
+        row = {field: "evidence" for field in BASELINE_FIELDS}
+        row.update(source_sha256="same", baseline_source_sha256="same")
+        self.assertEqual(missing_baseline_fields(row), [])
+
     def test_stale_capture_only_remains_excluded(self) -> None:
         fixture = LedgerFixture()
         fixture.inventory["scenarios"][0]["capture_only"] = True
