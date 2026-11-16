@@ -9,6 +9,7 @@ use oblikovati_model::sketch::{
 };
 use std::error::Error;
 mod arc_direction;
+mod corner;
 /// Stateless geometry service injected at the desktop and CLI composition roots.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct MartensiteSketchConstruction;
@@ -106,4 +107,16 @@ fn verify_endpoint_displacement(
         }
     }
     Ok(())
+}
+
+impl oblikovati_model::sketch::SketchCornerConstruction for MartensiteSketchConstruction {
+    fn construct_corner(
+        &self,
+        points: [[f64; 2]; 3],
+        size: oblikovati_model::sketch::SketchCornerSize,
+        maximum_residual: f64,
+    ) -> Result<oblikovati_model::sketch::SketchCornerSeed, Box<dyn Error>> {
+        corner::construct(points, size, maximum_residual)
+            .map_err(|cause| Box::new(cause) as Box<dyn Error>)
+    }
 }

@@ -23,7 +23,10 @@ mod compile;
 mod constraint;
 mod construction;
 mod corner_predicate;
-pub use corner_predicate::{SketchCornerPredicate, SketchCornerTurn};
+pub use corner_predicate::{
+    SketchCornerConstruction, SketchCornerPredicate, SketchCornerSeed, SketchCornerSize,
+    SketchCornerTurn,
+};
 mod dimensional_authoring;
 mod geometric_authoring;
 mod ground_constraint;
