@@ -407,6 +407,42 @@ class ScenarioDependencyTests(unittest.TestCase):
                 self.fixture.root, mapping, self.inventory, "one", self.fixture.baseline
             )
 
+    def test_case_variant_untracked_file_is_not_a_clean_worktree(self) -> None:
+        mapping = self.manifest()
+        self.fixture.git("config", "core.ignorecase", "true")
+        collision = self.fixture.root / "ASSETS"
+        if collision.exists():
+            self.skipTest("filesystem does not allow distinct case variants")
+        self.fixture.write("ASSETS/theme.xml", "case-variant untracked file")
+        self.assertEqual(
+            self.fixture.git("status", "--porcelain", "--untracked-files=all"), ""
+        )
+        self.assertFalse(self.manifest()["worktree_clean"])
+        with self.assertRaisesRegex(ValueError, "clean"):
+            changed_dependencies(
+                self.fixture.root, mapping, self.inventory, "one", self.fixture.baseline
+            )
+
+    def test_case_variant_untracked_name_is_not_a_clean_worktree(self) -> None:
+        mapping = self.manifest()
+        self.fixture.git("config", "core.ignorecase", "true")
+        collision = self.fixture.root / "assets/THEME.XML"
+        if collision.exists():
+            self.skipTest("filesystem does not allow distinct case variants")
+        self.fixture.write("assets/THEME.XML", "case-variant untracked file")
+        self.assertEqual(
+            self.fixture.git("status", "--porcelain", "--untracked-files=all"), ""
+        )
+        self.assertFalse(self.manifest()["worktree_clean"])
+        with self.assertRaisesRegex(ValueError, "clean"):
+            changed_dependencies(
+                self.fixture.root, mapping, self.inventory, "one", self.fixture.baseline
+            )
+
+    def test_clean_checkout_with_case_insensitive_git_setting_is_accepted(self) -> None:
+        self.fixture.git("config", "core.ignorecase", "true")
+        self.assertTrue(self.manifest()["worktree_clean"])
+
     def test_index_flags_cannot_hide_changed_tracked_inputs(self) -> None:
         mapping = self.manifest()
         path = "crates/head/src/lib.rs"

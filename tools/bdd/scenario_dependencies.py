@@ -140,11 +140,24 @@ def worktree_clean(root: Path) -> bool:
     )
     if output:
         return False
+    if case_sensitive_status(root):
+        return False
     flags = subprocess.check_output(
         git_status_command(root, "ls-files", "-v", "-z"),
         env=git_environment() | {"GIT_OPTIONAL_LOCKS": "0"},
     )
     return all(entry.startswith(b"H ") for entry in flags.split(b"\0") if entry)
+
+
+def case_sensitive_status(root: Path) -> bytes:
+    """Check case-distinct paths without changing the user's Git config; example: case_sensitive_status(repo)."""
+    return subprocess.check_output(
+        git_status_command(
+            root, "-c", "core.ignorecase=false", "status", "--porcelain", "-z",
+            "--untracked-files=all",
+        ),
+        env=git_environment() | {"GIT_OPTIONAL_LOCKS": "0"},
+    )
 
 
 def build_map(
