@@ -62,6 +62,79 @@ fn extrusion_creation_joins_session_history_and_undo_redo() {
     owner.redo().unwrap();
     assert_eq!(owner.snapshot().work_geometry.features().len(), before + 1);
 }
+
+fn fillet_input() -> oblikovati_model::feature::fillet::FilletDefinition {
+    use oblikovati_model::{
+        feature::{fillet::FilletDefinition, work_geometry::DatumLength},
+        identity::{DocumentGuid, SemanticReferenceName},
+    };
+    let document: DocumentGuid = "11111111-2222-3333-4444-555555555555".parse().unwrap();
+    let body = SemanticReferenceName::new(document, 1, 4, "fixture", "body", &[1])
+        .unwrap()
+        .encode()
+        .unwrap();
+    let edge = SemanticReferenceName::new(document, 1, 2, "fixture", "edge", &[1])
+        .unwrap()
+        .encode()
+        .unwrap();
+    FilletDefinition::new(body, vec![edge], DatumLength::Constant(0.1)).unwrap()
+}
+
+#[test]
+fn fillet_creation_is_one_undoable_session_edit() {
+    let mut owner = session(7);
+    let id = owner.create_fillet("Fillet", fillet_input()).unwrap();
+    assert_eq!(
+        owner
+            .snapshot()
+            .work_geometry
+            .get(id)
+            .unwrap()
+            .definition()
+            .kind(),
+        "fillet"
+    );
+    owner.undo().unwrap();
+    assert!(owner.snapshot().work_geometry.get(id).is_err());
+    owner.redo().unwrap();
+    assert_eq!(
+        owner
+            .snapshot()
+            .work_geometry
+            .get(id)
+            .unwrap()
+            .definition()
+            .kind(),
+        "fillet"
+    );
+}
+
+#[test]
+fn rejected_fillet_projection_preserves_recipe_and_reserves_identity() {
+    let mut owner = session(7);
+    let mut rejected = None;
+    let result: Result<(), _> =
+        owner.create_fillet_projected("Fillet", fillet_input(), |created| {
+            rejected = Some(created.unwrap());
+            Err("reply refused")
+        });
+    assert!(result.is_err());
+    assert_eq!(owner.snapshot().work_geometry.features().len(), 1);
+    assert!(owner.undo_labels().is_empty());
+    let accepted = owner.create_fillet("Fillet", fillet_input()).unwrap();
+    assert_ne!(Some(accepted), rejected);
+}
+
+#[test]
+fn fillet_creation_joins_and_aborts_an_explicit_transaction() {
+    let mut owner = session(7);
+    owner.begin("Group").unwrap();
+    let id = owner.create_fillet("Fillet", fillet_input()).unwrap();
+    assert!(owner.snapshot().work_geometry.get(id).is_ok());
+    owner.abort().unwrap();
+    assert!(owner.snapshot().work_geometry.get(id).is_err());
+    assert!(owner.undo_labels().is_empty());
+}
 #[test]
 fn created_extrusion_tracks_parameter_edits_and_history_replay() {
     let mut owner = session(7);

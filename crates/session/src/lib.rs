@@ -17,6 +17,7 @@ pub mod selection;
 mod sketch_inference;
 pub use sketch_inference::SketchInferenceProjectionInput;
 mod editor_selection_scope;
+mod fillet_create;
 mod prism_create;
 mod sketch_auto_names;
 mod sketch_construction;
