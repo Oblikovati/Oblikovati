@@ -60,3 +60,44 @@ fn report_projection(target: &str, count: usize, samples: &[Duration]) {
         sorted[119].as_secs_f64() * 1e6
     );
 }
+
+#[test]
+#[ignore = "measure alternating fixed and changing projection batches"]
+fn measure_alternating_sketch_projection_batches() {
+    let runtime = ViewportRuntime::new(Default::default()).unwrap();
+    let mut view = runtime
+        .open_window("Alternating projection benchmark", [1440, 900])
+        .unwrap();
+    view.poll_events(64).unwrap();
+    assert_eq!(view.drawable_extent().unwrap(), [1440, 900]);
+    eprintln!(
+        "projection device={}, extent=1440x900",
+        runtime.device_name()
+    );
+    for count in [201_usize, 1001] {
+        measure_alternating(&view, count);
+    }
+    view.close();
+    assert!(runtime.validation_errors().unwrap().is_empty());
+}
+
+fn measure_alternating(view: &Viewport, count: usize) {
+    let points: Vec<_> = (0..count)
+        .map(|i| [i as f64 * 0.04 - 4., (i % 2) as f64 * 0.1])
+        .collect();
+    let mut curves = points.clone();
+    let mut samples = Vec::with_capacity(120);
+    for sample in 0..140 {
+        for curve in &mut curves {
+            curve[1] += 0.000_001;
+        }
+        let start = Instant::now();
+        let first = view.sketch_pixels(SketchPlane::xy(), &points).unwrap();
+        let second = view.sketch_pixels(SketchPlane::xy(), &curves).unwrap();
+        std::hint::black_box((first, second));
+        if sample >= 20 {
+            samples.push(start.elapsed());
+        }
+    }
+    report_projection("native-alternating", count, &samples);
+}

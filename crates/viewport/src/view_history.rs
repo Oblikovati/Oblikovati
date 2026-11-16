@@ -9,6 +9,7 @@ impl Viewport {
         command: ViewportNavigation,
         framing: Option<crate::fit_region::FitFraming>,
     ) -> Result<bool, String> {
+        self.projection_cache.get_mut().clear();
         let renderer = self.live()?;
         let previous = renderer.saved_camera();
         renderer.navigate(command, framing)?;
@@ -39,6 +40,7 @@ impl Viewport {
             self.view_history.pop_back();
             return Ok(false);
         }
+        self.projection_cache.get_mut().clear();
         let next = self.restore_previous_camera(previous)?;
         self.view_history.pop_back();
         self.camera = next;

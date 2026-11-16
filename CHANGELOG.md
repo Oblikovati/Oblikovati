@@ -4,6 +4,8 @@
 
 ### Changed
 
+- Reduced repeated sketch point projection work during pointer interaction. (#4035)
+
 - Discarded closed document-window preview images and stale pending updates. (#3987)
 
 - Added type-preserving integer, number, boolean, and byte property editing to iProperties. (#3958)

@@ -52,15 +52,34 @@ impl Viewport {
             return Ok(Vec::new());
         }
         self.require_projection_extent()?;
-        let projected = points
+        let key = super::projection_cache::ProjectionKey {
+            plane,
+            camera: self.camera,
+            surface: self.surface,
+        };
+        if let Some(projected) = self.projection_cache.borrow_mut().get(key, points) {
+            self.require_projection_extent()?;
+            return Ok(projected);
+        }
+        let projected = self.project_sketch_points(plane, points)?;
+        self.require_projection_extent()?;
+        self.projection_cache
+            .borrow_mut()
+            .store(key, points, &projected);
+        Ok(projected)
+    }
+    fn project_sketch_points(
+        &self,
+        plane: SketchPlane,
+        points: &[[f64; 2]],
+    ) -> Result<Vec<[i32; 2]>, String> {
+        points
             .iter()
             .map(|point| {
                 let model = plane.to_model(*point).map_err(|cause| cause.to_string())?;
                 self.model_pixel_checked_extent(model)
             })
-            .collect::<Result<Vec<_>, String>>()?;
-        self.require_projection_extent()?;
-        Ok(projected)
+            .collect()
     }
     /// Project each point while retaining its own error under one extent check.
     /// Example: `view.sketch_pixel_results(plane, &points)?` for ordered picks.
