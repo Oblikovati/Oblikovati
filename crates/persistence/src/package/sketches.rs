@@ -122,19 +122,33 @@ pub(super) fn require_monotonic_mark(
     Ok(())
 }
 fn require_legacy_import(package: &DocumentPackage) -> Result<(), PackageCodecError> {
-    let Some(legacy) = package
-        .root
-        .get("model")
-        .and_then(|model| model.get("sketches"))
-    else {
+    let Some(model) = package.root.get("model") else {
+        return Ok(());
+    };
+    if model.get("<<").is_some() {
+        return Err(PackageCodecError(
+            "model.<<: expected explicit fields until model YAML merges are supported".into(),
+        ));
+    }
+    for name in ["sketches", "sketches3D"] {
+        require_empty_legacy_sketch_section(model, name)?;
+    }
+    Ok(())
+}
+
+fn require_empty_legacy_sketch_section(
+    model: &serde_yaml_ng::Value,
+    name: &str,
+) -> Result<(), PackageCodecError> {
+    let Some(legacy) = model.get(name) else {
         return Ok(());
     };
     if legacy.is_null() || legacy.as_sequence().is_some_and(Vec::is_empty) {
         return Ok(());
     }
-    // #3719: retain raw legacy recipes until an explicit importer covers their full domains.
+    // #4004: retaining unsupported raw geometry must not hide it from a live document.
     Err(PackageCodecError(format!(
-        "legacy model.sketches {legacy:?}: expected explicit legacy sketch import before Rust sketch restore or replacement"
+        "legacy model.{name} {legacy:?}: expected explicit legacy sketch import before Rust sketch restore or replacement"
     )))
 }
 fn sketch_codec_error(error: impl std::fmt::Display) -> PackageCodecError {
