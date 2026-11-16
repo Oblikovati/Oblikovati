@@ -166,7 +166,12 @@ fn update_validated_sketches(
             if !corner_inputs_changed(before, snapshot, report.sketch, owner)? {
                 continue;
             }
-            let anchors = snapshot.resolve_sketch_projected_points(report.sketch)?;
+            let points = outcome
+                .candidate
+                .get(report.sketch)?
+                .geometry()
+                .corner_related_points(owner)?;
+            let anchors = snapshot.resolve_selected_sketch_projections(report.sketch, &points)?;
             outcome.candidate.recompute_corner_component(
                 report.sketch,
                 owner,
@@ -208,9 +213,5 @@ fn relevant_projections(
     sketch: DocumentSketchId,
     points: &[oblikovati_model::sketch::SketchEntityId],
 ) -> Result<Vec<oblikovati_model::sketch::SketchPoint2D>, SketchError> {
-    Ok(snapshot
-        .resolve_sketch_projected_points(sketch)?
-        .into_iter()
-        .filter(|point| points.contains(&point.id))
-        .collect())
+    snapshot.resolve_selected_sketch_projections(sketch, points)
 }
