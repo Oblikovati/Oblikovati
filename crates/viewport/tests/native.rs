@@ -142,3 +142,6 @@ mod gui_fixture;
 mod sketch_hover;
 #[path = "native/sketch_palette.rs"]
 mod sketch_palette;
+
+#[path = "native/projection_performance.rs"]
+mod projection_performance;
