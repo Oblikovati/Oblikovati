@@ -7,7 +7,9 @@ use super::viewport_orientation::{
 use super::viewport_pan::{camera, expect_part_and_solid, press_bar};
 use crate::{HeadWindow, HeadWork};
 use cucumber::{given, then, when};
-use oblikovati_viewport::{ViewportCamera, ViewportEvent, ViewportInput, ViewportNavigation};
+use oblikovati_viewport::{ViewportCamera, ViewportNavigation};
+#[cfg(not(target_os = "linux"))]
+use oblikovati_viewport::{ViewportEvent, ViewportInput};
 
 const ZOOM_OUT_NOTCHES: i32 = 3;
 const SMALL: f64 = 5.;
@@ -21,6 +23,12 @@ fn set_camera(world: &mut ApplicationWorld, camera: ViewportCamera) {
 fn wheel(world: &mut ApplicationWorld, notches: i32) {
     let (low, high) = solid_bounds(world);
     let position = [(low[0] + high[0]) as i32 / 2, (low[1] + high[1]) as i32 / 2];
+    #[cfg(target_os = "linux")]
+    {
+        super::x11_input::scroll(position, notches);
+        world.pump(Vec::new());
+    }
+    #[cfg(not(target_os = "linux"))]
     world.pump(vec![ViewportEvent::Input(ViewportInput::Wheel {
         notches,
         position,
@@ -134,6 +142,7 @@ fn expect_same_orientation(world: &mut ApplicationWorld) {
 fn visible_block(world: &mut ApplicationWorld) {
     open_block(world);
     remember_view(world);
+    world.save_capture("native-wheel-before-3881");
 }
 #[given("no navigation command is active")]
 fn no_command(world: &mut ApplicationWorld) {
@@ -149,6 +158,7 @@ fn appears_smaller(world: &mut ApplicationWorld) {
     let [wide, _] = solid_extent(world);
     assert!(wide < world.observed_counts[0], "width {wide}");
     world.observed_counts[0] = wide;
+    world.save_capture("native-wheel-out-3881");
 }
 #[then("the same part and orientation remain active")]
 fn part_and_orientation(world: &mut ApplicationWorld) {
@@ -164,6 +174,7 @@ fn wheel_in(world: &mut ApplicationWorld) {
 fn appears_larger(world: &mut ApplicationWorld) {
     let [wide, _] = solid_extent(world);
     assert!(wide > world.observed_counts[0], "width {wide}");
+    world.save_capture("native-wheel-in-3881");
 }
 // The command
 #[when("I select Zoom on the navigation bar")]

@@ -79,10 +79,10 @@ Last checked: 2026-11-16 on `rust-work`. Refresh from current evidence at each c
   The source tags 60 declarations as capture-only and 34 more as capture-host
   only; they are not portable passing evidence. Follow `bdd-workflow.md`
   when source files change; use a unique Cargo target for each active worktree.
-- Native input paths vary; check each receipt. Close windows and retain receipts.
+- Wheel zoom passes a native mouse diagnostic (#3881); see
+  `receipts/2026-11-16-native-wheel-3881/`. Check input paths; close test windows.
 - `make docs-lint` passed (#3970, #3971); the full `make gate` remains open.
-- Martensite work is owned separately. Report validated kernel gaps in
-  `Oblikovati/Martensite`; do not modify the kernel in this lane.
+- Martensite is owned separately; report kernel gaps without changing it here.
 - GUI unit tests isolate the shared ImGui context under parallel execution
   (#3878). The final eight-thread run passed 495 tests; the production context
   ownership check still rejects a second active owner. Native windows and

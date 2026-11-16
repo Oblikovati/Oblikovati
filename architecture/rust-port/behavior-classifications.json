@@ -2891,15 +2891,15 @@
       "state": "inventoried",
       "last_receipt": null,
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
-      "go_reference": "Go aa8297d1b: head/ui/navigate.go and head/ui/navigate_test.go; see receipts/2026-11-14-go-zoom-baseline/README.md.",
-      "go_test_premise": "Go wheel zoom and modal navigation tests pass. They do not cover the Zoom menu, selected-face paths, window selection or cancellation.",
-      "api_revision": "21b18a952fa7548a31e7eac338f6c78a32e5cfe1",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "go_reference": "../Oblikovati/head/ui/chrome_viewport.go; ../Oblikovati/app/viewport_input.go; ../Oblikovati/app/scroll_viewport_test.go",
+      "go_test_premise": "Go aa8297d1b: TestScrollViewport tests passed for wheel direction, inversion, zero delta and zoom to cursor. They do not establish native window or visual parity.",
+      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "kernel_capabilities": "A visible solid fixture is required; zoom changes the camera and does not modify the B-rep.",
       "platforms": "Linux Xvfb with Vulkan Lavapipe. Windows and macOS not checked.",
-      "kernel_integration": "A host-prepared solid is rendered in the native viewport; view setup uses camera controls and Zoom Selected uses a picked face.",
-      "rust_tests": "Native scenario steps in crates/head/tests/application/viewport-zoom/steps.rs; face_selection_regression checks the preselected face fixture.",
-      "oracle": "Pinned scenario steps, observed camera and solid extents, selected-face state and reviewed native capture; Go is a partial navigation reference.",
+      "kernel_integration": "A host-prepared solid is rendered in the native viewport; wheel input changes the camera without modifying geometry.",
+      "rust_tests": "application_scenarios_use_the_native_window: Change magnification with the mouse wheel; Linux sends wheel events with X11 XTEST.",
+      "oracle": "Pinned scenario assertions, visible solid bounds, active part and camera orientation, and reviewed native captures; Go is a partial navigation reference.",
       "expected_result": "Wheel zoom changes the block size in both directions while the part and orientation remain.",
       "historical_receipts": [
         {
@@ -2917,7 +2917,8 @@
           "path": "architecture/rust-port/receipts/2026-11-15-zoom-fixed/receipt-1edb7a1739ca5af4.json",
           "sha256": "1d89ed8bf867fcddb1eb3cad73faa6fcebf7f40fada7989cf1af51020d4f23fc"
         }
-      ]
+      ],
+      "baseline_source_sha256": "cb07444a13797a6d98fac5b8f26463343a1cbff5ed4781c359290bd6e4856e9c"
     },
     {
       "id": "scenario:7a9612d5b55491de21d09d9b0c90e74706f4dedd0e807ac106feb6a58889ffb5",
