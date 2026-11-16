@@ -1,0 +1,66 @@
+{
+  "kind": "diagnostic only; not acceptance",
+  "source_files": {
+    "/tmp/obk-arc-center-scenarios/features/sketch/arc-center-point/scenario.feature": "@sketch\r\nFeature: Arc center point\r\n\r\n  @acceptance @documented_observation @needs_fixture\r\n  Scenario: arc-center-point-01 Commit the intended result\r\n    Given the MCAD Software is running\r\n    And an editable planar sketch is active\r\n    When the user select Center Point Arc, choose its center, start point, and end direction\r\n    Then an arc is created from the selected center, start and end direction\r\n    And the command requests another center\r\n    When the user press Escape\r\n    Then the arc remains and the sketch returns to Ready\r\n\r\n  @needs_fixture @capture_only\r\n  Scenario: arc-center-point-06 Cancel after selecting the center\r\n    Given the observed sketch fixture is Ready\r\n    When the user choose Center Point Arc and select a center\r\n    Then the prompt requests the start point\r\n    When the user press Escape\r\n    Then the MCAD Software returns to Ready without a new arc\r\n\r\n  @needs_fixture @capture_only\r\n  Scenario: arc-center-point-07 Cancel after center and start\r\n    Given the observed sketch fixture is Ready\r\n    When the user invoke Center Point Arc\r\n    And the user select a center and a start point\r\n    Then the prompt requests the end point\r\n    When the user press Escape\r\n    Then the MCAD Software returns to Ready without a new arc\r\n\r\n  @needs_fixture @capture_only\r\n  Scenario: arc-center-point-08 Create and undo and redo a center-point arc\r\n    Given the captured 1700 by 1012 sketch view is Ready with the recorded starting sketch state\r\n    When the user invoke Center Point Arc\r\n    And the user click the captured center at window coordinate (1530, 600), the start at (1570, 600), and the end direction at (1530, 640)\r\n    Then the short arc appears below and right of the center\r\n    And the command requests another center\r\n    When the user press Escape\r\n    Then the arc remains\r\n    When the user undo\r\n    Then the arc disappears\r\n    When the user redo\r\n    Then the arc returns\r\n\r\n  @needs_fixture @capture_only\r\n  Scenario: arc-center-point-09 Measure the restored curve instead of its middle point\r\n    Given the pointer-created arc made with center (1530, 600), start (1570, 600), and end direction (1530, 640) in the captured window coordinates has been restored by Redo\r\n    When the user open Measure and select its middle point\r\n    Then the selection type is Middle Point\r\n    When the user clear the selection and select the curve near its start\r\n    Then the selection type is Curve\r\n    And the radius is 4.759 mm and diameter is 9.518 mm\r\n    And the length is 7.037 mm\r\n    \r\n  @needs_fixture @capture_only\r\n  Scenario: arc-center-point-10 Reject the same requested center and start position\r\n    Given Center Point Arc requests its start point after center selection\r\n    When the user click the same requested center position\r\n    Then the prompt remains Select start point with radius zero\r\n    When the user press 4 in this captured state\r\n    Then command alias input appears instead of an edited radius\r\n    When the user press Escape\r\n    Then the command exits without committing a new arc\r\n\r\n  @needs_fixture @capture_only\r\n  Scenario: arc-center-point-11 Create a numeric radius and sweep\r\n    Given a fresh Center Point Arc command with a selected center\r\n    When the user enter 4 for radius\r\n    And the user press Tab\r\n    Then the radius is locked at 4 mm and focus moves to the start-angle field\r\n    When the user click the recorded start location\r\n    Then the command requests the end point\r\n    When the user press 9 and then 0 for the sweep\r\n    And the user press Tab\r\n    Then the sweep is locked at 90 degrees\r\n    When the user click the recorded endpoint location\r\n    Then the command requests another center\r\n    When the user press Escape and measure the arc\r\n    Then Measure reports radius 4.000 mm and sweep 90.00 degrees\r\n    And its center is (0, 4.914, 17.623) mm\r\n    And the resulting arc is oriented toward the upper right\r\n\r\n  @needs_fixture @capture_only\r\n  Scenario: arc-center-point-12 Cancel a proposed radius edit\r\n    Given the radius dimension editor is open with 4 mm selected\r\n    When the user replace its expression with 5 and press Escape\r\n    And the user reopen the radius annotation\r\n    Then the editor still contains 4 mm\r\n\r\n  @needs_fixture @capture_only\r\n  Scenario: arc-center-point-13 Accept and undo a radius edit\r\n    Given the created arc has radius 4 mm and sweep 90 degrees\r\n    And its measured center is (0, 4.914, 17.623) mm\r\n    When the user open the radius dimension and change it to 5 mm\r\n    And the user exit dimension editing and measure the arc\r\n    Then Measure reports radius 5.000 mm, length 7.854 mm and the same center\r\n    When the user close Measure and undo\r\n    Then the displayed radius returns to 4 mm\r\n    When the user redo\r\n    Then the displayed radius returns to 5 mm\r\n\r\n  @needs_fixture @capture_only\r\n  Scenario: arc-center-point-14 Accept and undo a sweep edit\r\n    Given the recorded arc has radius 5 mm, sweep 90 degrees and center (0, 4.914, 17.623) mm\r\n    When the user open the sweep dimension\r\n    And the user press 1, then 2, then 0\r\n    And the user accept the edit, exit dimension editing and measure the arc\r\n    Then Measure reports sweep 120 degrees, length 10.472 mm and radius 5 mm\r\n    And its center remains (0, 4.914, 17.623) mm\r\n    And the arc extends toward the upper left in the recorded view\r\n    When the user close Measure and undo\r\n    Then the displayed sweep returns to 90 degrees\r\n    When the user redo\r\n    Then the displayed sweep returns to 120 degrees\r\n\r\n\r\n\r\n"
+  },
+  "scenarios": [
+    {
+      "source": "/tmp/obk-arc-center-scenarios/features/sketch/arc-center-point/scenario.feature",
+      "scenario": "arc-center-point-01 Commit the intended result",
+      "line": 5,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is running",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "an editable planar sketch is active",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 8,
+          "step": "the user select Center Point Arc, choose its center, start point, and end direction",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 9,
+          "step": "an arc is created from the selected center, start and end direction",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 10,
+          "step": "the command requests another center",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 11,
+          "step": "the user press Escape",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 12,
+          "step": "the arc remains and the sketch returns to Ready",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    }
+  ]
+}
