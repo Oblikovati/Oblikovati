@@ -2,6 +2,7 @@
 """Check conservative, per-scenario dependency records."""
 
 import copy
+import json
 import os
 import subprocess
 import tempfile
@@ -9,7 +10,9 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+import dependency_cli
 from dependency_cli import runtime_changes_for
+import scenario_dependencies
 from scenario_dependencies import (
     build_map,
     changed_dependencies,
@@ -52,6 +55,35 @@ class GitDependencyFixture:
         return self.git("rev-parse", "HEAD")
 
 
+class FakeGitFsMonitor:
+    """Record any unexpected invocation of the Git fsmonitor hook."""
+
+    def __init__(self, base: Path) -> None:
+        self.marker = base / "ran"
+        self.hook = base / "fsmonitor"
+        self.hook.write_text(
+            f"#!/bin/sh\nprintf ran > '{self.marker}'\nprintf 'token\\0'\n"
+        )
+        self.hook.chmod(0o755)
+
+
+class CommitAfterTreeRead:
+    """Change HEAD after the first tree read to exercise the post-check."""
+
+    def __init__(self, fixture: GitDependencyFixture) -> None:
+        self.fixture = fixture
+        self.original = scenario_dependencies.git_tree
+        self.changed = False
+
+    def __call__(self, root: Path, commit: str) -> dict[str, str]:
+        tree = self.original(root, commit)
+        if not self.changed:
+            self.changed = True
+            self.fixture.write("crates/head/src/lib.rs", "changed during map")
+            self.fixture.commit("changed during map")
+        return tree
+
+
 def source_row(identifier: str, feature: str) -> dict[str, object]:
     """Create a scenario declaration; example: source_row('one', 'first')."""
     return {
@@ -75,6 +107,84 @@ class ScenarioDependencyTests(unittest.TestCase):
     def manifest(self) -> dict[str, object]:
         """Build the baseline map; example: self.manifest()."""
         return build_map(self.fixture.root, self.inventory, self.fixture.baseline)
+
+    def test_build_rejects_head_change_during_tree_read(self) -> None:
+        writer = CommitAfterTreeRead(self.fixture)
+        with patch("scenario_dependencies.git_tree", writer):
+            with self.assertRaisesRegex(ValueError, "HEAD"):
+                self.manifest()
+
+    def test_compare_rejects_head_change_during_tree_read(self) -> None:
+        mapping = self.manifest()
+        writer = CommitAfterTreeRead(self.fixture)
+        with patch("scenario_dependencies.git_tree", writer):
+            with self.assertRaisesRegex(ValueError, "HEAD"):
+                changed_dependencies(
+                    self.fixture.root, mapping, self.inventory, "one", self.fixture.baseline
+                )
+
+    def test_nested_directory_is_not_a_worktree_root(self) -> None:
+        nested = self.fixture.root / "crates/head"
+        with self.assertRaisesRegex(ValueError, "worktree"):
+            build_map(nested, self.inventory, self.fixture.baseline)
+
+    @unittest.skipUnless(os.name == "posix", "requires a shell hook")
+    def test_local_fsmonitor_hook_is_not_used_for_cleanliness(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            monitor = FakeGitFsMonitor(Path(folder))
+            self.fixture.git("config", "core.fsmonitor", str(monitor.hook))
+            mapping = self.manifest()
+            self.fixture.write("crates/head/src/lib.rs", "changed")
+            with self.assertRaisesRegex(ValueError, "clean"):
+                changed_dependencies(
+                    self.fixture.root, mapping, self.inventory, "one", self.fixture.baseline
+                )
+            self.assertFalse(monitor.marker.exists(), "a Git fsmonitor hook must not run")
+
+    @unittest.skipUnless(os.name == "posix", "requires a shell hook")
+    def test_cli_compare_does_not_run_local_fsmonitor(self) -> None:
+        mapping = self.manifest()
+        with tempfile.TemporaryDirectory() as folder:
+            base = Path(folder)
+            monitor = FakeGitFsMonitor(base)
+            self.fixture.git("config", "core.fsmonitor", str(monitor.hook))
+            map_path, inventory_path = base / "map.json", base / "inventory.json"
+            map_path.write_text(json.dumps(mapping))
+            inventory_path.write_text(json.dumps(self.inventory))
+            with patch.object(dependency_cli, "ROOT", self.fixture.root):
+                with patch.object(dependency_cli, "INVENTORY", inventory_path):
+                    dependency_cli.compare(map_path, "one", None)
+            self.assertFalse(monitor.marker.exists(), "a Git fsmonitor hook must not run")
+
+    def test_local_core_worktree_cannot_hide_a_changed_file(self) -> None:
+        mapping = self.manifest()
+        with tempfile.TemporaryDirectory() as folder:
+            GitDependencyFixture(Path(folder))
+            self.fixture.git("config", "core.worktree", folder)
+            self.fixture.write("crates/head/src/lib.rs", "hidden dirty")
+            with self.assertRaisesRegex(ValueError, "worktree|clean"):
+                changed_dependencies(self.fixture.root, mapping, self.inventory, "one", self.fixture.baseline)
+
+    def test_runtime_root_for_another_scenario_is_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            mapping = build_map(self.fixture.root, self.inventory, self.fixture.baseline,
+                                runtime_scenario="one", runtime_root=root)
+            with self.assertRaisesRegex(ValueError, "runtime"):
+                runtime_changes_for(mapping, "two", root)
+
+    def test_build_refuses_a_commit_other_than_checked_out_head(self) -> None:
+        self.fixture.write("crates/head/src/lib.rs", "changed")
+        self.fixture.commit("new head")
+        with self.assertRaisesRegex(ValueError, "HEAD"):
+            build_map(self.fixture.root, self.inventory, self.fixture.baseline)
+
+    def test_compare_refuses_a_current_commit_other_than_checked_out_head(self) -> None:
+        mapping = self.manifest()
+        self.fixture.write("crates/head/src/lib.rs", "changed")
+        self.fixture.commit("new head")
+        with self.assertRaisesRegex(ValueError, "HEAD"):
+            changed_dependencies(self.fixture.root, mapping, self.inventory, "one", self.fixture.baseline)
 
     def test_each_scenario_has_its_own_source_and_shared_complete_git_tree(
         self,

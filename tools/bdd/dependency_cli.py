@@ -12,7 +12,6 @@ from pathlib import Path
 from behavior_ledger import (
     INVENTORY,
     ROOT,
-    application_state,
     read_json,
     require_object,
     verify_inputs,
@@ -22,8 +21,11 @@ from scenario_dependencies import (
     build_map,
     changed_dependencies,
     changed_runtime_dependencies,
+    dependency_checkout_state,
+    require_checkout,
     reuse_decision,
     validate_map,
+    worktree_clean,
 )
 from verify_snapshot import restore_snapshot
 
@@ -37,10 +39,10 @@ def generate(
     """Map a verified snapshot; example: generate(checkout, output)."""
     inventory = require_object(read_json(INVENTORY), "inventory")
     verify_inputs(ROOT, checkout, inventory)
-    commit, clean = application_state(ROOT)
+    commit, clean = dependency_checkout_state(ROOT)
     mapping = build_map(ROOT, inventory, commit, scenario, runtime_root)
     validate_map(mapping, inventory)
-    if application_state(ROOT) != (commit, clean):
+    if dependency_checkout_state(ROOT) != (commit, clean):
         raise ValueError("application inputs: expected unchanged state while mapping")
     write_ledger(output, mapping)
     print_summary(mapping)
@@ -61,9 +63,12 @@ def compare(mapping_path: Path, scenario: str, runtime_root: Path | None) -> Non
     """Explain tracked changes for a scenario; example: compare(map_path, scenario_id)."""
     inventory = require_object(read_json(INVENTORY), "inventory")
     mapping = require_object(read_json(mapping_path), "dependency map")
-    current, _ = application_state(ROOT)
+    current, _ = dependency_checkout_state(ROOT)
     changes = changed_dependencies(ROOT, mapping, inventory, scenario, current)
     runtime_changes = runtime_changes_for(mapping, scenario, runtime_root)
+    require_checkout(ROOT, current)
+    if not worktree_clean(ROOT):
+        raise ValueError("application worktree: expected clean state after comparison")
     print(
         json.dumps(
             {
@@ -85,6 +90,11 @@ def runtime_changes_for(
 ) -> list[str] | None:
     """Compare a runtime only for its own scenario; example: runtime_changes_for(mapping, id, root)."""
     if mapping.get("runtime_scenario") != scenario:
+        if runtime_root is not None:
+            raise ValueError(
+                f"runtime root {runtime_root!r}: expected the recorded scenario "
+                f"{mapping.get('runtime_scenario')!r}, got {scenario!r}"
+            )
         return None
     if runtime_root is None:
         raise ValueError("runtime root None: expected the recorded scenario runtime")

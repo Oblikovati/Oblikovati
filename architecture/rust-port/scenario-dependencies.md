@@ -26,8 +26,13 @@ Added, removed, renamed, changed and mode-changed tracked inputs are reported.
 The optional runtime inventory requires Linux no-follow and no-atime file
 descriptors; unsupported platforms decline instead of claiming completeness.
 Git commands use a restricted environment and ignore replacement objects. The
-clean-worktree check also refuses index entries marked assume-unchanged or
-skip-worktree. Revisions containing Git submodules are refused because the map
+requested checkout root and HEAD must match before and after mapping or
+comparison. The check refuses a redirected `core.worktree`, disables Git's
+filesystem monitor and untracked cache for cleanliness checks, and refuses
+index entries marked assume-unchanged or skip-worktree. A runtime root supplied
+for another scenario is rejected instead of silently ignored. These checks are
+not atomic: concurrent changes that are reverted between observations can go
+undetected, and local Git metadata and the host are not authenticated. Revisions containing Git submodules are refused because the map
 does not inventory their contents, including uninitialized or ignored changes.
 Ignored files and host inputs remain outside this check. Unknown
 schemas, scenario changes, missing records and divergent histories are refused. Keep output outside the worktree to avoid making the map dirty.
