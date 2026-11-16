@@ -3,9 +3,9 @@
 use oblikovati_model::sketch::SketchPlane;
 use std::collections::VecDeque;
 
-// Two batches retain the stable point pass while the curve witness pass changes.
-// Bound retained coordinate and pixel storage to 16 MiB across both entries.
-const CAPACITY: usize = 2;
+// Retain point, curve-witness and glyph batches during sketch interaction (#4035).
+// Bound retained coordinate and pixel storage to 24 MiB across three entries.
+const CAPACITY: usize = 3;
 const MAX_BATCH_BYTES: usize = 8 * 1024 * 1024;
 const MAX_POINTS: usize =
     MAX_BATCH_BYTES / (std::mem::size_of::<[f64; 2]>() + std::mem::size_of::<[i32; 2]>());

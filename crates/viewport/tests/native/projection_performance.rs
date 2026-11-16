@@ -4,6 +4,44 @@ use super::*;
 use oblikovati_model::sketch::SketchPlane;
 
 #[test]
+#[ignore = "compare individual and cached glyph projections"]
+fn measure_constraint_glyph_projection_reuse() {
+    let runtime = ViewportRuntime::new(Default::default()).unwrap();
+    let mut view = runtime
+        .open_window("Glyph projection benchmark", [1440, 900])
+        .unwrap();
+    view.poll_events(64).unwrap();
+    assert_eq!(view.drawable_extent().unwrap(), [1440, 900]);
+    eprintln!(
+        "glyph_projection device={} extent=1440x900",
+        runtime.device_name()
+    );
+    let points: Vec<_> = (0..201).map(|i| [i as f64 * 0.04 - 4., 0.1]).collect();
+    let mut single = Vec::new();
+    let mut cached = Vec::new();
+    for index in 0..140 {
+        let start = Instant::now();
+        let expected: Vec<_> = points
+            .iter()
+            .map(|point| view.sketch_pixel(SketchPlane::xy(), *point).unwrap())
+            .collect();
+        let single_time = start.elapsed();
+        let start = Instant::now();
+        let actual = view.sketch_pixels(SketchPlane::xy(), &points).unwrap();
+        let cached_time = start.elapsed();
+        assert_eq!(actual, expected);
+        if index >= 20 {
+            single.push(single_time);
+            cached.push(cached_time);
+        }
+    }
+    report_projection("glyph-individual", points.len(), &single);
+    report_projection("glyph-cached", points.len(), &cached);
+    view.close();
+    assert!(runtime.validation_errors().unwrap().is_empty());
+}
+
+#[test]
 #[ignore = "measure checked sketch projection in an optimized build"]
 fn measure_sketch_projection_batches() {
     let runtime = ViewportRuntime::new(Default::default()).unwrap();

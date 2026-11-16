@@ -54,19 +54,45 @@ pub(super) fn projected_constraint_glyphs(
     window: &dyn HeadWindow,
     owner: &dyn HeadWork,
 ) -> Vec<oblikovati_gui::GuiConstraintGlyph> {
-    owner
-        .sketch_constraint_marks()
+    project_constraint_marks(window, owner.sketch_constraint_marks())
+}
+fn project_constraint_marks(
+    window: &dyn HeadWindow,
+    marks: Vec<crate::HeadConstraintMark>,
+) -> Vec<oblikovati_gui::GuiConstraintGlyph> {
+    let pixels = project_mark_pixels(window, &marks);
+    marks
         .into_iter()
-        .filter_map(|mark| {
-            let pixel = window.sketch_pixel(mark.plane, mark.at).ok()?;
+        .zip(pixels)
+        .filter_map(|(mark, pixel)| {
             Some(oblikovati_gui::GuiConstraintGlyph {
                 sketch: mark.sketch,
                 constraint: mark.constraint,
                 related: mark.related,
-                pixel,
+                pixel: pixel?,
                 text: mark.text,
             })
         })
+        .collect()
+}
+fn project_mark_pixels(
+    window: &dyn HeadWindow,
+    marks: &[crate::HeadConstraintMark],
+) -> Vec<Option<[i32; 2]>> {
+    let Some(first) = marks.first() else {
+        return Vec::new();
+    };
+    if marks.iter().all(|mark| mark.plane.same_recipe(first.plane)) {
+        let points: Vec<_> = marks.iter().map(|mark| mark.at).collect();
+        if let Ok(pixels) = window.sketch_pixels(first.plane, &points)
+            && pixels.len() == marks.len()
+        {
+            return pixels.into_iter().map(Some).collect();
+        }
+    }
+    marks
+        .iter()
+        .map(|mark| window.sketch_pixel(mark.plane, mark.at).ok())
         .collect()
 }
 /// How far the triad's axes reach on screen, in pixels: a mark, not a measure.
@@ -180,3 +206,7 @@ pub(super) fn origin_plane_outlines(
         })
         .collect()
 }
+
+#[cfg(test)]
+#[path = "../../tests/constraint_glyph_projection.rs"]
+mod tests;

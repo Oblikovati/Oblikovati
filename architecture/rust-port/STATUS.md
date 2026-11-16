@@ -37,6 +37,9 @@ Last checked: 2026-11-16 on `rust-work`. Refresh from current evidence at each c
   27.920 ms p95 for the combined work; see
   `receipts/2026-11-16-sketch-redraw-capture-4031/`. These are separate
   measurements, not an end-to-end latency result.
+  Constraint glyphs now use a cached same-plane projection batch. A debug
+  projection-only diagnostic and native hover run are recorded in
+  `receipts/2026-11-16-glyph-projection-4035/`; 60 fps remains unproven.
 - Application closing (#4030) has a native close guard and save prompt. The
   current live feature passed 3/3 scenarios in an X11 diagnostic at `2dee60eef`;
   see `receipts/2026-11-16-application-closing-4030/`. It is not in the pinned

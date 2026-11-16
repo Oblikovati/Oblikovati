@@ -4,6 +4,8 @@
 
 ### Changed
 
+- Reduced repeated projection of constraint glyphs in an active sketch. (#4035)
+
 - Enabled named-edge Fillet preview and creation in the Part viewport, with undo, redo, and save/reopen support. (#4045)
 
 - Refresh camera depth when an edited model would be clipped. (#4044)

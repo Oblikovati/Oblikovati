@@ -40,14 +40,17 @@ fn alternating_batches_remain_cached_and_eviction_is_bounded() {
     let a = [[0., 0.]];
     let b = [[1., 1.]];
     let c = [[2., 2.]];
+    let d = [[3., 3.]];
     cache.store(key(1, 1), &a, &[[1, 1]]);
     cache.store(key(1, 1), &b, &[[2, 2]]);
     assert!(cache.get(key(1, 1), &a).is_some());
     cache.store(key(1, 1), &c, &[[3, 3]]);
+    cache.store(key(1, 1), &d, &[[4, 4]]);
     assert!(cache.get(key(1, 1), &a).is_some());
     assert!(cache.get(key(1, 1), &b).is_none());
     assert!(cache.get(key(1, 1), &c).is_some());
-    assert_eq!(cache.entries.len(), 2);
+    assert!(cache.get(key(1, 1), &d).is_some());
+    assert_eq!(cache.entries.len(), 3);
 }
 
 #[test]
