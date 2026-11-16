@@ -162,7 +162,12 @@ fn run_owner_frame(
     control.pending |= synchronize_sketch_view(window, owner)?;
     control.pending |= publish_sketch_preview(window, owner)?;
     let closing = inputs.contains(&ViewportEvent::CloseRequested);
-    control.events(&inputs, !closing || owner.close_allowed()?);
+    let close_allowed = !closing || owner.close_allowed()?;
+    if closing && !close_allowed {
+        window.request_application_close_confirmation()?;
+        activity.pending = true;
+    }
+    control.events(&inputs, close_allowed);
     if control.stopped() || gui.deferred {
         return Ok(activity);
     }
@@ -195,6 +200,9 @@ fn process_frame_inputs(
     changed |= synchronize_sketch_view(window, owner)?;
     changed |= gui::advance_gui(window, owner, None)?.changed;
     for event in inputs {
+        if *event == ViewportEvent::CloseRequested {
+            continue;
+        }
         let event = owner.resolve_shortcut(*event);
         let gui = gui::advance_gui(window, owner, Some(&event))?;
         let shortcut = owner.take_shortcut_action();

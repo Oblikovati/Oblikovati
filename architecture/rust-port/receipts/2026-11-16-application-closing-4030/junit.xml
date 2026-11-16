@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Close the application: mnt/vininas-projects/MCAD-Scenarios/features/application/application-closing/application-closing.feature" package="testsuite/Feature: Close the application: mnt/vininas-projects/MCAD-Scenarios/features/application/application-closing/application-closing.feature" tests="3" errors="0" failures="0" hostname="localhost" timestamp="2026-11-16T13:24:54.116197145Z" time="60.647071654"><testcase name="Scenario: Cancel closing the application when a document has unsaved changes: mnt/vininas-projects/MCAD-Scenarios/features/application/application-closing/application-closing.feature:4:3" time="20.946065866"><system-out><![CDATA[  Scenario: Cancel closing the application when a document has unsaved changes
+   ✔  Given the MCAD Software has an open part document with unsaved changes
+   ✔  When the user selects the application window's Close control
+   ✔  Then a save-changes prompt identifies the part document
+   ✔  And the prompt offers Yes, No and Cancel
+   ✔  When the user chooses Cancel
+   ✔  Then the save-changes prompt closes
+   ✔  And the part document remains open
+   ✔  And the MCAD Software remains open
+]]></system-out></testcase><testcase name="Scenario: Close the application when the open document has no unsaved changes: mnt/vininas-projects/MCAD-Scenarios/features/application/application-closing/application-closing.feature:15:3" time="21.331029371"><system-out><![CDATA[  Scenario: Close the application when the open document has no unsaved changes
+   ✔  Given the MCAD Software has an open saved document with no unsaved changes
+   ✔  When the user selects the application window's Close control
+   ✔  Then the MCAD Software closes without a save-changes prompt
+]]></system-out></testcase><testcase name="Scenario: Close the application when no document is open: mnt/vininas-projects/MCAD-Scenarios/features/application/application-closing/application-closing.feature:21:3" time="18.369976417"><system-out><![CDATA[  Scenario: Close the application when no document is open
+   ✔  Given the MCAD Software is open with no document open
+   ✔  When the user selects the application window's Close control
+   ✔  Then the MCAD Software closes without a save-changes prompt
+]]></system-out></testcase></testsuite></testsuites>

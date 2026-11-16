@@ -135,6 +135,10 @@ impl HeadWindow for ScriptedGuiWindow {
     fn capture_isometric_preview(&mut self, document: u64) -> Result<bool, String> {
         self.native.capture_isometric_preview(document)
     }
+    fn request_application_close_confirmation(&mut self) -> Result<(), String> {
+        self.confirmation_requests += 1;
+        self.native.request_application_close_confirmation()
+    }
     fn request_close(&mut self) -> Result<bool, String> {
         self.native.request_close()
     }

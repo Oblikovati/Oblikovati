@@ -209,6 +209,10 @@ impl GuiFrameEngine {
         }
         self.draw_controls(request)
     }
+    /// Request a guarded application exit; example: `engine.request_application_close()`.
+    pub fn request_application_close(&mut self) {
+        self.document_files.request_application_close();
+    }
     /// Show a captured window picture in Save As; example: after `CaptureWindowPreview`.
     pub fn receive_window_preview(&mut self, image: crate::GuiPreviewImage) {
         self.document_files.receive_window_preview(image);

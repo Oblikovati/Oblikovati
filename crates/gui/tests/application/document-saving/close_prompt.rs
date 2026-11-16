@@ -65,6 +65,135 @@ const CLEAN_SAVED: fn(u64) -> Row = |id| Row {
 };
 
 #[test]
+fn application_close_prompts_for_edited_document_and_cancel_keeps_it() {
+    let state = state(&[EDITED_NEW(1), CLEAN_SAVED(2)]);
+    let mut prompt = ClosePrompt::default();
+    let mut actions = Vec::new();
+    prompt.request_application_exit();
+    prompt.advance_application_exit(&state, &mut actions, false);
+    assert_eq!(prompt.asking, [1]);
+    assert!(actions.is_empty());
+    prompt.resolve(&state, CloseAnswer::Keep, &mut CloseOutcome::default());
+    assert!(!prompt.application_exit && prompt.asking.is_empty());
+    assert!(actions.is_empty());
+}
+
+#[test]
+fn application_close_discards_only_confirmed_documents_then_exits() {
+    let initial = state(&[EDITED_SAVED(1), EDITED_SAVED(2)]);
+    let mut prompt = ClosePrompt::default();
+    let mut actions = Vec::new();
+    prompt.request_application_exit();
+    prompt.advance_application_exit(&initial, &mut actions, false);
+    let mut outcome = CloseOutcome::default();
+    prompt.resolve(&initial, CloseAnswer::Discard, &mut outcome);
+    assert_eq!(outcome.actions, [close(1, true)]);
+    let remaining = state(&[EDITED_SAVED(2)]);
+    prompt.advance_application_exit(&remaining, &mut actions, false);
+    assert_eq!(prompt.asking, [2]);
+    prompt.resolve(
+        &remaining,
+        CloseAnswer::Discard,
+        &mut CloseOutcome::default(),
+    );
+    prompt.advance_application_exit(&state(&[]), &mut actions, false);
+    assert_eq!(actions, [GuiShellAction::Exit]);
+}
+
+#[test]
+fn failed_save_cancels_application_exit_without_discarding() {
+    let state = state(&[EDITED_SAVED(1)]);
+    let mut prompt = ClosePrompt::default();
+    let mut actions = Vec::new();
+    prompt.request_application_exit();
+    prompt.advance_application_exit(&state, &mut actions, false);
+    prompt.resolve(&state, CloseAnswer::Save, &mut CloseOutcome::default());
+    prompt.advance_application_exit(&state, &mut actions, false);
+    assert!(!prompt.application_exit && actions.is_empty());
+}
+
+#[test]
+fn cancelled_first_save_ends_application_exit() {
+    let state = state(&[EDITED_NEW(1)]);
+    let mut prompt = ClosePrompt::default();
+    let mut actions = Vec::new();
+    prompt.request_application_exit();
+    prompt.advance_application_exit(&state, &mut actions, false);
+    prompt.resolve(&state, CloseAnswer::Save, &mut CloseOutcome::default());
+    prompt.advance_application_exit(&state, &mut actions, true);
+    prompt.cancel_application_exit();
+    assert!(!prompt.application_exit && actions.is_empty());
+}
+
+#[test]
+fn repeated_application_close_does_not_duplicate_the_confirmation() {
+    let state = state(&[EDITED_NEW(1)]);
+    let mut prompt = ClosePrompt::default();
+    let mut actions = Vec::new();
+    prompt.request_application_exit();
+    prompt.advance_application_exit(&state, &mut actions, false);
+    prompt.request_application_exit();
+    prompt.advance_application_exit(&state, &mut actions, false);
+    assert_eq!(prompt.asking, [1]);
+    assert!(actions.is_empty());
+}
+
+#[test]
+fn application_close_discards_an_untouched_new_part_without_prompt() {
+    let initial = state(&[UNTOUCHED_NEW(1)]);
+    let mut prompt = ClosePrompt::default();
+    let mut actions = Vec::new();
+    prompt.request_application_exit();
+    prompt.advance_application_exit(&initial, &mut actions, false);
+    assert_eq!(actions, [close(1, true)]);
+    actions.clear();
+    prompt.advance_application_exit(&state(&[]), &mut actions, false);
+    assert_eq!(actions, [GuiShellAction::Exit]);
+}
+
+#[test]
+fn application_close_never_discards_an_open_transaction() {
+    let mut state = state(&[UNTOUCHED_NEW(1)]);
+    state.transaction_open = true;
+    let mut prompt = ClosePrompt::default();
+    let mut actions = Vec::new();
+    prompt.request_application_exit();
+    prompt.advance_application_exit(&state, &mut actions, false);
+    assert!(actions.is_empty());
+    assert!(!prompt.application_exit);
+}
+
+#[test]
+fn suppressed_application_close_saves_a_dirty_existing_document() {
+    let mut state = state(&[EDITED_SAVED(1)]);
+    state.prompts = PromptPreferences::default().with(
+        ApplicationPrompt::SaveChanges,
+        PromptFrequency::SuppressForSession,
+    );
+    let mut prompt = ClosePrompt::default();
+    let mut actions = Vec::new();
+    prompt.request_application_exit();
+    let first_saves = prompt.advance_application_exit(&state, &mut actions, false);
+    assert!(first_saves.is_empty() && prompt.asking.is_empty());
+    assert_eq!(actions, [GuiShellAction::Save, close(1, false)]);
+}
+
+#[test]
+fn suppressed_application_close_requests_first_save_without_discarding() {
+    let mut state = state(&[EDITED_NEW(1)]);
+    state.prompts = PromptPreferences::default().with(
+        ApplicationPrompt::SaveChanges,
+        PromptFrequency::SuppressPermanently,
+    );
+    let mut prompt = ClosePrompt::default();
+    let mut actions = Vec::new();
+    prompt.request_application_exit();
+    let first_saves = prompt.advance_application_exit(&state, &mut actions, false);
+    assert_eq!(first_saves, [1]);
+    assert!(prompt.asking.is_empty() && actions.is_empty());
+}
+
+#[test]
 fn an_edited_document_waits_and_the_other_commands_proceed() {
     let state = state(&[EDITED_NEW(1), CLEAN_SAVED(2)]);
     let mut prompt = ClosePrompt::default();

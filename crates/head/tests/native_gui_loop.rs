@@ -26,6 +26,7 @@ struct ScriptedGuiWindow {
     scripted: Vec<ViewportEvent>,
     passed: Vec<ViewportEvent>,
     gui_actions: Vec<oblikovati_gui::GuiShellAction>,
+    confirmation_requests: usize,
     scene_colors: Vec<[f32; 4]>,
     scene_triangles: Vec<oblikovati_viewport::ViewportTriangle>,
     presentation_delay: Duration,
@@ -38,6 +39,7 @@ fn scripted_window(native: NativeHeadWindow) -> ScriptedGuiWindow {
         scripted: Vec::new(),
         passed: Vec::new(),
         gui_actions: Vec::new(),
+        confirmation_requests: 0,
         scene_colors: Vec::new(),
         scene_triangles: Vec::new(),
         presentation_delay: Duration::ZERO,
@@ -428,3 +430,6 @@ mod sketch_preferences;
 
 #[path = "native_gui_loop/selection_preferences.rs"]
 mod selection_preferences;
+
+#[path = "native_gui_loop/application_close.rs"]
+mod application_close;

@@ -110,6 +110,9 @@ const RECENT_MENU_ROWS: usize = 8;
 const RECENT_NAME_X: f32 = 22.;
 const RECENT_PIN_X: f32 = 190.;
 impl GuiDocumentFiles {
+    pub(crate) fn request_application_close(&mut self) {
+        self.close_prompt.request_application_exit();
+    }
     pub(crate) fn request_save_path(
         &mut self,
         document: u64,
@@ -267,13 +270,24 @@ impl GuiDocumentFiles {
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
     ) {
+        let exit_saves = self.close_prompt.advance_application_exit(
+            state,
+            actions,
+            self.save_as.is_open() || self.first_saves.is_waiting(),
+        );
+        self.first_saves.extend(exit_saves);
         let routed = self.close_prompt.intercept(state, actions);
         self.apply_close_outcome(routed, actions);
         let answered = self.close_prompt.panel(ui, state);
         self.apply_close_outcome(answered, actions);
         self.next_first_save(state, actions);
-        if self.save_as.panel(ui, state, actions) == Some(DialogEnd::Cancelled) {
-            self.first_saves.cancel();
+        match self.save_as.panel(ui, state, actions) {
+            Some(DialogEnd::Cancelled) => {
+                self.first_saves.cancel();
+                self.close_prompt.cancel_application_exit();
+            }
+            Some(DialogEnd::Accepted) => self.close_prompt.resume_application_exit(),
+            None => {}
         }
     }
     fn apply_close_outcome(&mut self, outcome: CloseOutcome, actions: &mut Vec<GuiShellAction>) {

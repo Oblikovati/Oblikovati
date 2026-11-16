@@ -47,6 +47,10 @@ pub trait HeadWindow {
     fn request_close(&mut self) -> Result<bool, String> {
         Err("exit: expected a native window that can close".into())
     }
+    /// Queue the application close confirmation; example: `window.request_application_close_confirmation()?`.
+    fn request_application_close_confirmation(&mut self) -> Result<(), String> {
+        Err("application close confirmation: expected a window with a GUI".into())
+    }
     /// Capture the current composed window on the owner thread; example: `window.capture_window()?`.
     fn capture_window(&self) -> Result<oblikovati_viewport::ViewportCapture, String> {
         Err("window capture: expected a native capture-capable window".into())
