@@ -30,7 +30,12 @@ requested checkout root and HEAD must match before and after mapping or
 comparison. The check refuses a redirected `core.worktree`, disables Git's
 filesystem monitor and untracked cache for cleanliness checks, and refuses
 index entries marked assume-unchanged or skip-worktree. A runtime root supplied
-for another scenario is rejected instead of silently ignored. These checks are
+for another scenario is rejected instead of silently ignored. Cleanliness requires
+both the configured Git status and a second status with case folding disabled;
+this catches case-distinct untracked paths hidden by `core.ignorecase` (#4018).
+If either check reports a change, the tree is dirty. This conservative second
+check can decline a usable tree on a case-insensitive filesystem; that platform
+has not been tested here. These checks are
 not atomic: concurrent changes that are reverted between observations can go
 undetected, and local Git metadata and the host are not authenticated. Revisions containing Git submodules are refused because the map
 does not inventory their contents, including uninitialized or ignored changes.
