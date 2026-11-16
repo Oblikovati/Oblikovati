@@ -12,6 +12,12 @@ Last checked: 2026-11-16 at application commit `37dc93c0f`. Refresh from current
 
 ## Current state
 
+- Application closing (#4030) has a native close guard and save prompt. The
+  current live feature passed 3/3 scenarios in an X11 diagnostic at `2dee60eef`;
+  see `receipts/2026-11-16-application-closing-4030/`. It is not in the pinned
+  snapshot, two scenarios have reference capture gaps, and #3978 prevents a
+  verified acceptance claim. A wider GUI run also found the clean-base #3850
+  UI-scale test failure.
 - Martensite v0.13.1 is pinned at `bef25f47548431c8f128f08f66a1f719bcee4982`
   (#4025). The adapter and native cube checks passed; the curved profile
   comparison still fails as reported in Martensite #407. See
