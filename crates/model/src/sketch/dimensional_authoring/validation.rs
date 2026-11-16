@@ -95,5 +95,6 @@ fn offset_spline_ownership_relation(offset: SketchEntityId) -> PlanarConstraint 
         offset,
         parameter: 0,
         side: LineContactSide::Left,
+        signed: false,
     }
 }

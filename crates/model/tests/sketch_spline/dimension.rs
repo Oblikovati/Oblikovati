@@ -188,6 +188,7 @@ fn append_explicit_right_side(sketch: &mut Sketch2D) {
                 offset: id(5),
                 parameter: 1,
                 side: LineContactSide::Right,
+                signed: false,
             },
         )
         .unwrap();
@@ -216,4 +217,58 @@ fn assert_scaled_distance(scale: f64, sign: f64) {
     let actual = outcome.candidate().offset_spline(id(5)).unwrap().distance();
     assert!((actual / (sign * 0.5 * scale) - 1.0).abs() < 1e-8);
     assert_eq!(outcome.candidate().points(), sketch.points());
+}
+
+#[test]
+fn signed_expression_relation_has_unit_jacobian_across_both_sides() {
+    for seed in [-2.0, 0.0, 2.0] {
+        for expression in ["-5 mm", "0 mm", "5 mm"] {
+            assert_signed_expression_solve(seed, expression);
+        }
+    }
+}
+fn assert_signed_expression_solve(seed: f64, expression: &str) {
+    let mut sketch = owned(SketchSplineKind::Control, seed);
+    let points = sketch.points().to_vec();
+    sketch
+        .add_constraint(SketchConstraintId(1), PlanarConstraint::Ground { points })
+        .unwrap();
+    SketchDimensionalConstraintCreation::Measured(MeasuredDimensionOperands::SignedOffsetSpline {
+        offset: id(5),
+    })
+    .append(&mut sketch, SketchConstraintId(2), 1)
+    .unwrap();
+    let mut parameters = ParameterCollection::new(Default::default());
+    parameters
+        .insert_expression(1, "offset", USER_PARAM, expression)
+        .unwrap();
+    let solved = sketch
+        .solve(&parameters, Default::default(), || false)
+        .unwrap();
+    let target = match expression {
+        "-5 mm" => -0.5,
+        "0 mm" => 0.0,
+        _ => 0.5,
+    };
+    let row = solved.numerical().evaluation.jacobian().last().unwrap();
+    assert_eq!(&row[..6], &[0.0; 6]);
+    assert_eq!(row[6], 1.0);
+    assert!((solved.candidate().offset_spline(id(5)).unwrap().distance() - target).abs() < 1e-8);
+    assert!(
+        (solved
+            .candidate()
+            .measure_dimension(SketchConstraintId(2))
+            .unwrap()
+            .value
+            - target)
+            .abs()
+            < 1e-8
+    );
+    let recipe = solved.candidate().recipe();
+    assert_eq!(recipe.version, 18);
+    let restored = Sketch2D::from_recipe(&recipe).unwrap();
+    assert!(restored.same_recipe(solved.candidate()));
+    let mut old = recipe;
+    old.version = 17;
+    assert!(Sketch2D::from_recipe(&old).is_err());
 }

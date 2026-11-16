@@ -31,6 +31,9 @@ pub enum MeasuredDimensionOperands {
     ArcLength {
         arc: SketchEntityId,
     },
+    SignedOffsetSpline {
+        offset: SketchEntityId,
+    },
 }
 /// Branch-sensitive operands; arrays name their role and retain the API operand order.
 #[derive(Clone, Debug, PartialEq)]
@@ -112,6 +115,12 @@ impl MeasuredDimensionOperands {
             Self::Radius { curve } => PlanarConstraint::Radius { curve, parameter },
             Self::Diameter { curve } => PlanarConstraint::Diameter { curve, parameter },
             Self::ArcLength { arc } => PlanarConstraint::ArcLength { arc, parameter },
+            Self::SignedOffsetSpline { offset } => PlanarConstraint::OffsetSplineDistance {
+                offset,
+                parameter,
+                side: super::LineContactSide::Left,
+                signed: true,
+            },
         }
     }
 }

@@ -70,21 +70,84 @@ fn invalid_and_unavailable_bindings_leave_geometry_and_history_unchanged() {
 }
 
 #[test]
-fn named_offset_spline_declines_instead_of_baking_its_distance() {
+fn signed_offset_spline_expression_crosses_zero_and_survives_history_and_reload() {
     let (mut files, document, mut source) = fresh();
     let fit = super::super::spline_requests::fit_request("chord", false);
     let parent = add_call(&mut files, &mut source, &fit).unwrap();
     let request = super::super::spline_requests::offset_request(parent.entity_id, "width");
+    let result = add_call(&mut files, &mut source, &request).unwrap();
+    assert_offset(&files, document, result.entity_id, 1.0);
+    for (expression, expected) in [("0 cm", 0.0), ("-2 cm", -2.0)] {
+        set_width(&mut files, &mut source, expression);
+        assert_offset(&files, document, result.entity_id, expected);
+    }
+    files.commands(document).unwrap().undo().unwrap();
+    assert_offset(&files, document, result.entity_id, 0.0);
+    files.commands(document).unwrap().redo().unwrap();
+    assert_offset(&files, document, result.entity_id, -2.0);
+    let reopened = reopen_with_observer(&mut files, document, &mut source, Default::default());
+    assert_offset(&files, reopened, result.entity_id, -2.0);
+    set_width(&mut files, &mut source, "3 cm");
+    assert_offset(&files, reopened, result.entity_id, 3.0);
+}
+#[test]
+fn signed_offset_parameter_edit_veto_keeps_geometry_and_history() {
+    let (mut files, document, mut source) = fresh();
+    let fit = super::super::spline_requests::fit_request("chord", false);
+    let parent = add_call(&mut files, &mut source, &fit).unwrap();
+    let request = super::super::spline_requests::offset_request(parent.entity_id, "width");
+    let result = add_call(&mut files, &mut source, &request).unwrap();
+    let reopened = reopen_with_observer(
+        &mut files,
+        document,
+        &mut source,
+        QueryObserver {
+            veto: true,
+            ..Default::default()
+        },
+    );
+    let before = owner_revision(&files, reopened);
+    let error = Client::new(FileHost::new(&mut files, &mut source, "test"))
+        .parameters()
+        .set(&ParameterSetArgs {
+            name: "width".into(),
+            expression: "-2 cm".into(),
+            ..Default::default()
+        })
+        .unwrap_err();
+    assert!(error.to_string().contains("locked"));
+    assert_offset(&files, reopened, result.entity_id, 1.0);
+    let after = owner_revision(&files, reopened);
+    assert_eq!((after.1, after.2), (before.1, before.2));
+    let params = owned_parameters(&files, reopened);
+    let width = params.find("width").unwrap();
+    assert_eq!(params.get(width).unwrap().source, "1 cm");
+}
+#[test]
+fn signed_offset_refuses_invalid_sources_without_geometry_or_history_changes() {
+    let (mut files, document, mut source) = fresh();
+    let fit = super::super::spline_requests::fit_request("chord", false);
+    let parent = add_call(&mut files, &mut source, &fit).unwrap();
     let before = owner_revision(&files, document);
     let geometry = rows(&files);
+    for expression in ["missing", "width + 2 deg", "width / 0"] {
+        let request = super::super::spline_requests::offset_request(parent.entity_id, expression);
+        assert!(add_call(&mut files, &mut source, &request).is_err());
+        assert_eq!(owner_revision(&files, document), before);
+        assert_eq!(rows(&files), geometry);
+    }
+}
+fn assert_offset(files: &DiscoveryWorkspace, document: u64, entity: u64, expected: f64) {
+    let sketch = &owned_geometry(files, document).sketches()[0];
+    let offset = sketch
+        .geometry()
+        .offset_spline(SketchEntityId(entity))
+        .unwrap();
     assert!(
-        add_associative(&mut files, &mut source, &request)
-            .unwrap_err()
-            .to_string()
-            .contains("offsetSpline")
+        (offset.distance() - expected).abs() < 1e-7,
+        "distance {} expected {expected}",
+        offset.distance()
     );
-    assert_eq!(owner_revision(&files, document), before);
-    assert_eq!(rows(&files), geometry);
 }
 
 #[test]

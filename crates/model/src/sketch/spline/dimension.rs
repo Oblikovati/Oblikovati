@@ -20,6 +20,7 @@ impl Sketch2D {
                 offset,
                 parameter,
                 side,
+                signed: false,
             },
         )
     }
@@ -35,6 +36,19 @@ pub(super) fn has_offset_dimension(recipe: &crate::sketch::SketchRecipe) -> bool
 pub(super) fn require_offset_dimension_schema(
     recipe: &crate::sketch::SketchRecipe,
 ) -> Result<(), SketchError> {
+    if recipe.version < 18
+        && recipe.constraints.iter().any(|c| {
+            matches!(
+                c.relation,
+                PlanarConstraint::OffsetSplineDistance { signed: true, .. }
+            )
+        })
+    {
+        return Err(SketchError::Definition(format!(
+            "signed offset-spline recipe version {}: expected version 18",
+            recipe.version
+        )));
+    }
     if recipe.version < 11 && has_offset_dimension(recipe) {
         return Err(SketchError::Definition(format!(
             "offset-spline dimension recipe version {}: expected version 11 for retained side metadata",

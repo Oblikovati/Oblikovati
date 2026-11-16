@@ -139,6 +139,8 @@ pub enum PlanarConstraint {
         offset: SketchEntityId,
         parameter: u64,
         side: super::LineContactSide,
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        signed: bool,
     },
     EllipseMinorRadius {
         ellipse: SketchEntityId,

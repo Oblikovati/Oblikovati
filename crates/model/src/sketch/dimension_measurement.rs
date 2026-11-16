@@ -104,6 +104,7 @@ fn linear_measurement(
     use PlanarConstraint::*;
     match relation {
         Distance { measure, .. } => super::residual::distance(variables, *measure),
+        OffsetSplineDistance { signed: true, .. } => Ok(variables[0].clone()),
         OffsetSplineDistance { .. } => Ok(variables[0].abs()?),
         Radius { .. } | EllipseRadius { .. } | EllipseMinorRadius { .. } => {
             Ok(variables[0].clone())

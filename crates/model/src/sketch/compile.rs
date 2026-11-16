@@ -171,10 +171,21 @@ fn equation(
             side,
         },
         PlanarConstraint::OffsetSplineDistance {
-            parameter, side, ..
+            parameter,
+            side,
+            signed,
+            ..
         } => PlanarEquation::ScalarLength {
-            target: length_target(constraint, parameter, parameters)?,
-            domain: super::scalar_length::LengthVariableDomain::Signed(side),
+            target: if signed {
+                signed_length_target(constraint, parameter, parameters)?
+            } else {
+                length_target(constraint, parameter, parameters)?
+            },
+            domain: super::scalar_length::LengthVariableDomain::Signed(if signed {
+                super::LineContactSide::Left
+            } else {
+                side
+            }),
         },
         PlanarConstraint::EqualRadius { .. } => PlanarEquation::EqualRadius,
         PlanarConstraint::Diameter { parameter, .. } => PlanarEquation::ScalarLength {
@@ -248,6 +259,24 @@ fn equation(
             target: length_target(constraint, parameter, parameters)?,
         },
     })
+}
+fn signed_length_target(
+    constraint: &SketchConstraint,
+    parameter: u64,
+    parameters: &ParameterCollection<u64>,
+) -> Result<f64, SketchError> {
+    dimensional_target(
+        constraint,
+        parameter,
+        parameters,
+        DimensionDomain {
+            kind: Dimension::Length,
+            minimum: f64::NEG_INFINITY,
+            maximum: f64::INFINITY,
+            label: "signed length",
+            expected: "a healthy finite signed working-unit length",
+        },
+    )
 }
 fn length_target(
     constraint: &SketchConstraint,

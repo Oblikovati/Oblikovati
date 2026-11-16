@@ -14,6 +14,7 @@ pub(super) enum RadiusBinding {
     Circle(String),
     Major(String),
     Minor(String),
+    SignedOffset(String),
 }
 
 pub(super) fn named(snapshot: &DocumentSnapshot, expression: &str) -> Result<bool, Error> {
@@ -41,7 +42,7 @@ pub(super) fn bindings(
         }
     }
     if request.kind == "offsetSpline" && named(snapshot, &request.radius)? {
-        return Err(Error("sketch.addEntity offsetSpline radius: expected a literal until associative offset placement is supported".into()));
+        result.push(RadiusBinding::SignedOffset(request.radius.clone()));
     }
     Ok(result)
 }
@@ -52,6 +53,10 @@ impl RadiusBinding {
         entity: oblikovati_model::sketch::SketchEntityId,
     ) -> SketchDimensionCreation {
         let (operands, expression) = match self {
+            Self::SignedOffset(source) => (
+                MeasuredDimensionOperands::SignedOffsetSpline { offset: entity },
+                source,
+            ),
             Self::Circle(source) => (MeasuredDimensionOperands::Radius { curve: entity }, source),
             Self::Major(source) => (
                 MeasuredDimensionOperands::EllipseRadius { ellipse: entity },

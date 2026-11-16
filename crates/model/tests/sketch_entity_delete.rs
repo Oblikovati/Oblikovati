@@ -103,6 +103,7 @@ fn install_offset_relation(sketch: &mut Sketch2D) {
         offset: id(16),
         parameter: 99,
         side: LineContactSide::Right,
+        signed: false,
     };
     let constraint = SketchConstraintId(1);
     sketch.add_constraint(constraint, relation).unwrap();
