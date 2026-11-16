@@ -147,12 +147,14 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
   are diagnostic.
 - Quick access: the diagnostic passed 11 of 12 scenarios. Clear can open
   before selection and can clear multiple browser-selected bodies in one edit
-  (#3962). Viewport body multi-selection now passes frame-loop tests; named
-  faces, occurrences, and OS-level input remain open. See
+  (#3962). Viewport body multi-selection passes frame-loop tests; see
   `implementation-viewport-body-toggle.md` and
-  `receipts/2026-11-15-clear-multiple-bodies/`. Clear has confirmation, undo and
-  redo checks in `receipts/2026-11-15-clear-appearance/`; its wider selection
-  workflow remains open (#3962). The recorded profile remains incomplete
+  `receipts/2026-11-15-clear-multiple-bodies/`. Exact named-face and mixed
+  body-and-face clearing also have owner tests and OS-input diagnostics; see
+  `receipts/2026-11-15-live-clear-faces/` and
+  `receipts/2026-11-15-live-clear-mixed/`. These diagnostics do not establish
+  reusable BDD evidence (#3978). Assembly occurrences remain open (#3962).
+  The recorded profile remains incomplete
   (#3955). The scenario owner clarified that the menu-inspection case does
   not require a particular toolbar profile.
 - Body properties: all six pinned scenarios passed with checked setup, list
