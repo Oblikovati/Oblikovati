@@ -22,7 +22,7 @@
       "kernel_integration": "crates/martensite/src/prism/snapshot.rs and crates/head/src/part_scene/physical.rs integrate the analytic body; Go part query uses a mesh and is not the numeric oracle.",
       "rust_tests": "Native scenario: crates/head/tests/application/body-properties/steps.rs; analytic prism assertion: crates/head/tests/owner/part_scene/physical.rs.",
       "oracle": "Independent rectangular prism formulas for volume, surface area, centroid and density-scaled mass; no Go per-body numeric comparison established.",
-      "expected_result": "Initially unavailable values become mass 24 g, area 5200 mm², volume 24000 mm³, centroid (20, 15, 10) mm for the native prism fixture and remain displayed when reopened.",
+      "expected_result": "Initially unavailable values become mass 24 g, area 5200 mm\u00b2, volume 24000 mm\u00b3, centroid (20, 15, 10) mm for the native prism fixture and remain displayed when reopened.",
       "historical_receipts": [
         {
           "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
@@ -21043,12 +21043,22 @@
       "acceptance_test": "sketch_scenarios_use_the_native_window: move-07 Undo and redoes the accepted precise endpoint",
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3904",
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/4014"
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_transform_tools.go; ../Oblikovati/app/commands_sketch.go",
-      "mapping_reason": "Sketch transformation, constraints, and edit/history behavior."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: app/sketch_transform_tools.go Move and Copy tools; app/commands_sketch.go Sketch.Move registration.",
+      "mapping_reason": "Sketch transformation, constraints, and edit/history behavior.",
+      "go_test_premise": "Go app/sketch_transform_tools_test.go TestSketchMoveTool and TestSketchCopyTool pass on aa8297d1b; they exercise line translation and source retention, not ellipse history or the native UI.",
+      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "Native ellipse selection uses planar-curve picking; the sketch model owns the translation and history. General conic picking has an open Martensite #406 defect.",
+      "platforms": "Linux with Xvfb and Vulkan Lavapipe: frame-loop diagnostic only. Windows, macOS, OS-level input and trusted build provenance are not established.",
+      "kernel_integration": "crates/head/src/owner_sketch_picking.rs calls the Martensite planar-curve adapter; crates/model/src/sketch/translation.rs and crates/session/src/sketch_translation.rs own transformation and transaction.",
+      "rust_tests": "crates/head/tests/sketch/move/precise.rs; sketch_scenarios_use_the_native_window; diagnostic reports in architecture/rust-port/receipts/2026-11-16-move-history-4014/.",
+      "oracle": "Pinned scenario state assertions, sketch recipe and ellipse identity, viewport outline checks, and a 10 mm equals 1 cm coordinate conversion for the precise move. Go line tests are a partial reference only.",
+      "expected_result": "A 10 mm X move is undone, redone, and undone again; the original sketch recipe and position return and the redo restores the displaced center."
     },
     {
       "id": "scenario:82850a47375b7d9b2f1c9bec41f161b01d594b4585f2b9a2608ffe93a59b6935",
@@ -21077,12 +21087,22 @@
       "acceptance_test": "sketch_scenarios_use_the_native_window: move-09 undo and redoes a copied ellipse",
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3904",
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/4014"
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_transform_tools.go; ../Oblikovati/app/commands_sketch.go",
-      "mapping_reason": "Sketch transformation, constraints, and edit/history behavior."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: app/sketch_transform_tools.go Move and Copy tools; app/commands_sketch.go Sketch.Move registration.",
+      "mapping_reason": "Sketch transformation, constraints, and edit/history behavior.",
+      "go_test_premise": "Go app/sketch_transform_tools_test.go TestSketchMoveTool and TestSketchCopyTool pass on aa8297d1b; they exercise line translation and source retention, not ellipse history or the native UI.",
+      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
+      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_capabilities": "Native ellipse selection uses planar-curve picking; the sketch model owns the translation and history. General conic picking has an open Martensite #406 defect.",
+      "platforms": "Linux with Xvfb and Vulkan Lavapipe: frame-loop diagnostic only. Windows, macOS, OS-level input and trusted build provenance are not established.",
+      "kernel_integration": "crates/head/src/owner_sketch_picking.rs calls the Martensite planar-curve adapter; crates/model/src/history/sketch_copy.rs and the session own copy and transaction.",
+      "rust_tests": "crates/head/tests/sketch/move/precise.rs; sketch_scenarios_use_the_native_window; diagnostic reports in architecture/rust-port/receipts/2026-11-16-move-history-4014/.",
+      "oracle": "Pinned scenario state assertions, sketch recipe and ellipse identity, viewport outline checks, and a 10 mm equals 1 cm coordinate conversion for the precise move. Go line tests are a partial reference only.",
+      "expected_result": "A copied ellipse is removed by undo, restored by redo, and removed by a second undo while the original remains."
     },
     {
       "id": "scenario:cc26398a9b46287372de848b50debd14b520061c1f72f7bc1d3378050593384b",
