@@ -284,7 +284,13 @@ impl QuickAccessToolbar {
         }
     }
     /// A ribbon command's own menu; example: right-click Extrude on the 3D Model tab.
-    pub(crate) fn ribbon_command_menu(&mut self, ui: &Ui, label: &str, state: &GuiCommandState) {
+    pub(crate) fn ribbon_command_menu(
+        &mut self,
+        ui: &Ui,
+        label: &str,
+        supported: bool,
+        state: &GuiCommandState,
+    ) {
         let identity = format!("##ribbon-command-{label}");
         let hovered = ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED);
         if hovered && ui.is_mouse_clicked(MouseButton::Right) {
@@ -299,7 +305,7 @@ impl QuickAccessToolbar {
         let present = self.selection(state).has_command(label);
         if ui
             .menu_item_config("Add to Quick Access Toolbar")
-            .enabled(!present)
+            .enabled(supported && !present)
             .build()
         {
             self.selection(state)
