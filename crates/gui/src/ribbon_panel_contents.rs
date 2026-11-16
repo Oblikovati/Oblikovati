@@ -385,7 +385,9 @@ fn part_create_controls(
     {
         ui.tooltip_text(NOT_PORTED);
     }
-    owners.quick_access.ribbon_command_menu(ui, EXTRUDE, state);
+    owners
+        .quick_access
+        .ribbon_command_menu(ui, EXTRUDE, true, state);
     let (position, size) = owners.icons.appearance.cell(1);
     owners.icons.cursor(ui, origin, position);
     {
@@ -399,7 +401,7 @@ fn part_create_controls(
     }
     owners
         .quick_access
-        .ribbon_command_menu(ui, "Revolve", state);
+        .ribbon_command_menu(ui, "Revolve", false, state);
 }
 /// Stays lit while the origin planes wait for a choice.
 fn start_sketch_command(
