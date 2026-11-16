@@ -36,6 +36,7 @@ pub(crate) fn panel(
     precise: &mut crate::sketch::precise_input::PreciseInputBar,
     actions: &mut Vec<GuiShellAction>,
 ) {
+    precise.sync_move_context(state.sketch_move.is_some());
     let Some(status) = state.sketch_move else {
         return;
     };
@@ -61,7 +62,10 @@ pub(crate) fn panel(
             )));
         }
         drop(disabled);
-        ui.checkbox("Precise Input", &mut precise.open);
+        let mut enabled = precise.move_option();
+        if ui.checkbox("Precise Input", &mut enabled) {
+            precise.set_move_option(enabled);
+        }
         let base = GuiShellAction::SketchMove(GuiSketchMoveAction::ChooseBase);
         let disabled = ui.begin_disabled(!base.enabled(state));
         if ui.button("Base Point") {

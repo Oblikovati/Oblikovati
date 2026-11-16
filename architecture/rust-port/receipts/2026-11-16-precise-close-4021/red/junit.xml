@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Move: tmp/obk-toolbar-close-source/features/sketch/move/scenario.feature" package="testsuite/Feature: Move: tmp/obk-toolbar-close-source/features/sketch/move/scenario.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-16T05:05:13.488822666Z" time="25.907688683"><testcase name="Scenario: move-17 close the mini-toolbar while retaining Move: tmp/obk-toolbar-close-source/features/sketch/move/scenario.feature:136:3" time="25.907688683"><failure type="Step Panicked" message="Step panicked. Captured output: Move Precise Input must stay checked"/><system-out><![CDATA[  Scenario: move-17 close the mini-toolbar while retaining Move
+   ✔  Given an editable sketch with eligible geometry
+   ✔  Given the precise toolbar is visible in Move Base Point mode
+   ✔  When the user opens its right menu
+   ✔  Then Pin Mini-Toolbar Position, Auto Fade and closes are listed
+   ✔  When the user chooses Close
+   ✔  Then the toolbar and triad disappear while Move remains open
+   ✘  And Precise Input remains checked
+      Step failed:
+      Defined: tmp/obk-toolbar-close-source/features/sketch/move/scenario.feature:143:5
+      Matched: crates/head/src/../tests/application/../sketch/move/close.rs:37:1
+      Step panicked. Captured output: Move Precise Input must stay checked
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nRight\nMove:Selectbasepoint\n5dimensionsneeded\nModel\n+\nModel\nMenu\nSearch\nPart1<Primary>\nRepresentations\nModelState\n<Primary>\n1\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nSketch1\n[DOF5]\nFeatures\nEndofPart\nHome\nPart1<Primary>*\nDocuments\nFile\nTools\nNew\nOpen\nSave\nUndo\nRedo\nHome\nProjects\nUpdate\nSelect\nMaterialBrowser\nMaterials\nAppearanceBrowser\nParameters\n...\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nRibbonDisplay\nv\nv\nRectangle\nCircle\nv\nPoint\nCenterArcv\nEllipse\nCenterRect.\n3-PtRect.\nv\nLine\nProjectGeometry\nCreatev\nv\nConstrain\nv\nModify\nv\nPattern\nv\nInsert\nv\nFormat\nFinishSketch\nExit\nMove\nSelectbasepoint\nOptimizeforSingleSelection\nCopy\nPreciseInput\nBasePoint\nDone",
+          ..
+      }
+]]></system-out></testcase></testsuite></testsuites>

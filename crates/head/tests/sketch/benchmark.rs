@@ -29,6 +29,8 @@ mod fixtures_midpoint;
 mod line;
 #[path = "move/cancel.rs"]
 mod move_cancel;
+#[path = "move/close.rs"]
+mod move_close;
 #[path = "move/fade.rs"]
 mod move_fade;
 #[path = "move/pin.rs"]

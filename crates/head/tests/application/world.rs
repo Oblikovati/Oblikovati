@@ -219,7 +219,10 @@ impl ApplicationWorld {
     }
     /// A check mark drawn on the same row as `label`; a cleared option has none.
     pub fn checked(&self, label: &str) -> bool {
-        let run = self.run(label).clone();
+        self.checked_run(self.run(label))
+    }
+    /// Inspect a specific rendered row; example: `world.checked_run(world.run("Option"))`.
+    pub fn checked_run(&self, run: &diagnostics::RenderedRun) -> bool {
         self.frame.marks.iter().any(|mark| {
             mark.bright
                 && mark.list == run.list
