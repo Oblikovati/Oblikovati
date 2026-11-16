@@ -1,0 +1,1847 @@
+{
+  "kind": "diagnostic only; not acceptance",
+  "source_files": {
+    "/tmp/obk-move-mixed-scenarios/features/sketch/move/scenario.feature": "@sketch @needs_fixture\r\nFeature: Move\r\n\r\n  @needs_fixture\r\n  Scenario: move-06 Enter a precise ellipse Move endpoint\r\n    Given an editable sketch with eligible geometry\r\n    Given the ellipse is selected in Move with Copy off and Precise Input on\r\n    When the user chooses Base Point and clicks its center\r\n    Then the coordinate toolbar appears and the status requests an endpoint\r\n    When the user types 1 then 0 into X and presses Tab to Y\r\n    And the user types 0 and presses Enter\r\n    Then Move returns to geometry selection without an error dialog\r\n    And the ellipse appears above its original position\r\n    When the user clicks Done\r\n    Then Move closes and the displaced ellipse remains\r\n\r\n  @documented_observation @needs_fixture @precise_history\r\n  Scenario: move-07 Undo and redoes the accepted precise endpoint\r\n    Given an editable sketch with eligible geometry\r\n    Given the precise ellipse Move has been accepted and Move closed\r\n    When the user undoes\r\n    Then the ellipse returns to its original screen position\r\n    When the user redoes\r\n    Then the ellipse returns to its displaced screen position\r\n    When the user undoes\r\n    Then the original fixture position is restored again\r\n\r\n  @copy_mode @documented_observation @needs_fixture\r\n  Scenario: move-08 Retain the source when Copy is enabled\r\n    Given an editable sketch with eligible geometry\r\n    Given Move has reopened with Precise Input checked and Copy unchecked\r\n    When the user enables Copy and selects the original ellipse\r\n    And the user chooses its center as Base Point and clicks the displaced endpoint\r\n    Then Move returns to geometry selection\r\n    And a displaced ellipse and the original ellipse are both visible\r\n    When the user clicks Done\r\n    Then both ellipse outlines remain\r\n\r\n  @copy_history @documented_observation @needs_fixture\r\n  Scenario: move-09 undo and redoes a copied ellipse\r\n    Given an editable sketch with eligible geometry\r\n    Given Move Copy has created the displaced ellipse and Move is closed\r\n    When the user undoes\r\n    Then only the original ellipse remains in the pair\r\n    When the user redoes\r\n    Then the displaced ellipse returns\r\n    When the user undoes\r\n    Then the trial copy is removed again\r\n\r\n  @documented_observation @needs_fixture @single_selection\r\n  Scenario: move-10 automatically advance to Base Point after one selection\r\n    Given an editable sketch with eligible geometry\r\n    Given Move has Copy and Precise Input off\r\n    When the user enables Optimize for Single Selection and clicks the ellipse perimeter\r\n    Then Base Point activates without a separate button click\r\n    And the status reads Select base point\r\n    When the user presses Escape before choosing a base point\r\n    Then Move closes and the ellipse remains in its original position\r\n\r\n  @documented_observation @endpoint_cancel @needs_fixture\r\n  Scenario: move-11 Cancel after choosing a base point\r\n    Given an editable sketch with eligible geometry\r\n    Given Move reopens with Optimize for Single Selection checked\r\n    And Copy and Precise Input are unchecked\r\n    When the user selects the ellipse and clicks its center as base point\r\n    Then the status requests an endpoint for Move\r\n    When the user presses Escape before accepting an endpoint\r\n    Then Move closes and the ellipse remains in its original position\r\n\r\n  @documented_observation @needs_fixture @same_point\r\n  Scenario: move-12 reject an identical canvas base and endpoint in this fixture\r\n    Given an editable sketch with eligible geometry\r\n    Given the ellipse is selected with optimization on and Copy and Precise Input off\r\n    When the user chooses a canvas location as base point\r\n    And the user chooses the same location again as endpoint\r\n    Then Move reports that the selected geometry could not be moved\r\n    And the message refers to Constraint Settings for Sketch Edit Tools\r\n    When the user clicks Cancel\r\n    Then Move returns to geometry selection\r\n    When the user expands options\r\n    Then both constraint policies show Prompt\r\n    When the user clicks Done\r\n    Then the ellipse has no visible displacement\r\n\r\n  @coordinate_modes @documented_observation @needs_fixture\r\n  Scenario: move-13 Choose Distance and X axis angle fields\r\n    Given an editable sketch with eligible geometry\r\n    Given the selected ellipse is at the precise Base Point stage\r\n    When the user opens the coordinate-mode dropdown\r\n    Then four coordinate and angle combinations are listed\r\n    When the user chooses Distance and X axis angle\r\n    Then the toolbar exposes Distance in mm and Angle in degrees\r\n\r\n  @documented_observation @needs_fixture @triad_reset\r\n  Scenario: move-14 reset the triad without placing geometry\r\n    Given an editable sketch with eligible geometry\r\n    Given the ellipse is selected in precise Base Point mode\r\n    And the triad remains at its prior visible position\r\n    When the user clicks Reset to Origin\r\n    Then the visible triad moves to the sketch axes intersection\r\n    And the selected ellipse remains at its original position\r\n    And the Distance and Angle fields appear blank\r\n    When the user presses Escape\r\n    Then Move and its toolbar close without an accepted endpoint\r\n\r\n  @documented_observation @needs_fixture @polar_numeric\r\n  Scenario: move-15 accept a numeric distance-and-angle endpoint\r\n    Given an editable sketch with eligible geometry\r\n    Given Move reopens with Precise Input and single-selection optimization on and Copy off\r\n    When the user selects the ellipse\r\n    Then Distance and X axis angle mode is retained\r\n    When the user clicks its center as base point\r\n    And the user focuses Distance, selects its text and types 2 then 0\r\n    And the user presses Tab to Angle, types 0 and presses Enter\r\n    Then Move returns to geometry selection without an error dialog\r\n    And the ellipse remains at the lower preview position\r\n    When the user clicks Done\r\n    Then Move closes\r\n    When the user undoes\r\n    Then the ellipse returns to its original position\r\n\r\n  @coordinate_reference @documented_observation @needs_fixture\r\n  Scenario: move-16 Inspect Relative and Absolute coordinate modes\r\n    Given an editable sketch with eligible geometry\r\n    Given the selected ellipse is in precise Base Point mode\r\n    When the user opens the left toolbar dropdown\r\n    Then Relative and Absolute choices are visible\r\n    When the user chooses Absolute\r\n    Then the visible triad is at the sketch axes intersection\r\n    And the selected ellipse retains its recorded position\r\n    When the user reopens the dropdown and chooses Relative\r\n    Then the toolbar icon changes\r\n    And the triad remains at the axes intersection\r\n\r\n  @documented_observation @needs_fixture @toolbar_close\r\n  Scenario: move-17 close the mini-toolbar while retaining Move\r\n    Given an editable sketch with eligible geometry\r\n    Given the precise toolbar is visible in Move Base Point mode\r\n    When the user opens its right menu\r\n    Then Pin Mini-Toolbar Position, Auto Fade and closes are listed\r\n    When the user chooses Close\r\n    Then the toolbar and triad disappear while Move remains open\r\n    And Precise Input remains checked\r\n    When the user presses Escape\r\n    Then Move closes without accepting placement\r\n\r\n  @needs_fixture\r\n  Scenario: move-18 Never policies permit observed coupled line displacement\r\n    Given an editable sketch with eligible geometry\r\n    Given the recorded fixture has two horizontal lines and their 25 +/-1 separation annotation\r\n    And Copy and Precise Input are off and Optimize for Single Selection is on\r\n    When both constraint policies are Never\r\n    And the upper line is moved from the base point to the endpoint\r\n    Then Move returns to geometry selection without an error or relaxation question\r\n    And both horizontal lines visibly shift screen-up while the separation annotation remains\r\n    When both policies are restored to Prompt and Done is clicked\r\n    And the user presses Undo\r\n    Then the two lines return to their recorded original screen positions\r\n\r\n  @needs_fixture\r\n  Scenario: move-19 Mixed X coordinate and angle endpoint accepts\r\n    Given an editable sketch with eligible geometry\r\n    Given Move has Copy off and Precise Input and Optimize for Single Selection on\r\n    And the ellipse is selected with X coordinate and X axis angle mode\r\n    When its recorded center is chosen as the base point\r\n    And individual keys enter X=10 and Angle=45\r\n    And Return is pressed\r\n    Then Move returns to geometry selection without an error or question\r\n    And one ellipse remains at the up-left position\r\n    When Done and undoes are used\r\n    Then the ellipse returns to its original visible position\r\n\r\n  @needs_fixture\r\n  Scenario: move-20 Mixed Y coordinate and angle endpoint accepts\r\n    Given an editable sketch with eligible geometry\r\n    Given reopening Move retains the previously selected mixed X/angle mode\r\n    When Y coordinate and X axis angle is selected\r\n    And the ellipse center is chosen as the base point\r\n    And individual keys replace Y with 5 and Angle with 45\r\n    And Return is pressed\r\n    Then one ellipse remains at the up-left position\r\n    And Move returns to geometry selection\r\n    When Done and undoes are used\r\n    Then the original visible ellipse position is restored\r\n\r\n  @needs_fixture\r\n  Scenario: move-21 Mini-toolbar Pin check state toggles\r\n    Given an editable sketch with eligible geometry\r\n    Given the precise-input mini-toolbar is visible at Move Base Point stage\r\n    And Pin Mini-Toolbar Position is unchecked\r\n    When Pin Mini-Toolbar Position is clicked and Settings is reopened\r\n    Then Pin Mini-Toolbar Position is checked\r\n    When Pin is later clicked again and Settings is reopened\r\n    Then Pin Mini-Toolbar Position is unchecked\r\n\r\n  @needs_fixture\r\n  Scenario: move-22 Auto Fade reduces toolbar and hover restores it\r\n    Given an editable sketch with eligible geometry\r\n    Given the mini-toolbar is visible with Pin checked and Auto Fade unchecked\r\n    When Auto Fade is enabled and the pointer remains away\r\n    Then the mode selector and lower toolbar row disappear while numeric fields remain\r\n    When the pointer hovers over the Y input\r\n    Then the full toolbar reappears\r\n    And reopened Settings shows Auto Fade checked\r\n    When Auto Fade is disabled and Settings is reopened\r\n    Then Auto Fade is unchecked\r\n\r\n  @needs_fixture\r\n  Scenario: move-23 Never policies reject the white-curve selection\r\n    Given an editable sketch with eligible geometry\r\n    Given both Move constraint policies are Never and precise input is off\r\n    And the recorded white-curve fixture is present\r\n    When the white-curve selection and base and endpoint clicks are supplied\r\n    Then the Move constraint-settings failure is displayed\r\n    And the original white outline remains\r\n    When Cancel is clicked\r\n    Then Move returns to geometry selection\r\n\r\n  @needs_fixture\r\n  Scenario: move-24 Geometric Always changes the outcome for the same clicks\r\n    Given an editable sketch with eligible geometry\r\n    Given the failed trial has returned to geometry selection\r\n    When only Break Geometric Constraints is changed to Always\r\n    And the same recorded selection and base and endpoint clicks are supplied\r\n    Then Move returns to geometry selection without a question or error\r\n    And a displaced purple point appears while the broad curve remains in its original location\r\n    When both policies are restored to Prompt and Done is clicked\r\n    Then Ready returns\r\n    When Undo is pressed\r\n    Then the displaced point disappears and the white outline is restored\r\n\r\n  @needs_fixture\r\n  Scenario: move-25 Accept the Always dimensional policy trial\r\n    Given the recorded rectangle fixture is present\r\n    And Move has Copy off, Precise Input off and optimization on\r\n    And dimensional relaxation is Always and geometric breaking is Never\r\n    When the user selects the rectangle left edge and its lower endpoint as base\r\n    And the user clicks the endpoint 40 pixels left\r\n    Then Move returns to geometry selection without a question or error\r\n    And the rectangle widens with linked geometry shifting\r\n    When the user clicks Done and measures the moved lower endpoint\r\n    Then its position is (0.000, -174.642, -202.352) mm\r\n    When the user closes Measure and undoes\r\n    Then the earlier rectangle width and linked geometry return\r\n\r\n  @needs_fixture\r\n  Scenario: move-26 Accept the same placement under If No Equation\r\n    Given the earlier Always trial was undone\r\n    When the user reopens and expands Move\r\n    Then Always and Never remain selected\r\n    When the user selects If No Equation for dimensional relaxation\r\n    And repeat the same edge base and endpoint clicks\r\n    Then the placement accepts without a question or error\r\n    And the same visible coupled deformation appears\r\n\r\n \r\n  Scenario: move-27 Answer Yes to prompted dimensional relaxation\r\n    Given both Move constraint policies are Prompt\r\n    When the user selects the moved rectangle left edge and its lower endpoint as base\r\n    Then the MCAD Software asks whether existing dimensions should be relaxed if necessary\r\n    When the user clicks Yes and supplies the endpoint 20 pixels further left\r\n    Then Move returns to geometry selection without another warning\r\n    And the loop widens further with linked geometry shifted\r\n    When the user clicks Done\r\n    Then Move closes and the accepted placement remains\r\n\r\n \r\n  Scenario: move-28 Measure the final accepted endpoint\r\n    Given the recorded conditional and prompted rectangle placements are retained\r\n    When the user opens Measure and selects the final lower-left rectangle endpoint\r\n    Then its position is (0.000, -174.642, -186.644) mm\r\n\r\n \r\n  Scenario: move-29 Retain the measured placement after actual disk reopen\r\n    Given the recorded sketch is finished and its part saved\r\n    When the user closes and reopens the part in the same session\r\n    And edit the saved sketch and measures the lower-left rectangle endpoint\r\n    Then its position remains (0.000, -174.642, -186.644) mm\r\n    When the user clicks Done\r\n    Then Measure closes and the saved geometry remains\r\n\r\n  @needs_fixture\r\n  Scenario: move-30 Select and move two sources without optimization\r\n    Given Copy and Precise Input are off and optimization is off\r\n    When the upper line and lower hourglass edge are selected by separate ordinary clicks\r\n    Then both are highlighted and selects remains active\r\n    When Base Point and the canvas base and endpoint are supplied\r\n    Then Move returns to geometry selection without a question or error\r\n    And both selected lines move up while connected hourglass diagonals deform\r\n\r\n  @needs_fixture\r\n  Scenario: move-31 Undo and redoes the two-source operation together\r\n    Given the two-source Move has been accepted and Done clicked\r\n    When Undo is pressed once\r\n    Then both selected lines and the hourglass return to their original positions\r\n    When Redo is pressed\r\n    Then the displaced pair and deformed hourglass return\r\n    When Undo is pressed again\r\n    Then the original fixture is restored\r\n\r\n  @needs_fixture\r\n  Scenario: move-32 Reject invalid text and recover with signed numeric input\r\n    Given the upper line is selected with precise X and Y endpoint entry active\r\n    When q is typed into X and Return is pressed\r\n    Then the red invalid input remains at endpoint selection without an accepted placement\r\n    When separate keys replace X with -5 and Y with 0\r\n    And Return is pressed\r\n    Then Move returns to geometry selection with the displaced line\r\n    When precise input is disabled and optimization enabled and Done clicked\r\n    And the user presses Undo\r\n    Then the upper line returns to its original position\r\n\r\n\r\n\r\n"
+  },
+  "scenarios": [
+    {
+      "source": "/tmp/obk-move-mixed-scenarios/features/sketch/move/scenario.feature",
+      "scenario": "move-06 Enter a precise ellipse Move endpoint",
+      "line": 5,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "an editable sketch with eligible geometry",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "the ellipse is selected in Move with Copy off and Precise Input on",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 8,
+          "step": "the user chooses Base Point and clicks its center",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 9,
+          "step": "the coordinate toolbar appears and the status requests an endpoint",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 10,
+          "step": "the user types 1 then 0 into X and presses Tab to Y",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 11,
+          "step": "the user types 0 and presses Enter",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 12,
+          "step": "Move returns to geometry selection without an error dialog",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 13,
+          "step": "the ellipse appears above its original position",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 14,
+          "step": "the user clicks Done",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 15,
+          "step": "Move closes and the displaced ellipse remains",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-move-mixed-scenarios/features/sketch/move/scenario.feature",
+      "scenario": "move-07 Undo and redoes the accepted precise endpoint",
+      "line": 18,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 19,
+          "step": "an editable sketch with eligible geometry",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 20,
+          "step": "the precise ellipse Move has been accepted and Move closed",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 21,
+          "step": "the user undoes",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 22,
+          "step": "the ellipse returns to its original screen position",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 23,
+          "step": "the user redoes",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 24,
+          "step": "the ellipse returns to its displaced screen position",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 25,
+          "step": "the user undoes",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 26,
+          "step": "the original fixture position is restored again",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-move-mixed-scenarios/features/sketch/move/scenario.feature",
+      "scenario": "move-08 Retain the source when Copy is enabled",
+      "line": 29,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 30,
+          "step": "an editable sketch with eligible geometry",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 31,
+          "step": "Move has reopened with Precise Input checked and Copy unchecked",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 32,
+          "step": "the user enables Copy and selects the original ellipse",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 33,
+          "step": "the user chooses its center as Base Point and clicks the displaced endpoint",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 34,
+          "step": "Move returns to geometry selection",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 35,
+          "step": "a displaced ellipse and the original ellipse are both visible",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 36,
+          "step": "the user clicks Done",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 37,
+          "step": "both ellipse outlines remain",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-move-mixed-scenarios/features/sketch/move/scenario.feature",
+      "scenario": "move-09 undo and redoes a copied ellipse",
+      "line": 40,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 41,
+          "step": "an editable sketch with eligible geometry",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 42,
+          "step": "Move Copy has created the displaced ellipse and Move is closed",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 43,
+          "step": "the user undoes",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 44,
+          "step": "only the original ellipse remains in the pair",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 45,
+          "step": "the user redoes",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 46,
+          "step": "the displaced ellipse returns",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 47,
+          "step": "the user undoes",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 48,
+          "step": "the trial copy is removed again",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-move-mixed-scenarios/features/sketch/move/scenario.feature",
+      "scenario": "move-10 automatically advance to Base Point after one selection",
+      "line": 51,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 52,
+          "step": "an editable sketch with eligible geometry",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 53,
+          "step": "Move has Copy and Precise Input off",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 54,
+          "step": "the user enables Optimize for Single Selection and clicks the ellipse perimeter",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 55,
+          "step": "Base Point activates without a separate button click",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 56,
+          "step": "the status reads Select base point",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 57,
+          "step": "the user presses Escape before choosing a base point",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 58,
+          "step": "Move closes and the ellipse remains in its original position",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-move-mixed-scenarios/features/sketch/move/scenario.feature",
+      "scenario": "move-11 Cancel after choosing a base point",
+      "line": 61,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 62,
+          "step": "an editable sketch with eligible geometry",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 63,
+          "step": "Move reopens with Optimize for Single Selection checked",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 64,
+          "step": "Copy and Precise Input are unchecked",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 65,
+          "step": "the user selects the ellipse and clicks its center as base point",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 66,
+          "step": "the status requests an endpoint for Move",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 67,
+          "step": "the user presses Escape before accepting an endpoint",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 68,
+          "step": "Move closes and the ellipse remains in its original position",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-move-mixed-scenarios/features/sketch/move/scenario.feature",
+      "scenario": "move-12 reject an identical canvas base and endpoint in this fixture",
+      "line": 71,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 72,
+          "step": "an editable sketch with eligible geometry",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 73,
+          "step": "the ellipse is selected with optimization on and Copy and Precise Input off",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 74,
+          "step": "the user chooses a canvas location as base point",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 75,
+          "step": "the user chooses the same location again as endpoint",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 76,
+          "step": "Move reports that the selected geometry could not be moved",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 77,
+          "step": "the message refers to Constraint Settings for Sketch Edit Tools",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 78,
+          "step": "the user clicks Cancel",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected a window \"Customize\""
+        },
+        {
+          "line": 79,
+          "step": "Move returns to geometry selection",
+          "result": "failed",
+          "tainted": true,
+          "detail": "called `Option::unwrap()` on a `None` value"
+        },
+        {
+          "line": 80,
+          "step": "the user expands options",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 81,
+          "step": "both constraint policies show Prompt",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 82,
+          "step": "the user clicks Done",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected a window \"Move\""
+        },
+        {
+          "line": 83,
+          "step": "the ellipse has no visible displacement",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-move-mixed-scenarios/features/sketch/move/scenario.feature",
+      "scenario": "move-13 Choose Distance and X axis angle fields",
+      "line": 86,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 87,
+          "step": "an editable sketch with eligible geometry",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 88,
+          "step": "the selected ellipse is at the precise Base Point stage",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 89,
+          "step": "the user opens the coordinate-mode dropdown",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 90,
+          "step": "four coordinate and angle combinations are listed",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 91,
+          "step": "the user chooses Distance and X axis angle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 92,
+          "step": "the toolbar exposes Distance in mm and Angle in degrees",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-move-mixed-scenarios/features/sketch/move/scenario.feature",
+      "scenario": "move-14 reset the triad without placing geometry",
+      "line": 95,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 96,
+          "step": "an editable sketch with eligible geometry",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 97,
+          "step": "the ellipse is selected in precise Base Point mode",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 98,
+          "step": "the triad remains at its prior visible position",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 99,
+          "step": "the user clicks Reset to Origin",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 100,
+          "step": "the visible triad moves to the sketch axes intersection",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 101,
+          "step": "the selected ellipse remains at its original position",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 102,
+          "step": "the Distance and Angle fields appear blank",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 103,
+          "step": "the user presses Escape",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 104,
+          "step": "Move and its toolbar close without an accepted endpoint",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-move-mixed-scenarios/features/sketch/move/scenario.feature",
+      "scenario": "move-15 accept a numeric distance-and-angle endpoint",
+      "line": 107,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 108,
+          "step": "an editable sketch with eligible geometry",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 109,
+          "step": "Move reopens with Precise Input and single-selection optimization on and Copy off",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 110,
+          "step": "the user selects the ellipse",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 111,
+          "step": "Distance and X axis angle mode is retained",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 112,
+          "step": "the user clicks its center as base point",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 113,
+          "step": "the user focuses Distance, selects its text and types 2 then 0",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 114,
+          "step": "the user presses Tab to Angle, types 0 and presses Enter",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 115,
+          "step": "Move returns to geometry selection without an error dialog",
+          "result": "failed",
+          "tainted": true,
+          "detail": "called `Option::unwrap()` on a `None` value"
+        },
+        {
+          "line": 116,
+          "step": "the ellipse remains at the lower preview position",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 117,
+          "step": "the user clicks Done",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected a window \"Move\""
+        },
+        {
+          "line": 118,
+          "step": "Move closes",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 119,
+          "step": "the user undoes",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 120,
+          "step": "the ellipse returns to its original position",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-move-mixed-scenarios/features/sketch/move/scenario.feature",
+      "scenario": "move-16 Inspect Relative and Absolute coordinate modes",
+      "line": 123,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 124,
+          "step": "an editable sketch with eligible geometry",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 125,
+          "step": "the selected ellipse is in precise Base Point mode",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 126,
+          "step": "the user opens the left toolbar dropdown",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 127,
+          "step": "Relative and Absolute choices are visible",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 128,
+          "step": "the user chooses Absolute",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 129,
+          "step": "the visible triad is at the sketch axes intersection",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 130,
+          "step": "the selected ellipse retains its recorded position",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 131,
+          "step": "the user reopens the dropdown and chooses Relative",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 132,
+          "step": "the toolbar icon changes",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 133,
+          "step": "the triad remains at the axes intersection",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-move-mixed-scenarios/features/sketch/move/scenario.feature",
+      "scenario": "move-17 close the mini-toolbar while retaining Move",
+      "line": 136,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 137,
+          "step": "an editable sketch with eligible geometry",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 138,
+          "step": "the precise toolbar is visible in Move Base Point mode",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 139,
+          "step": "the user opens its right menu",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 140,
+          "step": "Pin Mini-Toolbar Position, Auto Fade and closes are listed",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 141,
+          "step": "the user chooses Close",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 142,
+          "step": "the toolbar and triad disappear while Move remains open",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 143,
+          "step": "Precise Input remains checked",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 144,
+          "step": "the user presses Escape",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 145,
+          "step": "Move closes without accepting placement",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-move-mixed-scenarios/features/sketch/move/scenario.feature",
+      "scenario": "move-18 Never policies permit observed coupled line displacement",
+      "line": 148,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 149,
+          "step": "an editable sketch with eligible geometry",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 150,
+          "step": "the recorded fixture has two horizontal lines and their 25 +/-1 separation annotation",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 151,
+          "step": "Copy and Precise Input are off and Optimize for Single Selection is on",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 152,
+          "step": "both constraint policies are Never",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 153,
+          "step": "the upper line is moved from the base point to the endpoint",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 154,
+          "step": "Move returns to geometry selection without an error or relaxation question",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 155,
+          "step": "both horizontal lines visibly shift screen-up while the separation annotation remains",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 156,
+          "step": "both policies are restored to Prompt and Done is clicked",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 157,
+          "step": "the user presses Undo",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 158,
+          "step": "the two lines return to their recorded original screen positions",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-move-mixed-scenarios/features/sketch/move/scenario.feature",
+      "scenario": "move-19 Mixed X coordinate and angle endpoint accepts",
+      "line": 161,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 162,
+          "step": "an editable sketch with eligible geometry",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 163,
+          "step": "Move has Copy off and Precise Input and Optimize for Single Selection on",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 164,
+          "step": "the ellipse is selected with X coordinate and X axis angle mode",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 165,
+          "step": "its recorded center is chosen as the base point",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 166,
+          "step": "individual keys enter X=10 and Angle=45",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 167,
+          "step": "Return is pressed",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 168,
+          "step": "Move returns to geometry selection without an error or question",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 169,
+          "step": "one ellipse remains at the up-left position",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 170,
+          "step": "Done and undoes are used",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 171,
+          "step": "the ellipse returns to its original visible position",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-move-mixed-scenarios/features/sketch/move/scenario.feature",
+      "scenario": "move-20 Mixed Y coordinate and angle endpoint accepts",
+      "line": 174,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 175,
+          "step": "an editable sketch with eligible geometry",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 176,
+          "step": "reopening Move retains the previously selected mixed X/angle mode",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 177,
+          "step": "Y coordinate and X axis angle is selected",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 178,
+          "step": "the ellipse center is chosen as the base point",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 179,
+          "step": "individual keys replace Y with 5 and Angle with 45",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 180,
+          "step": "Return is pressed",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 181,
+          "step": "one ellipse remains at the up-left position",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 182,
+          "step": "Move returns to geometry selection",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 183,
+          "step": "Done and undoes are used",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 184,
+          "step": "the original visible ellipse position is restored",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-move-mixed-scenarios/features/sketch/move/scenario.feature",
+      "scenario": "move-21 Mini-toolbar Pin check state toggles",
+      "line": 187,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 188,
+          "step": "an editable sketch with eligible geometry",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 189,
+          "step": "the precise-input mini-toolbar is visible at Move Base Point stage",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 190,
+          "step": "Pin Mini-Toolbar Position is unchecked",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 191,
+          "step": "Pin Mini-Toolbar Position is clicked and Settings is reopened",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 192,
+          "step": "Pin Mini-Toolbar Position is checked",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 193,
+          "step": "Pin is later clicked again and Settings is reopened",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 194,
+          "step": "Pin Mini-Toolbar Position is unchecked",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-move-mixed-scenarios/features/sketch/move/scenario.feature",
+      "scenario": "move-22 Auto Fade reduces toolbar and hover restores it",
+      "line": 197,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 198,
+          "step": "an editable sketch with eligible geometry",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 199,
+          "step": "the mini-toolbar is visible with Pin checked and Auto Fade unchecked",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 200,
+          "step": "Auto Fade is enabled and the pointer remains away",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 201,
+          "step": "the mode selector and lower toolbar row disappear while numeric fields remain",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 202,
+          "step": "the pointer hovers over the Y input",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 203,
+          "step": "the full toolbar reappears",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 204,
+          "step": "reopened Settings shows Auto Fade checked",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 205,
+          "step": "Auto Fade is disabled and Settings is reopened",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 206,
+          "step": "Auto Fade is unchecked",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-move-mixed-scenarios/features/sketch/move/scenario.feature",
+      "scenario": "move-23 Never policies reject the white-curve selection",
+      "line": 209,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 210,
+          "step": "an editable sketch with eligible geometry",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 211,
+          "step": "both Move constraint policies are Never and precise input is off",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 212,
+          "step": "the recorded white-curve fixture is present",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 213,
+          "step": "the white-curve selection and base and endpoint clicks are supplied",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 214,
+          "step": "the Move constraint-settings failure is displayed",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 215,
+          "step": "the original white outline remains",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 216,
+          "step": "Cancel is clicked",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected \"Cancel\" in rendered text \"W\\nP\\nZ\\nv\\nO\\nv\\nRight\\nReady\\n5dimensionsneeded\\nModel\\n+\\nModel\\nMenu\\nSearch\\nPart1<Primary>\\nRepresentations\\nModelState\\n<Primary>\\n1\\nOrigin\\nYZPlane\\nXZPlane\\nXYPlane\\nXAxis\\nYAxis\\nZAxis\\nCenterPoint\\nParameters\\nSketches\\nSketch1\\n[DOF5]\\nFeatures\\nEndofPart\\nHome\\nPart1<Primary>*\\nDocuments\\nFile\\nTools\\nNew\\nOpen\\nSave\\nUndo\\nRedo\\nHome\\nProjects\\nUpdate\\nSelect\\nMaterialBrowser\\nMaterials\\nAppearanceBrowser\\nParameters\\n...\\n3DModel\\nSketch\\nTools\\nManage\\nView\\nAnnotate\\nRibbonDisplay\\nv\\nv\\nRectangle\\nCircle\\nv\\nPoint\\nCenterArcv\\nEllipse\\nCenterRect.\\n3-PtRect.\\nv\\nLine\\nProjectGeometry\\nCreatev\\nv\\nConstrain\\nv\\nModify\\nv\\nPattern\\nv\\nInsert\\nv\\nFormat\\nFinishSketch\\nExit\""
+        },
+        {
+          "line": 217,
+          "step": "Move returns to geometry selection",
+          "result": "failed",
+          "tainted": true,
+          "detail": "called `Option::unwrap()` on a `None` value"
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-move-mixed-scenarios/features/sketch/move/scenario.feature",
+      "scenario": "move-24 Geometric Always changes the outcome for the same clicks",
+      "line": 220,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 221,
+          "step": "an editable sketch with eligible geometry",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 222,
+          "step": "the failed trial has returned to geometry selection",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 223,
+          "step": "only Break Geometric Constraints is changed to Always",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 224,
+          "step": "the same recorded selection and base and endpoint clicks are supplied",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 225,
+          "step": "Move returns to geometry selection without a question or error",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 226,
+          "step": "a displaced purple point appears while the broad curve remains in its original location",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 227,
+          "step": "both policies are restored to Prompt and Done is clicked",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 228,
+          "step": "Ready returns",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 229,
+          "step": "Undo is pressed",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 230,
+          "step": "the displaced point disappears and the white outline is restored",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-move-mixed-scenarios/features/sketch/move/scenario.feature",
+      "scenario": "move-25 Accept the Always dimensional policy trial",
+      "line": 233,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 234,
+          "step": "the recorded rectangle fixture is present",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 235,
+          "step": "Move has Copy off, Precise Input off and optimization on",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 236,
+          "step": "dimensional relaxation is Always and geometric breaking is Never",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 237,
+          "step": "the user selects the rectangle left edge and its lower endpoint as base",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 238,
+          "step": "the user clicks the endpoint 40 pixels left",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 239,
+          "step": "Move returns to geometry selection without a question or error",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 240,
+          "step": "the rectangle widens with linked geometry shifting",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 241,
+          "step": "the user clicks Done and measures the moved lower endpoint",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 242,
+          "step": "its position is (0.000, -174.642, -202.352) mm",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 243,
+          "step": "the user closes Measure and undoes",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 244,
+          "step": "the earlier rectangle width and linked geometry return",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-move-mixed-scenarios/features/sketch/move/scenario.feature",
+      "scenario": "move-26 Accept the same placement under If No Equation",
+      "line": 247,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 248,
+          "step": "the earlier Always trial was undone",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 249,
+          "step": "the user reopens and expands Move",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 250,
+          "step": "Always and Never remain selected",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 251,
+          "step": "the user selects If No Equation for dimensional relaxation",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 252,
+          "step": "repeat the same edge base and endpoint clicks",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 253,
+          "step": "the placement accepts without a question or error",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 254,
+          "step": "the same visible coupled deformation appears",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-move-mixed-scenarios/features/sketch/move/scenario.feature",
+      "scenario": "move-27 Answer Yes to prompted dimensional relaxation",
+      "line": 257,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 258,
+          "step": "both Move constraint policies are Prompt",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 259,
+          "step": "the user selects the moved rectangle left edge and its lower endpoint as base",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 260,
+          "step": "the MCAD Software asks whether existing dimensions should be relaxed if necessary",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 261,
+          "step": "the user clicks Yes and supplies the endpoint 20 pixels further left",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 262,
+          "step": "Move returns to geometry selection without another warning",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 263,
+          "step": "the loop widens further with linked geometry shifted",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 264,
+          "step": "the user clicks Done",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected a window \"Move\""
+        },
+        {
+          "line": 265,
+          "step": "Move closes and the accepted placement remains",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-move-mixed-scenarios/features/sketch/move/scenario.feature",
+      "scenario": "move-28 Measure the final accepted endpoint",
+      "line": 268,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 269,
+          "step": "the recorded conditional and prompted rectangle placements are retained",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 270,
+          "step": "the user opens Measure and selects the final lower-left rectangle endpoint",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 271,
+          "step": "its position is (0.000, -174.642, -186.644) mm",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-move-mixed-scenarios/features/sketch/move/scenario.feature",
+      "scenario": "move-29 Retain the measured placement after actual disk reopen",
+      "line": 274,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 275,
+          "step": "the recorded sketch is finished and its part saved",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 276,
+          "step": "the user closes and reopens the part in the same session",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 277,
+          "step": "edit the saved sketch and measures the lower-left rectangle endpoint",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 278,
+          "step": "its position remains (0.000, -174.642, -186.644) mm",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 279,
+          "step": "the user clicks Done",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected a window \"Move\""
+        },
+        {
+          "line": 280,
+          "step": "Measure closes and the saved geometry remains",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-move-mixed-scenarios/features/sketch/move/scenario.feature",
+      "scenario": "move-30 Select and move two sources without optimization",
+      "line": 283,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 284,
+          "step": "Copy and Precise Input are off and optimization is off",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 285,
+          "step": "the upper line and lower hourglass edge are selected by separate ordinary clicks",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 286,
+          "step": "both are highlighted and selects remains active",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 287,
+          "step": "Base Point and the canvas base and endpoint are supplied",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 288,
+          "step": "Move returns to geometry selection without a question or error",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 289,
+          "step": "both selected lines move up while connected hourglass diagonals deform",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-move-mixed-scenarios/features/sketch/move/scenario.feature",
+      "scenario": "move-31 Undo and redoes the two-source operation together",
+      "line": 292,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 293,
+          "step": "the two-source Move has been accepted and Done clicked",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 294,
+          "step": "Undo is pressed once",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 295,
+          "step": "both selected lines and the hourglass return to their original positions",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 296,
+          "step": "Redo is pressed",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 297,
+          "step": "the displaced pair and deformed hourglass return",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 298,
+          "step": "Undo is pressed again",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 299,
+          "step": "the original fixture is restored",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-move-mixed-scenarios/features/sketch/move/scenario.feature",
+      "scenario": "move-32 Reject invalid text and recover with signed numeric input",
+      "line": 302,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 303,
+          "step": "the upper line is selected with precise X and Y endpoint entry active",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 304,
+          "step": "q is typed into X and Return is pressed",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 305,
+          "step": "the red invalid input remains at endpoint selection without an accepted placement",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 306,
+          "step": "separate keys replace X with -5 and Y with 0",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 307,
+          "step": "Return is pressed",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 308,
+          "step": "Move returns to geometry selection with the displaced line",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 309,
+          "step": "precise input is disabled and optimization enabled and Done clicked",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 310,
+          "step": "the user presses Undo",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 311,
+          "step": "the upper line returns to its original position",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    }
+  ]
+}
