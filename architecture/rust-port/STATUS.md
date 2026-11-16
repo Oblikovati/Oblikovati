@@ -26,7 +26,7 @@ Last checked: 2026-11-16 on `rust-work`. Refresh from current evidence at each c
 - The 60 fps sketch target is not met on the measured GPU. A 4-segment
   pointer-motion run measured 20.738 ms median and 24.861 ms p95 at 1440 × 900;
   the 60 fps frame budget is 16.67 ms. See `receipts/2026-11-16-sketch-frame-baseline-4031/`.
-  Host capture is #4032; exact batch projection reuse landed for #4035.
+  Host capture is #4032; context picks now use checked projection batches (#4035).
   No-readback presentation is Martensite #501; efficient previews are #504.
   Native batch projection costs: `receipts/2026-11-16-pick-phases-4035/` (#505). Neither measurement proves
   input-to-display latency or a universal rate.

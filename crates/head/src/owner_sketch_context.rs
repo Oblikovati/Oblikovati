@@ -36,9 +36,13 @@ fn context_points(
     pixel: [i32; 2],
     window: &dyn HeadWindow,
 ) -> Result<Vec<(f64, SketchEntityId)>, String> {
+    let points = geometry.points();
+    if points.is_empty() {
+        return Ok(Vec::new());
+    }
+    let projected = project_context_points(geometry, plane, window)?;
     let mut within = Vec::new();
-    for point in geometry.points() {
-        let at = window.sketch_pixel(plane, point.position)?;
+    for (point, at) in points.iter().zip(projected) {
         let distance = super::sketch_picking::screen_distance(at, pixel);
         if distance <= CONTEXT_POINT_REACH {
             within.push((distance, point.id));
@@ -46,6 +50,27 @@ fn context_points(
     }
     within.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
     Ok(within)
+}
+
+fn project_context_points(
+    geometry: &Sketch2D,
+    plane: SketchPlane,
+    window: &dyn HeadWindow,
+) -> Result<Vec<[i32; 2]>, String> {
+    let positions: Vec<_> = geometry
+        .points()
+        .iter()
+        .map(|point| point.position)
+        .collect();
+    let projected = window.sketch_pixels(plane, &positions)?;
+    if projected.len() != positions.len() {
+        return Err(format!(
+            "projected {} context points: expected {} pixels",
+            projected.len(),
+            positions.len()
+        ));
+    }
+    Ok(projected)
 }
 
 fn context_items(
@@ -77,3 +102,7 @@ fn context_kind_label(kind: &oblikovati_api::types::SketchEntityKind) -> String 
     };
     first.to_uppercase().chain(chars).collect()
 }
+
+#[cfg(test)]
+#[path = "../tests/owner/sketch_context_batch.rs"]
+mod batch_tests;
