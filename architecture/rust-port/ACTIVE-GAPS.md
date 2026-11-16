@@ -10,6 +10,9 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
   feature run (#3887). The latest full run passed 8 of 9 scenarios; point-10
   is excluded until the recorded sketch fixture is supplied. See `receipts/2026-11-15-point-fixture-full/`.
   Captures remain historical (#3978).
+- Cube replay: current headless and native frame-loop checks passed; they do
+  not establish OS input, solve precision, or verified acceptance. See
+  `receipts/2026-11-16-cube-current-3857/` (#3857, #3928, #3978).
 - Extrusion undo and redo: the native diagnostic passed three of four scenario
   steps. Named edge lengths are available through the typed API; selecting and
   measuring two edges in the viewport remains open (#3967). See
