@@ -1,6 +1,6 @@
 # Rust port status
 
-Last checked: 2026-11-16 at application commit `c714736c7`. Refresh from current evidence at each checkpoint.
+Last checked: 2026-11-16 at application commit `84627a97d`. Refresh from current evidence at each checkpoint.
 
 ## Start here
 
@@ -29,14 +29,18 @@ Last checked: 2026-11-16 at application commit `c714736c7`. Refresh from current
 - `rust-work` is local and has not passed the full pre-push gate. All 20 former
   application PR heads were merged locally and their PRs closed. Do not remove
   their remaining remote branches until the consolidated work is safely pushed.
-- The 2026-11-15 `make gate` stopped at the API pin check, before workspace
-  tests: Express requires an unreleased API contract. Release and pin work is
-  tracked in #3965. API branch `agent/express-release-prep` passed its gate and
-  its issue-scope duplication scan at 1.0269%. The two example packages now
-  report 95.7% and 85.7% coverage; aggregate Go coverage is 84.6%. The branch
-  is local and no release was published. The ledger also rejects stale receipts.
-  A fresh API `make gate` passed at `276a401`; the local result is in
-  `receipts/2026-11-15-api-candidate-gate/`. It is not a release or hosted CI result.
+- The full gate needs a released API contract (#3965). The combined local API
+  candidate is `a87a7fc` on `work/api-release-3965`; no release or hosted CI
+  result exists for it. The full-scope duplication scan reports 1.0389%.
+  API #304 still needs the scenario owner's Move policy clarifications. The
+  next release must also include the user-approved driving-dimension behavior
+  for existing sketch creation calls (#187).
+- The #187 host implementations remain unmerged pending the released API pin:
+  Rust `work/host-expressions-187` at `3b77b8dbc`, and Go
+  `work/go-associative-187` at `17d564e374`. Their focused and affected-package
+  suites passed against the draft API. The Rust adapter's full suite fails on
+  the clean-base Martensite #406 ellipse test. The Go branch's normal hook
+  passed; its full pre-push gate has not run. See also Go pick-index race #4027.
 - Scenario pin: `e76cb749ed43c73a91c24854057da7c890041f51`, a local snapshot
   of the unversioned source. It is not an upstream commit. The live feature
   inventory matched the pin again on 2026-11-16: no `.feature` files were added,
