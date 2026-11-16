@@ -36,6 +36,32 @@ pub(super) fn right_click(position: [i32; 2]) {
     send_click(&connection, root, x, y, 3);
 }
 
+pub(super) fn scroll(position: [i32; 2], notches: i32) {
+    assert!(
+        (1..=20).contains(&notches.unsigned_abs()),
+        "wheel notches {notches}: expected 1 to 20 steps in either direction"
+    );
+    let (connection, root, x, y) = pointer_target(position);
+    connection
+        .xtest_fake_input(MOTION_NOTIFY_EVENT, 0, 0, root, x, y, 0)
+        .unwrap()
+        .check()
+        .unwrap();
+    let button = if notches > 0 { 4 } else { 5 };
+    for _ in 0..notches.unsigned_abs() {
+        for event in [BUTTON_PRESS_EVENT, BUTTON_RELEASE_EVENT] {
+            connection
+                .xtest_fake_input(event, button, 0, root, x, y, 0)
+                .unwrap()
+                .check()
+                .unwrap();
+        }
+    }
+    connection
+        .flush()
+        .expect("X11 wheel: expected a flushed request");
+}
+
 pub(super) fn move_pointer(position: [i32; 2]) {
     let (connection, root, x, y) = pointer_target(position);
     connection
