@@ -337,6 +337,8 @@ impl GuiShellAction {
             Self::PreviewFillet(Some(request)) | Self::CreateFillet(request) => {
                 Self::OpenFillet.enabled(state)
                     && state.document == Some(request.document)
+                    && !request.edges.is_empty()
+                    && request.edges.len() == state.selected_edge_count
                     && state.fillet_selection.as_ref()
                         == Some(&(request.generation, request.edges.clone()))
                     && !request.radius.trim().is_empty()

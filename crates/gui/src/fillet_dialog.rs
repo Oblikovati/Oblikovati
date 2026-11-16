@@ -117,15 +117,12 @@ impl FilletDialog {
         let mut open = true;
         Self::dockable_window(ui, "Fillet", &mut open).build(|| {
             if self.edit.is_none() {
-                ui.text(format!(
-                    "{} Edge{}",
-                    state.selected_edge_count,
-                    if state.selected_edge_count == 1 {
-                        ""
-                    } else {
-                        "s"
-                    }
-                ));
+                let selection = match state.selected_edge_count {
+                    0 => "Select Edges".to_owned(),
+                    1 => "1 Edge".to_owned(),
+                    count => format!("{count} Edges"),
+                };
+                ui.text(selection);
             }
             if ui.input_text("Radius", &mut self.radius).build() {
                 self.submitted = None;
@@ -231,6 +228,34 @@ mod tests {
             fillet_selection: Some((3, vec![vec![1, 2, 3]])),
             ..Default::default()
         }
+    }
+    #[test]
+    fn visible_body_allows_start_without_allowing_an_empty_fillet() {
+        let mut state = selected_state();
+        state.selected_edge_count = 0;
+        state.fillet_selection = Some((3, vec![]));
+        let mut browser = crate::GuiModelBrowser::default();
+        browser.bodies.push(crate::GuiBrowserBody {
+            name: "Solid1".into(),
+            feature: oblikovati_model::feature::FeatureId(1),
+            key: "body".into(),
+            index: 0,
+            visible: true,
+            faces: 6,
+            appearance: String::new(),
+            physical: None,
+        });
+        state.browser = Some(browser);
+        assert!(GuiShellAction::OpenFillet.enabled(&state));
+        let mut dialog = FilletDialog::default();
+        dialog.open(&state);
+        let empty = dialog.request(&state).unwrap();
+        assert!(!GuiShellAction::CreateFillet(empty).enabled(&state));
+        let mut actions = Vec::new();
+        dialog.refresh_preview(&state, &mut actions);
+        assert!(actions.is_empty());
+        state.browser.as_mut().unwrap().bodies[0].visible = false;
+        assert!(!GuiShellAction::OpenFillet.enabled(&state));
     }
     #[test]
     fn draft_previews_each_selection_once_and_cancel_clears_it() {

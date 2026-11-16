@@ -4,6 +4,8 @@
 
 ### Changed
 
+- Allowed the Fillet tool to start before an edge is selected. (#4045)
+
 - Enabled Fillet radius editing from the model browser with preview and cancel. (#4045)
 
 - Enabled certified Fillet radius edits through the feature API, including named parameters and undo/redo. (#4045)

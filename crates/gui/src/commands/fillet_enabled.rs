@@ -7,7 +7,11 @@ pub(super) fn create(state: &GuiCommandState) -> bool {
         && state.document.is_some()
         && state.authoring == GuiAuthoringContext::Part
         && !state.transaction_open
-        && state.selected_edge_count > 0
+        && (state.selected_edge_count > 0
+            || state
+                .browser
+                .as_ref()
+                .is_some_and(|browser| browser.bodies.iter().any(|body| body.visible)))
 }
 pub(super) fn open(state: &GuiCommandState, feature: oblikovati_model::feature::FeatureId) -> bool {
     state.fillet_available

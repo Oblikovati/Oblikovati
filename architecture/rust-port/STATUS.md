@@ -20,7 +20,8 @@ Last checked: 2026-11-16 on `rust-work`. Refresh from current evidence at each c
 - Named-edge Fillet creation, replay, undo/redo and save/reopen have focused
   API and native-window tests (#4045). The typed `features.edit` path supports
   certified radius edits. The desktop edit panel has a native input diagnostic;
-  full BDD acceptance remains open. See
+  creation can also start before an edge is picked. The replacement preview
+  hides the original edge highlight; full BDD acceptance remains open. See
   `receipts/2026-11-16-fillet-history-4045/`.
 - Pointer-driven Line creation and preview cancellation have an X11 diagnostic
   (#4037). Move preview and cancellation also pass a focused X11 diagnostic

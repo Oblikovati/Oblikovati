@@ -9,3 +9,8 @@ previews an isolated candidate, cancels without an edit, and commits through
 the typed API. The draft is tied to the document generation and is refused
 after another edit. See `receipts/2026-11-17-fillet-ui-edit-4045/` for the
 native input test and its limits.
+
+The creation panel can open before selection when a visible solid is present.
+It waits for a picked edge before preview or commit. The replacement preview
+currently hides the original edge highlight; see
+`receipts/2026-11-17-fillet-pick-after-start-4045/`.

@@ -5,6 +5,42 @@ use oblikovati_gui::GuiShellAction;
 use oblikovati_viewport::ViewportPhysicalKey;
 
 #[test]
+fn native_fillet_can_pick_an_edge_after_the_tool_starts() {
+    let directory = tempfile::tempdir().unwrap();
+    let native = NativeHeadWindow::open().unwrap();
+    let mut owner = native_owner_at(native.wake.clone(), directory.path()).unwrap();
+    let document = open_native_part(&mut owner, &directory.path().join("fillet-pick.opd"));
+    let mut window = scripted_window(native);
+    crate::frames::run_frames(&mut window, HeadOptions { frames: Some(3) }, &mut owner).unwrap();
+    assert_eq!(owner.gui_command_state().unwrap().selected_edge_count, 0);
+    let before = feature_count(&owner, document);
+    click_shell_position(
+        &mut window,
+        &mut owner,
+        application_bdd::rendered_label_center("Fillet"),
+    );
+    assert!(application_bdd::window_geometry("Fillet").is_some());
+    assert!(!owner.gui_command_state().unwrap().extrude_preview_active);
+    press_shell_key(&mut window, &mut owner, ViewportPhysicalKey::Enter);
+    assert_eq!(feature_count(&owner, document), before);
+    let pixel = window.native.view.model_pixel([2., 0., 2.]).unwrap();
+    window.scripted = pointer_click_events(pixel, 1);
+    crate::frames::run_frames(&mut window, HeadOptions { frames: Some(3) }, &mut owner).unwrap();
+    assert_eq!(owner.gui_command_state().unwrap().selected_edge_count, 1);
+    assert!(owner.gui_command_state().unwrap().extrude_preview_active);
+    capture_when_requested(&mut window, "OBLIKOVATI_FILLET_PICK_CAPTURE");
+    assert_eq!(feature_count(&owner, document), before);
+    click_shell_position(
+        &mut window,
+        &mut owner,
+        application_bdd::rendered_label_center("OK"),
+    );
+    assert_eq!(feature_count(&owner, document), before + 1);
+    owner.finish().unwrap();
+    window.finish().unwrap();
+}
+
+#[test]
 fn native_edge_fillet_preview_cancel_commit_and_history() {
     let directory = tempfile::tempdir().unwrap();
     let native = NativeHeadWindow::open().unwrap();
