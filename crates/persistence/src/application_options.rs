@@ -15,6 +15,8 @@ use std::{
     io,
     path::{Path, PathBuf},
 };
+#[path = "application_options/startup_plane.rs"]
+mod startup_plane;
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 #[serde(default)]
@@ -70,6 +72,7 @@ impl<Files: PackageFileReader + AtomicFiles> ApplicationPreferenceFile<Files> {
         let part = candidate.part.get_or_insert_default();
         part.look_at_sketch_plane = Some(options.look_at_sketch_plane);
         part.chamfer_flat_corners = Some(options.chamfer_flat_corners);
+        part.startup_sketch_plane = options.startup_sketch_plane;
         self.publish(candidate)
     }
     /// Save text/icon scale without changing other groups; example: `preferences.save_ui_scale(options)?`.
@@ -142,6 +145,11 @@ impl<Files: PackageFileReader + AtomicFiles> PartPreferenceAccess
                 .as_ref()
                 .and_then(|part| part.chamfer_flat_corners)
                 .unwrap_or(true),
+            startup_sketch_plane: self
+                .recipe
+                .part
+                .as_ref()
+                .and_then(|part| part.startup_sketch_plane),
         }
     }
     fn set_part_options(&mut self, options: PartApplicationOptions) -> Result<(), String> {
@@ -229,6 +237,8 @@ struct PartPreferenceRecipe {
     look_at_sketch_plane: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     chamfer_flat_corners: Option<bool>,
+    #[serde(default, with = "startup_plane")]
+    startup_sketch_plane: Option<oblikovati_model::feature::work_plane::WorkPlaneOrigin>,
     #[serde(flatten)]
     retained: BTreeMap<String, serde_yaml_ng::Value>,
 }
