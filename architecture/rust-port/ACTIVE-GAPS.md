@@ -185,6 +185,10 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
   scenarios; collapsed-panel interaction is tracked in #4014. See
   `receipts/2026-11-16-move-cancel-4013/`. Frame-loop input and unbounded build
   provenance prevent verified acceptance (#3978).
+- Move triad reset: `move-14` passed the pinned diagnostic after the triad
+  was repositioned through the UI. A separate OS-input check showed reset and
+  cancellation; the full Move diagnostic passed 12 of 27 scenarios, with 15
+  unbound. See `receipts/2026-11-16-move-triad-reset-4022/` (#4022).
 - Circle zero radius: same-position mouse clicks and Escape passed a focused
   OS-input diagnostic, with bridge queries confirming no new circle. See
   `receipts/2026-11-16-live-circle-zero/`; pinned BDD acceptance remains
