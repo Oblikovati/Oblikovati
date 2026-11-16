@@ -50,8 +50,8 @@ pub use sketch_translation::{SketchTransformPreview, SketchTransformProjectionIn
 mod sketch_delete;
 mod sketch_precision;
 pub use sketch_precision::{
-    ConditionalPrismAxis, ConditionalPrismDisplacement, PrismPrecisionObligation,
-    SessionConditionalSketch,
+    ConditionalPrismAxis, ConditionalPrismDisplacement, ConditionalPrismSweptPoints,
+    PrismPrecisionObligation, SessionConditionalSketch,
 };
 mod sketch_recompute;
 pub use sketch_delete::SketchDeleteProjectionInput;

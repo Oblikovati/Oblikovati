@@ -37,6 +37,40 @@ pub(super) fn check<O: TransactionObserver>(
         .source
         .clone();
     assert_eq!(axes[2].parameter().unwrap().sources(), &[(1, source)]);
+    let projection = evidence.projection().unwrap();
+    let sketch = projection
+        .snapshot()
+        .sketches
+        .get(projection.sketch())
+        .unwrap()
+        .geometry();
+    let sketch_box = sketch
+        .points()
+        .iter()
+        .flat_map(|point| point.position)
+        .map(|value| [value - 0.01, value + 0.01])
+        .collect::<Vec<_>>();
+    let wide = evidence
+        .conditional_prism_displacement(
+            feature,
+            [Some([-0.001, 0.001]), Some([-0.001, 0.001]), None],
+        )
+        .unwrap();
+    let swept = wide.swept_points(&sketch_box).unwrap();
+    assert_eq!(
+        swept
+            .points()
+            .iter()
+            .map(|point| point.point)
+            .collect::<Vec<_>>(),
+        sketch
+            .points()
+            .iter()
+            .map(|point| point.id)
+            .collect::<Vec<_>>()
+    );
+    assert!(swept.points().iter().all(|point| point.upper >= 0.002));
+    assert!(wide.swept_points(&[]).is_err());
     assert!(
         evidence
             .conditional_prism_displacement(feature, [None, Some([0., 0.]), None])

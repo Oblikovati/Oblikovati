@@ -58,6 +58,41 @@ impl<O> ConditionalPrismDisplacement<'_, '_, O> {
         &self.axes
     }
 }
+
+/// Conditional error bounds for points swept by one session-owned prism input.
+pub struct ConditionalPrismSweptPoints<'b, 'e, 's, O> {
+    _displacement: &'b ConditionalPrismDisplacement<'e, 's, O>,
+    points: Vec<oblikovati_model::history::ConditionalPointDisplacement>,
+}
+impl<O> ConditionalPrismSweptPoints<'_, '_, '_, O> {
+    /// Read point identities and their conditional swept displacement; example: `result.points()`.
+    pub fn points(&self) -> &[oblikovati_model::history::ConditionalPointDisplacement] {
+        &self.points
+    }
+}
+impl<'e, 's, O: TransactionObserver> ConditionalPrismDisplacement<'e, 's, O> {
+    /// Compose source and sketch errors for all points on a canonical-plane sweep.
+    /// Example: `displacement.swept_points(&sketch_box)?`.
+    /// This bound is conditional and does not authorize a kernel operation.
+    pub fn swept_points<'b>(
+        &'b self,
+        sketch_box: &[[f64; 2]],
+    ) -> Result<ConditionalPrismSweptPoints<'b, 'e, 's, O>, String> {
+        let definition = self._evidence.prism_definition(self.feature)?;
+        let center = definition
+            .resolve(self._evidence.session.snapshot())
+            .map_err(|e| e.to_string())?
+            .displacement;
+        let projection = self._evidence.projection()?;
+        let root = projection.conditional_root_auto(sketch_box, &[])?;
+        let bounds = std::array::from_fn(|axis| self.axes[axis].bounds());
+        let points = root.canonical_swept_point_displacements(center, bounds)?;
+        Ok(ConditionalPrismSweptPoints {
+            _displacement: self,
+            points,
+        })
+    }
+}
 impl<'s, O: TransactionObserver> SessionConditionalSketch<'s, O> {
     /// Bound a prism's source components under explicit constant assumptions.
     /// Example: `evidence.conditional_prism_displacement(feature, assumptions)?`.

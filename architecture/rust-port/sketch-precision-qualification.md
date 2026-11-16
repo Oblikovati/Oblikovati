@@ -214,3 +214,20 @@ These bounds remain conditional on arithmetic conformance and the constant
 assumptions. They do not bound a derived frame, prove a topology mapping, or
 establish a tolerance budget. They do not discharge the `ExtrusionSource`
 obligation, authorize preview or creation, or qualify an existing result.
+
+## Conditional swept-point bounds
+
+A canonical-plane sketch root and the same session's prism displacement
+source bounds can be combined into a conditional bound for each retained sketch
+point over sweep parameter values from zero through one. The upper bound uses
+the point displacement bound plus the sum of the three displacement-component
+errors. Directed interval arithmetic encloses the differences and sum. This
+conservative L1 bound does not assume correlations between the sketch and
+parameter errors. Exact-rational checks cover source-box corners and sweep
+parameters zero, one half and one.
+
+The source constants remain caller assumptions and the parameter enclosures
+remain conditional on the arithmetic backend. The result is a mathematical
+input bound, not a bound on kernel operations or the final B-rep. It does not
+prove the coincidence mapping, kernel tolerance composition, output validity,
+or admission coverage. The existing prism obligations remain unchanged.
