@@ -7,7 +7,7 @@ use oblikovati_gui::GuiSketchMoveStage;
 #[given("Move reopens with Optimize for Single Selection checked")]
 fn reopen_move_with_single_selection(world: &mut ApplicationWorld) {
     world.remember_edited_sketch(vec![move_precise::EDGE]);
-    open_move(world);
+    move_precise::open_move(world);
     if !world.state().sketch_move.unwrap().optimize_single {
         let toggle = world
             .run_in_window("Move", "OptimizeforSingleSelection")
@@ -16,16 +16,8 @@ fn reopen_move_with_single_selection(world: &mut ApplicationWorld) {
     }
     let done = world.run_in_window("Move", "Done").center();
     world.click(diagnostics::pointer_pixels(done));
-    open_move(world);
+    move_precise::open_move(world);
     assert!(world.state().sketch_move.unwrap().optimize_single);
-}
-
-fn open_move(world: &mut ApplicationWorld) {
-    if !world.shows("Move") {
-        let label = world.run("Modify").center();
-        world.click(diagnostics::pointer_pixels([label[0], label[1] - 35.]));
-    }
-    world.click_text("Move");
 }
 
 #[given("Copy and Precise Input are unchecked")]
