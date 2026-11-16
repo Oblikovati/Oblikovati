@@ -1,6 +1,6 @@
 # Rust port status
 
-Last checked: 2026-11-16 at application commit `84627a97d`. Refresh from current evidence at each checkpoint.
+Last checked: 2026-11-16 at application commit `37dc93c0f`. Refresh from current evidence at each checkpoint.
 
 ## Start here
 
@@ -17,7 +17,8 @@ Last checked: 2026-11-16 at application commit `84627a97d`. Refresh from current
   comparison still fails as reported in Martensite #407. See
   `receipts/2026-11-16-martensite-0131-4025/`.
 - **R0 remains open.** The full gate, baseline fields and milestone exit audits
-  are incomplete. Run `python3 -B tools/bdd/behavior_cli.py report` for current
+  are incomplete. At `37dc93c0f`, 2,572 scenario declarations lack at least one
+  baseline field. Run `python3 -B tools/bdd/behavior_cli.py report` for current
   counts; source and application changes can make earlier receipts stale.
 - At the local source snapshot `e76cb749ed43c73a91c24854057da7c890041f51`, the ledger reports **0 verified**, 21 stale, 38 blocked and 39 excluded across 2,720 declarations. Earlier receipts remain historical. Native build provenance is not bounded (#3978); the gate also requires missing baseline fields.
 - Startup sketches on XY, YZ and XZ are integrated (#4009). The full pinned
@@ -37,10 +38,12 @@ Last checked: 2026-11-16 at application commit `84627a97d`. Refresh from current
   for existing sketch creation calls (#187).
 - The #187 host implementations remain unmerged pending the released API pin:
   Rust `work/host-expressions-187` at `3b77b8dbc`, and Go
-  `work/go-associative-187` at `17d564e374`. Their focused and affected-package
+  `work/go-associative-187` at `1649e3cad`. Their focused and affected-package
   suites passed against the draft API. The Rust adapter's full suite fails on
   the clean-base Martensite #406 ellipse test. The Go branch's normal hook
-  passed; its full pre-push gate has not run. See also Go pick-index race #4027.
+  passed; its full pre-push gate has not run. The Go branch includes the #4027
+  cache race fix; concurrent sketch mutation (#4028) and stale picks after
+  in-place geometry edits (#4029) remain separate open defects.
 - Scenario pin: `e76cb749ed43c73a91c24854057da7c890041f51`, a local snapshot
   of the unversioned source. It is not an upstream commit. The live feature
   inventory matched the pin again on 2026-11-16: no `.feature` files were added,
