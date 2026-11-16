@@ -39,7 +39,10 @@ Last checked: 2026-11-16 on `rust-work` after `6ba45dcb1`. Refresh from current 
   are incomplete. At `37dc93c0f`, 2,572 scenario declarations lack at least one
   baseline field. Run `python3 -B tools/bdd/behavior_cli.py report` for current
   counts; source and application changes can make earlier receipts stale.
-- At the local source snapshot `e76cb749ed43c73a91c24854057da7c890041f51`, the ledger reports **0 verified**, 21 stale, 38 blocked and 39 excluded across 2,720 declarations. Earlier receipts remain historical. Native build provenance is not bounded (#3978); the gate also requires missing baseline fields.
+- At local snapshot `b576445b98cffd686dcc05aa8c017de2a591c8c8`, the ledger
+  reports **0 verified** across 2,760 declarations. Changed source leaves 124
+  classifications stale. Sketch3D has 10 capture-only cases and no native
+  runner. Earlier receipts remain historical; native provenance is open (#3978).
 - Startup sketches on XY, YZ and XZ are integrated (#4009). The full pinned
   New Sketch diagnostic passed nine scenarios and found one unbound; its
   latest report is in `receipts/2026-11-16-new-sketch-current-18d90af/`.
@@ -63,16 +66,15 @@ Last checked: 2026-11-16 on `rust-work` after `6ba45dcb1`. Refresh from current 
   passed; its full pre-push gate has not run. The Go branch includes the #4027
   cache race fix; concurrent sketch mutation (#4028) and stale picks after
   in-place geometry edits (#4029) remain separate open defects.
-- Scenario pin: `e76cb749ed43c73a91c24854057da7c890041f51`, a local snapshot
-  of the unversioned source. It is not an upstream commit. The live feature
-  inventory matched the pin again on 2026-11-16: no `.feature` files were added,
-  changed, or removed. The comparison covers `.feature` files only.
-  The source tags 39 observations
-  as capture-only and the remaining 34 document-creation cases as capture-host
-  only; these are excluded or blocked, not passing. Follow `bdd-workflow.md`
+- Scenario pin: `b576445b98cffd686dcc05aa8c017de2a591c8c8`, a local snapshot
+  of the unversioned source. It is not an upstream commit. At the latest check,
+  the live solid viewport interaction feature had changed again (#4038). The
+  comparison covers `.feature` files only; review that change in the next sync.
+  The source tags 60 declarations as capture-only and 34 more as capture-host
+  only; they are not portable passing evidence. Follow `bdd-workflow.md`
   when source files change; use a unique Cargo target for each active worktree.
-- The native harness injects input into the window frame loop. It does not prove
-  OS-level key and mouse delivery. Close test windows and retain receipts.
+- Some native tests inject input into the frame loop; others use X11 XTEST.
+  Check each receipt for its input path. Close test windows and retain receipts.
 - `make docs-lint` passed after the source-size and worktree-discovery fixes
   (#3970, #3971). The full `make gate` remains open.
 - Martensite work is owned separately. Report validated kernel gaps in

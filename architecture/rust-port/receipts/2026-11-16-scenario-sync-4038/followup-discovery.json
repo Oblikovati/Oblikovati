@@ -1,0 +1,50 @@
+{
+  "source": "/mnt/vininas-projects/MCAD-Scenarios",
+  "areas": {
+    "application": {
+      "features": 25,
+      "scenario_declarations": 749,
+      "outlines": 6
+    },
+    "sketch": {
+      "features": 92,
+      "scenario_declarations": 1384,
+      "outlines": 0
+    },
+    "sketch3d": {
+      "features": 4,
+      "scenario_declarations": 10,
+      "outlines": 1
+    },
+    "solid-model": {
+      "features": 84,
+      "scenario_declarations": 617,
+      "outlines": 0
+    }
+  },
+  "changes": {
+    "added": [
+      "features/application/application-closing/application-closing.feature",
+      "features/sketch/constraint-glyph-hover/constraint-glyph-hover.feature",
+      "features/sketch/measure-entity-picking/measure-entity-picking.feature",
+      "features/sketch/viewport-entity-interaction/viewport-entity-interaction.feature",
+      "features/sketch3d/arc/arc.feature",
+      "features/sketch3d/helical-curve/helical-curve.feature",
+      "features/sketch3d/line/line.feature",
+      "features/sketch3d/shared-tool-lifecycle/shared-tool-lifecycle.feature",
+      "features/solid-model/viewport-feature-interaction/viewport-feature-interaction.feature",
+      "features/solid-model/viewport-feature-picking/viewport-feature-picking.feature"
+    ],
+    "changed": [
+      "features/sketch/chamfer/scenario.feature",
+      "features/sketch/line/scenario.feature",
+      "features/sketch/rectangle-two-point/scenario.feature",
+      "features/solid-model/bend-part/bend-part.feature",
+      "features/solid-model/boundary-patch/boundary-patch.feature",
+      "features/solid-model/chamfer/chamfer.feature",
+      "features/solid-model/copy-object/copy-object.feature",
+      "features/solid-model/extrusion/extrusion.feature"
+    ],
+    "removed": []
+  }
+}

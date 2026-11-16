@@ -20,7 +20,7 @@ For a reproducible focused run, restore and verify the checkout explicitly:
 
 ```sh
 git clone -c core.autocrlf=false --branch snapshot \
-  "$PWD/test-utilities/benchmarks/scenario-snapshots/mcad-scenarios-2026-11-15-e76cb74.bundle" \
+  "$PWD/test-utilities/benchmarks/scenario-snapshots/mcad-scenarios-2026-11-16-b576445.bundle" \
   /absolute/path/to/scenario-checkout
 python3 tools/bdd/verify_snapshot.py /absolute/path/to/scenario-checkout
 export OBK_BDD_ROOT=/absolute/path/to/scenario-checkout
