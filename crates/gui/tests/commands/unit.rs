@@ -139,3 +139,32 @@ fn express_assembly_offers_full_load_but_refuses_edits_and_save() {
     assert!(!GuiShellAction::LoadFullDocument(7).enabled(&state));
     assert!(GuiShellAction::Save.enabled(&state));
 }
+
+#[test]
+fn sketch_context_choice_requires_current_offered_identity() {
+    use crate::{GuiSketchCandidate, GuiSketchContext};
+    use oblikovati_model::sketch::SketchEntityId;
+    let entity = SketchEntityId(4);
+    let mut state = GuiCommandState {
+        sketch_at_ready: true,
+        sketch_context: Some(GuiSketchContext {
+            token: 7,
+            candidates: vec![GuiSketchCandidate {
+                entity,
+                label: "Line".into(),
+            }],
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
+    let action = GuiShellAction::SelectSketchContextCandidate { token: 7, entity };
+    assert!(action.enabled(&state) && action.dispatchable(&state));
+    state.sketch_context.as_mut().unwrap().candidates[0].entity = SketchEntityId(5);
+    assert!(!action.enabled(&state));
+    state.sketch_context.as_mut().unwrap().candidates[0].entity = entity;
+    state.sketch_context.as_mut().unwrap().token = 8;
+    assert!(!action.enabled(&state));
+    state.sketch_context.as_mut().unwrap().token = 7;
+    state.sketch_at_ready = false;
+    assert!(!action.enabled(&state));
+}

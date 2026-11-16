@@ -132,6 +132,16 @@ pub trait HeadSketchWork {
             "sketch relation {id}: expected an active sketch owner"
         ))
     }
+    /// Select a current context candidate; example: `work.select_sketch_context_candidate(token, entity)?`.
+    fn select_sketch_context_candidate(
+        &mut self,
+        token: u64,
+        entity: oblikovati_model::sketch::SketchEntityId,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "sketch context {token}, entity {entity:?}: expected an active sketch owner"
+        ))
+    }
     /// The edited sketch's shown relation marks; example: `work.sketch_constraint_marks()`.
     fn sketch_constraint_marks(&self) -> Vec<crate::HeadConstraintMark> {
         Vec::new()

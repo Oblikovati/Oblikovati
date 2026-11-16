@@ -77,13 +77,21 @@ fn measure_width(ui: &Ui, panel: &GuiMeasurePanel) -> f32 {
 /// What was under the pointer when the canvas menu was asked for.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct GuiSketchContext {
+    /// Unique owner-generated identity for this context-menu invocation.
+    pub token: u64,
     /// The point the menu's Center Point row acts on; none on empty canvas.
     pub point: Option<u64>,
     pub center_point: bool,
     /// Every entity within reach; two or more is what Select Other is for.
-    pub candidates: Vec<String>,
+    pub candidates: Vec<GuiSketchCandidate>,
     /// Geometric relations owned by the curve under the context pointer.
     pub relations: Vec<GuiSketchRelation>,
+}
+/// One identifiable selectable under the sketch context pointer.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GuiSketchCandidate {
+    pub entity: oblikovati_model::sketch::SketchEntityId,
+    pub label: String,
 }
 /// One geometric relation resolved from the picked curve.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -163,7 +171,7 @@ fn relation_rows(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAct
         }
     }
 }
-fn select_other_row(ui: &Ui, state: &GuiCommandState) {
+fn select_other_row(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
     let Some(context) = state
         .sketch_context
         .as_ref()
@@ -173,7 +181,12 @@ fn select_other_row(ui: &Ui, state: &GuiCommandState) {
     };
     ui.menu("Select Other", || {
         for (index, candidate) in context.candidates.iter().enumerate() {
-            ui.menu_item(format!("{candidate}##candidate-{index}"));
+            if ui.menu_item(format!("{}##candidate-{index}", candidate.label)) {
+                actions.push(GuiShellAction::SelectSketchContextCandidate {
+                    token: context.token,
+                    entity: candidate.entity,
+                });
+            }
         }
     });
 }
@@ -199,7 +212,7 @@ pub(crate) fn canvas_menu(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<Gu
     center_point_row(ui, state, actions);
     delete_selection_row(ui, state, actions);
     relation_rows(ui, state, actions);
-    select_other_row(ui, state);
+    select_other_row(ui, state, actions);
     if ui.menu_item("Measure") {
         actions.push(GuiShellAction::Inspect(GuiInspectAction::StartMeasure));
     }

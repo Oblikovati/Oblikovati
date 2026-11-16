@@ -2,6 +2,8 @@
 //! Exact points for a running command, and what the sketch shows of its relations.
 #[path = "owner_relation_marks.rs"]
 mod relation_marks;
+#[path = "owner_sketch_context.rs"]
+mod sketch_context;
 use super::*;
 use crate::HeadWindow;
 use crate::{placement_input::SketchPlacementState, sketch_tool::SketchToolState};
@@ -14,6 +16,7 @@ use oblikovati_viewport::{
     ViewportButton, ViewportEvent, ViewportInput, ViewportKey, ViewportPhysicalKey,
 };
 use relation_marks::relation_marks;
+use sketch_context::context_target;
 
 impl<
     O: TransactionObserver,
@@ -300,6 +303,8 @@ impl<
         else {
             return Ok(());
         };
+        // A failed new hit test must not leave the previous menu actionable (#4041).
+        self.sketch_memory.context = None;
         let Some(edit) = self.active_sketch_edit() else {
             return Ok(());
         };
@@ -314,7 +319,16 @@ impl<
             .get(edit.sketch)
             .map_err(|cause| cause.to_string())?
             .geometry();
-        let target = context_target(geometry, edit, session.generation(), position, window)?;
+        let token = self
+            .sketch_memory
+            .context_serial
+            .checked_add(1)
+            .ok_or_else(|| {
+                "sketch context token overflow: expected an unused menu identity".to_owned()
+            })?;
+        let mut target = context_target(geometry, edit, session.generation(), position, window)?;
+        target.token = token;
+        self.sketch_memory.context_serial = token;
         self.sketch_memory.context = Some(target);
         Ok(())
     }
@@ -367,6 +381,7 @@ pub(super) struct SketchCommandMemory {
     pub triad: Option<[f64; 2]>,
     pub triad_pick: Option<TriadPick>,
     pub context: Option<SketchContextTarget>,
+    pub context_serial: u64,
 }
 impl Default for SketchCommandMemory {
     fn default() -> Self {
@@ -378,6 +393,7 @@ impl Default for SketchCommandMemory {
             triad: None,
             triad_pick: None,
             context: None,
+            context_serial: 0,
         }
     }
 }
@@ -390,53 +406,13 @@ pub(super) enum TriadPick {
 /// What a right press landed on.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) struct SketchContextTarget {
+    pub(super) token: u64,
     pub(super) point: Option<SketchEntityId>,
     pub(super) curve: Option<SketchEntityId>,
     pub(super) generation: u64,
     pub(super) document: u64,
     pub(super) sketch: oblikovati_model::document_sketch::DocumentSketchId,
-    pub(super) candidates: Vec<String>,
-}
-/// A right press acts on a point within this reach, in pixels.
-const CONTEXT_POINT_REACH: f64 = 6.;
-
-fn context_target(
-    geometry: &Sketch2D,
-    edit: crate::HeadSketchEdit,
-    generation: u64,
-    pixel: [i32; 2],
-    window: &dyn HeadWindow,
-) -> Result<SketchContextTarget, String> {
-    let plane = edit.plane;
-    let mut within = Vec::new();
-    for point in geometry.points() {
-        let at = window.sketch_pixel(plane, point.position)?;
-        let distance = super::sketch_picking::screen_distance(at, pixel);
-        if distance <= CONTEXT_POINT_REACH {
-            within.push((distance, point.id));
-        }
-    }
-    within.sort_by(|first, second| first.0.total_cmp(&second.0).then(first.1.cmp(&second.1)));
-    let curve = if within.is_empty() {
-        super::sketch_picking::pick_witness(
-            geometry,
-            plane,
-            pixel,
-            window,
-            super::sketch_picking::SketchPickFilter::Curves,
-        )?
-        .map(|hit| hit.entity)
-    } else {
-        None
-    };
-    Ok(SketchContextTarget {
-        point: within.first().map(|(_, id)| *id),
-        curve,
-        generation,
-        document: edit.document,
-        sketch: edit.sketch,
-        candidates: vec!["Point".to_owned(); within.len()],
-    })
+    pub(super) candidates: Vec<oblikovati_gui::GuiSketchCandidate>,
 }
 fn cancels_pick(event: ViewportEvent) -> bool {
     matches!(
@@ -472,3 +448,7 @@ pub struct HeadConstraintMark {
     pub text: String,
     pub related: Vec<SketchEntityId>,
 }
+
+#[cfg(test)]
+#[path = "../tests/owner/sketch_context_other.rs"]
+mod context_other_tests;

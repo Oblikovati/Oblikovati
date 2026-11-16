@@ -2,6 +2,7 @@
 //! Read and remove relations under the sketch context pointer.
 use super::*;
 use oblikovati_api::wire::DeleteConstraintArgs;
+use oblikovati_session::selection::SelectionClickMode;
 
 impl<
     O: TransactionObserver,
@@ -57,6 +58,7 @@ impl<
             Vec::new()
         };
         Ok(Some(oblikovati_gui::GuiSketchContext {
+            token: target.token,
             point: point.map(|point| point.0),
             center_point: point.is_some_and(|point| geometry.is_center_point(point)),
             candidates: target.candidates.clone(),
@@ -71,6 +73,51 @@ impl<
             .delete(&request)
             .map_err(|e| e.to_string())?;
         Ok(true)
+    }
+    pub(super) fn select_context_candidate(
+        &mut self,
+        token: u64,
+        entity: oblikovati_model::sketch::SketchEntityId,
+    ) -> Result<bool, String> {
+        let edit = self.checked_context_candidate(token, entity)?;
+        self.store_sketch_click(edit, Some(entity), SelectionClickMode::Replace)?;
+        self.publish_selection_count(edit)?;
+        self.sketch_memory.context = None;
+        Ok(true)
+    }
+
+    fn checked_context_candidate(
+        &self,
+        token: u64,
+        entity: oblikovati_model::sketch::SketchEntityId,
+    ) -> Result<crate::HeadSketchEdit, String> {
+        let target = self.sketch_memory.context.as_ref().ok_or_else(|| {
+            format!("sketch context {token}, entity {entity:?}: expected an open context")
+        })?;
+        let edit = self.active_sketch_edit().ok_or_else(|| {
+            format!("sketch context {token}, entity {entity:?}: expected an active sketch")
+        })?;
+        if !self.context_choice_is_current(target, edit, token, entity) {
+            return Err(format!(
+                "sketch context {token}, entity {entity:?}: expected a current offered candidate"
+            ));
+        }
+        Ok(edit)
+    }
+
+    fn context_choice_is_current(
+        &self,
+        target: &super::owner_precise_input::SketchContextTarget,
+        edit: crate::HeadSketchEdit,
+        token: u64,
+        entity: oblikovati_model::sketch::SketchEntityId,
+    ) -> bool {
+        target.token == token
+            && target.document == edit.document
+            && target.sketch == edit.sketch
+            && self.sketch_tool.is_none()
+            && target.candidates.iter().any(|item| item.entity == entity)
+            && self.sketch_context_valid(edit.document, edit.sketch, target.generation)
     }
     fn require_context_relation(&self, id: u64) -> Result<(), String> {
         let state = self.gui_command_state()?;
