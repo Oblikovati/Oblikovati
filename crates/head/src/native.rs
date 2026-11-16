@@ -8,14 +8,8 @@ mod preferences;
 use oblikovati_viewport::{
     Viewport, ViewportEvent, ViewportPresentation, ViewportRuntime, ViewportScene, ViewportWake,
 };
-type SketchCameraState = (
-    crate::HeadSketchEdit,
-    Option<oblikovati_viewport::ViewportCamera>,
-);
-type SavedWindowView = (
-    oblikovati_viewport::ViewportCamera,
-    Option<SketchCameraState>,
-);
+mod saved_view;
+use saved_view::{SavedWindowView, SketchCameraState};
 pub struct NativeHeadWindow {
     capture_files: Box<dyn crate::WindowCaptureFiles>,
     capture_requests: Vec<crate::WindowCaptureJob>,
@@ -481,27 +475,22 @@ mod addin_services_tests;
 #[cfg(test)]
 #[path = "../tests/native_history.rs"]
 mod history_tests;
+mod projection;
 #[cfg(test)]
 #[path = "../tests/native_save.rs"]
 mod save_tests;
+mod sketch_display;
+mod sketch_edit;
 mod title;
 
-mod projection;
-
-mod sketch_edit;
-
-mod sketch_display;
-
+mod gui_composition;
 #[cfg(test)]
 #[path = "../tests/native_sketch_display.rs"]
 mod sketch_display_tests;
 
-mod gui_composition;
-
 #[cfg(test)]
 #[path = "../tests/native_gui_composition.rs"]
 mod gui_composition_tests;
-
 mod gui_loop;
 #[cfg(test)]
 #[path = "../tests/native_gui_loop.rs"]

@@ -88,9 +88,9 @@ Last checked: 2026-11-16 on `rust-work`. Refresh from current evidence at each c
   when source files change; use a unique Cargo target for each active worktree.
 - Wheel zoom passes a native mouse diagnostic (#3881); see
   `receipts/2026-11-16-native-wheel-3881/`. Check input paths; close test windows.
-- `make docs-lint` currently fails on Rust source files at or above the
-  500-line limit after the Fillet integration. Markdown lint passed. The full
-  `make gate` remains open.
+- `make docs-lint` passed after splitting the source files that exceeded the
+  500-line limit following the Fillet integration. The full `make gate`
+  remains open.
 - Martensite is owned separately; report kernel gaps without changing it here.
 - GUI unit tests isolate the shared ImGui context under parallel execution
   (#3878). The final eight-thread run passed 495 tests; the production context

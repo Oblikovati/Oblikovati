@@ -74,24 +74,7 @@ pub trait HeadWork: HeadSketchWork {
             "document {document} units {request:?}: expected a document owner"
         ))
     }
-    /// Show or clear a drawing preview; example: `work.base_view_preview_from_gui(None)?`.
-    fn base_view_preview_from_gui(
-        &mut self,
-        request: Option<&oblikovati_gui::GuiBaseViewRequest>,
-    ) -> Result<bool, String> {
-        Err(format!(
-            "drawing view preview {request:?}: expected a drawing owner"
-        ))
-    }
-    /// Create a drawing view through the public drawing commands; example: `work.base_view_from_gui(&request)?`.
-    fn base_view_from_gui(
-        &mut self,
-        request: &oblikovati_gui::GuiBaseViewRequest,
-    ) -> Result<bool, String> {
-        Err(format!(
-            "drawing view {request:?}: expected a drawing owner"
-        ))
-    }
+    crate::work_drawing::drawing_work_methods!();
     /// Place an open component through the document owner; example: `work.place_component_from_gui(assembly, &request)?`.
     fn place_component_from_gui(
         &mut self,

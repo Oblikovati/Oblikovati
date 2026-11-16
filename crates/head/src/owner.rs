@@ -7,7 +7,6 @@ use oblikovati_automation::{
 use oblikovati_model::identity::GuidSource;
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
-use std::time::Duration;
 #[path = "owner_commands.rs"]
 mod commands;
 #[path = "owner_datum_overlay.rs"]
@@ -96,20 +95,8 @@ mod windows;
 #[path = "owner_work.rs"]
 mod work;
 pub use commands::{DesktopCommandNotice, DesktopHistoryAction};
-#[derive(Clone, Copy, Debug)]
-pub struct DesktopDispatchOptions {
-    pub capacity: usize,
-    pub timeout: Duration,
-}
-impl Default for DesktopDispatchOptions {
-    fn default() -> Self {
-        // The fixed Go head uses dispatch.New(64) and hostCallTimeout = 10 seconds.
-        Self {
-            capacity: 64,
-            timeout: Duration::from_secs(10),
-        }
-    }
-}
+mod dispatch_options;
+pub use dispatch_options::DesktopDispatchOptions;
 struct ComponentPreview {
     assembly: u64,
     generations: Vec<(u64, u64)>,

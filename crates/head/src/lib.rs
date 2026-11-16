@@ -48,6 +48,7 @@ mod orientation_work;
 #[cfg(target_os = "linux")]
 #[macro_use]
 mod work_datum;
+mod work_drawing;
 #[cfg(target_os = "linux")]
 #[macro_use]
 mod work_metadata;
