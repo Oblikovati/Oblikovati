@@ -146,7 +146,12 @@ the model expression parser without constant folding, checks each reference
 against its bound identity, and retains source identities and text. It requires
 the default centimetre working scale. It encloses authored decimals, unit
 factors and arithmetic, and includes each parameter's rounded binary64 value.
-Division by a box containing zero and unsupported functions decline. Fixed and grounded coordinate
+Division by a box containing zero and unsupported functions decline. Independent
+rational checks cover nested arithmetic; a cancellation test checks that an
+exactly zero divisor is refused even if binary64 evaluation is nonzero. A
+canonical projected-origin rectangle also retains the formula source through
+its conditional root check and rejects a later same-value source edit. These
+checks do not authenticate interval arithmetic across platforms. Fixed and grounded coordinate
 targets additionally require explicit caller-supplied exact-value assumptions;
 their stored binary64 values are not treated as proven physical inputs. Other
 units, scales, engineering-value selections, failed sources, and cycles decline.

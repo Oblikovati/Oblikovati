@@ -111,6 +111,42 @@ fn formula_constants_keep_their_authored_decimal_precision() {
 }
 
 #[test]
+fn compound_formula_bounds_enclose_independent_exact_rationals() {
+    let (_, mut parameters) = bound_for("10 mm");
+    parameters
+        .insert_expression(2, "result", USER_PARAM, "size")
+        .unwrap();
+    for (formula, exact) in [
+        (
+            "(size - 2 mm) / 3 + size * 0.1",
+            ratio(11, BigInt::from(30)),
+        ),
+        ("-(size - 12 mm) * (0.5 + 0.5)", ratio(1, BigInt::from(5))),
+        ("size * (size / (size + 10 mm))", ratio(1, BigInt::from(2))),
+    ] {
+        parameters.set_expression(2, formula).unwrap();
+        let [low, high] = conditional_parameter_bound(&parameters, 2)
+            .unwrap()
+            .bounds();
+        assert!(
+            rational(low) <= exact && exact <= rational(high),
+            "{formula}: [{low}, {high}]"
+        );
+    }
+}
+
+#[test]
+fn rounded_nonzero_divisor_with_exact_zero_is_refused() {
+    let (_, mut parameters) = bound_for("10 mm");
+    parameters
+        .insert_expression(2, "result", USER_PARAM, "size / (0.1 + 0.2 - 0.3)")
+        .unwrap();
+    assert_ne!(parameters.model_value(2).unwrap().value, 0.0);
+    let error = conditional_parameter_bound(&parameters, 2).unwrap_err();
+    assert!(error.contains("excluding zero"), "{error}");
+}
+
+#[test]
 fn deeply_nested_parameter_sources_decline_before_exhausting_the_stack() {
     let (_, mut parameters) = bound_for("10 mm");
     let mut previous = "size".to_owned();
