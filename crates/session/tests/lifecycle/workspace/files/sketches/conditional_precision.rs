@@ -414,6 +414,8 @@ fn assert_prism_obligations(
         [
             ArithmeticPlatform,
             ExtrusionSource,
+            ProfileIdentityMapping,
+            ExactCoincidenceAdmission,
             OperandToleranceBudget,
             AdmissionCoverage
         ]

@@ -9,24 +9,30 @@ numeric bounds or a certificate. Missing features, mismatched sketches,
 unsupported selections, and invalid root boxes decline. The result does not
 admit an operation and does not change existing feature behavior.
 
-For a future tolerance budget, let `p` and `q` be true positions and let
-`p0` and `q0` be the positions that an operation will consume. Given proven
-Euclidean error upper bounds `ep` and `eq`, the triangle inequality gives
-`|p-q| <= |p0-q0| + ep + eq`. Each term needs an outward-rounded bound in the
-same document length unit. A shared authored point identity is a stronger
-structural coincidence and must not be replaced by a numeric weld. If distinct
-operands originate from the same computation, any allocated comparison budget
-must use the operation's weld semantics. Independent source operands require
-their source and frame bounds and the operation's sew semantics. A line angular
-bound is in radians and cannot be added to either length budget; when compared
-as an arc-length effect it also needs a proven extent and directed arithmetic.
+For a source-based tolerance analysis, let `p` and `q` be true positions,
+`p0` and `q0` the accepted positions, and `ep` and `eq` proven Euclidean input
+error bounds. The triangle inequality gives both `|p-q| >= |p0-q0|-ep-eq`
+and `|p-q| <= |p0-q0|+ep+eq`. Each term needs a directed bound. These are
+conditional mathematical relations, not an operation admission result.
 
-These inequalities do not establish that the currently exposed weld or sew
-limits allocate any budget to sketch solve error. The contracts do not state
-which operand pairs each operation compares, how its achieved tolerance is
-composed, or what fraction of the cap is available. Extrusion displacement
-source uncertainty and cross-platform interval guarantees also remain open.
-Therefore no resolution comparison or feature admission is justified here.
+The host-pinned Martensite contract uses weld as a *minimum* distance for
+distinct used vertices and a minimum line length. Sew is a *maximum* allowed
+curve-end/vertex gap, not a universal threshold for independent sources.
+Angular controls different input tests, including frame orthogonality and sweep
+inclination. No one tolerance can be treated as a generic input-error budget.
+The kernel reports maximum stored vertex, edge and face tolerances; its contract
+does not state how those values compose with input uncertainty.
+
+The profile converter builds the complete non-construction profile, including
+curves outside the selected loop. It groups authored coincidence relations and
+requires the coordinates in each group to have identical binary64 bits. The
+selected-line diagnostic here does not prove that grouping or the full profile.
+Those are distinct outstanding obligations. The source analysis and its
+conservative inequalities are recorded in the companion contract audit.
+
+Martensite issue [#494](https://github.com/Oblikovati/Martensite/issues/494)
+tracks the missing source uncertainty and tolerance composition contract. No
+resolution comparison or feature admission is justified here.
 
 A future gate must cover profile discovery, preview, feature commit and edit,
 ordered replay, and `retain_certified_sketch_prism` direct adapter calls. The

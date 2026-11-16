@@ -11,6 +11,10 @@ pub enum PrismPrecisionObligation {
     ArithmeticPlatform,
     /// The extrusion displacement source has no propagated physical bound.
     ExtrusionSource,
+    /// The complete profile's coincidence identity mapping is not proven here.
+    ProfileIdentityMapping,
+    /// The adapter's bit-identical coincidence admission is not proven here.
+    ExactCoincidenceAdmission,
     /// A model tolerance budget for the relevant operand origins is unavailable.
     OperandToleranceBudget,
     /// All profile, preview, commit, replay and direct adapter paths need one gate.
@@ -63,6 +67,8 @@ impl<O: TransactionObserver> SessionConditionalSketch<'_, O> {
         Ok(vec![
             PrismPrecisionObligation::ArithmeticPlatform,
             PrismPrecisionObligation::ExtrusionSource,
+            PrismPrecisionObligation::ProfileIdentityMapping,
+            PrismPrecisionObligation::ExactCoincidenceAdmission,
             PrismPrecisionObligation::OperandToleranceBudget,
             PrismPrecisionObligation::AdmissionCoverage,
         ])

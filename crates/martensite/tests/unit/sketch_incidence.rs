@@ -49,3 +49,15 @@ fn inconsistent_coincident_positions_are_not_moved_or_welded() {
     assert!(error.to_string().contains("identical solved coordinates"));
     assert_eq!(sketch.recipe(), before);
 }
+#[test]
+fn coincident_signed_zero_coordinates_do_not_silently_merge() {
+    let mut sketch = points(&[[0., 0.], [-0., 0.]]);
+    coincide(&mut sketch, 1, 1, 2);
+    let before = sketch.recipe();
+    let error = CoincidentPoints::new(&sketch)
+        .vertex(SketchEntityId(2))
+        .unwrap_err();
+    assert_eq!(error.kind(), Kind::InvalidGeometry);
+    assert!(error.to_string().contains("identical solved coordinates"));
+    assert_eq!(sketch.recipe(), before);
+}
