@@ -204,3 +204,6 @@ fn rejected_creation_leaves_no_owner_or_observer_and_preserves_active_document()
             .contains("factory")
     );
 }
+
+#[path = "file_create/startup_sketch.rs"]
+mod startup_sketch;

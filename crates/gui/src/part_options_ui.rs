@@ -3,6 +3,14 @@
 use crate::GuiShellAction;
 use imgui::Ui;
 use oblikovati_model::application_options::PartApplicationOptions;
+use oblikovati_model::feature::work_plane::WorkPlaneOrigin;
+
+const STARTUP_PLANES: [(Option<WorkPlaneOrigin>, &str); 4] = [
+    (None, "No new sketch"),
+    (Some(WorkPlaneOrigin::XY), "x-y"),
+    (Some(WorkPlaneOrigin::YZ), "y-z"),
+    (Some(WorkPlaneOrigin::XZ), "x-z"),
+];
 
 #[derive(Default)]
 pub(crate) struct PartOptionsDraft {
@@ -36,6 +44,7 @@ impl PartOptionsDraft {
         ui.separator();
         ui.text("Part");
         ui.checkbox("Look at sketch plane", &mut edited.look_at_sketch_plane);
+        draw_startup_plane(ui, &mut edited.startup_sketch_plane);
         let conflict = self.original != Some(accepted);
         if conflict {
             ui.text("Part settings changed. Revert before applying.");
@@ -49,6 +58,24 @@ impl PartOptionsDraft {
         ui.same_line();
         if ui.button_with_size("Revert Part", [0., 0.]) {
             self.clear();
+        }
+    }
+}
+
+fn draw_startup_plane(ui: &Ui, plane: &mut Option<WorkPlaneOrigin>) {
+    let label = STARTUP_PLANES[match plane {
+        None => 0,
+        Some(WorkPlaneOrigin::XY) => 1,
+        Some(WorkPlaneOrigin::YZ) => 2,
+        Some(WorkPlaneOrigin::XZ) => 3,
+    }]
+    .1;
+    let Some(_combo) = ui.begin_combo("New part sketch", label) else {
+        return;
+    };
+    for (value, name) in STARTUP_PLANES {
+        if ui.selectable_config(name).selected(value == *plane).build() {
+            *plane = value;
         }
     }
 }
@@ -91,5 +118,18 @@ mod tests {
         draft.synchronize(external);
         assert_ne!(draft.original, Some(external));
         assert!(draft.edited.unwrap().chamfer_flat_corners);
+    }
+    #[test]
+    fn startup_choices_cover_each_origin_and_no_sketch_once() {
+        let choices: Vec<_> = STARTUP_PLANES.iter().map(|(plane, _)| *plane).collect();
+        assert_eq!(
+            choices,
+            [
+                None,
+                Some(WorkPlaneOrigin::XY),
+                Some(WorkPlaneOrigin::YZ),
+                Some(WorkPlaneOrigin::XZ)
+            ]
+        );
     }
 }

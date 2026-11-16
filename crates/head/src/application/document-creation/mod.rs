@@ -29,12 +29,15 @@ impl<
         }
         let previous = self.files.workspace().active_document();
         let name = self.next_new_document_name(template.name_prefix());
-        create_template(
+        let created = create_template(
             &Client::new(self.document_host()),
             template,
             &name,
             previous,
         )?;
+        if template.type_name() == "part" {
+            self.enter_new_part_startup(created, previous)?;
+        }
         Ok(true)
     }
 }
@@ -86,7 +89,7 @@ fn create_template<T: Caller>(
     template: GuiDocumentTemplate,
     name: &str,
     previous: Option<u64>,
-) -> Result<(), String> {
+) -> Result<u64, String> {
     let created = client
         .documents()
         .create(&template_request(template, name))
@@ -104,7 +107,7 @@ fn create_template<T: Caller>(
             template.length_unit()
         ));
     }
-    Ok(())
+    Ok(created.id)
 }
 fn template_request(template: GuiDocumentTemplate, name: &str) -> CreateDocumentArgs {
     CreateDocumentArgs {

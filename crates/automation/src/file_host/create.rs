@@ -7,11 +7,16 @@ use oblikovati_persistence::package::DocumentPackage;
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext<'_, O, W, F> {
     pub(super) fn create(&mut self, request: CreateDocumentArgs) -> Result<Vec<u8>, Error> {
         let package = creation_package(&request)?;
+        let previous = self.files.workspace().active_document();
+        let startup = self.startup_sketch_request(DocumentType(package.manifest().document_type));
         let observer = open::create_observer(&mut self.observers).map_err(Error)?;
         let registered = self
             .files
             .create_unbound(package, observer, self.version, self.source)
             .map_err(|error| Error(error.to_string()))?;
+        if let Some(startup) = startup {
+            self.create_startup_sketch(registered.session_id, previous, &startup)?;
+        }
         let response = self
             .files
             .document_info(registered.session_id)

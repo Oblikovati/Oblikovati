@@ -57,7 +57,18 @@ fn sketch_standoff(
             "sketch camera side {side}: expected a finite view-plane projection"
         ));
     }
-    Ok(if side < 0. { -distance } else { distance })
+    let negative = side < 0. || (side == 0. && dominant_normal_component(normal) < 0.);
+    Ok(if negative { -distance } else { distance })
+}
+// When the eye lies in the plane, choose the positive model-axis side for a stable view.
+fn dominant_normal_component(normal: [f64; 3]) -> f64 {
+    normal.into_iter().fold(0_f64, |largest, value| {
+        if value.abs() > largest.abs() {
+            value
+        } else {
+            largest
+        }
+    })
 }
 fn normalized_up(axis: [f64; 3]) -> [f64; 3] {
     let magnitude = axis.iter().map(|value| value * value).sum::<f64>().sqrt();
@@ -108,6 +119,7 @@ mod tests {
             .facing_sketch(SketchPlane::xz())
             .unwrap();
         assert_eq!(top.up, [0., 0., 1.]);
+        assert_eq!(top.eye, [0., 20., 0.]);
         let front = ViewportCamera::default()
             .facing_sketch(SketchPlane::xy())
             .unwrap();
