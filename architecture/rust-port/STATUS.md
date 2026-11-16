@@ -17,7 +17,10 @@ Last checked: 2026-11-16 on `rust-work`. Refresh from current evidence at each c
   reference-capture gaps prevent acceptance; other mouse scenarios remain open.
 - Solid viewport edit and cancel (#4038) pass X11 diagnostics for extrusion;
   three creation and picking scenarios remain unbound; shading is under review (#4044).
-- Fillet face-history probes pass; four result edges still need names (#4045).
+- Named-edge Fillet creation, replay, undo/redo and save/reopen have focused
+  API and native-window tests (#4045). Direct radius editing through
+  `features.edit` and full BDD acceptance remain open. See
+  `receipts/2026-11-16-fillet-history-4045/`.
 - Pointer-driven Line creation and preview cancellation have an X11 diagnostic
   (#4037). Move preview and cancellation also pass a focused X11 diagnostic
   (#4040). Overlap type cues and Select Other also pass a native diagnostic
@@ -30,6 +33,10 @@ Last checked: 2026-11-16 on `rust-work`. Refresh from current evidence at each c
   Host capture is #4032; context picks now use checked projection batches (#4035).
   No-readback presentation is Martensite #501; efficient previews are #504.
   Projection costs: `receipts/2026-11-16-pick-phases-4035/` (#505); no input-to-display timing was measured.
+  A separate 200-line redraw and capture probe measured 25.963 ms median and
+  27.920 ms p95 for the combined work; see
+  `receipts/2026-11-16-sketch-redraw-capture-4031/`. These are separate
+  measurements, not an end-to-end latency result.
 - Application closing (#4030) has a native close guard and save prompt. The
   current live feature passed 3/3 scenarios in an X11 diagnostic at `2dee60eef`;
   see `receipts/2026-11-16-application-closing-4030/`. It is not in the pinned
@@ -81,7 +88,9 @@ Last checked: 2026-11-16 on `rust-work`. Refresh from current evidence at each c
   when source files change; use a unique Cargo target for each active worktree.
 - Wheel zoom passes a native mouse diagnostic (#3881); see
   `receipts/2026-11-16-native-wheel-3881/`. Check input paths; close test windows.
-- `make docs-lint` passed (#3970, #3971); the full `make gate` remains open.
+- `make docs-lint` currently fails on Rust source files at or above the
+  500-line limit after the Fillet integration. Markdown lint passed. The full
+  `make gate` remains open.
 - Martensite is owned separately; report kernel gaps without changing it here.
 - GUI unit tests isolate the shared ImGui context under parallel execution
   (#3878). The final eight-thread run passed 495 tests; the production context

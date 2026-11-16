@@ -1,8 +1,9 @@
 # Fillet history probe
 
 Base `9e7f0fddc`, pinned Martensite
-`bef25f47548431c8f128f08f66a1f719bcee4982`, Rust 1.99.0. These are
-headless kernel compatibility probes, not a desktop feature or BDD acceptance.
+`bef25f47548431c8f128f08f66a1f719bcee4982`, Rust 1.99.0. The initial
+results below are headless kernel compatibility probes. Later sections record
+desktop diagnostics; none establishes full BDD acceptance.
 
 A 10-unit box with one 2-unit edge fillet produced a valid body and the
 closed-form analytic volume. The test also checked seven result faces: six
@@ -16,7 +17,8 @@ history attributed 11 output edges. The remaining edges need an identity path,
 for example from named neighbors, with ambiguity refused. A second probe copied
 the host's prism and its selected edge, then checked a valid result, source
 volume and face coverage. It did not resolve a document-scoped edge key.
-The host feature, full provenance, replay, UI and scenarios remain open (#4045).
+At that stage the host feature, full provenance, replay, UI and scenarios
+remained open (#4045); later sections record the work completed since then.
 
 An additional cube probe checks exact face adjacency on every result edge.
 Each result edge has two neighbors, and their source-history pairs are unique
@@ -52,8 +54,8 @@ desktop scene and Part update owners now use the named-solid evaluator. A
 desktop-owner test opens a saved fillet, builds a scene and selects both a
 retained planar face and the generated curved face by exact key;
 it checks that the curved-face key survives a width edit, undo and redo. The
-UI controls are still under test. No live render or frame-time result is
-claimed for this draft.
+UI controls were still under test at this stage. No frame-time result is
+claimed for this work.
 
 The common named-solid queries now expose exact face picking, topology counts,
 face area and type, loop count, edge length and analytic bounds. The replay
