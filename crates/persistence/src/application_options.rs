@@ -67,8 +67,9 @@ impl<Files: PackageFileReader + AtomicFiles> ApplicationPreferenceFile<Files> {
     /// Save Part options while retaining other groups; example: `preferences.save_part_options(options)?`.
     pub fn save_part_options(&mut self, options: PartApplicationOptions) -> io::Result<()> {
         let mut candidate = read_preferences(&self.path, &mut self.files)?;
-        candidate.part.get_or_insert_default().look_at_sketch_plane =
-            Some(options.look_at_sketch_plane);
+        let part = candidate.part.get_or_insert_default();
+        part.look_at_sketch_plane = Some(options.look_at_sketch_plane);
+        part.chamfer_flat_corners = Some(options.chamfer_flat_corners);
         self.publish(candidate)
     }
     /// Save text/icon scale without changing other groups; example: `preferences.save_ui_scale(options)?`.
@@ -134,6 +135,12 @@ impl<Files: PackageFileReader + AtomicFiles> PartPreferenceAccess
                 .part
                 .as_ref()
                 .and_then(|part| part.look_at_sketch_plane)
+                .unwrap_or(true),
+            chamfer_flat_corners: self
+                .recipe
+                .part
+                .as_ref()
+                .and_then(|part| part.chamfer_flat_corners)
                 .unwrap_or(true),
         }
     }
@@ -220,6 +227,8 @@ struct UiPreferenceRecipe {
 struct PartPreferenceRecipe {
     #[serde(skip_serializing_if = "Option::is_none")]
     look_at_sketch_plane: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    chamfer_flat_corners: Option<bool>,
     #[serde(flatten)]
     retained: BTreeMap<String, serde_yaml_ng::Value>,
 }

@@ -61,9 +61,11 @@ mod tests {
         let mut draft = PartOptionsDraft::default();
         let enabled = PartApplicationOptions {
             look_at_sketch_plane: true,
+            ..Default::default()
         };
         let disabled = PartApplicationOptions {
             look_at_sketch_plane: false,
+            ..Default::default()
         };
         draft.synchronize(enabled);
         draft.synchronize(disabled);
@@ -75,5 +77,19 @@ mod tests {
         assert_eq!(draft.original, Some(enabled));
         draft.clear();
         assert!(draft.original.is_none() && draft.edited.is_none());
+    }
+    #[test]
+    fn pending_view_edit_does_not_absorb_an_external_chamfer_change() {
+        let mut draft = PartOptionsDraft::default();
+        let initial = PartApplicationOptions::default();
+        draft.synchronize(initial);
+        draft.edited.as_mut().unwrap().look_at_sketch_plane = false;
+        let external = PartApplicationOptions {
+            chamfer_flat_corners: false,
+            ..initial
+        };
+        draft.synchronize(external);
+        assert_ne!(draft.original, Some(external));
+        assert!(draft.edited.unwrap().chamfer_flat_corners);
     }
 }

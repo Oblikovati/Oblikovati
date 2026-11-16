@@ -27,6 +27,7 @@ fn missing_part_option_defaults_on_and_explicit_values_survive_reopen() {
         owner
             .set_part_options(PartApplicationOptions {
                 look_at_sketch_plane: enabled,
+                ..Default::default()
             })
             .unwrap();
         assert_eq!(load(&disk).part_options().look_at_sketch_plane, enabled);
@@ -46,7 +47,8 @@ fn failed_part_save_keeps_the_published_value_and_file() {
         assert!(
             owner
                 .set_part_options(PartApplicationOptions {
-                    look_at_sketch_plane: false
+                    look_at_sketch_plane: false,
+                    ..Default::default()
                 })
                 .is_err()
         );
@@ -84,6 +86,7 @@ fn part_save_preserves_other_groups_updated_by_another_owner() {
     part_owner
         .set_part_options(PartApplicationOptions {
             look_at_sketch_plane: false,
+            ..Default::default()
         })
         .unwrap();
     let reopened = load(&disk);
@@ -91,4 +94,20 @@ fn part_save_preserves_other_groups_updated_by_another_owner() {
     assert!(!reopened.sketch_options().grid_visible);
     let saved: serde_yaml_ng::Value = serde_yaml_ng::from_slice(&disk.borrow().committed).unwrap();
     assert_eq!(saved["part"]["futureSetting"], 3);
+}
+
+#[test]
+fn part_settings_preserve_go_chamfer_value_and_unknown_fields() {
+    let disk = disk("part: {chamferFlatCorners: false, tangentChainSelect: true}\n");
+    let mut owner = load(&disk);
+    let mut options = owner.part_options();
+    assert!(!options.chamfer_flat_corners);
+    assert!(options.look_at_sketch_plane);
+    options.look_at_sketch_plane = false;
+    owner.set_part_options(options).unwrap();
+    let reopened = load(&disk).part_options();
+    assert_eq!(reopened, options);
+    let saved: serde_yaml_ng::Value = serde_yaml_ng::from_slice(&disk.borrow().committed).unwrap();
+    assert_eq!(saved["part"]["tangentChainSelect"], true);
+    assert_eq!(saved["part"]["chamferFlatCorners"], false);
 }
