@@ -340,5 +340,7 @@ mod face_plane;
 
 #[path = "part_scene/clear_face.rs"]
 mod clear_face;
+#[path = "part_scene/fillet_edit.rs"]
+mod fillet_edit;
 #[path = "part_scene/fillet_scene.rs"]
 mod fillet_scene;

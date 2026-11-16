@@ -358,9 +358,10 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
             let FileContext {
                 files,
                 part_topology,
+                fillet,
                 ..
             } = &mut *context;
-            return crate::feature_lifecycle::apply(files, part_topology, method, request);
+            return crate::feature_lifecycle::apply(files, part_topology, *fillet, method, request);
         }
         context.owned_command(method, request)
     }

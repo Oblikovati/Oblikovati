@@ -8,6 +8,7 @@ use oblikovati_model::{
 };
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
+mod fillet_edit;
 
 /// Native feature lifecycle calls that operate on the active part history.
 pub const FEATURE_LIFECYCLE_METHODS: [&str; 5] = [
@@ -34,12 +35,13 @@ pub(crate) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
 pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
     access: &mut Option<&mut dyn PartTopologyAccess<O, W, F>>,
+    fillet: Option<&dyn crate::FilletAccess>,
     method: &str,
     encoded: &[u8],
 ) -> Result<Vec<u8>, Error> {
     let document = active_part(files)?;
     require_owner(access, document)?;
-    let id = apply_edit(files, document, method, encoded)?;
+    let id = apply_edit(files, document, fillet, method, encoded)?;
     let errors = refresh(access, files, document)?;
     detail(files, document, id, errors)
 }
@@ -64,11 +66,12 @@ pub(crate) fn delete<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFi
 fn apply_edit<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
     document: u64,
+    fillet: Option<&dyn crate::FilletAccess>,
     method: &str,
     encoded: &[u8],
 ) -> Result<u64, Error> {
     match method {
-        METHOD_FEATURES_EDIT => edit(files, document, crate::decode(method, encoded)?),
+        METHOD_FEATURES_EDIT => edit(files, document, fillet, crate::decode(method, encoded)?),
         METHOD_FEATURES_RENAME => rename(files, document, crate::decode(method, encoded)?),
         METHOD_FEATURES_REORDER => reorder(files, document, crate::decode(method, encoded)?),
         _ => Err(Error(format!(
@@ -80,8 +83,12 @@ fn apply_edit<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
 fn edit<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
     document: u64,
+    fillet: Option<&dyn crate::FilletAccess>,
     request: EditFeatureArgs,
 ) -> Result<u64, Error> {
+    if fillet_edit::is_fillet(files, document, request.id)? {
+        return fillet_edit::edit(files, document, fillet, &request);
+    }
     files
         .commands(document)
         .map_err(api_error)?
@@ -139,7 +146,7 @@ fn require_empty_repicks(request: &EditFeatureArgs) -> Result<(), Error> {
         return Ok(());
     }
     Err(Error(format!(
-        "features.edit id {} repick: expected no repicks for a sketch prism",
+        "features.edit id {} repick: expected no repicks for this feature",
         request.id
     )))
 }
@@ -148,7 +155,7 @@ fn single_distance_edit(request: &EditFeatureArgs) -> Result<&str, Error> {
     let edits = request.scalars.as_deref().unwrap_or_default();
     if edits.len() != 1 || edits[0].index != 0 || edits[0].value.trim().is_empty() {
         return Err(Error(format!(
-            "features.edit id {} scalars {edits:?}: expected one nonempty distance edit at slot 0",
+            "features.edit id {} scalars {edits:?}: expected one nonempty length edit at slot 0",
             request.id
         )));
     }
@@ -268,21 +275,23 @@ fn feature_detail(
             health: health(feature.suppressed(), id, errors),
         },
         index: checked_index(id, index)?,
-        scalars: prism_scalars(feature, snapshot)?,
+        scalars: feature_scalars(feature, snapshot)?,
         slots: None,
     })
 }
 
-pub(crate) fn prism_scalars(
+pub(crate) fn feature_scalars(
     feature: &AuthoredFeature<PartFeatureDefinition>,
     snapshot: &DocumentSnapshot,
 ) -> Result<Option<Vec<FeatureScalar>>, Error> {
-    let PartFeatureDefinition::SketchPrism(definition) = feature.definition() else {
-        return Ok(None);
+    let (length, label) = match feature.definition() {
+        PartFeatureDefinition::SketchPrism(definition) => {
+            (definition.displacement()[2], "Distance")
+        }
+        PartFeatureDefinition::Fillet(definition) => (definition.radius(), "Radius"),
+        _ => return Ok(None),
     };
-    let distance = definition.displacement()[2]
-        .resolve(&snapshot.parameters)
-        .map_err(api_error)?;
+    let distance = length.resolve(&snapshot.parameters).map_err(api_error)?;
     let units = snapshot.parameters.units();
     let value = units.to_preferred(Quantity::new(distance, Dimension::Length));
     if !value.is_finite() {
@@ -293,7 +302,7 @@ pub(crate) fn prism_scalars(
     }
     Ok(Some(vec![FeatureScalar {
         index: 0,
-        label: "Distance".into(),
+        label: label.into(),
         unit: units.preferred_name(Dimension::Length).into(),
         value,
         integer: false,

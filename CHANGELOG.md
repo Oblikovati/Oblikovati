@@ -4,6 +4,8 @@
 
 ### Changed
 
+- Enabled certified Fillet radius edits through the feature API, including named parameters and undo/redo. (#4045)
+
 - Reduced repeated projection of constraint glyphs in an active sketch. (#4035)
 
 - Enabled named-edge Fillet preview and creation in the Part viewport, with undo, redo, and save/reopen support. (#4045)

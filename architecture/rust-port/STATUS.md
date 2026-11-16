@@ -18,8 +18,9 @@ Last checked: 2026-11-16 on `rust-work`. Refresh from current evidence at each c
 - Solid viewport edit and cancel (#4038) pass X11 diagnostics for extrusion;
   three creation and picking scenarios remain unbound; shading is under review (#4044).
 - Named-edge Fillet creation, replay, undo/redo and save/reopen have focused
-  API and native-window tests (#4045). Direct radius editing through
-  `features.edit` and full BDD acceptance remain open. See
+  API and native-window tests (#4045). The typed `features.edit` path supports
+  certified radius edits; a desktop radius-edit tool and full BDD acceptance
+  remain open. See
   `receipts/2026-11-16-fillet-history-4045/`.
 - Pointer-driven Line creation and preview cancellation have an X11 diagnostic
   (#4037). Move preview and cancellation also pass a focused X11 diagnostic

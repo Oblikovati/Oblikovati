@@ -55,7 +55,7 @@ fn detail(
                 health,
             },
             index: i64::try_from(index).map_err(api_error)?,
-            scalars: crate::feature_lifecycle::prism_scalars(feature, snapshot)?,
+            scalars: crate::feature_lifecycle::feature_scalars(feature, snapshot)?,
             slots: None,
         },
     })
