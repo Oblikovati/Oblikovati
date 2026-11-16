@@ -12,6 +12,7 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
+maryada = "=0.2.0"
 oblikovati-solve = { path = "../solve" }
 getrandom = "=0.4.3"
 oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "a8e651bc537e516953c7d9313792719e5b474a25", version = "=0.159.0" }
@@ -24,3 +25,7 @@ xml = "=1.4.0"
 [[test]]
 name = "sketch_revolve_recipe"
 path = "tests/sketch_revolve_recipe.rs"
+
+[dev-dependencies]
+num-bigint = "=0.4.6"
+num-rational = "=0.4.2"

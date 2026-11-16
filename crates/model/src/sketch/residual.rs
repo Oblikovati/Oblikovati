@@ -280,12 +280,9 @@ impl ResidualSource for PreparedConstraint {
                 variables[2].minus(&variables[0])?.shifted(-offset[0])?,
                 variables[3].minus(&variables[1])?.shifted(-offset[1])?,
             ]),
-            PlanarEquation::Coincident => Ok(point(variables, 0)?
-                .minus(&point(variables, 2)?)?
-                .components()
-                .to_vec()),
+            PlanarEquation::Coincident => super::linear_equations::coincident(variables),
             PlanarEquation::Coordinate(axis) => {
-                Ok(vec![variables[axis].minus(&variables[axis + 2])?])
+                super::linear_equations::coordinate(variables, axis)
             }
             PlanarEquation::Fix(position) => {
                 super::ground_constraint::coordinate_residuals(variables, &[position])
@@ -328,11 +325,9 @@ pub(super) fn point(
 }
 fn midpoint(variables: &[DualNumber]) -> Result<Vec<DualNumber>, ResidualError> {
     // Scale before summing so a representable midpoint does not overflow (#3704).
-    let middle = point(variables, 2)?
-        .scaled(0.5)?
-        .plus(&point(variables, 4)?.scaled(0.5)?)?;
-    Ok(point(variables, 0)?.minus(&middle)?.components().to_vec())
+    super::linear_equations::midpoint(variables)
 }
+
 pub(super) fn distance(
     variables: &[DualNumber],
     measure: DistanceMeasure,
@@ -341,8 +336,8 @@ pub(super) fn distance(
         DistanceMeasure::Aligned => Ok(point(variables, 0)?
             .minus(&point(variables, 2)?)?
             .length()?),
-        DistanceMeasure::Horizontal => Ok(variables[0].minus(&variables[2])?.abs()?),
-        DistanceMeasure::Vertical => Ok(variables[1].minus(&variables[3])?.abs()?),
+        DistanceMeasure::Horizontal => super::linear_equations::axis_distance(variables, 0),
+        DistanceMeasure::Vertical => super::linear_equations::axis_distance(variables, 1),
     }
 }
 

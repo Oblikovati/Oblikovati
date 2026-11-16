@@ -489,10 +489,11 @@ mod point_preview;
 
 #[path = "owner/cube_ui.rs"]
 mod cube_ui;
-#[path = "owner/sketch_pattern.rs"]
-mod sketch_pattern;
-
+#[path = "owner/origin_identity.rs"]
+mod origin_identity;
 #[path = "owner/saved_extrude_shortcut.rs"]
 mod saved_extrude_shortcut;
 #[path = "owner/selection_preferences.rs"]
 mod selection_preferences;
+#[path = "owner/sketch_pattern.rs"]
+mod sketch_pattern;

@@ -451,6 +451,8 @@ mod dimension_create;
 #[path = "sketches/entity_delete.rs"]
 mod entity_delete;
 
+#[path = "sketches/conditional_precision.rs"]
+mod conditional_precision;
 #[path = "sketches/visibility.rs"]
 mod visibility;
 

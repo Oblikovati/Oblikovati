@@ -445,3 +445,9 @@ mod sketch_placement_recipe;
 pub use sketch_placement_recipe::{
     SketchPlacementCreationError, SketchPlacementCreationReport, SketchPlacementFieldLock,
 };
+
+mod conditional_projection;
+pub use conditional_projection::{
+    ConditionalFrameSource, ConditionalOriginProjection, ConditionalPointDisplacement,
+    ConditionalProjectedSketchRoot, ConditionalSegmentError, SketchFrameInputBounds,
+};

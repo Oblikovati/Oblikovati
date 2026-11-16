@@ -71,3 +71,124 @@ a choice of free-variable slice needs its own justified semantics. The
 describes the interval operator as a certificate rather than a point-residual
 check. Independent interval or exact-arithmetic oracles and cross-platform
 rounding tests are required before this can gate extrusion.
+
+## Accepted operand evidence
+
+Each raw residual row retains the prepared relation's source-level variable
+operands in original solver-column order. Point coordinates carry their point
+identity and axis; supplied grounded anchors are marked separately from active
+solver variables. Values come from the accepted solve after restoring eliminated
+anchors. Non-point identities are explicitly unknown. For coincident, coordinate,
+fixed, grounded, midpoint, distance, and scalar length equations, each row
+records the indices it reads and its prepared
+numeric target with the authored parameter identity where applicable. Other
+rows and projected transformations explicitly remain unattributed.
+
+These binary64 values are observations, not enclosures of input uncertainty or
+error bounds. They neither establish conditioning nor qualify any operation.
+A future interval evaluator must bind the missing parameter targets, operand
+provenance, and projection uncertainty to the same solve before certification.
+
+## Conditional interval equation evaluation
+
+The sketch model can evaluate coincident, coordinate, fixed, grounded,
+midpoint, and horizontal or vertical distance equations over a finite box in
+full solver-variable order. Dimensional targets require caller-supplied bounds
+that name the relation and parameter and contain the prepared target. The
+caller is responsible for proving that these bounds enclose the true target.
+Absolute-distance boxes that touch or cross zero are refused. Fixed and grounded
+targets are treated as their stored binary64 values; this does not enclose
+uncertainty from external sources. The point solver and interval path share
+those expressions. Results retain the source relation, equation number,
+residual enclosure, and a derivative enclosure for each input variable. Other
+relations, including aligned distances, projected equation layouts, malformed
+boxes, and nonfinite results are refused. A caller-supplied box is not bound to
+a solve or to projected input uncertainty and does not imply a sketch
+certificate.
+
+The project-owned arithmetic boundary uses pinned `maryada` 0.2.0 interval
+subtraction, addition, and multiplication by one half. Exact binary-rational
+tests cover representative endpoints, subnormal values, and overflow refusal
+on the test platform. This is not a
+cross-platform proof of the dependency's rounding contract. Qualification
+also needs validated input boxes, complete residual and Jacobian coverage,
+conditioning, existence and uniqueness checks, and a policy shared by every
+consumer. The interval evaluator does not enable that policy.
+
+## Conditional root inclusion
+
+A retained converged solve can be checked with a caller-provided finite box,
+target bounds, and a finite square preconditioner. The check verifies that the
+candidate values, point identities, relation inputs, and prepared targets match
+the retained solve. Externally grounded inputs, unsupported equations,
+non-square systems, and boxes that do not contain the accepted candidate are
+refused.
+
+For the supported continuously differentiable equations, the check evaluates
+`K = x0 - C f(x0, P) + (I - C J(X, P))(X - x0)` with interval arithmetic. It
+requires strict inclusion of `K` in `X` and an upper infinity-norm bound below
+one for `I - C J(X, P)`. The result retains the accepted sketch and solve evidence, box, target
+assumptions, preconditioner, enclosure, and contraction bound. It does not
+carry a document identity or prove that a later document still matches it.
+Subject to the interval arithmetic contract and the supplied target assumptions, this is
+conditional root evidence for each target in `P`.
+
+It does not establish source or projection uncertainty, cross-platform
+arithmetic conformance, general constraint coverage, or feature tolerance
+qualification. It does not change profile discovery or extrusion admission.
+
+## Authored parameter bounds
+
+A conditional source-bound path supports healthy nominal model or user length
+parameters whose source is an explicit decimal literal in `mm`, `cm`, or `m`,
+or a direct chain of parameter aliases. It requires the default centimetre
+working scale. It encloses the authored decimal and exact unit factor with
+interval arithmetic and includes the model's rounded binary64 value. The result
+retains parameter identities and source text. Fixed and grounded coordinate
+targets additionally require explicit caller-supplied exact-value assumptions;
+their stored binary64 values are not treated as proven physical inputs. Other
+formulas, units, scales, engineering-value selections, failed sources, and alias cycles decline.
+
+The source-bound root check compares the current parameter graph and input
+state with a snapshot captured by the accepted solve. A source edit therefore
+invalidates the check even if the rounded target remains equal. This is a
+solve-input check, not a document lifetime guarantee: document sketch health
+currently retains diagnostics rather than the full solve outcome. Projected
+anchors also remain unsupported; their source geometry and placement
+uncertainty are not yet bounded. Neither path enables feature admission.
+
+## Conditional origin projection
+
+A current document snapshot can produce a conditional bound for an origin
+projection on a fixed sketch frame. The caller supplies bounds for the resolved
+frame origin and axes; the operation checks that they contain the resolved
+binary64 frame, then encloses the analytic origin projection and the current
+rounded result. The bounds are assumptions, not bounds proven from the frame's
+source. Feature-point projections, derived frames and derived orientations
+decline.
+
+The evidence borrows the immutable snapshot and checks current sketch health,
+accepted solve diagnostics and geometry, the solve-time frame, and the retained
+parameter-source stamp. This catches changed projected inputs and same-value
+expression edits. It does not prove a document or session identity across
+snapshots. For a single origin anchor, the conditional root check retains the
+original full-to-active variable mapping. It checks the original reduced equation count,
+then appends two full-coordinate anchor equations using the projected bounds.
+The anchor source identity and bounds remain available with the result. A
+non-square or singular augmented system declines. This equivalence holds under
+the supplied frame bounds; it does not validate those assumptions or enable
+feature admission.
+
+## Canonical origin-plane source
+
+New sketches created on an origin plane retain `XY`, `XZ`, or `YZ` as an
+explicit placement identity in sketch recipe version 13. The matching canonical
+frame supplies exact model-origin and unit-axis bounds for conditional origin
+projection. An orientation override declines this path. Older fixed frames
+remain fixed; equal coordinates do not establish origin-plane provenance.
+
+The conditional result still borrows one immutable document snapshot and does
+not establish session identity across snapshots or validate cross-platform
+interval arithmetic. It does not enable feature admission. Rust's native
+planar-sketch section uses document schema 3. The Go host tested with this
+change supports schema 2 and rejects schema 3 before model restoration.

@@ -84,6 +84,19 @@ fn sketch_plane_label_remains_clickable_at_workspace_edge() {
     }
     let edit = owner.active_sketch_edit().expect("expected an XY sketch");
     assert_eq!(edit.plane, oblikovati_model::sketch::SketchPlane::xy());
+    let document = owner.documents().workspace().active_document().unwrap();
+    let snapshot = owner
+        .documents()
+        .workspace()
+        .session(document)
+        .unwrap()
+        .snapshot();
+    assert_eq!(
+        snapshot.sketches.sketches()[0].placement(),
+        oblikovati_model::document_sketch::SketchPlacement::OriginPlane(
+            oblikovati_model::feature::work_plane::WorkPlaneOrigin::XY
+        )
+    );
     owner.finish().unwrap();
     window.finish().unwrap();
 }

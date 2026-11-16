@@ -16,16 +16,39 @@ use oblikovati_solve::{
 /// Immutable solve candidate; callers decide how document health permits adoption.
 #[derive(Clone, Debug)]
 pub struct SketchSolveOutcome {
-    candidate: Sketch2D,
-    numerical: NonlinearResult,
-    origins: Vec<SketchRelationId>,
+    pub(super) candidate: Sketch2D,
+    pub(super) numerical: NonlinearResult,
+    pub(super) origins: Vec<SketchRelationId>,
     parameter_dependencies: Vec<u64>,
+    parameter_stamp: Option<super::parameter_stamp::ParameterStamp>,
+    pub(super) active_slots: Vec<Option<usize>>,
+    pub(super) grounded_inputs: Vec<SketchPoint2D>,
+    pub(super) operands: Vec<Vec<SketchResidualOperand>>,
+    pub(super) equations: Vec<Vec<super::equation_evidence::EquationEvidence>>,
+}
+/// Identity and accepted value for a variable read by one prepared relation.
+#[derive(Clone, Debug, PartialEq)]
+pub struct SketchResidualOperand {
+    /// Column in the complete pre-elimination sketch variable layout.
+    pub column: usize,
+    /// A point coordinate when known; other variable kinds remain explicitly unidentified.
+    pub point: Option<(super::SketchEntityId, usize)>,
+    /// The accepted binary64 operand, not an uncertainty bound.
+    pub value: f64,
+    /// True when the solver took this point from the supplied grounded anchors.
+    pub externally_grounded: bool,
 }
 /// One raw solver equation with its relation and convergence domain, not a certified bound.
 #[derive(Clone, Debug, PartialEq)]
 pub struct SketchResidualRow {
     pub relation: SketchRelationId,
     pub equation: usize,
+    /// Source-level inputs; a row may use only a subset. Targets are not included.
+    pub operands: Vec<SketchResidualOperand>,
+    /// Indices into `operands`; None means the equation layout is not yet attributed.
+    pub operand_indices: Option<Vec<usize>>,
+    /// Complete numeric target list, or None if target attribution is unsupported.
+    pub targets: Option<Vec<super::SketchResidualTarget>>,
     pub value: f64,
     pub convergence_domain: oblikovati_solve::residual::ResidualTolerance,
     /// Physical unit of the raw value; unknown rows cannot be qualified by unit.
@@ -47,12 +70,45 @@ impl SketchSolveOutcome {
                     .map(move |(equation, index)| SketchResidualRow {
                         relation,
                         equation,
+                        operands: self.operands[source].clone(),
+                        operand_indices: self.equations[source][equation].operands.clone(),
+                        targets: self.equations[source][equation].targets.clone(),
                         value: numerical.evaluation.values()[index],
                         convergence_domain: numerical.residual_domains[index],
                         unit: numerical.residual_units[index],
                     })
             })
             .collect()
+    }
+    pub(crate) fn full_to_active_slots(&self) -> &[Option<usize>] {
+        &self.active_slots
+    }
+    pub(crate) fn source_stamp_current(&self, parameters: &ParameterCollection<u64>) -> bool {
+        self.parameter_stamp
+            .as_ref()
+            .is_some_and(|stamp| stamp.matches(parameters, &self.parameter_dependencies))
+    }
+    pub(super) fn verified_interval_center(
+        &self,
+        parameters: &ParameterCollection<u64>,
+    ) -> Result<Vec<f64>, String> {
+        let prepared =
+            super::compile::prepare(&self.candidate, parameters).map_err(|e| e.to_string())?;
+        let values = self.candidate.variable_values();
+        if values.len() != self.numerical.values.len() || prepared.origins != self.origins {
+            return Err("interval solve inputs: expected the same unprojected variable and relation identities".into());
+        }
+        if !values
+            .iter()
+            .zip(&self.numerical.values)
+            .all(|(a, b)| a.to_bits() == b.to_bits())
+        {
+            return Err("interval solve values: expected the exact accepted candidate".into());
+        }
+        for (index, source) in prepared.sources.iter().enumerate() {
+            verify_relation(self, source, index, &values)?;
+        }
+        Ok(values)
     }
     /// Inspect accepted numerical values without changing the input sketch; example: `outcome.candidate()`.
     pub fn candidate(&self) -> &Sketch2D {
@@ -133,7 +189,19 @@ impl Sketch2D {
         )
         .map_err(|cause| source_failure(&prepared.origins, cause))?;
         let candidate = self.candidate_values(&prepared.restore(&result.solution.values)?)?;
+        let operands = residual_operands(self, &prepared, &result.solution.values, anchors)?;
+        let equations = prepared.equation_evidence(self);
+        let parameter_stamp = super::parameter_stamp::ParameterStamp::capture(
+            parameters,
+            &prepared.parameter_dependencies,
+        );
+        let active_slots = prepared.active_slots();
         let outcome = SketchSolveOutcome {
+            active_slots,
+            grounded_inputs: anchors.to_vec(),
+            parameter_stamp,
+            equations,
+            operands,
             origins: prepared.origins,
             candidate,
             numerical: result.solution,
@@ -210,7 +278,19 @@ impl Sketch2D {
         )
         .map_err(|cause| source_failure(&prepared.origins, cause))?;
         let candidate = self.candidate_values(&prepared.restore(&numerical.values)?)?;
+        let operands = residual_operands(self, &prepared, &numerical.values, anchors)?;
+        let equations = prepared.equation_evidence(self);
+        let parameter_stamp = super::parameter_stamp::ParameterStamp::capture(
+            parameters,
+            &prepared.parameter_dependencies,
+        );
+        let active_slots = prepared.active_slots();
         Ok(SketchSolveOutcome {
+            active_slots,
+            grounded_inputs: anchors.to_vec(),
+            parameter_stamp,
+            equations,
+            operands,
             origins: prepared.origins,
             candidate,
             numerical,
@@ -243,3 +323,158 @@ impl Sketch2D {
 #[cfg(test)]
 #[path = "../../tests/sketch/conflict_order.rs"]
 mod conflict_order_tests;
+
+fn residual_operands(
+    sketch: &Sketch2D,
+    prepared: &grounded::GroundedSketch,
+    values: &[f64],
+    anchors: &[SketchPoint2D],
+) -> Result<Vec<Vec<SketchResidualOperand>>, SketchError> {
+    let restored = prepared.restore(values)?;
+    Ok(prepared
+        .operand_columns()
+        .into_iter()
+        .map(|columns| {
+            columns
+                .into_iter()
+                .map(|column| residual_operand(sketch, &restored, anchors, column))
+                .collect()
+        })
+        .collect())
+}
+fn residual_operand(
+    sketch: &Sketch2D,
+    values: &[f64],
+    anchors: &[SketchPoint2D],
+    column: usize,
+) -> SketchResidualOperand {
+    let point = sketch
+        .points()
+        .get(column / 2)
+        .map(|point| (point.id, column % 2));
+    let externally_grounded =
+        point.is_some_and(|(id, _)| anchors.iter().any(|anchor| anchor.id == id));
+    SketchResidualOperand {
+        column,
+        point,
+        value: values[column],
+        externally_grounded,
+    }
+}
+
+fn verify_relation(
+    outcome: &SketchSolveOutcome,
+    source: &super::residual::PreparedConstraint,
+    index: usize,
+    values: &[f64],
+) -> Result<(), String> {
+    let operands = &outcome.operands[index];
+    if operands.len() != source.variables.len()
+        || operands
+            .iter()
+            .zip(&source.variables)
+            .any(|(operand, &column)| {
+                operand.externally_grounded
+                    || operand.column != column
+                    || operand.point
+                        != outcome
+                            .candidate
+                            .points()
+                            .get(column / 2)
+                            .map(|point| (point.id, column % 2))
+                    || operand.value.to_bits() != values[column].to_bits()
+            })
+    {
+        return Err(format!(
+            "interval relation {:?}: expected unchanged unprojected operands",
+            outcome.origins[index]
+        ));
+    }
+    let current =
+        super::equation_evidence::rows(&outcome.candidate, outcome.origins[index], source);
+    if !same_equation_evidence(&outcome.equations[index], &current) {
+        return Err(format!(
+            "interval relation {:?}: expected unchanged equation inputs and targets",
+            outcome.origins[index]
+        ));
+    }
+    Ok(())
+}
+pub(super) fn same_equation_evidence(
+    first: &[super::equation_evidence::EquationEvidence],
+    second: &[super::equation_evidence::EquationEvidence],
+) -> bool {
+    first.len() == second.len()
+        && first
+            .iter()
+            .zip(second)
+            .all(|(a, b)| a.operands == b.operands && same_targets(&a.targets, &b.targets))
+}
+fn same_targets(
+    first: &Option<Vec<super::SketchResidualTarget>>,
+    second: &Option<Vec<super::SketchResidualTarget>>,
+) -> bool {
+    match (first, second) {
+        (None, None) => true,
+        (Some(a), Some(b)) => {
+            a.len() == b.len()
+                && a.iter()
+                    .zip(b)
+                    .all(|(a, b)| a.source == b.source && a.value.to_bits() == b.value.to_bits())
+        }
+        _ => false,
+    }
+}
+
+#[cfg(test)]
+mod operand_tests {
+    use super::*;
+
+    #[test]
+    fn non_point_operand_is_explicitly_unidentified() {
+        let mut sketch = Sketch2D::default();
+        sketch
+            .add_point(super::super::SketchEntityId(1), [2.0, -3.0])
+            .unwrap();
+        let operand = residual_operand(&sketch, &[2.0, -3.0, 4.0], &[], 2);
+        assert_eq!(operand.point, None);
+        assert_eq!(operand.value, 4.0);
+        assert!(!operand.externally_grounded);
+    }
+    #[test]
+    fn forged_solve_values_and_point_identity_are_refused() {
+        let mut sketch = Sketch2D::default();
+        let id = super::super::SketchEntityId(1);
+        sketch.add_point(id, [2., 3.]).unwrap();
+        sketch
+            .add_constraint(
+                super::super::SketchConstraintId(1),
+                super::super::PlanarConstraint::Fix {
+                    point: id,
+                    position: [2., 3.],
+                },
+            )
+            .unwrap();
+        let parameters = ParameterCollection::new(crate::units::UnitsOfMeasure::default());
+        let outcome = sketch
+            .solve(&parameters, SolveOptions::default(), || false)
+            .unwrap();
+        assert!(outcome.verified_interval_center(&parameters).is_ok());
+        let mut forged = outcome.clone();
+        forged.numerical.values[0] = 9.;
+        assert!(
+            forged
+                .verified_interval_center(&parameters)
+                .unwrap_err()
+                .contains("accepted candidate")
+        );
+        let mut forged = outcome.clone();
+        forged.operands[0][0].point = Some((super::super::SketchEntityId(99), 0));
+        assert!(
+            forged
+                .verified_interval_center(&parameters)
+                .unwrap_err()
+                .contains("unprojected operands")
+        );
+    }
+}

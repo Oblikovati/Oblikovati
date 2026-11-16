@@ -31,6 +31,27 @@ impl GroundedSketch {
             })
             .collect()
     }
+    pub fn equation_evidence(
+        &self,
+        sketch: &Sketch2D,
+    ) -> Vec<Vec<super::equation_evidence::EquationEvidence>> {
+        self.sources
+            .iter()
+            .zip(&self.origins)
+            .map(|(source, origin)| {
+                super::equation_evidence::rows(sketch, *origin, &source.original)
+            })
+            .collect()
+    }
+    pub fn active_slots(&self) -> Vec<Option<usize>> {
+        self.layout.active_slots()
+    }
+    pub fn operand_columns(&self) -> Vec<Vec<usize>> {
+        self.sources
+            .iter()
+            .map(|source| source.original.variables.clone())
+            .collect()
+    }
     pub fn warm_start_values(&self, sketch: &Sketch2D) -> Vec<f64> {
         self.layout.active_values(&sketch.variable_values())
     }

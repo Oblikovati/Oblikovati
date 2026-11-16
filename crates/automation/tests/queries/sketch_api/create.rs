@@ -66,6 +66,17 @@ fn typed_creation_normalizes_all_origin_planes_and_creates_exact_origin_anchors(
         assert_eq!(reply.plane, normalized);
         assert_created(&files, document, index, true);
         assert_current_frame(&files, document, index, frame);
+        let expected = match normalized {
+            "XY" => oblikovati_model::feature::work_plane::WorkPlaneOrigin::XY,
+            "XZ" => oblikovati_model::feature::work_plane::WorkPlaneOrigin::XZ,
+            _ => oblikovati_model::feature::work_plane::WorkPlaneOrigin::YZ,
+        };
+        assert_placement(
+            &files,
+            document,
+            index,
+            SketchPlacement::OriginPlane(expected),
+        );
     }
     assert_eq!(owner_revision(&files, document).1, ["Create sketch"; 3]);
 }
@@ -73,10 +84,11 @@ fn typed_creation_normalizes_all_origin_planes_and_creates_exact_origin_anchors(
 #[test]
 fn work_plane_indices_take_precedence_and_keep_the_catalogue_origin_order() {
     let (mut files, document, mut source) = configured_files(DOCUMENT_PART, Default::default());
-    for (index, frame, label) in [
-        (0, SketchPlane::xy(), "XY Plane"),
-        (1, SketchPlane::xz(), "XZ Plane"),
-        (2, SketchPlane::yz(), "YZ Plane"),
+    use oblikovati_model::feature::work_plane::WorkPlaneOrigin;
+    for (index, origin, label) in [
+        (0, WorkPlaneOrigin::XY, "XY Plane"),
+        (1, WorkPlaneOrigin::XZ, "XZ Plane"),
+        (2, WorkPlaneOrigin::YZ, "YZ Plane"),
     ] {
         let mut request = indexed_request(index);
         request.plane = "invalid but unused".into();
@@ -86,7 +98,7 @@ fn work_plane_indices_take_precedence_and_keep_the_catalogue_origin_order() {
             &files,
             document,
             reply.sketch_index,
-            SketchPlacement::Fixed(frame),
+            SketchPlacement::OriginPlane(origin),
         );
     }
 }

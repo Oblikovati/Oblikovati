@@ -96,7 +96,7 @@ pub use error::SketchError;
 pub use geometry::{SketchEntityId, SketchLine2D, SketchPoint2D};
 pub use plane::{SketchFrameAxis, SketchPlane, SketchPlaneOptions, SketchPlaneRecipe};
 pub use recipe::{SKETCH_RECIPE_VERSION, SketchRecipe};
-pub use solve::{SketchResidualRow, SketchSolveOutcome};
+pub use solve::{SketchResidualOperand, SketchResidualRow, SketchSolveOutcome};
 pub use source::SketchRelationId;
 pub use tangent::{CircleContact, LineContactSide};
 pub use tangent_distance::{TangentDistanceContact, TangentDistanceOptions, TangentLean};
@@ -205,3 +205,18 @@ pub use entity_geometry::OwnedSketchGeometry;
 pub use read_index::SketchReadIndex;
 
 mod frozen;
+
+mod equation_evidence;
+pub use equation_evidence::{SketchResidualTarget, SketchTargetSource};
+
+pub(crate) mod interval_equations;
+mod linear_equations;
+pub use interval_equations::{SketchIntervalEquation, SketchIntervalError, SketchIntervalTarget};
+mod conditional_root;
+pub use conditional_root::{ConditionalSketchRoot, FixedCoordinateAssumption};
+
+mod parameter_bound;
+mod parameter_stamp;
+pub use parameter_bound::{ConditionalParameterBound, conditional_parameter_bound};
+
+mod projected_center;

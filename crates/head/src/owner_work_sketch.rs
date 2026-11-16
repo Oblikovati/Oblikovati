@@ -32,22 +32,22 @@ impl<
         &mut self,
         plane: oblikovati_gui::GuiOriginPlaneKind,
     ) -> Result<bool, String> {
-        use oblikovati_model::sketch::SketchPlane;
+        use oblikovati_model::feature::work_plane::WorkPlaneOrigin;
         let document = self
             .files
             .workspace()
             .active_document()
             .ok_or_else(|| format!("{}: expected an active part document", plane.label()))?;
-        let frame = match plane {
-            oblikovati_gui::GuiOriginPlaneKind::Xy => SketchPlane::xy(),
-            oblikovati_gui::GuiOriginPlaneKind::Xz => SketchPlane::xz(),
-            oblikovati_gui::GuiOriginPlaneKind::Yz => SketchPlane::yz(),
+        let origin = match plane {
+            oblikovati_gui::GuiOriginPlaneKind::Xy => WorkPlaneOrigin::XY,
+            oblikovati_gui::GuiOriginPlaneKind::Xz => WorkPlaneOrigin::XZ,
+            oblikovati_gui::GuiOriginPlaneKind::Yz => WorkPlaneOrigin::YZ,
         };
         self.create_automatic_sketch_for_edit(
             document,
             &oblikovati_model::history::DocumentSketchCreation {
                 name: String::new(),
-                placement: oblikovati_model::document_sketch::SketchPlacement::Fixed(frame),
+                placement: oblikovati_model::document_sketch::SketchPlacement::OriginPlane(origin),
                 orientation: None,
                 project_origin: true,
             },

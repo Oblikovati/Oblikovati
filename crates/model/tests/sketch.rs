@@ -485,3 +485,14 @@ mod planes;
 
 #[path = "sketch/collinear_incidence.rs"]
 mod collinear_incidence;
+
+#[path = "sketch/equation_evidence.rs"]
+mod equation_evidence;
+#[path = "sketch/interval_rectangle.rs"]
+mod interval_rectangle;
+
+#[path = "sketch/conditional_root.rs"]
+mod conditional_root;
+
+#[path = "sketch/parameter_bound.rs"]
+mod parameter_bound;

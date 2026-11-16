@@ -3,7 +3,7 @@ use super::{DocumentSketchId, DocumentSketches, PlacedSketch, PlacedSketchRecipe
 use crate::{
     feature::{
         FeatureId, FeatureReadFootprint, FeatureReadKey,
-        work_plane::{WorkPlaneError, WorkPlaneFaceReference, WorkPlaneResolver},
+        work_plane::{WorkPlaneError, WorkPlaneFaceReference, WorkPlaneOrigin, WorkPlaneResolver},
     },
     sketch::{Sketch2D, SketchError, SketchPlane},
 };
@@ -11,6 +11,7 @@ use crate::{
 /// Authored placement; a feature reference stores no derived frame.
 #[derive(Clone, Debug, PartialEq)]
 pub enum SketchPlacement {
+    OriginPlane(WorkPlaneOrigin),
     Fixed(SketchPlane),
     WorkPlane(FeatureId),
     Face(WorkPlaneFaceReference),
@@ -18,6 +19,7 @@ pub enum SketchPlacement {
 impl SketchPlacement {
     pub(super) fn same_recipe(&self, other: &Self) -> bool {
         match (self, other) {
+            (Self::OriginPlane(first), Self::OriginPlane(second)) => first == second,
             (Self::Fixed(first), Self::Fixed(second)) => first.same_recipe(*second),
             (Self::WorkPlane(first), Self::WorkPlane(second)) => first == second,
             (Self::Face(first), Self::Face(second)) => first == second,
@@ -33,18 +35,22 @@ impl SketchPlacement {
             recipe.plane_options,
             recipe.plane_feature,
             &recipe.plane_face,
+            recipe.plane_origin,
         ) {
-            (Some(frame), Some(options), None, None) => {
+            (Some(frame), Some(options), None, None, None) => {
                 SketchPlane::from_recipe(frame, options).map(Self::Fixed)
             }
-            (None, None, Some(feature), None) if version >= 2 && feature.0 != 0 => {
+            (None, None, Some(feature), None, None) if version >= 2 && feature.0 != 0 => {
                 Ok(Self::WorkPlane(feature))
             }
-            (None, None, None, Some(reference)) if version >= 12 => {
+            (None, None, None, Some(reference), None) if version >= 12 => {
                 Ok(Self::Face(reference.clone()))
             }
+            (None, None, None, None, Some(origin)) if version >= 13 => {
+                Ok(Self::OriginPlane(origin))
+            }
             shape => Err(SketchError::Definition(format!(
-                "sketch {:?} placement {shape:?} in recipe version {version}: expected one fixed frame, work-plane feature, or version 12 face reference",
+                "sketch {:?} placement {shape:?} in recipe version {version}: expected one fixed frame, work-plane feature, or version 12 face or version 13 origin-plane reference",
                 recipe.id
             ))),
         }
@@ -78,7 +84,7 @@ impl PlacedSketch {
             SketchPlacement::Face(reference) => {
                 keys.push(FeatureReadKey::Feature(reference.source()))
             }
-            SketchPlacement::Fixed(_) => {}
+            SketchPlacement::Fixed(_) | SketchPlacement::OriginPlane(_) => {}
         }
         if let Some(orientation) = self.orientation {
             keys.extend(orientation.read_keys());
@@ -108,6 +114,7 @@ impl PlacedSketch {
     ) -> Result<SketchPlane, WorkPlaneError> {
         match &self.placement {
             SketchPlacement::Fixed(plane) => Ok(*plane),
+            SketchPlacement::OriginPlane(origin) => Ok(origin.plane()),
             SketchPlacement::WorkPlane(id) => planes
                 .ok_or(WorkPlaneError::Unavailable {
                     feature: *id,
@@ -141,6 +148,16 @@ impl DocumentSketches {
         let index = self.index(sketch)?;
         self.sketches[index].placement = SketchPlacement::WorkPlane(feature);
         Ok(())
+    }
+    /// Create on an origin plane by stable identity; example: `sketches.add_on_origin_plane(id, "Sketch", origin, geometry)?`.
+    pub fn add_on_origin_plane(
+        &mut self,
+        id: DocumentSketchId,
+        name: &str,
+        origin: WorkPlaneOrigin,
+        geometry: Sketch2D,
+    ) -> Result<(), SketchError> {
+        self.insert_placed(id, name, SketchPlacement::OriginPlane(origin), geometry)
     }
     /// Create directly on an authored reference; example: `sketches.add_on_work_plane(id, "Sketch", feature, geometry)?`.
     pub fn add_on_work_plane(
