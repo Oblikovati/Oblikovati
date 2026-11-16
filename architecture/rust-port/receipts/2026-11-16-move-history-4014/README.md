@@ -12,3 +12,7 @@ ellipse after a second undo. The capture was inspected.
 The scenario snapshot is `e76cb749ed43c73a91c24854057da7c890041f51`. These
 runs used an uncommitted test tree. They do not establish OS-level input or
 bounded build provenance (#3978), and do not verify the complete Move feature.
+
+The full pinned Move feature run passed 4 of 27 scenarios; 23 failed or stopped
+at undefined steps. The `full/` report contains those results. A failing step
+stops its scenario, so later gaps may remain hidden.
