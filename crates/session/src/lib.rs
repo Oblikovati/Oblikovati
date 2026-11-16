@@ -49,7 +49,10 @@ pub use sketch_primitive::SketchPrimitiveProjectionInput;
 pub use sketch_translation::{SketchTransformPreview, SketchTransformProjectionInput};
 mod sketch_delete;
 mod sketch_precision;
-pub use sketch_precision::{PrismPrecisionObligation, SessionConditionalSketch};
+pub use sketch_precision::{
+    ConditionalPrismAxis, ConditionalPrismDisplacement, PrismPrecisionObligation,
+    SessionConditionalSketch,
+};
 mod sketch_recompute;
 pub use sketch_delete::SketchDeleteProjectionInput;
 pub use sketch_recompute::SketchSolveProjectionInput;

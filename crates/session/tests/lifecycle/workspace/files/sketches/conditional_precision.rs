@@ -376,6 +376,13 @@ fn real_prism_feature_reports_non_admitting_precision_obligations_across_history
     host.commands(doc).unwrap().undo().unwrap();
     assert_prism_obligations(&mut host, doc, sketch, anchor, feature);
     host.commands(doc).unwrap().redo().unwrap();
+    host.commands(doc)
+        .unwrap()
+        .run("Formula size", |snapshot, _| {
+            snapshot.parameters.set_expression(1, "40 mm / 2")
+        })
+        .unwrap();
+    assert_prism_obligations(&mut host, doc, sketch, anchor, feature);
     host.save(doc, "alpha", &mut source).unwrap();
     host.close_discarding_changes(doc).unwrap();
     let reopened = open_file(&mut host, "a.obk", &mut source, OpenActivation::Activate);
@@ -393,6 +400,7 @@ fn assert_prism_obligations(
     let evidence = commands
         .conditional_canonical_sketch(sketch, anchor)
         .unwrap();
+    displacement::check(&evidence, feature);
     let projection = evidence.projection().unwrap();
     let points = projection
         .snapshot()
@@ -485,3 +493,6 @@ fn prism_obligations_refuse_a_selected_non_line_identity() {
         .unwrap_err();
     assert!(error.contains("expected a supported line"), "{error}");
 }
+
+#[path = "conditional_precision/displacement.rs"]
+mod displacement;
