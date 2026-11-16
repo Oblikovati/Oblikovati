@@ -66,3 +66,24 @@ fn side_length(sketch: &Sketch2D, line: &SketchLine2D) -> f64 {
     let [a, b] = line.endpoints.map(|id| sketch.point(id).unwrap().position);
     (a[0] - b[0]).hypot(a[1] - b[1])
 }
+
+pub(super) fn expect_axis_sizes(sketch: &Sketch2D, sizes: [f64; 2]) {
+    let index = sketch.read_index();
+    let mut extents = [0.0_f64; 2];
+    for line in sketch
+        .lines()
+        .iter()
+        .filter(|line| !index.is_construction(line.id).unwrap())
+    {
+        let [a, b] = line.endpoints.map(|id| sketch.point(id).unwrap().position);
+        for axis in 0..2 {
+            extents[axis] = extents[axis].max((a[axis] - b[axis]).abs());
+        }
+    }
+    for (actual, expected) in extents.into_iter().zip(sizes) {
+        assert!(
+            (actual - expected).abs() < 1e-8,
+            "axis size {actual}: expected {expected}"
+        );
+    }
+}
