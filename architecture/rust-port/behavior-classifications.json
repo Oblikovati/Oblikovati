@@ -49614,7 +49614,8 @@
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
       "acceptance_test": "sketch_scenarios_use_the_native_window: Modify geometry with a tool that previews before commitment",
       "issues": [
-        "https://github.com/Oblikovati/Oblikovati/issues/4038"
+        "https://github.com/Oblikovati/Oblikovati/issues/4038",
+        "https://github.com/Oblikovati/Oblikovati/issues/4040"
       ],
       "state": "inventoried",
       "last_receipt": null

@@ -401,6 +401,10 @@ fn move_opens_from_the_collapsed_modify_panel() {
 }
 
 fn open_modify_panel(world: &mut ApplicationWorld) {
+    world.click(collapsed_modify_button(world));
+}
+
+pub(super) fn collapsed_modify_button(world: &ApplicationWorld) -> [i32; 2] {
     let label = world.run("Modify").center();
     let button = world
         .frame
@@ -414,7 +418,7 @@ fn open_modify_panel(world: &mut ApplicationWorld) {
         })
         .expect("expected the collapsed Modify button")
         .center();
-    world.click(diagnostics::pointer_pixels(button));
+    diagnostics::pointer_pixels(button)
 }
 
 #[given("the precise ellipse Move has been accepted and Move closed")]
