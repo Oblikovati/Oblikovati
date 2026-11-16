@@ -7,6 +7,49 @@ const GO_CUBE: &[u8] = include_bytes!(
 );
 
 #[test]
+fn go_center_point_roles_and_ownership_survive_import() {
+    use oblikovati_model::sketch::{Sketch2D, SketchEntityId};
+    let source = include_bytes!(
+        "../../../architecture/rust-port/receipts/2026-11-16-go-center-points-3882/center-points.obk"
+    );
+    let observations = include_str!(
+        "../../../architecture/rust-port/receipts/2026-11-16-go-center-points-3882/observations.json"
+    );
+    let rows: serde_yaml_ng::Value = serde_yaml_ng::from_str(observations).unwrap();
+    let package = DocumentPackage::decode(source).unwrap();
+    let candidate = package.prepare_legacy_sketch_candidate().unwrap();
+    let sketch = candidate
+        .sketches
+        .get(DocumentSketchId(1))
+        .unwrap()
+        .geometry();
+    let restored = Sketch2D::from_recipe(&sketch.recipe()).unwrap();
+    for row in rows.as_sequence().unwrap() {
+        let id = SketchEntityId(row["id"].as_u64().unwrap());
+        assert_eq!(
+            restored.is_center_point(id),
+            row["center"].as_bool().unwrap()
+        );
+        assert_eq!(
+            restored.read_index().entity_ids().contains(&id),
+            row["standalone"].as_bool().unwrap()
+        );
+    }
+}
+
+#[test]
+fn invalid_center_point_marker_leaves_source_unchanged() {
+    let source = include_str!(
+        "../../../architecture/rust-port/receipts/2026-11-16-go-center-points-3882/center-points.obk"
+    );
+    let invalid = source.replacen("centerPoint: true", "centerPoint: unknown", 1);
+    let package = DocumentPackage::decode(invalid.as_bytes()).unwrap();
+    let original = package.clone();
+    assert!(package.prepare_legacy_sketch_candidate().is_err());
+    assert_eq!(package, original);
+}
+
+#[test]
 fn go_cube_sketch_import_preserves_dimensions_and_is_fully_constrained() {
     let package = DocumentPackage::decode(GO_CUBE).unwrap();
     let imported = package.prepare_legacy_sketch_candidate().unwrap();
