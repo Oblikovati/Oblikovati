@@ -132,6 +132,12 @@ pub trait HeadSketchWork {
             "sketch relation {id}: expected an active sketch owner"
         ))
     }
+    /// Retire a dismissed context; example: `work.dismiss_sketch_context(1)?`.
+    fn dismiss_sketch_context(&mut self, token: u64) -> Result<bool, String> {
+        Err(format!(
+            "sketch context {token}: expected an active sketch owner"
+        ))
+    }
     /// Select a current context candidate; example: `work.select_sketch_context_candidate(token, entity)?`.
     fn select_sketch_context_candidate(
         &mut self,

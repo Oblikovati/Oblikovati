@@ -4,6 +4,7 @@ impl GuiShellAction {
     /// Preserve Go empty-stack enablement; example: `GuiShellAction::Undo.enabled(&state)`.
     pub fn enabled(&self, state: &GuiCommandState) -> bool {
         match self {
+            Self::DismissSketchContext { .. } => true,
             Self::SelectSketchContextCandidate { token, entity } => {
                 state.sketch_at_ready
                     && state.sketch_context.as_ref().is_some_and(|context| {

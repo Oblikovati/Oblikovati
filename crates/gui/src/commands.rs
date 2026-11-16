@@ -74,6 +74,10 @@ pub enum GuiShellAction {
         token: u64,
         entity: oblikovati_model::sketch::SketchEntityId,
     },
+    /// Retire a dismissed sketch context menu.
+    DismissSketchContext {
+        token: u64,
+    },
     Inspect(crate::GuiInspectAction),
     EditDimensionValue(crate::GuiDimensionValue),
     SetTheme(String),
