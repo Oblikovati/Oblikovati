@@ -10,7 +10,6 @@ const POINTER: [i32; 2] = [1000, 620];
 /// The isolated line: its end is where the triad goes, with nothing else beside it.
 const LINE: [[i32; 2]; 2] = [[420, 720], [600, 620]];
 const TRIAD_SAMPLE: i32 = 24;
-const NEAR_VIEW_CM: f64 = 100.;
 const MODE_INPUTS: [(&str, &str, &str); 4] = [
     ("X and Y coordinate", "5", "6"),
     ("Distance and X axis angle", "10", "45"),
@@ -204,20 +203,19 @@ fn position_on_yz(world: &mut ApplicationWorld) {
     world.expect_measure("Position X 0.000 Y 5.000 Z 6.000 mm");
 }
 // precise-input-03
-fn expect_red_value(world: &ApplicationWorld) {
+fn typed_a(world: &ApplicationWorld) -> Option<&diagnostics::RenderedRun> {
     let (position, size) = diagnostics::window_geometry(TOOLBAR).expect("expected the toolbar");
-    let run = world
-        .frame
-        .runs
-        .iter()
-        .find(|run| {
-            let center = run.center();
-            run.text.starts_with('a')
-                && center[0] >= position[0]
-                && center[0] <= position[0] + size[0]
-                && center[1] >= position[1]
-                && center[1] <= position[1] + size[1]
-        })
+    world.frame.runs.iter().find(|run| {
+        let center = run.center();
+        run.text.starts_with('a')
+            && center[0] >= position[0]
+            && center[0] <= position[0] + size[0]
+            && center[1] >= position[1]
+            && center[1] <= position[1] + size[1]
+    })
+}
+fn expect_red_value(world: &ApplicationWorld) {
+    let run = typed_a(world)
         .unwrap_or_else(|| panic!("expected a typed a in {:?}", world.window_text(TOOLBAR)));
     let [red, green, blue] = run.color;
     assert!(
@@ -229,16 +227,24 @@ fn expect_red_value(world: &ApplicationWorld) {
 fn expect_numeric_fields(world: &mut ApplicationWorld) {
     world.hover(POINTER);
     let text = world.window_text(TOOLBAR);
-    assert!(
-        text.contains(".000") || text.chars().any(|letter| letter.is_ascii_digit()),
-        "expected numbers in {text:?}"
-    );
+    for label in ["X", "Y"] {
+        let value = text.split_whitespace().collect::<Vec<_>>();
+        let index = value.iter().position(|part| *part == label);
+        let number = index
+            .and_then(|index| index.checked_sub(1))
+            .and_then(|index| value[index].parse::<f64>().ok());
+        assert!(
+            number.is_some_and(f64::is_finite),
+            "expected numeric {label} field in {text:?}"
+        );
+    }
 }
 #[given("X and Y coordinate mode is active with numeric fields")]
 fn numeric_fields(world: &mut ApplicationWorld) {
     point_active_on_yz(world);
     world.open_precise_input();
     expect_numeric_fields(world);
+    world.remember_edited_sketch(Vec::new());
 }
 #[when("I focus X, select its value, and enter the single character a")]
 #[when("the user focus X, select its value, and enter the single character a")]
@@ -259,18 +265,7 @@ fn press_return(world: &mut ApplicationWorld) {
 #[then("the Red value remains and no visible point is committed")]
 fn red_remains(world: &mut ApplicationWorld) {
     expect_red_value(world);
-    // Far-away seeds and the projected origin are not what the command would have placed.
-    let geometry = world.edited_geometry();
-    let near = geometry
-        .points()
-        .iter()
-        .filter(|point| {
-            point.position != [0., 0.]
-                && point.position[0].abs() < NEAR_VIEW_CM
-                && point.position[1].abs() < NEAR_VIEW_CM
-        })
-        .count();
-    assert_eq!(near, 0, "points near the view");
+    world.expect_edited_sketch_retained();
 }
 #[when("I press Escape and restart Point")]
 #[when("the user press Escape and restart Point")]
@@ -283,11 +278,11 @@ fn escape_and_restart(world: &mut ApplicationWorld) {
 fn reopened_numeric(world: &mut ApplicationWorld) {
     assert!(toolbar_shows(world), "expected the toolbar back");
     expect_numeric_fields(world);
-    let text = world.window_text(TOOLBAR);
     assert!(
-        !text.contains('a') || !text.starts_with('a'),
-        "expected no typed a in {text:?}"
+        typed_a(world).is_none(),
+        "expected the invalid value to be cleared"
     );
+    world.expect_edited_sketch_retained();
 }
 // precise-input-04
 #[given("Precise Input is in X and Y coordinate mode")]
