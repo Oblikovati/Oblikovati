@@ -138,5 +138,7 @@ mod gui_composition;
 #[path = "gui_fixture.rs"]
 mod gui_fixture;
 
+#[path = "native/sketch_hover.rs"]
+mod sketch_hover;
 #[path = "native/sketch_palette.rs"]
 mod sketch_palette;

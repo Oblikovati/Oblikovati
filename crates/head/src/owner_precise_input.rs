@@ -345,10 +345,13 @@ impl<
         }
         relation_marks(sketch.geometry())
             .into_iter()
-            .map(|(at, text)| HeadConstraintMark {
+            .map(|mark| HeadConstraintMark {
+                sketch: edit.sketch,
+                constraint: mark.id,
                 plane: edit.plane,
-                at,
-                text,
+                at: mark.at,
+                text: mark.text,
+                related: mark.related,
             })
             .collect()
     }
@@ -462,7 +465,10 @@ fn left_press(event: ViewportEvent) -> Option<[i32; 2]> {
 /// One relation's mark as a sketch point on its plane, ready for a window to project.
 #[derive(Clone, Debug, PartialEq)]
 pub struct HeadConstraintMark {
+    pub sketch: oblikovati_model::document_sketch::DocumentSketchId,
+    pub constraint: oblikovati_model::sketch::SketchConstraintId,
     pub plane: oblikovati_model::sketch::SketchPlane,
     pub at: [f64; 2],
     pub text: String,
+    pub related: Vec<SketchEntityId>,
 }

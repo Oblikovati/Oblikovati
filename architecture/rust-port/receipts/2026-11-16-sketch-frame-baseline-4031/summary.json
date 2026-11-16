@@ -1,0 +1,68 @@
+{
+  "base_commit": "5b82105d67631c027e6e7ed607c881b58a3a66ef",
+  "martensite_commit": "bef25f47548431c8f128f08f66a1f719bcee4982",
+  "build": "cargo release; Rust 1.99.0 (b940084d7 2026-09-28)",
+  "gpu": "AMD Radeon 8060S Graphics (RADV STRIX_HALO), Mesa 26.1.6-1pop0~1787580452~24.04~a5619ea",
+  "display": "Xwayland :1, reported display 3840x2560; normal window request 1440x900",
+  "frame_boundary": "event polling through present return; synthetic pointer input; excludes OS input and display scanout",
+  "warmup_frames": 20,
+  "sample_frames": 120,
+  "baseline_raw_samples_available": false,
+  "baseline_note": "The first two uninstrumented baseline runs were reported as summaries in the conversation; individual frame samples were not logged. phase-profile.log contains per-frame data from the subsequent instrumented run, not those first runs.",
+  "baseline_runs_ms": [
+    {
+      "segments": 4,
+      "run": 1,
+      "mean": 23.314,
+      "p50": 23.122,
+      "p95": 26.324,
+      "p99": 28.29,
+      "max": 28.402,
+      "over_16_67ms": 120
+    },
+    {
+      "segments": 200,
+      "run": 1,
+      "mean": 25.534,
+      "p50": 25.164,
+      "p95": 29.492,
+      "p99": 31.798,
+      "max": 32.66,
+      "over_16_67ms": 120
+    },
+    {
+      "segments": 4,
+      "run": 2,
+      "mean": 21.18,
+      "p50": 20.738,
+      "p95": 24.861,
+      "p99": 28.176,
+      "max": 28.562,
+      "over_16_67ms": 120
+    },
+    {
+      "segments": 200,
+      "run": 2,
+      "mean": 23.353,
+      "p50": 22.992,
+      "p95": 26.252,
+      "p99": 27.695,
+      "max": 29.535,
+      "over_16_67ms": 120
+    }
+  ],
+  "software_run": "exploratory; llvmpipe Xvfb, 23 CPU-intensive audit processes active; not comparable to GPU baseline",
+  "xwayland_4k": "invalid as 4K measurement: requested 3840x2560, observed 2559x1545",
+  "xvfb_radv": "failed: Xvfb lacks DRI3; no supported presentation queue",
+  "harness_note": "harness.patch is the final instrumentation for present split, size checks and still/motion tests. Earlier baseline and phase runs used earlier versions; the final patch does not exactly reproduce those runs.",
+  "file_sha256": {
+    "harness.patch": "8c72710322bfda2c3d12b0709e6d7d600aee11673a6d0e4f3db82aaf37accb06",
+    "phase-profile.log": "a6a6cea7eaab637eccc5b6139ccae9daab926587da7fdabcb2928bedc70c1187",
+    "present-exploratory.log": "6a4fa5bed507d222505e60f3b327d6e0e0aee7d3f95f4c9113f18cf11d18426b",
+    "present-extent-check.log": "b8dd410b6c7bab7e321c99e955cbf6455a1063c014571af8d19e62e59d93a466",
+    "xvfb-radv-failed.log": "d6c0eb7bd4ad9773b9ef6b0f6f596d336512555bcae37dd170c853695805b53d",
+    "xvfb-software-loaded.log": "f74dd55d5706e5bdc38e667cce58834523310c11c27fb082efe7406d33ec5b20"
+  },
+  "cargo_lock_sha256": "2dc9ec518a8fc1192050d28371def3c583c60bc6fe118596cb7916509d3ba7fa",
+  "file_sha256_note": "The listed hashes are for the uncompressed bytes; these artifacts are stored as deterministic gzip files."
+}

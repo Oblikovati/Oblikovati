@@ -20,7 +20,8 @@ impl GuiFrameEngine {
         self.workspace
             .sync_origin_document(request.commands.document);
         crate::dimension_labels::draw_dimension_labels(ui, request);
-        crate::sketch::constraint_glyphs::draw_constraint_glyphs(ui, request);
+        let constraint_hover =
+            crate::sketch::constraint_glyphs::draw_constraint_glyphs(ui, request);
         crate::application::workspace_layout::browser_feature::draw_feature_edges(ui, request);
         self.workspace.draw_selected_origin(ui, request);
         let mut selected = Vec::new();
@@ -267,6 +268,8 @@ impl GuiFrameEngine {
             self.document_tabs.previews.showing = None;
         }
         self.document_tabs.previews.enqueue_picture(&mut selected);
+        let constraint_hover =
+            crate::sketch::constraint_glyphs::unobstructed_hover(ui, constraint_hover);
         let snapshot = capture_frame(self.context.render(), request.extent, &self.resources)?;
         let mut activity = frame_activity()?;
         let mut capture = input_capture(self.context.io());
@@ -331,6 +334,7 @@ impl GuiFrameEngine {
             draws: snapshot,
             actions: selected,
             parameter_actions,
+            constraint_hover,
             capture,
             activity,
             document_area: area.framebuffer_region(request.layout_scale(), request.extent),

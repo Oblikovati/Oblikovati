@@ -15,6 +15,7 @@ pub struct HeadGuiUpdate {
     pub deferred: bool,
     pub actions: Vec<GuiShellAction>,
     pub parameter_actions: Vec<oblikovati_gui::GuiParameterAction>,
+    pub constraint_hover: Option<Option<oblikovati_gui::GuiConstraintHover>>,
     pub wake_after: Option<Duration>,
 }
 pub(super) fn advance_gui(

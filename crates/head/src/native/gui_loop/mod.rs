@@ -192,6 +192,7 @@ impl NativeGui {
             consumed_input: self.pointer.consumed(event, output.capture),
             actions: output.actions,
             parameter_actions: output.parameter_actions,
+            constraint_hover: Some(output.constraint_hover),
             wake_after: self.wake_after(now),
             ..Default::default()
         })

@@ -5,9 +5,6 @@ use cucumber::{given, then, when};
 #[cfg(not(target_os = "linux"))]
 use oblikovati_viewport::ViewportEvent;
 
-#[cfg(target_os = "linux")]
-mod x11_close;
-
 #[given("the MCAD Software has an open part document with unsaved changes")]
 fn dirty_part(world: &mut ApplicationWorld) {
     let document = world.add_part();
@@ -34,7 +31,7 @@ fn request_application_close(world: &mut ApplicationWorld) {
     world.application_close_requested = true;
     let can_close = world.app().owner.close_allowed().unwrap();
     #[cfg(target_os = "linux")]
-    x11_close::request_native_close();
+    super::x11_input::request_native_close();
     #[cfg(not(target_os = "linux"))]
     if !can_close {
         return world.pump(vec![ViewportEvent::CloseRequested]);
@@ -71,7 +68,7 @@ pub(super) fn cancel_application_close(world: &mut ApplicationWorld) {
     #[cfg(target_os = "linux")]
     {
         let position = super::rendered_label_center("Cancel");
-        x11_close::click(position);
+        super::x11_input::click(position);
         world.pump(Vec::new());
     }
     #[cfg(not(target_os = "linux"))]

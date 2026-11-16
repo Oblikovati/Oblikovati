@@ -163,6 +163,21 @@ impl HeadWindow for NativeHeadWindow {
         };
         let selection_changed = self.synchronize_sketch_highlights(commands)?;
         let mut update = self.advance_native_gui(event, commands)?;
+        if let Some(hover) = &update.constraint_hover {
+            let matching = self
+                .sketch_scene
+                .as_ref()
+                .and_then(|scene| scene.source)
+                .map(|(document, _)| document)
+                == commands.document;
+            let hover = hover.as_ref().filter(|_| matching).map(|value| {
+                oblikovati_viewport::ViewportSketchHover {
+                    sketch: value.sketch,
+                    entities: value.related.clone(),
+                }
+            });
+            update.changed |= self.view.set_sketch_hover(hover.as_ref())?;
+        }
         update.changed |= changed || sketch_changed || selection_changed;
         Ok(update)
     }

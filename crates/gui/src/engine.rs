@@ -25,6 +25,7 @@ pub struct GuiFrameOutput {
     pub draws: GuiFrame,
     pub actions: Vec<GuiShellAction>,
     pub parameter_actions: Vec<crate::GuiParameterAction>,
+    pub constraint_hover: Option<crate::GuiConstraintHover>,
     pub capture: GuiInputCapture,
     pub activity: GuiFrameActivity,
     /// The unobstructed document area in framebuffer pixels, if it has positive size.
