@@ -14,13 +14,29 @@ impl Sketch2D {
     pub fn has_owned_relations(&self) -> bool {
         !self.owned_relations.is_empty()
     }
+    /// List the stable owners of entity-owned structural relations.
+    /// Example: `sketch.corner_owners()` before checking each connected component.
+    pub fn corner_owners(&self) -> Vec<SketchEntityId> {
+        self.owned_relations
+            .values()
+            .copied()
+            .collect::<std::collections::BTreeSet<_>>()
+            .into_iter()
+            .collect()
+    }
     /// Find dimension sources connected to an entity-owned corner through sketch relations.
-    /// Example: `sketch.corner_related_parameters()?` before accepting an edit.
-    pub fn corner_related_parameters(&self) -> Result<Vec<u64>, SketchError> {
-        let reached = self.corner_related_columns()?;
+    /// Example: `sketch.corner_related_parameters(owner)?` before accepting an edit.
+    pub fn corner_related_parameters(
+        &self,
+        owner: SketchEntityId,
+    ) -> Result<Vec<u64>, SketchError> {
+        let reached = self.corner_related_columns(owner)?;
         let mut parameters = Vec::new();
         for row in &self.constraints {
-            let connected = self.owned_relations.contains_key(&row.id)
+            if self.reference_dimensions.contains(&row.id) {
+                continue;
+            }
+            let connected = self.owned_relations.get(&row.id) == Some(&owner)
                 || self
                     .relation_columns(&row.relation)?
                     .iter()
@@ -36,9 +52,12 @@ impl Sketch2D {
         Ok(parameters)
     }
     /// Find point identities connected to a corner's solver variables.
-    /// Example: `sketch.corner_related_points()?` before checking projected anchors.
-    pub fn corner_related_points(&self) -> Result<Vec<SketchEntityId>, SketchError> {
-        let reached = self.corner_related_columns()?;
+    /// Example: `sketch.corner_related_points(owner)?` before checking projected anchors.
+    pub fn corner_related_points(
+        &self,
+        owner: SketchEntityId,
+    ) -> Result<Vec<SketchEntityId>, SketchError> {
+        let reached = self.corner_related_columns(owner)?;
         let mut points = Vec::new();
         for point in &self.points {
             let columns = self
@@ -52,16 +71,24 @@ impl Sketch2D {
         }
         Ok(points)
     }
-    fn corner_related_columns(&self) -> Result<std::collections::BTreeSet<usize>, SketchError> {
+    pub(super) fn corner_related_columns(
+        &self,
+        owner: SketchEntityId,
+    ) -> Result<std::collections::BTreeSet<usize>, SketchError> {
         let mut reached = std::collections::BTreeSet::new();
         for row in &self.constraints {
-            if self.owned_relations.contains_key(&row.id) {
+            if self.owned_relations.get(&row.id) == Some(&owner) {
                 reached.extend(self.relation_columns(&row.relation)?);
             }
         }
         loop {
             let count = reached.len();
             for row in &self.constraints {
+                if self.reference_dimensions.contains(&row.id)
+                    || matches!(row.relation, super::PlanarConstraint::Ground { .. })
+                {
+                    continue;
+                }
                 let columns = self.relation_columns(&row.relation)?;
                 if columns.iter().any(|column| reached.contains(column)) {
                     reached.extend(columns);
@@ -113,7 +140,7 @@ impl Sketch2D {
         }
         Ok(())
     }
-    fn relation_columns(
+    pub(super) fn relation_columns(
         &self,
         relation: &super::PlanarConstraint,
     ) -> Result<Vec<usize>, SketchError> {
@@ -140,11 +167,6 @@ impl Sketch2D {
             .into_iter()
             .map(|variable| self.variable_column(variable))
             .collect()
-    }
-    /// Check whether a constraint belongs to an entity.
-    /// Example: `sketch.owns_relation(id)` before classifying a solve failure.
-    pub fn owns_relation(&self, id: SketchConstraintId) -> bool {
-        self.owned_relations.contains_key(&id)
     }
     pub(crate) fn own_relation(
         &mut self,

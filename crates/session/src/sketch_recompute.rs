@@ -145,29 +145,35 @@ fn update_validated_sketches(
     before: &DocumentSnapshot,
     options: SolveOptions,
 ) -> Result<(), SketchError> {
-    let outcome = snapshot.solve_pending_document_sketches(options, || false);
+    let mut outcome = snapshot.solve_pending_document_sketches(options, || false);
     for report in &outcome.report.reports {
         let geometry = outcome.candidate.get(report.sketch)?.geometry();
         if !geometry.has_owned_relations() {
             continue;
         }
-        let affected = corner_inputs_changed(before, snapshot, report.sketch)?;
-        match &report.result {
-            Err(error) if affected || error_belongs_to_corner(geometry, error) => {
-                return Err(error.clone());
+        let owners = geometry.corner_owners();
+        let failed = match &report.result {
+            Err(_) => true,
+            Ok(solved) => {
+                solved.numerical().termination
+                    != oblikovati_solve::nonlinear::SolveTermination::Converged
             }
-            Ok(solved)
-                if affected
-                    && solved.numerical().termination
-                        != oblikovati_solve::nonlinear::SolveTermination::Converged =>
-            {
-                return Err(SketchError::Definition(format!(
-                    "owned sketch {:?} solve termination {:?}: expected convergence",
-                    report.sketch,
-                    solved.numerical().termination
-                )));
+        };
+        if !failed {
+            continue;
+        }
+        for owner in owners {
+            if !corner_inputs_changed(before, snapshot, report.sketch, owner)? {
+                continue;
             }
-            _ => {}
+            let anchors = snapshot.resolve_sketch_projected_points(report.sketch)?;
+            outcome.candidate.recompute_corner_component(
+                report.sketch,
+                owner,
+                &snapshot.parameters,
+                &anchors,
+                options,
+            )?;
         }
     }
     snapshot.sketches = outcome.candidate;
@@ -177,6 +183,7 @@ fn corner_inputs_changed(
     before: &DocumentSnapshot,
     after: &DocumentSnapshot,
     sketch: DocumentSketchId,
+    owner: oblikovati_model::sketch::SketchEntityId,
 ) -> Result<bool, SketchError> {
     let after_geometry = after.sketches.get(sketch)?.geometry();
     let Ok(before_sketch) = before.sketches.get(sketch) else {
@@ -186,13 +193,13 @@ fn corner_inputs_changed(
         return Ok(true);
     }
     if after_geometry
-        .corner_related_parameters()?
+        .corner_related_parameters(owner)?
         .into_iter()
         .any(|id| before.parameters.model_value(id) != after.parameters.model_value(id))
     {
         return Ok(true);
     }
-    let points = after_geometry.corner_related_points()?;
+    let points = after_geometry.corner_related_points(owner)?;
     Ok(relevant_projections(before, sketch, &points)
         != relevant_projections(after, sketch, &points))
 }
@@ -206,16 +213,4 @@ fn relevant_projections(
         .into_iter()
         .filter(|point| points.contains(&point.id))
         .collect())
-}
-fn error_belongs_to_corner(
-    geometry: &oblikovati_model::sketch::Sketch2D,
-    error: &SketchError,
-) -> bool {
-    match error {
-        SketchError::Parameter { constraint, .. }
-        | SketchError::Residual { constraint, .. }
-        | SketchError::AngleSelection { constraint, .. }
-        | SketchError::ContactSelection { constraint, .. } => geometry.owns_relation(*constraint),
-        _ => false,
-    }
 }

@@ -442,6 +442,15 @@ fn corner_dependency_map_follows_pattern_point_offsets_and_radius_links() {
             member: id(54),
         })
         .unwrap();
+    let anchors = [id(2), id(51)].map(|point| *geometry.point(point).unwrap());
+    geometry
+        .add_constraint(
+            SketchConstraintId(97),
+            PlanarConstraint::Ground {
+                points: anchors.to_vec(),
+            },
+        )
+        .unwrap();
     geometry
         .add_constraint(
             SketchConstraintId(99),
@@ -451,11 +460,14 @@ fn corner_dependency_map_follows_pattern_point_offsets_and_radius_links() {
             },
         )
         .unwrap();
-    let related = geometry.corner_related_parameters().unwrap();
+    let related = geometry.corner_related_parameters(blend.entity).unwrap();
     assert!(related.contains(&7));
     assert!(related.contains(&9));
     assert!(!related.contains(&8));
-    let points = geometry.corner_related_points().unwrap();
+    let points = geometry.corner_related_points(blend.entity).unwrap();
     assert!(points.contains(&id(2)));
     assert!(!points.contains(&id(52)));
 }
+
+#[path = "sketch_corner/components.rs"]
+mod components;

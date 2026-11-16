@@ -342,3 +342,95 @@ fn projected_source_cannot_move_inside_the_owned_setback() {
     let after = owner_revision(&files, document);
     assert_eq!((&after.1, after.2), (&history.1, history.2));
 }
+#[test]
+fn healthy_corner_recomputes_while_a_disconnected_dimension_stays_sick() {
+    let (mut files, document, mut source) = fresh();
+    let corner = create_corner(&mut files, &mut source, "fillet", "");
+    Client::new(FileHost::new(&mut files, &mut source, "test"))
+        .parameters()
+        .add(&oblikovati_api::wire::ParameterSetArgs {
+            name: "other".into(),
+            expression: "1 cm".into(),
+            ..Default::default()
+        })
+        .unwrap();
+    let mut circle = circle_input();
+    circle.radius = "other".into();
+    let other = add_call(&mut files, &mut source, &circle).unwrap();
+    Client::new(FileHost::new(&mut files, &mut source, "test"))
+        .parameters()
+        .set(&oblikovati_api::wire::ParameterSetArgs {
+            name: "other".into(),
+            expression: "-1 cm".into(),
+            ..Default::default()
+        })
+        .unwrap();
+    let result = Client::new(FileHost::new(&mut files, &mut source, "test"))
+        .parameters()
+        .set(&oblikovati_api::wire::ParameterSetArgs {
+            name: "width".into(),
+            expression: "2 cm".into(),
+            ..Default::default()
+        });
+    assert!(
+        result.is_ok(),
+        "a sick disconnected dimension must not block a valid corner edit: {result:?}"
+    );
+    let snapshot = files.workspace().session(document).unwrap().snapshot();
+    let geometry = snapshot.sketches.sketches()[0].geometry();
+    assert!(
+        (geometry
+            .arc_radius(SketchEntityId(corner.entity_id))
+            .unwrap()
+            - 2.)
+            .abs()
+            < 1e-7
+    );
+    assert_eq!(
+        geometry
+            .circle(SketchEntityId(other.entity_id))
+            .unwrap()
+            .radius,
+        1.
+    );
+    assert!(matches!(
+        snapshot
+            .document_sketch_health(snapshot.sketches.sketches()[0].id())
+            .unwrap(),
+        oblikovati_model::document_sketch::PlacedSketchHealth::Current(
+            oblikovati_model::document_sketch::SketchEvaluation::Failed(_)
+        )
+    ));
+    let result = Client::new(FileHost::new(&mut files, &mut source, "test"))
+        .parameters()
+        .set(&oblikovati_api::wire::ParameterSetArgs {
+            name: "width".into(),
+            expression: "0 cm".into(),
+            ..Default::default()
+        });
+    assert!(
+        result.is_err(),
+        "the component solve must not hide an invalid corner"
+    );
+    files.commands(document).unwrap().undo().unwrap();
+    let geometry = owned_geometry(&files, document).sketches()[0].geometry();
+    assert!(
+        (geometry
+            .arc_radius(SketchEntityId(corner.entity_id))
+            .unwrap()
+            - 1.)
+            .abs()
+            < 1e-7
+    );
+    files.commands(document).unwrap().redo().unwrap();
+    let reopened = reopen_with_observer(&mut files, document, &mut source, Default::default());
+    let geometry = owned_geometry(&files, reopened).sketches()[0].geometry();
+    assert!(
+        (geometry
+            .arc_radius(SketchEntityId(corner.entity_id))
+            .unwrap()
+            - 2.)
+            .abs()
+            < 1e-7
+    );
+}
