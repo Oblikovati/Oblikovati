@@ -57,6 +57,16 @@ fn typed_radius_edit_validates_before_commit_and_survives_history() {
         .unwrap()["id"]
         .as_u64()
         .unwrap();
+    let browser = owner.gui_command_state().unwrap().browser.unwrap();
+    assert_eq!(
+        browser
+            .features
+            .iter()
+            .find(|feature| feature.id.0 == id)
+            .unwrap()
+            .kind,
+        "Fillet"
+    );
     let before_scene: Vec<_> = owner
         .take_scene()
         .unwrap()
@@ -67,11 +77,43 @@ fn typed_radius_edit_validates_before_commit_and_survives_history() {
         .map(|triangle| triangle.positions)
         .collect();
     assert_eq!(radius(&mut owner, id), 1.);
-    Client::new(owner.document_host())
-        .features()
-        .edit(&edit(id, "2 mm"))
-        .unwrap();
+    let generation = owner
+        .files
+        .workspace()
+        .session(document)
+        .unwrap()
+        .generation();
+    let draft = oblikovati_gui::GuiFilletEditRequest {
+        document,
+        generation,
+        feature: oblikovati_model::feature::FeatureId(id),
+        radius: "2 mm".into(),
+    };
+    assert!(owner.preview_fillet_edit(&draft).unwrap());
+    assert_eq!(
+        owner
+            .files
+            .workspace()
+            .session(document)
+            .unwrap()
+            .generation(),
+        generation
+    );
+    let preview: Vec<_> = owner
+        .take_scene()
+        .unwrap()
+        .unwrap()
+        .scene
+        .triangles
+        .iter()
+        .map(|triangle| triangle.positions)
+        .collect();
+    assert_ne!(before_scene, preview);
+    assert!(owner.preview_fillet_from_gui(None).unwrap());
+    assert_eq!(radius(&mut owner, id), 1.);
+    assert!(owner.commit_fillet_edit(&draft).unwrap());
     assert_eq!(radius(&mut owner, id), 2.);
+    assert!(owner.commit_fillet_edit(&draft).is_err());
     let after_scene: Vec<_> = owner
         .take_scene()
         .unwrap()

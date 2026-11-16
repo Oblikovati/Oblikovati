@@ -25,12 +25,12 @@ impl<
         if !browser.has_origin {
             return Ok(browser);
         }
-        let snapshot = self
+        let session = self
             .files
             .workspace()
             .session(document)
-            .map_err(|cause| cause.to_string())?
-            .snapshot();
+            .map_err(|cause| cause.to_string())?;
+        let snapshot = session.snapshot();
         let mut query = oblikovati_automation::FileQueryHost::new(&self.files)
             .with_sketch_edit(self.sketch_inspection_edit());
         if oblikovati_automation::requires_part_replay(snapshot) {
@@ -40,6 +40,33 @@ impl<
             query = query.with_part_sketch_continuity(resolver);
         }
         populate_browser(&mut browser, snapshot, &Client::new(query))?;
+        browser.fillet_edits = snapshot
+            .work_geometry
+            .features()
+            .iter()
+            .filter_map(|feature| {
+                let oblikovati_model::feature::part::PartFeatureDefinition::Fillet(definition) =
+                    feature.definition()
+                else {
+                    return None;
+                };
+                let radius = match definition.radius() {
+                    oblikovati_model::feature::work_geometry::DatumLength::Constant(value) => {
+                        format!("{value} cm")
+                    }
+                    oblikovati_model::feature::work_geometry::DatumLength::Parameter(id) => {
+                        snapshot.parameters.get(id)?.name.clone()
+                    }
+                };
+                Some((
+                    feature.id(),
+                    oblikovati_gui::GuiFilletEditSeed {
+                        generation: session.generation(),
+                        radius,
+                    },
+                ))
+            })
+            .collect();
         browser.occurrences = occurrences::browser_occurrences(&self.files, document)?;
         browser.selected_occurrence =
             self.selected_occurrence.as_ref().and_then(|(owner, path)| {
@@ -228,9 +255,10 @@ fn browser_block_instances(
 fn feature_kind_name(
     definition: &oblikovati_model::feature::part::PartFeatureDefinition,
 ) -> &'static str {
-    use oblikovati_model::feature::part::PartFeatureDefinition::{DeleteBody, SketchPrism};
+    use oblikovati_model::feature::part::PartFeatureDefinition::{DeleteBody, Fillet, SketchPrism};
     match definition {
         SketchPrism(_) => "Extrusion",
+        Fillet(_) => "Fillet",
         DeleteBody(_) => "Delete Body",
         oblikovati_model::feature::part::PartFeatureDefinition::Fixed(_)
         | oblikovati_model::feature::part::PartFeatureDefinition::Offset { .. }

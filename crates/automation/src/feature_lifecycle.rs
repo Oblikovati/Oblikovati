@@ -9,6 +9,7 @@ use oblikovati_model::{
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 mod fillet_edit;
+pub use fillet_edit::apply_fillet_radius_edit;
 
 /// Native feature lifecycle calls that operate on the active part history.
 pub const FEATURE_LIFECYCLE_METHODS: [&str; 5] = [

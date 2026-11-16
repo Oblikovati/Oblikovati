@@ -129,7 +129,7 @@ fn feature_menu(
         return;
     };
     edit_sketch_row(ui, state, browser, feature, actions);
-    let edit = GuiShellAction::OpenExtrudeEdit(feature.id);
+    let edit = feature_edit_action(browser, feature);
     if ui
         .menu_item_config("Edit Feature")
         .enabled(edit.enabled(state))
@@ -309,12 +309,18 @@ pub(crate) fn selection_toolbar(
     selection_toolbar_window(ui, corner, || {
         edit_sketch_row_button(ui, commands, browser, feature, actions);
         ui.same_line();
-        let edit = GuiShellAction::OpenExtrudeEdit(feature.id);
+        let edit = feature_edit_action(browser, feature);
         let _muted = ui.begin_disabled(!edit.enabled(commands));
         if crate::widget_abi::button(ui, "Edit Feature", [0.; 2]) && edit.enabled(commands) {
             actions.push(edit);
         }
     });
+}
+fn feature_edit_action(browser: &GuiModelBrowser, feature: &GuiBrowserFeature) -> GuiShellAction {
+    if browser.fillet_edits.contains_key(&feature.id) {
+        return GuiShellAction::OpenFilletEdit(feature.id);
+    }
+    GuiShellAction::OpenExtrudeEdit(feature.id)
 }
 fn edge_selection_toolbar(ui: &Ui, request: &GuiFrameRequest, actions: &mut Vec<GuiShellAction>) {
     let Some(corner) = outline_corner(request) else {

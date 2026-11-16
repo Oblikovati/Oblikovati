@@ -119,4 +119,71 @@ impl<
         self.clear_extrusion_preview();
         Ok(true)
     }
+
+    fn require_fillet_edit(
+        &self,
+        request: &oblikovati_gui::GuiFilletEditRequest,
+    ) -> Result<(), String> {
+        self.require_browser_document(request.document)?;
+        let session = self
+            .files
+            .workspace()
+            .session(request.document)
+            .map_err(|cause| cause.to_string())?;
+        if session.generation() != request.generation {
+            return Err(format!(
+                "fillet edit generation {}: expected current generation {}",
+                request.generation,
+                session.generation()
+            ));
+        }
+        Ok(())
+    }
+
+    pub(super) fn preview_edited_fillet(
+        &mut self,
+        request: &oblikovati_gui::GuiFilletEditRequest,
+    ) -> Result<bool, String> {
+        self.require_fillet_edit(request)?;
+        self.clear_extrusion_preview();
+        let session = self
+            .files
+            .workspace()
+            .session(request.document)
+            .map_err(|cause| cause.to_string())?;
+        let edit = super::owner_extrusion_preview::feature_distance_request(
+            request.feature.0,
+            &request.radius,
+        );
+        let scene = session
+            .preview_projected(
+                |candidate, _| oblikovati_automation::apply_fillet_radius_edit(candidate, &edit),
+                |candidate, feature| {
+                    self.part_scenes
+                        .preview_feature_edit(&self.files, request.document, candidate, feature)
+                        .map_err(oblikovati_api::Error)
+                },
+            )
+            .map_err(|cause| cause.to_string())?;
+        self.extrusion_preview = Some((request.document, request.generation, scene, true));
+        self.part_scenes.invalidate_presentation();
+        Ok(true)
+    }
+
+    pub(super) fn commit_edited_fillet(
+        &mut self,
+        request: &oblikovati_gui::GuiFilletEditRequest,
+    ) -> Result<bool, String> {
+        self.require_fillet_edit(request)?;
+        let edit = super::owner_extrusion_preview::feature_distance_request(
+            request.feature.0,
+            &request.radius,
+        );
+        oblikovati_api::client::Client::new(self.document_host())
+            .features()
+            .edit(&edit)
+            .map_err(|cause| cause.to_string())?;
+        self.clear_extrusion_preview();
+        Ok(true)
+    }
 }

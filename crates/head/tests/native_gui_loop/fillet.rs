@@ -72,6 +72,125 @@ fn native_edge_fillet_preview_cancel_commit_and_history() {
     owner.finish().unwrap();
     window.finish().unwrap();
 }
+
+#[test]
+fn native_fillet_radius_edit_previews_cancels_and_commits() {
+    let directory = tempfile::tempdir().unwrap();
+    let native = NativeHeadWindow::open().unwrap();
+    let mut owner = native_owner_at(native.wake.clone(), directory.path()).unwrap();
+    let path = directory.path().join("fillet-edit.opd");
+    let document = open_native_part(&mut owner, &path);
+    let mut window = scripted_window(native);
+    crate::frames::run_frames(&mut window, HeadOptions { frames: Some(3) }, &mut owner).unwrap();
+    let pixel = window.native.view.model_pixel([2., 0., 2.]).unwrap();
+    window.scripted = pointer_click_events(pixel, 1);
+    crate::frames::run_frames(&mut window, HeadOptions { frames: Some(3) }, &mut owner).unwrap();
+    open_fillet_toolbar(&mut window, &mut owner);
+    press_shell_key(&mut window, &mut owner, ViewportPhysicalKey::Enter);
+    assert_eq!(fillet_radius(&owner, document), 0.2);
+    open_fillet_edit(&mut window, &mut owner);
+    change_fillet_radius(&mut window, &mut owner, "1 mm");
+    assert!(owner.gui_command_state().unwrap().extrude_preview_active);
+    assert_eq!(window.native.command_notice, None);
+    capture_when_requested(&mut window, "OBLIKOVATI_FILLET_EDIT_CAPTURE");
+    assert_eq!(fillet_radius(&owner, document), 0.2);
+    press_shell_key(&mut window, &mut owner, ViewportPhysicalKey::Escape);
+    assert!(!owner.gui_command_state().unwrap().extrude_preview_active);
+    assert_eq!(fillet_radius(&owner, document), 0.2);
+    open_fillet_edit(&mut window, &mut owner);
+    change_fillet_radius(&mut window, &mut owner, "1 mm");
+    press_shell_key(&mut window, &mut owner, ViewportPhysicalKey::Enter);
+    assert_eq!(fillet_radius(&owner, document), 0.1);
+    for (label, expected) in [("Undo", 0.2), ("Redo", 0.1)] {
+        click_shell_position(
+            &mut window,
+            &mut owner,
+            application_bdd::rendered_label_center(label),
+        );
+        assert_eq!(fillet_radius(&owner, document), expected);
+    }
+    reopen_fillet(&mut window, &mut owner, &path, 2);
+    let reopened = owner.documents().workspace().active_document().unwrap();
+    assert_eq!(fillet_radius(&owner, reopened), 0.1);
+    owner.finish().unwrap();
+    window.finish().unwrap();
+}
+
+fn open_fillet_edit(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOwner) {
+    click_shell_position(
+        window,
+        owner,
+        application_bdd::rendered_label_center("Fillet1"),
+    );
+    let state = owner.gui_command_state().unwrap();
+    assert_eq!(
+        state.selected_edge_count, 0,
+        "browser choice must clear edge selection"
+    );
+    assert!(
+        !state.model_face_chosen,
+        "browser choice must clear face selection"
+    );
+    assert_eq!(
+        state.browser.unwrap().selected_feature,
+        Some(oblikovati_model::feature::FeatureId(2))
+    );
+    assert!(
+        !owner.selected_browser_outline().is_empty(),
+        "selected Fillet has no outline"
+    );
+    window.scripted = vec![ViewportEvent::Input(ViewportInput::Motion {
+        position: [1000, 700],
+        modifiers: Default::default(),
+    })];
+    crate::frames::run_frames(window, HeadOptions { frames: Some(3) }, owner).unwrap();
+    let (position, size) = application_bdd::window_geometry("##selection-toolbar").unwrap();
+    let end = [position[0] + size[0], position[1] + size[1]];
+    let edit = application_bdd::rendered_label_in_rect("EditFeature", position, end);
+    click_shell_position(window, owner, edit);
+    assert!(
+        application_bdd::window_geometry("Fillet").is_some(),
+        "edit toolbar did not open panel"
+    );
+}
+
+fn change_fillet_radius(
+    window: &mut ScriptedGuiWindow,
+    owner: &mut NativeDesktopOwner,
+    value: &str,
+) {
+    let (position, _) = application_bdd::window_geometry("Fillet").unwrap();
+    let field = application_bdd::pointer_pixels([position[0] + 80., position[1] + 40.]);
+    click_shell_position(window, owner, field);
+    for _ in 0..12 {
+        press_shell_key(window, owner, ViewportPhysicalKey::Backspace);
+    }
+    type_native_text(window, owner, value);
+}
+
+fn fillet_radius(owner: &NativeDesktopOwner, document: u64) -> f64 {
+    let session = owner.documents().workspace().session(document).unwrap();
+    let feature = session
+        .snapshot()
+        .work_geometry
+        .features()
+        .iter()
+        .find(|feature| {
+            matches!(
+                feature.definition(),
+                oblikovati_model::feature::part::PartFeatureDefinition::Fillet(_)
+            )
+        })
+        .unwrap();
+    let oblikovati_model::feature::part::PartFeatureDefinition::Fillet(definition) =
+        feature.definition()
+    else {
+        panic!("expected Fillet")
+    };
+    definition
+        .resolved_radius(&session.snapshot().parameters)
+        .unwrap()
+}
 fn verify_context_dismissal_clears_edge(
     window: &mut ScriptedGuiWindow,
     owner: &mut NativeDesktopOwner,

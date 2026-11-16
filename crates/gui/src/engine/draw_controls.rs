@@ -182,6 +182,12 @@ impl GuiFrameEngine {
         } else {
             self.part_context_open = false;
         }
+        for action in &selected {
+            if let GuiShellAction::OpenFilletEdit(feature) = action {
+                self.fillet_dialog.open_edit(&request.commands, *feature);
+            }
+        }
+        selected.retain(|action| !matches!(action, GuiShellAction::OpenFilletEdit(_)));
         if selected.contains(&GuiShellAction::OpenFillet) {
             self.fillet_dialog.open(&request.commands);
             selected.retain(|action| !matches!(action, GuiShellAction::OpenFillet));

@@ -267,6 +267,11 @@ pub(super) fn dispatch_gui_action(
             cause,
         );
     }
+    if matches!(action, GuiShellAction::PreviewFilletEdit(_))
+        && result.as_ref().is_ok_and(|changed| *changed)
+    {
+        window.show_command_notice(crate::DesktopCommandNotice::Ready)?;
+    }
     let changed = report_authoring_result(window, result)?;
     Ok(synchronize_sketch_view(window, owner)? || changed)
 }
@@ -389,6 +394,9 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::FinishSketch
         | GuiShellAction::OpenExtrude
         | GuiShellAction::OpenFillet
+        | GuiShellAction::OpenFilletEdit(_)
+        | GuiShellAction::PreviewFilletEdit(_)
+        | GuiShellAction::EditFilletRadius(_)
         | GuiShellAction::LookAtSelection
         | GuiShellAction::PreviewFillet(_)
         | GuiShellAction::CreateFillet(_)

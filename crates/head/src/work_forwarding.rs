@@ -102,6 +102,18 @@ macro_rules! forward_owner_view_work {
         ) -> Result<bool, String> {
             self.$owner.validate_offset_plane_from_gui(document, offset)
         }
+        fn preview_fillet_edit(
+            &mut self,
+            request: &oblikovati_gui::GuiFilletEditRequest,
+        ) -> Result<bool, String> {
+            self.$owner.preview_fillet_edit(request)
+        }
+        fn commit_fillet_edit(
+            &mut self,
+            request: &oblikovati_gui::GuiFilletEditRequest,
+        ) -> Result<bool, String> {
+            self.$owner.commit_fillet_edit(request)
+        }
         fn preview_fillet_from_gui(
             &mut self,
             request: Option<&oblikovati_gui::GuiFilletRequest>,

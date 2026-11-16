@@ -4,6 +4,8 @@
 
 ### Changed
 
+- Enabled Fillet radius editing from the model browser with preview and cancel. (#4045)
+
 - Enabled certified Fillet radius edits through the feature API, including named parameters and undo/redo. (#4045)
 
 - Reduced repeated projection of constraint glyphs in an active sketch. (#4035)

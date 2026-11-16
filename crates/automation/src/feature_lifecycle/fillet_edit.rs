@@ -38,7 +38,7 @@ pub(super) fn edit<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFile
         .map_err(api_error)?
         .run_projected(
             "Edit fillet",
-            |snapshot, _| replace_radius(snapshot, request),
+            |snapshot, _| apply_fillet_radius_edit(snapshot, request),
             |snapshot, id| {
                 backend.validate(guid, snapshot, id).map_err(Error)?;
                 Ok(id.0)
@@ -47,7 +47,8 @@ pub(super) fn edit<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFile
         .map_err(api_error)
 }
 
-fn replace_radius(
+/// Update a private Fillet candidate; example: `apply_fillet_radius_edit(candidate, &request)?`.
+pub fn apply_fillet_radius_edit(
     snapshot: &mut DocumentSnapshot,
     request: &EditFeatureArgs,
 ) -> Result<FeatureId, Error> {

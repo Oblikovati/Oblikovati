@@ -16,6 +16,14 @@ pub struct GuiFilletRequest {
     pub edges: Vec<Vec<u8>>,
     pub radius: String,
 }
+/// A generation-scoped radius draft for an existing Fillet.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GuiFilletEditRequest {
+    pub document: u64,
+    pub generation: u64,
+    pub feature: oblikovati_model::feature::FeatureId,
+    pub radius: String,
+}
 /// A document-scoped extrusion distance draft.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GuiExtrudeEditRequest {

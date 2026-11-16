@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+#[path = "commands/fillet_enabled.rs"]
+mod fillet_enabled;
 impl GuiShellAction {
     /// Preserve Go empty-stack enablement; example: `GuiShellAction::Undo.enabled(&state)`.
     pub fn enabled(&self, state: &GuiCommandState) -> bool {
@@ -326,14 +328,12 @@ impl GuiShellAction {
                     }
             }
             Self::LookAtSelection => state.look_at_available,
-            Self::OpenFillet => {
-                state.fillet_available
-                    && state.document.is_some()
-                    && state.authoring == GuiAuthoringContext::Part
-                    && !state.transaction_open
-                    && state.selected_edge_count > 0
-            }
+            Self::OpenFillet => fillet_enabled::create(state),
             Self::PreviewFillet(None) => true,
+            Self::OpenFilletEdit(feature) => fillet_enabled::open(state, *feature),
+            Self::PreviewFilletEdit(request) | Self::EditFilletRadius(request) => {
+                fillet_enabled::edit(state, request)
+            }
             Self::PreviewFillet(Some(request)) | Self::CreateFillet(request) => {
                 Self::OpenFillet.enabled(state)
                     && state.document == Some(request.document)

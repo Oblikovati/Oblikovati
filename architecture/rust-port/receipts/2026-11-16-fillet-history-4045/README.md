@@ -109,7 +109,8 @@ the edited candidate with certified replay before it changes history. A real
 desktop-owner API test checks a changed scene, invalid units, zero and oversized
 radii, invalid scalar batches, undo/redo, a named parameter, and save/reopen.
 The native Extrude distance-edit test and automation suite also pass. This is
-API and owner evidence; a desktop Fillet radius-edit tool remains open.
+API and owner evidence; the desktop tool was still open at that stage. The
+later desktop diagnostic is in `../2026-11-17-fillet-ui-edit-4045/`.
 
 An exploratory debug-build CPU timing of the 12-edge cube query used three
 warmups and 30 samples: median 2.101 ms, p95 2.222 ms, maximum 2.223 ms. The

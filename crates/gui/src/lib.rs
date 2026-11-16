@@ -15,7 +15,7 @@ mod browser;
 pub use browser::{
     GuiBrowserBlockInstance, GuiBrowserBody, GuiBrowserFeature, GuiBrowserKind,
     GuiBrowserOccurrence, GuiBrowserRectangularPattern, GuiBrowserSketch, GuiExtrudeEditSeed,
-    GuiMaterialChoice, GuiModelBrowser, GuiOccurrencePath,
+    GuiFilletEditSeed, GuiMaterialChoice, GuiModelBrowser, GuiOccurrencePath,
 };
 mod clipboard;
 pub use activity::GuiFrameActivity;
@@ -99,9 +99,10 @@ pub use application::ribbon_customization::GuiRibbonSettingsStore;
 pub use commands::{
     GuiAuthoringContext, GuiBaseViewRequest, GuiBrowserChoice, GuiCommandState, GuiDocumentStorage,
     GuiDrawingLine, GuiDrawingProjection, GuiExtrudeDistanceValidation, GuiExtrudeEditRequest,
-    GuiExtrudePreview, GuiFeatureCondition, GuiFeatureEdit, GuiFilletRequest, GuiOffsetPlaneBase,
-    GuiOffsetPlaneValidation, GuiParameterMutation, GuiPartAssetKind, GuiPreviewImage, GuiProject,
-    GuiProjectGroup, GuiSelectionMode, GuiShellAction, GuiSketchLineStyle,
+    GuiExtrudePreview, GuiFeatureCondition, GuiFeatureEdit, GuiFilletEditRequest, GuiFilletRequest,
+    GuiOffsetPlaneBase, GuiOffsetPlaneValidation, GuiParameterMutation, GuiPartAssetKind,
+    GuiPreviewImage, GuiProject, GuiProjectGroup, GuiSelectionMode, GuiShellAction,
+    GuiSketchLineStyle,
 };
 pub use engine::{GuiFrameEngine, GuiFrameOutput, GuiFrameRequest};
 pub use sketch_pick_cue::GuiSketchPickCue;

@@ -2,6 +2,18 @@
 //! Extrusion methods on the desktop work boundary.
 macro_rules! desktop_extrusion_work {
     () => {
+        fn preview_fillet_edit(
+            &mut self,
+            request: &oblikovati_gui::GuiFilletEditRequest,
+        ) -> Result<bool, String> {
+            self.preview_edited_fillet(request)
+        }
+        fn commit_fillet_edit(
+            &mut self,
+            request: &oblikovati_gui::GuiFilletEditRequest,
+        ) -> Result<bool, String> {
+            self.commit_edited_fillet(request)
+        }
         fn preview_fillet_from_gui(
             &mut self,
             request: Option<&oblikovati_gui::GuiFilletRequest>,

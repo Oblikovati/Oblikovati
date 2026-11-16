@@ -260,6 +260,9 @@ pub enum GuiShellAction {
     OpenExtrude,
     /// Open a fillet draft for selected edges.
     OpenFillet,
+    OpenFilletEdit(oblikovati_model::feature::FeatureId),
+    PreviewFilletEdit(GuiFilletEditRequest),
+    EditFilletRadius(GuiFilletEditRequest),
     /// Orient the view to the selected planar reference.
     LookAtSelection,
     /// Show or clear a private fillet candidate.
@@ -355,7 +358,9 @@ pub struct GuiBaseViewRequest {
     pub center: [f64; 2],
 }
 mod feature_requests;
-pub use feature_requests::{GuiExtrudeEditRequest, GuiExtrudePreview, GuiFilletRequest};
+pub use feature_requests::{
+    GuiExtrudeEditRequest, GuiExtrudePreview, GuiFilletEditRequest, GuiFilletRequest,
+};
 /// Owner validation for one extrusion expression and active document.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GuiExtrudeDistanceValidation {
