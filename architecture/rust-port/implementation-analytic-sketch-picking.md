@@ -35,6 +35,15 @@ in point-first order. Select Other carries each entity identity to the owner and
 refuses choices from an old menu, sketch, document, or generation (#4041).
 This is not a claim that a native overlap scenario has passed.
 
+## Ready-state pointer feedback
+
+In an editable sketch, pointer motion resolves the same analytic candidates as
+selection. The hovered entity is highlighted and a nearby cue names its type;
+selection and undo history do not change. The cue is tied to the active sketch
+and document generation. Tool actions and sketch scene changes clear transient
+feedback (#4043). This adds a pick query to Ready-state pointer motion; the
+60 fps target remains open (#4035 and Martensite #505).
+
 ## Evidence and limits
 
 The adapter suite passes the analytic and construction checks, including the new analytic endpoint,

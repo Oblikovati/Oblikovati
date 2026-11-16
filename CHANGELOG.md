@@ -143,6 +143,8 @@
 
 ### Added
 
+- Show the type and highlight of a sketch entity under the pointer in Ready. (#4043)
+
 - Show the picked sketch entity type and sketch name near the pointer. (#4042)
 
 - Added Move and Measure pointer feedback for sketch curves, points, and midpoints. (#4034)

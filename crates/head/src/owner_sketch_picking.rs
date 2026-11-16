@@ -48,6 +48,9 @@ impl<
         pixel: [i32; 2],
         window: &dyn HeadWindow,
     ) -> Result<Option<oblikovati_viewport::ViewportSketchFeedback>, String> {
+        if self.sketch_tool.is_none() {
+            return Ok(self.ready_hover_feedback());
+        }
         if let Some(crate::sketch_tool::SketchToolState::Measure(tool)) = self.sketch_tool.as_ref()
         {
             if self.active_sketch_edit() != Some(tool.edit) || window.navigation_active() {

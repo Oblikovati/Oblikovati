@@ -306,6 +306,8 @@ fn publish_owner_sketches(
     let Some(update) = owner.take_sketch_scene()? else {
         return Ok(false);
     };
+    // A previous pointer hit belongs to the old sketch geometry (#4043).
+    window.set_tool_feedback(None)?;
     window.submit_sketch_scene(update)?;
     Ok(true)
 }

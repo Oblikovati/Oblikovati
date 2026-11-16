@@ -321,3 +321,11 @@ mod pick_cue;
 mod pointer_move;
 #[path = "pointer_placement.rs"]
 mod pointer_placement;
+
+#[cfg(target_os = "linux")]
+#[path = "ready_hover.rs"]
+mod ready_hover;
+
+#[cfg(target_os = "linux")]
+#[path = "ready_hover_perf.rs"]
+mod ready_hover_perf;

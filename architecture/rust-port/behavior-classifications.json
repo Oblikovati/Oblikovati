@@ -49526,7 +49526,8 @@
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
       "acceptance_test": "sketch_scenarios_use_the_native_window: Show and clear hover feedback on a sketch line",
       "issues": [
-        "https://github.com/Oblikovati/Oblikovati/issues/4038"
+        "https://github.com/Oblikovati/Oblikovati/issues/4038",
+        "https://github.com/Oblikovati/Oblikovati/issues/4043"
       ],
       "state": "excluded",
       "last_receipt": null,
@@ -49541,7 +49542,8 @@
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
       "acceptance_test": "sketch_scenarios_use_the_native_window: Identify a sketch point under the pointer in Ready",
       "issues": [
-        "https://github.com/Oblikovati/Oblikovati/issues/4038"
+        "https://github.com/Oblikovati/Oblikovati/issues/4038",
+        "https://github.com/Oblikovati/Oblikovati/issues/4043"
       ],
       "state": "excluded",
       "last_receipt": null,
