@@ -6,6 +6,14 @@ use oblikovati_model::sketch::{SketchPointInput, SketchPrimitiveCreation};
 
 #[given("an editable sketch contains an unselected line and the sketch is ready for input")]
 fn unselected_line(world: &mut ApplicationWorld) {
+    add_isolated_line(world);
+    assert!(world.state().sketch_selection.entities.is_empty());
+    assert!(world.state().sketch_at_ready);
+    world.last_capture = Some(super::super::super::capture_framebuffer(
+        &mut world.app().window.native,
+    ));
+}
+fn add_isolated_line(world: &mut ApplicationWorld) {
     let edit = world.app().owner.active_sketch_edit().unwrap();
     let line = SketchPrimitiveCreation::Line {
         endpoints: [
@@ -22,11 +30,6 @@ fn unselected_line(world: &mut ApplicationWorld) {
         .create_sketch_primitive(edit.sketch, &line)
         .unwrap();
     world.pump(Vec::new());
-    assert!(world.state().sketch_selection.entities.is_empty());
-    assert!(world.state().sketch_at_ready);
-    world.last_capture = Some(super::super::super::capture_framebuffer(
-        &mut world.app().window.native,
-    ));
 }
 #[when("the user clicks the line away from its endpoints and constraint glyphs")]
 fn click_line(world: &mut ApplicationWorld) {
@@ -294,5 +297,7 @@ fn measure_candidate_frames_for_dense_sketch() {
 #[path = "measure_perf.rs"]
 mod measure_perf;
 
+#[path = "pointer_move.rs"]
+mod pointer_move;
 #[path = "pointer_placement.rs"]
 mod pointer_placement;

@@ -18,7 +18,8 @@ Last checked: 2026-11-16 on `rust-work` after `6ba45dcb1`. Refresh from current 
   Their live features carry fixture or reference-capture gaps; see the matching
   receipts before counting results. Other mouse scenarios remain open.
 - Pointer-driven Line creation and preview cancellation have an X11 diagnostic
-  (#4037). Its live source still needs a fixture and reference capture.
+  (#4037). Move preview and cancellation also pass a focused X11 diagnostic
+  (#4040). These cases still need fixtures and reference captures.
 - The 60 fps sketch target is not met on the measured GPU. A 4-segment
   pointer-motion run measured 20.738 ms median and 24.861 ms p95 at 1440 × 900;
   the 60 fps frame budget is 16.67 ms. See `receipts/2026-11-16-sketch-frame-baseline-4031/`.
@@ -69,9 +70,9 @@ Last checked: 2026-11-16 on `rust-work` after `6ba45dcb1`. Refresh from current 
   in-place geometry edits (#4029) remain separate open defects.
 - Scenario pin: `b576445b98cffd686dcc05aa8c017de2a591c8c8`, a local snapshot
   of the unversioned source. It is not an upstream commit. At the latest check,
-  the live solid viewport interaction feature had changed and a Sketch3D spline
-  feature was added (#4038). Review both in the next sync; the comparison covers
-  `.feature` files only.
+  the live solid viewport and Sketch3D lifecycle features had changed, and a
+  Sketch3D spline feature was added (#4038). Review them in the next sync; the
+  comparison covers `.feature` files only.
   The source tags 60 declarations as capture-only and 34 more as capture-host
   only; they are not portable passing evidence. Follow `bdd-workflow.md`
   when source files change; use a unique Cargo target for each active worktree.

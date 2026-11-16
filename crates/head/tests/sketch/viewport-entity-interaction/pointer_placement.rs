@@ -54,7 +54,6 @@ fn cancel_pending_line(world: &mut ApplicationWorld) {
 #[then("the pending preview is removed")]
 fn preview_is_removed(world: &mut ApplicationWorld) {
     assert!(world.app().owner.sketch_preview().is_none());
-    world.expect_segment_absent(END, NEXT);
     assert!(world.state().sketch_at_ready);
 }
 
@@ -65,5 +64,6 @@ fn accepted_line_remains(world: &mut ApplicationWorld) {
     let before = &world.observed_sketch.as_ref().unwrap().geometry;
     assert!(after.same_recipe(before));
     world.expect_segment_drawn(START, END);
+    world.expect_segment_absent(END, NEXT);
     world.save_capture("sketch-pointer-line-cancel-4037");
 }
