@@ -21,6 +21,7 @@ mod close;
 mod derived_links;
 mod drawing_snapshots;
 mod selection;
+mod synchronization;
 pub use derived_links::DERIVED_COMMAND_METHODS;
 mod create;
 pub use create::creation_package;
@@ -482,26 +483,5 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
             .call(method, request)
     }
 }
-impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext<'_, O, W, F> {
-    fn synchronize_drawing_references(&mut self) {
-        for document in self.files.workspace().documents().to_vec() {
-            self.open_drawing_reference(document);
-        }
-    }
-    fn synchronize_assembly_references(&mut self) -> Result<(), Error> {
-        let documents = self.files.workspace().documents().to_vec();
-        for document in documents {
-            let Ok(session) = self.files.workspace().session(document) else {
-                continue;
-            };
-            let is_assembly = session.snapshot().assembly.is_some();
-            if is_assembly {
-                self.resolve_assembly_references(document)?;
-            }
-        }
-        Ok(())
-    }
-}
-
 #[cfg(test)]
 mod tests;
