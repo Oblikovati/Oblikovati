@@ -12,6 +12,14 @@ pub struct BoundExpression<Id> {
 }
 
 impl<Id: Copy + Ord> BoundExpression<Id> {
+    pub(crate) fn reference_id(&self, name: &str) -> Option<Id> {
+        let index = self
+            .expression
+            .references
+            .iter()
+            .position(|reference| reference == name)?;
+        self.bindings[index]
+    }
     /// Read unresolved names in source order; for example `bound.unresolved()`.
     pub fn unresolved(&self) -> Vec<&str> {
         self.expression

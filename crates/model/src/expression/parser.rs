@@ -11,8 +11,11 @@ use std::collections::BTreeMap;
 // Limit recursive syntax, not a left-associative formula's length. Evaluation
 // and destruction use flat storage regardless of the number of operations.
 const MAX_NESTING: usize = 128;
+type ParsedSource = (Expression, Vec<Option<(usize, usize)>>);
 
 struct Parser<'a> {
+    fold_constants: bool,
+    literal_spans: Vec<Option<(usize, usize)>>,
     tokens: Vec<Token<'a>>,
     position: usize,
     nodes: Vec<Node>,
@@ -23,7 +26,24 @@ struct Parser<'a> {
 }
 
 pub(super) fn compile(source: &str, units: &UnitsOfMeasure) -> Result<Expression, ExpressionError> {
+    Ok(compile_with_spans(source, units, true)?.0)
+}
+
+pub(super) fn compile_unfolded(
+    source: &str,
+    units: &UnitsOfMeasure,
+) -> Result<ParsedSource, ExpressionError> {
+    compile_with_spans(source, units, false)
+}
+
+fn compile_with_spans(
+    source: &str,
+    units: &UnitsOfMeasure,
+    fold_constants: bool,
+) -> Result<ParsedSource, ExpressionError> {
     let mut parser = Parser {
+        fold_constants,
+        literal_spans: Vec::new(),
         tokens: tokenize(source)?,
         position: 0,
         nodes: Vec::new(),
@@ -36,13 +56,16 @@ pub(super) fn compile(source: &str, units: &UnitsOfMeasure) -> Result<Expression
     if parser.peek().kind != TokenKind::End {
         return Err(parser.peek().expected("the end of the expression"));
     }
-    Ok(Expression {
-        source: source.into(),
-        nodes: parser.nodes,
-        references: parser.references,
-        spans: parser.spans,
-        root,
-    })
+    Ok((
+        Expression {
+            source: source.into(),
+            nodes: parser.nodes,
+            references: parser.references,
+            spans: parser.spans,
+            root,
+        },
+        parser.literal_spans,
+    ))
 }
 
 impl Parser<'_> {
@@ -60,7 +83,13 @@ impl Parser<'_> {
 
     fn append(&mut self, node: Node) -> usize {
         let index = self.nodes.len();
-        self.nodes.push(node.fold(&self.nodes));
+        let node = if self.fold_constants {
+            node.fold(&self.nodes)
+        } else {
+            node
+        };
+        self.nodes.push(node);
+        self.literal_spans.push(None);
         index
     }
 
@@ -101,14 +130,18 @@ impl Parser<'_> {
     fn number(&mut self) -> Result<usize, ExpressionError> {
         let token = self.tokens[self.position];
         self.advance();
-        if let Some(quantity) = self.named_literal(token.text) {
-            return Ok(self.append(Node::Literal(quantity)));
-        }
-        let quantity = self
-            .units
-            .parse(token.text, Dimension::Unitless)
-            .map_err(|_| token.expected("a finite decimal literal"))?;
-        Ok(self.append(Node::Literal(quantity)))
+        let quantity = match self.named_literal(token.text) {
+            Some(quantity) => quantity,
+            None => self
+                .units
+                .parse(token.text, Dimension::Unitless)
+                .map_err(|_| token.expected("a finite decimal literal"))?,
+        };
+        let last = self.tokens[self.position - 1];
+        let end = last.position + last.text.len();
+        let index = self.append(Node::Literal(quantity));
+        self.literal_spans[index] = Some((token.position, end));
+        Ok(index)
     }
 
     fn named_literal(&mut self, number: &str) -> Option<Quantity> {
