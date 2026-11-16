@@ -13,6 +13,43 @@ VERSION = 1
 RUNTIME_COVERAGE = "unbounded"
 
 
+def require_checkout(root: Path, expected: str) -> None:
+    """Bind the requested revision to this worktree; example: require_checkout(repo, sha)."""
+    if not re.fullmatch(r"[0-9a-f]{40}", expected):
+        raise ValueError(f"commit {expected!r}: expected a full Git SHA-1")
+    actual_root = git_checkout_value(root, "--show-toplevel")
+    if Path(actual_root).resolve() != root.resolve():
+        raise ValueError(f"worktree {actual_root!r}: expected {str(root.resolve())!r}")
+    actual = git_checkout_value(root, "--verify", "HEAD^{commit}")
+    if actual != expected:
+        raise ValueError(f"HEAD {actual!r}: expected commit {expected!r}")
+
+
+def git_checkout_value(root: Path, *args: str) -> str:
+    """Read a Git checkout value without inherited overrides; example: git_checkout_value(repo, '--show-toplevel')."""
+    output = subprocess.check_output(
+        ["git", "-C", str(root), "rev-parse", *args], env=git_environment(), text=True
+    )
+    return output.removesuffix("\n")
+
+
+def dependency_checkout_state(root: Path) -> tuple[str, bool]:
+    """Read HEAD and cleanliness within this worktree; example: dependency_checkout_state(repo)."""
+    commit = git_checkout_value(root, "--verify", "HEAD^{commit}")
+    require_checkout(root, commit)
+    clean = worktree_clean(root)
+    require_checkout(root, commit)
+    return commit, clean
+
+
+def git_status_command(root: Path, *args: str) -> list[str]:
+    """Disable stateful Git extensions for the dependency check; example: git_status_command(repo, 'status')."""
+    return [
+        "git", "-C", str(root), "-c", "core.fsmonitor=false", "-c",
+        "core.untrackedCache=false", *args,
+    ]
+
+
 def git_tree(root: Path, commit: str) -> dict[str, str]:
     """Read tracked paths and object identities; example: git_tree(repo, commit)."""
     if not re.fullmatch(r"[0-9a-f]{40}", commit):
@@ -98,21 +135,14 @@ def scenario_records(inventory: Mapping[str, object]) -> dict[str, dict[str, obj
 def worktree_clean(root: Path) -> bool:
     """Detect tracked and untracked changes; example: worktree_clean(repo)."""
     output = subprocess.check_output(
-        [
-            "git",
-            "-C",
-            str(root),
-            "status",
-            "--porcelain",
-            "-z",
-            "--untracked-files=all",
-        ],
-        env=git_environment(),
+        git_status_command(root, "status", "--porcelain", "-z", "--untracked-files=all"),
+        env=git_environment() | {"GIT_OPTIONAL_LOCKS": "0"},
     )
     if output:
         return False
     flags = subprocess.check_output(
-        ["git", "-C", str(root), "ls-files", "-v", "-z"], env=git_environment()
+        git_status_command(root, "ls-files", "-v", "-z"),
+        env=git_environment() | {"GIT_OPTIONAL_LOCKS": "0"},
     )
     return all(entry.startswith(b"H ") for entry in flags.split(b"\0") if entry)
 
@@ -125,15 +155,28 @@ def build_map(
     runtime_root: Path | None = None,
 ) -> dict[str, object]:
     """Create a conservative map for a Git revision; example: build_map(repo, inventory, commit)."""
-    revision = source_revision(inventory)
+    require_checkout(root, commit)
+    clean = worktree_clean(root)
+    result = collect_map(root, inventory, commit, clean, runtime_scenario, runtime_root)
+    require_checkout(root, commit)
+    if worktree_clean(root) != clean:
+        raise ValueError("application worktree: expected unchanged cleanliness while mapping")
+    return result
+
+
+def collect_map(
+    root: Path, inventory: Mapping[str, object], commit: str, clean: bool,
+    runtime_scenario: str | None, runtime_root: Path | None,
+) -> dict[str, object]:
+    """Collect tracked and optional runtime inputs; example: collect_map(repo, inventory, sha, True, None, None)."""
     application_inputs = git_tree(root, commit)
     require_no_submodules(application_inputs)
     return {
         "version": VERSION,
         "application_commit": commit,
-        "source_revision": revision,
+        "source_revision": source_revision(inventory),
         "runtime_coverage": RUNTIME_COVERAGE,
-        "worktree_clean": worktree_clean(root),
+        "worktree_clean": clean,
         "application_inputs": application_inputs,
         "runtime_scenario": runtime_scenario,
         "runtime_inputs": snapshot_runtime(runtime_root) if runtime_root else None,
@@ -228,6 +271,7 @@ def changed_dependencies(
     current: str,
 ) -> list[str]:
     """List conservative tracked-input changes; example: changed_dependencies(repo, mapping, id, head)."""
+    require_checkout(root, current)
     validate_map(mapping, inventory)
     scenarios = mapping.get("scenarios")
     if not isinstance(scenarios, dict) or scenario not in scenarios:
@@ -235,7 +279,11 @@ def changed_dependencies(
     after = git_tree(root, current)
     require_no_submodules(after)
     before = checked_application_tree(root, mapping, current)
-    return changed_paths(before, after)
+    changes = changed_paths(before, after)
+    require_checkout(root, current)
+    if not worktree_clean(root):
+        raise ValueError("application worktree: expected clean state after comparison")
+    return changes
 
 
 def checked_application_tree(
