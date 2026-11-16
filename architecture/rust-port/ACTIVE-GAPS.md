@@ -88,6 +88,11 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
   passed all nine steps on the current source pin (#3889); its receipt is now
   stale. See
   `receipts/2026-11-15-open-existing-current-pin/`. Input is frame-loop scripted.
+- New Sketch: a full pinned diagnostic reported seven scenarios passing and
+  three unbound. Startup plane preference is tracked in #4009, look-at sketch
+  behavior in #4010, and the accumulated-sketch reopen scenario (#4011) needs
+  fixture clarification. See `receipts/2026-11-16-new-sketch-diagnostic/`. These are
+  frame-loop diagnostics, not verified BDD acceptance (#3978).
 - Document saving: seven basic save, reopen, cancel, and overwrite scenarios
   passed on the current source pin (#3888); their receipts are now stale. See
   `receipts/2026-11-15-save-r4-current-1/` through `-7/`. Input is frame-loop scripted.

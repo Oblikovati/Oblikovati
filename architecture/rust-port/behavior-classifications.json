@@ -824,7 +824,8 @@
       "target_module": "crates/head, crates/gui, crates/session, crates/model",
       "acceptance_test": "sketch_scenarios_use_the_native_window: new-sketch-09 Observe each automatic startup plane and restore the baseline",
       "issues": [
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/4009"
       ],
       "state": "inventoried",
       "last_receipt": null,
@@ -839,7 +840,8 @@
       "target_module": "crates/head, crates/gui, crates/session, crates/model",
       "acceptance_test": "sketch_scenarios_use_the_native_window: new-sketch-10 Compare automatic normal view on creation and edit",
       "issues": [
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/4010"
       ],
       "state": "inventoried",
       "last_receipt": null,
@@ -854,7 +856,8 @@
       "target_module": "crates/head, crates/gui, crates/session, crates/model",
       "acceptance_test": "sketch_scenarios_use_the_native_window: new-sketch-06 Save close and reopen an accumulated sketch document",
       "issues": [
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/4011"
       ],
       "state": "inventoried",
       "last_receipt": null,
