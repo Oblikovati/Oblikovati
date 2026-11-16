@@ -247,3 +247,20 @@ an admissible region, authenticate the interval backend, establish a tolerance
 budget, or qualify a feature. Exact coincidence of the true root and the
 kernel's tolerance composition remain separate obligations (#3928 and
 Martensite #494).
+
+## Single-root host assessment
+
+The session can reuse one projected root for the selected-line obligations and
+swept-point bounds. It rejects a root tied to a different snapshot, solve,
+sketch, or anchor, even if its numeric values match. The swept result retains
+the checked root. The host assessment combines that same root with the profile
+converter's complete line input, displacement-source bounds and the unchanged
+list of admission obligations. Every selected curve must occur exactly once in
+the converted input; a selected construction line or duplicate is refused.
+The assessment remains borrowed from its
+owning session; edits require the evidence to be released first.
+
+The assessment is not an extrusion certificate. It still depends on the
+interval backend and explicit constant assumptions, and it does not resolve
+kernel tolerance composition, true coincidence identity, output validation,
+or coverage of every feature path. Curved profile inputs continue to decline.

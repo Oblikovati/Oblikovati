@@ -7,10 +7,12 @@ use oblikovati_model::{
         FeatureId, part::PartFeatureDefinition, sketch_prism::SketchPrismDefinition,
         work_geometry::DatumLength,
     },
-    sketch::{ConditionalParameterBound, conditional_parameter_bound},
+    history::ConditionalProjectedSketchRoot,
+    sketch::{ConditionalParameterBound, ConditionalSketchRoot, conditional_parameter_bound},
 };
 
 /// One local displacement component with its source and conditional bounds.
+#[derive(Clone)]
 pub struct ConditionalPrismAxis {
     source: DatumLength,
     bounds: [f64; 2],
@@ -62,12 +64,17 @@ impl<O> ConditionalPrismDisplacement<'_, '_, O> {
 /// Conditional error bounds for points swept by one session-owned prism input.
 pub struct ConditionalPrismSweptPoints<'b, 'e, 's, O> {
     _displacement: &'b ConditionalPrismDisplacement<'e, 's, O>,
+    root: ConditionalSketchRoot,
     points: Vec<oblikovati_model::history::ConditionalPointDisplacement>,
 }
 impl<O> ConditionalPrismSweptPoints<'_, '_, '_, O> {
     /// Read point identities and their conditional swept displacement; example: `result.points()`.
     pub fn points(&self) -> &[oblikovati_model::history::ConditionalPointDisplacement] {
         &self.points
+    }
+    /// Read the root used to calculate the points; example: `result.root()`.
+    pub fn root(&self) -> &ConditionalSketchRoot {
+        &self.root
     }
 }
 impl<'e, 's, O: TransactionObserver> ConditionalPrismDisplacement<'e, 's, O> {
@@ -78,17 +85,27 @@ impl<'e, 's, O: TransactionObserver> ConditionalPrismDisplacement<'e, 's, O> {
         &'b self,
         sketch_box: &[[f64; 2]],
     ) -> Result<ConditionalPrismSweptPoints<'b, 'e, 's, O>, String> {
+        let projection = self._evidence.projection()?;
+        let root = projection.conditional_root_auto(sketch_box, &[])?;
+        self.swept_points_with_root(&root)
+    }
+    /// Reuse a root from this exact session evidence; example: `displacement.swept_points_with_root(&root)?`.
+    /// A root from a different snapshot is refused even when its numeric values match.
+    pub fn swept_points_with_root<'b>(
+        &'b self,
+        root: &ConditionalProjectedSketchRoot<'_, '_>,
+    ) -> Result<ConditionalPrismSweptPoints<'b, 'e, 's, O>, String> {
+        self._evidence.require_root(root)?;
         let definition = self._evidence.prism_definition(self.feature)?;
         let center = definition
             .resolve(self._evidence.session.snapshot())
             .map_err(|e| e.to_string())?
             .displacement;
-        let projection = self._evidence.projection()?;
-        let root = projection.conditional_root_auto(sketch_box, &[])?;
         let bounds = std::array::from_fn(|axis| self.axes[axis].bounds());
         let points = root.canonical_swept_point_displacements(center, bounds)?;
         Ok(ConditionalPrismSweptPoints {
             _displacement: self,
+            root: root.root().clone(),
             points,
         })
     }
@@ -111,7 +128,10 @@ impl<'s, O: TransactionObserver> SessionConditionalSketch<'s, O> {
             axes,
         })
     }
-    fn prism_definition(&self, feature: FeatureId) -> Result<&SketchPrismDefinition, String> {
+    pub(super) fn prism_definition(
+        &self,
+        feature: FeatureId,
+    ) -> Result<&SketchPrismDefinition, String> {
         let authored = self
             .session
             .snapshot()

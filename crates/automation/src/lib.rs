@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 //! Typed owner-thread queries and transactional edits; native transport is a separate boundary.
+pub mod conditional_prism;
 mod datums;
 pub mod legacy_profile;
 mod part_owner;

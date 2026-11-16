@@ -57,6 +57,47 @@ pub(super) fn check<O: TransactionObserver>(
         )
         .unwrap();
     let swept = wide.swept_points(&sketch_box).unwrap();
+    let root = projection.conditional_root_auto(&sketch_box, &[]).unwrap();
+    let shared = wide.swept_points_with_root(&root).unwrap();
+    assert_eq!(shared.points(), swept.points());
+    assert_eq!(shared.root().enclosure(), root.root().enclosure());
+    assert_eq!(
+        evidence
+            .prism_precision_obligations_with_root(feature, &root)
+            .unwrap(),
+        evidence
+            .prism_precision_obligations(feature, &sketch_box)
+            .unwrap()
+    );
+    let mut other = projection.snapshot().clone();
+    let batch = other
+        .solve_one_document_sketch(projection.sketch(), Default::default(), || false)
+        .unwrap();
+    let outcome = batch.report.reports[0].result.as_ref().unwrap().clone();
+    other.sketches = batch.candidate;
+    let other_projection = other
+        .canonical_origin_projection(projection.sketch(), projection.anchor(), &outcome)
+        .unwrap();
+    let other_root = other_projection
+        .conditional_root_auto(&sketch_box, &[])
+        .unwrap();
+    assert!(wide.swept_points_with_root(&other_root).is_err());
+    assert!(
+        evidence
+            .prism_precision_obligations_with_root(feature, &other_root)
+            .is_err()
+    );
+    let other_solve = projection
+        .snapshot()
+        .canonical_origin_projection(projection.sketch(), projection.anchor(), &outcome)
+        .unwrap();
+    let other_solve_root = other_solve.conditional_root_auto(&sketch_box, &[]).unwrap();
+    assert!(wide.swept_points_with_root(&other_solve_root).is_err());
+    assert!(
+        evidence
+            .prism_precision_obligations_with_root(feature, &other_solve_root)
+            .is_err()
+    );
     assert_eq!(
         swept
             .points()

@@ -5,7 +5,7 @@ mod prism_displacement;
 use crate::{DocumentSession, TransactionObserver};
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
-    history::{ConditionalOriginProjection, DocumentSnapshot},
+    history::{ConditionalOriginProjection, ConditionalProjectedSketchRoot, DocumentSnapshot},
     sketch::{SketchEntityId, SketchSolveOutcome},
 };
 pub use prism::PrismPrecisionObligation;
@@ -84,6 +84,20 @@ impl<O: TransactionObserver> DocumentSession<O> {
     }
 }
 impl<O: TransactionObserver> SessionConditionalSketch<'_, O> {
+    fn require_root(&self, root: &ConditionalProjectedSketchRoot<'_, '_>) -> Result<(), String> {
+        let projection = root.projection();
+        if !std::ptr::eq(projection.snapshot(), &self.snapshot)
+            || !std::ptr::eq(projection.solve_outcome(), &self.outcome)
+            || projection.sketch() != self.sketch
+            || projection.anchor() != self.anchor
+        {
+            return Err(
+                "projected root: expected this evidence's exact snapshot, solve, sketch and anchor"
+                    .into(),
+            );
+        }
+        Ok(())
+    }
     /// Borrow the current session's conditional projection; example: `evidence.projection()?`.
     pub fn projection(&self) -> Result<ConditionalOriginProjection<'_>, String> {
         self.snapshot
