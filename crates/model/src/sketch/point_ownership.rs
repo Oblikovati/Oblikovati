@@ -80,9 +80,9 @@ impl Sketch2D {
 }
 pub(super) fn require_point_ownership_schema(recipe: &SketchRecipe) -> Result<(), SketchError> {
     match (recipe.version, &recipe.defining_points) {
-        (1..=11, None) | (12..=18, Some(_)) => Ok(()),
+        (1..=11, None) | (12..=19, Some(_)) => Ok(()),
         shape => Err(SketchError::Definition(format!(
-            "point ownership recipe {shape:?}: expected no defining-point field in versions 1-11 or an explicit list in versions 12-18"
+            "point ownership recipe {shape:?}: expected no defining-point field in versions 1-11 or an explicit list in versions 12-19"
         ))),
     }
 }

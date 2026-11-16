@@ -271,8 +271,8 @@ impl Sketch2D {
         recipe: &SketchRecipe,
     ) -> Result<(), SketchError> {
         match (recipe.version, &recipe.rectangular_patterns) {
-            (1..=15, None) | (17..=18, None) => Ok(()),
-            (16..=18, Some(patterns)) if !patterns.is_empty() => patterns
+            (1..=15, None) | (17..=19, None) => Ok(()),
+            (16..=19, Some(patterns)) if !patterns.is_empty() => patterns
                 .iter()
                 .try_for_each(|pattern| self.adopt_rectangular_pattern(pattern.clone())),
             shape => Err(SketchError::Definition(format!(

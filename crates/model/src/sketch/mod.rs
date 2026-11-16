@@ -22,6 +22,8 @@ mod circular_projection;
 mod compile;
 mod constraint;
 mod construction;
+mod owned_relation;
+pub use owned_relation::SketchOwnedRelation;
 mod corner_predicate;
 pub use corner_predicate::{
     SketchCornerConstruction, SketchCornerPredicate, SketchCornerSeed, SketchCornerSize,
@@ -123,6 +125,7 @@ pub struct Sketch2D {
     spline_handles: Vec<SketchSplineHandle2D>,
     offset_splines: Vec<SketchOffsetSpline2D>,
     constraints: Vec<SketchConstraint>,
+    owned_relations: std::collections::BTreeMap<SketchConstraintId, SketchEntityId>,
     pattern_point_links: Vec<SketchPatternPointLink>,
     pattern_offsets: Vec<SketchPatternOffset>,
     rectangular_patterns: Vec<SketchRectangularPattern>,

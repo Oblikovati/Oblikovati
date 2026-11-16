@@ -6,9 +6,10 @@ impl Sketch2D {
     /// Enumerate geometric relations in authored order, independently of dimensional sources.
     /// Example: `sketch.geometric_constraints().map(|constraint| constraint.id)` for API rows.
     pub fn geometric_constraints(&self) -> impl Iterator<Item = &SketchConstraint> {
-        self.constraints
-            .iter()
-            .filter(|constraint| dimension_parameter(&constraint.relation).is_none())
+        self.constraints.iter().filter(|constraint| {
+            dimension_parameter(&constraint.relation).is_none()
+                && !self.owned_relations.contains_key(&constraint.id)
+        })
     }
     /// Resolve an applied relation's geometric index; dimensional IDs and unknown IDs are errors.
     /// Example: `let index = sketch.geometric_constraint_index(created_constraint)?;`.
@@ -23,6 +24,11 @@ impl Sketch2D {
         &mut self,
         id: SketchConstraintId,
     ) -> Result<SketchConstraint, SketchError> {
+        if self.owned_relations.contains_key(&id) {
+            return Err(SketchError::Definition(format!(
+                "structural relation {id:?}: expected deletion through its owner"
+            )));
+        }
         self.remove_authored_relation(id, false)
     }
     pub(super) fn remove_authored_relation(
@@ -30,6 +36,11 @@ impl Sketch2D {
         id: SketchConstraintId,
         dimensional: bool,
     ) -> Result<SketchConstraint, SketchError> {
+        if self.owned_relations.contains_key(&id) {
+            return Err(SketchError::Definition(format!(
+                "structural relation {id:?}: expected deletion through its owner"
+            )));
+        }
         let position = self.constraints.iter().position(|constraint| {
             constraint.id == id
                 && dimension_parameter(&constraint.relation).is_some() == dimensional
