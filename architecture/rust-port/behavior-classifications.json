@@ -22,7 +22,7 @@
       "kernel_integration": "crates/martensite/src/prism/snapshot.rs and crates/head/src/part_scene/physical.rs integrate the analytic body; Go part query uses a mesh and is not the numeric oracle.",
       "rust_tests": "Native scenario: crates/head/tests/application/body-properties/steps.rs; analytic prism assertion: crates/head/tests/owner/part_scene/physical.rs.",
       "oracle": "Independent rectangular prism formulas for volume, surface area, centroid and density-scaled mass; no Go per-body numeric comparison established.",
-      "expected_result": "Initially unavailable values become mass 24 g, area 5200 mm², volume 24000 mm³, centroid (20, 15, 10) mm for the native prism fixture and remain displayed when reopened.",
+      "expected_result": "Initially unavailable values become mass 24 g, area 5200 mm\u00b2, volume 24000 mm\u00b3, centroid (20, 15, 10) mm for the native prism fixture and remain displayed when reopened.",
       "historical_receipts": [
         {
           "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
@@ -4891,7 +4891,8 @@
       "kernel_integration": "The native viewport and document owner are used; the scenario does not request solid geometry.",
       "rust_tests": "application_scenarios_use_the_native_window: Open and cancel the first save",
       "oracle": "Pinned scenario assertions and reviewed final native capture; Go file compatibility and visual parity are not established.",
-      "expected_result": "the Save As dialog reopens with the same proposed document name selected; the user cancels the dialog again; the unsaved part remains active"
+      "expected_result": "the Save As dialog reopens with the same proposed document name selected; the user cancels the dialog again; the unsaved part remains active",
+      "baseline_source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2"
     },
     {
       "id": "scenario:14f48e698bd03b3faf10660cc4dddccfa827d553243c2c8f76d8a0089380b700",
@@ -4934,7 +4935,8 @@
       "kernel_integration": "The native viewport and document owner are used; the scenario does not request solid geometry.",
       "rust_tests": "application_scenarios_use_the_native_window: Save and reopen a newly created empty part",
       "oracle": "Pinned scenario assertions and reviewed final native capture; Go file compatibility and visual parity are not established.",
-      "expected_result": "the saved part becomes active; its viewport contains no visible model geometry; its model browser displays the origin and end-of-part marker"
+      "expected_result": "the saved part becomes active; its viewport contains no visible model geometry; its model browser displays the origin and end-of-part marker",
+      "baseline_source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2"
     },
     {
       "id": "scenario:cb5f795341d33e8781b661f83c644b2437997cfcbb69421d51fa51155c7ce1ed",
@@ -4977,7 +4979,8 @@
       "kernel_integration": "Sketch geometry is displayed after reopening through the host; this scenario does not verify a solid.",
       "rust_tests": "application_scenarios_use_the_native_window: Save changes to an existing part and reopen its sketch",
       "oracle": "Pinned scenario assertions and reviewed final native capture; Go file compatibility and visual parity are not established.",
-      "expected_result": "the user opens the selected part; the model browser contains the sketch; the rectangular sketch profile is visible in the viewport"
+      "expected_result": "the user opens the selected part; the model browser contains the sketch; the rectangular sketch profile is visible in the viewport",
+      "baseline_source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2"
     },
     {
       "id": "scenario:ec6362e3e986c02ef4690b3c134b9d166b8eeae0242613a788b7d246c671e067",
@@ -5100,7 +5103,8 @@
           "path": "architecture/rust-port/receipts/2026-11-15-save-r4-current-4/receipt-52a88b77aefd086f.json",
           "sha256": "61d6c8fbcad787341b8325c4ca68197055615e6c432a2d2ade1872e868190a28"
         }
-      ]
+      ],
+      "baseline_source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2"
     },
     {
       "id": "scenario:93af71b702f4432ad324512d976b8c68d1cbc9c11e2f0bf5514abe81fedbdb3e",
@@ -5138,7 +5142,8 @@
           "path": "architecture/rust-port/receipts/2026-11-15-save-r4-current-5/receipt-93af71b702f4432a.json",
           "sha256": "c95bc4b46bc464c86a333183083973dbf3f12faf55fb6ce1a5ece37191b5b778"
         }
-      ]
+      ],
+      "baseline_source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2"
     },
     {
       "id": "scenario:688d756622cc25dc4d9bdef3efe4aba56339ba73f01748fc67987a5b1327c3bf",
@@ -5207,7 +5212,8 @@
       "kernel_integration": "The native viewport and document owner are used; the scenario does not request solid geometry.",
       "rust_tests": "application_scenarios_use_the_native_window: Save a new modified part while closing it",
       "oracle": "Pinned scenario assertions and reviewed final native capture; Go file compatibility and visual parity are not established.",
-      "expected_result": "the user reopens the newly saved part in the same session; the part becomes active; its model browser contains the finished sketch"
+      "expected_result": "the user reopens the newly saved part in the same session; the part becomes active; its model browser contains the finished sketch",
+      "baseline_source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2"
     },
     {
       "id": "scenario:408b526faa48672c210f18a75a125074944da21cbd1a60dc5880e411c43b4442",
@@ -5507,7 +5513,8 @@
           "path": "architecture/rust-port/receipts/2026-11-15-save-r4-current-7/receipt-9eede5804b59d06f.json",
           "sha256": "b2cfda999fbedabd37f8c434f2df3f81fad0806b71cdc671b59e598e72e6db98"
         }
-      ]
+      ],
+      "baseline_source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2"
     },
     {
       "id": "scenario:29faf9bb78c1fe481e8278f78bf88fded3506448069ee2778bb73ba656f93fd8",
