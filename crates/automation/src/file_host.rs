@@ -82,6 +82,7 @@ struct FileContext<'a, O: TransactionObserver, W, F> {
     assembly_producer: Option<Result<String, String>>,
     part_update: Option<&'a mut dyn crate::PartUpdateAccess<O, W, F>>,
     extrusion: Option<&'a dyn crate::ExtrudeRegionAccess>,
+    fillet: Option<&'a dyn crate::FilletAccess>,
     drawing_views: Option<&'a dyn crate::DrawingViewProjectionAccess>,
     sketch_preferences:
         Option<&'a mut dyn oblikovati_model::application_options::SketchPreferenceAccess>,
@@ -152,6 +153,11 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHos
         self.context.get_mut().extrusion = Some(backend);
         self
     }
+    /// Supply exact Fillet body resolution and validation; example: `host.with_fillet(&backend)`.
+    pub fn with_fillet(mut self, backend: &'a dyn crate::FilletAccess) -> Self {
+        self.context.get_mut().fillet = Some(backend);
+        self
+    }
     /// Borrow the application viewport palettes; example: `host.with_color_schemes(&mut registry)`.
     pub fn with_color_schemes(
         mut self,
@@ -213,6 +219,7 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHos
                 assembly_producer: None,
                 part_update: None,
                 extrusion: None,
+                fillet: None,
                 drawing_views: None,
                 sketch_construction: None,
             }),
@@ -412,6 +419,10 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
             return Ok(result);
         }
         if method == METHOD_FEATURES_ADD {
+            let args: AddFeatureArgs = decode(method, request)?;
+            if args.kind == oblikovati_api::wire::featureargs::KIND_FILLET {
+                return crate::fillet::apply_wire(self.files, self.fillet, args);
+            }
             return crate::extrusion::apply(self.files, self.extrusion, request);
         }
         if method == METHOD_FEATURES_SET_SUPPRESSED {

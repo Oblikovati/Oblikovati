@@ -158,7 +158,9 @@ pub(crate) fn query_evaluated<O: TransactionObserver, W: WorkspaceObserver, F: D
 impl DatumCollection {
     fn contains(self, definition: &WorkGeometryDefinition) -> bool {
         let kind = match definition {
-            WorkGeometryDefinition::SketchPrism(_) | WorkGeometryDefinition::DeleteBody(_) => {
+            WorkGeometryDefinition::SketchPrism(_)
+            | WorkGeometryDefinition::DeleteBody(_)
+            | WorkGeometryDefinition::Fillet(_) => {
                 return false;
             }
             WorkGeometryDefinition::Axis(_) | WorkGeometryDefinition::AxisThroughPoints(_) => {

@@ -18,8 +18,13 @@ mod edit;
 mod extrusion;
 mod feature_suppression;
 mod file_host;
+mod fillet;
 pub use extrusion::{
     ExtrudeRegionAccess, PreparedExtrusion, prepare_extrusion, validate_extrude_distance,
+};
+pub use fillet::{
+    CertifiedFilletAccess, CertifiedFilletValidation, FilletAccess, FilletValidation,
+    PreparedFillet, prepare_fillet,
 };
 mod interests;
 pub use file_host::{

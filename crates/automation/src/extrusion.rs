@@ -195,17 +195,24 @@ fn sketch_index(snapshot: &DocumentSnapshot, index: i64) -> Result<DocumentSketc
         })
 }
 pub(super) fn distance(snapshot: &DocumentSnapshot, source: &str) -> Result<DatumLength, Error> {
+    positive_length(snapshot, source, "extrude distance")
+}
+pub(crate) fn positive_length(
+    snapshot: &DocumentSnapshot,
+    source: &str,
+    label: &str,
+) -> Result<DatumLength, Error> {
     let parameters = &snapshot.parameters;
     let text = source.trim();
     if let Some(id) = parameters.find(text) {
         let quantity = parameters.model_value(id).map_err(api_error)?;
-        require_positive(quantity.value, quantity.dimension, source)?;
+        require_positive(quantity.value, quantity.dimension, source, label)?;
         return Ok(DatumLength::Parameter(id));
     }
     let expression = Expression::parse(text, parameters.units()).map_err(api_error)?;
     if !expression.references().is_empty() {
         return Err(Error(format!(
-            "extrude distance {source:?}: expected a parameter name or a reference-free length expression"
+            "{label} {source:?}: expected a parameter name or a reference-free length expression"
         )));
     }
     let mut quantity = expression.evaluate().map_err(api_error)?;
@@ -214,7 +221,7 @@ pub(super) fn distance(snapshot: &DocumentSnapshot, source: &str) -> Result<Datu
             .units()
             .from_preferred(quantity.value, Dimension::Length);
     }
-    require_positive(quantity.value, quantity.dimension, source)?;
+    require_positive(quantity.value, quantity.dimension, source, label)?;
     Ok(DatumLength::Constant(quantity.value))
 }
 /// Check an extrusion expression with the same rules as feature creation.
@@ -222,10 +229,15 @@ pub(super) fn distance(snapshot: &DocumentSnapshot, source: &str) -> Result<Datu
 pub fn validate_extrude_distance(snapshot: &DocumentSnapshot, source: &str) -> Result<(), Error> {
     distance(snapshot, source).map(|_| ())
 }
-fn require_positive(value: f64, dimension: Dimension, source: &str) -> Result<(), Error> {
+fn require_positive(
+    value: f64,
+    dimension: Dimension,
+    source: &str,
+    label: &str,
+) -> Result<(), Error> {
     if dimension != Dimension::Length || !value.is_finite() || value <= 0. {
         return Err(Error(format!(
-            "extrude distance {source:?} resolved to {value:?} {dimension:?}: expected a finite positive length"
+            "{label} {source:?} resolved to {value:?} {dimension:?}: expected a finite positive length"
         )));
     }
     Ok(())

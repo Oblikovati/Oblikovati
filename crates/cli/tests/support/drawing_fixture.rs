@@ -2,7 +2,7 @@
 //! Real parameter-driven part and a drawing that references it.
 #[path = "../../../../test-utilities/rust/selected_sketch_prism.rs"]
 #[allow(dead_code)]
-mod prism;
+pub(super) mod prism;
 use oblikovati_model::drawing::{DrawingBaseViewDefinition, DrawingDocument};
 use oblikovati_persistence::package::DocumentPackage;
 use std::path::{Path, PathBuf};

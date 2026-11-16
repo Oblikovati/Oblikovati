@@ -52,6 +52,7 @@ struct ScriptSession<'a, F> {
     guids: &'a mut dyn GuidSource,
     version: String,
     replay: oblikovati_automation::PartReplayService,
+    fillet: oblikovati_automation::CertifiedFilletAccess,
 }
 impl<'a, F: DocumentFiles> ScriptSession<'a, F> {
     fn new(files: F, guids: &'a mut dyn GuidSource) -> Result<Self, String> {
@@ -59,7 +60,12 @@ impl<'a, F: DocumentFiles> ScriptSession<'a, F> {
             documents: FileWorkspace::new(observations::CliObservations, files),
             guids,
             version: BuildIdentity::parse(BUILD_MANIFEST)?.version,
-            replay: Default::default(),
+            replay: oblikovati_automation::PartReplayService::with_policy(
+                oblikovati_drawing::modelling_policy(),
+            )?,
+            fillet: oblikovati_automation::CertifiedFilletAccess::new(
+                oblikovati_drawing::modelling_policy(),
+            )?,
         })
     }
     fn open(&mut self, path: Option<&Path>) -> Result<(), String> {
@@ -104,6 +110,7 @@ impl<'a, F: DocumentFiles> ScriptSession<'a, F> {
             &projection,
         )
         .with_sketch_construction(&construction, Default::default())
+        .with_fillet(&self.fillet)
         .with_part_update(&mut self.replay);
         execution
             .wait(&host, output)

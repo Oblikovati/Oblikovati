@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Resolve edit continuity against the published ordered part state.
-use oblikovati_martensite::{
-    CertifiedNamedPrismEvaluator, NamedPrismEvaluator, PrismResolutionPolicy,
-};
+use oblikovati_martensite::{CertifiedNamedSolidEvaluator, PrismResolutionPolicy};
 use oblikovati_model::{
     document_sketch::DocumentSketchId, history::DocumentEditHistory, identity::DocumentGuid,
 };
@@ -48,18 +46,16 @@ impl PartSketchContinuity {
         history: &DocumentEditHistory,
     ) -> Result<oblikovati_model::feature::work_geometry::WorkGeometryEvaluation, String> {
         let snapshot = history.snapshot();
-        let (result, _) = match self.resolution {
-            Some(policy) => snapshot.recompute_part_with_sketches(
-                &mut CertifiedNamedPrismEvaluator::with_policy(history, self.document, policy),
-                self.options,
-            ),
-            None => snapshot.recompute_part_with_sketches(
-                &mut NamedPrismEvaluator::new(history, self.document),
-                self.options,
-            ),
-        }
-        .map_err(|error| error.to_string())?;
-        Ok(result.datum_evaluation())
+        let mut evaluator = CertifiedNamedSolidEvaluator::with_optional_policy(
+            history,
+            self.document,
+            self.resolution,
+        );
+        let (result, _) = snapshot
+            .recompute_part_with_sketches(&mut evaluator, self.options)
+            .map_err(|error| error.to_string())?;
+        let datums = result.datum_evaluation();
+        Ok(datums)
     }
 }
 impl SketchContinuityResolver for PartSketchContinuity {
@@ -71,3 +67,7 @@ impl SketchContinuityResolver for PartSketchContinuity {
         self.plane(history, sketch).map(|_| ())
     }
 }
+
+#[cfg(test)]
+#[path = "../tests/part_sketch_continuity/mod.rs"]
+mod tests;

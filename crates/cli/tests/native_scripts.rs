@@ -19,6 +19,80 @@ fn write_source(directory: &Path, source: &str) -> std::path::PathBuf {
 }
 
 #[test]
+fn headless_script_creates_replays_and_saves_a_named_fillet() {
+    let directory = tempfile::tempdir().unwrap();
+    let document = saved_named_part(directory.path());
+    let guid = "11111111-2222-3333-4444-555555555555".parse().unwrap();
+    let edge = oblikovati_model::identity::SemanticReferenceName::new(
+        guid,
+        1,
+        2,
+        "sketch-prism",
+        "start-edge-curve",
+        &[1, 101],
+    )
+    .unwrap()
+    .encode()
+    .unwrap();
+    let key: String = edge.iter().map(|byte| format!("{byte:02x}")).collect();
+    let source = format!(
+        r#"local result=oblikovati.call("features.add",{{kind="fillet",args={{edgeRefs={{"{key}"}},radius="1 mm"}}}})
+assert(result.kind=="fillet" and result.healthy)
+assert(not oblikovati.documents.update{{}}.requiresUpdate)
+print("fillet-ok")"#
+    );
+    let script = write_source(directory.path(), &source);
+    let saved = directory.path().join("fillet.opd");
+    let output = cli(&[
+        "script",
+        "run",
+        script.to_str().unwrap(),
+        "--doc",
+        document.to_str().unwrap(),
+        "--save",
+        saved.to_str().unwrap(),
+    ]);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(String::from_utf8_lossy(&output.stdout).contains("fillet-ok"));
+    let package =
+        oblikovati_persistence::package::DocumentPackage::decode(&std::fs::read(&saved).unwrap())
+            .unwrap();
+    let geometry = package.restore_work_geometry().unwrap();
+    assert_eq!(geometry.program.features().len(), 2);
+    let reopen = write_source(
+        directory.path(),
+        "assert(not oblikovati.documents.update{}.requiresUpdate); print('reopened')",
+    );
+    let reopened = cli(&[
+        "script",
+        "run",
+        reopen.to_str().unwrap(),
+        "--doc",
+        saved.to_str().unwrap(),
+    ]);
+    assert!(
+        reopened.status.success(),
+        "{}",
+        String::from_utf8_lossy(&reopened.stderr)
+    );
+    assert!(String::from_utf8_lossy(&reopened.stdout).contains("reopened"));
+}
+fn saved_named_part(folder: &Path) -> std::path::PathBuf {
+    let source = folder.join("named-part.opd");
+    let snapshot = drawing_fixture::prism::selected_prism_document();
+    let package = oblikovati_persistence::package::DocumentPackage::decode(b"schemaVersion: 2\ndocumentType: 1\nidentity: {internalName: 11111111-2222-3333-4444-555555555555}\n")
+        .unwrap().with_parameters(&snapshot.parameters, snapshot.parameters.units().clone()).unwrap()
+        .with_sketches(&snapshot.sketches, 1, 104).unwrap()
+        .with_work_geometry(&snapshot.work_geometry, 1).unwrap();
+    std::fs::write(&source, package.encode().unwrap()).unwrap();
+    source
+}
+
+#[test]
 fn script_updates_a_part_and_tracks_freshness_across_calls() {
     let directory = tempfile::tempdir().unwrap();
     let source = r#"

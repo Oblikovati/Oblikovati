@@ -2,7 +2,7 @@
 //! Shared part replay and freshness ownership for desktop and headless hosts.
 use oblikovati_api::wire::FeatureError;
 use oblikovati_martensite::{
-    EvaluationFailure, NamedPrismEvaluator, NamedPrismSnapshot, PrismResolutionPolicy,
+    CertifiedNamedSolidEvaluator, EvaluationFailure, NamedSolid, PrismResolutionPolicy,
 };
 use oblikovati_model::{
     feature::{
@@ -20,7 +20,7 @@ use oblikovati_session::{
 };
 use std::collections::BTreeMap;
 type NamedSketchRecompute = oblikovati_session::part_evaluation::CompletedPartSketchRecompute<
-    NamedPrismSnapshot,
+    NamedSolid,
     EvaluationFailure,
 >;
 
@@ -78,14 +78,22 @@ pub trait PartUpdateAccess<O: TransactionObserver, W: WorkspaceObserver, F: Docu
 /// A headless owner of generation-checked Martensite replay results.
 #[derive(Default)]
 pub struct PartReplayService {
-    slots: BTreeMap<u64, PartEvaluationSlot<NamedPrismSnapshot, EvaluationFailure>>,
+    slots: BTreeMap<u64, PartEvaluationSlot<NamedSolid, EvaluationFailure>>,
+    resolution: Option<PrismResolutionPolicy>,
 }
 impl PartReplayService {
+    /// Create a certified headless replay owner; example: `PartReplayService::with_policy(policy)?`.
+    pub fn with_policy(policy: PrismResolutionPolicy) -> Result<Self, String> {
+        Ok(Self {
+            slots: BTreeMap::new(),
+            resolution: Some(policy.validate()?),
+        })
+    }
     fn current_slot<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
         &mut self,
         files: &mut FileWorkspace<O, W, F>,
         document: u64,
-    ) -> Result<&PartEvaluationSlot<NamedPrismSnapshot, EvaluationFailure>, String> {
+    ) -> Result<&PartEvaluationSlot<NamedSolid, EvaluationFailure>, String> {
         let session = files
             .workspace()
             .session(document)
@@ -112,8 +120,8 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
     ) -> Result<Vec<FeatureError>, String> {
         self.slots
             .retain(|id, _| files.workspace().documents().contains(id));
-        refresh_part_sketches(files, document, None)?;
-        let completed = complete_part_replay(files, document, None)?;
+        refresh_part_sketches(files, document, self.resolution)?;
+        let completed = complete_part_replay(files, document, self.resolution)?;
         let slot = self.slots.entry(document).or_default();
         files
             .commands(document)
@@ -172,7 +180,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
         document: u64,
         candidate: &DocumentSnapshot,
     ) -> Result<oblikovati_model::feature::work_geometry::WorkGeometryEvaluation, String> {
-        preview_part_datums(files, document, candidate, None)
+        preview_part_datums(files, document, candidate, self.resolution)
     }
     fn current_part_datums(
         &mut self,
@@ -232,21 +240,11 @@ fn prepare_part_sketches<O: TransactionObserver, W: WorkspaceObserver, F: Docume
         .map_err(|error| error.to_string())?
         .internal_name;
     let request = session.prepare_part_evaluation();
-    let completed = match resolution {
-        Some(policy) => request.recompute_sketches(
-            &mut oblikovati_martensite::CertifiedNamedPrismEvaluator::with_policy(
-                session.history(),
-                guid,
-                policy,
-            ),
-            options,
-        ),
-        None => request.recompute_sketches(
-            &mut NamedPrismEvaluator::new(session.history(), guid),
-            options,
-        ),
-    }
-    .map_err(|error| error.to_string())?;
+    let mut evaluator =
+        CertifiedNamedSolidEvaluator::with_optional_policy(session.history(), guid, resolution);
+    let completed = request
+        .recompute_sketches(&mut evaluator, options)
+        .map_err(|error| error.to_string())?;
     Ok(Some(completed))
 }
 
@@ -265,27 +263,19 @@ pub fn preview_part_datums<O: TransactionObserver, W: WorkspaceObserver, F: Docu
         .identity(document)
         .map_err(|error| error.to_string())?
         .internal_name;
-    let result = match resolution {
-        Some(policy) => candidate.evaluate_part_features(
-            &mut oblikovati_martensite::CertifiedNamedPrismEvaluator::with_policy(
-                session.history(),
-                guid,
-                policy,
-            ),
-        ),
-        None => {
-            candidate.evaluate_part_features(&mut NamedPrismEvaluator::new(session.history(), guid))
-        }
-    }
-    .map_err(|error| error.to_string())?;
-    Ok(result.datum_evaluation())
+    let mut evaluator =
+        CertifiedNamedSolidEvaluator::with_optional_policy(session.history(), guid, resolution);
+    candidate
+        .evaluate_part_features(&mut evaluator)
+        .map(|result| result.datum_evaluation())
+        .map_err(|error| error.to_string())
 }
 
 /// Bind a named face through an adopted result; example: `resolve_slot_face(files, id, slot, &face)?`.
 pub fn resolve_slot_face<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &FileWorkspace<O, W, F>,
     document: u64,
-    slot: &PartEvaluationSlot<NamedPrismSnapshot, EvaluationFailure>,
+    slot: &PartEvaluationSlot<NamedSolid, EvaluationFailure>,
     face: &oblikovati_model::feature::work_plane::WorkPlaneFaceReference,
 ) -> Result<oblikovati_model::sketch::SketchPlane, String> {
     let workspace = files.workspace();
@@ -298,7 +288,7 @@ pub fn resolve_slot_face<O: TransactionObserver, W: WorkspaceObserver, F: Docume
         .internal_name;
     slot.resolve_planar_face(
         session,
-        &NamedPrismEvaluator::new(session.history(), guid),
+        &CertifiedNamedSolidEvaluator::with_optional_policy(session.history(), guid, None),
         face,
     )
 }
@@ -308,7 +298,7 @@ pub fn resolve_slot_face<O: TransactionObserver, W: WorkspaceObserver, F: Docume
 pub fn slot_datums_for_face<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &FileWorkspace<O, W, F>,
     document: u64,
-    slot: &PartEvaluationSlot<NamedPrismSnapshot, EvaluationFailure>,
+    slot: &PartEvaluationSlot<NamedSolid, EvaluationFailure>,
     face: &oblikovati_model::feature::work_plane::WorkPlaneFaceReference,
 ) -> Result<oblikovati_session::part_evaluation::CurrentPartDatums, String> {
     let workspace = files.workspace();
@@ -321,7 +311,7 @@ pub fn slot_datums_for_face<O: TransactionObserver, W: WorkspaceObserver, F: Doc
         .internal_name;
     slot.current_datums_for_face(
         session,
-        &NamedPrismEvaluator::new(session.history(), guid),
+        &CertifiedNamedSolidEvaluator::with_optional_policy(session.history(), guid, None),
         face,
     )
 }
@@ -330,7 +320,7 @@ pub fn slot_datums_for_face<O: TransactionObserver, W: WorkspaceObserver, F: Doc
 /// Example: `part_replay_is_stale(session, slot)` before updating.
 pub fn part_replay_is_stale<O: TransactionObserver>(
     session: &oblikovati_session::DocumentSession<O>,
-    slot: Option<&PartEvaluationSlot<NamedPrismSnapshot, EvaluationFailure>>,
+    slot: Option<&PartEvaluationSlot<NamedSolid, EvaluationFailure>>,
 ) -> bool {
     !session.snapshot().work_geometry.features().is_empty()
         && slot.is_none_or(|result| result.current(session).is_err())
@@ -342,7 +332,7 @@ pub fn complete_part_replay<O: TransactionObserver, W: WorkspaceObserver, F: Doc
     files: &FileWorkspace<O, W, F>,
     document: u64,
     resolution: Option<PrismResolutionPolicy>,
-) -> Result<CompletedPartEvaluation<NamedPrismSnapshot, EvaluationFailure>, String> {
+) -> Result<CompletedPartEvaluation<NamedSolid, EvaluationFailure>, String> {
     let workspace = files.workspace();
     let guid = workspace
         .identity(document)
@@ -352,17 +342,11 @@ pub fn complete_part_replay<O: TransactionObserver, W: WorkspaceObserver, F: Doc
         .session(document)
         .map_err(|error| error.to_string())?;
     let request = session.prepare_part_evaluation();
-    match resolution {
-        Some(policy) => request.evaluate(
-            &mut oblikovati_martensite::CertifiedNamedPrismEvaluator::with_policy(
-                session.history(),
-                guid,
-                policy,
-            ),
-        ),
-        None => request.evaluate(&mut NamedPrismEvaluator::new(session.history(), guid)),
-    }
-    .map_err(|error| error.to_string())
+    let mut evaluator =
+        CertifiedNamedSolidEvaluator::with_optional_policy(session.history(), guid, resolution);
+    request
+        .evaluate(&mut evaluator)
+        .map_err(|error| error.to_string())
 }
 
 /// Convert ordered replay health to canonical feature errors.
@@ -400,6 +384,7 @@ fn feature_kind(definition: &PartFeatureDefinition) -> &'static str {
     match definition {
         SketchPrism(_) => "extrude",
         DeleteBody(_) => "delete-body",
+        Fillet(_) => "fillet",
         Fixed(_) => "fixed-frame",
         Offset { .. } => "plane-offset",
         ParallelThroughPoint(_) => "plane-point",
