@@ -120,6 +120,7 @@ fn relative_icon(world: &mut ApplicationWorld) {
 }
 
 #[when("I choose Base Point and click its center")]
+#[when("the user chooses Base Point and clicks its center")]
 fn choose_base(world: &mut ApplicationWorld) {
     world.sketch_click(CENTER);
 }
@@ -131,6 +132,7 @@ fn endpoint_requested(world: &mut ApplicationWorld) {
 }
 
 #[when("I type 1 then 0 into X and Tab to Y")]
+#[when("the user types 1 then 0 into X and presses Tab to Y")]
 fn type_x(world: &mut ApplicationWorld) {
     world.click_precise_field("X");
     world.type_text("10");
@@ -138,6 +140,7 @@ fn type_x(world: &mut ApplicationWorld) {
 }
 
 #[when("I type 0 and press Enter")]
+#[when("the user types 0 and presses Enter")]
 fn type_y(world: &mut ApplicationWorld) {
     world.type_text("0");
     world.key(ViewportPhysicalKey::Enter, false);
@@ -159,6 +162,10 @@ fn ellipse_moved(world: &mut ApplicationWorld) {
     let center = before.ellipses()[0].center();
     let original = before.point(center).unwrap().position;
     let moved = world.edited_geometry().point(center).unwrap().position;
+    assert!(
+        (moved[0] - original[0] - 1.).abs() < 1e-8 && (moved[1] - original[1]).abs() < 1e-8,
+        "expected a 10 mm X displacement, got {original:?} -> {moved:?}"
+    );
     let old_pixel = world.sketch_pixel_of(original);
     let new_pixel = world.sketch_pixel_of(moved);
     assert!(
@@ -266,6 +273,7 @@ fn both_ellipses(world: &mut ApplicationWorld) {
 }
 
 #[when("Done is clicked")]
+#[when("the user clicks Done")]
 fn done(world: &mut ApplicationWorld) {
     let done = world.run_in_window("Move", "Done").center();
     world.click(diagnostics::pointer_pixels(done));
