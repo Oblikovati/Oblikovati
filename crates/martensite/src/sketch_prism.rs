@@ -6,7 +6,12 @@ pub use regions::{
     certified_sketch_regions_with_policy,
 };
 pub(crate) mod certified;
+mod conditional_profile;
 mod incidence;
+pub use conditional_profile::{
+    ConditionalProfileLine, ConditionalProfileMapping, ConditionalProfileVertex,
+    conditional_profile_mapping,
+};
 pub(crate) mod profile_extent;
 use crate::{
     EvaluationEntity as Entity, EvaluationFailure, EvaluationFailureKind as Kind,
