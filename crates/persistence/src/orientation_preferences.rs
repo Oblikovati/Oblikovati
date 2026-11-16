@@ -47,7 +47,8 @@ impl<Files: PackageFileReader + AtomicFiles> OrientationPreferenceAccess
         let mut recipe =
             read_recipe(&self.path, &mut self.files).map_err(|error| error.to_string())?;
         recipe.lock_to_selection = locked;
-        let bytes = serde_yaml_ng::to_string(&recipe).map_err(|error| error.to_string())?;
+        let bytes =
+            crate::preference_yaml_guard::encode(&recipe).map_err(|error| error.to_string())?;
         replace_file(&self.path, bytes.as_bytes(), &mut self.files)
             .map_err(|error| error.to_string())?;
         self.locked = locked;

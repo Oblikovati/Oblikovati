@@ -41,7 +41,7 @@ impl<Files: PackageFileReader + AtomicFiles> KeymapPreferenceAccess
         self.delta.clone()
     }
     fn set_keymap(&mut self, delta: &KeymapExport) -> Result<(), String> {
-        let encoded = serde_yaml_ng::to_string(delta)
+        let encoded = crate::preference_yaml_guard::encode(delta)
             .map_err(|error| failure(&self.path, error).to_string())?;
         replace_file(&self.path, encoded.as_bytes(), &mut self.files)
             .map_err(|error| failure(&self.path, error).to_string())?;
