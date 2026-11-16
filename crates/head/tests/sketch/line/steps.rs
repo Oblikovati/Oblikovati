@@ -8,12 +8,20 @@ const SEGMENT: [[i32; 2]; 2] = [[620, 300], [840, 420]];
 
 #[given("the MCAD Software is running")]
 fn software_running(world: &mut ApplicationWorld) {
-    world.expect_text("Ready");
+    assert!(world.state().sketch_at_ready);
 }
 #[given("an empty editable planar sketch is active")]
 fn empty_sketch(world: &mut ApplicationWorld) {
-    world.start_empty_sketch();
-    world.expect_ready();
+    let geometry = world.edited_geometry();
+    assert_eq!(geometry.entity_ids().len(), geometry.points().len());
+    assert!(geometry.points().len() <= 1);
+    assert!(
+        geometry
+            .points()
+            .iter()
+            .all(|point| point.position == [0., 0.])
+    );
+    assert!(world.state().sketch_at_ready);
 }
 #[when("I select Line and click two distinct points")]
 #[when("the user select Line and click two distinct points")]
@@ -39,7 +47,7 @@ fn one_segment_and_next(world: &mut ApplicationWorld) {
 }
 #[then("the command ends and the visible segment remains")]
 fn command_ended(world: &mut ApplicationWorld) {
-    world.expect_ready();
+    assert!(world.state().sketch_at_ready);
     world.expect_segment_drawn(SEGMENT[0], SEGMENT[1]);
 }
 
