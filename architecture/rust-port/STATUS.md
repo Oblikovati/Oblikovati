@@ -34,7 +34,9 @@ Last checked: 2026-11-16 at application commit `c714736c7`. Refresh from current
   `receipts/2026-11-15-api-candidate-gate/`. It is not a release or hosted CI result.
 - Scenario pin: `e76cb749ed43c73a91c24854057da7c890041f51`, a local snapshot
   of the unversioned source. It is not an upstream commit. The live feature
-  inventory matched the pin at the source sync. The source tags 39 observations
+  inventory matched the pin again on 2026-11-16: no `.feature` files were added,
+  changed, or removed. The comparison covers `.feature` files only.
+  The source tags 39 observations
   as capture-only and the remaining 34 document-creation cases as capture-host
   only; these are excluded or blocked, not passing. Follow `bdd-workflow.md`
   when source files change; use a unique Cargo target for each active worktree.
