@@ -287,3 +287,6 @@ fn pick_query_classifies_the_same_index_it_uses_for_witnesses() {
     );
     assert!(query.entity_kind(SketchEntityId(99)).is_err());
 }
+
+#[path = "sketch_pick_performance.rs"]
+mod sketch_pick_performance;

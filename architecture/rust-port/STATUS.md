@@ -25,7 +25,9 @@ Last checked: 2026-11-16 on `rust-work` after `6ba45dcb1`. Refresh from current 
   pointer-motion run measured 20.738 ms median and 24.861 ms p95 at 1440 × 900;
   the 60 fps frame budget is 16.67 ms. See `receipts/2026-11-16-sketch-frame-baseline-4031/`.
   Host capture work is #4032; analytic candidate scaling is #4035; checked
-  no-readback presentation is Martensite #501. Neither measurement proves
+  no-readback presentation is Martensite #501; efficient checked previews
+  are Martensite #504. Native batch projection costs and Martensite #505 are
+  recorded in `receipts/2026-11-16-pick-phases-4035/`. Neither measurement proves
   input-to-display latency or a universal rate.
 - Application closing (#4030) has a native close guard and save prompt. The
   current live feature passed 3/3 scenarios in an X11 diagnostic at `2dee60eef`;
@@ -71,9 +73,10 @@ Last checked: 2026-11-16 on `rust-work` after `6ba45dcb1`. Refresh from current 
   in-place geometry edits (#4029) remain separate open defects.
 - Scenario pin: `b576445b98cffd686dcc05aa8c017de2a591c8c8`, a local snapshot
   of the unversioned source. It is not an upstream commit. At the latest check,
-  the live solid viewport and Sketch3D lifecycle features had changed, and a
-  Sketch3D spline feature was added (#4038). Review them in the next sync; the
-  comparison covers `.feature` files only.
+  the live solid viewport and Sketch3D arc and lifecycle features had changed.
+  Five Sketch3D features were added: curve on face, intersection curve, project
+  to surface, silhouette curve, and spline (#4038). Review them in the next
+  sync; the comparison covers `.feature` files only.
   The source tags 60 declarations as capture-only and 34 more as capture-host
   only; they are not portable passing evidence. Follow `bdd-workflow.md`
   when source files change; use a unique Cargo target for each active worktree.

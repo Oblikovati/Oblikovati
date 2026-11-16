@@ -1,0 +1,62 @@
+// SPDX-License-Identifier: GPL-2.0-only
+//! Measures the host projection boundary used by analytic sketch picking (#4035).
+use super::*;
+use oblikovati_model::sketch::SketchPlane;
+
+#[test]
+#[ignore = "measure checked sketch projection in an optimized build"]
+fn measure_sketch_projection_batches() {
+    let runtime = ViewportRuntime::new(Default::default()).unwrap();
+    let mut offscreen = runtime.open_offscreen([1440, 900]).unwrap();
+    let mut native = runtime
+        .open_window("Projection benchmark", [1440, 900])
+        .unwrap();
+    native.poll_events(64).unwrap();
+    assert_eq!(native.drawable_extent().unwrap(), [1440, 900]);
+    assert_eq!(offscreen.drawable_extent().unwrap(), [1440, 900]);
+    eprintln!(
+        "projection device={}, extent=1440x900",
+        runtime.device_name()
+    );
+    for count in [5_usize, 201, 1001] {
+        measure_projection(&offscreen, "offscreen", count);
+        measure_projection(&native, "native", count);
+    }
+    offscreen.close();
+    native.close();
+    assert!(runtime.validation_errors().unwrap().is_empty());
+}
+
+fn measure_projection(view: &Viewport, target: &str, count: usize) {
+    let points: Vec<_> = (0..count)
+        .map(|i| [i as f64 * 0.04 - 4., (i % 2) as f64 * 0.1])
+        .collect();
+    let mut samples = Vec::with_capacity(120);
+    for sample in 0..140 {
+        let start = Instant::now();
+        let projected = view.sketch_pixels(SketchPlane::xy(), &points).unwrap();
+        std::hint::black_box(projected);
+        if sample >= 20 {
+            samples.push(start.elapsed());
+        }
+    }
+    report_projection(target, count, &samples);
+}
+
+fn report_projection(target: &str, count: usize, samples: &[Duration]) {
+    for (index, elapsed) in samples.iter().enumerate() {
+        eprintln!(
+            "sketch_projection_sample target={target} points={count} sample={index} elapsed_ns={}",
+            elapsed.as_nanos()
+        );
+    }
+    let mut sorted = samples.to_vec();
+    sorted.sort_unstable();
+    eprintln!(
+        "sketch_projection target={target} points={count} samples={} p50_us={:.3} p95_us={:.3} max_us={:.3}",
+        sorted.len(),
+        sorted[60].as_secs_f64() * 1e6,
+        sorted[113].as_secs_f64() * 1e6,
+        sorted[119].as_secs_f64() * 1e6
+    );
+}
