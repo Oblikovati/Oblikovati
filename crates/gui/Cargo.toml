@@ -26,7 +26,7 @@ syn = { version = "=2.0.119", features = ["full", "visit"] }
 tempfile = "=3.27.0"
 
 [target.'cfg(target_os = "linux")'.dev-dependencies]
-rustix = { version = "=1.1.5", features = ["event"] }
+rustix = { version = "=1.1.6", features = ["event"] }
 
 [build-dependencies]
 cc = "=1.7.0"
