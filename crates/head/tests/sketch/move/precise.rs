@@ -39,6 +39,12 @@ fn precise_base_point(world: &mut ApplicationWorld) {
     select_ellipse(world);
 }
 
+#[when("the user opens the coordinate-mode dropdown")]
+fn open_coordinate_modes(world: &mut ApplicationWorld) {
+    let button = world.run_in_window("Precise Input", "Mode").center();
+    world.click(diagnostics::pointer_pixels(button));
+}
+
 #[then("four coordinate and angle combinations are listed")]
 fn coordinate_modes(world: &mut ApplicationWorld) {
     for name in [
@@ -52,6 +58,7 @@ fn coordinate_modes(world: &mut ApplicationWorld) {
 }
 
 #[when("I choose Distance and X axis angle")]
+#[when("the user chooses Distance and X axis angle")]
 fn distance_angle(world: &mut ApplicationWorld) {
     world.click_text("Distance and X axis angle");
 }
@@ -71,6 +78,7 @@ fn reference_base_point(world: &mut ApplicationWorld) {
 }
 
 #[when("I open the left toolbar dropdown")]
+#[when("the user opens the left toolbar dropdown")]
 fn reference_menu(world: &mut ApplicationWorld) {
     let current = if world.window_text("Precise Input").contains("Rel") {
         "Rel"
@@ -88,6 +96,7 @@ fn reference_choices(world: &mut ApplicationWorld) {
 }
 
 #[when("I choose Absolute")]
+#[when("the user chooses Absolute")]
 fn choose_absolute(world: &mut ApplicationWorld) {
     world.click_text("Absolute");
 }
@@ -109,6 +118,7 @@ fn reference_retains_ellipse(world: &mut ApplicationWorld) {
 }
 
 #[when("I reopen the dropdown and choose Relative")]
+#[when("the user reopens the dropdown and chooses Relative")]
 fn choose_relative(world: &mut ApplicationWorld) {
     reference_menu(world);
     world.click_text("Relative");
