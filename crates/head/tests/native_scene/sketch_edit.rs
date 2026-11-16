@@ -181,6 +181,7 @@ impl oblikovati_model::application_options::PartPreferenceAccess for FixedPartPr
     fn part_options(&self) -> oblikovati_model::application_options::PartApplicationOptions {
         oblikovati_model::application_options::PartApplicationOptions {
             look_at_sketch_plane: self.0,
+            ..Default::default()
         }
     }
     fn set_part_options(

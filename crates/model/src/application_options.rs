@@ -64,11 +64,13 @@ pub trait SketchPreferenceAccess {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct PartApplicationOptions {
     pub look_at_sketch_plane: bool,
+    pub chamfer_flat_corners: bool,
 }
 impl Default for PartApplicationOptions {
     fn default() -> Self {
         Self {
             look_at_sketch_plane: true,
+            chamfer_flat_corners: true,
         }
     }
 }

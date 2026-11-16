@@ -51,6 +51,11 @@ fn sketch_preferences_change_the_owned_application_options() {
 #[test]
 fn part_sketch_view_preference_is_staged_reverted_and_applied() {
     let preferences = tempfile::tempdir().unwrap();
+    std::fs::write(
+        preferences.path().join("options.yaml"),
+        "part: {chamferFlatCorners: false, tangentChainSelect: true}\n",
+    )
+    .unwrap();
     let mut native = NativeHeadWindow::open().unwrap();
     native.ribbon_settings_directory = Some(preferences.path().to_owned());
     let mut owner = native_owner_at(native.wake.clone(), preferences.path()).unwrap();
@@ -72,6 +77,14 @@ fn part_sketch_view_preference_is_staged_reverted_and_applied() {
             .look_at_sketch_plane
     };
     assert!(current(&owner));
+    assert!(
+        !owner
+            .gui_command_state()
+            .unwrap()
+            .part_options
+            .unwrap()
+            .chamfer_flat_corners
+    );
     click_shell_position(
         &mut window,
         &mut owner,
@@ -100,6 +113,10 @@ fn part_sketch_view_preference_is_staged_reverted_and_applied() {
     assert!(
         !oblikovati_model::application_options::PartPreferenceAccess::part_options(&reloaded)
             .look_at_sketch_plane
+    );
+    assert!(
+        !oblikovati_model::application_options::PartPreferenceAccess::part_options(&reloaded)
+            .chamfer_flat_corners
     );
     owner.finish().unwrap();
     window.finish().unwrap();
