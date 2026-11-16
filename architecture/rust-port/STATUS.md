@@ -17,6 +17,8 @@ Last checked: 2026-11-16 on `rust-work` after `6ba45dcb1`. Refresh from current 
   diagnostics against live source, not pinned acceptance.
   Their live features carry fixture or reference-capture gaps; see the matching
   receipts before counting results. Other mouse scenarios remain open.
+- Pointer-driven Line creation and preview cancellation have an X11 diagnostic
+  (#4037). Its live source still needs a fixture and reference capture.
 - The 60 fps sketch target is not met on the measured GPU. A 4-segment
   pointer-motion run measured 20.738 ms median and 24.861 ms p95 at 1440 × 900;
   the 60 fps frame budget is 16.67 ms. See `receipts/2026-11-16-sketch-frame-baseline-4031/`.

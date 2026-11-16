@@ -293,3 +293,6 @@ fn measure_candidate_frames_for_dense_sketch() {
 
 #[path = "measure_perf.rs"]
 mod measure_perf;
+
+#[path = "pointer_placement.rs"]
+mod pointer_placement;
