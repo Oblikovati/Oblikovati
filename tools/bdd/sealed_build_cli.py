@@ -27,7 +27,7 @@ def pinned_scenario_revision(checkout: Path) -> str:
 def parse_arguments(arguments: list[str] | None = None) -> argparse.Namespace:
     """Parse explicit experimental inputs; example: parse_arguments(['--help'])."""
     parser = argparse.ArgumentParser(description=__doc__)
-    for name in ("source", "vendor", "toolchain", "config", "target", "build-logs", "bwrap", "repository", "runtime", "checkout", "reports", "run-log"):
+    for name in ("source", "vendor", "toolchain", "config", "target", "build-logs", "bwrap", "system", "repository", "runtime", "checkout", "reports", "run-log"):
         parser.add_argument(f"--{name}", required=True, type=Path)
     for name in ("revision", "area", "feature", "scenario"):
         parser.add_argument(f"--{name}", required=True)
@@ -46,7 +46,7 @@ def parse_arguments(arguments: list[str] | None = None) -> argparse.Namespace:
 
 def requests(args: argparse.Namespace) -> tuple[BuildProbe, SealedRequest]:
     """Construct the linked build and execution requests; example: requests(args)."""
-    probe = BuildProbe(args.source, args.vendor, args.toolchain, args.config, args.target, args.build_logs, args.bwrap)
+    probe = BuildProbe(args.source, args.vendor, args.toolchain, args.config, args.target, args.build_logs, args.bwrap, args.system)
     run = SealedRequest(args.runtime, args.target / "build-runner", args.checkout, args.reports, args.run_log, args.bwrap, args.area, args.feature, args.scenario)
     return probe, run
 

@@ -13,8 +13,8 @@ receipt reuse or define a trusted builder.
    files. Display and renderer inputs are inherited.
 2. `sandbox_build_probe.py` can build an exported commit without network in a
    Bubblewrap namespace. It checks source and optional vendor inputs before the
-   build and snapshots several mounts before and after it. It still mounts host
-   `/usr`, `/proc` and `/dev`; the kernel, toolchain authority and external
+   build and snapshots the supplied system tree and other mounts before and
+   after it. It still exposes `/proc` and `/dev`; the kernel, input authority and external
    writes during a build are not bounded. Before-and-after equality cannot rule
    out a temporary substitution. Git vendor manifests remain partly checked.
 3. `sealed_build_chain.py` binds a digest of the observed build output to sealed

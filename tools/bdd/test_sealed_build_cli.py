@@ -64,7 +64,7 @@ class SealedBuildCliTests(unittest.TestCase):
     def arguments(self, root: Path, fixture: SealedFixture) -> list[str]:
         """Make explicit CLI inputs; example: self.arguments(root, fixture)."""
         result: list[str] = []
-        for name in ("source", "vendor", "toolchain", "config", "target", "build-logs", "repository"):
+        for name in ("source", "vendor", "toolchain", "config", "target", "build-logs", "system", "repository"):
             path = root / name
             path.mkdir()
             result.extend([f"--{name}", str(path)])

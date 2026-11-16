@@ -94,7 +94,8 @@ python3 -B tools/bdd/sealed_build_cli.py \
   --source /absolute/source --vendor /absolute/vendor \
   --toolchain /absolute/toolchain --config /absolute/config \
   --target /absolute/empty-target --build-logs /absolute/empty-build-logs \
-  --bwrap /absolute/bwrap --repository /absolute/repository --revision FULL_SHA \
+  --bwrap /absolute/bwrap --system /absolute/system-tree \
+  --repository /absolute/repository --revision FULL_SHA \
   --runtime /absolute/runtime --checkout /absolute/pinned-scenarios \
   --reports /absolute/empty-reports --run-log /absolute/new-native.log \
   --area application --feature document-opening --scenario 'Open a part' \
@@ -189,7 +190,7 @@ remains open until those inputs and the built runner are independently checked.
 `tools/bdd/sandbox_build_probe.py` runs a fixed Linux x86-64 head-test build
 with an empty target, an empty Cargo home, no inherited environment, and an
 isolated network namespace. It mounts source, vendored packages, the supplied
-Rust toolchain and Cargo configuration read-only. It inventories those inputs
+Rust toolchain, Cargo configuration and supplied system tree read-only. It inventories those inputs
 before and after the build and refuses a change. It finds the test executable
 from Cargo's artifact messages and records its hash. Both output directories
 must be empty and all input and output roots must be disjoint.
@@ -203,9 +204,10 @@ host source remained unchanged. The real Bubblewrap regression in
 without the restriction and verifies its refusal with the restriction. It skips
 when the host cannot reproduce nested namespaces.
 
-The build probe still mounts host `/usr` without inventorying it. A sandboxed
-process can read `/usr/bin/gcc` and `/proc/uptime`; the compiler, system files,
-kernel, devices, time, and concurrent host changes are not bounded. The Git
+The supplied system tree is mounted at `/usr` and inventoried before and after
+the build. A sandboxed process can still read `/proc/uptime`; system and
+toolchain origin, kernel, devices, time, and concurrent host changes are not
+bounded. The Git
 vendor check also leaves generated manifests unverified. The probe does not
 feed the native capture command or independently verify the built executable.
 It remains non-reusable and does not change the receipt verifier. A safe
@@ -218,11 +220,11 @@ The configuration directory must contain `config.toml` with Cargo source
 replacement configured to use `/vendor`. Each input root and the Bubblewrap
 executable and its parent must support the no-atime checks. For example, use a
 task-owned Bubblewrap copy.
-Invoke the probe with seven absolute paths:
+Invoke the probe with eight absolute paths:
 
 ```sh
 python3 -B tools/bdd/sandbox_build_probe.py SOURCE VENDOR TOOLCHAIN CONFIG \
-  EMPTY_TARGET EMPTY_LOGS BWRAP > /absolute/path/to/build-observation.json
+  EMPTY_TARGET EMPTY_LOGS BWRAP SYSTEM > /absolute/path/to/build-observation.json
 ```
 
 To compare the source snapshot with a Git commit before starting Cargo, add
