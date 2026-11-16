@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Move: tmp/obk-move-single-source/features/sketch/move/scenario.feature" package="testsuite/Feature: Move: tmp/obk-move-single-source/features/sketch/move/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-16T04:12:59.129303434Z" time="26.643637253"><testcase name="Scenario: move-10 automatically advance to Base Point after one selection: tmp/obk-move-single-source/features/sketch/move/scenario.feature:51:3" time="26.643637253"><system-out><![CDATA[  Scenario: move-10 automatically advance to Base Point after one selection
+   ✔  Given an editable sketch with eligible geometry
+   ✔  Given Move has Copy and Precise Input off
+   ✔  When the user enables Optimize for Single Selection and clicks the ellipse perimeter
+   ✔  Then Base Point activates without a separate button click
+   ✔  And the status reads Select base point
+   ✔  When the user presses Escape before choosing a base point
+   ✔  Then Move closes and the ellipse remains in its original position
+]]></system-out></testcase></testsuite></testsuites>
