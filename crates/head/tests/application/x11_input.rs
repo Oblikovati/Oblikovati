@@ -49,20 +49,44 @@ pub(super) fn move_pointer(position: [i32; 2]) {
 }
 
 pub(super) fn press_escape() {
+    let (connection, root) = keyboard_target();
+    let escape = keyboard_keycode(&connection, 0xff1b);
+    send_key_sequence(
+        &connection,
+        root,
+        &[(KEY_PRESS_EVENT, escape), (KEY_RELEASE_EVENT, escape)],
+    );
+}
+
+pub(super) fn press_control_o() {
+    let (connection, root) = keyboard_target();
+    let control = keyboard_keycode(&connection, 0xffe3);
+    let letter = keyboard_keycode(&connection, u32::from(b'o'));
+    send_key_sequence(
+        &connection,
+        root,
+        &[
+            (KEY_PRESS_EVENT, control),
+            (KEY_PRESS_EVENT, letter),
+            (KEY_RELEASE_EVENT, letter),
+            (KEY_RELEASE_EVENT, control),
+        ],
+    );
+}
+
+fn keyboard_target() -> (RustConnection, Window) {
     let (connection, screen) = x11rb::connect(None).expect("X11: expected a display connection");
-    let setup = connection.setup();
-    let root = setup.roots[screen].root;
+    let root = connection.setup().roots[screen].root;
     let window = application_window(&connection, root);
-    let keycode = escape_keycode(&connection);
     connection
         .set_input_focus(InputFocus::PARENT, window, 0_u32)
         .unwrap()
         .check()
         .unwrap();
-    send_escape(&connection, root, keycode);
+    (connection, root)
 }
 
-fn escape_keycode(connection: &RustConnection) -> u8 {
+fn keyboard_keycode(connection: &RustConnection, keysym: u32) -> u8 {
     let setup = connection.setup();
     let first = setup.min_keycode;
     let count = setup.max_keycode - first + 1;
@@ -74,22 +98,22 @@ fn escape_keycode(connection: &RustConnection) -> u8 {
     mapping
         .keysyms
         .chunks(usize::from(mapping.keysyms_per_keycode))
-        .position(|symbols| symbols.contains(&0xff1b))
+        .position(|symbols| symbols.contains(&keysym))
         .map(|offset| first + u8::try_from(offset).unwrap())
-        .expect("X11 keyboard: expected an Escape key")
+        .unwrap_or_else(|| panic!("X11 keysym {keysym:#x}: expected a mapped key"))
 }
 
-fn send_escape(connection: &RustConnection, root: Window, keycode: u8) {
-    for event in [KEY_PRESS_EVENT, KEY_RELEASE_EVENT] {
+fn send_key_sequence(connection: &RustConnection, root: Window, events: &[(u8, u8)]) {
+    for &(event, key) in events {
         connection
-            .xtest_fake_input(event, keycode, 0, root, 0, 0, 0)
+            .xtest_fake_input(event, key, 0, root, 0, 0, 0)
             .unwrap()
             .check()
             .unwrap();
     }
     connection
         .flush()
-        .expect("X11 Escape: expected a flushed request");
+        .expect("X11 keyboard: expected a flushed request");
 }
 
 fn pointer_target(position: [i32; 2]) -> (RustConnection, Window, i16, i16) {

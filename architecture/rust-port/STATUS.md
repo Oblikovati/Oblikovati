@@ -1,6 +1,6 @@
 # Rust port status
 
-Last checked: 2026-11-16 on `rust-work` after `6ba45dcb1`. Refresh from current evidence at each checkpoint.
+Last checked: 2026-11-16 on `rust-work`. Refresh from current evidence at each checkpoint.
 
 ## Start here
 
@@ -41,19 +41,17 @@ Last checked: 2026-11-16 on `rust-work` after `6ba45dcb1`. Refresh from current 
   comparison still fails as reported in Martensite #407. See
   `receipts/2026-11-16-martensite-0131-4025/`.
 - **R0 remains open.** The full gate, baseline fields and milestone exit audits
-  are incomplete. At `37dc93c0f`, 2,572 scenario declarations lack at least one
-  baseline field. Run `python3 -B tools/bdd/behavior_cli.py report` for current
-  counts; source and application changes can make earlier receipts stale.
+  are incomplete. Run `python3 -B tools/bdd/behavior_cli.py report` for current counts.
+- Opening an already open part passed native keyboard and mouse diagnostics
+  (#3889); see `receipts/2026-11-16-open-existing-native-3889/` for input limits.
 - At local snapshot `b576445b98cffd686dcc05aa8c017de2a591c8c8`, the ledger
-  reports **0 verified** across 2,760 declarations. After reviewing 103 changed
-  assignments, 21 classifications remain stale and 2,622 fail the baseline-field
-  check (#4039). Sketch3D has 10 capture-only cases and no native runner.
-  Earlier receipts remain historical; native provenance is open (#3978).
+  reports **0 verified** across 2,760 declarations. There are 21 stale
+  classifications and 2,622 baseline-field gaps (#4039). Sketch3D has 10
+  capture-only cases and no native runner; provenance is open (#3978).
 - Startup sketches on XY, YZ and XZ are integrated (#4009). The full pinned
-  New Sketch diagnostic passed nine scenarios and found one unbound; its
-  latest report is in `receipts/2026-11-16-new-sketch-current-18d90af/`.
-  The zero-radius
-  circle OS-input check passed (#4012); see `receipts/2026-11-16-circle-os-4012/`.
+  New Sketch diagnostic passed nine scenarios and found one unbound; see
+  `receipts/2026-11-16-new-sketch-current-18d90af/`.
+  The zero-radius circle OS-input check passed (#4012); see `receipts/2026-11-16-circle-os-4012/`.
   These are diagnostics and supporting observations, not verified acceptance.
 - `rust-work` is local and has not passed the full pre-push gate. All 20 former
   application PR heads were merged locally and their PRs closed. Do not remove
@@ -81,10 +79,8 @@ Last checked: 2026-11-16 on `rust-work` after `6ba45dcb1`. Refresh from current 
   The source tags 60 declarations as capture-only and 34 more as capture-host
   only; they are not portable passing evidence. Follow `bdd-workflow.md`
   when source files change; use a unique Cargo target for each active worktree.
-- Some native tests inject input into the frame loop; others use X11 XTEST.
-  Check each receipt for its input path. Close test windows and retain receipts.
-- `make docs-lint` passed after the source-size and worktree-discovery fixes
-  (#3970, #3971). The full `make gate` remains open.
+- Native input paths vary; check each receipt. Close windows and retain receipts.
+- `make docs-lint` passed (#3970, #3971); the full `make gate` remains open.
 - Martensite work is owned separately. Report validated kernel gaps in
   `Oblikovati/Martensite`; do not modify the kernel in this lane.
 - GUI unit tests isolate the shared ImGui context under parallel execution
