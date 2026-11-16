@@ -1,0 +1,191 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.13s
+     Running unittests src/lib.rs (/tmp/obk-move-precise-target/debug/deps/oblikovati_head-c865ed7d2d134d42)
+
+running 1 test
+test native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window ... Feature: Move
+  Scenario: move-06 Enter a precise ellipse Move endpoint
+   ✔  Given an editable sketch with eligible geometry
+   ✔  Given the ellipse is selected in Move with Copy off and Precise Input on
+   ✔  When the user chooses Base Point and clicks its center
+   ✔  Then the coordinate toolbar appears and the status requests an endpoint
+   ✔  When the user types 1 then 0 into X and presses Tab to Y
+   ✔  And the user types 0 and presses Enter
+   ✔  Then Move returns to geometry selection without an error dialog
+   ✔  And the ellipse appears above its original position
+   ✔  When the user clicks Done
+   ✔  Then Move closes and the displaced ellipse remains
+  Scenario: move-07 Undo and redoes the accepted precise endpoint
+   ✔  Given an editable sketch with eligible geometry
+   ✘  Given the precise ellipse Move has been accepted and Move closed
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:20:5
+      Step doesn't match any function
+  Scenario: move-08 Retain the source when Copy is enabled
+   ✔  Given an editable sketch with eligible geometry
+   ✔  Given Move has reopened with Precise Input checked and Copy unchecked
+   ✘  When the user enables Copy and selects the original ellipse
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:32:5
+      Step doesn't match any function
+  Scenario: move-09 undo and redoes a copied ellipse
+   ✔  Given an editable sketch with eligible geometry
+   ✔  Given Move Copy has created the displaced ellipse and Move is closed
+   ✘  When the user undoes
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:43:5
+      Step doesn't match any function
+  Scenario: move-10 automatically advance to Base Point after one selection
+   ✔  Given an editable sketch with eligible geometry
+   ✘  Given Move has Copy and Precise Input off
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:53:5
+      Step doesn't match any function
+  Scenario: move-11 Cancel after choosing a base point
+   ✔  Given an editable sketch with eligible geometry
+   ✔  Given Move reopens with Optimize for Single Selection checked
+   ✔  And Copy and Precise Input are unchecked
+   ✔  When the user selects the ellipse and clicks its center as base point
+   ✔  Then the status requests an endpoint for Move
+   ✔  When the user presses Escape before accepting an endpoint
+   ✔  Then Move closes and the ellipse remains in its original position
+  Scenario: move-12 reject an identical canvas base and endpoint in this fixture
+   ✔  Given an editable sketch with eligible geometry
+   ✘  Given the ellipse is selected with optimization on and Copy and Precise Input off
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:73:5
+      Step doesn't match any function
+  Scenario: move-13 Choose Distance and X axis angle fields
+   ✔  Given an editable sketch with eligible geometry
+   ✔  Given the selected ellipse is at the precise Base Point stage
+   ✘  When the user opens the coordinate-mode dropdown
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:89:5
+      Step doesn't match any function
+  Scenario: move-14 reset the triad without placing geometry
+   ✔  Given an editable sketch with eligible geometry
+   ✘  Given the ellipse is selected in precise Base Point mode
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:97:5
+      Step doesn't match any function
+  Scenario: move-15 accept a numeric distance-and-angle endpoint
+   ✔  Given an editable sketch with eligible geometry
+   ✘  Given Move reopens with Precise Input and single-selection optimization on and Copy off
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:109:5
+      Step doesn't match any function
+  Scenario: move-16 Inspect Relative and Absolute coordinate modes
+   ✔  Given an editable sketch with eligible geometry
+   ✔  Given the selected ellipse is in precise Base Point mode
+   ✘  When the user opens the left toolbar dropdown
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:126:5
+      Step doesn't match any function
+  Scenario: move-17 close the mini-toolbar while retaining Move
+   ✔  Given an editable sketch with eligible geometry
+   ✘  Given the precise toolbar is visible in Move Base Point mode
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:138:5
+      Step doesn't match any function
+  Scenario: move-18 Never policies permit observed coupled line displacement
+   ✔  Given an editable sketch with eligible geometry
+   ✘  Given the recorded fixture has two horizontal lines and their 25 +/-1 separation annotation
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:150:5
+      Step doesn't match any function
+  Scenario: move-19 Mixed X coordinate and angle endpoint accepts
+   ✔  Given an editable sketch with eligible geometry
+   ✘  Given Move has Copy off and Precise Input and Optimize for Single Selection on
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:163:5
+      Step doesn't match any function
+  Scenario: move-20 Mixed Y coordinate and angle endpoint accepts
+   ✔  Given an editable sketch with eligible geometry
+   ✘  Given reopening Move retains the previously selected mixed X/angle mode
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:176:5
+      Step doesn't match any function
+  Scenario: move-21 Mini-toolbar Pin check state toggles
+   ✔  Given an editable sketch with eligible geometry
+   ✘  Given the precise-input mini-toolbar is visible at Move Base Point stage
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:189:5
+      Step doesn't match any function
+  Scenario: move-22 Auto Fade reduces toolbar and hover restores it
+   ✔  Given an editable sketch with eligible geometry
+   ✘  Given the mini-toolbar is visible with Pin checked and Auto Fade unchecked
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:199:5
+      Step doesn't match any function
+  Scenario: move-23 Never policies reject the white-curve selection
+   ✔  Given an editable sketch with eligible geometry
+   ✘  Given both Move constraint policies are Never and precise input is off
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:211:5
+      Step doesn't match any function
+  Scenario: move-24 Geometric Always changes the outcome for the same clicks
+   ✔  Given an editable sketch with eligible geometry
+   ✘  Given the failed trial has returned to geometry selection
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:222:5
+      Step doesn't match any function
+  Scenario: move-25 Accept the Always dimensional policy trial
+   ✘  Given the recorded rectangle fixture is present
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:234:5
+      Step doesn't match any function
+  Scenario: move-26 Accept the same placement under If No Equation
+   ✘  Given the earlier Always trial was undone
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:248:5
+      Step doesn't match any function
+  Scenario: move-27 Answer Yes to prompted dimensional relaxation
+   ✘  Given both Move constraint policies are Prompt
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:258:5
+      Step doesn't match any function
+  Scenario: move-28 Measure the final accepted endpoint
+   ✘  Given the recorded conditional and prompted rectangle placements are retained
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:269:5
+      Step doesn't match any function
+  Scenario: move-29 Retain the measured placement after actual disk reopen
+   ✘  Given the recorded sketch is finished and its part saved
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:275:5
+      Step doesn't match any function
+  Scenario: move-30 Select and move two sources without optimization
+   ✘  Given Copy and Precise Input are off and optimization is off
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:284:5
+      Step doesn't match any function
+  Scenario: move-31 Undo and redoes the two-source operation together
+   ✘  Given the two-source Move has been accepted and Done clicked
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:293:5
+      Step doesn't match any function
+  Scenario: move-32 Reject invalid text and recover with signed numeric input
+   ✘  Given the upper line is selected with precise X and Y endpoint entry active
+      Step failed:
+      Defined: tmp/obk-move-precise-source/features/sketch/move/scenario.feature:303:5
+      Step doesn't match any function
+[Summary]
+1 feature
+27 scenarios (2 passed, 25 failed)
+63 steps (38 passed, 25 failed)
+
+thread 'sketch-scenarios' (3505472) panicked at crates/head/src/../tests/application/benchmark.rs:294:5:
+scenario benchmark: expected no failed, undefined, or skipped steps
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window' (3505471) panicked at crates/head/src/../tests/application/../sketch/benchmark.rs:78:10:
+called `Result::unwrap()` on an `Err` value: Any { .. }
+FAILED
+
+failures:
+
+failures:
+    native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1065 filtered out; finished in 486.96s
+
+error: test failed, to rerun pass `-p oblikovati-head --lib`
