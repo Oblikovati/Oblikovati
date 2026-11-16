@@ -22,6 +22,8 @@ mod circular_projection;
 mod compile;
 mod constraint;
 mod construction;
+mod corner_predicate;
+pub use corner_predicate::{SketchCornerPredicate, SketchCornerTurn};
 mod dimensional_authoring;
 mod geometric_authoring;
 mod ground_constraint;
