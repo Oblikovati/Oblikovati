@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use oblikovati_martensite::planar_curve::sketch::{
-    SketchDisplayPrimitive, SketchSamplingOptionsV1, sample_sketch_display,
+    SketchDisplayPrimitive, SketchSamplingOptionsV1, sample_sketch_display, sample_sketch_entity,
 };
 use oblikovati_model::sketch::{
     Sketch2D, SketchEllipse2D, SketchEntityId as Id, SketchSpline2D, SketchSplineKind,
@@ -137,4 +137,20 @@ fn circular_center_marker_keeps_the_defining_identity_and_position() {
     assert_eq!(report.center_markers.len(), 1);
     assert_eq!(report.center_markers[0].id, Id(100));
     assert_eq!(report.center_markers[0].position, [0., 0.]);
+}
+
+#[test]
+fn single_entity_sampling_matches_the_full_display_and_reports_missing_ids() {
+    let sketch = fixture();
+    let report = sample_sketch_display(&sketch, options()).unwrap();
+    for entity in &report.entities {
+        assert_eq!(
+            sample_sketch_entity(&sketch, entity.entity, options()).unwrap(),
+            *entity
+        );
+    }
+    assert!(sample_sketch_entity(&sketch, Id(999), options()).is_err());
+    let mut invalid = options();
+    invalid.deflection = f64::NAN;
+    assert!(sample_sketch_entity(&sketch, Id(9), invalid).is_err());
 }

@@ -216,6 +216,9 @@ fn process_frame_inputs(
             other => other,
         };
         changed |= gui.changed;
+        if gui.consumed_input {
+            changed |= window.set_tool_candidate(None)?;
+        }
         if !gui.consumed_input {
             if let Some(action) = shortcut {
                 changed |= gui::dispatch_shortcut_action(window, owner, &action)?;

@@ -401,8 +401,31 @@ pub(super) fn dispatch_frame_input(
     let mut changed = window.process_view_input(event)?;
     changed |= owner.process_window_inputs(&[*event], window)?;
     changed |= synchronize_sketch_view(window, owner)?;
+    changed |= update_tool_candidate(window, owner, event)?;
     Ok(changed)
 }
+fn update_tool_candidate(
+    window: &mut dyn HeadWindow,
+    owner: &mut dyn HeadWork,
+    event: &ViewportEvent,
+) -> Result<bool, String> {
+    let ViewportEvent::Input(ViewportInput::Motion { position, .. }) = event else {
+        return window.set_tool_candidate(None);
+    };
+    if window.navigation_active() {
+        return window.set_tool_candidate(None);
+    }
+    let candidate = match owner.sketch_tool_candidate(*position, window) {
+        Ok(candidate) => candidate,
+        Err(cause) => {
+            window.show_command_notice(crate::DesktopCommandNotice::SelectionFailed { cause })?;
+            window.set_tool_candidate(None)?;
+            return Ok(true);
+        }
+    };
+    window.set_tool_candidate(candidate.as_ref())
+}
+
 fn semantic_command_event(event: ViewportEvent) -> ViewportEvent {
     let ViewportEvent::Input(ViewportInput::PhysicalKey {
         command: Some(key),

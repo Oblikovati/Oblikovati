@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 impl HeadWindow for ScriptedGuiWindow {
+    fn set_tool_candidate(
+        &mut self,
+        hover: Option<&oblikovati_viewport::ViewportSketchHover>,
+    ) -> Result<bool, String> {
+        self.native.set_tool_candidate(hover)
+    }
     fn window_capture_extent(&mut self) -> Result<Option<[u32; 2]>, String> {
         self.native.window_capture_extent()
     }
@@ -34,6 +40,13 @@ impl HeadWindow for ScriptedGuiWindow {
     }
     fn set_view_slot(&mut self, slot: u64) -> Result<bool, String> {
         self.native.set_view_slot(slot)
+    }
+    fn sketch_pixels(
+        &self,
+        plane: oblikovati_model::sketch::SketchPlane,
+        points: &[[f64; 2]],
+    ) -> Result<Vec<[i32; 2]>, String> {
+        self.native.sketch_pixels(plane, points)
     }
     fn sketch_pixel(
         &self,

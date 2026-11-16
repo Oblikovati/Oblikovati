@@ -33,6 +33,14 @@ impl<'a> SketchReadIndex<'a> {
             ))
         })
     }
+    /// Classify an indexed entity without rebuilding the catalogue.
+    /// Example: `index.entity_kind(id)?` when filtering a pick pass.
+    pub fn entity_kind(
+        &self,
+        id: SketchEntityId,
+    ) -> Result<oblikovati_api::types::SketchEntityKind, SketchError> {
+        self.entity(id).map(OwnedSketchGeometry::kind)
+    }
     /// Resolve a defining point without another collection scan; example: `index.point(line.endpoints[0])?`.
     pub fn point(&self, id: SketchEntityId) -> Result<SketchPoint2D, SketchError> {
         match self.entity(id)? {

@@ -9,6 +9,13 @@ impl<
     S: DispatchWakeup,
 > crate::HeadSketchWork for DesktopOwner<O, W, F, G, R, S>
 {
+    fn sketch_tool_candidate(
+        &mut self,
+        pixel: [i32; 2],
+        window: &dyn crate::HeadWindow,
+    ) -> Result<Option<oblikovati_viewport::ViewportSketchHover>, String> {
+        self.resolve_tool_candidate(pixel, window)
+    }
     fn set_part_options_from_gui(
         &mut self,
         options: oblikovati_model::application_options::PartApplicationOptions,

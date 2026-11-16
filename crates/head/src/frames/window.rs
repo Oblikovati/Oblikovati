@@ -167,9 +167,29 @@ pub trait HeadWindow {
         ))
     }
 
+    /// Update transient tool feedback; example: `window.set_tool_candidate(None)?` on exit.
+    fn set_tool_candidate(
+        &mut self,
+        _: Option<&oblikovati_viewport::ViewportSketchHover>,
+    ) -> Result<bool, String> {
+        Ok(false)
+    }
+
     /// Apply one view-only input before projecting that same event; example: `window.process_view_input(&event)?`.
     fn process_view_input(&mut self, _: &ViewportEvent) -> Result<bool, String> {
         Ok(false)
+    }
+
+    /// Project sketch witnesses; example: `window.sketch_pixels(plane, &points)?` for a pick pass.
+    fn sketch_pixels(
+        &self,
+        plane: oblikovati_model::sketch::SketchPlane,
+        points: &[[f64; 2]],
+    ) -> Result<Vec<[i32; 2]>, String> {
+        points
+            .iter()
+            .map(|point| self.sketch_pixel(plane, *point))
+            .collect()
     }
 
     /// Map physical pointer coordinates through the current view; example: `window.sketch_point(pixel,plane)?`.

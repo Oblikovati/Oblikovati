@@ -129,3 +129,19 @@ fn circular_seed_reads_current_circle_and_arc_values_without_mutation() {
         serde_json::to_vec(&before).unwrap()
     );
 }
+
+#[test]
+fn indexed_entity_classification_matches_the_sketch_and_rejects_missing_ids() {
+    let mut sketch = Sketch2D::default();
+    sketch.add_point(Id(1), [0., 0.]).unwrap();
+    sketch.add_point(Id(2), [2., 0.]).unwrap();
+    sketch.add_line(Id(3), [Id(1), Id(2)]).unwrap();
+    let index = sketch.read_index();
+    for id in [Id(1), Id(2), Id(3)] {
+        assert_eq!(
+            index.entity_kind(id).unwrap(),
+            sketch.entity_kind(id).unwrap()
+        );
+    }
+    assert!(index.entity_kind(Id(99)).is_err());
+}

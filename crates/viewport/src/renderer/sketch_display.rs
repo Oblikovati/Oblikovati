@@ -163,7 +163,7 @@ impl SketchDisplayOverlay {
         } else {
             sketch.line_color.as_ref().unwrap_or(&self.color)
         };
-        match build_entity(viewer, sketch, entity, color) {
+        match build_entity(viewer, sketch, entity, color, false) {
             Ok(structure) => self.structures.push(structure),
             Err(cause) => self.declines.push(display_decline(sketch, identity, cause)),
         }
@@ -174,11 +174,12 @@ impl SketchDisplayOverlay {
         self.source = None;
     }
 }
-fn build_entity(
+pub(super) fn build_entity(
     viewer: &V3dViewer,
     sketch: &ViewportSketchDisplay,
     entity: &SketchDisplayEntity,
     color: &Rgba,
+    transient: bool,
 ) -> Result<SketchStructure, String> {
     let kind = entity_line_style(entity);
     match &entity.primitive {
@@ -187,10 +188,10 @@ fn build_entity(
             let cross = sketch.geometry.is_center_point(entity.entity)
                 || sketch.geometry.is_implicit_circular_center(entity.entity);
             let glyph = super::sketch_marker::SketchPointGlyph::from_center_role(cross);
-            sketch_structure::point(viewer, sketch.plane, *point, glyph, color, false)
+            sketch_structure::point(viewer, sketch.plane, *point, glyph, color, transient)
         }
         SketchDisplayPrimitive::Curve(points) => {
-            sketch_structure::curve(viewer, sketch.plane, points, color, kind, false)
+            sketch_structure::curve(viewer, sketch.plane, points, color, kind, transient)
         }
     }
 }

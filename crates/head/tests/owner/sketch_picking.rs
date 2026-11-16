@@ -163,3 +163,77 @@ fn successful_pick_replaces_a_failure_after_the_window_consumes_it() {
     assert_eq!(owner.take_command_notice().unwrap().message(), "Ready");
     assert_eq!(selection(&mut owner).count, 0);
 }
+
+#[test]
+fn geometric_candidate_obeys_tool_filter_and_never_selects_on_hover() {
+    use crate::HeadSketchWork;
+    use oblikovati_gui::GuiSketchConstraint::{Concentric, Parallel};
+    let mut owner = candidate_owner();
+    let window = PlanarInputWindow {
+        navigating: false,
+        fail: false,
+        edge_on: false,
+    };
+    assert!(
+        owner
+            .sketch_tool_candidate([50, 0], &window)
+            .unwrap()
+            .is_none()
+    );
+    owner.constrain_sketch_from_gui(Concentric).unwrap();
+    assert!(
+        owner
+            .sketch_tool_candidate([50, 0], &window)
+            .unwrap()
+            .is_none()
+    );
+    owner.constrain_sketch_from_gui(Parallel).unwrap();
+    let candidate = owner
+        .sketch_tool_candidate([50, 0], &window)
+        .unwrap()
+        .unwrap();
+    assert_eq!(candidate.entities.len(), 1);
+    assert_eq!(selection(&mut owner).count, 0);
+    assert!(
+        owner
+            .sketch_tool_candidate([200, 200], &window)
+            .unwrap()
+            .is_none()
+    );
+    deliver(&mut owner, &[button([50, 0], true)]);
+    assert!(
+        owner
+            .sketch_tool_candidate([50, 0], &window)
+            .unwrap()
+            .is_none()
+    );
+    deliver(&mut owner, &[key(ViewportKey::Cancel, true)]);
+    assert!(
+        owner
+            .sketch_tool_candidate([50, 0], &window)
+            .unwrap()
+            .is_none()
+    );
+}
+
+fn candidate_owner() -> TestOwner {
+    use oblikovati_model::sketch::{SketchPlacementRecipe, SketchPlane};
+    let (mut owner, _) = owner();
+    let document = Client::new(owner.document_host())
+        .documents()
+        .create(&CreateDocumentArgs {
+            type_: "part".into(),
+            name: "Candidate part".into(),
+            ..Default::default()
+        })
+        .unwrap()
+        .id;
+    let mut request = super::sketch_edit::request(SketchPlane::xy());
+    request.project_origin = false;
+    let sketch = owner.create_sketch_for_edit(document, &request).unwrap();
+    let recipe = SketchPlacementRecipe::line_chain(&[[0., 0.], [100., 0.]], false).unwrap();
+    owner
+        .commit_sketch_placement(document, sketch, &recipe, &[])
+        .unwrap();
+    owner
+}

@@ -54,3 +54,12 @@ This completes these three geometric tools. Dimensional constraint tools,
 constraint marker selection and the full cube acceptance journey remain open.
 A healthy DOF=2 test sketch is not a fully constrained cube profile. Solid adapter
 migration still requires the tracked Martensite region and mass-property work.
+
+## Candidate feedback (#4034)
+
+Constraint and dimension tools can show a transient candidate under the pointer.
+The owner uses the same analytic pick and operand checks as a click. Candidate
+presentation samples only the named entity and keeps it separate from selection.
+A pointer over a panel, tool cancellation, and a change of displayed sketch clear
+the feedback. Constraint glyph feedback takes priority over a tool candidate.
+Move and Measure tool candidates remain open, as does a verified 60 fps result.

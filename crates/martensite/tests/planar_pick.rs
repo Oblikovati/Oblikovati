@@ -265,3 +265,25 @@ fn rotated_ellipse_pick_matches_the_independent_occt_minimum() {
     );
     assert_eq!(hit.origin, PlanarPickOrigin::Stationary);
 }
+
+#[test]
+fn pick_query_classifies_the_same_index_it_uses_for_witnesses() {
+    use oblikovati_martensite::planar_curve::sketch::SketchPickQuery;
+    use oblikovati_model::sketch::{Sketch2D, SketchEntityId};
+    let mut sketch = Sketch2D::default();
+    sketch.add_point(SketchEntityId(1), [0., 0.]).unwrap();
+    sketch.add_point(SketchEntityId(2), [1., 0.]).unwrap();
+    sketch
+        .add_line(SketchEntityId(3), [SketchEntityId(1), SketchEntityId(2)])
+        .unwrap();
+    let query = SketchPickQuery::new(&sketch, [0.5, 0.2], PlanarPickOptionsV1::default()).unwrap();
+    assert_eq!(
+        query.entity_kind(SketchEntityId(3)).unwrap(),
+        oblikovati_api::types::SKETCH_ENTITY_LINE
+    );
+    assert_eq!(
+        query.candidate(SketchEntityId(3)).unwrap().entity,
+        SketchEntityId(3)
+    );
+    assert!(query.entity_kind(SketchEntityId(99)).is_err());
+}

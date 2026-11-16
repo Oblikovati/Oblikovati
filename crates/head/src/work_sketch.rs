@@ -2,6 +2,15 @@
 //! Sketch editing services called by the desktop frame loop.
 /// Route sketch editing to its owner; example: `work.edit_sketch_from_gui(true)?`.
 pub trait HeadSketchWork {
+    /// Resolve a tool-eligible sketch candidate at the pointer.
+    /// Example: `work.sketch_tool_candidate(pixel, window)?` before drawing feedback.
+    fn sketch_tool_candidate(
+        &mut self,
+        _: [i32; 2],
+        _: &dyn crate::HeadWindow,
+    ) -> Result<Option<oblikovati_viewport::ViewportSketchHover>, String> {
+        Ok(None)
+    }
     /// Save accepted Part options; example: `work.set_part_options_from_gui(options)`.
     fn set_part_options_from_gui(
         &mut self,

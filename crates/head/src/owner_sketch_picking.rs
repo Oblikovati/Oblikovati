@@ -37,6 +37,67 @@ impl<
     S: DispatchWakeup,
 > DesktopOwner<O, W, F, G, R, S>
 {
+    pub(super) fn resolve_tool_candidate(
+        &self,
+        pixel: [i32; 2],
+        window: &dyn HeadWindow,
+    ) -> Result<Option<oblikovati_viewport::ViewportSketchHover>, String> {
+        let Some((edit, filter)) = self.tool_candidate_filter() else {
+            return Ok(None);
+        };
+        if self.active_sketch_edit() != Some(edit) || window.navigation_active() {
+            return Ok(None);
+        }
+        let Some(hit) = self.resolve_sketch_hit(edit, pixel, window, filter)? else {
+            return Ok(None);
+        };
+        if !self.tool_accepts_candidate(edit, hit.entity)? {
+            return Ok(None);
+        }
+        Ok(Some(oblikovati_viewport::ViewportSketchHover {
+            sketch: edit.sketch,
+            entities: vec![hit.entity],
+        }))
+    }
+    fn tool_candidate_filter(&self) -> Option<(HeadSketchEdit, SketchPickFilter)> {
+        use crate::sketch_tool::SketchToolState;
+        match self.sketch_tool.as_ref() {
+            Some(SketchToolState::Geometric(tool)) => {
+                Some((tool.edit, SketchPickFilter::Geometric(tool.choice)))
+            }
+            Some(SketchToolState::Dimension(tool)) if tool.placed.is_none() => {
+                Some((tool.edit, SketchPickFilter::Dimension))
+            }
+            _ => None,
+        }
+    }
+    fn tool_accepts_candidate(
+        &self,
+        edit: HeadSketchEdit,
+        entity: SketchEntityId,
+    ) -> Result<bool, String> {
+        use crate::sketch_tool::SketchToolState;
+        let session = self
+            .files
+            .workspace()
+            .session(edit.document)
+            .map_err(|cause| cause.to_string())?;
+        let picks = session.selected_sketch_picks(edit.sketch);
+        match self.sketch_tool.as_ref() {
+            Some(SketchToolState::Geometric(_)) => Ok(!picks
+                .iter()
+                .any(|pick| pick.target() == SketchPickTarget::Entity(entity))),
+            Some(SketchToolState::Dimension(tool)) => {
+                let sketch = session
+                    .snapshot()
+                    .sketches
+                    .get(edit.sketch)
+                    .map_err(|cause| cause.to_string())?;
+                tool.wants(sketch.geometry(), &picks, entity)
+            }
+            _ => Ok(false),
+        }
+    }
     pub(super) fn process_sketch_pick(
         &mut self,
         event: ViewportEvent,
@@ -205,16 +266,20 @@ pub(super) fn pick_witness(
         .iter()
         .map(|point| point.id)
         .collect::<std::collections::BTreeSet<_>>();
-    // Go app/sketch_select.go gives every standalone or defining point priority over curves.
-    let points = nearest_screen_candidate(point_ids.iter().copied(), &query, plane, pixel, window)?;
-    if filter.accepts(&oblikovati_api::types::SKETCH_ENTITY_POINT) && points.is_some() {
-        return Ok(points);
+    // Go app/sketch_select.go gives eligible standalone and defining points priority over curves.
+    if filter.accepts(&oblikovati_api::types::SKETCH_ENTITY_POINT) {
+        let points =
+            nearest_screen_candidate(point_ids.iter().copied(), &query, plane, pixel, window)?;
+        if points.is_some() {
+            return Ok(points);
+        }
     }
-    let curves = eligible_curves(sketch, &point_ids, filter)?;
+    let curves = eligible_curves(sketch, &query, &point_ids, filter)?;
     nearest_screen_candidate(curves.into_iter(), &query, plane, pixel, window)
 }
 fn eligible_curves(
     sketch: &Sketch2D,
+    query: &SketchPickQuery<'_>,
     points: &std::collections::BTreeSet<SketchEntityId>,
     filter: SketchPickFilter,
 ) -> Result<Vec<SketchEntityId>, String> {
@@ -225,7 +290,7 @@ fn eligible_curves(
         .copied()
         .filter(|id| !points.contains(id))
     {
-        let kind = sketch
+        let kind = query
             .entity_kind(entity)
             .map_err(|cause| cause.to_string())?;
         if filter.accepts(&kind) {
@@ -242,25 +307,40 @@ fn nearest_screen_candidate(
     pixel: [i32; 2],
     window: &dyn HeadWindow,
 ) -> Result<Option<SketchEntityPickWitness>, String> {
-    let mut candidates: Vec<(f64, SketchEntityPickWitness)> = Vec::new();
-    for entity in ids {
-        let witness = query.candidate(entity).map_err(|cause| cause.to_string())?;
-        let projected = window.sketch_pixel(plane, witness.position)?;
-        let distance = screen_distance(projected, pixel);
-        // Match Go's snapPixels=12; this is a UI hit radius, not a modelling tolerance.
-        if distance <= 12. {
-            candidates.push((distance, witness));
-        }
+    let witnesses = ids
+        .map(|entity| query.candidate(entity).map_err(|cause| cause.to_string()))
+        .collect::<Result<Vec<_>, _>>()?;
+    let positions: Vec<_> = witnesses.iter().map(|witness| witness.position).collect();
+    let projected = window.sketch_pixels(plane, &positions)?;
+    if projected.len() != witnesses.len() {
+        return Err(format!(
+            "projected {} sketch witnesses: expected {} pixels",
+            projected.len(),
+            witnesses.len()
+        ));
     }
-    Ok(candidates
+    Ok(closest_projected_witness(witnesses, projected, pixel))
+}
+fn closest_projected_witness(
+    witnesses: Vec<SketchEntityPickWitness>,
+    projected: Vec<[i32; 2]>,
+    pixel: [i32; 2],
+) -> Option<SketchEntityPickWitness> {
+    witnesses
         .into_iter()
+        .zip(projected)
+        .filter_map(|(witness, point)| {
+            let distance = screen_distance(point, pixel);
+            // Match Go's snapPixels=12; this is a UI hit radius, not a modelling tolerance.
+            (distance <= 12.).then_some((distance, witness))
+        })
         .min_by(|first, second| {
             first
                 .0
                 .total_cmp(&second.0)
                 .then(first.1.entity.cmp(&second.1.entity))
         })
-        .map(|(_, witness)| witness))
+        .map(|(_, witness)| witness)
 }
 
 pub(super) fn screen_distance(first: [i32; 2], second: [i32; 2]) -> f64 {
