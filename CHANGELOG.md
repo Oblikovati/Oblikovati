@@ -4,7 +4,7 @@
 
 ### Changed
 
-- Reduced repeated sketch point projection work during pointer interaction. (#4035)
+- Reduced repeated sketch point projection work during pointer interaction and context picking. (#4035)
 
 - Discarded closed document-window preview images and stale pending updates. (#3987)
 

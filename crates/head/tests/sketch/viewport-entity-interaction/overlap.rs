@@ -74,3 +74,15 @@ fn submenu_candidate(world: &ApplicationWorld, label: &str) -> [i32; 2] {
         });
     super::super::super::diagnostics::pointer_pixels(candidate.center())
 }
+
+#[cfg(target_os = "linux")]
+#[test]
+fn native_context_offers_overlapping_point_and_line() {
+    let mut world = ApplicationWorld::new();
+    world.start_empty_sketch();
+    point_on_line(&mut world);
+    click_overlap(&mut world);
+    picked_point_is_named(&mut world);
+    select_other_identifies_and_selects_line(&mut world);
+    world.close();
+}
