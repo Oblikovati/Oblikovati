@@ -4,7 +4,7 @@
 use x11rb::connection::Connection;
 use x11rb::protocol::xproto::{
     Atom, AtomEnum, BUTTON_PRESS_EVENT, BUTTON_RELEASE_EVENT, ClientMessageEvent, ConnectionExt,
-    EventMask, MOTION_NOTIFY_EVENT, Window,
+    EventMask, InputFocus, KEY_PRESS_EVENT, KEY_RELEASE_EVENT, MOTION_NOTIFY_EVENT, Window,
 };
 use x11rb::protocol::xtest::ConnectionExt as _;
 use x11rb::rust_connection::RustConnection;
@@ -41,6 +41,50 @@ pub(super) fn move_pointer(position: [i32; 2]) {
     connection
         .flush()
         .expect("X11 motion: expected a flushed request");
+}
+
+pub(super) fn press_escape() {
+    let (connection, screen) = x11rb::connect(None).expect("X11: expected a display connection");
+    let setup = connection.setup();
+    let root = setup.roots[screen].root;
+    let window = application_window(&connection, root);
+    let keycode = escape_keycode(&connection);
+    connection
+        .set_input_focus(InputFocus::PARENT, window, 0_u32)
+        .unwrap()
+        .check()
+        .unwrap();
+    send_escape(&connection, root, keycode);
+}
+
+fn escape_keycode(connection: &RustConnection) -> u8 {
+    let setup = connection.setup();
+    let first = setup.min_keycode;
+    let count = setup.max_keycode - first + 1;
+    let mapping = connection
+        .get_keyboard_mapping(first, count)
+        .unwrap()
+        .reply()
+        .unwrap();
+    mapping
+        .keysyms
+        .chunks(usize::from(mapping.keysyms_per_keycode))
+        .position(|symbols| symbols.contains(&0xff1b))
+        .map(|offset| first + u8::try_from(offset).unwrap())
+        .expect("X11 keyboard: expected an Escape key")
+}
+
+fn send_escape(connection: &RustConnection, root: Window, keycode: u8) {
+    for event in [KEY_PRESS_EVENT, KEY_RELEASE_EVENT] {
+        connection
+            .xtest_fake_input(event, keycode, 0, root, 0, 0, 0)
+            .unwrap()
+            .check()
+            .unwrap();
+    }
+    connection
+        .flush()
+        .expect("X11 Escape: expected a flushed request");
 }
 
 fn pointer_target(position: [i32; 2]) -> (RustConnection, Window, i16, i16) {
