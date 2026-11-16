@@ -26,13 +26,15 @@ pub(super) struct LegacyPlane {
     pub y_axis: [f64; 3],
 }
 #[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub(super) struct LegacyPoint {
     pub id: u64,
     pub x: f64,
     pub y: f64,
     #[serde(default)]
     pub standalone: bool,
+    #[serde(default)]
+    pub center_point: bool,
 }
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]

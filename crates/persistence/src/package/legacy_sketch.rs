@@ -88,6 +88,9 @@ fn legacy_points(points: Vec<LegacyPoint>) -> Result<Sketch2D, PackageCodecError
             geometry.add_defining_point(id, [point.x, point.y])
         }
         .map_err(failure)?;
+        geometry
+            .set_center_point(id, point.center_point)
+            .map_err(failure)?;
     }
     Ok(geometry)
 }

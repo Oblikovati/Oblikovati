@@ -11,8 +11,10 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
   is excluded until the recorded sketch fixture is supplied. See `receipts/2026-11-15-point-fixture-full/`.
   Captures remain historical (#3978).
 - Go sketch import: the isolated candidate preserves line construction and
-  centerline roles, checked against a Go-generated fixture. Normal legacy open
-  and save remain open (#3882); see `receipts/2026-11-16-go-line-roles-3882/`.
+  centerline roles and point center markers, checked against Go-generated
+  fixtures. Normal legacy open and save remain open (#3882); see
+  `receipts/2026-11-16-go-line-roles-3882/` and
+  `receipts/2026-11-16-go-center-points-3882/`.
 - Cube replay: current headless and native frame-loop checks passed; they do
   not establish OS input, solve precision, or verified acceptance. See
   `receipts/2026-11-16-cube-current-3857/` (#3857, #3928, #3978).
