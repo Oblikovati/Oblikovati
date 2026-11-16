@@ -27,6 +27,11 @@ pub(crate) struct SketchMoveState {
     pointer: Option<[f64; 2]>,
     pub preview: Option<ViewportSketchPreview>,
 }
+impl SketchMoveState {
+    pub(super) fn accepts_geometry(&self) -> bool {
+        matches!(self.stage, MoveStage::Geometry)
+    }
+}
 impl<
     O: TransactionObserver,
     W: WorkspaceObserver,

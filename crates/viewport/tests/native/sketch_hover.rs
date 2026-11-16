@@ -6,7 +6,9 @@ use oblikovati_model::{
     sketch::{Sketch2D, SketchEntityId as Id, SketchPlane},
     theme::ThemeDefinition,
 };
-use oblikovati_viewport::{ViewportSketchDisplay, ViewportSketchHover, ViewportSketchPalette};
+use oblikovati_viewport::{
+    ViewportSketchDisplay, ViewportSketchFeedback, ViewportSketchHover, ViewportSketchPalette,
+};
 
 fn parallel_lines(offset: f64) -> ViewportSketchDisplay {
     let mut geometry = Sketch2D::default();
@@ -126,5 +128,34 @@ fn one_curved_candidate_uses_the_transient_theme_color_and_clears() {
     assert!(!view.set_sketch_hover(Some(&hover)).unwrap());
     assert!(view.set_sketch_hover(None).unwrap());
     assert_eq!(view.redraw().unwrap().rgba, baseline.rgba);
+    super::sketch_display::close_display(&runtime, &mut view);
+}
+
+#[test]
+fn derived_midpoint_feedback_is_transient_and_clears_on_source_change() {
+    let (runtime, mut view) = super::sketch_display::open_display("Midpoint candidate");
+    let packet = parallel_lines(0.);
+    view.set_sketch_display(&[packet]).unwrap();
+    view.set_sketch_palette(&candidate_palette()).unwrap();
+    let baseline = view.redraw().unwrap();
+    assert!(!green_near(&view, &baseline, [0., 1.]));
+    let hover = ViewportSketchFeedback::Point {
+        sketch: DocumentSketchId(1),
+        position: [0., 1.],
+    };
+    assert!(view.set_sketch_feedback(Some(&hover)).unwrap());
+    let highlighted = view.redraw().unwrap();
+    assert!(green_near(&view, &highlighted, [0., 1.]));
+    assert!(!view.set_sketch_feedback(Some(&hover)).unwrap());
+    let invalid = ViewportSketchFeedback::Point {
+        sketch: DocumentSketchId(1),
+        position: [f64::NAN, 1.],
+    };
+    assert!(view.set_sketch_feedback(Some(&invalid)).is_err());
+    assert!(!view.set_sketch_feedback(Some(&hover)).unwrap());
+    view.set_sketch_display(&[parallel_lines(1.)]).unwrap();
+    assert!(!view.set_sketch_feedback(None).unwrap());
+    let changed = view.redraw().unwrap();
+    assert!(!green_near(&view, &changed, [0., 1.]));
     super::sketch_display::close_display(&runtime, &mut view);
 }

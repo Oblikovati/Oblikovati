@@ -119,6 +119,10 @@ Last checked: 2026-11-16 on `rust-work` after `6ba45dcb1`. Refresh from current 
   8 of 9 native scenarios; point-10 is excluded until its recorded fixture is supplied (#3887).
 - Rectangle visibility now rejects obstructed observations (#3980). Focused
   native checks passed; the full gate is still required.
+- Move and Measure now show transient sketch candidates (#4034). A native
+  Measure scenario passes with mouse input; its unpinned fixture makes this
+  diagnostic evidence. Sketch frame time still exceeds the 60 fps budget
+  (#4032, #4035 and Martensite #501).
 - Authored work planes now display in part views (#3981). Viewport plane
   picking now supports sketch and offset-plane creation (#3984); assembly
   overlays and picking remain open. Visibility editing needs the

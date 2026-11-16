@@ -175,6 +175,22 @@ pub trait HeadWindow {
         Ok(false)
     }
 
+    /// Publish authored or derived feedback; example: `window.set_tool_feedback(None)?`.
+    fn set_tool_feedback(
+        &mut self,
+        feedback: Option<&oblikovati_viewport::ViewportSketchFeedback>,
+    ) -> Result<bool, String> {
+        match feedback {
+            Some(oblikovati_viewport::ViewportSketchFeedback::Entities(hover)) => {
+                self.set_tool_candidate(Some(hover))
+            }
+            None => self.set_tool_candidate(None),
+            Some(point) => Err(format!(
+                "sketch feedback {point:?}: expected a derived-point capable window"
+            )),
+        }
+    }
+
     /// Apply one view-only input before projecting that same event; example: `window.process_view_input(&event)?`.
     fn process_view_input(&mut self, _: &ViewportEvent) -> Result<bool, String> {
         Ok(false)
@@ -190,6 +206,18 @@ pub trait HeadWindow {
             .iter()
             .map(|point| self.sketch_pixel(plane, *point))
             .collect()
+    }
+
+    /// Project ordered picks with individual errors; example: `window.sketch_pixel_results(plane, &points)?`.
+    fn sketch_pixel_results(
+        &self,
+        plane: oblikovati_model::sketch::SketchPlane,
+        points: &[[f64; 2]],
+    ) -> Result<Vec<Result<[i32; 2], String>>, String> {
+        Ok(points
+            .iter()
+            .map(|point| self.sketch_pixel(plane, *point))
+            .collect())
     }
 
     /// Map physical pointer coordinates through the current view; example: `window.sketch_point(pixel,plane)?`.

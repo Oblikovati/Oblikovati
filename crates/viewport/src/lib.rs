@@ -65,8 +65,8 @@ mod sketch_camera;
 
 mod sketch_display;
 pub use sketch_display::{
-    ViewportSketchBlock, ViewportSketchDecline, ViewportSketchDisplay, ViewportSketchHover,
-    ViewportSketchSelection,
+    ViewportSketchBlock, ViewportSketchDecline, ViewportSketchDisplay, ViewportSketchFeedback,
+    ViewportSketchHover, ViewportSketchSelection,
 };
 
 mod sketch_palette;

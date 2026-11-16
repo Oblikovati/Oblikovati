@@ -1,0 +1,84 @@
+// SPDX-License-Identifier: GPL-2.0-only
+//! Release-mode Measure pointer-query and bounded frame measurements (#4035).
+use super::super::super::ApplicationWorld;
+use crate::HeadSketchWork;
+use oblikovati_viewport::{ViewportEvent, ViewportInput, ViewportPhysicalKey};
+use std::time::{Duration, Instant};
+
+fn measure_world() -> ApplicationWorld {
+    let mut world = super::dense_sketch_world();
+    world.key(ViewportPhysicalKey::M, false);
+    assert!(super::super::super::diagnostics::window_geometry("Measure").is_some());
+    world
+}
+fn check_device(world: &mut ApplicationWorld) {
+    let app = world.app();
+    let extent = app.window.native.drawable_extent().unwrap();
+    eprintln!(
+        "Measure device: {}, extent: {extent:?}",
+        app.window.native.runtime.device_name()
+    );
+    assert_eq!(extent, [1440, 900]);
+}
+fn print_samples(label: &str, samples: &mut [Duration]) {
+    samples.sort();
+    eprintln!(
+        "{label} n={} p50={:?} p95={:?} p99={:?} max={:?} over_16_67ms={}",
+        samples.len(),
+        samples[60],
+        samples[113],
+        samples[118],
+        samples[119],
+        samples
+            .iter()
+            .filter(|elapsed| elapsed.as_secs_f64() > 1. / 60.)
+            .count()
+    );
+}
+#[test]
+#[ignore = "run in release mode on a native desktop to measure Measure hover"]
+fn measure_inspect_candidate_for_dense_sketch() {
+    let mut world = measure_world();
+    check_device(&mut world);
+    let app = world.app();
+    let mut samples = Vec::with_capacity(120);
+    for i in 0..140 {
+        let start = Instant::now();
+        let _ = app
+            .owner
+            .sketch_tool_feedback([1050 + i % 100, 650], &app.window)
+            .unwrap();
+        if i >= 20 {
+            samples.push(start.elapsed());
+        }
+    }
+    print_samples("Measure candidate query 200 segments", &mut samples);
+    world.close();
+}
+#[test]
+#[ignore = "run in release mode on a native desktop to measure Measure frames"]
+fn measure_inspect_frames_for_dense_sketch() {
+    let mut world = measure_world();
+    check_device(&mut world);
+    let app = world.app();
+    let mut samples = Vec::with_capacity(120);
+    for i in 0..140 {
+        app.window.scripted = vec![ViewportEvent::Input(ViewportInput::Motion {
+            position: [1050 + i % 100, 650],
+            modifiers: Default::default(),
+        })];
+        let start = Instant::now();
+        let summary = crate::frames::run_frames(
+            &mut app.window,
+            crate::HeadOptions { frames: Some(1) },
+            &mut app.owner,
+        )
+        .unwrap();
+        assert_eq!(summary.completed, 1);
+        if i >= 20 {
+            samples.push(start.elapsed());
+        }
+    }
+    print_samples("Measure frame 200 segments", &mut samples);
+    world.close();
+}

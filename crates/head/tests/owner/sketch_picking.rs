@@ -192,7 +192,7 @@ fn geometric_candidate_obeys_tool_filter_and_never_selects_on_hover() {
         .sketch_tool_candidate([50, 0], &window)
         .unwrap()
         .unwrap();
-    assert_eq!(candidate.entities.len(), 1);
+    assert!(candidate.entities.len() == 1);
     assert_eq!(selection(&mut owner).count, 0);
     assert!(
         owner
@@ -236,4 +236,38 @@ fn candidate_owner() -> TestOwner {
         .commit_sketch_placement(document, sketch, &recipe, &[])
         .unwrap();
     owner
+}
+
+#[test]
+fn move_candidate_follows_geometry_selection_stage_without_selecting() {
+    use crate::HeadSketchWork;
+    use oblikovati_gui::GuiSketchMoveAction;
+    let mut owner = candidate_owner();
+    let window = PlanarInputWindow::default();
+    owner
+        .sketch_move_from_gui(GuiSketchMoveAction::Start)
+        .unwrap();
+    owner
+        .sketch_move_from_gui(GuiSketchMoveAction::SetOptimizeSingle(true))
+        .unwrap();
+    let candidate = owner.sketch_tool_candidate([50, 0], &window).unwrap();
+    assert!(matches!(
+        candidate,
+        Some(oblikovati_viewport::ViewportSketchHover { .. })
+    ));
+    assert_eq!(selection(&mut owner).count, 0);
+    deliver(&mut owner, &[button([50, 0], true)]);
+    assert!(
+        owner
+            .sketch_tool_candidate([50, 0], &window)
+            .unwrap()
+            .is_none()
+    );
+    deliver(&mut owner, &[key(ViewportKey::Cancel, true)]);
+    assert!(
+        owner
+            .sketch_tool_candidate([50, 0], &window)
+            .unwrap()
+            .is_none()
+    );
 }

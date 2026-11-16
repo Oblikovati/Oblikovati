@@ -217,7 +217,7 @@ fn process_frame_inputs(
         };
         changed |= gui.changed;
         if gui.consumed_input {
-            changed |= window.set_tool_candidate(None)?;
+            changed |= window.set_tool_feedback(None)?;
         }
         if !gui.consumed_input {
             if let Some(action) = shortcut {

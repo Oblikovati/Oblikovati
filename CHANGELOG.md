@@ -141,6 +141,8 @@
 
 ### Added
 
+- Added Move and Measure pointer feedback for sketch curves, points, and midpoints. (#4034)
+
 - Added transient candidate feedback for sketch constraint and dimension tools. (#4034)
 
 - Added an experimental offline sandbox build probe for native BDD investigations. (#3978)

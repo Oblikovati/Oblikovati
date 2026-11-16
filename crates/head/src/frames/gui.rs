@@ -410,20 +410,20 @@ fn update_tool_candidate(
     event: &ViewportEvent,
 ) -> Result<bool, String> {
     let ViewportEvent::Input(ViewportInput::Motion { position, .. }) = event else {
-        return window.set_tool_candidate(None);
+        return window.set_tool_feedback(None);
     };
     if window.navigation_active() {
-        return window.set_tool_candidate(None);
+        return window.set_tool_feedback(None);
     }
-    let candidate = match owner.sketch_tool_candidate(*position, window) {
+    let candidate = match owner.sketch_tool_feedback(*position, window) {
         Ok(candidate) => candidate,
         Err(cause) => {
             window.show_command_notice(crate::DesktopCommandNotice::SelectionFailed { cause })?;
-            window.set_tool_candidate(None)?;
+            window.set_tool_feedback(None)?;
             return Ok(true);
         }
     };
-    window.set_tool_candidate(candidate.as_ref())
+    window.set_tool_feedback(candidate.as_ref())
 }
 
 fn semantic_command_event(event: ViewportEvent) -> ViewportEvent {

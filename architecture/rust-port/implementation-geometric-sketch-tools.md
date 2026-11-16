@@ -62,4 +62,7 @@ The owner uses the same analytic pick and operand checks as a click. Candidate
 presentation samples only the named entity and keeps it separate from selection.
 A pointer over a panel, tool cancellation, and a change of displayed sketch clear
 the feedback. Constraint glyph feedback takes priority over a tool candidate.
-Move and Measure tool candidates remain open, as does a verified 60 fps result.
+Move shows candidates during geometry selection. Measure uses its ordered pick
+rules to distinguish authored curves, points, and derived midpoints. Its marker
+is transient, and a geometry update clears derived positions. A verified 60 fps
+result remains open (#4035 and Martensite #501).

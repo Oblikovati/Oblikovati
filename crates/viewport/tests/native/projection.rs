@@ -62,6 +62,12 @@ fn verify_mapping(view: &mut Viewport) {
         .collect();
     assert_eq!(view.sketch_pixels(plane, &points).unwrap(), expected);
     assert!(view.sketch_pixels(plane, &[]).unwrap().is_empty());
+    let outcomes = view
+        .sketch_pixel_results(plane, &[[1., -2.], [f64::NAN, 0.], [-3., 4.]])
+        .unwrap();
+    assert_eq!(outcomes[0].as_ref().unwrap(), &expected[1]);
+    assert!(outcomes[1].is_err());
+    assert_eq!(outcomes[2].as_ref().unwrap(), &expected[2]);
     assert_eq!(view.capture().unwrap(), capture);
 }
 fn verify_rejections(view: &Viewport) {

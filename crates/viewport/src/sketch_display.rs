@@ -40,6 +40,15 @@ pub struct ViewportSketchHover {
     pub sketch: DocumentSketchId,
     pub entities: Vec<oblikovati_model::sketch::SketchEntityId>,
 }
+/// Transient feedback for authored entities or a derived point, such as a midpoint.
+#[derive(Clone, Debug, PartialEq)]
+pub enum ViewportSketchFeedback {
+    Entities(ViewportSketchHover),
+    Point {
+        sketch: DocumentSketchId,
+        position: [f64; 2],
+    },
+}
 // #3795: only the Linux renderer consumes normalization; pure selection checks remain portable.
 #[cfg(any(target_os = "linux", test))]
 impl ViewportSketchSelection {

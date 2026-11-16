@@ -62,6 +62,29 @@ impl Viewport {
         self.require_projection_extent()?;
         Ok(projected)
     }
+    /// Project each point while retaining its own error under one extent check.
+    /// Example: `view.sketch_pixel_results(plane, &points)?` for ordered picks.
+    pub fn sketch_pixel_results(
+        &self,
+        plane: SketchPlane,
+        points: &[[f64; 2]],
+    ) -> Result<Vec<Result<[i32; 2], String>>, String> {
+        if points.is_empty() {
+            return Ok(Vec::new());
+        }
+        self.require_projection_extent()?;
+        let projected = points
+            .iter()
+            .map(|point| {
+                plane
+                    .to_model(*point)
+                    .map_err(|cause| cause.to_string())
+                    .and_then(|model| self.model_pixel_checked_extent(model))
+            })
+            .collect();
+        self.require_projection_extent()?;
+        Ok(projected)
+    }
     /// The pixel a model position shows at; example: to draw a solid's edges over the view.
     pub fn model_pixel(&self, [x, y, z]: [f64; 3]) -> Result<[i32; 2], String> {
         self.require_projection_extent()?;

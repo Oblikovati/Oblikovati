@@ -29,6 +29,8 @@ pub(super) mod fixtures;
 mod fixtures_midpoint;
 #[path = "line/steps.rs"]
 mod line;
+#[path = "measure-entity-picking/steps.rs"]
+mod measure_entity_picking;
 #[path = "move/cancel.rs"]
 mod move_cancel;
 #[path = "move/close.rs"]

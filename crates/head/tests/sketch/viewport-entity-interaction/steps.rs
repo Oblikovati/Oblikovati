@@ -223,6 +223,12 @@ fn measure_candidate_query_for_dense_sketch() {
 }
 
 fn dense_candidate_world() -> ApplicationWorld {
+    let mut world = dense_sketch_world();
+    world.key(oblikovati_viewport::ViewportPhysicalKey::D, false);
+    world
+}
+
+fn dense_sketch_world() -> ApplicationWorld {
     use oblikovati_model::sketch::SketchPlacementRecipe;
     let mut world = ApplicationWorld::new();
     world.start_empty_sketch();
@@ -236,7 +242,6 @@ fn dense_candidate_world() -> ApplicationWorld {
         .owner
         .commit_sketch_placement(edit.document, edit.sketch, &recipe, &[])
         .unwrap();
-    world.key(oblikovati_viewport::ViewportPhysicalKey::D, false);
     world
 }
 
@@ -285,3 +290,6 @@ fn measure_candidate_frames_for_dense_sketch() {
     );
     world.close();
 }
+
+#[path = "measure_perf.rs"]
+mod measure_perf;

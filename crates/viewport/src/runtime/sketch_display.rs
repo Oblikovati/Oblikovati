@@ -8,6 +8,13 @@ impl Viewport {
     ) -> Result<bool, String> {
         self.update_overlay(|render| render.set_sketch_hover(hover))
     }
+    /// Show derived or authored pointer feedback; example: `viewport.set_sketch_feedback(None)?` on exit.
+    pub fn set_sketch_feedback(
+        &mut self,
+        feedback: Option<&crate::ViewportSketchFeedback>,
+    ) -> Result<bool, String> {
+        self.update_overlay(|render| render.set_sketch_feedback(feedback))
+    }
     /// Replace committed sketch presentation without modifying solid meshes or transient previews.
     /// Example: `viewport.set_sketch_display(&sketches)?` after a document history change.
     pub fn set_sketch_display(

@@ -5,10 +5,19 @@ impl NativeHeadWindow {
         &mut self,
         hover: Option<&oblikovati_viewport::ViewportSketchHover>,
     ) -> Result<bool, String> {
-        let next = hover.cloned();
+        let feedback = hover
+            .cloned()
+            .map(oblikovati_viewport::ViewportSketchFeedback::Entities);
+        self.update_tool_feedback(feedback.as_ref())
+    }
+    pub(super) fn update_tool_feedback(
+        &mut self,
+        feedback: Option<&oblikovati_viewport::ViewportSketchFeedback>,
+    ) -> Result<bool, String> {
+        let next = feedback.cloned();
         let changed = self
             .view
-            .set_sketch_hover(self.glyph_hover.as_ref().or(next.as_ref()))?;
+            .set_sketch_feedback(self.glyph_hover.as_ref().or(next.as_ref()))?;
         self.tool_hover = next;
         Ok(changed)
     }
@@ -16,8 +25,12 @@ impl NativeHeadWindow {
         &mut self,
         update: crate::HeadSketchSceneUpdate,
     ) -> Result<(), String> {
-        if self.sketch_scene.as_ref().and_then(|scene| scene.source) != update.source {
-            self.view.set_sketch_hover(None)?;
+        if self
+            .sketch_scene
+            .as_ref()
+            .is_none_or(|scene| scene.source != update.source || scene.sketches != update.sketches)
+        {
+            self.view.set_sketch_feedback(None)?;
             self.glyph_hover = None;
             self.tool_hover = None;
         }
@@ -33,13 +46,17 @@ impl NativeHeadWindow {
         let source = self.sketch_scene.as_ref().and_then(|scene| scene.source);
         let next = hover
             .filter(|_| source.map(|value| value.0) == document)
-            .map(|value| oblikovati_viewport::ViewportSketchHover {
-                sketch: value.sketch,
-                entities: value.related.clone(),
+            .map(|value| {
+                oblikovati_viewport::ViewportSketchFeedback::Entities(
+                    oblikovati_viewport::ViewportSketchHover {
+                        sketch: value.sketch,
+                        entities: value.related.clone(),
+                    },
+                )
             });
         let changed = self
             .view
-            .set_sketch_hover(next.as_ref().or(self.tool_hover.as_ref()))?;
+            .set_sketch_feedback(next.as_ref().or(self.tool_hover.as_ref()))?;
         self.glyph_hover = next;
         Ok(changed)
     }

@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Transient feedback for sketch entities without changing selection.
 use super::{RenderView, sketch_display::build_entity, sketch_structure};
-use crate::{ViewportSketchDisplay, ViewportSketchHover};
+use crate::{ViewportSketchDisplay, ViewportSketchFeedback, ViewportSketchHover};
 use martensite_tkservice::graphic3d::Graphic3dStructureSource;
 use oblikovati_martensite::planar_curve::sketch::{SketchSamplingOptionsV1, sample_sketch_entity};
 
 #[derive(Default)]
 pub(super) struct SketchHoverOverlay {
-    hover: Option<ViewportSketchHover>,
+    hover: Option<ViewportSketchFeedback>,
     structures: Vec<sketch_structure::SketchStructure>,
 }
 
@@ -15,6 +15,17 @@ impl RenderView {
     pub(crate) fn set_sketch_hover(
         &mut self,
         hover: Option<&ViewportSketchHover>,
+    ) -> Result<bool, String> {
+        self.set_sketch_feedback(
+            hover
+                .cloned()
+                .map(ViewportSketchFeedback::Entities)
+                .as_ref(),
+        )
+    }
+    pub(crate) fn set_sketch_feedback(
+        &mut self,
+        hover: Option<&ViewportSketchFeedback>,
     ) -> Result<bool, String> {
         if self.sketch_hover.hover.as_ref() == hover {
             return Ok(false);
@@ -58,7 +69,7 @@ impl RenderView {
     }
     pub(super) fn build_sketch_hover(
         &self,
-        hover: Option<&ViewportSketchHover>,
+        hover: Option<&ViewportSketchFeedback>,
         sketches: &[ViewportSketchDisplay],
         palette: &crate::ViewportSketchPalette,
     ) -> Result<SketchHoverOverlay, String> {
@@ -66,14 +77,36 @@ impl RenderView {
             return Ok(SketchHoverOverlay::default());
         };
         let sketch = find_sketch(sketches, hover)?;
-        let mut structures = Vec::with_capacity(hover.entities.len());
-        for id in &hover.entities {
-            structures.push(self.hover_entity(sketch, *id, palette)?);
-        }
+        let structures = self.hover_structures(sketch, hover, palette)?;
         Ok(SketchHoverOverlay {
             hover: Some(hover.clone()),
             structures,
         })
+    }
+    fn hover_structures(
+        &self,
+        sketch: &ViewportSketchDisplay,
+        hover: &ViewportSketchFeedback,
+        palette: &crate::ViewportSketchPalette,
+    ) -> Result<Vec<sketch_structure::SketchStructure>, String> {
+        match hover {
+            ViewportSketchFeedback::Entities(ViewportSketchHover { entities, .. }) => entities
+                .iter()
+                .map(|id| self.hover_entity(sketch, *id, palette))
+                .collect(),
+            ViewportSketchFeedback::Point { position, .. } => {
+                let glyph = super::sketch_marker::SketchPointGlyph::from_center_role(false);
+                sketch_structure::point(
+                    &self.viewer,
+                    sketch.plane,
+                    *position,
+                    glyph,
+                    &palette.candidate,
+                    true,
+                )
+                .map(|point| vec![point])
+            }
+        }
     }
     fn hover_entity(
         &self,
@@ -93,10 +126,13 @@ impl RenderView {
     }
 }
 
-fn hover_still_valid(sketches: &[ViewportSketchDisplay], hover: &ViewportSketchHover) -> bool {
+fn hover_still_valid(sketches: &[ViewportSketchDisplay], hover: &ViewportSketchFeedback) -> bool {
+    let ViewportSketchFeedback::Entities(ViewportSketchHover { entities, .. }) = hover else {
+        // Derived positions must be recomputed after any source change.
+        return false;
+    };
     find_sketch(sketches, hover).is_ok_and(|sketch| {
-        hover
-            .entities
+        entities
             .iter()
             .all(|id| sketch.geometry.entity_kind(*id).is_ok())
     })
@@ -104,28 +140,34 @@ fn hover_still_valid(sketches: &[ViewportSketchDisplay], hover: &ViewportSketchH
 
 fn find_sketch<'a>(
     sketches: &'a [ViewportSketchDisplay],
-    hover: &ViewportSketchHover,
+    hover: &ViewportSketchFeedback,
 ) -> Result<&'a ViewportSketchDisplay, String> {
-    let mut distinct = std::collections::BTreeSet::new();
-    if hover.entities.is_empty() || !hover.entities.iter().all(|id| distinct.insert(*id)) {
-        return Err(format!(
-            "sketch hover {:?}: expected distinct entity identities",
-            hover.entities
-        ));
-    }
-    let mut found = sketches
-        .iter()
-        .filter(|sketch| sketch.sketch == hover.sketch);
-    let sketch = found.next().ok_or_else(|| {
-        format!(
-            "constraint hover sketch {:?}: expected one displayed sketch",
-            hover.sketch
-        )
-    })?;
+    let id = match hover {
+        ViewportSketchFeedback::Entities(ViewportSketchHover { sketch, entities }) => {
+            let mut distinct = std::collections::BTreeSet::new();
+            if entities.is_empty() || !entities.iter().all(|id| distinct.insert(*id)) {
+                return Err(format!(
+                    "sketch hover {entities:?}: expected distinct entity identities"
+                ));
+            }
+            *sketch
+        }
+        ViewportSketchFeedback::Point { sketch, position } => {
+            if !position.iter().all(|coordinate| coordinate.is_finite()) {
+                return Err(format!(
+                    "sketch hover point {position:?}: expected finite coordinates"
+                ));
+            }
+            *sketch
+        }
+    };
+    let mut found = sketches.iter().filter(|sketch| sketch.sketch == id);
+    let sketch = found
+        .next()
+        .ok_or_else(|| format!("hover sketch {id:?}: expected one displayed sketch"))?;
     if found.next().is_some() {
         return Err(format!(
-            "constraint hover sketch {:?}: expected an unambiguous display",
-            hover.sketch
+            "hover sketch {id:?}: expected an unambiguous display"
         ));
     }
     Ok(sketch)
