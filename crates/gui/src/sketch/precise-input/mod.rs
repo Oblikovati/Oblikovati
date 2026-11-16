@@ -107,6 +107,7 @@ pub(crate) struct PreciseInputBar {
     second: PreciseField,
     mode: GuiPreciseMode,
     relative: bool,
+    pinned: bool,
 }
 impl DockableWindow for PreciseInputBar {}
 impl PreciseInputBar {
@@ -150,11 +151,7 @@ impl PreciseInputBar {
         let mut open = self.open;
         Self::dockable_window(ui, "Precise Input", &mut open)
             .position([width * 0.5, 200.], imgui::Condition::FirstUseEver)
-            .flags(
-                WindowFlags::ALWAYS_AUTO_RESIZE
-                    | WindowFlags::NO_COLLAPSE
-                    | WindowFlags::NO_FOCUS_ON_APPEARING,
-            )
+            .flags(self.window_flags())
             .build(|| {
                 self.reference_control(ui);
                 ui.same_line();
@@ -172,6 +169,15 @@ impl PreciseInputBar {
                 ui.text_disabled(format!("{} / {}", target.units[0], second_unit));
             });
         self.open &= open;
+    }
+    fn window_flags(&self) -> WindowFlags {
+        let mut flags = WindowFlags::ALWAYS_AUTO_RESIZE
+            | WindowFlags::NO_COLLAPSE
+            | WindowFlags::NO_FOCUS_ON_APPEARING;
+        if self.pinned {
+            flags |= WindowFlags::NO_MOVE;
+        }
+        flags
     }
     fn fields(
         &mut self,
@@ -260,10 +266,14 @@ impl PreciseInputBar {
         let Some(_menu) = ui.begin_popup(OPTIONS) else {
             return;
         };
-        // Listed so the toolbar's menu is complete; neither has anything to change here yet.
-        ui.menu_item_config("Pin Mini-Toolbar Position")
-            .enabled(false)
-            .build();
+        if ui
+            .menu_item_config("Pin Mini-Toolbar Position")
+            .selected(self.pinned)
+            .build()
+        {
+            self.pinned = !self.pinned;
+        }
+        // Keep Auto Fade visible, but unavailable until it has behavior.
         ui.menu_item_config("Auto Fade").enabled(false).build();
         if ui.menu_item("Close") {
             self.open = false;
@@ -355,6 +365,16 @@ mod tests {
         };
         assert_eq!(target.displayed_triad(true), Some(reference));
         assert_eq!(target.displayed_triad(false), Some(origin));
+    }
+    #[test]
+    fn pin_locks_only_the_toolbar_position() {
+        let mut bar = PreciseInputBar::default();
+        assert!(!bar.window_flags().contains(WindowFlags::NO_MOVE));
+        bar.pinned = true;
+        assert!(bar.window_flags().contains(WindowFlags::NO_MOVE));
+        assert!(!bar.window_flags().contains(WindowFlags::NO_INPUTS));
+        bar.pinned = false;
+        assert!(!bar.window_flags().contains(WindowFlags::NO_MOVE));
     }
     #[test]
     fn each_mode_names_its_two_values() {
