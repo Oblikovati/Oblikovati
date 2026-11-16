@@ -26,7 +26,7 @@ from sealed_execution import file_identity, require_disjoint
 
 @dataclass(frozen=True)
 class BuildProbe:
-    """Locations for one probe; example: BuildProbe(source, vendor, tools, config, target, logs, bwrap)."""
+    """Locations for one probe; example: BuildProbe(source, vendor, tools, config, target, logs, bwrap, system)."""
 
     source: Path
     vendor: Path
@@ -35,6 +35,7 @@ class BuildProbe:
     target: Path
     logs: Path
     bwrap: Path
+    system: Path
 
 
 ProbeProcess = Callable[[list[str], Path, Path], int]
@@ -52,6 +53,7 @@ def require_roots(probe: BuildProbe) -> None:
         probe.config,
         probe.target,
         probe.logs,
+        probe.system,
     )
     for root in roots:
         if not root.is_absolute() or root.is_symlink() or not root.is_dir():
@@ -109,9 +111,6 @@ SANDBOX_PREFIX = (
     "--die-with-parent",
     "--new-session",
     "--clearenv",
-    "--ro-bind",
-    "/usr",
-    "/usr",
     "--symlink",
     "usr/bin",
     "/bin",
@@ -143,6 +142,7 @@ def sandbox_build_command(probe: BuildProbe) -> list[str]:
     """Build the fixed offline command; example: sandbox_build_command(probe)."""
     command = [str(probe.bwrap), *SANDBOX_PREFIX]
     for host, guest in (
+        (probe.system, "/usr"),
         (probe.source, "/source"),
         (probe.vendor, "/vendor"),
         (probe.toolchain, "/toolchain"),
@@ -237,7 +237,7 @@ def snapshot_inputs(
     """Inventory mounted build inputs; example: snapshot_inputs(probe, snapshot_runtime)."""
     return {
         name: snapshot(getattr(probe, name))
-        for name in ("source", "vendor", "toolchain", "config")
+        for name in ("source", "vendor", "toolchain", "config", "system")
     }
 
 
@@ -256,7 +256,7 @@ def probe_result(
         },
         "sandbox_sha256": sandbox["sha256"],
         "reusable": False,
-        "limitations": "Host system libraries, kernel, devices and concurrent host writes are not bounded.",
+        "limitations": "System and toolchain origin, kernel, devices and concurrent host writes are not bounded.",
     }
 
 
@@ -449,7 +449,7 @@ def run_committed_build_probe(
 def main() -> None:
     """Run an experimental build probe; run `python3 sandbox_build_probe.py --help`."""
     parser = argparse.ArgumentParser(description=__doc__)
-    for name in ("source", "vendor", "toolchain", "config", "target", "logs", "bwrap"):
+    for name in ("source", "vendor", "toolchain", "config", "target", "logs", "bwrap", "system"):
         parser.add_argument(name, type=Path)
     parser.add_argument("--repository", type=Path)
     parser.add_argument("--revision")

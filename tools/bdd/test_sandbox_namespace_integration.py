@@ -5,6 +5,7 @@ import shutil
 import subprocess
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 
 from sandbox_build_probe import BuildProbe, sandbox_build_command
@@ -26,7 +27,22 @@ class SandboxNamespaceTests(unittest.TestCase):
             'then exit 73; else exit 0; fi\n'
         )
         cargo.chmod(0o755)
-        return BuildProbe(*paths, Path(shutil.which("bwrap") or "/missing/bwrap"))
+        return BuildProbe(*paths, Path(shutil.which("bwrap") or "/missing/bwrap"), Path("/usr"))
+
+    def make_minimal_system(self, root: Path) -> Path:
+        """Copy the shell and libraries for a sandbox fixture; example: self.make_minimal_system(root)."""
+        system = root / "system"
+        for name in ("bin", "lib/x86_64-linux-gnu", "lib64"):
+            (system / name).mkdir(parents=True)
+        for source, target in (
+            ("/usr/bin/dash", "bin/sh"),
+            ("/lib/x86_64-linux-gnu/libc.so.6", "lib/x86_64-linux-gnu/libc.so.6"),
+            ("/lib64/ld-linux-x86-64.so.2", "lib64/ld-linux-x86-64.so.2"),
+        ):
+            shutil.copyfile(source, system / target)
+        (system / "bin/sh").chmod(0o755)
+        (system / "lib64/ld-linux-x86-64.so.2").chmod(0o755)
+        return system
 
     @unittest.skipUnless(
         shutil.which("bwrap") and shutil.which("unshare") and shutil.which("mount"),
@@ -44,3 +60,26 @@ class SandboxNamespaceTests(unittest.TestCase):
             safe = subprocess.run(command, capture_output=True, text=True)
             self.assertEqual(safe.returncode, 0, safe.stderr)
             self.assertEqual((probe.source / "probe").read_text(), "committed")
+
+    @unittest.skipUnless(
+        shutil.which("bwrap") and all(Path(path).is_file() for path in (
+            "/usr/bin/dash", "/lib/x86_64-linux-gnu/libc.so.6", "/lib64/ld-linux-x86-64.so.2"
+        )),
+        "requires Bubblewrap and Linux x86-64 system libraries",
+    )
+    def test_build_mounts_only_the_supplied_system_tree_read_only(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            probe = self.make_probe(root)
+            system = self.make_minimal_system(root)
+            marker = system / "marker"
+            marker.write_text("provided\n")
+            cargo = probe.toolchain / "bin/cargo"
+            cargo.write_text(
+                '#!/bin/sh\nread -r value < /usr/marker\n'
+                '[ "$value" = provided ] || exit 72\n'
+                '(printf forged > /usr/marker) 2>/dev/null && exit 73\nexit 0\n'
+            )
+            result = subprocess.run(sandbox_build_command(replace(probe, system=system)), capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(marker.read_text(), "provided\n")

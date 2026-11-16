@@ -66,8 +66,21 @@ class FakeInputSnapshot:
         self.count += 1
         return {
             "path": str(path),
-            "version": 2 if self.changed and self.count > 4 else 1,
+            "version": 2 if self.changed and self.count > 5 else 1,
         }
+
+
+class SystemChangingBuild(FakeBuildProcess):
+    """Simulate a host writer changing a system build input."""
+
+    def __init__(self, target: Path, system: Path) -> None:
+        super().__init__(target)
+        self.system = system
+
+    def __call__(self, command: list[str], messages: Path, log: Path) -> int:
+        result = super().__call__(command, messages, log)
+        (self.system / "compiler-input").write_text("changed")
+        return result
 
 
 @unittest.skipUnless(
@@ -87,7 +100,9 @@ class SandboxBuildProbeTests(unittest.TestCase):
         (roots[3] / "config.toml").write_text("[source.vendored-sources]\n")
         bwrap = root / "bwrap"
         bwrap.write_bytes(b"sandbox executable")
-        self.probe = BuildProbe(*roots, bwrap)
+        system = root / "system"
+        system.mkdir()
+        self.probe = BuildProbe(*roots, bwrap, system)
 
     def test_build_observes_inputs_and_never_claims_reuse(self) -> None:
         process = FakeBuildProcess(self.probe.target)
@@ -96,7 +111,7 @@ class SandboxBuildProbeTests(unittest.TestCase):
         self.assertEqual(len(result["runner_sha256"]), 64)
         self.assertEqual(
             set(result["input_inventory_sha256"]),
-            {"source", "vendor", "toolchain", "config"},
+            {"source", "vendor", "toolchain", "config", "system"},
         )
         self.assertEqual(len(result["sandbox_sha256"]), 64)
         self.assertIn("--unshare-all", process.command)
@@ -105,6 +120,14 @@ class SandboxBuildProbeTests(unittest.TestCase):
         self.assertIn("--offline", process.command)
         self.assertNotIn("RUSTFLAGS", build_environment())
         self.assertIn("/config/config.toml", sandbox_build_command(self.probe))
+        self.assertIn(str(self.probe.system), process.command)
+        self.assertNotIn(["--ro-bind", "/usr", "/usr"], [process.command[i:i+3] for i in range(len(process.command)-2)])
+
+    def test_changed_system_input_rejects_the_build(self) -> None:
+        (self.probe.system / "compiler-input").write_text("original")
+        process = SystemChangingBuild(self.probe.target, self.probe.system)
+        with self.assertRaisesRegex(ValueError, "build inputs changed"):
+            run_build_probe(self.probe, process)
 
     def test_committed_source_is_checked_before_the_build(self) -> None:
         repo = self.probe.source.parent / "repository"
@@ -279,6 +302,7 @@ class SandboxBuildProbeTests(unittest.TestCase):
             self.probe.target,
             self.probe.logs,
             self.probe.bwrap,
+            self.probe.system,
         )
         with self.assertRaisesRegex(ValueError, "disjoint"):
             require_probe(overlap)

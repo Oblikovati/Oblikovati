@@ -54,7 +54,9 @@ class SealedBuildChainTests(unittest.TestCase):
         paths = [root / name for name in ("build-source", "vendor", "toolchain", "config", "target", "build-logs")]
         for path in paths:
             path.mkdir()
-        return BuildProbe(*paths, fixture.bwrap), fixture
+        system = root / "system"
+        system.mkdir()
+        return BuildProbe(*paths, fixture.bwrap, system), fixture
 
     def test_chain_uses_build_artifact_and_never_claims_reuse(self) -> None:
         with tempfile.TemporaryDirectory() as folder:
