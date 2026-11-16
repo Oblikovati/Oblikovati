@@ -52,7 +52,7 @@ Last checked: 2026-11-16 on `rust-work`. Refresh from current evidence at each c
 - Opening an already open part passed native keyboard and mouse diagnostics
   (#3889); see `receipts/2026-11-16-open-existing-native-3889/` for input limits.
 - At local snapshot `b576445b98cffd686dcc05aa8c017de2a591c8c8`, the ledger
-  reports **0 verified** across 2,760 declarations. There are 8 stale
+  reports **0 verified** across 2,760 declarations. There are 0 stale
   classifications and 2,751 incomplete baselines (#3865, #4039). Baselines
   without a reviewed source hash now count as incomplete. Sketch3D has 10
   capture-only cases and no native runner; provenance is open (#3978).
