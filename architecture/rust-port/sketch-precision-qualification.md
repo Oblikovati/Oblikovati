@@ -231,3 +231,19 @@ remain conditional on the arithmetic backend. The result is a mathematical
 input bound, not a bound on kernel operations or the final B-rep. It does not
 prove the coincidence mapping, kernel tolerance composition, output validity,
 or admission coverage. The existing prism obligations remain unchanged.
+
+## Conditional profile input mapping
+
+The host adapter can now attribute the complete converted line-profile input
+back to the current conditional sketch root. It calls the same converter as
+region discovery, retaining its line and vertex identities and its transitive
+coincidence source groups. Each converted vertex receives the maximum of its
+source points' conditional displacement bounds. Construction curves are
+excluded by that converter; other unselected normal lines remain in the input.
+Curved inputs decline because their complete source bounds are not yet covered.
+
+The mapping borrows the root evidence. It does not prove that the input forms
+an admissible region, authenticate the interval backend, establish a tolerance
+budget, or qualify a feature. Exact coincidence of the true root and the
+kernel's tolerance composition remain separate obligations (#3928 and
+Martensite #494).

@@ -102,3 +102,6 @@ fn assert_analytic_centroid(actual: [f64; 3], expected: [f64; 3]) {
 
 #[path = "sketch_prism/legacy_cube.rs"]
 mod legacy_cube;
+
+#[path = "sketch_prism/conditional_profile.rs"]
+mod conditional_profile;

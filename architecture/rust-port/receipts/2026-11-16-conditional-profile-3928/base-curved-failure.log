@@ -1,0 +1,22 @@
+   Compiling martensite-tkbo v0.8.1 (https://github.com/Oblikovati/Martensite?rev=d051ff699982faba4ec2df3ee9a47e14f38dedbd#d051ff69)
+   Compiling oblikovati-martensite v0.1.0 (/tmp/obk-profile-base-3928/crates/martensite)
+    Finished `test` profile [unoptimized] target(s) in 54.07s
+     Running tests/profile_regions.rs (/tmp/obk-profile-base-target/debug/deps/profile_regions-8754404a531687a8)
+
+running 1 test
+
+thread 'curved::curved_intersections_match_every_occt_face' (357572) panicked at crates/martensite/tests/profile_regions/curved_prism.rs:95:5:
+assertion `left == right` failed: region [0.9424777960769383, 3.575586818421612, 1.5], face [5.10559688276129, 3.4145580136776803, 1.5, 1.0, 1.0, 4.0, 8.0]: expected one oracle face
+  left: 0
+ right: 1
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test curved::curved_intersections_match_every_occt_face ... FAILED
+
+failures:
+
+failures:
+    curved::curved_intersections_match_every_occt_face
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.27s
+
+error: test failed, to rerun pass `-p oblikovati-martensite --test profile_regions`
