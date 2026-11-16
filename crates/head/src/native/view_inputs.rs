@@ -44,7 +44,7 @@ impl NativeHeadWindow {
         for event in inputs {
             let command = self.navigation.command(event)?;
             if previous_view_pressed(event) {
-                changed |= self.view.previous_view()?;
+                changed |= self.restore_previous_scene_view()?;
                 continue;
             }
             if let Some(command) = command {

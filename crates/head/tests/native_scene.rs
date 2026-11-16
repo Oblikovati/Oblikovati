@@ -466,3 +466,6 @@ pub(super) fn assert_same_native_pixels(actual: &ViewportCapture, expected: &Vie
         "expected identical native pixels; first mismatch {mismatch:?}"
     );
 }
+
+#[path = "native_scene/depth.rs"]
+mod depth;

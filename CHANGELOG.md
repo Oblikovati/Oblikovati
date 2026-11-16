@@ -4,6 +4,8 @@
 
 ### Changed
 
+- Refresh camera depth when an edited model would be clipped. (#4044)
+
 - Preserve body-relative face orientation in prism presentation. (#4044)
 
 - Reduced repeated sketch point projection work during pointer interaction and context picking. (#4035)

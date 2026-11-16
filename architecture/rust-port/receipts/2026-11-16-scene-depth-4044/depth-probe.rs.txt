@@ -1,0 +1,115 @@
+// Temporary diagnostic for #4044; not production code.
+use super::*;
+use oblikovati_martensite::{
+    PrismMeshOptions, PrismProbeDefinition, PrismProbeLoop, retain_planar_prism,
+};
+
+#[test]
+fn opaque_prism_render_does_not_depend_on_triangle_order() {
+    let runtime = ViewportRuntime::new(ViewportOptions::default()).unwrap();
+    let mut view = runtime
+        .open_window("Oblikovati depth diagnostic", [640, 480])
+        .unwrap();
+    let prism = retain_planar_prism(&PrismProbeDefinition {
+        outer: PrismProbeLoop::polygon(
+            vec![1, 2, 3, 4],
+            vec![
+                [0.8888889, -2.4666667],
+                [7.5555553, -2.4666667],
+                [7.5555553, 1.5333333],
+                [0.8888889, 1.5333333],
+            ],
+        ),
+        holes: Vec::new(),
+        displacement: [0., 0., 2.],
+    })
+    .unwrap();
+    let mesh = prism
+        .presentation(PrismMeshOptions {
+            chord_error: 0.05,
+            angular_error: 0.5,
+        })
+        .unwrap();
+    let mut scene =
+        ViewportScene::from_prism(&mesh, [0.2, 0.21, 0.24], [0.702, 0.722, 0.741, 1.]).unwrap();
+    view.submit(&scene).unwrap();
+    view.navigate(oblikovati_viewport::ViewportNavigation::Home { margin: 0.1 })
+        .unwrap();
+    let first = complete_surface_frame(&mut view);
+    await_presented_pixels(&view, &first);
+    write_ppm("/tmp/obk-depth-4044-forward.ppm", &first);
+    scene.triangles.reverse();
+    view.submit(&scene).unwrap();
+    let second = complete_surface_frame(&mut view);
+    await_presented_pixels(&view, &second);
+    write_ppm("/tmp/obk-depth-4044-reverse.ppm", &second);
+    view.close();
+    assert!(runtime.validation_errors().unwrap().is_empty());
+    assert_eq!(
+        first.rgba, second.rgba,
+        "opaque prism: expected the same pixels for either triangle order"
+    );
+}
+fn write_ppm(path: &str, capture: &ViewportCapture) {
+    let mut bytes = format!("P6\n{} {}\n255\n", capture.extent[0], capture.extent[1]).into_bytes();
+    for pixel in capture.rgba.as_chunks::<4>().0 {
+        bytes.extend_from_slice(&pixel[..3]);
+    }
+    std::fs::write(path, bytes).unwrap();
+}
+
+#[test]
+fn edited_prism_requires_current_depth_range() {
+    let runtime = ViewportRuntime::new(ViewportOptions::default()).unwrap();
+    let mut view = runtime
+        .open_window("Oblikovati edit depth diagnostic", [640, 480])
+        .unwrap();
+    let mut scene = depth_scene(1.);
+    view.submit(&scene).unwrap();
+    view.navigate(oblikovati_viewport::ViewportNavigation::Home { margin: 0.1 })
+        .unwrap();
+    let original = complete_surface_frame(&mut view);
+    write_ppm("/tmp/obk-depth-4044-before-edit.ppm", &original);
+    eprintln!("[DEPTH-4044] after home {:?}", view.camera_state().unwrap());
+    scene = depth_scene(2.);
+    view.submit(&scene).unwrap();
+    let stale = complete_surface_frame(&mut view);
+    write_ppm("/tmp/obk-depth-4044-edited-stale.ppm", &stale);
+    eprintln!("[DEPTH-4044] after edit {:?}", view.camera_state().unwrap());
+    view.navigate(oblikovati_viewport::ViewportNavigation::FitDepth)
+        .unwrap();
+    let refreshed = complete_surface_frame(&mut view);
+    write_ppm("/tmp/obk-depth-4044-edited-refreshed.ppm", &refreshed);
+    eprintln!(
+        "[DEPTH-4044] after depth fit {:?}",
+        view.camera_state().unwrap()
+    );
+    view.close();
+    assert_ne!(
+        stale.rgba, refreshed.rgba,
+        "expected explicit depth fit to affect the clipped edit"
+    );
+}
+fn depth_scene(depth: f64) -> ViewportScene {
+    let prism = retain_planar_prism(&PrismProbeDefinition {
+        outer: PrismProbeLoop::polygon(
+            vec![1, 2, 3, 4],
+            vec![
+                [0.8888889, -2.4666667],
+                [7.5555553, -2.4666667],
+                [7.5555553, 1.5333333],
+                [0.8888889, 1.5333333],
+            ],
+        ),
+        holes: Vec::new(),
+        displacement: [0., 0., depth],
+    })
+    .unwrap();
+    let mesh = prism
+        .presentation(PrismMeshOptions {
+            chord_error: 0.05,
+            angular_error: 0.5,
+        })
+        .unwrap();
+    ViewportScene::from_prism(&mesh, [0.2, 0.21, 0.24], [0.702, 0.722, 0.741, 1.]).unwrap()
+}
