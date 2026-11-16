@@ -1,0 +1,24 @@
+   Packaging oblikovati-api v0.160.0 (/tmp/obk-api-preview-3965/rust)
+    Updating crates.io index
+    Packaged 202 files, 2.9MiB (407.6KiB compressed)
+   Verifying oblikovati-api v0.160.0 (/tmp/obk-api-preview-3965/rust)
+    Blocking waiting for file lock on package cache
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.26
+   Compiling quote v1.0.47
+   Compiling serde_core v1.0.229
+   Compiling zmij v1.0.23
+   Compiling serde_json v1.0.151
+   Compiling itoa v1.0.18
+   Compiling serde v1.0.229
+   Compiling powerfmt v0.2.1
+   Compiling num-conv v0.1.0
+   Compiling time-core v0.1.7
+   Compiling memchr v2.8.3
+   Compiling base64 v0.22.1
+   Compiling deranged v0.5.8
+   Compiling syn v3.0.7
+   Compiling time v0.3.45
+   Compiling serde_derive v1.0.229
+   Compiling oblikovati-api v0.160.0 (/tmp/obk-api-preview-target-3965/package/oblikovati-api-0.160.0)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 29.56s
