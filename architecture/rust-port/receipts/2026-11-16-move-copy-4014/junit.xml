@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Move: tmp/obk-move-copy-source/features/sketch/move/scenario.feature" package="testsuite/Feature: Move: tmp/obk-move-copy-source/features/sketch/move/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-16T03:57:59.965829518Z" time="28.73743386"><testcase name="Scenario: move-08 Retain the source when Copy is enabled: tmp/obk-move-copy-source/features/sketch/move/scenario.feature:29:3" time="28.73743386"><system-out><![CDATA[  Scenario: move-08 Retain the source when Copy is enabled
+   ✔  Given an editable sketch with eligible geometry
+   ✔  Given Move has reopened with Precise Input checked and Copy unchecked
+   ✔  When the user enables Copy and selects the original ellipse
+   ✔  And the user chooses its center as Base Point and clicks the displaced endpoint
+   ✔  Then Move returns to geometry selection
+   ✔  And a displaced ellipse and the original ellipse are both visible
+   ✔  When the user clicks Done
+   ✔  Then both ellipse outlines remain
+]]></system-out></testcase></testsuite></testsuites>
