@@ -3,7 +3,9 @@ use crate::{
     atomic::{AtomicFiles, replace_file},
     load::PackageFileReader,
 };
-use oblikovati_model::application_options::{SketchApplicationOptions, SketchPreferenceAccess};
+use oblikovati_model::application_options::{
+    PartApplicationOptions, PartPreferenceAccess, SketchApplicationOptions, SketchPreferenceAccess,
+};
 use oblikovati_model::application_prompts::{PromptPreferenceAccess, PromptPreferences};
 use oblikovati_model::application_recent::{RecentDocument, RecentDocumentAccess};
 use oblikovati_model::ui_scale::{UiScaleOptions, UiScalePreferenceAccess};
@@ -18,6 +20,8 @@ use std::{
 #[serde(default)]
 struct PreferenceRecipe {
     sketch: SketchApplicationOptions,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    part: Option<PartPreferenceRecipe>,
     #[serde(skip_serializing_if = "Option::is_none")]
     ui: Option<UiPreferenceRecipe>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -58,6 +62,13 @@ impl<Files: PackageFileReader + AtomicFiles> ApplicationPreferenceFile<Files> {
             .map_err(|cause| preference_failure(&self.path, cause))?;
         let mut candidate = read_preferences(&self.path, &mut self.files)?;
         candidate.sketch = options;
+        self.publish(candidate)
+    }
+    /// Save Part options while retaining other groups; example: `preferences.save_part_options(options)?`.
+    pub fn save_part_options(&mut self, options: PartApplicationOptions) -> io::Result<()> {
+        let mut candidate = read_preferences(&self.path, &mut self.files)?;
+        candidate.part.get_or_insert_default().look_at_sketch_plane =
+            Some(options.look_at_sketch_plane);
         self.publish(candidate)
     }
     /// Save text/icon scale without changing other groups; example: `preferences.save_ui_scale(options)?`.
@@ -110,6 +121,24 @@ impl<Files: PackageFileReader + AtomicFiles> SketchPreferenceAccess
     }
     fn set_sketch_options(&mut self, options: SketchApplicationOptions) -> Result<(), String> {
         self.save_options(options)
+            .map_err(|cause| cause.to_string())
+    }
+}
+impl<Files: PackageFileReader + AtomicFiles> PartPreferenceAccess
+    for ApplicationPreferenceFile<Files>
+{
+    fn part_options(&self) -> PartApplicationOptions {
+        PartApplicationOptions {
+            look_at_sketch_plane: self
+                .recipe
+                .part
+                .as_ref()
+                .and_then(|part| part.look_at_sketch_plane)
+                .unwrap_or(true),
+        }
+    }
+    fn set_part_options(&mut self, options: PartApplicationOptions) -> Result<(), String> {
+        self.save_part_options(options)
             .map_err(|cause| cause.to_string())
     }
 }
@@ -182,6 +211,15 @@ struct UiPreferenceRecipe {
     #[serde(skip_serializing_if = "Option::is_none")]
     icon_scale: Option<f32>,
     // Go also owns menu/status visibility, and future keys must round-trip unchanged.
+    #[serde(flatten)]
+    retained: BTreeMap<String, serde_yaml_ng::Value>,
+}
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+struct PartPreferenceRecipe {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    look_at_sketch_plane: Option<bool>,
     #[serde(flatten)]
     retained: BTreeMap<String, serde_yaml_ng::Value>,
 }
