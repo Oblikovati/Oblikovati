@@ -111,3 +111,49 @@ fn part_settings_preserve_go_chamfer_value_and_unknown_fields() {
     assert_eq!(saved["part"]["tangentChainSelect"], true);
     assert_eq!(saved["part"]["chamferFlatCorners"], false);
 }
+
+#[test]
+fn startup_planes_round_trip_without_changing_other_part_values() {
+    use oblikovati_model::feature::work_plane::WorkPlaneOrigin;
+    assert_eq!(
+        load(&disk("part: {startupSketchPlane: null}"))
+            .part_options()
+            .startup_sketch_plane,
+        None
+    );
+    let disk = disk("part: {chamferFlatCorners: false, tangentChainSelect: true}\n");
+    let mut owner = load(&disk);
+    assert_eq!(owner.part_options().startup_sketch_plane, None);
+    for plane in [
+        Some(WorkPlaneOrigin::XY),
+        Some(WorkPlaneOrigin::YZ),
+        Some(WorkPlaneOrigin::XZ),
+        None,
+    ] {
+        let mut options = owner.part_options();
+        options.startup_sketch_plane = plane;
+        owner.set_part_options(options).unwrap();
+        let read = load(&disk).part_options();
+        assert_eq!(read.startup_sketch_plane, plane);
+        assert!(!read.chamfer_flat_corners && read.look_at_sketch_plane);
+        let saved: serde_yaml_ng::Value =
+            serde_yaml_ng::from_slice(&disk.borrow().committed).unwrap();
+        assert_eq!(saved["part"]["tangentChainSelect"], true);
+    }
+}
+#[test]
+fn invalid_startup_plane_is_rejected_without_rewriting_preferences() {
+    for value in ["future", "XY", "42"] {
+        let source = format!("part: {{startupSketchPlane: '{value}'}}\n");
+        let disk = disk(&source);
+        let error = ApplicationPreferenceFile::load(
+            Path::new("options.yaml"),
+            FakeAtomicFiles(disk.clone()),
+        )
+        .err()
+        .unwrap();
+        assert!(error.to_string().contains(value));
+        assert!(error.to_string().contains("expected"));
+        assert_eq!(disk.borrow().committed, source.as_bytes());
+    }
+}

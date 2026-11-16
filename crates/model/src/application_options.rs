@@ -65,12 +65,14 @@ pub trait SketchPreferenceAccess {
 pub struct PartApplicationOptions {
     pub look_at_sketch_plane: bool,
     pub chamfer_flat_corners: bool,
+    pub startup_sketch_plane: Option<crate::feature::work_plane::WorkPlaneOrigin>,
 }
 impl Default for PartApplicationOptions {
     fn default() -> Self {
         Self {
             look_at_sketch_plane: true,
             chamfer_flat_corners: true,
+            startup_sketch_plane: None,
         }
     }
 }
