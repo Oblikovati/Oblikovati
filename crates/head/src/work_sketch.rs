@@ -11,6 +11,15 @@ pub trait HeadSketchWork {
     ) -> Result<Option<oblikovati_viewport::ViewportSketchHover>, String> {
         Ok(None)
     }
+    /// Resolve authored or derived pointer feedback; example: `work.sketch_tool_feedback(pixel, window)?`.
+    fn sketch_tool_feedback(
+        &mut self,
+        pixel: [i32; 2],
+        window: &dyn crate::HeadWindow,
+    ) -> Result<Option<oblikovati_viewport::ViewportSketchFeedback>, String> {
+        self.sketch_tool_candidate(pixel, window)
+            .map(|candidate| candidate.map(oblikovati_viewport::ViewportSketchFeedback::Entities))
+    }
     /// Save accepted Part options; example: `work.set_part_options_from_gui(options)`.
     fn set_part_options_from_gui(
         &mut self,

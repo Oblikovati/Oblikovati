@@ -41,7 +41,14 @@ impl<
         &self,
         pixel: [i32; 2],
         window: &dyn HeadWindow,
-    ) -> Result<Option<oblikovati_viewport::ViewportSketchHover>, String> {
+    ) -> Result<Option<oblikovati_viewport::ViewportSketchFeedback>, String> {
+        if let Some(crate::sketch_tool::SketchToolState::Measure(tool)) = self.sketch_tool.as_ref()
+        {
+            if self.active_sketch_edit() != Some(tool.edit) || window.navigation_active() {
+                return Ok(None);
+            }
+            return self.measure_candidate(tool.edit, pixel, window);
+        }
         let Some((edit, filter)) = self.tool_candidate_filter() else {
             return Ok(None);
         };
@@ -54,10 +61,12 @@ impl<
         if !self.tool_accepts_candidate(edit, hit.entity)? {
             return Ok(None);
         }
-        Ok(Some(oblikovati_viewport::ViewportSketchHover {
-            sketch: edit.sketch,
-            entities: vec![hit.entity],
-        }))
+        Ok(Some(oblikovati_viewport::ViewportSketchFeedback::Entities(
+            oblikovati_viewport::ViewportSketchHover {
+                sketch: edit.sketch,
+                entities: vec![hit.entity],
+            },
+        )))
     }
     fn tool_candidate_filter(&self) -> Option<(HeadSketchEdit, SketchPickFilter)> {
         use crate::sketch_tool::SketchToolState;
@@ -67,6 +76,9 @@ impl<
             }
             Some(SketchToolState::Dimension(tool)) if tool.placed.is_none() => {
                 Some((tool.edit, SketchPickFilter::Dimension))
+            }
+            Some(SketchToolState::Move(tool)) if tool.accepts_geometry() => {
+                Some((tool.edit, SketchPickFilter::Any))
             }
             _ => None,
         }
@@ -84,6 +96,7 @@ impl<
             .map_err(|cause| cause.to_string())?;
         let picks = session.selected_sketch_picks(edit.sketch);
         match self.sketch_tool.as_ref() {
+            Some(SketchToolState::Move(_)) => Ok(true),
             Some(SketchToolState::Geometric(_)) => Ok(!picks
                 .iter()
                 .any(|pick| pick.target() == SketchPickTarget::Entity(entity))),

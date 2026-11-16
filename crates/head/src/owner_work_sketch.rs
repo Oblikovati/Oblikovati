@@ -14,6 +14,18 @@ impl<
         pixel: [i32; 2],
         window: &dyn crate::HeadWindow,
     ) -> Result<Option<oblikovati_viewport::ViewportSketchHover>, String> {
+        self.resolve_tool_candidate(pixel, window).map(|feedback| {
+            feedback.and_then(|value| match value {
+                oblikovati_viewport::ViewportSketchFeedback::Entities(hover) => Some(hover),
+                oblikovati_viewport::ViewportSketchFeedback::Point { .. } => None,
+            })
+        })
+    }
+    fn sketch_tool_feedback(
+        &mut self,
+        pixel: [i32; 2],
+        window: &dyn crate::HeadWindow,
+    ) -> Result<Option<oblikovati_viewport::ViewportSketchFeedback>, String> {
         self.resolve_tool_candidate(pixel, window)
     }
     fn set_part_options_from_gui(

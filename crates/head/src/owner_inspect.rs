@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! The sketch's inspection commands on the owner: Measure and Region Properties.
 use super::sketch_picking::{SketchPickFilter, pick_witness};
+#[path = "owner_inspect/measure_projection.rs"]
+mod measure_projection;
 use super::*;
 use crate::{
     HeadWindow,
@@ -10,6 +12,7 @@ use crate::{
     },
     sketch_tool::SketchToolState,
 };
+use measure_projection::first_near;
 use oblikovati_gui::{GuiInspectAction, GuiMeasurePanel, GuiRegionPanel};
 use oblikovati_model::sketch::SketchPlane;
 use oblikovati_viewport::{
@@ -216,6 +219,42 @@ impl<
             results: tool.results.clone(),
         })
     }
+    pub(super) fn measure_candidate(
+        &self,
+        edit: crate::HeadSketchEdit,
+        pixel: [i32; 2],
+        window: &dyn HeadWindow,
+    ) -> Result<Option<oblikovati_viewport::ViewportSketchFeedback>, String> {
+        let session = self
+            .files
+            .workspace()
+            .session(edit.document)
+            .map_err(|cause| cause.to_string())?;
+        let sketch = session
+            .snapshot()
+            .sketches
+            .get(edit.sketch)
+            .map_err(|cause| cause.to_string())?;
+        let pick = measure_target(sketch.geometry(), edit.plane, pixel, window)?;
+        let pick = pick.filter(|candidate| match self.sketch_tool.as_ref() {
+            Some(SketchToolState::Measure(tool)) => !tool.picks.contains(candidate),
+            _ => false,
+        });
+        Ok(pick.map(|pick| match pick {
+            MeasurePick::Curve(entity) => oblikovati_viewport::ViewportSketchFeedback::Entities(
+                oblikovati_viewport::ViewportSketchHover {
+                    sketch: edit.sketch,
+                    entities: vec![entity],
+                },
+            ),
+            MeasurePick::Point(position) | MeasurePick::Middle(position) => {
+                oblikovati_viewport::ViewportSketchFeedback::Point {
+                    sketch: edit.sketch,
+                    position,
+                }
+            }
+        }))
+    }
     /// One event while Measure runs; Escape ends it, a press selects.
     pub(super) fn process_measure_event(
         &mut self,
@@ -366,32 +405,37 @@ fn measure_point(
     pixel: [i32; 2],
     window: &dyn HeadWindow,
 ) -> Result<Option<MeasurePick>, String> {
-    for point in geometry.points() {
-        let at = window.sketch_pixel(plane, point.position)?;
-        if super::sketch_picking::screen_distance(at, pixel) <= VERTEX_REACH {
-            return Ok(Some(MeasurePick::Point(point.position)));
-        }
+    let points = geometry
+        .points()
+        .iter()
+        .map(|point| Ok(point.position))
+        .collect();
+    if let Some(point) = first_near(plane, pixel, VERTEX_REACH, points, window)? {
+        return Ok(Some(MeasurePick::Point(point)));
     }
-    for line in geometry.lines() {
-        let [start, end] = line.endpoints.map(|point| geometry.point(point));
-        let (start, end) = (
-            start.map_err(|cause| cause.to_string())?.position,
-            end.map_err(|cause| cause.to_string())?.position,
-        );
-        let middle = [(start[0] + end[0]) * 0.5, (start[1] + end[1]) * 0.5];
-        let at = window.sketch_pixel(plane, middle)?;
-        if super::sketch_picking::screen_distance(at, pixel) <= MIDPOINT_REACH {
-            return Ok(Some(MeasurePick::Middle(middle)));
-        }
+    let lines = geometry
+        .lines()
+        .iter()
+        .map(|line| line_middle(geometry, line))
+        .collect();
+    if let Some(point) = first_near(plane, pixel, MIDPOINT_REACH, lines, window)? {
+        return Ok(Some(MeasurePick::Middle(point)));
     }
-    for arc in geometry.arcs() {
-        let middle = arc_middle(geometry, arc)?;
-        let at = window.sketch_pixel(plane, middle)?;
-        if super::sketch_picking::screen_distance(at, pixel) <= MIDPOINT_REACH {
-            return Ok(Some(MeasurePick::Middle(middle)));
-        }
-    }
-    Ok(None)
+    let arcs = geometry
+        .arcs()
+        .iter()
+        .map(|arc| arc_middle(geometry, arc))
+        .collect();
+    Ok(first_near(plane, pixel, MIDPOINT_REACH, arcs, window)?.map(MeasurePick::Middle))
+}
+fn line_middle(
+    geometry: &oblikovati_model::sketch::Sketch2D,
+    line: &oblikovati_model::sketch::SketchLine2D,
+) -> Result<[f64; 2], String> {
+    let [start, end] = line.endpoints.map(|point| geometry.point(point));
+    let start = start.map_err(|cause| cause.to_string())?.position;
+    let end = end.map_err(|cause| cause.to_string())?.position;
+    Ok([(start[0] + end[0]) * 0.5, (start[1] + end[1]) * 0.5])
 }
 /// The point halfway along an arc, the way it runs.
 fn arc_middle(
@@ -423,3 +467,6 @@ fn arc_middle(
         center[1] + radius * middle.sin(),
     ])
 }
+#[cfg(test)]
+#[path = "../tests/owner/measure_projection.rs"]
+mod projection_tests;

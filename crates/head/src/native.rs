@@ -29,8 +29,8 @@ pub struct NativeHeadWindow {
     current_scene: Option<ViewportScene>,
     preview_background: Option<oblikovati_viewport::ViewportBackground>,
     sketch_scene: Option<crate::HeadSketchSceneUpdate>,
-    glyph_hover: Option<oblikovati_viewport::ViewportSketchHover>,
-    tool_hover: Option<oblikovati_viewport::ViewportSketchHover>,
+    glyph_hover: Option<oblikovati_viewport::ViewportSketchFeedback>,
+    tool_hover: Option<oblikovati_viewport::ViewportSketchFeedback>,
     datum_declines: Vec<(oblikovati_model::feature::FeatureId, String)>,
     navigation: crate::navigation::DesktopNavigation,
     sketch_view: Option<SketchCameraState>,
@@ -151,6 +151,12 @@ impl HeadWindow for NativeHeadWindow {
     ) -> Result<bool, String> {
         self.update_tool_hover(hover)
     }
+    fn set_tool_feedback(
+        &mut self,
+        feedback: Option<&oblikovati_viewport::ViewportSketchFeedback>,
+    ) -> Result<bool, String> {
+        self.update_tool_feedback(feedback)
+    }
     fn gui_frame(
         &mut self,
         event: Option<&ViewportEvent>,
@@ -269,6 +275,13 @@ impl HeadWindow for NativeHeadWindow {
     ) -> Result<Vec<[i32; 2]>, String> {
         self.view.sketch_pixels(plane, points)
     }
+    fn sketch_pixel_results(
+        &self,
+        plane: oblikovati_model::sketch::SketchPlane,
+        points: &[[f64; 2]],
+    ) -> Result<Vec<Result<[i32; 2], String>>, String> {
+        self.view.sketch_pixel_results(plane, points)
+    }
     fn sketch_pixel(
         &self,
         plane: oblikovati_model::sketch::SketchPlane,
@@ -276,15 +289,12 @@ impl HeadWindow for NativeHeadWindow {
     ) -> Result<[i32; 2], String> {
         NativeHeadWindow::sketch_pixel(self, plane, point)
     }
-
     fn model_pixel(&self, point: [f64; 3]) -> Result<[i32; 2], String> {
         self.view.model_pixel(point)
     }
-
     fn view_camera(&self) -> Result<oblikovati_viewport::ViewportCamera, String> {
         self.view.camera_state()
     }
-
     fn set_view_camera(
         &mut self,
         camera: oblikovati_viewport::ViewportCamera,
@@ -294,7 +304,6 @@ impl HeadWindow for NativeHeadWindow {
             .navigate(oblikovati_viewport::ViewportNavigation::FitDepth)?;
         Ok(true)
     }
-
     fn view_line(&self, pixel: [i32; 2]) -> Result<[[f64; 3]; 2], String> {
         self.view.view_line(pixel)
     }
@@ -352,7 +361,6 @@ impl HeadWindow for NativeHeadWindow {
         self.scene_status = Some(update.status);
         self.refresh_title()
     }
-
     fn events(&mut self, limit: usize) -> Result<Vec<ViewportEvent>, String> {
         self.clipboard.service_pending(limit);
         let queued = limit.min(self.injected_events.len());
@@ -440,39 +448,32 @@ use owner::{NativeScriptDesktop, native_owner, native_script_owner};
 mod run;
 pub use run::{run_native, run_native_documents};
 #[cfg(test)]
-#[path = "../tests/native_wait.rs"]
-mod tests;
-
+#[path = "../tests/navigation/native.rs"]
+mod navigation_tests;
 #[cfg(test)]
 #[path = "../tests/native_owner.rs"]
 mod owner_tests;
-
 #[cfg(test)]
 #[path = "../tests/native_scene.rs"]
 mod scene_tests;
-
-#[cfg(test)]
-#[path = "../tests/navigation/native.rs"]
-mod navigation_tests;
-
 #[cfg(test)]
 #[path = "../tests/native_startup.rs"]
 mod startup_tests;
-
-mod title;
-
 #[cfg(test)]
-#[path = "../tests/native_save.rs"]
-mod save_tests;
-
-#[cfg(test)]
-#[path = "../tests/native_history.rs"]
-mod history_tests;
+#[path = "../tests/native_wait.rs"]
+mod tests;
 
 #[cfg(test)]
 #[allow(unsafe_code)]
 #[path = "../tests/native_services.rs"]
 mod addin_services_tests;
+#[cfg(test)]
+#[path = "../tests/native_history.rs"]
+mod history_tests;
+#[cfg(test)]
+#[path = "../tests/native_save.rs"]
+mod save_tests;
+mod title;
 
 mod projection;
 

@@ -7,6 +7,12 @@ impl HeadWindow for ScriptedGuiWindow {
     ) -> Result<bool, String> {
         self.native.set_tool_candidate(hover)
     }
+    fn set_tool_feedback(
+        &mut self,
+        feedback: Option<&oblikovati_viewport::ViewportSketchFeedback>,
+    ) -> Result<bool, String> {
+        self.native.set_tool_feedback(feedback)
+    }
     fn window_capture_extent(&mut self) -> Result<Option<[u32; 2]>, String> {
         self.native.window_capture_extent()
     }
@@ -47,6 +53,13 @@ impl HeadWindow for ScriptedGuiWindow {
         points: &[[f64; 2]],
     ) -> Result<Vec<[i32; 2]>, String> {
         self.native.sketch_pixels(plane, points)
+    }
+    fn sketch_pixel_results(
+        &self,
+        plane: oblikovati_model::sketch::SketchPlane,
+        points: &[[f64; 2]],
+    ) -> Result<Vec<Result<[i32; 2], String>>, String> {
+        self.native.sketch_pixel_results(plane, points)
     }
     fn sketch_pixel(
         &self,
