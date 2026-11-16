@@ -14,6 +14,61 @@ impl Sketch2D {
     pub fn has_owned_relations(&self) -> bool {
         !self.owned_relations.is_empty()
     }
+    /// Find dimension sources connected to an entity-owned corner through sketch relations.
+    /// Example: `sketch.corner_related_parameters()?` before accepting an edit.
+    pub fn corner_related_parameters(&self) -> Result<Vec<u64>, SketchError> {
+        let mut reached = std::collections::BTreeSet::new();
+        for row in &self.constraints {
+            if self.owned_relations.contains_key(&row.id) {
+                reached.extend(self.relation_columns(&row.relation)?);
+            }
+        }
+        loop {
+            let count = reached.len();
+            for row in &self.constraints {
+                let columns = self.relation_columns(&row.relation)?;
+                if columns.iter().any(|column| reached.contains(column)) {
+                    reached.extend(columns);
+                }
+            }
+            for arc in &self.arcs {
+                let columns = self.arc_columns(arc)?;
+                if columns.iter().any(|column| reached.contains(column)) {
+                    reached.extend(columns);
+                }
+            }
+            if reached.len() == count {
+                break;
+            }
+        }
+        let mut parameters = Vec::new();
+        for row in &self.constraints {
+            let connected = self.owned_relations.contains_key(&row.id)
+                || self
+                    .relation_columns(&row.relation)?
+                    .iter()
+                    .any(|column| reached.contains(column));
+            if connected
+                && let Some(parameter) = super::dependencies::dimension_parameter(&row.relation)
+                && !parameters.contains(&parameter)
+            {
+                parameters.push(parameter);
+            }
+        }
+        Ok(parameters)
+    }
+    fn relation_columns(
+        &self,
+        relation: &super::PlanarConstraint,
+    ) -> Result<Vec<usize>, SketchError> {
+        let (_, columns) = super::circular_compile::relation_projection(self, relation, None)?;
+        Ok(columns)
+    }
+    /// Check whether a constraint belongs to an entity.
+    /// Example: `sketch.owns_relation(id)` before classifying a solve failure.
+    pub fn owns_relation(&self, id: SketchConstraintId) -> bool {
+        self.owned_relations.contains_key(&id)
+    }
     pub(crate) fn own_relation(
         &mut self,
         owner: SketchEntityId,
@@ -59,7 +114,7 @@ impl Sketch2D {
                 Ok(())
             }
             shape => Err(SketchError::Definition(format!(
-                "structural relation recipe {shape:?}: expected no owners through version 18 or a nonempty owner list in version 19"
+                "structural relation recipe {shape:?}: expected no owners through version 18 or a nonempty owner list in versions 19 or 20"
             ))),
         }
     }

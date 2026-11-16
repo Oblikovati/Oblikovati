@@ -128,19 +128,21 @@ pub(crate) fn apply_recipe_edit<R, T, E>(
     options: Option<SolveOptions>,
     project: impl FnOnce(&DocumentSnapshot, R) -> Result<T, E>,
 ) -> Result<T, MutationError<E>> {
+    let before = snapshot.clone();
     let result = command(snapshot, ids).map_err(MutationError::Command)?;
     snapshot
         .properties
         .sync_exposed_parameters(&snapshot.parameters)
         .map_err(MutationError::Property)?;
     if let Some(options) = options {
-        update_validated_sketches(snapshot, options).map_err(MutationError::Sketch)?;
+        update_validated_sketches(snapshot, &before, options).map_err(MutationError::Sketch)?;
     }
     project(snapshot, result).map_err(MutationError::Command)
 }
 
 fn update_validated_sketches(
     snapshot: &mut DocumentSnapshot,
+    before: &DocumentSnapshot,
     options: SolveOptions,
 ) -> Result<(), SketchError> {
     let outcome = snapshot.solve_pending_document_sketches(options, || false);
@@ -149,11 +151,15 @@ fn update_validated_sketches(
         if !geometry.has_owned_relations() {
             continue;
         }
+        let affected = corner_inputs_changed(before, snapshot, report.sketch)?;
         match &report.result {
-            Err(error) => return Err(error.clone()),
+            Err(error) if affected || error_belongs_to_corner(geometry, error) => {
+                return Err(error.clone());
+            }
             Ok(solved)
-                if solved.numerical().termination
-                    != oblikovati_solve::nonlinear::SolveTermination::Converged =>
+                if affected
+                    && solved.numerical().termination
+                        != oblikovati_solve::nonlinear::SolveTermination::Converged =>
             {
                 return Err(SketchError::Definition(format!(
                     "owned sketch {:?} solve termination {:?}: expected convergence",
@@ -161,9 +167,38 @@ fn update_validated_sketches(
                     solved.numerical().termination
                 )));
             }
-            Ok(_) => {}
+            _ => {}
         }
     }
     snapshot.sketches = outcome.candidate;
     Ok(())
+}
+fn corner_inputs_changed(
+    before: &DocumentSnapshot,
+    after: &DocumentSnapshot,
+    sketch: DocumentSketchId,
+) -> Result<bool, SketchError> {
+    let after_geometry = after.sketches.get(sketch)?.geometry();
+    let Ok(before_sketch) = before.sketches.get(sketch) else {
+        return Ok(true);
+    };
+    if !before_sketch.geometry().same_recipe(after_geometry) {
+        return Ok(true);
+    }
+    Ok(after_geometry
+        .corner_related_parameters()?
+        .into_iter()
+        .any(|id| before.parameters.model_value(id) != after.parameters.model_value(id)))
+}
+fn error_belongs_to_corner(
+    geometry: &oblikovati_model::sketch::Sketch2D,
+    error: &SketchError,
+) -> bool {
+    match error {
+        SketchError::Parameter { constraint, .. }
+        | SketchError::Residual { constraint, .. }
+        | SketchError::AngleSelection { constraint, .. }
+        | SketchError::ContactSelection { constraint, .. } => geometry.owns_relation(*constraint),
+        _ => false,
+    }
 }

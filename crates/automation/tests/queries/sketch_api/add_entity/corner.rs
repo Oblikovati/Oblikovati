@@ -450,3 +450,123 @@ fn explicit_associative_corner_method_uses_the_same_driving_path() {
     set_width(&mut files, &mut source, "2 cm");
     assert!((row(&files, result.entity_id).radius - 2.).abs() < 1e-7);
 }
+#[test]
+fn a_sick_unrelated_sketch_keeps_its_failure_local_to_its_owner() {
+    let (mut files, document, mut source) = fresh();
+    let corner = create_corner(&mut files, &mut source, "fillet", "");
+    Client::new(FileHost::new(&mut files, &mut source, "test"))
+        .parameters()
+        .add(&oblikovati_api::wire::ParameterSetArgs {
+            name: "other".into(),
+            expression: "1 cm".into(),
+            ..Default::default()
+        })
+        .unwrap();
+    create_empty_sketch(&mut files, &mut source);
+    let mut circle = circle_input();
+    circle.sketch_index = 1;
+    circle.radius = "other".into();
+    add_call(&mut files, &mut source, &circle).unwrap();
+    let result = Client::new(FileHost::new(&mut files, &mut source, "test"))
+        .parameters()
+        .set(&oblikovati_api::wire::ParameterSetArgs {
+            name: "other".into(),
+            expression: "-1 cm".into(),
+            ..Default::default()
+        });
+    assert!(
+        result.is_ok(),
+        "unrelated sick sketch must not reject the edit: {result:?}"
+    );
+    assert!((row(&files, corner.entity_id).radius - 1.).abs() < 1e-7);
+    assert_eq!(owned_geometry(&files, document).sketches().len(), 2);
+}
+#[test]
+fn a_sick_unrelated_dimension_in_the_corner_sketch_remains_failure_local() {
+    let (mut files, _, mut source) = fresh();
+    create_corner(&mut files, &mut source, "fillet", "");
+    Client::new(FileHost::new(&mut files, &mut source, "test"))
+        .parameters()
+        .add(&oblikovati_api::wire::ParameterSetArgs {
+            name: "other".into(),
+            expression: "1 cm".into(),
+            ..Default::default()
+        })
+        .unwrap();
+    let mut circle = circle_input();
+    circle.radius = "other".into();
+    add_call(&mut files, &mut source, &circle).unwrap();
+    let result = Client::new(FileHost::new(&mut files, &mut source, "test"))
+        .parameters()
+        .set(&oblikovati_api::wire::ParameterSetArgs {
+            name: "other".into(),
+            expression: "-1 cm".into(),
+            ..Default::default()
+        });
+    assert!(
+        result.is_ok(),
+        "unrelated sick dimension must not reject the edit: {result:?}"
+    );
+}
+#[test]
+fn source_line_parameter_cannot_shrink_beneath_the_owned_setback() {
+    let (mut files, document, mut source) = fresh();
+    Client::new(FileHost::new(&mut files, &mut source, "test"))
+        .parameters()
+        .add(&oblikovati_api::wire::ParameterSetArgs {
+            name: "extent".into(),
+            expression: "5 cm".into(),
+            ..Default::default()
+        })
+        .unwrap();
+    let first = add_call(
+        &mut files,
+        &mut source,
+        &literal_input("line", &[[-5., 0.], [0., 0.]]),
+    )
+    .unwrap();
+    let second = add_call(
+        &mut files,
+        &mut source,
+        &literal_input("line", &[[0., 0.], [0., 5.]]),
+    )
+    .unwrap();
+    Client::new(FileHost::new(&mut files, &mut source, "test"))
+        .dimension()
+        .add(&oblikovati_api::wire::AddDimensionArgs {
+            kind: "distance".into(),
+            entities: first.point_i_ds.clone(),
+            expression: "extent".into(),
+            ..Default::default()
+        })
+        .unwrap();
+    let request = AddSketchEntityArgs {
+        kind: "chamfer".into(),
+        entity_refs: Some(vec![first.entity_id, second.entity_id]),
+        radius: "width".into(),
+        ..Default::default()
+    };
+    let blend = Client::new(
+        FileHost::new(&mut files, &mut source, "test")
+            .with_sketch_corner_construction(&MartensiteSketchConstruction, Default::default()),
+    )
+    .sketch()
+    .add_entity(&request)
+    .unwrap();
+    let before = row(&files, blend.entity_id);
+    let history = owner_revision(&files, document);
+    let result = Client::new(FileHost::new(&mut files, &mut source, "test"))
+        .parameters()
+        .set(&oblikovati_api::wire::ParameterSetArgs {
+            name: "extent".into(),
+            expression: "0.25 cm".into(),
+            ..Default::default()
+        });
+    assert!(
+        result.is_err(),
+        "source shrink must reject the impossible setback: {result:?}"
+    );
+    assert_eq!(row(&files, blend.entity_id), before);
+    let after = owner_revision(&files, document);
+    assert_eq!((&after.1, after.2), (&history.1, history.2));
+}
