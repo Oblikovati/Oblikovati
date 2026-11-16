@@ -21111,7 +21111,8 @@
       "acceptance_test": "sketch_scenarios_use_the_native_window: move-11 Cancel after choosing a base point",
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3904",
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/4013"
       ],
       "state": "inventoried",
       "last_receipt": null,

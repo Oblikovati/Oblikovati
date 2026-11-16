@@ -27,6 +27,8 @@ pub(super) mod fixtures;
 mod fixtures_midpoint;
 #[path = "line/steps.rs"]
 mod line;
+#[path = "move/cancel.rs"]
+mod move_cancel;
 #[path = "move/precise.rs"]
 mod move_precise;
 #[path = "new-sketch/steps.rs"]

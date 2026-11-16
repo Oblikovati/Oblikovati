@@ -5,8 +5,8 @@ use cucumber::{given, then, when};
 use oblikovati_gui::GuiSketchMoveStage;
 use oblikovati_viewport::ViewportPhysicalKey;
 
-const CENTER: [i32; 2] = [850, 550];
-const EDGE: [i32; 2] = [1010, 470];
+pub(super) const CENTER: [i32; 2] = [850, 550];
+pub(super) const EDGE: [i32; 2] = [1010, 470];
 
 #[given("an editable sketch with eligible geometry")]
 fn editable_ellipse(world: &mut ApplicationWorld) {
@@ -21,7 +21,7 @@ fn editable_ellipse(world: &mut ApplicationWorld) {
 
 #[given("the ellipse is selected in Move with Copy off and Precise Input on")]
 fn select_ellipse(world: &mut ApplicationWorld) {
-    world.click_text("Move");
+    open_move(world);
     let check = world.run_in_window("Move", "PreciseInput").center();
     world.click(diagnostics::pointer_pixels(check));
     world.sketch_click(EDGE);
@@ -181,7 +181,7 @@ fn finished(world: &mut ApplicationWorld) {
 
 #[given("Move Copy is checked and the original ellipse is selected")]
 fn select_copy(world: &mut ApplicationWorld) {
-    world.click_text("Move");
+    open_move(world);
     enable_copy_and_select(world);
 }
 
@@ -199,11 +199,11 @@ fn enable_copy_and_select(world: &mut ApplicationWorld) {
 
 #[given("Move has reopened with Precise Input checked and Copy unchecked")]
 fn reopened_move(world: &mut ApplicationWorld) {
-    world.click_text("Move");
+    open_move(world);
     let check = world.run_in_window("Move", "PreciseInput").center();
     world.click(diagnostics::pointer_pixels(check));
     done(world);
-    world.click_text("Move");
+    open_move(world);
     assert!(!world.state().sketch_move.unwrap().copy);
 }
 
@@ -306,7 +306,7 @@ fn cancelling_copy_preview_keeps_the_source_and_history() {
     assert!(crate::HeadSketchWork::sketch_preview(&world.app().owner).is_none());
     original_only(&mut world);
     assert_eq!(world.state().undo_label, history);
-    world.click_text("Move");
+    open_move(&mut world);
     assert!(world.state().sketch_move.unwrap().copy);
     world.close();
 }
@@ -344,4 +344,55 @@ fn relative_pointer_values_accept_the_displayed_endpoint() {
         "expected {endpoint:?}, observed {pixel:?}"
     );
     world.close();
+}
+
+/// Opens Move through the ribbon, expanding the Modify panel when needed.
+/// For example, `open_move(world)` also works when Move is already visible.
+pub(super) fn open_move(world: &mut ApplicationWorld) {
+    if !world.frame.runs.iter().any(|run| run.text == "Move") {
+        open_modify_panel(world);
+    }
+    world.click_text("Move");
+    assert!(world.state().sketch_move.is_some(), "Move did not open");
+}
+
+#[test]
+fn move_opens_from_the_expanded_modify_panel() {
+    let mut world = ApplicationWorld::new();
+    editable_ellipse(&mut world);
+    if !world.frame.runs.iter().any(|run| run.text == "Move") {
+        open_modify_panel(&mut world);
+    }
+    world.expect_text("Move");
+    open_move(&mut world);
+    world.close();
+}
+
+#[test]
+fn move_opens_from_the_collapsed_modify_panel() {
+    let mut world = ApplicationWorld::new();
+    editable_ellipse(&mut world);
+    assert!(
+        !world.frame.runs.iter().any(|run| run.text == "Move"),
+        "expected a collapsed Modify panel"
+    );
+    open_move(&mut world);
+    world.close();
+}
+
+fn open_modify_panel(world: &mut ApplicationWorld) {
+    let label = world.run("Modify").center();
+    let button = world
+        .frame
+        .runs
+        .iter()
+        .filter(|run| run.text == "v" && run.center()[1] < label[1])
+        .min_by(|a, b| {
+            (a.center()[0] - label[0])
+                .abs()
+                .total_cmp(&(b.center()[0] - label[0]).abs())
+        })
+        .expect("expected the collapsed Modify button")
+        .center();
+    world.click(diagnostics::pointer_pixels(button));
 }

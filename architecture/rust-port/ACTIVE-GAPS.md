@@ -180,6 +180,11 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
   the real visibility controls and does not assume the captured state. See
   `receipts/2026-11-15-ribbon-clarified/`. This is diagnostic evidence, not a
   verified acceptance result (#3978).
+- Move: `move-11` passed a focused native run with unchanged ellipse geometry
+  and history (#4013). A full Move run reported 26 failed or undefined
+  scenarios; collapsed-panel interaction is tracked in #4014. See
+  `receipts/2026-11-16-move-cancel-4013/`. Frame-loop input and unbounded build
+  provenance prevent verified acceptance (#3978).
 - Circle zero radius: same-position mouse clicks and Escape passed a focused
   OS-input diagnostic, with bridge queries confirming no new circle. See
   `receipts/2026-11-16-live-circle-zero/`; pinned BDD acceptance remains
