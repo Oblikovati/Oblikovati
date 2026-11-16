@@ -1,0 +1,7 @@
+running 5 tests
+test global_minimum_does_not_identify_first_hit_within_pick_radius ... ok
+test analytic_circle_ray_distance_at_non_seam_point ... ok
+test analytic_circle_ray_reports_both_zero_distance_intersections ... ok
+test analytic_segment_distance_covers_interior_and_endpoint ... ok
+test analytic_spline_ray_distance_at_interior_point ... ok
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
