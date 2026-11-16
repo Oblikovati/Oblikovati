@@ -1,6 +1,6 @@
 # Rust port status
 
-Last checked: 2026-11-16 at application commit `37dc93c0f`. Refresh from current evidence at each checkpoint.
+Last checked: 2026-11-16 on `rust-work` after `6ba45dcb1`. Refresh from current evidence at each checkpoint.
 
 ## Start here
 
@@ -12,6 +12,15 @@ Last checked: 2026-11-16 at application commit `37dc93c0f`. Refresh from current
 
 ## Current state
 
+- Parallel constraint hover (#4031) and Ready-state line selection (#4033)
+  have native X11 mouse diagnostics against live source, not pinned acceptance.
+  Their live features carry fixture or reference-capture gaps; see the matching
+  receipts before counting results. Other mouse scenarios remain open.
+- The 60 fps sketch target is not met on the measured GPU. A 4-segment
+  pointer-motion run measured 20.738 ms median and 24.861 ms p95 at 1440 × 900;
+  the 60 fps frame budget is 16.67 ms. See `receipts/2026-11-16-sketch-frame-baseline-4031/`.
+  Host capture work is #4032; checked no-readback presentation is Martensite
+  #501. Neither measurement proves input-to-display latency or a universal rate.
 - Application closing (#4030) has a native close guard and save prompt. The
   current live feature passed 3/3 scenarios in an X11 diagnostic at `2dee60eef`;
   see `receipts/2026-11-16-application-closing-4030/`. It is not in the pinned
