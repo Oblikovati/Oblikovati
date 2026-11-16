@@ -44,6 +44,16 @@ pub(super) enum PlanarEquation {
     Ground(Vec<[f64; 2]>),
     Midpoint,
     PointOnLine,
+    CornerLine {
+        trimmed_first: bool,
+    },
+    CornerTangent {
+        side: LineContactSide,
+        trimmed_first: bool,
+    },
+    CornerSetback {
+        target: f64,
+    },
     Offset {
         target: f64,
         side: LineContactSide,
@@ -124,13 +134,17 @@ impl PreparedConstraint {
             | PlanarEquation::PinnedLineTangent { .. }
             | PlanarEquation::TangentDistance { .. }
             | PlanarEquation::PinnedTangentDistance { .. } => 7,
-            PlanarEquation::PinnedCircularTangent(_) | PlanarEquation::ArcMidpoint(_) => 8,
+            PlanarEquation::PinnedCircularTangent(_)
+            | PlanarEquation::ArcMidpoint(_)
+            | PlanarEquation::CornerTangent { .. } => 8,
             PlanarEquation::CircleTangent(_)
             | PlanarEquation::ArcCircularity
             | PlanarEquation::ArcLength { .. }
             | PlanarEquation::ArcSweep { .. } => 6,
             PlanarEquation::Midpoint
             | PlanarEquation::PointOnLine
+            | PlanarEquation::CornerLine { .. }
+            | PlanarEquation::CornerSetback { .. }
             | PlanarEquation::Offset { .. } => 6,
             PlanarEquation::Lines { .. } | PlanarEquation::Angle { .. } => 8,
             _ => 4,
@@ -174,6 +188,8 @@ impl ResidualSource for PreparedConstraint {
             | PlanarEquation::PatternPointLink(_)
             | PlanarEquation::Midpoint
             | PlanarEquation::PointOnLine
+            | PlanarEquation::CornerLine { .. }
+            | PlanarEquation::CornerSetback { .. }
             | PlanarEquation::PointOnCircle
             | PlanarEquation::EqualRadius
             | PlanarEquation::ScalarLength { .. }
@@ -208,6 +224,7 @@ impl ResidualSource for PreparedConstraint {
             | PlanarEquation::CircleTangent(_)
             | PlanarEquation::PinnedLineTangent { .. }
             | PlanarEquation::PinnedCircularTangent(_)
+            | PlanarEquation::CornerTangent { .. }
             | PlanarEquation::TangentDistance { .. }
             | PlanarEquation::PinnedTangentDistance { .. } => Unknown,
         }
@@ -292,6 +309,16 @@ impl ResidualSource for PreparedConstraint {
             }
             PlanarEquation::Midpoint => midpoint(variables),
             PlanarEquation::PointOnLine => line_residual::point_on_line(variables),
+            PlanarEquation::CornerTangent {
+                side,
+                trimmed_first,
+            } => super::corner_setback::tangent(variables, side, trimmed_first),
+            PlanarEquation::CornerLine { trimmed_first } => {
+                super::corner_setback::bounded_line(variables, trimmed_first)
+            }
+            PlanarEquation::CornerSetback { target } => Ok(vec![
+                super::corner_setback::measure(variables)?.shifted(-target)?,
+            ]),
             PlanarEquation::Offset { target, side } => {
                 super::offset_dimension::offset_residual(variables, target, side)
             }

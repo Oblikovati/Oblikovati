@@ -8,7 +8,7 @@ use crate::{
     },
 };
 
-/// A certified corner seed and explicit source endpoints to replace.
+/// A corner seed checked against the caller-provided bound and explicit source endpoints to replace.
 #[derive(Clone, Debug, PartialEq)]
 pub struct SketchCornerCreation {
     pub lines: [SketchEntityId; 2],
@@ -23,9 +23,21 @@ pub struct SketchCornerCreationReport {
     pub points: Vec<SketchEntityId>,
     pub virtual_corners: [SketchEntityId; 2],
     pub trimmed: [SketchEntityId; 2],
+    pub far: [SketchEntityId; 2],
 }
 impl DocumentSnapshot {
-    /// Apply one certified corner to an isolated snapshot; example: `snapshot.create_sketch_corner(sketch, &input, ids)?`.
+    /// Associate a newly authored relation with its blend; example: `snapshot.own_corner_relation(sketch, blend, constraint)?`.
+    pub fn own_corner_relation(
+        &mut self,
+        sketch: DocumentSketchId,
+        owner: SketchEntityId,
+        constraint: crate::sketch::SketchConstraintId,
+    ) -> Result<(), SketchError> {
+        let mut geometry = self.sketches.get(sketch)?.geometry().clone();
+        geometry.own_relation(owner, constraint)?;
+        self.sketches.replace_geometry(sketch, geometry)
+    }
+    /// Apply one checked corner to an isolated snapshot; example: `snapshot.create_sketch_corner(sketch, &input, ids)?`.
     pub fn create_sketch_corner(
         &mut self,
         sketch: DocumentSketchId,
@@ -54,18 +66,24 @@ fn validate_corner_input(
             input.lines
         )));
     }
-    let points = std::array::from_fn::<_, 2, _>(|i| {
-        corner_line_points(geometry, input.lines[i], input.ends[i])
-    });
-    let [first, second] = points;
-    let (first, second) = (first?, second?);
-    if first[0] != second[0] {
+    let first = corner_line_points(geometry, input.lines[0], input.ends[0])?;
+    let second = corner_line_points(geometry, input.lines[1], input.ends[1])?;
+    let first_id = corner_point_id(geometry, input.lines[0], input.ends[0])?;
+    let second_id = corner_point_id(geometry, input.lines[1], input.ends[1])?;
+    if !geometry.points_coincident(first_id, second_id)? {
         return Err(SketchError::Definition(format!(
-            "corner endpoints {:?} and {:?}: expected coincident seed positions",
-            first[0], second[0]
+            "corner endpoints {first_id:?} and {second_id:?}: expected a recorded coincidence or equal positions"
         )));
     }
     Ok([first[0], first[1], second[1]])
+}
+fn corner_point_id(
+    geometry: &Sketch2D,
+    line: SketchEntityId,
+    end: SketchLineEnd,
+) -> Result<SketchEntityId, SketchError> {
+    let index = if end == SketchLineEnd::First { 0 } else { 1 };
+    Ok(geometry.line(line)?.endpoints[index])
 }
 fn corner_line_points(
     geometry: &Sketch2D,
@@ -86,6 +104,7 @@ fn append_corner(
     seed: SketchCornerSeed,
     ids: &mut RecipeReservations<'_>,
 ) -> Result<SketchCornerCreationReport, SketchError> {
+    let far = corner_far_points(geometry, input)?;
     let [first, second] = detach_ends(geometry, input, seed, ids)?;
     let corners = [first.previous, second.previous];
     let trimmed = [first.created, second.created];
@@ -101,7 +120,24 @@ fn append_corner(
         points: report.points,
         virtual_corners: corners,
         trimmed,
+        far,
     })
+}
+fn corner_far_points(
+    geometry: &Sketch2D,
+    input: &SketchCornerCreation,
+) -> Result<[SketchEntityId; 2], SketchError> {
+    let mut far = [SketchEntityId(0); 2];
+    for (index, value) in far.iter_mut().enumerate() {
+        let line = geometry.line(input.lines[index])?;
+        let far_index = if input.ends[index] == SketchLineEnd::First {
+            1
+        } else {
+            0
+        };
+        *value = line.endpoints[far_index];
+    }
+    Ok(far)
 }
 fn detach_ends(
     geometry: &mut Sketch2D,
@@ -167,7 +203,7 @@ fn retain_corner_incidence(
         )?;
         geometry.own_relation(owner, id)?;
     }
-    if corners[0] != corners[1] {
+    if !geometry.coincidence_path(corners[0], corners[1], &std::collections::BTreeSet::new()) {
         let id = ids
             .allocate_sketch_constraint(sketch)
             .map_err(|e| SketchError::Definition(e.to_string()))?;

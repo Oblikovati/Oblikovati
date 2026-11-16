@@ -12,6 +12,9 @@ pub enum SketchDimensionalConstraintCreation {
 /// Dimensions whose authored relation needs no geometric branch selection.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum MeasuredDimensionOperands {
+    CornerSetback {
+        points: [SketchEntityId; 3],
+    },
     Distance {
         points: [SketchEntityId; 2],
         measure: DistanceMeasure,
@@ -101,6 +104,7 @@ impl SketchDimensionalConstraintCreation {
 impl MeasuredDimensionOperands {
     fn relation(&self, parameter: u64) -> PlanarConstraint {
         match *self {
+            Self::CornerSetback { points } => PlanarConstraint::CornerSetback { points, parameter },
             Self::Distance { points, measure } => PlanarConstraint::Distance {
                 points,
                 measure,

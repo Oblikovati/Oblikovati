@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{
-    PlanarConstraint, Sketch2D, SketchConstraint, SketchError, SketchRelationId,
+    PlanarConstraint, Sketch2D, SketchConstraint, SketchEntityId, SketchError, SketchRelationId,
     residual::{PlanarEquation, PreparedConstraint},
 };
 use crate::{
@@ -142,10 +142,70 @@ fn prepared_source(
     constraint: &SketchConstraint,
     parameters: &ParameterCollection<u64>,
 ) -> Result<PreparedConstraint, SketchError> {
+    if let Some(source) = corner_tangent_source(sketch, constraint)? {
+        return Ok(source);
+    }
     let equation = equation(sketch, constraint, parameters)?;
     super::circular_compile::prepare_relation(sketch, &constraint.relation, equation)
 }
 
+fn corner_tangent_source(
+    sketch: &Sketch2D,
+    constraint: &SketchConstraint,
+) -> Result<Option<PreparedConstraint>, SketchError> {
+    let Some(owner) = sketch.owned_relations.get(&constraint.id) else {
+        return Ok(None);
+    };
+    let PlanarConstraint::LineTangent { line, curve, side } = constraint.relation else {
+        return Ok(None);
+    };
+    if curve != *owner {
+        return Err(SketchError::Definition(format!(
+            "owned tangent {constraint:?}: expected its curve to own the relation"
+        )));
+    }
+    let corner = sketch
+        .constraints
+        .iter()
+        .find_map(|row| {
+            if sketch.owned_relations.get(&row.id) != Some(owner) {
+                return None;
+            }
+            match row.relation {
+                PlanarConstraint::PointOnLine {
+                    point,
+                    line: source,
+                } if source == line => Some(point),
+                _ => None,
+            }
+        })
+        .ok_or_else(|| {
+            SketchError::Definition(format!(
+                "owned tangent {constraint:?}: expected a corresponding virtual corner"
+            ))
+        })?;
+    let line_points = sketch.line(line)?.endpoints;
+    let first = corner_trimmed_first(sketch, line, *owner)?;
+    let (trim, far) = if first {
+        (line_points[0], line_points[1])
+    } else {
+        (line_points[1], line_points[0])
+    };
+    let center = sketch.arc(curve)?.center;
+    let variables = sketch
+        .point_variables(&[corner, far, trim, center])
+        .into_iter()
+        .map(|variable| sketch.variable_column(variable))
+        .collect::<Result<_, _>>()?;
+    Ok(Some(PreparedConstraint {
+        equation: PlanarEquation::CornerTangent {
+            side,
+            trimmed_first: first,
+        },
+        projection: None,
+        variables,
+    }))
+}
 fn equation(
     sketch: &Sketch2D,
     constraint: &SketchConstraint,
@@ -169,6 +229,9 @@ fn equation(
         } => PlanarEquation::Offset {
             target: offset_target(constraint, parameter, parameters, linear_diameter)?,
             side,
+        },
+        PlanarConstraint::CornerSetback { parameter, .. } => PlanarEquation::CornerSetback {
+            target: positive_length_target(constraint, parameter, parameters, "corner setback")?,
         },
         PlanarConstraint::OffsetSplineDistance {
             parameter,
@@ -227,7 +290,14 @@ fn equation(
             PlanarEquation::ArcMidpoint(sketch.arc(arc)?.counter_clockwise)
         }
         PlanarConstraint::Midpoint { .. } => PlanarEquation::Midpoint,
-        PlanarConstraint::PointOnLine { .. } => PlanarEquation::PointOnLine,
+        PlanarConstraint::PointOnLine { line, .. } => {
+            match sketch.owned_relations.get(&constraint.id) {
+                Some(owner) => PlanarEquation::CornerLine {
+                    trimmed_first: corner_trimmed_first(sketch, line, *owner)?,
+                },
+                None => PlanarEquation::PointOnLine,
+            }
+        }
         PlanarConstraint::Angle {
             parameter, turn, ..
         }
@@ -259,6 +329,25 @@ fn equation(
             target: length_target(constraint, parameter, parameters)?,
         },
     })
+}
+fn corner_trimmed_first(
+    sketch: &Sketch2D,
+    line: SketchEntityId,
+    owner: SketchEntityId,
+) -> Result<bool, SketchError> {
+    let endpoints = sketch.line(line)?.endpoints;
+    let blend = if let Ok(arc) = sketch.arc(owner) {
+        [arc.start, arc.end]
+    } else {
+        sketch.line(owner)?.endpoints
+    };
+    match [blend.contains(&endpoints[0]), blend.contains(&endpoints[1])] {
+        [true, false] => Ok(true),
+        [false, true] => Ok(false),
+        _ => Err(SketchError::Definition(format!(
+            "corner line {line:?}, owner {owner:?}: expected exactly one shared blend endpoint"
+        ))),
+    }
 }
 fn signed_length_target(
     constraint: &SketchConstraint,

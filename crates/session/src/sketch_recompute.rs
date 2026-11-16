@@ -134,7 +134,36 @@ pub(crate) fn apply_recipe_edit<R, T, E>(
         .sync_exposed_parameters(&snapshot.parameters)
         .map_err(MutationError::Property)?;
     if let Some(options) = options {
-        update_pending_sketches(snapshot, options);
+        update_validated_sketches(snapshot, options).map_err(MutationError::Sketch)?;
     }
     project(snapshot, result).map_err(MutationError::Command)
+}
+
+fn update_validated_sketches(
+    snapshot: &mut DocumentSnapshot,
+    options: SolveOptions,
+) -> Result<(), SketchError> {
+    let outcome = snapshot.solve_pending_document_sketches(options, || false);
+    for report in &outcome.report.reports {
+        let geometry = outcome.candidate.get(report.sketch)?.geometry();
+        if !geometry.has_owned_relations() {
+            continue;
+        }
+        match &report.result {
+            Err(error) => return Err(error.clone()),
+            Ok(solved)
+                if solved.numerical().termination
+                    != oblikovati_solve::nonlinear::SolveTermination::Converged =>
+            {
+                return Err(SketchError::Definition(format!(
+                    "owned sketch {:?} solve termination {:?}: expected convergence",
+                    report.sketch,
+                    solved.numerical().termination
+                )));
+            }
+            Ok(_) => {}
+        }
+    }
+    snapshot.sketches = outcome.candidate;
+    Ok(())
 }

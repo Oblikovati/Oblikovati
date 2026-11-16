@@ -29,6 +29,10 @@ impl Sketch2D {
                 "structural relation {id:?}: expected deletion through its owner"
             )));
         }
+        self.require_corner_connectivity_after_removing(
+            &std::collections::BTreeSet::from([id]),
+            &[],
+        )?;
         self.remove_authored_relation(id, false)
     }
     pub(super) fn remove_authored_relation(

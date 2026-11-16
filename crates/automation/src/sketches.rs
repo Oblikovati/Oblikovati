@@ -144,9 +144,11 @@ fn apply_geometry_command<O: TransactionObserver, W: WorkspaceObserver, F: Docum
         }
         METHOD_SKETCH_TRANSFORM => transform::apply(files, crate::decode(method, request)?),
         METHOD_SKETCH_ADD_PATTERN => pattern::apply(files, crate::decode(method, request)?),
-        METHOD_SKETCH_ADD_ENTITY => add_entity::apply(files, crate::decode(method, request)?, None),
+        METHOD_SKETCH_ADD_ENTITY => {
+            add_entity::apply(files, crate::decode(method, request)?, None, None)
+        }
         METHOD_SKETCH_ADD_ASSOCIATIVE_ENTITY => {
-            add_entity::apply(files, crate::decode(method, request)?, None)
+            add_entity::apply(files, crate::decode(method, request)?, None, None)
         }
         METHOD_SKETCH_ADD_CONSTRAINT => {
             add_constraint::apply(files, crate::decode(method, request)?)

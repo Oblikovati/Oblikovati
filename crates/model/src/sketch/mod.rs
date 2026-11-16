@@ -25,6 +25,7 @@ mod construction;
 mod owned_relation;
 pub use owned_relation::SketchOwnedRelation;
 mod corner_predicate;
+mod corner_setback;
 pub use corner_predicate::{
     SketchCornerConstruction, SketchCornerPredicate, SketchCornerSeed, SketchCornerSize,
     SketchCornerTurn,

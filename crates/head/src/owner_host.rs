@@ -6,7 +6,7 @@ pub(super) fn borrowed_host<'a, O: TransactionObserver, W: WorkspaceObserver, F:
     version: &'a str,
     factory: &'a mut dyn DocumentObserverFactory<Observer = O>,
     scenes: &'a mut crate::part_scene::DesktopPartScenes,
-    construction: &'a dyn oblikovati_model::sketch::SketchCircleConstruction,
+    construction: &'a oblikovati_martensite::planar_curve::MartensiteSketchConstruction,
     captures: &'a mut Option<crate::DesktopWindowCaptures>,
 ) -> FileHost<'a, O, W, F> {
     let producer = scenes.assembly_producer_digest();
@@ -18,7 +18,8 @@ pub(super) fn borrowed_host<'a, O: TransactionObserver, W: WorkspaceObserver, F:
             crate::part_scene::DISPLAY_MESH.chord_error,
             crate::part_scene::DISPLAY_MESH.angular_error,
         ))
-        .with_sketch_construction(construction, Default::default());
+        .with_sketch_construction(construction, Default::default())
+        .with_sketch_corner_construction(construction, Default::default());
     match captures {
         Some(captures) => host.with_window_capture(captures),
         None => host,

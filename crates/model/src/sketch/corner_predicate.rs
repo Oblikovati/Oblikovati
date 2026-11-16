@@ -29,7 +29,7 @@ pub struct SketchCornerSeed {
 }
 /// Injected geometry constructor for the selected corner branch.
 pub trait SketchCornerConstruction: SketchCornerPredicate {
-    /// Construct within both finite source segments and certify the metric residuals.
+    /// Construct within both finite source segments and check metric residuals against the supplied bound.
     /// Example: `backend.construct_corner(points, size, bound)?`.
     fn construct_corner(
         &self,

@@ -3,6 +3,7 @@ use super::*;
 use oblikovati_session::SketchPrimitiveProjectionInput;
 mod associative;
 mod chain_reply;
+mod corner;
 mod inputs;
 mod line_reply;
 mod slot;
@@ -12,6 +13,10 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     files: &mut FileWorkspace<O, W, F>,
     request: AddSketchEntityArgs,
     construction: Option<crate::file_host::SketchConstructionAccess<'_>>,
+    corner_construction: Option<(
+        &dyn oblikovati_model::sketch::SketchCornerConstruction,
+        oblikovati_model::sketch::SketchConstructionPolicy,
+    )>,
 ) -> Result<Vec<u8>, Error> {
     let (document, sketch) = active_sketch(files, request.sketch_index)?;
     let snapshot = files
@@ -19,6 +24,9 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         .session(document)
         .map_err(api_error)?
         .snapshot();
+    if matches!(request.kind.as_str(), "fillet" | "chamfer") {
+        return corner::create(files, document, sketch, request, corner_construction);
+    }
     let input = inputs::prepare(snapshot, &request)?;
     let bindings = associative::bindings(snapshot, &request)?;
     let slot_width = if request.kind == "slot" && associative::named(snapshot, &request.width)? {

@@ -300,3 +300,68 @@ fn structural_relation_schema_rejects_older_versions_missing_owners_and_duplicat
     unknown.owned_relations.as_mut().unwrap()[0].owner = id(99999);
     assert!(Sketch2D::from_recipe(&unknown).is_err());
 }
+#[test]
+fn existing_coincidence_cannot_be_removed_while_a_blend_depends_on_it() {
+    let mut geometry = Sketch2D::default();
+    for (n, p) in [(1, [0., 0.]), (2, [4., 0.]), (3, [0., 0.]), (4, [0., 5.])] {
+        geometry.add_point(id(n), p).unwrap();
+    }
+    geometry.add_line(id(5), [id(2), id(1)]).unwrap();
+    geometry.add_line(id(6), [id(3), id(4)]).unwrap();
+    geometry
+        .add_constraint(
+            SketchConstraintId(1),
+            PlanarConstraint::Coincident {
+                points: [id(1), id(3)],
+            },
+        )
+        .unwrap();
+    let mut snapshot = document_snapshot::empty_snapshot();
+    snapshot
+        .sketches
+        .add(DocumentSketchId(1), "Corner", SketchPlane::xy(), geometry)
+        .unwrap();
+    let mut history = DocumentEditHistory::new(snapshot, Default::default()).unwrap();
+    let mut request = input(true);
+    request.lines = [id(5), id(6)];
+    let token = history.begin("Fillet").unwrap();
+    let blend = history
+        .edit(&token, |snapshot, ids| {
+            snapshot.create_sketch_corner(
+                DocumentSketchId(1),
+                &request,
+                &FakeCornerConstruction,
+                0.,
+                ids,
+            )
+        })
+        .unwrap();
+    let mut geometry = history
+        .snapshot()
+        .sketches
+        .get(DocumentSketchId(1))
+        .unwrap()
+        .geometry()
+        .clone();
+    assert!(
+        geometry
+            .remove_geometric_constraint(SketchConstraintId(1))
+            .is_err()
+    );
+    assert!(
+        geometry
+            .delete_selection(&oblikovati_model::sketch::SketchDeletionSelection {
+                geometric_constraints: vec![SketchConstraintId(1)],
+                ..Default::default()
+            })
+            .is_err()
+    );
+    geometry
+        .delete_selection(&oblikovati_model::sketch::SketchDeletionSelection {
+            entities: vec![blend.entity],
+            geometric_constraints: vec![SketchConstraintId(1)],
+            ..Default::default()
+        })
+        .unwrap();
+    assert!(geometry.arc(blend.entity).is_err());
+}

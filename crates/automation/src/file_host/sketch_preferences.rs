@@ -40,6 +40,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
                 self.files,
                 crate::decode(method, request)?,
                 self.sketch_construction,
+                self.sketch_corner_construction,
             );
         }
         if method == METHOD_SKETCH_ADD_ASSOCIATIVE_ENTITY {
@@ -47,6 +48,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
                 self.files,
                 crate::decode(method, request)?,
                 self.sketch_construction,
+                self.sketch_corner_construction,
             );
         }
         if method != METHOD_SKETCH_CREATE {

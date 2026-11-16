@@ -77,6 +77,10 @@ struct FileContext<'a, O: TransactionObserver, W, F> {
     external: Option<&'a mut dyn ExternalAttachmentFiles>,
     observers: Option<&'a mut dyn DocumentObserverFactory<Observer = O>>,
     sketch_construction: Option<SketchConstructionAccess<'a>>,
+    sketch_corner_construction: Option<(
+        &'a dyn oblikovati_model::sketch::SketchCornerConstruction,
+        oblikovati_model::sketch::SketchConstructionPolicy,
+    )>,
     part_topology: Option<&'a mut dyn crate::PartTopologyAccess<O, W, F>>,
     assembly_display_limits: Option<(f64, f64)>,
     assembly_producer: Option<Result<String, String>>,
@@ -215,6 +219,7 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHos
                 extrusion: None,
                 drawing_views: None,
                 sketch_construction: None,
+                sketch_corner_construction: None,
             }),
         }
     }

@@ -442,3 +442,6 @@ mod three_point;
 
 #[path = "add_entity/slots.rs"]
 mod slots;
+
+#[path = "add_entity/corner.rs"]
+mod corner;

@@ -48,6 +48,8 @@ impl Sketch2D {
         for id in &selected.geometric_constraints {
             self.geometric_constraint_index(*id)?;
         }
+        let removed: BTreeSet<_> = selected.geometric_constraints.iter().copied().collect();
+        self.require_corner_connectivity_after_removing(&removed, &selected.entities)?;
         Ok(selected
             .dimensions
             .iter()

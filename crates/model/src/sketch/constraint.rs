@@ -142,6 +142,10 @@ pub enum PlanarConstraint {
         #[serde(default, skip_serializing_if = "std::ops::Not::not")]
         signed: bool,
     },
+    CornerSetback {
+        points: [SketchEntityId; 3],
+        parameter: u64,
+    },
     EllipseMinorRadius {
         ellipse: SketchEntityId,
         parameter: u64,
@@ -226,6 +230,7 @@ impl Sketch2D {
             | PlanarConstraint::Vertical { points }
             | PlanarConstraint::Distance { points, .. }
             | PlanarConstraint::PointAngle { points, .. } => points.to_vec(),
+            PlanarConstraint::CornerSetback { points, .. } => points.to_vec(),
             PlanarConstraint::Fix { point, .. } => vec![*point],
             PlanarConstraint::Ground { points } => points.iter().map(|point| point.id).collect(),
             PlanarConstraint::LineHorizontal { line } | PlanarConstraint::LineVertical { line } => {

@@ -104,6 +104,7 @@ impl<'a, F: DocumentFiles> ScriptSession<'a, F> {
             &projection,
         )
         .with_sketch_construction(&construction, Default::default())
+        .with_sketch_corner_construction(&construction, Default::default())
         .with_part_update(&mut self.replay);
         execution
             .wait(&host, output)
