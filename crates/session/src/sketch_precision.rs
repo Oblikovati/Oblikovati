@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Session-borrowed conditional evidence; no feature admission.
 mod prism;
+mod prism_displacement;
 use crate::{DocumentSession, TransactionObserver};
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
@@ -8,6 +9,7 @@ use oblikovati_model::{
     sketch::{SketchEntityId, SketchSolveOutcome},
 };
 pub use prism::PrismPrecisionObligation;
+pub use prism_displacement::{ConditionalPrismAxis, ConditionalPrismDisplacement};
 
 /// A fresh solve retained only while its owning session is immutably borrowed.
 /// Derived numeric bounds can be copied and do not carry this lifetime.

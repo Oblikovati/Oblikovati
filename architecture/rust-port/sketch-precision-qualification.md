@@ -199,3 +199,18 @@ not establish session identity across snapshots or validate cross-platform
 interval arithmetic. It does not enable feature admission. Rust's native
 planar-sketch section uses document schema 3. The Go host tested with this
 change supports schema 2 and rejects schema 3 before model restoration.
+
+## Conditional prism displacement sources
+
+A session-borrowed sketch result can inspect an authored prism for the same
+sketch and retain conditional bounds for its three local displacement sources.
+Each parameter uses the authored formula bound and retains its parameter and
+source identities. Each stored constant requires explicit caller-supplied
+finite bounds containing the resolved value. The normal interval must exclude
+zero. The evidence cannot outlive the session borrow, and the session tests
+rederive it after edits, undo, redo, save and reopen.
+
+These bounds remain conditional on arithmetic conformance and the constant
+assumptions. They do not bound a derived frame, prove a topology mapping, or
+establish a tolerance budget. They do not discharge the `ExtrusionSource`
+obligation, authorize preview or creation, or qualify an existing result.
