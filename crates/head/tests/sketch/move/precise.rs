@@ -9,7 +9,7 @@ pub(super) const CENTER: [i32; 2] = [850, 550];
 pub(super) const EDGE: [i32; 2] = [1010, 470];
 
 #[given("an editable sketch with eligible geometry")]
-fn editable_ellipse(world: &mut ApplicationWorld) {
+pub(super) fn editable_ellipse(world: &mut ApplicationWorld) {
     world.start_sketch_on("YZ Plane");
     world.choose_from_flyout("Circle", "Ellipse");
     for point in [CENTER, EDGE, [880, 610]] {
@@ -20,7 +20,7 @@ fn editable_ellipse(world: &mut ApplicationWorld) {
 }
 
 #[given("the ellipse is selected in Move with Copy off and Precise Input on")]
-fn select_ellipse(world: &mut ApplicationWorld) {
+pub(super) fn select_ellipse(world: &mut ApplicationWorld) {
     open_move(world);
     let check = world.run_in_window("Move", "PreciseInput").center();
     world.click(diagnostics::pointer_pixels(check));

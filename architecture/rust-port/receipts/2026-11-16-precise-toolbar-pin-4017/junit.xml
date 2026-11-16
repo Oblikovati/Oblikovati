@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Move: tmp/obk-toolbar-pin-source/features/sketch/move/scenario.feature" package="testsuite/Feature: Move: tmp/obk-toolbar-pin-source/features/sketch/move/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-16T04:14:19.77110989Z" time="27.225520923"><testcase name="Scenario: move-21 Mini-toolbar Pin check state toggles: tmp/obk-toolbar-pin-source/features/sketch/move/scenario.feature:187:3" time="27.225520923"><system-out><![CDATA[  Scenario: move-21 Mini-toolbar Pin check state toggles
+   ✔  Given an editable sketch with eligible geometry
+   ✔  Given the precise-input mini-toolbar is visible at Move Base Point stage
+   ✔  And Pin Mini-Toolbar Position is unchecked
+   ✔  When Pin Mini-Toolbar Position is clicked and Settings is reopened
+   ✔  Then Pin Mini-Toolbar Position is checked
+   ✔  When Pin is later clicked again and Settings is reopened
+   ✔  Then Pin Mini-Toolbar Position is unchecked
+]]></system-out></testcase></testsuite></testsuites>
