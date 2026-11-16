@@ -35,7 +35,12 @@ both the configured Git status and a second status with case folding disabled;
 this catches case-distinct untracked paths hidden by `core.ignorecase` (#4018).
 If either check reports a change, the tree is dirty. This conservative second
 check can decline a usable tree on a case-insensitive filesystem; that platform
-has not been tested here. These checks are
+has not been tested here. Tracked file bytes, link targets and executable modes
+are also compared with the committed Git blobs. This detects same-size edits
+hidden by Git's stat cache, including with `core.trustctime=false` (#3978).
+Checkout filters or line-ending conversion can cause a conservative rejection.
+The byte comparison does not authenticate the host or make the check atomic.
+These checks are
 not atomic: concurrent changes that are reverted between observations can go
 undetected, and local Git metadata and the host are not authenticated. Revisions containing Git submodules are refused because the map
 does not inventory their contents, including uninitialized or ignored changes.

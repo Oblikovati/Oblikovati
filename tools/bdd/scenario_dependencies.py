@@ -8,6 +8,7 @@ from typing import Mapping
 
 from git_environment import git_environment
 from runtime_snapshot import snapshot_runtime
+from tracked_content import tracked_content_matches
 
 VERSION = 1
 RUNTIME_COVERAGE = "unbounded"
@@ -146,7 +147,10 @@ def worktree_clean(root: Path) -> bool:
         git_status_command(root, "ls-files", "-v", "-z"),
         env=git_environment() | {"GIT_OPTIONAL_LOCKS": "0"},
     )
-    return all(entry.startswith(b"H ") for entry in flags.split(b"\0") if entry)
+    if not all(entry.startswith(b"H ") for entry in flags.split(b"\0") if entry):
+        return False
+    head = git_checkout_value(root, "--verify", "HEAD^{commit}")
+    return tracked_content_matches(root, git_tree(root, head))
 
 
 def case_sensitive_status(root: Path) -> bytes:
