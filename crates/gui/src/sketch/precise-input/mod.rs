@@ -103,6 +103,8 @@ impl PreciseField {
 #[derive(Default)]
 pub(crate) struct PreciseInputBar {
     pub open: bool,
+    move_option: bool,
+    move_active: bool,
     first: PreciseField,
     second: PreciseField,
     mode: GuiPreciseMode,
@@ -117,7 +119,7 @@ impl PreciseInputBar {
     /// The ribbon's way in; example: `bar.toggle(ui)` inside the Format panel.
     pub(crate) fn toggle(&mut self, ui: &Ui) {
         if crate::widget_abi::toggle_button(ui, "Precise Input", [108., 18.], self.open) {
-            self.open = !self.open;
+            self.toggle_visibility();
         }
     }
     pub(crate) fn toggle_icon(&mut self, ui: &Ui, icons: &crate::icons::GuiRibbonIcons) {
@@ -131,7 +133,26 @@ impl PreciseInputBar {
             crate::icons::IconGlyph::PreciseInput,
             icons.appearance.cell(3).1,
         ) {
-            self.open = !self.open;
+            self.toggle_visibility();
+        }
+    }
+    pub(crate) fn sync_move_context(&mut self, active: bool) {
+        if active && !self.move_active {
+            self.move_option = self.open;
+        }
+        self.move_active = active;
+    }
+    pub(crate) fn move_option(&self) -> bool {
+        self.move_option
+    }
+    pub(crate) fn set_move_option(&mut self, enabled: bool) {
+        self.move_option = enabled;
+        self.open = enabled;
+    }
+    fn toggle_visibility(&mut self) {
+        self.open = !self.open;
+        if self.move_active {
+            self.move_option = self.open;
         }
     }
     /// Draw while open and a command takes points; a command that ends drops what was typed.
@@ -425,6 +446,26 @@ mod tests {
         bar.popup_open = false;
         bar.auto_fade = false;
         assert!(bar.show_full_controls(false));
+    }
+    #[test]
+    fn closing_toolbar_preserves_move_option_until_explicitly_changed() {
+        let mut bar = PreciseInputBar {
+            open: true,
+            ..Default::default()
+        };
+        bar.sync_move_context(true);
+        bar.open = false;
+        assert!(bar.move_option());
+        bar.set_move_option(false);
+        assert!(!bar.open && !bar.move_option());
+        bar.set_move_option(true);
+        assert!(bar.open && bar.move_option());
+        bar.toggle_visibility();
+        assert!(!bar.open && !bar.move_option());
+        bar.sync_move_context(false);
+        bar.open = true;
+        bar.sync_move_context(true);
+        assert!(bar.move_option());
     }
     #[test]
     fn pin_locks_only_the_toolbar_position() {
