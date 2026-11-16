@@ -31937,7 +31937,8 @@
       "acceptance_test": "sketch_scenarios_use_the_native_window: circle-center-point-09 Keep selecting circumference after a same-position click",
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/4012"
       ],
       "state": "inventoried",
       "last_receipt": null,

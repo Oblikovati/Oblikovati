@@ -180,6 +180,10 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
   the real visibility controls and does not assume the captured state. See
   `receipts/2026-11-15-ribbon-clarified/`. This is diagnostic evidence, not a
   verified acceptance result (#3978).
+- Circle zero radius: same-position mouse clicks and Escape passed a focused
+  OS-input diagnostic, with bridge queries confirming no new circle. See
+  `receipts/2026-11-16-live-circle-zero/`; pinned BDD acceptance remains
+  unverified (#3978, #4012).
 - Two-point rectangle: the scenario owner clarified that scenario 10 uses an
   empty metric sketch and does not require recorded whole-sketch counts. Its
   corrected eight-step native run passed, but its receipt is stale (#3953).
