@@ -195,10 +195,21 @@ impl<
             // Projected by the frame, which owns the camera.
             origin_planes: Vec::new(),
             feature_edges: Vec::new(),
+            selected_edge_outlines: Vec::new(),
             origin_axes: Vec::new(),
             view_axes: None,
             inspected_file: self.inspected_file.clone(),
             model_face_chosen: self.chosen_model_face(document).is_some(),
+            selected_edge_count: self.chosen_model_edges(document).len(),
+            look_at_available: self.look_at_plane()?.is_some(),
+            fillet_selection: Some((
+                session.generation(),
+                self.chosen_model_edges(document)
+                    .iter()
+                    .map(|edge| edge.key.clone())
+                    .collect(),
+            )),
+            fillet_available: self.part_scenes.edge_pick_available(),
             orientation_selection_available: self.chosen_model_face(document).is_some()
                 || session.selected_browser_body().is_some(),
             orientation_selection_locked: self.orientation_lock,

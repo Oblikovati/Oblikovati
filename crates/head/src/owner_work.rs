@@ -21,6 +21,11 @@ impl<
     fn orientation_selection_pivot(&mut self) -> Result<Option<[f64; 3]>, String> {
         self.orientation_pivot()
     }
+    fn look_at_selection_plane(
+        &self,
+    ) -> Result<Option<oblikovati_model::sketch::SketchPlane>, String> {
+        self.look_at_plane()
+    }
 
     fn set_selection_mode_from_gui(
         &mut self,
@@ -433,6 +438,9 @@ impl<
     }
     fn selected_browser_outline(&mut self) -> Vec<[[f64; 3]; 2]> {
         self.current_browser_outline()
+    }
+    fn selected_edge_outlines(&mut self) -> Vec<Vec<[[f64; 3]; 2]>> {
+        self.current_selected_edge_outlines()
     }
     desktop_document_work!();
     fn select_block_geometry_from_gui(&mut self, active: bool) -> Result<bool, String> {

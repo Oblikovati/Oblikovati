@@ -300,6 +300,8 @@ fn retained_report(
         .unwrap();
     let key = body.body_reference_key(session.history(), guid).unwrap();
     let report = body
+        .as_prism()
+        .unwrap()
         .body_report(session.history(), guid, key)
         .unwrap()
         .clone();

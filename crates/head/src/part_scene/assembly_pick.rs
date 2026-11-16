@@ -111,7 +111,7 @@ impl DesktopPartScenes {
             if !session.body_visible(&key) {
                 continue;
             }
-            if let Some((_, reach)) = body.face_on_line(line)? {
+            if let Some((_, reach)) = body.face_key_on_line(session.history(), guid, line)? {
                 let distance = reach / scale;
                 if !distance.is_finite() {
                     return Err(format!(

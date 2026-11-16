@@ -32,7 +32,7 @@ impl DesktopPartScenes {
                 density,
             );
         }
-        match oblikovati_martensite::named_part_properties(session.history(), guid, bodies)? {
+        match oblikovati_martensite::named_solid_part_properties(session.history(), guid, bodies)? {
             Some(properties) => converted_properties(properties, density),
             None => Ok(empty_properties(density)),
         }
@@ -101,9 +101,9 @@ fn finite_conversion(result: &MassPropertiesResult) -> Result<(), String> {
 }
 
 pub(super) fn selected_body<'a>(
-    bodies: &[&'a NamedPrismSnapshot],
+    bodies: &[&'a NamedSolid],
     index: i64,
-) -> Result<&'a NamedPrismSnapshot, String> {
+) -> Result<&'a NamedSolid, String> {
     usize::try_from(index)
         .ok()
         .and_then(|index| bodies.get(index))

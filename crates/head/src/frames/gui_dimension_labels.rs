@@ -84,6 +84,22 @@ pub(super) fn projected_browser_outline(
         })
         .collect()
 }
+pub(super) fn projected_selected_edges(
+    window: &dyn HeadWindow,
+    owner: &mut dyn HeadWork,
+) -> Vec<Vec<[[i32; 2]; 2]>> {
+    owner
+        .selected_edge_outlines()
+        .into_iter()
+        .map(|edge| {
+            edge.into_iter()
+                .filter_map(|[from, to]| {
+                    Some([window.model_pixel(from).ok()?, window.model_pixel(to).ok()?])
+                })
+                .collect()
+        })
+        .collect()
+}
 /// The toolbar's triad at its sketch position; a window that cannot project shows none.
 pub(super) fn project_precise_triad(
     window: &dyn HeadWindow,

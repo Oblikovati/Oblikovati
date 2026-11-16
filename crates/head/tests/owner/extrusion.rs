@@ -195,9 +195,13 @@ fn assert_cube(owner: &TestOwner, document: u64, side: f64) {
     let body = evaluated
         .body(oblikovati_model::feature::FeatureId(1))
         .unwrap();
-    assert!(body.certification().is_some());
+    assert!(body.as_prism().unwrap().certification().is_some());
     let key = body.body_reference_key(session.history(), guid).unwrap();
-    let report = body.body_report(session.history(), guid, key).unwrap();
+    let report = body
+        .as_prism()
+        .unwrap()
+        .body_report(session.history(), guid, key)
+        .unwrap();
     assert!((report.properties.volume - side.powi(3)).abs() < 1e-8);
     assert_eq!(
         (
@@ -214,7 +218,11 @@ fn assert_cube(owner: &TestOwner, document: u64, side: f64) {
         .collect();
     assert_eq!(face_keys.len(), 6);
     for face_key in face_keys {
-        let face = body.face_report(session.history(), guid, face_key).unwrap();
+        let face = body
+            .as_prism()
+            .unwrap()
+            .face_report(session.history(), guid, face_key)
+            .unwrap();
         assert_eq!(face.loops, 1);
         assert!((face.area - side.powi(2)).abs() < 1e-8);
     }
@@ -265,7 +273,11 @@ fn assert_face(owner: &TestOwner, document: u64, key: &[u8], area: f64) {
     let body = evaluated
         .body(oblikovati_model::feature::FeatureId(1))
         .unwrap();
-    let face = body.face_report(session.history(), guid, key).unwrap();
+    let face = body
+        .as_prism()
+        .unwrap()
+        .face_report(session.history(), guid, key)
+        .unwrap();
     assert!((face.area - area).abs() < 1e-8);
 }
 

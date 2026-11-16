@@ -262,6 +262,13 @@ pub trait HeadWindow {
             "view camera {camera:?}: expected a window with a view"
         ))
     }
+    /// Change a discrete view and retain its previous camera; example: `window.set_view_camera_recorded(camera)?`.
+    fn set_view_camera_recorded(
+        &mut self,
+        camera: oblikovati_viewport::ViewportCamera,
+    ) -> Result<bool, String> {
+        self.set_view_camera(camera)
+    }
     /// The line of sight through a pixel, as a point and a direction away from the viewer.
     fn view_line(&self, pixel: [i32; 2]) -> Result<[[f64; 3]; 2], String> {
         Err(format!(

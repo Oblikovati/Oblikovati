@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Analytic area of a face selected from the current evaluated body.
 use super::*;
-use oblikovati_martensite::{PrismFaceProbe, PrismFaceRole};
 use oblikovati_model::feature::FeatureId;
 
 impl DesktopPartScenes {
@@ -11,7 +10,7 @@ impl DesktopPartScenes {
         files: &FileWorkspace<O, W, F>,
         document: u64,
         feature: FeatureId,
-        role: PrismFaceRole,
+        face: &[u8],
     ) -> Result<f64, String> {
         let workspace = files.workspace();
         let session = workspace
@@ -25,23 +24,13 @@ impl DesktopPartScenes {
         let body = evaluated
             .body(feature)
             .ok_or_else(|| format!("feature {feature:?}: expected a current solid"))?;
-        let key = body.body_reference_key(session.history(), guid)?;
-        face_area(&body.body_report(session.history(), guid, key)?.faces, role)
+        face_area(body.face_area(session.history(), guid, face)?)
     }
 }
-fn face_area(report: &[PrismFaceProbe], role: PrismFaceRole) -> Result<f64, String> {
-    let mut faces = report.iter().filter(|face| face.role == role);
-    let face = faces
-        .next()
-        .ok_or_else(|| format!("face {role:?}: expected a current face"))?;
-    if faces.next().is_some() {
-        return Err(format!("face {role:?}: expected a unique face"));
-    }
-    let area = face.area * 100.;
+fn face_area(area: f64) -> Result<f64, String> {
+    let area = area * 100.;
     if !area.is_finite() || area <= 0. {
-        return Err(format!(
-            "face {role:?} area {area:?}: expected finite positive mm²"
-        ));
+        return Err(format!("face area {area:?}: expected finite positive mm²"));
     }
     Ok(area)
 }
@@ -49,20 +38,10 @@ fn face_area(report: &[PrismFaceProbe], role: PrismFaceRole) -> Result<f64, Stri
 #[cfg(test)]
 mod tests {
     use super::*;
-    fn face(area: f64) -> PrismFaceProbe {
-        PrismFaceProbe {
-            role: PrismFaceRole::Start,
-            area,
-            centroid: [0.; 3],
-            loops: 1,
-        }
-    }
     #[test]
     fn area_conversion_requires_one_finite_positive_face() {
-        assert_eq!(face_area(&[face(2.5)], PrismFaceRole::Start).unwrap(), 250.);
-        assert!(face_area(&[], PrismFaceRole::Start).is_err());
-        assert!(face_area(&[face(1.), face(2.)], PrismFaceRole::Start).is_err());
-        assert!(face_area(&[face(f64::NAN)], PrismFaceRole::Start).is_err());
-        assert!(face_area(&[face(0.)], PrismFaceRole::Start).is_err());
+        assert_eq!(face_area(2.5).unwrap(), 250.);
+        assert!(face_area(f64::NAN).is_err());
+        assert!(face_area(0.).is_err());
     }
 }

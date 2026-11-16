@@ -26,7 +26,7 @@ impl<
         face: Option<browser_selection::ChosenModelFace>,
     ) -> Option<SelectedFaceAppearance> {
         let face = face?;
-        let key = self.pick_face_key(document, face)?;
+        let key = self.pick_face_key(document, &face)?;
         let generation = self.files.workspace().session(document).ok()?.generation();
         Some(SelectedFaceAppearance {
             face,
@@ -38,13 +38,13 @@ impl<
     fn pick_face_key(
         &mut self,
         document: u64,
-        face: browser_selection::ChosenModelFace,
+        face: &browser_selection::ChosenModelFace,
     ) -> Option<String> {
         match self.part_scenes.selected_face_reference(
             &mut self.files,
             document,
             face.feature,
-            face.role,
+            &face.key,
         ) {
             Ok(key) => Some(key),
             Err(cause) => {
@@ -158,7 +158,7 @@ impl<
                 &mut self.files,
                 document,
                 pick.face.feature,
-                pick.face.role,
+                &pick.face.key,
             )?;
             if current != pick.key {
                 return Err(format!(

@@ -95,7 +95,24 @@ fn viewport_ray_from_inside_a_solid_selects_the_forward_face() {
         .face_on_line(&owner.files, document, [[1., 1., 1.], [0., 0., 1.]])
         .unwrap()
         .unwrap();
-    assert_eq!(picked.1, oblikovati_martensite::PrismFaceRole::End);
+    let guid = owner
+        .files
+        .workspace()
+        .identity(document)
+        .unwrap()
+        .internal_name;
+    let expected = oblikovati_model::identity::SemanticReferenceName::new(
+        guid,
+        1,
+        1,
+        "sketch-prism",
+        "end",
+        &[1],
+    )
+    .unwrap()
+    .encode()
+    .unwrap();
+    assert_eq!(picked.1, expected);
 }
 
 #[test]
@@ -154,7 +171,7 @@ fn viewport_toggle_preserves_other_selected_bodies_and_can_remove_the_pick() {
 }
 
 #[test]
-fn unsupported_face_toggle_reports_failure_and_preserves_body_selection() {
+fn face_toggle_preserves_body_selection_and_toggles_the_face() {
     use oblikovati_session::selection::SelectionKind;
     let (mut owner, _) = owner();
     let document = super::super::part_scene::open_prism(&mut owner, false);
@@ -178,9 +195,23 @@ fn unsupported_face_toggle_reports_failure_and_preserves_body_selection() {
     owner
         .click_model_with_modifiers(document, ray, Some(0.1), true)
         .unwrap();
-    assert!(
-        matches!(owner.take_command_notice(), Some(crate::DesktopCommandNotice::SelectionFailed { cause }) if cause.contains("face viewport toggle"))
+    assert!(owner.take_command_notice().is_none());
+    assert_eq!(owner.current_face_appearance_picks(document).len(), 1);
+    assert_eq!(
+        owner
+            .documents()
+            .workspace()
+            .session(document)
+            .unwrap()
+            .selected_browser_body()
+            .unwrap()
+            .0,
+        key
     );
+    owner
+        .click_model_with_modifiers(document, ray, Some(0.1), true)
+        .unwrap();
+    assert!(owner.current_face_appearance_picks(document).is_empty());
     assert_eq!(
         owner
             .documents()
@@ -243,6 +274,12 @@ fn visible_plane_hits_respect_selection_filter() {
         .click_model_with_window(document, ray, Some(0.1))
         .unwrap();
     assert_eq!(chosen_feature(&owner, document), Some(plane));
+    assert!(owner.gui_command_state().unwrap().look_at_available);
+    assert!(
+        crate::HeadWork::look_at_selection_plane(&owner)
+            .unwrap()
+            .is_some()
+    );
     owner
         .ambient_selection
         .set_enabled(SelectionKind::WorkPlane, false);
@@ -250,6 +287,7 @@ fn visible_plane_hits_respect_selection_filter() {
         .click_model_with_window(document, ray, Some(0.1))
         .unwrap();
     assert_eq!(chosen_feature(&owner, document), None);
+    assert!(!owner.gui_command_state().unwrap().look_at_available);
 }
 
 #[test]

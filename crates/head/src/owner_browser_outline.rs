@@ -10,26 +10,67 @@ impl<
     S: DispatchWakeup,
 > DesktopOwner<O, W, F, G, R, S>
 {
-    /// The chosen row's outline; worked out once per model state, then read every frame.
-    pub(in crate::owner) fn current_browser_outline(&mut self) -> Vec<[[f64; 3]; 2]> {
-        if self
-            .extrusion_preview
-            .as_ref()
-            .is_some_and(|(document, generation, _, replace)| {
-                *replace
-                    && self.files.workspace().active_document() == Some(*document)
-                    && self
-                        .files
-                        .workspace()
-                        .session(*document)
-                        .is_ok_and(|session| session.generation() == *generation)
-            })
-        {
+    pub(in crate::owner) fn current_selected_edge_outlines(&mut self) -> Vec<Vec<[[f64; 3]; 2]>> {
+        if self.replacement_preview_active() {
             return Vec::new();
         }
         let Some(source) = self.browser_outline_source() else {
             return Vec::new();
         };
+        let BrowserOutlineRow::Edges(edges) = &source.row else {
+            return Vec::new();
+        };
+        if let Some(cache) = &self.selected_edge_outlines
+            && cache.source == source
+        {
+            return cache.groups.clone();
+        }
+        let groups = match self.edge_outline_groups(source.document, edges) {
+            Ok(groups) => groups,
+            Err(cause) => {
+                self.command_notice = Some(crate::DesktopCommandNotice::SelectionFailed { cause });
+                return Vec::new();
+            }
+        };
+        self.selected_edge_outlines = Some(EdgeOutlineCache {
+            source,
+            groups: groups.clone(),
+        });
+        groups
+    }
+    fn edge_outline_groups(
+        &self,
+        document: u64,
+        edges: &[(oblikovati_model::feature::FeatureId, Vec<u8>)],
+    ) -> Result<Vec<Vec<[[f64; 3]; 2]>>, String> {
+        let workspace = self.files.workspace();
+        let session = workspace
+            .session(document)
+            .map_err(|cause| cause.to_string())?;
+        let guid = workspace
+            .identity(document)
+            .map_err(|cause| cause.to_string())?
+            .internal_name;
+        edges
+            .iter()
+            .map(|(feature, key)| self.part_scenes.edge_outline(session, guid, *feature, key))
+            .collect()
+    }
+    /// The chosen row's outline; worked out once per model state, then read every frame.
+    pub(in crate::owner) fn current_browser_outline(&mut self) -> Vec<[[f64; 3]; 2]> {
+        if self.replacement_preview_active() {
+            return Vec::new();
+        }
+        let Some(source) = self.browser_outline_source() else {
+            return Vec::new();
+        };
+        if matches!(source.row, BrowserOutlineRow::Edges(_)) {
+            return self
+                .current_selected_edge_outlines()
+                .into_iter()
+                .flatten()
+                .collect();
+        }
         if let Some((known, outline)) = &self.browser_outline
             && *known == source
         {
@@ -40,6 +81,19 @@ impl<
         self.browser_outline = Some((source, outline.clone()));
         outline
     }
+    fn replacement_preview_active(&self) -> bool {
+        self.extrusion_preview
+            .as_ref()
+            .is_some_and(|(document, generation, _, replace)| {
+                *replace
+                    && self.files.workspace().active_document() == Some(*document)
+                    && self
+                        .files
+                        .workspace()
+                        .session(*document)
+                        .is_ok_and(|session| session.generation() == *generation)
+            })
+    }
     fn browser_outline_source(&self) -> Option<BrowserOutlineSource> {
         let document = self.files.workspace().active_document()?;
         let session = self.files.workspace().session(document).ok()?;
@@ -47,6 +101,12 @@ impl<
             session.selected_browser_feature(),
             session.selected_browser_sketches().first(),
         ) {
+            _ if !self.chosen_model_edges(document).is_empty() => BrowserOutlineRow::Edges(
+                self.chosen_model_edges(document)
+                    .iter()
+                    .map(|edge| (edge.feature, edge.key.clone()))
+                    .collect(),
+            ),
             _ if !session.selected_browser_bodies().is_empty()
                 && !self.current_face_appearance_picks(document).is_empty() =>
             {
@@ -59,7 +119,7 @@ impl<
                     faces: self
                         .current_face_appearance_picks(document)
                         .iter()
-                        .map(|pick| (pick.face.feature, pick.face.role))
+                        .map(|pick| (pick.face.feature, pick.face.key.clone()))
                         .collect(),
                 }
             }
@@ -72,11 +132,11 @@ impl<
                 let picks = self.current_face_appearance_picks(document);
                 let faces = if picks.is_empty() {
                     let face = self.chosen_model_face(document)?;
-                    vec![(face.feature, face.role)]
+                    vec![(face.feature, face.key)]
                 } else {
                     picks
                         .iter()
-                        .map(|pick| (pick.face.feature, pick.face.role))
+                        .map(|pick| (pick.face.feature, pick.face.key.clone()))
                         .collect()
                 };
                 BrowserOutlineRow::Faces(faces)
@@ -103,13 +163,16 @@ impl<
     fn outline_of_every_feature(
         &self,
         session: &oblikovati_session::DocumentSession<O>,
+        document: oblikovati_model::identity::DocumentGuid,
     ) -> Result<Vec<[[f64; 3]; 2]>, String> {
         let mut outline = Vec::new();
         for feature in session.snapshot().work_geometry.features() {
-            outline.extend(
-                self.part_scenes
-                    .feature_edges(session, feature.id(), None)?,
-            );
+            outline.extend(self.part_scenes.feature_edges(
+                session,
+                document,
+                feature.id(),
+                None,
+            )?);
         }
         Ok(outline)
     }
@@ -122,18 +185,28 @@ impl<
             .workspace()
             .session(source.document)
             .map_err(|cause| cause.to_string())?;
+        let document = self
+            .files
+            .workspace()
+            .identity(source.document)
+            .map_err(|cause| cause.to_string())?
+            .internal_name;
         match &source.row {
-            BrowserOutlineRow::Feature(feature) => {
-                self.part_scenes.feature_edges(session, *feature, None)
-            }
-            BrowserOutlineRow::Root => self.outline_of_every_feature(session),
+            BrowserOutlineRow::Feature(feature) => self
+                .part_scenes
+                .feature_edges(session, document, *feature, None),
+            BrowserOutlineRow::Root => self.outline_of_every_feature(session, document),
+            BrowserOutlineRow::Edges(edges) => self
+                .edge_outline_groups(source.document, edges)
+                .map(|groups| groups.into_iter().flatten().collect()),
             BrowserOutlineRow::Faces(faces) => {
                 let mut outline = Vec::new();
-                for (feature, role) in faces {
+                for (feature, face) in faces {
                     outline.extend(self.part_scenes.feature_edges(
                         session,
+                        document,
                         *feature,
-                        Some(*role),
+                        Some(face),
                     )?);
                 }
                 Ok(outline)
@@ -141,13 +214,17 @@ impl<
             BrowserOutlineRow::Mixed { bodies, faces } => {
                 let mut outline = Vec::new();
                 for feature in bodies {
-                    outline.extend(self.part_scenes.feature_edges(session, *feature, None)?);
+                    outline.extend(
+                        self.part_scenes
+                            .feature_edges(session, document, *feature, None)?,
+                    );
                 }
-                for (feature, role) in faces {
+                for (feature, face) in faces {
                     outline.extend(self.part_scenes.feature_edges(
                         session,
+                        document,
                         *feature,
-                        Some(*role),
+                        Some(face),
                     )?);
                 }
                 Ok(outline)
@@ -163,23 +240,20 @@ pub(in crate::owner) struct BrowserOutlineSource {
     generation: u64,
     row: BrowserOutlineRow,
 }
+pub(in crate::owner) struct EdgeOutlineCache {
+    source: BrowserOutlineSource,
+    groups: Vec<Vec<[[f64; 3]; 2]>>,
+}
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum BrowserOutlineRow {
     Root,
+    Edges(Vec<(oblikovati_model::feature::FeatureId, Vec<u8>)>),
     Mixed {
         bodies: Vec<oblikovati_model::feature::FeatureId>,
-        faces: Vec<(
-            oblikovati_model::feature::FeatureId,
-            oblikovati_martensite::PrismFaceRole,
-        )>,
+        faces: Vec<(oblikovati_model::feature::FeatureId, Vec<u8>)>,
     },
     Feature(oblikovati_model::feature::FeatureId),
-    Faces(
-        Vec<(
-            oblikovati_model::feature::FeatureId,
-            oblikovati_martensite::PrismFaceRole,
-        )>,
-    ),
+    Faces(Vec<(oblikovati_model::feature::FeatureId, Vec<u8>)>),
     Sketch(DocumentSketchId),
 }
 /// A sketch's curves as segments in model space, as finely as they are drawn when edited.

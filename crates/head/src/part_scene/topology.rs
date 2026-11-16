@@ -32,13 +32,13 @@ impl DesktopPartScenes {
 fn body_topology<O: TransactionObserver>(
     session: &DocumentSession<O>,
     guid: DocumentGuid,
-    body: &NamedPrismSnapshot,
+    body: &NamedSolid,
 ) -> Result<BodyTopology, String> {
     let history = session.history();
     let mut faces = Vec::new();
     let mut edges = Vec::new();
     let mut vertices = Vec::new();
-    for key in body.reference_keys(history, guid)? {
+    for key in body.face_reference_keys(history, guid)? {
         if ReferenceEnvelope::decode(&key)
             .map_err(|cause| cause.to_string())?
             .kind
@@ -57,7 +57,7 @@ fn body_topology<O: TransactionObserver>(
         let kind = ReferenceEnvelope::decode(&key)
             .map_err(|cause| cause.to_string())?
             .kind;
-        let entity = body.subentity_provenance(history, guid, &key)?;
+        let point = body.subentity_point(history, guid, &key)?;
         let target = match kind {
             2 => &mut edges,
             3 => &mut vertices,
@@ -69,7 +69,7 @@ fn body_topology<O: TransactionObserver>(
         };
         target.push(TopologyRef {
             key: super::bodies::body_reference_text(&key),
-            point: Some(entity.point.to_vec()),
+            point: Some(point.to_vec()),
             kind: String::new(),
         });
     }

@@ -13,5 +13,11 @@ macro_rules! orientation_work_methods {
         fn orientation_selection_pivot(&mut self) -> Result<Option<[f64; 3]>, String> {
             Err("orientation selection pivot: expected a desktop selection owner".into())
         }
+        /// Read the selected planar reference; example: `work.look_at_selection_plane()?`.
+        fn look_at_selection_plane(
+            &self,
+        ) -> Result<Option<oblikovati_model::sketch::SketchPlane>, String> {
+            Err("look at: expected a desktop selection owner".into())
+        }
     };
 }

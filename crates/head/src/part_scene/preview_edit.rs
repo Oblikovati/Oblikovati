@@ -4,7 +4,7 @@ use super::*;
 use oblikovati_model::{feature::FeatureId, history::DocumentSnapshot, identity::DocumentGuid};
 use oblikovati_session::DocumentSession;
 type PreviewEvaluation = oblikovati_model::feature::part::PartFeatureEvaluation<
-    NamedPrismSnapshot,
+    NamedSolid,
     oblikovati_martensite::EvaluationFailure,
 >;
 impl DesktopPartScenes {
@@ -50,7 +50,7 @@ fn evaluate_preview<O: TransactionObserver>(
     guid: DocumentGuid,
     policy: oblikovati_martensite::PrismResolutionPolicy,
 ) -> Result<(PreviewEvaluation, String), String> {
-    let mut evaluator = oblikovati_martensite::CertifiedNamedPrismEvaluator::with_policy(
+    let mut evaluator = oblikovati_martensite::CertifiedNamedSolidEvaluator::with_policy(
         session.history(),
         guid,
         policy,

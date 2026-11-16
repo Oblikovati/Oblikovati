@@ -253,12 +253,16 @@ fn verify_published_face(owner: &TestOwner, document: u64) {
     let face = evaluated
         .body(FeatureId(1))
         .unwrap()
+        .as_prism()
+        .unwrap()
         .face_report(session.history(), guid, &key)
         .unwrap();
     assert!((face.area - 18.).abs() < 1e-10);
     assert!(
         evaluated
             .body(FeatureId(2))
+            .unwrap()
+            .as_prism()
             .unwrap()
             .face_report(session.history(), guid, &key)
             .is_err()
@@ -336,3 +340,5 @@ mod face_plane;
 
 #[path = "part_scene/clear_face.rs"]
 mod clear_face;
+#[path = "part_scene/fillet_scene.rs"]
+mod fillet_scene;

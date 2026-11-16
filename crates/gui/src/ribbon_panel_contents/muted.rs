@@ -20,18 +20,36 @@ pub(super) fn part_modify_controls(
     origin: [f32; 2],
     icons: &crate::icons::GuiRibbonIcons,
     hole_tip: bool,
+    state: &crate::GuiCommandState,
+    actions: &mut Vec<crate::GuiShellAction>,
 ) {
     use crate::icons::IconGlyph;
-    muted_icon_commands(
+    let size = muted_command_position(ui, origin, icons, 0);
+    muted_command(
         ui,
-        origin,
+        "Hole",
+        NOT_PORTED,
         icons,
-        &[
-            ("Hole", Some(IconGlyph::Hole)),
-            ("Fillet", Some(IconGlyph::Fillet)),
-            ("Chamfer", Some(IconGlyph::Chamfer)),
-        ],
+        Some(IconGlyph::Hole),
         hole_tip,
+        size,
+    );
+    let size = muted_command_position(ui, origin, icons, 1);
+    let action = crate::GuiShellAction::OpenFillet;
+    let disabled = ui.begin_disabled(!action.dispatchable(state));
+    if icons.button(ui, "Fillet", IconGlyph::Fillet, size) {
+        actions.push(action);
+    }
+    drop(disabled);
+    let size = muted_command_position(ui, origin, icons, 2);
+    muted_command(
+        ui,
+        "Chamfer",
+        NOT_PORTED,
+        icons,
+        Some(IconGlyph::Chamfer),
+        false,
+        size,
     );
 }
 pub(super) fn muted_icon_commands(

@@ -119,6 +119,7 @@ impl WorkspaceLayout {
         state: &GuiCommandState,
         height: f32,
         band_height: f32,
+        part_context_open: bool,
         actions: &mut Vec<GuiShellAction>,
     ) {
         self.pending_layout = false;
@@ -126,7 +127,7 @@ impl WorkspaceLayout {
         self.view.feature_keyboard_focus = false;
         self.view.document_area = Some(self.document_area(ui.io().display_size, band_height));
         self.view.view_clicks_taken = self.view_clicks_taken;
-        browser_origin::follow_view_click(ui, state, &mut self.view, actions);
+        browser_origin::follow_view_click(ui, state, &mut self.view, part_context_open, actions);
         if !self.panels.dock_visible() {
             self.empty_dock_control(ui, band_height);
             self.draw_find(ui, state, actions);

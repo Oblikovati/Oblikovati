@@ -2,6 +2,23 @@
 //! Extrusion methods on the desktop work boundary.
 macro_rules! desktop_extrusion_work {
     () => {
+        fn preview_fillet_from_gui(
+            &mut self,
+            request: Option<&oblikovati_gui::GuiFilletRequest>,
+        ) -> Result<bool, String> {
+            let Some(request) = request else {
+                return Ok(self.clear_extrusion_preview());
+            };
+            self.require_fillet_selection(request)?;
+            self.preview_selected_fillet(request.document, &request.radius)
+        }
+        fn commit_fillet_from_gui(
+            &mut self,
+            request: &oblikovati_gui::GuiFilletRequest,
+        ) -> Result<bool, String> {
+            self.require_fillet_selection(request)?;
+            self.commit_selected_fillet(request.document, &request.radius)
+        }
         fn create_offset_plane_from_gui(
             &mut self,
             document: u64,

@@ -13,7 +13,7 @@ impl DesktopPartScenes {
         files: &mut FileWorkspace<O, W, F>,
         document: u64,
         feature: FeatureId,
-        face: Option<oblikovati_martensite::PrismFaceRole>,
+        face: Option<&[u8]>,
         expected_body: Option<&str>,
     ) -> Result<[f64; 3], String> {
         self.ensure_current(files, document)?;
@@ -30,9 +30,8 @@ impl DesktopPartScenes {
             .current(session)?
             .body(feature)
             .ok_or_else(|| format!("selected feature {feature:?}: expected a current body"))?;
-        if let Some(role) = face {
-            let key = body.face_key_for_role(history, guid, role)?;
-            return body.face_bounds_center(history, guid, &key);
+        if let Some(key) = face {
+            return body.face_bounds_center(history, guid, key);
         }
         let key = body.body_reference_key(history, guid)?;
         let actual = super::bodies::body_reference_text(key);

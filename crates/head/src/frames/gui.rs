@@ -33,7 +33,17 @@ pub(super) fn advance_gui(
     }
     commands.dimension_labels = dimension_labels::projected_dimension_labels(window, owner)?;
     commands.origin_planes = dimension_labels::origin_plane_outlines(window, &commands);
-    commands.feature_edges = dimension_labels::projected_browser_outline(window, owner);
+    if commands.selected_edge_count > 0 {
+        commands.selected_edge_outlines = dimension_labels::projected_selected_edges(window, owner);
+        commands.feature_edges = commands
+            .selected_edge_outlines
+            .iter()
+            .flatten()
+            .copied()
+            .collect();
+    } else {
+        commands.feature_edges = dimension_labels::projected_browser_outline(window, owner);
+    }
     commands.origin_axes = dimension_labels::origin_axis_lines(window, &commands);
     follow_view_projection(window);
     commands.view_axes = window
@@ -172,6 +182,13 @@ pub(super) fn dispatch_gui_action(
         GuiShellAction::SetViewProjection(mode) => {
             window.set_view_projection(*mode);
             return Ok(true);
+        }
+        GuiShellAction::LookAtSelection => {
+            let plane = owner
+                .look_at_selection_plane()?
+                .ok_or("look at: expected a selected planar reference")?;
+            return window
+                .set_view_camera_recorded(window.view_camera()?.facing_planar_reference(plane)?);
         }
         GuiShellAction::ViewCommand(command) => {
             return authoring::view_command(window, owner, command);
@@ -371,6 +388,10 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::StartSketchAt { .. }
         | GuiShellAction::FinishSketch
         | GuiShellAction::OpenExtrude
+        | GuiShellAction::OpenFillet
+        | GuiShellAction::LookAtSelection
+        | GuiShellAction::PreviewFillet(_)
+        | GuiShellAction::CreateFillet(_)
         | GuiShellAction::OpenOffsetPlane
         | GuiShellAction::ValidateOffsetPlane { .. }
         | GuiShellAction::CreateOffsetPlane { .. }

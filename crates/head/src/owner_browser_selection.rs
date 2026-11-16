@@ -8,7 +8,7 @@ mod viewport;
 use super::*;
 use oblikovati_model::document_sketch::DocumentSketchId;
 use oblikovati_session::selection::SelectionClickMode;
-pub(super) use outline::BrowserOutlineSource;
+pub(super) use outline::{BrowserOutlineSource, EdgeOutlineCache};
 impl<
     O: TransactionObserver,
     W: WorkspaceObserver,
@@ -34,6 +34,7 @@ impl<
             .map(|count| count.is_some())
             .map_err(|cause| cause.to_string())?;
         self.model_face = None;
+        self.model_edges.clear();
         self.face_appearance_picks.clear();
         self.selected_occurrence = None;
         Ok(changed)
@@ -50,6 +51,7 @@ impl<
             .set_browser_feature_selection(feature)
             .map_err(|cause| cause.to_string())?;
         self.model_face = None;
+        self.model_edges.clear();
         self.face_appearance_picks.clear();
         self.selected_occurrence = None;
         Ok(true)
@@ -159,6 +161,7 @@ impl<
                 .map_err(|cause| cause.to_string())?;
             self.selected_occurrence = None;
             self.model_face = None;
+            self.model_edges.clear();
             self.face_appearance_picks.clear();
             return Ok(true);
         }
@@ -176,6 +179,7 @@ impl<
                 .map_err(|cause| cause.to_string())?;
             self.selected_occurrence = Some((document, path.clone()));
             self.model_face = None;
+            self.model_edges.clear();
             self.face_appearance_picks.clear();
             return Ok(true);
         }
@@ -244,6 +248,7 @@ impl<
         }
         if matches!(choice, Nothing | Root | Body { toggle: false, .. }) {
             self.model_face = None;
+            self.model_edges.clear();
             self.face_appearance_picks.clear();
             self.selected_occurrence = None;
         }
@@ -296,7 +301,7 @@ impl<
         let Some(document) = self.files.workspace().active_document() else {
             return Ok(Vec::new());
         };
-        let Some((feature, role)) = self.part_scenes.face_on_line(&self.files, document, line)?
+        let Some((feature, face)) = self.part_scenes.face_on_line(&self.files, document, line)?
         else {
             return Ok(Vec::new());
         };
@@ -305,7 +310,14 @@ impl<
             .workspace()
             .session(document)
             .map_err(|cause| cause.to_string())?;
-        self.part_scenes.feature_edges(session, feature, Some(role))
+        let guid = self
+            .files
+            .workspace()
+            .identity(document)
+            .map_err(|cause| cause.to_string())?
+            .internal_name;
+        self.part_scenes
+            .feature_edges(session, guid, feature, Some(&face))
     }
     /// The open sketch has something to delete, and nothing else is in the way.
     pub(super) fn sketch_delete_available(&self, document: u64) -> bool {
@@ -320,7 +332,26 @@ impl<
     }
     /// The face chosen in the view, while its document is the active one.
     pub(super) fn chosen_model_face(&self, document: u64) -> Option<ChosenModelFace> {
-        self.model_face.filter(|face| face.document == document)
+        self.model_face
+            .clone()
+            .filter(|face| face.document == document)
+    }
+    pub(super) fn chosen_model_edges(&self, document: u64) -> &[ChosenModelEdge] {
+        let generation = self
+            .files
+            .workspace()
+            .session(document)
+            .ok()
+            .map(|session| session.generation());
+        if self
+            .model_edges
+            .iter()
+            .all(|edge| edge.document == document && Some(edge.generation) == generation)
+        {
+            &self.model_edges
+        } else {
+            &[]
+        }
     }
     pub(super) fn require_browser_document(&self, document: u64) -> Result<(), String> {
         if self.files.workspace().active_document() != Some(document) {
@@ -359,11 +390,18 @@ pub(super) fn gui_sketch_selection<O: TransactionObserver>(
     }
 }
 /// A face a click chose in the view; it lasts until the next click, and no edit depends on it.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) struct ChosenModelFace {
     document: u64,
     pub(super) feature: oblikovati_model::feature::FeatureId,
-    pub(super) role: oblikovati_martensite::PrismFaceRole,
+    pub(super) key: Vec<u8>,
+}
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(super) struct ChosenModelEdge {
+    pub(super) document: u64,
+    pub(super) generation: u64,
+    pub(super) feature: oblikovati_model::feature::FeatureId,
+    pub(super) key: Vec<u8>,
 }
 const FEATURE_COMPARISONS: [oblikovati_model::feature::FeatureSuppressionComparison; 6] = {
     use oblikovati_model::feature::FeatureSuppressionComparison::{

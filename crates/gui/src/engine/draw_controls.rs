@@ -115,6 +115,7 @@ impl GuiFrameEngine {
             request.extent[1] as f32 / request.layout_scale()[1]
                 - crate::application::workspace_layout::status_bar::STATUS_BAR_HEIGHT,
             band_height,
+            self.part_context_open,
             &mut selected,
         );
         let open_offset = selected.contains(&GuiShellAction::OpenOffsetPlane);
@@ -176,6 +177,14 @@ impl GuiFrameEngine {
                 request,
                 &mut selected,
             );
+            self.part_context_open =
+                crate::part_context_menu::canvas_menu(ui, &request.commands, &mut selected);
+        } else {
+            self.part_context_open = false;
+        }
+        if selected.contains(&GuiShellAction::OpenFillet) {
+            self.fillet_dialog.open(&request.commands);
+            selected.retain(|action| !matches!(action, GuiShellAction::OpenFillet));
         }
         self.home.panel(ui, &request.commands, area, &mut selected);
         let home_requests = std::mem::take(&mut self.home.requests);
@@ -206,6 +215,8 @@ impl GuiFrameEngine {
             self.plane_selection.active,
             &mut selected,
         );
+        self.fillet_dialog
+            .panel(ui, &request.commands, &mut selected);
         self.offset_plane
             .panel(ui, &request.commands, &mut selected);
         self.ribbon

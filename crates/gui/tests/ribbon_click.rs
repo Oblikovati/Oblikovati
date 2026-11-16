@@ -463,6 +463,8 @@ mod icon_commands;
 
 #[path = "ribbon_click/extrude.rs"]
 mod extrude;
+#[path = "ribbon_click/fillet.rs"]
+mod fillet;
 
 #[path = "ribbon_click/dimension_draft.rs"]
 mod dimension_draft;

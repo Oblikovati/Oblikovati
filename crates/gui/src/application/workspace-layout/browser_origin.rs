@@ -164,11 +164,12 @@ pub(crate) fn follow_view_click(
     ui: &Ui,
     state: &GuiCommandState,
     view: &mut BrowserView,
+    part_context_open: bool,
     actions: &mut Vec<GuiShellAction>,
 ) {
     let on_view = ui.is_mouse_clicked(MouseButton::Left)
         && !ui.is_window_hovered_with_flags(crate::widget_abi::over_any_panel())
-        && !crate::widget_abi::any_popup_open(ui);
+        && (part_context_open || !crate::widget_abi::any_popup_open(ui));
     let [x, y] = ui.io().mouse_pos;
     // A tab may change the document in this same frame; the click was never on its model.
     let on_document = view.document_area.is_some_and(|area| {

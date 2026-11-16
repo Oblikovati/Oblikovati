@@ -86,7 +86,7 @@ impl<
                     &mut self.files,
                     document,
                     face.feature,
-                    face.role,
+                    &face.key,
                 )
             }
         }

@@ -37,5 +37,9 @@ macro_rules! selection_work_methods {
         fn selected_browser_outline(&mut self) -> Vec<[[f64; 3]; 2]> {
             Vec::new()
         }
+        /// Return display segments grouped by selected edge; example: `work.selected_edge_outlines()`.
+        fn selected_edge_outlines(&mut self) -> Vec<Vec<[[f64; 3]; 2]>> {
+            Vec::new()
+        }
     };
 }

@@ -14,10 +14,8 @@ pub(crate) fn depth_window(scale: f64, height: u32) -> Result<f64, String> {
 
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) enum PickTarget {
-    Face(
-        oblikovati_model::feature::FeatureId,
-        oblikovati_martensite::PrismFaceRole,
-    ),
+    Edge(oblikovati_model::feature::FeatureId, Vec<u8>),
+    Face(oblikovati_model::feature::FeatureId, Vec<u8>),
     Body(oblikovati_model::feature::FeatureId, String),
     Occurrence(oblikovati_gui::GuiOccurrencePath),
     WorkPlane(oblikovati_model::feature::FeatureId),
@@ -25,6 +23,7 @@ pub(crate) enum PickTarget {
 impl PickTarget {
     fn kind(&self) -> SelectionKind {
         match self {
+            Self::Edge(..) => SelectionKind::Edge,
             Self::Face(..) => SelectionKind::Face,
             Self::Body(..) => SelectionKind::Body,
             Self::Occurrence(..) => SelectionKind::Occurrence,
@@ -35,6 +34,9 @@ impl PickTarget {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum PickCoverage {
+    #[cfg(test)]
+    NamedEdges,
+    NamedEdgesAndFaces,
     NearestFacePerBody,
     NearestFacePerOccurrenceBody,
     VisiblePlanesAndNearestFaces,
@@ -61,6 +63,9 @@ impl PickCandidates {
 
     pub(crate) fn include_visible_planes(&mut self) {
         self.coverage = PickCoverage::VisiblePlanesAndNearestFaces;
+    }
+    pub(crate) fn include_edges(&mut self) {
+        self.coverage = PickCoverage::NamedEdgesAndFaces;
     }
 
     pub(crate) fn push(&mut self, target: PickTarget, line_parameter: f64) -> Result<(), String> {
@@ -174,10 +179,7 @@ fn nearest_ranked(
 mod tests {
     use super::*;
     fn face(id: u64) -> PickTarget {
-        PickTarget::Face(
-            oblikovati_model::feature::FeatureId(id),
-            oblikovati_martensite::PrismFaceRole::Start,
-        )
+        PickTarget::Face(oblikovati_model::feature::FeatureId(id), vec![id as u8])
     }
     #[test]
     fn batch_refuses_distinct_equal_depths_but_accepts_repeat_identity() {

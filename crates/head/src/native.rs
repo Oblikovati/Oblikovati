@@ -304,6 +304,17 @@ impl HeadWindow for NativeHeadWindow {
             .navigate(oblikovati_viewport::ViewportNavigation::FitDepth)?;
         Ok(true)
     }
+    fn set_view_camera_recorded(
+        &mut self,
+        camera: oblikovati_viewport::ViewportCamera,
+    ) -> Result<bool, String> {
+        let changed = self.view.set_camera_recorded(camera)?;
+        if changed {
+            self.view
+                .navigate(oblikovati_viewport::ViewportNavigation::FitDepth)?;
+        }
+        Ok(changed)
+    }
     fn view_line(&self, pixel: [i32; 2]) -> Result<[[f64; 3]; 2], String> {
         self.view.view_line(pixel)
     }

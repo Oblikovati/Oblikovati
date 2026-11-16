@@ -20,8 +20,19 @@ pub(crate) fn status_bar(ui: &Ui, request: &GuiFrameRequest, alias: Option<&str>
                 let advance = ui.calc_text_size(&text)[0];
                 crate::widget_abi::cursor_position(ui, [width - advance - 12., 4.]);
                 ui.text(text);
+            } else if let Some(text) = selected_edge_text(request.commands.selected_edge_count) {
+                let advance = ui.calc_text_size(&text)[0];
+                crate::widget_abi::cursor_position(ui, [width - advance - 12., 4.]);
+                ui.text(text);
             }
         });
+}
+fn selected_edge_text(count: usize) -> Option<String> {
+    match count {
+        0 => None,
+        1 => Some("1 Edge".into()),
+        count => Some(format!("{count} Edges")),
+    }
 }
 fn command_status<'a>(prompt: Option<&'a str>, alias: Option<&str>) -> std::borrow::Cow<'a, str> {
     match alias {
@@ -52,6 +63,12 @@ pub(crate) fn dimensions_needed_text(needed: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn edge_selection_status_reports_count() {
+        assert_eq!(selected_edge_text(0), None);
+        assert_eq!(selected_edge_text(1).as_deref(), Some("1 Edge"));
+        assert_eq!(selected_edge_text(2).as_deref(), Some("2 Edges"));
+    }
     #[test]
     fn status_feedback_reads_the_existing_alias_before_the_tool_prompt() {
         assert_eq!(

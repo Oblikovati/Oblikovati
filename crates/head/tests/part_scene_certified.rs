@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use oblikovati_martensite::{CertifiedNamedPrismEvaluator, PrismResolution};
+use oblikovati_martensite::{CertifiedNamedSolidEvaluator, PrismResolution};
 use oblikovati_model::{
     history::DocumentEditHistory,
     identity::{DocumentGuid, RecipeIdAllocator},
@@ -24,16 +24,15 @@ fn history() -> DocumentEditHistory {
 }
 fn rendered(history: &DocumentEditHistory) -> HeadSceneUpdate {
     let document: DocumentGuid = "11111111-2222-3333-4444-555555555555".parse().unwrap();
-    let mut evaluator = CertifiedNamedPrismEvaluator::new(history, document, resolution());
+    let mut evaluator = CertifiedNamedSolidEvaluator::new(history, document, resolution());
     let evaluated = history
         .snapshot()
         .evaluate_part_features(&mut evaluator)
         .unwrap();
-    assert!(
-        evaluated
-            .ordered_bodies()
-            .all(|body| body.certification().is_some())
-    );
+    assert!(evaluated.ordered_bodies().all(|body| {
+        body.as_prism()
+            .is_some_and(|prism| prism.certification().is_some())
+    }));
     render_part_scene(&evaluated, (1, 1), |_| Ok(Some([0., 1., 0., 1.]))).unwrap()
 }
 fn maximum_z(scene: &ViewportScene) -> f64 {

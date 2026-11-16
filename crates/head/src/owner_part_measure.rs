@@ -2,7 +2,6 @@
 //! Measure a selected solid face using its analytic Martensite report.
 use super::*;
 use oblikovati_gui::GuiMeasurePanel;
-use oblikovati_martensite::PrismFaceRole;
 use oblikovati_model::feature::FeatureId;
 
 const SELECT_FACE: &str = "Select a solid face to measure its area";
@@ -80,7 +79,7 @@ impl<
     pub(super) fn measure_part_face(
         &mut self,
         document: u64,
-        picked: Option<(FeatureId, PrismFaceRole)>,
+        picked: Option<(FeatureId, Vec<u8>)>,
     ) -> Result<(), String> {
         if self
             .part_measure
@@ -106,14 +105,14 @@ impl<
     fn part_measure_rows(
         &self,
         document: u64,
-        picked: Option<(FeatureId, PrismFaceRole)>,
+        picked: Option<(FeatureId, Vec<u8>)>,
     ) -> Result<Vec<String>, String> {
-        let Some((feature, role)) = picked else {
+        let Some((feature, face)) = picked else {
             return Ok(vec![SELECT_FACE.into()]);
         };
         let area = self
             .part_scenes
-            .face_area_mm2(&self.files, document, feature, role)?;
+            .face_area_mm2(&self.files, document, feature, &face)?;
         Ok(vec![
             "Selection 1: Face".into(),
             format!("Area {area:.3} mm²"),

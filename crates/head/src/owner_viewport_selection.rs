@@ -71,6 +71,32 @@ impl<
         let mut candidates = self
             .part_scenes
             .part_candidates(&self.files, document, line)?;
+        if allowed.accepts(oblikovati_session::selection::SelectionKind::Edge)
+            && let Some(tolerance) = depth_window
+        {
+            if self.part_scenes.edge_pick_available() {
+                if let Err(cause) = self.part_scenes.append_edge_candidates(
+                    &self.files,
+                    document,
+                    line,
+                    tolerance,
+                    &mut candidates,
+                ) {
+                    self.command_notice =
+                        Some(crate::DesktopCommandNotice::SelectionFailed { cause });
+                    return Ok(true);
+                }
+                candidates.include_edges();
+            } else if allowed.is_restricted()
+                && !allowed.accepts(oblikovati_session::selection::SelectionKind::Face)
+                && !allowed.accepts(oblikovati_session::selection::SelectionKind::Body)
+            {
+                self.command_notice = Some(crate::DesktopCommandNotice::SelectionFailed {
+                    cause: "edge selection: expected a certified model resolution".into(),
+                });
+                return Ok(true);
+            }
+        }
         if allowed.accepts(oblikovati_session::selection::SelectionKind::WorkPlane) {
             self.append_visible_plane_hits(document, line, &mut candidates)?;
         }
@@ -108,6 +134,7 @@ impl<
             self.ambient_selection.filter()
         };
         (allowed.accepts(SelectionKind::Face)
+            || allowed.accepts(SelectionKind::Edge)
             || allowed.accepts(SelectionKind::Body)
             || allowed.accepts(SelectionKind::WorkPlane))
         .then_some(allowed)
@@ -118,6 +145,12 @@ impl<
         picked: Option<crate::part_scene::pick_candidates::PickTarget>,
         toggle: bool,
     ) -> Result<bool, String> {
+        if let Some(crate::part_scene::pick_candidates::PickTarget::Edge(feature, key)) = &picked {
+            return self.select_model_edge(document, *feature, key.clone(), toggle);
+        }
+        if !toggle {
+            self.model_edges.clear();
+        }
         if let Some(crate::part_scene::pick_candidates::PickTarget::WorkPlane(feature)) = &picked {
             if toggle {
                 return self.unsupported_selection_toggle("work plane");
@@ -165,14 +198,14 @@ impl<
             None => None,
             Some(other) => return Err(format!("part hit {other:?}: expected a face or body")),
         };
-        self.measure_part_face(document, picked)?;
-        let selected = picked.map(|(feature, role)| ChosenModelFace {
+        self.measure_part_face(document, picked.clone())?;
+        let selected = picked.map(|(feature, key)| ChosenModelFace {
             document,
             feature,
-            role,
+            key,
         });
         let previous = self.current_face_appearance_picks(document).to_vec();
-        let picked = self.capture_face_appearance_pick(document, selected);
+        let picked = self.capture_face_appearance_pick(document, selected.clone());
         let unresolved_face = if !toggle && picked.is_none() {
             selected
         } else {
@@ -188,9 +221,49 @@ impl<
         }
         self.model_face = selected_faces
             .last()
-            .map(|pick| pick.face)
+            .map(|pick| pick.face.clone())
             .or(unresolved_face);
         self.face_appearance_picks = selected_faces;
+        Ok(true)
+    }
+    fn select_model_edge(
+        &mut self,
+        document: u64,
+        feature: oblikovati_model::feature::FeatureId,
+        key: Vec<u8>,
+        toggle: bool,
+    ) -> Result<bool, String> {
+        let generation = self
+            .files
+            .workspace()
+            .session(document)
+            .map_err(|cause| cause.to_string())?
+            .generation();
+        if !toggle || self.chosen_model_edges(document).len() != self.model_edges.len() {
+            self.model_edges.clear();
+        }
+        if !toggle {
+            self.files
+                .commands(document)
+                .map_err(|cause| cause.to_string())?
+                .set_browser_sketch_selection(None, SelectionClickMode::Replace, false)
+                .map_err(|cause| cause.to_string())?;
+            self.model_face = None;
+            self.face_appearance_picks.clear();
+        }
+        self.selected_occurrence = None;
+        if let Some(index) = self.model_edges.iter().position(|edge| edge.key == key) {
+            if toggle {
+                self.model_edges.remove(index);
+            }
+        } else {
+            self.model_edges.push(ChosenModelEdge {
+                document,
+                generation,
+                feature,
+                key,
+            });
+        }
         Ok(true)
     }
     fn unsupported_selection_toggle(&mut self, kind: &str) -> Result<bool, String> {

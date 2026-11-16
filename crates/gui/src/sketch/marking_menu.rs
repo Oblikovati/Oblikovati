@@ -12,36 +12,7 @@ pub(super) fn draw(
     state: &GuiCommandState,
     actions: &mut Vec<GuiShellAction>,
 ) {
-    let slots = [[7, 0, 1], [6, 8, 2], [5, 4, 3]];
-    for row in slots {
-        for (index, slot) in row.into_iter().enumerate() {
-            if index > 0 {
-                ui.same_line();
-            }
-            draw_slot(ui, menu, slot, state, actions);
-        }
-    }
-    ui.separator();
-    draw_overflow(ui, menu, state, actions);
-}
-fn draw_overflow(
-    ui: &Ui,
-    menu: &MarkingMenuView,
-    state: &GuiCommandState,
-    actions: &mut Vec<GuiShellAction>,
-) {
-    for id in menu.overflow.iter().flatten() {
-        let Some((label, command)) = action(id) else {
-            continue;
-        };
-        if ui
-            .menu_item_config(label)
-            .enabled(command.enabled(state))
-            .build()
-        {
-            actions.push(command);
-        }
-    }
+    crate::marking_menu::draw(ui, menu, state, actions, action);
 }
 pub(super) fn draw_classic(
     ui: &Ui,
@@ -49,42 +20,7 @@ pub(super) fn draw_classic(
     state: &GuiCommandState,
     actions: &mut Vec<GuiShellAction>,
 ) {
-    for item in menu.quadrants.iter().flatten() {
-        if let Some((label, command)) = action(&item.command_id)
-            && ui
-                .menu_item_config(label)
-                .enabled(command.enabled(state))
-                .build()
-        {
-            actions.push(command);
-        }
-    }
-    draw_overflow(ui, menu, state, actions);
-    ui.separator();
-}
-fn draw_slot(
-    ui: &Ui,
-    menu: &MarkingMenuView,
-    slot: u8,
-    state: &GuiCommandState,
-    actions: &mut Vec<GuiShellAction>,
-) {
-    let item = menu
-        .quadrants
-        .iter()
-        .flatten()
-        .find(|item| item.quadrant.0 == slot);
-    let Some((label, action)) = item.and_then(|item| action(&item.command_id)) else {
-        ui.dummy([100., 24.]);
-        return;
-    };
-    let disabled = ui.begin_disabled(!action.enabled(state));
-    let pressed = ui.button_with_size(format!("{label}##marking-{slot}"), [100., 24.]);
-    drop(disabled);
-    if pressed {
-        actions.push(action);
-        ui.close_current_popup();
-    }
+    crate::marking_menu::draw_classic(ui, menu, state, actions, action);
 }
 pub(crate) const COMMANDS: [(&str, &str); 22] = [
     ("Sketch.Line", "Line"),

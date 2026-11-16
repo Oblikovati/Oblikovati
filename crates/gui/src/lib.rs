@@ -99,7 +99,7 @@ pub use application::ribbon_customization::GuiRibbonSettingsStore;
 pub use commands::{
     GuiAuthoringContext, GuiBaseViewRequest, GuiBrowserChoice, GuiCommandState, GuiDocumentStorage,
     GuiDrawingLine, GuiDrawingProjection, GuiExtrudeDistanceValidation, GuiExtrudeEditRequest,
-    GuiExtrudePreview, GuiFeatureCondition, GuiFeatureEdit, GuiOffsetPlaneBase,
+    GuiExtrudePreview, GuiFeatureCondition, GuiFeatureEdit, GuiFilletRequest, GuiOffsetPlaneBase,
     GuiOffsetPlaneValidation, GuiParameterMutation, GuiPartAssetKind, GuiPreviewImage, GuiProject,
     GuiProjectGroup, GuiSelectionMode, GuiShellAction, GuiSketchLineStyle,
 };
@@ -117,7 +117,10 @@ pub use sketch_constraints::GuiSketchConstraint;
 
 mod dimensions;
 mod extrude_dialog;
+mod fillet_dialog;
+mod marking_menu;
 mod offset_plane;
+mod part_context_menu;
 pub use dimensions::{GuiDimensionAction, GuiDimensionDraft};
 
 mod dimension_labels;

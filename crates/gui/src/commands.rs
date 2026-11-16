@@ -258,6 +258,14 @@ pub enum GuiShellAction {
     FinishSketch,
     /// Open the Extrude dialog for the active part.
     OpenExtrude,
+    /// Open a fillet draft for selected edges.
+    OpenFillet,
+    /// Orient the view to the selected planar reference.
+    LookAtSelection,
+    /// Show or clear a private fillet candidate.
+    PreviewFillet(Option<GuiFilletRequest>),
+    /// Commit a fillet after validating its selected edges and radius.
+    CreateFillet(GuiFilletRequest),
     /// Reopen an existing extrusion's distance draft.
     OpenExtrudeEdit(oblikovati_model::feature::FeatureId),
     /// Commit an existing extrusion's distance through the typed lifecycle operation.
@@ -354,6 +362,14 @@ pub struct GuiExtrudePreview {
     pub sketch: oblikovati_model::document_sketch::DocumentSketchId,
     pub profile: i64,
     pub distance: String,
+}
+/// One immutable edge selection and radius for a fillet draft.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GuiFilletRequest {
+    pub document: u64,
+    pub generation: u64,
+    pub edges: Vec<Vec<u8>>,
+    pub radius: String,
 }
 /// A document-scoped extrusion distance draft.
 #[derive(Clone, Debug, PartialEq, Eq)]

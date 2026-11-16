@@ -13,9 +13,9 @@ impl DesktopPartScenes {
         files: &mut FileWorkspace<O, W, F>,
         document: u64,
         feature: FeatureId,
-        role: oblikovati_martensite::PrismFaceRole,
+        face: &[u8],
     ) -> Result<String, String> {
-        let key = self.selected_face_key(files, document, feature, role)?;
+        let key = self.selected_face_key(files, document, feature, face)?;
         Ok(super::bodies::body_reference_text(&key))
     }
     fn selected_face_key<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
@@ -23,7 +23,7 @@ impl DesktopPartScenes {
         files: &mut FileWorkspace<O, W, F>,
         document: u64,
         feature: FeatureId,
-        role: oblikovati_martensite::PrismFaceRole,
+        face: &[u8],
     ) -> Result<Vec<u8>, String> {
         self.ensure_current(files, document)?;
         let workspace = files.workspace();
@@ -38,7 +38,8 @@ impl DesktopPartScenes {
             .current(session)?
             .body(feature)
             .ok_or_else(|| format!("selected feature {feature:?}: expected a current body"))?;
-        body.face_key_for_role(session.history(), guid, role)
+        body.face_topology(session.history(), guid, face)?;
+        Ok(face.to_vec())
     }
     pub(crate) fn sketch_support_face<
         O: TransactionObserver,
@@ -51,10 +52,10 @@ impl DesktopPartScenes {
         line: [[f64; 3]; 2],
     ) -> Result<Option<oblikovati_model::feature::work_plane::WorkPlaneFaceReference>, String> {
         self.ensure_current(files, document)?;
-        let Some((feature, role)) = self.face_on_line(files, document, line)? else {
+        let Some((feature, face)) = self.face_on_line(files, document, line)? else {
             return Ok(None);
         };
-        let key = self.selected_face_key(files, document, feature, role)?;
+        let key = self.selected_face_key(files, document, feature, &face)?;
         oblikovati_model::feature::work_plane::WorkPlaneFaceReference::new(key).map(Some)
     }
 }
@@ -216,7 +217,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartTopolog
         let evaluation = self.current(session)?;
         let bodies: Vec<_> = evaluation.ordered_bodies().collect();
         let body = super::physical::selected_body(&bodies, index)?;
-        Ok(body.face_report(session.history(), guid, key)?.area)
+        body.face_area(session.history(), guid, key)
     }
     fn edge_length(
         &mut self,
@@ -265,12 +266,12 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartTopolog
             .map_err(|cause| cause.to_string())?
             .internal_name;
         let feature = FeatureId(envelope.context);
-        let body = self.current(session)?.body(feature).ok_or_else(|| {
-            format!("assignment feature {feature:?}: expected a current successful body")
-        })?;
+        let body = self.current(session)?.body_from_source(feature)?;
         match kind {
-            TopologyEntityKind::Body => body.body_report(session.history(), guid, key).map(|_| ()),
-            TopologyEntityKind::Face => body.face_report(session.history(), guid, key).map(|_| ()),
+            TopologyEntityKind::Body => body
+                .topology_summary(session.history(), guid, key)
+                .map(|_| ()),
+            TopologyEntityKind::Face => body.face_area(session.history(), guid, key).map(|_| ()),
         }
     }
 }

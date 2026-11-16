@@ -337,7 +337,11 @@ fn assert_cube_face_properties(owner: &TestOwner) {
     assert_eq!(faces.len(), 6);
     let mut areas = Vec::new();
     for key in faces {
-        let face = body.face_report(session.history(), guid, &key).unwrap();
+        let face = body
+            .as_prism()
+            .unwrap()
+            .face_report(session.history(), guid, &key)
+            .unwrap();
         assert_eq!(face.loops, 1);
         areas.push((face.area * 1000.).round() as i64);
     }

@@ -86,6 +86,12 @@ impl HeadWindow for ScriptedGuiWindow {
     fn previous_view(&mut self) -> Result<bool, String> {
         self.native.previous_view()
     }
+    fn set_view_camera_recorded(
+        &mut self,
+        camera: oblikovati_viewport::ViewportCamera,
+    ) -> Result<bool, String> {
+        self.native.set_view_camera_recorded(camera)
+    }
     fn mark_view(&mut self) -> Result<(), String> {
         self.native.mark_view()
     }

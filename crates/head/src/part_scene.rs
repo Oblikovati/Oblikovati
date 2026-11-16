@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use oblikovati_martensite::{NamedPrismSnapshot, PrismMeshOptions};
+use oblikovati_martensite::{NamedSolid, PrismMeshOptions};
 use oblikovati_model::feature::{
     FeatureEvaluationStatus, FeatureHealthRecord, part::PartFeatureFailure,
 };
@@ -12,6 +12,7 @@ use oblikovati_viewport::{PartPresentationDecline, ViewportScene};
 mod assembly;
 use assembly::AssemblyViewMode;
 mod assembly_pick;
+mod edge_pick;
 pub(crate) mod extrusion;
 pub(crate) mod pick_candidates;
 pub(crate) mod resolution_policy;
@@ -77,7 +78,7 @@ pub(crate) struct DesktopPartScenes {
     presentation_invalidated: bool,
     occurrence_selection: Option<oblikovati_gui::GuiOccurrencePath>,
     resolution: Option<oblikovati_martensite::PrismResolutionPolicy>,
-    slot: PartEvaluationSlot<NamedPrismSnapshot, oblikovati_martensite::EvaluationFailure>,
+    slot: PartEvaluationSlot<NamedSolid, oblikovati_martensite::EvaluationFailure>,
 }
 impl DesktopPartScenes {
     pub(crate) fn assembly_producer_digest(&mut self) -> Result<String, String> {
@@ -116,6 +117,9 @@ impl DesktopPartScenes {
     ) {
         self.resolution = Some(resolution);
         self.clear();
+    }
+    pub(crate) fn edge_pick_available(&self) -> bool {
+        self.resolution.is_some()
     }
     pub fn refresh<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
         &mut self,
@@ -193,7 +197,7 @@ impl DesktopPartScenes {
         session: &'a oblikovati_session::DocumentSession<O>,
     ) -> Result<
         &'a oblikovati_model::feature::part::PartFeatureEvaluation<
-            NamedPrismSnapshot,
+            NamedSolid,
             oblikovati_martensite::EvaluationFailure,
         >,
         String,
@@ -257,21 +261,15 @@ impl DesktopPartScenes {
     pub(crate) fn feature_edges<O: TransactionObserver>(
         &self,
         session: &oblikovati_session::DocumentSession<O>,
+        document: oblikovati_model::identity::DocumentGuid,
         feature: oblikovati_model::feature::FeatureId,
-        only: Option<oblikovati_martensite::PrismFaceRole>,
+        only: Option<&[u8]>,
     ) -> Result<Vec<[[f64; 3]; 2]>, String> {
         let evaluation = self.current(session)?;
         let Some(body) = evaluation.body(feature) else {
             return Ok(Vec::new());
         };
-        let mesh =
-            oblikovati_martensite::PrismPresentationSource::presentation(body, DISPLAY_MESH)?;
-        Ok(mesh
-            .faces
-            .iter()
-            .filter(|face| only.is_none_or(|role| face.role == role))
-            .flat_map(|face| face.boundary_segments())
-            .collect())
+        body.face_outlines(session.history(), document, only, DISPLAY_MESH)
     }
     /// The nearest face on a line of sight, over every solid of the part.
     /// Example: `scenes.face_on_line(files, document, window.view_line(pixel)?)?`.
@@ -280,13 +278,7 @@ impl DesktopPartScenes {
         files: &FileWorkspace<O, W, F>,
         document: u64,
         line: [[f64; 3]; 2],
-    ) -> Result<
-        Option<(
-            oblikovati_model::feature::FeatureId,
-            oblikovati_martensite::PrismFaceRole,
-        )>,
-        String,
-    > {
+    ) -> Result<Option<(oblikovati_model::feature::FeatureId, Vec<u8>)>, String> {
         let candidates = self.part_candidates(files, document, line)?;
         let filter = oblikovati_session::selection::SelectionFilter::only([
             oblikovati_session::selection::SelectionKind::Face,
@@ -329,19 +321,23 @@ impl DesktopPartScenes {
             if !session.body_visible(&key) {
                 continue;
             }
-            if let Some((role, reach)) = body.face_on_line(line)? {
-                candidates.push(
-                    pick_candidates::PickTarget::Face(record.feature, role),
-                    reach,
-                )?;
+            let faces = body.face_hits_on_line(session.history(), guid, line)?;
+            if let Some((_, reach)) = faces.first() {
                 candidates.push(
                     pick_candidates::PickTarget::Body(record.feature, key),
+                    *reach,
+                )?;
+            }
+            for (face, reach) in faces {
+                candidates.push(
+                    pick_candidates::PickTarget::Face(record.feature, face),
                     reach,
                 )?;
             }
         }
         Ok(candidates)
     }
+
     pub(crate) fn invalidate_presentation(&mut self) {
         self.presentation_invalidated = true;
     }
@@ -412,11 +408,11 @@ fn resolved_body_color(
 }
 pub(crate) fn render_part_scene(
     evaluated: &oblikovati_model::feature::part::PartFeatureEvaluation<
-        NamedPrismSnapshot,
+        NamedSolid,
         oblikovati_martensite::EvaluationFailure,
     >,
     source: (u64, u64),
-    style: impl FnMut(&NamedPrismSnapshot) -> Result<Option<[f32; 4]>, String>,
+    style: impl FnMut(&NamedSolid) -> Result<Option<[f32; 4]>, String>,
 ) -> Result<HeadSceneUpdate, String> {
     let presentation =
         ViewportScene::from_part_evaluation_styled(evaluated, DISPLAY_MESH, [0., 0., 1.], style)?;

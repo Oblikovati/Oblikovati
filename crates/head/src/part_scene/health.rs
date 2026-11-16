@@ -82,7 +82,9 @@ fn status_reason(
         | FeatureEvaluationStatus::Failed(PartFeatureFailure::Metadata(cause)) => cause.to_string(),
         FeatureEvaluationStatus::Failed(PartFeatureFailure::Inputs(cause)) => cause.to_string(),
         FeatureEvaluationStatus::Failed(PartFeatureFailure::Kernel(cause)) => cause.to_string(),
-        FeatureEvaluationStatus::Failed(PartFeatureFailure::BodyReference(cause)) => cause.clone(),
+        FeatureEvaluationStatus::Failed(PartFeatureFailure::BodyReference(cause))
+        | FeatureEvaluationStatus::Failed(PartFeatureFailure::FilletInput(cause))
+        | FeatureEvaluationStatus::Failed(PartFeatureFailure::Unsupported(cause)) => cause.clone(),
         FeatureEvaluationStatus::ConditionFailed(cause) => cause.to_string(),
         FeatureEvaluationStatus::Blocked { drivers } => {
             format!("blocked by unavailable features {drivers:?}")

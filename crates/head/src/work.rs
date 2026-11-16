@@ -142,6 +142,24 @@ pub trait HeadWork: HeadSketchWork {
             "extrude document {document}, sketch {sketch:?}, profile {profile}, distance {distance:?}: expected a certified extrusion owner"
         ))
     }
+    /// Preview selected edges without changing history; example: `work.preview_fillet_from_gui(Some(&request))?`.
+    fn preview_fillet_from_gui(
+        &mut self,
+        request: Option<&oblikovati_gui::GuiFilletRequest>,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "fillet preview {request:?}: expected a certified fillet owner"
+        ))
+    }
+    /// Commit selected edges as a fillet; example: `work.commit_fillet_from_gui(&request)?`.
+    fn commit_fillet_from_gui(
+        &mut self,
+        request: &oblikovati_gui::GuiFilletRequest,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "fillet {request:?}: expected a certified fillet owner"
+        ))
+    }
     /// Validate a draft through the document owner; example: `work.validate_extrusion_distance(1, "10 mm")?`.
     fn validate_extrusion_distance(
         &mut self,

@@ -54,7 +54,7 @@ impl DesktopPartScenes {
             .map_err(|cause| cause.to_string())?
             .internal_name;
         let evaluated = self.current(session)?;
-        let key_of = |body: &NamedPrismSnapshot| {
+        let key_of = |body: &NamedSolid| {
             body.body_reference_key(session.history(), guid)
                 .map(body_reference_text)
         };
@@ -77,8 +77,7 @@ impl DesktopPartScenes {
                 .map_err(|cause| cause.to_string())?;
             let encoded = body.body_reference_key(session.history(), guid)?;
             let faces = body
-                .body_report(session.history(), guid, encoded)?
-                .topology
+                .topology_summary(session.history(), guid, encoded)?
                 .faces;
             rows.push(BodyRow {
                 feature: record.feature,
@@ -95,10 +94,10 @@ fn native_body_info<O: TransactionObserver>(
     session: &DocumentSession<O>,
     guid: DocumentGuid,
     index: usize,
-    body: &NamedPrismSnapshot,
+    body: &NamedSolid,
 ) -> Result<BodyInfo, String> {
     let encoded = body.body_reference_key(session.history(), guid)?;
-    let report = body.body_report(session.history(), guid, encoded)?;
+    let topology = body.topology_summary(session.history(), guid, encoded)?;
     let key = body_reference_text(encoded);
     let reference = AssignmentReference::new(&key, vec![])?;
     let material_id = session
@@ -108,7 +107,7 @@ fn native_body_info<O: TransactionObserver>(
         .effective_material_id(&reference)
         .unwrap_or_default()
         .into();
-    let mut info = topology_info(&report.topology)?;
+    let mut info = topology_info(&topology)?;
     info.index = api_count("body index", index)?;
     info.name = format!("Solid{}", index + 1);
     info.visible = session.body_visible(&key);

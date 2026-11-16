@@ -12,6 +12,8 @@ const FEATURE_MENU: &str = "##feature-menu";
 const BODIES_MENU: &str = "##bodies-menu";
 const BODY_MENU: &str = "##body-menu";
 const EDGE_COLOR: [f32; 4] = [0.25, 0.6, 1., 1.];
+const EDGE_HOVER_COLOR: [f32; 4] = [0.2, 1., 0.2, 1.];
+const EDGE_HOVER_REACH: f32 = 8.;
 const EDGE_THICKNESS: f32 = 2.;
 const SELECTION_TOOLBAR: &str = "##selection-toolbar";
 const TOOLBAR_RISE: f32 = 40.;
@@ -285,6 +287,10 @@ pub(crate) fn selection_toolbar(
     actions: &mut Vec<GuiShellAction>,
 ) {
     let commands = &request.commands;
+    if commands.selected_edge_count > 0 {
+        edge_selection_toolbar(ui, request, actions);
+        return;
+    }
     if commands.model_face_chosen {
         face_selection_toolbar(ui, request, actions);
         return;
@@ -308,6 +314,19 @@ pub(crate) fn selection_toolbar(
         if crate::widget_abi::button(ui, "Edit Feature", [0.; 2]) && edit.enabled(commands) {
             actions.push(edit);
         }
+    });
+}
+fn edge_selection_toolbar(ui: &Ui, request: &GuiFrameRequest, actions: &mut Vec<GuiShellAction>) {
+    let Some(corner) = outline_corner(request) else {
+        return;
+    };
+    selection_toolbar_window(ui, corner, || {
+        let action = GuiShellAction::OpenFillet;
+        let disabled = ui.begin_disabled(!action.dispatchable(&request.commands));
+        if crate::widget_abi::button(ui, "Fillet", [0.; 2]) {
+            actions.push(action);
+        }
+        drop(disabled);
     });
 }
 fn face_selection_toolbar(ui: &Ui, request: &GuiFrameRequest, actions: &mut Vec<GuiShellAction>) {
@@ -367,17 +386,62 @@ pub(crate) fn draw_feature_edges(ui: &Ui, request: &GuiFrameRequest) {
     let scale = request.layout_scale();
     let logical = |pixel: [i32; 2]| [pixel[0] as f32 / scale[0], pixel[1] as f32 / scale[1]];
     let list = ui.get_background_draw_list();
+    if !request.commands.selected_edge_outlines.is_empty() {
+        let pointer = std::array::from_fn(|axis| ui.io().mouse_pos[axis] * scale[axis]);
+        for group in &request.commands.selected_edge_outlines {
+            let color = if edge_group_hovered(pointer, group) {
+                EDGE_HOVER_COLOR
+            } else {
+                EDGE_COLOR
+            };
+            for [from, to] in group {
+                list.add_line(logical(*from), logical(*to), color)
+                    .thickness(EDGE_THICKNESS)
+                    .build();
+            }
+        }
+        return;
+    }
     for [from, to] in &request.commands.feature_edges {
         list.add_line(logical(*from), logical(*to), EDGE_COLOR)
             .thickness(EDGE_THICKNESS)
             .build();
     }
 }
+fn edge_group_hovered(pointer: [f32; 2], segments: &[[[i32; 2]; 2]]) -> bool {
+    pointer.iter().all(|value| value.is_finite())
+        && segments.iter().any(|segment| {
+            segment_distance_squared(pointer, *segment) <= EDGE_HOVER_REACH * EDGE_HOVER_REACH
+        })
+}
+fn segment_distance_squared(point: [f32; 2], segment: [[i32; 2]; 2]) -> f32 {
+    let a = segment[0].map(|value| value as f32);
+    let b = segment[1].map(|value| value as f32);
+    let v = [b[0] - a[0], b[1] - a[1]];
+    let w = [point[0] - a[0], point[1] - a[1]];
+    let length = v[0] * v[0] + v[1] * v[1];
+    let ratio = if length > 0. {
+        ((w[0] * v[0] + w[1] * v[1]) / length).clamp(0., 1.)
+    } else {
+        0.
+    };
+    (w[0] - ratio * v[0]).powi(2) + (w[1] - ratio * v[1]).powi(2)
+}
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use oblikovati_model::feature::FeatureId;
+    #[test]
+    fn hover_uses_segment_distance_in_window_pixels() {
+        let edge = [[[10, 20], [30, 20]], [[30, 20], [35, 25]]];
+        assert!(edge_group_hovered([20., 27.], &edge));
+        assert!(!edge_group_hovered([20., 27.], &[[[80, 20], [100, 20]]]));
+        assert!(!edge_group_hovered([20., 29.], &edge));
+        assert!(edge_group_hovered([36., 26.], &edge));
+        assert!(!edge_group_hovered([f32::NAN, 20.], &edge));
+        assert_eq!(segment_distance_squared([3., 4.], [[0, 0], [0, 0]]), 25.);
+    }
     fn extrude(suppressed: bool) -> GuiBrowserFeature {
         GuiBrowserFeature {
             id: FeatureId(1),

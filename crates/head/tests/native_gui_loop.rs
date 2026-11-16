@@ -12,6 +12,8 @@ mod camera;
 mod create;
 #[path = "native_gui_loop/cube.rs"]
 mod cube;
+#[path = "native_gui_loop/fillet.rs"]
+mod fillet;
 use camera::{drive_wheel, press_camera_home, verify_gui_camera};
 #[path = "native_gui_loop/files.rs"]
 mod files;

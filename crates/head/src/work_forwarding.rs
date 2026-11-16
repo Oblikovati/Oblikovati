@@ -8,6 +8,11 @@ macro_rules! forward_owner_view_work {
         fn orientation_selection_pivot(&mut self) -> Result<Option<[f64; 3]>, String> {
             self.$owner.orientation_selection_pivot()
         }
+        fn look_at_selection_plane(
+            &self,
+        ) -> Result<Option<oblikovati_model::sketch::SketchPlane>, String> {
+            self.$owner.look_at_selection_plane()
+        }
         fn set_selection_mode_from_gui(
             &mut self,
             mode: oblikovati_gui::GuiSelectionMode,
@@ -96,6 +101,18 @@ macro_rules! forward_owner_view_work {
             offset: &str,
         ) -> Result<bool, String> {
             self.$owner.validate_offset_plane_from_gui(document, offset)
+        }
+        fn preview_fillet_from_gui(
+            &mut self,
+            request: Option<&oblikovati_gui::GuiFilletRequest>,
+        ) -> Result<bool, String> {
+            self.$owner.preview_fillet_from_gui(request)
+        }
+        fn commit_fillet_from_gui(
+            &mut self,
+            request: &oblikovati_gui::GuiFilletRequest,
+        ) -> Result<bool, String> {
+            self.$owner.commit_fillet_from_gui(request)
         }
         fn extrude_from_gui(
             &mut self,
@@ -261,6 +278,9 @@ macro_rules! forward_owner_view_work {
         }
         fn selected_browser_outline(&mut self) -> Vec<[[f64; 3]; 2]> {
             self.$owner.selected_browser_outline()
+        }
+        fn selected_edge_outlines(&mut self) -> Vec<Vec<[[f64; 3]; 2]>> {
+            self.$owner.selected_edge_outlines()
         }
         fn observe_window_capture_extent(&mut self, extent: Option<[u32; 2]>) {
             self.$owner.observe_window_capture_extent(extent);

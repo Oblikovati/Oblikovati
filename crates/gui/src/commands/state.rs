@@ -109,11 +109,20 @@ pub struct GuiCommandState {
     pub origin_planes: Vec<crate::GuiOriginPlane>,
     /// The chosen browser row's outline in the view, in pixels: a solid's edges or a sketch.
     pub feature_edges: Vec<[[i32; 2]; 2]>,
+    /// Projected display segments grouped by the selected exact edge.
+    pub selected_edge_outlines: Vec<Vec<[[i32; 2]; 2]>>,
     pub origin_axes: Vec<crate::GuiOriginAxis>,
     /// What the owner read from the file an Open dialog has selected.
     pub inspected_file: Option<crate::GuiInspectedFile>,
     /// A face of the model is chosen in the view.
     pub model_face_chosen: bool,
+    /// Current exact solid edge selection count.
+    pub selected_edge_count: usize,
+    /// Current exact edge keys and document generation for a fillet draft.
+    pub fillet_selection: Option<(u64, Vec<Vec<u8>>)>,
+    pub fillet_available: bool,
+    /// The selected work plane or face has a current planar frame.
+    pub look_at_available: bool,
     /// A selected model entity can define an orientation pivot.
     pub orientation_selection_available: bool,
     /// The saved orientation control selection pivot preference.

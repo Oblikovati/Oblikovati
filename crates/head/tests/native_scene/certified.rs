@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use oblikovati_martensite::{CertifiedNamedPrismEvaluator, PrismResolution};
+use oblikovati_martensite::{CertifiedNamedSolidEvaluator, PrismResolution};
 use oblikovati_model::{
     history::DocumentEditHistory,
     identity::{DocumentGuid, RecipeIdAllocator},
@@ -24,7 +24,7 @@ fn history() -> DocumentEditHistory {
 }
 fn scene(history: &DocumentEditHistory) -> crate::HeadSceneUpdate {
     let document: DocumentGuid = "11111111-2222-3333-4444-555555555555".parse().unwrap();
-    let mut evaluator = CertifiedNamedPrismEvaluator::new(history, document, resolution());
+    let mut evaluator = CertifiedNamedSolidEvaluator::new(history, document, resolution());
     let evaluation = history
         .snapshot()
         .evaluate_part_features(&mut evaluator)

@@ -140,6 +140,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     prompt_store: Option<Box<dyn oblikovati_model::application_prompts::PromptPreferenceAccess>>,
     prompt_frequencies: oblikovati_model::application_prompts::PromptPreferences,
     orientation_lock: bool,
+    look_at_cache: std::cell::RefCell<Option<orientation_selection::LookAtCache>>,
     orientation_store:
         Option<Box<dyn oblikovati_model::orientation_preferences::OrientationPreferenceAccess>>,
     theme_store: Option<Box<dyn oblikovati_model::theme::ThemeSelectionStore>>,
@@ -158,6 +159,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     drawing_projection_access: oblikovati_drawing::DrawingProjectionService,
     drawing_view_preview: Option<drawing_projection::DrawingViewPreview>,
     extrusion_access: Option<crate::part_scene::extrusion::CertifiedExtrudeAccess>,
+    fillet_access: Option<oblikovati_automation::CertifiedFilletAccess>,
     extrusion_preview: Option<(u64, u64, oblikovati_viewport::ViewportScene, bool)>,
     extrusion_distance_validation: Option<(u64, oblikovati_gui::GuiExtrudeDistanceValidation)>,
     offset_plane_validation: Option<oblikovati_gui::GuiOffsetPlaneValidation>,
@@ -187,6 +189,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     block_created: Option<String>,
     opened_hidden_sketch: Option<oblikovati_model::document_sketch::DocumentSketchId>,
     model_face: Option<browser_selection::ChosenModelFace>,
+    model_edges: Vec<browser_selection::ChosenModelEdge>,
     face_appearance_picks: Vec<clear_appearance::SelectedFaceAppearance>,
     selected_occurrence: Option<(u64, oblikovati_gui::GuiOccurrencePath)>,
     part_measure: Option<part_measure::PartMeasure>,
@@ -198,6 +201,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
         std::collections::BTreeMap<(u64, String), (u64, oblikovati_gui::GuiBodyPhysical)>,
     /// The last outlined browser row, keyed by what it was worked out from.
     browser_outline: Option<(browser_selection::BrowserOutlineSource, Vec<[[f64; 3]; 2]>)>,
+    selected_edge_outlines: Option<browser_selection::EdgeOutlineCache>,
     document_windows: Vec<oblikovati_gui::GuiDocumentWindow>,
     active_window: Option<u64>,
     window_serial: u64,
@@ -245,6 +249,7 @@ impl<
             prompt_store: None,
             prompt_frequencies: Default::default(),
             orientation_lock: false,
+            look_at_cache: std::cell::RefCell::new(None),
             orientation_store: None,
             theme_store: None,
             themes: None,
@@ -262,6 +267,7 @@ impl<
             drawing_projection_access: oblikovati_drawing::DrawingProjectionService,
             drawing_view_preview: None,
             extrusion_access: None,
+            fillet_access: None,
             extrusion_preview: None,
             extrusion_distance_validation: None,
             offset_plane_validation: None,
@@ -276,6 +282,7 @@ impl<
             block_created: None,
             opened_hidden_sketch: None,
             model_face: None,
+            model_edges: Vec::new(),
             face_appearance_picks: Vec::new(),
             selected_occurrence: None,
             part_measure: None,
@@ -283,6 +290,7 @@ impl<
             shown_feature_dimensions: None,
             body_physical: Default::default(),
             browser_outline: None,
+            selected_edge_outlines: None,
             document_windows: Vec::new(),
             active_window: None,
             window_serial: 0,
@@ -324,6 +332,7 @@ impl<
         let policy = policy.validate()?;
         self.part_scenes.use_certified_resolution(policy);
         self.extrusion_access = Some(crate::part_scene::extrusion::CertifiedExtrudeAccess(policy));
+        self.fillet_access = Some(oblikovati_automation::CertifiedFilletAccess::new(policy)?);
         Ok(self)
     }
     /// Clone only the queued worker transport; example: `Client::new(owner.caller())` on a worker.
@@ -379,6 +388,10 @@ impl<
             Some(backend) => host.with_extrusion(backend),
             None => host,
         };
+        let host = match &self.fillet_access {
+            Some(backend) => host.with_fillet(backend),
+            None => host,
+        };
         match &self.themes {
             Some(library) => host.with_themes(library),
             None => host,
@@ -415,6 +428,10 @@ impl<
         };
         let host = match &self.extrusion_access {
             Some(backend) => host.with_extrusion(backend),
+            None => host,
+        };
+        let host = match &self.fillet_access {
+            Some(backend) => host.with_fillet(backend),
             None => host,
         };
         let host = match &self.themes {
@@ -467,6 +484,8 @@ mod orientation_selection;
 mod owner_command_state;
 #[path = "owner_extrusion.rs"]
 mod owner_extrusion;
+#[path = "owner_fillet.rs"]
+mod owner_fillet;
 #[path = "owner_host.rs"]
 mod owner_host;
 #[path = "owner_prompts.rs"]

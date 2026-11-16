@@ -325,6 +325,23 @@ impl GuiShellAction {
                         crate::GuiOffsetPlaneBase::SelectedFace => state.model_face_chosen,
                     }
             }
+            Self::LookAtSelection => state.look_at_available,
+            Self::OpenFillet => {
+                state.fillet_available
+                    && state.document.is_some()
+                    && state.authoring == GuiAuthoringContext::Part
+                    && !state.transaction_open
+                    && state.selected_edge_count > 0
+            }
+            Self::PreviewFillet(None) => true,
+            Self::PreviewFillet(Some(request)) | Self::CreateFillet(request) => {
+                Self::OpenFillet.enabled(state)
+                    && state.document == Some(request.document)
+                    && state.fillet_selection.as_ref()
+                        == Some(&(request.generation, request.edges.clone()))
+                    && !request.radius.trim().is_empty()
+                    && !request.radius.contains('\0')
+            }
             Self::OpenExtrude => {
                 state.extrude_available
                     && state.authoring == GuiAuthoringContext::Part
