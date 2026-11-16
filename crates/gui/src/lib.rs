@@ -74,7 +74,8 @@ pub use application::workspace_layout::browser_origin::GuiOriginAxis;
 pub use sketch::constraint_glyphs::{GuiConstraintGlyph, GuiConstraintHover};
 pub use sketch::dimension_edit::{GuiDimensionEdit, GuiDimensionValue};
 pub use sketch::inspect::{
-    GuiInspectAction, GuiMeasurePanel, GuiSketchContext, GuiSketchRelation, GuiSketchRepeat,
+    GuiInspectAction, GuiMeasurePanel, GuiSketchCandidate, GuiSketchContext, GuiSketchRelation,
+    GuiSketchRepeat,
 };
 pub use sketch::line::{GuiLineCommand, GuiLineCommandMenu, GuiSketchHud, GuiSketchHudField};
 pub use sketch::move_tool::{GuiSketchMoveAction, GuiSketchMoveStage, GuiSketchMoveStatus};

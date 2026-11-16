@@ -371,6 +371,8 @@ mod part_scene;
 #[path = "owner/commands.rs"]
 mod commands;
 
+#[path = "owner/browser.rs"]
+mod browser;
 #[path = "owner/file_tools.rs"]
 mod file_tools;
 #[path = "owner/gui_commands.rs"]
@@ -379,23 +381,18 @@ mod gui_commands;
 mod parameter_editor;
 #[path = "owner/parameter_view.rs"]
 mod parameter_view;
+#[path = "owner/placement_fields.rs"]
+mod placement_fields;
 #[path = "owner/prompts.rs"]
 mod prompts;
-
-#[path = "owner/slot_input.rs"]
-mod slot_input;
-
-#[path = "owner/browser.rs"]
-mod browser;
+#[path = "owner/rectangle_input.rs"]
+mod rectangle_input;
 #[path = "owner/sketch_edit.rs"]
 mod sketch_edit;
 #[path = "owner/sketch_history.rs"]
 mod sketch_history;
-
-#[path = "owner/placement_fields.rs"]
-mod placement_fields;
-#[path = "owner/rectangle_input.rs"]
-mod rectangle_input;
+#[path = "owner/slot_input.rs"]
+mod slot_input;
 
 #[path = "owner/circle_input.rs"]
 mod circle_input;
@@ -495,5 +492,7 @@ mod origin_identity;
 mod saved_extrude_shortcut;
 #[path = "owner/selection_preferences.rs"]
 mod selection_preferences;
+#[path = "owner/sketch_context_selection.rs"]
+mod sketch_context_selection;
 #[path = "owner/sketch_pattern.rs"]
 mod sketch_pattern;

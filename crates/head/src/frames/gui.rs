@@ -280,6 +280,7 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::ToggleCenterPointFormat
         | GuiShellAction::SetCenterPoint { .. }
         | GuiShellAction::DeleteSketchRelation(_)
+        | GuiShellAction::SelectSketchContextCandidate { .. }
         | GuiShellAction::Inspect(_)
         | GuiShellAction::EditDimensionValue(_)
         | GuiShellAction::SetPromptFrequency { .. }
