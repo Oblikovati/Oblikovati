@@ -402,6 +402,7 @@ def application_inputs_match(root: Path, tested: str, current: str) -> bool:
     ancestor = subprocess.run(
         ["git", "-C", str(root), "merge-base", "--is-ancestor", tested, current],
         capture_output=True,
+        env=checkout_git_environment(),
     )
     if ancestor.returncode != 0:
         return False
@@ -412,12 +413,14 @@ def application_inputs_match(root: Path, tested: str, current: str) -> bool:
             str(root),
             "diff",
             "--quiet",
+            "--no-ext-diff",
             tested,
             current,
             "--",
             *APPLICATION_PATHS,
         ],
         capture_output=True,
+        env=checkout_git_environment(),
     )
     if difference.returncode not in (0, 1):
         raise ValueError(

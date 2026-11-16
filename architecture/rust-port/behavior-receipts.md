@@ -90,3 +90,7 @@ for stale evidence. Input comparison excludes the README, Rust-port ledger and
 receipt documents, and the BDD and build-driver tools. The native test runner,
 application crates, lockfile, and other repository inputs remain in scope. The
 current inventory and evidence checkers run again for every report.
+
+The tracked-input comparison ignores Git replacement objects, inherited Git
+configuration, and external diff commands (#4016). This does not bound the
+runtime or establish build provenance. Native receipts remain stale under issue #3978 until that evidence is established.
