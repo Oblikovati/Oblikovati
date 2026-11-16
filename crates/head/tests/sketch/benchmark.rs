@@ -43,6 +43,8 @@ mod move_precise;
 mod new_sketch;
 #[path = "new-sketch/face.rs"]
 mod new_sketch_face;
+#[path = "new-sketch/view_preference.rs"]
+mod new_sketch_view_preference;
 #[path = "new-sketch/work_plane.rs"]
 mod new_sketch_work_plane;
 #[path = "point/steps.rs"]
