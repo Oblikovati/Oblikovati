@@ -1169,6 +1169,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "martensite-tkbool"
+version = "0.8.0"
+source = "git+https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47548431c8f128f08f66a1f719bcee4982"
+dependencies = [
+ "martensite-cmath",
+ "martensite-tkbo",
+ "martensite-tkbrep",
+ "martensite-tkernel",
+ "martensite-tkg2d",
+ "martensite-tkg3d",
+ "martensite-tkgeomalgo",
+ "martensite-tkgeombase",
+ "martensite-tkmath",
+ "martensite-tkprim",
+ "martensite-tkshhealing",
+ "martensite-tktopalgo",
+]
+
+[[package]]
 name = "martensite-tkbrep"
 version = "0.3.11"
 source = "git+https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47548431c8f128f08f66a1f719bcee4982"
@@ -1198,6 +1217,25 @@ dependencies = [
  "windows-sys",
  "winsafe",
  "xattr",
+]
+
+[[package]]
+name = "martensite-tkfillet"
+version = "0.8.1"
+source = "git+https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47548431c8f128f08f66a1f719bcee4982"
+dependencies = [
+ "martensite-cmath",
+ "martensite-tkbo",
+ "martensite-tkbool",
+ "martensite-tkbrep",
+ "martensite-tkernel",
+ "martensite-tkg2d",
+ "martensite-tkg3d",
+ "martensite-tkgeomalgo",
+ "martensite-tkgeombase",
+ "martensite-tkmath",
+ "martensite-tkshhealing",
+ "martensite-tktopalgo",
 ]
 
 [[package]]
@@ -1704,6 +1742,7 @@ dependencies = [
  "martensite-tkbo",
  "martensite-tkbrep",
  "martensite-tkernel",
+ "martensite-tkfillet",
  "martensite-tkg2d",
  "martensite-tkg3d",
  "martensite-tkgeomalgo",
