@@ -296,7 +296,9 @@ BASELINE_FIELDS = (
 def missing_baseline_fields(row: Mapping[str, object]) -> list[str]:
     """List R0 evidence fields still missing; for example, missing_baseline_fields(row)."""
     baseline_source = row.get("baseline_source_sha256")
-    if baseline_source is not None and baseline_source != row.get("source_sha256"):
+    if not isinstance(baseline_source, str) or not re.fullmatch(r"[0-9a-f]{64}", baseline_source):
+        return list(BASELINE_FIELDS)
+    if baseline_source != row.get("source_sha256"):
         return list(BASELINE_FIELDS)
     return [
         field

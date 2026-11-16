@@ -89,11 +89,13 @@ class FeatureBacklogTests(unittest.TestCase):
 
     def test_complete_baseline_is_not_counted_as_missing(self) -> None:
         row = {field: "evidence" for field in BASELINE_FIELDS}
+        row.update(source_sha256="a" * 64, baseline_source_sha256="a" * 64)
         row.update(path="part.feature", area="sketch", milestone="R3", classified=True)
         self.assertEqual(feature_backlog([row])[0]["missing_baseline"], 0)
 
     def test_field_counts_include_only_scenarios_missing_each_field(self) -> None:
         full = {field: "evidence" for field in BASELINE_FIELDS}
+        full.update(source_sha256="a" * 64, baseline_source_sha256="a" * 64)
         first = dict(full, path="part.feature", area="sketch", go_reference="")
         second = dict(full, path="part.feature", area="sketch", oracle=None)
         third = dict(full, path="part.feature", area="sketch", go_reference=None)

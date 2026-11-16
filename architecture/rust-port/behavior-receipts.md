@@ -37,8 +37,9 @@ Use `python3 -B tools/bdd/behavior_cli.py backlog` for one entry per feature
 file, ordered by the earliest milestone assigned to one of its scenarios.
 Each entry counts verified, blocked, unclassified, stale, and incomplete R0
 baseline rows. Its milestone counts include an `unassigned` group. Each feature
-also reports the number of rows missing each baseline field. These counts show
-absent text; they do not verify the quality of the evidence. A mixed feature can
+also reports the number of rows missing each baseline field. An unbound or
+changed source hash makes every field incomplete. These counts do not verify
+the quality of the evidence. A mixed feature can
 span milestones; the sort order is not a feature-level assignment
 or proof that its dependencies are complete. Unassigned files sort last until
 their scenarios have reviewed classifications.
@@ -48,7 +49,9 @@ hash, milestone, owner, target module, acceptance test, issue links, state, and
 last receipt. R0 also requires the Go reference and test premise, API revision,
 kernel capability and integration information, platform profiles, Rust tests,
 oracle, and expected result. Explain an inapplicable field instead of leaving
-it empty. A renamed scenario receives a new ID; review its orphaned former
+it empty. Set `baseline_source_sha256` to the reviewed feature-file hash;
+missing, invalid, or changed hashes leave the baseline incomplete. A renamed
+scenario receives a new ID; review its orphaned former
 classification. A changed feature invalidates the prior receipt even when the
 scenario name stays the same.
 

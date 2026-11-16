@@ -42,6 +42,7 @@ class ScenarioQueueTests(unittest.TestCase):
 
     def test_complete_group_is_omitted_but_missing_baseline_stays(self) -> None:
         baseline = {field: "evidence" for field in BASELINE_FIELDS}
+        baseline.update(source_sha256="a" * 64, baseline_source_sha256="a" * 64)
         complete = scenario("done.feature", "R3", "verified", **baseline)
         partial = scenario("baseline.feature", "R4", "verified")
         result = scenario_queue([complete, partial])
@@ -51,6 +52,7 @@ class ScenarioQueueTests(unittest.TestCase):
 
     def test_stale_evidence_remains_visible_with_a_complete_baseline(self) -> None:
         baseline = {field: "evidence" for field in BASELINE_FIELDS}
+        baseline.update(source_sha256="a" * 64, baseline_source_sha256="a" * 64)
         row = scenario("stale.feature", "R4", "verified", stale=True, **baseline)
         self.assertEqual(scenario_queue([row])["rows"][0]["stale"], 1)
 

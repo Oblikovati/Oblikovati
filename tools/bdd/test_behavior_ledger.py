@@ -115,8 +115,18 @@ class LedgerTests(unittest.TestCase):
 
     def test_matching_baseline_source_keeps_its_evidence_fields(self) -> None:
         row = {field: "evidence" for field in BASELINE_FIELDS}
-        row.update(source_sha256="same", baseline_source_sha256="same")
+        row.update(source_sha256="a" * 64, baseline_source_sha256="a" * 64)
         self.assertEqual(missing_baseline_fields(row), [])
+
+    def test_unbound_baseline_never_counts_as_complete(self) -> None:
+        row = {field: "evidence" for field in BASELINE_FIELDS}
+        row["source_sha256"] = "a" * 64
+        self.assertEqual(missing_baseline_fields(row), list(BASELINE_FIELDS))
+
+    def test_invalid_matching_hash_does_not_bind_baseline(self) -> None:
+        row = {field: "evidence" for field in BASELINE_FIELDS}
+        row.update(source_sha256="same", baseline_source_sha256="same")
+        self.assertEqual(missing_baseline_fields(row), list(BASELINE_FIELDS))
 
     def test_stale_capture_only_remains_excluded(self) -> None:
         fixture = LedgerFixture()

@@ -53,7 +53,8 @@ Last checked: 2026-11-16 on `rust-work`. Refresh from current evidence at each c
   (#3889); see `receipts/2026-11-16-open-existing-native-3889/` for input limits.
 - At local snapshot `b576445b98cffd686dcc05aa8c017de2a591c8c8`, the ledger
   reports **0 verified** across 2,760 declarations. There are 21 stale
-  classifications and 2,622 baseline-field gaps (#4039). Sketch3D has 10
+  classifications and 2,758 incomplete baselines (#3865, #4039). Baselines
+  without a reviewed source hash now count as incomplete. Sketch3D has 10
   capture-only cases and no native runner; provenance is open (#3978).
 - Startup sketches on XY, YZ and XZ are integrated (#4009). The full pinned
   New Sketch diagnostic passed nine scenarios and found one unbound; see
