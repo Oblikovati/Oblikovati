@@ -82,7 +82,11 @@ impl QuickAccessToolbar {
                 self.requests.open_parameters |= ui.button(label);
                 drop(disabled);
             }
-            StandardCommand::Print => muted_button(ui, label),
+            StandardCommand::Print
+            | StandardCommand::RefineAppearance
+            | StandardCommand::AppearanceOverride
+            | StandardCommand::AdjustAppearance
+            | StandardCommand::DesignDoctor => muted_button(ui, label),
             StandardCommand::ClearAppearance => clear_appearance::button(ui, state, actions),
             StandardCommand::Return => {
                 crate::chrome::command_button(
