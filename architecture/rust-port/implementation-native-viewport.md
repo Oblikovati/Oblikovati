@@ -121,3 +121,22 @@ both 320-by-240 and 960-by-240 drawables with the same exact color oracle. It
 passes with validation enabled on software Vulkan and the AMD device. The native
 suite retains placed, flipped, edited, Undo, and Redo cases and its independent
 X11 pixel comparison. No production geometry or rendering behavior was changed.
+
+## Depth after a model update
+
+After the desktop submits a model scene, it caches its display bounds and checks
+the current camera depth range. If the bounds might be clipped, it checks the
+actual scene vertices. When every vertex is in front of the eye and one lies
+outside the near or far plane, the desktop runs the existing `FitDepth`
+navigation operation. This changes depth limits without changing the
+eye, target, up direction, or scale. The viewport records any actual camera
+change and invalidates its projection cache; the operation does not add a
+Previous View entry. Empty scenes and geometry crossing the eye keep the current
+camera. Previous View and marked-view restore use the cached bounds and perform
+an exact vertex check only when needed. Pointer motion and ordinary navigation
+do not scan scene vertices. A failed depth refresh is returned to the caller.
+
+The check concerns display clipping only; it does not affect B-rep geometry or
+model decisions. The native edit regression compares the result to an explicit
+depth fit and covers positive and negative extrusion, resize, empty scenes,
+Previous View, and marked-view restore. See `receipts/2026-11-16-scene-depth-4044/`.

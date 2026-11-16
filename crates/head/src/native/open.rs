@@ -44,6 +44,7 @@ impl NativeHeadWindow {
             wake: ViewportWake::new()?,
             scene_status: None,
             current_scene: None,
+            scene_depth_bounds: None,
             preview_background: None,
             sketch_scene: None,
             glyph_hover: None,
