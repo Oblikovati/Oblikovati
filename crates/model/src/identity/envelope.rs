@@ -13,6 +13,8 @@ pub enum ReferenceScheme {
     Current,
     /// Rust semantic topology payload, distinct from Go lineage.
     Semantic,
+    /// Canonical parent-derived topology identity.
+    Derived,
 }
 
 /// Borrowed identity bytes. Decoding does not prove that a reference can bind.
@@ -51,6 +53,7 @@ impl<'payload> ReferenceEnvelope<'payload> {
         let scheme = match encoded[4] {
             1 => ReferenceScheme::Current,
             2 => ReferenceScheme::Semantic,
+            3 => ReferenceScheme::Derived,
             other => return Err(ReferenceEnvelopeError::UnsupportedScheme(other)),
         };
         decode_triple(&encoded[5..], scheme)
@@ -83,10 +86,10 @@ impl<'payload> ReferenceEnvelope<'payload> {
         let length = encoded_payload_length(self.payload.len())?;
         let mut encoded = Vec::with_capacity(CURRENT_HEADER + self.payload.len());
         encoded.extend_from_slice(MAGIC);
-        encoded.push(if self.scheme == ReferenceScheme::Semantic {
-            2
-        } else {
-            1
+        encoded.push(match self.scheme {
+            ReferenceScheme::Semantic => 2,
+            ReferenceScheme::Derived => 3,
+            ReferenceScheme::Legacy | ReferenceScheme::Current => 1,
         });
         encoded.extend_from_slice(&self.context.to_le_bytes());
         encoded.extend_from_slice(&self.kind.to_le_bytes());
@@ -146,7 +149,7 @@ impl fmt::Display for ReferenceEnvelopeError {
             Self::UnsupportedScheme(scheme) => {
                 write!(
                     formatter,
-                    "reference scheme {scheme}: expected scheme 1 or 2"
+                    "reference scheme {scheme}: expected scheme 1, 2 or 3"
                 )
             }
             Self::PayloadLength { declared, actual } => write!(

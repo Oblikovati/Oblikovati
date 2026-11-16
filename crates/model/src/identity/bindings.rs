@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::{DocumentGuid, ReferenceEnvelope, ReferenceScheme, SemanticReferenceName};
+use super::{
+    DocumentGuid, ReferenceEnvelope, ReferenceScheme, SemanticReferenceName,
+    topology_reference_document,
+};
 use crate::history::{DocumentEditHistory, EvaluationScope};
 use std::collections::{BTreeMap, btree_map::Entry};
 
@@ -112,19 +115,17 @@ fn decoded_binding_key(
             envelope.kind
         ));
     }
-    if envelope.scheme == ReferenceScheme::Semantic {
-        require_semantic_document(encoded, document)?;
+    let actual = match envelope.scheme {
+        ReferenceScheme::Semantic => Some(SemanticReferenceName::decode(encoded)?.document()),
+        ReferenceScheme::Derived => Some(topology_reference_document(encoded)?),
+        ReferenceScheme::Legacy | ReferenceScheme::Current => None,
+    };
+    if let Some(actual) = actual
+        && actual != document
+    {
+        return Err(format!("reference document {actual}: expected {document}"));
     }
     Ok(envelope)
-}
-fn require_semantic_document(encoded: &[u8], expected: DocumentGuid) -> Result<(), String> {
-    let actual = SemanticReferenceName::decode(encoded)?.document();
-    if actual != expected {
-        return Err(format!(
-            "semantic reference document {actual}: expected {expected}"
-        ));
-    }
-    Ok(())
 }
 fn insert_exact_entry<Entity>(
     entries: &mut BTreeMap<Vec<u8>, Entity>,

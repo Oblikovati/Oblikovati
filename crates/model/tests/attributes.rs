@@ -20,7 +20,7 @@ fn equivalent_envelopes_share_identity_and_malformed_keys_are_rejected() {
     assert_ne!(target(5), target(6));
     assert!(AttributeTarget::from_encoded(&[]).is_err());
     let mut unknown = original.encoded().to_vec();
-    unknown[4] = 3;
+    unknown[4] = 4;
     assert!(AttributeTarget::from_encoded(&unknown).is_err());
     unknown[4] = 1;
     unknown.push(0);

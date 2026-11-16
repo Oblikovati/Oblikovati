@@ -41,6 +41,46 @@ fn bindings(owner: &DocumentEditHistory) -> ExactReferenceBindings<&'static str>
     .unwrap()
 }
 #[test]
+fn derived_names_bind_only_in_their_own_document() {
+    use oblikovati_model::identity::{DerivedReferenceName, SemanticReferenceName};
+    let owner = history();
+    let parent = SemanticReferenceName::new(document(), 1, 1, "prism", "face", &[1])
+        .unwrap()
+        .encode()
+        .unwrap();
+    let key = DerivedReferenceName::new(document(), 2, 2, "edge", &[parent])
+        .unwrap()
+        .encode()
+        .unwrap();
+    let scope = owner.evaluation_snapshot().scope().clone();
+    let index =
+        ExactReferenceBindings::from_entries(document(), scope.clone(), [(key.clone(), "edge")])
+            .unwrap();
+    assert_eq!(*index.bind(&owner, document(), &key, 2).unwrap(), "edge");
+    let foreign: DocumentGuid = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee".parse().unwrap();
+    assert!(ExactReferenceBindings::from_entries(foreign, scope, [(key, "edge")]).is_err());
+}
+
+#[test]
+fn semantic_non_topology_names_remain_valid_bindings() {
+    use oblikovati_model::identity::SemanticReferenceName;
+    let owner = history();
+    let key = SemanticReferenceName::new(document(), 1, 10, "feature", "identity", &[1])
+        .unwrap()
+        .encode()
+        .unwrap();
+    let index = ExactReferenceBindings::from_entries(
+        document(),
+        owner.evaluation_snapshot().scope().clone(),
+        [(key.clone(), "feature")],
+    )
+    .unwrap();
+    assert_eq!(
+        *index.bind(&owner, document(), &key, 10).unwrap(),
+        "feature"
+    );
+}
+#[test]
 fn context_kind_and_payload_all_participate_in_exact_binding() {
     let owner = history();
     let index = bindings(&owner);
@@ -179,7 +219,7 @@ fn malformed_and_unknown_kind_keys_never_enter_or_bind() {
     let owner = history();
     let index = bindings(&owner);
     let mut unknown_scheme = key(2, 1, b"cap");
-    unknown_scheme[4] = 3;
+    unknown_scheme[4] = 4;
     for invalid in [
         vec![],
         key(2, 0, b"cap"),
