@@ -20,8 +20,9 @@ receipt reuse or define a trusted builder.
 3. `sealed_build_chain.py` binds a digest of the observed build output to sealed
    runner bytes in the experimental execution. This is useful identity binding,
    conditional on the observing process, kernel and sandbox. It does not prove
-   the build inputs or the origin of the observations. The diagnostic CLI does
-   not publish a native receipt or validate its scenario artifacts for reuse.
+   the build inputs or the origin of the observations. The diagnostic CLI
+   now checks scenario artifacts against the tested commit's pinned inventory,
+   but does not authenticate their origin or publish a reusable native receipt.
 4. `behavior_evidence.py` checks report content, artifacts, source and commit
    identity, then unconditionally marks native receipts stale for #3978. No
    caller-provided receipt field changes this decision. The dependency map also
