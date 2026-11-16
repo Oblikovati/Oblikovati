@@ -54,6 +54,7 @@ mod snapshot;
 pub use sketches::RestoredDocumentSketches;
 pub use snapshot::{ParameterPackageTarget, SnapshotPackageError};
 mod validation;
+pub(crate) mod yaml_write_guard;
 pub use oblikovati_model::resource::{DocumentResource as PackageResource, ResourceContents};
 pub use save::{PackageSaveError, PackageSaveTarget};
 
@@ -132,6 +133,7 @@ impl DocumentPackage {
     /// # Ok::<(), oblikovati_persistence::package::PackageCodecError>(())
     /// ```
     pub fn encode(&self) -> Result<Vec<u8>, PackageCodecError> {
+        yaml_write_guard::reject_ambiguous_merge_keys(&self.root)?;
         serde_yaml_ng::to_string(&self.root)
             .map(String::into_bytes)
             .map_err(codec_error)
@@ -161,6 +163,7 @@ impl DocumentPackage {
         self.root
             .get(Value::String(name.to_owned()))
             .map(|section| {
+                yaml_write_guard::reject_ambiguous_merge_value(section)?;
                 serde_yaml_ng::to_string(section)
                     .map(String::into_bytes)
                     .map_err(codec_error)

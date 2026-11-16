@@ -236,3 +236,18 @@ fn edited_parameter_recipe_survives_native_save_and_reopen() {
 
 #[path = "package_save/names.rs"]
 mod names;
+
+#[test]
+fn ambiguous_yaml_keys_are_refused_before_atomic_file_staging() {
+    let source = b"schemaVersion: 2\ndocumentType: 1\nattributes: [{'<<': {x: 1}}]\n";
+    let mut package = DocumentPackage::decode(source).unwrap();
+    let before = package.clone();
+    let mut ids = CountingGuidSource(0);
+    let identity = FileIdentity::new("alpha", &mut ids).unwrap();
+    let mut files = RefusingFiles { calls: 0 };
+    let mut target = PackageSaveTarget::new(&mut package, Path::new("part.obk"), &mut files);
+    let error = target.persist(&identity).unwrap_err();
+    assert!(error.to_string().contains("<<"), "{error}");
+    assert_eq!(files.calls, 0);
+    assert_eq!(package, before);
+}

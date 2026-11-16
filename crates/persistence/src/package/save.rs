@@ -64,6 +64,7 @@ impl DocumentPackage {
             serde_yaml_ng::to_value(FileIdentityRecord::from(identity)).map_err(codec_error)?;
         let mut root = self.root.clone();
         root.insert(Value::String("identity".into()), record.clone());
+        super::yaml_write_guard::reject_ambiguous_merge_keys(&root)?;
         let encoded = serde_yaml_ng::to_string(&root)
             .map(String::into_bytes)
             .map_err(codec_error)?;

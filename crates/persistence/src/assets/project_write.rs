@@ -140,6 +140,8 @@ fn restore_family(
 fn encode_family(family: ProjectAssetFamily, records: Value) -> Result<Vec<u8>, String> {
     let mut root = Mapping::new();
     root.insert(family.field().into(), records);
+    crate::package::yaml_write_guard::reject_ambiguous_merge_keys(&root)
+        .map_err(|cause| cause.to_string())?;
     serde_yaml_ng::to_string(&root)
         .map(String::into_bytes)
         .map_err(|cause| cause.to_string())
