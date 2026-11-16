@@ -12,6 +12,10 @@ Last checked: 2026-11-16 at application commit `c714736c7`. Refresh from current
 
 ## Current state
 
+- Martensite v0.13.1 is pinned at `bef25f47548431c8f128f08f66a1f719bcee4982`
+  (#4025). The adapter and native cube checks passed; the curved profile
+  comparison still fails as reported in Martensite #407. See
+  `receipts/2026-11-16-martensite-0131-4025/`.
 - **R0 remains open.** The full gate, baseline fields and milestone exit audits
   are incomplete. Run `python3 -B tools/bdd/behavior_cli.py report` for current
   counts; source and application changes can make earlier receipts stale.

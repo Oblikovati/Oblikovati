@@ -1,0 +1,273 @@
+   Compiling libc v0.2.190
+   Compiling autocfg v1.5.1
+   Compiling bitflags v2.13.2
+   Compiling cfg-if v1.0.5
+   Compiling rustix v1.1.6
+   Compiling linux-raw-sys v0.12.1
+   Compiling cfg_aliases v0.2.2
+   Compiling metallic v0.3.0
+   Compiling smallvec v1.16.3
+   Compiling rustc_apfloat v0.2.3+llvm-462a31f5a5ab
+   Compiling bytemuck v1.25.2
+   Compiling allocator-api2 v0.4.0
+   Compiling proc-macro2 v1.0.107
+   Compiling version_check v0.9.5
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.26
+   Compiling serde_core v1.0.229
+   Compiling typenum v1.20.1
+   Compiling serde v1.0.229
+   Compiling zmij v1.0.23
+   Compiling serde_json v1.0.151
+   Compiling itoa v1.0.18
+   Compiling libm v0.2.16
+   Compiling getrandom v0.4.3
+   Compiling deranged v0.5.8
+   Compiling memchr v2.8.3
+   Compiling time-core v0.1.9
+   Compiling powerfmt v0.2.1
+   Compiling num-conv v0.2.2
+   Compiling cpufeatures v0.2.17
+   Compiling sha1_smol v1.0.1
+   Compiling base64 v0.22.1
+   Compiling nix v0.31.3
+   Compiling oblikovati-solve v0.1.0 (/tmp/obk-martensite-0131/crates/solve)
+   Compiling hashbrown v0.17.1
+   Compiling equivalent v1.0.2
+   Compiling xml v1.4.0
+   Compiling ryu v1.0.23
+   Compiling fastrand v2.5.0
+   Compiling unsafe-libyaml v0.2.11
+   Compiling once_cell v1.21.4
+   Compiling uuid v1.27.0
+   Compiling generic-array v0.14.7
+   Compiling num-traits v0.2.19
+   Compiling indexmap v2.14.2
+   Compiling syn v3.0.7
+   Compiling fast_polynomial v0.4.1
+   Compiling num-integer v0.1.47
+   Compiling num-complex v0.4.6
+   Compiling maryada v0.2.0
+   Compiling time v0.3.55
+   Compiling num-bigint v0.4.6
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.7
+   Compiling digest v0.10.7
+   Compiling sha2 v0.10.9
+   Compiling errno v0.3.14
+   Compiling martensite-cmath v0.3.5 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling serde_derive v1.0.229
+   Compiling xattr v1.7.0
+   Compiling tempfile v3.27.0
+   Compiling martensite-tkernel v0.4.5 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling oblikovati-api v0.159.0 (https://github.com/Oblikovati/Oblikovati.API.git?rev=a8e651bc537e516953c7d9313792719e5b474a25#a8e651bc)
+   Compiling serde_yaml_ng v0.10.0
+   Compiling martensite-tkmath v0.3.9 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling martensite-tkg2d v0.3.7 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling martensite-tkg3d v0.3.9 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling martensite-tkgeombase v0.3.6 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling martensite-tkbrep v0.3.11 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling oblikovati-model v0.1.0 (/tmp/obk-martensite-0131/crates/model)
+   Compiling martensite-tkgeomalgo v0.3.8 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling oblikovati-persistence v0.1.0 (/tmp/obk-martensite-0131/crates/persistence)
+   Compiling oblikovati-session v0.1.0 (/tmp/obk-martensite-0131/crates/session)
+   Compiling martensite-tktopalgo v0.4.3 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling martensite-tkshhealing v0.3.9 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling martensite-tkprim v0.3.10 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling martensite-tkhlr v0.3.6 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling martensite-tkbo v0.8.2 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling martensite-tkmesh v0.3.8 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling oblikovati-martensite v0.1.0 (/tmp/obk-martensite-0131/crates/martensite)
+    Finished `test` profile [unoptimized] target(s) in 53.66s
+     Running unittests src/lib.rs (/tmp/obk-martensite-0131-target/debug/deps/oblikovati_martensite-f5fd7308d39f4154)
+
+running 91 tests
+test analytic_body::tests::canonical_axis_uses_stable_sign_ties_and_positive_zero ... ok
+test evaluation_failure::tests::cloned_failure_retains_native_type_bytes_stack_and_replay_context ... ok
+test evaluation_failure::tests::model_cause_and_naming_context_are_not_kernel_exceptions ... ok
+test evaluation_failure::tests::native_validator_failure_keeps_cause_class_stage_and_context ... ok
+test occurrence_line::tests::converts_a_translated_rotated_and_scaled_line ... ok
+test occurrence_line::tests::placement_validation_uses_the_same_inverse_as_picking ... ok
+test evaluation_failure::tests::copy_failure_retains_the_native_exception ... ok
+test occurrence_line::tests::refuses_singular_ill_conditioned_and_invalid_lines ... ok
+test planar_curve::closest::order_tests::identical_roots_use_origin_and_residuals_as_total_tie_breaks ... ok
+test planar_curve::closest::candidates::tests::boundary_witness_does_not_require_an_orthogonal_tangent ... ok
+test planar_curve::closest::candidates::tests::native_parameter_and_position_witnesses_cannot_escape_the_result_gates ... ok
+test planar_curve::closest::candidates::tests::a_query_level_with_a_lines_end_picks_that_end_instead_of_failing ... ok
+test evaluation_failure::tests::invalid_geometry_is_distinct_from_a_failed_validator ... ok
+test planar_curve::closest::candidates::tests::nonfinite_coordinates_and_distance_overflow_are_named_result_failures ... ok
+test planar_curve::report::tests::corrupt_parameters_positions_and_residuals_are_refused ... ok
+test planar_curve::report::tests::incomplete_intersection_is_not_an_empty_success ... ok
+test planar_curve::report::tests::half_bounded_overlap_preserves_the_missing_endpoint ... ok
+test planar_curve::report::tests::report_order_uses_operand_parameters_and_explicit_unbounded_endpoints ... ok
+test planar_curve::report::tests::supplied_residual_limit_is_enforced_without_a_hidden_floor ... ok
+test planar_curve::sketch::measure::tests::a_point_inside_a_segments_span_is_nearest_at_its_foot ... ok
+test planar_curve::sketch::measure::tests::a_segment_measures_its_length_and_its_ends ... ok
+test planar_curve::sketch::measure::tests::parallel_segments_fall_back_to_their_ends ... ok
+test planar_curve::sketch::measure::tests::two_segments_report_their_nearest_and_farthest_ends ... ok
+test planar_curve::sketch::natural_tangent::tests::native_fit_tangent_follows_a_straight_line_and_refuses_invalid_inputs ... ok
+test planar_curve::sketch::measure::tests::rotated_ellipses_return_converged_length_and_canonical_axis_properties ... ok
+test planar_curve::transition::tests::crossing_direction_and_tangent_flag_are_not_recomputed ... ok
+test planar_curve::sketch::spline::tests::active_fit_handle_uses_the_released_native_hermite_constructor ... ok
+test planar_curve::transition::tests::every_native_position_is_retained_for_undecided_incidence ... ok
+test planar_curve::sketch::spline::tests::construction_policy_is_independent_of_endpoint_and_display_bounds ... ok
+test prism::certified::tests::short_profile_curve_preserves_the_kernel_admission_decline ... ok
+test planar_curve::sketch::spline::tests::native_construction_failures_keep_typed_causes_and_source_identity ... ok
+test prism::mesh::boundary_tests::a_face_outline_is_the_facet_sides_only_one_facet_uses ... ok
+test prism::named::evaluate::tests::naming_refusal_keeps_sketch_and_message_without_fabricating_native_cause ... ok
+test prism::named::base_view::tests::standard_frames_follow_go_screen_right_and_up_axes ... ok
+test planar_curve::sketch::spline::tests::offset_requires_an_owned_spline_parent_and_missing_points_are_named ... ok
+test planar_curve::transition::tests::touch_side_and_relative_orientation_are_not_guessed ... ok
+test prism::named::face_topology::tests::oriented_surface_frame_refuses_non_boundary_orientations ... ok
+test planar_curve::sketch::spline::tests::signed_offsets_keep_parent_checks_and_cannot_alias_input_or_saved_recipe ... ok
+test prism::resolution::tests::explicit_limits_preserve_each_value_and_refuse_an_invalid_cap ... ok
+test prism::resolution::tests::model_relative_policy_scales_modelling_limits_but_not_angles_or_display ... ok
+test prism::report::tests::nonfinite_face_values_and_empty_faces_are_named_refusals ... ok
+test prism::snapshot_tests::displacement_ignores_large_origins_and_declines_overflow ... ok
+test prism::snapshot_tests::mesh_orientation_reverses_only_the_triangle_winding ... ok
+test prism::named::discretize::tests::circle_sampling_tracks_requested_deflection ... ok
+test prism::report::tests::incomplete_history_retains_the_source_identity_and_failure_class ... ok
+test prism::report::tests::incomplete_or_ambiguous_generated_history_cannot_pass_face_coverage ... ok
+test planar_curve::sketch::spline::tests::owned_fit_inputs_reconstruct_all_six_go_recipes_and_135_samples ... ok
+test planar_curve::sketch::spline::tests::constructed_fit_and_control_curves_match_169_occt_positions_and_tangents ... ok
+test prism::provenance::tests::duplicate_source_role_pairs_are_refused_before_naming ... ok
+test prism::provenance::tests::incompatible_result_role_or_parent_is_refused ... ok
+test prism::provenance::tests::circular_edge_representative_lies_on_the_curve ... ok
+test region_identity::tests::boundary_equivalence_keeps_holes_and_curve_directions ... ok
+test sketch_prism::incidence::tests::coincidence_groups_are_transitive_and_do_not_join_unrelated_equal_points ... ok
+test sketch_prism::conditional_profile::tests::curved_profile_declines_instead_of_dropping_geometry ... ok
+test sketch_prism::conditional_profile::tests::mapping_uses_converter_identity_and_all_nonconstruction_curves ... ok
+test sketch_prism::incidence::tests::coincident_signed_zero_coordinates_do_not_silently_merge ... ok
+test sketch_prism::profile_extent::tests::empty_and_nonfinite_extents_are_refused ... ok
+test sketch_prism::incidence::tests::inconsistent_coincident_positions_are_not_moved_or_welded ... ok
+test sketch_prism::conditional_profile::tests::missing_duplicate_and_inconsistent_input_evidence_declines ... ok
+test sketch_prism::conditional_profile::tests::nonfinite_and_negative_source_bounds_decline ... ok
+test snapshot::tests::null_sources_and_nonfinite_analytic_results_are_named_declines ... ok
+test snapshot::tests::kernel_parameter_limits_cannot_be_retained_as_a_successful_snapshot ... ok
+test sketch_prism::regions::input::tests::analytic_curve_conversion_keeps_positions_sweep_and_authored_order ... ok
+test sketch_prism::profile_extent::tests::native_bounds_use_arc_span_instead_of_the_full_carrier ... ok
+test validity_errors::validity_checker_failure_retains_the_probe_input ... ok
+test validity_errors::invalid_geometry_is_refused_before_reading_properties ... ok
+test analytic_body::tests::invalid_integrals_and_principal_certificates_are_refused ... ok
+test sketch_region::tests::a_closed_triangle_reports_its_area_perimeter_and_centroid ... ok
+test evaluation_failure::tests::collinear_prism_retains_validation_decline_and_legacy_text ... ok
+test sketch_region::tests::an_open_chain_bounds_nothing_and_an_outside_point_finds_nothing ... ok
+test analytic_body::tests::system_preserves_single_body_bits_and_empty_has_no_fabricated_solid ... ok
+test sketch_region::tests::a_nested_loop_is_its_own_region_and_the_ring_excludes_it ... ok
+test prism::certified::tests::tolerance_requires_a_limit_and_preserves_over_budget_declines ... ok
+test analytic_body::tests::separated_boxes_include_parallel_axis_inertia_about_the_combined_centroid ... ok
+test prism::certified::tests::kernel_decline_keeps_its_typed_cause ... ok
+test prism::certified::tests::certified_prism_declines_an_unmatched_saved_profile ... ok
+test snapshot::tests::edge_geometry_and_face_attributes_remain_isolated_after_capture ... ok
+test analytic_body::tests::thin_separated_bodies_keep_positive_finite_combined_moments ... ok
+test snapshot::tests::vertex_point_mutation_does_not_cross_the_snapshot_boundary ... ok
+test snapshot::tests::snapshot_detaches_each_face_surface_and_isolates_source_geometry_changes ... ok
+test region_identity::tests::missing_or_incorrect_boundary_is_a_named_decline ... ok
+test region_identity::tests::matching_requires_consistent_direction_for_every_edge ... ok
+test prism::snapshot_tests::detached_prism_copies_each_native_role_and_geometry ... ok
+test snapshot::tests::detached_snapshots_preserve_location_orientation_and_analytic_values ... ok
+test prism::snapshot_tests::presentation_does_not_mesh_or_change_the_retained_brep ... ok
+test prism::certified::tests::certified_prism_keeps_source_faces_for_an_oblique_negative_sweep ... ok
+test analytic_body::tests::combined_integrals_match_occt_at_three_scales_and_offsets ... ok
+test region_identity::tests::saved_ring_survives_region_reordering_and_reversed_loop_traversal ... ok
+test prism::certified::tests::certified_cube_retains_analytic_faces_lineage_and_measured_tolerance ... ok
+test prism::certified::tests::certified_cube_retains_every_edge_and_vertex_parent_with_analytic_positions ... ok
+test snapshot::tests::detached_copies_match_occt_properties_and_unique_topology_for_scaled_reversed_inputs ... ok
+
+test result: ok. 91 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.32s
+
+     Running tests/release_probe.rs (/tmp/obk-martensite-0131-target/debug/deps/release_probe-0ba9a89440446845)
+
+running 4 tests
+test malformed_extents_are_refused_before_kernel_construction ... ok
+test kernel_declines_below_resolution_without_a_panic ... ok
+test separate_evaluations_do_not_change_prior_results ... ok
+test released_toolkits_construct_validate_and_integrate_in_working_units ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+     Running tests/sketch_prism.rs (/tmp/obk-martensite-0131-target/debug/deps/sketch_prism-b9201a59df6b9660)
+
+running 79 tests
+test legacy_cube::legacy_name_witness::go_side_index_depends_on_source_traversal_order ... ok
+test conditional_profile::profile_mapping_borrows_a_current_canonical_root ... ok
+test legacy_cube::legacy_name_witness::legacy_cap_stage::staging_preserves_a_qualifier_decline_and_skips_cap_verification ... ok
+test legacy_cube::legacy_name_witness::legacy_cap_stage::staging_refuses_go_side_faces_without_source_curve_evidence ... ok
+test legacy_cube::legacy_name_witness::legacy_cap_stage::staging_refuses_unsolved_or_mutated_source_without_changing_the_base ... ok
+test legacy_cube::legacy_name_witness::legacy_side_stage::go_side_stage_refuses_missing_ambiguous_or_wrong_source_lineage ... ok
+test legacy_cube::legacy_name_witness::legacy_cap_stage::staging_refuses_missing_duplicate_and_extra_feature_assignments ... ok
+test legacy_cube::legacy_name_witness::legacy_cap_stage::staging_declines_current_solve_without_precision_qualification ... ok
+test legacy_cube::legacy_name_witness::legacy_side_stage::side_stage_refuses_unverified_current_target_without_mutating_the_source ... ok
+test named::rebuild::certified_replay_declines_an_unknown_resolution_version ... ok
+test legacy_cube::legacy_name_witness::legacy_side_stage::side_stage_declines_before_lineage_without_qualified_precision ... ok
+test current_plane_changes_placement_without_editing_local_geometry ... ok
+test legacy_cube::legacy_name_witness::legacy_cap_witness::cap_migration_refuses_ambiguous_source_sequences ... ok
+test legacy_cube::legacy_name_witness::legacy_cap_witness::cap_offset_migration_rejects_missing_ambiguous_and_unverified_planes ... ok
+test certified::exactly_coincident_endpoint_identities_remain_in_source_lineage ... ok
+test certified::certified_sketch_prism_uses_the_current_placed_plane ... ok
+test legacy_cube::legacy_name_witness::face_offset_rejects_a_foreign_document_name_without_dropping_its_body ... ok
+test named::exact_names_reject_wrong_kind_source_feature_document_and_history ... ok
+test named::profile_parameter_changes_preserve_source_names_and_change_exact_face_area ... ok
+test named::part_properties_require_every_body_to_belong_to_the_current_history ... ok
+test legacy_cube::legacy_name_witness::legacy_cap_witness::cap_migration_refuses_unverified_wrong_target_and_wrong_document ... ok
+test placement::suppressed_host_plane_has_no_last_good_kernel_input ... ok
+test legacy_cube::legacy_name_witness::legacy_side_witness::side_migration_refuses_unwitnessed_or_nonboundary_lineage ... ok
+test legacy_cube::legacy_name_witness::legacy_cap_witness::cap_offset_migration_refuses_side_keys_and_nonfinite_offsets ... ok
+test refusals::boundary_classification_refuses_short_duplicate_missing_and_open_selections ... ok
+test refusals::construction_and_reversed_open_boundaries_cannot_be_published ... ok
+test refusals::geometrically_equal_distinct_endpoints_need_kernel_arrangement ... ok
+test refusals::invalid_displacement_retains_the_source_sketch_in_the_kernel_decline ... ok
+test refusals::missing_sketch_is_a_named_owner_decline ... ok
+test directed_lines_and_holes_reuse_the_same_kernel_path ... ok
+test certified::a_new_inner_loop_invalidates_the_previous_unholed_region ... ok
+test named::selection_centers_use_exact_named_body_and_face_bounds ... ok
+test regions::free_open_profile_does_not_discover_a_bounded_region ... ok
+test regions::line_recipe_refuses_a_curved_region_with_a_named_decline ... ok
+test regions::profile_extent_excludes_distant_construction_curves ... ok
+test regions::profile_extent_follows_solved_parameters_and_refuses_stale_geometry ... ok
+test named::named_faces_follow_depth_edits_and_undo_without_reusing_old_handles ... ok
+test regions::construction_curves_are_excluded_and_unconverted_splines_decline ... ok
+test certified::current_document_parameters_drive_the_certified_sketch_prism ... ok
+test named::rebuild::projection::standard_base_view_centers_and_scales_current_cube_on_sheet ... ok
+test refusals::absent_and_failed_verification_never_reuse_a_previous_body ... ok
+test named::rebuild::saved_recipes_rebuild_the_same_keys_under_a_new_history_owner ... ok
+test certified::certified_sketch_prism_accepts_holes_and_reversed_source_lines ... ok
+test parameter_driven_prism_consumes_current_fully_constrained_sketch ... ok
+test stored::stored_condition_failure_has_no_last_good_result_and_manual_suppression_wins ... ok
+test placement::linked_plane_changes_and_failures_are_resolved_on_every_kernel_call ... ok
+test stored::replay::failed_host_plane_blocks_native_prism_until_current_datum_recovers ... ok
+test stored::stored_suppressed_cutoff_and_absent_entries_do_not_build_shapes ... ok
+test recipe::restored_parameter_backed_definition_builds_current_kernel_geometry ... ok
+test legacy_cube::go_cube_candidate_replays_as_a_certified_solid_and_keeps_fixed_depth ... ok
+test stored::replay::unnamed_diagnostic_replay_refuses_body_deletion_without_losing_geometry ... ok
+test named::rebuild::hole_and_oblique_negative_sweep_names_ignore_traversal_order ... ok
+test stored::session::closed_native_owner_marks_retained_presentation_stale_and_cancels_queued_input ... ok
+test legacy_cube::legacy_name_witness::ordered_recompute_moves_face_sketch_after_size_edit ... ok
+test stored::stored_condition_selects_enabled_or_suppressed_inputs ... ok
+test stored::stored_datum_is_declined_as_a_non_body_definition ... ok
+test regions::converged_free_rectangle_keeps_source_topology_for_regions_and_extrusion ... ok
+test named::rebuild::projection::exact_projection_retains_a_hole_in_an_oblique_prism ... ok
+test stored::owned_stored_inputs_build_and_restore_kernel_results_through_undo ... ok
+test stored::replay::kernel_boundary_decline_keeps_independent_current_prism_and_recovers ... ok
+test named::selection_center_rebinds_after_edit_undo_and_redo ... ok
+test regions::closed_sketch_regions_preserve_boundary_curves_and_nested_holes ... ok
+test named::rebuild::projection::standard_view_projects_all_current_part_bodies_together ... ok
+test stored::session::session_created_extrusion_builds_exact_faces_through_parameter_history ... ok
+test stored::session::candidate_certification_rolls_back_a_refused_extrusion_before_commit ... ok
+test stored::session::retained_current_bodies_reject_late_results_and_track_undo_redo_generations ... ok
+test named::rebuild::certified_replay_keeps_named_faces_through_undo_redo_and_reopen ... ok
+test legacy_cube::legacy_name_witness::face_offset_replays_from_named_body_through_edit_history_and_recipe ... ok
+test legacy_cube::legacy_name_witness::go_face_frame_tracks_fixture_through_edit_undo_redo_and_reopen ... ok
+test legacy_cube::legacy_name_witness::legacy_side_stage::go_side_plane_stages_and_replays_with_test_only_witness_and_qualification ... ok
+test named::rebuild::projection::certified_cube_projects_exact_hidden_and_visible_curves ... ok
+test legacy_cube::legacy_name_witness::named_planar_face_frame_tracks_the_go_dependent_plane_witness ... ok
+test legacy_cube::legacy_name_witness::legacy_side_witness::witnessed_go_side_plane_replays_through_edit_undo_redo_and_reopen ... ok
+test legacy_cube::legacy_name_witness::legacy_cap_witness::go_cap_names_migrate_through_edit_undo_redo_and_reopen ... ok
+test legacy_cube::legacy_name_witness::go_side_witnesses_resolve_to_their_source_named_rust_faces ... ok
+test legacy_cube::legacy_name_witness::legacy_cap_witness::go_cap_plane_candidate_replays_through_edit_history_and_package_reopen ... ok
+test legacy_cube::legacy_name_witness::legacy_cap_stage::go_cap_fixture_replays_with_test_only_assumed_precision ... ok
+test legacy_cube::legacy_name_witness::legacy_side_witness::go_side_names_use_external_curve_lineage_through_edit_undo_redo_and_reopen ... ok
+test named::rebuild::one_size_parameter_drives_certified_cube_replay_and_saved_names ... ok
+
+test result: ok. 79 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.31s
+

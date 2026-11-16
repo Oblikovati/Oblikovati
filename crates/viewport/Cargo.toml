@@ -16,15 +16,15 @@ oblikovati-model = { path = "../model" }
 oblikovati-martensite = { path = "../martensite" }
 
 [target.'cfg(target_os = "linux")'.dependencies]
-martensite-vulkan = { git = "https://github.com/Oblikovati/Martensite", rev = "d051ff699982faba4ec2df3ee9a47e14f38dedbd", version = "=0.7.2" }
-martensite-tkernel = { git = "https://github.com/Oblikovati/Martensite", rev = "d051ff699982faba4ec2df3ee9a47e14f38dedbd", version = "=0.4.4" }
-martensite-tkmath = { git = "https://github.com/Oblikovati/Martensite", rev = "d051ff699982faba4ec2df3ee9a47e14f38dedbd", version = "=0.3.8" }
-martensite-tkservice = { git = "https://github.com/Oblikovati/Martensite", rev = "d051ff699982faba4ec2df3ee9a47e14f38dedbd", version = "=0.4.1" }
-martensite-tkv3d = { git = "https://github.com/Oblikovati/Martensite", rev = "d051ff699982faba4ec2df3ee9a47e14f38dedbd", version = "=0.7.1" }
+martensite-vulkan = { git = "https://github.com/Oblikovati/Martensite", rev = "bef25f47548431c8f128f08f66a1f719bcee4982", version = "=0.7.2" }
+martensite-tkernel = { git = "https://github.com/Oblikovati/Martensite", rev = "bef25f47548431c8f128f08f66a1f719bcee4982", version = "=0.4.5" }
+martensite-tkmath = { git = "https://github.com/Oblikovati/Martensite", rev = "bef25f47548431c8f128f08f66a1f719bcee4982", version = "=0.3.9" }
+martensite-tkservice = { git = "https://github.com/Oblikovati/Martensite", rev = "bef25f47548431c8f128f08f66a1f719bcee4982", version = "=0.4.1" }
+martensite-tkv3d = { git = "https://github.com/Oblikovati/Martensite", rev = "bef25f47548431c8f128f08f66a1f719bcee4982", version = "=0.7.1" }
 x11-dl = "=2.21.0"
 x11rb = "=0.14.0"
 libc = "=0.2.190"
-rustix = { version = "=1.1.5", features = ["event"] }
+rustix = { version = "=1.1.6", features = ["event"] }
 
 [lints.rust]
 unsafe_code = "deny"
