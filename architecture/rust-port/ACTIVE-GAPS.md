@@ -40,6 +40,12 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
   current pin (#3886). Six capture-only cases were not executed; the result
   is not verified acceptance. See
   `receipts/2026-11-15-rectangle-portable-diagnostic/`.
+- Centered rectangle: six early scenarios passed focused diagnostics, including
+  construction diagonal topology and typed 8 by 4 mm side lengths. Separate
+  OS-input runs covered creation, undo/redo and typed input. The full feature
+  diagnostic passed 8 of 15 scenarios, with seven unbound. See
+  `receipts/2026-11-16-center-rectangle-4024/` (#4024); these are not verified
+  acceptance.
 - Ellipse measurement: the updated step now reaches the visible ellipse, but
   the analytic pick returns a distant boundary. `ellipse-05` is blocked by
   [Martensite #406](https://github.com/Oblikovati/Martensite/issues/406); see
