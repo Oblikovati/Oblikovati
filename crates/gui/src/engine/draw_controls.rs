@@ -218,7 +218,12 @@ impl GuiFrameEngine {
         crate::sketch::line::command_menu(ui, &request.commands, &mut selected);
         self.precise_input
             .panel(ui, &request.commands, &mut selected);
-        crate::sketch::inspect::canvas_menu(ui, &request.commands, &mut selected);
+        crate::sketch::inspect::canvas_menu(
+            ui,
+            &request.commands,
+            &mut selected,
+            &mut self.sketch_popup_token,
+        );
         self.dimension_value_editor
             .panel(ui, request, &mut selected);
         crate::sketch::move_tool::panel(

@@ -217,3 +217,27 @@ fn context_rejects_a_different_active_sketch() {
             .is_empty()
     );
 }
+#[test]
+fn dismiss_only_retires_matching_context_and_rejects_replay() {
+    let (mut owner, _, _, line) = overlapping_owner();
+    let old = open_context(&mut owner);
+    let current = open_context(&mut owner);
+    assert!(!owner.retire_sketch_context(old.token));
+    assert!(owner.retire_sketch_context(current.token));
+    assert!(
+        owner
+            .select_sketch_context_candidate(current.token, line)
+            .is_err()
+    );
+    let next = open_context(&mut owner);
+    assert!(
+        owner
+            .select_sketch_context_candidate(next.token, line)
+            .unwrap()
+    );
+    assert!(!owner.retire_sketch_context(next.token));
+    assert_eq!(
+        owner.gui_command_state().unwrap().sketch_selection.entities[0].1,
+        line
+    );
+}

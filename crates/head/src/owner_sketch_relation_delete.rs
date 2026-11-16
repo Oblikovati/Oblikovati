@@ -74,6 +74,19 @@ impl<
             .map_err(|e| e.to_string())?;
         Ok(true)
     }
+    pub(super) fn retire_sketch_context(&mut self, token: u64) -> bool {
+        if !self
+            .sketch_memory
+            .context
+            .as_ref()
+            .is_some_and(|context| context.token == token)
+        {
+            return false;
+        }
+        self.sketch_memory.context = None;
+        true
+    }
+
     pub(super) fn select_context_candidate(
         &mut self,
         token: u64,

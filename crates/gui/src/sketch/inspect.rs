@@ -190,8 +190,14 @@ fn select_other_row(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShell
         }
     });
 }
-pub(crate) fn canvas_menu(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
+pub(crate) fn canvas_menu(
+    ui: &Ui,
+    state: &GuiCommandState,
+    actions: &mut Vec<GuiShellAction>,
+    open_token: &mut Option<u64>,
+) {
     if state.authoring != GuiAuthoringContext::Sketch || !state.sketch_at_ready {
+        retire_closed_context(open_token, actions);
         return;
     }
     let over_panel = ui.is_window_hovered_with_flags(crate::widget_abi::over_any_panel());
@@ -199,8 +205,10 @@ pub(crate) fn canvas_menu(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<Gu
         ui.open_popup(CANVAS_MENU);
     }
     let Some(_popup) = ui.begin_popup(CANVAS_MENU) else {
+        retire_closed_context(open_token, actions);
         return;
     };
+    *open_token = state.sketch_context.as_ref().map(|context| context.token);
     if let Some(menu) = &state.sketch_marking_menu {
         if state.sketch_classic_menu {
             super::marking_menu::draw_classic(ui, menu, state, actions);
@@ -220,5 +228,11 @@ pub(crate) fn canvas_menu(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<Gu
         actions.push(GuiShellAction::Inspect(
             GuiInspectAction::OpenRegionProperties,
         ));
+    }
+}
+
+fn retire_closed_context(open_token: &mut Option<u64>, actions: &mut Vec<GuiShellAction>) {
+    if let Some(token) = open_token.take() {
+        actions.push(GuiShellAction::DismissSketchContext { token });
     }
 }

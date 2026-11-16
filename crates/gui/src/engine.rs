@@ -56,6 +56,7 @@ pub struct GuiFrameEngine {
     /// A popup was open last frame: Escape closes it, and the frame that opens is already too
     /// late to ask, since Dear ImGui acts on the key as the frame begins.
     popup_was_open: bool,
+    sketch_popup_token: Option<u64>,
     /// Keys a widget received the press of, so their release reaches it too.
     widget_keys: Vec<crate::GuiKey>,
     quick_access: crate::application::quick_access_toolbar::QuickAccessToolbar,
@@ -121,6 +122,7 @@ impl GuiFrameEngine {
             sketch_pattern: Default::default(),
             command_alias: Default::default(),
             popup_was_open: false,
+            sketch_popup_token: None,
             widget_keys: Vec::new(),
             quick_access: Default::default(),
             metadata: Default::default(),
