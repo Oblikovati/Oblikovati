@@ -4,7 +4,7 @@ fn input() -> AddSketchEntityArgs {
     let mut input = literal_input("ellipse", &[[1.0, 2.0]]);
     input.axis = Some(vec![3.0, 4.0]);
     input.major_radius = "30 mm".into();
-    input.minor_radius = "width".into();
+    input.minor_radius = "10 mm".into();
     input.construction = true;
     input
 }
@@ -116,17 +116,31 @@ fn check_major_dimension(files: &mut DiscoveryWorkspace, source: &mut QueryGuids
 }
 
 #[test]
-fn ellipse_expression_inputs_seed_geometry_from_current_parameters_without_live_bindings() {
+fn ellipse_expression_inputs_drive_radii_while_points_remain_initial_seeds() {
     let (mut files, document, mut source) = fresh();
     let mut request = input();
+    request.minor_radius = "width".into();
     request.points = Some(vec![None]);
     request.point_exprs = Some(vec![Some(vec!["width".into(), "width * 2".into()])]);
     let before = owned_parameters(&files, document).clone();
     let created = add_call(&mut files, &mut source, &request).unwrap();
     assert_frame(&files, document, created.entity_id, 1.0);
-    assert!(owned_parameters(&files, document).same_recipe(&before));
+    assert!(!owned_parameters(&files, document).same_recipe(&before));
     set_width(&mut files, &mut source, "2 cm");
-    assert_frame(&files, document, created.entity_id, 1.0);
+    let geometry = owned_geometry(&files, document).sketches()[0].geometry();
+    assert!(
+        (geometry
+            .ellipse(SketchEntityId(created.entity_id))
+            .unwrap()
+            .radii()[1]
+            - 2.0)
+            .abs()
+            < 1e-8
+    );
+    assert_eq!(
+        row(&files, created.entity_id).points,
+        expected_points(&[[1.0, 2.0]])
+    );
     let second = add_call(&mut files, &mut source, &request).unwrap();
     check_reseeded_ellipse(&files, document, second.entity_id);
 }

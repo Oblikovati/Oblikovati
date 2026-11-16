@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use oblikovati_session::SketchPrimitiveProjectionInput;
+mod associative;
 mod chain_reply;
 mod inputs;
 mod line_reply;
@@ -19,7 +20,21 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         .map_err(api_error)?
         .snapshot();
     let input = inputs::prepare(snapshot, &request)?;
-    create_prepared(files, document, sketch, input, construction)
+    let bindings = associative::bindings(snapshot, &request)?;
+    let slot_width = if request.kind == "slot" && associative::named(snapshot, &request.width)? {
+        Some(request.width)
+    } else {
+        None
+    };
+    create_prepared(
+        files,
+        document,
+        sketch,
+        input,
+        construction,
+        bindings,
+        slot_width,
+    )
 }
 fn create_prepared<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
@@ -27,12 +42,19 @@ fn create_prepared<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFile
     sketch: oblikovati_model::document_sketch::DocumentSketchId,
     input: PreparedEntity,
     construction: Option<crate::file_host::SketchConstructionAccess<'_>>,
+    bindings: Vec<associative::RadiusBinding>,
+    slot_width: Option<String>,
 ) -> Result<Vec<u8>, Error> {
     let mut commands = files.commands(document).map_err(api_error)?;
     match input {
-        PreparedEntity::Slot(input) => slot::create(files, document, sketch, input, construction),
+        PreparedEntity::Slot(input) => {
+            slot::create(files, document, sketch, input, construction, slot_width)
+        }
         PreparedEntity::ThreePoint(input) => {
             three_point::create(files, document, sketch, input, construction)
+        }
+        PreparedEntity::Primitive(input, kind) if !bindings.is_empty() => {
+            associative::create(files, document, sketch, input, kind, bindings)
         }
         PreparedEntity::Primitive(input, kind) => commands
             .create_sketch_primitive_projected(sketch, &input, |result| {

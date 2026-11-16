@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::three_point::{CardinalCircleConstruction, call};
 use super::*;
-fn slot_request(variant: &str) -> AddSketchEntityArgs {
+pub(super) fn slot_request(variant: &str) -> AddSketchEntityArgs {
     let points = match variant {
         "arc" => vec![[0.0; 2], [4.0, 0.0], [0.0, 4.0]],
         "arcThreePoint" => vec![[4.0, 0.0], [0.0, 4.0], [-4.0, 0.0]],

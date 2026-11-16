@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::inputs::slots::{SlotInput, SlotPlacementInput};
 use super::*;
+mod associative_slot;
 use crate::file_host::SketchConstructionAccess;
 use oblikovati_model::{
     history::{SketchSlotCreation, SketchSlotCreationReport},
     sketch::{CircumcircleOptions, SketchSlotPlacement, SolvedCircularSeed},
 };
 #[derive(Clone, Copy)]
-struct SlotVerification<'a> {
+pub(super) struct SlotVerification<'a> {
     access: SketchConstructionAccess<'a>,
     points: [[f64; 2]; 3],
     options: CircumcircleOptions,
@@ -19,6 +20,7 @@ pub(super) fn create<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFi
     sketch: DocumentSketchId,
     input: SlotInput,
     access: Option<SketchConstructionAccess<'_>>,
+    width_expression: Option<String>,
 ) -> Result<Vec<u8>, Error> {
     let scale = files
         .workspace()
@@ -34,6 +36,16 @@ pub(super) fn create<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFi
         width: input.width,
         construction: input.construction,
     };
+    if let Some(expression) = width_expression {
+        return associative_slot::create(
+            files,
+            document,
+            sketch,
+            creation,
+            verification,
+            expression,
+        );
+    }
     adopt_slot(files, document, sketch, creation, verification)
 }
 fn adopt_slot<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
@@ -113,7 +125,7 @@ fn verify_reply(
     })
 }
 impl SlotVerification<'_> {
-    fn verify(
+    pub(super) fn verify(
         self,
         snapshot: &DocumentSnapshot,
         report: &SketchSlotCreationReport,
