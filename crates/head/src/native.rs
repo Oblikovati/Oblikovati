@@ -359,6 +359,13 @@ impl HeadWindow for NativeHeadWindow {
     fn capture_isometric_preview(&mut self, document: u64) -> Result<bool, String> {
         self.publish_isometric_preview(document)
     }
+    fn request_application_close_confirmation(&mut self) -> Result<(), String> {
+        let gui = self.gui.as_mut().ok_or_else(|| {
+            "application close confirmation: expected an initialized GUI".to_string()
+        })?;
+        gui.request_application_close();
+        Ok(())
+    }
     fn request_close(&mut self) -> Result<bool, String> {
         self.exit_requested = true;
         Ok(true)

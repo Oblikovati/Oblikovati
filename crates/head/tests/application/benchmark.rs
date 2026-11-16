@@ -101,6 +101,8 @@ pub(super) fn rendered_sketch_row_center() -> [i32; 2] {
     };
     diagnostics::pointer_pixels(row.center())
 }
+#[path = "application-closing/steps.rs"]
+mod application_closing;
 #[path = "body-properties/steps.rs"]
 mod body_properties;
 #[path = "document-creation/steps.rs"]

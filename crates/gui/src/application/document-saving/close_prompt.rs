@@ -66,11 +66,108 @@ pub(crate) struct ClosePrompt {
     opening_save: bool,
     opening_exit: bool,
     escape: DialogEscape,
+    application_exit: bool,
+    exit_advance: bool,
+    exit_waiting: Option<u64>,
+    exit_progress: bool,
 }
 impl ClosePrompt {
+    /// Begin one guarded application exit; example: `prompt.request_application_exit()`.
+    pub(crate) fn request_application_exit(&mut self) {
+        if !self.application_exit {
+            self.application_exit = true;
+            self.exit_advance = true;
+        }
+    }
+    /// Stop an exit when its save is cancelled; example: `prompt.cancel_application_exit()`.
+    pub(crate) fn cancel_application_exit(&mut self) {
+        self.application_exit = false;
+        self.exit_advance = false;
+        self.exit_waiting = None;
+        self.exit_progress = false;
+    }
+    /// Continue after a first-save dialog closes; example: `prompt.resume_application_exit()`.
+    pub(crate) fn resume_application_exit(&mut self) {
+        self.exit_advance = self.application_exit;
+    }
+    /// Advance one exit without closing an unconfirmed document.
+    /// Example: `prompt.advance_application_exit(&state, &mut actions, false)`.
+    pub(crate) fn advance_application_exit(
+        &mut self,
+        state: &GuiCommandState,
+        actions: &mut Vec<GuiShellAction>,
+        saving: bool,
+    ) -> Vec<u64> {
+        if !self.application_exit || !std::mem::take(&mut self.exit_advance) {
+            return Vec::new();
+        }
+        if self.waiting_for_exit_document(state, saving) {
+            return Vec::new();
+        }
+        self.exit_progress |= self.exit_waiting.take().is_some();
+        self.route_application_exit(state, actions)
+    }
+    fn waiting_for_exit_document(&mut self, state: &GuiCommandState, saving: bool) -> bool {
+        if !self
+            .exit_waiting
+            .is_some_and(|id| document(state, id).is_some())
+        {
+            return false;
+        }
+        if !saving {
+            self.cancel_application_exit();
+        }
+        true
+    }
+    fn route_application_exit(
+        &mut self,
+        state: &GuiCommandState,
+        actions: &mut Vec<GuiShellAction>,
+    ) -> Vec<u64> {
+        if let Some(id) = edited_exit_document(state) {
+            return self.start_edited_exit(state, id, actions);
+        }
+        if let Some(id) = untouched_new_document(state) {
+            actions.push(close(id, true));
+            self.exit_waiting = Some(id);
+            self.exit_advance = true;
+            return Vec::new();
+        }
+        let complete = self.exit_progress;
+        self.cancel_application_exit();
+        if complete {
+            actions.push(GuiShellAction::Exit);
+        }
+        Vec::new()
+    }
+    fn start_edited_exit(
+        &mut self,
+        state: &GuiCommandState,
+        id: u64,
+        actions: &mut Vec<GuiShellAction>,
+    ) -> Vec<u64> {
+        if state.prompts.save_changes.suppressed() {
+            return self.save_suppressed_exit(state, id, actions);
+        }
+        self.ask(id);
+        Vec::new()
+    }
+    fn save_suppressed_exit(
+        &mut self,
+        state: &GuiCommandState,
+        id: u64,
+        actions: &mut Vec<GuiShellAction>,
+    ) -> Vec<u64> {
+        let mut outcome = CloseOutcome::default();
+        answer(state, id, CloseAnswer::Save, &mut outcome);
+        self.exit_waiting = Some(id);
+        self.exit_advance = true;
+        actions.extend(outcome.actions);
+        outcome.first_saves
+    }
     /// A frame must follow: a popup is about to open, or a held close must be routed again.
     pub(crate) fn needs_frame(&self) -> bool {
-        self.opening_save || self.opening_exit || !self.continuing.is_empty()
+        self.opening_save || self.opening_exit || self.exit_advance || !self.continuing.is_empty()
     }
     /// Route every unforced close in `actions`; the one place all close commands pass through.
     /// Example: `prompt.intercept(&state, &mut actions)` after the frame's controls have drawn.
@@ -229,6 +326,14 @@ impl ClosePrompt {
         choice: CloseAnswer,
         outcome: &mut CloseOutcome,
     ) {
+        if self.application_exit {
+            if choice == CloseAnswer::Keep {
+                self.cancel_application_exit();
+            } else {
+                self.exit_waiting = self.asking.first().copied();
+                self.exit_advance = true;
+            }
+        }
         let shared = state.prompts.save_changes == PromptFrequency::OncePerOperation;
         let count = if shared || choice == CloseAnswer::Keep {
             self.asking.len()
@@ -289,6 +394,23 @@ fn activate_unless_active(state: &GuiCommandState, id: u64) -> Option<GuiShellAc
 }
 fn document(state: &GuiCommandState, id: u64) -> Option<&DocumentInfo> {
     state.documents.iter().find(|row| row.id == id)
+}
+fn edited_exit_document(state: &GuiCommandState) -> Option<u64> {
+    state
+        .document
+        .into_iter()
+        .chain(state.documents.iter().map(|row| row.id))
+        .find(|id| storage(state, *id).is_some_and(|row| row.unsaved_edits))
+}
+fn untouched_new_document(state: &GuiCommandState) -> Option<u64> {
+    state.documents.iter().find_map(|row| {
+        let storage = storage(state, row.id)?;
+        (row.dirty
+            && storage.path.is_none()
+            && !storage.unsaved_edits
+            && !(state.transaction_open && state.document == Some(row.id)))
+        .then_some(row.id)
+    })
 }
 fn storage(state: &GuiCommandState, id: u64) -> Option<&crate::GuiDocumentStorage> {
     state.document_storage.get(&id)

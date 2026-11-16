@@ -403,6 +403,9 @@ fn prompt_buttons(world: &mut ApplicationWorld) {
 #[when("I choose Cancel at the save-changes prompt")]
 #[when("the user chooses Cancel at the save-changes prompt")]
 fn prompt_cancel(world: &mut ApplicationWorld) {
+    if world.application_close_requested {
+        return super::application_closing::cancel_application_close(world);
+    }
     world.click_text("Cancel");
 }
 #[then("the part remains active")]

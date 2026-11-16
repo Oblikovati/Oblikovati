@@ -11,8 +11,33 @@ struct FakeHeadWindow {
     event_failure: bool,
     cleanup_failure: bool,
     timeouts: Vec<Option<std::time::Duration>>,
+    gui_events: Vec<ViewportEvent>,
+    no_gui: bool,
+    confirmation_waiting: bool,
+    confirmation_drawn: bool,
 }
 impl HeadWindow for FakeHeadWindow {
+    fn gui_frame(
+        &mut self,
+        event: Option<&ViewportEvent>,
+        _: &oblikovati_gui::GuiCommandState,
+    ) -> Result<HeadGuiUpdate, String> {
+        self.gui_events.extend(event.copied());
+        let changed = std::mem::take(&mut self.confirmation_waiting);
+        self.confirmation_drawn |= changed;
+        Ok(HeadGuiUpdate {
+            changed,
+            ..Default::default()
+        })
+    }
+    fn request_application_close_confirmation(&mut self) -> Result<(), String> {
+        self.calls.push("confirm_close");
+        if self.no_gui {
+            return Err("application close confirmation: expected an initialized GUI".into());
+        }
+        self.confirmation_waiting = true;
+        Ok(())
+    }
     fn events(&mut self, limit: usize) -> Result<Vec<ViewportEvent>, String> {
         assert!(limit > 0 && limit <= 64);
         self.calls.push("events");
@@ -231,8 +256,13 @@ struct FakeHeadWork {
     calls: Vec<&'static str>,
     fail_finish: bool,
     preview: Option<oblikovati_viewport::ViewportSketchPreview>,
+    resolved_events: Vec<ViewportEvent>,
 }
 impl crate::HeadWork for FakeHeadWork {
+    fn resolve_shortcut(&mut self, event: ViewportEvent) -> ViewportEvent {
+        self.resolved_events.push(event);
+        event
+    }
     fn poll(&mut self, budget: usize) -> Result<crate::HeadWorkStatus, String> {
         assert_eq!(budget, 32);
         self.calls.push("poll");
@@ -252,27 +282,8 @@ impl crate::HeadWork for FakeHeadWork {
         Ok(())
     }
 }
-#[test]
-fn refused_close_keeps_the_window_alive_until_the_owner_approves_another_request() {
-    let mut window = FakeHeadWindow {
-        inputs: [
-            vec![ViewportEvent::CloseRequested],
-            vec![ViewportEvent::CloseRequested],
-        ]
-        .into(),
-        wakes: [Ok(false)].into(),
-        ..Default::default()
-    };
-    let mut owner = FakeHeadWork {
-        close_answers: [false, true].into(),
-        ..Default::default()
-    };
-    let summary = run_window_with_owner(&mut window, HeadOptions::default(), &mut owner).unwrap();
-    assert_eq!(summary.completed, 1);
-    assert_eq!(owner.calls, ["poll", "close", "poll", "close", "finish"]);
-    let expected = ["events", "present", "wait", "events", "finish"];
-    assert_eq!(window.calls, expected);
-}
+#[path = "frames/closing.rs"]
+mod closing;
 #[test]
 fn queued_work_prevents_idle_wait_between_bounded_owner_batches() {
     let mut window = FakeHeadWindow {
