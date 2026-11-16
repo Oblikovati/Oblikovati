@@ -5,8 +5,8 @@ use cucumber::{given, then, when};
 use oblikovati_gui::GuiSketchMoveStage;
 use oblikovati_viewport::ViewportPhysicalKey;
 
-const CENTER: [i32; 2] = [850, 550];
-const EDGE: [i32; 2] = [1010, 470];
+pub(super) const CENTER: [i32; 2] = [850, 550];
+pub(super) const EDGE: [i32; 2] = [1010, 470];
 
 #[given("an editable sketch with eligible geometry")]
 fn editable_ellipse(world: &mut ApplicationWorld) {
