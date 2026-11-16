@@ -34,6 +34,12 @@ pub struct ViewportSketchSelection {
     pub sketches: Vec<DocumentSketchId>,
     pub entities: Vec<(DocumentSketchId, oblikovati_model::sketch::SketchEntityId)>,
 }
+/// Transient candidate lines; example: a hovered parallel-constraint glyph.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ViewportSketchHover {
+    pub sketch: DocumentSketchId,
+    pub entities: Vec<oblikovati_model::sketch::SketchEntityId>,
+}
 // #3795: only the Linux renderer consumes normalization; pure selection checks remain portable.
 #[cfg(any(target_os = "linux", test))]
 impl ViewportSketchSelection {

@@ -27,11 +27,28 @@ pub(super) fn request_native_close() {
 }
 
 pub(super) fn click(position: [i32; 2]) {
+    let (connection, root, x, y) = pointer_target(position);
+    send_click(&connection, root, x, y);
+}
+
+pub(super) fn move_pointer(position: [i32; 2]) {
+    let (connection, root, x, y) = pointer_target(position);
+    connection
+        .xtest_fake_input(MOTION_NOTIFY_EVENT, 0, 0, root, x, y, 0)
+        .unwrap()
+        .check()
+        .unwrap();
+    connection
+        .flush()
+        .expect("X11 motion: expected a flushed request");
+}
+
+fn pointer_target(position: [i32; 2]) -> (RustConnection, Window, i16, i16) {
     let (connection, screen) = x11rb::connect(None).expect("X11: expected a display connection");
     let root = connection.setup().roots[screen].root;
     let window = application_window(&connection, root);
     let [x, y] = root_position(&connection, root, window, position);
-    send_click(&connection, root, x, y);
+    (connection, root, x, y)
 }
 
 fn root_position(

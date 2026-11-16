@@ -14,11 +14,13 @@ impl RenderView {
         let deflection = self.sketch_deflection()?;
         let sketches = self.restyle_committed(palette, deflection, &self.sketch_selection)?;
         let preview = self.restyle_preview(palette, deflection)?;
+        let hover = self.sketch_hover_for_palette(palette)?;
         // Build both replacements before publishing either, so a declined preview keeps both old overlays.
         sketches.show();
         preview.show();
         self.sketches = sketches;
         self.preview = preview;
+        self.replace_sketch_hover(hover);
         self.sketch_palette = palette.clone();
         Ok(true)
     }

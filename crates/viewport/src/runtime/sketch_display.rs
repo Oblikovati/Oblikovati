@@ -1,6 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 impl Viewport {
+    /// Show transient candidate lines without changing selection; example: `viewport.set_sketch_hover(None)?`.
+    pub fn set_sketch_hover(
+        &mut self,
+        hover: Option<&crate::ViewportSketchHover>,
+    ) -> Result<bool, String> {
+        self.update_overlay(|render| render.set_sketch_hover(hover))
+    }
     /// Replace committed sketch presentation without modifying solid meshes or transient previews.
     /// Example: `viewport.set_sketch_display(&sketches)?` after a document history change.
     pub fn set_sketch_display(

@@ -60,6 +60,9 @@ pub(super) fn projected_constraint_glyphs(
         .filter_map(|mark| {
             let pixel = window.sketch_pixel(mark.plane, mark.at).ok()?;
             Some(oblikovati_gui::GuiConstraintGlyph {
+                sketch: mark.sketch,
+                constraint: mark.constraint,
+                related: mark.related,
                 pixel,
                 text: mark.text,
             })

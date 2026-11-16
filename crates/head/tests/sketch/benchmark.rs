@@ -17,6 +17,8 @@ mod coincident_multi_move;
 mod coincident_points;
 #[path = "coincident/segments.rs"]
 mod coincident_segments;
+#[path = "constraint-glyph-hover/steps.rs"]
+mod constraint_glyph_hover;
 #[path = "dimension-expression/steps.rs"]
 mod dimension_expression;
 #[path = "ellipse/steps.rs"]

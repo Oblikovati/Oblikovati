@@ -17,6 +17,7 @@ mod lighting;
 #[path = "renderer/navigation.rs"]
 mod navigation;
 mod sketch_display;
+mod sketch_hover;
 mod sketch_marker;
 mod sketch_palette;
 mod sketch_preview;
@@ -40,6 +41,7 @@ pub(crate) struct RenderView {
     status: status_text::StatusTextOverlay,
     preview: sketch_preview::SketchPreviewOverlay,
     sketches: sketch_display::SketchDisplayOverlay,
+    sketch_hover: sketch_hover::SketchHoverOverlay,
 }
 impl RenderView {
     pub fn new(
@@ -69,6 +71,7 @@ impl RenderView {
             status: Default::default(),
             preview: Default::default(),
             sketches: Default::default(),
+            sketch_hover: Default::default(),
         };
         result.configure(window)?;
         lighting::configure(&result.viewer)?;

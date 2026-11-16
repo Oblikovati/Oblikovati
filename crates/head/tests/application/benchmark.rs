@@ -18,6 +18,8 @@ mod scenario_source;
 mod solid_visibility;
 mod viewport_background;
 mod world;
+#[cfg(target_os = "linux")]
+mod x11_input;
 use world::ApplicationWorld;
 pub(super) fn window_geometry(title: &str) -> Option<([f32; 2], [f32; 2])> {
     diagnostics::window_geometry(title)

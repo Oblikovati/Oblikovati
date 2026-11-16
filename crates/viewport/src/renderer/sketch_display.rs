@@ -31,19 +31,28 @@ impl SketchDisplayOverlay {
         palette: &crate::ViewportSketchPalette,
         selected: &crate::ViewportSketchSelection,
     ) -> Result<bool, String> {
-        if self.source.as_ref().is_some_and(|(previous, error)| {
-            previous == source
-                && *error == deflection
-                && self.color == palette.geometry
-                && self.selected_color == palette.selected
-                && self.selected == *selected
-        }) {
+        if self.matches(source, deflection, palette, selected) {
             return Ok(false);
         }
         let replacement = Self::replacement(viewer, source, deflection, palette, selected)?;
         replacement.show();
         *self = replacement;
         Ok(true)
+    }
+    fn matches(
+        &self,
+        source: &[ViewportSketchDisplay],
+        deflection: f64,
+        palette: &crate::ViewportSketchPalette,
+        selected: &crate::ViewportSketchSelection,
+    ) -> bool {
+        self.source.as_ref().is_some_and(|(previous, error)| {
+            previous == source
+                && *error == deflection
+                && self.color == palette.geometry
+                && self.selected_color == palette.selected
+                && self.selected == *selected
+        })
     }
     pub(super) fn replacement(
         viewer: &V3dViewer,
@@ -191,13 +200,24 @@ impl super::RenderView {
         source: &[ViewportSketchDisplay],
     ) -> Result<bool, String> {
         let deflection = self.sketch_deflection()?;
-        self.sketches.submit(
+        if self.sketches.matches(
+            source,
+            deflection,
+            &self.sketch_palette,
+            &self.sketch_selection,
+        ) {
+            return Ok(false);
+        }
+        let hover = self.sketch_hover_for_source(source)?;
+        let changed = self.sketches.submit(
             &self.viewer,
             source,
             deflection,
             &self.sketch_palette,
             &self.sketch_selection,
-        )
+        )?;
+        self.replace_sketch_hover(hover);
+        Ok(changed)
     }
     pub(crate) fn refresh_sketch_display(&mut self) -> Result<bool, String> {
         let deflection = self.sketch_deflection()?;
