@@ -40,9 +40,10 @@ Last checked: 2026-11-16 on `rust-work` after `6ba45dcb1`. Refresh from current 
   baseline field. Run `python3 -B tools/bdd/behavior_cli.py report` for current
   counts; source and application changes can make earlier receipts stale.
 - At local snapshot `b576445b98cffd686dcc05aa8c017de2a591c8c8`, the ledger
-  reports **0 verified** across 2,760 declarations. Changed source leaves 124
-  classifications stale. Sketch3D has 10 capture-only cases and no native
-  runner. Earlier receipts remain historical; native provenance is open (#3978).
+  reports **0 verified** across 2,760 declarations. After reviewing 103 changed
+  assignments, 21 classifications remain stale and 2,622 fail the baseline-field
+  check (#4039). Sketch3D has 10 capture-only cases and no native runner.
+  Earlier receipts remain historical; native provenance is open (#3978).
 - Startup sketches on XY, YZ and XZ are integrated (#4009). The full pinned
   New Sketch diagnostic passed nine scenarios and found one unbound; its
   latest report is in `receipts/2026-11-16-new-sketch-current-18d90af/`.
@@ -68,8 +69,9 @@ Last checked: 2026-11-16 on `rust-work` after `6ba45dcb1`. Refresh from current 
   in-place geometry edits (#4029) remain separate open defects.
 - Scenario pin: `b576445b98cffd686dcc05aa8c017de2a591c8c8`, a local snapshot
   of the unversioned source. It is not an upstream commit. At the latest check,
-  the live solid viewport interaction feature had changed again (#4038). The
-  comparison covers `.feature` files only; review that change in the next sync.
+  the live solid viewport interaction feature had changed and a Sketch3D spline
+  feature was added (#4038). Review both in the next sync; the comparison covers
+  `.feature` files only.
   The source tags 60 declarations as capture-only and 34 more as capture-host
   only; they are not portable passing evidence. Follow `bdd-workflow.md`
   when source files change; use a unique Cargo target for each active worktree.
