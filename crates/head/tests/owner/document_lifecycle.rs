@@ -120,3 +120,76 @@ fn verify_transaction_close_guard(owner: &mut TestOwner, awake: &Receiver<()>) {
     });
     assert!(owner.close_allowed().unwrap());
 }
+
+struct FixedStartupPreference(Option<oblikovati_model::feature::work_plane::WorkPlaneOrigin>);
+impl oblikovati_model::application_options::PartPreferenceAccess for FixedStartupPreference {
+    fn part_options(&self) -> oblikovati_model::application_options::PartApplicationOptions {
+        oblikovati_model::application_options::PartApplicationOptions {
+            startup_sketch_plane: self.0,
+            ..Default::default()
+        }
+    }
+    fn set_part_options(
+        &mut self,
+        options: oblikovati_model::application_options::PartApplicationOptions,
+    ) -> Result<(), String> {
+        self.0 = options.startup_sketch_plane;
+        Ok(())
+    }
+}
+#[test]
+fn new_part_and_metric_template_enter_the_selected_startup_sketch() {
+    use oblikovati_model::{
+        document_sketch::SketchPlacement, feature::work_plane::WorkPlaneOrigin,
+    };
+    for plane in [
+        WorkPlaneOrigin::XY,
+        WorkPlaneOrigin::YZ,
+        WorkPlaneOrigin::XZ,
+    ] {
+        for template in [false, true] {
+            let (owner, _) = owner();
+            let mut owner =
+                owner.with_part_preferences(Box::new(FixedStartupPreference(Some(plane))));
+            if template {
+                owner
+                    .create_document_template(oblikovati_gui::GuiDocumentTemplate {
+                        kind: oblikovati_gui::GuiTemplateKind::Part,
+                        units: oblikovati_gui::GuiTemplateUnits::Metric,
+                    })
+                    .unwrap();
+            } else {
+                owner.create_part_document().unwrap();
+            }
+            let edit = owner
+                .active_sketch_edit()
+                .expect("expected active startup sketch");
+            let session = owner
+                .documents()
+                .workspace()
+                .session(edit.document)
+                .unwrap();
+            let sketches = session.snapshot().sketches.sketches();
+            assert_eq!(sketches.len(), 1);
+            assert_eq!(sketches[0].name(), "Sketch1");
+            assert_eq!(sketches[0].placement(), SketchPlacement::OriginPlane(plane));
+            assert_eq!(sketches[0].id(), edit.sketch);
+        }
+    }
+}
+#[test]
+fn refused_startup_sketch_preserves_the_previous_part() {
+    use oblikovati_model::feature::work_plane::WorkPlaneOrigin;
+    let (mut owner, _) = super::tool_veto::veto_owner("Create sketch");
+    owner.create_part_document().unwrap();
+    let previous = owner.documents().workspace().active_document().unwrap();
+    let mut owner =
+        owner.with_part_preferences(Box::new(FixedStartupPreference(Some(WorkPlaneOrigin::XY))));
+    let error = owner.create_part_document().unwrap_err();
+    assert!(error.contains("expected successful creation"), "{error}");
+    assert_eq!(owner.documents().workspace().documents(), &[previous]);
+    assert_eq!(
+        owner.documents().workspace().active_document(),
+        Some(previous)
+    );
+}

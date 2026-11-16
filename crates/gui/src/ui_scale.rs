@@ -105,7 +105,7 @@ fn preference_geometry(ui: &Ui) {
     let [width, height] = ui.io().display_size;
     let size = [
         (width - 32.).clamp(1., 420.),
-        (height - 32.).clamp(1., 340.),
+        (height - 32.).clamp(1., 500.),
     ];
     GuiScalePreferences::fit_dockable(
         ui,

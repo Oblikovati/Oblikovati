@@ -344,7 +344,7 @@ impl<
     pub fn document_host(&mut self) -> FileHost<'_, O, W, F> {
         self.synchronize_sketch_edit();
         let editing = self.sketch_inspection_edit();
-        let host = borrowed_host(
+        let host = owner_host::borrowed_host(
             &mut self.files,
             &mut self.guids,
             &self.version,
@@ -357,7 +357,12 @@ impl<
         .with_sketch_edit(editing)
         .with_marking_menus(&mut self.marking_menus)
         .with_keymap(&mut self.keymap)
-        .with_color_schemes(&mut self.color_schemes);
+        .with_color_schemes(&mut self.color_schemes)
+        .with_startup_projection(self.sketch_options.auto_project_origin);
+        let host = match self.part_store.as_mut() {
+            Some(store) => host.with_part_preferences(store.as_mut()),
+            None => host,
+        };
         let host = match self.marking_store.as_mut() {
             Some(store) => host.with_marking_store(store.as_mut()),
             None => host,
@@ -377,7 +382,7 @@ impl<
     }
     fn drain_calls(&mut self, budget: usize) -> Result<usize, String> {
         let editing = self.sketch_inspection_edit();
-        let host = borrowed_host(
+        let host = owner_host::borrowed_host(
             &mut self.files,
             &mut self.guids,
             &self.version,
@@ -390,7 +395,12 @@ impl<
         .with_sketch_edit(editing)
         .with_marking_menus(&mut self.marking_menus)
         .with_keymap(&mut self.keymap)
-        .with_color_schemes(&mut self.color_schemes);
+        .with_color_schemes(&mut self.color_schemes)
+        .with_startup_projection(self.sketch_options.auto_project_origin);
+        let host = match self.part_store.as_mut() {
+            Some(store) => host.with_part_preferences(store.as_mut()),
+            None => host,
+        };
         let host = match self.marking_store.as_mut() {
             Some(store) => host.with_marking_store(store.as_mut()),
             None => host,
@@ -443,30 +453,6 @@ impl<
         self.document_host()
     }
 }
-fn borrowed_host<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
-    files: &'a mut FileWorkspace<O, W, F>,
-    guids: &'a mut dyn GuidSource,
-    version: &'a str,
-    factory: &'a mut dyn DocumentObserverFactory<Observer = O>,
-    scenes: &'a mut crate::part_scene::DesktopPartScenes,
-    construction: &'a dyn oblikovati_model::sketch::SketchCircleConstruction,
-    captures: &'a mut Option<crate::DesktopWindowCaptures>,
-) -> FileHost<'a, O, W, F> {
-    let producer = scenes.assembly_producer_digest();
-    let host = FileHost::new(files, guids, version)
-        .with_assembly_producer(producer)
-        .with_observer_factory(factory)
-        .with_part_topology(scenes)
-        .with_assembly_display_limits((
-            crate::part_scene::DISPLAY_MESH.chord_error,
-            crate::part_scene::DISPLAY_MESH.angular_error,
-        ))
-        .with_sketch_construction(construction, Default::default());
-    match captures {
-        Some(captures) => host.with_window_capture(captures),
-        None => host,
-    }
-}
 #[path = "owner_themes.rs"]
 mod application_themes;
 #[path = "owner_marking_menu.rs"]
@@ -477,10 +463,14 @@ mod orientation_selection;
 mod owner_command_state;
 #[path = "owner_extrusion.rs"]
 mod owner_extrusion;
+#[path = "owner_host.rs"]
+mod owner_host;
 #[path = "owner_prompts.rs"]
 mod owner_prompts;
 #[path = "owner_shortcuts.rs"]
 mod owner_shortcuts;
+#[path = "owner_startup_sketch.rs"]
+mod owner_startup_sketch;
 #[path = "owner_placement.rs"]
 mod placement;
 #[path = "owner_placement_input.rs"]

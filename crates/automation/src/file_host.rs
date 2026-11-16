@@ -30,6 +30,7 @@ mod open;
 mod sketch_construction;
 mod sketch_inspection;
 mod sketch_preferences;
+mod startup_sketch;
 pub use open::DocumentObserverFactory;
 pub(crate) use sketch_construction::SketchConstructionAccess;
 
@@ -84,6 +85,9 @@ struct FileContext<'a, O: TransactionObserver, W, F> {
     drawing_views: Option<&'a dyn crate::DrawingViewProjectionAccess>,
     sketch_preferences:
         Option<&'a mut dyn oblikovati_model::application_options::SketchPreferenceAccess>,
+    part_preferences:
+        Option<&'a mut dyn oblikovati_model::application_options::PartPreferenceAccess>,
+    startup_project_origin: bool,
 }
 impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHost<'a, O, W, F> {
     /// Set the current display producer identity.
@@ -202,6 +206,8 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHos
                 observers: None,
                 external: None,
                 sketch_preferences: None,
+                part_preferences: None,
+                startup_project_origin: true,
                 part_topology: None,
                 assembly_display_limits: None,
                 assembly_producer: None,

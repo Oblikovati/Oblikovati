@@ -327,8 +327,9 @@ impl<
         self.create_template_document(template)
     }
     fn create_part_document(&mut self) -> Result<bool, String> {
+        let previous = self.files.workspace().active_document();
         let name = self.next_new_document_name("Part");
-        oblikovati_api::client::Client::new(self.document_host())
+        let created = oblikovati_api::client::Client::new(self.document_host())
             .documents()
             .create(&oblikovati_api::wire::CreateDocumentArgs {
                 type_: "part".into(),
@@ -336,6 +337,7 @@ impl<
                 ..Default::default()
             })
             .map_err(|cause| format!("New Part: expected a created part document: {cause}"))?;
+        self.enter_new_part_startup(created.id, previous)?;
         Ok(true)
     }
     fn select_browser_block_from_gui(
