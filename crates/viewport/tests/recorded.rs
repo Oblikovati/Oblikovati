@@ -306,6 +306,28 @@ fn verify_empty_home(view: &mut Viewport, camera: ViewportCamera) {
 }
 
 #[test]
+fn recorded_camera_restores_the_previous_view_and_rejects_invalid_input() {
+    let (runtime, _) = runtime();
+    let mut view = runtime.open_offscreen([64, 48]).unwrap();
+    let original = view.camera_state().unwrap();
+    assert!(!view.set_camera_recorded(original).unwrap());
+    assert!(view.view_history.is_empty());
+    let changed = original.isometric();
+    assert!(view.set_camera_recorded(changed).unwrap());
+    assert_eq!(view.view_history.len(), 1);
+    assert!(
+        view.set_camera_recorded(ViewportCamera {
+            scale: f64::NAN,
+            ..changed
+        })
+        .is_err()
+    );
+    assert_eq!(view.view_history.len(), 1);
+    assert!(view.previous_view().unwrap());
+    assert_eq!(view.camera_state().unwrap(), original);
+}
+
+#[test]
 fn view_history_is_bounded_and_continuous_navigation_does_not_fill_it() {
     let (runtime, _) = runtime();
     let mut view = runtime.open_offscreen([64, 48]).unwrap();

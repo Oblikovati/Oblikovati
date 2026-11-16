@@ -4,6 +4,16 @@ use crate::{ViewportNavigation, renderer::SavedViewCamera};
 // Retain Go app/view_history.go's limit without saving native handles or old pixel extents.
 const VIEW_HISTORY_LIMIT: usize = 64;
 impl Viewport {
+    /// Change the view and retain its previous camera; example: `viewport.set_camera_recorded(camera)?`.
+    pub fn set_camera_recorded(&mut self, camera: crate::ViewportCamera) -> Result<bool, String> {
+        let previous = self.live()?.saved_camera();
+        self.set_camera(camera)?;
+        if self.live()?.camera_matches(&previous) {
+            return Ok(false);
+        }
+        self.record_discrete_view(previous);
+        Ok(true)
+    }
     pub(super) fn apply_camera_navigation(
         &mut self,
         command: ViewportNavigation,

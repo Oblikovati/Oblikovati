@@ -17,21 +17,40 @@ impl ViewportCamera {
     /// Face a sketch from the viewer's current side, preserving scale and standoff.
     /// Example: `view.set_camera(view.camera_state()?.facing_sketch(plane)?)?` on edit entry.
     pub fn facing_sketch(self, plane: SketchPlane) -> Result<Self, String> {
-        self.validate()?;
         let frame = plane.recipe();
-        let normal = plane.normal();
-        let standoff = sketch_standoff(self, frame.origin, normal)?;
-        let eye = std::array::from_fn(|axis| frame.origin[axis] + normal[axis] * standoff);
-        let up = normalized_up(sketch_up(frame.x_axis, frame.y_axis));
-        let facing = Self {
-            eye,
-            target: frame.origin,
-            up,
-            ..self
-        };
-        facing.validate()?;
-        Ok(facing)
+        let zero_negative = dominant_normal_component(plane.normal()) < 0.;
+        facing_plane(
+            self,
+            plane,
+            normalized_up(sketch_up(frame.x_axis, frame.y_axis)),
+            zero_negative,
+        )
     }
+    /// Face a selected planar reference with its Y axis up; example: `camera.facing_planar_reference(plane)?`.
+    pub fn facing_planar_reference(self, plane: SketchPlane) -> Result<Self, String> {
+        facing_plane(self, plane, plane.recipe().y_axis, false)
+    }
+}
+
+fn facing_plane(
+    camera: ViewportCamera,
+    plane: SketchPlane,
+    up: [f64; 3],
+    zero_negative: bool,
+) -> Result<ViewportCamera, String> {
+    camera.validate()?;
+    let origin = plane.recipe().origin;
+    let normal = plane.normal();
+    let standoff = plane_standoff(camera, origin, normal, zero_negative)?;
+    let eye = std::array::from_fn(|axis| origin[axis] + normal[axis] * standoff);
+    let facing = ViewportCamera {
+        eye,
+        target: origin,
+        up,
+        ..camera
+    };
+    facing.validate()?;
+    Ok(facing)
 }
 
 /// Model Y stays up when the plane holds it, so a sketch on YZ reads as the Right view.
@@ -40,10 +59,11 @@ fn sketch_up(x_axis: [f64; 3], y_axis: [f64; 3]) -> [f64; 3] {
     if x_axis == MODEL_Y { MODEL_Y } else { y_axis }
 }
 
-fn sketch_standoff(
+fn plane_standoff(
     camera: ViewportCamera,
     origin: [f64; 3],
     normal: [f64; 3],
+    zero_negative: bool,
 ) -> Result<f64, String> {
     let delta: [f64; 3] = std::array::from_fn(|axis| camera.eye[axis] - camera.target[axis]);
     let distance = delta.iter().map(|value| value * value).sum::<f64>().sqrt();
@@ -57,7 +77,7 @@ fn sketch_standoff(
             "sketch camera side {side}: expected a finite view-plane projection"
         ));
     }
-    let negative = side < 0. || (side == 0. && dominant_normal_component(normal) < 0.);
+    let negative = side < 0. || (side == 0. && zero_negative);
     Ok(if negative { -distance } else { distance })
 }
 // When the eye lies in the plane, choose the positive model-axis side for a stable view.
@@ -78,6 +98,20 @@ fn normalized_up(axis: [f64; 3]) -> [f64; 3] {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn planar_reference_uses_its_y_axis_and_preserves_the_viewer_side() {
+        let plane =
+            SketchPlane::new([2., 3., 4.], [0., 1., 0.], [0., 0., 1.], Default::default()).unwrap();
+        let camera = ViewportCamera {
+            eye: [-8., 3., 4.],
+            target: [2., 3., 4.],
+            ..Default::default()
+        };
+        let result = camera.facing_planar_reference(plane).unwrap();
+        assert_eq!(result.eye, [-8., 3., 4.]);
+        assert_eq!(result.target, [2., 3., 4.]);
+        assert_eq!(result.up, [0., 0., 1.]);
+    }
     #[test]
     fn a_perspective_view_shows_the_same_height_at_the_target() {
         let camera = ViewportCamera::default();
