@@ -271,3 +271,56 @@ fn certified_cube_retains_every_edge_and_vertex_parent_with_analytic_positions()
         }
     }
 }
+
+#[test]
+fn certified_prism_presentation_orients_every_triangle_outward() {
+    for displacement in [[0., 0., 10.], [2., 3., -10.]] {
+        assert_outward_prism(displacement);
+    }
+}
+fn assert_outward_prism(displacement: [f64; 3]) {
+    let (profile, selection) = square(10.);
+    let snapshot = retain_certified_profile_prism(
+        &profile,
+        &selection,
+        displacement,
+        resolution(ToleranceCap::Refuse(1e-5)),
+    )
+    .unwrap();
+    let mesh = snapshot
+        .body
+        .presentation(PrismMeshOptions {
+            chord_error: 0.05,
+            angular_error: 0.5,
+        })
+        .unwrap();
+    let center = [
+        5. + displacement[0] / 2.,
+        5. + displacement[1] / 2.,
+        displacement[2] / 2.,
+    ];
+    assert_outward_faces(mesh, center);
+}
+fn assert_outward_faces(mesh: PrismPresentation, center: [f64; 3]) {
+    for face in mesh.faces {
+        for triangle in face.triangles {
+            assert!(
+                outward_dot(triangle, center) > 0.,
+                "face {:?}, triangle {triangle:?}, body center {center:?}: expected outward winding",
+                face.role
+            );
+        }
+    }
+}
+fn outward_dot([a, b, c]: [[f64; 3]; 3], center: [f64; 3]) -> f64 {
+    let u: [f64; 3] = std::array::from_fn(|i| b[i] - a[i]);
+    let v: [f64; 3] = std::array::from_fn(|i| c[i] - a[i]);
+    let n = [
+        u[1] * v[2] - u[2] * v[1],
+        u[2] * v[0] - u[0] * v[2],
+        u[0] * v[1] - u[1] * v[0],
+    ];
+    (0..3)
+        .map(|i| n[i] * ((a[i] + b[i] + c[i]) / 3. - center[i]))
+        .sum()
+}

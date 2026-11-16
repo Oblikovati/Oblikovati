@@ -268,3 +268,48 @@ impl PrismProbeSnapshot {
         crate::analytic_body::integrate_body(&self.shape)
     }
 }
+
+// Face history preserves identity, but its orientation is not necessarily body-relative.
+pub(super) struct BodyFaceIndex(martensite_tkbrep::toptools::IndexedMapOfShape);
+
+impl BodyFaceIndex {
+    pub(super) fn new(body: &Shape) -> Result<Self, String> {
+        use martensite_tkbrep::topexp::Explorer;
+        use martensite_tkg3d::top_abs::ShapeEnum;
+        let mut faces = Explorer::new(body, ShapeEnum::Face, ShapeEnum::Shape)
+            .map_err(|cause| cause.to_string())?;
+        let mut index = martensite_tkbrep::toptools::IndexedMapOfShape::default();
+        while faces.more() {
+            let face = faces.current();
+            if index.contains(face) {
+                return Err(format!(
+                    "body face {} orientation {:?}: expected one occurrence",
+                    index.find_index(face),
+                    face.orientation()
+                ));
+            }
+            index.add(face.clone());
+            faces.next().map_err(|cause| cause.to_string())?;
+        }
+        Ok(Self(index))
+    }
+
+    pub(super) fn resolve(&self, lineage: &Shape) -> Result<Shape, String> {
+        let index = self.0.find_index(lineage);
+        if index == 0 {
+            return Err(format!(
+                "named face orientation {:?}: expected one match among {} body faces",
+                lineage.orientation(),
+                self.0.extent()
+            ));
+        }
+        self.0
+            .find_key(index)
+            .cloned()
+            .map_err(|cause| cause.to_string())
+    }
+}
+
+pub(super) fn unique_body_face(body: &Shape, lineage: &Shape) -> Result<Shape, String> {
+    BodyFaceIndex::new(body)?.resolve(lineage)
+}

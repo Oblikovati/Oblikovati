@@ -46,9 +46,15 @@ pub(super) fn derive_presentation(
     let (shape, faces) = snapshot::copied_prism(&snapshot.shape, &snapshot.faces)
         .map_err(|cause| cause.to_string())?;
     mesh_shape(&shape, options)?;
+    let body_faces = snapshot::BodyFaceIndex::new(&shape)?;
     let faces = faces
         .iter()
-        .map(|(role, shape)| face_mesh(*role, shape))
+        .map(|(role, lineage)| {
+            let body_face = body_faces
+                .resolve(lineage)
+                .map_err(|cause| format!("prism {role:?} face: {cause}"))?;
+            face_mesh(*role, &body_face)
+        })
         .collect::<Result<Vec<_>, _>>()?;
     Ok(PrismPresentation { faces })
 }
