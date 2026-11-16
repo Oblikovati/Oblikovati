@@ -150,6 +150,10 @@ pub(super) fn dispatch_gui_action(
     owner: &mut dyn HeadWork,
     action: &GuiShellAction,
 ) -> Result<bool, String> {
+    // A GUI action can change tools or geometry without a viewport pointer event (#4043).
+    if !matches!(action, GuiShellAction::KeepDocumentPicture { .. }) {
+        window.set_tool_feedback(None)?;
+    }
     match action {
         GuiShellAction::CaptureWindowPreview => return window.capture_window_preview(),
         GuiShellAction::CaptureIsometricPreview { document } => {

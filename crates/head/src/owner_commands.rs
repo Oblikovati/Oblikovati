@@ -56,6 +56,9 @@ pub enum DesktopCommandNotice {
     SelectionCueFailed {
         cause: String,
     },
+    HoverFailed {
+        cause: String,
+    },
     PlacementFailed {
         cause: String,
     },
@@ -122,6 +125,7 @@ impl DesktopCommandNotice {
             Self::SelectionCueFailed { cause } => {
                 format!("Selection succeeded; pick cue unavailable: {cause}")
             }
+            Self::HoverFailed { cause } => format!("Sketch hover unavailable: {cause}"),
             Self::PlacementFailed { cause } => format!("Sketch placement failed: {cause}"),
             Self::AddInStartupFailed { library, cause } => format!("Add-in {library:?}: {cause}"),
             Self::HistoryCompleted { document, action } => {

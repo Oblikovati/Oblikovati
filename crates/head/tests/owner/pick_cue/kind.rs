@@ -38,3 +38,14 @@ fn cue_failure_does_not_claim_selection_failed() {
         "Selection succeeded; pick cue unavailable: projection unavailable"
     );
 }
+
+#[test]
+fn hover_failure_reports_the_hover_without_claiming_selection_failed() {
+    let notice = DesktopCommandNotice::HoverFailed {
+        cause: "projection unavailable".into(),
+    };
+    assert_eq!(
+        notice.message(),
+        "Sketch hover unavailable: projection unavailable"
+    );
+}
