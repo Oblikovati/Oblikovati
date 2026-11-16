@@ -18,7 +18,8 @@ Last checked: 2026-11-16 at application commit `c714736c7`. Refresh from current
 - At the local source snapshot `e76cb749ed43c73a91c24854057da7c890041f51`, the ledger reports **0 verified**, 21 stale, 38 blocked and 39 excluded across 2,720 declarations. Earlier receipts remain historical. Native build provenance is not bounded (#3978); the gate also requires missing baseline fields.
 - Startup sketches on XY, YZ and XZ are integrated (#4009). The full pinned
   New Sketch diagnostic passed nine scenarios and found one unbound; its
-  evidence is in `receipts/2026-11-16-startup-sketch-4009/`. The zero-radius
+  latest report is in `receipts/2026-11-16-new-sketch-current-18d90af/`.
+  The zero-radius
   circle OS-input check passed (#4012); see `receipts/2026-11-16-circle-os-4012/`.
   These are diagnostics and supporting observations, not verified acceptance.
 - `rust-work` is local and has not passed the full pre-push gate. All 20 former
