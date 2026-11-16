@@ -43,6 +43,10 @@ impl ConditionalOriginProjection<'_> {
     pub fn snapshot(&self) -> &DocumentSnapshot {
         self.snapshot
     }
+    /// Read the retained solve input; example: `evidence.solve_outcome()`.
+    pub fn solve_outcome(&self) -> &SketchSolveOutcome {
+        self.outcome
+    }
     /// Read the sketch identity; example: `evidence.sketch()`.
     pub fn sketch(&self) -> DocumentSketchId {
         self.sketch

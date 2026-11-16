@@ -2,7 +2,7 @@
 //! Feature-specific conditional diagnostics; this is not an admission gate.
 use super::SessionConditionalSketch;
 use crate::TransactionObserver;
-use oblikovati_model::feature::{FeatureId, part::PartFeatureDefinition};
+use oblikovati_model::{feature::FeatureId, history::ConditionalProjectedSketchRoot};
 
 /// Proof obligations that remain open after conditional line evidence was checked.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -29,29 +29,22 @@ impl<O: TransactionObserver> SessionConditionalSketch<'_, O> {
         feature: FeatureId,
         bounds: &[[f64; 2]],
     ) -> Result<Vec<PrismPrecisionObligation>, String> {
-        let authored = self
-            .session
-            .snapshot()
-            .work_geometry
-            .get(feature)
-            .map_err(|e| e.to_string())?;
-        let PartFeatureDefinition::SketchPrism(definition) = authored.definition() else {
-            return Err(format!(
-                "feature {feature:?}: expected an authored sketch prism"
-            ));
-        };
-        if definition.sketch() != self.sketch {
-            return Err(format!(
-                "feature {feature:?} sketch {:?}: expected evidence sketch {:?}",
-                definition.sketch(),
-                self.sketch
-            ));
-        }
-        let input = definition
-            .resolve(self.session.snapshot())
-            .map_err(|e| e.to_string())?;
         let projection = self.projection()?;
         let root = projection.conditional_root_auto(bounds, &[])?;
+        self.prism_precision_obligations_with_root(feature, &root)
+    }
+    /// Check the same non-admitting obligations with this session's retained root.
+    /// Example: `evidence.prism_precision_obligations_with_root(feature, &root)?`.
+    pub fn prism_precision_obligations_with_root(
+        &self,
+        feature: FeatureId,
+        root: &ConditionalProjectedSketchRoot<'_, '_>,
+    ) -> Result<Vec<PrismPrecisionObligation>, String> {
+        self.require_root(root)?;
+        let input = self
+            .prism_definition(feature)?
+            .resolve(self.session.snapshot())
+            .map_err(|e| e.to_string())?;
         let segments = root.canonical_segment_errors()?;
         for edge in std::iter::once(&input.selection.outer)
             .chain(&input.selection.holes)
