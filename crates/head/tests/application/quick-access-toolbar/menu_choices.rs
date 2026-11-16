@@ -2,6 +2,55 @@
 //! Check the standard quick access customization choices.
 use super::*;
 
+const CHOICES: [&str; 22] = [
+    "New",
+    "Open",
+    "Save",
+    "Undo",
+    "Redo",
+    "Home",
+    "Projects",
+    "Update",
+    "Select",
+    "Refine Appearance",
+    "Material Browser",
+    "Materials",
+    "Appearance Browser",
+    "Appearance Override",
+    "Adjust",
+    "Clear",
+    "Parameters",
+    "Design Doctor",
+    "Print",
+    "iProperties",
+    "Return",
+    "Measure",
+];
+
+fn read_choices(world: &ApplicationWorld, labels: &[&str]) -> Vec<(String, bool)> {
+    labels
+        .iter()
+        .map(|label| ((*label).to_owned(), world.checked(label)))
+        .collect()
+}
+
+#[then(
+    "the menu lists New, Open, Save, Undo, Redo, Home, Projects, Update, Select, Refine Appearance, Material Browser, Materials, Appearance Browser, Appearance Override, Adjust, Clear, Parameters, Design Doctor, Print, iProperties, Return, and Measure"
+)]
+fn lists_current_choices(world: &mut ApplicationWorld) {
+    for label in CHOICES {
+        assert!(
+            world.frame.runs.iter().any(|run| run.text == label),
+            "expected quick-access choice {label:?}"
+        );
+    }
+}
+
+#[then("each listed command displays its current checked or unchecked state")]
+fn capture_current_choices(world: &mut ApplicationWorld) {
+    world.observed_quick_access = Some(read_choices(world, &CHOICES));
+}
+
 #[then(
     "Projects, Update, Select, Refine Appearance, Material Browser, Materials, Appearance Browser, Appearance Override, Adjust, Clear, Parameters, and Design Doctor are checked"
 )]
@@ -39,15 +88,36 @@ fn below_offered(world: &mut ApplicationWorld) {
 }
 
 #[then("the customization menu closes")]
-fn menu_closed(_world: &mut ApplicationWorld) {
-    assert!(window_geometry("##quick-access-customize").is_none());
+fn menu_closed(world: &mut ApplicationWorld) {
+    world.expect_no_text("Show Below the Ribbon");
+    world.expect_no_text("Show Above the Ribbon");
 }
 
 #[then("the command check states remain unchanged")]
 fn choices_unchanged(world: &mut ApplicationWorld) {
     open_customization(world);
-    defaults_checked(world);
-    common_choices_checked(world);
-    optional_choices_unchecked(world);
+    let before = world
+        .observed_quick_access
+        .as_ref()
+        .expect("expected captured quick-access choices");
+    assert_eq!(*before, read_choices(world, &CHOICES));
     world.escape();
+}
+
+#[test]
+fn menu_state_comparison_accepts_a_nondefault_profile() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    open_customization(&mut world);
+    world.click_text("Print");
+    open_customization(&mut world);
+    let labels = ["New", "Print"];
+    let before = read_choices(&world, &labels);
+    assert_eq!(before, [("New".into(), true), ("Print".into(), true)]);
+    world.escape();
+    menu_closed(&mut world);
+    open_customization(&mut world);
+    assert_eq!(before, read_choices(&world, &labels));
+    world.escape();
+    world.close();
 }

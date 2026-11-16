@@ -1,0 +1,94 @@
+{
+  "kind": "diagnostic only; not acceptance",
+  "source_files": {
+    "/tmp/obk-qat-profile-3955/features/application/quick-access-toolbar/quick-access-toolbar.feature": "@application @toolbar\r\nFeature: Quick access toolbar customization\r\n  The MCAD Software provides a customizable toolbar for frequently used commands.\r\n\r\n  Scenario: Add and remove a quick access command\r\n    Given a part document is active in the MCAD Software\r\n    And the quick access toolbar is above the ribbon\r\n    And Print is not present on the toolbar\r\n    And New, Open, Save, Undo, Redo and Home are present on the toolbar\r\n    When the user opens the quick access customization menu\r\n    Then Print is unchecked\r\n    And New, Open, Save, Undo, Redo and Home are checked\r\n    When the user selects Print\r\n    Then a Print icon appears on the quick access toolbar\r\n    When the user reopens the customization menu\r\n    Then Print is checked\r\n    When the user selects Print again\r\n    Then the Print icon is removed from the toolbar\r\n    And the same part remains active\r\n\r\n  Scenario: Move the quick access toolbar below and above the ribbon\r\n    Given a part document is active in the MCAD Software\r\n    And the quick access toolbar is above the ribbon\r\n    And Print is visible on the toolbar\r\n    When the user opens the quick access customization menu\r\n    And the user chooses Show Below the Ribbon\r\n    Then the quick access toolbar appears in a row below the ribbon\r\n    And Print remains visible on the toolbar\r\n    When the user reopens the customization menu\r\n    Then Print is checked\r\n    And Show Above the Ribbon is offered\r\n    When the user chooses Show Above the Ribbon\r\n    Then the quick access toolbar returns above the ribbon\r\n    And the same part remains active\r\n\r\n  Scenario: Add and remove a ribbon command through its context menu\r\n    Given a part document is active in the MCAD Software\r\n    And Extrude is available on the 3D Model ribbon\r\n    And Extrude is not on the quick access toolbar\r\n    When the user right-clicks Extrude on the ribbon\r\n    Then its context menu offers Add to Quick Access Toolbar\r\n    When the user chooses Add to Quick Access Toolbar\r\n    Then an Extrude icon appears on the quick access toolbar\r\n    And Extrude remains available on the ribbon\r\n    When the user right-clicks the added quick access icon\r\n    Then its context menu offers Remove from Quick Access Toolbar\r\n    When the user chooses Remove from Quick Access Toolbar\r\n    Then the added icon disappears from the quick access toolbar\r\n    And Extrude remains available on the ribbon\r\n    And the same part remains active\r\n\r\n  Scenario: Add a separator from a toolbar command context menu\r\n    Given a part document is active in the MCAD Software\r\n    And Extrude has been added to the quick access toolbar\r\n    When the user right-clicks its quick access icon\r\n    Then the context menu offers Add Separator\r\n    When the user chooses Add Separator\r\n    Then the quick access row gains a narrow divider beside the added command\r\n    And the same part remains active\r\n\r\n  Scenario: Invoke an added command from quick access in an empty part\r\n    Given an empty part is active in the MCAD Software\r\n    And Extrude has been added to the quick access toolbar\r\n    And the 3D Model ribbon is active\r\n    When the user selects the Extrude quick access icon\r\n    Then the workspace displays the origin planes for selection\r\n    And Start 2D Sketch is highlighted on the ribbon\r\n    When the user presses Escape\r\n    Then the origin plane selection display closes\r\n    And the empty part remains active\r\n\r\n  Scenario: Invoke an added shortcut while another ribbon tab is active\r\n    Given an empty part is active in the MCAD Software\r\n    And Extrude has been added to the quick access toolbar from 3D Model\r\n    When the user selects the View ribbon tab\r\n    Then the Extrude quick access icon remains visible\r\n    When the user selects the Extrude quick access icon\r\n    Then the origin planes are displayed for selection\r\n    And the View ribbon remains displayed\r\n    When the user presses Escape\r\n    Then the origin plane selection display closes\r\n    And the empty part remains active\r\n\r\n  @needs_fixture\r\n  Scenario: Show a part shortcut in part documents but not an assembly\r\n    Given two parts and an assembly are open in the MCAD Software\r\n    And the first part is active\r\n    And Extrude has been added to the quick access toolbar from its ribbon\r\n    When the user activates the assembly document\r\n    Then the Extrude shortcut is not shown on its quick access toolbar\r\n    When the user reactivates the first part\r\n    Then the Extrude shortcut is visible again\r\n    When the user activates the second part\r\n    Then the Extrude shortcut is visible there as well\r\n    And the second part remains active\r\n\r\n  Scenario: Disable the add option for an existing shortcut\r\n    Given a part is active in the MCAD Software\r\n    And Extrude is not on the quick access toolbar\r\n    When the user right-clicks Extrude on the ribbon\r\n    Then Add to Quick Access Toolbar is enabled\r\n    When the user chooses Add to Quick Access Toolbar\r\n    And the user right-clicks Extrude on the ribbon again\r\n    Then Add to Quick Access Toolbar is disabled\r\n    When the user dismisses the menu and remove the Extrude quick access icon\r\n    And the user right-clicks Extrude on the ribbon again\r\n    Then Add to Quick Access Toolbar is enabled\r\n\r\n\r\n  @needs_fixture\r\n  Scenario: Keep a standard shortcut selection when switching document contexts\r\n    Given a part and an assembly are open in the MCAD Software\r\n    And Print is not selected in either document's quick access customization menu\r\n    When the user activates the part and selects Print in its quick access customization menu\r\n    Then Print appears on the part's quick access toolbar\r\n    When the user activates the assembly\r\n    Then Print is absent from the assembly's quick access toolbar\r\n    When the user opens its quick access customization menu\r\n    Then Print is unchecked\r\n    When the user returns to the part\r\n    Then Print is visible on the part's quick access toolbar\r\n    When the user opens its quick access customization menu\r\n    Then Print is checked\r\n    When the user selects Print again\r\n    Then Print is removed from the part's quick access toolbar\r\n\n  Scenario: Show Redo disabled when no redo action is available\n    Given a part document is active in the MCAD Software\n    And Redo is present on the quick access toolbar\n    And no redo action is available in the active document\n    When the user inspects the quick access toolbar\n    Then Redo remains visible but disabled\n    And the active part remains open\r\n\n  Scenario: Inspect and dismisses quick access command choices\n    Given a part document is active in the MCAD Software\n    And the full Tools ribbon is selected\n    And the quick access toolbar is above the ribbon\n    When the user opens the quick access toolbar customization menu\n    Then the menu lists New, Open, Save, Undo, Redo, Home, Projects, Update, Select, Refine Appearance, Material Browser, Materials, Appearance Browser, Appearance Override, Adjust, Clear, Parameters, Design Doctor, Print, iProperties, Return, and Measure\r\n    And each listed command displays its current checked or unchecked state\n    And the menu offers Show Below the Ribbon\n    When the user presses Escape\n    Then the customization menu closes\n    And the command check states remain unchanged\n    And the Tools ribbon and active part remain visible\r\n\n  Scenario: Open and close the Material Browser from quick access\n    Given a part document is active in the MCAD Software\n    And the Tools ribbon is selected\n    And the Material Browser quick access command is visible\n    And the Material Browser window is closed\n    When the user selects the Material Browser quick access command\n    Then the Material Browser window opens over the part workspace\n    And the part remains active\n    When the user closes the Material Browser window\n    Then the browser window closes\n    And the Tools ribbon and active part remain visible\r\n"
+  },
+  "scenarios": [
+    {
+      "source": "/tmp/obk-qat-profile-3955/features/application/quick-access-toolbar/quick-access-toolbar.feature",
+      "scenario": "Inspect and dismisses quick access command choices",
+      "line": 135,
+      "classification": "bound but fails",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 136,
+          "step": "a part document is active in the MCAD Software",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 137,
+          "step": "the full Tools ribbon is selected",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 138,
+          "step": "the quick access toolbar is above the ribbon",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 139,
+          "step": "the user opens the quick access toolbar customization menu",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 140,
+          "step": "the menu lists New, Open, Save, Undo, Redo, Home, Projects, Update, Select, Refine Appearance, Material Browser, Materials, Appearance Browser, Appearance Override, Adjust, Clear, Parameters, Design Doctor, Print, iProperties, Return, and Measure",
+          "result": "failed",
+          "tainted": false,
+          "detail": "expected quick-access choice \"Refine Appearance\""
+        },
+        {
+          "line": 141,
+          "step": "each listed command displays its current checked or unchecked state",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected \"Refine Appearance\" in rendered text \"W\\nP\\nZ\\nv\\nO\\nv\\nFront\\nTextinputunavailable:XOpenIMforwindow2097153,XMODIFIERS=Some(\\\"@im=ibus\\\"):expectedanavailableconfiguredinputmethod\\nModel\\n+\\nModel\\nMenu\\nSearch\\nPart1<Primary>\\nRepresentations\\nModelState\\n<Primary>\\n1\\nOrigin\\nYZPlane\\nXZPlane\\nXYPlane\\nXAxis\\nYAxis\\nZAxis\\nCenterPoint\\nParameters\\nSketches\\nFeatures\\nEndofPart\\nHome\\nPart1<Primary>*\\nDocuments\\nFile\\nTools\\nNew\\nOpen\\nSave\\nUndo\\nRedo\\nHome\\nProjects\\nUpdate\\nSelect\\nMaterialBrowser\\nMaterials\\nAppearanceBrowser\\nParameters\\n...\\n3DModel\\nSketch\\nTools\\nManage\\nView\\nAnnotate\\nRibbonDisplay\\nv\\nv\\nMeasure\\nMeasure\\nDefault\\nMaterial\\nDefault\\nAppearance\\nMaterialandAppearance\\nCustomize\\nApplicationOptions\\nDocumentSettings\\nOptions\\nCopy\\nClipboard\\nFind\\nFind\\nNew\\nOpen\\nSave\\nUndo\\nRedo\\nHome\\nProjects\\nUpdate\\nSelect\\nMaterialBrowser\\nMaterials\\nAppearanceBrowser\\nParameters\\nPrint\\nMeasure\\niProperties\\nReturn\\nClear\\nShowBelowtheRibbon\""
+        },
+        {
+          "line": 142,
+          "step": "the menu offers Show Below the Ribbon",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 143,
+          "step": "the user presses Escape",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 144,
+          "step": "the customization menu closes",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 145,
+          "step": "the command check states remain unchanged",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected captured quick-access choices"
+        },
+        {
+          "line": 146,
+          "step": "the Tools ribbon and active part remain visible",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    }
+  ]
+}

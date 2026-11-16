@@ -40,6 +40,8 @@ pub(super) struct ApplicationWorld {
     pub observed_annotations: Option<bool>,
     /// Text read before a later step changes what the window shows.
     pub observed_rows: Option<String>,
+    /// Quick-access choices captured before dismissing their menu.
+    pub observed_quick_access: Option<Vec<(String, bool)>>,
     /// The latest drag, for a step that checks the preview it left.
     pub last_drag: Option<[[i32; 2]; 2]>,
     /// The dimension value last opened, for a step that reopens "the annotation".
@@ -100,6 +102,7 @@ impl ApplicationWorld {
             observed_second_view: None,
             observed_annotations: None,
             observed_rows: None,
+            observed_quick_access: None,
             last_drag: None,
             opened_value: None,
         };
