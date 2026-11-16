@@ -509,8 +509,8 @@
     },
     {
       "id": "scenario:c7961c524b21f4e1124e3f4d865c19bde5f6dc740d654f9838726b63cccd0b84",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "c5b51038c64283e9ec2a81e892ea8f912a06264a80eee7e42d65932f3146aa59",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "76882454042afe7a01b2a43ebfb7b83d95e9f25d8fcfa75ebe4cf1a373ec783e",
       "milestone": "R4",
       "owner": "desktop",
       "target_module": "crates/head, crates/gui, crates/session",
@@ -542,12 +542,14 @@
       "rust_tests": "sketch_scenarios_use_the_native_window: rectangle-two-point-08 Commit typed sizes and restore through history",
       "oracle": "Pinned scenario assertions and reviewed final native capture; the receipt is stale after application test-source changes.",
       "expected_result": "the rectangle and its two size annotations disappear; the user press Ctrl+Y; the rectangle and both annotations return",
-      "reason": "The source marks this capture-only until its recorded fixture and input state are available."
+      "reason": "The source marks this capture-only until its recorded fixture and input state are available.",
+      "baseline_source_sha256": "c5b51038c64283e9ec2a81e892ea8f912a06264a80eee7e42d65932f3146aa59",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:6d4a200f137644d4c6104d1e91aeb91aa8167a0ac26b27ae09cb219eb27fadd2",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
       "milestone": "R4",
       "owner": "desktop",
       "target_module": "crates/head, crates/gui, crates/session",
@@ -599,12 +601,14 @@
       "kernel_integration": "No solid operation is requested during sketch entry.",
       "rust_tests": "application_scenarios_use_the_native_window with OBK_BDD_AREA=solid-model and OBK_BDD_SCENARIO=extrusion-01.",
       "oracle": "The native run checks metric part creation, an initially empty sketch list, sketch authoring state and a single Sketch1 browser entry; the capture was reviewed.",
-      "expected_result": "Selecting an origin plane after Extrude opens Sketch1 for profile creation."
+      "expected_result": "Selecting an origin plane after Extrude opens Sketch1 for profile creation.",
+      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:5c666abf06d3e4d293ac1364203a639772c5f754d85d32a48ddf497941590bbe",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
       "milestone": "R4",
       "owner": "desktop",
       "target_module": "crates/head, crates/gui, crates/session",
@@ -648,12 +652,14 @@
           "path": "architecture/rust-port/receipts/2026-11-15-extrusion-r4-current-2/receipt-5c666abf06d3e4d2.json",
           "sha256": "7e2f4bd2868ee3e76e3f83e38e988d7ec6a351c9af7207bf26cf38f120d9db7a"
         }
-      ]
+      ],
+      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:c958310f71da6060fc96ec06b1a1f472e92cc4b966876db9962c792cb59f2f4f",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
       "milestone": "R4",
       "owner": "desktop",
       "target_module": "crates/head, crates/gui, crates/session",
@@ -696,12 +702,14 @@
           "path": "architecture/rust-port/receipts/2026-11-15-extrusion-r4-current-3/receipt-c958310f71da6060.json",
           "sha256": "4f3cf3c158692b2912e8dcdd2a324a205de461dc56fc36ac567f29217f8b8401"
         }
-      ]
+      ],
+      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:2fc85f94acd6cc5fba2c6fa3583808dd1d99608f49b07700761c67e95a66b61a",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
       "milestone": "R4",
       "owner": "desktop",
       "target_module": "crates/head, crates/gui, crates/session",
@@ -745,7 +753,9 @@
           "path": "architecture/rust-port/receipts/2026-11-15-extrusion-r4-current-4/receipt-2fc85f94acd6cc5f.json",
           "sha256": "75df3a8a621911499ae4e5f085e0555d80943599c451dc73003d5689213bee25"
         }
-      ]
+      ],
+      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:d46c554381029cf43cc527f90d95974a544c5e83c23ead926db74cadd5f7afd3",
@@ -903,8 +913,8 @@
     },
     {
       "id": "scenario:152ae6bfde300d9b28f59b8d0c51fa6077176ebf1a2c4b0e5bb1b850690a6e39",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "c5b51038c64283e9ec2a81e892ea8f912a06264a80eee7e42d65932f3146aa59",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "76882454042afe7a01b2a43ebfb7b83d95e9f25d8fcfa75ebe4cf1a373ec783e",
       "milestone": "R5",
       "owner": "desktop",
       "target_module": "crates/model, crates/head, crates/gui",
@@ -937,12 +947,14 @@
       "rust_tests": "sketch_scenarios_use_the_native_window: rectangle-two-point-09 Verify the numeric rectangle edge lengths",
       "oracle": "Pinned scenario assertions and reviewed final native capture; the receipt is stale after application test-source changes.",
       "expected_result": "Selection 1 is a Curve with Length 6.000 mm; the user click Done; Measure closes and the rectangle remains",
-      "reason": "The source marks this capture-only until its recorded fixture and input state are available."
+      "reason": "The source marks this capture-only until its recorded fixture and input state are available.",
+      "baseline_source_sha256": "c5b51038c64283e9ec2a81e892ea8f912a06264a80eee7e42d65932f3146aa59",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:4598b4de9868b11667330de37cc2e67c65b468129c6a78abd277ad8518101e05",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "c5b51038c64283e9ec2a81e892ea8f912a06264a80eee7e42d65932f3146aa59",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "76882454042afe7a01b2a43ebfb7b83d95e9f25d8fcfa75ebe4cf1a373ec783e",
       "milestone": "R4",
       "owner": "desktop",
       "target_module": "crates/model, crates/head, crates/gui",
@@ -963,12 +975,14 @@
           "path": "architecture/rust-port/receipts/2026-11-15-rectangle-status-current/receipt-4598b4de9868b116.json",
           "sha256": "63705def468d05895268c6661f4518587733c43b4b325d21b9738b5166d144a7"
         }
-      ]
+      ],
+      "baseline_source_sha256": "c5b51038c64283e9ec2a81e892ea8f912a06264a80eee7e42d65932f3146aa59",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:be5c680262911cc108a8e69afe91ddb4a39ba915d4cdd36a6318c2b3e6ed960c",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "c5b51038c64283e9ec2a81e892ea8f912a06264a80eee7e42d65932f3146aa59",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "76882454042afe7a01b2a43ebfb7b83d95e9f25d8fcfa75ebe4cf1a373ec783e",
       "milestone": "R4",
       "owner": "desktop",
       "target_module": "crates/model, crates/head, crates/gui",
@@ -1001,12 +1015,14 @@
       "rust_tests": "sketch_scenarios_use_the_native_window: rectangle-two-point-11 Retain a numeric rectangle",
       "oracle": "Pinned scenario assertions and reviewed final native capture; the receipt is stale after application test-source changes.",
       "expected_result": "it overlaps part of the existing ellipse; the user press Escape; the rectangle remains and Ready returns",
-      "reason": "The source marks this capture-only until its recorded fixture and input state are available."
+      "reason": "The source marks this capture-only until its recorded fixture and input state are available.",
+      "baseline_source_sha256": "c5b51038c64283e9ec2a81e892ea8f912a06264a80eee7e42d65932f3146aa59",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:4e818f2994acb248e4b9581fff1b726df90bb658342df0b92244dd318f6e745c",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "c5b51038c64283e9ec2a81e892ea8f912a06264a80eee7e42d65932f3146aa59",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "76882454042afe7a01b2a43ebfb7b83d95e9f25d8fcfa75ebe4cf1a373ec783e",
       "milestone": "R5",
       "owner": "desktop",
       "target_module": "crates/model, crates/head, crates/gui",
@@ -1039,12 +1055,14 @@
       "rust_tests": "sketch_scenarios_use_the_native_window: rectangle-two-point-12 Cancel a rectangle height proposal",
       "oracle": "Pinned scenario assertions and reviewed final native capture; the receipt is stale after application test-source changes.",
       "expected_result": "the user enter 8 and press Escape; the user reopen the height annotation; the height editor still contains 6 mm",
-      "reason": "The source marks this capture-only until its recorded fixture and input state are available."
+      "reason": "The source marks this capture-only until its recorded fixture and input state are available.",
+      "baseline_source_sha256": "c5b51038c64283e9ec2a81e892ea8f912a06264a80eee7e42d65932f3146aa59",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:ecfb4103b54e7240f86118a4493a82fa9918a03162bfd26bcd7b4594a9791f99",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "c5b51038c64283e9ec2a81e892ea8f912a06264a80eee7e42d65932f3146aa59",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "76882454042afe7a01b2a43ebfb7b83d95e9f25d8fcfa75ebe4cf1a373ec783e",
       "milestone": "R5",
       "owner": "desktop",
       "target_module": "crates/model, crates/head, crates/gui",
@@ -1078,12 +1096,14 @@
       "rust_tests": "sketch_scenarios_use_the_native_window: rectangle-two-point-13 Accept and undo a rectangle height edit",
       "oracle": "Pinned native scenario, measured four-edge lengths through edit, undo and redo, and reviewed final capture; no stationary edge is assumed.",
       "expected_result": "the user redoes the height edit; the visible height annotation returns to 8; width annotation 4 remains",
-      "reason": "The source marks this capture-only until its recorded fixture and input state are available."
+      "reason": "The source marks this capture-only until its recorded fixture and input state are available.",
+      "baseline_source_sha256": "c5b51038c64283e9ec2a81e892ea8f912a06264a80eee7e42d65932f3146aa59",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:841bc6eecc0f22624f0096f9d14e6fae6d64b60d913f2fea0ed3de284acf8ae2",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "c5b51038c64283e9ec2a81e892ea8f912a06264a80eee7e42d65932f3146aa59",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "76882454042afe7a01b2a43ebfb7b83d95e9f25d8fcfa75ebe4cf1a373ec783e",
       "milestone": "R4",
       "owner": "desktop",
       "target_module": "crates/model, crates/head, crates/gui",
@@ -1116,12 +1136,14 @@
       "rust_tests": "sketch_scenarios_use_the_native_window: rectangle-two-point-14 Observe a zero second size",
       "oracle": "Pinned scenario assertions and reviewed final native capture; the receipt is stale after application test-source changes.",
       "expected_result": "Select first corner returns without a warning or a visible new rectangle; the user press Escape; Ready returns and the prior rectangle remains",
-      "reason": "The source marks this capture-only until its recorded fixture and input state are available."
+      "reason": "The source marks this capture-only until its recorded fixture and input state are available.",
+      "baseline_source_sha256": "c5b51038c64283e9ec2a81e892ea8f912a06264a80eee7e42d65932f3146aa59",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:6687f2b9f0c80ee04273db1471cd659584217548980bb5880265a4820d31f8f8",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
       "milestone": "R5",
       "owner": "desktop",
       "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
@@ -1132,12 +1154,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/model/feature/extrude_extent.go; ../Oblikovati/model/feature/extrude_modes_test.go; ../Oblikovati/head/ui/extrude_dialog.go",
-      "mapping_reason": "A flipped extrusion requires the remaining base-solid direction modes."
+      "mapping_reason": "A flipped extrusion requires the remaining base-solid direction modes.",
+      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:4a916367e941df71ce4cbcda10983fa95c54c9cbfaa8fe0b25b6f206a82cd865",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
       "milestone": "R5",
       "owner": "desktop",
       "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
@@ -1148,12 +1172,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/model/feature/extrude_extent.go; ../Oblikovati/model/feature/extrude_modes_test.go; ../Oblikovati/head/ui/extrude_dialog.go",
-      "mapping_reason": "A symmetric extrusion requires the remaining base-solid direction modes."
+      "mapping_reason": "A symmetric extrusion requires the remaining base-solid direction modes.",
+      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:74855f10d2606e770609759f1c1fde0758ac2f8e83fdd7c8970b17245206919f",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
       "milestone": "R5",
       "owner": "desktop",
       "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
@@ -1164,12 +1190,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/model/feature/extrude_extent.go; ../Oblikovati/model/feature/extrude_modes_test.go; ../Oblikovati/head/ui/extrude_dialog.go",
-      "mapping_reason": "An asymmetric extrusion requires two independent extents and tapers."
+      "mapping_reason": "An asymmetric extrusion requires two independent extents and tapers.",
+      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:d24d560902737df6642bc78e0f45c668e45468cadee606ec49d59bbcdaec9aa0",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
       "milestone": "R7",
       "owner": "desktop",
       "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
@@ -1180,12 +1208,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/model/feature/extrude_extent.go; ../Oblikovati/model/feature/extrude_modes_test.go; ../Oblikovati/head/ui/extrude_dialog.go",
-      "mapping_reason": "The icon and dropdown selector styles are full-shell presentation controls."
+      "mapping_reason": "The icon and dropdown selector styles are full-shell presentation controls.",
+      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:1a0edf159f537bfe28d917613d17b13757b5b2f09b9e57ecf51aeeddac878e82",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
       "milestone": "R4",
       "owner": "desktop",
       "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
@@ -1199,12 +1229,14 @@
       "last_receipt": null,
       "go_reference": "../Oblikovati/model/feature/extrude_extent.go; ../Oblikovati/model/feature/extrude_modes_test.go; ../Oblikovati/head/ui/extrude_dialog.go",
       "mapping_reason": "Creation and undo/redo of the initial extrusion are part of the integrated desktop workflow.",
-      "reason": "The desktop Measure workflow cannot select and report two solid edges. General analytic edge picking depends on the unresolved Martensite point-to-curve extrema completeness issue; see #3967 and Martensite #462."
+      "reason": "The desktop Measure workflow cannot select and report two solid edges. General analytic edge picking depends on the unresolved Martensite point-to-curve extrema completeness issue; see #3967 and Martensite #462.",
+      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:1404f9981fb54fee10e3c77ed7fadf3b835e8550d09f1e1bd8543909d57e8e25",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
       "milestone": "R5",
       "owner": "desktop",
       "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
@@ -1215,12 +1247,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/model/feature/extrude_extent.go; ../Oblikovati/model/feature/extrude_modes_test.go; ../Oblikovati/head/ui/extrude_dialog.go",
-      "mapping_reason": "A tapered solid requires the remaining extrude geometry modes."
+      "mapping_reason": "A tapered solid requires the remaining extrude geometry modes.",
+      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:b84ae6cb0850b2186bd2f5bd0c974e37ff662f1085063ab3af3613b24bc48c4f",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
       "milestone": "R5",
       "owner": "desktop",
       "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
@@ -1231,12 +1265,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/model/feature/extrude_extent.go; ../Oblikovati/model/feature/extrude_modes_test.go; ../Oblikovati/head/ui/extrude_dialog.go",
-      "mapping_reason": "History for a tapered solid depends on the tapered extrude mode."
+      "mapping_reason": "History for a tapered solid depends on the tapered extrude mode.",
+      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:4c78e263367780784697d1dda91e7ae5e8a6a3cd1b77232266f1d4c87c8607a4",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
       "milestone": "R5",
       "owner": "desktop",
       "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
@@ -1247,7 +1283,9 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/model/feature/extrude_extent.go; ../Oblikovati/model/feature/extrude_modes_test.go; ../Oblikovati/head/ui/extrude_dialog.go",
-      "mapping_reason": "Preview and cancellation of a signed taper depend on the tapered extrude mode."
+      "mapping_reason": "Preview and cancellation of a signed taper depend on the tapered extrude mode.",
+      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:3e4b9e33e44dffb2c65edec2817081f095cd3ee4e2dd0a4018e976b135f897bb",
@@ -3163,8 +3201,8 @@
     },
     {
       "id": "scenario:be2c25b2f39d7ae721a7f08cce5fe95730a8e4db2995dc1513e24b25f9d2f8e0",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
       "milestone": "R5",
       "owner": "desktop",
       "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
@@ -3173,12 +3211,14 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3870",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried"
+      "state": "inventoried",
+      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:7d911868103af0e383820346e9f833fd1e96584062059175dd4e37eb6691fc57",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
       "milestone": "R5",
       "owner": "desktop",
       "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
@@ -3187,12 +3227,14 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3870",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried"
+      "state": "inventoried",
+      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:e5c5168b1e62ff2e3e1ca62d770a4be95ef5c5dc7b512651ce3faa44ac3ce2bc",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
       "milestone": "R7",
       "owner": "desktop",
       "target_module": "crates/head, crates/gui, crates/session",
@@ -3201,12 +3243,14 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3870",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried"
+      "state": "inventoried",
+      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:8fd89d6385b64c81738a8c643464f36706a592bb51a61336a0a9d9760ccab01d",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
       "milestone": "R7",
       "owner": "desktop",
       "target_module": "crates/head, crates/gui, crates/session",
@@ -3215,12 +3259,14 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3870",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried"
+      "state": "inventoried",
+      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:0375c3804f13a87cf4cc5bb400b7f0406cb183a7f2b86a1b19623becb9fa4b63",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
       "milestone": "R7",
       "owner": "desktop",
       "target_module": "crates/head, crates/gui, crates/session",
@@ -3229,12 +3275,14 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3870",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried"
+      "state": "inventoried",
+      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:8d6629a37244ba99589ebcba9a4a850878ff5bc8ad42c8a313e895c3f8b166f4",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
       "milestone": "R7",
       "owner": "desktop",
       "target_module": "crates/head, crates/gui, crates/session",
@@ -3243,12 +3291,14 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3870",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried"
+      "state": "inventoried",
+      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:c886bb6773e2fd0f09435753df021a71b4355805863890f3b44371b433e5df51",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
       "milestone": "R5",
       "owner": "desktop",
       "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
@@ -3257,12 +3307,14 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3870",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried"
+      "state": "inventoried",
+      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:a6ce53fe7e8ba3377e819ec610ddefec4b45b3dfb98e718cd2dfb00d563818c8",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
       "milestone": "R5",
       "owner": "desktop",
       "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
@@ -3271,12 +3323,14 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3870",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried"
+      "state": "inventoried",
+      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:925998a1d9ad4b6e5e498310d993ae9c2f1d6987df3e4a8836e1eb91e41ed893",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
       "milestone": "R5",
       "owner": "desktop",
       "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
@@ -3285,12 +3339,14 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3870",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried"
+      "state": "inventoried",
+      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:bb33afbd331af8d494414e55b9254f8b74e07cdaacda71caffb203ec982676c5",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
       "milestone": "R5",
       "owner": "desktop",
       "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
@@ -3299,12 +3355,14 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3870",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried"
+      "state": "inventoried",
+      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:defa5c41357f0c0f54012b06d46fd26c98ab6ed3159a7838e90bc0a1ac94ad42",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
       "milestone": "R5",
       "owner": "desktop",
       "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
@@ -3313,12 +3371,14 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3870",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried"
+      "state": "inventoried",
+      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:6db87975918b15f8995ea494c1986c6c0bc993d3799ab0bf68048a4e504cbf09",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
       "milestone": "R5",
       "owner": "desktop",
       "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
@@ -3327,12 +3387,14 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3870",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried"
+      "state": "inventoried",
+      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:34007142e2ddea9d9fdbd0f77de5593484c627f56479ce80364cd5c10507901c",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
       "milestone": "R5",
       "owner": "desktop",
       "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
@@ -3341,12 +3403,14 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3870",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried"
+      "state": "inventoried",
+      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:8ee96610359fdca243912bac3fdc1dcdc6de40f752546b6130687438996ee6c5",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
       "milestone": "R5",
       "owner": "desktop",
       "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
@@ -3355,12 +3419,14 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3870",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried"
+      "state": "inventoried",
+      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:4253a44e35e179d2c329210f07f92249929d7c5473b377c1eea56d16ff080a96",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
       "milestone": "R7",
       "owner": "desktop",
       "target_module": "crates/head, crates/gui, crates/session",
@@ -3369,12 +3435,14 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3870",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried"
+      "state": "inventoried",
+      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:3f146bf19a7bfd387229b530e0d198b511f4936e593c0bd5bab5cc8ba149a4ee",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
       "milestone": "R5",
       "owner": "desktop",
       "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
@@ -3383,12 +3451,14 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3870",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried"
+      "state": "inventoried",
+      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:f945ebb349ef0eeb7cdd747260ebe846502ea1dd8e30530c6368eec7283191f7",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
       "milestone": "R5",
       "owner": "desktop",
       "target_module": "crates/model, crates/martensite, crates/head, crates/gui",
@@ -3397,12 +3467,14 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3870",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried"
+      "state": "inventoried",
+      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:afb1aa7e332b90219189faf95f5286d9637937499da43cfc4cdbd30b6dc114cd",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ccb973b10334aa2f8f31a189392ad8049212caaa2938db03b034bc9f49008821",
       "milestone": "R7",
       "owner": "desktop",
       "target_module": "crates/head, crates/gui, crates/session",
@@ -3411,7 +3483,9 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3870",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried"
+      "state": "inventoried",
+      "baseline_source_sha256": "ebbd267ebe7c98d24d7ec6dff2d75316bd7292f9affe87b4ff2fd70d9e6a4126",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:b5b837eabb4d68e50d4579523ef8d0c66f9a0b487a8f97b91c3ea7f820091ddc",
@@ -32631,8 +32705,8 @@
     },
     {
       "id": "scenario:4eeef3c693075589abe8d9c80cfe2f8b380728633c78374e1fb1d498042a3c1c",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "da19a8fdf28b30b343b963d0da5b05a00d305254d07797cfc74cf19544425aae",
       "milestone": "R4",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -32646,7 +32720,9 @@
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
       "mapping_reason": "First native sketch geometry input, cancellation, and history.",
-      "reason": "The source marks this capture-only until its recorded fixture and input state are available."
+      "reason": "The source marks this capture-only until its recorded fixture and input state are available.",
+      "baseline_source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:f0687ede833937858e4d33db9402e09686c877a89ea628305a7660eaf8b21602",
@@ -32749,8 +32825,8 @@
     },
     {
       "id": "scenario:bd578b515b58dccc5db60ab55550c235ff1346c7d2e9fe251a5495da47219e98",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "da19a8fdf28b30b343b963d0da5b05a00d305254d07797cfc74cf19544425aae",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -32762,12 +32838,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "baseline_source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:a2acbff10f3fb7ad9c28afdea4837e4eb83437dd897bb9e240efc082f68f6850",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "da19a8fdf28b30b343b963d0da5b05a00d305254d07797cfc74cf19544425aae",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -32779,12 +32857,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "baseline_source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:ae27341bdba35996d03fd3255c54310de2ab3fdc91fa83b02c6d70029c798e75",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "da19a8fdf28b30b343b963d0da5b05a00d305254d07797cfc74cf19544425aae",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -32796,12 +32876,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "baseline_source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:570f3777c00cdc8f1201084fc938261799638f583866bd59806e743b896d3695",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "da19a8fdf28b30b343b963d0da5b05a00d305254d07797cfc74cf19544425aae",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -32813,12 +32895,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "baseline_source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:409197d7951f7f4cf68bfdbe42279de6c39fbb64ca1a0197c15fe64a06e9faf2",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "da19a8fdf28b30b343b963d0da5b05a00d305254d07797cfc74cf19544425aae",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -32830,12 +32914,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "baseline_source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:ae6f1ce7bf03f2a8ecc78000c6421118a3dca6a0e03d9d9b79884bee66f23355",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "da19a8fdf28b30b343b963d0da5b05a00d305254d07797cfc74cf19544425aae",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -32847,12 +32933,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "baseline_source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:c072ff21fd978835b5723c8a7ec3b09ddbe2cfc0f9332c60cb83185e6fdfed7d",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "da19a8fdf28b30b343b963d0da5b05a00d305254d07797cfc74cf19544425aae",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -32864,12 +32952,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "baseline_source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:2aba22fb1db6f851917809aac10c7e4250775766d86cbf78300b6d641809fa3c",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "da19a8fdf28b30b343b963d0da5b05a00d305254d07797cfc74cf19544425aae",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -32881,12 +32971,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "baseline_source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:d60acc997351dab0ad7d08bf45fe06d97dbbdaef63d5ea092bd46035827d56e0",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "da19a8fdf28b30b343b963d0da5b05a00d305254d07797cfc74cf19544425aae",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -32898,12 +32990,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "baseline_source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:ed86ecef9c3deffaba0368a380733f6de7e21a9a9f4a8d7912383b3719acf262",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "da19a8fdf28b30b343b963d0da5b05a00d305254d07797cfc74cf19544425aae",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -32915,12 +33009,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "baseline_source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:3876ed493c10b3757f0d69390cf73b90bc6685a69a0b256667458255ea8f1c05",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "da19a8fdf28b30b343b963d0da5b05a00d305254d07797cfc74cf19544425aae",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -32932,12 +33028,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "baseline_source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:45312483d58946f98e44723ac52dbaffa22fc491a30f7483ae897c281aad141e",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "da19a8fdf28b30b343b963d0da5b05a00d305254d07797cfc74cf19544425aae",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -32949,12 +33047,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "baseline_source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:822d5cb5446f1ba9424e0aab9bd918f85b16a0eae60bd56c2103a39235a23dc1",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "da19a8fdf28b30b343b963d0da5b05a00d305254d07797cfc74cf19544425aae",
       "milestone": "R7",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -32966,12 +33066,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Sketch display or application preference interaction."
+      "mapping_reason": "Sketch display or application preference interaction.",
+      "baseline_source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:f46beb0b1feca148521bead499fa8b440054feb158e8895b1cf19633d4ddd2e7",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "da19a8fdf28b30b343b963d0da5b05a00d305254d07797cfc74cf19544425aae",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -32985,12 +33087,14 @@
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
       "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
-      "reason": "The source marks this capture-only until its recorded fixture and input state are available."
+      "reason": "The source marks this capture-only until its recorded fixture and input state are available.",
+      "baseline_source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:05543428a7b1c60967dc1fc7b6abb25a4e5ece3e1747c7027ee77cdfdf462a04",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "da19a8fdf28b30b343b963d0da5b05a00d305254d07797cfc74cf19544425aae",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -33002,12 +33106,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "baseline_source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:f7d3409ff922f742fe526658adf3ac4f1d2a56d53dea8642605ba668ee6c8ee1",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "da19a8fdf28b30b343b963d0da5b05a00d305254d07797cfc74cf19544425aae",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -33019,12 +33125,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "baseline_source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:480504ecd90ef5671633c32c8152d9640d813349c88d5a1d125cdd48387cfa21",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "da19a8fdf28b30b343b963d0da5b05a00d305254d07797cfc74cf19544425aae",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -33036,12 +33144,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "baseline_source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:fa09745d5bd2e7722a3e5323b9e941f2e3dab982c6fdab1f06c74aa34edb6072",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "da19a8fdf28b30b343b963d0da5b05a00d305254d07797cfc74cf19544425aae",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -33053,12 +33163,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "baseline_source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:7bc1bb460fd2c15cc961e38cd1646893f16611b806e8c08c33b423b596c50d0e",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "da19a8fdf28b30b343b963d0da5b05a00d305254d07797cfc74cf19544425aae",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -33070,12 +33182,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "baseline_source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:4d0a76b77466036a729d1882bcd0995bbbd487dec7b221acccbb46cc089915c8",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "da19a8fdf28b30b343b963d0da5b05a00d305254d07797cfc74cf19544425aae",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -33087,12 +33201,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "baseline_source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:34be3e4a8522cf484fbcb0410eb5ad272c6bf26c99328429214182aa99f48093",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "da19a8fdf28b30b343b963d0da5b05a00d305254d07797cfc74cf19544425aae",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -33104,12 +33220,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "baseline_source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:bf991f7d1c3ad89de34413e37f083639f492e57929335a50477f86645982ecd6",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "da19a8fdf28b30b343b963d0da5b05a00d305254d07797cfc74cf19544425aae",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -33121,12 +33239,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "baseline_source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:a84da82eb68bb1888222878409d376148172325986432f2b3255c08344d03799",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "da19a8fdf28b30b343b963d0da5b05a00d305254d07797cfc74cf19544425aae",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -33138,7 +33258,9 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "baseline_source_sha256": "179ea951940fa8afef2bf063c79fd482a6093c13e89fa7798d3a0316b2c8c8b0",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:b4ba1551dd99f319f380c6e933f5e204a3643542ec93eede4d293da4887391a2",
@@ -33924,8 +34046,8 @@
     },
     {
       "id": "scenario:73d7005a0c57c10884b83d0789e66771adb517511e55504d78c2c413e7f60ecb",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "015dd18c0b09fd202c047ef24216fb87729fcbb7dac64f4203739232d6b12885",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "dce1044d773cf1682908291dffa569ebd8c8a647a7919049a36715bd07976675",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -33937,12 +34059,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_transform_tools.go",
-      "mapping_reason": "Sketch geometry editing, references, and history behavior."
+      "mapping_reason": "Sketch geometry editing, references, and history behavior.",
+      "baseline_source_sha256": "015dd18c0b09fd202c047ef24216fb87729fcbb7dac64f4203739232d6b12885",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:6d1eddf4bc95619776e5c7e2d155761eeaf7f4659246c75078de92f7219e0655",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "015dd18c0b09fd202c047ef24216fb87729fcbb7dac64f4203739232d6b12885",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "dce1044d773cf1682908291dffa569ebd8c8a647a7919049a36715bd07976675",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -33954,12 +34078,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_transform_tools.go",
-      "mapping_reason": "Sketch geometry editing, references, and history behavior."
+      "mapping_reason": "Sketch geometry editing, references, and history behavior.",
+      "baseline_source_sha256": "015dd18c0b09fd202c047ef24216fb87729fcbb7dac64f4203739232d6b12885",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:010964ff084f77f33d51dfe55950b443b9e65cf62b8434be5d262b7a6fa039f8",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "015dd18c0b09fd202c047ef24216fb87729fcbb7dac64f4203739232d6b12885",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "dce1044d773cf1682908291dffa569ebd8c8a647a7919049a36715bd07976675",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -33971,12 +34097,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_transform_tools.go",
-      "mapping_reason": "Sketch geometry editing, references, and history behavior."
+      "mapping_reason": "Sketch geometry editing, references, and history behavior.",
+      "baseline_source_sha256": "015dd18c0b09fd202c047ef24216fb87729fcbb7dac64f4203739232d6b12885",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:29e0f7029cceab035f29cfb988db1174caca79e0348448b9f9b1365983ef22ea",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "015dd18c0b09fd202c047ef24216fb87729fcbb7dac64f4203739232d6b12885",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "dce1044d773cf1682908291dffa569ebd8c8a647a7919049a36715bd07976675",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -33988,12 +34116,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_transform_tools.go",
-      "mapping_reason": "Sketch geometry editing, references, and history behavior."
+      "mapping_reason": "Sketch geometry editing, references, and history behavior.",
+      "baseline_source_sha256": "015dd18c0b09fd202c047ef24216fb87729fcbb7dac64f4203739232d6b12885",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:394e26c1ec24161accb3af4fd5ca747c95a7d17d7daaedc808467eb1cf517285",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "015dd18c0b09fd202c047ef24216fb87729fcbb7dac64f4203739232d6b12885",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "dce1044d773cf1682908291dffa569ebd8c8a647a7919049a36715bd07976675",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -34005,12 +34135,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_transform_tools.go",
-      "mapping_reason": "Sketch geometry editing, references, and history behavior."
+      "mapping_reason": "Sketch geometry editing, references, and history behavior.",
+      "baseline_source_sha256": "015dd18c0b09fd202c047ef24216fb87729fcbb7dac64f4203739232d6b12885",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:0ad66c8fa32667925fe18b909bf234b95ba6ebd4272931bb9cd81b9f028ba0bc",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "015dd18c0b09fd202c047ef24216fb87729fcbb7dac64f4203739232d6b12885",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "dce1044d773cf1682908291dffa569ebd8c8a647a7919049a36715bd07976675",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -34022,12 +34154,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_transform_tools.go",
-      "mapping_reason": "Sketch geometry editing, references, and history behavior."
+      "mapping_reason": "Sketch geometry editing, references, and history behavior.",
+      "baseline_source_sha256": "015dd18c0b09fd202c047ef24216fb87729fcbb7dac64f4203739232d6b12885",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:7cc4c1f30ccd82901e2a5886519c8ee0133828421b7a497677d7a5f7f1d00834",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "015dd18c0b09fd202c047ef24216fb87729fcbb7dac64f4203739232d6b12885",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "dce1044d773cf1682908291dffa569ebd8c8a647a7919049a36715bd07976675",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -34039,12 +34173,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_transform_tools.go",
-      "mapping_reason": "Sketch geometry editing, references, and history behavior."
+      "mapping_reason": "Sketch geometry editing, references, and history behavior.",
+      "baseline_source_sha256": "015dd18c0b09fd202c047ef24216fb87729fcbb7dac64f4203739232d6b12885",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:9f5de142c1732d2297f2552273be6149a3cb103914615f8aeb5b18d79df29388",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "015dd18c0b09fd202c047ef24216fb87729fcbb7dac64f4203739232d6b12885",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "dce1044d773cf1682908291dffa569ebd8c8a647a7919049a36715bd07976675",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -34056,12 +34192,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_transform_tools.go",
-      "mapping_reason": "Sketch geometry editing, references, and history behavior."
+      "mapping_reason": "Sketch geometry editing, references, and history behavior.",
+      "baseline_source_sha256": "015dd18c0b09fd202c047ef24216fb87729fcbb7dac64f4203739232d6b12885",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:78ad7c66853b56d765f93d9b5db6f87fd869324c0c6823c41e6f7bd70cee9d1e",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "015dd18c0b09fd202c047ef24216fb87729fcbb7dac64f4203739232d6b12885",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "dce1044d773cf1682908291dffa569ebd8c8a647a7919049a36715bd07976675",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -34073,12 +34211,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_transform_tools.go",
-      "mapping_reason": "Sketch geometry editing, references, and history behavior."
+      "mapping_reason": "Sketch geometry editing, references, and history behavior.",
+      "baseline_source_sha256": "015dd18c0b09fd202c047ef24216fb87729fcbb7dac64f4203739232d6b12885",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:bac1327304afb88e4439a0d29ebc3111e85c9ec7352ce3d19a62b8109d8a6c91",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "015dd18c0b09fd202c047ef24216fb87729fcbb7dac64f4203739232d6b12885",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "dce1044d773cf1682908291dffa569ebd8c8a647a7919049a36715bd07976675",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -34090,12 +34230,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_transform_tools.go",
-      "mapping_reason": "Sketch geometry editing, references, and history behavior."
+      "mapping_reason": "Sketch geometry editing, references, and history behavior.",
+      "baseline_source_sha256": "015dd18c0b09fd202c047ef24216fb87729fcbb7dac64f4203739232d6b12885",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:6e9c983203911cbd2d5bef165f72dfc05663abe7b03886cc4d62d8435bc70e87",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "015dd18c0b09fd202c047ef24216fb87729fcbb7dac64f4203739232d6b12885",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "dce1044d773cf1682908291dffa569ebd8c8a647a7919049a36715bd07976675",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -34107,12 +34249,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_transform_tools.go",
-      "mapping_reason": "Sketch geometry editing, references, and history behavior."
+      "mapping_reason": "Sketch geometry editing, references, and history behavior.",
+      "baseline_source_sha256": "015dd18c0b09fd202c047ef24216fb87729fcbb7dac64f4203739232d6b12885",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:f775bee4ebacacbb3c9bc3db9f099b81715dad1e3d43aa4326e2aa6da0990eb8",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "015dd18c0b09fd202c047ef24216fb87729fcbb7dac64f4203739232d6b12885",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "dce1044d773cf1682908291dffa569ebd8c8a647a7919049a36715bd07976675",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -34124,12 +34268,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_transform_tools.go",
-      "mapping_reason": "Sketch geometry editing, references, and history behavior."
+      "mapping_reason": "Sketch geometry editing, references, and history behavior.",
+      "baseline_source_sha256": "015dd18c0b09fd202c047ef24216fb87729fcbb7dac64f4203739232d6b12885",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:33c82a64d6492f06694937cc04c73b899e9706c8b36e1da5e09cea4e81f0514b",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "015dd18c0b09fd202c047ef24216fb87729fcbb7dac64f4203739232d6b12885",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "dce1044d773cf1682908291dffa569ebd8c8a647a7919049a36715bd07976675",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -34141,12 +34287,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_transform_tools.go",
-      "mapping_reason": "Sketch geometry editing, references, and history behavior."
+      "mapping_reason": "Sketch geometry editing, references, and history behavior.",
+      "baseline_source_sha256": "015dd18c0b09fd202c047ef24216fb87729fcbb7dac64f4203739232d6b12885",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:84ec63b512c526ebffcd9eefc007a57af82b8ea14a0c23a0814366c6df51ea02",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "015dd18c0b09fd202c047ef24216fb87729fcbb7dac64f4203739232d6b12885",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "dce1044d773cf1682908291dffa569ebd8c8a647a7919049a36715bd07976675",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -34158,7 +34306,9 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_geometry_tools.go; ../Oblikovati/app/sketch_transform_tools.go",
-      "mapping_reason": "Sketch geometry editing, references, and history behavior."
+      "mapping_reason": "Sketch geometry editing, references, and history behavior.",
+      "baseline_source_sha256": "015dd18c0b09fd202c047ef24216fb87729fcbb7dac64f4203739232d6b12885",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:38bc23385ebf55ac8c60dac55e16831fe6d7007188f32667147858ac4c20bf1c",
@@ -39434,8 +39584,8 @@
     },
     {
       "id": "scenario:3c113e607df683eed0d05b6fa9dc5ef6aea65056cb314032a632dabc47543063",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "0e057713d45b17c83f450525a82f31b23f8a2ec4a4ebc63204a8e0d2c7389be6",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "fd5acdcd636ef73a7a5fabe8bd7d28f31a011a9ec4242225b29f170e30f2dc68",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -39447,12 +39597,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/feature_extra_tools.go; exact per-feature Go baseline review remains open.",
-      "mapping_reason": "Part feature or work geometry; kernel readiness remains a separate dependency."
+      "mapping_reason": "Part feature or work geometry; kernel readiness remains a separate dependency.",
+      "baseline_source_sha256": "0e057713d45b17c83f450525a82f31b23f8a2ec4a4ebc63204a8e0d2c7389be6",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:2dcd2a1d1c95d15edd6dd2f429b2a47b5f4756db7af148e10e7e0f35c12f6e73",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "0e057713d45b17c83f450525a82f31b23f8a2ec4a4ebc63204a8e0d2c7389be6",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "fd5acdcd636ef73a7a5fabe8bd7d28f31a011a9ec4242225b29f170e30f2dc68",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -39464,12 +39616,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/feature_extra_tools.go; exact per-feature Go baseline review remains open.",
-      "mapping_reason": "Part feature or work geometry; kernel readiness remains a separate dependency."
+      "mapping_reason": "Part feature or work geometry; kernel readiness remains a separate dependency.",
+      "baseline_source_sha256": "0e057713d45b17c83f450525a82f31b23f8a2ec4a4ebc63204a8e0d2c7389be6",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:9adbac8dfc14272d62295bca8b86384d60240a023e0ce41d963013f2f9b1b264",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "0e057713d45b17c83f450525a82f31b23f8a2ec4a4ebc63204a8e0d2c7389be6",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "fd5acdcd636ef73a7a5fabe8bd7d28f31a011a9ec4242225b29f170e30f2dc68",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -39481,12 +39635,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/feature_extra_tools.go; exact per-feature Go baseline review remains open.",
-      "mapping_reason": "Part feature or work geometry; kernel readiness remains a separate dependency."
+      "mapping_reason": "Part feature or work geometry; kernel readiness remains a separate dependency.",
+      "baseline_source_sha256": "0e057713d45b17c83f450525a82f31b23f8a2ec4a4ebc63204a8e0d2c7389be6",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:cc458e4c97ba591e7c36a207cb33c8060fca2d3b199a35620fce662d99de1b06",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "0e057713d45b17c83f450525a82f31b23f8a2ec4a4ebc63204a8e0d2c7389be6",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "fd5acdcd636ef73a7a5fabe8bd7d28f31a011a9ec4242225b29f170e30f2dc68",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -39498,12 +39654,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/feature_extra_tools.go; exact per-feature Go baseline review remains open.",
-      "mapping_reason": "Part feature or work geometry; kernel readiness remains a separate dependency."
+      "mapping_reason": "Part feature or work geometry; kernel readiness remains a separate dependency.",
+      "baseline_source_sha256": "0e057713d45b17c83f450525a82f31b23f8a2ec4a4ebc63204a8e0d2c7389be6",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:1ac277047b46db579367d162d74ebf6bbb1f7f64cb03fad1fa9c44766d9ad765",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "0e057713d45b17c83f450525a82f31b23f8a2ec4a4ebc63204a8e0d2c7389be6",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "fd5acdcd636ef73a7a5fabe8bd7d28f31a011a9ec4242225b29f170e30f2dc68",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -39515,12 +39673,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/feature_extra_tools.go; exact per-feature Go baseline review remains open.",
-      "mapping_reason": "Part feature or work geometry; kernel readiness remains a separate dependency."
+      "mapping_reason": "Part feature or work geometry; kernel readiness remains a separate dependency.",
+      "baseline_source_sha256": "0e057713d45b17c83f450525a82f31b23f8a2ec4a4ebc63204a8e0d2c7389be6",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:28a1da2e1094cd03f92b6abcdd268bb62fae165480465cb83be9f7d70949e1fa",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "0e057713d45b17c83f450525a82f31b23f8a2ec4a4ebc63204a8e0d2c7389be6",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "fd5acdcd636ef73a7a5fabe8bd7d28f31a011a9ec4242225b29f170e30f2dc68",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -39532,12 +39692,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/feature_extra_tools.go; exact per-feature Go baseline review remains open.",
-      "mapping_reason": "Part feature or work geometry; kernel readiness remains a separate dependency."
+      "mapping_reason": "Part feature or work geometry; kernel readiness remains a separate dependency.",
+      "baseline_source_sha256": "0e057713d45b17c83f450525a82f31b23f8a2ec4a4ebc63204a8e0d2c7389be6",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:dca44adfc9bcd3a425f39401edb1ec47a6e4d833f7c33e4388b1de9b04468949",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "0e057713d45b17c83f450525a82f31b23f8a2ec4a4ebc63204a8e0d2c7389be6",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "fd5acdcd636ef73a7a5fabe8bd7d28f31a011a9ec4242225b29f170e30f2dc68",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -39549,12 +39711,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/feature_extra_tools.go; exact per-feature Go baseline review remains open.",
-      "mapping_reason": "Part feature or work geometry; kernel readiness remains a separate dependency."
+      "mapping_reason": "Part feature or work geometry; kernel readiness remains a separate dependency.",
+      "baseline_source_sha256": "0e057713d45b17c83f450525a82f31b23f8a2ec4a4ebc63204a8e0d2c7389be6",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:7d792723d7c0669d0c4c8bfbd7b70214a9029f68f5afac4384a4b2b1152e30fb",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "3e9bf4b214c8ba68735594fe015a4394ceb5cd2484a20fd1b776b2054eab1767",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "14c466ffd579a4acca7c2573eba2db625aa08c945481f66f8e1f7c25fc415ecb",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -39566,12 +39730,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/freeform_tools.go; exact per-feature Go baseline review remains open.",
-      "mapping_reason": "Surface or freeform modeling behavior."
+      "mapping_reason": "Surface or freeform modeling behavior.",
+      "baseline_source_sha256": "3e9bf4b214c8ba68735594fe015a4394ceb5cd2484a20fd1b776b2054eab1767",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:3b5f0350264db15e41de869b83b78df54413847200537c4ed670951d0123fbe2",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "3e9bf4b214c8ba68735594fe015a4394ceb5cd2484a20fd1b776b2054eab1767",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "14c466ffd579a4acca7c2573eba2db625aa08c945481f66f8e1f7c25fc415ecb",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -39583,12 +39749,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/freeform_tools.go; exact per-feature Go baseline review remains open.",
-      "mapping_reason": "Surface or freeform modeling behavior."
+      "mapping_reason": "Surface or freeform modeling behavior.",
+      "baseline_source_sha256": "3e9bf4b214c8ba68735594fe015a4394ceb5cd2484a20fd1b776b2054eab1767",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:1c5add9896e91a7a59e84b0cd55d4ad2915c70cd0f5741c016c3a6c7a8b58365",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "3e9bf4b214c8ba68735594fe015a4394ceb5cd2484a20fd1b776b2054eab1767",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "14c466ffd579a4acca7c2573eba2db625aa08c945481f66f8e1f7c25fc415ecb",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -39600,12 +39768,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/freeform_tools.go; exact per-feature Go baseline review remains open.",
-      "mapping_reason": "Surface or freeform modeling behavior."
+      "mapping_reason": "Surface or freeform modeling behavior.",
+      "baseline_source_sha256": "3e9bf4b214c8ba68735594fe015a4394ceb5cd2484a20fd1b776b2054eab1767",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:72675cd0476a8102e2918fa6148b4be426ace38b283bb9136c4ee61a41cbd2a8",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "3e9bf4b214c8ba68735594fe015a4394ceb5cd2484a20fd1b776b2054eab1767",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "14c466ffd579a4acca7c2573eba2db625aa08c945481f66f8e1f7c25fc415ecb",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -39617,12 +39787,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/freeform_tools.go; exact per-feature Go baseline review remains open.",
-      "mapping_reason": "Surface or freeform modeling behavior."
+      "mapping_reason": "Surface or freeform modeling behavior.",
+      "baseline_source_sha256": "3e9bf4b214c8ba68735594fe015a4394ceb5cd2484a20fd1b776b2054eab1767",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:7e663ebe7b4d2bca5bc1b057beda73c823ef4ae09f0e37ec0e0a37a1d0ced875",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "3e9bf4b214c8ba68735594fe015a4394ceb5cd2484a20fd1b776b2054eab1767",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "14c466ffd579a4acca7c2573eba2db625aa08c945481f66f8e1f7c25fc415ecb",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -39634,12 +39806,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/freeform_tools.go; exact per-feature Go baseline review remains open.",
-      "mapping_reason": "Surface or freeform modeling behavior."
+      "mapping_reason": "Surface or freeform modeling behavior.",
+      "baseline_source_sha256": "3e9bf4b214c8ba68735594fe015a4394ceb5cd2484a20fd1b776b2054eab1767",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:4695c7c69961c7f1a9768bb1ab6ffb467ccd266d4ce5f88c5962a7ae11b1043c",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "3e9bf4b214c8ba68735594fe015a4394ceb5cd2484a20fd1b776b2054eab1767",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "14c466ffd579a4acca7c2573eba2db625aa08c945481f66f8e1f7c25fc415ecb",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -39651,12 +39825,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/freeform_tools.go; exact per-feature Go baseline review remains open.",
-      "mapping_reason": "Surface or freeform modeling behavior."
+      "mapping_reason": "Surface or freeform modeling behavior.",
+      "baseline_source_sha256": "3e9bf4b214c8ba68735594fe015a4394ceb5cd2484a20fd1b776b2054eab1767",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:c7fc0927a3a6a7e0c801366342311d258f419c2b408e349a0d3d4b493979c96c",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "3f6f7f2a470749d2098ea7e314a435509671e3801f46569c82a7986386522747",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ff93ecfc751384091e485ea672340224e5eefb35fbadeb36785c8b26a7f45fd6",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -39668,12 +39844,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/chamfer_tool.go",
-      "mapping_reason": "Part topology, dress-up, or feature editing behavior."
+      "mapping_reason": "Part topology, dress-up, or feature editing behavior.",
+      "baseline_source_sha256": "3f6f7f2a470749d2098ea7e314a435509671e3801f46569c82a7986386522747",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:53e82e1c850a8dc9bf606166c24d3d61a37e1989ead866db2ca2c54a99964ab3",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "3f6f7f2a470749d2098ea7e314a435509671e3801f46569c82a7986386522747",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ff93ecfc751384091e485ea672340224e5eefb35fbadeb36785c8b26a7f45fd6",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -39685,12 +39863,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/chamfer_tool.go",
-      "mapping_reason": "Part topology, dress-up, or feature editing behavior."
+      "mapping_reason": "Part topology, dress-up, or feature editing behavior.",
+      "baseline_source_sha256": "3f6f7f2a470749d2098ea7e314a435509671e3801f46569c82a7986386522747",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:65d039ce0cabd39e9304ebfe05bb688186c4a8c2e7f89151f36c55e88111f093",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "3f6f7f2a470749d2098ea7e314a435509671e3801f46569c82a7986386522747",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ff93ecfc751384091e485ea672340224e5eefb35fbadeb36785c8b26a7f45fd6",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -39702,12 +39882,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/chamfer_tool.go",
-      "mapping_reason": "Part topology, dress-up, or feature editing behavior."
+      "mapping_reason": "Part topology, dress-up, or feature editing behavior.",
+      "baseline_source_sha256": "3f6f7f2a470749d2098ea7e314a435509671e3801f46569c82a7986386522747",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:170cd74ad82854b42680e56764cdecb350fcd37ee25e58d4d274e6e13036af76",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "3f6f7f2a470749d2098ea7e314a435509671e3801f46569c82a7986386522747",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ff93ecfc751384091e485ea672340224e5eefb35fbadeb36785c8b26a7f45fd6",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -39719,12 +39901,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/chamfer_tool.go",
-      "mapping_reason": "Part topology, dress-up, or feature editing behavior."
+      "mapping_reason": "Part topology, dress-up, or feature editing behavior.",
+      "baseline_source_sha256": "3f6f7f2a470749d2098ea7e314a435509671e3801f46569c82a7986386522747",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:6894fd0f063848c6bf6f2a7fddd0f88ccc258f733aab5a44542a7328408830d0",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "3f6f7f2a470749d2098ea7e314a435509671e3801f46569c82a7986386522747",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ff93ecfc751384091e485ea672340224e5eefb35fbadeb36785c8b26a7f45fd6",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -39736,12 +39920,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/chamfer_tool.go",
-      "mapping_reason": "Part topology, dress-up, or feature editing behavior."
+      "mapping_reason": "Part topology, dress-up, or feature editing behavior.",
+      "baseline_source_sha256": "3f6f7f2a470749d2098ea7e314a435509671e3801f46569c82a7986386522747",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:18deae933a8133ab0fd878a974f40745bee05ffc87dd2fbcbb00c2993ca6aad2",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "3f6f7f2a470749d2098ea7e314a435509671e3801f46569c82a7986386522747",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ff93ecfc751384091e485ea672340224e5eefb35fbadeb36785c8b26a7f45fd6",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -39753,12 +39939,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/chamfer_tool.go",
-      "mapping_reason": "Part topology, dress-up, or feature editing behavior."
+      "mapping_reason": "Part topology, dress-up, or feature editing behavior.",
+      "baseline_source_sha256": "3f6f7f2a470749d2098ea7e314a435509671e3801f46569c82a7986386522747",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:c37688e9104f4deb8f0f564aad65670cb2f925db4d3ebe93b1cd155d1db1f962",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "3f6f7f2a470749d2098ea7e314a435509671e3801f46569c82a7986386522747",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ff93ecfc751384091e485ea672340224e5eefb35fbadeb36785c8b26a7f45fd6",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -39770,12 +39958,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/chamfer_tool.go",
-      "mapping_reason": "Part topology, dress-up, or feature editing behavior."
+      "mapping_reason": "Part topology, dress-up, or feature editing behavior.",
+      "baseline_source_sha256": "3f6f7f2a470749d2098ea7e314a435509671e3801f46569c82a7986386522747",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:b25c0583c25e21cba1f5a10a573ebe389e2d3c244127026636c26af4b5aa1a23",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "3f6f7f2a470749d2098ea7e314a435509671e3801f46569c82a7986386522747",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ff93ecfc751384091e485ea672340224e5eefb35fbadeb36785c8b26a7f45fd6",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -39787,12 +39977,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/chamfer_tool.go",
-      "mapping_reason": "Part topology, dress-up, or feature editing behavior."
+      "mapping_reason": "Part topology, dress-up, or feature editing behavior.",
+      "baseline_source_sha256": "3f6f7f2a470749d2098ea7e314a435509671e3801f46569c82a7986386522747",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:426b27b984aa460d39f05ccc85a666eb0f38fddfc66fc88b04a6a2f4eb3d4467",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "3f6f7f2a470749d2098ea7e314a435509671e3801f46569c82a7986386522747",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "ff93ecfc751384091e485ea672340224e5eefb35fbadeb36785c8b26a7f45fd6",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -39804,7 +39996,9 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/chamfer_tool.go",
-      "mapping_reason": "Part topology, dress-up, or feature editing behavior."
+      "mapping_reason": "Part topology, dress-up, or feature editing behavior.",
+      "baseline_source_sha256": "3f6f7f2a470749d2098ea7e314a435509671e3801f46569c82a7986386522747",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:43864bed123a8f4bb7a0f5eac96ccc02b3d5fb75d2322bdd0a64d8f57f1f2912",
@@ -40250,8 +40444,8 @@
     },
     {
       "id": "scenario:98aed90f5b1d1c781b61ce6bee55fae2dfdafcc4434cf08cfec111c9c508b977",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "5c35419d1a76371eec13938df83639b5fe9d35786799e3e42fdd9f200bb79dbc",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "2f602c768e06783d438992934561e38603c3942772068b1e14cf130cd76e7843",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -40263,12 +40457,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/feature_pattern_tools.go; exact per-feature Go baseline review remains open.",
-      "mapping_reason": "Part repetition, derived geometry, or reusable feature behavior."
+      "mapping_reason": "Part repetition, derived geometry, or reusable feature behavior.",
+      "baseline_source_sha256": "5c35419d1a76371eec13938df83639b5fe9d35786799e3e42fdd9f200bb79dbc",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:89c94d69bbf6c031a34acfd9e53a5c97ddcd022933062e91b644d370bfd675df",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "5c35419d1a76371eec13938df83639b5fe9d35786799e3e42fdd9f200bb79dbc",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "2f602c768e06783d438992934561e38603c3942772068b1e14cf130cd76e7843",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -40280,12 +40476,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/feature_pattern_tools.go; exact per-feature Go baseline review remains open.",
-      "mapping_reason": "Part repetition, derived geometry, or reusable feature behavior."
+      "mapping_reason": "Part repetition, derived geometry, or reusable feature behavior.",
+      "baseline_source_sha256": "5c35419d1a76371eec13938df83639b5fe9d35786799e3e42fdd9f200bb79dbc",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:0dfa4ebe20182484433e84929bbc21f8321a511966a8057d6049363258a89228",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "5c35419d1a76371eec13938df83639b5fe9d35786799e3e42fdd9f200bb79dbc",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "2f602c768e06783d438992934561e38603c3942772068b1e14cf130cd76e7843",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -40297,12 +40495,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/feature_pattern_tools.go; exact per-feature Go baseline review remains open.",
-      "mapping_reason": "Part repetition, derived geometry, or reusable feature behavior."
+      "mapping_reason": "Part repetition, derived geometry, or reusable feature behavior.",
+      "baseline_source_sha256": "5c35419d1a76371eec13938df83639b5fe9d35786799e3e42fdd9f200bb79dbc",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:e12254aabf7b47ae69f07239dca49618b6cee7829f3a0f1da48844be5e4d2f07",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "5c35419d1a76371eec13938df83639b5fe9d35786799e3e42fdd9f200bb79dbc",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "2f602c768e06783d438992934561e38603c3942772068b1e14cf130cd76e7843",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -40314,12 +40514,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/feature_pattern_tools.go; exact per-feature Go baseline review remains open.",
-      "mapping_reason": "Part repetition, derived geometry, or reusable feature behavior."
+      "mapping_reason": "Part repetition, derived geometry, or reusable feature behavior.",
+      "baseline_source_sha256": "5c35419d1a76371eec13938df83639b5fe9d35786799e3e42fdd9f200bb79dbc",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:937c36bf472e005ea995e13d938b978ac3ec998c9a45ed618d8ec0e1c80d7eb1",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "5c35419d1a76371eec13938df83639b5fe9d35786799e3e42fdd9f200bb79dbc",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "2f602c768e06783d438992934561e38603c3942772068b1e14cf130cd76e7843",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -40331,12 +40533,14 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/feature_pattern_tools.go; exact per-feature Go baseline review remains open.",
-      "mapping_reason": "Part repetition, derived geometry, or reusable feature behavior."
+      "mapping_reason": "Part repetition, derived geometry, or reusable feature behavior.",
+      "baseline_source_sha256": "5c35419d1a76371eec13938df83639b5fe9d35786799e3e42fdd9f200bb79dbc",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:0b06a90fe19ccae64af3f934c5b5601d0327429ff69a064cd41a68ce3c71dc27",
-      "source_revision": "e76cb749ed43c73a91c24854057da7c890041f51",
-      "source_sha256": "5c35419d1a76371eec13938df83639b5fe9d35786799e3e42fdd9f200bb79dbc",
+      "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+      "source_sha256": "2f602c768e06783d438992934561e38603c3942772068b1e14cf130cd76e7843",
       "milestone": "R5",
       "owner": "desktop and model",
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
@@ -40348,7 +40552,9 @@
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/feature_pattern_tools.go; exact per-feature Go baseline review remains open.",
-      "mapping_reason": "Part repetition, derived geometry, or reusable feature behavior."
+      "mapping_reason": "Part repetition, derived geometry, or reusable feature behavior.",
+      "baseline_source_sha256": "5c35419d1a76371eec13938df83639b5fe9d35786799e3e42fdd9f200bb79dbc",
+      "source_review": "architecture/rust-port/receipts/2026-11-16-background-review-4039/review.json"
     },
     {
       "id": "scenario:a782b75b9bb320c77867cdf2ffc6e956e4b20ab0e9a924ef053be4ce25147a00",
