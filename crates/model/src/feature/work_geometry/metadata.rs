@@ -5,7 +5,9 @@ impl AuthoredFeature<WorkGeometryDefinition> {
         if self.construction_datum
             && matches!(
                 self.definition(),
-                WorkGeometryDefinition::SketchPrism(_) | WorkGeometryDefinition::DeleteBody(_)
+                WorkGeometryDefinition::SketchPrism(_)
+                    | WorkGeometryDefinition::DeleteBody(_)
+                    | WorkGeometryDefinition::Fillet(_)
             )
         {
             return Err(WorkGeometryError::Kind(super::WorkGeometryKindMismatch {

@@ -114,7 +114,9 @@ impl WorkGeometryEvaluation {
         feature.validate_plane_metadata()?;
         if matches!(
             feature.definition(),
-            WorkPlaneDefinition::SketchPrism(_) | WorkPlaneDefinition::DeleteBody(_)
+            WorkPlaneDefinition::SketchPrism(_)
+                | WorkPlaneDefinition::DeleteBody(_)
+                | WorkPlaneDefinition::Fillet(_)
         ) {
             return Err(WorkPlaneError::Kind(super::WorkGeometryKindMismatch {
                 feature: id,

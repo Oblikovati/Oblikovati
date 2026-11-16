@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::{
     feature::{FeatureId, FeatureReadFootprint, FeatureReadKey},
-    identity::{ReferenceEnvelope, SemanticReferenceName},
+    identity::{ReferenceEnvelope, topology_reference_document},
 };
 
 /// A body-set edit retains the complete name, never a transient body index (Go #1078).
@@ -13,7 +13,7 @@ pub struct DeleteBodyDefinition {
 impl DeleteBodyDefinition {
     /// Validate the stored name; current binding is checked at replay. Example: `DeleteBodyDefinition::new(key)?`.
     pub fn new(key: Vec<u8>) -> Result<Self, String> {
-        SemanticReferenceName::decode(&key)?;
+        topology_reference_document(&key)?;
         let envelope = ReferenceEnvelope::decode(&key).map_err(|cause| cause.to_string())?;
         if envelope.kind != 4 {
             return Err(format!(

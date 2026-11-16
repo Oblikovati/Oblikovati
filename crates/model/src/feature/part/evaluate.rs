@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::{PartFeatureDefinition, PartFeatureProgramError};
+use super::{
+    FilletEvaluator, PartFeatureDefinition, PartFeatureProgramError,
+    body_resolution::{resolve_body_face, resolve_body_slot},
+};
 use crate::{
     feature::{
         FeatureHealthRecord, FeatureId, FeatureReplayController, FeatureReplayRange,
@@ -26,6 +29,10 @@ pub trait SketchPrismEvaluator {
             "face key {key:?}: expected a named planar-face evaluator"
         ))
     }
+    /// Select fillet capability before construction; example: `backend.fillet_evaluator()`.
+    fn fillet_evaluator(&mut self) -> Option<&mut dyn FilletEvaluator<Self::Body, Self::Failure>> {
+        None
+    }
     /// Construct an isolated result from checked inputs; example: `backend.evaluate_prism(feature.id(), input)?`.
     fn evaluate_prism(
         &mut self,
@@ -41,11 +48,14 @@ pub enum PartFeatureFailure<Failure> {
     Inputs(SketchPrismError),
     Kernel(Failure),
     BodyReference(String),
+    FilletInput(String),
+    Unsupported(String),
 }
 /// Derived results from a fresh replay. This does not implement the complete extrude operation or a prefix cache.
 pub struct PartFeatureEvaluation<Body, Failure> {
     datums: WorkGeometryEvaluation,
-    bodies: BTreeMap<FeatureId, Body>,
+    pub(super) bodies: BTreeMap<FeatureId, Body>,
+    pub(super) body_lineage: super::body_lineage::BodyLineageIndex,
     deleted: BTreeMap<FeatureId, Vec<u8>>,
     health: Vec<FeatureHealthRecord<PartFeatureFailure<Failure>>>,
 }
@@ -73,7 +83,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         backend: &B,
         reference: &crate::feature::work_plane::WorkPlaneFaceReference,
     ) -> Result<WorkGeometryEvaluation, WorkGeometryError> {
-        let plane = resolve_body_face(&self.bodies, backend, reference)?;
+        let plane = resolve_body_face(&self.bodies, &self.body_lineage, backend, reference)?;
         let mut datums = self.datum_evaluation();
         datums.insert_sketch_face(reference, plane);
         Ok(datums)
@@ -82,6 +92,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         Self {
             datums: WorkGeometryEvaluation::default(),
             bodies: BTreeMap::new(),
+            body_lineage: super::body_lineage::BodyLineageIndex::default(),
             deleted: BTreeMap::new(),
             health: Vec::new(),
         }
@@ -93,6 +104,18 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
     /// Inspect successful current outputs only; example: `evaluation.body(feature_id)` returns none for a failed feature.
     pub fn body(&self, feature: FeatureId) -> Option<&Body> {
         self.bodies.get(&feature)
+    }
+    /// Find the current body descended from a producer; example: `evaluation.body_from_source(feature)?`.
+    pub fn body_from_source(&self, source: FeatureId) -> Result<&Body, String> {
+        let owners: Vec<_> = self.body_lineage.candidates(source).collect();
+        let [owner] = owners.as_slice() else {
+            return Err(format!(
+                "body source {source:?}, owners {owners:?}: expected one current body"
+            ));
+        };
+        self.bodies.get(owner).ok_or_else(|| {
+            format!("body source {source:?}, owner {owner:?}: expected a current body")
+        })
     }
     /// Borrow successful bodies in replay order; example: `evaluation.ordered_bodies().collect::<Vec<_>>()`.
     pub fn ordered_bodies(&self) -> impl Iterator<Item = &Body> {
@@ -180,7 +203,8 @@ impl DocumentSnapshot {
         cancelled: &mut impl FnMut() -> bool,
     ) -> Result<PartReplayCandidate<'a, B::Body, B::Failure>, PartFeatureProgramError> {
         let range = self.part_replay_range()?;
-        let sequence = self.effective_work_geometry();
+        let sequence =
+            super::body_dependencies::with_replacement_reads(self.effective_work_geometry())?;
         let mut controller = FeatureReplayController::new_with_parameters(
             &sequence,
             range,
@@ -259,9 +283,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         let mut faces = BTreeMap::new();
         for sketch in snapshot.sketches.sketches() {
             if let SketchPlacement::Face(reference) = sketch.placement() {
-                faces
-                    .entry(reference.key().to_vec())
-                    .or_insert_with(|| resolve_body_face(&self.bodies, backend, &reference));
+                faces.entry(reference.key().to_vec()).or_insert_with(|| {
+                    resolve_body_face(&self.bodies, &self.body_lineage, backend, &reference)
+                });
             }
         }
         self.datums.replace_sketch_faces(faces);
@@ -307,7 +331,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         })?;
         if matches!(
             feature.definition(),
-            PartFeatureDefinition::SketchPrism(_) | PartFeatureDefinition::DeleteBody(_)
+            PartFeatureDefinition::SketchPrism(_)
+                | PartFeatureDefinition::DeleteBody(_)
+                | PartFeatureDefinition::Fillet(_)
         ) {
             feature
                 .validate_plane_metadata()
@@ -320,11 +346,15 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             PartFeatureDefinition::DeleteBody(definition) => {
                 self.delete_body(backend, id, definition)
             }
+            PartFeatureDefinition::Fillet(definition) => {
+                self.evaluate_fillet(snapshot, backend, id, definition)
+            }
             _ => {
                 let bodies = &self.bodies;
+                let lineage = &self.body_lineage;
                 let resolve_face =
                     |reference: &crate::feature::work_plane::WorkPlaneFaceReference| {
-                        resolve_body_face(bodies, backend, reference)
+                        resolve_body_face(bodies, lineage, backend, reference)
                     };
                 self.datums
                     .evaluate_entry_with_face(
@@ -344,16 +374,16 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         definition: &super::DeleteBodyDefinition,
     ) -> Result<(), PartFeatureFailure<Failure>> {
         let source = definition.source();
-        let body = self.bodies.get(&source).ok_or_else(|| {
-            PartFeatureFailure::BodyReference(format!(
-                "delete-body key {:?}, source {source:?}: expected an available unconsumed body",
-                definition.key()
-            ))
-        })?;
-        backend
-            .verify_body_reference(body, definition.key())
-            .map_err(PartFeatureFailure::BodyReference)?;
-        self.bodies.remove(&source);
+        let slot = resolve_body_slot(
+            &self.bodies,
+            &self.body_lineage,
+            backend,
+            source,
+            definition.key(),
+        )
+        .map_err(PartFeatureFailure::BodyReference)?;
+        self.bodies.remove(&slot);
+        self.body_lineage.retire(slot);
         self.deleted.insert(feature, definition.key().to_vec());
         Ok(())
     }
@@ -371,6 +401,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         let body = backend
             .evaluate_prism(feature.id(), input)
             .map_err(PartFeatureFailure::Kernel)?;
+        self.body_lineage
+            .register(feature.id())
+            .map_err(PartFeatureFailure::BodyReference)?;
         self.bodies.insert(feature.id(), body);
         Ok(())
     }
@@ -409,23 +442,6 @@ impl<Body, Failure> crate::feature::work_plane::WorkPlaneResolver
     fn point(&self, feature: FeatureId) -> Result<[f64; 3], WorkGeometryError> {
         self.datums.point(feature)
     }
-}
-
-fn resolve_body_face<B: SketchPrismEvaluator>(
-    bodies: &BTreeMap<FeatureId, B::Body>,
-    backend: &B,
-    reference: &crate::feature::work_plane::WorkPlaneFaceReference,
-) -> Result<crate::sketch::SketchPlane, WorkGeometryError> {
-    let body = bodies.get(&reference.source()).ok_or_else(|| {
-        WorkGeometryError::BodyReference(format!(
-            "face key {:?}, source {:?}: expected an available unconsumed body",
-            reference.key(),
-            reference.source()
-        ))
-    })?;
-    backend
-        .resolve_planar_face(body, reference.key())
-        .map_err(WorkGeometryError::BodyReference)
 }
 
 fn require_replay_current(

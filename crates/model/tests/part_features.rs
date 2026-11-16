@@ -158,3 +158,6 @@ mod delete;
 
 #[path = "part_features/face_plane.rs"]
 mod face_plane;
+
+#[path = "part_features/fillet.rs"]
+mod fillet;

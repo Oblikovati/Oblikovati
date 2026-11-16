@@ -8,6 +8,7 @@ mod scalar_parameters;
 pub use scalar_ownership::{FeatureScalarBinding, FeatureScalarOwnershipError};
 mod error;
 mod evaluation;
+pub mod fillet;
 mod footprint;
 pub mod part;
 mod replay;

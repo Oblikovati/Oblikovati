@@ -2,7 +2,7 @@
 //! A durable semantic face name and its producing feature.
 use crate::{
     feature::FeatureId,
-    identity::{ReferenceEnvelope, SemanticReferenceName},
+    identity::{ReferenceEnvelope, topology_reference_document},
 };
 
 /// A complete face name; binding to a current body occurs during replay.
@@ -15,7 +15,7 @@ pub struct WorkPlaneFaceReference {
 impl WorkPlaneFaceReference {
     /// Validate the semantic face name; example: `WorkPlaneFaceReference::new(key)?`.
     pub fn new(key: Vec<u8>) -> Result<Self, String> {
-        SemanticReferenceName::decode(&key)?;
+        topology_reference_document(&key)?;
         let envelope = ReferenceEnvelope::decode(&key).map_err(|cause| cause.to_string())?;
         if envelope.kind != 1 {
             return Err(format!(

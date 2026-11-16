@@ -8,6 +8,7 @@ impl WorkGeometryDefinition {
     pub fn reads(&self) -> FeatureReadFootprint {
         let keys = match self {
             Self::DeleteBody(definition) => return definition.reads(),
+            Self::Fillet(definition) => return definition.reads(),
             Self::SketchPrism(definition) => {
                 definition.source_reads().keys().iter().copied().collect()
             }

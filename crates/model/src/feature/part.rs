@@ -8,8 +8,12 @@ use super::{
     work_plane::{WorkPlaneDistance, WorkPlaneReference},
 };
 use crate::sketch::SketchPlane;
+mod body_dependencies;
+mod body_lineage;
+mod body_resolution;
 mod delete;
 mod error;
+mod fillet_evaluation;
 pub use delete::DeleteBodyDefinition;
 mod evaluate;
 pub use evaluate::{
@@ -21,10 +25,12 @@ pub use super::work_plane::{
     WorkPlaneProgramRecipeError as PartFeatureProgramRecipeError,
 };
 pub use error::PartFeatureProgramError;
+pub use fillet_evaluation::FilletEvaluator;
 /// One owned datum or body input in the common ordered feature program.
 #[derive(Clone, Debug, PartialEq)]
 pub enum PartFeatureDefinition {
     DeleteBody(DeleteBodyDefinition),
+    Fillet(Box<super::fillet::FilletDefinition>),
     SketchPrism(Box<super::sketch_prism::SketchPrismDefinition>),
     Fixed(SketchPlane),
     Offset {
@@ -48,6 +54,7 @@ impl PartFeatureDefinition {
         match self {
             Self::SketchPrism(_) => "extrude",
             Self::DeleteBody(_) => "delete-body",
+            Self::Fillet(_) => "fillet",
             Self::Axis(_) | Self::AxisThroughPoints(_) => "work-axis",
             Self::Point(_) | Self::PointAtReference(_) => "work-point",
             _ => "work-plane",
