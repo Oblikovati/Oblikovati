@@ -4,6 +4,11 @@ use super::*;
 impl ApplicationWorld {
     /// Click a toolbar field; its label sits right of it and may share a run with its value.
     pub fn click_precise_field(&mut self, label: &str) {
+        let position = self.precise_field_position(label);
+        self.click(position);
+    }
+    /// Find a toolbar input for native pointer interaction; example: `world.precise_field_position("Y")`.
+    pub fn precise_field_position(&self, label: &str) -> [i32; 2] {
         let (position, size) = diagnostics::window_geometry("Precise Input")
             .expect("expected the Precise Input toolbar");
         let run = self
@@ -22,7 +27,7 @@ impl ApplicationWorld {
             .clone();
         let label_width = LABEL_GLYPH_WIDTH * label.len() as f32;
         let x = run.maximum[0] - label_width - FIELD_INSIDE_LABEL;
-        self.click([x as i32, run.center()[1] as i32]);
+        [x as i32, run.center()[1] as i32]
     }
     /// Type both of the toolbar's values and accept them, whatever its fields are named.
     pub fn precise_values(&mut self, first: &str, second: &str) {
