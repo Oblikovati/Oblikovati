@@ -58,6 +58,9 @@ pub(super) fn native_owner_at(
     .with_sketch_preferences(Box::new(preferences::load_native_application_options(
         directory,
     )?))
+    .with_part_preferences(Box::new(preferences::load_native_application_options(
+        directory,
+    )?))
     .with_recent_documents(Box::new(preferences::load_native_application_options(
         directory,
     )?))

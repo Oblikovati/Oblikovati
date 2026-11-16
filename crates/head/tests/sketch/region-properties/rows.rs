@@ -37,6 +37,7 @@ fn clicking_an_accepted_loop_again_releases_it_and_any_change_drops_the_result()
         document: 1,
         sketch: oblikovati_model::document_sketch::DocumentSketchId(1),
         plane: oblikovati_model::sketch::SketchPlane::xy(),
+        look_at_plane: true,
     };
     let mut state = SketchRegionState {
         edit,

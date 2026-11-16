@@ -203,6 +203,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     recent_store: Option<Box<dyn oblikovati_model::application_recent::RecentDocumentAccess>>,
     sketch_options: oblikovati_model::application_options::SketchApplicationOptions,
     sketch_store: Option<Box<dyn oblikovati_model::application_options::SketchPreferenceAccess>>,
+    part_store: Option<Box<dyn oblikovati_model::application_options::PartPreferenceAccess>>,
     sketch_construction: oblikovati_martensite::planar_curve::MartensiteSketchConstruction,
 }
 impl<
@@ -286,6 +287,7 @@ impl<
             recent_store: None,
             sketch_options: Default::default(),
             sketch_store: None,
+            part_store: None,
             sketch_tool: None,
             pattern_preview: None,
             pattern_result: None,

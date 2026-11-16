@@ -16,7 +16,7 @@ impl NativeHeadWindow {
         let Some(edit) = edit else {
             return self.restore_sketch_camera();
         };
-        self.face_sketch_camera(edit)
+        self.enter_sketch_camera(edit)
     }
     /// Name the active document in the title bar; only a change touches the window.
     pub(super) fn note_document_title(
@@ -53,15 +53,16 @@ impl NativeHeadWindow {
         self.navigation = Default::default();
         Ok(true)
     }
-    fn face_sketch_camera(&mut self, edit: crate::HeadSketchEdit) -> Result<bool, String> {
+    fn enter_sketch_camera(&mut self, edit: crate::HeadSketchEdit) -> Result<bool, String> {
         let current = self.view.camera_state()?;
-        let returning = self.sketch_view.map_or(current, |(_, returning)| returning);
-        let basis = self
-            .sketch_view
-            .filter(|(old, _)| (old.document, old.sketch) != (edit.document, edit.sketch))
-            .map_or(current, |(_, returning)| returning);
+        let returning = self.sketch_view.and_then(|(_, returning)| returning);
+        let basis = returning.unwrap_or(current);
+        if !edit.look_at_plane {
+            self.sketch_view = Some((edit, None));
+            return Ok(false);
+        }
         self.view.set_camera(basis.facing_sketch(edit.plane)?)?;
-        self.sketch_view = Some((edit, returning));
+        self.sketch_view = Some((edit, Some(basis)));
         self.navigation = Default::default();
         Ok(true)
     }
@@ -69,8 +70,13 @@ impl NativeHeadWindow {
         let Some((_, returning)) = self.sketch_view else {
             return Ok(false);
         };
-        self.view.set_camera(returning)?;
+        if let Some(returning) = returning {
+            self.view.set_camera(returning)?;
+        }
         self.sketch_view = None;
+        if returning.is_none() {
+            return Ok(false);
+        }
         self.navigation = Default::default();
         Ok(true)
     }

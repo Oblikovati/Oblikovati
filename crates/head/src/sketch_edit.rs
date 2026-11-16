@@ -6,4 +6,6 @@ pub struct HeadSketchEdit {
     pub document: u64,
     pub sketch: DocumentSketchId,
     pub plane: SketchPlane,
+    /// Apply the accepted Part view preference when entering this edit.
+    pub look_at_plane: bool,
 }

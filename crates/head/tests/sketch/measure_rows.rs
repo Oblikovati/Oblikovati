@@ -65,6 +65,7 @@ fn a_third_selection_starts_over_and_a_repeat_changes_nothing() {
             document: 1,
             sketch: oblikovati_model::document_sketch::DocumentSketchId(1),
             plane: SketchPlane::xy(),
+            look_at_plane: true,
         },
         generation: 0,
         picks: Vec::new(),
