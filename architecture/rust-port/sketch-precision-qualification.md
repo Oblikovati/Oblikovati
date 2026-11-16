@@ -140,14 +140,16 @@ qualification. It does not change profile discovery or extrusion admission.
 ## Authored parameter bounds
 
 A conditional source-bound path supports healthy nominal model or user length
-parameters whose source is an explicit decimal literal in `mm`, `cm`, or `m`,
-or a direct chain of parameter aliases. It requires the default centimetre
-working scale. It encloses the authored decimal and exact unit factor with
-interval arithmetic and includes the model's rounded binary64 value. The result
-retains parameter identities and source text. Fixed and grounded coordinate
+parameters with decimal literals in `mm`, `cm`, or `m`, unitless literals,
+references, parentheses, negation, and the four arithmetic operators. It uses
+the model expression parser without constant folding, checks each reference
+against its bound identity, and retains source identities and text. It requires
+the default centimetre working scale. It encloses authored decimals, unit
+factors and arithmetic, and includes each parameter's rounded binary64 value.
+Division by a box containing zero and unsupported functions decline. Fixed and grounded coordinate
 targets additionally require explicit caller-supplied exact-value assumptions;
 their stored binary64 values are not treated as proven physical inputs. Other
-formulas, units, scales, engineering-value selections, failed sources, and alias cycles decline.
+units, scales, engineering-value selections, failed sources, and cycles decline.
 
 The source-bound root check compares the current parameter graph and input
 state with a snapshot captured by the accepted solve. A source edit therefore

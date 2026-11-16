@@ -2,6 +2,7 @@
 
 //! Compile authored formulas and bind references to caller-owned stable identities.
 mod binding;
+mod conditional;
 mod display;
 mod error;
 mod evaluate;
@@ -13,6 +14,7 @@ mod token;
 
 use crate::{quantity::Quantity, units::UnitsOfMeasure};
 pub use binding::BoundExpression;
+pub(crate) use conditional::{ConditionalValue, conditional_expression};
 pub use error::ExpressionError;
 use node::Node;
 pub(crate) use token::reference_name;

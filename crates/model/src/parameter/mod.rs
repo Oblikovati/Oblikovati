@@ -115,6 +115,15 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
         self.names.get(name).copied()
     }
 
+    pub(crate) fn bound_reference_id(&self, owner: Id, name: &str) -> Option<Id> {
+        self.records
+            .get(&owner)?
+            .formula
+            .as_ref()?
+            .binding
+            .reference_id(name)
+    }
+
     /// Enumerate IDs in insertion order; for example `parameters.ids()`.
     pub fn ids(&self) -> &[Id] {
         &self.order

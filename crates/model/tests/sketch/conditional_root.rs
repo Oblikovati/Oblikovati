@@ -287,6 +287,35 @@ fn source_bound_root_rejects_a_same_value_but_changed_expression() {
 }
 
 #[test]
+fn source_bound_root_encloses_formula_driven_rectangle() {
+    let mut parameters = parameters();
+    parameters.set_expression(2, "width / 2").unwrap();
+    let outcome = rectangle()
+        .solve(&parameters, SolveOptions::default(), || false)
+        .unwrap();
+    let bounds = box_for(&outcome);
+    let root = outcome
+        .conditional_root_from_sources(&parameters, &bounds, &fixed(), &inverse())
+        .unwrap();
+    for (exact, interval) in [0., 0., 5., 0., 5., 2.5, 0., 2.5]
+        .into_iter()
+        .zip(root.enclosure())
+    {
+        assert!(interval[0] <= exact && exact <= interval[1]);
+    }
+    assert_eq!(
+        root.parameter_bounds().unwrap()[1].sources(),
+        &[(2, "width / 2".into()), (1, "50 mm".into())]
+    );
+    parameters.set_expression(2, "25 mm").unwrap();
+    assert!(
+        outcome
+            .conditional_root_from_sources(&parameters, &bounds, &fixed(), &inverse())
+            .is_err()
+    );
+}
+
+#[test]
 fn authored_fixed_coordinates_need_explicit_exact_value_assumptions() {
     let mut source_parameters = parameters();
     source_parameters.set_expression(2, "width").unwrap();
