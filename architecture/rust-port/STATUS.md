@@ -16,7 +16,8 @@ Last checked: 2026-11-16 on `rust-work`. Refresh from current evidence at each c
   tool candidate hover (#4034) have X11 diagnostics on live source. Fixture and
   reference-capture gaps prevent acceptance; other mouse scenarios remain open.
 - Solid viewport edit and cancel (#4038) pass X11 diagnostics for extrusion;
-  three creation and picking scenarios remain unbound. Shading is under review (#4044).
+  three creation and picking scenarios remain unbound; shading is under review (#4044).
+- Fillet face-history probes pass; four result edges still need names (#4045).
 - Pointer-driven Line creation and preview cancellation have an X11 diagnostic
   (#4037). Move preview and cancellation also pass a focused X11 diagnostic
   (#4040). Overlap type cues and Select Other also pass a native diagnostic
@@ -28,8 +29,7 @@ Last checked: 2026-11-16 on `rust-work`. Refresh from current evidence at each c
   the 60 fps frame budget is 16.67 ms. See `receipts/2026-11-16-sketch-frame-baseline-4031/`.
   Host capture is #4032; context picks now use checked projection batches (#4035).
   No-readback presentation is Martensite #501; efficient previews are #504.
-  Native batch projection costs: `receipts/2026-11-16-pick-phases-4035/` (#505). Neither measurement proves
-  input-to-display latency or a universal rate.
+  Projection costs: `receipts/2026-11-16-pick-phases-4035/` (#505); no input-to-display timing was measured.
 - Application closing (#4030) has a native close guard and save prompt. The
   current live feature passed 3/3 scenarios in an X11 diagnostic at `2dee60eef`;
   see `receipts/2026-11-16-application-closing-4030/`. It is not in the pinned

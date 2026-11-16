@@ -96,3 +96,7 @@ impl PrismPresentationSource for PrismProbeSnapshot {
         PrismProbeSnapshot::presentation(self, options)
     }
 }
+
+#[cfg(test)]
+#[path = "../tests/unit/fillet_prism_history_probe.rs"]
+mod fillet_prism_history_probe;
