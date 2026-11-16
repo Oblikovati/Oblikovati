@@ -109,19 +109,19 @@ mod assembly_loading_tests;
 
 // Already open files
 #[given("a saved part is open in the MCAD Software")]
-fn part_open(world: &mut ApplicationWorld) {
+pub(super) fn part_open(world: &mut ApplicationWorld) {
     let folder = models_folder(world);
     let id = saved_document(world, GuiTemplateKind::Part, &folder, PART_FILE);
     world.parts.push(id);
 }
 #[given("a different drawing document is active")]
-fn drawing_on_top(world: &mut ApplicationWorld) {
+pub(super) fn drawing_on_top(world: &mut ApplicationWorld) {
     world.other_document = Some(world.add_template(GuiTemplateKind::Drawing));
     world.observed_counts = vec![documents(world)];
     world.observed_document_windows = world.state().document_windows;
 }
 #[given("the open part's exact file location is known")]
-fn location_known(world: &mut ApplicationWorld) {
+pub(super) fn location_known(world: &mut ApplicationWorld) {
     assert!(
         models_folder(world).join(PART_FILE).exists(),
         "expected the saved part"
@@ -145,12 +145,12 @@ fn dialog_closed(world: &mut ApplicationWorld) {
     world.expect_no_text("Look in");
 }
 #[then("the existing part document tab becomes active")]
-fn part_tab_active(world: &mut ApplicationWorld) {
+pub(super) fn part_tab_active(world: &mut ApplicationWorld) {
     let part = *world.parts.last().expect("expected the saved part");
     assert_eq!(world.active_id(), part, "active document");
 }
 #[then("no additional document tab is created")]
-fn no_extra_tab(world: &mut ApplicationWorld) {
+pub(super) fn no_extra_tab(world: &mut ApplicationWorld) {
     assert_eq!(documents(world), world.observed_counts[0], "documents");
     assert_eq!(
         world.state().document_windows,
@@ -159,7 +159,7 @@ fn no_extra_tab(world: &mut ApplicationWorld) {
     );
 }
 #[then("the drawing tab remains available")]
-fn drawing_tab_kept(world: &mut ApplicationWorld) {
+pub(super) fn drawing_tab_kept(world: &mut ApplicationWorld) {
     let drawing = world.other_document.expect("expected the original drawing");
     let name = world.document_name(drawing);
     world.expect_tab(&name);

@@ -5753,10 +5753,10 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
+      "go_reference": "../Oblikovati/head/ui/file_dialog_draw.go; ../Oblikovati/app/session.go; ../Oblikovati/model/doc/workspace.go",
       "mapping_reason": "Activate an existing part without creating a duplicate.",
       "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
@@ -5779,13 +5779,14 @@
           "sha256": "512947fc01bd8c142e5c3a92d29b26af97891f2e6753b2dda429e2caaf35c28b"
         }
       ],
-      "go_test_premise": "Go aa8297d1b: package-store save/reopen, missing-path and MRU tests pass; they do not check this native dialog or saved-sketch scenario. See receipts/2026-11-14-go-save-open-baseline/README.md.",
+      "go_test_premise": "Go aa8297d1b: OpenDocument delegates to Workspace.Open, which reuses an exact-name open document and activates it. Existing package-store tests do not establish native dialog parity; see receipts/2026-11-14-go-save-open-baseline/README.md.",
       "kernel_capabilities": "No solid modeling operation is required by this document and dialog scenario.",
       "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
       "kernel_integration": "The native viewport and document owner are used; the scenario does not request solid geometry.",
-      "rust_tests": "application_scenarios_use_the_native_window: Activate an already open part through the Open dialog",
+      "rust_tests": "application_scenarios_use_the_native_window: Activate an already open part through the Open dialog; native_input_activates_existing_part_without_an_extra_tab",
       "oracle": "Pinned scenario assertions and reviewed final native capture; Go file compatibility and visual parity are not established.",
-      "expected_result": "the existing part document tab becomes active; no additional document tab is created; the drawing tab remains available"
+      "expected_result": "the existing part document tab becomes active; no additional document tab is created; the drawing tab remains available",
+      "baseline_source_sha256": "ce0be44dd1e0ded53c12de6a96465ffafca2307db3029351147c6d9606bf4b8b"
     },
     {
       "id": "scenario:59162ec325e7796e63268366914195a25056bc4db02bba09c772d154c62dc4b3",

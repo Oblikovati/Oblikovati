@@ -18,6 +18,9 @@ mod drawing_fixture;
 mod express_fixture;
 #[path = "lists.rs"]
 mod lists;
+#[cfg(target_os = "linux")]
+#[path = "native_existing.rs"]
+mod native_existing;
 #[path = "selections.rs"]
 mod selections;
 
