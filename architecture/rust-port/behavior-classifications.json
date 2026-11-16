@@ -21200,12 +21200,14 @@
       "acceptance_test": "sketch_scenarios_use_the_native_window: move-15 accept a numeric distance-and-angle endpoint",
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3904",
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/4014"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_transform_tools.go; ../Oblikovati/app/commands_sketch.go",
-      "mapping_reason": "Sketch transformation, constraints, and edit/history behavior."
+      "mapping_reason": "Sketch transformation, constraints, and edit/history behavior.",
+      "reason": "The source does not identify the reference or setup for the lower preview position; clarification requested in the scenario folder."
     },
     {
       "id": "scenario:a2170ce357a87ab50433fc2f0d77710c8aa18d8f45288675c381b89a120e1580",

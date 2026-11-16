@@ -35,6 +35,8 @@ mod move_close;
 mod move_fade;
 #[path = "move/pin.rs"]
 mod move_pin;
+#[path = "move/polar.rs"]
+mod move_polar;
 #[path = "move/precise.rs"]
 mod move_precise;
 #[path = "new-sketch/steps.rs"]
