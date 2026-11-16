@@ -15,11 +15,7 @@ pub(super) fn construct(
     size: SketchCornerSize,
     bound: f64,
 ) -> Result<SketchCornerSeed, PlanarCurveFailure> {
-    if !bound.is_finite() || bound < 0.0 {
-        return Err(PlanarCurveFailure::input(format!(
-            "corner residual bound {bound}: expected a finite nonnegative value"
-        )));
-    }
+    require_bound(bound)?;
     let frame = frame(points)?;
     let (distances, radius) = match size {
         SketchCornerSize::Chamfer(distances) => (distances, None),
@@ -32,6 +28,14 @@ pub(super) fn construct(
     let seed = SketchCornerSeed { endpoints, arc };
     verify_seed(&frame, seed, distances, radius, bound)?;
     Ok(seed)
+}
+fn require_bound(bound: f64) -> Result<(), PlanarCurveFailure> {
+    if !bound.is_finite() || bound < 0.0 {
+        return Err(PlanarCurveFailure::input(format!(
+            "corner residual bound {bound}: expected a finite nonnegative value"
+        )));
+    }
+    Ok(())
 }
 fn frame(points: [Point; 3]) -> Result<CornerFrame, PlanarCurveFailure> {
     let turn = classify_turn(points)?;
@@ -114,27 +118,48 @@ fn verify_seed(
     bound: f64,
 ) -> Result<(), PlanarCurveFailure> {
     for (i, distance) in distances.into_iter().enumerate() {
-        let delta = [
-            seed.endpoints[i][0] - frame.origin[0],
-            seed.endpoints[i][1] - frame.origin[1],
-        ];
-        let direction = frame.directions[i];
-        let residual = (delta[0] * direction[0] + delta[1] * direction[1] - distance)
-            .abs()
-            .max((delta[0] * direction[1] - delta[1] * direction[0]).abs());
-        require_residual(residual, bound)?;
+        verify_endpoint(
+            frame,
+            seed.endpoints[i],
+            frame.directions[i],
+            distance,
+            bound,
+        )?;
         if let (Some((center, _)), Some(radius)) = (seed.arc, radius) {
-            let radial = [
-                seed.endpoints[i][0] - center[0],
-                seed.endpoints[i][1] - center[1],
-            ];
-            let residual = (radial[0].hypot(radial[1]) - radius)
-                .abs()
-                .max((radial[0] * direction[0] + radial[1] * direction[1]).abs());
-            require_residual(residual, bound)?;
+            verify_tangent(
+                seed.endpoints[i],
+                center,
+                frame.directions[i],
+                radius,
+                bound,
+            )?;
         }
     }
     Ok(())
+}
+fn verify_endpoint(
+    frame: &CornerFrame,
+    endpoint: Point,
+    direction: Point,
+    distance: f64,
+    bound: f64,
+) -> Result<(), PlanarCurveFailure> {
+    let delta = [endpoint[0] - frame.origin[0], endpoint[1] - frame.origin[1]];
+    let along = (delta[0] * direction[0] + delta[1] * direction[1] - distance).abs();
+    let across = (delta[0] * direction[1] - delta[1] * direction[0]).abs();
+    require_residual(along.max(across), bound)
+}
+fn verify_tangent(
+    endpoint: Point,
+    center: Point,
+    direction: Point,
+    radius: f64,
+    bound: f64,
+) -> Result<(), PlanarCurveFailure> {
+    let radial = [endpoint[0] - center[0], endpoint[1] - center[1]];
+    let radius_error = (radial[0].hypot(radial[1]) - radius).abs();
+    let tangent_error = (radial[0] * direction[0] + radial[1] * direction[1]).abs();
+    require_residual(radius_error.max(tangent_error), bound)
 }
 fn require_residual(residual: f64, bound: f64) -> Result<(), PlanarCurveFailure> {
     if !residual.is_finite() || residual > bound {
