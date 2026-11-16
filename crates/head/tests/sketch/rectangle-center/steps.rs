@@ -251,14 +251,18 @@ fn ready_committed(world: &mut ApplicationWorld) {
 #[given("the numeric centered rectangle")]
 fn numeric_rectangle(world: &mut ApplicationWorld) {
     recorded_rectangle(world, "8", "4");
+    world.remember_edited_sketch(Vec::new());
 }
 #[when("I open Measure and select its adjacent vertical and horizontal sides as Curves")]
+#[when("the user open Measure and select its adjacent vertical and horizontal sides as Curves")]
 fn select_adjacent(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::M, false);
     let upright = world.line_point(0, 0.3);
     world.sketch_click(upright);
     let across = world.line_point(1, 0.3);
     world.sketch_click(across);
+    world.expect_measure("Selection 1: Curve");
+    world.expect_measure("Selection 2: Curve");
 }
 #[then("their lengths are 8.000 mm and 4.000 mm")]
 fn lengths(world: &mut ApplicationWorld) {
@@ -277,6 +281,7 @@ fn measure_closed(world: &mut ApplicationWorld) {
         "expected Measure to close"
     );
     expect_shape(world);
+    world.expect_edited_sketch_retained();
 }
 // rectangle-center-11 to rectangle-center-13
 #[then("the command requests Select center without a warning or visible new rectangle")]
