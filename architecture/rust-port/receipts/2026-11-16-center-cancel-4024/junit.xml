@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Rectangle center: tmp/obk-center-cancel-4024/features/sketch/rectangle-center/scenario.feature" package="testsuite/Feature: Rectangle center: tmp/obk-center-cancel-4024/features/sketch/rectangle-center/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-16T10:27:53.849400545Z" time="31.065559992"><testcase name="Scenario: rectangle-center-16 Cancel a proposed height edit: tmp/obk-center-cancel-4024/features/sketch/rectangle-center/scenario.feature:123:3" time="31.065559992"><system-out><![CDATA[  Scenario: rectangle-center-16 Cancel a proposed height edit
+   ✔  Given the retained centered rectangle has a driving height dimension equal to 6 mm
+   ✔  When the user open its height annotation, enter 8 and press Escape
+   ✔  And the user reopen the annotation
+   ✔  Then the height editor still contains 6 mm
+]]></system-out></testcase></testsuite></testsuites>

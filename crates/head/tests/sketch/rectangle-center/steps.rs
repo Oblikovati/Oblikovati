@@ -397,6 +397,7 @@ fn retained_height(world: &mut ApplicationWorld) {
     recorded_rectangle(world, "6", "4");
 }
 #[when("I open its height annotation, enter 8 and press Escape")]
+#[when("the user open its height annotation, enter 8 and press Escape")]
 fn height_and_escape(world: &mut ApplicationWorld) {
     world.open_dimension_label("6");
     world.type_text("8");

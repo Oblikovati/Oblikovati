@@ -97,6 +97,7 @@ fn editor_closed(world: &mut ApplicationWorld) {
     world.expect_annotation("4");
 }
 #[when("I reopen the annotation")]
+#[when("the user reopen the annotation")]
 fn reopen_annotation(world: &mut ApplicationWorld) {
     let value = world
         .opened_value
