@@ -193,6 +193,7 @@ fn select_copy(world: &mut ApplicationWorld) {
 }
 
 #[when("I enable Copy and select the original ellipse")]
+#[when("the user enables Copy and selects the original ellipse")]
 fn enable_copy_and_select(world: &mut ApplicationWorld) {
     let check = world.run_in_window("Move", "Copy").center();
     world.click(diagnostics::pointer_pixels(check));
@@ -215,6 +216,7 @@ fn reopened_move(world: &mut ApplicationWorld) {
 }
 
 #[when("I choose its center as Base Point and click the displaced endpoint")]
+#[when("the user chooses its center as Base Point and clicks the displaced endpoint")]
 fn copy_from_center(world: &mut ApplicationWorld) {
     place_copy(world);
 }
