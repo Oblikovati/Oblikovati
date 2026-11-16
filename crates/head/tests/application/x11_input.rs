@@ -220,3 +220,35 @@ fn atom(connection: &RustConnection, name: &[u8]) -> Atom {
         .unwrap()
         .atom
 }
+
+pub(super) fn press_control_a() {
+    let (connection, root) = keyboard_target();
+    let control = keyboard_keycode(&connection, 0xffe3);
+    let letter = keyboard_keycode(&connection, u32::from(b'a'));
+    send_key_sequence(
+        &connection,
+        root,
+        &[
+            (KEY_PRESS_EVENT, control),
+            (KEY_PRESS_EVENT, letter),
+            (KEY_RELEASE_EVENT, letter),
+            (KEY_RELEASE_EVENT, control),
+        ],
+    );
+}
+
+pub(super) fn type_digits(digits: &str) {
+    assert!(
+        digits.bytes().all(|digit| digit.is_ascii_digit()),
+        "digits {digits:?}: expected ASCII digits"
+    );
+    let (connection, root) = keyboard_target();
+    for digit in digits.bytes() {
+        let key = keyboard_keycode(&connection, u32::from(digit));
+        send_key_sequence(
+            &connection,
+            root,
+            &[(KEY_PRESS_EVENT, key), (KEY_RELEASE_EVENT, key)],
+        );
+    }
+}

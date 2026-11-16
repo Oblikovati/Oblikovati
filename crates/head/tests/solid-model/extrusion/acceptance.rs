@@ -59,7 +59,7 @@ fn assert_eight_millimeter_edges(world: &mut ApplicationWorld) {
     );
 }
 
-fn named_solid_edges(world: &mut ApplicationWorld) -> Vec<String> {
+pub(super) fn named_solid_edges(world: &mut ApplicationWorld) -> Vec<String> {
     let client = oblikovati_api::client::Client::new(world.app().owner.document_host());
     let body = client
         .model()
@@ -75,7 +75,7 @@ fn named_solid_edges(world: &mut ApplicationWorld) -> Vec<String> {
         .collect()
 }
 
-fn edge_is_eight_mm(world: &mut ApplicationWorld, key: &str) -> bool {
+pub(super) fn edge_is_eight_mm(world: &mut ApplicationWorld, key: &str) -> bool {
     use oblikovati_api::{client::Client, wire::MeasureArgs};
     let client = Client::new(world.app().owner.document_host());
     let value = client
@@ -90,7 +90,7 @@ fn edge_is_eight_mm(world: &mut ApplicationWorld, key: &str) -> bool {
     value.unit == "mm" && (value.value - 8.0).abs() < 1e-6
 }
 
-fn feature_count(world: &mut ApplicationWorld) -> usize {
+pub(super) fn feature_count(world: &mut ApplicationWorld) -> usize {
     let document = world.active_id();
     world
         .app()
@@ -169,8 +169,15 @@ fn open_extrusion_editor(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
     world.pump(Vec::new());
     world.expect_text("Show Dimensions");
+    let edit = edit_menu_position(world);
+    world.click(edit);
+    world.pump(Vec::new());
+    world.expect_text("Distance A");
+}
+
+pub(super) fn edit_menu_position(world: &ApplicationWorld) -> [i32; 2] {
     let anchor = world.run("Show Dimensions").center();
-    let edit = world
+    world
         .frame
         .runs
         .iter()
@@ -186,12 +193,10 @@ fn open_extrusion_editor(world: &mut ApplicationWorld) {
                 .total_cmp(&(b.center()[1] - anchor[1]).abs())
         })
         .expect("expected Edit Feature in the context menu")
-        .center();
-    world.click(edit.map(|value| value as i32));
-    world.pump(Vec::new());
-    world.expect_text("Distance A");
+        .center()
+        .map(|value| value as i32)
 }
-fn feature_distance(world: &mut ApplicationWorld) -> f64 {
+pub(super) fn feature_distance(world: &mut ApplicationWorld) -> f64 {
     use oblikovati_api::{client::Client, wire::FeatureRefArgs};
     Client::new(world.app().owner.document_host())
         .features()

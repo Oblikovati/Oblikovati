@@ -13,10 +13,10 @@ Last checked: 2026-11-16 on `rust-work`. Refresh from current evidence at each c
 ## Current state
 
 - Parallel constraint hover (#4031), Ready-state line selection (#4033), and
-  constraint/dimension tool candidate hover (#4034) have native X11 mouse
-  diagnostics against live source, not pinned acceptance.
-  Their live features carry fixture or reference-capture gaps; see the matching
-  receipts before counting results. Other mouse scenarios remain open.
+  tool candidate hover (#4034) have X11 diagnostics on live source. Fixture and
+  reference-capture gaps prevent acceptance; other mouse scenarios remain open.
+- Solid viewport edit and cancel (#4038) pass X11 diagnostics for extrusion;
+  three creation and picking scenarios remain unbound. Shading is under review (#4044).
 - Pointer-driven Line creation and preview cancellation have an X11 diagnostic
   (#4037). Move preview and cancellation also pass a focused X11 diagnostic
   (#4040). Overlap type cues and Select Other also pass a native diagnostic
