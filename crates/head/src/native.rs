@@ -27,6 +27,7 @@ pub struct NativeHeadWindow {
     wake: ViewportWake,
     scene_status: Option<crate::HeadSceneStatus>,
     current_scene: Option<ViewportScene>,
+    scene_depth_bounds: Option<scene_depth::SceneBounds>,
     preview_background: Option<oblikovati_viewport::ViewportBackground>,
     sketch_scene: Option<crate::HeadSketchSceneUpdate>,
     glyph_hover: Option<oblikovati_viewport::ViewportSketchFeedback>,
@@ -50,6 +51,7 @@ pub struct NativeHeadWindow {
     _context_lease: crate::test_context::TestContextLease,
 }
 mod open;
+mod scene_depth;
 mod scene_status;
 #[path = "native/view_inputs.rs"]
 mod view_inputs;
@@ -327,7 +329,7 @@ impl HeadWindow for NativeHeadWindow {
     }
 
     fn previous_view(&mut self) -> Result<bool, String> {
-        self.view.previous_view()
+        self.restore_previous_scene_view()
     }
 
     fn mark_view(&mut self) -> Result<(), String> {
@@ -340,6 +342,7 @@ impl HeadWindow for NativeHeadWindow {
             return Ok(false);
         };
         self.view.set_camera(camera)?;
+        self.refresh_current_scene_depth()?;
         Ok(true)
     }
 
@@ -367,10 +370,7 @@ impl HeadWindow for NativeHeadWindow {
     }
 
     fn submit_scene(&mut self, update: crate::HeadSceneUpdate) -> Result<(), String> {
-        self.view.submit(&update.scene)?;
-        self.current_scene = Some(update.scene);
-        self.scene_status = Some(update.status);
-        self.refresh_title()
+        self.submit_model_scene(update)
     }
     fn events(&mut self, limit: usize) -> Result<Vec<ViewportEvent>, String> {
         self.clipboard.service_pending(limit);
