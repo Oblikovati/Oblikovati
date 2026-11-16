@@ -53,6 +53,10 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
         GuiShellAction::PrecisePoint(point) => owner.precise_point_from_gui(point),
         GuiShellAction::PreciseTriad(command) => owner.precise_triad_from_gui(*command),
         GuiShellAction::DeleteSketchRelation(id) => owner.delete_sketch_relation_from_gui(*id),
+        GuiShellAction::DismissSketchContext { token } => owner.dismiss_sketch_context(*token),
+        GuiShellAction::SelectSketchContextCandidate { token, entity } => {
+            owner.select_sketch_context_candidate(*token, *entity)
+        }
         GuiShellAction::ToggleCenterPointFormat => owner.toggle_center_point_format_from_gui(),
         GuiShellAction::SetCenterPoint { point, center } => {
             owner.set_center_point_from_gui(*point, *center)
@@ -371,6 +375,16 @@ mod tests {
         let mut owner = crate::work_idle::IdleHeadWork;
         let cause = apply(&mut owner, &GuiShellAction::DeleteSketchSelection).unwrap_err();
         assert!(cause.contains("Delete Sketch Selection") && cause.contains("expected"));
+    }
+    #[test]
+    fn idle_context_choice_names_the_missing_editor_owner() {
+        let mut owner = crate::work_idle::IdleHeadWork;
+        let action = GuiShellAction::SelectSketchContextCandidate {
+            token: 9,
+            entity: oblikovati_model::sketch::SketchEntityId(12),
+        };
+        let cause = apply(&mut owner, &action).unwrap_err();
+        assert!(cause.contains('9') && cause.contains("12") && cause.contains("expected"));
     }
     #[test]
     fn idle_theme_editor_requests_return_named_owner_declines() {

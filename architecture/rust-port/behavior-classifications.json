@@ -22,7 +22,7 @@
       "kernel_integration": "crates/martensite/src/prism/snapshot.rs and crates/head/src/part_scene/physical.rs integrate the analytic body; Go part query uses a mesh and is not the numeric oracle.",
       "rust_tests": "Native scenario: crates/head/tests/application/body-properties/steps.rs; analytic prism assertion: crates/head/tests/owner/part_scene/physical.rs.",
       "oracle": "Independent rectangular prism formulas for volume, surface area, centroid and density-scaled mass; no Go per-body numeric comparison established.",
-      "expected_result": "Initially unavailable values become mass 24 g, area 5200 mm\u00b2, volume 24000 mm\u00b3, centroid (20, 15, 10) mm for the native prism fixture and remain displayed when reopened.",
+      "expected_result": "Initially unavailable values become mass 24 g, area 5200 mm², volume 24000 mm³, centroid (20, 15, 10) mm for the native prism fixture and remain displayed when reopened.",
       "historical_receipts": [
         {
           "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
@@ -49585,7 +49585,9 @@
       "target_module": "crates/head, crates/gui, crates/model, crates/session",
       "acceptance_test": "sketch_scenarios_use_the_native_window: Resolve a pick where sketch entities overlap",
       "issues": [
-        "https://github.com/Oblikovati/Oblikovati/issues/4038"
+        "https://github.com/Oblikovati/Oblikovati/issues/4038",
+        "https://github.com/Oblikovati/Oblikovati/issues/4041",
+        "https://github.com/Oblikovati/Oblikovati/issues/4042"
       ],
       "state": "inventoried",
       "last_receipt": null

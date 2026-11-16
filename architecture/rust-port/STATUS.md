@@ -19,7 +19,8 @@ Last checked: 2026-11-16 on `rust-work` after `6ba45dcb1`. Refresh from current 
   receipts before counting results. Other mouse scenarios remain open.
 - Pointer-driven Line creation and preview cancellation have an X11 diagnostic
   (#4037). Move preview and cancellation also pass a focused X11 diagnostic
-  (#4040). These cases still need fixtures and reference captures.
+  (#4040). Overlap type cues and Select Other also pass a native diagnostic
+  (#4041, #4042). These cases still need fixtures and reference captures.
 - The 60 fps sketch target is not met on the measured GPU. A 4-segment
   pointer-motion run measured 20.738 ms median and 24.861 ms p95 at 1440 × 900;
   the 60 fps frame budget is 16.67 ms. See `receipts/2026-11-16-sketch-frame-baseline-4031/`.

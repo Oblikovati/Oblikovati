@@ -77,6 +77,7 @@ impl<
             dimension_labels: Vec::new(),
             sketch_delete_available: self.sketch_delete_available(document),
             sketch_selection: browser_selection::gui_sketch_selection(session),
+            sketch_pick_cue: self.gui_sketch_pick_cue(),
             sketch_block_names: session
                 .snapshot()
                 .sketches

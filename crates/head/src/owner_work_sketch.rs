@@ -137,6 +137,16 @@ impl<
     fn delete_sketch_relation_from_gui(&mut self, id: u64) -> Result<bool, String> {
         self.delete_context_relation(id)
     }
+    fn dismiss_sketch_context(&mut self, token: u64) -> Result<bool, String> {
+        Ok(self.retire_sketch_context(token))
+    }
+    fn select_sketch_context_candidate(
+        &mut self,
+        token: u64,
+        entity: oblikovati_model::sketch::SketchEntityId,
+    ) -> Result<bool, String> {
+        self.select_context_candidate(token, entity)
+    }
     fn set_center_point_from_gui(&mut self, point: u64, center: bool) -> Result<bool, String> {
         DesktopOwner::set_center_point_from_gui(self, point, center)
     }

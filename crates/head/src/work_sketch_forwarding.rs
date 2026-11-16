@@ -58,6 +58,16 @@ macro_rules! forward_owner_sketch_work {
         fn delete_sketch_relation_from_gui(&mut self, id: u64) -> Result<bool, String> {
             self.$owner.delete_sketch_relation_from_gui(id)
         }
+        fn dismiss_sketch_context(&mut self, token: u64) -> Result<bool, String> {
+            self.$owner.dismiss_sketch_context(token)
+        }
+        fn select_sketch_context_candidate(
+            &mut self,
+            token: u64,
+            entity: oblikovati_model::sketch::SketchEntityId,
+        ) -> Result<bool, String> {
+            self.$owner.select_sketch_context_candidate(token, entity)
+        }
         fn preview_sketch_pattern_from_gui(
             &mut self,
             request: Option<oblikovati_model::history::SketchRectangularPatternRequest>,

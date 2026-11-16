@@ -36,6 +36,8 @@
 
 ### Fixed
 
+- Listed and selected overlapping sketch point and curve candidates in Select Other. (#4041)
+
 - Refused preference saves when YAML keys have ambiguous merge meaning, preserving the existing file. (#4007)
 
 - Preserved document and Home tab order when scrolling and closing windows. (#3993)
@@ -140,6 +142,8 @@
 - Resolved viewport body colors from document and catalog appearances. (#3859)
 
 ### Added
+
+- Show the picked sketch entity type and sketch name near the pointer. (#4042)
 
 - Added Move and Measure pointer feedback for sketch curves, points, and midpoints. (#4034)
 

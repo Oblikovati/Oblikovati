@@ -77,13 +77,21 @@ fn measure_width(ui: &Ui, panel: &GuiMeasurePanel) -> f32 {
 /// What was under the pointer when the canvas menu was asked for.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct GuiSketchContext {
+    /// Unique owner-generated identity for this context-menu invocation.
+    pub token: u64,
     /// The point the menu's Center Point row acts on; none on empty canvas.
     pub point: Option<u64>,
     pub center_point: bool,
     /// Every entity within reach; two or more is what Select Other is for.
-    pub candidates: Vec<String>,
+    pub candidates: Vec<GuiSketchCandidate>,
     /// Geometric relations owned by the curve under the context pointer.
     pub relations: Vec<GuiSketchRelation>,
+}
+/// One identifiable selectable under the sketch context pointer.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GuiSketchCandidate {
+    pub entity: oblikovati_model::sketch::SketchEntityId,
+    pub label: String,
 }
 /// One geometric relation resolved from the picked curve.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -163,7 +171,7 @@ fn relation_rows(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAct
         }
     }
 }
-fn select_other_row(ui: &Ui, state: &GuiCommandState) {
+fn select_other_row(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
     let Some(context) = state
         .sketch_context
         .as_ref()
@@ -173,12 +181,23 @@ fn select_other_row(ui: &Ui, state: &GuiCommandState) {
     };
     ui.menu("Select Other", || {
         for (index, candidate) in context.candidates.iter().enumerate() {
-            ui.menu_item(format!("{candidate}##candidate-{index}"));
+            if ui.menu_item(format!("{}##candidate-{index}", candidate.label)) {
+                actions.push(GuiShellAction::SelectSketchContextCandidate {
+                    token: context.token,
+                    entity: candidate.entity,
+                });
+            }
         }
     });
 }
-pub(crate) fn canvas_menu(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
+pub(crate) fn canvas_menu(
+    ui: &Ui,
+    state: &GuiCommandState,
+    actions: &mut Vec<GuiShellAction>,
+    open_token: &mut Option<u64>,
+) {
     if state.authoring != GuiAuthoringContext::Sketch || !state.sketch_at_ready {
+        retire_closed_context(open_token, actions);
         return;
     }
     let over_panel = ui.is_window_hovered_with_flags(crate::widget_abi::over_any_panel());
@@ -186,8 +205,10 @@ pub(crate) fn canvas_menu(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<Gu
         ui.open_popup(CANVAS_MENU);
     }
     let Some(_popup) = ui.begin_popup(CANVAS_MENU) else {
+        retire_closed_context(open_token, actions);
         return;
     };
+    *open_token = state.sketch_context.as_ref().map(|context| context.token);
     if let Some(menu) = &state.sketch_marking_menu {
         if state.sketch_classic_menu {
             super::marking_menu::draw_classic(ui, menu, state, actions);
@@ -199,7 +220,7 @@ pub(crate) fn canvas_menu(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<Gu
     center_point_row(ui, state, actions);
     delete_selection_row(ui, state, actions);
     relation_rows(ui, state, actions);
-    select_other_row(ui, state);
+    select_other_row(ui, state, actions);
     if ui.menu_item("Measure") {
         actions.push(GuiShellAction::Inspect(GuiInspectAction::StartMeasure));
     }
@@ -207,5 +228,11 @@ pub(crate) fn canvas_menu(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<Gu
         actions.push(GuiShellAction::Inspect(
             GuiInspectAction::OpenRegionProperties,
         ));
+    }
+}
+
+fn retire_closed_context(open_token: &mut Option<u64>, actions: &mut Vec<GuiShellAction>) {
+    if let Some(token) = open_token.take() {
+        actions.push(GuiShellAction::DismissSketchContext { token });
     }
 }

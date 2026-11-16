@@ -27,6 +27,12 @@ impl SketchPickFilter {
 }
 use oblikovati_session::selection::{SelectionClickMode, SketchPickTarget};
 use oblikovati_viewport::{ViewportButton, ViewportEvent, ViewportInput};
+// Match Go's snapPixels; this is a UI hit radius, not a modelling tolerance.
+const SKETCH_PICK_REACH: f64 = 12.;
+pub(super) type ContextCurve = (
+    SketchEntityPickWitness,
+    oblikovati_api::types::SketchEntityKind,
+);
 
 impl<
     O: TransactionObserver,
@@ -148,7 +154,7 @@ impl<
         self.publish_selection_count(edit)?;
         Ok(true)
     }
-    fn publish_selection_count(&mut self, edit: HeadSketchEdit) -> Result<(), String> {
+    pub(super) fn publish_selection_count(&mut self, edit: HeadSketchEdit) -> Result<(), String> {
         let session = self
             .files
             .workspace()
@@ -320,6 +326,16 @@ fn nearest_screen_candidate(
     pixel: [i32; 2],
     window: &dyn HeadWindow,
 ) -> Result<Option<SketchEntityPickWitness>, String> {
+    let (witnesses, projected) = project_witnesses(ids, query, plane, window)?;
+    Ok(closest_projected_witness(witnesses, projected, pixel))
+}
+
+fn project_witnesses(
+    ids: impl Iterator<Item = SketchEntityId>,
+    query: &SketchPickQuery<'_>,
+    plane: SketchPlane,
+    window: &dyn HeadWindow,
+) -> Result<(Vec<SketchEntityPickWitness>, Vec<[i32; 2]>), String> {
     let witnesses = ids
         .map(|entity| query.candidate(entity).map_err(|cause| cause.to_string()))
         .collect::<Result<Vec<_>, _>>()?;
@@ -332,28 +348,76 @@ fn nearest_screen_candidate(
             witnesses.len()
         ));
     }
-    Ok(closest_projected_witness(witnesses, projected, pixel))
+    Ok((witnesses, projected))
+}
+
+pub(super) fn curve_context_candidates(
+    sketch: &Sketch2D,
+    plane: SketchPlane,
+    pixel: [i32; 2],
+    window: &dyn HeadWindow,
+) -> Result<Vec<ContextCurve>, String> {
+    let Some(cursor) = window.sketch_point(pixel, plane)? else {
+        return Ok(Vec::new());
+    };
+    let query = SketchPickQuery::new(sketch, cursor, PlanarPickOptionsV1::default())
+        .map_err(|cause| cause.to_string())?;
+    let point_ids = sketch.points().iter().map(|p| p.id).collect();
+    let curves = eligible_curves(sketch, &query, &point_ids, SketchPickFilter::Curves)?;
+    let (witnesses, projected) = project_witnesses(curves.into_iter(), &query, plane, window)?;
+    ordered_context_curves(witnesses, projected, pixel, &query)
+}
+
+fn ordered_context_curves(
+    witnesses: Vec<SketchEntityPickWitness>,
+    projected: Vec<[i32; 2]>,
+    pixel: [i32; 2],
+    query: &SketchPickQuery<'_>,
+) -> Result<Vec<ContextCurve>, String> {
+    let mut candidates: Vec<_> = reachable_witnesses(witnesses, projected, pixel).collect();
+    candidates.sort_by(compare_witnesses);
+    candidates
+        .into_iter()
+        .map(|(_, witness)| {
+            let kind = query
+                .entity_kind(witness.entity)
+                .map_err(|cause| cause.to_string())?;
+            Ok((witness, kind))
+        })
+        .collect()
 }
 fn closest_projected_witness(
     witnesses: Vec<SketchEntityPickWitness>,
     projected: Vec<[i32; 2]>,
     pixel: [i32; 2],
 ) -> Option<SketchEntityPickWitness> {
+    reachable_witnesses(witnesses, projected, pixel)
+        .min_by(compare_witnesses)
+        .map(|(_, witness)| witness)
+}
+
+fn reachable_witnesses(
+    witnesses: Vec<SketchEntityPickWitness>,
+    projected: Vec<[i32; 2]>,
+    pixel: [i32; 2],
+) -> impl Iterator<Item = (f64, SketchEntityPickWitness)> {
     witnesses
         .into_iter()
         .zip(projected)
-        .filter_map(|(witness, point)| {
-            let distance = screen_distance(point, pixel);
-            // Match Go's snapPixels=12; this is a UI hit radius, not a modelling tolerance.
-            (distance <= 12.).then_some((distance, witness))
+        .filter_map(move |(witness, at)| {
+            let distance = screen_distance(at, pixel);
+            (distance <= SKETCH_PICK_REACH).then_some((distance, witness))
         })
-        .min_by(|first, second| {
-            first
-                .0
-                .total_cmp(&second.0)
-                .then(first.1.entity.cmp(&second.1.entity))
-        })
-        .map(|(_, witness)| witness)
+}
+
+fn compare_witnesses(
+    first: &(f64, SketchEntityPickWitness),
+    second: &(f64, SketchEntityPickWitness),
+) -> std::cmp::Ordering {
+    first
+        .0
+        .total_cmp(&second.0)
+        .then(first.1.entity.cmp(&second.1.entity))
 }
 
 pub(super) fn screen_distance(first: [i32; 2], second: [i32; 2]) -> f64 {

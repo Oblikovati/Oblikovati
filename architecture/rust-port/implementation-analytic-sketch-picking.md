@@ -30,6 +30,11 @@ survives theme and display refresh; other entities retain their normal colour.
 The existing canonical selection response retains Go's kinds and empty reference
 entries for sketch entities. No public wire method or DTO is added.
 
+The sketch context menu enumerates reachable points and analytic curve witnesses
+in point-first order. Select Other carries each entity identity to the owner and
+refuses choices from an old menu, sketch, document, or generation (#4041).
+This is not a claim that a native overlap scenario has passed.
+
 ## Evidence and limits
 
 The adapter suite passes the analytic and construction checks, including the new analytic endpoint,

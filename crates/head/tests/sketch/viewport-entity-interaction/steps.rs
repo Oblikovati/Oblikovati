@@ -31,6 +31,21 @@ fn add_isolated_line(world: &mut ApplicationWorld) {
         .unwrap();
     world.pump(Vec::new());
 }
+fn add_overlap_point(world: &mut ApplicationWorld) -> oblikovati_model::sketch::SketchEntityId {
+    let edit = world.app().owner.active_sketch_edit().unwrap();
+    let point = world
+        .app()
+        .owner
+        .document_commands(edit.document)
+        .create_sketch_primitive(
+            edit.sketch,
+            &SketchPrimitiveCreation::Point { position: [0., 1.] },
+        )
+        .unwrap()
+        .entity;
+    world.pump(Vec::new());
+    point
+}
 #[when("the user clicks the line away from its endpoints and constraint glyphs")]
 fn click_line(world: &mut ApplicationWorld) {
     let position = world.line_point(0, 0.25);
@@ -297,6 +312,11 @@ fn measure_candidate_frames_for_dense_sketch() {
 #[path = "measure_perf.rs"]
 mod measure_perf;
 
+#[path = "overlap.rs"]
+mod overlap;
+#[cfg(target_os = "linux")]
+#[path = "pick_cue.rs"]
+mod pick_cue;
 #[path = "pointer_move.rs"]
 mod pointer_move;
 #[path = "pointer_placement.rs"]

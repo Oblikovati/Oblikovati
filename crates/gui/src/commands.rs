@@ -69,6 +69,15 @@ pub enum GuiShellAction {
     },
     /// Delete the stable relation selected in the sketch context menu.
     DeleteSketchRelation(u64),
+    /// Select one checked entity from the current sketch context menu.
+    SelectSketchContextCandidate {
+        token: u64,
+        entity: oblikovati_model::sketch::SketchEntityId,
+    },
+    /// Retire a dismissed sketch context menu.
+    DismissSketchContext {
+        token: u64,
+    },
     Inspect(crate::GuiInspectAction),
     EditDimensionValue(crate::GuiDimensionValue),
     SetTheme(String),

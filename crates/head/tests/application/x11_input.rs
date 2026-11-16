@@ -28,7 +28,12 @@ pub(super) fn request_native_close() {
 
 pub(super) fn click(position: [i32; 2]) {
     let (connection, root, x, y) = pointer_target(position);
-    send_click(&connection, root, x, y);
+    send_click(&connection, root, x, y, 1);
+}
+
+pub(super) fn right_click(position: [i32; 2]) {
+    let (connection, root, x, y) = pointer_target(position);
+    send_click(&connection, root, x, y, 3);
 }
 
 pub(super) fn move_pointer(position: [i32; 2]) {
@@ -117,11 +122,11 @@ fn coordinate(base: i16, offset: i32) -> i16 {
     i16::try_from(value).unwrap_or_else(|_| panic!("X11 click coordinate {value}: expected i16"))
 }
 
-fn send_click(connection: &RustConnection, root: Window, x: i16, y: i16) {
+fn send_click(connection: &RustConnection, root: Window, x: i16, y: i16, button: u8) {
     for (event, detail) in [
         (MOTION_NOTIFY_EVENT, 0),
-        (BUTTON_PRESS_EVENT, 1),
-        (BUTTON_RELEASE_EVENT, 1),
+        (BUTTON_PRESS_EVENT, button),
+        (BUTTON_RELEASE_EVENT, button),
     ] {
         connection
             .xtest_fake_input(event, detail, 0, root, x, y, 0)

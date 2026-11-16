@@ -23,6 +23,8 @@ pub struct GuiCommandState {
     pub dimension_labels: Vec<crate::GuiDimensionLabel>,
     pub dimension_draft: Option<crate::GuiDimensionDraft>,
     pub sketch_selection: oblikovati_viewport::ViewportSketchSelection,
+    /// Transient type cue for a checked canvas pick.
+    pub sketch_pick_cue: Option<crate::GuiSketchPickCue>,
     /// Names in the active document's block registry.
     pub sketch_block_names: Vec<String>,
     /// Last block creation acknowledged by the document owner during this dialog.
