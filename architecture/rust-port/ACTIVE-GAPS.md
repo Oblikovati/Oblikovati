@@ -169,7 +169,9 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
   revealed an incorrect active-tab highlight (#3992). The fix passed the full
   feature again; see `receipts/2026-11-15-document-tabs-3992/`. These results
   are diagnostic.
-- Quick access: the diagnostic passed 11 of 12 scenarios. Clear can open
+- Quick access: the full pinned run passed 12 of 12 scenarios with frame-loop
+  input. Four unavailable commands are shown disabled; their implementations
+  remain open (#3955). See `receipts/2026-11-16-qat-choices-3955/`. Clear can open
   before selection and can clear multiple browser-selected bodies in one edit
   (#3962). Viewport body multi-selection passes frame-loop tests; see
   `implementation-viewport-body-toggle.md` and

@@ -39,8 +39,13 @@ fn read_choices(world: &ApplicationWorld, labels: &[&str]) -> Vec<(String, bool)
 )]
 fn lists_current_choices(world: &mut ApplicationWorld) {
     for label in CHOICES {
+        let expected = super::super::world::squeezed(label);
         assert!(
-            world.frame.runs.iter().any(|run| run.text == label),
+            world
+                .frame
+                .runs
+                .iter()
+                .any(|run| super::super::world::squeezed(&run.text) == expected),
             "expected quick-access choice {label:?}"
         );
     }
@@ -119,5 +124,27 @@ fn menu_state_comparison_accepts_a_nondefault_profile() {
     open_customization(&mut world);
     assert_eq!(before, read_choices(&world, &labels));
     world.escape();
+    world.close();
+}
+
+#[test]
+fn unimplemented_choices_are_visible_but_cannot_be_added() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    open_customization(&mut world);
+    for label in [
+        "Refine Appearance",
+        "Appearance Override",
+        "Adjust",
+        "Design Doctor",
+    ] {
+        world.expect_text(label);
+        assert!(!world.run_is_enabled(label), "{label} must be unavailable");
+        assert!(!world.checked(label), "{label} must not be selected");
+    }
+    world.click_text("Refine Appearance");
+    assert!(!world.checked("Refine Appearance"));
+    world.escape();
+    assert!(!on_row(&world, "Refine Appearance"));
     world.close();
 }

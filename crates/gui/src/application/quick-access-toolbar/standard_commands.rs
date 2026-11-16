@@ -2,7 +2,7 @@
 //! Ordered standard commands for the quick-access toolbar.
 
 /// Commands the customization menu lists, in its order.
-pub(super) const STANDARD: [StandardCommand; 18] = [
+pub(super) const STANDARD: [StandardCommand; 22] = [
     StandardCommand::New,
     StandardCommand::Open,
     StandardCommand::Save,
@@ -12,10 +12,14 @@ pub(super) const STANDARD: [StandardCommand; 18] = [
     StandardCommand::Projects,
     StandardCommand::Update,
     StandardCommand::Select,
+    StandardCommand::RefineAppearance,
     StandardCommand::MaterialBrowser,
     StandardCommand::Materials,
     StandardCommand::AppearanceBrowser,
+    StandardCommand::AppearanceOverride,
+    StandardCommand::AdjustAppearance,
     StandardCommand::Parameters,
+    StandardCommand::DesignDoctor,
     StandardCommand::Print,
     StandardCommand::Measure,
     StandardCommand::IProperties,
@@ -34,10 +38,14 @@ pub(super) enum StandardCommand {
     Projects,
     Update,
     Select,
+    RefineAppearance,
     MaterialBrowser,
     Materials,
     AppearanceBrowser,
+    AppearanceOverride,
+    AdjustAppearance,
     Parameters,
+    DesignDoctor,
     Print,
     Measure,
     IProperties,
@@ -56,10 +64,14 @@ impl StandardCommand {
             Self::Projects => "Projects",
             Self::Update => "Update",
             Self::Select => "Select",
+            Self::RefineAppearance => "Refine Appearance",
             Self::MaterialBrowser => "Material Browser",
             Self::Materials => "Materials",
             Self::AppearanceBrowser => "Appearance Browser",
+            Self::AppearanceOverride => "Appearance Override",
+            Self::AdjustAppearance => "Adjust",
             Self::Parameters => "Parameters",
+            Self::DesignDoctor => "Design Doctor",
             Self::Print => "Print",
             Self::Measure => "Measure",
             Self::IProperties => "iProperties",
@@ -70,7 +82,24 @@ impl StandardCommand {
     pub(super) fn default_shown(self) -> bool {
         !matches!(
             self,
-            Self::Print | Self::Measure | Self::IProperties | Self::Return | Self::ClearAppearance
+            Self::Print
+                | Self::Measure
+                | Self::IProperties
+                | Self::Return
+                | Self::ClearAppearance
+                | Self::RefineAppearance
+                | Self::AppearanceOverride
+                | Self::AdjustAppearance
+                | Self::DesignDoctor
+        )
+    }
+    pub(super) fn implemented(self) -> bool {
+        !matches!(
+            self,
+            Self::RefineAppearance
+                | Self::AppearanceOverride
+                | Self::AdjustAppearance
+                | Self::DesignDoctor
         )
     }
 }

@@ -269,8 +269,18 @@ impl QuickAccessToolbar {
         };
         for command in STANDARD {
             let shown = self.selection(state).shows(command);
-            if ui.menu_item_config(command.label()).selected(shown).build() {
+            if ui
+                .menu_item_config(command.label())
+                .selected(shown)
+                .enabled(command.implemented())
+                .build()
+            {
                 self.selection(state).toggle(command);
+            }
+            if !command.implemented()
+                && ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED)
+            {
+                ui.tooltip_text(NOT_AVAILABLE);
             }
         }
         ui.separator();

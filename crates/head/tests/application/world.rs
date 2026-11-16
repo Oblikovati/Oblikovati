@@ -308,7 +308,7 @@ impl Drop for ApplicationWorld {
 }
 
 const CHECK_MARK_REACH: f32 = 6.;
-fn squeezed(text: &str) -> String {
+pub(super) fn squeezed(text: &str) -> String {
     text.chars()
         .filter(|letter| !letter.is_whitespace())
         .collect()
