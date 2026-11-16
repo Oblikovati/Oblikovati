@@ -149,6 +149,7 @@ impl GuiShellAction {
                 !state.transaction_open
             }
             Self::SetSketchOptions(_) => state.sketch_options.is_some(),
+            Self::SetPartOptions(_) => state.part_options.is_some(),
             Self::LineCommand(_) => state.line_command.is_some(),
             Self::PrecisePoint(_) | Self::PreciseTriad(_) => state.precise_target.is_some(),
             Self::ToggleCenterPointFormat => state.authoring == GuiAuthoringContext::Sketch,

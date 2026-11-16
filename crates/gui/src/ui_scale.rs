@@ -39,6 +39,7 @@ pub(crate) fn rebuild_font_atlas(context: &mut Context, scale: f32) -> GuiAtlas 
 pub(crate) struct GuiScalePreferences {
     open: bool,
     document_units: crate::document_units::GuiDocumentUnits,
+    part_draft: crate::part_options_ui::PartOptionsDraft,
 }
 impl DockableWindow for GuiScalePreferences {}
 impl GuiScalePreferences {
@@ -77,6 +78,7 @@ impl GuiScalePreferences {
     ) {
         self.document_units.panel(ui, state, actions, home_active);
         let Some(options) = state.ui_scale.filter(|_| self.open) else {
+            self.part_draft.clear();
             return;
         };
         preference_geometry(ui);
@@ -86,12 +88,16 @@ impl GuiScalePreferences {
                 ui.separator();
                 ui.text("Text size");
                 scale_choices(ui, options, actions);
+                self.part_draft.draw(ui, state.part_options, actions);
                 crate::sketch_options_ui::draw(ui, state, actions);
                 ui.is_window_focused() && ui.is_key_pressed_no_repeat(imgui::Key::Escape)
             })
             .unwrap_or(false);
         if escape {
             self.open = false;
+        }
+        if !self.open {
+            self.part_draft.clear();
         }
     }
 }

@@ -2,6 +2,15 @@
 //! Sketch editing services called by the desktop frame loop.
 /// Route sketch editing to its owner; example: `work.edit_sketch_from_gui(true)?`.
 pub trait HeadSketchWork {
+    /// Save accepted Part options; example: `work.set_part_options_from_gui(options)`.
+    fn set_part_options_from_gui(
+        &mut self,
+        options: oblikovati_model::application_options::PartApplicationOptions,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "part options {options:?}: expected an application preference owner"
+        ))
+    }
     /// Consume an alias input after the GUI releases it; example: `work.accept_sketch_alias(event)`.
     fn accept_sketch_alias(
         &mut self,

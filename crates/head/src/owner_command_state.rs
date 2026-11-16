@@ -25,6 +25,7 @@ impl<
                 keymap_bindings: self.keymap.catalog(),
                 ui_scale: self.gui_ui_scale(),
                 sketch_options: Some(self.sketch_options.clone()),
+                part_options: self.part_store.as_ref().map(|store| store.part_options()),
                 recent_documents: self.gui_recent_rows(),
                 theme,
                 color_scheme,
@@ -64,6 +65,7 @@ impl<
             ),
             ui_scale: self.gui_ui_scale(),
             sketch_options: Some(self.sketch_options.clone()),
+            part_options: self.part_store.as_ref().map(|store| store.part_options()),
             // Projected by the frame, which owns the camera.
             constraint_glyphs: Vec::new(),
             recent_documents: self.gui_recent_rows(),

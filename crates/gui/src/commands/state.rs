@@ -99,6 +99,7 @@ pub struct GuiCommandState {
     pub repeat_command: Option<crate::GuiSketchRepeat>,
     pub line_command: Option<crate::GuiLineCommandMenu>,
     pub sketch_options: Option<oblikovati_model::application_options::SketchApplicationOptions>,
+    pub part_options: Option<oblikovati_model::application_options::PartApplicationOptions>,
     /// A sketch is open with no command running: the canvas offers its own menu.
     pub sketch_at_ready: bool,
     /// Current canvas move stage when the Move tool is open.
