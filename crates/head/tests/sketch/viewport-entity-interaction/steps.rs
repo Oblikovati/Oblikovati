@@ -329,3 +329,7 @@ mod ready_hover;
 #[cfg(target_os = "linux")]
 #[path = "ready_hover_perf.rs"]
 mod ready_hover_perf;
+
+#[cfg(target_os = "linux")]
+#[path = "rectangle_menu.rs"]
+mod rectangle_menu;
