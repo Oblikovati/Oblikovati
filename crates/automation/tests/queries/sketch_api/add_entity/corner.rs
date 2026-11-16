@@ -419,3 +419,34 @@ fn fillet_keeps_its_tangent_branch_for_line_order_and_endpoint_directions() {
         }
     }
 }
+#[test]
+fn explicit_associative_corner_method_uses_the_same_driving_path() {
+    let (mut files, _, mut source) = fresh();
+    let first = add_call(
+        &mut files,
+        &mut source,
+        &literal_input("line", &[[-5., 0.], [0., 0.]]),
+    )
+    .unwrap();
+    let second = add_call(
+        &mut files,
+        &mut source,
+        &literal_input("line", &[[0., 0.], [0., 5.]]),
+    )
+    .unwrap();
+    let request = AddSketchEntityArgs {
+        kind: "fillet".into(),
+        entity_refs: Some(vec![first.entity_id, second.entity_id]),
+        radius: "width".into(),
+        ..Default::default()
+    };
+    let result = Client::new(
+        FileHost::new(&mut files, &mut source, "test")
+            .with_sketch_corner_construction(&MartensiteSketchConstruction, Default::default()),
+    )
+    .sketch()
+    .add_associative_entity(&request)
+    .unwrap();
+    set_width(&mut files, &mut source, "2 cm");
+    assert!((row(&files, result.entity_id).radius - 2.).abs() < 1e-7);
+}
