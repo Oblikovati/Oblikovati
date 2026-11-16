@@ -1,6 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Build a temporary certified extrusion without changing the document.
 use super::*;
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum PreviewKind {
+    Additive,
+    Replacement,
+    FilletInput,
+}
+pub(super) type ScenePreview = (u64, u64, oblikovati_viewport::ViewportScene, PreviewKind);
 impl<
     O: TransactionObserver,
     W: WorkspaceObserver,
@@ -143,7 +150,7 @@ impl<
             .session(document)
             .map_err(|cause| cause.to_string())?
             .generation();
-        self.extrusion_preview = Some((document, generation, scene, false));
+        self.extrusion_preview = Some((document, generation, scene, PreviewKind::Additive));
         self.part_scenes.invalidate_presentation();
         Ok(true)
     }
@@ -168,7 +175,7 @@ impl<
             .session(document)
             .map_err(|cause| cause.to_string())?
             .generation();
-        self.extrusion_preview = Some((document, generation, scene, true));
+        self.extrusion_preview = Some((document, generation, scene, PreviewKind::Replacement));
         self.part_scenes.invalidate_presentation();
         Ok(true)
     }
@@ -280,8 +287,8 @@ impl<
         let Some(mut update) = self.part_scenes.refresh(&mut self.files)? else {
             return Ok(None);
         };
-        if let Some((_, _, preview, replace)) = &self.extrusion_preview {
-            if *replace {
+        if let Some((_, _, preview, kind)) = &self.extrusion_preview {
+            if *kind != PreviewKind::Additive {
                 update.scene = preview.clone();
             } else {
                 update

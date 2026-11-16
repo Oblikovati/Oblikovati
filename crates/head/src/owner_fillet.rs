@@ -91,7 +91,12 @@ impl<
                 },
             )
             .map_err(|cause| cause.to_string())?;
-        self.extrusion_preview = Some((document, generation, scene, true));
+        self.extrusion_preview = Some((
+            document,
+            generation,
+            scene,
+            super::owner_extrusion_preview::PreviewKind::FilletInput,
+        ));
         self.part_scenes.invalidate_presentation();
         Ok(true)
     }
@@ -165,7 +170,12 @@ impl<
                 },
             )
             .map_err(|cause| cause.to_string())?;
-        self.extrusion_preview = Some((request.document, request.generation, scene, true));
+        self.extrusion_preview = Some((
+            request.document,
+            request.generation,
+            scene,
+            super::owner_extrusion_preview::PreviewKind::Replacement,
+        ));
         self.part_scenes.invalidate_presentation();
         Ok(true)
     }

@@ -4,6 +4,8 @@
 
 ### Changed
 
+- Kept selected input edges visible during a Fillet preview. (#4045)
+
 - Allowed the Fillet tool to start before an edge is selected. (#4045)
 
 - Enabled Fillet radius editing from the model browser with preview and cancel. (#4045)

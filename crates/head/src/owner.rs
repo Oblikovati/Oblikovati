@@ -147,7 +147,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     drawing_view_preview: Option<drawing_projection::DrawingViewPreview>,
     extrusion_access: Option<crate::part_scene::extrusion::CertifiedExtrudeAccess>,
     fillet_access: Option<oblikovati_automation::CertifiedFilletAccess>,
-    extrusion_preview: Option<(u64, u64, oblikovati_viewport::ViewportScene, bool)>,
+    extrusion_preview: Option<owner_extrusion_preview::ScenePreview>,
     extrusion_distance_validation: Option<(u64, oblikovati_gui::GuiExtrudeDistanceValidation)>,
     offset_plane_validation: Option<oblikovati_gui::GuiOffsetPlaneValidation>,
     component_preview: Option<ComponentPreview>,

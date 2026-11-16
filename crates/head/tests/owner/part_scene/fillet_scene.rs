@@ -248,7 +248,10 @@ fn selected_edge_fillet_preview_cancel_and_commit_are_isolated() {
     stale.generation = generation;
     stale.edges[0].push(0);
     assert!(crate::HeadWork::commit_fillet_from_gui(&mut owner, &stale).is_err());
+    let selected_outline = owner.current_selected_edge_outlines();
+    assert!(!selected_outline.is_empty());
     assert!(crate::HeadWork::preview_fillet_from_gui(&mut owner, Some(&request)).unwrap());
+    assert_eq!(owner.current_selected_edge_outlines(), selected_outline);
     assert_eq!(
         owner
             .files

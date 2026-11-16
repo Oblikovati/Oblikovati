@@ -172,11 +172,13 @@ impl GuiFrameEngine {
         self.document_tabs.previews.showing_document =
             request.commands.document.filter(|_| !self.home.active);
         if !self.home.active {
-            crate::application::workspace_layout::browser_feature::selection_toolbar(
-                ui,
-                request,
-                &mut selected,
-            );
+            if !self.fillet_dialog.active() {
+                crate::application::workspace_layout::browser_feature::selection_toolbar(
+                    ui,
+                    request,
+                    &mut selected,
+                );
+            }
             self.part_context_open =
                 crate::part_context_menu::canvas_menu(ui, &request.commands, &mut selected);
         } else {

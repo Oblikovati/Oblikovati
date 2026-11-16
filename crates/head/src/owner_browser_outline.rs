@@ -11,7 +11,7 @@ impl<
 > DesktopOwner<O, W, F, G, R, S>
 {
     pub(in crate::owner) fn current_selected_edge_outlines(&mut self) -> Vec<Vec<[[f64; 3]; 2]>> {
-        if self.replacement_preview_active() {
+        if self.replacement_preview_active() && !self.fillet_input_preview_active() {
             return Vec::new();
         }
         let Some(source) = self.browser_outline_source() else {
@@ -84,14 +84,21 @@ impl<
     fn replacement_preview_active(&self) -> bool {
         self.extrusion_preview
             .as_ref()
-            .is_some_and(|(document, generation, _, replace)| {
-                *replace
+            .is_some_and(|(document, generation, _, kind)| {
+                *kind != super::owner_extrusion_preview::PreviewKind::Additive
                     && self.files.workspace().active_document() == Some(*document)
                     && self
                         .files
                         .workspace()
                         .session(*document)
                         .is_ok_and(|session| session.generation() == *generation)
+            })
+    }
+    fn fillet_input_preview_active(&self) -> bool {
+        self.extrusion_preview
+            .as_ref()
+            .is_some_and(|(_, _, _, kind)| {
+                *kind == super::owner_extrusion_preview::PreviewKind::FilletInput
             })
     }
     fn browser_outline_source(&self) -> Option<BrowserOutlineSource> {

@@ -16,6 +16,9 @@ pub(crate) struct FilletDialog {
 }
 impl DockableWindow for FilletDialog {}
 impl FilletDialog {
+    pub(crate) fn active(&self) -> bool {
+        self.document.is_some()
+    }
     pub(crate) fn open(&mut self, state: &GuiCommandState) {
         self.document = state.document;
         self.radius = "2 mm".into();

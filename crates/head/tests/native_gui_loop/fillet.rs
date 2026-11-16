@@ -28,7 +28,22 @@ fn native_fillet_can_pick_an_edge_after_the_tool_starts() {
     crate::frames::run_frames(&mut window, HeadOptions { frames: Some(3) }, &mut owner).unwrap();
     assert_eq!(owner.gui_command_state().unwrap().selected_edge_count, 1);
     assert!(owner.gui_command_state().unwrap().extrude_preview_active);
+    let selected = pixel_at(&capture_framebuffer(&mut window.native), pixel);
+    assert!(
+        selected[1] > selected[0] && selected[1] > selected[2],
+        "selected edge pixel {selected:?}"
+    );
     capture_when_requested(&mut window, "OBLIKOVATI_FILLET_PICK_CAPTURE");
+    window.scripted = vec![ViewportEvent::Input(ViewportInput::Motion {
+        position: [1000, 600],
+        modifiers: Default::default(),
+    })];
+    crate::frames::run_frames(&mut window, HeadOptions { frames: Some(3) }, &mut owner).unwrap();
+    let selected = pixel_at(&capture_framebuffer(&mut window.native), pixel);
+    assert!(
+        selected[2] > selected[0] && selected[2] > selected[1],
+        "retained edge pixel {selected:?}"
+    );
     assert_eq!(feature_count(&owner, document), before);
     click_shell_position(
         &mut window,

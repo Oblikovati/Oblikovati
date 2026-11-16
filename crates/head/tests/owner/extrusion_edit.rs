@@ -70,7 +70,10 @@ fn distance_edit_preview_uses_private_candidate_and_cancel_preserves_history() {
             .preview_edited_extrusion(document, id, "20 mm")
             .unwrap()
     );
-    assert!(owner.extrusion_preview.as_ref().unwrap().3);
+    assert_eq!(
+        owner.extrusion_preview.as_ref().unwrap().3,
+        crate::owner::owner_extrusion_preview::PreviewKind::Replacement
+    );
     assert!(owner.current_browser_outline().is_empty());
     let preview = owner.take_scene().unwrap().unwrap();
     assert_ne!(
