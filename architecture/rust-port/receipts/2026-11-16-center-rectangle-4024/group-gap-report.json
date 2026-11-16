@@ -1,0 +1,321 @@
+{
+  "kind": "diagnostic only; not acceptance",
+  "source_files": {
+    "/tmp/obk-center-scenarios/features/sketch/rectangle-center/scenario.feature": "@sketch\r\nFeature: Rectangle center\r\n\r\n  @acceptance @documented_observation @needs_fixture\r\n  Scenario: rectangle-center-01 Commit the intended result\r\n    Given the MCAD Software is running\r\n    And an editable planar sketch\r\n    When the user select Two Point Center Rectangle, choose a center, then a corner outside the input HUD\r\n    Then the rectangle is centered on the first point and includes the observed diagonal construction geometry\r\n    When the user press Escape\r\n    Then Ready returns with the rectangle and construction diagonals retained\r\n\r\n  @documented_observation @edge_case @needs_fixture\r\n  Scenario: rectangle-center-02 Select a corner after clicking a dynamic input field\r\n    Given Two Point Center Rectangle is active in an editable sketch\r\n    And a center has been selected and the command requests a corner\r\n    When the user click a dynamic input field\r\n    Then no rectangle is committed and corner selection remains active\r\n    When the user click a distinct corner outside the input fields\r\n    Then a rectangle with construction diagonals is committed\r\n    And the command requests another center\r\n\r\n\r\n\r\n\r\n  @cancel @documented_observation @needs_fixture\r\n  Scenario: rectangle-center-06 Cancel after setting the center\r\n    Given an editable sketch is Ready\r\n    When the user select Two Point Center Rectangle and click its center\r\n    Then the prompt changes to Select corner and two size fields appear\r\n    When the user press Escape\r\n    Then Ready returns without a new rectangle or construction diagonals\r\n\r\n  @documented_observation @edge_case @needs_fixture\r\n  Scenario: rectangle-center-07 Recover a corner coincident with the center\r\n    Given the command has accepted the center at a chosen location\r\n    When the user click the identical location as the corner\r\n    Then Select corner remains and both size fields show zero\r\n    And no error dialog appears\r\n    When the user click a distinct corner outside the dynamic input HUD\r\n    Then the rectangle and diagonal construction geometry are committed\r\n    And the prompt returns to Select center\r\n\r\n  @documented_observation @needs_fixture @undo_redo\r\n  Scenario: rectangle-center-08 Restore centered rectangle and construction geometry\r\n    Given a mouse-created centered rectangle\r\n    When the user press Escape and then Ctrl+Z\r\n    Then its sides and construction diagonals disappear\r\n    When the user press Ctrl+Y\r\n    Then the sides and construction diagonals return\r\n\r\n  @documented_observation @needs_fixture @numeric_input\r\n  Scenario: rectangle-center-09 Create a centered rectangle with two typed sizes\r\n    Given Ready with a mouse-created rectangle\r\n    When the user start Two Point Center Rectangle and select center at a chosen location\r\n    And the user press 8, Tab, 4, and Enter separately\r\n    Then a rectangle with size annotations 8 and 4 is committed\r\n    And the command returns to Select center\r\n    When the user press Escape\r\n    Then Ready returns and the committed rectangle remains\r\n\r\n  @documented_observation @measurement @needs_fixture\r\n  Scenario: rectangle-center-10 Verify full sizes of the numeric rectangle\r\n    Given the numeric centered rectangle\r\n    When the user open Measure and select its adjacent vertical and horizontal sides as Curves\r\n    Then their lengths are 8.000 mm and 4.000 mm\r\n    And the included angle is 90.00 degrees and minimum distance is 0.000 mm\r\n    When the user click Done\r\n    Then Measure closes without changing the rectangle\r\n\r\n  @needs_fixture\r\n  Scenario: rectangle-center-11 Observe zero in the first size field\r\n    Given the recorded fixture sketch is Ready\r\n    When the user choose Two Point Center Rectangle and select the fixture center\r\n    And the user enter 0 and press Tab\r\n    Then the first size is locked at 0.000 mm and the second field is selected\r\n    When the user enter 4 and press Return\r\n    Then the command requests Select center without a warning or visible new rectangle\r\n    When the user press Escape\r\n    Then Ready returns with no visible new sides or diagonals\r\n\r\n  @needs_fixture\r\n  Scenario: rectangle-center-12 Observe zero in the second size field\r\n    Given the previous sketch geometry is retained at Ready\r\n    When the user start a fresh Two Point Center Rectangle and select the fixture center\r\n    And the user enter 4 and press Tab\r\n    Then the second field briefly displays a pointer-derived 0.368 mm preview\r\n    When the user replace that field with 0 and press Return\r\n    Then the command requests Select center without a warning or visible new rectangle\r\n    When the user press Escape\r\n    Then Ready returns with the previous geometry retained\r\n\r\n  @needs_fixture\r\n  Scenario: rectangle-center-13 Create a six-by-four centered rectangle\r\n    Given the recorded fixture sketch is Ready\r\n    When the user start Two Point Center Rectangle and select the fixture center\r\n    And the user enter 6, press Tab, enter 4 and press Return\r\n    Then the rectangle shows vertical 6 and horizontal 4 with construction diagonals\r\n    When the user press Escape\r\n    Then Ready returns\r\n\r\n  @needs_fixture\r\n  Scenario: rectangle-center-14 Compare center and opposite corner coordinates\r\n    Given the recorded 6-by-4 centered rectangle is retained\r\n    When the user open Measure and select the center\r\n    Then its Point coordinates are (0,-17.513,4.675) mm\r\n    When the user click empty canvas to clear the selection\r\n    And the user select the upper-left corner\r\n    And the user select the opposite lower-right corner\r\n    Then their Point coordinates are (0,-14.513,6.675) and (0,-20.513,2.675) mm\r\n    And the corner distance is 7.211 mm with displayed component differences 0, 6 and 4 mm\r\n    And the opposite-corner arithmetic midpoint equals the measured center at displayed precision\r\n\r\n  @needs_fixture\r\n  Scenario: rectangle-center-15 Undo and redo numeric creation\r\n    Given Measure is closed and the numeric rectangle is retained\r\n    When the user press Ctrl+Z\r\n    Then its sides, construction diagonals and size dimensions disappear\r\n    When the user press Ctrl+Y\r\n    Then the rectangle and its annotations return\r\n\r\n  @needs_fixture\r\n  Scenario: rectangle-center-16 Cancel a proposed height edit\r\n    Given the retained centered rectangle has a driving height dimension equal to 6 mm\r\n    When the user open its height annotation, enter 8 and press Escape\r\n    And the user reopen the annotation\r\n    Then the height editor still contains 6 mm\r\n\r\n  @needs_fixture\r\n  Scenario: rectangle-center-17 Accept height and observe the unfixed center move\r\n    Given the height editor is open with 6 mm selected\r\n    And the earlier measured center is (0,-17.513,4.675) mm\r\n    When the user enter 8, press Return and exit General Dimension\r\n    Then the top edge and diagonal intersection move upward visibly\r\n    And the bottom edge remains visibly in place\r\n    When the user open Measure and select the center point\r\n    Then Measure reports center Point (0,-16.513,4.675) mm\r\n    And its Y coordinate has increased by 1.000 mm at displayed precision\r\n    When the user clear the selection and select the vertical edge\r\n    Then the selected vertical Curve length is 8.000 mm\r\n    And width annotation 4 and construction diagonals remain visible\r\n\r\n  @needs_fixture\r\n  Scenario: rectangle-center-18 Undo and redo the accepted centered height edit\r\n    Given Measure is closed after accepting height 8\r\n    When the user press Ctrl+Z\r\n    Then height annotation 6 and the shorter shape return\r\n    When the user press Ctrl+Y\r\n    Then height annotation 8 and the taller shape return\r\n    And the center-marker location changes with the shape while width annotation 4 remains\r\n\r\n"
+  },
+  "scenarios": [
+    {
+      "source": "/tmp/obk-center-scenarios/features/sketch/rectangle-center/scenario.feature",
+      "scenario": "rectangle-center-01 Commit the intended result",
+      "line": 5,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is running",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "an editable planar sketch",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 8,
+          "step": "the user select Two Point Center Rectangle, choose a center, then a corner outside the input HUD",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 9,
+          "step": "the rectangle is centered on the first point and includes the observed diagonal construction geometry",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 10,
+          "step": "the user press Escape",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 11,
+          "step": "Ready returns with the rectangle and construction diagonals retained",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-center-scenarios/features/sketch/rectangle-center/scenario.feature",
+      "scenario": "rectangle-center-02 Select a corner after clicking a dynamic input field",
+      "line": 14,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 15,
+          "step": "Two Point Center Rectangle is active in an editable sketch",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 16,
+          "step": "a center has been selected and the command requests a corner",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 17,
+          "step": "the user click a dynamic input field",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 18,
+          "step": "no rectangle is committed and corner selection remains active",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 19,
+          "step": "the user click a distinct corner outside the input fields",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 20,
+          "step": "a rectangle with construction diagonals is committed",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 21,
+          "step": "the command requests another center",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-center-scenarios/features/sketch/rectangle-center/scenario.feature",
+      "scenario": "rectangle-center-06 Cancel after setting the center",
+      "line": 27,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 28,
+          "step": "an editable sketch is Ready",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 29,
+          "step": "the user select Two Point Center Rectangle and click its center",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 30,
+          "step": "the prompt changes to Select corner and two size fields appear",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 31,
+          "step": "the user press Escape",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 32,
+          "step": "Ready returns without a new rectangle or construction diagonals",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-center-scenarios/features/sketch/rectangle-center/scenario.feature",
+      "scenario": "rectangle-center-07 Recover a corner coincident with the center",
+      "line": 35,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 36,
+          "step": "the command has accepted the center at a chosen location",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 37,
+          "step": "the user click the identical location as the corner",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 38,
+          "step": "Select corner remains and both size fields show zero",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 39,
+          "step": "no error dialog appears",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 40,
+          "step": "the user click a distinct corner outside the dynamic input HUD",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 41,
+          "step": "the rectangle and diagonal construction geometry are committed",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 42,
+          "step": "the prompt returns to Select center",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-center-scenarios/features/sketch/rectangle-center/scenario.feature",
+      "scenario": "rectangle-center-08 Restore centered rectangle and construction geometry",
+      "line": 45,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 46,
+          "step": "a mouse-created centered rectangle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 47,
+          "step": "the user press Escape and then Ctrl+Z",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 48,
+          "step": "its sides and construction diagonals disappear",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 49,
+          "step": "the user press Ctrl+Y",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 50,
+          "step": "the sides and construction diagonals return",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/obk-center-scenarios/features/sketch/rectangle-center/scenario.feature",
+      "scenario": "rectangle-center-09 Create a centered rectangle with two typed sizes",
+      "line": 53,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 54,
+          "step": "Ready with a mouse-created rectangle",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 55,
+          "step": "the user start Two Point Center Rectangle and select center at a chosen location",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 56,
+          "step": "the user press 8, Tab, 4, and Enter separately",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 57,
+          "step": "a rectangle with size annotations 8 and 4 is committed",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 58,
+          "step": "the command returns to Select center",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 59,
+          "step": "the user press Escape",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 60,
+          "step": "Ready returns and the committed rectangle remains",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    }
+  ]
+}

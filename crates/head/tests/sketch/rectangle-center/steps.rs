@@ -3,6 +3,8 @@
 use super::super::{ApplicationWorld, diagnostics};
 use cucumber::{given, then, when};
 use oblikovati_viewport::ViewportPhysicalKey;
+#[path = "shape.rs"]
+mod shape;
 
 const TOOL: &str = "Center Rect.";
 const SIDES: usize = 4;
@@ -32,6 +34,7 @@ fn expect_shape(world: &mut ApplicationWorld) {
         (SIDES, DIAGONALS),
         "sides and diagonals"
     );
+    shape::expect_centered_rectangle(&world.edited_geometry());
 }
 fn expect_no_shape(world: &mut ApplicationWorld) {
     assert_eq!(line_counts(world), (0, 0), "sides and diagonals");
@@ -84,6 +87,9 @@ fn measure_position(world: &mut ApplicationWorld, at: [f64; 2]) -> String {
 }
 // rectangle-center-01
 #[when("I select Two Point Center Rectangle, choose a center, then a corner outside the input HUD")]
+#[when(
+    "the user select Two Point Center Rectangle, choose a center, then a corner outside the input HUD"
+)]
 fn center_and_corner(world: &mut ApplicationWorld) {
     pointer_rectangle(world);
 }
@@ -116,6 +122,7 @@ fn center_selected(world: &mut ApplicationWorld) {
     world.expect_status("Select corner");
 }
 #[when("I click a dynamic input field")]
+#[when("the user click a dynamic input field")]
 fn click_field(world: &mut ApplicationWorld) {
     world.hover(CORNER);
     let (position, size) = diagnostics::window_geometry("##sketch-hud").expect("expected fields");
@@ -131,6 +138,8 @@ fn nothing_committed(world: &mut ApplicationWorld) {
 }
 #[when("I click a distinct corner outside the input fields")]
 #[when("I click a distinct corner outside the dynamic input HUD")]
+#[when("the user click a distinct corner outside the input fields")]
+#[when("the user click a distinct corner outside the dynamic input HUD")]
 fn distinct_corner(world: &mut ApplicationWorld) {
     world.sketch_click([CORNER[0], CORNER[1] + 90]);
 }
@@ -147,6 +156,7 @@ fn asks_center(world: &mut ApplicationWorld) {
 }
 // rectangle-center-06
 #[when("I select Two Point Center Rectangle and click its center")]
+#[when("the user select Two Point Center Rectangle and click its center")]
 fn tool_and_center(world: &mut ApplicationWorld) {
     select_tool(world);
     world.sketch_click(CENTER);
@@ -164,6 +174,7 @@ fn ready_empty(world: &mut ApplicationWorld) {
 }
 // rectangle-center-07
 #[when("I click the identical location as the corner")]
+#[when("the user click the identical location as the corner")]
 fn identical(world: &mut ApplicationWorld) {
     world.sketch_click(CENTER);
 }
@@ -203,6 +214,7 @@ fn ready_with_rectangle(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
 }
 #[when("I start Two Point Center Rectangle and select center at a chosen location")]
+#[when("the user start Two Point Center Rectangle and select center at a chosen location")]
 #[when("I choose Two Point Center Rectangle and select the fixture center")]
 #[when("I start a fresh Two Point Center Rectangle and select the fixture center")]
 #[when("I start Two Point Center Rectangle and select the fixture center")]
@@ -211,6 +223,7 @@ fn start_and_center(world: &mut ApplicationWorld) {
     world.sketch_click(CENTER);
 }
 #[when("I press 8, Tab, 4, and Enter separately")]
+#[when("the user press 8, Tab, 4, and Enter separately")]
 fn typed_eight_four(world: &mut ApplicationWorld) {
     type_sizes(world, "8", "4");
 }
@@ -223,6 +236,7 @@ fn eight_four(world: &mut ApplicationWorld) {
         (2 * SIDES, 2 * DIAGONALS),
         "two rectangles"
     );
+    shape::expect_latest_sizes(&world.edited_geometry(), 0.4, 0.8);
 }
 #[then("Ready returns and the committed rectangle remains")]
 fn ready_committed(world: &mut ApplicationWorld) {
