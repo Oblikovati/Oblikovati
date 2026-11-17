@@ -153,3 +153,42 @@ fn click_close_answer(world: &mut ApplicationWorld, answer: &str) {
     super::x11_input::click(position);
     world.pump(Vec::new());
 }
+
+#[cfg(target_os = "linux")]
+#[test]
+fn native_exit_save_failure_keeps_all_modified_documents_open() {
+    let mut world = ApplicationWorld::new();
+    let (first, first_path) = dirty_saved_part(&mut world, "first-failure.opd");
+    let first_bytes = std::fs::read(&first_path).unwrap();
+    let (second, second_path) = dirty_saved_part(&mut world, "second-failure.opd");
+    let second_bytes = std::fs::read(&second_path).unwrap();
+    let backup = second_path.with_extension("original.opd");
+    std::fs::rename(&second_path, &backup).unwrap();
+    std::fs::create_dir(&second_path).unwrap();
+    super::x11_input::request_native_close();
+    world.pump(Vec::new());
+    click_close_answer(&mut world, "Yes");
+    world.pump(Vec::new());
+    assert!(world.document_is_open(first));
+    assert!(world.document_is_open(second));
+    assert!(world.state().document_storage[&first].unsaved_edits);
+    assert!(world.state().document_storage[&second].unsaved_edits);
+    assert_eq!(std::fs::read(&first_path).unwrap(), first_bytes);
+    assert_eq!(std::fs::read(&backup).unwrap(), second_bytes);
+    assert!(second_path.is_dir());
+    world.expect_status("Save document");
+    world.save_capture("application-close-save-failure");
+    std::fs::remove_dir(&second_path).unwrap();
+    std::fs::rename(&backup, &second_path).unwrap();
+    super::x11_input::request_native_close();
+    world.pump(Vec::new());
+    click_close_answer(&mut world, "Yes");
+    assert!(!world.document_is_open(second));
+    assert!(world.document_is_open(first));
+    assert_ne!(std::fs::read(&second_path).unwrap(), second_bytes);
+    click_close_answer(&mut world, "Cancel");
+    assert!(world.document_is_open(first));
+    assert!(world.state().document_storage[&first].unsaved_edits);
+    assert_eq!(std::fs::read(first_path).unwrap(), first_bytes);
+    world.close();
+}
