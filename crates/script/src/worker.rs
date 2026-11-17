@@ -22,12 +22,18 @@ fn execute_program(
     incoming: BufReader<io::Stdin>,
 ) -> Result<(), String> {
     #[cfg(target_os = "linux")]
-    resource_limits(&program.limits)?;
+    let containment = resource_limits(&program.limits);
     #[cfg(target_os = "windows")]
-    let _job = windows_limits::contain_worker(&program.limits)?;
-    let outcome = crate::vm::execute(&program, incoming, io::stdout());
+    let containment = windows_limits::contain_worker(&program.limits);
+    // Keep the worker admitted until the terminal frame is written. Admission
+    // errors use the protocol because the parent only drains worker stderr.
+    let outcome = match &containment {
+        Ok(_) => crate::vm::execute(&program, incoming, io::stdout()),
+        Err(error) => Err(error.clone()),
+    };
     write_frame(&mut io::stdout(), &WorkerFrame::Finished { outcome })
 }
+
 #[cfg(not(any(target_os = "linux", target_os = "windows")))]
 fn execute_program(_: crate::ScriptProgram, _: BufReader<io::Stdin>) -> Result<(), String> {
     Err("Lua worker platform: expected Linux or Windows".into())
