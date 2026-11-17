@@ -15,8 +15,10 @@ Last checked: 2026-11-16 on `rust-work`. Refresh from current evidence at each c
 - Parallel constraint hover (#4031), Ready-state line selection (#4033), and
   tool candidate hover (#4034) have X11 diagnostics on live source. Fixture and
   reference-capture gaps prevent acceptance; other mouse scenarios remain open.
-- Solid viewport edit and cancel (#4038) pass X11 diagnostics for extrusion;
-  three creation and picking scenarios remain unbound; shading is under review (#4044).
+- All five solid viewport interaction scenarios pass X11 diagnostics for
+  extrusion and Fillet (#4038, #4045). The live source is not pinned and its
+  fixture and capture tags remain; shading is under review (#4044). See
+  `receipts/2026-11-17-viewport-fillet-bdd-4045/`.
 - Named-edge Fillet creation, replay, undo/redo and save/reopen have focused
   API and native-window tests (#4045). The typed `features.edit` path supports
   certified radius edits. The desktop edit panel has a native input diagnostic;

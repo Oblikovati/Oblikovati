@@ -5,6 +5,8 @@ use cucumber::{given, then, when};
 use oblikovati_viewport::ViewportPhysicalKey;
 mod acceptance;
 #[cfg(target_os = "linux")]
+pub(super) mod viewport_fillet;
+#[cfg(target_os = "linux")]
 mod viewport_interaction;
 
 #[given("a new Standard (mm) part with no sketch")]

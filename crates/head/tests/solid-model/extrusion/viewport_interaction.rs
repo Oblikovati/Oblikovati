@@ -9,7 +9,7 @@ fn open_part(world: &mut ApplicationWorld) {
 }
 
 #[given("the part contains an editable solid feature")]
-fn committed_extrusion(world: &mut ApplicationWorld) {
+pub(super) fn committed_extrusion(world: &mut ApplicationWorld) {
     rectangle_in_waiting_extrusion(world);
     finish_requested_profile(world);
     world.pump(Vec::new());
@@ -135,7 +135,7 @@ fn updated_solid_is_visible(world: &mut ApplicationWorld) {
     ));
 }
 
-fn click_text_native(world: &mut ApplicationWorld, text: &str) {
+pub(super) fn click_text_native(world: &mut ApplicationWorld, text: &str) {
     let position = world.run(text).center().map(|value| value as i32);
     super::super::x11_input::click(position);
     world.pump(Vec::new());
@@ -155,7 +155,7 @@ fn replace_distance_native(world: &mut ApplicationWorld, distance: &str) {
 // A small changed patch avoids counting isolated raster noise as a geometry update.
 const MIN_CHANGED_PREVIEW_PIXELS: usize = 20;
 
-fn preview_changed_outside_windows(
+pub(super) fn preview_changed_outside_windows(
     before: &oblikovati_viewport::ViewportCapture,
     after: &oblikovati_viewport::ViewportCapture,
     windows: &[[f32; 4]],

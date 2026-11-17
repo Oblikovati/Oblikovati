@@ -62,6 +62,10 @@ fn line_selected(world: &mut ApplicationWorld) {
 }
 #[then("the viewport displays a distinct selected state")]
 fn selected_visible(world: &mut ApplicationWorld) {
+    #[cfg(target_os = "linux")]
+    if world.state().authoring == oblikovati_gui::GuiAuthoringContext::Part {
+        return super::super::solid_extrusion::viewport_fillet::selected_edge_is_visible(world);
+    }
     use oblikovati_api::types::{TOKEN_SKETCH_GEOMETRY, TOKEN_SKETCH_SELECTED};
     let point = world.line_point(0, 0.75);
     let state = world.state();

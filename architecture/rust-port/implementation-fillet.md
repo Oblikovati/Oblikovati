@@ -14,3 +14,9 @@ The creation panel can open before selection when a visible solid is present.
 It waits for a picked edge before preview or commit. The selected input edge
 remains visible as a display overlay during the replacement preview. See
 `receipts/2026-11-17-fillet-selected-preview-4045/`.
+
+The live viewport feature scenarios exercise native edge selection, a radius
+change, and creation, plus extrusion edit and cancel. The five scenarios pass
+as diagnostics; they are not verified acceptance until the fixture, capture,
+and source provenance gaps are closed. See
+`receipts/2026-11-17-viewport-fillet-bdd-4045/`.
