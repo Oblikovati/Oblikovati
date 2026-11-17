@@ -317,7 +317,7 @@ impl<
         policy: oblikovati_martensite::PrismResolutionPolicy,
     ) -> Result<Self, String> {
         let policy = policy.validate()?;
-        self.part_scenes.use_certified_resolution(policy);
+        self.part_scenes.use_certified_resolution(policy)?;
         self.extrusion_access = Some(crate::part_scene::extrusion::CertifiedExtrudeAccess(policy));
         self.fillet_access = Some(oblikovati_automation::CertifiedFilletAccess::new(policy)?);
         Ok(self)

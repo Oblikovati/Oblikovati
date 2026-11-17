@@ -89,6 +89,21 @@ impl PartReplayService {
             resolution: Some(policy.validate()?),
         })
     }
+    /// Borrow a document's retained replay; example: `service.slot(document)`.
+    pub fn slot(
+        &self,
+        document: u64,
+    ) -> Option<&PartEvaluationSlot<NamedSolid, EvaluationFailure>> {
+        self.slots.get(&document)
+    }
+    /// Retire results for closed documents; example: `service.retain_open_documents(ids)`.
+    pub fn retain_open_documents(&mut self, documents: &[u64]) {
+        self.slots.retain(|id, _| documents.contains(id));
+    }
+    /// Retire all retained kernel outputs; example: `service.clear()` on policy change.
+    pub fn clear(&mut self) {
+        self.slots.clear();
+    }
     fn current_slot<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
         &mut self,
         files: &mut FileWorkspace<O, W, F>,
@@ -118,8 +133,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
         files: &mut FileWorkspace<O, W, F>,
         document: u64,
     ) -> Result<Vec<FeatureError>, String> {
-        self.slots
-            .retain(|id, _| files.workspace().documents().contains(id));
+        self.retain_open_documents(files.workspace().documents());
         let slot = self.slots.entry(document).or_default();
         refresh_and_adopt_part(files, document, self.resolution, slot)?;
         let session = files

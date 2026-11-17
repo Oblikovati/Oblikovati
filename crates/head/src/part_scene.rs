@@ -83,7 +83,8 @@ pub(crate) struct DesktopPartScenes {
     #[cfg(test)]
     face_mesh_builds: usize,
     resolution: Option<oblikovati_martensite::PrismResolutionPolicy>,
-    slot: PartEvaluationSlot<NamedSolid, oblikovati_martensite::EvaluationFailure>,
+    replay: oblikovati_automation::PartReplayService,
+    active_replay: Option<u64>,
 }
 impl DesktopPartScenes {
     #[cfg(test)]
@@ -129,9 +130,11 @@ impl DesktopPartScenes {
     pub(crate) fn use_certified_resolution(
         &mut self,
         resolution: oblikovati_martensite::PrismResolutionPolicy,
-    ) {
-        self.resolution = Some(resolution);
+    ) -> Result<(), String> {
         self.clear();
+        self.replay = oblikovati_automation::PartReplayService::with_policy(resolution)?;
+        self.resolution = Some(resolution);
+        Ok(())
     }
     pub(crate) fn edge_pick_available(&self) -> bool {
         self.resolution.is_some()
@@ -140,6 +143,8 @@ impl DesktopPartScenes {
         &mut self,
         files: &mut FileWorkspace<O, W, F>,
     ) -> Result<Option<HeadSceneUpdate>, String> {
+        self.replay
+            .retain_open_documents(files.workspace().documents());
         let source = match assembly::active_scene_source(files) {
             Ok(source) => source,
             Err(error) => return self.failed_assembly_scene(files, error),
@@ -175,33 +180,31 @@ impl DesktopPartScenes {
         files: &mut FileWorkspace<O, W, F>,
         document: u64,
     ) -> Result<(), String> {
-        if self
-            .slot
-            .latest()
-            .is_some_and(|view| view.document != document)
-        {
-            self.slot.clear();
-        }
+        use oblikovati_automation::PartUpdateAccess;
         let session = files
             .workspace()
             .session(document)
             .map_err(|cause| cause.to_string())?;
-        if self.slot.current(session).is_ok() {
-            return Ok(());
+        if self
+            .replay
+            .slot(document)
+            .is_none_or(|slot| slot.current(session).is_err())
+        {
+            self.replay.update_part(files, document)?;
         }
-        self.adopt_current(files, document)
+        self.active_replay = Some(document);
+        Ok(())
     }
-    fn adopt_current<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
-        &mut self,
-        files: &mut FileWorkspace<O, W, F>,
-        document: u64,
-    ) -> Result<(), String> {
-        oblikovati_automation::refresh_and_adopt_part(
-            files,
-            document,
-            self.resolution,
-            &mut self.slot,
-        )
+    fn active_slot(
+        &self,
+    ) -> Result<&PartEvaluationSlot<NamedSolid, oblikovati_martensite::EvaluationFailure>, String>
+    {
+        let document = self
+            .active_replay
+            .ok_or("part replay: expected an active document")?;
+        self.replay
+            .slot(document)
+            .ok_or_else(|| format!("document {document} part replay: expected a retained result"))
     }
     /// Borrow only this session's current published bodies; example: `scenes.current(session)?`.
     pub(crate) fn current<'a, O: TransactionObserver>(
@@ -214,7 +217,7 @@ impl DesktopPartScenes {
         >,
         String,
     > {
-        self.slot
+        self.active_slot()?
             .current(session)
             .map_err(|cause| cause.to_string())
     }
@@ -267,7 +270,7 @@ impl DesktopPartScenes {
         render_part_scene(evaluated, (document, session.generation()), style)
     }
     fn empty(&mut self) -> HeadSceneUpdate {
-        self.slot.clear();
+        self.active_replay = None;
         self.face_mesh_cache = None;
         HeadSceneUpdate {
             scene: ViewportScene {
@@ -369,7 +372,8 @@ impl DesktopPartScenes {
         }
     }
     pub fn clear(&mut self) {
-        self.slot.clear();
+        self.replay.clear();
+        self.active_replay = None;
         self.source = None;
         self.scene_failure = None;
         self.face_selection = None;

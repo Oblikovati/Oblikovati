@@ -79,6 +79,19 @@ fn occurrence(name: &str, x: f64) -> AssemblyOccurrenceRecipe {
 }
 
 #[test]
+fn assembly_presentation_retains_current_component_replay() {
+    let (mut files, part, assembly, _) = workspace();
+    let mut scenes = DesktopPartScenes::default();
+    scenes.ensure_current(&mut files, part).unwrap();
+    scenes.empty();
+    let session = files.workspace().session(part).unwrap();
+    assert!(scenes.replay.slot(part).unwrap().current(session).is_ok());
+    scenes.evaluate_assembly(&mut files, assembly).unwrap();
+    let session = files.workspace().session(part).unwrap();
+    assert!(scenes.replay.slot(part).unwrap().current(session).is_ok());
+}
+
+#[test]
 fn component_preview_is_transformed_without_an_assembly_edit() {
     let (mut files, part, assembly, _) = workspace();
     let generation = files.workspace().session(assembly).unwrap().generation();
