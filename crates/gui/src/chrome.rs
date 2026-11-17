@@ -291,11 +291,10 @@ fn ribbon_menu_row(
 ) {
     let style = ui.clone_style();
     let width = (ui.calc_text_size("File")[0]
-        + ui.calc_text_size("Tools")[0]
-        + style.frame_padding[0] * 4.
-        + style.item_spacing[0] * 3.
+        + style.frame_padding[0] * 2.
+        + style.item_spacing[0]
         + style.window_padding[0] * 2.)
-        .max(100.);
+        .max(40.);
     ui.child_window("##ribbon-menu-row")
         .size([width, tab_row_height(ui)])
         .menu_bar(true)
@@ -304,9 +303,6 @@ fn ribbon_menu_row(
                 owners
                     .files
                     .menu(ui, &request.commands, actions, owners.ribbon.tips.tabs());
-                owners
-                    .preferences
-                    .menu(ui, &request.commands, owners.home_active);
             });
         });
 }

@@ -50,25 +50,6 @@ impl GuiScalePreferences {
     pub(crate) fn request_document(&mut self, document: u64) {
         self.document_units.request(document);
     }
-    pub(crate) fn menu(&mut self, ui: &Ui, state: &GuiCommandState, home_active: bool) {
-        ui.menu("Tools", || {
-            if ui
-                .menu_item_config("Application Options...")
-                .enabled(state.ui_scale.is_some())
-                .build()
-            {
-                self.open = true;
-            }
-            if ui
-                .menu_item_config("Document Settings...")
-                .enabled(state.document_units.is_some() && !home_active)
-                .build()
-                && let Some(document) = state.document
-            {
-                self.request_document(document);
-            }
-        });
-    }
     pub(crate) fn panel(
         &mut self,
         ui: &Ui,

@@ -9,7 +9,7 @@ fn sketch_preferences_change_the_owned_application_options() {
     let mut owner = native_owner_at(native.wake.clone(), preferences.path()).unwrap();
     let mut window = scripted_window(native);
     crate::frames::run_frames(&mut window, HeadOptions { frames: Some(3) }, &mut owner).unwrap();
-    for label in ["Tools", "Application Options..."] {
+    for label in ["Tools", "Application Options"] {
         click_shell_position(
             &mut window,
             &mut owner,
@@ -61,7 +61,7 @@ fn part_sketch_view_preference_is_staged_reverted_and_applied() {
     let mut owner = native_owner_at(native.wake.clone(), preferences.path()).unwrap();
     let mut window = scripted_window(native);
     crate::frames::run_frames(&mut window, HeadOptions { frames: Some(3) }, &mut owner).unwrap();
-    for label in ["Tools", "Application Options..."] {
+    for label in ["Tools", "Application Options"] {
         click_shell_position(
             &mut window,
             &mut owner,
@@ -144,7 +144,7 @@ fn check_startup_plane_choice(
     let mut owner = native_owner_at(native.wake.clone(), preferences.path()).unwrap();
     let mut window = scripted_window(native);
     crate::frames::run_frames(&mut window, HeadOptions { frames: Some(3) }, &mut owner).unwrap();
-    for text in ["Tools", "Application Options..."] {
+    for text in ["Tools", "Application Options"] {
         click_shell_position(
             &mut window,
             &mut owner,
@@ -190,6 +190,11 @@ fn check_startup_plane_choice(
         })
         .collect();
     crate::frames::run_frames(&mut window, HeadOptions { frames: Some(3) }, &mut owner).unwrap();
+    click_shell_position(
+        &mut window,
+        &mut owner,
+        application_bdd::rendered_label_center("Get Started"),
+    );
     click_shell_position(
         &mut window,
         &mut owner,
