@@ -6,6 +6,8 @@ use workspace_layout::dockspace_native::{native_drag, resize_boundary, viewport}
 
 #[path = "float_scenario.rs"]
 mod float_scenario;
+#[path = "preview_scenario.rs"]
+mod preview_scenario;
 #[path = "restart_scenario.rs"]
 mod restart_scenario;
 #[path = "retention_scenario.rs"]
