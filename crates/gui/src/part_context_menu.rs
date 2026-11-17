@@ -9,6 +9,7 @@ pub(crate) fn canvas_menu(
     state: &GuiCommandState,
     area: crate::application::document_creation::workspaces::WorkspaceArea,
     actions: &mut Vec<GuiShellAction>,
+    repeat_wheel: &mut Option<bool>,
 ) -> bool {
     if state.authoring != GuiAuthoringContext::Part || state.document.is_none() {
         return false;
@@ -28,6 +29,9 @@ pub(crate) fn canvas_menu(
     };
     if separate {
         draw_face_standard(ui, state, actions, face.as_ref());
+    }
+    if repeat_wheel.is_some() && ui.menu_item("Repeat Navigation Wheel") {
+        *repeat_wheel = Some(true);
     }
     draw_configured_menu(ui, state, actions);
     draw_face_measure(ui, state, actions, face.as_ref());

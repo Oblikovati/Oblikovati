@@ -1,0 +1,13 @@
+{
+  "kind": "native diagnostic",
+  "base": "2f692f10b",
+  "scenario_snapshot": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+  "environment": "Linux X11, Xvfb, Vulkan Lavapipe",
+  "input": "XTEST right-click and menu selection; setup and Escape use frame-loop input",
+  "assertions": "Wheel visible, same document and camera",
+  "screenshot_sha256": "e727e7eab166877da322b3727c8d2a107ad32b9b29e287d4ed733215add83503",
+  "limitations": [
+    "This is not a sealed acceptance receipt (#3978).",
+    "Scenario fixture has a reference capture gap."
+  ]
+}

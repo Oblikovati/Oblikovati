@@ -121,3 +121,26 @@ fn choose_repeat(world: &mut ApplicationWorld) {
 fn full_again(_: &mut ApplicationWorld) {
     assert!(wheel_side() >= FULL_WHEEL_SIDE, "side {}", wheel_side());
 }
+
+#[cfg(target_os = "linux")]
+#[test]
+fn native_viewport_menu_reopens_the_previous_navigation_wheel() {
+    let mut world = ApplicationWorld::new();
+    open_wheel_on_block(&mut world);
+    let before = camera(&mut world);
+    let document = world.state().document;
+    wheel_closed(&mut world);
+    super::super::x11_input::right_click(PLACED_AT);
+    world.pump(Vec::new());
+    world.expect_text(REPEAT);
+    let position = super::super::rendered_label_center(REPEAT);
+    super::super::x11_input::click(position);
+    world.pump(Vec::new());
+    settle(&mut world);
+    full_again(&mut world);
+    assert_eq!(world.state().document, document);
+    assert_eq!(camera(&mut world), before);
+    world.save_capture("repeat-wheel-native-4058");
+    world.escape();
+    world.close();
+}
