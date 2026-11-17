@@ -203,6 +203,7 @@ impl PreciseInputBar {
                 self.expanded_controls(ui, target, actions);
             }
         });
+        Self::close_dockable(ui, "Precise Input", open && !self.open);
         self.open &= open;
     }
     fn show_full_controls(&self, hovered: bool) -> bool {
