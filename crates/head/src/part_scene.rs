@@ -80,6 +80,8 @@ pub(crate) struct DesktopPartScenes {
     occurrence_selection: Option<oblikovati_gui::GuiOccurrencePath>,
     face_selection: Option<face_display::FaceSelection>,
     face_mesh_cache: Option<face_display::FaceMeshCache>,
+    #[cfg(test)]
+    face_mesh_builds: usize,
     resolution: Option<oblikovati_martensite::PrismResolutionPolicy>,
     slot: PartEvaluationSlot<NamedSolid, oblikovati_martensite::EvaluationFailure>,
 }
@@ -224,7 +226,8 @@ impl DesktopPartScenes {
             .identity(document)
             .map_err(|cause| cause.to_string())?
             .internal_name;
-        self.prepare_face_mesh_cache(session, document, guid, mode)?;
+        let active = files.workspace().active_document() == Some(document);
+        self.prepare_face_mesh_cache(session, document, guid, mode, active)?;
         let evaluated = self.current(session)?;
         let style = |body: &NamedSolid| {
             let key =

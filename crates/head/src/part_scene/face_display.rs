@@ -154,6 +154,11 @@ fn validate_selected_meshes(
 }
 
 impl DesktopPartScenes {
+    #[cfg(test)]
+    pub(crate) fn face_mesh_builds(&self) -> usize {
+        self.face_mesh_builds
+    }
+
     pub(crate) fn set_selected_faces(&mut self, selection: Option<FaceSelection>) {
         if self.face_selection != selection {
             self.face_selection = selection;
@@ -167,6 +172,7 @@ impl DesktopPartScenes {
         document: u64,
         guid: DocumentGuid,
         mode: AssemblyViewMode,
+        active: bool,
     ) -> Result<(), String> {
         let source = (document, session.generation());
         if self
@@ -176,12 +182,7 @@ impl DesktopPartScenes {
         {
             self.face_mesh_cache = None;
         }
-        if mode != AssemblyViewMode::Live
-            || self
-                .face_selection
-                .as_ref()
-                .is_none_or(|item| (item.0, item.1) != source)
-        {
+        if mode != AssemblyViewMode::Live || !active {
             return Ok(());
         }
         if self
@@ -193,6 +194,10 @@ impl DesktopPartScenes {
         }
         let cache = FaceMeshCache::build(source, self.current(session)?, session.history(), guid);
         self.face_mesh_cache = Some(cache);
+        #[cfg(test)]
+        {
+            self.face_mesh_builds += 1;
+        }
         Ok(())
     }
 }

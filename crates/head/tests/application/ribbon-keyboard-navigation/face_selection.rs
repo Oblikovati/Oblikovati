@@ -130,6 +130,11 @@ fn native_default_filter_selects_and_clears_visible_face() {
     use crate::HeadWork;
     let mut world = ApplicationWorld::new();
     super::super::workspace_layout::browser_feature::open_visible_extruded_part(&mut world);
+    assert_eq!(
+        world.app().owner.face_mesh_builds(),
+        1,
+        "opening the part must prepare the named display mesh"
+    );
     let (low, high) = super::super::viewport_orientation::solid_bounds(&mut world);
     let point = [
         ((low[0] + high[0]) / 2) as i32,
@@ -159,6 +164,11 @@ fn native_default_filter_selects_and_clears_visible_face() {
     );
     world.expect_text("1. Face");
     toolbar_visible(&mut world);
+    assert_eq!(
+        world.app().owner.face_mesh_builds(),
+        1,
+        "selecting a face must reuse the display mesh"
+    );
     let selected = super::super::capture_framebuffer(&mut world.app().window.native);
     if std::env::var_os("OBK_BDD_REPORTS").is_some() {
         world.save_capture("selected-named-face-4048");
@@ -178,6 +188,11 @@ fn native_default_filter_selects_and_clears_visible_face() {
     super::super::x11_input::click(empty);
     world.pump(Vec::new());
     selection_cleared(&mut world);
+    assert_eq!(
+        world.app().owner.face_mesh_builds(),
+        1,
+        "clearing selection must reuse the display mesh"
+    );
     world.expect_no_text("1. Face");
     let cleared = super::super::capture_framebuffer(&mut world.app().window.native);
     assert_eq!(

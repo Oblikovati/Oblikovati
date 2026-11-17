@@ -304,7 +304,11 @@ mod projection;
 
 #[test]
 fn named_prism_display_mesh_covers_each_analytic_face_once() {
-    let history = owner(cube_document());
+    check_named_prism_mesh(owner(cube_document()), 6);
+    check_named_prism_mesh(owner(holed_document(0)), 10);
+}
+
+fn check_named_prism_mesh(history: DocumentEditHistory, expected_faces: usize) {
     let mut evaluator = oblikovati_martensite::CertifiedNamedSolidEvaluator::new(
         &history,
         document(),
@@ -323,13 +327,24 @@ fn named_prism_display_mesh_covers_each_analytic_face_once() {
         .named_face_meshes(&history, document(), options)
         .unwrap();
     let keys = solid.face_reference_keys(&history, document()).unwrap();
-    assert_eq!(meshes.len(), 6);
+    assert_eq!(meshes.len(), expected_faces);
     assert_eq!(
         meshes
             .iter()
             .map(|mesh| mesh.key.clone())
             .collect::<Vec<_>>(),
         keys
+    );
+    use oblikovati_martensite::BodyPresentationSource;
+    let ordinary = canonical_triangles(solid.body_triangles(options).unwrap());
+    let named = canonical_triangles(
+        meshes
+            .iter()
+            .flat_map(|mesh| mesh.triangles.iter().copied()),
+    );
+    assert_eq!(
+        named, ordinary,
+        "named mesh must preserve the complete original display"
     );
     for mesh in meshes {
         let area: f64 = mesh.triangles.iter().map(triangle_area).sum();
@@ -351,4 +366,13 @@ fn triangle_area([a, b, c]: &[[f64; 3]; 3]) -> f64 {
         u[0] * v[1] - u[1] * v[0],
     ];
     cross[0].hypot(cross[1]).hypot(cross[2]) / 2.
+}
+
+fn canonical_triangles(triangles: impl IntoIterator<Item = [[f64; 3]; 3]>) -> Vec<[[u64; 3]; 3]> {
+    let mut result: Vec<_> = triangles
+        .into_iter()
+        .map(|triangle| triangle.map(|point| point.map(f64::to_bits)))
+        .collect();
+    result.sort();
+    result
 }

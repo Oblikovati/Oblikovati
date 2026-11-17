@@ -155,6 +155,21 @@ fn assert_fillet_replay(history: &DocumentEditHistory, size: f64) {
             .collect::<Vec<_>>(),
         keys
     );
+    use oblikovati_martensite::BodyPresentationSource;
+    let options = oblikovati_martensite::PrismMeshOptions {
+        chord_error: 0.01,
+        angular_error: 0.2,
+    };
+    let ordinary = super::canonical_triangles(result.body_triangles(options).unwrap());
+    let named = super::canonical_triangles(
+        meshes
+            .iter()
+            .flat_map(|mesh| mesh.triangles.iter().copied()),
+    );
+    assert_eq!(
+        named, ordinary,
+        "named fillet meshes must preserve the original display triangles"
+    );
     for mesh in &meshes {
         let area: f64 = mesh.triangles.iter().map(super::triangle_area).sum();
         let analytic = result.face_area(history, document(), &mesh.key).unwrap();

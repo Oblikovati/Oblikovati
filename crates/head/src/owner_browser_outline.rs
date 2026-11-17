@@ -10,6 +10,11 @@ impl<
     S: DispatchWakeup,
 > DesktopOwner<O, W, F, G, R, S>
 {
+    #[cfg(test)]
+    pub(crate) fn face_mesh_builds(&self) -> usize {
+        self.part_scenes.face_mesh_builds()
+    }
+
     pub(in crate::owner) fn current_selected_edge_outlines(&mut self) -> Vec<Vec<[[f64; 3]; 2]>> {
         if self.replacement_preview_active() && !self.fillet_input_preview_active() {
             return Vec::new();

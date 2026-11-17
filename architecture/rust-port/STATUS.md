@@ -43,13 +43,16 @@ Last checked: 2026-11-16 on `rust-work`. Refresh from current evidence at each c
   also have an X11 diagnostic (#4033); reference fixture and capture gaps remain.
 - Face selection with the default and Faces filters has native X11 diagnostics
   for the teal fill, green boundary, cue, toolbar and empty-space clear (#4048).
-  The default-filter test checks the analytic face hit. First-selection face
-  meshing is synchronous; performance and full live scenario verification
-  remain open.
+  The default-filter test checks the analytic face hit. Part presentation
+  prepares named meshes once per generation for reuse on selection; the
+  first build is synchronous. Full live scenario verification remains open.
 - The 60 fps sketch target is not met on the measured GPU. A 4-segment
   pointer-motion run measured 20.738 ms median and 24.861 ms p95 at 1440 × 900;
   the 60 fps frame budget is 16.67 ms. See `receipts/2026-11-16-sketch-frame-baseline-4031/`.
-  Host capture is #4032; context picks now use checked projection batches (#4035).
+  A cube face-mesh CPU diagnostic is in
+  `receipts/2026-11-17-face-selection-cost-4048/baseline.json`; it does not
+  measure frame rate. Host capture is #4032; context picks now use checked
+  projection batches (#4035).
   No-readback presentation is Martensite #501; efficient previews are #504.
   Projection costs: `receipts/2026-11-16-pick-phases-4035/` (#505); no input-to-display timing was measured.
   A separate 200-line redraw and capture probe measured 25.963 ms median and
