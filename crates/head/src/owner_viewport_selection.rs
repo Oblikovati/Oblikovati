@@ -69,9 +69,9 @@ impl<
         let Some(allowed) = self.part_pick_filter(document, depth_window.is_some()) else {
             return Ok(false);
         };
-        let mut candidates = self
-            .part_scenes
-            .part_candidates(&self.files, document, line)?;
+        let mut candidates =
+            self.part_scenes
+                .part_candidates(&self.files, document, line, &allowed)?;
         if allowed.accepts(oblikovati_session::selection::SelectionKind::Edge)
             && let Some(tolerance) = depth_window
         {

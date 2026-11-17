@@ -123,3 +123,47 @@ fn native_face_click_cue_retires_when_pointer_leaves() {
     world.expect_no_text("1. Face");
     world.close();
 }
+
+#[cfg(target_os = "linux")]
+#[test]
+fn native_default_filter_selects_and_clears_visible_face() {
+    use crate::HeadWork;
+    let mut world = ApplicationWorld::new();
+    super::super::workspace_layout::browser_feature::open_visible_extruded_part(&mut world);
+    let (low, high) = super::super::viewport_orientation::solid_bounds(&mut world);
+    let point = [
+        ((low[0] + high[0]) / 2) as i32,
+        ((low[1] + high[1]) / 2) as i32,
+    ];
+    let ray = world.app().window.view_line(point).unwrap();
+    let edges = world.app().owner.face_edges_on_line(ray).unwrap();
+    assert!(
+        !edges.is_empty(),
+        "pixel {point:?}: expected an analytic face hit"
+    );
+    super::super::x11_input::focus_window();
+    super::super::x11_input::move_pointer(point);
+    world.pump(Vec::new());
+    super::super::x11_input::click(point);
+    world.pump(Vec::new());
+    assert!(
+        world.state().model_face_chosen,
+        "default face click {point:?}: {}",
+        world.text()
+    );
+    assert_eq!(
+        world.app().owner.selected_browser_outline(),
+        edges,
+        "selected face must match the analytic hit"
+    );
+    world.expect_text("1. Face");
+    toolbar_visible(&mut world);
+    let empty = super::super::viewport_pan::EMPTY_VIEW;
+    super::super::x11_input::move_pointer(empty);
+    world.pump(Vec::new());
+    super::super::x11_input::click(empty);
+    world.pump(Vec::new());
+    selection_cleared(&mut world);
+    world.expect_no_text("1. Face");
+    world.close();
+}

@@ -279,10 +279,10 @@ impl DesktopPartScenes {
         document: u64,
         line: [[f64; 3]; 2],
     ) -> Result<Option<(oblikovati_model::feature::FeatureId, Vec<u8>)>, String> {
-        let candidates = self.part_candidates(files, document, line)?;
         let filter = oblikovati_session::selection::SelectionFilter::only([
             oblikovati_session::selection::SelectionKind::Face,
         ]);
+        let candidates = self.part_candidates(files, document, line, &filter)?;
         let ambient = oblikovati_session::selection::AmbientSelectionFilter::default();
         match candidates.resolve(&filter, &ambient, 0.)? {
             Some(pick_candidates::PickTarget::Face(feature, role)) => Ok(Some((feature, role))),
@@ -299,6 +299,7 @@ impl DesktopPartScenes {
         files: &FileWorkspace<O, W, F>,
         document: u64,
         line: [[f64; 3]; 2],
+        allowed: &oblikovati_session::selection::SelectionFilter,
     ) -> Result<pick_candidates::PickCandidates, String> {
         let session = files
             .workspace()
@@ -322,18 +323,7 @@ impl DesktopPartScenes {
                 continue;
             }
             let faces = body.face_hits_on_line(session.history(), guid, line)?;
-            if let Some((_, reach)) = faces.first() {
-                candidates.push(
-                    pick_candidates::PickTarget::Body(record.feature, key),
-                    *reach,
-                )?;
-            }
-            for (face, reach) in faces {
-                candidates.push(
-                    pick_candidates::PickTarget::Face(record.feature, face),
-                    reach,
-                )?;
-            }
+            candidates.push_body_face_hits(record.feature, key, faces, allowed)?;
         }
         Ok(candidates)
     }

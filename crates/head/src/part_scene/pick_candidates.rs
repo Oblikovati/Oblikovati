@@ -82,6 +82,26 @@ impl PickCandidates {
         Ok(())
     }
 
+    // A ray hit represents a face when permitted, or its body when only bodies are allowed.
+    pub(crate) fn push_body_face_hits(
+        &mut self,
+        feature: oblikovati_model::feature::FeatureId,
+        body: String,
+        faces: Vec<(Vec<u8>, f64)>,
+        allowed: &oblikovati_session::selection::SelectionFilter,
+    ) -> Result<(), String> {
+        if allowed.accepts(SelectionKind::Face) {
+            for (face, distance) in faces {
+                self.push(PickTarget::Face(feature, face), distance)?;
+            }
+        } else if allowed.accepts(SelectionKind::Body)
+            && let Some((_, distance)) = faces.first()
+        {
+            self.push(PickTarget::Body(feature, body), *distance)?;
+        }
+        Ok(())
+    }
+
     pub(crate) fn nearest(self) -> Result<Option<PickTarget>, String> {
         if let Some(first) = self.candidates.first()
             && self
@@ -191,6 +211,26 @@ mod tests {
     use super::*;
     fn face(id: u64) -> PickTarget {
         PickTarget::Face(oblikovati_model::feature::FeatureId(id), vec![id as u8])
+    }
+    #[test]
+    fn face_hit_resolves_to_face_or_body_as_the_filter_permits() {
+        use oblikovati_session::selection::{AmbientSelectionFilter, SelectionFilter};
+        let feature = oblikovati_model::feature::FeatureId(1);
+        let ambient = AmbientSelectionFilter::default();
+        for (filter, expected) in [
+            (SelectionFilter::All, Some(face(1))),
+            (
+                SelectionFilter::only([SelectionKind::Body]),
+                Some(PickTarget::Body(feature, "body".into())),
+            ),
+            (SelectionFilter::only([SelectionKind::Edge]), None),
+        ] {
+            let mut batch = PickCandidates::new(PickCoverage::NearestFacePerBody);
+            batch
+                .push_body_face_hits(feature, "body".into(), vec![(vec![1], 2.)], &filter)
+                .unwrap();
+            assert_eq!(batch.resolve(&filter, &ambient, 0.).unwrap(), expected);
+        }
     }
     #[test]
     fn arbitration_retains_the_selected_face_and_its_ray_distance() {
