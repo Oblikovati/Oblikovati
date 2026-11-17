@@ -99,12 +99,6 @@ mod work;
 pub use commands::{DesktopCommandNotice, DesktopHistoryAction};
 mod dispatch_options;
 pub use dispatch_options::DesktopDispatchOptions;
-struct ComponentPreview {
-    assembly: u64,
-    generations: Vec<(u64, u64)>,
-    scene: oblikovati_viewport::ViewportScene,
-    owned_source: Option<u64>,
-}
 /// Documents and queue admission share one owner. The worker transport contains no model.
 /// ```compile_fail
 /// use oblikovati_head::DesktopOwner;
@@ -152,7 +146,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     extrusion_preview: Option<owner_extrusion_preview::ScenePreview>,
     extrusion_distance_validation: Option<(u64, oblikovati_gui::GuiExtrudeDistanceValidation)>,
     offset_plane_validation: Option<oblikovati_gui::GuiOffsetPlaneValidation>,
-    component_preview: Option<ComponentPreview>,
+    component_preview: Option<owner_extrusion_preview::ComponentPreview>,
     sketch_scenes: crate::sketch_scene::DesktopSketchScenes,
     command_notice: Option<DesktopCommandNotice>,
     /// Sketches being edited in documents that are not active, by document.

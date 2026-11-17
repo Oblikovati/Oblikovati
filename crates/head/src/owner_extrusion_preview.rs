@@ -1,6 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Build a temporary certified extrusion without changing the document.
 use super::*;
+pub(super) struct ComponentPreview {
+    assembly: u64,
+    generations: Vec<(u64, u64)>,
+    scene: oblikovati_viewport::ViewportScene,
+    owned_source: Option<u64>,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum PreviewKind {
     Additive,

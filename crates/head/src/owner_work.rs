@@ -6,6 +6,9 @@ mod extrusion_work;
 #[macro_use]
 #[path = "owner_work_document.rs"]
 mod document_work;
+#[macro_use]
+#[path = "owner_work_selection.rs"]
+mod selection_work;
 impl<
     O: TransactionObserver,
     W: WorkspaceObserver,
@@ -413,35 +416,7 @@ impl<
     fn navigation_prompt_from_gui(&mut self, prompt: Option<&str>) -> Result<bool, String> {
         self.navigation_prompt(prompt)
     }
-    fn face_edges_on_line(&mut self, line: [[f64; 3]; 2]) -> Result<Vec<[[f64; 3]; 2]>, String> {
-        self.edges_of_face_on_line(line)
-    }
-    fn click_model_from_gui(&mut self, document: u64, line: [[f64; 3]; 2]) -> Result<bool, String> {
-        self.click_model(document, line)
-    }
-    fn click_model_with_window(
-        &mut self,
-        document: u64,
-        line: [[f64; 3]; 2],
-        window: f64,
-    ) -> Result<bool, String> {
-        self.click_model_with_window(document, line, Some(window))
-    }
-    fn click_model_with_modifiers(
-        &mut self,
-        document: u64,
-        line: [[f64; 3]; 2],
-        window: Option<f64>,
-        toggle: bool,
-    ) -> Result<bool, String> {
-        self.click_model_with_modifiers(document, line, window, toggle)
-    }
-    fn selected_browser_outline(&mut self) -> Vec<[[f64; 3]; 2]> {
-        self.current_browser_outline()
-    }
-    fn selected_edge_outlines(&mut self) -> Vec<Vec<[[f64; 3]; 2]>> {
-        self.current_selected_edge_outlines()
-    }
+    desktop_selection_work!();
     desktop_document_work!();
     fn select_block_geometry_from_gui(&mut self, active: bool) -> Result<bool, String> {
         self.set_block_selection(active)
