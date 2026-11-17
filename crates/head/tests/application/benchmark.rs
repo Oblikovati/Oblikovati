@@ -62,6 +62,51 @@ pub(super) fn rendered_label_center(label: &str) -> [i32; 2] {
         });
     diagnostics::pointer_pixels(run)
 }
+fn tab_label_run<'a>(
+    frame: &'a diagnostics::RenderedFrame,
+    label: &str,
+) -> &'a diagnostics::RenderedRun {
+    let (position, size) =
+        diagnostics::window_geometry("##open-document-tabs").expect("document tab strip");
+    frame
+        .runs
+        .iter()
+        .find(|run| {
+            run.text.starts_with(label)
+                && (0..2).all(|axis| {
+                    run.center()[axis] >= position[axis]
+                        && run.center()[axis] < position[axis] + size[axis]
+                })
+        })
+        .unwrap_or_else(|| panic!("tab {label:?}: expected a label in the tab strip"))
+}
+pub(super) fn tab_label_center(label: &str) -> [i32; 2] {
+    let frame = diagnostics::rendered_frame();
+    diagnostics::pointer_pixels(tab_label_run(&frame, label).center())
+}
+pub(super) fn tab_close_mark(label: &str) -> [i32; 2] {
+    let frame = diagnostics::rendered_frame();
+    let run = tab_label_run(&frame, label);
+    let marks: Vec<_> = frame
+        .marks
+        .iter()
+        .filter(|mark| {
+            mark.list == run.list
+                && mark.position[0] > run.maximum[0]
+                && mark.position[0] < run.maximum[0] + 30.
+                && mark.position[1] >= run.minimum[1] - 2.
+                && mark.position[1] <= run.maximum[1] + 2.
+        })
+        .collect();
+    assert!(
+        !marks.is_empty(),
+        "tab {label:?}: expected its visible close mark"
+    );
+    let point = std::array::from_fn(|axis| {
+        marks.iter().map(|mark| mark.position[axis]).sum::<f32>() / marks.len() as f32
+    });
+    diagnostics::pointer_pixels(point)
+}
 pub(super) fn rendered_label_in_rect(label: &str, min: [f32; 2], max: [f32; 2]) -> [i32; 2] {
     let frame = diagnostics::rendered_frame();
     let run = frame

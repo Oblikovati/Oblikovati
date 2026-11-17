@@ -146,6 +146,18 @@ impl HeadWindow for ScriptedGuiWindow {
             current.template_size_issue = Some(cause.clone());
         }
         let result = self.native.gui_frame(event, &current)?;
+        if self.observe_sketch_after_prompt
+            && self.sketch_after_prompt.is_none()
+            && self
+                .native
+                .gui
+                .as_ref()
+                .and_then(|gui| gui.frame_controls())
+                .is_some_and(|(_, popup, _, _)| !popup)
+        {
+            self.sketch_after_prompt =
+                Some(commands.authoring == oblikovati_gui::GuiAuthoringContext::Sketch);
+        }
         self.gui_actions.extend(result.actions.iter().cloned());
         Ok(result)
     }

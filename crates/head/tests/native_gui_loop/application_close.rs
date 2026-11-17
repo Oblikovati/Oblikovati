@@ -358,3 +358,43 @@ fn dirty_accessibility_fixture(owner: &mut NativeDesktopOwner) {
         })
         .unwrap();
 }
+
+#[test]
+#[ignore = "run with the AT-SPI client in accessibility_atspi/sketch_run.sh"]
+fn accessible_sketch_exit_live_fixture() {
+    let (mut window, mut owner) = initialized_window();
+    owner.create_part_document().unwrap();
+    begin_edited_sketch(&mut window, &mut owner);
+    let state = owner.gui_command_state().unwrap();
+    let document = state.document.unwrap();
+    let name = &state
+        .documents
+        .iter()
+        .find(|row| row.id == document)
+        .unwrap()
+        .name;
+    let position = application_bdd::tab_label_center(name);
+    window
+        .scripted
+        .push(ViewportEvent::Input(ViewportInput::Motion {
+            position,
+            modifiers: Default::default(),
+        }));
+    crate::frames::run_frames(&mut window, HeadOptions { frames: Some(3) }, &mut owner).unwrap();
+    let close = application_bdd::tab_close_mark(name);
+    click_shell_position(&mut window, &mut owner, close);
+    assert!(application_bdd::window_geometry("Exit environment").is_some());
+    window.observe_sketch_after_prompt = true;
+    if let Some(path) = std::env::var_os("OBLIKOVATI_A11Y_READY") {
+        std::fs::write(path, b"ready").unwrap();
+    }
+    crate::run_window_with_owner(&mut window, HeadOptions::default(), &mut owner).unwrap();
+    if std::env::var("OBLIKOVATI_SKETCH_ANSWER").as_deref() != Ok("OK") {
+        assert_eq!(
+            window.sketch_after_prompt,
+            Some(true),
+            "Cancel must leave the sketch active"
+        );
+    }
+    assert!(owner.documents().workspace().documents().is_empty());
+}
