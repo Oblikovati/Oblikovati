@@ -201,6 +201,8 @@
 
 ### Fixed
 
+- Avoided computing the assembly producer identity for ordinary document commands. (#4081)
+
 - Allow Fillet and Chamfer creation after model-state changes and reopening a part. (#4080)
 
 - Preserved dock tabs when tool windows close, suspend, or reopen. (#4073)

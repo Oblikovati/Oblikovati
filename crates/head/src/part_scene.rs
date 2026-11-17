@@ -86,6 +86,16 @@ pub(crate) struct DesktopPartScenes {
     slot: PartEvaluationSlot<NamedSolid, oblikovati_martensite::EvaluationFailure>,
 }
 impl DesktopPartScenes {
+    #[cfg(test)]
+    pub(crate) fn set_test_producer_digest(&mut self, digest: Result<String, String>) {
+        self.producer_digest = Some(digest);
+    }
+
+    #[cfg(test)]
+    pub(crate) fn has_assembly_producer_digest(&self) -> bool {
+        self.producer_digest.is_some()
+    }
+
     pub(crate) fn assembly_producer_digest(&mut self) -> Result<String, String> {
         self.producer_digest
             .get_or_insert_with(crate::assembly_producer::current_executable_digest)
