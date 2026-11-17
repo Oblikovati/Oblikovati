@@ -25,6 +25,10 @@ Last checked: 2026-11-16 on `rust-work`. Refresh from current evidence at each c
   creation can also start before an edge is picked, and its preview retains
   selected input-edge feedback. Full BDD acceptance remains open. See
   `receipts/2026-11-16-fillet-history-4045/`.
+- Solid Chamfer is not yet available in the Rust UI (#4046). The pinned
+  Martensite builder passed detached-cube geometry and face-history probes
+  on all 12 edges. Naming, replay, host operations and UI remain open; see
+  `receipts/2026-11-17-chamfer-prism-probe-4046/`.
 - Pointer-driven Line creation and preview cancellation have an X11 diagnostic
   (#4037). Move preview and cancellation also pass a focused X11 diagnostic
   (#4040). Overlap type cues and Select Other also pass a native diagnostic
