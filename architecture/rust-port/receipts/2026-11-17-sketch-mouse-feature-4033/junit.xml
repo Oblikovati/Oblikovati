@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Interact with sketch entities in the viewport: tmp/oblikovati-bdd-SGy6Pe/checkout/features/sketch/viewport-entity-interaction/viewport-entity-interaction.feature" package="testsuite/Feature: Interact with sketch entities in the viewport: tmp/oblikovati-bdd-SGy6Pe/checkout/features/sketch/viewport-entity-interaction/viewport-entity-interaction.feature" tests="5" errors="0" failures="0" hostname="localhost" timestamp="2026-11-17T09:15:28.298025601Z" time="126.158691104"><testcase name="Scenario: Show hover feedback for a sketch curve offered to a selection tool: tmp/oblikovati-bdd-SGy6Pe/checkout/features/sketch/viewport-entity-interaction/viewport-entity-interaction.feature:9:3" time="23.767372"><system-out><![CDATA[  Scenario: Show hover feedback for a sketch curve offered to a selection tool
+   ✔> Given the MCAD Software is displaying an editable sketch
+   ✔> And the viewport pointer is idle
+   ✔  Given the sketch contains a curve and a sketch tool is requesting a curve selection
+   ✔  When the user hovers over a candidate curve segment
+   ✔  Then the candidate segment receives pointer highlight feedback before it is selected
+]]></system-out></testcase><testcase name="Scenario: Select a sketch entity in the ready state: tmp/oblikovati-bdd-SGy6Pe/checkout/features/sketch/viewport-entity-interaction/viewport-entity-interaction.feature:29:3" time="24.947551682"><system-out><![CDATA[  Scenario: Select a sketch entity in the ready state
+   ✔> Given the MCAD Software is displaying an editable sketch
+   ✔> And the viewport pointer is idle
+   ✔  Given an editable sketch contains an unselected line and the sketch is ready for input
+   ✔  When the user clicks the line away from its endpoints and constraint glyphs
+   ✔  Then the line becomes the selected sketch entity
+   ✔  And the viewport displays a distinct selected state
+   ✔  When the user clicks empty sketch space
+   ✔  Then the line is no longer selected
+]]></system-out></testcase><testcase name="Scenario: Resolve a pick where sketch entities overlap: tmp/oblikovati-bdd-SGy6Pe/checkout/features/sketch/viewport-entity-interaction/viewport-entity-interaction.feature:54:3" time="26.266083373"><system-out><![CDATA[  Scenario: Resolve a pick where sketch entities overlap
+   ✔> Given the MCAD Software is displaying an editable sketch
+   ✔> And the viewport pointer is idle
+   ✔  Given an editable sketch contains a curve and a selectable point at the same screen location
+   ✔  When the user clicks the overlapping location
+   ✔  Then the MCAD Software identifies the picked entity type
+   ✔  And any available pick-choice control identifies the alternatives
+]]></system-out></testcase><testcase name="Scenario: Create geometry through a pointer-driven sketch tool: tmp/oblikovati-bdd-SGy6Pe/checkout/features/sketch/viewport-entity-interaction/viewport-entity-interaction.feature:61:3" time="25.360454396"><system-out><![CDATA[  Scenario: Create geometry through a pointer-driven sketch tool
+   ✔> Given the MCAD Software is displaying an editable sketch
+   ✔> And the viewport pointer is idle
+   ✔  Given a sketch geometry tool is active and requesting viewport input
+   ✔  When the user selects the positions required by that tool
+   ✔  Then accepted geometry appears in the sketch
+   ✔  And the tool advances to its next input or returns to Ready
+   ✔  When the user presses Escape while a later placement preview is pending
+   ✔  Then the pending preview is removed
+   ✔  And previously accepted geometry remains in the sketch
+]]></system-out></testcase><testcase name="Scenario: Modify geometry with a tool that previews before commitment: tmp/oblikovati-bdd-SGy6Pe/checkout/features/sketch/viewport-entity-interaction/viewport-entity-interaction.feature:71:3" time="25.817229653"><system-out><![CDATA[  Scenario: Modify geometry with a tool that previews before commitment
+   ✔> Given the MCAD Software is displaying an editable sketch
+   ✔> And the viewport pointer is idle
+   ✔  Given a sketch modification tool is requesting existing geometry
+   ✔  And the tool has not committed its result
+   ✔  When the user picks the required sketch entities
+   ✔  Then the tool displays a pending preview of the modification
+   ✔  When the user cancels before committing the result
+   ✔  Then the pending preview is removed
+   ✔  And the original sketch geometry remains unchanged
+]]></system-out></testcase></testsuite></testsuites>

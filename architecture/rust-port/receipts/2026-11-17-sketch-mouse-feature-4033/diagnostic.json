@@ -1,0 +1,16 @@
+{
+  "kind": "diagnostic",
+  "application_commit": "65cb4617c",
+  "scenario_snapshot": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+  "feature_sha256": "b026f6a89824c1c50b8d6d2f7d9ae4c6fecd5c25f0cb6f87fa05063b205841d7",
+  "feature": "sketch/viewport-entity-interaction",
+  "scenarios_passed": 5,
+  "scenarios_capture_only": 3,
+  "steps_passed": 37,
+  "environment": "Linux Xvfb and Vulkan Lavapipe; inspect individual bindings for OS input",
+  "limitations": [
+    "Three capture-only cases were not executed.",
+    "Fixture and reference capture gaps remain.",
+    "Sealed build provenance remains open (#3978); this is not verified acceptance."
+  ]
+}
