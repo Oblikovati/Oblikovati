@@ -1,0 +1,8 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+# Check repository documentation before a commit can capture invalid state.
+set -eu
+root=$(git rev-parse --show-toplevel)
+cd "$root"
+cargo xtask docs
+make docs-lint
