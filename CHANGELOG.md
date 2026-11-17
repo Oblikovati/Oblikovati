@@ -4,6 +4,8 @@
 
 ### Changed
 
+- Enabled Chamfer from the default Part marking menu. (#4046)
+
 - Kept selected input edges visible during a Fillet preview. (#4045)
 
 - Allowed the Fillet tool to start before an edge is selected. (#4045)

@@ -80,6 +80,7 @@ fn command(id: &str) -> Option<(&'static str, GuiShellAction)> {
     match id {
         "Create.Extrude" => Some(("Extrude", GuiShellAction::OpenExtrude)),
         "Modify.Fillet" => Some(("Fillet", GuiShellAction::OpenFillet)),
+        "Modify.Chamfer" => Some(("Chamfer", GuiShellAction::OpenChamfer)),
         "Sketch.Create2D" => Some(("Start 2D Sketch", GuiShellAction::ChooseSketchPlane)),
         "WorkPlane.Offset" => Some(("Offset Plane", GuiShellAction::OpenOffsetPlane)),
         _ => None,
@@ -144,6 +145,10 @@ mod tests {
         assert_eq!(
             command("Create.Extrude"),
             Some(("Extrude", GuiShellAction::OpenExtrude))
+        );
+        assert_eq!(
+            command("Modify.Chamfer"),
+            Some(("Chamfer", GuiShellAction::OpenChamfer))
         );
         assert_eq!(command("Modify.Unknown"), None);
     }

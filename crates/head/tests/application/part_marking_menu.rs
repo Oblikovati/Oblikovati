@@ -185,3 +185,29 @@ fn save_and_reopen_face_sketch(world: &mut ApplicationWorld, document: u64) -> u
         .unwrap()
         .id
 }
+
+#[test]
+fn native_part_menu_chamfer_opens_and_cancels_without_model_changes() {
+    let mut world = ApplicationWorld::new();
+    super::workspace_layout::browser_feature::open_visible_extruded_part(&mut world);
+    let before = world.state().browser.unwrap().features;
+    x11_input::focus_window();
+    x11_input::move_pointer([900, 450]);
+    world.pump(Vec::new());
+    x11_input::right_click([900, 450]);
+    world.pump(Vec::new());
+    let button = world
+        .frame
+        .runs
+        .iter()
+        .find(|run| run.text == "Chamfer" && run.center()[0] > 700. && run.center()[1] > 250.)
+        .unwrap_or_else(|| panic!("Part menu: expected Chamfer; rendered {:?}", world.text()));
+    x11_input::click(diagnostics::pointer_pixels(button.center()));
+    world.pump(Vec::new());
+    world.expect_text("Select Edges");
+    assert!(!world.state().extrude_preview_active);
+    click_native_label(&mut world, "Cancel");
+    assert_eq!(world.state().browser.unwrap().features, before);
+    assert!(!world.state().extrude_preview_active);
+    world.close();
+}

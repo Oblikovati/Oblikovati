@@ -20,6 +20,8 @@ Last checked: 2026-11-16 on `rust-work`. Refresh from current evidence at each c
   fixture and capture tags remain. The dark-face ambient issue has a host
   correction (#4044); full Go lighting parity remains open. See
   `receipts/2026-11-17-viewport-fillet-bdd-4045/`.
+- The default Part marking menu now opens Chamfer; a native X11 diagnostic
+  covers opening and cancelling without changing the model (#4046).
 - Named-edge Fillet creation, replay, undo/redo and save/reopen have focused
   API and native-window tests (#4045). The typed `features.edit` path supports
   certified radius edits. The desktop edit panel has a native input diagnostic;
