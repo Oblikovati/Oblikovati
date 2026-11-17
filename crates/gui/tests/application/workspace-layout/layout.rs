@@ -82,13 +82,13 @@ fn selected_origin_plane_is_consumed_and_does_not_cross_documents() {
 }
 
 #[test]
-fn the_bottom_tab_strip_follows_the_viewport_and_browser_dock() {
+fn the_workspace_span_follows_the_browser_dock() {
     let mut layout = WorkspaceLayout::default();
-    assert_eq!(layout.tab_strip_span(1000.), (250., 750.));
+    assert_eq!(layout.tab_span(1000.), (250., 750.));
     layout.dock = BrowserDock::Right;
-    assert_eq!(layout.tab_strip_span(1000.), (0., 750.));
+    assert_eq!(layout.tab_span(1000.), (0., 750.));
     layout.reserve_for_ribbon(196., 0.);
-    assert_eq!(layout.tab_strip_span(1000.), (196., 554.));
+    assert_eq!(layout.tab_span(1000.), (196., 554.));
     assert_eq!(layout.tab_top(900.), 844.);
     layout.tabs_visible = false;
     assert_eq!(layout.tab_top(900.), 878.);

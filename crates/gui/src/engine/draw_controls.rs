@@ -85,10 +85,20 @@ impl GuiFrameEngine {
             request,
             self.command_alias.text(),
         );
+        let logical =
+            std::array::from_fn(|axis| request.extent[axis] as f32 / request.layout_scale()[axis]);
+        let workspace = self.workspace.document_area(logical, band_height);
+        let area = crate::application::workspace_docking::draw(ui, workspace);
         let over_fields = crate::sketch::line::hud_panel(ui, request);
         self.document_tabs.previews.synchronize(&request.commands);
-        self.document_tabs
-            .panel(ui, request, &self.workspace, &mut self.home, &mut selected);
+        self.document_tabs.panel(
+            ui,
+            request,
+            &self.workspace,
+            area,
+            &mut self.home,
+            &mut selected,
+        );
         selected.retain(|action| {
             if let GuiShellAction::OpenClearBodyAppearance { document } = action {
                 self.clear_appearance.open(*document);
@@ -123,9 +133,12 @@ impl GuiFrameEngine {
         self.workspace.browser_panel(
             ui,
             &request.commands,
-            request.extent[1] as f32 / request.layout_scale()[1]
-                - crate::application::workspace_layout::status_bar::STATUS_BAR_HEIGHT,
-            band_height,
+            (
+                request.extent[1] as f32 / request.layout_scale()[1]
+                    - crate::application::workspace_layout::status_bar::STATUS_BAR_HEIGHT,
+                band_height,
+            ),
+            area,
             self.part_context_open,
             &mut selected,
         );
@@ -162,9 +175,6 @@ impl GuiFrameEngine {
         }
         selected.retain(|action| !matches!(action, GuiShellAction::OpenSketchPattern { .. }));
         selected.retain(|action| !matches!(action, GuiShellAction::OpenExtrudeEdit(_)));
-        let logical =
-            std::array::from_fn(|axis| request.extent[axis] as f32 / request.layout_scale()[axis]);
-        let area = self.workspace.document_area(logical, band_height);
         // Over Home there is no view for it to turn.
         if !self.home.active {
             self.orientation.panel(ui, request, area, &mut selected);

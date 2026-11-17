@@ -39,6 +39,7 @@ impl DocumentTabs {
         ui: &Ui,
         request: &GuiFrameRequest,
         layout: &crate::application::workspace_layout::WorkspaceLayout,
+        area: crate::application::document_creation::workspaces::WorkspaceArea,
         home: &mut crate::application::home_recent_documents::HomeWorkspace,
         actions: &mut Vec<GuiShellAction>,
     ) {
@@ -52,10 +53,9 @@ impl DocumentTabs {
             self.order.cancel_input();
             return;
         }
-        let width = request.extent[0] as f32 / request.layout_scale()[0];
         let height = request.extent[1] as f32 / request.layout_scale()[1];
         let strip_top = layout.tab_top(height);
-        let span = layout.tab_strip_span(width);
+        let span = (area.left, (area.right - area.left).max(1.));
         let strip = (span.0, (span.1 - DOCUMENT_LIST_WIDTH).max(1.));
         let mut strip_owner = StripOwner {
             menu: &mut self.menu,

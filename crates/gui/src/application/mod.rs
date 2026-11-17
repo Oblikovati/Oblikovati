@@ -23,6 +23,8 @@ pub(crate) mod ribbon_customization;
 pub(crate) mod ribbon_display;
 #[path = "viewport-orientation/mod.rs"]
 pub(crate) mod viewport_orientation;
+#[path = "workspace-docking/mod.rs"]
+pub(crate) mod workspace_docking;
 #[path = "workspace-layout/mod.rs"]
 pub(crate) mod workspace_layout;
 

@@ -28,13 +28,18 @@ fn close_title(world: &mut ApplicationWorld, title: &str) {
 }
 
 fn enter_parameter_field(world: &mut ApplicationWorld, label: &str, value: &str) {
-    let kind = world.run_in_window("Parameters", "Numeric");
-    let offset = match label {
-        "Name" => 125.,
-        "Equation" => 273.,
-        _ => panic!("parameter field {label:?}: expected Name or Equation"),
+    let point = if window_geometry("Parameters").is_some() {
+        let kind = world.run_in_window("Parameters", "Numeric");
+        let offset = match label {
+            "Name" => 125.,
+            "Equation" => 273.,
+            _ => panic!("parameter field {label:?}: expected Name or Equation"),
+        };
+        [kind.minimum[0] + offset, kind.center()[1]]
+    } else {
+        let run = world.run(label);
+        [run.minimum[0] - 40., run.center()[1]]
     };
-    let point = [kind.minimum[0] + offset, kind.center()[1]];
     world.click(super::super::diagnostics::pointer_pixels(point));
     world.type_text(value);
     world.key(oblikovati_viewport::ViewportPhysicalKey::Enter, false);

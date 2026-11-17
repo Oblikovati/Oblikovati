@@ -8,6 +8,9 @@ pub(super) mod browser_feature;
 pub(super) mod browser_origin;
 #[path = "browser_tree.rs"]
 pub(super) mod browser_tree;
+#[cfg(target_os = "linux")]
+#[path = "dockspace_native.rs"]
+mod dockspace_native;
 #[path = "drawing_browser.rs"]
 mod drawing_browser;
 #[path = "wireframe_tabs.rs"]

@@ -25,6 +25,23 @@ void draw_ribbon_icon(const char* label, std::uint32_t texture, ImVec2 icon, boo
 }
 }
 extern "C" {
+std::uint32_t oblikovati_gui_workspace_dockspace(float width, float height) {
+    const ImGuiID id = ImGui::GetID("##workspace-dockspace");
+    // The central node is the live viewport and must remain open for rendering and picks (#4069).
+    return ImGui::DockSpace(id, ImVec2(width, height),
+                           ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoDockingInCentralNode);
+}
+
+bool oblikovati_gui_dockspace_center(std::uint32_t id, float* left, float* top, float* right, float* bottom) {
+    const ImGuiDockNode* center = ImGui::DockBuilderGetCentralNode(id);
+    if (!center || center->Size.x <= 0 || center->Size.y <= 0) return false;
+    *left = center->Pos.x;
+    *top = center->Pos.y;
+    *right = center->Pos.x + center->Size.x;
+    *bottom = center->Pos.y + center->Size.y;
+    return true;
+}
+
 bool oblikovati_gui_icon_button(const unsigned char* bytes, std::uint32_t texture,
                                 float width, float height, float icon_width, float icon_height, bool large, bool show_caption) {
     const char* label = reinterpret_cast<const char*>(bytes);
