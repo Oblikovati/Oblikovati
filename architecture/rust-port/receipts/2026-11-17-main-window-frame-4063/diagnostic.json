@@ -11,5 +11,6 @@
     "Filtered feature run against unversioned scenario source; not a pinned full-suite gate.",
     "Windows runtime behavior was not exercised.",
     "Sealed build provenance remains open (#3978)."
-  ]
+  ],
+  "feature_snapshot": "main-window-frame.feature.gz"
 }
