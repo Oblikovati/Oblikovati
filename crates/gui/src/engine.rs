@@ -9,10 +9,14 @@ use crate::{
 };
 use imgui::{ConfigFlags, Context, TextureId};
 use std::sync::Arc;
+pub(crate) mod dock_registration;
 #[path = "engine/document_name.rs"]
 mod document_name;
 #[path = "engine/draw_controls.rs"]
 mod draw_controls;
+mod external_panels;
+mod work_plane;
+use work_plane::selected_work_plane;
 #[path = "engine/workspace_layout.rs"]
 mod workspace_layout;
 #[derive(Clone, Debug)]
@@ -60,6 +64,8 @@ pub struct GuiFrameOutput {
 /// ```
 pub struct GuiFrameEngine {
     context: Context,
+    dock_lifecycle: crate::dockable_lifecycle::DockRegistry,
+    external_docks: crate::external_dock_window::ExternalDockWindows,
     #[cfg(test)]
     _test_context_lease: crate::test_context::TestContextLease,
     atlas: GuiAtlas,
@@ -130,8 +136,10 @@ impl GuiFrameEngine {
         let atlas = configure_owner_context(&mut context);
         let resources = crate::GuiTextureResources::new(atlas.clone(), [])?;
         let icons = crate::icons::GuiIconCache::new(atlas.clone())?;
-        Ok(Self {
+        let mut engine = Self {
             context,
+            dock_lifecycle: Default::default(),
+            external_docks: Default::default(),
             #[cfg(test)]
             _test_context_lease: test_context_lease,
             atlas,
@@ -174,7 +182,9 @@ impl GuiFrameEngine {
             workspaces: Default::default(),
             modifiers_held: Default::default(),
             theme_editor: Default::default(),
-        })
+        };
+        dock_registration::register(&mut engine)?;
+        Ok(engine)
     }
     /// Apply semantic chrome colours on the GUI thread; example: `engine.apply_theme(library.active())`.
     pub fn apply_theme(&mut self, theme: &oblikovati_model::theme::ThemeDefinition) {
@@ -240,6 +250,7 @@ impl GuiFrameEngine {
         if let Some(theme) = &request.commands.theme {
             crate::theme::apply_chrome_theme(&mut self.context.style_mut().colors, theme.palette());
         }
+        self.external_docks.synchronize(&request.commands);
         self.draw_controls(request)
     }
     /// Focus an accessible control; example: `engine.focus_accessible(GuiAccessibleFocus::Frame(0))`.
@@ -473,17 +484,6 @@ fn apply_quick_access(
         }
     }
     extrude.requested |= requests.open_extrude || selected.contains(&GuiShellAction::OpenExtrude);
-}
-fn selected_work_plane(
-    state: &crate::GuiCommandState,
-) -> Option<oblikovati_model::feature::FeatureId> {
-    let browser = state.browser.as_ref()?;
-    let selected = browser.selected_feature?;
-    browser
-        .features
-        .iter()
-        .find(|feature| feature.id == selected && feature.kind == "Work Plane")
-        .map(|feature| feature.id)
 }
 #[cfg(test)]
 #[path = "../tests/parameter_journey/platform.rs"]

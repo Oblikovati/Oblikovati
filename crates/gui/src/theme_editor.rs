@@ -9,9 +9,17 @@ use imgui::Ui;
 pub(crate) struct GuiThemeEditor {
     pub(crate) new_name: String,
     requested: bool,
-    open: bool,
+    open: crate::dockable_lifecycle::DockableState,
 }
 impl DockableWindow for GuiThemeEditor {}
+impl GuiThemeEditor {
+    pub(crate) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>(THEME_EDITOR_POPUP, &self.open)
+    }
+}
 const THEME_EDITOR_POPUP: &str = "Theme editor";
 
 pub(crate) fn launcher(ui: &Ui, editor: &mut GuiThemeEditor) -> bool {
@@ -38,10 +46,10 @@ pub(crate) fn panel(
 ) {
     // #3849: the launcher belongs to a flyout; draw the editor from its stable owner.
     if std::mem::take(&mut editor.requested) {
-        editor.open = true;
+        editor.open.set_open(true);
     }
-    let Some(theme) = theme.filter(|_| editor.open) else {
-        editor.open = false;
+    let Some(theme) = theme.filter(|_| editor.open.is_open()) else {
+        editor.open.set_open(false);
         return;
     };
     popup_geometry(ui);
@@ -58,7 +66,7 @@ pub(crate) fn panel(
         }
         color_rows(ui, theme, actions);
     });
-    editor.open = open && !close;
+    editor.open.set_open(open && !close);
 }
 fn popup_geometry(ui: &Ui) {
     let [width, height] = ui.io().display_size;

@@ -12,6 +12,7 @@ use oblikovati_api::{
 #[derive(Default)]
 pub(crate) struct MetadataEditor {
     document: Option<u64>,
+    dock_state: crate::dockable_lifecycle::DockableState,
     set: String,
     name: String,
     value: String,
@@ -19,12 +20,27 @@ pub(crate) struct MetadataEditor {
 }
 impl DockableWindow for MetadataEditor {}
 impl MetadataEditor {
+    pub(crate) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>("iProperties", &self.dock_state)
+    }
+    fn set_document(&mut self, document: Option<u64>) {
+        self.document = document;
+        self.dock_state.set_open(document.is_some());
+    }
     pub(crate) fn open(&mut self, state: &GuiCommandState) {
-        self.document = state.document;
+        self.set_document(state.document);
         self.set = "Summary Information".into();
         self.name.clear();
         self.value.clear();
         self.kind = 0;
+    }
+    pub(crate) fn sync_before_docking(&mut self, state: &GuiCommandState) {
+        if self.document.is_some() && self.document != state.document {
+            self.set_document(None);
+        }
     }
     pub(crate) fn panel(
         &mut self,
@@ -32,13 +48,10 @@ impl MetadataEditor {
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
     ) {
+        self.sync_before_docking(state);
         let Some(document) = self.document else {
             return;
         };
-        if state.document != Some(document) {
-            self.document = None;
-            return;
-        }
         let mut open = true;
         let width = ui.calc_text_size("Summary Information")[0]
             + ui.calc_text_size("Property set")[0]
@@ -50,7 +63,7 @@ impl MetadataEditor {
             )
             .build(|| self.contents(ui, state, document, actions));
         if !open {
-            self.document = None;
+            self.set_document(None);
         }
     }
     fn contents(
@@ -147,6 +160,17 @@ fn property_text(value: &VariantValue) -> String {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn document_change_closes_before_docking() {
+        let mut editor = MetadataEditor::default();
+        editor.open(&GuiCommandState {
+            document: Some(1),
+            ..Default::default()
+        });
+        editor.sync_before_docking(&GuiCommandState::default());
+        assert!(editor.document.is_none());
+    }
+
     use super::*;
     use oblikovati_api::wire::PropertyInfo;
 

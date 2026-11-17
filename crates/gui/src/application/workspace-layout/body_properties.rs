@@ -30,9 +30,20 @@ pub(crate) struct BodyPropertiesDialog {
     /// A choice OK has not applied yet; closing any other way forgets it.
     pending: Option<String>,
     document: Option<u64>,
+    dock_state: crate::dockable_lifecycle::DockableState,
 }
 impl DockableWindow for BodyPropertiesDialog {}
 impl BodyPropertiesDialog {
+    pub(crate) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>("Body Properties", &self.dock_state)
+    }
+    fn set_document(&mut self, document: Option<u64>) {
+        self.document = document;
+        self.dock_state.set_open(document.is_some());
+    }
     /// Open for one body; example: from its browser row's menu.
     pub(crate) fn request(&mut self, body: FeatureId) {
         self.opening = true;
@@ -43,6 +54,21 @@ impl BodyPropertiesDialog {
     pub(crate) fn needs_frame(&self) -> bool {
         self.opening
     }
+    pub(crate) fn sync_before_docking(&mut self, state: &GuiCommandState, suspended: bool) {
+        let missing_body = state.browser.as_ref().is_some_and(|browser| {
+            self.body
+                .is_some_and(|id| !browser.bodies.iter().any(|body| body.feature == id))
+        });
+        if !self.opening
+            && self.document.is_some()
+            && (self.document != state.document || missing_body)
+        {
+            self.body = None;
+            self.pending = None;
+            self.set_document(None);
+        }
+        self.dock_state.set_suspended(suspended);
+    }
     /// Draw while its body exists; example: inside the browser panel, each frame.
     pub(crate) fn panel(
         &mut self,
@@ -52,19 +78,19 @@ impl BodyPropertiesDialog {
         actions: &mut Vec<GuiShellAction>,
     ) {
         if std::mem::take(&mut self.opening) {
-            self.document = state.document;
+            self.set_document(state.document);
         }
         if self.document.is_none() || self.document != state.document {
             self.body = None;
             self.pending = None;
-            self.document = None;
+            self.set_document(None);
             return;
         }
         let body = self
             .body
             .and_then(|id| browser.bodies.iter().find(|body| body.feature == id));
         let Some(body) = body else {
-            self.document = None;
+            self.set_document(None);
             return;
         };
         // To one side: the chosen solid stays in view behind it, near the middle of the window.
@@ -89,7 +115,7 @@ impl BodyPropertiesDialog {
         if closed || !open {
             self.body = None;
             self.pending = None;
-            self.document = None;
+            self.set_document(None);
         }
     }
     fn identity_row(
@@ -186,6 +212,40 @@ fn muted_checkbox(ui: &Ui) {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn deleted_body_closes_nested_window_before_docking() {
+        let mut dialog = BodyPropertiesDialog {
+            body: Some(FeatureId(1)),
+            ..Default::default()
+        };
+        dialog.set_document(Some(1));
+        let state = GuiCommandState {
+            document: Some(1),
+            browser: Some(GuiModelBrowser::default()),
+            ..Default::default()
+        };
+        dialog.sync_before_docking(&state, false);
+        assert!(dialog.body.is_none());
+        assert!(!dialog.dock_state.is_requested());
+    }
+    #[test]
+    fn document_change_closes_nested_window_before_docking() {
+        let mut dialog = BodyPropertiesDialog {
+            body: Some(FeatureId(1)),
+            ..Default::default()
+        };
+        dialog.set_document(Some(1));
+        dialog.sync_before_docking(
+            &GuiCommandState {
+                document: Some(2),
+                ..Default::default()
+            },
+            false,
+        );
+        assert!(dialog.body.is_none());
+        assert!(!dialog.dock_state.is_requested());
+    }
+
     use super::*;
     fn body() -> GuiBrowserBody {
         GuiBrowserBody {

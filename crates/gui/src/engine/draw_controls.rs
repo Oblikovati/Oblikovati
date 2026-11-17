@@ -18,8 +18,16 @@ impl GuiFrameEngine {
             &mut self.widget_keys,
         );
         self.sync_tool_visibility();
-        crate::widget_abi::prepare_dock_hit_test(workspace_pointer(&self.context, request));
+        let mut selected = Vec::new();
+        self.prepare_dock_owners(&request.commands, &mut selected);
+        crate::widget_abi::prepare_dock_hit_test(workspace_layout::workspace_pointer(
+            &self.context,
+            request,
+        ));
         let ui = self.context.frame();
+        self.dock_lifecycle.reconcile(|title| {
+            crate::widget_abi::close_dock_tab(ui, title);
+        })?;
         crate::sketch_pick_cue::draw_sketch_pick_cue(ui, request);
         crate::sketch_pick_cue::draw_model_pick_cue(ui, request);
         self.workspace
@@ -29,7 +37,6 @@ impl GuiFrameEngine {
             crate::sketch::constraint_glyphs::draw_constraint_glyphs(ui, request);
         crate::application::workspace_layout::browser_feature::draw_feature_edges(ui, request);
         self.workspace.draw_selected_origin(ui, request);
-        let mut selected = Vec::new();
         self.document_files.home_in_front = self.home.active;
         let band_height = crate::chrome::ribbon_band(
             ui,
@@ -94,6 +101,10 @@ impl GuiFrameEngine {
             request,
             self.command_alias.text(),
         );
+        self.workspace.sync_before_docking(&request.commands);
+        self.dock_lifecycle.reconcile(|title| {
+            crate::widget_abi::close_dock_tab(ui, title);
+        })?;
         let logical =
             std::array::from_fn(|axis| request.extent[axis] as f32 / request.layout_scale()[axis]);
         let outer = self.workspace.outer_area(logical, band_height);
@@ -193,6 +204,8 @@ impl GuiFrameEngine {
         // Over Home there is no view for it to turn.
         if !self.home.active {
             self.orientation.panel(ui, request, area, &mut selected);
+        } else {
+            self.orientation.set_suspended(true);
         }
         let detached = self.document_tabs.is_detached(request.commands.document);
         self.workspaces
@@ -311,10 +324,8 @@ impl GuiFrameEngine {
         self.ribbon
             .customization
             .panel(ui, &request.commands, &mut selected);
-        let dock_close = self.ribbon.customization.flush_dock_close(ui);
         self.create_block
             .panel(ui, &request.commands, &mut selected);
-        let block_dock_close = self.create_block.flush_dock_close(ui);
         self.sketch_pattern
             .panel(ui, &request.commands, &mut selected);
         crate::sketch::line::command_menu(ui, &request.commands, &mut selected);
@@ -328,15 +339,13 @@ impl GuiFrameEngine {
         );
         self.dimension_value_editor
             .panel(ui, request, &mut selected);
-        crate::sketch::move_tool::panel(
+        external_panels::draw(
+            &self.external_docks,
             ui,
             &request.commands,
             &mut self.precise_input,
             &mut selected,
         );
-        crate::sketch::inspect::measure_panel(ui, &request.commands, &mut selected);
-        crate::face_properties::draw(ui, &request.commands, &mut selected);
-        crate::sketch::region_properties::panel(ui, &request.commands, &mut selected);
         crate::sketch_delete::append_keyboard_delete(ui, &request.commands, &mut selected);
         crate::application::document_tabs::document_keys(
             ui,
@@ -362,7 +371,7 @@ impl GuiFrameEngine {
         self.document_tabs
             .menu
             .properties
-            .panel(ui, &request.commands);
+            .panel(ui, &request.commands)?;
         self.document_files
             .closing_panel(ui, &request.commands, &mut selected);
         let close_prompt = self
@@ -394,6 +403,10 @@ impl GuiFrameEngine {
         self.document_tabs.previews.enqueue_picture(&mut selected);
         let constraint_hover =
             crate::sketch::constraint_glyphs::unobstructed_hover(ui, constraint_hover);
+        self.external_docks.observe_actions(&selected);
+        let dock_lifecycle_changed = self.dock_lifecycle.reconcile(|title| {
+            crate::widget_abi::close_dock_tab(ui, title);
+        })?;
         let snapshot = capture_frame(self.context.render(), request.extent, &self.resources)?;
         let mut activity = frame_activity()?;
         let mut capture = input_capture(self.context.io());
@@ -445,7 +458,7 @@ impl GuiFrameEngine {
             || self.ribbon.customization.escape_consumed
             || self.ribbon.display.temporary_escape_consumed;
         capture.pointer |= self.dimension_value_editor.over_label || over_fields;
-        activity.pending_layout |= dock_close || block_dock_close;
+        activity.pending_layout |= dock_lifecycle_changed;
         activity.pending_layout |= self.orientation.needs_frame();
         activity.pending_layout |= self.ribbon.panels.pending_layout || self.ribbon.needs_frame();
         activity.pending_layout |=
@@ -469,18 +482,4 @@ impl GuiFrameEngine {
             document_area: area.framebuffer_region(request.layout_scale(), request.extent),
         })
     }
-}
-
-fn workspace_pointer(context: &imgui::Context, request: &GuiFrameRequest) -> [f32; 2] {
-    request
-        .events
-        .iter()
-        .rev()
-        .find_map(|event| match event {
-            GuiInputEvent::PointerMoved(position) => Some(std::array::from_fn(|axis| {
-                position[axis] / request.layout_scale()[axis]
-            })),
-            _ => None,
-        })
-        .unwrap_or(context.io().mouse_pos)
 }

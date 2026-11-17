@@ -6,14 +6,25 @@ use imgui::Ui;
 #[derive(Default)]
 pub(crate) struct OffsetPlaneDialog {
     document: Option<u64>,
+    dock_state: crate::dockable_lifecycle::DockableState,
     base: Option<GuiOffsetPlaneBase>,
     offset: String,
     error: Option<String>,
 }
 impl DockableWindow for OffsetPlaneDialog {}
 impl OffsetPlaneDialog {
+    pub(crate) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>("Offset Plane", &self.dock_state)
+    }
+    fn set_document(&mut self, document: Option<u64>) {
+        self.document = document;
+        self.dock_state.set_open(document.is_some());
+    }
     pub(crate) fn open(&mut self, document: u64, base: Option<GuiOffsetPlaneBase>) {
-        self.document = Some(document);
+        self.set_document(Some(document));
         self.base = base;
         self.offset = "10 mm".into();
         self.error = None;
@@ -35,10 +46,18 @@ impl OffsetPlaneDialog {
         offset: &str,
         error: &str,
     ) {
-        self.document = Some(document);
+        self.set_document(Some(document));
         self.base = Some(base);
         self.offset = offset.to_owned();
         self.error = Some(error.to_owned());
+    }
+    pub(crate) fn sync_before_docking(&mut self, state: &GuiCommandState) {
+        if self.document.is_some()
+            && (self.document != state.document
+                || state.authoring != crate::GuiAuthoringContext::Part)
+        {
+            self.set_document(None);
+        }
     }
     pub(crate) fn panel(
         &mut self,
@@ -46,20 +65,17 @@ impl OffsetPlaneDialog {
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
     ) {
+        self.sync_before_docking(state);
         let Some(document) = self.document else {
             return;
         };
-        if state.document != Some(document) || state.authoring != crate::GuiAuthoringContext::Part {
-            self.document = None;
-            return;
-        }
         let mut open = true;
         let mut done = false;
         Self::dockable_window(ui, "Offset Plane", &mut open)
             .size([340., 210.], imgui::Condition::FirstUseEver)
             .build(|| done = self.controls(ui, state, actions, document));
         if !open || done {
-            self.document = None;
+            self.set_document(None);
         }
     }
     fn controls(
@@ -145,6 +161,14 @@ fn submit_buttons(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn document_change_closes_before_docking() {
+        let mut editor = OffsetPlaneDialog::default();
+        editor.open(1, None);
+        editor.sync_before_docking(&GuiCommandState::default());
+        assert!(editor.document.is_none());
+    }
+
     use super::*;
 
     #[test]

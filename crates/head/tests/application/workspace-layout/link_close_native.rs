@@ -140,9 +140,11 @@ fn link_snapshot_loss_selects_next_tab_and_reopens() {
     select_dock_tab(&mut world, "Link Parameters");
     let point = world.expect_tab("Source").center();
     super::super::x11_input::click(super::super::diagnostics::pointer_pixels(point));
-    world.pump(Vec::new());
-    world.pump(Vec::new());
-    assert!(window_geometry("Link Parameters").is_none());
+    super::external_close_native::assert_closed_with_visible_tab(
+        &mut world,
+        "Link Parameters",
+        "Material Browser",
+    );
     assert_eq!(
         super::super::diagnostics::window_dock_tab_visible("Material Browser"),
         Some(true)

@@ -14,6 +14,7 @@ const NOT_AVAILABLE: &str = "This opening mode is not available in this build.";
 #[derive(Default)]
 pub(super) struct FileOpenOptions {
     target: Option<OpenTarget>,
+    dock_state: crate::dockable_lifecycle::DockableState,
     opening: bool,
 }
 impl DockableWindow for FileOpenOptions {}
@@ -57,14 +58,22 @@ fn modes_of(kind: GuiTemplateKind) -> Vec<&'static str> {
     }
 }
 impl FileOpenOptions {
+    pub(super) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>(TITLE, &self.dock_state)
+    }
     /// Discard a draft; example: `options.close()` when Home closes.
     pub(super) fn close(&mut self) {
         self.target = None;
+        self.dock_state.set_open(false);
         self.opening = false;
     }
     /// Ask for the dialog; example: from a recent row's Open with options.
     pub(super) fn request(&mut self, row: &GuiRecentDocument) {
         self.target = Some(OpenTarget::of(row));
+        self.dock_state.set_open(true);
         self.opening = true;
     }
     /// Draw the dialog; OK opens with the file's own state in Full mode.

@@ -102,6 +102,13 @@ impl TemplateView {
     }
 }
 impl TemplateChooser {
+    pub(crate) fn register_dockables(
+        &mut self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        self.projects
+            .register_dockable(registry, "template-projects")
+    }
     fn details_layout(&self, ui: &Ui, state: &GuiCommandState) -> DetailsLayout {
         let units = match self.folder {
             TemplateFolder::Units(units) => units,

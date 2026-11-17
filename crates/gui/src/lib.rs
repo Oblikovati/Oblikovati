@@ -29,10 +29,12 @@ mod color_scheme_state;
 mod commands;
 #[allow(unsafe_code)]
 mod context_owner;
+mod dockable_lifecycle;
 mod dockable_window;
 mod document_tabs;
 mod document_units;
 mod engine;
+mod external_dock_window;
 mod files;
 mod frame_keys;
 mod history_browser;

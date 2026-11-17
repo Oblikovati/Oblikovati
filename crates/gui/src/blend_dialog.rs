@@ -7,6 +7,8 @@ use imgui::Ui;
 #[derive(Default)]
 pub(crate) struct BlendDialog {
     chamfer: bool,
+    fillet_dock: crate::dockable_lifecycle::DockableState,
+    chamfer_dock: crate::dockable_lifecycle::DockableState,
     edited_edges: usize,
     document: Option<u64>,
     radius: String,
@@ -18,13 +20,30 @@ pub(crate) struct BlendDialog {
 }
 impl DockableWindow for BlendDialog {}
 impl BlendDialog {
+    pub(crate) fn register_dockables(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>("Fillet", &self.fillet_dock)?;
+        registry.register::<Self>("Chamfer", &self.chamfer_dock)
+    }
+    fn set_document(&mut self, document: Option<u64>) {
+        self.document = document;
+        self.fillet_dock
+            .set_open(document.is_some() && !self.chamfer);
+        self.chamfer_dock
+            .set_open(document.is_some() && self.chamfer);
+    }
     pub(crate) fn active(&self) -> bool {
         self.document.is_some()
     }
     pub(crate) fn open(&mut self, state: &GuiCommandState) {
-        self.chamfer = false;
+        self.open_for(state, false);
+    }
+    fn open_for(&mut self, state: &GuiCommandState, chamfer: bool) {
+        self.chamfer = chamfer;
         self.edited_edges = 0;
-        self.document = state.document;
+        self.set_document(state.document);
         self.radius = "2 mm".into();
         self.attempted = None;
         self.submitted = None;
@@ -33,8 +52,7 @@ impl BlendDialog {
         self.submitted_edit = None;
     }
     pub(crate) fn open_chamfer(&mut self, state: &GuiCommandState) {
-        self.open(state);
-        self.chamfer = true;
+        self.open_for(state, true);
         self.radius = "1 mm".into();
     }
     pub(crate) fn open_edit(
@@ -68,7 +86,7 @@ impl BlendDialog {
         };
         self.chamfer = chamfer;
         self.edited_edges = seed.edge_count;
-        self.document = state.document;
+        self.set_document(state.document);
         self.radius = seed.radius.clone();
         self.edit = Some((feature, seed.generation));
         self.attempted = None;
@@ -96,7 +114,8 @@ impl BlendDialog {
         })
     }
     pub(crate) fn close(&mut self, actions: &mut Vec<GuiShellAction>) {
-        if self.document.take().is_some() {
+        if self.document.is_some() {
+            self.set_document(None);
             actions.push(self.preview_action(None));
         }
         self.attempted = None;
@@ -105,9 +124,8 @@ impl BlendDialog {
         self.attempted_edit = None;
         self.submitted_edit = None;
     }
-    pub(crate) fn panel(
+    pub(crate) fn sync_before_docking(
         &mut self,
-        ui: &Ui,
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
     ) {
@@ -141,6 +159,14 @@ impl BlendDialog {
         }) {
             self.close(actions);
         }
+    }
+    pub(crate) fn panel(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        self.sync_before_docking(state, actions);
         if self.document.is_none() {
             return;
         }
@@ -328,6 +354,19 @@ mod tests {
         state.browser.as_mut().unwrap().bodies[0].visible = false;
         assert!(!GuiShellAction::OpenFillet.enabled(&state));
     }
+    #[test]
+    fn document_change_closes_blend_before_docking_once() {
+        let mut dialog = BlendDialog::default();
+        let mut state = selected_state();
+        dialog.open(&state);
+        state.document = None;
+        let mut actions = Vec::new();
+        dialog.sync_before_docking(&state, &mut actions);
+        dialog.sync_before_docking(&state, &mut actions);
+        assert!(dialog.document.is_none());
+        assert_eq!(actions, [GuiShellAction::PreviewFillet(None)]);
+    }
+
     #[test]
     fn draft_previews_each_selection_once_and_cancel_clears_it() {
         let mut dialog = BlendDialog::default();

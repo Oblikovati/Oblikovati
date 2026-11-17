@@ -26,17 +26,25 @@ impl GuiParameterGroupEdit {
 #[derive(Default)]
 pub(super) struct ParameterGroupEditor {
     target: Option<GuiParameterTextTarget>,
+    dock_state: crate::dockable_lifecycle::DockableState,
     name: String,
     request: ParameterEditRequest<GuiParameterGroupEdit>,
 }
 impl DockableWindow for ParameterGroupEditor {}
 impl ParameterGroupEditor {
+    pub(super) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>("Add to Group", &self.dock_state)
+    }
     pub(super) fn open(&mut self, document: u64, row: &GuiParameterRow) {
         self.target = Some(GuiParameterTextTarget {
             document,
             parameter: row.parameter,
             field: GuiParameterTextField::Name,
         });
+        self.dock_state.set_open(true);
         self.name.clear();
         self.request.retire();
     }
@@ -56,6 +64,7 @@ impl ParameterGroupEditor {
     }
     fn close(&mut self) {
         self.target = None;
+        self.dock_state.set_open(false);
         self.name.clear();
         self.request.retire();
     }

@@ -124,19 +124,42 @@ enum RowRequest {
 #[derive(Debug, Default)]
 pub(crate) struct RelationshipsDialog {
     shown: Option<RelatedRow>,
+    document: Option<u64>,
+    opening: bool,
+    dock_state: crate::dockable_lifecycle::DockableState,
     chosen: Option<RelatedRow>,
     /// The origin row the browser should show as chosen, taken once.
     chosen_origin: Option<usize>,
 }
 impl DockableWindow for RelationshipsDialog {}
 impl RelationshipsDialog {
+    pub(crate) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>(TITLE, &self.dock_state)
+    }
     /// Open on one row; example: from its menu's Relationships.
     pub(crate) fn request(&mut self, row: RelatedRow) {
         self.shown = Some(row);
+        self.opening = true;
+        self.dock_state.set_open(true);
         self.chosen = None;
     }
     pub(crate) fn take_chosen_origin(&mut self) -> Option<usize> {
         self.chosen_origin.take()
+    }
+    fn bind_document(&mut self, document: Option<u64>) {
+        self.document = document;
+        self.opening = false;
+    }
+    pub(crate) fn sync_before_docking(&mut self, state: &GuiCommandState, suspended: bool) {
+        if !self.opening && self.document.is_some() && self.document != state.document {
+            self.shown = None;
+            self.document = None;
+            self.dock_state.set_open(false);
+        }
+        self.dock_state.set_suspended(suspended);
     }
     pub(crate) fn panel(
         &mut self,
@@ -145,6 +168,9 @@ impl RelationshipsDialog {
         browser: &GuiModelBrowser,
         actions: &mut Vec<GuiShellAction>,
     ) {
+        if self.opening {
+            self.bind_document(state.document);
+        }
         let Some(shown) = self.shown else {
             return;
         };
@@ -169,6 +195,8 @@ impl RelationshipsDialog {
         self.follow(request, state, actions);
         if done || !open {
             self.shown = None;
+            self.document = None;
+            self.dock_state.set_open(false);
         }
     }
     fn list(

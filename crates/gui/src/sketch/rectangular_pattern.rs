@@ -33,6 +33,7 @@ pub(crate) fn ribbon_button(
 #[derive(Default)]
 pub(crate) struct RectangularPatternDialog {
     document: Option<u64>,
+    dock_state: crate::dockable_lifecycle::DockableState,
     counts: [i32; 2],
     spacing: [String; 2],
     fitted: bool,
@@ -44,8 +45,18 @@ pub(crate) struct RectangularPatternDialog {
 }
 impl DockableWindow for RectangularPatternDialog {}
 impl RectangularPatternDialog {
+    pub(crate) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>("Rectangular Pattern", &self.dock_state)
+    }
+    fn set_document(&mut self, document: Option<u64>) {
+        self.document = document;
+        self.dock_state.set_open(document.is_some());
+    }
     fn open(&mut self, state: &GuiCommandState) {
-        self.document = state.document;
+        self.set_document(state.document);
         self.counts = [2, 1];
         self.spacing = ["10 mm".into(), "10 mm".into()];
         self.fitted = false;
@@ -78,7 +89,7 @@ impl RectangularPatternDialog {
         let Ok(second) = i32::try_from(row.pattern.definition.counts[1]) else {
             return;
         };
-        self.document = state.document;
+        self.set_document(state.document);
         self.counts = [first, second];
         self.spacing = spacing.clone();
         self.fitted = row.pattern.definition.fitted;
@@ -96,9 +107,8 @@ impl RectangularPatternDialog {
         self.last_preview = None;
         self.pending = None;
     }
-    pub(crate) fn panel(
+    pub(crate) fn sync_before_docking(
         &mut self,
-        ui: &Ui,
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
     ) {
@@ -112,6 +122,14 @@ impl RectangularPatternDialog {
             self.close(actions);
         }
         self.observe_result(state, actions);
+    }
+    pub(crate) fn panel(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        self.sync_before_docking(state, actions);
         if self.document.is_none() {
             return;
         }
@@ -235,7 +253,8 @@ impl RectangularPatternDialog {
         }
     }
     fn close(&mut self, actions: &mut Vec<GuiShellAction>) {
-        if self.document.take().is_some() {
+        if self.document.is_some() {
+            self.set_document(None);
             actions.push(GuiShellAction::PreviewSketchPattern(None));
         }
         self.last_preview = None;
@@ -290,6 +309,18 @@ mod tests {
         assert_eq!(request.counts, [3, 1]);
         assert_eq!(request.directions[0], [-1., 0.]);
         assert!(request.fitted);
+    }
+    #[test]
+    fn document_change_closes_pattern_before_docking_once() {
+        let mut dialog = RectangularPatternDialog::default();
+        let mut state = state();
+        dialog.open(&state);
+        state.document = None;
+        let mut actions = Vec::new();
+        dialog.sync_before_docking(&state, &mut actions);
+        dialog.sync_before_docking(&state, &mut actions);
+        assert!(dialog.document.is_none());
+        assert_eq!(actions, [GuiShellAction::PreviewSketchPattern(None)]);
     }
     #[test]
     fn cancel_discards_the_draft_and_clears_the_preview() {

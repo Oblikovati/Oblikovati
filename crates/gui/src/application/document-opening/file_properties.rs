@@ -35,12 +35,19 @@ impl GuiInspectedFile {
 pub(super) struct FileProperties {
     folders: Rc<dyn GuiFolders>,
     path: Option<String>,
+    dock_state: crate::dockable_lifecycle::DockableState,
     /// Read once when the window opens: a frame loop must not touch the disk.
     facts: Result<FileFacts, String>,
     opening: bool,
 }
 impl DockableWindow for FileProperties {}
 impl FileProperties {
+    pub(super) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>(TITLE, &self.dock_state)
+    }
     /// The file its window is showing, whose stored properties it must have read.
     pub(super) fn shown_path(&self) -> Option<String> {
         self.path.clone()
@@ -49,6 +56,7 @@ impl FileProperties {
         Self {
             folders,
             path: None,
+            dock_state: Default::default(),
             facts: Ok(FileFacts::default()),
             opening: false,
         }
@@ -60,6 +68,7 @@ impl FileProperties {
     pub(super) fn request(&mut self, path: &str) {
         self.read_facts(path);
         self.path = Some(path.to_owned());
+        self.dock_state.set_open(true);
         self.opening = true;
     }
     pub(super) fn is_opening(&self) -> bool {
@@ -68,6 +77,7 @@ impl FileProperties {
     /// Close with its parent; example: `properties.close()` after Open is dismissed.
     pub(super) fn close(&mut self) {
         self.path = None;
+        self.dock_state.set_open(false);
         self.opening = false;
     }
     pub(super) fn panel(&mut self, ui: &Ui, inspections: &FileInspections) {
@@ -215,6 +225,25 @@ pub(super) fn details_rows(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn parent_close_notifies_file_properties_once() {
+        let mut registry = crate::dockable_lifecycle::DockRegistry::default();
+        let mut dialog =
+            FileProperties::new(Rc::new(crate::application::file_system::NativeFolders));
+        dialog.register_dockable(&mut registry).unwrap();
+        dialog.path = Some("part.opd".into());
+        dialog.dock_state.set_open(true);
+        registry.reconcile(|_| {}).unwrap();
+        dialog.close();
+        let mut titles = Vec::new();
+        assert!(
+            registry
+                .reconcile(|title| titles.push(title.to_string_lossy().into_owned()))
+                .unwrap()
+        );
+        assert_eq!(titles, ["File Properties"]);
+        assert!(!registry.reconcile(|_| {}).unwrap());
+    }
     #[test]
     fn a_missing_field_reads_as_empty() {
         let file = GuiInspectedFile {

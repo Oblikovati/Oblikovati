@@ -19,6 +19,7 @@ const FILE_CHOOSER: &str = "Choose Component File";
 pub(super) struct AssemblyPlaceDialog {
     requested: bool,
     assembly: Option<u64>,
+    dock_state: crate::dockable_lifecycle::DockableState,
     source: Option<u64>,
     name: String,
     selected_path: Option<String>,
@@ -33,6 +34,7 @@ impl Default for AssemblyPlaceDialog {
         Self {
             requested: false,
             assembly: None,
+            dock_state: Default::default(),
             source: None,
             name: String::new(),
             selected_path: None,
@@ -46,11 +48,36 @@ impl Default for AssemblyPlaceDialog {
 }
 impl DockableWindow for AssemblyPlaceDialog {}
 impl AssemblyPlaceDialog {
+    pub(super) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>("Place Component", &self.dock_state)
+    }
+    fn set_document(&mut self, document: Option<u64>) {
+        self.assembly = document;
+        self.dock_state.set_open(document.is_some());
+    }
     pub(super) fn request(&mut self) {
         self.requested = true;
     }
     pub(super) fn needs_frame(&self) -> bool {
         self.requested || self.assembly.is_some()
+    }
+    pub(super) fn sync_before_docking(
+        &mut self,
+        state: &GuiCommandState,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        if self.requested {
+            return;
+        }
+        if self.assembly != state.document || state.document_type != Some(DOCUMENT_ASSEMBLY) {
+            self.set_document(None);
+        }
+        if self.assembly.is_none() {
+            self.clear_preview(actions);
+        }
     }
     pub(super) fn panel(
         &mut self,
@@ -59,14 +86,12 @@ impl AssemblyPlaceDialog {
         actions: &mut Vec<GuiShellAction>,
     ) {
         if std::mem::take(&mut self.requested) {
-            self.assembly = state.document;
+            self.set_document(state.document);
             self.source = None;
             self.selected_path = None;
             self.name.clear();
         }
-        if self.assembly != state.document || state.document_type != Some(DOCUMENT_ASSEMBLY) {
-            self.assembly = None;
-        }
+        self.sync_before_docking(state, actions);
         let Some(assembly) = self.assembly else {
             self.clear_preview(actions);
             return;
@@ -105,19 +130,19 @@ impl AssemblyPlaceDialog {
                 if let Some(action) = action {
                     actions.push(action);
                 }
-                self.assembly = None;
+                self.set_document(None);
             }
             drop(disabled);
             ui.same_line();
             if crate::widget_abi::button(ui, "Cancel", [90., 0.]) || ui.is_key_pressed(Key::Escape)
             {
                 self.clear_preview(actions);
-                self.assembly = None;
+                self.set_document(None);
             }
         });
         if !open {
             self.clear_preview(actions);
-            self.assembly = None;
+            self.set_document(None);
         }
     }
     fn clear_preview(&mut self, actions: &mut Vec<GuiShellAction>) {
@@ -203,5 +228,28 @@ impl AssemblyPlaceDialog {
                 },
             },
         })
+    }
+}
+
+#[cfg(test)]
+mod dock_tests {
+    use super::*;
+    #[test]
+    fn pre_dock_sync_does_not_consume_a_new_request() {
+        let mut dialog = AssemblyPlaceDialog::default();
+        dialog.request();
+        dialog.sync_before_docking(&GuiCommandState::default(), &mut Vec::new());
+        assert!(dialog.requested);
+    }
+    #[test]
+    fn document_change_closes_placement_and_clears_preview_once() {
+        let mut dialog = AssemblyPlaceDialog::default();
+        dialog.set_document(Some(3));
+        dialog.preview_source = Some(4);
+        let mut actions = Vec::new();
+        dialog.sync_before_docking(&GuiCommandState::default(), &mut actions);
+        dialog.sync_before_docking(&GuiCommandState::default(), &mut actions);
+        assert!(dialog.assembly.is_none());
+        assert_eq!(actions, [GuiShellAction::PreviewComponent(None)]);
     }
 }

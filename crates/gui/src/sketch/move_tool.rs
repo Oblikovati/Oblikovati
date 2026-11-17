@@ -22,7 +22,7 @@ pub struct GuiSketchMoveStatus {
     pub optimize_single: bool,
     pub copy: bool,
 }
-impl DockableWindow for GuiSketchMoveStatus {}
+
 /// Control the current Move command.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GuiSketchMoveAction {
@@ -39,50 +39,61 @@ pub(crate) fn panel(
     state: &GuiCommandState,
     precise: &mut crate::sketch::precise_input::PreciseInputBar,
     actions: &mut Vec<GuiShellAction>,
+    dock: &crate::external_dock_window::ExternalDockWindow,
 ) {
     precise.sync_move_context(state.sketch_move.is_some());
+    if !dock.is_open() {
+        return;
+    }
     let Some(status) = state.sketch_move else {
         rejected_move_dialog(ui, None, actions);
         return;
     };
-    GuiSketchMoveStatus::fit_dockable(ui, "Move", [1100., 250.], [330., 205.]);
+    crate::external_dock_window::ExternalDockWindow::fit_dockable(
+        ui,
+        "Move",
+        [1100., 250.],
+        [330., 205.],
+    );
     let mut open = true;
-    GuiSketchMoveStatus::dockable_window(ui, "Move", &mut open).build(|| {
-        ui.text(match status.stage {
-            GuiSketchMoveStage::Geometry => "Select geometry",
-            GuiSketchMoveStage::Base => "Select base point",
-            GuiSketchMoveStage::Target => "Select end point",
-            GuiSketchMoveStage::ZeroDisplacement => "Move could not be completed",
-        });
-        let mut optimize = status.optimize_single;
-        let disabled = ui.begin_disabled(status.stage != GuiSketchMoveStage::Geometry);
-        if ui.checkbox("Optimize for Single Selection", &mut optimize) {
-            actions.push(GuiShellAction::SketchMove(
-                GuiSketchMoveAction::SetOptimizeSingle(optimize),
-            ));
-        }
-        let mut copy = status.copy;
-        if ui.checkbox("Copy", &mut copy) {
-            actions.push(GuiShellAction::SketchMove(GuiSketchMoveAction::SetCopy(
-                copy,
-            )));
-        }
-        drop(disabled);
-        let mut enabled = precise.move_option();
-        if ui.checkbox("Precise Input", &mut enabled) {
-            precise.set_move_option(enabled);
-        }
-        let base = GuiShellAction::SketchMove(GuiSketchMoveAction::ChooseBase);
-        let disabled = ui.begin_disabled(!base.enabled(state));
-        if ui.button("Base Point") {
-            actions.push(base);
-        }
-        drop(disabled);
-        ui.same_line();
-        if ui.button("Done") {
-            actions.push(GuiShellAction::SketchMove(GuiSketchMoveAction::Done));
-        }
-    });
+    crate::external_dock_window::ExternalDockWindow::dockable_window(ui, "Move", &mut open).build(
+        || {
+            ui.text(match status.stage {
+                GuiSketchMoveStage::Geometry => "Select geometry",
+                GuiSketchMoveStage::Base => "Select base point",
+                GuiSketchMoveStage::Target => "Select end point",
+                GuiSketchMoveStage::ZeroDisplacement => "Move could not be completed",
+            });
+            let mut optimize = status.optimize_single;
+            let disabled = ui.begin_disabled(status.stage != GuiSketchMoveStage::Geometry);
+            if ui.checkbox("Optimize for Single Selection", &mut optimize) {
+                actions.push(GuiShellAction::SketchMove(
+                    GuiSketchMoveAction::SetOptimizeSingle(optimize),
+                ));
+            }
+            let mut copy = status.copy;
+            if ui.checkbox("Copy", &mut copy) {
+                actions.push(GuiShellAction::SketchMove(GuiSketchMoveAction::SetCopy(
+                    copy,
+                )));
+            }
+            drop(disabled);
+            let mut enabled = precise.move_option();
+            if ui.checkbox("Precise Input", &mut enabled) {
+                precise.set_move_option(enabled);
+            }
+            let base = GuiShellAction::SketchMove(GuiSketchMoveAction::ChooseBase);
+            let disabled = ui.begin_disabled(!base.enabled(state));
+            if ui.button("Base Point") {
+                actions.push(base);
+            }
+            drop(disabled);
+            ui.same_line();
+            if ui.button("Done") {
+                actions.push(GuiShellAction::SketchMove(GuiSketchMoveAction::Done));
+            }
+        },
+    );
     rejected_move_dialog(ui, Some(status), actions);
     if !open {
         actions.push(GuiShellAction::SketchMove(GuiSketchMoveAction::Done));

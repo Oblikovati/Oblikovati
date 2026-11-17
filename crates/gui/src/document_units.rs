@@ -8,11 +8,27 @@ use oblikovati_api::wire::{DocumentUnitsInfo, SetDocumentUnitsArgs};
 #[derive(Default)]
 pub(crate) struct GuiDocumentUnits {
     document: Option<u64>,
+    dock_state: crate::dockable_lifecycle::DockableState,
 }
 impl DockableWindow for GuiDocumentUnits {}
 impl GuiDocumentUnits {
+    pub(crate) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>("Document Settings", &self.dock_state)
+    }
+    fn set_document(&mut self, document: Option<u64>) {
+        self.document = document;
+        self.dock_state.set_open(document.is_some());
+    }
     pub(crate) fn request(&mut self, document: u64) {
-        self.document = Some(document);
+        self.set_document(Some(document));
+    }
+    pub(crate) fn sync_before_docking(&mut self, state: &GuiCommandState, home_active: bool) {
+        if self.document != state.document || home_active {
+            self.set_document(None);
+        }
     }
     pub(crate) fn panel(
         &mut self,
@@ -21,9 +37,7 @@ impl GuiDocumentUnits {
         actions: &mut Vec<GuiShellAction>,
         home_active: bool,
     ) {
-        if self.document != state.document || home_active {
-            self.document = None;
-        }
+        self.sync_before_docking(state, home_active);
         let (Some(document), Some(units)) = (self.document, state.document_units.as_ref()) else {
             return;
         };
@@ -42,7 +56,7 @@ impl GuiDocumentUnits {
                 || ui.is_window_focused() && ui.is_key_pressed_no_repeat(Key::Escape);
         });
         if !open || done {
-            self.document = None;
+            self.set_document(None);
         }
     }
 }
@@ -139,5 +153,24 @@ fn precision_controls(
             request.angle_display_precision = Some(Box::new(i64::from(value)));
         }
         actions.push(GuiShellAction::SetDocumentUnits { document, request });
+    }
+}
+
+#[cfg(test)]
+mod dock_tests {
+    use super::*;
+    #[test]
+    fn document_change_closes_settings_before_docking() {
+        let mut dialog = GuiDocumentUnits::default();
+        dialog.request(7);
+        dialog.sync_before_docking(&GuiCommandState::default(), false);
+        assert!(dialog.document.is_none());
+        dialog.request(7);
+        let state = GuiCommandState {
+            document: Some(7),
+            ..Default::default()
+        };
+        dialog.sync_before_docking(&state, true);
+        assert!(dialog.document.is_none());
     }
 }

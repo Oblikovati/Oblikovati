@@ -440,3 +440,37 @@ fn focused_accessible_maximize_responds_to_enter_and_space() {
         assert_eq!(engine.frame(&request).unwrap().window_action, None);
     }
 }
+
+#[test]
+fn queued_window_actions_are_not_consumed_by_tool_closure() {
+    let mut engine = GuiFrameEngine::new().unwrap();
+    let mut input = request();
+    input.events.clear();
+    engine.set_parameters_open(true);
+    engine.frame(&input).unwrap();
+    engine.focus_accessible(GuiAccessibleFocus::Frame(1));
+    engine.frame(&input).unwrap();
+    engine.frame(&input).unwrap();
+    engine.set_parameters_open(false);
+    input.events = [true, false, true, false]
+        .into_iter()
+        .map(|pressed| GuiInputEvent::Key {
+            key: GuiKey::Space,
+            pressed,
+        })
+        .collect();
+    let mut output = engine.frame(&input).unwrap();
+    assert_eq!(output.window_action, Some(GuiWindowAction::ToggleMaximize));
+    assert!(output.activity.queued_input);
+    let mut count = usize::from(output.window_action.is_some());
+    input.events.clear();
+    for _ in 0..8 {
+        if !output.activity.queued_input {
+            break;
+        }
+        output = engine.frame(&input).unwrap();
+        count += usize::from(output.window_action == Some(GuiWindowAction::ToggleMaximize));
+    }
+    assert!(!output.activity.queued_input);
+    assert_eq!(count, 2);
+}

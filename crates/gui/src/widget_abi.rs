@@ -296,10 +296,14 @@ pub(crate) fn icon_button(_: &Ui, label: &str, presentation: IconButtonPresentat
     }
 }
 
-/// Notify ImGui of a programmatic dock tab closure (#4072).
-/// Example: `close_dock_tab(ui, "Tool")` after the tool closes.
-pub(crate) fn close_dock_tab(_ui: &Ui, title: &str) {
-    let title = std::ffi::CString::new(title)
-        .unwrap_or_else(|_| panic!("dockable window title {title:?} must be NUL-free"));
+/// Compute the exact ImGui window identity, including `###` semantics (#4073).
+/// Example: `dock_window_identity(c"Find###tool")` identifies the stable suffix.
+pub(crate) fn dock_window_identity(title: &std::ffi::CStr) -> u32 {
+    unsafe { imgui::sys::igImHashStr(title.as_ptr(), 0, 0) }
+}
+
+/// Notify ImGui of a validated programmatic dock tab closure (#4073).
+/// Example: `close_dock_tab(ui, c"Tool")` after the owner closes.
+pub(crate) fn close_dock_tab(_ui: &Ui, title: &std::ffi::CStr) {
     unsafe { imgui::sys::igSetTabItemClosed(title.as_ptr()) };
 }

@@ -67,9 +67,16 @@ pub(crate) struct GeometryProperties {
     color_opening: bool,
     colors: ColorDialog,
     document: Option<u64>,
+    dock_state: crate::dockable_lifecycle::DockableState,
 }
 impl DockableWindow for GeometryProperties {}
 impl GeometryProperties {
+    pub(crate) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>(TITLE, &self.dock_state)
+    }
     /// Open on a sketch's present style; example: from its row's Properties.
     pub(crate) fn request(&mut self, sketch: DocumentSketchId, style: GuiSketchLineStyle) {
         self.editing = Some(Editing {
@@ -79,10 +86,20 @@ impl GeometryProperties {
             style,
         });
         self.opening = true;
+        self.dock_state.set_open(true);
     }
     /// A frame must follow so the dialog opens without waiting for an event.
     pub(crate) fn needs_frame(&self) -> bool {
         self.opening || self.color_opening
+    }
+    pub(crate) fn sync_before_docking(&mut self, state: &GuiCommandState, suspended: bool) {
+        if !self.opening && self.document.is_some() && self.document != state.document {
+            self.editing = None;
+            self.dock_state.set_open(false);
+            self.document = None;
+            self.color_opening = false;
+        }
+        self.dock_state.set_suspended(suspended);
     }
     pub(crate) fn panel(
         &mut self,
@@ -95,6 +112,7 @@ impl GeometryProperties {
         }
         if self.document.is_none() || self.document != state.document {
             self.editing = None;
+            self.dock_state.set_open(false);
             self.document = None;
             self.color_opening = false;
         }
@@ -122,6 +140,7 @@ impl GeometryProperties {
         });
         if closed || !open {
             self.editing = None;
+            self.dock_state.set_open(false);
             self.color_opening = false;
             self.document = None;
         }
@@ -255,6 +274,23 @@ fn answer_row(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn document_change_closes_nested_window_before_docking() {
+        let mut dialog = GeometryProperties::default();
+        dialog.request(DocumentSketchId(1), GuiSketchLineStyle::default());
+        dialog.opening = false;
+        dialog.document = Some(1);
+        dialog.sync_before_docking(
+            &GuiCommandState {
+                document: Some(2),
+                ..Default::default()
+            },
+            false,
+        );
+        assert!(dialog.editing.is_none());
+        assert!(!dialog.dock_state.is_requested());
+    }
+
     use super::*;
     #[test]
     fn labels_name_a_style_as_its_lists_do() {

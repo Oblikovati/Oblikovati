@@ -6,11 +6,27 @@ use imgui::Ui;
 #[derive(Default)]
 pub(crate) struct ClearAppearance {
     document: Option<u64>,
+    dock_state: crate::dockable_lifecycle::DockableState,
 }
 impl DockableWindow for ClearAppearance {}
 impl ClearAppearance {
+    pub(crate) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>("Clear Appearance", &self.dock_state)
+    }
+    fn set_document(&mut self, document: Option<u64>) {
+        self.document = document;
+        self.dock_state.set_open(document.is_some());
+    }
     pub(crate) fn open(&mut self, document: u64) {
-        self.document = Some(document);
+        self.set_document(Some(document));
+    }
+    pub(crate) fn sync_before_docking(&mut self, state: &GuiCommandState) {
+        if self.document.is_some() && self.document != state.document {
+            self.set_document(None);
+        }
     }
     pub(crate) fn panel(
         &mut self,
@@ -18,13 +34,10 @@ impl ClearAppearance {
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
     ) {
+        self.sync_before_docking(state);
         let Some(document) = self.document else {
             return;
         };
-        if state.document != Some(document) {
-            self.document = None;
-            return;
-        }
         let action = Self::action_for(state, document);
         let mut open = true;
         let mut done = false;
@@ -35,7 +48,7 @@ impl ClearAppearance {
             .size(size, imgui::Condition::FirstUseEver)
             .build(|| done = confirm_clear(ui, state, action, actions));
         if !open || done {
-            self.document = None;
+            self.set_document(None);
         }
     }
     fn action_for(state: &GuiCommandState, document: u64) -> Option<GuiShellAction> {
@@ -173,6 +186,14 @@ fn confirm_clear(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn document_change_closes_before_docking() {
+        let mut editor = ClearAppearance::default();
+        editor.open(1);
+        editor.sync_before_docking(&GuiCommandState::default());
+        assert!(editor.document.is_none());
+    }
+
     use super::*;
 
     #[test]

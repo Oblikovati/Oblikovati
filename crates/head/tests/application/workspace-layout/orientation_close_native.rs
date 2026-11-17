@@ -88,3 +88,33 @@ fn close_and_reopen(world: &mut ApplicationWorld, node: u32, close: &str) {
         "{close}"
     );
 }
+
+#[test]
+fn orientation_suspends_while_home_is_active_and_restores_the_shared_dock() {
+    let mut world = ApplicationWorld::new();
+    super::browser_feature::open_visible_extruded_part(&mut world);
+    let document = world.active_id();
+    let name = world.document_name(document);
+    let node = dock_orientation(&mut world);
+    select_dock_tab(&mut world, "Orientation Options");
+    let home = world.expect_tab("Home").center();
+    super::super::x11_input::click(super::super::diagnostics::pointer_pixels(home));
+    super::external_close_native::assert_closed_with_visible_tab(
+        &mut world,
+        "Orientation Options",
+        "Material Browser",
+    );
+    assert!(window_geometry("##home-workspace").is_some());
+    let part = world.expect_tab(&name).center();
+    super::super::x11_input::click(super::super::diagnostics::pointer_pixels(part));
+    world.pump(Vec::new());
+    world.pump(Vec::new());
+    assert_eq!(
+        super::super::diagnostics::window_dock_id("Orientation Options"),
+        Some(node),
+        "the suspended window must return to its original dock"
+    );
+    select_dock_tab(&mut world, "Orientation Options");
+    world.run_in_window("Orientation Options", "Cancel");
+    world.close();
+}

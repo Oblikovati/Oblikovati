@@ -347,3 +347,99 @@ fn guard_counts_each_modal_call_for_the_same_title() {
         ["modal:REJECTION_POPUP", "modal:REJECTION_POPUP"]
     );
 }
+
+#[derive(Default)]
+struct DockableInventory {
+    implementations: std::collections::BTreeSet<String>,
+    constructions: std::collections::BTreeSet<String>,
+    lifecycle_owners: std::collections::BTreeSet<String>,
+    owner: Option<String>,
+}
+impl<'ast> Visit<'ast> for DockableInventory {
+    fn visit_item_impl(&mut self, item: &'ast ItemImpl) {
+        let previous = self.owner.take();
+        self.owner = match item.self_ty.as_ref() {
+            syn::Type::Path(path) => path.path.segments.last().map(|part| part.ident.to_string()),
+            _ => None,
+        };
+        if item.trait_.as_ref().is_some_and(|(_, path, _)| {
+            path.segments
+                .last()
+                .is_some_and(|part| part.ident == "DockableWindow")
+        }) && let Some(owner) = &self.owner
+        {
+            self.implementations.insert(owner.clone());
+        }
+        if item.trait_.is_none() && item.items.iter().any(|member| {
+            matches!(member, syn::ImplItem::Fn(method) if method.sig.ident == "register_dockable" || method.sig.ident == "register_dockables")
+        }) && let Some(owner) = &self.owner {
+            self.lifecycle_owners.insert(owner.clone());
+        }
+        visit::visit_item_impl(self, item);
+        self.owner = previous;
+    }
+    fn visit_expr_call(&mut self, call: &'ast ExprCall) {
+        if let Expr::Path(path) = call.func.as_ref() {
+            let parts = &path.path.segments;
+            if parts.len() >= 2
+                && parts
+                    .last()
+                    .is_some_and(|part| part.ident == "dockable_window")
+            {
+                let name = parts.iter().nth(parts.len() - 2).unwrap().ident.to_string();
+                let owner = if name == "Self" {
+                    self.owner.as_deref()
+                } else {
+                    Some(name.as_str())
+                };
+                if let Some(owner) = owner {
+                    self.constructions.insert(owner.to_owned());
+                }
+            }
+        }
+        visit::visit_expr_call(self, call);
+    }
+    fn visit_item_mod(&mut self, item: &'ast ItemMod) {
+        if !test_only(&item.attrs) {
+            visit::visit_item_mod(self, item);
+        }
+    }
+    fn visit_item_fn(&mut self, item: &'ast ItemFn) {
+        if !test_only(&item.attrs) {
+            visit::visit_item_fn(self, item);
+        }
+    }
+}
+#[test]
+fn every_dockable_window_uses_the_shared_constructor() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+    let mut files = Vec::new();
+    source_files(&root, &mut files);
+    let mut inventory = DockableInventory::default();
+    for path in files {
+        let source = std::fs::read_to_string(path).unwrap();
+        inventory.visit_file(&syn::parse_file(&source).unwrap());
+    }
+    assert!(!inventory.implementations.is_empty());
+    assert_eq!(inventory.implementations, inventory.constructions);
+}
+
+#[test]
+fn every_dockable_window_registers_with_the_lifecycle_owner() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+    let mut files = Vec::new();
+    source_files(&root, &mut files);
+    let mut inventory = DockableInventory::default();
+    for path in files {
+        let source = std::fs::read_to_string(path).unwrap();
+        inventory.visit_file(&syn::parse_file(&source).unwrap());
+    }
+    let unregistered: Vec<_> = inventory
+        .implementations
+        .difference(&inventory.lifecycle_owners)
+        .collect();
+    assert!(
+        unregistered.is_empty(),
+        "dockable owners without lifecycle registration: {unregistered:?}"
+    );
+}

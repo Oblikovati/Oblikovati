@@ -6,6 +6,8 @@ use imgui::{MouseButton, StyleColor, Ui, WindowFlags};
 
 #[path = "axis_triad.rs"]
 mod axis_triad;
+mod pick_arrows;
+use pick_arrows::{arrow_at, is_face_on, near};
 #[path = "cube.rs"]
 mod cube;
 #[path = "drawing.rs"]
@@ -245,6 +247,17 @@ pub(crate) struct OrientationControl {
     navigation: NavigationBar,
 }
 impl OrientationControl {
+    pub(crate) fn register_dockables(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        self.options.register_dockable(registry)?;
+        self.navigation.register_dockable(registry)
+    }
+    pub(crate) fn set_suspended(&self, suspended: bool) {
+        self.options.set_suspended(suspended);
+        self.navigation.set_suspended(suspended);
+    }
     /// Draw over a part's view; example: each frame, once the document area is known.
     pub(crate) fn panel(
         &mut self,
@@ -255,14 +268,17 @@ impl OrientationControl {
     ) {
         let state = &request.commands;
         let Some(axes) = state.view_axes else {
+            self.set_suspended(true);
             return;
         };
         if !matches!(
             state.authoring,
             crate::GuiAuthoringContext::Part | crate::GuiAuthoringContext::Sketch
         ) {
+            self.set_suspended(true);
             return;
         }
+        self.set_suspended(false);
         axis_triad::draw(ui, area, &axes);
         let side = self.options.side();
         let position = self.position(area, side);
@@ -457,36 +473,6 @@ fn press(
     if let Some(command) = command {
         actions.push(GuiShellAction::OrientView { command, fit });
     }
-}
-fn near(point: [f32; 2], center: [f32; 2]) -> bool {
-    (point[0] - center[0]).hypot(point[1] - center[1]) <= ARROW_REACH
-}
-fn is_face_on(axes: &GuiViewAxes) -> bool {
-    GuiCubeFace::ALL
-        .iter()
-        .any(|face| dot(face.normal(), axes.toward) > FACE_ON)
-}
-/// The arrows show only face-on: an oblique view has no neighbour to step to.
-fn arrow_at(
-    point: [f32; 2],
-    axes: &GuiViewAxes,
-    layout: &GuiOrientationLayout,
-) -> Option<GuiOrientCommand> {
-    use GuiOrientCommand::{Roll, Step};
-    if !is_face_on(axes) {
-        return None;
-    }
-    [
-        (layout.step_right, Step(GuiViewStep::Right)),
-        (layout.step_left, Step(GuiViewStep::Left)),
-        (layout.step_up, Step(GuiViewStep::Up)),
-        (layout.step_down, Step(GuiViewStep::Down)),
-        (layout.roll_upper, Roll { clockwise: true }),
-        (layout.roll_lower, Roll { clockwise: false }),
-    ]
-    .into_iter()
-    .find(|(center, _)| near(point, *center))
-    .map(|(_, command)| command)
 }
 #[cfg(test)]
 #[path = "tests.rs"]

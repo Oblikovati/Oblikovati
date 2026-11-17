@@ -21,6 +21,7 @@ pub(crate) struct DocumentProperties {
     folders: Rc<dyn GuiFolders>,
     target: Option<PropertiesTarget>,
     opening: bool,
+    dock_state: crate::dockable_lifecycle::DockableState,
 }
 impl DockableWindow for DocumentProperties {}
 impl Default for DocumentProperties {
@@ -29,11 +30,18 @@ impl Default for DocumentProperties {
     }
 }
 impl DocumentProperties {
+    pub(crate) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>(POPUP, &self.dock_state)
+    }
     pub(crate) fn with_folders(folders: Rc<dyn GuiFolders>) -> Self {
         Self {
             folders,
             target: None,
             opening: false,
+            dock_state: Default::default(),
         }
     }
     /// Inspect a document without activating it; example: `properties.request(&state, 7)`.
@@ -51,6 +59,7 @@ impl DocumentProperties {
             facts,
         });
         self.opening = true;
+        self.dock_state.set_open(true);
     }
     /// Inspect a file that need not be open; example: `properties.request_file("/work/a.opd")`.
     pub(crate) fn request_file(&mut self, path: &str) {
@@ -60,21 +69,28 @@ impl DocumentProperties {
             facts: self.folders.file_facts(path),
         });
         self.opening = true;
+        self.dock_state.set_open(true);
     }
     /// A frame must follow so the dialog opens without waiting for an event.
     pub(crate) fn needs_frame(&self) -> bool {
         self.opening
     }
+    pub(crate) fn sync_before_docking(&mut self, state: &GuiCommandState) {
+        let stale = self.target.as_ref().is_some_and(|target| {
+            target.file.is_none() && !state.documents.iter().any(|row| row.id == target.id)
+        });
+        if stale {
+            self.target = None;
+            self.dock_state.set_open(false);
+        }
+    }
     /// Draw the read-only dialog; example: `properties.panel(ui, &state)`.
-    pub(crate) fn panel(&mut self, ui: &Ui, state: &GuiCommandState) {
+    pub(crate) fn panel(&mut self, ui: &Ui, state: &GuiCommandState) -> Result<(), String> {
+        self.sync_before_docking(state);
         let Some(target) = &self.target else {
-            return;
+            return Ok(());
         };
         let row = state.documents.iter().find(|row| row.id == target.id);
-        if target.file.is_none() && row.is_none() {
-            self.target = None;
-            return;
-        }
         let stem = target
             .file
             .as_deref()
@@ -86,6 +102,7 @@ impl DocumentProperties {
             .unwrap_or("Document");
         self.opening = false;
         let title = format!("{name} Properties{POPUP}");
+        self.dock_state.set_title(&title)?;
         let mut open = true;
         let mut closed = false;
         Self::dockable_window(ui, &title, &mut open).build(|| {
@@ -99,7 +116,9 @@ impl DocumentProperties {
         });
         if closed || !open {
             self.target = None;
+            self.dock_state.set_open(false);
         }
+        Ok(())
     }
 }
 fn general_page(

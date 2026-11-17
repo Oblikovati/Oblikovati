@@ -7,6 +7,12 @@ pub(crate) struct GuiParameterEditor {
     panel: crate::parameter_panel::ParameterPanel,
 }
 impl GuiParameterEditor {
+    pub(crate) fn register_dockables(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        self.panel.register_dockables(registry)
+    }
     pub(crate) fn new() -> Result<Self, String> {
         Ok(Self {
             document: None,

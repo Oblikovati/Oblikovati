@@ -9,16 +9,33 @@ pub struct GuiFaceProperties {
     pub key: String,
     pub area_mm2: f64,
 }
-impl DockableWindow for GuiFaceProperties {}
 
-pub(crate) fn draw(ui: &imgui::Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
+pub(crate) fn draw(
+    ui: &imgui::Ui,
+    state: &GuiCommandState,
+    actions: &mut Vec<GuiShellAction>,
+    dock: &crate::external_dock_window::ExternalDockWindow,
+) {
+    if !dock.is_open() {
+        return;
+    }
     let Some(face) = &state.face_properties else {
         return;
     };
     let [width, _] = ui.io().display_size;
-    GuiFaceProperties::fit_dockable(ui, "Face Properties", [width - 390., 220.], [360., 190.]);
+    crate::external_dock_window::ExternalDockWindow::fit_dockable(
+        ui,
+        "Face Properties",
+        [width - 390., 220.],
+        [360., 190.],
+    );
     let mut open = true;
-    GuiFaceProperties::dockable_window(ui, "Face Properties", &mut open).build(|| {
+    crate::external_dock_window::ExternalDockWindow::dockable_window(
+        ui,
+        "Face Properties",
+        &mut open,
+    )
+    .build(|| {
         ui.text("Type: Face");
         ui.text(format!("Area: {:.3} mm²", face.area_mm2));
         ui.text_wrapped(format!("Reference: {}", face.key));

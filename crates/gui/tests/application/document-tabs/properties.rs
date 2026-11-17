@@ -81,3 +81,15 @@ fn a_request_reads_the_facts_once_and_keeps_the_active_document_unchanged() {
     assert_eq!(target.id, 2);
     assert_eq!(target.facts.as_ref().unwrap().size, 12);
 }
+
+#[test]
+fn closed_document_properties_close_before_docking_but_file_properties_remain() {
+    let mut dialog = DocumentProperties::with_folders(Rc::new(FakeFolders));
+    let state = GuiCommandState::default();
+    dialog.request(&state, 7);
+    dialog.sync_before_docking(&state);
+    assert!(dialog.target.is_none());
+    dialog.request_file("/work/a.opd");
+    dialog.sync_before_docking(&state);
+    assert!(dialog.target.is_some());
+}
