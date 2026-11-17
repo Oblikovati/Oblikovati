@@ -13,7 +13,7 @@ pub(crate) mod panel_tabs;
 #[path = "status_bar.rs"]
 pub(crate) mod status_bar;
 /// The document tab row and the gap above it.
-const TAB_STRIP_HEIGHT: f32 = 34.;
+const TAB_STRIP_HEIGHT: f32 = 26.;
 /// A press on the Model tab that travels this far moves the browser.
 const TAB_DRAG_REACH: f32 = 24.;
 /// Where a floated browser hangs from the pointer.

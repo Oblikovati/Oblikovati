@@ -89,7 +89,7 @@ fn the_workspace_span_follows_the_browser_dock() {
     assert_eq!(layout.tab_span(1000.), (0., 750.));
     layout.reserve_for_ribbon(196., 0.);
     assert_eq!(layout.tab_span(1000.), (196., 554.));
-    assert_eq!(layout.tab_top(900.), 844.);
+    assert_eq!(layout.tab_top(900.), 852.);
     layout.tabs_visible = false;
     assert_eq!(layout.tab_top(900.), 878.);
 }

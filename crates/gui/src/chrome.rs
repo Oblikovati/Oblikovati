@@ -212,7 +212,7 @@ fn ribbon_contents(
 ) {
     application_controls_row(ui, request, owners, actions);
     let tab_top = application_bar_height(owners.icons) + 1.;
-    crate::widget_abi::cursor_position(ui, [16., tab_top]);
+    crate::widget_abi::cursor_position(ui, [0., tab_top]);
     ribbon_menu_row(ui, request, owners, actions);
     if owners.ribbon.display.placement == RibbonPlacement::Top {
         ui.same_line();
@@ -250,8 +250,8 @@ fn application_controls_row(
     owners: &mut RibbonDrawOwners<'_>,
     actions: &mut Vec<GuiShellAction>,
 ) {
-    crate::widget_abi::cursor_position(ui, [16., 4.]);
-    let width = (ui.window_size()[0] - APPLICATION_BAR_TRAILING_RESERVED - 16.).max(1.);
+    crate::widget_abi::cursor_position(ui, [8., 4.]);
+    let width = (ui.window_size()[0] - APPLICATION_BAR_TRAILING_RESERVED - 8.).max(1.);
     let _padding = ui.push_style_var(imgui::StyleVar::WindowPadding([0., 0.]));
     ui.child_window("##application-bar-controls")
         .size([width, application_bar_height(owners.icons) - 4.])
@@ -313,7 +313,7 @@ fn ribbon_panel_row(
     actions: &mut Vec<GuiShellAction>,
     top: f32,
 ) {
-    crate::widget_abi::cursor_position(ui, [16., top]);
+    crate::widget_abi::cursor_position(ui, [8., top]);
     let ribbon = &mut *owners.ribbon;
     let mut icons = owners.icons.clone();
     icons.appearance = ribbon.display.appearance;
