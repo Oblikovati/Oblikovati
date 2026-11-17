@@ -15,6 +15,9 @@ pub(crate) struct MaterialBrowser {
 }
 impl DockableWindow for MaterialBrowser {}
 impl MaterialBrowser {
+    pub(crate) fn is_open(&self) -> bool {
+        self.open
+    }
     /// Create a separate appearance browser; example: `MaterialBrowser::appearances()`.
     pub(crate) fn appearances() -> Self {
         Self {

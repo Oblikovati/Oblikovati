@@ -2,6 +2,7 @@
 //! The shared workspace dockspace and its pass-through document area.
 use crate::application::document_creation::workspaces::WorkspaceArea;
 use imgui::{Condition, StyleVar, Ui, WindowFlags};
+pub(crate) mod persistence;
 
 /// Draw the shared docking targets and return the remaining document area.
 /// Example: `draw(ui, workspace)` after the ribbon has reserved its band.

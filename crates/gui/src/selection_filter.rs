@@ -55,6 +55,9 @@ pub(crate) struct SelectionFilterPanel {
 }
 impl DockableWindow for SelectionFilterPanel {}
 impl SelectionFilterPanel {
+    pub(crate) fn is_open(&self) -> bool {
+        self.open
+    }
     pub(crate) fn open(&mut self) {
         self.open = true;
     }

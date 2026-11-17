@@ -11,6 +11,9 @@ pub(super) mod browser_tree;
 #[cfg(target_os = "linux")]
 #[path = "dockspace_native.rs"]
 pub(super) mod dockspace_native;
+#[cfg(target_os = "linux")]
+#[path = "dockspace_restart.rs"]
+mod dockspace_restart;
 #[path = "drawing_browser.rs"]
 mod drawing_browser;
 #[path = "wireframe_tabs.rs"]

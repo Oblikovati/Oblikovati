@@ -1,0 +1,128 @@
+// SPDX-License-Identifier: GPL-2.0-only
+//! Native restart checks for floating and docked workspace tools.
+use super::dockspace_native::{native_drag, open_toolbar_tool, viewport};
+use super::*;
+
+#[test]
+fn docked_tool_tabs_and_bounds_survive_a_native_restart() {
+    let mut world = ApplicationWorld::new();
+    super::browser_feature::open_visible_extruded_part(&mut world);
+    let initial = viewport(&mut world);
+    open_toolbar_tool(&mut world, "Material Browser");
+    let (position, size) = window_geometry("Material Browser").unwrap();
+    let start = [
+        (position[0] + size[0] * 0.4) as i32,
+        (position[1] + 10.) as i32,
+    ];
+    native_drag(
+        &mut world,
+        start,
+        [
+            initial[2] as i32 - 15,
+            ((initial[1] + initial[3]) / 2) as i32,
+        ],
+    );
+    let docked_area = viewport(&mut world);
+    open_toolbar_tool(&mut world, "Appearance Browser");
+    let (source, source_size) = window_geometry("Appearance Browser").unwrap();
+    let (destination, destination_size) = window_geometry("Material Browser").unwrap();
+    let start = [
+        (source[0] + source_size[0] * 0.4) as i32,
+        (source[1] + 10.) as i32,
+    ];
+    let target = [
+        (destination[0] + destination_size[0] * 0.5) as i32,
+        (destination[1] + 10.) as i32,
+    ];
+    native_drag(&mut world, start, target);
+    let node = super::super::diagnostics::window_dock_id("Material Browser").unwrap();
+    assert_eq!(
+        super::super::diagnostics::window_dock_id("Appearance Browser"),
+        Some(node)
+    );
+    let selected = super::super::diagnostics::window_dock_tab_visible("Appearance Browser");
+    world.reopen_application();
+    world.add_part();
+    world.pump(Vec::new());
+    let restored = super::super::diagnostics::window_dock_id("Material Browser").unwrap();
+    assert_ne!(restored, 0, "material browser must restore its dock");
+    assert_eq!(
+        super::super::diagnostics::window_dock_id("Appearance Browser"),
+        Some(restored)
+    );
+    assert_eq!(
+        super::super::diagnostics::window_dock_tab_visible("Appearance Browser"),
+        selected
+    );
+    assert_eq!(
+        viewport(&mut world),
+        docked_area,
+        "workspace bounds must survive restart"
+    );
+    world.save_capture("workspace-dock-restored");
+    let (minimum, maximum) =
+        super::super::diagnostics::window_dock_tab_bounds("Appearance Browser").unwrap();
+    let close = [
+        maximum[0] - (maximum[1] - minimum[1]) * 0.5,
+        (minimum[1] + maximum[1]) * 0.5,
+    ];
+    world.click(super::super::diagnostics::pointer_pixels(close));
+    world.pump(Vec::new());
+    assert!(window_geometry("Appearance Browser").is_none());
+    world.reopen_application();
+    world.add_part();
+    world.pump(Vec::new());
+    assert!(
+        window_geometry("Appearance Browser").is_none(),
+        "closed tab must remain closed after restart"
+    );
+    assert_ne!(
+        super::super::diagnostics::window_dock_id("Material Browser"),
+        Some(0)
+    );
+    world.close();
+}
+
+#[test]
+fn floating_tool_position_and_size_survive_a_native_restart() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    open_toolbar_tool(&mut world, "Material Browser");
+    let (position, size) = window_geometry("Material Browser").unwrap();
+    let start = [
+        (position[0] + size[0] * 0.4) as i32,
+        (position[1] + 10.) as i32,
+    ];
+    native_drag(&mut world, start, [700, 420]);
+    assert_eq!(
+        super::super::diagnostics::window_dock_id("Material Browser"),
+        Some(0)
+    );
+    let (position, size) = window_geometry("Material Browser").unwrap();
+    let corner = [
+        (position[0] + size[0] - 4.) as i32,
+        (position[1] + size[1] - 4.) as i32,
+    ];
+    native_drag(&mut world, corner, [corner[0] + 70, corner[1] + 60]);
+    let (position, resized) = window_geometry("Material Browser").unwrap();
+    assert!(
+        resized[0] > size[0] + 30. && resized[1] > size[1] + 30.,
+        "window size {size:?} -> {resized:?}"
+    );
+    let size = resized;
+    world.reopen_application();
+    world.add_part();
+    world.pump(Vec::new());
+    let (restored_position, restored_size) = window_geometry("Material Browser").unwrap();
+    for axis in 0..2 {
+        assert!(
+            (position[axis] - restored_position[axis]).abs() <= 1.,
+            "position {position:?} -> {restored_position:?}"
+        );
+        assert!(
+            (size[axis] - restored_size[axis]).abs() <= 1.,
+            "size {size:?} -> {restored_size:?}"
+        );
+    }
+    world.close();
+}

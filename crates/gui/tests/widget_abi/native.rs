@@ -44,6 +44,18 @@ fn never_condition_does_not_publish_next_window_settings() {
     assert_eq!(current.NextWindowData.Flags, 0);
     context.render();
 }
+
+#[test]
+fn fitting_a_restored_window_leaves_saved_placement_to_imgui() {
+    let mut context = probe_context();
+    context
+        .load_ini_settings("[Window][Restored]\nPos=100,120\nSize=300,200\nDockId=0x00000002,0\n");
+    let ui = context.frame();
+    fit_dialog(ui, "Restored", [20., 20.], [400., 300.]);
+    let current = unsafe { imgui::sys::igGetCurrentContext().as_ref() }.unwrap();
+    assert_eq!(current.NextWindowData.Flags, 0);
+    context.render();
+}
 #[test]
 fn scalar_widgets_retain_cursor_dimensions_and_literal_draw_color() {
     let mut context = probe_context();

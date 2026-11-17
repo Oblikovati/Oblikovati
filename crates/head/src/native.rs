@@ -447,6 +447,13 @@ impl HeadWindow for NativeHeadWindow {
         Ok(ready.worker_wake)
     }
     fn finish(&mut self) -> Result<(), String> {
+        let workspace_error = match (&mut self.gui, &self.ribbon_settings_directory) {
+            (Some(gui), Some(directory)) => gui
+                .save_workspace_layout()
+                .and_then(|bytes| preferences::NativeWorkspaceLayout::new(directory).save(&bytes))
+                .err(),
+            _ => None,
+        };
         self.gui.take();
         #[cfg(target_os = "windows")]
         self.accessibility.take();
@@ -454,18 +461,19 @@ impl HeadWindow for NativeHeadWindow {
         #[cfg(target_os = "linux")]
         let clipboard = self.clipboard.handoff_on_shutdown();
         self.view.close();
-        let errors = if self.validate_vulkan {
+        let mut errors = if self.validate_vulkan {
             self.runtime.validation_errors()?
         } else {
             Vec::new()
         };
         #[cfg(target_os = "linux")]
-        let errors: Vec<_> = errors.into_iter().chain(clipboard.err()).collect();
+        errors.extend(clipboard.err());
+        errors.extend(workspace_error);
         if errors.is_empty() {
             return Ok(());
         }
         Err(format!(
-            "head shutdown {errors:?}: expected completed clipboard retirement and no renderer errors"
+            "head shutdown {errors:?}: expected saved workspace settings, completed clipboard retirement, and no renderer errors"
         ))
     }
 }

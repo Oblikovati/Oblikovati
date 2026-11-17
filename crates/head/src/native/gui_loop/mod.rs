@@ -34,6 +34,9 @@ pub(super) struct NativeGui {
     clipboard: Option<GuiClipboard>,
 }
 impl NativeGui {
+    pub(super) fn save_workspace_layout(&mut self) -> Result<Vec<u8>, String> {
+        self.engine.save_workspace_layout()
+    }
     pub(super) fn frame_controls(
         &self,
     ) -> Option<(
@@ -364,6 +367,9 @@ impl NativeHeadWindow {
             gui.engine.set_ribbon_settings_store(Box::new(
                 super::preferences::NativeRibbonSettings::new(directory),
             ))?;
+            if let Some(bytes) = super::preferences::NativeWorkspaceLayout::new(directory).load()? {
+                gui.engine.load_workspace_layout(&bytes)?;
+            }
         }
         if let Some(crate::DesktopCommandNotice::SavePathRequired { document }) =
             &self.command_notice

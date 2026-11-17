@@ -114,36 +114,52 @@ impl NativeRibbonSettings {
 }
 impl oblikovati_gui::GuiRibbonSettingsStore for NativeRibbonSettings {
     fn load(&mut self) -> Result<Option<Vec<u8>>, String> {
-        use std::io::Read;
-        let file = match std::fs::File::open(&self.path) {
-            Ok(file) => file,
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
-            Err(error) => {
-                return Err(format!(
-                    "ribbon settings {:?}: expected a readable file: {error}",
-                    self.path
-                ));
-            }
-        };
-        let mut bytes = Vec::new();
-        file.take(1024 * 1024 + 1)
-            .read_to_end(&mut bytes)
-            .map_err(|error| {
-                format!(
-                    "ribbon settings {:?}: expected readable bytes: {error}",
-                    self.path
-                )
-            })?;
-        Ok(Some(bytes))
+        read_settings_file(&self.path, "ribbon settings")
     }
     fn save(&mut self, bytes: &[u8]) -> Result<(), String> {
-        oblikovati_persistence::atomic::replace_file(
-            &self.path,
-            bytes,
-            &mut NativeThemePreferenceFiles,
-        )
-        .map_err(|error| error.to_string())
+        save_settings_file(&self.path, bytes)
     }
+}
+
+/// The desktop's atomically replaced workspace docking arrangement.
+pub(super) struct NativeWorkspaceLayout {
+    path: PathBuf,
+}
+impl NativeWorkspaceLayout {
+    pub(super) fn new(directory: &Path) -> Self {
+        Self {
+            path: directory.join("workspace-layout.json"),
+        }
+    }
+    pub(super) fn load(&self) -> Result<Option<Vec<u8>>, String> {
+        read_settings_file(&self.path, "workspace layout")
+    }
+    pub(super) fn save(&self, bytes: &[u8]) -> Result<(), String> {
+        save_settings_file(&self.path, bytes)
+    }
+}
+
+fn read_settings_file(path: &Path, label: &str) -> Result<Option<Vec<u8>>, String> {
+    use std::io::Read;
+    let file = match std::fs::File::open(path) {
+        Ok(file) => file,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(error) => {
+            return Err(format!(
+                "{label} {path:?}: expected a readable file: {error}"
+            ));
+        }
+    };
+    let mut bytes = Vec::new();
+    file.take(1024 * 1024 + 1)
+        .read_to_end(&mut bytes)
+        .map_err(|error| format!("{label} {path:?}: expected readable bytes: {error}"))?;
+    Ok(Some(bytes))
+}
+
+fn save_settings_file(path: &Path, bytes: &[u8]) -> Result<(), String> {
+    oblikovati_persistence::atomic::replace_file(path, bytes, &mut NativeThemePreferenceFiles)
+        .map_err(|error| error.to_string())
 }
 
 pub(super) fn load_native_orientation_preferences(
@@ -159,4 +175,20 @@ pub(super) fn load_native_orientation_preferences(
         NativeThemePreferenceFiles,
     )
     .map_err(|cause| cause.to_string())
+}
+
+#[cfg(test)]
+mod workspace_layout_tests {
+    use super::NativeWorkspaceLayout;
+    #[test]
+    fn layout_file_is_optional_and_replaced_atomically() {
+        let root = tempfile::tempdir().unwrap();
+        let directory = root.path().join("settings");
+        let store = NativeWorkspaceLayout::new(&directory);
+        assert_eq!(store.load().unwrap(), None);
+        store.save(b"first").unwrap();
+        store.save(b"second").unwrap();
+        assert_eq!(store.load().unwrap().as_deref(), Some(&b"second"[..]));
+        assert_eq!(std::fs::read_dir(directory).unwrap().count(), 1);
+    }
 }

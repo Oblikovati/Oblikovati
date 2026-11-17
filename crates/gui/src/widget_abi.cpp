@@ -54,7 +54,11 @@ bool oblikovati_gui_icon_button(const unsigned char* bytes, std::uint32_t textur
 }
 
 void oblikovati_gui_fit_dialog(const unsigned char* title, float x, float y, float width, float height) {
-    const ImGuiWindow* previous = ImGui::FindWindowByName(reinterpret_cast<const char*>(title));
+    const char* name = reinterpret_cast<const char*>(title);
+    const ImGuiWindow* previous = ImGui::FindWindowByName(name);
+    // ImGui applies saved docking and placement when the window is first created (#4069).
+    if (!previous && ImGui::FindWindowSettings(ImHashStr(name)))
+        return;
     // Dock nodes own their members' bounds; fitting an individual member would undo that layout.
     if (previous && previous->DockId != 0)
         return;
