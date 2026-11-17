@@ -88,3 +88,53 @@ fn proportions_restored(world: &mut ApplicationWorld) {
         size[0]
     );
 }
+
+#[given("a dockable panel is the active tab in a dock region")]
+fn active_panel_in_dock(world: &mut ApplicationWorld) {
+    panel_docked(world);
+    assert_eq!(diagnostics::window_dock_tab_visible(PANEL), Some(true));
+}
+
+#[when("the user closes the panel")]
+fn close_docked_panel(world: &mut ApplicationWorld) {
+    let (min, max) = diagnostics::window_dock_tab_bounds(PANEL).expect("panel tab");
+    let close = [max[0] - (max[1] - min[1]) * 0.5, (min[1] + max[1]) * 0.5];
+    world.click(diagnostics::pointer_pixels(close));
+    world.pump(Vec::new());
+    world.pump(Vec::new());
+}
+
+#[then("the panel is removed from the visible workspace")]
+fn closed_panel_hidden(_: &mut ApplicationWorld) {
+    assert!(diagnostics::window_geometry(PANEL).is_none());
+}
+
+#[then("the remaining dock regions and viewport use the freed space")]
+fn viewport_uses_freed_space(world: &mut ApplicationWorld) {
+    let (docked, _) = world.docking_resize.expect("docked viewport");
+    let current = viewport(world);
+    assert!(current[2] > docked[2], "viewport {docked:?} -> {current:?}");
+    world.expect_text("End of Part");
+}
+
+#[when("the user opens the interface visibility menu")]
+fn open_visibility_menu(world: &mut ApplicationWorld) {
+    world.click_text("View");
+    world.click_text("User Interface");
+}
+
+#[when("the user selects the closed panel")]
+fn select_closed_panel(world: &mut ApplicationWorld) {
+    world.click_text(PANEL);
+    world.pump(Vec::new());
+}
+
+#[then("the panel is restored to the workspace")]
+fn restored_panel_docked(_: &mut ApplicationWorld) {
+    assert_ne!(diagnostics::window_dock_id(PANEL).unwrap(), 0);
+}
+
+#[then("its contents are visible")]
+fn restored_panel_contents(world: &mut ApplicationWorld) {
+    world.run_in_window(PANEL, "Assigntopart");
+}
