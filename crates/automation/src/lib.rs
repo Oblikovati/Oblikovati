@@ -295,7 +295,8 @@ mod asset_assignments;
 pub use asset_assignments::ASSET_ASSIGNMENT_METHODS;
 mod part_topology;
 pub use feature_lifecycle::{
-    FEATURE_LIFECYCLE_METHODS, apply_feature_distance_edit, apply_fillet_radius_edit,
+    FEATURE_LIFECYCLE_METHODS, apply_chamfer_distance_edit, apply_feature_distance_edit,
+    apply_fillet_radius_edit,
 };
 pub use part_topology::{BODY_QUERY_METHODS, PartTopologyAccess, TopologyEntityKind};
 mod part_sketch_continuity;

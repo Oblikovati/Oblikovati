@@ -40,33 +40,39 @@ impl<
             query = query.with_part_sketch_continuity(resolver);
         }
         populate_browser(&mut browser, snapshot, &Client::new(query))?;
-        browser.fillet_edits = snapshot
-            .work_geometry
-            .features()
-            .iter()
-            .filter_map(|feature| {
-                let oblikovati_model::feature::part::PartFeatureDefinition::Fillet(definition) =
-                    feature.definition()
-                else {
-                    return None;
-                };
-                let radius = match definition.radius() {
-                    oblikovati_model::feature::work_geometry::DatumLength::Constant(value) => {
-                        format!("{value} cm")
-                    }
-                    oblikovati_model::feature::work_geometry::DatumLength::Parameter(id) => {
-                        snapshot.parameters.get(id)?.name.clone()
-                    }
-                };
-                Some((
-                    feature.id(),
-                    oblikovati_gui::GuiFilletEditSeed {
-                        generation: session.generation(),
-                        radius,
-                    },
-                ))
-            })
-            .collect();
+        for feature in snapshot.work_geometry.features() {
+            use oblikovati_model::feature::part::PartFeatureDefinition;
+            let (length, edge_count, chamfer) = match feature.definition() {
+                PartFeatureDefinition::Fillet(definition) => {
+                    (definition.radius(), definition.edges().len(), false)
+                }
+                PartFeatureDefinition::Chamfer(definition) => {
+                    (definition.distance(), definition.edges().len(), true)
+                }
+                _ => continue,
+            };
+            let radius = match length {
+                oblikovati_model::feature::work_geometry::DatumLength::Constant(value) => {
+                    format!("{value} cm")
+                }
+                oblikovati_model::feature::work_geometry::DatumLength::Parameter(id) => {
+                    let Some(parameter) = snapshot.parameters.get(id) else {
+                        continue;
+                    };
+                    parameter.name.clone()
+                }
+            };
+            let seed = oblikovati_gui::GuiFilletEditSeed {
+                generation: session.generation(),
+                radius,
+                edge_count,
+            };
+            if chamfer {
+                browser.chamfer_edits.insert(feature.id(), seed);
+            } else {
+                browser.fillet_edits.insert(feature.id(), seed);
+            }
+        }
         browser.occurrences = occurrences::browser_occurrences(&self.files, document)?;
         browser.selected_occurrence =
             self.selected_occurrence.as_ref().and_then(|(owner, path)| {

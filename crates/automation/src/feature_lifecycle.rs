@@ -8,8 +8,8 @@ use oblikovati_model::{
 };
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
-mod fillet_edit;
-pub use fillet_edit::apply_fillet_radius_edit;
+mod blend_edit;
+pub use blend_edit::{apply_chamfer_distance_edit, apply_fillet_radius_edit};
 
 /// Native feature lifecycle calls that operate on the active part history.
 pub const FEATURE_LIFECYCLE_METHODS: [&str; 5] = [
@@ -87,8 +87,8 @@ fn edit<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     fillet: Option<&dyn crate::FilletAccess>,
     request: EditFeatureArgs,
 ) -> Result<u64, Error> {
-    if fillet_edit::is_fillet(files, document, request.id)? {
-        return fillet_edit::edit(files, document, fillet, &request);
+    if let Some(kind) = blend_edit::kind(files, document, request.id)? {
+        return blend_edit::edit(files, document, fillet, &request, kind);
     }
     files
         .commands(document)
@@ -290,6 +290,7 @@ pub(crate) fn feature_scalars(
             (definition.displacement()[2], "Distance")
         }
         PartFeatureDefinition::Fillet(definition) => (definition.radius(), "Radius"),
+        PartFeatureDefinition::Chamfer(definition) => (definition.distance(), "Distance"),
         _ => return Ok(None),
     };
     let distance = length.resolve(&snapshot.parameters).map_err(api_error)?;

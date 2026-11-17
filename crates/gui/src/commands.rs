@@ -263,8 +263,11 @@ pub enum GuiShellAction {
     /// Open an equal-distance chamfer draft for selected edges.
     OpenChamfer,
     OpenFilletEdit(oblikovati_model::feature::FeatureId),
+    OpenChamferEdit(oblikovati_model::feature::FeatureId),
     PreviewFilletEdit(GuiFilletEditRequest),
     EditFilletRadius(GuiFilletEditRequest),
+    PreviewChamferEdit(GuiFilletEditRequest),
+    EditChamferDistance(GuiFilletEditRequest),
     /// Orient the view to the selected planar reference.
     LookAtSelection,
     /// Show or clear a private fillet candidate.

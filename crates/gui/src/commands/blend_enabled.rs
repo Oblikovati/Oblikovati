@@ -23,23 +23,48 @@ pub(super) fn request(state: &GuiCommandState, request: &GuiFilletRequest) -> bo
         && !request.radius.contains('\0')
 }
 pub(super) fn open(state: &GuiCommandState, feature: oblikovati_model::feature::FeatureId) -> bool {
+    open_blend(state, feature, false)
+}
+pub(super) fn open_chamfer(
+    state: &GuiCommandState,
+    feature: oblikovati_model::feature::FeatureId,
+) -> bool {
+    open_blend(state, feature, true)
+}
+fn open_blend(
+    state: &GuiCommandState,
+    feature: oblikovati_model::feature::FeatureId,
+    chamfer: bool,
+) -> bool {
     state.fillet_available
         && state.document.is_some()
         && state.authoring == GuiAuthoringContext::Part
         && !state.transaction_open
-        && state
-            .browser
-            .as_ref()
-            .is_some_and(|browser| browser.fillet_edits.contains_key(&feature))
+        && edit_seed(state, feature, chamfer).is_some()
+}
+fn edit_seed(
+    state: &GuiCommandState,
+    feature: oblikovati_model::feature::FeatureId,
+    chamfer: bool,
+) -> Option<&crate::GuiFilletEditSeed> {
+    let browser = state.browser.as_ref()?;
+    if chamfer {
+        browser.chamfer_edits.get(&feature)
+    } else {
+        browser.fillet_edits.get(&feature)
+    }
 }
 pub(super) fn edit(state: &GuiCommandState, request: &GuiFilletEditRequest) -> bool {
-    open(state, request.feature)
+    edit_blend(state, request, false)
+}
+pub(super) fn edit_chamfer(state: &GuiCommandState, request: &GuiFilletEditRequest) -> bool {
+    edit_blend(state, request, true)
+}
+fn edit_blend(state: &GuiCommandState, request: &GuiFilletEditRequest, chamfer: bool) -> bool {
+    open_blend(state, request.feature, chamfer)
         && state.document == Some(request.document)
         && !request.radius.trim().is_empty()
         && !request.radius.contains('\0')
-        && state
-            .browser
-            .as_ref()
-            .and_then(|browser| browser.fillet_edits.get(&request.feature))
+        && edit_seed(state, request.feature, chamfer)
             .is_some_and(|seed| seed.generation == request.generation)
 }

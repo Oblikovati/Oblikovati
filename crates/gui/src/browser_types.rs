@@ -31,6 +31,8 @@ pub struct GuiModelBrowser {
     pub extrusion_edits: std::collections::BTreeMap<FeatureId, GuiExtrudeEditSeed>,
     /// Authored radius expressions for editable Fillet features.
     pub fillet_edits: std::collections::BTreeMap<FeatureId, GuiFilletEditSeed>,
+    /// Authored distance expressions for editable Chamfer features.
+    pub chamfer_edits: std::collections::BTreeMap<FeatureId, GuiFilletEditSeed>,
     /// Placed components in assembly order, including their reference status.
     pub occurrences: Vec<GuiBrowserOccurrence>,
     /// The selected occurrence path, scoped to the current document generations.
@@ -63,6 +65,7 @@ pub struct GuiExtrudeEditSeed {
 pub struct GuiFilletEditSeed {
     pub generation: u64,
     pub radius: String,
+    pub edge_count: usize,
 }
 /// A material available to a selector.
 pub type GuiMaterialChoice = crate::GuiAssetChoice;

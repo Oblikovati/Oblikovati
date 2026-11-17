@@ -333,8 +333,12 @@ impl GuiShellAction {
             Self::PreviewFillet(None) => true,
             Self::PreviewChamfer(None) => true,
             Self::OpenFilletEdit(feature) => blend_enabled::open(state, *feature),
+            Self::OpenChamferEdit(feature) => blend_enabled::open_chamfer(state, *feature),
             Self::PreviewFilletEdit(request) | Self::EditFilletRadius(request) => {
                 blend_enabled::edit(state, request)
+            }
+            Self::PreviewChamferEdit(request) | Self::EditChamferDistance(request) => {
+                blend_enabled::edit_chamfer(state, request)
             }
             Self::PreviewFillet(Some(request))
             | Self::CreateFillet(request)

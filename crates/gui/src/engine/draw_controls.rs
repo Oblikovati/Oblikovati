@@ -190,6 +190,13 @@ impl GuiFrameEngine {
             }
         }
         selected.retain(|action| !matches!(action, GuiShellAction::OpenFilletEdit(_)));
+        for action in &selected {
+            if let GuiShellAction::OpenChamferEdit(feature) = action {
+                self.blend_dialog
+                    .open_chamfer_edit(&request.commands, *feature);
+            }
+        }
+        selected.retain(|action| !matches!(action, GuiShellAction::OpenChamferEdit(_)));
         if selected.contains(&GuiShellAction::OpenFillet) {
             if self.blend_dialog.active() {
                 self.blend_dialog.close(&mut selected);

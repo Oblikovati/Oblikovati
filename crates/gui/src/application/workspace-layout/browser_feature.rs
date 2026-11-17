@@ -317,6 +317,9 @@ pub(crate) fn selection_toolbar(
     });
 }
 fn feature_edit_action(browser: &GuiModelBrowser, feature: &GuiBrowserFeature) -> GuiShellAction {
+    if browser.chamfer_edits.contains_key(&feature.id) {
+        return GuiShellAction::OpenChamferEdit(feature.id);
+    }
     if browser.fillet_edits.contains_key(&feature.id) {
         return GuiShellAction::OpenFilletEdit(feature.id);
     }

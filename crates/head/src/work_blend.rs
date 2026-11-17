@@ -20,6 +20,24 @@ macro_rules! blend_work_methods {
                 "fillet edit {request:?}: expected a certified Fillet owner"
             ))
         }
+        /// Preview a Chamfer distance edit; example: `work.preview_chamfer_edit(&request)?`.
+        fn preview_chamfer_edit(
+            &mut self,
+            request: &oblikovati_gui::GuiFilletEditRequest,
+        ) -> Result<bool, String> {
+            Err(format!(
+                "chamfer edit {request:?}: expected a certified Chamfer owner"
+            ))
+        }
+        /// Commit a Chamfer distance edit; example: `work.commit_chamfer_edit(&request)?`.
+        fn commit_chamfer_edit(
+            &mut self,
+            request: &oblikovati_gui::GuiFilletEditRequest,
+        ) -> Result<bool, String> {
+            Err(format!(
+                "chamfer edit {request:?}: expected a certified Chamfer owner"
+            ))
+        }
         /// Preview selected edges as a chamfer; example: `work.preview_chamfer_from_gui(Some(&request))?`.
         fn preview_chamfer_from_gui(
             &mut self,

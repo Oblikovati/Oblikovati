@@ -86,3 +86,76 @@ fn chamfer_cancel_restores_solid(world: &mut ApplicationWorld) {
     ));
     world.save_capture("chamfer-cancelled-4046");
 }
+
+#[given("a committed chamfer is open for editing")]
+fn committed_chamfer_is_open(world: &mut ApplicationWorld) {
+    chamfer_is_open(world);
+    click_block_edge(world);
+    bevel_preview_is_visible(world);
+    commit_chamfer_preview(world);
+    open_chamfer_editor(world);
+}
+
+fn open_chamfer_editor(world: &mut ApplicationWorld) {
+    let position = world.run("Chamfer1").center().map(|value| value as i32);
+    super::super::x11_input::right_click(position);
+    world.pump(Vec::new());
+    world.expect_text("Show Dimensions");
+    let position = super::acceptance::edit_menu_position(world);
+    super::super::x11_input::click(position);
+    world.pump(Vec::new());
+    world.expect_text("Distance");
+    world.expect_text("1 Edge");
+}
+
+#[when("the user changes the chamfer distance to 2 mm")]
+fn change_chamfer_to_two(world: &mut ApplicationWorld) {
+    change_chamfer_distance(world, "2");
+}
+
+#[then("the chamfer edit preview does not change the committed distance")]
+fn chamfer_edit_preview_is_private(world: &mut ApplicationWorld) {
+    assert!(world.state().extrude_preview_active);
+    assert!((committed_distance(world) - 3.).abs() < 1e-9);
+    let capture = super::super::capture_framebuffer(&mut world.app().window.native);
+    let windows = super::super::diagnostics::window_occlusions();
+    assert!(super::super::solid_visibility::visible_preview_fill(
+        &capture, &windows
+    ));
+    world.save_capture("chamfer-edit-preview-4046");
+}
+
+fn committed_distance(world: &mut ApplicationWorld) -> f64 {
+    use oblikovati_api::{client::Client, wire::FeatureRefArgs};
+    Client::new(world.app().owner.document_host())
+        .features()
+        .get(&FeatureRefArgs { id: 2 })
+        .unwrap()
+        .feature
+        .scalars
+        .unwrap()[0]
+        .value
+}
+
+#[then("the committed chamfer distance is still 3 mm")]
+fn cancelled_chamfer_edit_is_unchanged(world: &mut ApplicationWorld) {
+    assert!(!world.state().extrude_preview_active);
+    assert!((committed_distance(world) - 3.).abs() < 1e-9);
+}
+
+#[when("the user reopens the chamfer editor")]
+fn reopen_chamfer_editor(world: &mut ApplicationWorld) {
+    open_chamfer_editor(world);
+}
+
+#[when("the user accepts the chamfer edit")]
+fn accept_chamfer_edit(world: &mut ApplicationWorld) {
+    click_text_native(world, "OK");
+}
+
+#[then("the committed chamfer distance is 2 mm")]
+fn committed_chamfer_is_updated(world: &mut ApplicationWorld) {
+    assert!(!world.state().extrude_preview_active);
+    assert!((committed_distance(world) - 2.).abs() < 1e-9);
+    world.save_capture("chamfer-edit-committed-4046");
+}

@@ -396,8 +396,11 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::OpenFillet
         | GuiShellAction::OpenChamfer
         | GuiShellAction::OpenFilletEdit(_)
+        | GuiShellAction::OpenChamferEdit(_)
         | GuiShellAction::PreviewFilletEdit(_)
         | GuiShellAction::EditFilletRadius(_)
+        | GuiShellAction::PreviewChamferEdit(_)
+        | GuiShellAction::EditChamferDistance(_)
         | GuiShellAction::LookAtSelection
         | GuiShellAction::PreviewFillet(_)
         | GuiShellAction::CreateFillet(_)

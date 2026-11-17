@@ -7,6 +7,7 @@ use imgui::Ui;
 #[derive(Default)]
 pub(crate) struct BlendDialog {
     chamfer: bool,
+    edited_edges: usize,
     document: Option<u64>,
     radius: String,
     attempted: Option<GuiFilletRequest>,
@@ -22,6 +23,7 @@ impl BlendDialog {
     }
     pub(crate) fn open(&mut self, state: &GuiCommandState) {
         self.chamfer = false;
+        self.edited_edges = 0;
         self.document = state.document;
         self.radius = "2 mm".into();
         self.attempted = None;
@@ -40,14 +42,32 @@ impl BlendDialog {
         state: &GuiCommandState,
         feature: oblikovati_model::feature::FeatureId,
     ) {
-        self.chamfer = false;
-        let Some(seed) = state
-            .browser
-            .as_ref()
-            .and_then(|browser| browser.fillet_edits.get(&feature))
-        else {
+        self.open_blend_edit(state, feature, false);
+    }
+    pub(crate) fn open_chamfer_edit(
+        &mut self,
+        state: &GuiCommandState,
+        feature: oblikovati_model::feature::FeatureId,
+    ) {
+        self.open_blend_edit(state, feature, true);
+    }
+    fn open_blend_edit(
+        &mut self,
+        state: &GuiCommandState,
+        feature: oblikovati_model::feature::FeatureId,
+        chamfer: bool,
+    ) {
+        let Some(seed) = state.browser.as_ref().and_then(|browser| {
+            if chamfer {
+                browser.chamfer_edits.get(&feature)
+            } else {
+                browser.fillet_edits.get(&feature)
+            }
+        }) else {
             return;
         };
+        self.chamfer = chamfer;
+        self.edited_edges = seed.edge_count;
         self.document = state.document;
         self.radius = seed.radius.clone();
         self.edit = Some((feature, seed.generation));
@@ -110,7 +130,13 @@ impl BlendDialog {
             state
                 .browser
                 .as_ref()
-                .and_then(|browser| browser.fillet_edits.get(&request.feature))
+                .and_then(|browser| {
+                    if self.chamfer {
+                        browser.chamfer_edits.get(&request.feature)
+                    } else {
+                        browser.fillet_edits.get(&request.feature)
+                    }
+                })
                 .is_none_or(|seed| seed.generation != request.generation)
         }) {
             self.close(actions);
@@ -123,8 +149,13 @@ impl BlendDialog {
         Self::fit_dockable(ui, title, [(display[0] - 380.).max(0.), 170.], [360., 190.]);
         let mut open = true;
         Self::dockable_window(ui, title, &mut open).build(|| {
-            if self.edit.is_none() {
-                let selection = match state.selected_edge_count {
+            {
+                let count = if self.edit.is_some() {
+                    self.edited_edges
+                } else {
+                    state.selected_edge_count
+                };
+                let selection = match count {
                     0 => "Select Edges".to_owned(),
                     1 => "1 Edge".to_owned(),
                     count => format!("{count} Edges"),
@@ -145,17 +176,18 @@ impl BlendDialog {
     fn refresh_preview(&mut self, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
         if self.edit.is_some() {
             let request = self.edit_request().filter(|request| {
-                GuiShellAction::PreviewFilletEdit(request.clone()).dispatchable(state)
+                self.preview_edit_action(request.clone())
+                    .dispatchable(state)
             });
             if request == self.attempted_edit {
                 return;
             }
             if self.attempted_edit.is_some() {
-                actions.push(GuiShellAction::PreviewFillet(None));
+                actions.push(self.preview_action(None));
             }
             self.attempted_edit = request.clone();
             if let Some(request) = request {
-                actions.push(GuiShellAction::PreviewFilletEdit(request));
+                actions.push(self.preview_edit_action(request));
             }
             return;
         }
@@ -214,22 +246,36 @@ impl BlendDialog {
             GuiShellAction::CreateFillet(request)
         }
     }
+    fn preview_edit_action(&self, request: crate::GuiFilletEditRequest) -> GuiShellAction {
+        if self.chamfer {
+            GuiShellAction::PreviewChamferEdit(request)
+        } else {
+            GuiShellAction::PreviewFilletEdit(request)
+        }
+    }
+    fn commit_edit_action(&self, request: crate::GuiFilletEditRequest) -> GuiShellAction {
+        if self.chamfer {
+            GuiShellAction::EditChamferDistance(request)
+        } else {
+            GuiShellAction::EditFilletRadius(request)
+        }
+    }
     fn edit_controls(
         &mut self,
         ui: &Ui,
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
     ) {
-        let request = self.edit_request().filter(|request| {
-            GuiShellAction::EditFilletRadius(request.clone()).dispatchable(state)
-        });
+        let request = self
+            .edit_request()
+            .filter(|request| self.commit_edit_action(request.clone()).dispatchable(state));
         let disabled = ui.begin_disabled(request.is_none());
         if (ui.button("OK")
             || (ui.is_window_focused() && ui.is_key_pressed_no_repeat(imgui::Key::Enter)))
             && let Some(request) = request
         {
             self.submitted_edit = Some(request.clone());
-            actions.push(GuiShellAction::EditFilletRadius(request));
+            actions.push(self.commit_edit_action(request));
         }
         drop(disabled);
         ui.same_line();
@@ -332,6 +378,47 @@ mod tests {
     }
 
     #[test]
+    fn chamfer_edit_uses_distance_and_rejects_stale_generation() {
+        let feature = oblikovati_model::feature::FeatureId(9);
+        let mut state = selected_state();
+        let mut browser = crate::GuiModelBrowser::default();
+        browser.chamfer_edits.insert(
+            feature,
+            crate::GuiFilletEditSeed {
+                generation: 3,
+                edge_count: 1,
+                radius: "bevel_size".into(),
+            },
+        );
+        state.browser = Some(browser);
+        let mut dialog = BlendDialog::default();
+        let mut actions = Vec::new();
+        dialog.open_chamfer_edit(&state, feature);
+        dialog.refresh_preview(&state, &mut actions);
+        let [GuiShellAction::PreviewChamferEdit(request)] = actions.as_slice() else {
+            panic!("expected Chamfer edit preview")
+        };
+        assert_eq!(request.radius, "bevel_size");
+        assert!(dialog.commit_edit_action(request.clone()).enabled(&state));
+        actions.clear();
+        state
+            .browser
+            .as_mut()
+            .unwrap()
+            .chamfer_edits
+            .get_mut(&feature)
+            .unwrap()
+            .generation = 4;
+        dialog.refresh_preview(&state, &mut actions);
+        assert_eq!(actions, [GuiShellAction::PreviewChamfer(None)]);
+        assert!(
+            !dialog
+                .commit_edit_action(dialog.edit_request().unwrap())
+                .enabled(&state)
+        );
+    }
+
+    #[test]
     fn edit_uses_authored_radius_and_rejects_a_stale_generation() {
         let feature = oblikovati_model::feature::FeatureId(9);
         let mut state = selected_state();
@@ -340,6 +427,7 @@ mod tests {
             feature,
             crate::GuiFilletEditSeed {
                 generation: 3,
+                edge_count: 1,
                 radius: "round_radius".into(),
             },
         );

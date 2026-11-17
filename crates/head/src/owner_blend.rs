@@ -183,7 +183,7 @@ impl<
         Ok(true)
     }
 
-    fn require_fillet_edit(
+    fn require_blend_edit(
         &self,
         request: &oblikovati_gui::GuiFilletEditRequest,
     ) -> Result<(), String> {
@@ -195,7 +195,7 @@ impl<
             .map_err(|cause| cause.to_string())?;
         if session.generation() != request.generation {
             return Err(format!(
-                "fillet edit generation {}: expected current generation {}",
+                "blend edit generation {}: expected current generation {}",
                 request.generation,
                 session.generation()
             ));
@@ -207,7 +207,25 @@ impl<
         &mut self,
         request: &oblikovati_gui::GuiFilletEditRequest,
     ) -> Result<bool, String> {
-        self.require_fillet_edit(request)?;
+        self.preview_edited_blend(request, oblikovati_automation::apply_fillet_radius_edit)
+    }
+
+    pub(super) fn preview_edited_chamfer(
+        &mut self,
+        request: &oblikovati_gui::GuiFilletEditRequest,
+    ) -> Result<bool, String> {
+        self.preview_edited_blend(request, oblikovati_automation::apply_chamfer_distance_edit)
+    }
+
+    fn preview_edited_blend(
+        &mut self,
+        request: &oblikovati_gui::GuiFilletEditRequest,
+        apply: fn(
+            &mut oblikovati_model::history::DocumentSnapshot,
+            &oblikovati_api::wire::EditFeatureArgs,
+        ) -> Result<oblikovati_model::feature::FeatureId, oblikovati_api::Error>,
+    ) -> Result<bool, String> {
+        self.require_blend_edit(request)?;
         self.clear_extrusion_preview();
         let session = self
             .files
@@ -220,7 +238,7 @@ impl<
         );
         let scene = session
             .preview_projected(
-                |candidate, _| oblikovati_automation::apply_fillet_radius_edit(candidate, &edit),
+                |candidate, _| apply(candidate, &edit),
                 |candidate, feature| {
                     self.part_scenes
                         .preview_feature_edit(&self.files, request.document, candidate, feature)
@@ -242,7 +260,7 @@ impl<
         &mut self,
         request: &oblikovati_gui::GuiFilletEditRequest,
     ) -> Result<bool, String> {
-        self.require_fillet_edit(request)?;
+        self.require_blend_edit(request)?;
         let edit = super::owner_extrusion_preview::feature_distance_request(
             request.feature.0,
             &request.radius,
