@@ -233,6 +233,12 @@ impl<
     fn measure_selected_face_from_gui(&mut self, document: u64, key: &str) -> Result<bool, String> {
         self.measure_selected_face(document, key)
     }
+    fn open_face_properties_from_gui(&mut self, document: u64, key: &str) -> Result<bool, String> {
+        self.open_face_properties(document, key)
+    }
+    fn close_face_properties_from_gui(&mut self) -> Result<bool, String> {
+        self.close_face_properties()
+    }
     fn set_ui_scale_from_gui(
         &mut self,
         options: oblikovati_model::ui_scale::UiScaleOptions,
@@ -449,6 +455,7 @@ impl<
         let changed = self.factory.take_changed() || serviced != 0;
         let changed = self.synchronize_sketch_edit() || changed;
         let changed = self.synchronize_model_pick_cue() || changed;
+        let changed = self.retire_stale_face_properties() || changed;
         let pending = self.dispatch.pending().map_err(|error| error.to_string())? != 0;
         Ok(HeadWorkStatus {
             changed,

@@ -217,6 +217,7 @@ impl<
             document_windows: self.document_windows.clone(),
             active_window: Some(self.active_view_slot()),
             measure: self.gui_measure_panel(),
+            face_properties: self.gui_face_properties(),
             region_properties: self.gui_region_panel(),
             sketch_hud: self.gui_sketch_hud(),
             precise_target: self.gui_precise_target(),

@@ -173,6 +173,8 @@
 
 ### Added
 
+- Added analytic face properties from the selected-face context menu. (#4053)
+
 - Show the type and highlight of a sketch entity under the pointer in Ready. (#4043)
 
 - Show the picked sketch entity type and sketch name near the pointer. (#4042)

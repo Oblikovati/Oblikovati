@@ -330,6 +330,52 @@ impl<
                 edit.document == document && !session.selected_sketch_picks(edit.sketch).is_empty()
             })
     }
+    /// Re-resolve one current face before an action consumes its identity.
+    pub(super) fn checked_selected_named_face(
+        &mut self,
+        document: u64,
+        key: &str,
+    ) -> Result<ChosenModelFace, String> {
+        self.require_browser_document(document)?;
+        let face = self.only_selected_named_face(document, key)?;
+        let resolved = self.part_scenes.selected_face_reference(
+            &mut self.files,
+            document,
+            face.feature,
+            &face.key,
+        )?;
+        if resolved != key {
+            return Err(format!(
+                "document {document}, selected face {key:?}: expected current face reference {resolved:?}"
+            ));
+        }
+        Ok(face)
+    }
+    pub(super) fn only_selected_named_face(
+        &self,
+        document: u64,
+        key: &str,
+    ) -> Result<ChosenModelFace, String> {
+        let [pick] = self.current_face_appearance_picks(document) else {
+            return Err(format!(
+                "document {document}, selected face {key:?}: expected exactly one current face"
+            ));
+        };
+        let session = self
+            .files
+            .workspace()
+            .session(document)
+            .map_err(|cause| cause.to_string())?;
+        if pick.key != key
+            || !self.chosen_model_edges(document).is_empty()
+            || !session.selected_browser_bodies().is_empty()
+        {
+            return Err(format!(
+                "document {document}, selected face {key:?}: expected the only current selected face"
+            ));
+        }
+        Ok(pick.face.clone())
+    }
     /// The face chosen in the view, while its document is the active one.
     pub(super) fn chosen_model_face(&self, document: u64) -> Option<ChosenModelFace> {
         self.model_face

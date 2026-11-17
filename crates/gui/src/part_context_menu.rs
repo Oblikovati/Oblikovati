@@ -21,7 +21,7 @@ pub(crate) fn canvas_menu(
         return false;
     };
     draw_configured_menu(ui, state, actions);
-    draw_selected_face_measure(ui, state, actions);
+    draw_selected_face_actions(ui, state, actions);
     let look_at = GuiShellAction::LookAtSelection;
     if ui
         .menu_item_config("Look At")
@@ -35,19 +35,32 @@ pub(crate) fn canvas_menu(
     }
     true
 }
-fn draw_selected_face_measure(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
+fn draw_selected_face_actions(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
     let Some(GuiShellAction::StartSketchOnSelectedFace { document, key }) =
         selected_face_action(state)
     else {
         return;
     };
-    let action = GuiShellAction::MeasureSelectedFace { document, key };
-    if ui
-        .menu_item_config("Measure")
-        .enabled(action.enabled(state))
-        .build()
-    {
-        actions.push(action);
+    for (label, action) in [
+        (
+            "Measure",
+            GuiShellAction::MeasureSelectedFace {
+                document,
+                key: key.clone(),
+            },
+        ),
+        (
+            "Properties",
+            GuiShellAction::OpenFaceProperties { document, key },
+        ),
+    ] {
+        if ui
+            .menu_item_config(label)
+            .enabled(action.enabled(state))
+            .build()
+        {
+            actions.push(action);
+        }
     }
 }
 fn draw_configured_menu(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
@@ -126,9 +139,15 @@ mod tests {
             document: 12,
             key: "face-1".into(),
         };
+        let properties = GuiShellAction::OpenFaceProperties {
+            document: 12,
+            key: "face-1".into(),
+        };
         assert!(measure.enabled(&state));
+        assert!(properties.enabled(&state));
         state.selected_face_appearances[0].0 = "face-2".into();
         assert!(!measure.enabled(&state));
+        assert!(!properties.enabled(&state));
         assert!(
             !original.enabled(&state),
             "a changed face must not execute a stale action"

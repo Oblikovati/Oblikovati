@@ -177,6 +177,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     face_appearance_picks: Vec<clear_appearance::SelectedFaceAppearance>,
     selected_occurrence: Option<(u64, oblikovati_gui::GuiOccurrencePath)>,
     part_measure: Option<part_measure::PartMeasure>,
+    face_properties: Option<(u64, u64, oblikovati_gui::GuiFaceProperties)>,
     inspected_file: Option<oblikovati_gui::GuiInspectedFile>,
     /// The feature whose dimensions a row's Show Dimensions put in the view.
     shown_feature_dimensions: Option<(u64, oblikovati_model::feature::FeatureId)>,
@@ -271,6 +272,7 @@ impl<
             face_appearance_picks: Vec::new(),
             selected_occurrence: None,
             part_measure: None,
+            face_properties: None,
             inspected_file: None,
             shown_feature_dimensions: None,
             body_physical: Default::default(),

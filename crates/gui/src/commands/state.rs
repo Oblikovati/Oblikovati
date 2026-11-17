@@ -135,6 +135,7 @@ pub struct GuiCommandState {
     pub active_window: Option<u64>,
     pub recent_documents: Vec<crate::GuiRecentDocument>,
     pub measure: Option<crate::GuiMeasurePanel>,
+    pub face_properties: Option<crate::GuiFaceProperties>,
     pub region_properties: Option<crate::GuiRegionPanel>,
     pub sketch_delete_available: bool,
     pub sketch_format_available: bool,
