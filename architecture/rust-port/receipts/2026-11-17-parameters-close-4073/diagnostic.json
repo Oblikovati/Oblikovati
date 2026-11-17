@@ -1,0 +1,11 @@
+{
+  "application_base": "7c7a2370c",
+  "provenance": "Native X11 regression; not a pinned BDD acceptance run.",
+  "result": "Parameters Done selected the remaining Material Browser tab and Parameters reopened in the same dock node.",
+  "checks": [
+    "Native X11 regression passed.",
+    "Head all-target Clippy and Windows GNU cross-build passed."
+  ],
+  "remaining": "Other programmatic close paths remain under audit in #4073.",
+  "environment": "Linux Xvfb with Mesa lavapipe; Windows GNU cross-build"
+}
