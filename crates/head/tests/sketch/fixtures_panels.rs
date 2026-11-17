@@ -111,7 +111,9 @@ impl ApplicationWorld {
     }
     /// Right-click on Undo lists what it would undo, a list only that popup shows.
     pub fn open_undo_history(&mut self) {
-        let undo = self.run("Undo").center().map(|value| value as i32);
+        let undo = super::super::super::quick_access_icons::standard_icon_center("Undo")
+            .expect("expected the Undo toolbar icon")
+            .map(|value| value as i32);
         self.right_click(undo);
         self.pump(Vec::new());
     }

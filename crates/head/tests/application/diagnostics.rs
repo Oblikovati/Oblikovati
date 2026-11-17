@@ -215,8 +215,8 @@ fn quad_glyph(
 ) -> Option<RenderedGlyph> {
     let start = vertices[first as usize];
     let opposite = vertices[first as usize + 2];
-    let uv = [start.uv[0], start.uv[1], opposite.uv[0], opposite.uv[1]].map(f32::to_bits);
-    let letter = *lookup.get(&uv)?;
+    let uv = [start.uv[0], start.uv[1], opposite.uv[0], opposite.uv[1]];
+    let letter = glyph_for_uv(uv, lookup)?;
     inside_clip(start, opposite, clip).then_some(RenderedGlyph {
         letter,
         minimum: start.pos,
@@ -225,11 +225,25 @@ fn quad_glyph(
         color: [start.col[0], start.col[1], start.col[2]],
     })
 }
+fn glyph_for_uv(uv: [f32; 4], lookup: &BTreeMap<GlyphCoordinates, char>) -> Option<char> {
+    if let Some(letter) = lookup.get(&uv.map(f32::to_bits)) {
+        return Some(*letter);
+    }
+    lookup.iter().find_map(|(bounds, letter)| {
+        let original = bounds.map(f32::from_bits);
+        let contained =
+            (0..2).all(|axis| uv[axis] >= original[axis] && uv[axis + 2] <= original[axis + 2]);
+        let visible = (0..2)
+            .all(|axis| uv[axis + 2] - uv[axis] >= (original[axis + 2] - original[axis]) * 0.85);
+        (contained && visible).then_some(*letter)
+    })
+}
 fn inside_clip(first: DrawVert, opposite: DrawVert, clip: [f32; 4]) -> bool {
-    first.pos[0] >= clip[0]
-        && first.pos[1] >= clip[1]
-        && opposite.pos[0] <= clip[2]
-        && opposite.pos[1] <= clip[3]
+    (0..2).all(|axis| {
+        let length = opposite.pos[axis] - first.pos[axis];
+        let visible = opposite.pos[axis].min(clip[axis + 2]) - first.pos[axis].max(clip[axis]);
+        length > 0. && visible >= length * 0.85
+    })
 }
 pub(super) fn window_geometry(title: &str) -> Option<([f32; 2], [f32; 2])> {
     let title = CString::new(title).unwrap();

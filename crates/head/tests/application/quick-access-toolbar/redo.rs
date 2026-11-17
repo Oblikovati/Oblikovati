@@ -20,10 +20,21 @@ fn inspect_toolbar(world: &mut ApplicationWorld) {
 #[then("Redo remains visible but disabled")]
 fn redo_is_disabled(world: &mut ApplicationWorld) {
     redo_present(world);
-    assert!(!world.run_is_enabled("Redo"), "expected Redo disabled");
+    let icon = super::super::quick_access_icons::standard_icon("Redo").unwrap();
+    assert!(icon.alpha < 255, "expected a disabled Redo icon");
 }
 
 #[then("the active part remains open")]
 fn active_part_remains(world: &mut ApplicationWorld) {
     part_stays(world);
+}
+
+#[test]
+fn undo_icon_keeps_its_history_menu() {
+    let mut world = ApplicationWorld::new();
+    part_active(&mut world);
+    world.right_click(row_center(&world, "Undo"));
+    world.pump(Vec::new());
+    world.expect_text("History Browser");
+    world.close();
 }

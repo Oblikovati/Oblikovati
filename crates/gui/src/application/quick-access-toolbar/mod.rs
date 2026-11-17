@@ -219,6 +219,8 @@ impl QuickAccessToolbar {
         for label in state.undo_labels.iter().rev() {
             ui.text(label);
         }
+        // The last row's descenders must fit inside the popup clip (#4068).
+        ui.dummy([0., 2.]);
     }
     fn added_entry(&mut self, ui: &Ui, entry: &AddedEntry, state: &GuiCommandState) {
         let AddedEntry::Command(label) = entry else {

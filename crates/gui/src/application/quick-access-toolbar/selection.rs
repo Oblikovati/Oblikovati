@@ -6,6 +6,7 @@ const MENU: &str = "##quick-access-selection";
 
 pub(super) fn button(
     ui: &Ui,
+    icons: &crate::icons::GuiRibbonIcons,
     state: &GuiCommandState,
     actions: &mut Vec<GuiShellAction>,
     open: &mut bool,
@@ -13,12 +14,13 @@ pub(super) fn button(
     let disabled =
         ui.begin_disabled(!GuiShellAction::SetSelectionMode(GuiSelectionMode::All).enabled(state));
     let requested = std::mem::take(open);
-    if ui.button("Select") || requested {
+    if icons.compact_button(ui, "Select", crate::icons::IconGlyph::Select) || requested {
         ui.open_popup(MENU);
     }
     drop(disabled);
     if let Some(_menu) = ui.begin_popup(MENU) {
         choices(ui, state, actions);
+        ui.dummy([0., 2.]);
     }
 }
 

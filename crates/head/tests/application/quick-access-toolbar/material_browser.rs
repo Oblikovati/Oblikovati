@@ -74,7 +74,8 @@ fn tools_selected(world: &mut ApplicationWorld) {
 #[given("the Material Browser quick access command is visible")]
 fn browser_command_visible(world: &mut ApplicationWorld) {
     assert!(on_row(world, "MaterialBrowser"));
-    assert!(world.run_is_enabled("Material Browser"));
+    let icon = super::super::quick_access_icons::standard_icon("Material Browser").unwrap();
+    assert_eq!(icon.alpha, 255, "expected an enabled Material Browser icon");
 }
 #[given("the Material Browser window is closed")]
 #[then("the browser window closes")]
