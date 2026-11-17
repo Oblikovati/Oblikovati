@@ -24,6 +24,9 @@ pub(super) fn sketch_row(
     ) {
         sketch_activation(ui, state, row.id, &action, actions);
     }
+    #[cfg(test)]
+    view.test_sketch_bounds
+        .insert(row.id.0, [ui.item_rect_min(), ui.item_rect_max()]);
     sketch_context_menu(ui, state, row, view, action, actions);
     block_instances(ui, state, row.id, actions);
     rectangular_patterns(ui, state, row.id, actions);
@@ -179,11 +182,15 @@ fn sketch_context_menu(
     let Some(_popup) = ui.begin_popup_context_item() else {
         return;
     };
-    if ui
+    let edit_selected = ui
         .menu_item_config("Edit Sketch")
         .enabled(action.dispatchable(state))
-        .build()
+        .build();
+    #[cfg(test)]
     {
+        view.test_edit_bounds = Some([ui.item_rect_min(), ui.item_rect_max()]);
+    }
+    if edit_selected {
         actions.push(action);
     }
     use crate::application::workspace_layout::browser_view::muted_menu_item;
@@ -195,6 +202,10 @@ fn sketch_context_menu(
     }
     muted_menu_item(ui, "Measure");
     sketch_visibility_menu(ui, state, row, actions);
+    #[cfg(test)]
+    {
+        view.test_visibility_bounds = Some([ui.item_rect_min(), ui.item_rect_max()]);
+    }
     if ui
         .menu_item_config("Dimension Visibility")
         .selected(row.dimensions_shown)
