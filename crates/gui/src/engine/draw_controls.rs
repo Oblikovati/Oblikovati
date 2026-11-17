@@ -172,7 +172,7 @@ impl GuiFrameEngine {
         self.document_tabs.previews.showing_document =
             request.commands.document.filter(|_| !self.home.active);
         if !self.home.active {
-            if !self.fillet_dialog.active() {
+            if !self.blend_dialog.active() {
                 crate::application::workspace_layout::browser_feature::selection_toolbar(
                     ui,
                     request,
@@ -186,13 +186,23 @@ impl GuiFrameEngine {
         }
         for action in &selected {
             if let GuiShellAction::OpenFilletEdit(feature) = action {
-                self.fillet_dialog.open_edit(&request.commands, *feature);
+                self.blend_dialog.open_edit(&request.commands, *feature);
             }
         }
         selected.retain(|action| !matches!(action, GuiShellAction::OpenFilletEdit(_)));
         if selected.contains(&GuiShellAction::OpenFillet) {
-            self.fillet_dialog.open(&request.commands);
+            if self.blend_dialog.active() {
+                self.blend_dialog.close(&mut selected);
+            }
+            self.blend_dialog.open(&request.commands);
             selected.retain(|action| !matches!(action, GuiShellAction::OpenFillet));
+        }
+        if selected.contains(&GuiShellAction::OpenChamfer) {
+            if self.blend_dialog.active() {
+                self.blend_dialog.close(&mut selected);
+            }
+            self.blend_dialog.open_chamfer(&request.commands);
+            selected.retain(|action| !matches!(action, GuiShellAction::OpenChamfer));
         }
         self.home.panel(ui, &request.commands, area, &mut selected);
         let home_requests = std::mem::take(&mut self.home.requests);
@@ -223,7 +233,7 @@ impl GuiFrameEngine {
             self.plane_selection.active,
             &mut selected,
         );
-        self.fillet_dialog
+        self.blend_dialog
             .panel(ui, &request.commands, &mut selected);
         self.offset_plane
             .panel(ui, &request.commands, &mut selected);

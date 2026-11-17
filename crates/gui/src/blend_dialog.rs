@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Dockable fillet draft; the owner holds the temporary preview (#4045).
+//! Dockable blend draft; the owner holds the temporary preview (#4045, #4046).
 use crate::dockable_window::DockableWindow;
 use crate::{GuiCommandState, GuiFilletRequest, GuiShellAction};
 use imgui::Ui;
 
 #[derive(Default)]
-pub(crate) struct FilletDialog {
+pub(crate) struct BlendDialog {
+    chamfer: bool,
     document: Option<u64>,
     radius: String,
     attempted: Option<GuiFilletRequest>,
@@ -14,12 +15,13 @@ pub(crate) struct FilletDialog {
     attempted_edit: Option<crate::GuiFilletEditRequest>,
     submitted_edit: Option<crate::GuiFilletEditRequest>,
 }
-impl DockableWindow for FilletDialog {}
-impl FilletDialog {
+impl DockableWindow for BlendDialog {}
+impl BlendDialog {
     pub(crate) fn active(&self) -> bool {
         self.document.is_some()
     }
     pub(crate) fn open(&mut self, state: &GuiCommandState) {
+        self.chamfer = false;
         self.document = state.document;
         self.radius = "2 mm".into();
         self.attempted = None;
@@ -28,11 +30,17 @@ impl FilletDialog {
         self.attempted_edit = None;
         self.submitted_edit = None;
     }
+    pub(crate) fn open_chamfer(&mut self, state: &GuiCommandState) {
+        self.open(state);
+        self.chamfer = true;
+        self.radius = "1 mm".into();
+    }
     pub(crate) fn open_edit(
         &mut self,
         state: &GuiCommandState,
         feature: oblikovati_model::feature::FeatureId,
     ) {
+        self.chamfer = false;
         let Some(seed) = state
             .browser
             .as_ref()
@@ -67,9 +75,9 @@ impl FilletDialog {
             radius: self.radius.clone(),
         })
     }
-    fn close(&mut self, actions: &mut Vec<GuiShellAction>) {
+    pub(crate) fn close(&mut self, actions: &mut Vec<GuiShellAction>) {
         if self.document.take().is_some() {
-            actions.push(GuiShellAction::PreviewFillet(None));
+            actions.push(self.preview_action(None));
         }
         self.attempted = None;
         self.submitted = None;
@@ -111,14 +119,10 @@ impl FilletDialog {
             return;
         }
         let display = ui.io().display_size;
-        Self::fit_dockable(
-            ui,
-            "Fillet",
-            [(display[0] - 380.).max(0.), 170.],
-            [360., 190.],
-        );
+        let title = if self.chamfer { "Chamfer" } else { "Fillet" };
+        Self::fit_dockable(ui, title, [(display[0] - 380.).max(0.), 170.], [360., 190.]);
         let mut open = true;
-        Self::dockable_window(ui, "Fillet", &mut open).build(|| {
+        Self::dockable_window(ui, title, &mut open).build(|| {
             if self.edit.is_none() {
                 let selection = match state.selected_edge_count {
                     0 => "Select Edges".to_owned(),
@@ -127,7 +131,8 @@ impl FilletDialog {
                 };
                 ui.text(selection);
             }
-            if ui.input_text("Radius", &mut self.radius).build() {
+            let label = if self.chamfer { "Distance" } else { "Radius" };
+            if ui.input_text(label, &mut self.radius).build() {
                 self.submitted = None;
             }
             self.refresh_preview(state, actions);
@@ -155,17 +160,18 @@ impl FilletDialog {
             return;
         }
         let request = self.request(state).filter(|request| {
-            GuiShellAction::PreviewFillet(Some(request.clone())).dispatchable(state)
+            self.preview_action(Some(request.clone()))
+                .dispatchable(state)
         });
         if request == self.attempted {
             return;
         }
         if self.attempted.is_some() {
-            actions.push(GuiShellAction::PreviewFillet(None));
+            actions.push(self.preview_action(None));
         }
         self.attempted = request.clone();
         if let Some(request) = request {
-            actions.push(GuiShellAction::PreviewFillet(Some(request)));
+            actions.push(self.preview_action(Some(request)));
         }
     }
     fn controls(&mut self, ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
@@ -175,14 +181,14 @@ impl FilletDialog {
         }
         let request = self
             .request(state)
-            .filter(|request| GuiShellAction::CreateFillet(request.clone()).dispatchable(state));
+            .filter(|request| self.create_action(request.clone()).dispatchable(state));
         let disabled = ui.begin_disabled(request.is_none());
         if (ui.button("OK")
             || (ui.is_window_focused() && ui.is_key_pressed_no_repeat(imgui::Key::Enter)))
             && let Some(request) = request
         {
             self.submitted = Some(request.clone());
-            actions.push(GuiShellAction::CreateFillet(request));
+            actions.push(self.create_action(request));
         }
         drop(disabled);
         ui.same_line();
@@ -190,6 +196,22 @@ impl FilletDialog {
             || (ui.is_window_focused() && ui.is_key_pressed_no_repeat(imgui::Key::Escape))
         {
             self.close(actions);
+        }
+    }
+
+    fn preview_action(&self, request: Option<GuiFilletRequest>) -> GuiShellAction {
+        if self.chamfer {
+            GuiShellAction::PreviewChamfer(request)
+        } else {
+            GuiShellAction::PreviewFillet(request)
+        }
+    }
+
+    fn create_action(&self, request: GuiFilletRequest) -> GuiShellAction {
+        if self.chamfer {
+            GuiShellAction::CreateChamfer(request)
+        } else {
+            GuiShellAction::CreateFillet(request)
         }
     }
     fn edit_controls(
@@ -250,7 +272,7 @@ mod tests {
         });
         state.browser = Some(browser);
         assert!(GuiShellAction::OpenFillet.enabled(&state));
-        let mut dialog = FilletDialog::default();
+        let mut dialog = BlendDialog::default();
         dialog.open(&state);
         let empty = dialog.request(&state).unwrap();
         assert!(!GuiShellAction::CreateFillet(empty).enabled(&state));
@@ -262,7 +284,7 @@ mod tests {
     }
     #[test]
     fn draft_previews_each_selection_once_and_cancel_clears_it() {
-        let mut dialog = FilletDialog::default();
+        let mut dialog = BlendDialog::default();
         let mut state = selected_state();
         let mut actions = Vec::new();
         dialog.open(&state);
@@ -291,6 +313,25 @@ mod tests {
     }
 
     #[test]
+    fn chamfer_draft_previews_once_and_cancel_clears_it() {
+        let state = selected_state();
+        let mut dialog = BlendDialog::default();
+        let mut actions = Vec::new();
+        dialog.open_chamfer(&state);
+        dialog.refresh_preview(&state, &mut actions);
+        let GuiShellAction::PreviewChamfer(Some(request)) = &actions[0] else {
+            panic!("expected chamfer preview")
+        };
+        assert_eq!(request.radius, "1 mm");
+        assert!(dialog.create_action(request.clone()).enabled(&state));
+        actions.clear();
+        dialog.refresh_preview(&state, &mut actions);
+        assert!(actions.is_empty());
+        dialog.close(&mut actions);
+        assert_eq!(actions, [GuiShellAction::PreviewChamfer(None)]);
+    }
+
+    #[test]
     fn edit_uses_authored_radius_and_rejects_a_stale_generation() {
         let feature = oblikovati_model::feature::FeatureId(9);
         let mut state = selected_state();
@@ -303,7 +344,7 @@ mod tests {
             },
         );
         state.browser = Some(browser);
-        let mut dialog = FilletDialog::default();
+        let mut dialog = BlendDialog::default();
         let mut actions = Vec::new();
         dialog.open_edit(&state, feature);
         dialog.refresh_preview(&state, &mut actions);

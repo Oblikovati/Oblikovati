@@ -32,3 +32,17 @@ pub struct GuiExtrudeEditRequest {
     pub feature: oblikovati_model::feature::FeatureId,
     pub distance: String,
 }
+
+/// Sheet-space display geometry and any model-resolution failure.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct GuiDrawingProjection {
+    pub lines: Vec<GuiDrawingLine>,
+    pub error: Option<String>,
+}
+/// One sampled edge in sheet millimetres.
+#[derive(Clone, Debug, PartialEq)]
+pub struct GuiDrawingLine {
+    pub points: Vec<[f64; 2]>,
+    pub hidden: bool,
+    pub preview: bool,
+}

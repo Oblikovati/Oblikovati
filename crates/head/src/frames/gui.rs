@@ -394,12 +394,15 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::FinishSketch
         | GuiShellAction::OpenExtrude
         | GuiShellAction::OpenFillet
+        | GuiShellAction::OpenChamfer
         | GuiShellAction::OpenFilletEdit(_)
         | GuiShellAction::PreviewFilletEdit(_)
         | GuiShellAction::EditFilletRadius(_)
         | GuiShellAction::LookAtSelection
         | GuiShellAction::PreviewFillet(_)
         | GuiShellAction::CreateFillet(_)
+        | GuiShellAction::PreviewChamfer(_)
+        | GuiShellAction::CreateChamfer(_)
         | GuiShellAction::OpenOffsetPlane
         | GuiShellAction::ValidateOffsetPlane { .. }
         | GuiShellAction::CreateOffsetPlane { .. }

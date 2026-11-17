@@ -260,6 +260,8 @@ pub enum GuiShellAction {
     OpenExtrude,
     /// Open a fillet draft for selected edges.
     OpenFillet,
+    /// Open an equal-distance chamfer draft for selected edges.
+    OpenChamfer,
     OpenFilletEdit(oblikovati_model::feature::FeatureId),
     PreviewFilletEdit(GuiFilletEditRequest),
     EditFilletRadius(GuiFilletEditRequest),
@@ -267,8 +269,12 @@ pub enum GuiShellAction {
     LookAtSelection,
     /// Show or clear a private fillet candidate.
     PreviewFillet(Option<GuiFilletRequest>),
+    /// Show or clear a private chamfer candidate.
+    PreviewChamfer(Option<GuiFilletRequest>),
     /// Commit a fillet after validating its selected edges and radius.
     CreateFillet(GuiFilletRequest),
+    /// Commit a chamfer after validating its selected edges and distance.
+    CreateChamfer(GuiFilletRequest),
     /// Reopen an existing extrusion's distance draft.
     OpenExtrudeEdit(oblikovati_model::feature::FeatureId),
     /// Commit an existing extrusion's distance through the typed lifecycle operation.
@@ -359,7 +365,8 @@ pub struct GuiBaseViewRequest {
 }
 mod feature_requests;
 pub use feature_requests::{
-    GuiExtrudeEditRequest, GuiExtrudePreview, GuiFilletEditRequest, GuiFilletRequest,
+    GuiDrawingLine, GuiDrawingProjection, GuiExtrudeEditRequest, GuiExtrudePreview,
+    GuiFilletEditRequest, GuiFilletRequest,
 };
 /// Owner validation for one extrusion expression and active document.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -472,19 +479,6 @@ pub struct GuiDocumentStorage {
     pub path: Option<String>,
     /// Closing without saving would lose work; a new, untouched part has none to lose.
     pub unsaved_edits: bool,
-}
-/// Sheet-space display geometry and any model-resolution failure.
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct GuiDrawingProjection {
-    pub lines: Vec<GuiDrawingLine>,
-    pub error: Option<String>,
-}
-/// One sampled edge in sheet millimetres.
-#[derive(Clone, Debug, PartialEq)]
-pub struct GuiDrawingLine {
-    pub points: Vec<[f64; 2]>,
-    pub hidden: bool,
-    pub preview: bool,
 }
 mod state;
 pub use state::GuiCommandState;

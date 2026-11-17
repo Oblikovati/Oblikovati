@@ -13,6 +13,15 @@ pub(super) fn create(state: &GuiCommandState) -> bool {
                 .as_ref()
                 .is_some_and(|browser| browser.bodies.iter().any(|body| body.visible)))
 }
+pub(super) fn request(state: &GuiCommandState, request: &GuiFilletRequest) -> bool {
+    create(state)
+        && state.document == Some(request.document)
+        && !request.edges.is_empty()
+        && request.edges.len() == state.selected_edge_count
+        && state.fillet_selection.as_ref() == Some(&(request.generation, request.edges.clone()))
+        && !request.radius.trim().is_empty()
+        && !request.radius.contains('\0')
+}
 pub(super) fn open(state: &GuiCommandState, feature: oblikovati_model::feature::FeatureId) -> bool {
     state.fillet_available
         && state.document.is_some()

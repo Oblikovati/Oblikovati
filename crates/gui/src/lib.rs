@@ -116,9 +116,9 @@ pub use sketch_tools::GuiSketchTool;
 mod sketch_constraints;
 pub use sketch_constraints::GuiSketchConstraint;
 
+mod blend_dialog;
 mod dimensions;
 mod extrude_dialog;
-mod fillet_dialog;
 mod marking_menu;
 mod offset_plane;
 mod part_context_menu;

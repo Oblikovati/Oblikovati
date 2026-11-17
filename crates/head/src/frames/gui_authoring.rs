@@ -184,12 +184,15 @@ fn sketch(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, Str
         GuiShellAction::FinishSketch => owner.edit_sketch_from_gui(false),
         GuiShellAction::OpenExtrude => Ok(false),
         GuiShellAction::OpenFillet => Ok(false),
+        GuiShellAction::OpenChamfer => Ok(false),
         GuiShellAction::OpenFilletEdit(_) => Ok(false),
         GuiShellAction::PreviewFilletEdit(request) => owner.preview_fillet_edit(request),
         GuiShellAction::EditFilletRadius(request) => owner.commit_fillet_edit(request),
         GuiShellAction::LookAtSelection => Ok(false),
         GuiShellAction::PreviewFillet(request) => owner.preview_fillet_from_gui(request.as_ref()),
         GuiShellAction::CreateFillet(request) => owner.commit_fillet_from_gui(request),
+        GuiShellAction::PreviewChamfer(request) => owner.preview_chamfer_from_gui(request.as_ref()),
+        GuiShellAction::CreateChamfer(request) => owner.commit_chamfer_from_gui(request),
         GuiShellAction::OpenOffsetPlane => Ok(false),
         GuiShellAction::ValidateOffsetPlane { document, offset } => {
             owner.validate_offset_plane_from_gui(*document, offset)

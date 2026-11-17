@@ -255,10 +255,13 @@ fn browser_block_instances(
 fn feature_kind_name(
     definition: &oblikovati_model::feature::part::PartFeatureDefinition,
 ) -> &'static str {
-    use oblikovati_model::feature::part::PartFeatureDefinition::{DeleteBody, Fillet, SketchPrism};
+    use oblikovati_model::feature::part::PartFeatureDefinition::{
+        Chamfer, DeleteBody, Fillet, SketchPrism,
+    };
     match definition {
         SketchPrism(_) => "Extrusion",
         Fillet(_) => "Fillet",
+        Chamfer(_) => "Chamfer",
         DeleteBody(_) => "Delete Body",
         oblikovati_model::feature::part::PartFeatureDefinition::Fixed(_)
         | oblikovati_model::feature::part::PartFeatureDefinition::Offset { .. }

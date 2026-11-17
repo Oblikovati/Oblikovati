@@ -98,7 +98,7 @@ impl<
         self.extrusion_preview
             .as_ref()
             .is_some_and(|(_, _, _, kind)| {
-                *kind == super::owner_extrusion_preview::PreviewKind::FilletInput
+                *kind == super::owner_extrusion_preview::PreviewKind::BlendInput
             })
     }
     fn browser_outline_source(&self) -> Option<BrowserOutlineSource> {

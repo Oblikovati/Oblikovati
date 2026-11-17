@@ -5,7 +5,7 @@ use super::*;
 pub(super) enum PreviewKind {
     Additive,
     Replacement,
-    FilletInput,
+    BlendInput,
 }
 pub(super) type ScenePreview = (u64, u64, oblikovati_viewport::ViewportScene, PreviewKind);
 impl<

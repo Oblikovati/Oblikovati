@@ -21,7 +21,7 @@ fn solid_is_available(world: &mut ApplicationWorld) {
 
 #[when("the user clicks an eligible model entity requested by that field")]
 #[when("the user picks the required entities")]
-fn pick_fillet_edge(world: &mut ApplicationWorld) {
+pub(super) fn pick_fillet_edge(world: &mut ApplicationWorld) {
     let point = first_top_edge_midpoint(world);
     let pixel = world.app().window.native.view.model_pixel(point).unwrap();
     super::super::x11_input::click(pixel);

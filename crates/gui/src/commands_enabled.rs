@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-#[path = "commands/fillet_enabled.rs"]
-mod fillet_enabled;
+#[path = "commands/blend_enabled.rs"]
+mod blend_enabled;
 impl GuiShellAction {
     /// Preserve Go empty-stack enablement; example: `GuiShellAction::Undo.enabled(&state)`.
     pub fn enabled(&self, state: &GuiCommandState) -> bool {
@@ -328,22 +328,18 @@ impl GuiShellAction {
                     }
             }
             Self::LookAtSelection => state.look_at_available,
-            Self::OpenFillet => fillet_enabled::create(state),
+            Self::OpenFillet => blend_enabled::create(state),
+            Self::OpenChamfer => blend_enabled::create(state),
             Self::PreviewFillet(None) => true,
-            Self::OpenFilletEdit(feature) => fillet_enabled::open(state, *feature),
+            Self::PreviewChamfer(None) => true,
+            Self::OpenFilletEdit(feature) => blend_enabled::open(state, *feature),
             Self::PreviewFilletEdit(request) | Self::EditFilletRadius(request) => {
-                fillet_enabled::edit(state, request)
+                blend_enabled::edit(state, request)
             }
-            Self::PreviewFillet(Some(request)) | Self::CreateFillet(request) => {
-                Self::OpenFillet.enabled(state)
-                    && state.document == Some(request.document)
-                    && !request.edges.is_empty()
-                    && request.edges.len() == state.selected_edge_count
-                    && state.fillet_selection.as_ref()
-                        == Some(&(request.generation, request.edges.clone()))
-                    && !request.radius.trim().is_empty()
-                    && !request.radius.contains('\0')
-            }
+            Self::PreviewFillet(Some(request))
+            | Self::CreateFillet(request)
+            | Self::PreviewChamfer(Some(request))
+            | Self::CreateChamfer(request) => blend_enabled::request(state, request),
             Self::OpenExtrude => {
                 state.extrude_available
                     && state.authoring == GuiAuthoringContext::Part

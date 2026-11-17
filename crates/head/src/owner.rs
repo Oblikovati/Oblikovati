@@ -467,12 +467,12 @@ mod application_themes;
 mod marking_menu;
 #[path = "owner_orientation_selection.rs"]
 mod orientation_selection;
+#[path = "owner_blend.rs"]
+mod owner_blend;
 #[path = "owner_command_state.rs"]
 mod owner_command_state;
 #[path = "owner_extrusion.rs"]
 mod owner_extrusion;
-#[path = "owner_fillet.rs"]
-mod owner_fillet;
 #[path = "owner_host.rs"]
 mod owner_host;
 #[path = "owner_prompts.rs"]

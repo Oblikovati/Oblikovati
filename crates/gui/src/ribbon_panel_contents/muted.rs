@@ -42,15 +42,12 @@ pub(super) fn part_modify_controls(
     }
     drop(disabled);
     let size = muted_command_position(ui, origin, icons, 2);
-    muted_command(
-        ui,
-        "Chamfer",
-        NOT_PORTED,
-        icons,
-        Some(IconGlyph::Chamfer),
-        false,
-        size,
-    );
+    let action = crate::GuiShellAction::OpenChamfer;
+    let disabled = ui.begin_disabled(!action.dispatchable(state));
+    if icons.button(ui, "Chamfer", IconGlyph::Chamfer, size) {
+        actions.push(action);
+    }
+    drop(disabled);
 }
 pub(super) fn muted_icon_commands(
     ui: &Ui,
