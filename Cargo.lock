@@ -1732,6 +1732,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "tempfile",
+ "x11-dl",
  "x11rb",
  "xml",
 ]
