@@ -117,15 +117,16 @@ impl WorkspaceLayout {
         &mut self,
         ui: &Ui,
         state: &GuiCommandState,
-        height: f32,
-        band_height: f32,
+        bounds: (f32, f32),
+        document_area: crate::application::document_creation::workspaces::WorkspaceArea,
         part_context_open: bool,
         actions: &mut Vec<GuiShellAction>,
     ) {
         self.pending_layout = false;
         self.view.arrow_consumed = false;
         self.view.feature_keyboard_focus = false;
-        self.view.document_area = Some(self.document_area(ui.io().display_size, band_height));
+        let (height, band_height) = bounds;
+        self.view.document_area = Some(document_area);
         self.view.view_clicks_taken = self.view_clicks_taken;
         browser_origin::follow_view_click(ui, state, &mut self.view, part_context_open, actions);
         if !self.panels.dock_visible() {
@@ -313,11 +314,6 @@ impl WorkspaceLayout {
             }
             _ => (0., width.max(1.)),
         }
-    }
-    /// Align the tab strip with the document viewport and any side ribbons.
-    /// Example: `layout.tab_strip_span(1440.)` for the bottom row.
-    pub(crate) fn tab_strip_span(&self, width: f32) -> (f32, f32) {
-        self.tab_span(width)
     }
     /// Reserve the tab row only while tabs are visible; example: `layout.tab_height()`.
     pub(crate) fn tab_height(&self) -> f32 {

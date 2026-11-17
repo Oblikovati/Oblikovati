@@ -293,11 +293,20 @@ pub(super) fn window_occlusions() -> Vec<[f32; 4]> {
     let windows =
         unsafe { std::slice::from_raw_parts(context.Windows.Data, context.Windows.Size as usize) };
     let scale = context.IO.DisplayFramebufferScale;
+    let dock_host = CString::new("##workspace-docking-host").unwrap();
+    let dock_host = unsafe { sys::igFindWindowByName(dock_host.as_ptr()) };
     windows
         .iter()
         .filter_map(|window| {
+            if *window == dock_host {
+                return None;
+            }
             let window = unsafe { window.as_ref() }?;
             if !window.Active || window.Hidden {
+                return None;
+            }
+            let name = unsafe { std::ffi::CStr::from_ptr(window.Name) }.to_bytes();
+            if name.starts_with(b"##workspace-docking-host/DockSpace_") {
                 return None;
             }
             let bounds = window.OuterRectClipped;
