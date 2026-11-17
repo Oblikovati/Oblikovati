@@ -3,8 +3,8 @@
 use super::*;
 use oblikovati_martensite::{CertifiedNamedSolidEvaluator, PrismResolutionPolicy};
 use oblikovati_model::{
-    history::DocumentEditHistory,
-    identity::{DocumentGuid, RecipeIdAllocator},
+    history::{DocumentEditHistory, SnapshotReplay},
+    identity::DocumentGuid,
 };
 
 /// A document-scoped validator for private, solved candidates.
@@ -101,13 +101,14 @@ impl CertifiedFilletValidation {
                 authored.definition().kind()
             ));
         }
-        let ids = RecipeIdAllocator::restore(None, candidate.parameters.ids())
-            .map_err(|cause| cause.to_string())?;
-        let history =
-            DocumentEditHistory::new(candidate.clone(), ids).map_err(|cause| cause.to_string())?;
-        let mut evaluator =
-            CertifiedNamedSolidEvaluator::with_policy(&history, self.document, self.policy);
+        let history = SnapshotReplay::new(candidate).map_err(|cause| cause.to_string())?;
+        let mut evaluator = CertifiedNamedSolidEvaluator::with_policy(
+            history.history(),
+            self.document,
+            self.policy,
+        );
         let result = history
+            .history()
             .snapshot()
             .evaluate_part_features(&mut evaluator)
             .map_err(|cause| cause.to_string())?;

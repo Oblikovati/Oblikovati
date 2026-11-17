@@ -325,3 +325,19 @@ fn owned_part_members_cannot_be_dropped_from_history() {
     ));
     assert!(history.snapshot().model_states.is_some());
 }
+
+#[test]
+fn snapshot_replay_reserves_model_state_ids_without_changing_snapshot() {
+    let mut snapshot = empty_history().snapshot().clone();
+    let mut members = crate::model_state::ModelStateMembers::default();
+    members.insert(20, "Variant").unwrap();
+    snapshot.model_states = Some(members);
+    let replay = SnapshotReplay::new(&snapshot).unwrap();
+    let replay = replay.history();
+    assert_eq!(replay.high_water(), 20);
+    assert_eq!(replay.snapshot().model_states, snapshot.model_states);
+    assert_eq!(
+        replay.snapshot().parameters.ids(),
+        snapshot.parameters.ids()
+    );
+}

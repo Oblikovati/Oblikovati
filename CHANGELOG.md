@@ -201,6 +201,8 @@
 
 ### Fixed
 
+- Allow Fillet and Chamfer creation after model-state changes and reopening a part. (#4080)
+
 - Preserved dock tabs when tool windows close, suspend, or reopen. (#4073)
 
 - Replayed fillets and chamfers consistently in drawing, feature health, and extrusion preview. (#4074)

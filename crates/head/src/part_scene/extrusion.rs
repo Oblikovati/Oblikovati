@@ -7,8 +7,8 @@ use oblikovati_martensite::{
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
     feature::{FeatureId, sketch_prism::SketchPrismSelection},
-    history::{DocumentEditHistory, DocumentSnapshot},
-    identity::{DocumentGuid, RecipeIdAllocator},
+    history::{DocumentSnapshot, SnapshotReplay},
+    identity::DocumentGuid,
 };
 
 pub(crate) struct CertifiedExtrudeAccess(pub PrismResolutionPolicy);
@@ -49,7 +49,8 @@ impl ExtrudeRegionAccess for CertifiedExtrudeAccess {
         feature: FeatureId,
     ) -> Result<usize, String> {
         let history = candidate_history(candidate)?;
-        let mut backend = CertifiedNamedSolidEvaluator::with_policy(&history, document, self.0);
+        let mut backend =
+            CertifiedNamedSolidEvaluator::with_policy(history.history(), document, self.0);
         let replay = candidate
             .evaluate_part_features(&mut backend)
             .map_err(|cause| cause.to_string())?;
@@ -69,7 +70,8 @@ impl ExtrudeRegionAccess for CertifiedExtrudeAccess {
     ) -> Result<String, String> {
         use oblikovati_model::feature::FeatureEvaluationStatus;
         let history = candidate_history(candidate)?;
-        let mut backend = CertifiedNamedSolidEvaluator::with_policy(&history, document, self.0);
+        let mut backend =
+            CertifiedNamedSolidEvaluator::with_policy(history.history(), document, self.0);
         let replay = candidate
             .evaluate_part_features(&mut backend)
             .map_err(|cause| cause.to_string())?;
@@ -85,24 +87,6 @@ impl ExtrudeRegionAccess for CertifiedExtrudeAccess {
     }
 }
 
-fn candidate_history(candidate: &DocumentSnapshot) -> Result<DocumentEditHistory, String> {
-    // Replay does not allocate IDs; include both live uses of the recipe stream (#4074).
-    let highest = candidate
-        .parameters
-        .ids()
-        .iter()
-        .copied()
-        .chain(
-            candidate
-                .model_states
-                .iter()
-                .flat_map(|states| states.list())
-                .filter(|state| state.id != 1)
-                .map(|state| state.id),
-        )
-        .max()
-        .unwrap_or(0);
-    let ids = RecipeIdAllocator::restore(Some(highest), candidate.parameters.ids())
-        .map_err(|cause| cause.to_string())?;
-    DocumentEditHistory::new(candidate.clone(), ids).map_err(|cause| cause.to_string())
+fn candidate_history(candidate: &DocumentSnapshot) -> Result<SnapshotReplay, String> {
+    SnapshotReplay::new(candidate).map_err(|cause| cause.to_string())
 }
