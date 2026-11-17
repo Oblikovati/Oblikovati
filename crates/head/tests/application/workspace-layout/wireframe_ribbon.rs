@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Read the application and ribbon rows from the completed native frame (#4062).
 use super::{ApplicationWorld, diagnostics, quick_access_icons};
-use cucumber::{given, then};
+use cucumber::{given, then, when};
 
 pub(super) fn assert_controls_above_tabs(world: &ApplicationWorld) {
     let file = world.run("File");
@@ -127,4 +127,43 @@ fn panel_titles_below_commands(world: &mut ApplicationWorld) {
             title.text
         );
     }
+}
+
+#[when("the user inspects the ribbon navigation row")]
+fn inspect_navigation_row(world: &mut ApplicationWorld) {
+    world.pump(Vec::new());
+}
+
+#[then("File and the command tabs share one row beneath the application bar")]
+fn navigation_row_below_bar(world: &mut ApplicationWorld) {
+    assert_controls_above_tabs(world);
+    assert_tabs_share_row(world);
+}
+
+#[then("the Tools ribbon tab appears once in that row")]
+#[then("no separate Tools menu appears before the ribbon tabs")]
+fn one_tools_tab(world: &mut ApplicationWorld) {
+    let file = world.run("File");
+    let tools: Vec<_> = world
+        .frame
+        .runs
+        .iter()
+        .filter(|run| run.text == "Tools")
+        .collect();
+    assert_eq!(tools.len(), 1, "expected one Tools item in the window");
+    assert!(
+        tools[0].minimum[0] > file.maximum[0],
+        "Tools must follow File"
+    );
+    assert!(
+        (tools[0].center()[1] - file.center()[1]).abs() < 12.,
+        "Tools must share the tab row"
+    );
+}
+
+#[then("the active part remains displayed")]
+fn active_part_remains(world: &mut ApplicationWorld) {
+    assert!(world.previous_document.is_some());
+    assert_eq!(world.state().document, world.previous_document);
+    world.expect_text("End of Part");
 }

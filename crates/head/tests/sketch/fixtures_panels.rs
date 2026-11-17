@@ -102,7 +102,7 @@ impl ApplicationWorld {
     pub fn open_application_options(&mut self) {
         self.click_text("Tools");
         self.pump(Vec::new());
-        self.click_text("Application Options...");
+        self.click_text("Application Options");
         self.pump(Vec::new());
     }
     pub fn close_application_options(&mut self) {
