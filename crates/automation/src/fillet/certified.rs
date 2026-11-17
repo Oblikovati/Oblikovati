@@ -28,7 +28,7 @@ impl FilletAccess for CertifiedFilletAccess {
         edges: &[Vec<u8>],
     ) -> Result<Vec<u8>, String> {
         if edges.is_empty() {
-            return Err("fillet edges []: expected at least one exact edge key".into());
+            return Err("blend edges []: expected at least one exact edge key".into());
         }
         let mut evaluator = CertifiedNamedSolidEvaluator::with_policy(history, document, self.0);
         let evaluated = history
@@ -45,7 +45,7 @@ impl FilletAccess for CertifiedFilletAccess {
         match owners.as_slice() {
             [body] => Ok(body.clone()),
             _ => Err(format!(
-                "fillet edges {edges:?}, matching bodies {}: expected one current body containing every edge",
+                "blend edges {edges:?}, matching bodies {}: expected one current body containing every edge",
                 owners.len()
             )),
         }
@@ -56,7 +56,17 @@ impl FilletAccess for CertifiedFilletAccess {
         candidate: &DocumentSnapshot,
         feature: FeatureId,
     ) -> Result<usize, String> {
-        CertifiedFilletValidation::new(document, self.0)?.validate_count(candidate, feature)
+        CertifiedFilletValidation::new(document, self.0)?
+            .validate_count(candidate, feature, "fillet")
+    }
+    fn validate_chamfer(
+        &self,
+        document: DocumentGuid,
+        candidate: &DocumentSnapshot,
+        feature: FeatureId,
+    ) -> Result<usize, String> {
+        CertifiedFilletValidation::new(document, self.0)?
+            .validate_count(candidate, feature, "chamfer")
     }
 }
 impl CertifiedFilletValidation {
@@ -70,7 +80,8 @@ impl CertifiedFilletValidation {
 }
 impl FilletValidation for CertifiedFilletValidation {
     fn validate(&self, candidate: &DocumentSnapshot, feature: FeatureId) -> Result<(), String> {
-        self.validate_count(candidate, feature).map(|_| ())
+        self.validate_count(candidate, feature, "fillet")
+            .map(|_| ())
     }
 }
 impl CertifiedFilletValidation {
@@ -78,17 +89,15 @@ impl CertifiedFilletValidation {
         &self,
         candidate: &DocumentSnapshot,
         feature: FeatureId,
+        expected: &str,
     ) -> Result<usize, String> {
         let authored = candidate
             .work_geometry
             .get(feature)
             .map_err(|cause| cause.to_string())?;
-        if !matches!(
-            authored.definition(),
-            oblikovati_model::feature::part::PartFeatureDefinition::Fillet(_)
-        ) {
+        if authored.definition().kind() != expected {
             return Err(format!(
-                "feature {feature:?}, kind {}: expected a fillet",
+                "feature {feature:?}, kind {}: expected {expected}",
                 authored.definition().kind()
             ));
         }
@@ -104,7 +113,7 @@ impl CertifiedFilletValidation {
             .map_err(|cause| cause.to_string())?;
         if result.body(feature).is_none() {
             return Err(format!(
-                "fillet {feature:?}, health {:?}: expected a valid named result",
+                "{expected} {feature:?}, health {:?}: expected a valid named result",
                 result.health()
             ));
         }

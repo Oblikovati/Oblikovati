@@ -425,6 +425,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
             if args.kind == oblikovati_api::wire::featureargs::KIND_FILLET {
                 return crate::fillet::apply_wire(self.files, self.fillet, args);
             }
+            if args.kind == oblikovati_api::wire::featureargs::KIND_CHAMFER {
+                return crate::chamfer::apply(self.files, self.fillet, args);
+            }
             return crate::extrusion::apply(self.files, self.extrusion, request);
         }
         if method == METHOD_FEATURES_SET_SUPPRESSED {

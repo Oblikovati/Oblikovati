@@ -26,6 +26,17 @@ pub trait FilletAccess {
         candidate: &DocumentSnapshot,
         feature: FeatureId,
     ) -> Result<usize, String>;
+    /// Validate a chamfer candidate; example: `access.validate_chamfer(document, candidate, feature)?`.
+    fn validate_chamfer(
+        &self,
+        _document: oblikovati_model::identity::DocumentGuid,
+        _candidate: &DocumentSnapshot,
+        feature: FeatureId,
+    ) -> Result<usize, String> {
+        Err(format!(
+            "chamfer {feature:?}: expected an available certified evaluator"
+        ))
+    }
 }
 
 /// Geometry validation performed before a fillet candidate is adopted.
@@ -72,20 +83,24 @@ pub fn prepare_fillet(
     let radius = crate::extrusion::positive_length(snapshot, radius, "fillet radius")?;
     let definition = FilletDefinition::new(body, edges, radius).map_err(Error)?;
     Ok(PreparedFillet {
-        name: next_name(snapshot)?,
+        name: next_name(snapshot, "Fillet")?,
         definition,
     })
 }
 
-fn next_name(snapshot: &DocumentSnapshot) -> Result<String, Error> {
+pub(crate) fn next_name(snapshot: &DocumentSnapshot, prefix: &str) -> Result<String, Error> {
     let limit = snapshot
         .work_geometry
         .features()
         .len()
         .checked_add(1)
-        .ok_or_else(|| Error("feature count: expected room for another fillet name".into()))?;
+        .ok_or_else(|| {
+            Error(format!(
+                "feature count: expected room for another {prefix} name"
+            ))
+        })?;
     (1..=limit)
-        .map(|index| format!("Fillet{index}"))
+        .map(|index| format!("{prefix}{index}"))
         .find(|name| {
             snapshot
                 .work_geometry
@@ -95,7 +110,7 @@ fn next_name(snapshot: &DocumentSnapshot) -> Result<String, Error> {
         })
         .ok_or_else(|| {
             Error(format!(
-                "fillet names through {limit}: expected an available name"
+                "{prefix} names through {limit}: expected an available name"
             ))
         })
 }

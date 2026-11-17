@@ -33,4 +33,11 @@ undid and redid creation, restored an encoded document package, and resolved
 the retained body and face names. An oversized Chamfer reported failure and
 left its source body available. These are headless checks; they do not prove
 the native scenario or a file written by the desktop save command. The host
-command and UI are still open.
+UI is still open.
+
+The typed `features.add` host path accepts the canonical equal-distance
+Chamfer payload, resolves all edge keys to one current body, and validates
+the private candidate before commit. The desktop-owner test checks refusal
+of invalid keys and unsupported options, an oversized cut, creation, scene
+refresh, and undo/redo. This uses the owner API and does not exercise native
+mouse input. Other Chamfer modes and concave-edge behavior are not established.

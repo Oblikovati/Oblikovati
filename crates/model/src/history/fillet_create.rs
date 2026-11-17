@@ -3,6 +3,7 @@
 use super::*;
 use crate::feature::{
     AuthoredFeature, FeatureId,
+    chamfer::ChamferDefinition,
     fillet::FilletDefinition,
     part::{PartFeatureDefinition, PartFeatureProgramError},
 };
@@ -29,14 +30,38 @@ impl DocumentSnapshot {
         definition: FilletDefinition,
         ids: &mut RecipeReservations<'_>,
     ) -> Result<FeatureId, HistoryError> {
-        let id = ids.allocate_feature().map_err(HistoryError::Identity)?;
         let reads = definition.reads();
-        let feature = AuthoredFeature::new(
-            id,
+        self.create_blend(
             name,
             PartFeatureDefinition::Fillet(Box::new(definition)),
             reads,
-        );
+            ids,
+        )
+    }
+    /// Append authored chamfer inputs; example: `snapshot.create_chamfer("Chamfer", definition, ids)?`.
+    pub fn create_chamfer(
+        &mut self,
+        name: &str,
+        definition: ChamferDefinition,
+        ids: &mut RecipeReservations<'_>,
+    ) -> Result<FeatureId, HistoryError> {
+        let reads = definition.reads();
+        self.create_blend(
+            name,
+            PartFeatureDefinition::Chamfer(Box::new(definition)),
+            reads,
+            ids,
+        )
+    }
+    fn create_blend(
+        &mut self,
+        name: &str,
+        definition: PartFeatureDefinition,
+        reads: crate::feature::FeatureReadFootprint,
+        ids: &mut RecipeReservations<'_>,
+    ) -> Result<FeatureId, HistoryError> {
+        let id = ids.allocate_feature().map_err(HistoryError::Identity)?;
+        let feature = AuthoredFeature::new(id, name, definition, reads);
         self.work_geometry
             .append(feature)
             .map_err(|cause| HistoryError::PartProgram(PartFeatureProgramError::Sequence(cause)))?;

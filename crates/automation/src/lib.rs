@@ -13,6 +13,8 @@ mod clients;
 pub use clients::CLIENT_COMMAND_METHODS;
 mod attachments;
 mod attributes;
+mod chamfer;
+pub use chamfer::{PreparedChamfer, prepare_chamfer};
 mod command_owner;
 mod edit;
 mod extrusion;
