@@ -139,10 +139,19 @@ pub(super) struct OrientationOptions {
     applied: OptionValues,
     editing: OptionValues,
     opening: bool,
-    open: bool,
+    open: crate::dockable_lifecycle::DockableState,
 }
 impl DockableWindow for OrientationOptions {}
 impl OrientationOptions {
+    pub(super) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>(TITLE, &self.open)
+    }
+    pub(super) fn set_suspended(&self, suspended: bool) {
+        self.open.set_suspended(suspended);
+    }
     pub(super) fn request(&mut self) {
         self.opening = true;
         self.editing = self.applied;
@@ -171,9 +180,9 @@ impl OrientationOptions {
     }
     pub(super) fn panel(&mut self, ui: &Ui) {
         if std::mem::take(&mut self.opening) {
-            self.open = true;
+            self.open.set_open(true);
         }
-        if !self.open {
+        if !self.open.is_open() {
             return;
         }
         Self::center_dockable(ui, TITLE, SIZE);
@@ -194,8 +203,7 @@ impl OrientationOptions {
             close |= crate::widget_abi::button(ui, "Cancel", [80., 0.])
                 || ui.is_window_focused() && ui.is_key_pressed_no_repeat(imgui::Key::Escape);
         });
-        Self::close_dockable(ui, TITLE, close);
-        self.open = open && !close;
+        self.open.set_open(open && !close);
     }
     fn visibility_rows(&mut self, ui: &Ui) {
         ui.checkbox(

@@ -186,10 +186,7 @@ fn browser_closed_from_its_contents_returns_to_shared_dock() {
     select_dock_tab(&mut world, "Appearance Browser");
     let close = world.run_in_window("Appearance Browser", "Close").center();
     super::super::x11_input::click(super::super::diagnostics::pointer_pixels(close));
-    world.pump(Vec::new());
-    assert!(window_geometry("Appearance Browser").is_none());
-    world.pump(Vec::new());
-    world.pump(Vec::new());
+    assert_remaining_tab_without_blank_frame(&mut world);
     world.save_capture("material-after-appearance-close");
     assert_eq!(
         super::super::diagnostics::window_dock_tab_visible("Material Browser"),
@@ -208,6 +205,27 @@ fn browser_closed_from_its_contents_returns_to_shared_dock() {
     world.run_in_window("Appearance Browser", "Assigntopart");
     world.save_capture("appearance-restored-to-shared-dock");
     world.close();
+}
+
+fn assert_remaining_tab_without_blank_frame(world: &mut ApplicationWorld) {
+    for _ in 0..8 {
+        let app = world.app();
+        crate::frames::run_frames(
+            &mut app.window,
+            crate::HeadOptions { frames: Some(1) },
+            &mut app.owner,
+        )
+        .unwrap();
+        if window_geometry("Appearance Browser").is_none() {
+            assert_eq!(
+                super::super::diagnostics::window_dock_tab_visible("Material Browser"),
+                Some(true),
+                "the remaining tab must be visible in the first frame after close"
+            );
+            return;
+        }
+    }
+    panic!("Appearance Browser: expected close within eight frames");
 }
 
 pub(super) fn select_dock_tab(world: &mut ApplicationWorld, title: &str) {

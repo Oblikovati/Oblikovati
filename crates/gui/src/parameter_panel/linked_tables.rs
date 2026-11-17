@@ -3,13 +3,19 @@ use super::*;
 use oblikovati_api::wire::DerivedParameterTableInfo;
 #[derive(Default)]
 pub(super) struct LinkPicker {
-    open: bool,
+    open: crate::dockable_lifecycle::DockableState,
     source: Option<u64>,
     checked: std::collections::BTreeSet<u64>,
     request: request_state::ParameterEditRequest<GuiParameterLinkEdit>,
 }
 impl DockableWindow for LinkPicker {}
 impl LinkPicker {
+    pub(super) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>("Link Parameters", &self.open)
+    }
     pub(super) fn synchronize(&mut self, snapshot: Option<&GuiParameterSnapshot>) {
         let valid = snapshot.is_some_and(|view| {
             self.source
@@ -20,13 +26,13 @@ impl LinkPicker {
         }
     }
     pub(super) fn open(&mut self) {
-        self.open = true;
+        self.open.set_open(true);
         self.source = None;
         self.checked.clear();
         self.request.retire();
     }
     fn close(&mut self) {
-        self.open = false;
+        self.open.set_open(false);
         self.source = None;
         self.checked.clear();
         self.request.retire();
@@ -42,7 +48,7 @@ impl LinkPicker {
         snapshot: Option<&GuiParameterSnapshot>,
         actions: &mut Vec<GuiParameterAction>,
     ) {
-        if !self.open {
+        if !self.open.is_open() {
             return;
         }
         let Some(snapshot) = snapshot else {
@@ -53,7 +59,6 @@ impl LinkPicker {
         Self::dockable_window(ui, "Link Parameters", &mut open)
             .size([360., 320.], Condition::FirstUseEver)
             .build(|| self.draw_body(ui, snapshot, actions));
-        Self::close_dockable(ui, "Link Parameters", open && !self.open);
         if !open {
             self.close();
         }

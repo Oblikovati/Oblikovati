@@ -41,12 +41,19 @@ fn validate_choice_texts(choices: &[String]) -> Result<(), String> {
 #[derive(Default)]
 pub(super) struct ParameterValueListEditor {
     target: Option<GuiParameterTextTarget>,
+    dock_state: crate::dockable_lifecycle::DockableState,
     text: String,
     allow_custom: bool,
     request: ParameterEditRequest<GuiParameterChoiceEdit>,
 }
 impl DockableWindow for ParameterValueListEditor {}
 impl ParameterValueListEditor {
+    pub(super) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>("Value List Editor", &self.dock_state)
+    }
     pub(super) fn open(&mut self, document: u64, row: &GuiParameterRow) -> Result<(), String> {
         let choices = row.detail.expression_list.as_deref();
         let expressions = choices
@@ -59,6 +66,7 @@ impl ParameterValueListEditor {
             parameter: row.parameter,
             field: GuiParameterTextField::Equation,
         });
+        self.dock_state.set_open(true);
         self.text = text;
         self.allow_custom = choices.is_some_and(|list| list.allow_custom_values);
         self.request.retire();
@@ -80,6 +88,7 @@ impl ParameterValueListEditor {
     }
     fn close(&mut self) {
         self.target = None;
+        self.dock_state.set_open(false);
         self.request.retire();
         self.text.clear();
     }

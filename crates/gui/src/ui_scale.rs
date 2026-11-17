@@ -37,7 +37,7 @@ pub(crate) fn rebuild_font_atlas(context: &mut Context, scale: f32) -> GuiAtlas 
 }
 #[derive(Default)]
 pub(crate) struct GuiScalePreferences {
-    open: bool,
+    open: crate::dockable_lifecycle::DockableState,
     document_units: crate::document_units::GuiDocumentUnits,
     part_draft: crate::part_options_ui::PartOptionsDraft,
     #[cfg(test)]
@@ -45,9 +45,16 @@ pub(crate) struct GuiScalePreferences {
 }
 impl DockableWindow for GuiScalePreferences {}
 impl GuiScalePreferences {
+    pub(crate) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>("Application Options", &self.open)?;
+        self.document_units.register_dockable(registry)
+    }
     /// Open the scale panel; example: the File menu's Options entry.
     pub(crate) fn request(&mut self) {
-        self.open = true;
+        self.open.set_open(true);
     }
     pub(crate) fn request_document(&mut self, document: u64) {
         self.document_units.request(document);
@@ -60,12 +67,13 @@ impl GuiScalePreferences {
         home_active: bool,
     ) {
         self.document_units.panel(ui, state, actions, home_active);
-        let Some(options) = state.ui_scale.filter(|_| self.open) else {
+        let Some(options) = state.ui_scale.filter(|_| self.open.is_open()) else {
             self.part_draft.clear();
             return;
         };
         preference_geometry(ui);
-        let escape = Self::dockable_window(ui, "Application Options", &mut self.open)
+        let mut open = self.open.is_open();
+        let escape = Self::dockable_window(ui, "Application Options", &mut open)
             .build(|| {
                 ui.text("UI");
                 ui.separator();
@@ -83,10 +91,12 @@ impl GuiScalePreferences {
             })
             .unwrap_or(false);
         if escape {
-            Self::close_dockable(ui, "Application Options", true);
-            self.open = false;
+            self.open.set_open(false);
         }
-        if !self.open {
+        if !open {
+            self.open.set_open(false);
+        }
+        if !self.open.is_open() {
             self.part_draft.clear();
         }
     }

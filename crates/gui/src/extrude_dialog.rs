@@ -11,6 +11,7 @@ mod pending;
 pub(crate) struct ExtrudeDialog {
     pub requested: bool,
     document: Option<u64>,
+    dock_state: crate::dockable_lifecycle::DockableState,
     sketch: Option<DocumentSketchId>,
     profile: i32,
     distance: String,
@@ -35,6 +36,16 @@ pub(crate) fn start_action(state: &GuiCommandState) -> GuiShellAction {
 }
 impl DockableWindow for ExtrudeDialog {}
 impl ExtrudeDialog {
+    pub(crate) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>("Extrude", &self.dock_state)
+    }
+    fn set_document(&mut self, document: Option<u64>) {
+        self.document = document;
+        self.dock_state.set_open(document.is_some());
+    }
     pub(crate) fn open_edit(
         &mut self,
         state: &GuiCommandState,
@@ -47,7 +58,7 @@ impl ExtrudeDialog {
         else {
             return;
         };
-        self.document = state.document;
+        self.set_document(state.document);
         self.sketch = Some(seed.sketch);
         self.profile = 0;
         self.distance = seed.distance.clone();
@@ -64,7 +75,7 @@ impl ExtrudeDialog {
             self.submitted = None;
             self.commit_error = None;
             self.attempted = None;
-            self.document = state.document;
+            self.set_document(state.document);
             self.sketch = state.browser.as_ref().and_then(|browser| {
                 browser
                     .selected_sketches
@@ -80,7 +91,7 @@ impl ExtrudeDialog {
             || !state.extrude_available
             || state.authoring != crate::GuiAuthoringContext::Part
         {
-            self.document = None;
+            self.set_document(None);
             self.edit_feature = None;
         }
     }
@@ -92,7 +103,7 @@ impl ExtrudeDialog {
         actions: &mut Vec<GuiShellAction>,
     ) {
         if let Some(sketch) = self.pending.observe(state, plane_active, actions) {
-            self.document = state.document;
+            self.set_document(state.document);
             self.sketch = Some(sketch);
             self.profile = 0;
             self.distance = "10 mm".into();
@@ -151,7 +162,7 @@ impl ExtrudeDialog {
                 actions.push(GuiShellAction::PreviewExtrude(None));
                 self.previewed = false;
             }
-            self.document = None;
+            self.set_document(None);
             self.edit_feature = None;
         }
     }
@@ -313,7 +324,7 @@ impl ExtrudeDialog {
             self.submitted = Some(submitted);
             actions.push(self.creation_action(request));
         }
-        self.document = None;
+        self.set_document(None);
         self.edit_feature = None;
         self.previewed = false;
         true
@@ -328,7 +339,7 @@ impl ExtrudeDialog {
             actions.push(GuiShellAction::PreviewExtrude(None));
             self.previewed = false;
         }
-        self.document = None;
+        self.set_document(None);
         self.edit_feature = None;
     }
     fn current_distance_validation<'a>(
@@ -345,14 +356,14 @@ impl ExtrudeDialog {
         if self.submitted.as_ref() != Some(request) {
             return;
         }
-        self.document = Some(request.document);
+        self.set_document(Some(request.document));
         self.commit_error = Some(cause.into());
     }
     pub(crate) fn reject_edit(&mut self, request: &crate::GuiExtrudeEditRequest, cause: &str) {
         if self.submitted_edit.as_ref() != Some(request) {
             return;
         }
-        self.document = Some(request.document);
+        self.set_document(Some(request.document));
         self.edit_feature = Some(request.feature);
         self.commit_error = Some(cause.into());
     }

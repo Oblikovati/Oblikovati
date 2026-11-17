@@ -29,6 +29,7 @@ pub(crate) struct ToolVisibility {
 #[derive(Debug)]
 pub(crate) struct WorkspaceLayout {
     pub panels: panel_tabs::DockPanels,
+    dock_state: crate::dockable_lifecycle::DockableState,
     pub tool_visibility: ToolVisibility,
     pub tabs_visible: bool,
     outer_center: Option<crate::application::document_creation::workspaces::WorkspaceArea>,
@@ -49,6 +50,7 @@ impl Default for WorkspaceLayout {
     fn default() -> Self {
         Self {
             panels: Default::default(),
+            dock_state: Default::default(),
             tool_visibility: Default::default(),
             tabs_visible: true,
             outer_center: None,
@@ -70,6 +72,17 @@ impl WorkspaceLayout {
     #[cfg(test)]
     pub(crate) fn test_browser_view(&self) -> &browser_view::BrowserView {
         &self.view
+    }
+    pub(crate) fn register_dockables(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>("Model", &self.dock_state)?;
+        self.view.body_properties.register_dockable(registry)?;
+        self.view.feature_properties.register_dockable(registry)?;
+        self.view.geometry.register_dockable(registry)?;
+        self.view.relationships.register_dockable(registry)?;
+        self.view.find.register_dockable(registry)
     }
     /// Clear a browser origin selection when its document changes; example: `layout.sync_origin_document(Some(1))`.
     pub(crate) fn sync_origin_document(&mut self, document: Option<u64>) {
@@ -124,6 +137,7 @@ impl WorkspaceLayout {
         self.view.document_area = Some(document_area);
         self.view.view_clicks_taken = self.view_clicks_taken;
         browser_origin::follow_view_click(ui, state, &mut self.view, part_context_open, actions);
+        self.dock_state.set_open(self.panels.dock_visible());
         if !self.panels.dock_visible() {
             self.empty_dock_control(ui, band_height);
             self.draw_find(ui, state, actions);
@@ -136,6 +150,7 @@ impl WorkspaceLayout {
             .build(|| self.dock_contents(ui, state, actions));
         if !open {
             self.panels.close_all();
+            self.dock_state.set_open(false);
         }
         self.pending_layout |= self.panels.needs_frame();
         self.draw_find(ui, state, actions);

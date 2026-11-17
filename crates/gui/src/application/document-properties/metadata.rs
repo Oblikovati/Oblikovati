@@ -12,6 +12,7 @@ use oblikovati_api::{
 #[derive(Default)]
 pub(crate) struct MetadataEditor {
     document: Option<u64>,
+    dock_state: crate::dockable_lifecycle::DockableState,
     set: String,
     name: String,
     value: String,
@@ -19,8 +20,18 @@ pub(crate) struct MetadataEditor {
 }
 impl DockableWindow for MetadataEditor {}
 impl MetadataEditor {
+    pub(crate) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>("iProperties", &self.dock_state)
+    }
+    fn set_document(&mut self, document: Option<u64>) {
+        self.document = document;
+        self.dock_state.set_open(document.is_some());
+    }
     pub(crate) fn open(&mut self, state: &GuiCommandState) {
-        self.document = state.document;
+        self.set_document(state.document);
         self.set = "Summary Information".into();
         self.name.clear();
         self.value.clear();
@@ -36,7 +47,7 @@ impl MetadataEditor {
             return;
         };
         if state.document != Some(document) {
-            self.document = None;
+            self.set_document(None);
             return;
         }
         let mut open = true;
@@ -50,7 +61,7 @@ impl MetadataEditor {
             )
             .build(|| self.contents(ui, state, document, actions));
         if !open {
-            self.document = None;
+            self.set_document(None);
         }
     }
     fn contents(

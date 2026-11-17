@@ -84,6 +84,12 @@ impl Default for OpenDialog {
     }
 }
 impl OpenDialog {
+    pub(crate) fn register_dockables(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        self.properties.register_dockable(registry)
+    }
     pub(crate) fn with_folders(folders: Rc<dyn GuiFolders>) -> Self {
         let mut browser = FolderBrowser::new(folders.clone());
         browser.folders_select_first = true;

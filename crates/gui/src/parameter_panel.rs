@@ -177,7 +177,7 @@ impl GuiParameterGroupAction {
     }
 }
 pub(crate) struct ParameterPanel {
-    open: bool,
+    open: crate::dockable_lifecycle::DockableState,
     snapshot: Option<GuiParameterSnapshot>,
     search: String,
     drafts: GuiParameterDrafts,
@@ -192,9 +192,19 @@ pub(crate) struct ParameterPanel {
 }
 impl DockableWindow for ParameterPanel {}
 impl ParameterPanel {
+    pub(crate) fn register_dockables(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>("Parameters", &self.open)?;
+        self.group.register_dockable(registry)?;
+        self.tolerance.register_dockable(registry)?;
+        self.value_list.register_dockable(registry)?;
+        self.link_picker.register_dockable(registry)
+    }
     pub(crate) fn new() -> Result<Self, String> {
         Ok(Self {
-            open: false,
+            open: Default::default(),
             snapshot: None,
             search: String::new(),
             drafts: GuiParameterDrafts::new(1024 * 1024, 4096)?,
@@ -232,10 +242,10 @@ impl ParameterPanel {
         Ok(changed)
     }
     pub(crate) fn set_open(&mut self, open: bool) {
-        self.open = open;
+        self.open.set_open(open);
     }
     pub(crate) fn is_open(&self) -> bool {
-        self.open
+        self.open.is_open()
     }
     pub(crate) fn acknowledge(
         &mut self,
@@ -278,16 +288,15 @@ impl ParameterPanel {
     }
     pub(crate) fn draw(&mut self, ui: &Ui) -> Vec<GuiParameterAction> {
         let mut actions = Vec::new();
-        if !self.open {
+        if !self.open.is_open() {
             return actions;
         }
-        let mut open = self.open;
+        let mut open = self.open.is_open();
         Self::dockable_window(ui, "Parameters", &mut open)
             .size([920., 480.], Condition::FirstUseEver)
             .build(|| self.draw_body(ui, &mut actions));
-        Self::close_dockable(ui, "Parameters", open && !self.open);
         if !open {
-            self.open = false;
+            self.open.set_open(false);
         }
         self.consume_editor_actions(&mut actions);
         self.value_list.draw(ui, &mut actions);
@@ -388,7 +397,7 @@ impl ParameterPanel {
             ui.text_wrapped(issue.replace('\0', "\\0"));
         }
         if ui.button("Done") {
-            self.open = false;
+            self.open.set_open(false);
         }
     }
 }

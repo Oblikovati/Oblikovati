@@ -15,8 +15,6 @@ const ROTATE_BUTTONS: [(&str, [f64; 3]); 6] = [
     ("Z+", [0., 0., 1.]),
     ("Z-", [0., 0., -1.]),
 ];
-struct RotateWindow;
-impl DockableWindow for RotateWindow {}
 impl NavigationBar {
     /// The rotate dialog: each press turns the view at once, and only OK keeps the turn.
     pub(in super::super) fn rotate_dialog(
@@ -27,15 +25,17 @@ impl NavigationBar {
     ) {
         if std::mem::take(&mut self.rotate_opening) {
             self.rotate_document = state.document;
+            self.rotate_dock.set_open(self.rotate_document.is_some());
         }
         if self.rotate_document.is_none() || self.rotate_document != state.document {
             self.rotate_document = None;
+            self.rotate_dock.set_open(false);
             return;
         }
-        RotateWindow::center_dockable(ui, ROTATE_TITLE, ROTATE_SIZE);
+        Self::center_dockable(ui, ROTATE_TITLE, ROTATE_SIZE);
         let mut open = true;
         let mut closed = false;
-        RotateWindow::dockable_window(ui, ROTATE_TITLE, &mut open).build(|| {
+        Self::dockable_window(ui, ROTATE_TITLE, &mut open).build(|| {
             let increment = self.increment.get_or_insert(DEFAULT_INCREMENT);
             ui.input_float("Increment", increment).build();
             let radians = f64::from(*increment).to_radians();
@@ -56,6 +56,7 @@ impl NavigationBar {
         }
         if !open || closed {
             self.rotate_document = None;
+            self.rotate_dock.set_open(false);
         }
     }
 }

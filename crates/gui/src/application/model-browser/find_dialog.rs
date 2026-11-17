@@ -65,7 +65,7 @@ impl Default for PendingCriterion {
 /// Open or not, the criteria stay for the session: reopening Find shows them again.
 #[derive(Debug, Default)]
 pub(crate) struct FindDialog {
-    open: bool,
+    open: crate::dockable_lifecycle::DockableState,
     object: FindObject,
     match_case: bool,
     pending: PendingCriterion,
@@ -80,9 +80,15 @@ pub(crate) struct FindDialog {
 }
 impl DockableWindow for FindDialog {}
 impl FindDialog {
+    pub(crate) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>("###find-dialog", &self.open)
+    }
     /// Open it, with whatever it held; example: the browser menu's Find.
     pub(crate) fn request(&mut self) {
-        self.open = true;
+        self.open.set_open(true);
     }
     /// A frame must follow so a prompt opens without waiting for an event.
     pub(crate) fn needs_frame(&self) -> bool {
@@ -95,7 +101,7 @@ impl FindDialog {
         browser: &GuiModelBrowser,
         actions: &mut Vec<GuiShellAction>,
     ) {
-        if !self.open {
+        if !self.open.is_open() {
             return;
         }
         let title = format!("Find: {}###find-dialog", self.object.label());
@@ -112,7 +118,7 @@ impl FindDialog {
             self.contents(ui, state, browser, &mut still_open, actions);
             self.prompts(ui);
         });
-        self.open = still_open && window_open;
+        self.open.set_open(still_open && window_open);
     }
     fn contents(
         &mut self,

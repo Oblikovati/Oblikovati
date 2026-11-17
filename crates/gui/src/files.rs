@@ -110,6 +110,14 @@ const RECENT_MENU_ROWS: usize = 8;
 const RECENT_NAME_X: f32 = 22.;
 const RECENT_PIN_X: f32 = 190.;
 impl GuiDocumentFiles {
+    pub(crate) fn register_dockables(
+        &mut self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        self.projects.register_dockable(registry, "file-projects")?;
+        self.templates.register_dockables(registry)?;
+        self.open.register_dockables(registry)
+    }
     pub(crate) fn request_application_close(&mut self) {
         self.close_prompt.request_application_exit();
     }

@@ -6,7 +6,7 @@ use imgui::Ui;
 
 #[derive(Default)]
 pub(crate) struct MaterialBrowser {
-    open: bool,
+    open: crate::dockable_lifecycle::DockableState,
     appearance_browser: bool,
     select_preferred: bool,
     document: Option<u64>,
@@ -15,15 +15,26 @@ pub(crate) struct MaterialBrowser {
 }
 impl DockableWindow for MaterialBrowser {}
 impl MaterialBrowser {
+    pub(crate) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        let title = if self.appearance_browser {
+            "Appearance Browser"
+        } else {
+            "Material Browser"
+        };
+        registry.register::<Self>(title, &self.open)
+    }
     pub(crate) fn set_open(&mut self, open: bool) {
-        if open && !self.open {
+        if open && !self.open.is_open() {
             self.open();
         } else {
-            self.open = open;
+            self.open.set_open(open);
         }
     }
     pub(crate) fn is_open(&self) -> bool {
-        self.open
+        self.open.is_open()
     }
     /// Create a separate appearance browser; example: `MaterialBrowser::appearances()`.
     pub(crate) fn appearances() -> Self {
@@ -34,7 +45,7 @@ impl MaterialBrowser {
     }
     /// Open the browser; example: `browser.open()` from the quick access toolbar.
     pub(crate) fn open(&mut self) {
-        self.open = true;
+        self.open.set_open(true);
         self.select_preferred = true;
     }
     /// Draw the current part's asset choices and queue explicit assignments.
@@ -45,11 +56,11 @@ impl MaterialBrowser {
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
     ) {
-        if !self.open {
+        if !self.open.is_open() {
             return;
         }
         self.sync_document(state);
-        let mut open = self.open;
+        let mut open = self.open.is_open();
         let mut close_requested = false;
         let title = if self.appearance_browser {
             "Appearance Browser"
@@ -64,8 +75,7 @@ impl MaterialBrowser {
         );
         Self::dockable_window(ui, title, &mut open)
             .build(|| close_requested = self.content(ui, state, actions));
-        Self::close_dockable(ui, title, close_requested);
-        self.open = open && !close_requested;
+        self.open.set_open(open && !close_requested);
     }
     fn sync_document(&mut self, state: &GuiCommandState) {
         if self.document == state.document {

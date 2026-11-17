@@ -48,6 +48,7 @@ impl GuiParameterToleranceEdit {
 #[derive(Default)]
 pub(super) struct ParameterToleranceEditor {
     target: Option<GuiParameterTextTarget>,
+    dock_state: crate::dockable_lifecycle::DockableState,
     upper: f64,
     lower: f64,
     selection: Option<ModelValueType>,
@@ -55,6 +56,12 @@ pub(super) struct ParameterToleranceEditor {
 }
 impl DockableWindow for ParameterToleranceEditor {}
 impl ParameterToleranceEditor {
+    pub(super) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>("Tolerance", &self.dock_state)
+    }
     pub(super) fn open(&mut self, document: u64, row: &GuiParameterRow) -> Result<(), String> {
         if matches!(row.detail.units.as_str(), "text" | "boolean") {
             return Err(format!(
@@ -75,6 +82,7 @@ impl ParameterToleranceEditor {
             parameter: row.parameter,
             field: GuiParameterTextField::Equation,
         });
+        self.dock_state.set_open(true);
         self.upper = upper;
         self.lower = lower;
         self.selection = Some(selection);
@@ -97,6 +105,7 @@ impl ParameterToleranceEditor {
     }
     fn close(&mut self) {
         self.target = None;
+        self.dock_state.set_open(false);
         self.selection = None;
         self.request.retire();
     }

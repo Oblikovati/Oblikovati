@@ -123,7 +123,7 @@ struct WheelOptions {
     walk_on_plane: bool,
     walk_speed: f32,
 }
-impl DockableWindow for WheelOptions {}
+impl DockableWindow for NavigationWheel {}
 impl Default for WheelOptions {
     fn default() -> Self {
         Self {
@@ -150,15 +150,24 @@ pub(super) struct NavigationWheel {
     options: WheelOptions,
     editing: WheelOptions,
     options_opening: bool,
-    options_visible: bool,
+    options_visible: crate::dockable_lifecycle::DockableState,
     dragging: Option<GuiNavigationMode>,
 }
 impl NavigationWheel {
+    pub(super) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>(OPTIONS_TITLE, &self.options_visible)
+    }
+    pub(super) fn set_suspended(&self, suspended: bool) {
+        self.options_visible.set_suspended(suspended);
+    }
     pub(super) fn request(&mut self) {
         self.open = true;
         self.used = true;
         self.placed = None;
-        self.options_visible = false;
+        self.options_visible.set_open(false);
         self.options_opening = false;
     }
     /// It has been up since the part opened, so the view's menu can bring it back.
@@ -203,7 +212,7 @@ impl NavigationWheel {
             .size([side, side], imgui::Condition::Always)
             .flags(flags)
             .build(|| self.contents(ui, state, center, side, actions));
-        let options_were_open = self.options_visible || self.options_opening;
+        let options_were_open = self.options_visible.is_open() || self.options_opening;
         self.options_dialog(ui);
         if !options_were_open {
             self.close_on_escape(ui);
@@ -349,15 +358,15 @@ impl NavigationWheel {
     }
     fn options_dialog(&mut self, ui: &Ui) {
         if std::mem::take(&mut self.options_opening) {
-            self.options_visible = true;
+            self.options_visible.set_open(true);
         }
-        if !self.options_visible {
+        if !self.options_visible.is_open() {
             return;
         }
-        WheelOptions::center_dockable(ui, OPTIONS_TITLE, OPTIONS_SIZE);
+        Self::center_dockable(ui, OPTIONS_TITLE, OPTIONS_SIZE);
         let mut open = true;
         let mut close = false;
-        WheelOptions::dockable_window(ui, OPTIONS_TITLE, &mut open).build(|| {
+        Self::dockable_window(ui, OPTIONS_TITLE, &mut open).build(|| {
             ui.checkbox("Show Tool Messages", &mut self.editing.tool_messages);
             ui.checkbox("Show Tool Tips", &mut self.editing.tool_tips);
             choice_list(
@@ -386,8 +395,7 @@ impl NavigationWheel {
             close = self.options_buttons(ui)
                 || ui.is_window_focused() && ui.is_key_pressed_no_repeat(Key::Escape);
         });
-        WheelOptions::close_dockable(ui, OPTIONS_TITLE, close);
-        self.options_visible = open && !close;
+        self.options_visible.set_open(open && !close);
     }
     fn options_buttons(&mut self, ui: &Ui) -> bool {
         let mut close = false;

@@ -26,7 +26,7 @@ enum ListFocus {
 }
 #[derive(Default)]
 pub(crate) struct RibbonCustomization {
-    open: bool,
+    open: crate::dockable_lifecycle::DockableState,
     draft: Draft,
     builtins: builtin::BuiltinLayout,
     appearance: crate::ribbon_command_layout::RibbonAppearance,
@@ -58,7 +58,6 @@ pub(crate) struct RibbonCustomization {
     keyboard_alias: String,
     keyboard_error: Option<String>,
     close_after_apply: bool,
-    pending_dock_close: bool,
     keyboard_conflict: bool,
     marking_draft: Option<oblikovati_api::wire::MarkingMenuView>,
     marking_base: Option<oblikovati_api::wire::MarkingMenuView>,
@@ -67,12 +66,11 @@ pub(crate) struct RibbonCustomization {
 }
 impl DockableWindow for RibbonCustomization {}
 impl RibbonCustomization {
-    /// Notify ImGui after the dialog closes and request a follow-up frame (#4073).
-    /// Example: `customization.flush_dock_close(ui)` after drawing the dialog.
-    pub(crate) fn flush_dock_close(&mut self, ui: &Ui) -> bool {
-        let pending = std::mem::take(&mut self.pending_dock_close);
-        Self::close_dockable(ui, "Customize", pending);
-        pending
+    pub(crate) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>("Customize", &self.open)
     }
     pub(crate) fn open(&mut self, tab: RibbonTab) {
         self.draft.open(tab);
@@ -93,7 +91,7 @@ impl RibbonCustomization {
         self.target_selector_open = false;
         self.scroll_source_to_selection = false;
         self.save_error = None;
-        self.open = true;
+        self.open.set_open(true);
     }
     pub(crate) fn has_panel(&self, tab: RibbonTab) -> bool {
         self.draft
@@ -140,18 +138,17 @@ impl RibbonCustomization {
         self.escape_consumed = false;
         self.navigation_consumed = false;
         self.command_error_popup(ui);
-        if !self.open {
+        if !self.open.is_open() {
             return;
         }
         self.sync_keyboard(commands);
         self.sync_marking(commands);
         self.finish_apply();
-        if !self.open {
-            self.pending_dock_close = true;
+        if !self.open.is_open() {
             return;
         }
         crate::widget_abi::fit_dialog(ui, "Customize", [340., 185.], [760., 540.]);
-        let mut window_open = self.open;
+        let mut window_open = self.open.is_open();
         let category_was_open = self.category_open;
         let target_was_open = self.target_selector_open;
         Self::dockable_window(ui, "Customize", &mut window_open)
@@ -175,12 +172,13 @@ impl RibbonCustomization {
                 let close_dialog = self.escape.pressed(ui)
                     || (selector_was_open && ui.is_key_pressed_no_repeat(imgui::Key::Escape));
                 if close_dialog && (focused || selector_was_open) {
-                    self.open = false;
+                    self.open.set_open(false);
                     self.escape_consumed = true;
                 }
             });
-        Self::close_dockable(ui, "Customize", window_open && !self.open);
-        self.open &= window_open;
+        if !window_open {
+            self.open.set_open(false);
+        }
         let document = self.staged_document();
         if let Some(settings) = self.settings.panel(ui, &document) {
             self.draft.import(settings.commands);
@@ -416,7 +414,7 @@ impl RibbonCustomization {
                     if keyboard || marking {
                         self.close_after_apply = true;
                     } else {
-                        self.open = false;
+                        self.open.set_open(false);
                     }
                 }
                 Err(error) => self.save_error = Some(error),
@@ -426,7 +424,7 @@ impl RibbonCustomization {
         ui.same_line();
         let cancel_disabled = ui.begin_disabled(!changed);
         if ui.button("Cancel") {
-            self.open = false;
+            self.open.set_open(false);
         }
         drop(cancel_disabled);
         ui.same_line();
@@ -441,7 +439,7 @@ impl RibbonCustomization {
         drop(disabled);
         ui.same_line();
         if ui.button("Close") {
-            self.open = false;
+            self.open.set_open(false);
         }
         ui.same_line();
         if ui.button("Import") {

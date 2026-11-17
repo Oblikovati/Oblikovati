@@ -86,6 +86,12 @@ pub(crate) struct HomeRequests {
     pub file_properties: Option<String>,
 }
 impl HomeWorkspace {
+    pub(crate) fn register_dockables(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        self.open_options.register_dockable(registry)
+    }
     /// Draw the workspace over the document area while it is active.
     pub(crate) fn panel(
         &mut self,

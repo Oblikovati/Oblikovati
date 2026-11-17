@@ -6,20 +6,26 @@ use oblikovati_api::wire::TransactionHistory;
 
 #[derive(Default)]
 pub(crate) struct HistoryBrowser {
-    open: bool,
+    open: crate::dockable_lifecycle::DockableState,
     selected: Vec<u64>,
     initialized: bool,
 }
 impl DockableWindow for HistoryBrowser {}
 impl HistoryBrowser {
+    pub(crate) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>("History Browser", &self.open)
+    }
     pub(crate) fn set_open(&mut self, open: bool) {
-        self.open = open;
+        self.open.set_open(open);
     }
     pub(crate) fn is_open(&self) -> bool {
-        self.open
+        self.open.is_open()
     }
     pub(crate) fn open(&mut self) {
-        self.open = true;
+        self.open.set_open(true);
     }
     pub(crate) fn draw(
         &mut self,
@@ -27,15 +33,15 @@ impl HistoryBrowser {
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
     ) {
-        if !self.open {
+        if !self.open.is_open() {
             return;
         }
         synchronize_documents(&state.histories, &mut self.selected, &mut self.initialized);
-        let mut open = self.open;
+        let mut open = self.open.is_open();
         Self::dockable_window(ui, "History Browser", &mut open)
             .size([560., 480.], imgui::Condition::FirstUseEver)
             .build(|| self.contents(ui, state, actions));
-        self.open = open;
+        self.open.set_open(open);
     }
     fn contents(&mut self, ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
         for history in &state.histories {

@@ -19,6 +19,7 @@ const FILE_CHOOSER: &str = "Choose Component File";
 pub(super) struct AssemblyPlaceDialog {
     requested: bool,
     assembly: Option<u64>,
+    dock_state: crate::dockable_lifecycle::DockableState,
     source: Option<u64>,
     name: String,
     selected_path: Option<String>,
@@ -33,6 +34,7 @@ impl Default for AssemblyPlaceDialog {
         Self {
             requested: false,
             assembly: None,
+            dock_state: Default::default(),
             source: None,
             name: String::new(),
             selected_path: None,
@@ -46,6 +48,16 @@ impl Default for AssemblyPlaceDialog {
 }
 impl DockableWindow for AssemblyPlaceDialog {}
 impl AssemblyPlaceDialog {
+    pub(super) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>("Place Component", &self.dock_state)
+    }
+    fn set_document(&mut self, document: Option<u64>) {
+        self.assembly = document;
+        self.dock_state.set_open(document.is_some());
+    }
     pub(super) fn request(&mut self) {
         self.requested = true;
     }
@@ -59,13 +71,13 @@ impl AssemblyPlaceDialog {
         actions: &mut Vec<GuiShellAction>,
     ) {
         if std::mem::take(&mut self.requested) {
-            self.assembly = state.document;
+            self.set_document(state.document);
             self.source = None;
             self.selected_path = None;
             self.name.clear();
         }
         if self.assembly != state.document || state.document_type != Some(DOCUMENT_ASSEMBLY) {
-            self.assembly = None;
+            self.set_document(None);
         }
         let Some(assembly) = self.assembly else {
             self.clear_preview(actions);
@@ -105,19 +117,19 @@ impl AssemblyPlaceDialog {
                 if let Some(action) = action {
                     actions.push(action);
                 }
-                self.assembly = None;
+                self.set_document(None);
             }
             drop(disabled);
             ui.same_line();
             if crate::widget_abi::button(ui, "Cancel", [90., 0.]) || ui.is_key_pressed(Key::Escape)
             {
                 self.clear_preview(actions);
-                self.assembly = None;
+                self.set_document(None);
             }
         });
         if !open {
             self.clear_preview(actions);
-            self.assembly = None;
+            self.set_document(None);
         }
     }
     fn clear_preview(&mut self, actions: &mut Vec<GuiShellAction>) {

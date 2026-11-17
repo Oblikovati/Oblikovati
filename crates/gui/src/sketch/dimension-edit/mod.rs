@@ -24,6 +24,8 @@ pub struct GuiDimensionValue {
 #[derive(Default)]
 pub(crate) struct GuiDimensionValueEditor {
     open: Option<GuiDimensionEdit>,
+    driving_dock: crate::dockable_lifecycle::DockableState,
+    driven_dock: crate::dockable_lifecycle::DockableState,
     submitted: Option<GuiDimensionEdit>,
     closed_this_frame: bool,
     /// The pointer is on a label that opens an editor, so its clicks are not a viewport pick.
@@ -47,6 +49,20 @@ const INVALID_TEXT: [f32; 4] = [0.95, 0.2, 0.2, 1.];
 
 impl DockableWindow for GuiDimensionValueEditor {}
 impl GuiDimensionValueEditor {
+    pub(crate) fn register_dockables(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>(TITLE, &self.driving_dock)?;
+        registry.register::<Self>(DRIVEN_TITLE, &self.driven_dock)
+    }
+    fn set_edit(&mut self, edit: Option<GuiDimensionEdit>) {
+        self.driving_dock
+            .set_open(edit.as_ref().is_some_and(|row| !row.driven));
+        self.driven_dock
+            .set_open(edit.as_ref().is_some_and(|row| row.driven));
+        self.open = edit;
+    }
     pub(crate) fn reject(&mut self, value: &GuiDimensionValue, cause: &str) {
         let Some(edit) = self.submitted.take() else {
             return;
@@ -56,7 +72,7 @@ impl GuiDimensionValueEditor {
         }
         self.text.clone_from(&value.expression);
         self.refusal = cause.to_owned();
-        self.open = Some(edit);
+        self.set_edit(Some(edit));
         self.warning_requested = true;
         self.warning_active = true;
     }
@@ -78,7 +94,7 @@ impl GuiDimensionValueEditor {
         }
         let state = &request.commands;
         if !state.sketch_at_ready && !state.dimension_tool_active {
-            self.open = None;
+            self.set_edit(None);
         }
         let Some(edit) = self.open.clone() else {
             return;
@@ -166,7 +182,7 @@ impl GuiDimensionValueEditor {
             close = true;
         }
         if close {
-            self.open = None;
+            self.set_edit(None);
             self.closed_this_frame = true;
             // Keyboard focus was this editor's; the sketch's own keys work again without a click.
             crate::widget_abi::release_keyboard_focus(ui);
@@ -181,7 +197,7 @@ impl GuiDimensionValueEditor {
         self.seen_draft = id;
         let Some(draft) = draft else {
             if self.owner_draft.take().is_some() {
-                self.open = None;
+                self.set_edit(None);
             }
             return;
         };
@@ -209,7 +225,7 @@ impl GuiDimensionValueEditor {
                 ]
             })
             .unwrap_or([640., 240.]);
-        self.open = Some(edit);
+        self.set_edit(Some(edit));
         self.focus = true;
     }
     fn warning(&mut self, ui: &Ui) -> bool {
@@ -261,7 +277,7 @@ impl GuiDimensionValueEditor {
             return;
         }
         self.text.clone_from(&edit.expression);
-        self.open = Some(edit);
+        self.set_edit(Some(edit));
         self.focus = true;
         self.position = ui.io().mouse_pos;
     }

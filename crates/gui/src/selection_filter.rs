@@ -51,18 +51,24 @@ pub struct GuiSelectionFilter {
 }
 #[derive(Default)]
 pub(crate) struct SelectionFilterPanel {
-    open: bool,
+    open: crate::dockable_lifecycle::DockableState,
 }
 impl DockableWindow for SelectionFilterPanel {}
 impl SelectionFilterPanel {
+    pub(crate) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>("Selection Filter", &self.open)
+    }
     pub(crate) fn set_open(&mut self, open: bool) {
-        self.open = open;
+        self.open.set_open(open);
     }
     pub(crate) fn is_open(&self) -> bool {
-        self.open
+        self.open.is_open()
     }
     pub(crate) fn open(&mut self) {
-        self.open = true;
+        self.open.set_open(true);
     }
     pub(crate) fn draw(
         &mut self,
@@ -70,14 +76,14 @@ impl SelectionFilterPanel {
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
     ) {
-        if !self.open {
+        if !self.open.is_open() {
             return;
         }
-        let mut open = self.open;
+        let mut open = self.open.is_open();
         Self::dockable_window(ui, "Selection Filter", &mut open)
             .size([300., 360.], imgui::Condition::FirstUseEver)
             .build(|| draw_filter(ui, state.selection_filter.as_ref(), actions));
-        self.open = open;
+        self.open.set_open(open);
     }
 }
 fn draw_filter(ui: &Ui, filter: Option<&GuiSelectionFilter>, actions: &mut Vec<GuiShellAction>) {
@@ -240,7 +246,7 @@ mod tests {
             button: GuiPointerButton::Left,
             pressed: false,
         }]);
-        assert!(!fixture.panel.open);
+        assert!(!fixture.panel.open.is_open());
     }
     #[test]
     fn reordering_refuses_the_first_and_last_bounds() {

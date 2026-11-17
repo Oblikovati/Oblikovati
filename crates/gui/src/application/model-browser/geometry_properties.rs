@@ -67,9 +67,16 @@ pub(crate) struct GeometryProperties {
     color_opening: bool,
     colors: ColorDialog,
     document: Option<u64>,
+    dock_state: crate::dockable_lifecycle::DockableState,
 }
 impl DockableWindow for GeometryProperties {}
 impl GeometryProperties {
+    pub(crate) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>(TITLE, &self.dock_state)
+    }
     /// Open on a sketch's present style; example: from its row's Properties.
     pub(crate) fn request(&mut self, sketch: DocumentSketchId, style: GuiSketchLineStyle) {
         self.editing = Some(Editing {
@@ -79,6 +86,7 @@ impl GeometryProperties {
             style,
         });
         self.opening = true;
+        self.dock_state.set_open(true);
     }
     /// A frame must follow so the dialog opens without waiting for an event.
     pub(crate) fn needs_frame(&self) -> bool {
@@ -95,6 +103,7 @@ impl GeometryProperties {
         }
         if self.document.is_none() || self.document != state.document {
             self.editing = None;
+            self.dock_state.set_open(false);
             self.document = None;
             self.color_opening = false;
         }
@@ -122,6 +131,7 @@ impl GeometryProperties {
         });
         if closed || !open {
             self.editing = None;
+            self.dock_state.set_open(false);
             self.color_opening = false;
             self.document = None;
         }

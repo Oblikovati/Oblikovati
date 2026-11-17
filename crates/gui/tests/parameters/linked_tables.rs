@@ -39,7 +39,7 @@ fn link_picker_emits_one_owned_selection_and_retires_after_matching_result() {
     assert_eq!(edit.source_document, 8);
     assert_eq!(edit.linked, vec![3]);
     picker.acknowledge(edit, Ok(()));
-    assert!(!picker.open);
+    assert!(!picker.open.is_open());
 }
 #[test]
 fn canonical_linked_tables_build_owned_draws_in_the_parameter_panel() {

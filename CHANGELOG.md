@@ -199,6 +199,8 @@
 
 ### Fixed
 
+- Preserved dock tabs when tool windows close, suspend, or reopen. (#4073)
+
 - Replayed fillets and chamfers consistently in drawing, feature health, and extrusion preview. (#4074)
 
 - Enabled Link Parameters cancellation without a source and restored the next dock tab on close. (#4073)

@@ -33,6 +33,7 @@ pub(crate) fn ribbon_button(
 #[derive(Default)]
 pub(crate) struct RectangularPatternDialog {
     document: Option<u64>,
+    dock_state: crate::dockable_lifecycle::DockableState,
     counts: [i32; 2],
     spacing: [String; 2],
     fitted: bool,
@@ -44,8 +45,18 @@ pub(crate) struct RectangularPatternDialog {
 }
 impl DockableWindow for RectangularPatternDialog {}
 impl RectangularPatternDialog {
+    pub(crate) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>("Rectangular Pattern", &self.dock_state)
+    }
+    fn set_document(&mut self, document: Option<u64>) {
+        self.document = document;
+        self.dock_state.set_open(document.is_some());
+    }
     fn open(&mut self, state: &GuiCommandState) {
-        self.document = state.document;
+        self.set_document(state.document);
         self.counts = [2, 1];
         self.spacing = ["10 mm".into(), "10 mm".into()];
         self.fitted = false;
@@ -78,7 +89,7 @@ impl RectangularPatternDialog {
         let Ok(second) = i32::try_from(row.pattern.definition.counts[1]) else {
             return;
         };
-        self.document = state.document;
+        self.set_document(state.document);
         self.counts = [first, second];
         self.spacing = spacing.clone();
         self.fitted = row.pattern.definition.fitted;
@@ -235,7 +246,8 @@ impl RectangularPatternDialog {
         }
     }
     fn close(&mut self, actions: &mut Vec<GuiShellAction>) {
-        if self.document.take().is_some() {
+        if self.document.is_some() {
+            self.set_document(None);
             actions.push(GuiShellAction::PreviewSketchPattern(None));
         }
         self.last_preview = None;

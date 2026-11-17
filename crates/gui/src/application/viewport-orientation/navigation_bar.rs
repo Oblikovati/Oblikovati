@@ -102,12 +102,25 @@ pub(super) struct NavigationBar {
     orbit_action: OrbitAction,
     rotate_opening: bool,
     rotate_document: Option<u64>,
+    rotate_dock: crate::dockable_lifecycle::DockableState,
     increment: Option<f32>,
     /// Where the current press began, and whether it has travelled far enough to be a drag.
     press: Option<([f32; 2], bool)>,
     window_corner: Option<[i32; 2]>,
 }
+impl crate::dockable_window::DockableWindow for NavigationBar {}
 impl NavigationBar {
+    pub(super) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        self.wheel.register_dockable(registry)?;
+        registry.register::<Self>("Incremental View Rotate", &self.rotate_dock)
+    }
+    pub(super) fn set_suspended(&self, suspended: bool) {
+        self.wheel.set_suspended(suspended);
+        self.rotate_dock.set_suspended(suspended);
+    }
     fn is_rotating(&self) -> bool {
         matches!(
             self.mode,
@@ -456,42 +469,5 @@ pub(super) fn drag_command(mode: GuiNavigationMode, [dx, dy]: [f32; 2]) -> GuiVi
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn only_running_navigation_owns_viewport_input() {
-        let mut navigation = NavigationBar::default();
-        let mut actions = Vec::new();
-        assert!(!navigation.owns_viewport_input());
-        for mode in [
-            GuiNavigationMode::Pan,
-            GuiNavigationMode::Zoom,
-            GuiNavigationMode::Orbit,
-            GuiNavigationMode::ConstrainedOrbit,
-            GuiNavigationMode::ZoomWindow,
-            GuiNavigationMode::ZoomSelected,
-        ] {
-            navigation.start(mode, &mut actions);
-            assert!(navigation.owns_viewport_input());
-            navigation.end(&mut actions);
-            assert!(!navigation.owns_viewport_input());
-        }
-    }
-    #[test]
-    fn a_drag_becomes_the_running_commands_motion() {
-        assert_eq!(
-            drag_command(GuiNavigationMode::Pan, [3., -2.]),
-            GuiViewCommand::Pan([3, -2])
-        );
-        assert_eq!(
-            drag_command(GuiNavigationMode::Zoom, [5., 0.]),
-            GuiViewCommand::Zoom(1.)
-        );
-        let GuiViewCommand::Orbit { yaw, pitch } =
-            drag_command(GuiNavigationMode::Orbit, [10., 0.])
-        else {
-            panic!("expected an orbit");
-        };
-        assert!((yaw - 0.1).abs() < 1e-9 && pitch == 0.);
-    }
-}
+#[path = "navigation_bar_tests.rs"]
+mod tests;

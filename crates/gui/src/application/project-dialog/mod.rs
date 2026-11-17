@@ -14,7 +14,8 @@ const NOT_AVAILABLE: &str = "This command is not available in this build.";
 #[derive(Default)]
 pub(crate) struct ProjectsDialog {
     opening: bool,
-    open: bool,
+    open: crate::dockable_lifecycle::DockableState,
+    dock_title: String,
     /// The row a click chose to inspect; choosing one does not activate it.
     inspected: Option<String>,
     /// The settings group the arrow keys open and close.
@@ -24,13 +25,21 @@ pub(crate) struct ProjectsDialog {
 }
 impl DockableWindow for ProjectsDialog {}
 impl ProjectsDialog {
+    pub(crate) fn register_dockable(
+        &mut self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+        identity: &str,
+    ) -> Result<(), String> {
+        self.dock_title = format!("Projects###{identity}");
+        registry.register::<Self>(&self.dock_title, &self.open)
+    }
     pub(crate) fn request(&mut self) {
         self.opening = true;
         self.inspected = None;
     }
     /// Close with its parent; example: `projects.close()` when the chooser closes.
     pub(crate) fn close(&mut self) {
-        self.open = false;
+        self.open.set_open(false);
         self.opening = false;
         self.wizard.cancel();
     }
@@ -41,15 +50,20 @@ impl ProjectsDialog {
     /// Draw inside the chooser, so it stacks above it; example: `dialog.panel(ui, &state)`.
     pub(crate) fn panel(&mut self, ui: &Ui, state: &GuiCommandState) {
         if std::mem::take(&mut self.opening) {
-            self.open = true;
+            self.open.set_open(true);
         }
-        if !self.open {
+        if !self.open.is_open() {
             return;
         }
-        Self::center_dockable(ui, TITLE, SIZE);
+        let title = if self.dock_title.is_empty() {
+            TITLE.to_owned()
+        } else {
+            self.dock_title.clone()
+        };
+        Self::center_dockable(ui, &title, SIZE);
         let mut open = true;
         let mut done = false;
-        Self::dockable_window(ui, TITLE, &mut open).build(|| {
+        Self::dockable_window(ui, &title, &mut open).build(|| {
             self.project_rows(ui, &state.projects);
             ui.separator();
             self.settings_tree(ui, &state.projects);

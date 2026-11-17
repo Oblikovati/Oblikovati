@@ -87,13 +87,21 @@ pub(crate) struct FeatureProperties {
     editing: Option<Editing>,
     opening: bool,
     document: Option<u64>,
+    dock_state: crate::dockable_lifecycle::DockableState,
 }
 impl DockableWindow for FeatureProperties {}
 impl FeatureProperties {
+    pub(crate) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>(TITLE, &self.dock_state)
+    }
     /// Open on a feature as it stands; example: from its row's Properties.
     pub(crate) fn request(&mut self, feature: &GuiBrowserFeature) {
         self.editing = Some(Editing::of(feature));
         self.opening = true;
+        self.dock_state.set_open(true);
     }
     pub(crate) fn needs_frame(&self) -> bool {
         self.opening
@@ -110,6 +118,7 @@ impl FeatureProperties {
         }
         if self.document.is_none() || self.document != state.document {
             self.editing = None;
+            self.dock_state.set_open(false);
             self.document = None;
         }
         if self.editing.is_none() {
@@ -138,6 +147,7 @@ impl FeatureProperties {
         });
         if closed || !open {
             self.editing = None;
+            self.dock_state.set_open(false);
             self.document = None;
         }
     }

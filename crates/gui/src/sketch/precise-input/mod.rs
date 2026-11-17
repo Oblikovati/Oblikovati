@@ -102,7 +102,7 @@ impl PreciseField {
 /// Whether the toolbar is up and what its fields hold.
 #[derive(Default)]
 pub(crate) struct PreciseInputBar {
-    pub open: bool,
+    open: crate::dockable_lifecycle::DockableState,
     move_option: bool,
     move_active: bool,
     first: PreciseField,
@@ -116,9 +116,15 @@ pub(crate) struct PreciseInputBar {
 }
 impl DockableWindow for PreciseInputBar {}
 impl PreciseInputBar {
+    pub(crate) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>("Precise Input", &self.open)
+    }
     /// The ribbon's way in; example: `bar.toggle(ui)` inside the Format panel.
     pub(crate) fn toggle(&mut self, ui: &Ui) {
-        if crate::widget_abi::toggle_button(ui, "Precise Input", [108., 18.], self.open) {
+        if crate::widget_abi::toggle_button(ui, "Precise Input", [108., 18.], self.open.is_open()) {
             self.toggle_visibility();
         }
     }
@@ -126,6 +132,7 @@ impl PreciseInputBar {
         let lit = ui.style_color(StyleColor::ButtonActive);
         let _highlight = self
             .open
+            .is_open()
             .then(|| ui.push_style_color(StyleColor::Button, lit));
         if icons.button(
             ui,
@@ -138,7 +145,7 @@ impl PreciseInputBar {
     }
     pub(crate) fn sync_move_context(&mut self, active: bool) {
         if active && !self.move_active {
-            self.move_option = self.open;
+            self.move_option = self.open.is_open();
         }
         self.move_active = active;
     }
@@ -147,12 +154,12 @@ impl PreciseInputBar {
     }
     pub(crate) fn set_move_option(&mut self, enabled: bool) {
         self.move_option = enabled;
-        self.open = enabled;
+        self.open.set_open(enabled);
     }
     fn toggle_visibility(&mut self) {
-        self.open = !self.open;
+        self.open.set_open(!self.open.is_open());
         if self.move_active {
-            self.move_option = self.open;
+            self.move_option = self.open.is_open();
         }
     }
     /// Draw while open and a command takes points; a command that ends drops what was typed.
@@ -168,12 +175,12 @@ impl PreciseInputBar {
             self.popup_open = false;
             return;
         };
-        if !self.open {
+        if !self.open.is_open() {
             return;
         }
         draw_triad(ui, target, self.relative);
         let [width, _] = ui.io().display_size;
-        let mut open = self.open;
+        let mut open = self.open.is_open();
         let window = Self::dockable_window(ui, "Precise Input", &mut open)
             .position([width * 0.5, 200.], imgui::Condition::FirstUseEver)
             .flags(self.window_flags());
@@ -203,8 +210,9 @@ impl PreciseInputBar {
                 self.expanded_controls(ui, target, actions);
             }
         });
-        Self::close_dockable(ui, "Precise Input", open && !self.open);
-        self.open &= open;
+        if !open {
+            self.open.set_open(false);
+        }
     }
     fn show_full_controls(&self, hovered: bool) -> bool {
         !self.auto_fade || hovered || self.popup_open || self.first.active || self.second.active
@@ -338,7 +346,7 @@ impl PreciseInputBar {
             self.auto_fade = !self.auto_fade;
         }
         if ui.menu_item("Close") {
-            self.open = false;
+            self.open.set_open(false);
         }
     }
 }
@@ -450,21 +458,19 @@ mod tests {
     }
     #[test]
     fn closing_toolbar_preserves_move_option_until_explicitly_changed() {
-        let mut bar = PreciseInputBar {
-            open: true,
-            ..Default::default()
-        };
+        let mut bar = PreciseInputBar::default();
+        bar.open.set_open(true);
         bar.sync_move_context(true);
-        bar.open = false;
+        bar.open.set_open(false);
         assert!(bar.move_option());
         bar.set_move_option(false);
-        assert!(!bar.open && !bar.move_option());
+        assert!(!bar.open.is_open() && !bar.move_option());
         bar.set_move_option(true);
-        assert!(bar.open && bar.move_option());
+        assert!(bar.open.is_open() && bar.move_option());
         bar.toggle_visibility();
-        assert!(!bar.open && !bar.move_option());
+        assert!(!bar.open.is_open() && !bar.move_option());
         bar.sync_move_context(false);
-        bar.open = true;
+        bar.open.set_open(true);
         bar.sync_move_context(true);
         assert!(bar.move_option());
     }

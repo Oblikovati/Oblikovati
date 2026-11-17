@@ -46,7 +46,7 @@ impl RibbonCustomization {
     }
     pub(super) fn finish_apply(&mut self) {
         if self.close_after_apply && !self.keyboard_changed() && !self.marking_changed() {
-            self.open = false;
+            self.open.set_open(false);
             self.close_after_apply = false;
         }
     }

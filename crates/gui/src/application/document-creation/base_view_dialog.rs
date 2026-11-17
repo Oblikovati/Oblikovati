@@ -17,6 +17,7 @@ const ORIENTATIONS: [(&str, &str); 7] = [
 pub(super) struct BaseViewDialog {
     requested: bool,
     drawing: Option<u64>,
+    dock_state: crate::dockable_lifecycle::DockableState,
     source: Option<u64>,
     orientation: usize,
     scale: f32,
@@ -25,6 +26,16 @@ pub(super) struct BaseViewDialog {
 }
 impl DockableWindow for BaseViewDialog {}
 impl BaseViewDialog {
+    pub(super) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>("Base View", &self.dock_state)
+    }
+    fn set_document(&mut self, document: Option<u64>) {
+        self.drawing = document;
+        self.dock_state.set_open(document.is_some());
+    }
     pub(super) fn request(&mut self) {
         self.requested = true;
     }
@@ -47,7 +58,7 @@ impl BaseViewDialog {
         if self.drawing != state.document
             || state.document_type != Some(oblikovati_api::types::DOCUMENT_DRAWING)
         {
-            self.drawing = None;
+            self.set_document(None);
         }
         if self.drawing.is_none() && self.previewed {
             actions.push(GuiShellAction::PreviewDrawingBaseView(None));
@@ -73,11 +84,11 @@ impl BaseViewDialog {
                 actions.push(GuiShellAction::PreviewDrawingBaseView(None));
                 self.previewed = false;
             }
-            self.drawing = None;
+            self.set_document(None);
         }
     }
     fn open(&mut self, state: &GuiCommandState) {
-        self.drawing = state.document;
+        self.set_document(state.document);
         self.source = preferred_source(state);
         self.orientation = 0;
         self.scale = 1.;
@@ -145,7 +156,7 @@ impl BaseViewDialog {
         let apply = crate::widget_abi::button(ui, "Apply", [0.; 2]);
         if enabled && (apply || ui.is_window_focused() && ui.is_key_pressed_no_repeat(Key::Enter)) {
             actions.extend(action);
-            self.drawing = None;
+            self.set_document(None);
             self.previewed = false;
         }
         drop(disabled);
@@ -157,7 +168,7 @@ impl BaseViewDialog {
                 actions.push(GuiShellAction::PreviewDrawingBaseView(None));
                 self.previewed = false;
             }
-            self.drawing = None;
+            self.set_document(None);
         }
     }
 }

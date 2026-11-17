@@ -283,10 +283,8 @@ mod tests {
     #[test]
     fn binding_edits_are_staged_and_acknowledged_by_owner_state() {
         let original = oblikovati_model::keymap::Keymap::desktop_defaults();
-        let mut dialog = RibbonCustomization {
-            open: true,
-            ..Default::default()
-        };
+        let mut dialog = RibbonCustomization::default();
+        dialog.open.set_open(true);
         let mut state = crate::GuiCommandState {
             keymap: Some(original.clone()),
             ..Default::default()
@@ -312,7 +310,7 @@ mod tests {
         dialog.sync_keyboard(&state);
         dialog.finish_apply();
         assert!(!dialog.keyboard_changed());
-        assert!(!dialog.open);
+        assert!(!dialog.open.is_open());
     }
     #[test]
     fn shortcut_edit_preserves_a_saved_alias() {
@@ -337,10 +335,8 @@ mod tests {
             keymap: Some(original.clone()),
             ..Default::default()
         };
-        let mut dialog = RibbonCustomization {
-            open: true,
-            ..Default::default()
-        };
+        let mut dialog = RibbonCustomization::default();
+        dialog.open.set_open(true);
         dialog.sync_keyboard(&state);
         dialog.keyboard_chord = "Ctrl+U".into();
         dialog.stage_binding("edit.undo").unwrap();

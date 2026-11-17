@@ -6,11 +6,22 @@ use imgui::Ui;
 #[derive(Default)]
 pub(crate) struct ClearAppearance {
     document: Option<u64>,
+    dock_state: crate::dockable_lifecycle::DockableState,
 }
 impl DockableWindow for ClearAppearance {}
 impl ClearAppearance {
+    pub(crate) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>("Clear Appearance", &self.dock_state)
+    }
+    fn set_document(&mut self, document: Option<u64>) {
+        self.document = document;
+        self.dock_state.set_open(document.is_some());
+    }
     pub(crate) fn open(&mut self, document: u64) {
-        self.document = Some(document);
+        self.set_document(Some(document));
     }
     pub(crate) fn panel(
         &mut self,
@@ -22,7 +33,7 @@ impl ClearAppearance {
             return;
         };
         if state.document != Some(document) {
-            self.document = None;
+            self.set_document(None);
             return;
         }
         let action = Self::action_for(state, document);
@@ -35,7 +46,7 @@ impl ClearAppearance {
             .size(size, imgui::Condition::FirstUseEver)
             .build(|| done = confirm_clear(ui, state, action, actions));
         if !open || done {
-            self.document = None;
+            self.set_document(None);
         }
     }
     fn action_for(state: &GuiCommandState, document: u64) -> Option<GuiShellAction> {

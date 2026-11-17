@@ -10,18 +10,36 @@ pub struct GuiRegionPanel {
     pub loops: Vec<String>,
     pub results: Vec<String>,
 }
-impl DockableWindow for GuiRegionPanel {}
+
 const SIZE: [f32; 2] = [360., 320.];
 
 /// Draw the dialog; Calculate needs an accepted loop, as nothing else has a result.
-pub(crate) fn panel(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
+pub(crate) fn panel(
+    ui: &Ui,
+    state: &GuiCommandState,
+    actions: &mut Vec<GuiShellAction>,
+    dock: &crate::external_dock_window::ExternalDockWindow,
+) {
+    if !dock.is_open() {
+        return;
+    }
     let Some(panel) = &state.region_properties else {
         return;
     };
     let [width, _] = ui.io().display_size;
-    GuiRegionPanel::fit_dockable(ui, "Region Properties", [width - SIZE[0] - 24., 220.], SIZE);
+    crate::external_dock_window::ExternalDockWindow::fit_dockable(
+        ui,
+        "Region Properties",
+        [width - SIZE[0] - 24., 220.],
+        SIZE,
+    );
     let mut open = true;
-    GuiRegionPanel::dockable_window(ui, "Region Properties", &mut open).build(|| {
+    crate::external_dock_window::ExternalDockWindow::dockable_window(
+        ui,
+        "Region Properties",
+        &mut open,
+    )
+    .build(|| {
         ui.text("Selected loops");
         for name in &panel.loops {
             ui.text(name);

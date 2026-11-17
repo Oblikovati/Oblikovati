@@ -8,11 +8,22 @@ use oblikovati_api::wire::{DocumentUnitsInfo, SetDocumentUnitsArgs};
 #[derive(Default)]
 pub(crate) struct GuiDocumentUnits {
     document: Option<u64>,
+    dock_state: crate::dockable_lifecycle::DockableState,
 }
 impl DockableWindow for GuiDocumentUnits {}
 impl GuiDocumentUnits {
+    pub(crate) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>("Document Settings", &self.dock_state)
+    }
+    fn set_document(&mut self, document: Option<u64>) {
+        self.document = document;
+        self.dock_state.set_open(document.is_some());
+    }
     pub(crate) fn request(&mut self, document: u64) {
-        self.document = Some(document);
+        self.set_document(Some(document));
     }
     pub(crate) fn panel(
         &mut self,
@@ -22,7 +33,7 @@ impl GuiDocumentUnits {
         home_active: bool,
     ) {
         if self.document != state.document || home_active {
-            self.document = None;
+            self.set_document(None);
         }
         let (Some(document), Some(units)) = (self.document, state.document_units.as_ref()) else {
             return;
@@ -42,7 +53,7 @@ impl GuiDocumentUnits {
                 || ui.is_window_focused() && ui.is_key_pressed_no_repeat(Key::Escape);
         });
         if !open || done {
-            self.document = None;
+            self.set_document(None);
         }
     }
 }

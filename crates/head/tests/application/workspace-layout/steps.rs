@@ -27,6 +27,9 @@ mod dockspace_restart;
 mod drawing_browser;
 #[path = "drawing_browser_steps.rs"]
 mod drawing_browser_steps;
+#[cfg(target_os = "linux")]
+#[path = "external_close_native.rs"]
+mod external_close_native;
 use drawing_browser_steps::{drag_over_drawing, drawing_tree, expect_sheet_at, floats_over_sheet};
 #[cfg(target_os = "linux")]
 #[path = "link_close_native.rs"]

@@ -6,14 +6,25 @@ use imgui::Ui;
 #[derive(Default)]
 pub(crate) struct OffsetPlaneDialog {
     document: Option<u64>,
+    dock_state: crate::dockable_lifecycle::DockableState,
     base: Option<GuiOffsetPlaneBase>,
     offset: String,
     error: Option<String>,
 }
 impl DockableWindow for OffsetPlaneDialog {}
 impl OffsetPlaneDialog {
+    pub(crate) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        registry.register::<Self>("Offset Plane", &self.dock_state)
+    }
+    fn set_document(&mut self, document: Option<u64>) {
+        self.document = document;
+        self.dock_state.set_open(document.is_some());
+    }
     pub(crate) fn open(&mut self, document: u64, base: Option<GuiOffsetPlaneBase>) {
-        self.document = Some(document);
+        self.set_document(Some(document));
         self.base = base;
         self.offset = "10 mm".into();
         self.error = None;
@@ -35,7 +46,7 @@ impl OffsetPlaneDialog {
         offset: &str,
         error: &str,
     ) {
-        self.document = Some(document);
+        self.set_document(Some(document));
         self.base = Some(base);
         self.offset = offset.to_owned();
         self.error = Some(error.to_owned());
@@ -50,7 +61,7 @@ impl OffsetPlaneDialog {
             return;
         };
         if state.document != Some(document) || state.authoring != crate::GuiAuthoringContext::Part {
-            self.document = None;
+            self.set_document(None);
             return;
         }
         let mut open = true;
@@ -59,7 +70,7 @@ impl OffsetPlaneDialog {
             .size([340., 210.], imgui::Condition::FirstUseEver)
             .build(|| done = self.controls(ui, state, actions, document));
         if !open || done {
-            self.document = None;
+            self.set_document(None);
         }
     }
     fn controls(

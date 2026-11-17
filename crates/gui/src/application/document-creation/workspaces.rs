@@ -68,6 +68,13 @@ impl Default for DocumentWorkspaces {
     }
 }
 impl DocumentWorkspaces {
+    pub(crate) fn register_dockables(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        self.base_view.register_dockable(registry)?;
+        self.assembly_place.register_dockable(registry)
+    }
     pub(crate) fn request_assembly_place(&mut self) {
         self.assembly_place.request();
     }

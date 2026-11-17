@@ -9,7 +9,7 @@ use imgui::Ui;
 pub struct GuiMeasurePanel {
     pub rows: Vec<String>,
 }
-impl DockableWindow for GuiMeasurePanel {}
+
 /// The last sketch command that can be started again from its context menu.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GuiSketchRepeat {
@@ -30,12 +30,20 @@ const CANVAS_MENU: &str = "##sketch-canvas-menu";
 const MEASURE_SIZE: [f32; 2] = [300., 300.];
 
 /// Draw the open measurement; example: rows of a selected curve, with Done below them.
-pub(crate) fn measure_panel(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
+pub(crate) fn measure_panel(
+    ui: &Ui,
+    state: &GuiCommandState,
+    actions: &mut Vec<GuiShellAction>,
+    dock: &crate::external_dock_window::ExternalDockWindow,
+) {
+    if !dock.is_open() {
+        return;
+    }
     let Some(panel) = &state.measure else {
         return;
     };
     let [width, _] = ui.io().display_size;
-    GuiMeasurePanel::fit_dockable(
+    crate::external_dock_window::ExternalDockWindow::fit_dockable(
         ui,
         "Measure",
         [width - MEASURE_SIZE[0] - 24., 220.],
@@ -43,7 +51,7 @@ pub(crate) fn measure_panel(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<
     );
     let minimum_width = measure_width(ui, panel);
     let mut open = true;
-    GuiMeasurePanel::dockable_window(ui, "Measure", &mut open)
+    crate::external_dock_window::ExternalDockWindow::dockable_window(ui, "Measure", &mut open)
         .size_constraints([minimum_width, 1.], [width.max(minimum_width), f32::MAX])
         .collapsible(false)
         .build(|| {
