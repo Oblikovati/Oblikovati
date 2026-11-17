@@ -59,6 +59,7 @@ mod sketch_ids;
 pub use sketch_constraints::{SketchConstraintReservationError, SketchConstraintReservations};
 pub use sketch_delete::{DocumentSketchDeleteError, DocumentSketchDeleteReport};
 mod preview;
+pub use preview::SnapshotReplay;
 mod sketch_placement;
 mod sketch_projection;
 mod sketch_recompute;

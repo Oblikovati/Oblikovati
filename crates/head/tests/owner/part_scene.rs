@@ -349,3 +349,6 @@ mod fillet_scene;
 
 #[path = "part_scene/fillet_replay_consumers.rs"]
 mod fillet_replay_consumers;
+
+#[path = "part_scene/blend_model_states.rs"]
+mod blend_model_states;
