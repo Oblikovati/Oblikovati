@@ -75,6 +75,7 @@ impl GuiScalePreferences {
             })
             .unwrap_or(false);
         if escape {
+            Self::close_dockable(ui, "Application Options", true);
             self.open = false;
         }
         if !self.open {

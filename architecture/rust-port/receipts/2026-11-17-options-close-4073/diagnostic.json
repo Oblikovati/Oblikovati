@@ -1,0 +1,12 @@
+{
+  "base": "b248d2871",
+  "issue": 4073,
+  "scope": "Application Options Escape in shared dock",
+  "native_x11": "Escape selects Material Browser and Options reopens in the same dock; 1 passed",
+  "checks": [
+    "cargo fmt --all -- --check",
+    "cargo clippy --locked --offline -p oblikovati-head --all-targets -- -D warnings",
+    "cargo check --locked --offline -p oblikovati-head --target x86_64-pc-windows-gnu"
+  ],
+  "remaining": "Other dockable window close transitions remain under investigation."
+}

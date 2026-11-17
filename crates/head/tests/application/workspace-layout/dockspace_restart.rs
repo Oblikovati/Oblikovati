@@ -408,3 +408,61 @@ fn customize_async_ok_selects_next_tab_and_reopens_in_same_dock() {
     world.save_capture("customize-async-restored-to-shared-dock");
     world.close();
 }
+
+#[test]
+fn application_options_escape_selects_next_tab_and_reopens_in_same_dock() {
+    let mut world = ApplicationWorld::new();
+    super::browser_feature::open_visible_extruded_part(&mut world);
+    let area = viewport(&mut world);
+    open_toolbar_tool(&mut world, "Material Browser");
+    let (position, size) = window_geometry("Material Browser").unwrap();
+    native_drag(
+        &mut world,
+        [
+            (position[0] + size[0] * 0.4) as i32,
+            (position[1] + 10.) as i32,
+        ],
+        [area[2] as i32 - 15, ((area[1] + area[3]) / 2) as i32],
+    );
+    native_open_application_options(&mut world);
+    let (source, size) = window_geometry("Application Options").unwrap();
+    let (destination, destination_size) = window_geometry("Material Browser").unwrap();
+    native_drag(
+        &mut world,
+        [(source[0] + size[0] * 0.4) as i32, (source[1] + 10.) as i32],
+        [
+            (destination[0] + destination_size[0] * 0.5) as i32,
+            (destination[1] + 10.) as i32,
+        ],
+    );
+    let node = super::super::diagnostics::window_dock_id("Material Browser").unwrap();
+    assert_ne!(node, 0);
+    assert_eq!(
+        super::super::diagnostics::window_dock_id("Application Options"),
+        Some(node)
+    );
+    select_dock_tab(&mut world, "Application Options");
+    super::super::x11_input::press_escape();
+    world.pump(Vec::new());
+    world.pump(Vec::new());
+    assert!(window_geometry("Application Options").is_none());
+    assert_eq!(
+        super::super::diagnostics::window_dock_tab_visible("Material Browser"),
+        Some(true)
+    );
+    world.run_in_window("Material Browser", "Assigntopart");
+    native_open_application_options(&mut world);
+    assert_eq!(
+        super::super::diagnostics::window_dock_id("Application Options"),
+        Some(node)
+    );
+    select_dock_tab(&mut world, "Application Options");
+    world.run_in_window("Application Options", "Textsize");
+    world.save_capture("options-restored-to-shared-dock");
+    world.close();
+}
+
+fn native_open_application_options(world: &mut ApplicationWorld) {
+    native_click_label(world, "Tools");
+    native_click_label(world, "Application Options");
+}
