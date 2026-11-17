@@ -19,10 +19,7 @@ impl NativeHeadWindow {
             title.push_str(&format!(" - {}", notice.message()));
         }
         self.view.set_title(&title)?;
-        #[cfg(target_os = "linux")]
-        {
-            self.accessibility_title = title;
-        }
+        self.accessibility_title = title;
         Ok(())
     }
 }

@@ -11,6 +11,7 @@ impl NativeHeadWindow {
         commands: &oblikovati_gui::GuiCommandState,
         update: &mut crate::HeadGuiUpdate,
     ) -> Result<(), String> {
+        #[cfg(target_os = "linux")]
         if matches!(event, Some(ViewportEvent::Resized(_))) {
             self.accessibility_bounds = self.view.window_screen_bounds()?;
         }
@@ -19,7 +20,13 @@ impl NativeHeadWindow {
         else {
             return Ok(());
         };
-        while let Some(control) = self.accessibility.next_request() {
+        #[cfg(target_os = "windows")]
+        let Some(accessibility) = self.accessibility.as_mut() else {
+            return Ok(());
+        };
+        #[cfg(target_os = "linux")]
+        let accessibility = &mut self.accessibility;
+        while let Some(control) = accessibility.next_request() {
             if !popup {
                 dispatch_control(control, update);
             }
@@ -31,9 +38,16 @@ impl NativeHeadWindow {
             bounds: controls.bounds.map(|bounds| bounds.map(f64::from)),
             focused: controls.focused.and_then(frame_control),
         };
-        let [x1, y1, x2, y2] = self.accessibility_bounds.map(f64::from);
-        self.accessibility
-            .update(semantics, accesskit::Rect::new(x1, y1, x2, y2), focused);
+        #[cfg(target_os = "linux")]
+        {
+            let [x1, y1, x2, y2] = self.accessibility_bounds.map(f64::from);
+            accessibility.update(semantics, accesskit::Rect::new(x1, y1, x2, y2), focused);
+        }
+        #[cfg(target_os = "windows")]
+        {
+            let _ = (event, focused);
+            accessibility.update(semantics);
+        }
         Ok(())
     }
 }
