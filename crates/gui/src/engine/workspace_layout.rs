@@ -4,6 +4,16 @@ use super::GuiFrameEngine;
 use crate::application::workspace_docking::persistence::WorkspaceDockSettings;
 
 impl GuiFrameEngine {
+    pub(super) fn sync_tool_visibility(&mut self) {
+        self.workspace.tool_visibility = crate::application::workspace_layout::ToolVisibility {
+            material: self.material_browser.is_open(),
+            appearance: self.appearance_browser.is_open(),
+            parameters: self.parameter_editor.is_open(),
+            selection_filter: self.selection_filter.is_open(),
+            history: self.history_browser.is_open(),
+        };
+    }
+
     /// Restore workspace docking before the first frame.
     /// Example: `engine.load_workspace_layout(&saved_bytes)?` at desktop startup.
     pub fn load_workspace_layout(&mut self, bytes: &[u8]) -> Result<(), String> {
@@ -43,5 +53,29 @@ impl GuiFrameEngine {
         settings.selection_filter = self.selection_filter.is_open();
         settings.history_browser = self.history_browser.is_open();
         settings.encode()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn visibility_snapshot_tracks_each_tool_after_open_and_close() {
+        let mut engine = crate::GuiFrameEngine::new().unwrap();
+        engine.material_browser.set_open(true);
+        engine.appearance_browser.set_open(true);
+        engine.parameter_editor.set_open(true);
+        engine.selection_filter.set_open(true);
+        engine.history_browser.set_open(true);
+        engine.sync_tool_visibility();
+        let visible = engine.workspace.tool_visibility;
+        assert!(visible.material && visible.appearance && visible.parameters);
+        assert!(visible.selection_filter && visible.history);
+        engine.material_browser.set_open(false);
+        engine.appearance_browser.set_open(false);
+        engine.parameter_editor.set_open(false);
+        engine.selection_filter.set_open(false);
+        engine.history_browser.set_open(false);
+        engine.sync_tool_visibility();
+        assert_eq!(engine.workspace.tool_visibility, Default::default());
     }
 }

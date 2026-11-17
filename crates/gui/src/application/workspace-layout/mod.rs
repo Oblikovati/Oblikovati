@@ -33,9 +33,19 @@ enum BrowserDock {
     Right,
     Floating([f32; 2]),
 }
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub(crate) struct ToolVisibility {
+    pub material: bool,
+    pub appearance: bool,
+    pub parameters: bool,
+    pub selection_filter: bool,
+    pub history: bool,
+}
+
 #[derive(Debug)]
 pub(crate) struct WorkspaceLayout {
     pub panels: panel_tabs::DockPanels,
+    pub tool_visibility: ToolVisibility,
     pub tabs_visible: bool,
     dock: BrowserDock,
     dragging: bool,
@@ -58,6 +68,7 @@ impl Default for WorkspaceLayout {
     fn default() -> Self {
         Self {
             panels: Default::default(),
+            tool_visibility: Default::default(),
             tabs_visible: true,
             dock: BrowserDock::default(),
             dragging: false,
@@ -366,6 +377,15 @@ impl WorkspaceLayout {
         if let Some(_menu) = ui.begin_popup("##user-interface") {
             ui.checkbox("Model Browser", &mut self.panels.model_open);
             ui.checkbox("Document Tabs", &mut self.tabs_visible);
+            ui.separator();
+            ui.checkbox("Material Browser", &mut self.tool_visibility.material);
+            ui.checkbox("Appearance Browser", &mut self.tool_visibility.appearance);
+            ui.checkbox("Parameters", &mut self.tool_visibility.parameters);
+            ui.checkbox(
+                "Selection Filter",
+                &mut self.tool_visibility.selection_filter,
+            );
+            ui.checkbox("History Browser", &mut self.tool_visibility.history);
         }
     }
 }

@@ -12,6 +12,9 @@ pub(crate) struct HistoryBrowser {
 }
 impl DockableWindow for HistoryBrowser {}
 impl HistoryBrowser {
+    pub(crate) fn set_open(&mut self, open: bool) {
+        self.open = open;
+    }
     pub(crate) fn is_open(&self) -> bool {
         self.open
     }

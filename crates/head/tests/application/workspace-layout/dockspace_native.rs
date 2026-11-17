@@ -81,6 +81,20 @@ fn material_browser_docks_at_workspace_right_and_reduces_viewport() {
         before,
         "closing the panel must restore the viewport"
     );
+    world.click_text("View");
+    world.click_text("User Interface");
+    world.click_text("Material Browser");
+    world.pump(Vec::new());
+    assert!(
+        window_geometry("Material Browser").is_some(),
+        "menu must reopen the panel"
+    );
+    assert_ne!(
+        super::super::diagnostics::window_dock_id("Material Browser").unwrap(),
+        0,
+        "reopened panel must return to its dock"
+    );
+    world.save_capture("workspace-docking-menu-restored");
     world.close();
 }
 
