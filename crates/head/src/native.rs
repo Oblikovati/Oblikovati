@@ -39,9 +39,10 @@ pub struct NativeHeadWindow {
     gui: Option<gui_loop::NativeGui>,
     #[cfg(target_os = "linux")]
     accessibility: crate::accessibility::unix::UnixFrameAccessibility,
+    #[cfg(target_os = "windows")]
+    accessibility: Option<crate::accessibility::windows::WindowsFrameAccessibility>,
     #[cfg(target_os = "linux")]
     accessibility_bounds: [i32; 4],
-    #[cfg(target_os = "linux")]
     accessibility_title: String,
     injected_events: std::collections::VecDeque<ViewportEvent>,
     ribbon_settings_directory: Option<std::path::PathBuf>,
@@ -198,7 +199,6 @@ impl HeadWindow for NativeHeadWindow {
         let mut window_commands = commands.clone();
         window_commands.window_maximized = self.view.window_maximized()?;
         let mut update = self.advance_native_gui(event, &window_commands)?;
-        #[cfg(target_os = "linux")]
         self.update_accessibility(event, &window_commands, &mut update)?;
         if let Some(hover) = &update.constraint_hover {
             update.changed |= self.update_glyph_hover(hover.as_ref(), commands.document)?;
@@ -448,6 +448,8 @@ impl HeadWindow for NativeHeadWindow {
     }
     fn finish(&mut self) -> Result<(), String> {
         self.gui.take();
+        #[cfg(target_os = "windows")]
+        self.accessibility.take();
         self.capture_requests.clear();
         #[cfg(target_os = "linux")]
         let clipboard = self.clipboard.handoff_on_shutdown();
@@ -515,7 +517,6 @@ mod gui_composition;
 #[path = "../tests/native_sketch_display.rs"]
 mod sketch_display_tests;
 
-#[cfg(target_os = "linux")]
 mod accessibility;
 #[cfg(test)]
 #[path = "../tests/native_gui_composition.rs"]

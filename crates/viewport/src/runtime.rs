@@ -62,6 +62,18 @@ impl ViewportRuntime {
         let window = NativeWindow::create(title, extent)?;
         self.create(ViewTarget::Native(Box::new(window)))
     }
+    /// Set up a native Windows window before it becomes visible.
+    /// Example: `runtime.open_window_with_setup("Oblikovati", [640, 480], |_| {})?`.
+    #[cfg(target_os = "windows")]
+    pub fn open_window_with_setup(
+        &self,
+        title: &str,
+        extent: [u32; 2],
+        setup: impl FnOnce(isize),
+    ) -> Result<Viewport, String> {
+        let window = NativeWindow::create_with_setup(title, extent, setup)?;
+        self.create(ViewTarget::Native(Box::new(window)))
+    }
     /// Create an explicit capture target on the same kernel renderer; example: `runtime.open_offscreen([64,64])?`.
     pub fn open_offscreen(&self, extent: [u32; 2]) -> Result<Viewport, String> {
         self.create(ViewTarget::offscreen(extent)?)

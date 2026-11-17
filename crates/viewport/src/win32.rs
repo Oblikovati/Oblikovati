@@ -40,6 +40,13 @@ const STYLE: u32 = WS_POPUP | WS_THICKFRAME | WS_SYSMENU | WS_MINIMIZEBOX | WS_M
 
 impl NativeWindow {
     pub fn create(title: &str, extent: [u32; 2]) -> Result<Self, String> {
+        Self::create_with_setup(title, extent, |_| {})
+    }
+    pub fn create_with_setup(
+        title: &str,
+        extent: [u32; 2],
+        setup: impl FnOnce(isize),
+    ) -> Result<Self, String> {
         let [width, height] = valid_extent(extent)?;
         let title = wide_title(title)?;
         let class = windows_sys::w!("OblikovatiViewport");
@@ -75,6 +82,7 @@ impl NativeWindow {
             hwnd,
             window,
         };
+        setup(hwnd as isize);
         native.mapped(true)?;
         native.refresh_extent();
         Ok(native)
@@ -334,4 +342,21 @@ fn wide_title(title: &str) -> Result<Vec<u16>, String> {
 
 fn win_error(operation: &str) -> String {
     format!("{operation}: {}", std::io::Error::last_os_error())
+}
+
+#[cfg(test)]
+mod setup_tests {
+    use super::*;
+
+    #[test]
+    fn native_setup_runs_before_the_window_is_visible() {
+        let visited = Cell::new(false);
+        let native = NativeWindow::create_with_setup("setup visibility", [640, 480], |handle| {
+            assert_eq!(unsafe { IsWindowVisible(handle as HWND) }, 0);
+            visited.set(true);
+        })
+        .expect("create a native test window");
+        assert!(visited.get());
+        assert_ne!(unsafe { IsWindowVisible(native.hwnd) }, 0);
+    }
 }

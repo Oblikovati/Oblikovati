@@ -34,7 +34,25 @@ impl NativeHeadWindow {
             ..ViewportOptions::default()
         };
         let runtime = ViewportRuntime::new(options)?;
+        let wake = ViewportWake::new()?;
+        #[cfg(target_os = "linux")]
         let mut view = runtime.open_window("Oblikovati", extent)?;
+        #[cfg(target_os = "windows")]
+        let (mut view, accessibility) = {
+            let mut adapter = None;
+            let signal = wake.clone();
+            let view = runtime.open_window_with_setup("Oblikovati", extent, |hwnd| {
+                adapter = Some(
+                    crate::accessibility::windows::WindowsFrameAccessibility::new(
+                        hwnd,
+                        move || {
+                            let _ = signal.wake();
+                        },
+                    ),
+                );
+            })?;
+            (view, adapter)
+        };
         view.submit(&ViewportScene {
             background: [0.; 3],
             triangles: Vec::new(),
@@ -43,7 +61,6 @@ impl NativeHeadWindow {
         let clipboard = clipboard::NativeClipboardChannel::open();
         #[cfg(target_os = "windows")]
         let clipboard = clipboard::NativeClipboardChannel::open(view.native_clipboard()?);
-        let wake = ViewportWake::new()?;
         #[cfg(target_os = "linux")]
         let accessibility_bounds = view.window_screen_bounds()?;
         #[cfg(target_os = "linux")]
@@ -78,11 +95,9 @@ impl NativeHeadWindow {
             saved_views: Default::default(),
             command_notice: None,
             gui: None,
-            #[cfg(target_os = "linux")]
             accessibility,
             #[cfg(target_os = "linux")]
             accessibility_bounds,
-            #[cfg(target_os = "linux")]
             accessibility_title: "Oblikovati".into(),
             injected_events: Default::default(),
             ribbon_settings_directory: None,

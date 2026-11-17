@@ -101,6 +101,10 @@ mod tests {
         assert_eq!(tree.nodes[3].1.bounds(), Some(Rect::new(1., 2., 3., 4.)));
         frame.maximized = true;
         assert_eq!(frame.tree().nodes[2].1.label(), Some("Restore"));
+        frame.enabled = false;
+        let disabled = frame.tree();
+        assert!(disabled.nodes[1].1.is_disabled());
+        assert!(!disabled.nodes[1].1.supports_action(Action::Click));
         assert_eq!(control_for_id(MAXIMIZE), Some(FrameControl::Maximize));
         assert_eq!(control_for_id(NodeId(42)), None);
     }
