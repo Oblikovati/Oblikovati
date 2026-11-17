@@ -43,6 +43,7 @@ pub(crate) fn canvas_menu(
 }
 fn command(id: &str) -> Option<(&'static str, GuiShellAction)> {
     match id {
+        "Create.Extrude" => Some(("Extrude", GuiShellAction::OpenExtrude)),
         "Modify.Fillet" => Some(("Fillet", GuiShellAction::OpenFillet)),
         "Sketch.Create2D" => Some(("Start 2D Sketch", GuiShellAction::ChooseSketchPlane)),
         "WorkPlane.Offset" => Some(("Offset Plane", GuiShellAction::OpenOffsetPlane)),
@@ -57,6 +58,10 @@ mod tests {
         assert_eq!(
             command("Modify.Fillet"),
             Some(("Fillet", GuiShellAction::OpenFillet))
+        );
+        assert_eq!(
+            command("Create.Extrude"),
+            Some(("Extrude", GuiShellAction::OpenExtrude))
         );
         assert_eq!(command("Modify.Unknown"), None);
     }
