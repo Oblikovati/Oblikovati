@@ -1,0 +1,7 @@
+{
+  "application_commit": "b93a592b7",
+  "result": "3 native restart tests passed: docked tab group, selected tab, bounds, closed tab, floating window position and size, and selection preferences",
+  "environment": "Linux Xvfb with Mesa lavapipe",
+  "provenance": "Diagnostic build from shared local target; no sealed build or pinned scenario acceptance.",
+  "limits": "Normal shutdown persistence for Material Browser, Appearance Browser, Parameters, Selection Filter and History Browser; model browser still uses its custom layout. Windows runtime untested."
+}
