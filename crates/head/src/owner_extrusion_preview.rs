@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Build a temporary certified extrusion without changing the document.
 use super::*;
+use oblikovati_martensite::PrismPresentationSource;
 pub(super) struct ComponentPreview {
     assembly: u64,
     generations: Vec<(u64, u64)>,
@@ -338,6 +339,12 @@ impl<
             .workspace()
             .session(document)
             .map_err(|cause| cause.to_string())?;
+        let guid = self
+            .files
+            .workspace()
+            .identity(document)
+            .map_err(|cause| cause.to_string())?
+            .internal_name;
         let prepared =
             oblikovati_automation::prepare_extrusion(session.snapshot(), backend, request)
                 .map_err(|cause| cause.to_string())?;
@@ -346,7 +353,11 @@ impl<
                 |snapshot, ids| prepared.create(snapshot, ids),
                 |candidate, id| {
                     let mut evaluator =
-                        oblikovati_martensite::CertifiedPrismEvaluator::with_policy(backend.0);
+                        oblikovati_martensite::CertifiedNamedSolidEvaluator::with_policy(
+                            session.history(),
+                            guid,
+                            backend.0,
+                        );
                     let result = candidate
                         .evaluate_part_features(&mut evaluator)
                         .map_err(|cause| oblikovati_api::Error(cause.to_string()))?;
@@ -356,7 +367,12 @@ impl<
                             result.health()
                         ))
                     })?;
-                    body.body
+                    body.as_prism()
+                        .ok_or_else(|| {
+                            oblikovati_api::Error(format!(
+                                "preview feature {id:?}: expected a prism result"
+                            ))
+                        })?
                         .presentation(crate::part_scene::DISPLAY_MESH)
                         .map_err(oblikovati_api::Error)
                 },

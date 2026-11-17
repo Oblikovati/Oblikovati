@@ -13,6 +13,7 @@ use oblikovati_model::{
         work_geometry::DatumLength,
     },
     history::DocumentSnapshot,
+    identity::DocumentGuid,
     quantity::Dimension,
 };
 use oblikovati_persistence::file_access::DocumentFiles;
@@ -28,12 +29,18 @@ pub trait ExtrudeRegionAccess {
         index: usize,
     ) -> Result<SketchPrismSelection, String>;
     /// Validate the solved candidate and return the current body count; example: `backend.validate(candidate, feature)?`.
-    fn validate(&self, candidate: &DocumentSnapshot, feature: FeatureId) -> Result<usize, String>;
+    fn validate(
+        &self,
+        candidate: &DocumentSnapshot,
+        document: DocumentGuid,
+        feature: FeatureId,
+    ) -> Result<usize, String>;
     /// Replay a feature and return its failure reason, or an empty string when healthy or suppressed.
     /// Example: `backend.feature_health(candidate, feature)?`.
     fn feature_health(
         &self,
         _candidate: &DocumentSnapshot,
+        _document: DocumentGuid,
         feature: FeatureId,
     ) -> Result<String, String> {
         Err(format!(
@@ -112,6 +119,11 @@ fn create<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     prepared: PreparedExtrusion,
 ) -> Result<Vec<u8>, Error> {
     let name = prepared.name.clone();
+    let guid = files
+        .workspace()
+        .identity(document)
+        .map_err(api_error)?
+        .internal_name;
     files
         .commands(document)
         .map_err(api_error)?
@@ -119,7 +131,7 @@ fn create<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
             "Create extrusion",
             |snapshot, ids| prepared.create(snapshot, ids),
             |candidate, id| {
-                let bodies = backend.validate(candidate, id).map_err(Error)?;
+                let bodies = backend.validate(candidate, guid, id).map_err(Error)?;
                 let feature = candidate.work_geometry.get(id).map_err(api_error)?;
                 crate::encode(&serde_json::json!({
                     "id": id.0, "name": feature.name(), "kind": feature.definition().kind(),

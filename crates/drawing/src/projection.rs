@@ -4,7 +4,7 @@ use oblikovati_api::types::{
     DrawingViewStyle, HIDDEN_LINE_REMOVED_VIEW_STYLE, HIDDEN_LINE_VIEW_STYLE, WIREFRAME_VIEW_STYLE,
 };
 use oblikovati_automation::DrawingViewProjectionAccess;
-use oblikovati_martensite::{DrawingBaseProjection, EvaluationFailure, NamedPrismSnapshot};
+use oblikovati_martensite::{DrawingBaseProjection, EvaluationFailure, NamedSolid};
 use oblikovati_model::{
     drawing::DrawingBaseViewDefinition,
     feature::{FeatureEvaluationStatus, part::PartFeatureEvaluation},
@@ -45,14 +45,14 @@ fn project_view(
 ) -> Result<DrawingBaseProjection, String> {
     let result = evaluate_part(history, document)?;
     let bodies: Vec<_> = result.ordered_bodies().collect();
-    oblikovati_martensite::drawing_base_view_bodies(history, document, &bodies, view)
+    oblikovati_martensite::drawing_base_view_solids(history, document, &bodies, view)
 }
 /// Evaluate the part and refuse a sick feature; example: `evaluate_part(history, guid)?`.
 pub fn evaluate_part(
     history: &DocumentEditHistory,
     document: DocumentGuid,
-) -> Result<PartFeatureEvaluation<NamedPrismSnapshot, EvaluationFailure>, String> {
-    let mut evaluator = oblikovati_martensite::CertifiedNamedPrismEvaluator::with_policy(
+) -> Result<PartFeatureEvaluation<NamedSolid, EvaluationFailure>, String> {
+    let mut evaluator = oblikovati_martensite::CertifiedNamedSolidEvaluator::with_policy(
         history,
         document,
         crate::modelling_policy(),

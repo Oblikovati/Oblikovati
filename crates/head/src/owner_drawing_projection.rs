@@ -96,7 +96,7 @@ impl<
         let evaluated = evaluate_part(history, document)?;
         let bodies: Vec<_> = evaluated.ordered_bodies().collect();
         let projected =
-            oblikovati_martensite::drawing_base_view_bodies(history, document, &bodies, &view)?;
+            oblikovati_martensite::drawing_base_view_solids(history, document, &bodies, &view)?;
         let mut projection = GuiDrawingProjection::default();
         append_curves(&mut projection, &projected, view.style, history, document)?;
         for line in &mut projection.lines {
@@ -219,7 +219,7 @@ impl<
         let bodies: Vec<_> = result.ordered_bodies().collect();
         let mut output = GuiDrawingProjection::default();
         for definition in &drawing.sheets()[drawing.active_sheet()].views {
-            let projection = oblikovati_martensite::drawing_base_view_bodies(
+            let projection = oblikovati_martensite::drawing_base_view_solids(
                 history, document, &bodies, definition,
             )?;
             append_curves(
