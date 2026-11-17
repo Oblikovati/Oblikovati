@@ -230,7 +230,7 @@ fn tool_windows_join_as_tabs_in_a_workspace_dock() {
     world.close();
 }
 
-fn open_toolbar_tool(world: &mut ApplicationWorld, label: &str) {
+pub(super) fn open_toolbar_tool(world: &mut ApplicationWorld, label: &str) {
     let icon = super::super::quick_access_icons::standard_icon_center(label).unwrap();
     world.click(super::super::diagnostics::pointer_pixels(icon));
     world.pump(Vec::new());

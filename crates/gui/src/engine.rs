@@ -9,8 +9,12 @@ use crate::{
 };
 use imgui::{ConfigFlags, Context, TextureId};
 use std::sync::Arc;
+#[path = "engine/document_name.rs"]
+mod document_name;
 #[path = "engine/draw_controls.rs"]
 mod draw_controls;
+#[path = "engine/workspace_layout.rs"]
+mod workspace_layout;
 #[derive(Clone, Debug)]
 pub struct GuiFrameRequest {
     pub extent: [u32; 2],
@@ -298,14 +302,6 @@ impl GuiFrameEngine {
     }
 }
 
-impl GuiFrameEngine {
-    fn document_name(&self, document: u64) -> String {
-        self.known_documents
-            .iter()
-            .find(|row| row.id == document)
-            .map_or_else(|| "Part".to_string(), |row| row.name.clone())
-    }
-}
 fn configure_owner_context(context: &mut Context) -> GuiAtlas {
     context.set_ini_filename(None);
     context.set_log_filename(None);
