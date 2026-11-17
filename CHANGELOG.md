@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Added
+
+- Enabled the Rust desktop application on Windows through a native Win32 window and Martensite Vulkan rendering.
+- Enabled isolated Lua scripting on Windows in the desktop and CLI.
+
 ### Changed
 
 - Separated selected-face context commands from the radial marking menu. (#4055)

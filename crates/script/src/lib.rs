@@ -3,7 +3,7 @@
 mod limits;
 mod process;
 mod protocol;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod vm;
 mod worker;
 pub use limits::{ScriptLimits, ScriptProgram, ScriptReport};

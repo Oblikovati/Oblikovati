@@ -169,6 +169,9 @@ impl NativeWindow {
         self.window.do_resize();
         Ok(())
     }
+    pub fn is_mapped(&self) -> bool {
+        self.window.is_mapped()
+    }
     pub fn mapped(&self, mapped: bool) -> Result<(), String> {
         if mapped {
             self.window.map();

@@ -18,10 +18,10 @@ pub(crate) fn key(key: ViewportKey, pressed: bool) -> ViewportEvent {
     ViewportEvent::Input(ViewportInput::Key { key, pressed })
 }
 
-// #3795: the shared input fixtures are portable; the native window seam is Linux-only.
-#[cfg(target_os = "linux")]
+// #3795: the shared input fixtures are portable; the native window seam needs a desktop backend.
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 pub(crate) struct ProjectionlessWindow;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 impl crate::HeadWindow for ProjectionlessWindow {
     fn events(&mut self, _: usize) -> Result<Vec<ViewportEvent>, String> {
         Ok(Vec::new())

@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use oblikovati_api::{API_MAJOR, API_MINOR, ffi};
+#[cfg(target_os = "linux")]
+use std::os::unix::ffi::OsStrExt;
 use std::{
     ffi::{CStr, CString, c_void},
-    os::unix::ffi::OsStrExt,
     path::Path,
     ptr::NonNull,
 };
@@ -22,6 +23,7 @@ struct ResidentLibrary {
     handle: NonNull<c_void>,
 }
 impl ResidentLibrary {
+    #[cfg(target_os = "linux")]
     unsafe fn open(path: &Path) -> Result<Self, Error> {
         let name = CString::new(path.as_os_str().as_bytes()).map_err(|error| {
             Error(format!(
@@ -39,6 +41,7 @@ impl ResidentLibrary {
                 ))
             })
     }
+    #[cfg(target_os = "linux")]
     unsafe fn symbol<T: Copy>(&self, name: &CStr) -> Result<Option<T>, Error> {
         // SAFETY: the mapping remains resident; names are static C strings and T is a canonical ffi function pointer.
         unsafe {
@@ -61,7 +64,11 @@ impl ResidentLibrary {
         }))
     }
 }
-// No dlclose: even a Go library's load-time constructors can start runtime threads before Activate.
+#[cfg(target_os = "windows")]
+#[path = "linux/windows_loader.rs"]
+mod windows_loader;
+// No unload: even a Go library's load-time constructors can start runtime threads.
+#[cfg(target_os = "linux")]
 fn last_loader_error() -> String {
     // SAFETY: dlerror returns null or a loader-owned NUL string, copied before another loader operation.
     let error = unsafe { libc::dlerror() };
@@ -86,7 +93,7 @@ pub unsafe fn probe_library(path: &Path) -> Result<AddInProbe, Error> {
 /// # Safety
 /// The obligations of `probe_library` apply. Lifecycle callers must obey foreign thread affinity
 /// and exclude other wrappers or foreign callers from the same library state during each call.
-/// Repeated dlopen does not prove separate library state.
+/// Repeated loading does not prove separate library state.
 pub unsafe fn open_addin(path: &Path) -> Result<LoadedAddIn, Error> {
     // SAFETY: caller supplies a trusted ABI implementation; mappings remain resident.
     let library = unsafe { ResidentLibrary::open(path)? };

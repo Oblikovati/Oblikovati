@@ -27,17 +27,28 @@ impl NativeHeadWindow {
         #[cfg(test)]
         let context_lease = crate::test_context::acquire();
         validate_window_extent(extent)?;
-        let runtime = ViewportRuntime::new(ViewportOptions::default())?;
+        let options = ViewportOptions {
+            #[cfg(target_os = "windows")]
+            validation: std::env::var_os("OBLIKOVATI_VULKAN_VALIDATION")
+                .is_some_and(|value| value == "1"),
+            ..ViewportOptions::default()
+        };
+        let runtime = ViewportRuntime::new(options)?;
         let mut view = runtime.open_window("Oblikovati", extent)?;
         view.submit(&ViewportScene {
             background: [0.; 3],
             triangles: Vec::new(),
         })?;
+        #[cfg(target_os = "linux")]
+        let clipboard = clipboard::NativeClipboardChannel::open();
+        #[cfg(target_os = "windows")]
+        let clipboard = clipboard::NativeClipboardChannel::open(view.native_clipboard()?);
         Ok(Self {
             capture_files,
             capture_requests: Vec::new(),
             exit_requested: false,
             runtime,
+            validate_vulkan: options.validation,
             view,
             view_projection: Default::default(),
             marked_view: None,
@@ -60,7 +71,7 @@ impl NativeHeadWindow {
             injected_events: Default::default(),
             ribbon_settings_directory: None,
             gui_epoch: std::time::Instant::now(),
-            clipboard: clipboard::NativeClipboardChannel::open(),
+            clipboard,
             #[cfg(test)]
             _context_lease: context_lease,
         })

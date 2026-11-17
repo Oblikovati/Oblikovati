@@ -48,7 +48,14 @@ impl IsolatedLuaEngine {
     pub fn start(&self, program: ScriptProgram) -> Result<ScriptExecution, String> {
         program.limits.validate(&program.source)?;
         let lease = RunLease::acquire(self.active.clone())?;
-        let child = Command::new(&self.executable)
+        let mut command = Command::new(&self.executable);
+        #[cfg(target_os = "windows")]
+        {
+            use std::os::windows::process::CommandExt;
+            use windows_sys::Win32::System::Threading::CREATE_NO_WINDOW;
+            command.creation_flags(CREATE_NO_WINDOW);
+        }
+        let child = command
             .args(&self.arguments)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())

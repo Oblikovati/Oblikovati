@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-#![cfg(target_os = "linux")]
+#![cfg(any(target_os = "linux", target_os = "windows"))]
 use oblikovati_automation::dispatch::PollingDispatchWakeup;
 use oblikovati_head::HeadSketchWork;
 use oblikovati_head::{

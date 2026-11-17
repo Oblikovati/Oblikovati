@@ -86,10 +86,11 @@ pub(super) fn submit_native_scene(owner: &mut NativeDesktopOwner, window: &mut N
             .starts_with(&window.scene_status().unwrap().title())
     );
 }
-/// Capture a completed scene and check its X11 pixels; example: `capture_native_scene(window)`.
+/// Capture a completed scene and check its X11 pixels where available; example: `capture_native_scene(window)`.
 pub(super) fn capture_native_scene(window: &mut NativeHeadWindow) -> ViewportCapture {
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
     let capture = completed_framebuffer_until(window, deadline);
+    #[cfg(target_os = "linux")]
     verify_native_pixels(window, &capture, deadline);
     capture
 }
@@ -112,6 +113,7 @@ fn completed_framebuffer_until(
         }
     }
 }
+#[cfg(target_os = "linux")]
 fn verify_native_pixels(
     window: &NativeHeadWindow,
     capture: &ViewportCapture,

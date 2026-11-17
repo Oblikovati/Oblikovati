@@ -19,8 +19,8 @@ pub(crate) fn sketch_shows(
     sketch.visible() || called_up.contains(&sketch.id())
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 #[path = "sketch_scene_runtime.rs"]
 mod runtime;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 pub(crate) use runtime::DesktopSketchScenes;

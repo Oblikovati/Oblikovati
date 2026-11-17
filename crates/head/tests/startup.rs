@@ -138,6 +138,7 @@ fn startup_failure_stops_later_opens_and_retires_without_presenting_a_frame() {
     assert_eq!(receipt.presents, 0);
     assert_eq!(receipt.retirements, ["owner", "window"]);
 }
+#[cfg(unix)]
 #[test]
 fn empty_or_non_utf8_startup_names_are_named_declines() {
     use std::os::unix::ffi::OsStringExt;

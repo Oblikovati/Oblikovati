@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::{
     ViewportCamera, ViewportCapture, ViewportEvent, ViewportOptions, ViewportPresentation,
-    ViewportScene,
-    renderer::RenderView,
-    target::ViewTarget,
-    x11::{NativeWindow, NativeX11},
+    ViewportScene, native::NativeWindow, renderer::RenderView, target::ViewTarget,
 };
 use martensite_tkernel::standard::Handle;
 use martensite_vulkan::Graphic3dRenderDriver;
@@ -17,8 +14,11 @@ mod fit;
 mod projection_cache;
 #[path = "view_history.rs"]
 mod view_history;
+#[cfg(target_os = "linux")]
+use crate::x11::NativeX11;
 struct RuntimeState {
     driver: Handle<Graphic3dRenderDriver>,
+    #[cfg(target_os = "linux")]
     x11: Option<Rc<NativeX11>>,
     next_view: Cell<u64>,
 }
@@ -32,13 +32,15 @@ pub struct ViewportRuntime {
     state: Rc<RuntimeState>,
 }
 impl ViewportRuntime {
-    /// Initialize before other application X11 connections; example: `ViewportRuntime::new(ViewportOptions::default())?`.
+    /// Initialize the owner-thread runtime; example: `ViewportRuntime::new(ViewportOptions::default())?`.
     pub fn new(options: ViewportOptions) -> Result<Self, String> {
+        #[cfg(target_os = "linux")]
         let x11 = NativeX11::open()?;
         let driver = gui_outcomes::native_gui_driver(options)?;
         Ok(Self {
             state: Rc::new(RuntimeState {
                 driver,
+                #[cfg(target_os = "linux")]
                 x11: Some(x11),
                 next_view: Cell::new(1),
             }),
@@ -46,15 +48,19 @@ impl ViewportRuntime {
     }
     /// Create an application-owned native target; example: `runtime.open_window("Oblikovati", [640,480])?`.
     pub fn open_window(&self, title: &str, extent: [u32; 2]) -> Result<Viewport, String> {
-        let x11 = self
-            .state
-            .x11
-            .as_ref()
-            .ok_or("viewport runtime: expected native X11 support")?
-            .clone();
-        self.create(ViewTarget::Native(Box::new(NativeWindow::create(
-            x11, title, extent,
-        )?)))
+        #[cfg(target_os = "linux")]
+        let window = NativeWindow::create(
+            self.state
+                .x11
+                .as_ref()
+                .ok_or("viewport runtime: expected native X11 support")?
+                .clone(),
+            title,
+            extent,
+        )?;
+        #[cfg(target_os = "windows")]
+        let window = NativeWindow::create(title, extent)?;
+        self.create(ViewTarget::Native(Box::new(window)))
     }
     /// Create an explicit capture target on the same kernel renderer; example: `runtime.open_offscreen([64,64])?`.
     pub fn open_offscreen(&self, extent: [u32; 2]) -> Result<Viewport, String> {
@@ -212,6 +218,16 @@ impl Viewport {
         self.completed = None;
         Ok(())
     }
+    /// Access the owning Win32 window's Unicode clipboard.
+    #[cfg(target_os = "windows")]
+    pub fn native_clipboard(&self) -> Result<crate::WindowsClipboard, String> {
+        self.live()?;
+        match self.target.as_ref().expect("live target") {
+            ViewTarget::Native(native) => Ok(native.clipboard()),
+            ViewTarget::Offscreen(_) => Err("clipboard: expected a native owner window".into()),
+        }
+    }
+
     /// Read a native text-input decline without stopping rendering or commands.
     /// Example: `viewport.text_input_issue()?` supplies the GUI health message.
     pub fn text_input_issue(&self) -> Result<Option<String>, String> {
@@ -298,6 +314,10 @@ impl Viewport {
             return Ok(ViewportPresentation::SurfaceChanged(extent));
         }
         self.require_frame_extent([frame.width, frame.height])?;
+        #[cfg(target_os = "windows")]
+        if let Some(ViewTarget::Native(native)) = &self.target {
+            native.present(self.extent, &frame.rgba)?;
+        }
         self.completed = Some(self.generations());
         Ok(ViewportPresentation::Completed(self.capture_from(frame)))
     }
@@ -394,6 +414,7 @@ impl Viewport {
             )),
         }
     }
+    #[cfg(target_os = "linux")]
     /// Capture the actual X11 drawable independently of GPU readback; example: `viewport.native_pixels()?`.
     pub fn native_pixels(&self) -> Result<Vec<u8>, String> {
         self.live()?;
@@ -471,6 +492,7 @@ impl Viewport {
     }
 }
 
+#[cfg(target_os = "linux")]
 mod clipboard;
 mod gui_composition;
 

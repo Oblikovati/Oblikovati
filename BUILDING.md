@@ -46,6 +46,13 @@ built through another command therefore performs an incremental Rust build.
 Changes made during a build prevent that binary from being marked current.
 GUI arguments and the GUI's exit status are preserved.
 
+Windows `run` needs an interactive Windows desktop and a Vulkan 1.3 driver.
+The Win32 window displays frames rendered by Martensite to an offscreen Vulkan
+target. Set `OBLIKOVATI_VULKAN_VALIDATION=1` to enable validation when the
+matching Khronos validation layer is installed. The CLI and desktop use the
+same isolated Lua 5.1 worker on Windows. A bounded smoke launch is
+`target/debug/oblikovati.exe --frames 3`.
+
 Linux `run` needs `DISPLAY`, for the current X11/XWayland backend.
 `WAYLAND_DISPLAY` alone is not sufficient. An interactive GUI is never launched
 under an automatically created virtual display. For a headless **build**, the

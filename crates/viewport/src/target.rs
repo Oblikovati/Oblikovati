@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use crate::{types::valid_extent, x11::NativeWindow};
+use crate::{native::NativeWindow, types::valid_extent};
 use martensite_tkernel::standard::Handle;
 use martensite_tkservice::aspect::{AspectNeutralWindow, AspectWindow, AspectWindowMembers};
 pub(crate) enum ViewTarget {
@@ -22,8 +22,11 @@ impl ViewTarget {
     }
     pub fn extent(&self) -> [u32; 2] {
         let window = self.window();
-        if let Self::Native(_) = self {
-            window.do_resize();
+        if let Self::Native(native) = self {
+            #[cfg(target_os = "linux")]
+            native.window.do_resize();
+            #[cfg(target_os = "windows")]
+            native.refresh_extent();
         }
         let (width, height) = window.size();
         [width as u32, height as u32]
@@ -43,7 +46,7 @@ impl ViewTarget {
 impl ViewTarget {
     pub fn require_presentation(&self) -> Result<(), String> {
         if let Self::Native(native) = self
-            && !native.window.is_mapped()
+            && !native.is_mapped()
         {
             return Err("native viewport redraw: expected a mapped drawable; hidden view has no presentation".into());
         }

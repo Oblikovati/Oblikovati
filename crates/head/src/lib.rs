@@ -1,107 +1,108 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Desktop window lifetime and document-owned frame dispatch. Native UI and model display remain open.
-#[cfg(any(target_os = "linux", test))]
+#[cfg(any(target_os = "linux", target_os = "windows", test))]
 mod assembly_producer;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 #[allow(unsafe_code)]
 mod native_services;
-#[cfg(all(test, target_os = "linux"))]
+#[cfg(all(test, any(target_os = "linux", target_os = "windows")))]
 #[path = "../../gui/src/test_context.rs"]
 mod test_context;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod view_orientation;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 pub use native_services::NativeAddInDesktop;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod addin_discovery;
 mod arguments;
 pub use arguments::{HeadCommand, HeadOptions, parse_arguments};
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod frames;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod viewport_automation;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod window_caller;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 pub use frames::{
     HeadGuiUpdate, HeadOrientationFitFrame, HeadPresentation, HeadSummary, HeadWindow, run_window,
     run_window_with_owner,
 };
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod native;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod navigation;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 pub use native::{NativeHeadWindow, run_native, run_native_documents};
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod startup;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 pub use startup::run_window_with_documents;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod capture_png;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod window_capture;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 #[macro_use]
 #[path = "work_orientation.rs"]
 mod orientation_work;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 #[macro_use]
 mod work_datum;
 mod work_blend;
 mod work_drawing;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 #[macro_use]
 mod work_metadata;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 #[macro_use]
 mod work_appearance;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 #[macro_use]
 mod work_selection;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod work;
 mod work_forwarding;
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 #[path = "work_idle.rs"]
 mod work_idle;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod work_inspect;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod work_sketch;
 mod work_sketch_forwarding;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod work_status;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod work_theme;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 pub use capture_png::{NativeWindowCaptureFiles, WindowCaptureFiles};
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 pub use window_capture::{DesktopWindowCaptures, WindowCaptureJob};
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 pub use work::HeadWork;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 pub use work_sketch::HeadSketchWork;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 pub use work_status::{HeadInvalidation, HeadWorkStatus};
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod owner;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod selection_preferences;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 pub use selection_preferences::SelectionPreferenceAccess;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod part_scene;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 pub use owner::{DesktopCommandNotice, DesktopDispatchOptions, DesktopHistoryAction, DesktopOwner};
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 pub use part_scene::{HeadSceneStatus, HeadSceneUpdate};
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod observations;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 pub use observations::{DesktopObservations, MissingInterestNotice};
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod scripts;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 pub use scripts::{DesktopScripts, ScriptDocumentOwner};
 use std::{ffi::OsString, io::Write};
 const USAGE: &str = "usage: oblikovati [--frames N] [--] [DOCUMENT ...]\n       oblikovati --help\n       oblikovati --version\n\n0 frames runs until the window closes. A positive count bounds a smoke run.";
@@ -123,13 +124,13 @@ pub fn run(arguments: &[OsString], output: &mut dyn Write) -> Result<(), String>
         HeadCommand::OpenDocuments { options, documents } => launch_documents(options, &documents),
     }
 }
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 fn launch_documents(options: HeadOptions, documents: &[std::path::PathBuf]) -> Result<(), String> {
     run_native_documents(options, documents).map(|_| ())
 }
-#[cfg(not(target_os = "linux"))]
+#[cfg(not(any(target_os = "linux", target_os = "windows")))]
 fn launch_documents(_: HeadOptions, _: &[std::path::PathBuf]) -> Result<(), String> {
-    Err("desktop target: expected the supported local Linux profile; other platforms remain deferred".into())
+    Err("desktop target: expected a Windows or Linux desktop".into())
 }
 fn write_output(output: &mut dyn Write, text: &str) -> Result<(), String> {
     writeln!(output, "{text}")
@@ -145,14 +146,14 @@ mod fixture_color;
 #[path = "../../../test-utilities/rust/selected_sketch_prism.rs"]
 mod scene_fixture;
 
-#[cfg(any(target_os = "linux", test))]
+#[cfg(any(target_os = "linux", target_os = "windows", test))]
 #[path = "placement/input.rs"]
 mod placement_input;
 
 #[cfg(test)]
 #[path = "../tests/placement_inputs.rs"]
 mod placement_test_inputs;
-#[cfg(all(test, target_os = "linux"))]
+#[cfg(all(test, any(target_os = "linux", target_os = "windows")))]
 #[path = "../tests/placement_samples.rs"]
 mod placement_test_samples;
 
@@ -168,21 +169,22 @@ pub use datum_scene::HeadDatumPlaneUpdate;
 mod sketch_scene;
 pub use sketch_scene::HeadSketchSceneUpdate;
 
-// #3795: these private states require the Linux DesktopOwner and placement runtime.
-#[cfg(target_os = "linux")]
+// #3795: these private states require the DesktopOwner and placement runtime.
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod sketch_geometric;
 /// Ids of extra document windows, which never collide with a document's own id.
 pub(crate) const FIRST_EXTRA_WINDOW: u64 = 1 << 40;
 #[path = "sketch/mod.rs"]
 mod sketch_inspect;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod sketch_tool;
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod sketch_dimension;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod sketch_operands;
 
 mod dimension_annotations;
 pub use dimension_annotations::{HeadDimensionAnnotation, HeadDimensionAnnotations};
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 pub use owner::owner_precise_input::HeadConstraintMark;

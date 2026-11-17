@@ -2,7 +2,7 @@
 //! Native desktop startup and document admission.
 use super::*;
 
-/// Open the Linux head on its owner thread; example: `run_native(HeadOptions { frames: Some(3) })?`.
+/// Open the desktop head on its owner thread; example: `run_native(HeadOptions { frames: Some(3) })?`.
 pub fn run_native(options: HeadOptions) -> Result<HeadSummary, String> {
     run_native_documents(options, &[])
 }

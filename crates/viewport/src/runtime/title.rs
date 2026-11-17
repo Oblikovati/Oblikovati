@@ -13,7 +13,7 @@ impl Viewport {
         };
         native.set_title(title)
     }
-    /// Read the actual X11 name; example: `view.native_title()?` checks displayed status metadata.
+    /// Read the actual native window title; example: `view.native_title()?` checks displayed status metadata.
     pub fn native_title(&self) -> Result<String, String> {
         self.live()?;
         let Some(ViewTarget::Native(native)) = &self.target else {

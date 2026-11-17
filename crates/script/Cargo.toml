@@ -6,12 +6,19 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 publish.workspace = true
-[lints]
-workspace = true
+[lints.rust]
+unsafe_code = "deny"
+[lints.clippy]
+all = "warn"
 [dependencies]
 oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "a8e651bc537e516953c7d9313792719e5b474a25", version = "=0.159.0" }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }
-[target.'cfg(target_os = "linux")'.dependencies]
+[target.'cfg(any(target_os = "linux", target_os = "windows"))'.dependencies]
 mlua = { version = "=0.12.2", features = ["lua51", "vendored"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-sys = { version = "=0.61.2", features = ["Win32_Security", "Win32_System_JobObjects", "Win32_System_Threading"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
 rustix = { version = "=1.1.6", features = ["process"] }

@@ -15,6 +15,7 @@ pub struct NativeHeadWindow {
     capture_requests: Vec<crate::WindowCaptureJob>,
     exit_requested: bool,
     runtime: ViewportRuntime,
+    validate_vulkan: bool,
     view: Viewport,
     view_projection: oblikovati_gui::GuiViewProjection,
     marked_view: Option<oblikovati_viewport::ViewportCamera>,
@@ -356,6 +357,7 @@ impl HeadWindow for NativeHeadWindow {
         self.submit_model_scene(update)
     }
     fn events(&mut self, limit: usize) -> Result<Vec<ViewportEvent>, String> {
+        #[cfg(target_os = "linux")]
         self.clipboard.service_pending(limit);
         let queued = limit.min(self.injected_events.len());
         let mut events: Vec<_> = self.injected_events.drain(..queued).collect();
@@ -408,23 +410,30 @@ impl HeadWindow for NativeHeadWindow {
         })
     }
     fn wait(&mut self, timeout: Option<std::time::Duration>) -> Result<bool, String> {
+        #[cfg(target_os = "linux")]
         let ready = match self.clipboard.endpoint() {
             Some(clipboard) => self
                 .view
                 .wait_events_with_clipboard(&self.wake, clipboard, timeout),
             None => self.view.wait_events(&self.wake, timeout),
         }?;
+        #[cfg(target_os = "windows")]
+        let ready = self.view.wait_events(&self.wake, timeout)?;
         Ok(ready.worker_wake)
     }
     fn finish(&mut self) -> Result<(), String> {
         self.gui.take();
         self.capture_requests.clear();
+        #[cfg(target_os = "linux")]
         let clipboard = self.clipboard.handoff_on_shutdown();
         self.view.close();
-        let mut errors = self.runtime.validation_errors()?;
-        if let Err(cause) = clipboard {
-            errors.push(cause);
-        }
+        let errors = if self.validate_vulkan {
+            self.runtime.validation_errors()?
+        } else {
+            Vec::new()
+        };
+        #[cfg(target_os = "linux")]
+        let errors: Vec<_> = errors.into_iter().chain(clipboard.err()).collect();
         if errors.is_empty() {
             return Ok(());
         }
@@ -434,6 +443,10 @@ impl HeadWindow for NativeHeadWindow {
     }
 }
 mod capture;
+#[cfg(target_os = "linux")]
+mod clipboard;
+#[cfg(target_os = "windows")]
+#[path = "native/clipboard_windows.rs"]
 mod clipboard;
 mod owner;
 use owner::{NativeDesktopOwner, NativeOwnerWake, native_owner_at, native_script_engine};
@@ -481,6 +494,6 @@ mod sketch_display_tests;
 #[path = "../tests/native_gui_composition.rs"]
 mod gui_composition_tests;
 mod gui_loop;
-#[cfg(test)]
+#[cfg(all(test, target_os = "linux"))]
 #[path = "../tests/native_gui_loop.rs"]
 mod gui_loop_tests;

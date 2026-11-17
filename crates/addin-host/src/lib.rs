@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Trusted native add-in admission; C prototypes come from the standalone API.
 use oblikovati_api::Error;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 #[allow(unsafe_code)]
 mod linux;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 pub use linux::{
     AddInState, HostBufferCounts, HostCallbackBinding, LoadedAddIn, NativeAddInRegistry,
     NativeAddInRuntime, NativeCatalogCaller, NativeCompletion, open_addin, probe_library,

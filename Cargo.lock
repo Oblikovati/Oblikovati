@@ -1610,6 +1610,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tempfile",
+ "windows-sys",
 ]
 
 [[package]]
@@ -1800,6 +1801,7 @@ dependencies = [
  "rustix",
  "serde",
  "serde_json",
+ "windows-sys",
 ]
 
 [[package]]
@@ -1834,6 +1836,7 @@ dependencies = [
  "oblikovati-model",
  "oblikovati-solve",
  "rustix",
+ "windows-sys",
  "x11-dl",
  "x11rb",
 ]

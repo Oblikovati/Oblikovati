@@ -111,6 +111,7 @@ fn target_classes_and_view_ids_are_explicit_and_runtime_outlives_its_creator() {
     let mut first = runtime.open_offscreen([8, 8]).unwrap();
     let second = runtime.open_offscreen([8, 8]).unwrap();
     assert_ne!(first.id(), second.id());
+    #[cfg(target_os = "linux")]
     assert!(first.native_pixels().is_err());
     assert!(first.set_mapped(false).is_err());
     assert!(first.poll_events(32).unwrap().is_empty());

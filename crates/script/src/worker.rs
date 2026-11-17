@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::protocol::{ParentFrame, read_frame};
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 use crate::protocol::{WorkerFrame, write_frame};
 use std::io::{self, BufReader};
+#[cfg(target_os = "windows")]
+#[allow(unsafe_code)]
+mod windows_limits;
 /// Serve exactly one isolated worker request; example: call from the private executable entry.
 /// This entry must never execute in the document-owning parent process.
 pub fn worker_stdio() -> Result<(), String> {
@@ -13,18 +16,21 @@ pub fn worker_stdio() -> Result<(), String> {
     program.limits.validate(&program.source)?;
     execute_program(program, incoming)
 }
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 fn execute_program(
     program: crate::ScriptProgram,
     incoming: BufReader<io::Stdin>,
 ) -> Result<(), String> {
+    #[cfg(target_os = "linux")]
     resource_limits(&program.limits)?;
+    #[cfg(target_os = "windows")]
+    let _job = windows_limits::contain_worker(&program.limits)?;
     let outcome = crate::vm::execute(&program, incoming, io::stdout());
     write_frame(&mut io::stdout(), &WorkerFrame::Finished { outcome })
 }
-#[cfg(not(target_os = "linux"))]
+#[cfg(not(any(target_os = "linux", target_os = "windows")))]
 fn execute_program(_: crate::ScriptProgram, _: BufReader<io::Stdin>) -> Result<(), String> {
-    Err("Lua worker platform: expected Linux; other platforms are deferred".into())
+    Err("Lua worker platform: expected Linux or Windows".into())
 }
 #[cfg(target_os = "linux")]
 fn resource_limits(limits: &crate::ScriptLimits) -> Result<(), String> {

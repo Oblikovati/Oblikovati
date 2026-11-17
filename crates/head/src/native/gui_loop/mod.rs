@@ -403,7 +403,7 @@ fn publish_gui(
     Ok(())
 }
 
-#[cfg(test)]
+#[cfg(all(test, target_os = "linux"))]
 #[path = "../../../tests/native_clipboard_health.rs"]
 mod clipboard_health_tests;
 #[cfg(test)]

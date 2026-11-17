@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use oblikovati_model::sketch::CircumcircleOptions;
-#[cfg(any(target_os = "linux", test))]
+#[cfg(any(target_os = "linux", target_os = "windows", test))]
 use oblikovati_model::sketch::{SketchCircleConstruction, SketchPlacementRecipe};
-#[cfg(any(target_os = "linux", test))]
+#[cfg(any(target_os = "linux", target_os = "windows", test))]
 #[path = "circular_recipes.rs"]
 mod circular_recipes;
-#[cfg(any(target_os = "linux", test))]
+#[cfg(any(target_os = "linux", target_os = "windows", test))]
 #[path = "ellipse_recipe.rs"]
 mod ellipse_recipe;
 /// A recipe choice in the shared mouse placement pipeline; dimensions are in working units.
@@ -41,7 +41,7 @@ pub enum SketchPlacementTool {
     ThreePointRectangle,
     ThreePointCenterRectangle,
 }
-#[cfg(any(target_os = "linux", test))]
+#[cfg(any(target_os = "linux", target_os = "windows", test))]
 impl SketchPlacementTool {
     pub(crate) fn validate(self) -> Result<(), String> {
         if let Self::StraightSlot { width }

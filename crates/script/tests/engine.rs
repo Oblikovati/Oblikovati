@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-#![cfg(target_os = "linux")]
+#![cfg(any(target_os = "linux", target_os = "windows"))]
 use oblikovati_api::{Error, client::Caller};
 use oblikovati_script::{IsolatedLuaEngine, ScriptLimits, ScriptProgram};
 use std::{
