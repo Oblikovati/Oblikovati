@@ -312,8 +312,9 @@ pub(super) fn window_occlusions() -> Vec<[f32; 4]> {
                 return None;
             }
             let name = unsafe { std::ffi::CStr::from_ptr(window.Name) }.to_bytes();
+            // Its children are transparent dockspace hosts; docked tools retain their own names.
             if name == b"##workspace-outer-host"
-                || name.starts_with(b"##workspace-outer-host/DockSpace_")
+                || name.starts_with(b"##workspace-outer-host/")
                 || name.starts_with(b"##workspace-docking-host/DockSpace_")
             {
                 return None;

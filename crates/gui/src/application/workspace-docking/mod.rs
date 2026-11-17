@@ -4,40 +4,64 @@ use crate::application::document_creation::workspaces::WorkspaceArea;
 use imgui::{Condition, StyleVar, Ui, WindowFlags};
 pub(crate) mod persistence;
 
-/// Draw the shared docking targets and return the remaining document area.
-/// Example: `draw(ui, workspace)` after the ribbon has reserved its band.
-pub(crate) fn draw(ui: &Ui, workspace: WorkspaceArea) -> WorkspaceArea {
+/// Draw the nested panel docks and return the document viewport.
+/// Example: `draw(ui, outer, layout, display, band)` once per frame.
+pub(crate) fn draw(
+    ui: &Ui,
+    outer: WorkspaceArea,
+    layout: &mut crate::application::workspace_layout::WorkspaceLayout,
+    display: [f32; 2],
+    band: f32,
+) -> WorkspaceArea {
+    let size = [
+        (outer.right - outer.left).max(1.),
+        (outer.bottom - outer.top).max(1.),
+    ];
+    let _padding = ui.push_style_var(StyleVar::WindowPadding([0., 0.]));
+    ui.window("##workspace-outer-host")
+        .position([outer.left, outer.top], Condition::Always)
+        .size(size, Condition::Always)
+        .flags(host_flags())
+        .build(|| draw_inner_workspace(ui, outer, size, layout, display, band))
+        .unwrap_or(outer)
+}
+
+fn draw_inner_workspace(
+    ui: &Ui,
+    outer: WorkspaceArea,
+    size: [f32; 2],
+    layout: &mut crate::application::workspace_layout::WorkspaceLayout,
+    display: [f32; 2],
+    band: f32,
+) -> WorkspaceArea {
+    let (bounds, span) = crate::widget_abi::outer_dockspace(ui, size)
+        .and_then(|(bounds, span)| contained_center(outer, bounds).map(|area| (area, span)))
+        .unwrap_or((outer, None));
+    layout.set_outer_center(bounds, outer);
+    layout.outer_bottom_span = span;
+    draw_inner_child(ui, outer, layout.document_area(display, band))
+}
+
+fn draw_inner_child(ui: &Ui, outer: WorkspaceArea, workspace: WorkspaceArea) -> WorkspaceArea {
     let size = [
         (workspace.right - workspace.left).max(1.),
         (workspace.bottom - workspace.top).max(1.),
     ];
-    let _padding = ui.push_style_var(StyleVar::WindowPadding([0., 0.]));
-    ui.window("##workspace-docking-host")
-        .position([workspace.left, workspace.top], Condition::Always)
-        .size(size, Condition::Always)
-        .flags(host_flags())
+    crate::widget_abi::cursor_position(
+        ui,
+        [workspace.left - outer.left, workspace.top - outer.top],
+    );
+    ui.child_window("##workspace-docking-host")
+        .size(size)
+        .flags(
+            WindowFlags::NO_BACKGROUND
+                | WindowFlags::NO_SCROLLBAR
+                | WindowFlags::NO_SCROLL_WITH_MOUSE,
+        )
         .build(|| crate::widget_abi::workspace_dockspace(ui, size))
         .flatten()
         .and_then(|bounds| contained_center(workspace, bounds))
         .unwrap_or(workspace)
-}
-
-/// Draw the outer panel dock across the full workspace, including the tab row.
-/// Example: `draw_outer(ui, workspace)` before drawing the inner dock.
-pub(crate) fn draw_outer(ui: &Ui, workspace: WorkspaceArea) -> (WorkspaceArea, Option<[f32; 2]>) {
-    let size = [
-        (workspace.right - workspace.left).max(1.),
-        (workspace.bottom - workspace.top).max(1.),
-    ];
-    let _padding = ui.push_style_var(StyleVar::WindowPadding([0., 0.]));
-    ui.window("##workspace-outer-host")
-        .position([workspace.left, workspace.top], Condition::Always)
-        .size(size, Condition::Always)
-        .flags(host_flags())
-        .build(|| crate::widget_abi::outer_dockspace(ui, size))
-        .flatten()
-        .and_then(|(bounds, span)| contained_center(workspace, bounds).map(|area| (area, span)))
-        .unwrap_or((workspace, None))
 }
 
 fn contained_center(workspace: WorkspaceArea, bounds: [f32; 4]) -> Option<WorkspaceArea> {

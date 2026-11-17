@@ -18,6 +18,7 @@ impl GuiFrameEngine {
             &mut self.widget_keys,
         );
         self.sync_tool_visibility();
+        crate::widget_abi::prepare_dock_hit_test(workspace_pointer(&self.context, request));
         let ui = self.context.frame();
         crate::sketch_pick_cue::draw_sketch_pick_cue(ui, request);
         crate::sketch_pick_cue::draw_model_pick_cue(ui, request);
@@ -96,12 +97,13 @@ impl GuiFrameEngine {
         let logical =
             std::array::from_fn(|axis| request.extent[axis] as f32 / request.layout_scale()[axis]);
         let outer = self.workspace.outer_area(logical, band_height);
-        let (outer_center, bottom_span) =
-            crate::application::workspace_docking::draw_outer(ui, outer);
-        self.workspace.set_outer_center(outer_center, outer);
-        self.workspace.outer_bottom_span = bottom_span;
-        let workspace = self.workspace.document_area(logical, band_height);
-        let area = crate::application::workspace_docking::draw(ui, workspace);
+        let area = crate::application::workspace_docking::draw(
+            ui,
+            outer,
+            &mut self.workspace,
+            logical,
+            band_height,
+        );
         let over_fields = crate::sketch::line::hud_panel(ui, request);
         self.document_tabs.previews.synchronize(&request.commands);
         self.document_tabs.panel(
@@ -464,4 +466,18 @@ impl GuiFrameEngine {
             document_area: area.framebuffer_region(request.layout_scale(), request.extent),
         })
     }
+}
+
+fn workspace_pointer(context: &imgui::Context, request: &GuiFrameRequest) -> [f32; 2] {
+    request
+        .events
+        .iter()
+        .rev()
+        .find_map(|event| match event {
+            GuiInputEvent::PointerMoved(position) => Some(std::array::from_fn(|axis| {
+                position[axis] / request.layout_scale()[axis]
+            })),
+            _ => None,
+        })
+        .unwrap_or(context.io().mouse_pos)
 }
