@@ -54,6 +54,8 @@
 
 ### Fixed
 
+- Keep hover feedback in sync with a sketch changed before the next frame. (#4051)
+
 - Restored Extrude from the Part marking menu for empty parts and finished sketches. (#4049)
 
 - Listed and selected overlapping sketch point and curve candidates in Select Other. (#4041)

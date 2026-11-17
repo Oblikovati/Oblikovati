@@ -457,3 +457,6 @@ impl crate::HeadSketchWork for FakeGuiOwner {
 
 #[path = "gui_frames/parameter.rs"]
 mod parameter;
+
+#[path = "gui_frames/sketch_scene_order.rs"]
+mod sketch_scene_order;
