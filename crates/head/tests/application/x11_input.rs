@@ -31,6 +31,24 @@ pub(super) fn click(position: [i32; 2]) {
     send_click(&connection, root, x, y, 1);
 }
 
+/// Change the real left-button state; example: `left_button(at, true)` starts a drag.
+pub(super) fn left_button(position: [i32; 2], pressed: bool) {
+    let (connection, root, x, y) = pointer_target(position);
+    let event = if pressed {
+        BUTTON_PRESS_EVENT
+    } else {
+        BUTTON_RELEASE_EVENT
+    };
+    connection
+        .xtest_fake_input(event, 1, 0, root, x, y, 0)
+        .unwrap()
+        .check()
+        .unwrap();
+    connection
+        .flush()
+        .expect("X11 button: expected a flushed request");
+}
+
 pub(super) fn right_click(position: [i32; 2]) {
     let (connection, root, x, y) = pointer_target(position);
     send_click(&connection, root, x, y, 3);
@@ -72,6 +90,14 @@ pub(super) fn move_pointer(position: [i32; 2]) {
     connection
         .flush()
         .expect("X11 motion: expected a flushed request");
+}
+
+/// Focus the native application window; example: `focus_window()` before pointer input.
+pub(super) fn focus_window() {
+    let (connection, _) = keyboard_target();
+    connection
+        .flush()
+        .expect("X11 focus: expected a flushed request");
 }
 
 pub(super) fn press_escape() {

@@ -154,17 +154,63 @@ fn native_pan_drag_moves_the_view_and_keeps_pan_active() {
     let before = camera(&mut world);
     world.drag(EMPTY_VIEW, [EMPTY_VIEW[0] + 80, EMPTY_VIEW[1] + 40]);
     let after = camera(&mut world);
-    assert_ne!(after.target, before.target, "pan must move the target");
-    assert_ne!(after.eye, before.eye, "pan must move the camera");
-    for axis in 0..3 {
-        let translation = after.eye[axis] - before.eye[axis];
-        let target_translation = after.target[axis] - before.target[axis];
-        assert!((translation - target_translation).abs() < 1e-9);
-    }
-    assert_eq!(after.up, before.up, "pan must retain orientation");
-    assert_eq!(after.scale, before.scale, "pan must retain scale");
+    assert_pan_translation(before, after);
     world.expect_status("Pan:");
     world.escape();
     world.expect_ready();
     world.close();
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn x11_pan_drag_moves_the_view_and_keeps_the_tool_active() {
+    let mut world = ApplicationWorld::new();
+    open_block(&mut world);
+    start_pan_with_x11(&mut world);
+    let before = camera(&mut world);
+    drag_pan_with_x11(&mut world);
+    assert_pan_translation(before, camera(&mut world));
+    world.expect_status("Pan:");
+    super::x11_input::press_escape();
+    world.pump(Vec::new());
+    world.expect_ready();
+    world.close();
+}
+
+fn assert_pan_translation(before: ViewportCamera, after: ViewportCamera) {
+    assert_ne!(after.target, before.target, "pan must move the target");
+    assert_ne!(after.eye, before.eye, "pan must move the camera");
+    for axis in 0..3 {
+        let eye = after.eye[axis] - before.eye[axis];
+        let target = after.target[axis] - before.target[axis];
+        assert!((eye - target).abs() < 1e-9);
+    }
+    assert_eq!(after.up, before.up, "pan must retain orientation");
+    assert_eq!(after.scale, before.scale, "pan must retain scale");
+}
+
+#[cfg(target_os = "linux")]
+fn start_pan_with_x11(world: &mut ApplicationWorld) {
+    super::x11_input::focus_window();
+    world.pump(Vec::new());
+    let button = world.run_in_window(NAVIGATION, "P").center();
+    let button = diagnostics::pointer_pixels(button);
+    super::x11_input::move_pointer(button);
+    world.pump(Vec::new());
+    super::x11_input::click(button);
+    world.pump(Vec::new());
+    world.expect_status("Pan:");
+}
+
+#[cfg(target_os = "linux")]
+fn drag_pan_with_x11(world: &mut ApplicationWorld) {
+    super::x11_input::move_pointer(EMPTY_VIEW);
+    world.pump(Vec::new());
+    super::x11_input::left_button(EMPTY_VIEW, true);
+    world.pump(Vec::new());
+    let destination = [EMPTY_VIEW[0] + 80, EMPTY_VIEW[1] + 40];
+    super::x11_input::move_pointer(destination);
+    world.pump(Vec::new());
+    super::x11_input::left_button(destination, false);
+    world.pump(Vec::new());
 }
