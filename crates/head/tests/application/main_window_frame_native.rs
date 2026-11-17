@@ -3,7 +3,7 @@
 use super::{ApplicationWorld, x11_input};
 use std::time::{Duration, Instant};
 
-fn pump_until(world: &mut ApplicationWorld, expected: bool) {
+pub(super) fn pump_until(world: &mut ApplicationWorld, expected: bool) {
     let deadline = Instant::now() + Duration::from_secs(5);
     loop {
         world.pump(Vec::new());
@@ -294,12 +294,10 @@ fn pump_minimize_button(world: &mut ApplicationWorld) {
         std::thread::sleep(Duration::from_millis(30));
     }
 }
-#[test]
-#[ignore = "requires an X11 window manager"]
-fn minimize_button_keeps_taskbar_entry_and_restores_window() {
+fn exercise_minimize_reactivation(use_taskbar: bool) {
     for maximized in [false, true] {
         let mut world = ApplicationWorld::new();
-        world.pump(Vec::new());
+        let document = world.add_part();
         x11_input::focus_window();
         if maximized {
             press_maximize(&mut world);
@@ -307,10 +305,56 @@ fn minimize_button_keeps_taskbar_entry_and_restores_window() {
         }
         pump_minimize_button(&mut world);
         assert!(!x11_input::window_has_state(b"_NET_WM_STATE_SKIP_TASKBAR"));
-        x11_input::activate_from_taskbar();
+        if use_taskbar {
+            std::thread::sleep(Duration::from_millis(500));
+            x11_input::click_test_taskbar();
+        } else {
+            x11_input::activate_from_taskbar();
+        }
         wait_for_hidden(false);
         world.pump(Vec::new());
         pump_until(&mut world, maximized);
+        assert_eq!(world.active_id(), document);
         world.close();
     }
+}
+#[test]
+#[ignore = "requires an X11 window manager"]
+fn minimize_button_keeps_taskbar_entry_and_restores_window() {
+    exercise_minimize_reactivation(false);
+}
+#[test]
+#[ignore = "requires Openbox and the dedicated tint2 test panel"]
+fn minimize_button_restores_by_clicking_the_taskbar() {
+    exercise_minimize_reactivation(true);
+}
+
+#[test]
+#[ignore = "requires an X11 window manager and XFixes"]
+fn resize_handles_show_direction_specific_cursors() {
+    let mut world = ApplicationWorld::new();
+    world.pump(Vec::new());
+    x11_input::focus_window();
+    let bounds = x11_input::application_bounds();
+    let points = [
+        [bounds[2] / 2, bounds[3] / 2],
+        [1, bounds[3] / 2],
+        [bounds[2] / 2, 1],
+        [1, 1],
+        [bounds[2] - 2, 1],
+    ];
+    let mut sprites = Vec::new();
+    for point in points {
+        x11_input::move_pointer(point);
+        world.pump(Vec::new());
+        sprites.push(x11_input::cursor_sprite());
+    }
+    for (index, sprite) in sprites.iter().enumerate() {
+        assert!(
+            sprites[..index].iter().all(|other| other != sprite),
+            "cursor for point {:?}: expected a distinct direction",
+            points[index]
+        );
+    }
+    world.close();
 }

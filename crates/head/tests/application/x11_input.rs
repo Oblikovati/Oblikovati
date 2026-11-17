@@ -2,6 +2,7 @@
 //! Send the window manager close protocol through the real X11 connection.
 
 use x11rb::connection::Connection;
+use x11rb::protocol::xfixes::ConnectionExt as _;
 use x11rb::protocol::xproto::{
     Atom, AtomEnum, BUTTON_PRESS_EVENT, BUTTON_RELEASE_EVENT, ClientMessageEvent, ConnectionExt,
     EventMask, InputFocus, KEY_PRESS_EVENT, KEY_RELEASE_EVENT, MOTION_NOTIFY_EVENT, Window,
@@ -367,4 +368,33 @@ pub(super) fn activate_from_taskbar() {
         .check()
         .unwrap();
     connection.flush().unwrap();
+}
+
+/// Read the current cursor sprite through XFixes for window-frame checks.
+pub(super) fn cursor_sprite() -> (u16, u16, u16, u16, Vec<u32>) {
+    let (connection, _) = x11rb::connect(None).expect("X11: expected a display connection");
+    connection
+        .xfixes_query_version(5, 0)
+        .unwrap()
+        .reply()
+        .unwrap();
+    let cursor = connection
+        .xfixes_get_cursor_image()
+        .unwrap()
+        .reply()
+        .unwrap();
+    (
+        cursor.width,
+        cursor.height,
+        cursor.xhot,
+        cursor.yhot,
+        cursor.cursor_image,
+    )
+}
+
+pub(super) fn click_test_taskbar() {
+    let (connection, screen) = x11rb::connect(None).expect("X11: expected a display connection");
+    let root = &connection.setup().roots[screen];
+    let y = i16::try_from(root.height_in_pixels - 16).unwrap();
+    send_click(&connection, root.root, 100, y, 1);
 }
