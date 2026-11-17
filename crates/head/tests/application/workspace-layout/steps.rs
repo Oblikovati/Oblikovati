@@ -24,7 +24,7 @@ fn drag_header(world: &mut ApplicationWorld, to: [i32; 2]) {
 }
 fn expect_docked_left(world: &mut ApplicationWorld) {
     let (position, size) = browser_geometry();
-    assert_eq!(position[0], 8., "browser: expected the left dock");
+    assert_eq!(position[0], 0., "browser: expected the left dock");
     let height = world.extent()[1] as f32;
     assert!(
         size[1] > height / 2.,
@@ -150,7 +150,7 @@ fn browser_right(world: &mut ApplicationWorld) {
     let width = world.extent()[0] as f32;
     assert_eq!(
         position[0] + size[0],
-        width - 8.,
+        width,
         "browser: expected the right dock"
     );
 }
@@ -184,7 +184,7 @@ fn docked_left_of_viewport(world: &mut ApplicationWorld) {
 fn drag_boundary(world: &mut ApplicationWorld, delta: i32) {
     let (position, size) = browser_geometry();
     let from = [
-        (position[0] + size[0]) as i32 + 3,
+        (position[0] + size[0]) as i32,
         (position[1] + size[1] / 2.) as i32,
     ];
     world.drag(from, [from[0] + delta, from[1]]);

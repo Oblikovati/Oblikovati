@@ -31,12 +31,7 @@ fn inspect_layout(world: &mut ApplicationWorld) {
 #[then("the document tab strip appears below the model browser and viewport")]
 fn strip_below_workspace(world: &mut ApplicationWorld) {
     let (strip, _) = geometry("##open-document-tabs");
-    let (browser, size) = geometry("Model");
     let area = viewport_area(world);
-    assert!(
-        browser[1] + size[1] <= strip[1],
-        "browser {browser:?} / {size:?}, strip {strip:?}"
-    );
     assert!(
         area[3] as f32 <= strip[1],
         "viewport {area:?}, strip {strip:?}"
@@ -161,4 +156,89 @@ fn status_at_bottom(world: &mut ApplicationWorld) {
     status_below_strip(world);
     let (position, size) = geometry("##status-bar");
     assert!((position[1] + size[1] - world.extent()[1] as f32).abs() < 1.);
+}
+
+#[given("the model browser is docked at the left with its default width")]
+fn default_browser_left(world: &mut ApplicationWorld) {
+    super::browser_feature::open_visible_extruded_part(world);
+    model_browser_docked_left(world);
+}
+
+#[when("the user inspects the workspace proportions")]
+#[when("the user inspects the workspace boundaries")]
+#[when("the user inspects the bottom workspace rows")]
+fn inspect_workspace_boundaries(world: &mut ApplicationWorld) {
+    world.pump(Vec::new());
+}
+
+#[then("the model browser occupies about one quarter of the available workspace width")]
+fn browser_quarter_width(world: &mut ApplicationWorld) {
+    let (_, size) = geometry("Model");
+    let width = world.extent()[0] as f32;
+    assert!(
+        (size[0] / width - 0.25).abs() < 0.02,
+        "browser {size:?}, width {width}"
+    );
+}
+
+#[then("the viewport occupies the remaining width beside the browser")]
+#[then("the viewport begins at the browser's shared divider without an empty gutter")]
+fn viewport_shares_browser_edge(world: &mut ApplicationWorld) {
+    let (browser, size) = geometry("Model");
+    let area = viewport_area(world);
+    assert!(
+        (browser[0] + size[0] - area[0] as f32).abs() <= 1.,
+        "browser {browser:?} / {size:?}, viewport {area:?}"
+    );
+}
+
+#[then("the model browser begins at the left content edge directly below the ribbon")]
+fn browser_starts_at_ribbon_edge(_: &mut ApplicationWorld) {
+    let (browser, _) = geometry("Model");
+    let (ribbon, size) = geometry("##application-ribbon");
+    assert!((browser[0] - ribbon[0]).abs() <= 1.);
+    assert!((browser[1] - ribbon[1] - size[1]).abs() <= 1.);
+}
+
+#[then("the viewport fills the remaining content width")]
+fn viewport_fills_width(world: &mut ApplicationWorld) {
+    let area = viewport_area(world);
+    assert_eq!(area[2], world.extent()[0], "viewport {area:?}");
+}
+
+#[then("the ribbon, browser, viewport and status area use aligned outer edges")]
+fn workspace_outer_edges(world: &mut ApplicationWorld) {
+    browser_starts_at_ribbon_edge(world);
+    viewport_fills_width(world);
+    let (status, size) = geometry("##status-bar");
+    assert_eq!(status[0], 0.);
+    assert_eq!(size[0], world.extent()[0] as f32);
+}
+
+#[then("the browser extends to the status area above the bottom row")]
+fn browser_reaches_status(_: &mut ApplicationWorld) {
+    let (browser, size) = geometry("Model");
+    let (status, _) = geometry("##status-bar");
+    assert!((browser[1] + size[1] - status[1]).abs() <= 1.);
+}
+
+#[then("the document tab strip begins at the viewport's left edge")]
+#[then("no document tabs appear below the model browser")]
+fn tabs_start_at_viewport(world: &mut ApplicationWorld) {
+    let (strip, _) = geometry("##open-document-tabs");
+    let area = viewport_area(world);
+    assert!((strip[0] - area[0] as f32).abs() <= 1.);
+}
+
+#[then("the document tab strip ends at the viewport's right edge")]
+fn tabs_end_at_viewport(world: &mut ApplicationWorld) {
+    let (list, size) = geometry("##document-list-control");
+    let area = viewport_area(world);
+    assert!((list[0] + size[0] - area[2] as f32).abs() <= 1.);
+}
+
+#[then("the status area spans the full application width")]
+fn status_spans_window(world: &mut ApplicationWorld) {
+    let (position, size) = geometry("##status-bar");
+    assert_eq!((position[0], size[0]), (0., world.extent()[0] as f32));
 }

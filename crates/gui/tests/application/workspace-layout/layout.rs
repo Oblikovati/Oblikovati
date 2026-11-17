@@ -13,11 +13,11 @@ fn a_header_released_near_a_side_edge_docks_there() {
 #[test]
 fn the_viewport_span_avoids_only_a_docked_visible_browser() {
     let mut layout = WorkspaceLayout::default();
-    assert_eq!(layout.tab_span(1000.), (316., 684.));
+    assert_eq!(layout.tab_span(1000.), (250., 750.));
     layout.dock = BrowserDock::Right;
-    assert_eq!(layout.tab_span(1000.), (8., 676.));
+    assert_eq!(layout.tab_span(1000.), (0., 750.));
     layout.dock = BrowserDock::Floating([50., 50.]);
-    assert_eq!(layout.tab_span(1000.), (8., 984.));
+    assert_eq!(layout.tab_span(1000.), (0., 1000.));
     layout.dock = BrowserDock::Left;
     layout.panels.model_open = false;
     assert_eq!(layout.tab_span(1000.), (42., 950.));
@@ -82,13 +82,13 @@ fn selected_origin_plane_is_consumed_and_does_not_cross_documents() {
 }
 
 #[test]
-fn the_bottom_tab_strip_spans_beneath_the_browser() {
+fn the_bottom_tab_strip_follows_the_viewport_and_browser_dock() {
     let mut layout = WorkspaceLayout::default();
-    assert_eq!(layout.tab_strip_span(1000.), (8., 984.));
+    assert_eq!(layout.tab_strip_span(1000.), (250., 750.));
     layout.dock = BrowserDock::Right;
-    assert_eq!(layout.tab_strip_span(1000.), (8., 984.));
+    assert_eq!(layout.tab_strip_span(1000.), (0., 750.));
     layout.reserve_for_ribbon(196., 0.);
-    assert_eq!(layout.tab_strip_span(1000.), (204., 788.));
+    assert_eq!(layout.tab_strip_span(1000.), (196., 554.));
     assert_eq!(layout.tab_top(900.), 844.);
     layout.tabs_visible = false;
     assert_eq!(layout.tab_top(900.), 878.);

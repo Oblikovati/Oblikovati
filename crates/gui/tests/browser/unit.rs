@@ -217,13 +217,9 @@ fn selection_has_its_own_enablement_and_requires_a_current_row() {
 }
 
 #[test]
-fn browser_preserves_wide_width_and_leaves_the_view_centre_available_when_narrow() {
-    for width in [640., 720., 1440.] {
-        assert_eq!(model_browser_width(width), 300.);
-    }
-    for width in [200., 320., 480.] {
-        let panel = model_browser_width(width);
-        assert!(panel > 0. && 8. + panel < width * 0.5);
+fn browser_defaults_to_a_quarter_of_the_workspace() {
+    for width in [200., 320., 480., 640., 720., 1440.] {
+        assert_eq!(model_browser_width(width), width * 0.25);
     }
     assert_eq!(model_browser_width(1.), 1.);
 }
