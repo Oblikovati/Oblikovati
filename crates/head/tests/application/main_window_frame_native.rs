@@ -229,3 +229,88 @@ fn native_frame_double_click_toggles_maximize() {
     }
     world.close();
 }
+
+#[test]
+#[ignore = "requires an X11 window manager"]
+fn desktop_close_shortcut_obeys_the_unsaved_document_guard() {
+    let mut world = ApplicationWorld::new();
+    let document = world.add_part();
+    world.start_sketch();
+    x11_input::press_alt_f4();
+    world.pump(Vec::new());
+    world.pump(Vec::new());
+    world.expect_text("Save changes to");
+    let cancel = super::diagnostics::pointer_pixels(world.run("Cancel").center());
+    x11_input::click(cancel);
+    world.pump(Vec::new());
+    assert!(world.document_is_open(document));
+    assert!(world.state().document_storage[&document].unsaved_edits);
+    world.close();
+}
+
+#[test]
+#[ignore = "requires an X11 window manager"]
+fn maximized_frame_ignores_resize_edges() {
+    let mut world = ApplicationWorld::new();
+    world.pump(Vec::new());
+    x11_input::focus_window();
+    press_maximize(&mut world);
+    pump_until(&mut world, true);
+    let before = x11_input::application_bounds();
+    drag_resize_handle(&mut world, [1, before[3] / 2], [40, before[3] / 2]);
+    assert_eq!(x11_input::application_bounds(), before);
+    assert!(world.app().window.native.view.window_maximized().unwrap());
+    world.close();
+}
+
+fn wait_for_hidden(hidden: bool) {
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while x11_input::window_has_state(b"_NET_WM_STATE_HIDDEN") != hidden {
+        assert!(Instant::now() < deadline, "expected hidden={hidden}");
+        std::thread::sleep(Duration::from_millis(30));
+    }
+}
+fn pump_minimize_button(world: &mut ApplicationWorld) {
+    use crate::HeadWindow;
+    let width = world.app().window.native.drawable_extent().unwrap()[0] as i32;
+    x11_input::click([width - 120, 17]);
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while !x11_input::window_has_state(b"_NET_WM_STATE_HIDDEN") {
+        let app = world.app();
+        let events = app.window.events(64).unwrap();
+        for event in events {
+            crate::frames::advance_gui_for_native_test(
+                &mut app.window,
+                &mut app.owner,
+                Some(&event),
+            )
+            .unwrap();
+        }
+        crate::frames::advance_gui_for_native_test(&mut app.window, &mut app.owner, None).unwrap();
+        assert!(
+            Instant::now() < deadline,
+            "Minimize control: expected the window to become hidden"
+        );
+        std::thread::sleep(Duration::from_millis(30));
+    }
+}
+#[test]
+#[ignore = "requires an X11 window manager"]
+fn minimize_button_keeps_taskbar_entry_and_restores_window() {
+    for maximized in [false, true] {
+        let mut world = ApplicationWorld::new();
+        world.pump(Vec::new());
+        x11_input::focus_window();
+        if maximized {
+            press_maximize(&mut world);
+            pump_until(&mut world, true);
+        }
+        pump_minimize_button(&mut world);
+        assert!(!x11_input::window_has_state(b"_NET_WM_STATE_SKIP_TASKBAR"));
+        x11_input::activate_from_taskbar();
+        wait_for_hidden(false);
+        world.pump(Vec::new());
+        pump_until(&mut world, maximized);
+        world.close();
+    }
+}

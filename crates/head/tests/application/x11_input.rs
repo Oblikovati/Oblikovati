@@ -110,6 +110,22 @@ pub(super) fn press_escape() {
     );
 }
 
+pub(super) fn press_alt_f4() {
+    let (connection, root) = keyboard_target();
+    let alt = keyboard_keycode(&connection, 0xffe9);
+    let f4 = keyboard_keycode(&connection, 0xffc1);
+    send_key_sequence(
+        &connection,
+        root,
+        &[
+            (KEY_PRESS_EVENT, alt),
+            (KEY_PRESS_EVENT, f4),
+            (KEY_RELEASE_EVENT, f4),
+            (KEY_RELEASE_EVENT, alt),
+        ],
+    );
+}
+
 pub(super) fn press_control_o() {
     let (connection, root) = keyboard_target();
     let control = keyboard_keycode(&connection, 0xffe3);
@@ -313,4 +329,42 @@ pub(super) fn application_bounds() -> [i32; 4] {
         i32::from(geometry.width),
         i32::from(geometry.height),
     ]
+}
+
+pub(super) fn window_has_state(name: &[u8]) -> bool {
+    let (connection, screen) = x11rb::connect(None).expect("X11: expected a display connection");
+    let window = application_window(&connection, connection.setup().roots[screen].root);
+    let state = atom(&connection, b"_NET_WM_STATE");
+    let expected = atom(&connection, name);
+    let property = connection
+        .get_property(false, window, state, AtomEnum::ATOM, 0, 64)
+        .unwrap()
+        .reply()
+        .unwrap();
+    property
+        .value32()
+        .is_some_and(|mut values| values.any(|value| value == expected))
+}
+
+pub(super) fn activate_from_taskbar() {
+    let (connection, screen) = x11rb::connect(None).expect("X11: expected a display connection");
+    let root = connection.setup().roots[screen].root;
+    let window = application_window(&connection, root);
+    let event = ClientMessageEvent::new(
+        32,
+        window,
+        atom(&connection, b"_NET_ACTIVE_WINDOW"),
+        [2, 0, 0, 0, 0],
+    );
+    connection
+        .send_event(
+            false,
+            root,
+            EventMask::SUBSTRUCTURE_REDIRECT | EventMask::SUBSTRUCTURE_NOTIFY,
+            event,
+        )
+        .unwrap()
+        .check()
+        .unwrap();
+    connection.flush().unwrap();
 }
