@@ -224,3 +224,41 @@ fn same_part_in_viewport(world: &mut ApplicationWorld) {
             .all(|value| *value > 0)
     );
 }
+
+#[given("the MCAD Software is open in a restored window with an active part")]
+fn restored_window_with_dirty_part(world: &mut ApplicationWorld) {
+    let part = world.add_part();
+    world.start_sketch();
+    world.previous_document = Some(part);
+    restored_window(world);
+}
+#[when("the user drags the bottom right corner inward past the supported minimum size")]
+fn shrink_past_minimum(world: &mut ApplicationWorld) {
+    let bounds = super::x11_input::application_bounds();
+    super::main_window_frame_native::drag_resize_handle(
+        world,
+        [bounds[2] - 2, bounds[3] - 2],
+        [100, 100],
+    );
+}
+#[then("the window stops shrinking at its minimum size")]
+fn minimum_window_bounds(_: &mut ApplicationWorld) {
+    assert_eq!(&super::x11_input::application_bounds()[2..], &[640, 480]);
+}
+#[then("Minimize, Maximize and Close remain fully visible and usable")]
+fn minimum_controls_usable(world: &mut ApplicationWorld) {
+    super::main_window_frame_native::press_maximize(world);
+    super::main_window_frame_native::pump_until(world, true);
+    super::main_window_frame_native::press_maximize(world);
+    super::main_window_frame_native::pump_until(world, false);
+    super::main_window_frame_native::pump_minimize_button(world);
+    activate_from_taskbar(world);
+    super::application_closing::request_application_close(world);
+    world.expect_text("Save changes to");
+    super::application_closing::cancel_application_close(world);
+}
+#[then("the active part remains displayed in the resized viewport")]
+fn minimum_viewport_keeps_part(world: &mut ApplicationWorld) {
+    same_part_in_viewport(world);
+    assert_eq!(&super::x11_input::application_bounds()[2..], &[640, 480]);
+}
