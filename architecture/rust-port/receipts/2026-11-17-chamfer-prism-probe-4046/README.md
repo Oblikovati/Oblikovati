@@ -25,5 +25,12 @@ The subsequent shared blend adapter supports a detached equal-distance
 Chamfer candidate and names its result from kernel history. Six focused
 tests passed for invalid inputs, unchanged source volume, name resolution,
 distance changes, multiple edges, and both Chamfer/Fillet orders. The affected Fillet test
-group passed 14 tests; one manual performance test was ignored. This does
-not yet cover feature replay, persistence, the host command, or the UI.
+group passed 14 tests; one manual performance test was ignored.
+
+The model now stores a versioned Chamfer recipe and replays it through the
+shared body-replacement path. A focused test changed its distance parameter,
+undid and redid creation, restored an encoded document package, and resolved
+the retained body and face names. An oversized Chamfer reported failure and
+left its source body available. These are headless checks; they do not prove
+the native scenario or a file written by the desktop save command. The host
+command and UI are still open.

@@ -8,6 +8,7 @@ impl AuthoredFeature<WorkGeometryDefinition> {
                 WorkGeometryDefinition::SketchPrism(_)
                     | WorkGeometryDefinition::DeleteBody(_)
                     | WorkGeometryDefinition::Fillet(_)
+                    | WorkGeometryDefinition::Chamfer(_)
             )
         {
             return Err(WorkGeometryError::Kind(super::WorkGeometryKindMismatch {

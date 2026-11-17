@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{
-    FilletEvaluator, PartFeatureDefinition, PartFeatureProgramError,
+    ChamferEvaluator, FilletEvaluator, PartFeatureDefinition, PartFeatureProgramError,
     body_resolution::{resolve_body_face, resolve_body_slot},
 };
 use crate::{
@@ -33,6 +33,12 @@ pub trait SketchPrismEvaluator {
     fn fillet_evaluator(&mut self) -> Option<&mut dyn FilletEvaluator<Self::Body, Self::Failure>> {
         None
     }
+    /// Select chamfer capability; example: `backend.chamfer_evaluator()`.
+    fn chamfer_evaluator(
+        &mut self,
+    ) -> Option<&mut dyn ChamferEvaluator<Self::Body, Self::Failure>> {
+        None
+    }
     /// Construct an isolated result from checked inputs; example: `backend.evaluate_prism(feature.id(), input)?`.
     fn evaluate_prism(
         &mut self,
@@ -49,6 +55,7 @@ pub enum PartFeatureFailure<Failure> {
     Kernel(Failure),
     BodyReference(String),
     FilletInput(String),
+    ChamferInput(String),
     Unsupported(String),
 }
 /// Derived results from a fresh replay. This does not implement the complete extrude operation or a prefix cache.
@@ -334,6 +341,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             PartFeatureDefinition::SketchPrism(_)
                 | PartFeatureDefinition::DeleteBody(_)
                 | PartFeatureDefinition::Fillet(_)
+                | PartFeatureDefinition::Chamfer(_)
         ) {
             feature
                 .validate_plane_metadata()
@@ -348,6 +356,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             }
             PartFeatureDefinition::Fillet(definition) => {
                 self.evaluate_fillet(snapshot, backend, id, definition)
+            }
+            PartFeatureDefinition::Chamfer(definition) => {
+                self.evaluate_chamfer(snapshot, backend, id, definition)
             }
             _ => {
                 let bodies = &self.bodies;

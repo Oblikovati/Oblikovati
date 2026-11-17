@@ -385,6 +385,7 @@ fn feature_kind(definition: &PartFeatureDefinition) -> &'static str {
         SketchPrism(_) => "extrude",
         DeleteBody(_) => "delete-body",
         Fillet(_) => "fillet",
+        Chamfer(_) => "chamfer",
         Fixed(_) => "fixed-frame",
         Offset { .. } => "plane-offset",
         ParallelThroughPoint(_) => "plane-point",

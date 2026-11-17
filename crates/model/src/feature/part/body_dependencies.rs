@@ -57,6 +57,7 @@ fn track_replacement(
             return;
         }
         PartFeatureDefinition::Fillet(fillet) => fillet.body_source(),
+        PartFeatureDefinition::Chamfer(chamfer) => chamfer.body_source(),
         PartFeatureDefinition::DeleteBody(delete) => delete.source(),
         _ => return,
     };

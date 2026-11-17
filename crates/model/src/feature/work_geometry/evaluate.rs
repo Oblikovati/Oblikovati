@@ -117,6 +117,7 @@ impl WorkGeometryEvaluation {
             WorkPlaneDefinition::SketchPrism(_)
                 | WorkPlaneDefinition::DeleteBody(_)
                 | WorkPlaneDefinition::Fillet(_)
+                | WorkPlaneDefinition::Chamfer(_)
         ) {
             return Err(WorkPlaneError::Kind(super::WorkGeometryKindMismatch {
                 feature: id,

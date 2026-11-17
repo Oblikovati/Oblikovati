@@ -2,7 +2,7 @@
 //! Ordered evaluation of named prism and fillet bodies (#4045).
 use super::*;
 use oblikovati_model::feature::{
-    part::{FilletEvaluator, SketchPrismEvaluator},
+    part::{ChamferEvaluator, FilletEvaluator, SketchPrismEvaluator},
     sketch_prism::ResolvedSketchPrism,
 };
 use std::collections::BTreeSet;
@@ -12,6 +12,7 @@ type NameLists = (Vec<Vec<u8>>, Vec<Vec<u8>>);
 pub enum NamedSolid {
     Prism(Box<NamedPrismSnapshot>),
     Fillet(Box<BlendNamedTopology>),
+    Chamfer(Box<BlendNamedTopology>),
 }
 
 impl NamedSolid {
@@ -19,7 +20,7 @@ impl NamedSolid {
     pub fn as_prism(&self) -> Option<&NamedPrismSnapshot> {
         match self {
             Self::Prism(body) => Some(body),
-            Self::Fillet(_) => None,
+            Self::Fillet(_) | Self::Chamfer(_) => None,
         }
     }
 
@@ -71,7 +72,7 @@ impl NamedSolid {
                     .ok_or_else(|| format!("face {key:?}: expected a face role"))?;
                 unique_face(&body.snapshot, role)
             }
-            Self::Fillet(body) => body.native_face(history, document, key),
+            Self::Fillet(body) | Self::Chamfer(body) => body.native_face(history, document, key),
         }
     }
     pub(super) fn native_shape<'a>(
@@ -84,7 +85,7 @@ impl NamedSolid {
                 body.body_reference_key(history, document)?;
                 Ok(&body.snapshot.shape)
             }
-            Self::Fillet(body) => body.native_shape(history, document),
+            Self::Fillet(body) | Self::Chamfer(body) => body.native_shape(history, document),
         }
     }
     /// Read analytic body bounds center; example: `body.body_bounds_center(&history, document, key)?`.
@@ -96,7 +97,9 @@ impl NamedSolid {
     ) -> Result<[f64; 3], String> {
         match self {
             Self::Prism(body) => body.body_bounds_center(history, document, key),
-            Self::Fillet(body) => body.body_bounds_center(history, document, key),
+            Self::Fillet(body) | Self::Chamfer(body) => {
+                body.body_bounds_center(history, document, key)
+            }
         }
     }
 
@@ -109,7 +112,9 @@ impl NamedSolid {
     ) -> Result<[f64; 3], String> {
         match self {
             Self::Prism(body) => body.face_bounds_center(history, document, key),
-            Self::Fillet(body) => body.face_bounds_center(history, document, key),
+            Self::Fillet(body) | Self::Chamfer(body) => {
+                body.face_bounds_center(history, document, key)
+            }
         }
     }
     /// Read analytic face information; example: `body.face_topology(&history, document, key)?`.
@@ -121,7 +126,7 @@ impl NamedSolid {
     ) -> Result<PrismFaceTopology, String> {
         match self {
             Self::Prism(body) => body.face_topology(history, document, key),
-            Self::Fillet(body) => body.face_topology(history, document, key),
+            Self::Fillet(body) | Self::Chamfer(body) => body.face_topology(history, document, key),
         }
     }
 
@@ -136,7 +141,9 @@ impl NamedSolid {
             Self::Prism(body) => body
                 .face_report(history, document, key)
                 .map(|report| report.loops),
-            Self::Fillet(body) => body.face_loop_count(history, document, key),
+            Self::Fillet(body) | Self::Chamfer(body) => {
+                body.face_loop_count(history, document, key)
+            }
         }
     }
     /// Enumerate exact face names; example: `body.face_reference_keys(&history, document)?`.
@@ -157,7 +164,7 @@ impl NamedSolid {
                     }
                 })
                 .collect(),
-            Self::Fillet(body) => body.keys_of_kinds(history, document, &[1]),
+            Self::Fillet(body) | Self::Chamfer(body) => body.keys_of_kinds(history, document, &[1]),
         }
     }
     /// Count exact body topology; example: `body.topology_summary(&history, document, key)?`.
@@ -171,7 +178,9 @@ impl NamedSolid {
             Self::Prism(body) => body
                 .body_report(history, document, key)
                 .map(|report| report.topology.clone()),
-            Self::Fillet(body) => body.topology_summary(history, document, key),
+            Self::Fillet(body) | Self::Chamfer(body) => {
+                body.topology_summary(history, document, key)
+            }
         }
     }
 
@@ -186,7 +195,7 @@ impl NamedSolid {
             Self::Prism(body) => body
                 .face_report(history, document, key)
                 .map(|report| report.area),
-            Self::Fillet(body) => body.face_area(history, document, key),
+            Self::Fillet(body) | Self::Chamfer(body) => body.face_area(history, document, key),
         }
     }
 
@@ -198,7 +207,9 @@ impl NamedSolid {
     ) -> Result<Vec<Vec<u8>>, String> {
         match self {
             Self::Prism(body) => body.subentity_reference_keys(history, document),
-            Self::Fillet(body) => body.keys_of_kinds(history, document, &[2, 3]),
+            Self::Fillet(body) | Self::Chamfer(body) => {
+                body.keys_of_kinds(history, document, &[2, 3])
+            }
         }
     }
 
@@ -211,7 +222,7 @@ impl NamedSolid {
     ) -> Result<f64, String> {
         match self {
             Self::Prism(body) => body.edge_length(history, document, key),
-            Self::Fillet(body) => body.edge_length(history, document, key),
+            Self::Fillet(body) | Self::Chamfer(body) => body.edge_length(history, document, key),
         }
     }
 
@@ -226,7 +237,9 @@ impl NamedSolid {
             Self::Prism(body) => body
                 .subentity_provenance(history, document, key)
                 .map(|record| record.point),
-            Self::Fillet(body) => body.subentity_point(history, document, key),
+            Self::Fillet(body) | Self::Chamfer(body) => {
+                body.subentity_point(history, document, key)
+            }
         }
     }
     /// Resolve the primary body key; example: `body.body_reference_key(&history, document)?`.
@@ -237,7 +250,7 @@ impl NamedSolid {
     ) -> Result<&'a [u8], String> {
         match self {
             Self::Prism(body) => body.body_reference_key(history, document),
-            Self::Fillet(body) => body.body_reference_key(history, document),
+            Self::Fillet(body) | Self::Chamfer(body) => body.body_reference_key(history, document),
         }
     }
 
@@ -250,7 +263,9 @@ impl NamedSolid {
     ) -> Result<crate::AnalyticBodyProperties, String> {
         match self {
             Self::Prism(body) => body.physical_properties(history, document, key),
-            Self::Fillet(body) => body.physical_properties(history, document, key),
+            Self::Fillet(body) | Self::Chamfer(body) => {
+                body.physical_properties(history, document, key)
+            }
         }
     }
     /// Integrate the current body; example: `body.volume(&history, document)?`.
@@ -267,7 +282,7 @@ impl NamedSolid {
                     body.body_reference_key(history, document)?,
                 )
                 .map(|properties| properties.geometry.volume),
-            Self::Fillet(body) => body.volume(history, document),
+            Self::Fillet(body) | Self::Chamfer(body) => body.volume(history, document),
         }
     }
 
@@ -282,7 +297,9 @@ impl NamedSolid {
                 live.extend(body.subentity_reference_keys(history, document)?);
                 Ok((live, Vec::new()))
             }
-            Self::Fillet(body) => Ok((body.live_keys().to_vec(), body.deleted_keys().to_vec())),
+            Self::Fillet(body) | Self::Chamfer(body) => {
+                Ok((body.live_keys().to_vec(), body.deleted_keys().to_vec()))
+            }
         }
     }
 }
@@ -307,7 +324,7 @@ impl crate::BodyPresentationSource for NamedSolid {
             Self::Prism(body) => {
                 super::super::BodyPresentationSource::body_triangles(body.as_ref(), options)
             }
-            Self::Fillet(body) => body.display_triangles(options),
+            Self::Fillet(body) | Self::Chamfer(body) => body.display_triangles(options),
         }
     }
 }
@@ -374,7 +391,7 @@ impl SketchPrismEvaluator for CertifiedNamedSolidEvaluator<'_> {
     fn verify_body_reference(&self, body: &NamedSolid, key: &[u8]) -> Result<(), String> {
         match body {
             NamedSolid::Prism(body) => self.diagnostic.verify_body_reference(body, key),
-            NamedSolid::Fillet(body) => body
+            NamedSolid::Fillet(body) | NamedSolid::Chamfer(body) => body
                 .contains(self.history, self.document, key, 4)
                 .map(|_| ()),
         }
@@ -386,7 +403,9 @@ impl SketchPrismEvaluator for CertifiedNamedSolidEvaluator<'_> {
     ) -> Result<oblikovati_model::sketch::SketchPlane, String> {
         match body {
             NamedSolid::Prism(body) => self.diagnostic.resolve_planar_face(body, key),
-            NamedSolid::Fillet(body) => body.face_plane(self.history, self.document, key),
+            NamedSolid::Fillet(body) | NamedSolid::Chamfer(body) => {
+                body.face_plane(self.history, self.document, key)
+            }
         }
     }
     fn evaluate_prism(
@@ -405,55 +424,11 @@ impl SketchPrismEvaluator for CertifiedNamedSolidEvaluator<'_> {
     ) -> Option<&mut dyn FilletEvaluator<NamedSolid, EvaluationFailure>> {
         Some(self)
     }
-}
-
-impl FilletEvaluator<NamedSolid, EvaluationFailure> for CertifiedNamedSolidEvaluator<'_> {
-    fn evaluate_fillet(
+    fn chamfer_evaluator(
         &mut self,
-        feature: FeatureId,
-        body: &NamedSolid,
-        edges: &[Vec<u8>],
-        radius: f64,
-    ) -> Result<NamedSolid, EvaluationFailure> {
-        let candidate = match body {
-            NamedSolid::Prism(body) => {
-                body.fillet_candidate(self.history, self.document, edges, radius)
-            }
-            NamedSolid::Fillet(body) => {
-                body.fillet_candidate(self.history, self.document, edges, radius)
-            }
-        }
-        .map_err(|message| failure(Phase::Fillet, feature, message))?;
-        let named = candidate
-            .name_topology(self.history, self.document, feature)
-            .map_err(|message| failure(Phase::Naming, feature, message))?;
-        Ok(NamedSolid::Fillet(Box::new(named)))
-    }
-
-    fn verify_fillet_lineage(&self, before: &NamedSolid, after: &NamedSolid) -> Result<(), String> {
-        let (prior_live, prior_deleted) = before.names(self.history, self.document)?;
-        let (live, deleted) = after.names(self.history, self.document)?;
-        let accounted: BTreeSet<_> = live.iter().chain(&deleted).collect();
-        for key in &prior_live {
-            if !accounted.contains(key) {
-                return Err(format!(
-                    "fillet input name {key:?}: expected a live or deleted result record"
-                ));
-            }
-        }
-        for key in &prior_deleted {
-            if !deleted.contains(key) {
-                return Err(format!(
-                    "fillet deleted name {key:?}: expected a retained deletion record"
-                ));
-            }
-        }
-        Ok(())
+    ) -> Option<&mut dyn ChamferEvaluator<NamedSolid, EvaluationFailure>> {
+        Some(self)
     }
 }
 
-fn failure(phase: Phase, feature: FeatureId, message: String) -> EvaluationFailure {
-    phase
-        .refused(Kind::InvalidResult, Entity::Body, message)
-        .for_feature(feature)
-}
+mod blend_evaluation;

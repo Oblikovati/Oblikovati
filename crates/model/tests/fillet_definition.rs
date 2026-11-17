@@ -130,3 +130,58 @@ fn fillet_recipe_revalidates_edges_and_refuses_unknown_fields() {
         .insert("unknown".into(), true.into());
     assert!(serde_json::from_value::<FilletRecipe>(encoded).is_err());
 }
+
+#[test]
+fn chamfer_recipe_tracks_sources_and_parameter() {
+    use oblikovati_model::feature::chamfer::{ChamferDefinition, ChamferRecipe};
+    let definition = ChamferDefinition::new(
+        body(),
+        vec![edge(2, 3), edge(1, 2)],
+        DatumLength::Parameter(3),
+    )
+    .unwrap();
+    let recipe = definition.recipe();
+    let encoded = serde_json::to_string(&recipe).unwrap();
+    let restored: ChamferRecipe = serde_json::from_str(&encoded).unwrap();
+    assert_eq!(
+        ChamferDefinition::from_recipe(&restored).unwrap(),
+        definition
+    );
+    assert!(
+        definition
+            .reads()
+            .keys()
+            .contains(&FeatureReadKey::Feature(FeatureId(2)))
+    );
+    assert!(
+        definition
+            .reads()
+            .keys()
+            .contains(&FeatureReadKey::Parameter(3))
+    );
+    assert_eq!(
+        definition
+            .resolved_distance(&lengths(2., Dimension::Length))
+            .unwrap(),
+        2.
+    );
+}
+
+#[test]
+fn chamfer_rejects_bad_inputs_and_recipe_versions() {
+    use oblikovati_model::feature::chamfer::ChamferDefinition;
+    let edge = edge(1, 2);
+    for (edges, distance) in [
+        (vec![], DatumLength::Constant(1.)),
+        (vec![edge.clone(), edge.clone()], DatumLength::Constant(1.)),
+        (vec![body()], DatumLength::Constant(1.)),
+        (vec![edge.clone()], DatumLength::Constant(0.)),
+        (vec![edge.clone()], DatumLength::Parameter(0)),
+    ] {
+        assert!(ChamferDefinition::new(body(), edges, distance).is_err());
+    }
+    let definition = ChamferDefinition::new(body(), vec![edge], DatumLength::Constant(1.)).unwrap();
+    let mut recipe = definition.recipe();
+    recipe.version = 2;
+    assert!(ChamferDefinition::from_recipe(&recipe).is_err());
+}

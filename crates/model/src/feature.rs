@@ -6,6 +6,7 @@ mod edits;
 mod scalar_ownership;
 mod scalar_parameters;
 pub use scalar_ownership::{FeatureScalarBinding, FeatureScalarOwnershipError};
+pub mod chamfer;
 mod error;
 mod evaluation;
 pub mod fillet;

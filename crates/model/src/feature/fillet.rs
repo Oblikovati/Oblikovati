@@ -7,15 +7,18 @@ use crate::{
 };
 use std::collections::BTreeSet;
 
-/// Authored fillet input; result geometry and bindings are resolved during replay.
+/// Authored named-edge blend input; geometry and bindings are resolved during replay.
 #[derive(Clone, Debug, PartialEq)]
-pub struct FilletDefinition {
+pub struct BlendDefinition {
     body: Vec<u8>,
     body_source: FeatureId,
     edges: Vec<Vec<u8>>,
     radius: DatumLength,
     sources: Vec<FeatureId>,
 }
+
+/// Compatibility name for authored fillet inputs.
+pub type FilletDefinition = BlendDefinition;
 
 /// Versioned fillet input without a cached kernel result.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -27,13 +30,21 @@ pub struct FilletRecipe {
     pub radius: DatumLength,
 }
 
-impl FilletDefinition {
+impl BlendDefinition {
     /// Validate names and sources; current body membership is checked during replay.
     /// Example: `FilletDefinition::new(body_key, edge_keys, radius)?`.
     pub fn new(body: Vec<u8>, edges: Vec<Vec<u8>>, radius: DatumLength) -> Result<Self, String> {
-        let (document, source) = reference_identity(&body, 4)?;
-        validate_radius_source(radius)?;
-        let (edges, sources) = validate_edges(document, source, edges)?;
+        Self::new_blend(body, edges, radius, "fillet")
+    }
+    pub(super) fn new_blend(
+        body: Vec<u8>,
+        edges: Vec<Vec<u8>>,
+        radius: DatumLength,
+        operation: &str,
+    ) -> Result<Self, String> {
+        let (document, source) = reference_identity(&body, 4, operation)?;
+        validate_radius_source(radius, operation)?;
+        let (edges, sources) = validate_edges(document, source, edges, operation)?;
         Ok(Self {
             body,
             body_source: source,
@@ -85,26 +96,38 @@ impl FilletDefinition {
     }
     /// Resolve a positive current radius; example: `definition.resolved_radius(&parameters)?`.
     pub fn resolved_radius(&self, parameters: &ParameterCollection<u64>) -> Result<f64, String> {
+        self.resolved_blend_length(parameters, "fillet")
+    }
+    pub(super) fn resolved_blend_length(
+        &self,
+        parameters: &ParameterCollection<u64>,
+        operation: &str,
+    ) -> Result<f64, String> {
         let value = self
             .radius
             .resolve(parameters)
             .map_err(|cause| cause.to_string())?;
         if value <= 0. {
             return Err(format!(
-                "fillet radius {value:?}: expected a finite positive length"
+                "{operation} length {value:?}: expected a finite positive length"
             ));
         }
         Ok(value)
     }
 }
 
-fn reference_identity(key: &[u8], expected: u32) -> Result<(DocumentGuid, FeatureId), String> {
-    let document = topology_reference_document(key)
-        .map_err(|cause| format!("fillet key {key:?}: expected a semantic reference: {cause}"))?;
+fn reference_identity(
+    key: &[u8],
+    expected: u32,
+    operation: &str,
+) -> Result<(DocumentGuid, FeatureId), String> {
+    let document = topology_reference_document(key).map_err(|cause| {
+        format!("{operation} key {key:?}: expected a semantic reference: {cause}")
+    })?;
     let envelope = ReferenceEnvelope::decode(key).map_err(|cause| cause.to_string())?;
     if envelope.kind != expected {
         return Err(format!(
-            "fillet key {key:?} kind {}: expected kind {expected}",
+            "{operation} key {key:?} kind {}: expected kind {expected}",
             envelope.kind
         ));
     }
@@ -115,17 +138,20 @@ fn validate_edges(
     document: DocumentGuid,
     body: FeatureId,
     edges: Vec<Vec<u8>>,
+    operation: &str,
 ) -> Result<(Vec<Vec<u8>>, Vec<FeatureId>), String> {
     if edges.is_empty() {
-        return Err("fillet edges []: expected at least one named edge".into());
+        return Err(format!(
+            "{operation} edges []: expected at least one named edge"
+        ));
     }
     let mut unique = BTreeSet::new();
     let mut sources = BTreeSet::from([body]);
     for key in edges {
-        let (edge_document, source) = reference_identity(&key, 2)?;
+        let (edge_document, source) = reference_identity(&key, 2, operation)?;
         if edge_document != document || !unique.insert(key.clone()) {
             return Err(format!(
-                "fillet edge {key:?}: expected one occurrence in document {document:?}"
+                "{operation} edge {key:?}: expected one occurrence in document {document:?}"
             ));
         }
         sources.insert(source);
@@ -133,7 +159,7 @@ fn validate_edges(
     Ok((unique.into_iter().collect(), sources.into_iter().collect()))
 }
 
-fn validate_radius_source(radius: DatumLength) -> Result<(), String> {
+fn validate_radius_source(radius: DatumLength, operation: &str) -> Result<(), String> {
     radius
         .validate_source()
         .map_err(|cause| cause.to_string())?;
@@ -141,7 +167,7 @@ fn validate_radius_source(radius: DatumLength) -> Result<(), String> {
         || radius.parameter() == Some(0)
     {
         return Err(format!(
-            "fillet radius source {radius:?}: expected a positive constant or nonzero parameter"
+            "{operation} length source {radius:?}: expected a positive constant or nonzero parameter"
         ));
     }
     Ok(())

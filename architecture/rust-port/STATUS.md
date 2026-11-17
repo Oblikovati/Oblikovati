@@ -29,7 +29,8 @@ Last checked: 2026-11-16 on `rust-work`. Refresh from current evidence at each c
   Martensite builder passed detached-cube geometry and face-history probes
   on all 12 edges. The shared blend adapter now names a detached Chamfer and
   retains names across tested distance changes and Fillet combinations.
-  Feature replay, host operations and UI remain open; see
+  A parameter-driven Chamfer also replays through undo, redo and package
+  restore. Host operations and UI remain open; see
   `receipts/2026-11-17-chamfer-prism-probe-4046/`.
 - Pointer-driven Line creation and preview cancellation have an X11 diagnostic
   (#4037). Move preview and cancellation also pass a focused X11 diagnostic

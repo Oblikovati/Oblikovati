@@ -15,6 +15,7 @@ pub enum EvaluationPhase {
     Profile,
     Prism,
     Fillet,
+    Chamfer,
     Validation,
     History,
     Copy,

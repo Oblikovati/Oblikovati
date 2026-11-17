@@ -16,6 +16,7 @@ pub struct WorkPlaneRecipe {
 #[serde(deny_unknown_fields)]
 pub enum WorkPlaneDefinitionRecipe {
     DeleteBody(Vec<u8>),
+    Chamfer(crate::feature::chamfer::ChamferRecipe),
     Fillet(crate::feature::fillet::FilletRecipe),
     SketchPrism(crate::feature::sketch_prism::SketchPrismRecipe),
     AtAngleAboutAxis(crate::feature::work_geometry::WorkPlaneLineAngle),
@@ -52,6 +53,7 @@ impl WorkPlaneDefinition {
         use WorkPlaneDefinitionRecipe as Source;
         match self {
             Self::DeleteBody(definition) => Source::DeleteBody(definition.key().to_vec()),
+            Self::Chamfer(definition) => Source::Chamfer(definition.recipe()),
             Self::Fillet(definition) => Source::Fillet(definition.recipe()),
             Self::SketchPrism(definition) => Source::SketchPrism(definition.recipe()),
             Self::AtAngleAboutAxis(source) => Source::AtAngleAboutAxis(source.clone()),
@@ -84,6 +86,9 @@ fn restore_definition(
 ) -> Result<WorkPlaneDefinition, WorkPlaneError> {
     use WorkPlaneDefinitionRecipe::*;
     match definition {
+        Chamfer(recipe) => crate::feature::chamfer::ChamferDefinition::from_recipe(&recipe)
+            .map(|definition| WorkPlaneDefinition::Chamfer(Box::new(definition)))
+            .map_err(WorkPlaneError::BodyReference),
         Fillet(recipe) => crate::feature::fillet::FilletDefinition::from_recipe(&recipe)
             .map(|definition| WorkPlaneDefinition::Fillet(Box::new(definition)))
             .map_err(WorkPlaneError::BodyReference),
@@ -147,6 +152,7 @@ impl WorkPlaneDefinitionRecipe {
             return 13;
         }
         match self {
+            Self::Chamfer(_) => 16,
             Self::Fillet(_) => 15,
             Self::DeleteBody(_) => 12,
             Self::SketchPrism(_) => 11,
@@ -170,6 +176,7 @@ impl WorkPlaneDefinitionRecipe {
             return 18;
         }
         match self {
+            Self::Chamfer(_) => 21,
             Self::Fillet(_) => 20,
             Self::DeleteBody(_) => 17,
             Self::SketchPrism(_) => 16,

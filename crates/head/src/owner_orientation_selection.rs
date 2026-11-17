@@ -119,7 +119,8 @@ impl<
             oblikovati_martensite::NamedSolid::Prism(body) => {
                 body.face_plane(session.history(), guid, face)?
             }
-            oblikovati_martensite::NamedSolid::Fillet(body) => {
+            oblikovati_martensite::NamedSolid::Fillet(body)
+            | oblikovati_martensite::NamedSolid::Chamfer(body) => {
                 body.face_plane(session.history(), guid, face)?
             }
         };

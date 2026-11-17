@@ -11,6 +11,7 @@ use crate::sketch::SketchPlane;
 mod body_dependencies;
 mod body_lineage;
 mod body_resolution;
+mod chamfer_evaluation;
 mod delete;
 mod error;
 mod fillet_evaluation;
@@ -24,12 +25,14 @@ pub use super::work_plane::{
     WorkPlaneProgramRecipe as PartFeatureProgramRecipe,
     WorkPlaneProgramRecipeError as PartFeatureProgramRecipeError,
 };
+pub use chamfer_evaluation::ChamferEvaluator;
 pub use error::PartFeatureProgramError;
 pub use fillet_evaluation::FilletEvaluator;
 /// One owned datum or body input in the common ordered feature program.
 #[derive(Clone, Debug, PartialEq)]
 pub enum PartFeatureDefinition {
     DeleteBody(DeleteBodyDefinition),
+    Chamfer(Box<super::chamfer::ChamferDefinition>),
     Fillet(Box<super::fillet::FilletDefinition>),
     SketchPrism(Box<super::sketch_prism::SketchPrismDefinition>),
     Fixed(SketchPlane),
@@ -54,6 +57,7 @@ impl PartFeatureDefinition {
         match self {
             Self::SketchPrism(_) => "extrude",
             Self::DeleteBody(_) => "delete-body",
+            Self::Chamfer(_) => "chamfer",
             Self::Fillet(_) => "fillet",
             Self::Axis(_) | Self::AxisThroughPoints(_) => "work-axis",
             Self::Point(_) | Self::PointAtReference(_) => "work-point",

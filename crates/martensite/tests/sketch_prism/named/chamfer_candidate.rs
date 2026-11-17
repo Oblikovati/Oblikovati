@@ -167,3 +167,143 @@ fn chamfer_accepts_two_named_edges_and_preserves_their_deletion_history() {
         .unwrap();
     assert!(edges.iter().all(|edge| named.deleted_keys().contains(edge)));
 }
+
+#[test]
+fn chamfer_replays_across_undo_redo_and_recipe_restore() {
+    use oblikovati_api::types::USER_PARAM;
+    use oblikovati_model::feature::{
+        AuthoredFeature, chamfer::ChamferDefinition, part::PartFeatureDefinition,
+    };
+    use oblikovati_model::quantity::{Dimension, Quantity};
+    let mut snapshot = cube_document();
+    snapshot
+        .parameters
+        .insert_value(
+            77,
+            "chamfer_size",
+            USER_PARAM,
+            Quantity::new(0.1, Dimension::Length),
+        )
+        .unwrap();
+    let mut history = owner(snapshot);
+    let edge = opposite_cube_edges(&certified(&history), &history).remove(0);
+    let definition =
+        ChamferDefinition::new(key("body", &[1]), vec![edge], DatumLength::Parameter(77)).unwrap();
+    let reads = definition.reads();
+    let token = history.begin("Chamfer").unwrap();
+    history
+        .edit(&token, |snapshot, ids| {
+            let id = ids.allocate_feature().map_err(|cause| cause.to_string())?;
+            snapshot
+                .work_geometry
+                .append(AuthoredFeature::new(
+                    id,
+                    "Chamfer",
+                    PartFeatureDefinition::Chamfer(Box::new(definition)),
+                    reads,
+                ))
+                .map_err(|cause| cause.to_string())?;
+            Ok::<(), String>(())
+        })
+        .unwrap();
+    history.commit(&token, false).unwrap();
+    assert_chamfer_replay(&history, 0.1);
+    let mut recipe = history.snapshot().work_geometry.part_recipe().unwrap();
+    assert_eq!(recipe.version, 21);
+    recipe.version = 20;
+    assert!(
+        oblikovati_model::feature::FeatureSequence::<PartFeatureDefinition>::from_part_recipe(
+            &recipe
+        )
+        .is_err()
+    );
+    history.undo().unwrap();
+    assert_eq!(history.snapshot().work_geometry.features().len(), 1);
+    history.redo().unwrap();
+    assert_chamfer_replay(&history, 0.1);
+    let token = history.begin("Change chamfer").unwrap();
+    history
+        .edit(&token, |snapshot, _| {
+            snapshot
+                .parameters
+                .set_value(77, Quantity::new(0.2, Dimension::Length))
+        })
+        .unwrap();
+    history.commit(&token, false).unwrap();
+    assert_chamfer_replay(&history, 0.2);
+    assert_chamfer_replay(&restored_owner(history.snapshot()), 0.2);
+}
+
+fn assert_chamfer_replay(history: &DocumentEditHistory, distance: f64) {
+    use oblikovati_martensite::CertifiedNamedSolidEvaluator;
+    let mut evaluator =
+        CertifiedNamedSolidEvaluator::new(history, document(), certified_resolution());
+    let replay = history
+        .snapshot()
+        .evaluate_part_features(&mut evaluator)
+        .unwrap();
+    let result = replay.body(FeatureId(2)).unwrap();
+    assert!(
+        (result.volume(history, document()).unwrap() - (1. - distance * distance / 2.)).abs()
+            < 1e-8
+    );
+    assert_eq!(
+        result.body_reference_key(history, document()).unwrap(),
+        key("body", &[1])
+    );
+    assert!(
+        result
+            .face_area(history, document(), &key("end", &[1]))
+            .unwrap()
+            > 0.
+    );
+    assert!(std::ptr::eq(
+        result,
+        replay.body_from_source(FeatureId(1)).unwrap()
+    ));
+}
+
+#[test]
+fn impossible_chamfer_keeps_the_source_body_and_reports_failure() {
+    use oblikovati_model::feature::{
+        AuthoredFeature, FeatureEvaluationStatus, chamfer::ChamferDefinition,
+        part::PartFeatureDefinition,
+    };
+    let mut history = owner(cube_document());
+    let edge = opposite_cube_edges(&certified(&history), &history).remove(0);
+    let definition =
+        ChamferDefinition::new(key("body", &[1]), vec![edge], DatumLength::Constant(2.)).unwrap();
+    let reads = definition.reads();
+    let token = history.begin("Chamfer").unwrap();
+    history
+        .edit(&token, |snapshot, ids| {
+            let id = ids.allocate_feature().map_err(|cause| cause.to_string())?;
+            snapshot
+                .work_geometry
+                .append(AuthoredFeature::new(
+                    id,
+                    "Chamfer",
+                    PartFeatureDefinition::Chamfer(Box::new(definition)),
+                    reads,
+                ))
+                .map_err(|cause| cause.to_string())?;
+            Ok::<(), String>(())
+        })
+        .unwrap();
+    history.commit(&token, false).unwrap();
+    let mut evaluator = oblikovati_martensite::CertifiedNamedSolidEvaluator::new(
+        &history,
+        document(),
+        certified_resolution(),
+    );
+    let replay = history
+        .snapshot()
+        .evaluate_part_features(&mut evaluator)
+        .unwrap();
+    assert!(replay.body(FeatureId(1)).is_some());
+    assert!(replay.body(FeatureId(2)).is_none());
+    assert!(matches!(
+        replay.health()[1].status,
+        FeatureEvaluationStatus::Failed(_)
+    ));
+}
