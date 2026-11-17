@@ -65,17 +65,22 @@ def scenario_area(row: Mapping[str, object]) -> str:
 
 def selected_capture(reports: Path, name: str | None) -> Path:
     """Select a reported image without guessing between captures; example: selected_capture(reports, None)."""
-    images = sorted(
-        path
-        for path in reports.glob("*.png")
-        if path.is_file() and not path.is_symlink()
-    )
+    scoped = reports / "scenarios"
+    folders = [] if scoped.is_symlink() or not scoped.is_dir() else [
+        path for path in scoped.iterdir() if path.is_dir() and not path.is_symlink()
+    ]
+    final_folders = [path / "final" for path in folders if not (path / "final").is_symlink()]
+    images = [path for folder in [reports, *final_folders] for path in folder.glob("*.png")
+              if path.is_file() and not path.is_symlink()]
     if name is not None:
         if Path(name).name != name:
             raise ValueError(
                 f"capture {name!r}: expected a PNG filename without directories"
             )
+        images.extend(path / name for path in folders
+                      if (path / name).is_file() and not (path / name).is_symlink())
         images = [path for path in images if path.name == name]
+    images.sort()
     if len(images) != 1:
         raise ValueError(
             f"capture {name!r}: expected exactly one selected PNG, got {[p.name for p in images]!r}"
@@ -166,11 +171,15 @@ def receipt_identity(request: CaptureRequest) -> dict[str, object]:
 
 def stage_artifacts(reports: Path, stage: Path, captures: list[Path]) -> None:
     """Copy the required run artifacts into staging; example: stage_artifacts(reports, stage, [image])."""
-    for name in ("cucumber.json", "source-revision.json", "junit.xml", *(path.name for path in captures)):
-        source = reports / name
-        if source.is_symlink() or not source.is_file():
-            raise ValueError(f"run artifact {source}: expected a regular file")
-        shutil.copyfile(source, stage / name)
+    required = [reports / name for name in ("cucumber.json", "source-revision.json", "junit.xml")]
+    sources = [*required, *captures]
+    if len({source.name for source in sources}) != len(sources):
+        raise ValueError(f"run artifacts {sources!r}: expected distinct filenames")
+    for source in sources:
+        if (source.is_symlink() or not source.is_file()
+                or not source.resolve().is_relative_to(reports.resolve())):
+            raise ValueError(f"run artifact {source}: expected a regular file inside {reports}")
+        shutil.copyfile(source, stage / source.name)
     log = reports / "native-test.log"
     if log.is_symlink() or not log.is_file():
         raise ValueError(f"run log {log}: expected a regular file")

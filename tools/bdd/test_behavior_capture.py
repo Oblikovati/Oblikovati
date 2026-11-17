@@ -186,6 +186,43 @@ class CaptureTests(unittest.TestCase):
                 capture_receipt(request, runner, state)
             self.assertFalse(request.destination.exists())
 
+    def test_scoped_capture_selection_refuses_same_name_in_two_scenarios(self) -> None:
+        from behavior_capture import selected_capture
+        with tempfile.TemporaryDirectory() as folder:
+            reports = Path(folder)
+            first = reports / "scenarios" / "first"
+            second = reports / "scenarios" / "second"
+            first.mkdir(parents=True)
+            second.mkdir(parents=True)
+            (first / "view.png").write_bytes(b"first")
+            self.assertEqual(selected_capture(reports, "view.png"), first / "view.png")
+            (second / "view.png").write_bytes(b"second")
+            with self.assertRaisesRegex(ValueError, "expected exactly one"):
+                selected_capture(reports, "view.png")
+
+    def test_scoped_final_capture_can_be_staged(self) -> None:
+        from behavior_capture import selected_capture, stage_artifacts
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            reports = root / "reports"
+            final = reports / "scenarios" / "one" / "final"
+            final.mkdir(parents=True)
+            stage = root / "stage"
+            stage.mkdir()
+            for name in ("cucumber.json", "source-revision.json", "junit.xml", "native-test.log"):
+                (reports / name).write_text("test")
+            (final / "first.png").write_bytes(b"image")
+            chosen = selected_capture(reports, None)
+            stage_artifacts(reports, stage, [chosen])
+            self.assertEqual((stage / "first.png").read_bytes(), b"image")
+            other = reports / "scenarios" / "two" / "final"
+            other.mkdir(parents=True)
+            (other / "first.png").write_bytes(b"another")
+            with self.assertRaisesRegex(ValueError, "expected exactly one"):
+                selected_capture(reports, None)
+            with self.assertRaisesRegex(ValueError, "expected exactly one"):
+                selected_capture(reports, "first.png")
+
     def test_scenario_selection_requires_current_reviewed_source(self) -> None:
         with tempfile.TemporaryDirectory() as folder:
             fixture, _, _, _ = self.fixture(folder)
