@@ -406,6 +406,9 @@ impl OrientationControl {
         }
     }
     /// A frame must follow so the dialog opens without waiting for an event.
+    pub(crate) fn navigation_owns_viewport(&self) -> bool {
+        self.navigation.owns_viewport_input()
+    }
     pub(crate) fn can_repeat_wheel(&self) -> bool {
         self.navigation.can_repeat_wheel()
     }
