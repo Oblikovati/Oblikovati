@@ -61,14 +61,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
         let limits = self.assembly_display_limits.ok_or_else(|| {
             Error("express assembly display limits: expected an injected display policy".into())
         })?;
-        let producer = self
-            .assembly_producer
-            .as_ref()
-            .ok_or_else(|| {
-                Error("express assembly producer: expected an injected producer identity".into())
-            })?
-            .as_ref()
-            .map_err(|error| Error(error.clone()))?;
+        let producer = self.express_producer()?;
         let observers = &mut self.observers;
         let outcome = self
             .files
@@ -78,7 +71,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
                 self.version,
                 self.source,
                 limits,
-                producer,
+                &producer,
             )
             .map_err(|error| Error(error.to_string()))?;
         let id = outcome.session_id();
@@ -86,6 +79,16 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
             .set_visible(id, visible)
             .map_err(|error| Error(error.to_string()))?;
         Ok(id)
+    }
+
+    fn express_producer(&mut self) -> Result<String, Error> {
+        if let Some(producer) = &self.assembly_producer {
+            return producer.clone().map_err(Error);
+        }
+        let backend = self.part_topology.as_deref_mut().ok_or_else(|| {
+            Error("express assembly producer: expected an injected producer identity".into())
+        })?;
+        backend.assembly_view_producer().map_err(Error)
     }
 
     pub(super) fn load_full(&mut self, request: LoadFullDocumentArgs) -> Result<Vec<u8>, Error> {

@@ -352,3 +352,6 @@ mod fillet_replay_consumers;
 
 #[path = "part_scene/blend_model_states.rs"]
 mod blend_model_states;
+
+#[path = "part_scene/lazy_producer.rs"]
+mod lazy_producer;
