@@ -13,16 +13,39 @@ pub(crate) fn draw(
     actions: &mut Vec<GuiShellAction>,
     resolve: ResolveCommand,
 ) {
-    for row in [[7, 0, 1], [6, 8, 2], [5, 4, 3]] {
-        for (index, slot) in row.into_iter().enumerate() {
-            if index > 0 {
-                ui.same_line();
-            }
-            draw_slot(ui, menu, slot, state, actions, resolve);
-        }
+    let slots = resolved_slots(ui, menu, resolve);
+    if !slots.is_empty() {
+        draw_ring(ui, slots, state, actions);
     }
     ui.separator();
     draw_overflow(ui, menu, state, actions, resolve);
+}
+fn draw_ring(
+    ui: &Ui,
+    slots: Vec<Slot>,
+    state: &GuiCommandState,
+    actions: &mut Vec<GuiShellAction>,
+) {
+    let ring = slot_layout(&slots);
+    let origin = ui.cursor_pos();
+    ui.dummy([ring.size, ring.size]);
+    for slot in slots {
+        draw_slot(ui, slot, &ring, origin, state, actions);
+    }
+    ui.set_cursor_pos([
+        origin[0],
+        origin[1] + ring.size + ui.clone_style().item_spacing[1],
+    ]);
+}
+pub(crate) fn ring_size(ui: &Ui, menu: &MarkingMenuView, resolve: ResolveCommand) -> Option<f32> {
+    let slots = resolved_slots(ui, menu, resolve);
+    (!slots.is_empty()).then(|| slot_layout(&slots).size)
+}
+fn slot_layout(slots: &[Slot]) -> crate::marking_menu_layout::RingLayout {
+    let maximum = slots.iter().fold([0.0_f32; 2], |maximum, slot| {
+        [maximum[0].max(slot.size[0]), maximum[1].max(slot.size[1])]
+    });
+    crate::marking_menu_layout::RingLayout::new(maximum)
 }
 pub(crate) fn draw_classic(
     ui: &Ui,
@@ -44,6 +67,13 @@ pub(crate) fn draw_classic(
     draw_overflow(ui, menu, state, actions, resolve);
     ui.separator();
 }
+pub(crate) fn overflow_count(menu: &MarkingMenuView, resolve: ResolveCommand) -> usize {
+    menu.overflow
+        .iter()
+        .flatten()
+        .filter(|id| resolve(id).is_some())
+        .count()
+}
 fn draw_overflow(
     ui: &Ui,
     menu: &MarkingMenuView,
@@ -64,28 +94,49 @@ fn draw_overflow(
         }
     }
 }
-fn draw_slot(
-    ui: &Ui,
-    menu: &MarkingMenuView,
-    slot: u8,
-    state: &GuiCommandState,
-    actions: &mut Vec<GuiShellAction>,
-    resolve: ResolveCommand,
-) {
-    let item = menu
-        .quadrants
+struct Slot {
+    quadrant: u8,
+    label: &'static str,
+    action: GuiShellAction,
+    size: [f32; 2],
+}
+fn resolved_slots(ui: &Ui, menu: &MarkingMenuView, resolve: ResolveCommand) -> Vec<Slot> {
+    let padding = ui.clone_style().frame_padding;
+    menu.quadrants
         .iter()
         .flatten()
-        .find(|item| item.quadrant.0 == slot);
-    let Some((label, action)) = item.and_then(|item| resolve(&item.command_id)) else {
-        ui.dummy([100., 24.]);
+        .filter_map(|item| {
+            let (label, action) = resolve(&item.command_id)?;
+            let text = ui.calc_text_size(label);
+            Some(Slot {
+                quadrant: item.quadrant.0,
+                label,
+                action,
+                size: [text[0] + 2. * padding[0], ui.frame_height()],
+            })
+        })
+        .collect()
+}
+fn draw_slot(
+    ui: &Ui,
+    slot: Slot,
+    ring: &crate::marking_menu_layout::RingLayout,
+    origin: [f32; 2],
+    state: &GuiCommandState,
+    actions: &mut Vec<GuiShellAction>,
+) {
+    let Some(position) = ring.position(slot.quadrant, slot.size) else {
         return;
     };
-    let disabled = ui.begin_disabled(!action.enabled(state));
-    let pressed = ui.button_with_size(format!("{label}##marking-{slot}"), [100., 24.]);
+    ui.set_cursor_pos([origin[0] + position[0], origin[1] + position[1]]);
+    let disabled = ui.begin_disabled(!slot.action.enabled(state));
+    let pressed = ui.button_with_size(
+        format!("{}##marking-{}", slot.label, slot.quadrant),
+        slot.size,
+    );
     drop(disabled);
     if pressed {
-        actions.push(action);
+        actions.push(slot.action);
         ui.close_current_popup();
     }
 }

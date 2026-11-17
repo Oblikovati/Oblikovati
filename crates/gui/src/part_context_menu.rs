@@ -7,6 +7,7 @@ const POPUP: &str = "##part-canvas-menu";
 pub(crate) fn canvas_menu(
     ui: &Ui,
     state: &GuiCommandState,
+    area: crate::application::document_creation::workspaces::WorkspaceArea,
     actions: &mut Vec<GuiShellAction>,
 ) -> bool {
     if state.authoring != GuiAuthoringContext::Part || state.document.is_none() {
@@ -16,12 +17,23 @@ pub(crate) fn canvas_menu(
         && ui.is_mouse_released(imgui::MouseButton::Right)
     {
         ui.open_popup(POPUP);
+        position_face_popup(ui, state, area);
     }
+    let face = selected_face_action(state);
+    let separate = face.is_some() && !state.sketch_classic_menu;
+    let _background =
+        separate.then(|| ui.push_style_color(imgui::StyleColor::PopupBg, [0., 0., 0., 0.]));
     let Some(_popup) = ui.begin_popup(POPUP) else {
         return false;
     };
+    if separate {
+        draw_face_standard(ui, state, actions, face.as_ref());
+    }
     draw_configured_menu(ui, state, actions);
-    draw_selected_face_actions(ui, state, actions);
+    draw_face_measure(ui, state, actions, face.as_ref());
+    if !separate {
+        draw_face_properties(ui, state, actions, face.as_ref());
+    }
     let look_at = GuiShellAction::LookAtSelection;
     if ui
         .menu_item_config("Look At")
@@ -30,37 +42,132 @@ pub(crate) fn canvas_menu(
     {
         actions.push(look_at);
     }
-    if ui.menu_item("Home View") {
+    if !separate && ui.menu_item("Home View") {
         actions.push(GuiShellAction::Home);
     }
     true
 }
-fn draw_selected_face_actions(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
-    let Some(GuiShellAction::StartSketchOnSelectedFace { document, key }) =
-        selected_face_action(state)
-    else {
+fn position_face_popup(
+    ui: &Ui,
+    state: &GuiCommandState,
+    area: crate::application::document_creation::workspaces::WorkspaceArea,
+) {
+    if state.sketch_classic_menu || selected_face_action(state).is_none() {
+        return;
+    }
+    let Some(ring) = face_ring_size(ui, state) else {
         return;
     };
-    for (label, action) in [
-        (
-            "Measure",
-            GuiShellAction::MeasureSelectedFace {
-                document,
-                key: key.clone(),
-            },
-        ),
-        (
-            "Properties",
-            GuiShellAction::OpenFaceProperties { document, key },
-        ),
-    ] {
-        if ui
-            .menu_item_config(label)
-            .enabled(action.enabled(state))
-            .build()
-        {
-            actions.push(action);
-        }
+    let origin = face_popup_origin(ui, state, area, ring);
+    crate::widget_abi::next_window_position(ui, origin);
+}
+fn face_popup_origin(
+    ui: &Ui,
+    state: &GuiCommandState,
+    area: crate::application::document_creation::workspaces::WorkspaceArea,
+    ring: f32,
+) -> [f32; 2] {
+    let style = ui.clone_style();
+    let above = face_standard_size(ui)[1] + style.item_spacing[1];
+    let overflow = state.marking_menus.as_ref().map_or(0, |menus| {
+        let menu = menus.get(oblikovati_api::types::BASE_ENVIRONMENT);
+        crate::marking_menu::overflow_count(&menu, selected_face_command)
+    });
+    let below = (overflow + 2) as f32 * ui.frame_height_with_spacing() + style.item_spacing[1];
+    crate::marking_menu_layout::popup_origin(
+        ui.io().mouse_pos,
+        [[area.left, area.top], [area.right, area.bottom]],
+        ring,
+        above,
+        below,
+        style.window_padding,
+    )
+}
+fn face_ring_size(ui: &Ui, state: &GuiCommandState) -> Option<f32> {
+    let menus = state.marking_menus.as_ref()?;
+    let menu = menus.get(oblikovati_api::types::BASE_ENVIRONMENT);
+    crate::marking_menu::ring_size(ui, &menu, selected_face_command)
+}
+fn face_standard_size(ui: &Ui) -> [f32; 2] {
+    let style = ui.clone_style();
+    let width = ui.calc_text_size("Properties")[0].max(ui.calc_text_size("Home View")[0])
+        + 4. * style.frame_padding[0]
+        + 2. * style.item_spacing[0];
+    [
+        width,
+        2. * ui.frame_height_with_spacing() + 2. * style.window_padding[1],
+    ]
+}
+fn draw_face_standard(
+    ui: &Ui,
+    state: &GuiCommandState,
+    actions: &mut Vec<GuiShellAction>,
+    face: Option<&GuiShellAction>,
+) {
+    let size = face_standard_size(ui);
+    let origin = ui.cursor_pos();
+    let ring = face_ring_size(ui, state).unwrap_or(size[0]);
+    ui.set_cursor_pos([origin[0] + ((ring - size[0]) / 2.).max(0.), origin[1]]);
+    ui.child_window("##face-standard-menu")
+        .size(size)
+        .border(true)
+        .build(|| draw_face_standard_rows(ui, state, actions, face));
+    ui.set_cursor_pos([
+        origin[0],
+        origin[1] + size[1] + ui.clone_style().item_spacing[1],
+    ]);
+}
+fn draw_face_standard_rows(
+    ui: &Ui,
+    state: &GuiCommandState,
+    actions: &mut Vec<GuiShellAction>,
+    face: Option<&GuiShellAction>,
+) {
+    draw_face_properties(ui, state, actions, face);
+    if ui.menu_item("Home View") {
+        actions.push(GuiShellAction::Home);
+    }
+}
+fn draw_face_measure(
+    ui: &Ui,
+    state: &GuiCommandState,
+    actions: &mut Vec<GuiShellAction>,
+    face: Option<&GuiShellAction>,
+) {
+    let Some(GuiShellAction::StartSketchOnSelectedFace { document, key }) = face else {
+        return;
+    };
+    let action = GuiShellAction::MeasureSelectedFace {
+        document: *document,
+        key: key.clone(),
+    };
+    if ui
+        .menu_item_config("Measure")
+        .enabled(action.enabled(state))
+        .build()
+    {
+        actions.push(action);
+    }
+}
+fn draw_face_properties(
+    ui: &Ui,
+    state: &GuiCommandState,
+    actions: &mut Vec<GuiShellAction>,
+    face: Option<&GuiShellAction>,
+) {
+    let Some(GuiShellAction::StartSketchOnSelectedFace { document, key }) = face else {
+        return;
+    };
+    let action = GuiShellAction::OpenFaceProperties {
+        document: *document,
+        key: key.clone(),
+    };
+    if ui
+        .menu_item_config("Properties")
+        .enabled(action.enabled(state))
+        .build()
+    {
+        actions.push(action);
     }
 }
 fn draw_configured_menu(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
@@ -176,6 +283,21 @@ mod tests {
         state.selected_edge_count = 0;
         state.transaction_open = true;
         assert_eq!(selected_face_action(&state), None);
+    }
+    #[test]
+    fn popup_height_counts_only_resolvable_overflow_commands() {
+        let menu = oblikovati_api::wire::MarkingMenuView {
+            overflow: Some(vec![
+                "Create.Extrude".into(),
+                "Unknown".into(),
+                "Modify.Chamfer".into(),
+            ]),
+            ..Default::default()
+        };
+        assert_eq!(
+            crate::marking_menu::overflow_count(&menu, selected_face_command),
+            2
+        );
     }
     #[test]
     fn part_commands_resolve_only_known_actions() {

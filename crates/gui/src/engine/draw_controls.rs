@@ -173,16 +173,13 @@ impl GuiFrameEngine {
         self.document_tabs.previews.showing_document =
             request.commands.document.filter(|_| !self.home.active);
         if !self.home.active {
-            if !self.blend_dialog.active() {
-                crate::application::workspace_layout::browser_feature::selection_toolbar(
-                    ui,
-                    request,
-                    &mut selected,
-                );
-            }
             let mut menu_actions = Vec::new();
-            self.part_context_open =
-                crate::part_context_menu::canvas_menu(ui, &request.commands, &mut menu_actions);
+            self.part_context_open = crate::part_context_menu::canvas_menu(
+                ui,
+                &request.commands,
+                area,
+                &mut menu_actions,
+            );
             for action in &mut menu_actions {
                 if *action == GuiShellAction::OpenExtrude {
                     *action = crate::extrude_dialog::start_action(&request.commands);
@@ -199,6 +196,13 @@ impl GuiFrameEngine {
                     &mut menu_actions,
                 );
                 selected.extend(menu_actions);
+            }
+            if !self.blend_dialog.active() && !self.part_context_open {
+                crate::application::workspace_layout::browser_feature::selection_toolbar(
+                    ui,
+                    request,
+                    &mut selected,
+                );
             }
         } else {
             self.part_context_open = false;

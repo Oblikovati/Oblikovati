@@ -183,6 +183,9 @@ Last checked: 2026-11-16 on `rust-work`. Refresh from current evidence at each c
   A 200-label software-rendered projection diagnostic measured 13.61 ms
   median individually and 4.71 ms batched; it does not measure frame rate.
   See `receipts/2026-11-17-dimension-projection-4035/`.
+- Selected-face context commands now have a linear region above the radial
+  ring (#4055). Native X11 layout, dismissal, and command checks pass; the
+  scenario still has missing commands and is not verified.
 - Selected-face Properties shows analytic area in a dockable window (#4053).
   Native X11 open and title-close checks pass; the complete face context-menu
   scenario remains open. See `implementation-face-properties.md`.

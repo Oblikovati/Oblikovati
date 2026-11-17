@@ -79,11 +79,20 @@ fn native_part_menu_starts_sketch_on_selected_face_and_reopens_it() {
     let mut world = ApplicationWorld::new();
     super::workspace_layout::browser_feature::open_visible_extruded_part(&mut world);
     let (document, point, selected) = select_front_face(&mut world);
+    assert!(diagnostics::window_geometry("##selection-toolbar").is_some());
     x11_input::right_click(point);
     world.pump(Vec::new());
+    assert!(diagnostics::window_geometry("##selection-toolbar").is_none());
+    x11_input::press_escape();
+    world.pump(Vec::new());
+    assert!(diagnostics::window_geometry("##selection-toolbar").is_some());
+    x11_input::right_click(point);
+    world.pump(Vec::new());
+    assert!(diagnostics::window_geometry("##selection-toolbar").is_none());
     if std::env::var_os("OBK_BDD_REPORTS").is_some() {
         world.save_capture("selected-face-new-sketch-menu");
     }
+    assert_selected_face_menu_layout(&world, point);
     click_native_label(&mut world, "New Sketch");
     assert_eq!(
         world.state().authoring,
@@ -104,6 +113,42 @@ fn native_part_menu_starts_sketch_on_selected_face_and_reopens_it() {
     let reopened = save_and_reopen_face_sketch(&mut world, document);
     assert_eq!(sketch_face_key(&mut world, reopened, sketch), face);
     world.close();
+}
+
+fn assert_selected_face_menu_layout(world: &ApplicationWorld, pointer: [i32; 2]) {
+    let menu_label = |label: &str| {
+        world
+            .frame
+            .runs
+            .iter()
+            .filter(|run| super::world::squeezed(&run.text) == super::world::squeezed(label))
+            .max_by(|left, right| left.center()[1].total_cmp(&right.center()[1]))
+            .unwrap_or_else(|| {
+                panic!(
+                    "face menu {label:?}: expected a rendered item in {:?}",
+                    world.frame.runs
+                )
+            })
+            .center()
+    };
+    let properties = menu_label("Properties");
+    let sketch = menu_label("New Sketch");
+    let extrude = menu_label("Extrude");
+    assert!(
+        properties[1] < sketch[1],
+        "standard menu {properties:?}: expected above ring {sketch:?}"
+    );
+    assert!(
+        sketch[0] < extrude[0] && sketch[1] < extrude[1],
+        "sketch {sketch:?}, extrude {extrude:?}: expected north and east ring positions"
+    );
+    let center = [sketch[0], extrude[1]];
+    let radius = extrude[0] - center[0];
+    assert!(
+        (center[0] - pointer[0] as f32).abs() < radius
+            && (center[1] - pointer[1] as f32).abs() < radius,
+        "ring center {center:?}, pointer {pointer:?}: expected pointer within ring radius {radius}"
+    );
 }
 
 fn select_front_face(world: &mut ApplicationWorld) -> (u64, [i32; 2], String) {
@@ -281,5 +326,29 @@ fn native_selected_face_properties_shows_area_and_title_close() {
     world.pump(Vec::new());
     assert!(diagnostics::window_geometry("Face Properties").is_none());
     assert_eq!(world.state().browser.unwrap().features, before);
+    world.close();
+}
+
+#[test]
+fn native_selected_face_keeps_classic_menu_linear() {
+    let mut world = ApplicationWorld::new();
+    std::fs::write(
+        world.preferences_directory().join("markingmenu.yaml"),
+        "classic: true\n",
+    )
+    .unwrap();
+    world.reopen_application();
+    super::workspace_layout::browser_feature::open_visible_extruded_part(&mut world);
+    let (_, point, _) = select_front_face(&mut world);
+    assert!(world.state().sketch_classic_menu);
+    x11_input::right_click(point);
+    world.pump(Vec::new());
+    let sketch = world.run("New Sketch").clone();
+    let properties = world.run("Properties").clone();
+    assert!(sketch.center()[1] < properties.center()[1]);
+    assert!((sketch.minimum[0] - properties.minimum[0]).abs() < 12.);
+    x11_input::click(diagnostics::pointer_pixels(properties.center()));
+    world.pump(Vec::new());
+    assert!(diagnostics::window_geometry("Face Properties").is_some());
     world.close();
 }

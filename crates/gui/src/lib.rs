@@ -122,6 +122,7 @@ mod extrude_dialog;
 mod face_properties;
 pub use face_properties::GuiFaceProperties;
 mod marking_menu;
+mod marking_menu_layout;
 mod offset_plane;
 mod part_context_menu;
 pub use dimensions::{GuiDimensionAction, GuiDimensionDraft};
