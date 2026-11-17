@@ -54,6 +54,7 @@ impl GuiFrameEngine {
             request,
             crate::chrome::application_bar_height(&self.icons.presentation),
             &mut selected,
+            &mut self.window_bar_drag_armed,
         );
         if std::mem::take(&mut self.pending_extrusion_shortcut) {
             selected.push(crate::extrude_dialog::start_action(&request.commands));
