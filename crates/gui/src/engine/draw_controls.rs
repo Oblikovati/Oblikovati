@@ -71,14 +71,8 @@ impl GuiFrameEngine {
         );
         let over_fields = crate::sketch::line::hud_panel(ui, request);
         self.document_tabs.previews.synchronize(&request.commands);
-        self.document_tabs.panel(
-            ui,
-            request,
-            band_height,
-            &self.workspace,
-            &mut self.home,
-            &mut selected,
-        );
+        self.document_tabs
+            .panel(ui, request, &self.workspace, &mut self.home, &mut selected);
         selected.retain(|action| {
             if let GuiShellAction::OpenClearBodyAppearance { document } = action {
                 self.clear_appearance.open(*document);
@@ -114,7 +108,8 @@ impl GuiFrameEngine {
             ui,
             &request.commands,
             request.extent[1] as f32 / request.layout_scale()[1]
-                - crate::application::workspace_layout::status_bar::STATUS_BAR_HEIGHT,
+                - crate::application::workspace_layout::status_bar::STATUS_BAR_HEIGHT
+                - self.workspace.tab_height(),
             band_height,
             self.part_context_open,
             &mut selected,

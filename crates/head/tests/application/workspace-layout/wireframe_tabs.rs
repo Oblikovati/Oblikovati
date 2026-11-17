@@ -1,0 +1,164 @@
+// SPDX-License-Identifier: GPL-2.0-only
+//! Verify the bottom document strip against the current workspace scenario (#4061).
+use super::*;
+use cucumber::{given, then, when};
+
+fn geometry(name: &str) -> ([f32; 2], [f32; 2]) {
+    window_geometry(name).unwrap_or_else(|| panic!("expected window {name:?}"))
+}
+fn viewport_area(world: &mut ApplicationWorld) -> [u32; 4] {
+    let extent = world.extent();
+    world
+        .app()
+        .window
+        .native
+        .gui
+        .as_ref()
+        .unwrap()
+        .document_area(extent)
+        .unwrap()
+}
+#[given("the ribbon and model browser are visible")]
+fn ribbon_and_browser_visible(world: &mut ApplicationWorld) {
+    geometry("##application-ribbon");
+    geometry("Model");
+    world.expect_text("3D Model");
+}
+#[when("the user inspects the workspace layout")]
+fn inspect_layout(world: &mut ApplicationWorld) {
+    world.pump(Vec::new());
+}
+#[then("the document tab strip appears below the model browser and viewport")]
+fn strip_below_workspace(world: &mut ApplicationWorld) {
+    let (strip, _) = geometry("##open-document-tabs");
+    let (browser, size) = geometry("Model");
+    let area = viewport_area(world);
+    assert!(
+        browser[1] + size[1] <= strip[1],
+        "browser {browser:?} / {size:?}, strip {strip:?}"
+    );
+    assert!(
+        area[3] as f32 <= strip[1],
+        "viewport {area:?}, strip {strip:?}"
+    );
+}
+#[then("the status area appears below the document tab strip")]
+fn status_below_strip(_: &mut ApplicationWorld) {
+    let (strip, size) = geometry("##open-document-tabs");
+    let (status, _) = geometry("##status-bar");
+    assert!(
+        strip[1] + size[1] <= status[1],
+        "strip {strip:?} / {size:?}, status {status:?}"
+    );
+}
+#[then("no document tab strip separates the ribbon from the viewport")]
+fn ribbon_does_not_meet_strip(world: &mut ApplicationWorld) {
+    let (ribbon, size) = geometry("##application-ribbon");
+    let (strip, _) = geometry("##open-document-tabs");
+    let area = viewport_area(world);
+    assert!(
+        ribbon[1] + size[1] <= area[1] as f32,
+        "ribbon {ribbon:?} / {size:?}, viewport {area:?}"
+    );
+    assert!(
+        (area[1] as f32) < strip[1],
+        "viewport {area:?}, strip {strip:?}"
+    );
+}
+#[then("the active document remains visible in the viewport")]
+fn active_document_visible(world: &mut ApplicationWorld) {
+    assert_eq!(world.state().document, world.previous_document);
+    assert!(world.previous_document.is_some());
+    let area = viewport_area(world);
+    assert!(
+        area[0] < area[2] && area[1] < area[3],
+        "empty viewport {area:?}"
+    );
+    world.expect_text("End of Part");
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn native_mouse_switches_tabs_in_the_bottom_strip() {
+    let mut world = ApplicationWorld::new();
+    super::browser_feature::open_visible_extruded_part(&mut world);
+    let first = world.active_id();
+    let second = world.add_part();
+    strip_below_workspace(&mut world);
+    status_below_strip(&mut world);
+    let first_name = world.document_name(first);
+    let point = super::super::diagnostics::pointer_pixels(world.expect_tab(&first_name).center());
+    super::super::x11_input::click(point);
+    world.pump(Vec::new());
+    assert_eq!(world.state().document, Some(first));
+    let capture = super::super::capture_framebuffer(&mut world.app().window.native);
+    let windows = super::super::diagnostics::window_occlusions();
+    assert!(super::super::solid_visibility::visible_solid_fill(
+        &capture, &windows
+    ));
+    let second_name = world.document_name(second);
+    let point = super::super::diagnostics::pointer_pixels(world.expect_tab(&second_name).center());
+    super::super::x11_input::click(point);
+    world.pump(Vec::new());
+    assert_eq!(world.state().document, Some(second));
+    world.close();
+}
+
+#[given("the model browser is docked at the left")]
+fn model_browser_docked_left(world: &mut ApplicationWorld) {
+    let (browser, _) = geometry("Model");
+    assert!(
+        browser[0] < world.extent()[0] as f32 / 4.,
+        "browser {browser:?}"
+    );
+}
+#[given("the 3D Model ribbon is expanded at the top")]
+fn model_ribbon_expanded(world: &mut ApplicationWorld) {
+    geometry("##application-ribbon");
+    world.expect_text("3D Model");
+    world.expect_text("Start 2D Sketch");
+}
+#[then("the model browser and viewport occupy the workspace below the ribbon")]
+fn workspace_below_ribbon(world: &mut ApplicationWorld) {
+    let (ribbon, size) = geometry("##application-ribbon");
+    let (browser, _) = geometry("Model");
+    let area = viewport_area(world);
+    assert!(
+        ribbon[1] + size[1] <= browser[1],
+        "ribbon {ribbon:?} / {size:?}, browser {browser:?}"
+    );
+    assert!(
+        ribbon[1] + size[1] <= area[1] as f32,
+        "ribbon {ribbon:?} / {size:?}, viewport {area:?}"
+    );
+}
+#[then("the model browser shows the part hierarchy at the left")]
+fn model_hierarchy_visible(world: &mut ApplicationWorld) {
+    geometry("Model");
+    world.expect_text("Origin");
+    world.expect_text("End of Part");
+}
+#[then("the viewport displays the part to the right of the browser")]
+fn viewport_right_of_browser(world: &mut ApplicationWorld) {
+    let (browser, size) = geometry("Model");
+    let area = viewport_area(world);
+    assert!(
+        browser[0] + size[0] <= area[0] as f32,
+        "browser {browser:?} / {size:?}, viewport {area:?}"
+    );
+    assert!(world.state().document.is_some());
+}
+#[then("the document tab strip shows Home and the active part below the workspace")]
+fn tabs_show_home_and_active(world: &mut ApplicationWorld) {
+    strip_below_workspace(world);
+    let id = world.state().document.expect("expected an active part");
+    let name = world.document_name(id);
+    world.expect_tab("Home");
+    world.expect_tab(&name);
+}
+#[then("the status area is visible along the bottom")]
+fn status_at_bottom(world: &mut ApplicationWorld) {
+    status_below_strip(world);
+    let (position, size) = geometry("##status-bar");
+    assert!((position[1] + size[1] - world.extent()[1] as f32).abs() < 1.);
+}

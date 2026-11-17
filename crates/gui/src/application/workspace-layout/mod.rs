@@ -12,7 +12,7 @@ pub(crate) mod browser_view;
 pub(crate) mod panel_tabs;
 #[path = "status_bar.rs"]
 pub(crate) mod status_bar;
-/// The tab strip and the gap under it.
+/// The document tab row and the gap above it.
 const TAB_STRIP_HEIGHT: f32 = 34.;
 /// A press on the Model tab that travels this far moves the browser.
 const TAB_DRAG_REACH: f32 = 24.;
@@ -304,7 +304,7 @@ impl WorkspaceLayout {
             self.dock = drop_target(x, display, [x - TAB_GRIP[0], y - TAB_GRIP[1]]);
         }
     }
-    /// The horizontal span the document tab strip may use; example: `layout.tab_span(1440.)`.
+    /// The horizontal span the document workspace may use; example: `layout.tab_span(1440.)`.
     pub(crate) fn tab_span(&self, display_width: f32) -> (f32, f32) {
         let width = display_width - self.ribbon_left - self.ribbon_right;
         let (left, span) = self.span_within(width);
@@ -323,6 +323,27 @@ impl WorkspaceLayout {
             _ => (EDGE_MARGIN, (width - 2. * EDGE_MARGIN).max(1.)),
         }
     }
+    /// The strip spans the window below the browser, between any side ribbons.
+    /// Example: `layout.tab_strip_span(1440.)` for the bottom row.
+    pub(crate) fn tab_strip_span(&self, width: f32) -> (f32, f32) {
+        let left = self.ribbon_left + EDGE_MARGIN;
+        (
+            left,
+            (width - self.ribbon_left - self.ribbon_right - 2. * EDGE_MARGIN).max(1.),
+        )
+    }
+    /// Reserve the tab row only while tabs are visible; example: `layout.tab_height()`.
+    pub(crate) fn tab_height(&self) -> f32 {
+        if self.tabs_visible {
+            TAB_STRIP_HEIGHT
+        } else {
+            0.
+        }
+    }
+    /// Find the top of the bottom tab row; example: `layout.tab_top(900.)`.
+    pub(crate) fn tab_top(&self, height: f32) -> f32 {
+        (height - status_bar::STATUS_BAR_HEIGHT - self.tab_height()).max(0.)
+    }
     /// The screen area left for a document after the browser, tabs and ribbon band.
     /// Example: `layout.document_area([1440., 900.], 120.)`.
     pub(crate) fn document_area(
@@ -331,16 +352,11 @@ impl WorkspaceLayout {
         band_height: f32,
     ) -> crate::application::document_creation::workspaces::WorkspaceArea {
         let (left, width) = self.tab_span(display[0]);
-        let tabs = if self.tabs_visible {
-            TAB_STRIP_HEIGHT
-        } else {
-            0.
-        };
         crate::application::document_creation::workspaces::WorkspaceArea {
             left,
-            top: band_height + tabs + EDGE_MARGIN,
+            top: band_height + EDGE_MARGIN,
             right: left + width,
-            bottom: display[1] - status_bar::STATUS_BAR_HEIGHT - EDGE_MARGIN,
+            bottom: self.tab_top(display[1]) - EDGE_MARGIN,
         }
     }
     /// Draw the View tab's panel checklist; example: `layout.user_interface_menu(ui, [108., 18.], None)`.

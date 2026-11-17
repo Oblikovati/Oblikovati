@@ -249,7 +249,7 @@ fn scaled_preview_avoids_the_tab_when_ribbon_is_minimized() {
     let (strip, strip_size) = super::super::diagnostics::window_geometry("##open-document-tabs")
         .expect("expected document tabs");
     assert!(
-        position[1] >= strip[1] + strip_size[1],
+        position[1] + size[1] <= strip[1],
         "preview {position:?} / {size:?} overlaps strip {strip:?} / {strip_size:?}"
     );
     let [width, height] = world.extent();

@@ -10,7 +10,7 @@ use tab_order::{TabKey, TabOrder};
 use tab_overflow::{ARROWS_WIDTH, scroll_arrows, visible_tabs};
 
 const SETTLING_FRAMES: u8 = 2;
-/// How far below the ribbon a released tab has left the strip behind.
+/// How far above the bottom strip a released tab has left it behind.
 const DETACH_DISTANCE: f32 = 90.;
 const DRAWING_TYPE_NAME: &str = "drawing";
 /// The room the document list control takes at the end of the strip.
@@ -38,7 +38,6 @@ impl DocumentTabs {
         &mut self,
         ui: &Ui,
         request: &GuiFrameRequest,
-        band_height: f32,
         layout: &crate::application::workspace_layout::WorkspaceLayout,
         home: &mut crate::application::home_recent_documents::HomeWorkspace,
         actions: &mut Vec<GuiShellAction>,
@@ -54,7 +53,9 @@ impl DocumentTabs {
             return;
         }
         let width = request.extent[0] as f32 / request.layout_scale()[0];
-        let span = layout.tab_span(width);
+        let height = request.extent[1] as f32 / request.layout_scale()[1];
+        let strip_top = layout.tab_top(height);
+        let span = layout.tab_strip_span(width);
         let strip = (span.0, (span.1 - DOCUMENT_LIST_WIDTH).max(1.));
         let mut strip_owner = StripOwner {
             menu: &mut self.menu,
@@ -67,7 +68,7 @@ impl DocumentTabs {
             hovered: None,
             home,
         };
-        document_strip_window(ui, strip, band_height, || {
+        document_strip_window(ui, strip, strip_top, || {
             document_strip(ui, request, &mut strip_owner, actions)
         });
         let hovered = strip_owner.hovered.take();
@@ -77,11 +78,11 @@ impl DocumentTabs {
         let front =
             crate::application::document_tabs::previews::front_key(&request.commands, home.active);
         self.previews.panel(ui, hovered.as_ref(), front);
-        self.detach_on_release(ui, request, band_height, actions);
+        self.detach_on_release(ui, request, strip_top, actions);
         self.detached_windows(ui, &request.commands, actions);
         crate::application::document_tabs::document_list_control(
             ui,
-            [span.0 + strip.1, band_height + 2.],
+            [span.0 + strip.1, strip_top + 2.],
             DOCUMENT_LIST_WIDTH,
             &request.commands,
             actions,
@@ -147,13 +148,13 @@ impl DocumentTabs {
     pub(crate) fn is_detached(&self, document: Option<u64>) -> bool {
         document.is_some_and(|id| self.detached.contains(&id))
     }
-    /// A drawing tab released well below the strip leaves it; only drawings have a view that does
+    /// A drawing tab released well above the strip leaves it; only drawings have a view that does
     /// not need the single 3D viewport.
     fn detach_on_release(
         &mut self,
         ui: &Ui,
         request: &GuiFrameRequest,
-        band_height: f32,
+        strip_top: f32,
         actions: &mut Vec<GuiShellAction>,
     ) {
         if !ui.is_mouse_released(imgui::MouseButton::Left) {
@@ -162,9 +163,9 @@ impl DocumentTabs {
         let Some(id) = self.pressed_tab.take() else {
             return;
         };
-        let below_strip = ui.io().mouse_pos[1] > band_height + DETACH_DISTANCE;
+        let above_strip = ui.io().mouse_pos[1] < strip_top - DETACH_DISTANCE;
         let state = &request.commands;
-        let Some(next) = next_attached(state, id, &self.detached).filter(|_| below_strip) else {
+        let Some(next) = next_attached(state, id, &self.detached).filter(|_| above_strip) else {
             return;
         };
         if is_drawing(state, id) {
@@ -373,10 +374,10 @@ fn home_tab(
     owner.menu.home_popup(ui, state, actions);
     owner.home.active |= clicked;
 }
-fn document_strip_window(ui: &Ui, span: (f32, f32), band_height: f32, contents: impl FnOnce()) {
+fn document_strip_window(ui: &Ui, span: (f32, f32), strip_top: f32, contents: impl FnOnce()) {
     crate::widget_abi::window_geometry(
         ui,
-        [span.0, band_height + 2.],
+        [span.0, strip_top + 2.],
         [span.1, 32.],
         Condition::Always,
     );
