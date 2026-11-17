@@ -1,0 +1,15 @@
+{
+  "kind": "diagnostic",
+  "application_base": "c29d75830",
+  "application_changes": "test observation correction in the commit containing this receipt",
+  "scenario_snapshot": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+  "feature_sha256": "cb07444a13797a6d98fac5b8f26463343a1cbff5ed4781c359290bd6e4856e9c",
+  "feature": "viewport-zoom",
+  "scenarios_passed": 7,
+  "steps_passed": 74,
+  "environment": "Linux Xvfb and Vulkan Lavapipe; frame-loop scenario input",
+  "limitations": [
+    "Filtered feature run, not full-area acceptance.",
+    "Fixture references and sealed build provenance remain open (#3978)."
+  ]
+}

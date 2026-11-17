@@ -49,6 +49,12 @@ pub(super) fn visible_solid_fill(capture: &ViewportCapture, windows: &[[f32; 4]]
 pub(super) fn visible_selected_fill(capture: &ViewportCapture, windows: &[[f32; 4]]) -> bool {
     visible_fill(capture, windows, &blue_selection_hue)
 }
+pub(super) fn visible_selected_face_fill(capture: &ViewportCapture, windows: &[[f32; 4]]) -> bool {
+    visible_fill(capture, windows, &|pixel| {
+        pixel[1] > pixel[0].saturating_add(HUE_MARGIN)
+            && pixel[2] > pixel[0].saturating_add(HUE_MARGIN)
+    })
+}
 pub(super) fn visible_preview_fill(capture: &ViewportCapture, windows: &[[f32; 4]]) -> bool {
     visible_fill(capture, windows, &|pixel| {
         pixel[0] > pixel[1].saturating_add(20) && pixel[1] > pixel[2].saturating_add(20)

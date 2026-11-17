@@ -128,3 +128,18 @@ fn fixture_bounds_exclude_neutral_pixels_in_application_chrome() {
     );
     assert_eq!(fixture_pixel_count(&capture, &[[0., 0., 8., 8.]]), 144);
 }
+
+#[test]
+fn selected_face_fill_requires_teal_pixels_outside_windows() {
+    let teal = capture_with_patch([0, 180, 170, 255], true);
+    assert!(visible_selected_face_fill(&teal, &[]));
+    assert!(!visible_selected_face_fill(&teal, &[[8., 8., 24., 24.]]));
+    assert!(!visible_selected_face_fill(
+        &capture_with_patch([210, 212, 214, 255], true),
+        &[]
+    ));
+    assert!(!visible_selected_face_fill(
+        &capture_with_patch([0, 180, 170, 255], false),
+        &[]
+    ));
+}
