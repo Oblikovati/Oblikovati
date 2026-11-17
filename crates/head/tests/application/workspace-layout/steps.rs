@@ -22,6 +22,9 @@ mod drawing_browser;
 #[cfg(target_os = "linux")]
 #[path = "model_dock_native.rs"]
 mod model_dock_native;
+#[cfg(target_os = "linux")]
+#[path = "orientation_close_native.rs"]
+mod orientation_close_native;
 #[path = "wireframe_tabs.rs"]
 mod wireframe_tabs;
 const BROWSER: &str = "Model";
