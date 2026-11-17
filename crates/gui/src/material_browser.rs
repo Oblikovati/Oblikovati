@@ -15,6 +15,13 @@ pub(crate) struct MaterialBrowser {
 }
 impl DockableWindow for MaterialBrowser {}
 impl MaterialBrowser {
+    pub(crate) fn set_open(&mut self, open: bool) {
+        if open && !self.open {
+            self.open();
+        } else {
+            self.open = open;
+        }
+    }
     pub(crate) fn is_open(&self) -> bool {
         self.open
     }

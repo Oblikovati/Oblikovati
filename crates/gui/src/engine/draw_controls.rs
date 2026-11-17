@@ -16,6 +16,7 @@ impl GuiFrameEngine {
             self.ribbon.tips.active(),
             &mut self.widget_keys,
         );
+        self.sync_tool_visibility();
         let ui = self.context.frame();
         crate::sketch_pick_cue::draw_sketch_pick_cue(ui, request);
         crate::sketch_pick_cue::draw_model_pick_cue(ui, request);
@@ -49,6 +50,12 @@ impl GuiFrameEngine {
             },
             &mut selected,
         );
+        let visibility = self.workspace.tool_visibility;
+        self.material_browser.set_open(visibility.material);
+        self.appearance_browser.set_open(visibility.appearance);
+        self.parameter_editor.set_open(visibility.parameters);
+        self.selection_filter.set_open(visibility.selection_filter);
+        self.history_browser.set_open(visibility.history);
         let focus = self.accessible_focus.take();
         let frame_focus = match focus {
             Some(crate::GuiAccessibleFocus::Frame(index)) => Some(index),
