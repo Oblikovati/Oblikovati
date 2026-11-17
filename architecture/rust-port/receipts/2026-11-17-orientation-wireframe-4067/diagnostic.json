@@ -1,0 +1,15 @@
+{
+  "source_feature_sha256": "65989d7b418fdc203bed1c3050624c407208d6019eaed74364fa5fa1330775d4",
+  "source_revision": null,
+  "source_copy": "viewport-orientation.feature.gz",
+  "application_base": "1c84f95ad",
+  "application_changes_commit": "eadd37692",
+  "provenance": "Diagnostic: unversioned source and working-tree build; navigation and unit test changes were added after the first two runs.",
+  "results": {
+    "front": "1 scenario, 6 steps passed",
+    "triad": "1 scenario, 9 steps passed",
+    "navigation": "1 scenario, 9 steps passed",
+    "axis_rotation": "native test passed"
+  },
+  "environment": "Linux Xvfb with Mesa lavapipe"
+}

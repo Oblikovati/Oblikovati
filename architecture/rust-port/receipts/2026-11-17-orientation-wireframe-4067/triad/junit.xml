@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Orient a model using the viewport control: tmp/obk-orientation-4067/features/application/viewport-orientation/viewport-orientation.feature" package="testsuite/Feature: Orient a model using the viewport control: tmp/obk-orientation-4067/features/application/viewport-orientation/viewport-orientation.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-17T12:52:17.2874165Z" time="24.910197944"><testcase name="Scenario: Display the axis triad at the lower-left of the viewport: tmp/obk-orientation-4067/features/application/viewport-orientation/viewport-orientation.feature:40:3" time="24.910197944"><system-out><![CDATA[  Scenario: Display the axis triad at the lower-left of the viewport
+   ✔  Given a rectangular block is active in the MCAD Software
+   ✔  And the viewport orientation control displays the Front view
+   ✔  When the user inspects the viewport corners
+   ✔  Then an axis triad appears at the lower-left of the viewport
+   ✔  And the X axis points right and is red
+   ✔  And the Y axis points up and is green
+   ✔  And the Z axis is indicated in blue at the triad origin
+   ✔  And the orientation control remains at the upper-right of the viewport
+   ✔  And the block remains visible
+]]></system-out></testcase></testsuite></testsuites>
