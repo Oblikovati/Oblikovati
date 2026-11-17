@@ -312,3 +312,24 @@ fn preview_tracks_a_named_parameter_edit_and_cancel() {
     cancelled_preview_keeps_sketch(&mut world);
     world.close();
 }
+
+#[cfg(target_os = "linux")]
+#[test]
+fn native_invalid_distance_recovery_and_cancel_preserve_the_sketch() {
+    let mut world = ApplicationWorld::new();
+    selected_rectangle_preview(&mut world);
+    viewport_interaction::replace_distance_native(&mut world, "0");
+    zero_is_rejected(&mut world);
+    assert!(!world.state().extrude_preview_active);
+    viewport_interaction::replace_distance_native(&mut world, "8");
+    positive_distance_is_accepted(&mut world);
+    assert!(world.state().extrude_preview_active);
+    let capture = super::capture_framebuffer(&mut world.app().window.native);
+    let windows = super::diagnostics::window_occlusions();
+    assert!(super::solid_visibility::visible_preview_fill(
+        &capture, &windows
+    ));
+    viewport_interaction::click_text_native(&mut world, "Cancel");
+    cancelled_preview_keeps_sketch(&mut world);
+    world.close();
+}
