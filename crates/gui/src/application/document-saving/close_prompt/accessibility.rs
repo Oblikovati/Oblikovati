@@ -5,6 +5,9 @@ impl ClosePrompt {
     pub(crate) fn answer_accessibly(&mut self, choice: crate::GuiClosePromptChoice) {
         self.accessible_choice = Some(choice);
     }
+    pub(crate) fn focus_accessibly(&mut self, choice: crate::GuiClosePromptChoice) {
+        self.accessible_focus = Some(choice);
+    }
     pub(crate) fn semantics(&self) -> Option<crate::GuiClosePrompt> {
         self.accessible_prompt.clone()
     }
@@ -24,7 +27,12 @@ impl ClosePrompt {
         label: &'static str,
         choice: crate::GuiClosePromptChoice,
     ) -> bool {
+        if self.accessible_focus == Some(choice) {
+            self.accessible_focus = None;
+            ui.set_keyboard_focus_here();
+        }
         let clicked = crate::widget_abi::button(ui, label, [80., 0.]);
+        let clicked = clicked || crate::accessibility::focused_activation(ui);
         let [x1, y1] = ui.item_rect_min();
         let [x2, y2] = ui.item_rect_max();
         if let Some(prompt) = &mut self.accessible_prompt {

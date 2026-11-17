@@ -110,6 +110,12 @@ impl NativeWindow {
         }
         Ok(())
     }
+    pub fn request_accessible_focus(&self) -> Result<(), String> {
+        if unsafe { SetForegroundWindow(self.hwnd) } == 0 {
+            return Err(win_error("focus accessible viewport window"));
+        }
+        Ok(())
+    }
     pub fn window_maximized(&self) -> Result<bool, String> {
         Ok(unsafe { IsZoomed(self.hwnd) != 0 })
     }

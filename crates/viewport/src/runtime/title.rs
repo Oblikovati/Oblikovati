@@ -14,6 +14,18 @@ impl Viewport {
         native.window_action(action)
     }
 
+    /// Request foreground focus for an assistive technology action.
+    /// Example: `view.request_accessible_focus()?` before focusing a control.
+    pub fn request_accessible_focus(&self) -> Result<(), String> {
+        self.live()?;
+        let Some(ViewTarget::Native(native)) = &self.target else {
+            return Err(format!(
+                "viewport {}: expected a native focus target",
+                self.id
+            ));
+        };
+        native.request_accessible_focus()
+    }
     /// Read the native maximize state; example: `view.window_maximized()?` before drawing Restore.
     pub fn window_maximized(&self) -> Result<bool, String> {
         self.live()?;

@@ -11,6 +11,7 @@ pub(crate) fn draw(
     bar_height: f32,
     actions: &mut Vec<GuiShellAction>,
     drag_armed: &mut bool,
+    focus: Option<usize>,
 ) -> (Option<GuiWindowAction>, crate::GuiWindowControls) {
     let width = request.extent[0] as f32 / request.layout_scale()[0];
     let mut action = None;
@@ -25,6 +26,7 @@ pub(crate) fn draw(
     let _padding = ui.push_style_var(imgui::StyleVar::WindowPadding([0., 0.]));
     let _spacing = ui.push_style_var(imgui::StyleVar::ItemSpacing([0., 0.]));
     ui.window("##application-window-controls")
+        .focused(focus.is_some())
         .title_bar(false)
         .movable(false)
         .resizable(false)
@@ -32,6 +34,9 @@ pub(crate) fn draw(
         .scroll_bar(false)
         .scrollable(false)
         .build(|| {
+            if focus == Some(0) {
+                ui.set_keyboard_focus_here();
+            }
             if control(
                 ui,
                 "###window-minimize",
@@ -49,10 +54,16 @@ pub(crate) fn draw(
             } else {
                 ("###window-maximize", "Maximize")
             };
+            if focus == Some(1) {
+                ui.set_keyboard_focus_here();
+            }
             if control(ui, symbol, title, bar_height, 1, &mut bounds, &mut focused) {
                 action = Some(GuiWindowAction::ToggleMaximize);
             }
             ui.same_line();
+            if focus == Some(2) {
+                ui.set_keyboard_focus_here();
+            }
             if control(
                 ui,
                 "###window-close",
@@ -87,6 +98,7 @@ fn control(
     focused: &mut Option<usize>,
 ) -> bool {
     let clicked = crate::widget_abi::button(ui, label, [CONTROL_WIDTH, bar_height]);
+    let clicked = clicked || crate::accessibility::focused_activation(ui);
     record_control(ui, index, bounds, focused);
     draw_icon(ui, accessible);
     if ui.is_item_hovered() {

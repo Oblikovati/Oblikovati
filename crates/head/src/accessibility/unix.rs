@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! AT-SPI adapter for application window semantics.
 use super::{
-    actions::FrameActions,
-    frame::{FrameControl, FrameSemantics},
+    actions::{FrameActions, FrameRequest},
+    frame::FrameSemantics,
 };
 use accesskit::{ActivationHandler, DeactivationHandler, TreeUpdate};
 use std::sync::{
@@ -24,7 +24,7 @@ impl DeactivationHandler for Deactivation {
 pub(crate) struct UnixFrameAccessibility {
     adapter: accesskit_unix::Adapter,
     snapshot: Arc<Mutex<Option<FrameSemantics>>>,
-    requests: Receiver<FrameControl>,
+    requests: Receiver<FrameRequest>,
     bounds: Option<accesskit::Rect>,
     focused: Option<bool>,
 }
@@ -62,7 +62,7 @@ impl UnixFrameAccessibility {
         }
         self.adapter.update_if_active(|| semantics.tree());
     }
-    pub fn next_request(&self) -> Option<FrameControl> {
+    pub fn next_request(&self) -> Option<FrameRequest> {
         self.requests.try_recv().ok()
     }
 }

@@ -1,8 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Synchronize the native AT-SPI tree with the actual application bar.
 use super::NativeHeadWindow;
-use crate::accessibility::frame::{FrameControl, FrameSemantics};
+use crate::accessibility::{
+    actions::FrameRequest,
+    frame::{FrameControl, FrameSemantics},
+};
 use oblikovati_viewport::ViewportEvent;
+mod requests;
 
 impl NativeHeadWindow {
     pub(super) fn update_accessibility(
@@ -26,26 +30,18 @@ impl NativeHeadWindow {
         };
         #[cfg(target_os = "linux")]
         let accessibility = &mut self.accessibility;
-        let mut answered = false;
-        while let Some(control) = accessibility.next_request() {
-            match control {
-                FrameControl::Answer(choice)
-                    if !answered
-                        && prompt.as_ref().is_some_and(|dialog| {
-                            dialog.buttons.iter().any(|button| button.choice == choice)
-                        }) =>
-                {
-                    if let Some(gui) = self.gui.as_mut() {
-                        gui.answer_close_prompt(choice);
-                    }
-                    answered = true;
-                    update.changed = true;
-                    update.wake_after = Some(std::time::Duration::ZERO);
-                }
-                FrameControl::Answer(_) => {}
-                _ if !popup => dispatch_control(control, update),
-                _ => {}
-            }
+        let mut context = requests::RequestContext {
+            view: &mut self.view,
+            gui: &mut self.gui,
+            notice: &mut self.command_notice,
+            update,
+            popup,
+            focused,
+            prompt: prompt.as_ref(),
+            answered: false,
+        };
+        while let Some(request) = accessibility.next_request() {
+            context.apply(request);
         }
         let semantics = FrameSemantics {
             title: self.accessibility_title.clone(),
@@ -66,6 +62,14 @@ impl NativeHeadWindow {
             accessibility.update(semantics);
         }
         Ok(())
+    }
+}
+fn focus_target(control: FrameControl) -> oblikovati_gui::GuiAccessibleFocus {
+    match control {
+        FrameControl::Minimize => oblikovati_gui::GuiAccessibleFocus::Frame(0),
+        FrameControl::Maximize => oblikovati_gui::GuiAccessibleFocus::Frame(1),
+        FrameControl::Close => oblikovati_gui::GuiAccessibleFocus::Frame(2),
+        FrameControl::Answer(choice) => oblikovati_gui::GuiAccessibleFocus::ClosePrompt(choice),
     }
 }
 fn frame_control(index: usize) -> Option<FrameControl> {
@@ -108,5 +112,17 @@ mod tests {
         dispatch_control(FrameControl::Close, &mut update);
         assert_eq!(update.actions, vec![oblikovati_gui::GuiShellAction::Exit]);
         assert_eq!(frame_control(3), None);
+        assert_eq!(
+            focus_target(FrameControl::Maximize),
+            oblikovati_gui::GuiAccessibleFocus::Frame(1)
+        );
+        assert_eq!(
+            focus_target(FrameControl::Answer(
+                oblikovati_gui::GuiClosePromptChoice::Cancel
+            )),
+            oblikovati_gui::GuiAccessibleFocus::ClosePrompt(
+                oblikovati_gui::GuiClosePromptChoice::Cancel
+            )
+        );
     }
 }

@@ -73,6 +73,7 @@ pub(super) fn frame_button(name: &str, bounds: [f64; 4], enabled: bool) -> Node 
     node.set_bounds(Rect::new(bounds[0], bounds[1], bounds[2], bounds[3]));
     if enabled {
         node.add_action(Action::Click);
+        node.add_action(Action::Focus);
     } else {
         node.set_disabled();
     }
@@ -167,6 +168,7 @@ mod tests {
         assert_eq!(tree.nodes[2].1.label(), Some("Maximize"));
         assert_eq!(tree.nodes[3].1.label(), Some("Close"));
         assert!(tree.nodes[3].1.supports_action(Action::Click));
+        assert!(tree.nodes[3].1.supports_action(Action::Focus));
         assert_eq!(tree.nodes[3].1.bounds(), Some(Rect::new(1., 2., 3., 4.)));
         frame.maximized = true;
         assert_eq!(frame.tree().nodes[2].1.label(), Some("Restore"));
@@ -174,6 +176,7 @@ mod tests {
         let disabled = frame.tree();
         assert!(disabled.nodes[1].1.is_disabled());
         assert!(!disabled.nodes[1].1.supports_action(Action::Click));
+        assert!(!disabled.nodes[1].1.supports_action(Action::Focus));
         assert_eq!(control_for_id(MAXIMIZE), Some(FrameControl::Maximize));
         assert_eq!(control_for_id(NodeId(42)), None);
     }

@@ -64,6 +64,7 @@ pub(crate) struct ClosePrompt {
     asking: Vec<u64>,
     accessible_prompt: Option<crate::GuiClosePrompt>,
     accessible_choice: Option<crate::GuiClosePromptChoice>,
+    accessible_focus: Option<crate::GuiClosePromptChoice>,
     leaving: Vec<u64>,
     /// Closes held until the sketch has finished; the next frame routes them again.
     continuing: Vec<u64>,
@@ -261,6 +262,10 @@ impl ClosePrompt {
         let open = |id: &u64| state.documents.iter().any(|row| row.id == *id);
         self.asking.retain(open);
         self.leaving.retain(open);
+        if self.asking.is_empty() && self.leaving.is_empty() {
+            self.accessible_focus = None;
+            self.accessible_choice = None;
+        }
         if self.leaving.is_empty() {
             self.save_changes_prompt(ui, state, &mut outcome);
         } else {

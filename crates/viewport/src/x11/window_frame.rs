@@ -135,6 +135,17 @@ impl NativeWindow {
             y + i32::from(geometry.height),
         ])
     }
+    pub fn request_accessible_focus(&self) -> Result<(), String> {
+        let (connection, screen) = connection()?;
+        let root = connection.setup().roots[screen].root;
+        request(
+            &connection,
+            root,
+            self.window.native_handle() as u32,
+            atom(&connection, b"_NET_ACTIVE_WINDOW")?,
+            [2, 0, 0, 0, 0],
+        )
+    }
     pub fn window_maximized(&self) -> Result<bool, String> {
         Ok(self.maximized.get())
     }

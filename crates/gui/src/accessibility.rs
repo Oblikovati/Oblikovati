@@ -27,3 +27,20 @@ pub struct GuiClosePrompt {
     pub bounds: [f32; 4],
     pub buttons: Vec<GuiClosePromptButton>,
 }
+
+/// A visible application-frame or close-prompt control that can receive keyboard focus.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GuiAccessibleFocus {
+    Frame(usize),
+    ClosePrompt(GuiClosePromptChoice),
+}
+
+pub(crate) fn focused_activation(ui: &imgui::Ui) -> bool {
+    let io = ui.io();
+    ui.is_item_focused()
+        && !io.key_ctrl
+        && !io.key_alt
+        && !io.key_super
+        && (ui.is_key_pressed_no_repeat(imgui::Key::Enter)
+            || ui.is_key_pressed_no_repeat(imgui::Key::Space))
+}

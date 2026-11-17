@@ -30,6 +30,7 @@ pub(super) struct NativeGui {
     window_controls: Option<oblikovati_gui::GuiWindowControls>,
     close_prompt: Option<oblikovati_gui::GuiClosePrompt>,
     accessibility_popup_active: bool,
+    accessibility_focus_frames: u8,
     clipboard: Option<GuiClipboard>,
 }
 impl NativeGui {
@@ -47,6 +48,12 @@ impl NativeGui {
             self.focused,
             self.close_prompt.clone(),
         ))
+    }
+    pub(super) fn focus_accessible(&mut self, target: oblikovati_gui::GuiAccessibleFocus) {
+        self.engine.focus_accessible(target);
+        self.parameter_changed = true;
+        self.accessibility_focus_frames = 2;
+        self.deadline = Some(Duration::ZERO);
     }
     pub(super) fn answer_close_prompt(&mut self, choice: oblikovati_gui::GuiClosePromptChoice) {
         self.engine.answer_close_prompt(choice);
@@ -183,6 +190,7 @@ impl NativeGui {
             window_controls: None,
             close_prompt: None,
             accessibility_popup_active: false,
+            accessibility_focus_frames: 0,
             clipboard,
         }
     }
@@ -216,9 +224,8 @@ impl NativeGui {
         self.window_controls = Some(output.window_controls);
         self.close_prompt = output.close_prompt;
         self.accessibility_popup_active = output.accessibility_popup_active;
-        self.deadline = self
-            .activity
-            .needs_frame()
+        self.accessibility_focus_frames = self.accessibility_focus_frames.saturating_sub(1);
+        self.deadline = (self.activity.needs_frame() || self.accessibility_focus_frames > 0)
             .then(|| now.saturating_add(GUI_TICK));
         Ok(HeadGuiUpdate {
             window_action: output.window_action,
