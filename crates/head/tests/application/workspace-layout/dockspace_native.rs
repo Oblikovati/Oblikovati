@@ -283,3 +283,89 @@ fn docked_tool_can_float_and_return_to_its_workspace_edge() {
     world.save_capture("workspace-dock-redocked");
     world.close();
 }
+
+#[test]
+fn docked_tool_retains_its_node_when_documents_change() {
+    let mut world = ApplicationWorld::new();
+    super::browser_feature::open_visible_extruded_part(&mut world);
+    let first = world.active_id();
+    let initial = viewport(&mut world);
+    open_toolbar_tool(&mut world, "Material Browser");
+    let (position, size) = window_geometry("Material Browser").unwrap();
+    let start = [
+        (position[0] + size[0] * 0.4) as i32,
+        (position[1] + 10.) as i32,
+    ];
+    native_drag(
+        &mut world,
+        start,
+        [
+            initial[2] as i32 - 15,
+            ((initial[1] + initial[3]) / 2) as i32,
+        ],
+    );
+    let node = super::super::diagnostics::window_dock_id("Material Browser").unwrap();
+    let docked_area = viewport(&mut world);
+    let second = world.add_part();
+    assert_ne!(first, second);
+    assert_eq!(
+        super::super::diagnostics::window_dock_id("Material Browser"),
+        Some(node)
+    );
+    assert_eq!(viewport(&mut world), docked_area);
+    let name = world.document_name(first);
+    let point = super::super::diagnostics::pointer_pixels(world.expect_tab(&name).center());
+    super::super::x11_input::click(point);
+    world.pump(Vec::new());
+    assert_eq!(world.state().document, Some(first));
+    assert_eq!(
+        super::super::diagnostics::window_dock_id("Material Browser"),
+        Some(node)
+    );
+    assert_eq!(viewport(&mut world), docked_area);
+    world.close();
+}
+
+#[test]
+fn docked_parameters_stays_open_when_switching_parts() {
+    let mut world = ApplicationWorld::new();
+    super::browser_feature::open_visible_extruded_part(&mut world);
+    let first = world.active_id();
+    let initial = viewport(&mut world);
+    open_toolbar_tool(&mut world, "Parameters");
+    let (position, size) = window_geometry("Parameters").unwrap();
+    let start = [
+        (position[0] + size[0] * 0.4) as i32,
+        (position[1] + 10.) as i32,
+    ];
+    native_drag(
+        &mut world,
+        start,
+        [
+            initial[2] as i32 - 15,
+            ((initial[1] + initial[3]) / 2) as i32,
+        ],
+    );
+    let node = super::super::diagnostics::window_dock_id("Parameters").unwrap();
+    assert_ne!(node, 0);
+    let docked_area = viewport(&mut world);
+    let second = world.add_part();
+    assert_ne!(first, second);
+    assert_eq!(
+        super::super::diagnostics::window_dock_id("Parameters"),
+        Some(node)
+    );
+    assert_eq!(viewport(&mut world), docked_area);
+    world.run_in_window("Parameters", "UserParameters");
+    let name = world.document_name(first);
+    let point = super::super::diagnostics::pointer_pixels(world.expect_tab(&name).center());
+    super::super::x11_input::click(point);
+    world.pump(Vec::new());
+    assert_eq!(world.state().document, Some(first));
+    assert_eq!(
+        super::super::diagnostics::window_dock_id("Parameters"),
+        Some(node)
+    );
+    assert_eq!(viewport(&mut world), docked_area);
+    world.close();
+}

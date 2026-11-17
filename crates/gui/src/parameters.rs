@@ -45,7 +45,9 @@ impl GuiParameterEditor {
         }
         self.panel.replace_snapshot(None)?;
         self.document = document;
-        self.panel.set_open(false);
+        if document.is_none() {
+            self.panel.set_open(false);
+        }
         Ok(())
     }
     pub(crate) fn set_open(&mut self, open: bool) {
@@ -91,17 +93,26 @@ mod tests {
     }
 
     #[test]
-    fn document_change_closes_editor_and_retires_the_previous_parameter_view() {
+    fn document_change_preserves_open_editor_and_retires_the_previous_parameter_view() {
         let mut editor = GuiParameterEditor::new().unwrap();
         editor.synchronize_document(Some(1)).unwrap();
         assert!(editor.set_snapshot(Some(snapshot(1))).unwrap());
         editor.open(Some(1));
         assert!(editor.is_open());
         editor.synchronize_document(Some(2)).unwrap();
-        assert!(!editor.is_open());
+        assert!(editor.is_open());
         assert!(editor.set_snapshot(Some(snapshot(1))).is_err());
         assert!(editor.set_snapshot(Some(snapshot(2))).unwrap());
         editor.open(Some(1));
+        assert!(!editor.is_open());
+    }
+
+    #[test]
+    fn closing_the_last_document_closes_the_parameter_editor() {
+        let mut editor = GuiParameterEditor::new().unwrap();
+        editor.synchronize_document(Some(1)).unwrap();
+        editor.open(Some(1));
+        editor.synchronize_document(None).unwrap();
         assert!(!editor.is_open());
     }
 }
