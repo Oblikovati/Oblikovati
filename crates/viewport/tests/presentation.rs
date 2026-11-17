@@ -33,3 +33,18 @@ fn invalid_coordinates_or_display_channels_are_declined() {
     assert!(ViewportScene::from_prism(&fixture(1.), [-1.; 3], [1.; 4]).is_err());
     assert!(ViewportScene::from_prism(&fixture(1.), [0.; 3], [2.; 4]).is_err());
 }
+
+#[test]
+fn colored_triangles_preserve_each_color_and_refuse_invalid_coordinates() {
+    let triangle = [[0., 0., 0.], [1., 0., 0.], [0., 1., 0.]];
+    let scene = ViewportScene::from_colored_triangles(
+        [0.; 3],
+        &[(triangle, [0., 0.8, 0.6, 1.]), (triangle, [1., 0., 0., 1.])],
+    )
+    .unwrap();
+    assert_eq!(scene.triangles[0].color, [0., 0.8, 0.6, 1.]);
+    assert_eq!(scene.triangles[1].color, [1., 0., 0., 1.]);
+    assert!(
+        ViewportScene::from_colored_triangles([0.; 3], &[([[f64::NAN; 3]; 3], [1.; 4])]).is_err()
+    );
+}

@@ -284,6 +284,19 @@ impl<
                     .map(|_| path.clone())
             });
         self.part_scenes.set_occurrence_selection(selected);
+        let selected_faces = current.and_then(|(document, generation)| {
+            let faces: Vec<_> = self
+                .current_face_appearance_picks(document)
+                .iter()
+                .map(|pick| (pick.face.feature, pick.face.key.clone()))
+                .collect();
+            if faces.is_empty() || self.active_sketch_edit().is_some() {
+                return None;
+            }
+            let color = &self.color_schemes.active().secondary_select;
+            Some((document, generation, faces, [color.r, color.g, color.b]))
+        });
+        self.part_scenes.set_selected_faces(selected_faces);
         let Some(mut update) = self.part_scenes.refresh(&mut self.files)? else {
             return Ok(None);
         };

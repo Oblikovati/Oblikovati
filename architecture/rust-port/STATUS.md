@@ -42,9 +42,10 @@ Last checked: 2026-11-16 on `rust-work`. Refresh from current evidence at each c
   diagnostics (#4043). Rectangle selection, context-menu dismissal and clearing
   also have an X11 diagnostic (#4033); reference fixture and capture gaps remain.
 - Face selection with the default and Faces filters has native X11 diagnostics
-  for the cue, toolbar, green boundary and empty-space clear (#4048). The
-  default-filter test checks the analytic face hit. Teal face fill and full
-  live scenario verification remain open.
+  for the teal fill, green boundary, cue, toolbar and empty-space clear (#4048).
+  The default-filter test checks the analytic face hit. First-selection face
+  meshing is synchronous; performance and full live scenario verification
+  remain open.
 - The 60 fps sketch target is not met on the measured GPU. A 4-segment
   pointer-motion run measured 20.738 ms median and 24.861 ms p95 at 1440 × 900;
   the 60 fps frame budget is 16.67 ms. See `receipts/2026-11-16-sketch-frame-baseline-4031/`.

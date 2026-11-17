@@ -2,6 +2,23 @@
 use crate::{ViewportScene, ViewportTriangle};
 use oblikovati_martensite::PrismPresentation;
 impl ViewportScene {
+    /// Convert colored derived triangles and reject coordinates or colors that cannot be displayed.
+    /// Example: `ViewportScene::from_colored_triangles([0.; 3], &triangles)?`.
+    pub fn from_colored_triangles(
+        background: [f64; 3],
+        triangles: &[([[f64; 3]; 3], [f32; 4])],
+    ) -> Result<Self, String> {
+        let triangles = triangles
+            .iter()
+            .map(|(points, color)| display_triangle(*points, *color))
+            .collect::<Result<Vec<_>, _>>()?;
+        let scene = Self {
+            background,
+            triangles,
+        };
+        scene.validate()?;
+        Ok(scene)
+    }
     /// Convert owned kernel mesh coordinates to display precision; construction roles are not pick keys.
     /// Example: `ViewportScene::from_prism(&mesh, [0., 0., 1.], [0., 1., 0., 1.])?`.
     pub fn from_prism(
@@ -27,7 +44,7 @@ fn display_triangle(positions: [[f64; 3]; 3], color: [f32; 4]) -> Result<Viewpor
     let converted = positions.map(|point| point.map(|value| value as f32));
     if converted.iter().flatten().any(|value| !value.is_finite()) {
         return Err(format!(
-            "prism triangle {positions:?}: expected coordinates representable as finite display floats"
+            "display triangle {positions:?}: expected coordinates representable as finite display floats"
         ));
     }
     Ok(ViewportTriangle {

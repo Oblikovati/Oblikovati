@@ -160,6 +160,14 @@ fn native_default_filter_selects_and_clears_visible_face() {
     world.expect_text("1. Face");
     toolbar_visible(&mut world);
     let selected = super::super::capture_framebuffer(&mut world.app().window.native);
+    if std::env::var_os("OBK_BDD_REPORTS").is_some() {
+        world.save_capture("selected-named-face-4048");
+    }
+    let color = capture_pixel(&selected, point);
+    assert!(
+        color[1] > color[0] + 20 && color[2] > color[0] + 20,
+        "selected face pixel {color:?}: expected teal"
+    );
     assert!(
         green_pixels(&selected) > green_pixels(&before) + 10,
         "selected face: expected a bright green boundary"
@@ -172,6 +180,11 @@ fn native_default_filter_selects_and_clears_visible_face() {
     selection_cleared(&mut world);
     world.expect_no_text("1. Face");
     let cleared = super::super::capture_framebuffer(&mut world.app().window.native);
+    assert_eq!(
+        capture_pixel(&cleared, point),
+        capture_pixel(&before, point),
+        "cleared face must recover its original appearance"
+    );
     assert!(
         green_pixels(&cleared) <= green_pixels(&before) + 10,
         "cleared face: expected no green boundary"
@@ -192,4 +205,10 @@ fn green_pixels(capture: &oblikovati_viewport::ViewportCapture) -> usize {
                 && pixel[1] > pixel[2].saturating_add(80)
         })
         .count()
+}
+
+#[cfg(target_os = "linux")]
+fn capture_pixel(capture: &oblikovati_viewport::ViewportCapture, point: [i32; 2]) -> [u8; 4] {
+    let index = (point[1] as usize * capture.extent[0] as usize + point[0] as usize) * 4;
+    capture.rgba[index..index + 4].try_into().unwrap()
 }

@@ -14,6 +14,7 @@ use assembly::AssemblyViewMode;
 mod assembly_pick;
 mod edge_pick;
 pub(crate) mod extrusion;
+mod face_display;
 pub(crate) mod pick_candidates;
 pub(crate) mod resolution_policy;
 mod selection_bounds;
@@ -77,6 +78,8 @@ pub(crate) struct DesktopPartScenes {
     scene_failure: Option<(u64, u64, String)>,
     presentation_invalidated: bool,
     occurrence_selection: Option<oblikovati_gui::GuiOccurrencePath>,
+    face_selection: Option<face_display::FaceSelection>,
+    face_mesh_cache: Option<face_display::FaceMeshCache>,
     resolution: Option<oblikovati_martensite::PrismResolutionPolicy>,
     slot: PartEvaluationSlot<NamedSolid, oblikovati_martensite::EvaluationFailure>,
 }
@@ -207,7 +210,7 @@ impl DesktopPartScenes {
             .map_err(|cause| cause.to_string())
     }
     fn present_current<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
-        &self,
+        &mut self,
         files: &FileWorkspace<O, W, F>,
         document: u64,
         mode: AssemblyViewMode,
@@ -216,13 +219,14 @@ impl DesktopPartScenes {
             .workspace()
             .session(document)
             .map_err(|cause| cause.to_string())?;
-        let evaluated = self.current(session)?;
         let guid = files
             .workspace()
             .identity(document)
             .map_err(|cause| cause.to_string())?
             .internal_name;
-        render_part_scene(evaluated, (document, session.generation()), |body| {
+        self.prepare_face_mesh_cache(session, document, guid, mode)?;
+        let evaluated = self.current(session)?;
+        let style = |body: &NamedSolid| {
             let key =
                 bodies::body_reference_text(body.body_reference_key(session.history(), guid)?);
             if mode == AssemblyViewMode::Live && !session.body_visible(&key) {
@@ -237,10 +241,24 @@ impl DesktopPartScenes {
                 return Ok(Some(CHOSEN_BODY_COLOR));
             }
             Ok(Some(body_color(files, session.snapshot(), &key)?))
-        })
+        };
+        if mode == AssemblyViewMode::Live
+            && let Some(cache) = self.face_mesh_cache.as_ref()
+            && cache.source == (document, session.generation())
+        {
+            let empty = (document, session.generation(), Vec::new(), [0; 3]);
+            let selection = self
+                .face_selection
+                .as_ref()
+                .filter(|item| (item.0, item.1) == cache.source)
+                .unwrap_or(&empty);
+            return face_display::selected_face_scene(evaluated, cache, selection, style);
+        }
+        render_part_scene(evaluated, (document, session.generation()), style)
     }
     fn empty(&mut self) -> HeadSceneUpdate {
         self.slot.clear();
+        self.face_mesh_cache = None;
         HeadSceneUpdate {
             scene: ViewportScene {
                 background: [0., 0., 1.],
@@ -344,6 +362,8 @@ impl DesktopPartScenes {
         self.slot.clear();
         self.source = None;
         self.scene_failure = None;
+        self.face_selection = None;
+        self.face_mesh_cache = None;
     }
 }
 
