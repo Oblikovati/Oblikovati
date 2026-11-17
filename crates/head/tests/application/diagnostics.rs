@@ -258,6 +258,12 @@ pub(super) fn window_dock_id(title: &str) -> Option<u32> {
     let window = unsafe { sys::igFindWindowByName(title.as_ptr()).as_ref() }?;
     window.Active.then_some(window.DockId)
 }
+/// Read the active state of a docked tab; example: `window_dock_tab_visible("Parameters")`.
+pub(super) fn window_dock_tab_visible(title: &str) -> Option<bool> {
+    let title = CString::new(title).ok()?;
+    let window = unsafe { sys::igFindWindowByName(title.as_ptr()).as_ref() }?;
+    (window.DockId != 0).then(|| window.DockTabIsVisible())
+}
 /// Read a docked tab's bounds; example: click its close control without closing the group.
 pub(super) fn window_dock_tab_bounds(title: &str) -> Option<([f32; 2], [f32; 2])> {
     let title = CString::new(title).ok()?;

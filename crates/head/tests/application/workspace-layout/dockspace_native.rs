@@ -2,7 +2,7 @@
 //! Drive a tool into the shared workspace dockspace with the native pointer.
 use super::*;
 
-fn viewport(world: &mut ApplicationWorld) -> [u32; 4] {
+pub(in super::super) fn viewport(world: &mut ApplicationWorld) -> [u32; 4] {
     let extent = world.extent();
     world
         .app()
@@ -60,7 +60,7 @@ fn material_browser_docks_at_workspace_right_and_reduces_viewport() {
     ));
     let (list, list_size) = window_geometry("##document-list-control").unwrap();
     assert!((list[0] + list_size[0] - after[2] as f32).abs() <= 1.);
-    resize_boundary(&mut world, after);
+    resize_boundary(&mut world, after, -80);
     let resized = viewport(&mut world);
     assert!(
         resized[2] < after[2],
@@ -84,9 +84,9 @@ fn material_browser_docks_at_workspace_right_and_reduces_viewport() {
     world.close();
 }
 
-fn resize_boundary(world: &mut ApplicationWorld, area: [u32; 4]) {
+pub(in super::super) fn resize_boundary(world: &mut ApplicationWorld, area: [u32; 4], delta: i32) {
     let start = [area[2] as i32 + 2, ((area[1] + area[3]) / 2) as i32];
-    let end = [start[0] - 80, start[1]];
+    let end = [start[0] + delta, start[1]];
     super::super::x11_input::move_pointer(start);
     world.pump(Vec::new());
     super::super::x11_input::left_button(start, true);
@@ -101,4 +101,185 @@ fn resize_boundary(world: &mut ApplicationWorld, area: [u32; 4]) {
     super::super::x11_input::left_button(end, false);
     world.pump(Vec::new());
     world.pump(Vec::new());
+}
+
+#[test]
+fn floating_tool_docks_to_each_remaining_workspace_edge() {
+    for edge in ["left", "top", "bottom"] {
+        check_workspace_edge(edge);
+    }
+}
+
+fn check_workspace_edge(edge: &str) {
+    let mut world = ApplicationWorld::new();
+    super::browser_feature::open_visible_extruded_part(&mut world);
+    let before = viewport(&mut world);
+    let icon = super::super::quick_access_icons::standard_icon_center("Material Browser").unwrap();
+    world.click(super::super::diagnostics::pointer_pixels(icon));
+    let (position, size) = window_geometry("Material Browser").unwrap();
+    let start = [
+        (position[0] + size[0] * 0.4) as i32,
+        (position[1] + 10.) as i32,
+    ];
+    let mid = [
+        ((before[0] + before[2]) / 2) as i32,
+        ((before[1] + before[3]) / 2) as i32,
+    ];
+    let target = match edge {
+        "left" => [before[0] as i32 + 15, mid[1]],
+        "top" => [mid[0], before[1] as i32 + 15],
+        "bottom" => [mid[0], before[3] as i32 - 15],
+        _ => panic!("edge {edge:?}: expected left, top, or bottom"),
+    };
+    native_drag(&mut world, start, target);
+    let node = super::super::diagnostics::window_dock_id("Material Browser").unwrap();
+    assert_ne!(node, 0, "{edge}: expected a docked panel");
+    let after = viewport(&mut world);
+    let changed = match edge {
+        "left" => after[0] > before[0],
+        "top" => after[1] > before[1],
+        "bottom" => after[3] < before[3],
+        _ => false,
+    };
+    assert!(changed, "{edge}: viewport {before:?} -> {after:?}");
+    let capture = super::super::capture_framebuffer(&mut world.app().window.native);
+    let windows = super::super::diagnostics::window_occlusions();
+    assert!(
+        super::super::solid_visibility::visible_solid_fill(&capture, &windows),
+        "{edge}: expected visible solid"
+    );
+    world.save_capture(&format!("workspace-dock-{edge}"));
+    world.close();
+}
+
+pub(in super::super) fn native_drag(world: &mut ApplicationWorld, start: [i32; 2], end: [i32; 2]) {
+    super::super::x11_input::move_pointer(start);
+    world.pump(Vec::new());
+    super::super::x11_input::left_button(start, true);
+    world.pump(Vec::new());
+    for step in 1..=8 {
+        let at = std::array::from_fn(|axis| start[axis] + (end[axis] - start[axis]) * step / 8);
+        super::super::x11_input::move_pointer(at);
+        world.pump(Vec::new());
+    }
+    super::super::x11_input::left_button(end, false);
+    world.pump(Vec::new());
+    world.pump(Vec::new());
+}
+
+#[test]
+fn tool_windows_join_as_tabs_in_a_workspace_dock() {
+    let mut world = ApplicationWorld::new();
+    super::browser_feature::open_visible_extruded_part(&mut world);
+    let before = viewport(&mut world);
+    open_toolbar_tool(&mut world, "Material Browser");
+    let (position, size) = window_geometry("Material Browser").unwrap();
+    let start = [
+        (position[0] + size[0] * 0.4) as i32,
+        (position[1] + 10.) as i32,
+    ];
+    native_drag(
+        &mut world,
+        start,
+        [before[2] as i32 - 15, ((before[1] + before[3]) / 2) as i32],
+    );
+    open_toolbar_tool(&mut world, "Appearance Browser");
+    let (source, source_size) = window_geometry("Appearance Browser").unwrap();
+    let (destination, destination_size) = window_geometry("Material Browser").unwrap();
+    let start = [
+        (source[0] + source_size[0] * 0.4) as i32,
+        (source[1] + 10.) as i32,
+    ];
+    let target = [
+        (destination[0] + destination_size[0] * 0.5) as i32,
+        (destination[1] + 10.) as i32,
+    ];
+    native_drag(&mut world, start, target);
+    let material = super::super::diagnostics::window_dock_id("Material Browser").unwrap();
+    let appearance = super::super::diagnostics::window_dock_id("Appearance Browser").unwrap();
+    assert!(
+        material != 0 && material == appearance,
+        "expected one dock node: {material}, {appearance}"
+    );
+    let (minimum, maximum) =
+        super::super::diagnostics::window_dock_tab_bounds("Material Browser").unwrap();
+    world.click(super::super::diagnostics::pointer_pixels([
+        (minimum[0] + maximum[0]) * 0.5,
+        (minimum[1] + maximum[1]) * 0.5,
+    ]));
+    world.pump(Vec::new());
+    world.run_in_window("Material Browser", "Assigntopart");
+    assert_eq!(
+        super::super::diagnostics::window_dock_tab_visible("Material Browser"),
+        Some(true)
+    );
+    let (minimum, maximum) =
+        super::super::diagnostics::window_dock_tab_bounds("Appearance Browser").unwrap();
+    world.click(super::super::diagnostics::pointer_pixels([
+        (minimum[0] + maximum[0]) * 0.5,
+        (minimum[1] + maximum[1]) * 0.5,
+    ]));
+    world.pump(Vec::new());
+    world.run_in_window("Appearance Browser", "Assigntopart");
+    assert_eq!(
+        super::super::diagnostics::window_dock_tab_visible("Appearance Browser"),
+        Some(true)
+    );
+    assert!(viewport(&mut world)[2] < before[2]);
+    world.save_capture("workspace-dock-tab-group");
+    world.close();
+}
+
+fn open_toolbar_tool(world: &mut ApplicationWorld, label: &str) {
+    let icon = super::super::quick_access_icons::standard_icon_center(label).unwrap();
+    world.click(super::super::diagnostics::pointer_pixels(icon));
+    world.pump(Vec::new());
+}
+
+#[test]
+fn docked_tool_can_float_and_return_to_its_workspace_edge() {
+    let mut world = ApplicationWorld::new();
+    super::browser_feature::open_visible_extruded_part(&mut world);
+    let before = viewport(&mut world);
+    open_toolbar_tool(&mut world, "Material Browser");
+    let (position, size) = window_geometry("Material Browser").unwrap();
+    let start = [
+        (position[0] + size[0] * 0.4) as i32,
+        (position[1] + 10.) as i32,
+    ];
+    let target = [before[2] as i32 - 15, ((before[1] + before[3]) / 2) as i32];
+    native_drag(&mut world, start, target);
+    let (minimum, maximum) =
+        super::super::diagnostics::window_dock_tab_bounds("Material Browser").unwrap();
+    let tab = [
+        ((minimum[0] + maximum[0]) * 0.5) as i32,
+        ((minimum[1] + maximum[1]) * 0.5) as i32,
+    ];
+    let floating = [
+        ((before[0] + before[2]) / 2) as i32,
+        ((before[1] + before[3]) / 2) as i32,
+    ];
+    native_drag(&mut world, tab, floating);
+    assert_eq!(
+        super::super::diagnostics::window_dock_id("Material Browser"),
+        Some(0)
+    );
+    assert_eq!(
+        viewport(&mut world),
+        before,
+        "floating the panel must free the viewport"
+    );
+    let (position, size) = window_geometry("Material Browser").unwrap();
+    let start = [
+        (position[0] + size[0] * 0.4) as i32,
+        (position[1] + 10.) as i32,
+    ];
+    native_drag(&mut world, start, target);
+    assert_ne!(
+        super::super::diagnostics::window_dock_id("Material Browser"),
+        Some(0)
+    );
+    assert!(viewport(&mut world)[2] < before[2]);
+    world.save_capture("workspace-dock-redocked");
+    world.close();
 }
