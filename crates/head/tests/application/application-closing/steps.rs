@@ -27,7 +27,7 @@ fn no_document(world: &mut ApplicationWorld) {
 }
 
 #[when("the user selects the application window's Close control")]
-fn request_application_close(world: &mut ApplicationWorld) {
+pub(super) fn request_application_close(world: &mut ApplicationWorld) {
     world.application_close_requested = true;
     let can_close = world.app().owner.close_allowed().unwrap();
     #[cfg(target_os = "linux")]
