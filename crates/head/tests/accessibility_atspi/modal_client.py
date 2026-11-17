@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-only
 import time
 import gi
+from keyboard import press_enter
 
 gi.require_version('Atspi', '2.0')
 from gi.repository import Atspi
@@ -39,7 +40,14 @@ for name in ['Yes', 'No', 'Cancel']:
     button = wait_for(name, dialog)
     bounds = button.get_component_iface().get_extents(Atspi.CoordType.SCREEN)
     assert bounds.width > 0 and bounds.height > 0, name
-invoke(wait_for('Cancel', dialog))
+cancel = wait_for('Cancel', dialog)
+assert cancel.get_component_iface().grab_focus()
+for _ in range(100):
+    cancel.clear_cache()
+    if cancel.get_state_set().contains(Atspi.StateType.FOCUSED): break
+    time.sleep(.1)
+else: raise AssertionError('Cancel did not receive keyboard focus')
+press_enter()
 for _ in range(100):
     if not any(child.get_name() == 'Save changes' for child in elements()):
         break

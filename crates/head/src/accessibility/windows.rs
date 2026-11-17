@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Windows UI Automation adapter for the application bar.
 use super::{
-    actions::FrameActions,
-    frame::{FrameControl, FrameSemantics},
+    actions::{FrameActions, FrameRequest},
+    frame::FrameSemantics,
 };
 use accesskit::{ActivationHandler, TreeUpdate};
 use std::sync::{
@@ -20,7 +20,7 @@ impl ActivationHandler for Activation {
 pub(crate) struct WindowsFrameAccessibility {
     adapter: accesskit_windows::SubclassingAdapter,
     snapshot: Arc<Mutex<Option<FrameSemantics>>>,
-    requests: Receiver<FrameControl>,
+    requests: Receiver<FrameRequest>,
 }
 impl WindowsFrameAccessibility {
     pub fn new(hwnd: isize, wake: impl Fn() + Send + 'static) -> Self {
@@ -48,7 +48,7 @@ impl WindowsFrameAccessibility {
             events.raise();
         }
     }
-    pub fn next_request(&self) -> Option<FrameControl> {
+    pub fn next_request(&self) -> Option<FrameRequest> {
         self.requests.try_recv().ok()
     }
 }

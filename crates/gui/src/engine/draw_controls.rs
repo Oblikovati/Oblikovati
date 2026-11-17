@@ -49,12 +49,21 @@ impl GuiFrameEngine {
             },
             &mut selected,
         );
+        let focus = self.accessible_focus.take();
+        let frame_focus = match focus {
+            Some(crate::GuiAccessibleFocus::Frame(index)) => Some(index),
+            _ => None,
+        };
+        if let Some(crate::GuiAccessibleFocus::ClosePrompt(choice)) = focus {
+            self.document_files.focus_close_prompt(choice);
+        }
         let (window_action, window_controls) = crate::window_frame::draw(
             ui,
             request,
             crate::chrome::application_bar_height(&self.icons.presentation),
             &mut selected,
             &mut self.window_bar_drag_armed,
+            frame_focus,
         );
         if std::mem::take(&mut self.pending_extrusion_shortcut) {
             selected.push(crate::extrude_dialog::start_action(&request.commands));

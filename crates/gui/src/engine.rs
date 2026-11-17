@@ -69,6 +69,7 @@ pub struct GuiFrameEngine {
     offset_plane: crate::offset_plane::OffsetPlaneDialog,
     pending_extrusion_shortcut: bool,
     window_bar_drag_armed: bool,
+    accessible_focus: Option<crate::GuiAccessibleFocus>,
     dimension_value_editor: crate::sketch::dimension_edit::GuiDimensionValueEditor,
     precise_input: crate::sketch::precise_input::PreciseInputBar,
     create_block: crate::sketch::create_block::CreateBlockDialog,
@@ -140,6 +141,7 @@ impl GuiFrameEngine {
             offset_plane: Default::default(),
             pending_extrusion_shortcut: false,
             window_bar_drag_armed: false,
+            accessible_focus: None,
             dimension_value_editor: Default::default(),
             precise_input: Default::default(),
             create_block: Default::default(),
@@ -235,6 +237,10 @@ impl GuiFrameEngine {
             crate::theme::apply_chrome_theme(&mut self.context.style_mut().colors, theme.palette());
         }
         self.draw_controls(request)
+    }
+    /// Focus an accessible control; example: `engine.focus_accessible(GuiAccessibleFocus::Frame(0))`.
+    pub fn focus_accessible(&mut self, target: crate::GuiAccessibleFocus) {
+        self.accessible_focus = Some(target);
     }
     /// Answer the active guarded-close prompt; example: `engine.answer_close_prompt(GuiClosePromptChoice::Cancel)`.
     pub fn answer_close_prompt(&mut self, choice: crate::GuiClosePromptChoice) {

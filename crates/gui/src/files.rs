@@ -264,6 +264,9 @@ impl GuiDocumentFiles {
     pub(crate) fn answer_close_prompt(&mut self, choice: crate::GuiClosePromptChoice) {
         self.close_prompt.answer_accessibly(choice);
     }
+    pub(crate) fn focus_close_prompt(&mut self, choice: crate::GuiClosePromptChoice) {
+        self.close_prompt.focus_accessibly(choice);
+    }
     pub(crate) fn close_prompt_semantics(&self) -> Option<crate::GuiClosePrompt> {
         self.close_prompt.semantics()
     }

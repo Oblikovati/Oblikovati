@@ -401,3 +401,42 @@ fn verify_owner_command_enabling(engine: &mut GuiFrameEngine) {
         );
     }
 }
+
+#[test]
+fn accessible_frame_focus_moves_between_real_buttons() {
+    let mut engine = GuiFrameEngine::new().unwrap();
+    let mut request = request();
+    request.events.clear();
+    engine.frame(&request).unwrap();
+    for index in 0..3 {
+        engine.focus_accessible(GuiAccessibleFocus::Frame(index));
+        let mut focused = None;
+        for _ in 0..4 {
+            focused = engine.frame(&request).unwrap().window_controls.focused;
+        }
+        assert_eq!(focused, Some(index));
+    }
+}
+
+#[test]
+fn focused_accessible_maximize_responds_to_enter_and_space() {
+    for key in [GuiKey::Enter, GuiKey::Space] {
+        let mut engine = GuiFrameEngine::new().unwrap();
+        let mut request = request();
+        request.events.clear();
+        engine.frame(&request).unwrap();
+        engine.focus_accessible(GuiAccessibleFocus::Frame(1));
+        engine.frame(&request).unwrap();
+        engine.frame(&request).unwrap();
+        request.events = vec![GuiInputEvent::Key { key, pressed: true }];
+        assert_eq!(
+            engine.frame(&request).unwrap().window_action,
+            Some(GuiWindowAction::ToggleMaximize)
+        );
+        request.events = vec![GuiInputEvent::Key {
+            key,
+            pressed: false,
+        }];
+        assert_eq!(engine.frame(&request).unwrap().window_action, None);
+    }
+}
