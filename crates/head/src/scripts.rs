@@ -156,6 +156,9 @@ impl<D: ScriptDocumentOwner> HeadWork for DesktopScripts<D> {
     ) -> Result<bool, String> {
         self.owner.inspect_from_gui(action)
     }
+    fn measure_selected_face_from_gui(&mut self, document: u64, key: &str) -> Result<bool, String> {
+        self.owner.measure_selected_face_from_gui(document, key)
+    }
     fn set_ui_scale_from_gui(
         &mut self,
         options: oblikovati_model::ui_scale::UiScaleOptions,

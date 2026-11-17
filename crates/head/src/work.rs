@@ -214,15 +214,7 @@ pub trait HeadWork: HeadSketchWork {
     fn new_document_window_from_gui(&mut self) -> Result<bool, String> {
         Err("New window: expected an owner with document windows".into())
     }
-    /// Apply one inspection choice; example: `work.inspect_from_gui(action)`.
-    fn inspect_from_gui(
-        &mut self,
-        action: oblikovati_gui::GuiInspectAction,
-    ) -> Result<bool, String> {
-        Err(format!(
-            "inspection {action:?}: expected a document with an edited sketch"
-        ))
-    }
+    crate::work_inspect::inspect_work_methods!();
     /// Save application text/icon scale; example: `work.set_ui_scale_from_gui(options)?`.
     fn set_ui_scale_from_gui(
         &mut self,

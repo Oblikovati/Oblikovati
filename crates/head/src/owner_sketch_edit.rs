@@ -88,7 +88,7 @@ impl<
         key: &str,
     ) -> Result<bool, String> {
         self.require_browser_document(document)?;
-        let face = self.only_selected_sketch_face(document, key)?;
+        let face = self.only_selected_named_face(document, key)?;
         let resolved = self.part_scenes.selected_face_reference(
             &mut self.files,
             document,
@@ -103,7 +103,7 @@ impl<
         let face = oblikovati_model::feature::work_plane::WorkPlaneFaceReference::new(face.key)?;
         self.create_sketch_on_face(document, face)
     }
-    fn only_selected_sketch_face(
+    pub(super) fn only_selected_named_face(
         &self,
         document: u64,
         key: &str,

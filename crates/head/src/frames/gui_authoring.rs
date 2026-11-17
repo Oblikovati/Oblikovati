@@ -62,6 +62,9 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
             owner.set_center_point_from_gui(*point, *center)
         }
         GuiShellAction::Inspect(action) => owner.inspect_from_gui(*action),
+        GuiShellAction::MeasureSelectedFace { document, key } => {
+            owner.measure_selected_face_from_gui(*document, key)
+        }
         GuiShellAction::EditDimensionValue(value) => owner.edit_dimension_value_from_gui(value),
         GuiShellAction::SetPromptFrequency { prompt, frequency } => {
             owner.set_prompt_frequency_from_gui(*prompt, *frequency)

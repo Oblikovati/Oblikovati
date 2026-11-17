@@ -36,10 +36,12 @@ pub(crate) fn canvas_menu(
     true
 }
 fn draw_selected_face_measure(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
-    if selected_face_action(state).is_none() {
+    let Some(GuiShellAction::StartSketchOnSelectedFace { document, key }) =
+        selected_face_action(state)
+    else {
         return;
-    }
-    let action = GuiShellAction::Inspect(crate::GuiInspectAction::StartMeasure);
+    };
+    let action = GuiShellAction::MeasureSelectedFace { document, key };
     if ui
         .menu_item_config("Measure")
         .enabled(action.enabled(state))
@@ -120,7 +122,13 @@ mod tests {
             })
         );
         let original = selected_face_action(&state).unwrap();
+        let measure = GuiShellAction::MeasureSelectedFace {
+            document: 12,
+            key: "face-1".into(),
+        };
+        assert!(measure.enabled(&state));
         state.selected_face_appearances[0].0 = "face-2".into();
+        assert!(!measure.enabled(&state));
         assert!(
             !original.enabled(&state),
             "a changed face must not execute a stale action"

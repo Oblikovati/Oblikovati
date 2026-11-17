@@ -58,6 +58,8 @@
 
 ### Fixed
 
+- Rejected a selected-face Measure action when its face or document changed. (#4052)
+
 - Started an associative sketch on the selected face from the Part marking menu. (#4050)
 
 - Keep hover feedback in sync with a sketch changed before the next frame. (#4051)

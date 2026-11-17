@@ -65,6 +65,8 @@ mod work_forwarding;
 #[path = "work_idle.rs"]
 mod work_idle;
 #[cfg(target_os = "linux")]
+mod work_inspect;
+#[cfg(target_os = "linux")]
 mod work_sketch;
 mod work_sketch_forwarding;
 #[cfg(target_os = "linux")]

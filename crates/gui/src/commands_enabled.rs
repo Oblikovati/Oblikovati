@@ -443,7 +443,8 @@ impl GuiShellAction {
             Self::Undo => state.undo_label.is_some() && !state.active_express(),
             Self::Redo => state.redo_label.is_some() && !state.active_express(),
             Self::Save => !state.active_express(),
-            Self::StartSketchOnSelectedFace { document, key } => {
+            Self::MeasureSelectedFace { document, key }
+            | Self::StartSketchOnSelectedFace { document, key } => {
                 sketch_enabled::selected_face(state, *document, key)
             }
             Self::ChooseSketchPlane

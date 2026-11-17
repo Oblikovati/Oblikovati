@@ -44,6 +44,27 @@ impl<
         });
         Ok(())
     }
+    pub(super) fn measure_selected_face(
+        &mut self,
+        document: u64,
+        key: &str,
+    ) -> Result<bool, String> {
+        self.require_browser_document(document)?;
+        let face = self.only_selected_named_face(document, key)?;
+        let resolved = self.part_scenes.selected_face_reference(
+            &mut self.files,
+            document,
+            face.feature,
+            &face.key,
+        )?;
+        if resolved != key {
+            return Err(format!(
+                "document {document}, selected face {key:?}: expected current face reference {resolved:?}"
+            ));
+        }
+        self.start_part_measure()?;
+        Ok(true)
+    }
     fn single_measure_face(&self, document: u64) -> Result<Option<(FeatureId, Vec<u8>)>, String> {
         let [pick] = self.current_face_appearance_picks(document) else {
             return Ok(None);

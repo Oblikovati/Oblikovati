@@ -290,3 +290,20 @@ fn measure_does_not_preselect_a_face_when_a_body_is_also_selected() {
     assert_eq!(state.selected_body_keys.len(), 1);
     assert_measure_requests_face(&mut owner);
 }
+
+#[test]
+fn face_measure_command_rejects_changed_selection_and_stale_identity() {
+    let (mut owner, document) = measure_face_fixture();
+    let key = owner.gui_command_state().unwrap().selected_face_appearances[0]
+        .0
+        .clone();
+    assert!(owner.measure_selected_face(document, "wrong").is_err());
+    toggle_back_face(&mut owner, document);
+    assert!(owner.measure_selected_face(document, &key).is_err());
+    toggle_back_face(&mut owner, document);
+    assert!(owner.measure_selected_face(document, &key).unwrap());
+    finish_measure(&mut owner);
+    set_parameter(&mut owner, "depth", "3 cm");
+    assert!(owner.measure_selected_face(document, &key).is_err());
+    assert!(owner.gui_command_state().unwrap().measure.is_none());
+}
