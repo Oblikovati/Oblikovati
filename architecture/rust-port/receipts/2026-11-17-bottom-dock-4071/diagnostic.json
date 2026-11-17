@@ -1,0 +1,16 @@
+{
+  "application_base": "8c4beb720",
+  "source_revisions": null,
+  "workspace_feature_sha256": "3910a3c0a4e77f5417ae7e6b08019330b2fdc621c6af1c4f7f42ff9acb329b1a",
+  "docking_feature_sha256": "139cea92a16ace53d22a47ba7839233d1000cbefc2ce2e51500844926651a3d0",
+  "provenance": "Diagnostic runs against copied unversioned sources; not pinned acceptance evidence.",
+  "results": [
+    "Two native bottom-node row alignment checks passed.",
+    "Native tab switching and Documents menu click passed.",
+    "Default workspace alignment: 1 scenario, 8 steps passed.",
+    "Updated docking edges: 1 scenario, 11 steps passed.",
+    "Head clippy all targets and Windows GNU cross-build passed."
+  ],
+  "remaining": "A partial outer bottom split still shortens the Model Browser by the tab-row height; issue #4071 remains open.",
+  "environment": "Linux Xvfb with Mesa lavapipe; Windows GNU cross-build"
+}

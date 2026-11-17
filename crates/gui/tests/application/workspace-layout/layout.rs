@@ -120,3 +120,29 @@ fn outer_bottom_dock_keeps_document_tabs_below_the_panel() {
     assert_eq!(layout.document_area([1000., 900.], 100.).bottom, 600.);
     assert_eq!(layout.tab_top(900.), 852.);
 }
+
+#[test]
+fn tab_row_uses_bottom_dock_width_when_it_spans_the_workspace() {
+    use crate::application::document_creation::workspaces::WorkspaceArea;
+    let mut layout = WorkspaceLayout::default();
+    layout.reserve_for_ribbon(100., 50.);
+    let viewport = WorkspaceArea {
+        left: 350.,
+        top: 100.,
+        right: 950.,
+        bottom: 500.,
+    };
+    assert_eq!(layout.document_tab_span(1000., viewport), (350., 600.));
+    let root = layout.outer_area([1000., 900.], 100.);
+    layout.set_outer_center(
+        WorkspaceArea {
+            bottom: 500.,
+            ..root
+        },
+        root,
+    );
+    layout.outer_bottom_span = Some([350., 950.]);
+    assert_eq!(layout.document_tab_span(1000., viewport), (350., 600.));
+    layout.outer_bottom_span = Some([100., 950.]);
+    assert_eq!(layout.document_tab_span(1000., viewport), (100., 850.));
+}

@@ -96,6 +96,10 @@ fn native_mouse_switches_tabs_in_the_bottom_strip() {
     super::super::x11_input::click(point);
     world.pump(Vec::new());
     assert_eq!(world.state().document, Some(second));
+    let point = super::super::diagnostics::pointer_pixels(world.run("Documents").center());
+    super::super::x11_input::click(point);
+    world.pump(Vec::new());
+    world.expect_text("Close All");
     world.close();
 }
 

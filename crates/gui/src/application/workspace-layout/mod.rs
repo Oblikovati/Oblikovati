@@ -33,6 +33,7 @@ pub(crate) struct WorkspaceLayout {
     pub tabs_visible: bool,
     outer_center: Option<crate::application::document_creation::workspaces::WorkspaceArea>,
     outer_bottom_docked: bool,
+    pub(crate) outer_bottom_span: Option<[f32; 2]>,
     /// GUI frames follow events, and a dropped panel takes its geometry in the next frame.
     pub pending_layout: bool,
     pub switcher: crate::application::document_tabs::WindowSwitcher,
@@ -52,6 +53,7 @@ impl Default for WorkspaceLayout {
             tabs_visible: true,
             outer_center: None,
             outer_bottom_docked: false,
+            outer_bottom_span: None,
             pending_layout: false,
             switcher: Default::default(),
             view: Default::default(),
@@ -222,6 +224,24 @@ impl WorkspaceLayout {
             .outer_center
             .map_or(display_width - self.ribbon_right, |area| area.right);
         (left, (right - left).max(1.))
+    }
+    /// Align the tab row with the dock directly above it.
+    /// Example: `layout.document_tab_span(1440., viewport)` after drawing the dockspaces.
+    pub(crate) fn document_tab_span(
+        &self,
+        display_width: f32,
+        viewport: crate::application::document_creation::workspaces::WorkspaceArea,
+    ) -> (f32, f32) {
+        if self.outer_bottom_docked
+            && let Some([left, right]) = self.outer_bottom_span
+        {
+            let start = left.max(self.ribbon_left);
+            let end = right.min(display_width - self.ribbon_right);
+            if start < end {
+                return (start, end - start);
+            }
+        }
+        (viewport.left, (viewport.right - viewport.left).max(1.))
     }
     /// Reserve the tab row only while tabs are visible; example: `layout.tab_height()`.
     pub(crate) fn tab_height(&self) -> f32 {

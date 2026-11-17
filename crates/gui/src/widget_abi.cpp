@@ -62,6 +62,23 @@ std::uint32_t oblikovati_gui_outer_dockspace(float width, float height) {
                            ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoDockingInCentralNode);
 }
 
+bool oblikovati_gui_outer_bottom_span(std::uint32_t id, float* left, float* right) {
+    ImGuiDockNode* root = ImGui::DockBuilderGetNode(id);
+    ImGuiDockNode* node = ImGui::DockBuilderGetCentralNode(id);
+    if (!root || !node) return false;
+    ImGuiDockNode* bottom = nullptr;
+    while (node->ParentNode) {
+        ImGuiDockNode* parent = node->ParentNode;
+        if (parent->SplitAxis == ImGuiAxis_Y && parent->ChildNodes[0] == node && parent->ChildNodes[1])
+            bottom = parent->ChildNodes[1];
+        node = parent;
+    }
+    if (!bottom || !bottom->IsVisible || bottom->Size.x <= 0) return false;
+    *left = bottom->Pos.x;
+    *right = bottom->Pos.x + bottom->Size.x;
+    return true;
+}
+
 bool oblikovati_gui_dockspace_center(std::uint32_t id, float* left, float* top, float* right, float* bottom) {
     const ImGuiDockNode* center = ImGui::DockBuilderGetCentralNode(id);
     if (!center || center->Size.x <= 0 || center->Size.y <= 0) return false;

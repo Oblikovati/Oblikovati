@@ -54,8 +54,9 @@ impl DocumentTabs {
             return;
         }
         let height = request.extent[1] as f32 / request.layout_scale()[1];
+        let width = request.extent[0] as f32 / request.layout_scale()[0];
         let strip_top = layout.tab_top(height);
-        let span = (area.left, (area.right - area.left).max(1.));
+        let span = layout.document_tab_span(width, area);
         let strip = (span.0, (span.1 - DOCUMENT_LIST_WIDTH).max(1.));
         let mut strip_owner = StripOwner {
             menu: &mut self.menu,
@@ -375,6 +376,7 @@ fn home_tab(
     owner.home.active |= clicked;
 }
 fn document_strip_window(ui: &Ui, span: (f32, f32), strip_top: f32, contents: impl FnOnce()) {
+    let _minimum = ui.push_style_var(imgui::StyleVar::WindowMinSize([1., 1.]));
     crate::widget_abi::window_geometry(
         ui,
         [span.0, strip_top + 1.],
