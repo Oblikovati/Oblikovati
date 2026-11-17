@@ -173,7 +173,7 @@ fn three_faces(world: &mut ApplicationWorld) {
     expect_control_shows(world, "TopFrontRight");
 }
 
-fn expect_camera_direction(world: &mut ApplicationWorld, expected: [f64; 3]) {
+pub(super) fn expect_camera_direction(world: &mut ApplicationWorld, expected: [f64; 3]) {
     let camera = super::super::viewport_pan::camera(world);
     let delta: [f64; 3] = std::array::from_fn(|axis| camera.eye[axis] - camera.target[axis]);
     let length = delta.iter().map(|value| value * value).sum::<f64>().sqrt();

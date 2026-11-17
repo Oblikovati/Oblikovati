@@ -4,6 +4,8 @@ use crate::application::document_creation::workspaces::WorkspaceArea;
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::{MouseButton, StyleColor, Ui, WindowFlags};
 
+#[path = "axis_triad.rs"]
+mod axis_triad;
 #[path = "cube.rs"]
 mod cube;
 #[path = "drawing.rs"]
@@ -261,6 +263,7 @@ impl OrientationControl {
         ) {
             return;
         }
+        axis_triad::draw(ui, area, &axes);
         let side = self.options.side();
         let position = self.position(area, side);
         let window = ui
