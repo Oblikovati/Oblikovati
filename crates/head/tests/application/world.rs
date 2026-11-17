@@ -52,6 +52,8 @@ pub(super) struct ApplicationWorld {
     pub observed_toolbar_command: Option<String>,
     /// Viewport and panel width before a docking-boundary resize.
     pub docking_resize: Option<([u32; 4], f32)>,
+    pub docking_node: Option<u32>,
+    pub docking_active_tab: Option<bool>,
     /// The latest drag, for a step that checks the preview it left.
     pub last_drag: Option<[[i32; 2]; 2]>,
     /// The dimension value last opened, for a step that reopens "the annotation".
@@ -121,6 +123,8 @@ impl ApplicationWorld {
             observed_quick_access: None,
             observed_toolbar_command: None,
             docking_resize: None,
+            docking_node: None,
+            docking_active_tab: None,
             last_drag: None,
             opened_value: None,
         };

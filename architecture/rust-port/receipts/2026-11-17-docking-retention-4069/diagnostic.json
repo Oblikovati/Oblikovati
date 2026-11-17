@@ -1,0 +1,11 @@
+{
+  "source_feature_sha256": "4144a8e819ca78dd055ac4d76791cc461ab47e4d7038e16e3ffc238f65f5ce54",
+  "source_revision": null,
+  "application_base": "00293c9bb",
+  "provenance": "Diagnostic runs against copied unversioned source; not pinned acceptance evidence. Restart setup explicitly saves through the workspace settings store.",
+  "results": {
+    "document_switch": "1 scenario, 7 steps passed",
+    "restart": "1 scenario, 4 steps passed"
+  },
+  "environment": "Linux Xvfb with Mesa lavapipe"
+}
