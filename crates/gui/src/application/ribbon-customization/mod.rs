@@ -170,6 +170,7 @@ impl RibbonCustomization {
                     self.escape_consumed = true;
                 }
             });
+        Self::close_dockable(ui, "Customize", window_open && !self.open);
         self.open &= window_open;
         let document = self.staged_document();
         if let Some(settings) = self.settings.panel(ui, &document) {
