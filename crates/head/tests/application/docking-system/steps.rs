@@ -12,6 +12,8 @@ mod preview_scenario;
 mod restart_scenario;
 #[path = "retention_scenario.rs"]
 mod retention_scenario;
+#[path = "tabs_scenario.rs"]
+mod tabs_scenario;
 
 const PANEL: &str = "Material Browser";
 
