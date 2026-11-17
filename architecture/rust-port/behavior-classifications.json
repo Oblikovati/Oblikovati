@@ -16731,7 +16731,8 @@
           "path": "architecture/rust-port/receipts/2026-11-15-tabs-r4-current-1/receipt-c65b58f2636efdba.json",
           "sha256": "f4f1eb95b91f8e38de91dcadf6bc07c10e9df17d91a2dbf8295d64125dbc6a62"
         }
-      ]
+      ],
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:06a79598b0a30395a860234d8084fca485a0a5345986c10f0faecf520a28908f",
@@ -16881,7 +16882,8 @@
           "path": "architecture/rust-port/receipts/2026-11-15-tabs-r4-current-2/receipt-50f02a102ce48562.json",
           "sha256": "eca5322f4f80bd227bf44354254e80a6e90794d36831b350cac0c83dc2b608cf"
         }
-      ]
+      ],
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:8d403d738cd321445aca38ac0a89be55e8e04f9adaad81f2ce25984fdee63f70",
@@ -16919,7 +16921,8 @@
           "path": "architecture/rust-port/receipts/2026-11-15-tabs-r4-current-3/receipt-8d403d738cd32144.json",
           "sha256": "34f893b7fb3e375f6df93dde52196202aec4a2572e9308422ff34d09b7f08b64"
         }
-      ]
+      ],
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:244278b44b0bbbfb43fe5022599facac564f99fa33ff9179ae0fa739bf4a29be",
@@ -16957,7 +16960,8 @@
           "path": "architecture/rust-port/receipts/2026-11-15-tabs-r4-current-4/receipt-244278b44b0bbbfb.json",
           "sha256": "c2a1447379aee160c34c34ebdbd27d222b7dcdb98fed41c12b508dbacf98ff95"
         }
-      ]
+      ],
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:d6614d03f57eca8a9235ca75f1928bcfe4cab64cfd94ef9c7475e3f7a7b17aa7",
@@ -16995,7 +16999,8 @@
           "path": "architecture/rust-port/receipts/2026-11-15-tabs-r4-current-5/receipt-d6614d03f57eca8a.json",
           "sha256": "6cb8f39093618020877c07222855c7c81a3acc8b39fbd30bcebac7dc7643f1ad"
         }
-      ]
+      ],
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:f2e3989ecad9628f74927889e4a0a261d6ea1e2c7b24416df00fcf4e07c8a09f",
@@ -17033,7 +17038,8 @@
           "path": "architecture/rust-port/receipts/2026-11-15-tabs-r4-current-6/receipt-f2e3989ecad9628f.json",
           "sha256": "7d84c476a26a2cb5513d32f66887296512e286b41975dd3637e469e5e27eea79"
         }
-      ]
+      ],
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:d6f09550bb0cdb933bc28a078c90f0070a2d54aa07b17c7067039b25d2a98912",
@@ -17071,7 +17077,8 @@
           "path": "architecture/rust-port/receipts/2026-11-15-tabs-r4-current-7/receipt-d6f09550bb0cdb93.json",
           "sha256": "f55dd8a9aac8e4aaca3cad9750d14e0a527dd783814838dc1e9b3135d4340b13"
         }
-      ]
+      ],
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:8f2c33b398b731b4c57b8fe973d59a15b162d40f6da04290cd34e0d21a8c4911",
@@ -17109,7 +17116,8 @@
           "path": "architecture/rust-port/receipts/2026-11-15-tabs-r4-current-8/receipt-8f2c33b398b731b4.json",
           "sha256": "dc75fd40dd67c18b439efd7dcef054853b9da9768b6317b1bf4cd70cd3cfa764"
         }
-      ]
+      ],
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:5013bf3ef372b4cd2c855cce963620205fbadf3431e771ee3b03b5f6240bbb03",
