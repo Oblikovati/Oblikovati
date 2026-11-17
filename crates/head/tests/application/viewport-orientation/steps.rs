@@ -21,6 +21,8 @@ pub(super) use behaviour::whole_block_visible;
 mod option_rows;
 #[path = "selection_pivot_regression.rs"]
 mod selection_pivot_regression;
+#[path = "wireframe.rs"]
+mod wireframe;
 
 const CONTROL: &str = "##orientation-control";
 const NAVIGATION: &str = "##navigation-bar";
@@ -81,7 +83,7 @@ pub(super) fn control_letters(world: &ApplicationWorld) -> String {
     letters.into_iter().collect()
 }
 fn sorted(text: &str) -> String {
-    let mut letters: Vec<char> = text.chars().collect();
+    let mut letters: Vec<char> = text.to_ascii_uppercase().chars().collect();
     letters.sort_unstable();
     letters.into_iter().collect()
 }

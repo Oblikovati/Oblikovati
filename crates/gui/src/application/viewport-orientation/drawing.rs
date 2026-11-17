@@ -37,11 +37,7 @@ pub(super) fn draw_control(
     faces.reverse();
     let at = |point: [f32; 2]| [origin[0] + point[0], origin[1] + point[1]];
     for shown in &faces {
-        let [a, b, c, d] = shown.corners;
-        list.add_triangle(a, b, c, faded(FACE_FILL, alpha))
-            .filled(true)
-            .build();
-        list.add_triangle(a, c, d, faded(FACE_FILL, alpha))
+        list.add_polyline(shown.corners.to_vec(), faded(FACE_FILL, alpha))
             .filled(true)
             .build();
         for index in 0..4 {
@@ -67,7 +63,13 @@ fn draw_face_label(ui: &Ui, shown: &ShownFace, axes: &GuiViewAxes, alpha: f32) {
     let reading = shown.face.reading();
     let angle = (-dot(reading, axes.up)).atan2(dot(reading, axes.right));
     let color = faded(LABEL_COLOR, alpha);
-    crate::widget_abi::rotated_text(ui, center, color, shown.face.label(), angle);
+    crate::widget_abi::rotated_text(
+        ui,
+        center,
+        color,
+        &shown.face.label().to_ascii_uppercase(),
+        angle,
+    );
 }
 fn draw_home(list: &imgui::DrawListMut, [x, y]: [f32; 2], color: [f32; 4]) {
     list.add_triangle([x - 6., y], [x + 6., y], [x, y - 6.], color)
