@@ -1,0 +1,9 @@
+{
+  "source_feature_sha256": "4144a8e819ca78dd055ac4d76791cc461ab47e4d7038e16e3ffc238f65f5ce54",
+  "source_revision": null,
+  "application_base": "d47d04413",
+  "provenance": "Diagnostic run against a copied unversioned source; not pinned acceptance evidence.",
+  "scenario": "Float a docked panel and dock it again",
+  "result": "1 scenario and 8 steps passed",
+  "environment": "Linux Xvfb with Mesa lavapipe"
+}
