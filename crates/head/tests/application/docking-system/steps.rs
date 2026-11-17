@@ -6,6 +6,10 @@ use workspace_layout::dockspace_native::{native_drag, resize_boundary, viewport}
 
 #[path = "float_scenario.rs"]
 mod float_scenario;
+#[path = "restart_scenario.rs"]
+mod restart_scenario;
+#[path = "retention_scenario.rs"]
+mod retention_scenario;
 
 const PANEL: &str = "Material Browser";
 
