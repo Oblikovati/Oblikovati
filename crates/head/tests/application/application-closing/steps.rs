@@ -192,3 +192,135 @@ fn native_exit_save_failure_keeps_all_modified_documents_open() {
     assert_eq!(std::fs::read(first_path).unwrap(), first_bytes);
     world.close();
 }
+
+#[cfg(target_os = "linux")]
+#[test]
+fn native_shared_discard_closes_both_dirty_documents() {
+    shared_answer_closes_both("No");
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn native_shared_save_closes_both_dirty_documents() {
+    shared_answer_closes_both("Yes");
+}
+
+#[cfg(target_os = "linux")]
+fn shared_answer_closes_both(answer: &str) {
+    use crate::HeadWindow;
+    use oblikovati_model::application_prompts::{ApplicationPrompt, PromptFrequency};
+    let mut world = ApplicationWorld::new();
+    let (first, first_path) = dirty_saved_part(&mut world, "shared-first.opd");
+    let first_bytes = std::fs::read(&first_path).unwrap();
+    let (_, second_path) = dirty_saved_part(&mut world, "shared-second.opd");
+    let second_bytes = std::fs::read(&second_path).unwrap();
+    world
+        .app()
+        .owner
+        .set_prompt_frequency_from_gui(
+            ApplicationPrompt::SaveChanges,
+            PromptFrequency::OncePerOperation,
+        )
+        .unwrap();
+    super::x11_input::request_native_close();
+    world.pump(Vec::new());
+    world.expect_text("before closing");
+    world.expect_text("This answer also applies to:");
+    let first_name = world.document_name(first);
+    world.expect_text(&first_name);
+    world.save_capture(&format!("shared-close-{answer}-4056"));
+    super::x11_input::click(super::rendered_label_center(answer));
+    let mut app = world.app.take().unwrap();
+    let result = crate::frames::run_frames(
+        &mut app.window,
+        crate::HeadOptions { frames: Some(30) },
+        &mut app.owner,
+    )
+    .unwrap();
+    assert!(result.attempts < 30, "exit did not finish after one answer");
+    assert!(app.owner.documents().workspace().documents().is_empty());
+    let changed = answer == "Yes";
+    assert_eq!(std::fs::read(first_path).unwrap() != first_bytes, changed);
+    assert_eq!(std::fs::read(second_path).unwrap() != second_bytes, changed);
+    app.owner.finish().unwrap();
+    app.window.finish().unwrap();
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn native_shared_save_stops_when_a_later_document_cannot_be_saved() {
+    use oblikovati_model::application_prompts::{ApplicationPrompt, PromptFrequency};
+    let mut world = ApplicationWorld::new();
+    let (first, first_path) = dirty_saved_part(&mut world, "shared-failure-first.opd");
+    let first_bytes = std::fs::read(&first_path).unwrap();
+    let (second, second_path) = dirty_saved_part(&mut world, "shared-failure-second.opd");
+    let second_bytes = std::fs::read(&second_path).unwrap();
+    let backup = first_path.with_extension("original.opd");
+    std::fs::rename(&first_path, &backup).unwrap();
+    std::fs::create_dir(&first_path).unwrap();
+    world
+        .app()
+        .owner
+        .set_prompt_frequency_from_gui(
+            ApplicationPrompt::SaveChanges,
+            PromptFrequency::OncePerOperation,
+        )
+        .unwrap();
+    super::x11_input::request_native_close();
+    world.pump(Vec::new());
+    click_close_answer(&mut world, "Yes");
+    world.pump(Vec::new());
+    assert!(world.document_is_open(first));
+    assert!(!world.document_is_open(second));
+    assert!(world.state().document_storage[&first].unsaved_edits);
+    assert_eq!(std::fs::read(&backup).unwrap(), first_bytes);
+    assert_ne!(std::fs::read(second_path).unwrap(), second_bytes);
+    world.expect_status("Save document");
+    std::fs::remove_dir(&first_path).unwrap();
+    std::fs::rename(backup, first_path).unwrap();
+    world.close();
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn native_shared_first_save_cancel_keeps_both_documents_open() {
+    use oblikovati_model::application_prompts::{ApplicationPrompt, PromptFrequency};
+    let mut world = ApplicationWorld::new();
+    let (first, first_path) = dirty_saved_part(&mut world, "shared-cancel-first.opd");
+    let first_bytes = std::fs::read(&first_path).unwrap();
+    let second = world.add_part();
+    oblikovati_api::client::Client::new(world.app().owner.document_host())
+        .parameters()
+        .add(&oblikovati_api::wire::ParameterSetArgs {
+            name: "size".into(),
+            expression: "10 mm".into(),
+            value_type: "numeric".into(),
+            ..Default::default()
+        })
+        .unwrap();
+    world.pump(Vec::new());
+    world
+        .app()
+        .owner
+        .set_prompt_frequency_from_gui(
+            ApplicationPrompt::SaveChanges,
+            PromptFrequency::OncePerOperation,
+        )
+        .unwrap();
+    super::x11_input::request_native_close();
+    world.pump(Vec::new());
+    click_close_answer(&mut world, "Yes");
+    assert!(super::window_geometry("Save As").is_some());
+    super::x11_input::press_escape();
+    world.pump(Vec::new());
+    assert!(super::window_geometry("Save As").is_none());
+    assert!(world.document_is_open(first) && world.document_is_open(second));
+    assert!(world.state().document_storage[&first].unsaved_edits);
+    assert!(world.state().document_storage[&second].unsaved_edits);
+    assert_eq!(std::fs::read(first_path).unwrap(), first_bytes);
+    super::x11_input::request_native_close();
+    world.pump(Vec::new());
+    world.expect_text("before closing");
+    click_close_answer(&mut world, "Cancel");
+    world.close();
+}

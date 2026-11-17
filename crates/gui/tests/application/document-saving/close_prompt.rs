@@ -101,6 +101,98 @@ fn application_close_discards_only_confirmed_documents_then_exits() {
 }
 
 #[test]
+fn once_per_operation_discard_covers_each_edited_exit_document() {
+    let mut initial = state(&[EDITED_SAVED(1), EDITED_SAVED(2)]);
+    initial.prompts = PromptPreferences::default().with(
+        ApplicationPrompt::SaveChanges,
+        PromptFrequency::OncePerOperation,
+    );
+    let mut prompt = ClosePrompt::default();
+    let mut actions = Vec::new();
+    prompt.request_application_exit();
+    prompt.advance_application_exit(&initial, &mut actions, false);
+    let mut outcome = CloseOutcome::default();
+    prompt.resolve(&initial, CloseAnswer::Discard, &mut outcome);
+    assert_eq!(outcome.actions, [close(1, true)]);
+    let mut remaining = state(&[EDITED_SAVED(2)]);
+    remaining.prompts = initial.prompts;
+    prompt.advance_application_exit(&remaining, &mut actions, false);
+    assert!(prompt.asking.is_empty());
+    assert_eq!(actions, [close(2, true)]);
+}
+
+#[test]
+fn once_per_operation_save_routes_each_document_through_its_save() {
+    let mut initial = state(&[EDITED_SAVED(1), EDITED_SAVED(2)]);
+    initial.prompts = PromptPreferences::default().with(
+        ApplicationPrompt::SaveChanges,
+        PromptFrequency::OncePerOperation,
+    );
+    let mut prompt = ClosePrompt::default();
+    let mut actions = Vec::new();
+    prompt.request_application_exit();
+    prompt.advance_application_exit(&initial, &mut actions, false);
+    prompt.resolve(&initial, CloseAnswer::Save, &mut CloseOutcome::default());
+    let mut remaining = state(&[EDITED_SAVED(2)]);
+    remaining.prompts = initial.prompts;
+    prompt.advance_application_exit(&remaining, &mut actions, false);
+    prompt.intercept(&remaining, &mut actions);
+    assert_eq!(actions, [GuiShellAction::Save, close(2, false)]);
+    assert!(prompt.asking.is_empty());
+    actions.clear();
+    prompt.advance_application_exit(&remaining, &mut actions, false);
+    assert!(!prompt.application_exit);
+    assert!(actions.is_empty());
+}
+
+#[test]
+fn shared_exit_answer_does_not_apply_to_a_later_edited_document() {
+    let mut initial = state(&[EDITED_SAVED(1), CLEAN_SAVED(2)]);
+    initial.prompts = PromptPreferences::default().with(
+        ApplicationPrompt::SaveChanges,
+        PromptFrequency::OncePerOperation,
+    );
+    let mut prompt = ClosePrompt::default();
+    let mut actions = Vec::new();
+    prompt.request_application_exit();
+    prompt.advance_application_exit(&initial, &mut actions, false);
+    prompt.resolve(&initial, CloseAnswer::Discard, &mut CloseOutcome::default());
+    let mut changed = state(&[EDITED_SAVED(2)]);
+    changed.prompts = initial.prompts;
+    prompt.advance_application_exit(&changed, &mut actions, false);
+    assert_eq!(prompt.asking, [2]);
+    assert!(actions.is_empty());
+}
+
+#[test]
+fn cancelling_shared_first_save_keeps_the_other_document_open() {
+    let mut initial = state(&[EDITED_SAVED(1), EDITED_NEW(2), EDITED_SAVED(3)]);
+    initial.prompts = PromptPreferences::default().with(
+        ApplicationPrompt::SaveChanges,
+        PromptFrequency::OncePerOperation,
+    );
+    let mut prompt = ClosePrompt::default();
+    let mut actions = Vec::new();
+    prompt.request_application_exit();
+    prompt.advance_application_exit(&initial, &mut actions, false);
+    prompt.resolve(&initial, CloseAnswer::Save, &mut CloseOutcome::default());
+    let mut remaining = state(&[EDITED_NEW(2), EDITED_SAVED(3)]);
+    remaining.prompts = initial.prompts;
+    assert_eq!(
+        prompt.advance_application_exit(&remaining, &mut actions, false),
+        [2]
+    );
+    prompt.cancel_application_exit();
+    prompt.resume_application_exit();
+    assert!(
+        prompt
+            .advance_application_exit(&remaining, &mut actions, false)
+            .is_empty()
+    );
+    assert!(actions.is_empty() && !prompt.application_exit);
+}
+
+#[test]
 fn failed_save_cancels_application_exit_without_discarding() {
     let state = state(&[EDITED_SAVED(1)]);
     let mut prompt = ClosePrompt::default();
