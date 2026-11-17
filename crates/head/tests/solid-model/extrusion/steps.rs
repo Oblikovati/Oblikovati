@@ -229,3 +229,26 @@ fn unconstrained_rectangle_resumes_waiting_extrusion_with_preview() {
     waiting_extrusion_shows_default_preview(&mut world);
     world.close();
 }
+
+#[test]
+fn invalid_distance_then_valid_distance_restores_the_preview() {
+    let mut world = ApplicationWorld::new();
+    selected_rectangle_preview(&mut world);
+    replace_extrusion_distance(&mut world, "0");
+    assert!(
+        !world.state().extrude_preview_active,
+        "invalid distance must clear preview"
+    );
+    replace_extrusion_distance(&mut world, "8");
+    assert!(
+        world.state().extrude_preview_active,
+        "valid distance must restore preview"
+    );
+    let capture = super::capture_framebuffer(&mut world.app().window.native);
+    let windows = super::diagnostics::window_occlusions();
+    assert!(super::solid_visibility::visible_preview_fill(
+        &capture, &windows
+    ));
+    expect_unmodified_source(&mut world);
+    world.close();
+}
