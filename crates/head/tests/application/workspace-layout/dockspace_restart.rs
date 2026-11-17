@@ -339,3 +339,72 @@ fn native_open_customize(world: &mut ApplicationWorld) {
     native_click_label(world, "Tools");
     native_click_label(world, "Customize");
 }
+
+#[test]
+fn customize_async_ok_selects_next_tab_and_reopens_in_same_dock() {
+    let mut world = ApplicationWorld::new();
+    super::browser_feature::open_visible_extruded_part(&mut world);
+    let area = viewport(&mut world);
+    open_toolbar_tool(&mut world, "Material Browser");
+    let (position, size) = window_geometry("Material Browser").unwrap();
+    native_drag(
+        &mut world,
+        [
+            (position[0] + size[0] * 0.4) as i32,
+            (position[1] + 10.) as i32,
+        ],
+        [area[2] as i32 - 15, ((area[1] + area[3]) / 2) as i32],
+    );
+    native_open_customize(&mut world);
+    native_click_label(&mut world, "Marking Menu");
+    let north = world.run_in_window("Customize", "North").clone();
+    let combo = [north.minimum[0] - 70., north.center()[1]];
+    super::super::x11_input::click(super::super::diagnostics::pointer_pixels(combo));
+    world.pump(Vec::new());
+    native_click_label(&mut world, "Rectangle");
+    let (source, size) = window_geometry("Customize").unwrap();
+    let (destination, destination_size) = window_geometry("Material Browser").unwrap();
+    native_drag(
+        &mut world,
+        [(source[0] + size[0] * 0.4) as i32, (source[1] + 10.) as i32],
+        [
+            (destination[0] + destination_size[0] * 0.5) as i32,
+            (destination[1] + 10.) as i32,
+        ],
+    );
+    let node = super::super::diagnostics::window_dock_id("Material Browser").unwrap();
+    assert_ne!(node, 0);
+    assert_eq!(
+        super::super::diagnostics::window_dock_id("Customize"),
+        Some(node)
+    );
+    select_dock_tab(&mut world, "Customize");
+    let close = world.run_in_window("Customize", "OK").center();
+    super::super::x11_input::click(super::super::diagnostics::pointer_pixels(close));
+    world.pump(Vec::new());
+    world.pump(Vec::new());
+    assert!(window_geometry("Customize").is_none());
+    let menu = oblikovati_api::client::Client::new(world.app().owner.document_host())
+        .ui()
+        .marking_menu(&oblikovati_api::wire::GetMarkingMenuArgs {
+            environment: oblikovati_api::types::SKETCH_ENVIRONMENT,
+        })
+        .unwrap();
+    assert!(menu.quadrants.unwrap().iter().any(|item| item.quadrant
+        == oblikovati_api::types::QUADRANT_NORTH
+        && item.command_id == "Sketch.Rectangle"));
+    assert_eq!(
+        super::super::diagnostics::window_dock_tab_visible("Material Browser"),
+        Some(true)
+    );
+    world.run_in_window("Material Browser", "Assigntopart");
+    native_open_customize(&mut world);
+    assert_eq!(
+        super::super::diagnostics::window_dock_id("Customize"),
+        Some(node)
+    );
+    select_dock_tab(&mut world, "Customize");
+    world.run_in_window("Customize", "Environment:2DSketch");
+    world.save_capture("customize-async-restored-to-shared-dock");
+    world.close();
+}
