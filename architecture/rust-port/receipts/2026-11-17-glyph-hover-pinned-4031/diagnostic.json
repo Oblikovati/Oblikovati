@@ -1,0 +1,15 @@
+{
+  "kind": "diagnostic",
+  "application_commit": "dbe201b77",
+  "scenario_snapshot": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+  "feature_sha256": "5d30dc6745bfc4bf6415c21558d7d6ff3cae1df3b50862583a87ebd4e38f2926",
+  "feature": "sketch/constraint-glyph-hover",
+  "scenarios_passed": 1,
+  "steps_passed": 6,
+  "environment": "Linux Xvfb and Vulkan Lavapipe; X11 pointer movement, owner-created fixture",
+  "limitations": [
+    "Exact reference hover color and other glyph types are unmeasured.",
+    "Fixture and sealed build provenance remain open (#3978).",
+    "Final automatic screenshot does not establish the hover state."
+  ]
+}
