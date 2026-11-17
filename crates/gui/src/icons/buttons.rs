@@ -31,6 +31,26 @@ impl GuiRibbonIcons {
         }
         pressed
     }
+    /// Draw an icon-only application-bar command with its accessible tooltip.
+    /// Example: `icons.compact_button(ui, "Open", IconGlyph::Open)`.
+    pub(crate) fn compact_button(&self, ui: &Ui, label: &str, glyph: IconGlyph) -> bool {
+        let icon = self.logical[IconSize::Small.index()];
+        let pressed = crate::widget_abi::icon_button(
+            ui,
+            label,
+            crate::widget_abi::IconButtonPresentation {
+                texture: self.key(glyph, IconSize::Small),
+                size: self.cell([24., 24.]),
+                icon,
+                large: false,
+                show_caption: false,
+            },
+        );
+        if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
+            ui.tooltip_text(label);
+        }
+        pressed
+    }
     fn presentation(
         &self,
         ui: &Ui,

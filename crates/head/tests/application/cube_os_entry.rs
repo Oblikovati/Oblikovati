@@ -3,7 +3,9 @@
 use super::{ApplicationWorld, diagnostics, x11_input};
 
 fn click_label(world: &mut ApplicationWorld, label: &str) {
-    let point = diagnostics::pointer_pixels(world.run(label).center());
+    let center = super::quick_access_icons::standard_icon_center(label)
+        .unwrap_or_else(|| world.run(label).center());
+    let point = diagnostics::pointer_pixels(center);
     x11_input::click(point);
     world.pump(Vec::new());
 }

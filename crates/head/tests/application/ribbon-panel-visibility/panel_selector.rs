@@ -117,6 +117,13 @@ fn initial_panel_choices(world: &mut ApplicationWorld) {
 }
 #[when("the user selects the View ribbon tab")]
 fn select_view(world: &mut ApplicationWorld) {
+    #[cfg(target_os = "linux")]
+    {
+        let point = super::super::diagnostics::pointer_pixels(world.run("View").center());
+        super::super::x11_input::click(point);
+        world.pump(Vec::new());
+    }
+    #[cfg(not(target_os = "linux"))]
     world.click_text("View");
 }
 #[when("the user returns to the 3D Model ribbon tab")]

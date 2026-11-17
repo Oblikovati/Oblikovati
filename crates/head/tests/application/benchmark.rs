@@ -13,6 +13,7 @@ mod cube_os_entry;
 mod diagnostics;
 mod documents;
 mod gap_runner;
+mod quick_access_icons;
 mod refinements;
 mod report_destination;
 mod scenario_revision;
@@ -46,13 +47,15 @@ pub(super) fn rendered_label_center(label: &str) -> [i32; 2] {
                 .eq(wanted.chars())
         })
         .min_by(|a, b| a.minimum[1].total_cmp(&b.minimum[1]))
+        .map(|run| run.center())
+        .or_else(|| quick_access_icons::standard_icon_center(label))
         .unwrap_or_else(|| {
             panic!(
                 "label {label:?}: expected visible control in {:?}",
                 frame.runs
             )
         });
-    diagnostics::pointer_pixels(run.center())
+    diagnostics::pointer_pixels(run)
 }
 pub(super) fn rendered_label_in_rect(label: &str, min: [f32; 2], max: [f32; 2]) -> [i32; 2] {
     let frame = diagnostics::rendered_frame();
@@ -166,6 +169,8 @@ mod viewport_orientation;
 mod viewport_pan;
 #[path = "viewport-zoom/steps.rs"]
 mod viewport_zoom;
+#[path = "workspace-layout/wireframe_ribbon.rs"]
+mod wireframe_ribbon;
 #[path = "workspace-layout/steps.rs"]
 mod workspace_layout;
 
