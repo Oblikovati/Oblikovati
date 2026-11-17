@@ -100,3 +100,56 @@ fn application_remains_open(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
     assert!(world.app.is_some());
 }
+
+#[cfg(target_os = "linux")]
+#[test]
+fn native_close_cancels_after_discarding_only_the_confirmed_document() {
+    let mut world = ApplicationWorld::new();
+    let (first, first_path) = dirty_saved_part(&mut world, "first-close.opd");
+    let first_bytes = std::fs::read(&first_path).unwrap();
+    let (second, second_path) = dirty_saved_part(&mut world, "second-close.opd");
+    let second_bytes = std::fs::read(&second_path).unwrap();
+    let first_name = world.document_name(first);
+    let second_name = world.document_name(second);
+    super::x11_input::request_native_close();
+    world.pump(Vec::new());
+    world.expect_text(&format!("Save changes to {second_name}"));
+    world.save_capture("application-close-two-dirty-first");
+    click_close_answer(&mut world, "No");
+    world.expect_text(&format!("Save changes to {first_name}"));
+    world.save_capture("application-close-two-dirty-second");
+    assert!(!world.document_is_open(second));
+    assert!(world.document_is_open(first));
+    click_close_answer(&mut world, "Cancel");
+    world.expect_no_text("before closing");
+    assert!(world.document_is_open(first));
+    assert!(world.state().document_storage[&first].unsaved_edits);
+    assert_eq!(std::fs::read(first_path).unwrap(), first_bytes);
+    assert_eq!(std::fs::read(second_path).unwrap(), second_bytes);
+    world.close();
+}
+
+#[cfg(target_os = "linux")]
+fn dirty_saved_part(world: &mut ApplicationWorld, name: &str) -> (u64, std::path::PathBuf) {
+    let document = world.add_part();
+    let path = world.save_part_to_file(document, name);
+    oblikovati_api::client::Client::new(world.app().owner.document_host())
+        .parameters()
+        .add(&oblikovati_api::wire::ParameterSetArgs {
+            name: "size".into(),
+            expression: "10 mm".into(),
+            value_type: "numeric".into(),
+            ..Default::default()
+        })
+        .unwrap();
+    world.pump(Vec::new());
+    assert!(world.state().document_storage[&document].unsaved_edits);
+    (document, path)
+}
+
+#[cfg(target_os = "linux")]
+fn click_close_answer(world: &mut ApplicationWorld, answer: &str) {
+    let position = super::rendered_label_center(answer);
+    super::x11_input::click(position);
+    world.pump(Vec::new());
+}
