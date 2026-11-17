@@ -7,6 +7,7 @@ use std::collections::BTreeSet;
 mod block_definitions;
 mod block_instances;
 mod construction;
+mod corner_component;
 mod curve_format;
 mod dimension_placement;
 mod dimension_settings;

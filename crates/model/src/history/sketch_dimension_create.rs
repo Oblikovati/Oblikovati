@@ -66,17 +66,37 @@ impl DocumentSnapshot {
         datums: AuthoringDatums<'_>,
     ) -> Result<SketchDimensionCreationReport, SketchDimensionCreationError> {
         let geometry = self.prepare_dimension_creation(sketch, input, options, datums)?;
+        let prior_redundancy =
+            self.dimension_prior_redundancy(sketch, &geometry, options, datums)?;
         let probe =
             self.prepare_dimension_role(sketch, &geometry, input, policy, options, datums)?;
         let reserved = self.reserve_dimension_creation(sketch, ids)?;
         let mut candidate = self.clone();
         candidate.append_owned_dimension(sketch, input, geometry, &reserved)?;
         candidate.classify_dimension_role(sketch, reserved.constraint, probe, options)?;
-        let report = candidate.evaluate_created_dimension(sketch, &reserved, options, datums)?;
+        let report = candidate.evaluate_created_dimension(
+            sketch,
+            &reserved,
+            options,
+            datums,
+            prior_redundancy,
+        )?;
         candidate.confirm_dimension_creation(sketch, &report, datums)?;
         self.parameters = candidate.parameters;
         self.sketches = candidate.sketches;
         Ok(report)
+    }
+    fn dimension_prior_redundancy(
+        &self,
+        sketch: DocumentSketchId,
+        geometry: &Sketch2D,
+        options: SolveOptions,
+        datums: AuthoringDatums<'_>,
+    ) -> Result<usize, SketchError> {
+        let anchors = self.sketch_authoring_anchors(sketch, datums)?;
+        Ok(geometry
+            .analyze_with_grounded_points(&self.parameters, &anchors, options.rank_tolerance)?
+            .redundant_equations)
     }
     fn confirm_dimension_creation(
         &self,
@@ -151,6 +171,7 @@ impl DocumentSnapshot {
         reserved: &ReservedDimension,
         options: SolveOptions,
         datums: AuthoringDatums<'_>,
+        prior_redundancy: usize,
     ) -> Result<SketchDimensionCreationReport, SketchError> {
         let solved = match datums {
             Some(datums) => {
@@ -159,7 +180,7 @@ impl DocumentSnapshot {
             None => self.solve_one_document_sketch(sketch, options, || false)?,
         };
         let (degrees_of_freedom, unavailable_targets) =
-            self.creation_dimension_structure(sketch, &solved, options, datums)?;
+            self.creation_dimension_structure(sketch, &solved, options, datums, prior_redundancy)?;
         self.sketches = solved.candidate;
         let geometry = self.sketches.get(sketch)?.geometry();
         Ok(SketchDimensionCreationReport {
@@ -178,9 +199,10 @@ impl DocumentSnapshot {
         solved: &DocumentSketchSolveOutcome,
         options: SolveOptions,
         datums: AuthoringDatums<'_>,
+        prior_redundancy: usize,
     ) -> Result<(usize, Vec<SketchError>), SketchError> {
         match solved_sketch_numerical(solved, sketch) {
-            Ok(numerical) => self.available_dimension_structure(numerical),
+            Ok(numerical) => self.available_dimension_structure(numerical, prior_redundancy),
             Err(SketchError::Parameter { .. }) => {
                 self.unavailable_dimension_structure(sketch, options, datums)
             }
@@ -190,17 +212,18 @@ impl DocumentSnapshot {
     fn available_dimension_structure(
         &self,
         numerical: &oblikovati_solve::nonlinear::NonlinearResult,
+        prior_redundancy: usize,
     ) -> Result<(usize, Vec<SketchError>), SketchError> {
         use oblikovati_api::types::OVER_CONSTRAINED_APPLY_DRIVING;
         let structure = &numerical.structure;
         let explicit_driving = self.effective_sketch_settings().over_constrained_behavior
             == OVER_CONSTRAINED_APPLY_DRIVING;
         if numerical.termination == oblikovati_solve::nonlinear::SolveTermination::Converged
-            && structure.redundant_equations != 0
+            && structure.redundant_equations > prior_redundancy
             && !explicit_driving
         {
             return Err(SketchError::Definition(format!(
-                "dimension candidate has {} redundant equations: expected zero; use a reference dimension for a measured relation",
+                "dimension candidate has {} redundant equations versus {prior_redundancy} before creation: expected no increase; use a reference dimension for a measured relation",
                 structure.redundant_equations
             )));
         }

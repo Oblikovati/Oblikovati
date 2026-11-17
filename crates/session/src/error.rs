@@ -63,12 +63,14 @@ pub enum CommandError<E> {
 pub enum MutationError<E> {
     Command(E),
     Property(PropertyError),
+    Sketch(oblikovati_model::sketch::SketchError),
 }
 impl<E: fmt::Display> fmt::Display for MutationError<E> {
     fn fmt(&self, output: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Command(error) => error.fmt(output),
             Self::Property(error) => error.fmt(output),
+            Self::Sketch(error) => error.fmt(output),
         }
     }
 }

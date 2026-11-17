@@ -128,13 +128,90 @@ pub(crate) fn apply_recipe_edit<R, T, E>(
     options: Option<SolveOptions>,
     project: impl FnOnce(&DocumentSnapshot, R) -> Result<T, E>,
 ) -> Result<T, MutationError<E>> {
+    let before = snapshot.clone();
     let result = command(snapshot, ids).map_err(MutationError::Command)?;
     snapshot
         .properties
         .sync_exposed_parameters(&snapshot.parameters)
         .map_err(MutationError::Property)?;
     if let Some(options) = options {
-        update_pending_sketches(snapshot, options);
+        update_validated_sketches(snapshot, &before, options).map_err(MutationError::Sketch)?;
     }
     project(snapshot, result).map_err(MutationError::Command)
+}
+
+fn update_validated_sketches(
+    snapshot: &mut DocumentSnapshot,
+    before: &DocumentSnapshot,
+    options: SolveOptions,
+) -> Result<(), SketchError> {
+    let mut outcome = snapshot.solve_pending_document_sketches(options, || false);
+    for report in &outcome.report.reports {
+        let geometry = outcome.candidate.get(report.sketch)?.geometry();
+        if !geometry.has_owned_relations() {
+            continue;
+        }
+        let owners = geometry.corner_owners();
+        let failed = match &report.result {
+            Err(_) => true,
+            Ok(solved) => {
+                solved.numerical().termination
+                    != oblikovati_solve::nonlinear::SolveTermination::Converged
+            }
+        };
+        if !failed {
+            continue;
+        }
+        for owner in owners {
+            if !corner_inputs_changed(before, snapshot, report.sketch, owner)? {
+                continue;
+            }
+            let points = outcome
+                .candidate
+                .get(report.sketch)?
+                .geometry()
+                .corner_related_points(owner)?;
+            let anchors = snapshot.resolve_selected_sketch_projections(report.sketch, &points)?;
+            outcome.candidate.recompute_corner_component(
+                report.sketch,
+                owner,
+                &snapshot.parameters,
+                &anchors,
+                options,
+            )?;
+        }
+    }
+    snapshot.sketches = outcome.candidate;
+    Ok(())
+}
+fn corner_inputs_changed(
+    before: &DocumentSnapshot,
+    after: &DocumentSnapshot,
+    sketch: DocumentSketchId,
+    owner: oblikovati_model::sketch::SketchEntityId,
+) -> Result<bool, SketchError> {
+    let after_geometry = after.sketches.get(sketch)?.geometry();
+    let Ok(before_sketch) = before.sketches.get(sketch) else {
+        return Ok(true);
+    };
+    if !before_sketch.geometry().same_recipe(after_geometry) {
+        return Ok(true);
+    }
+    if after_geometry
+        .corner_related_parameters(owner)?
+        .into_iter()
+        .any(|id| before.parameters.model_value(id) != after.parameters.model_value(id))
+    {
+        return Ok(true);
+    }
+    let points = after_geometry.corner_related_points(owner)?;
+    Ok(relevant_projections(before, sketch, &points)
+        != relevant_projections(after, sketch, &points))
+}
+fn relevant_projections(
+    snapshot: &DocumentSnapshot,
+    sketch: DocumentSketchId,
+    points: &[oblikovati_model::sketch::SketchEntityId],
+) -> Result<Vec<oblikovati_model::sketch::SketchPoint2D>, SketchError> {
+    snapshot.resolve_selected_sketch_projections(sketch, points)
 }

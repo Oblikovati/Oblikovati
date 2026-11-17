@@ -1,0 +1,16 @@
+{
+  "kind": "integration test",
+  "application_commit": "a4f94c9bd764aaf75e80a9ad4509143a661226a5",
+  "api_revision": "a87a7fc945232c1d73c67c6dcfd08967e4738aa3",
+  "command": "cargo test --locked --offline -p oblikovati-automation --test queries",
+  "result": {
+    "passed": 785,
+    "failed": 0,
+    "ignored": 0
+  },
+  "scope": "Automation integration tests, including associative sketch entities and recompute/reload.",
+  "limitations": [
+    "Does not establish GUI acceptance or a released API contract.",
+    "Full local gate remains open (#3965)."
+  ]
+}

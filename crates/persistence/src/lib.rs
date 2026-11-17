@@ -33,3 +33,5 @@ pub mod theme_file_preferences;
 pub mod theme_lifecycle;
 
 mod preference_yaml_guard;
+
+mod preference_revision;

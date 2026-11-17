@@ -91,19 +91,18 @@ Last checked: 2026-11-16 on `rust-work`. Refresh from current evidence at each c
   `receipts/2026-11-16-new-sketch-current-18d90af/`.
   The zero-radius circle OS-input check passed (#4012); see `receipts/2026-11-16-circle-os-4012/`.
   These are diagnostics and supporting observations, not verified acceptance.
-- `rust-work` is local and has not passed the full pre-push gate. All 20 former
-  application PR heads were merged locally and their PRs closed. Do not remove
-  their remaining remote branches until the consolidated work is safely pushed.
-- The full gate needs a released API contract (#3965). The combined local API
-  candidate is `a87a7fc` on `work/api-release-3965`; no release or hosted CI
+- `rust-work` is pushed to `origin/rust-work` at `a72c2a23c`. The 20 former
+  feature refs were removed after their work was retained in `rust-work` or
+  `origin/go-legacy`. The full pre-push gate has not passed.
+- The full gate needs a released API contract (#3965). The combined API
+  candidate is `a87a7fc` on remote `work/api-release-3965`; no release or hosted CI
   result exists for it. The full-scope duplication scan reports 1.0389%.
   API #304 still needs the scenario owner's Move policy clarifications. The
   next release must also include the user-approved driving-dimension behavior
   for existing sketch creation calls (#187).
-- The #187 host implementations remain unmerged pending the released API pin:
-  Rust `work/host-expressions-187` at `3b77b8dbc`, and Go
-  `work/go-associative-187` at `1649e3cad`. Their focused and affected-package
-  suites passed against the draft API. The Rust adapter's full suite fails on
+- The #187 Rust host work is merged into `rust-work` against the draft API;
+  the Go `work/go-associative-187` branch at `1649e3cad` remains unmerged.
+  Their focused and affected-package suites passed against the draft API. The Rust adapter's full suite fails on
   the clean-base Martensite #406 ellipse test. The Go branch's normal hook
   passed; its full pre-push gate has not run. The Go branch includes the #4027
   cache race fix; concurrent sketch mutation (#4028) and stale picks after

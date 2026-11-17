@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
+mod corner;
 use super::{
     PlanarConstraint, Sketch2D, SketchConstraint, SketchError, SketchRelationId,
     residual::{PlanarEquation, PreparedConstraint},
@@ -7,6 +8,7 @@ use crate::{
     parameter::ParameterCollection,
     quantity::{Dimension, Quantity},
 };
+use corner::{corner_tangent_source, corner_trimmed_first};
 
 pub(super) struct PreparedSketch {
     pub values: Vec<f64>,
@@ -89,11 +91,7 @@ fn append_pattern_point_sources(
     prepared: &mut PreparedSketch,
 ) -> Result<(), SketchError> {
     for link in &sketch.pattern_point_links {
-        let variables = sketch
-            .point_variables(&[link.source, link.member])
-            .into_iter()
-            .map(|variable| sketch.variable_column(variable))
-            .collect::<Result<_, _>>()?;
+        let variables = pattern_point_columns(sketch, link)?;
         prepared.sources.push(PreparedConstraint {
             equation: PlanarEquation::PatternPointLink(
                 match sketch
@@ -119,12 +117,8 @@ fn append_pattern_radius_sources(
     sketch: &Sketch2D,
     prepared: &mut PreparedSketch,
 ) -> Result<(), SketchError> {
-    use super::variables::SketchVariable;
     for link in &sketch.pattern_radius_links {
-        let variables = [link.source, link.member]
-            .into_iter()
-            .map(|circle| sketch.variable_column(SketchVariable::Radius(circle)))
-            .collect::<Result<_, _>>()?;
+        let variables = pattern_radius_columns(sketch, link)?;
         prepared.sources.push(PreparedConstraint {
             equation: PlanarEquation::EqualRadius,
             projection: None,
@@ -137,11 +131,33 @@ fn append_pattern_radius_sources(
     Ok(())
 }
 
+pub(super) fn pattern_point_columns(
+    sketch: &Sketch2D,
+    link: &super::SketchPatternPointLink,
+) -> Result<Vec<usize>, SketchError> {
+    sketch
+        .point_variables(&[link.source, link.member])
+        .into_iter()
+        .map(|variable| sketch.variable_column(variable))
+        .collect()
+}
+pub(super) fn pattern_radius_columns(
+    sketch: &Sketch2D,
+    link: &super::SketchPatternRadiusLink,
+) -> Result<Vec<usize>, SketchError> {
+    [link.source, link.member]
+        .into_iter()
+        .map(|circle| sketch.variable_column(super::variables::SketchVariable::Radius(circle)))
+        .collect()
+}
 fn prepared_source(
     sketch: &Sketch2D,
     constraint: &SketchConstraint,
     parameters: &ParameterCollection<u64>,
 ) -> Result<PreparedConstraint, SketchError> {
+    if let Some(source) = corner_tangent_source(sketch, constraint)? {
+        return Ok(source);
+    }
     let equation = equation(sketch, constraint, parameters)?;
     super::circular_compile::prepare_relation(sketch, &constraint.relation, equation)
 }
@@ -170,11 +186,25 @@ fn equation(
             target: offset_target(constraint, parameter, parameters, linear_diameter)?,
             side,
         },
+        PlanarConstraint::CornerSetback { parameter, .. } => PlanarEquation::CornerSetback {
+            target: positive_length_target(constraint, parameter, parameters, "corner setback")?,
+        },
         PlanarConstraint::OffsetSplineDistance {
-            parameter, side, ..
+            parameter,
+            side,
+            signed,
+            ..
         } => PlanarEquation::ScalarLength {
-            target: length_target(constraint, parameter, parameters)?,
-            domain: super::scalar_length::LengthVariableDomain::Signed(side),
+            target: if signed {
+                signed_length_target(constraint, parameter, parameters)?
+            } else {
+                length_target(constraint, parameter, parameters)?
+            },
+            domain: super::scalar_length::LengthVariableDomain::Signed(if signed {
+                super::LineContactSide::Left
+            } else {
+                side
+            }),
         },
         PlanarConstraint::EqualRadius { .. } => PlanarEquation::EqualRadius,
         PlanarConstraint::Diameter { parameter, .. } => PlanarEquation::ScalarLength {
@@ -216,7 +246,14 @@ fn equation(
             PlanarEquation::ArcMidpoint(sketch.arc(arc)?.counter_clockwise)
         }
         PlanarConstraint::Midpoint { .. } => PlanarEquation::Midpoint,
-        PlanarConstraint::PointOnLine { .. } => PlanarEquation::PointOnLine,
+        PlanarConstraint::PointOnLine { line, .. } => {
+            match sketch.owned_relations.get(&constraint.id) {
+                Some(owner) => PlanarEquation::CornerLine {
+                    trimmed_first: corner_trimmed_first(sketch, line, *owner)?,
+                },
+                None => PlanarEquation::PointOnLine,
+            }
+        }
         PlanarConstraint::Angle {
             parameter, turn, ..
         }
@@ -248,6 +285,24 @@ fn equation(
             target: length_target(constraint, parameter, parameters)?,
         },
     })
+}
+fn signed_length_target(
+    constraint: &SketchConstraint,
+    parameter: u64,
+    parameters: &ParameterCollection<u64>,
+) -> Result<f64, SketchError> {
+    dimensional_target(
+        constraint,
+        parameter,
+        parameters,
+        DimensionDomain {
+            kind: Dimension::Length,
+            minimum: f64::NEG_INFINITY,
+            maximum: f64::INFINITY,
+            label: "signed length",
+            expected: "a healthy finite signed working-unit length",
+        },
+    )
 }
 fn length_target(
     constraint: &SketchConstraint,

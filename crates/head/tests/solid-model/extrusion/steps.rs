@@ -229,3 +229,107 @@ fn unconstrained_rectangle_resumes_waiting_extrusion_with_preview() {
     waiting_extrusion_shows_default_preview(&mut world);
     world.close();
 }
+
+#[test]
+fn invalid_distance_then_valid_distance_restores_the_preview() {
+    let mut world = ApplicationWorld::new();
+    selected_rectangle_preview(&mut world);
+    replace_extrusion_distance(&mut world, "0");
+    assert!(
+        !world.state().extrude_preview_active,
+        "invalid distance must clear preview"
+    );
+    replace_extrusion_distance(&mut world, "8");
+    assert!(
+        world.state().extrude_preview_active,
+        "valid distance must restore preview"
+    );
+    let capture = super::capture_framebuffer(&mut world.app().window.native);
+    let windows = super::diagnostics::window_occlusions();
+    assert!(super::solid_visibility::visible_preview_fill(
+        &capture, &windows
+    ));
+    expect_unmodified_source(&mut world);
+    world.close();
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn preview_tracks_a_named_parameter_edit_and_cancel() {
+    use oblikovati_api::{client::Client, wire::ParameterSetArgs};
+    let mut world = ApplicationWorld::new();
+    selected_rectangle_preview(&mut world);
+    let parameter = |expression: &str| ParameterSetArgs {
+        name: "depth".into(),
+        expression: expression.into(),
+        ..Default::default()
+    };
+    Client::new(world.app().owner.document_host())
+        .parameters()
+        .add(&parameter("10 mm"))
+        .unwrap();
+    world.pump(Vec::new());
+    replace_extrusion_distance(&mut world, "depth");
+    assert!(world.state().extrude_preview_active);
+    crate::HeadWindow::navigate_view(
+        &mut world.app().window.native,
+        oblikovati_viewport::ViewportNavigation::Home { margin: 0.1 },
+    )
+    .unwrap();
+    world.pump(Vec::new());
+    let before_scene: Vec<_> = world
+        .app()
+        .window
+        .scene_triangles
+        .iter()
+        .map(|triangle| triangle.positions)
+        .collect();
+    let before = super::capture_framebuffer(&mut world.app().window.native);
+    Client::new(world.app().owner.document_host())
+        .parameters()
+        .set(&parameter("20 mm"))
+        .unwrap();
+    for _ in 0..4 {
+        world.pump(Vec::new());
+    }
+    assert_ne!(
+        world
+            .app()
+            .window
+            .scene_triangles
+            .iter()
+            .map(|triangle| triangle.positions)
+            .collect::<Vec<_>>(),
+        before_scene,
+        "parameter edit must update preview geometry"
+    );
+    let after = super::capture_framebuffer(&mut world.app().window.native);
+    let windows = super::diagnostics::window_occlusions();
+    assert!(viewport_interaction::preview_changed_outside_windows(
+        &before, &after, &windows
+    ));
+    cancel_extrusion(&mut world);
+    cancelled_preview_keeps_sketch(&mut world);
+    world.close();
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn native_invalid_distance_recovery_and_cancel_preserve_the_sketch() {
+    let mut world = ApplicationWorld::new();
+    selected_rectangle_preview(&mut world);
+    viewport_interaction::replace_distance_native(&mut world, "0");
+    zero_is_rejected(&mut world);
+    assert!(!world.state().extrude_preview_active);
+    viewport_interaction::replace_distance_native(&mut world, "8");
+    positive_distance_is_accepted(&mut world);
+    assert!(world.state().extrude_preview_active);
+    let capture = super::capture_framebuffer(&mut world.app().window.native);
+    let windows = super::diagnostics::window_occlusions();
+    assert!(super::solid_visibility::visible_preview_fill(
+        &capture, &windows
+    ));
+    viewport_interaction::click_text_native(&mut world, "Cancel");
+    cancelled_preview_keeps_sketch(&mut world);
+    world.close();
+}

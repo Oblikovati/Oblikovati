@@ -125,6 +125,25 @@ impl DocumentSnapshot {
         let placed = self.sketches.get(id)?;
         placed.projection_inputs(&CurrentSketchProjectionInputs::new(self))
     }
+    /// Resolve only selected projection anchors while retaining errors from those sources.
+    /// Example: `snapshot.resolve_selected_sketch_projections(id, &anchors)?` for an isolated component.
+    pub fn resolve_selected_sketch_projections(
+        &self,
+        sketch: DocumentSketchId,
+        anchors: &[crate::sketch::SketchEntityId],
+    ) -> Result<Vec<SketchPoint2D>, SketchError> {
+        let placed = self.sketches.get(sketch)?;
+        let current = CurrentSketchProjectionInputs::new(self);
+        let inputs = BorrowedSketchProjectionInputs {
+            datums: current.datums.as_ref(),
+        };
+        placed
+            .point_projections()
+            .iter()
+            .filter(|binding| anchors.contains(&binding.anchor))
+            .map(|binding| inputs.binding_point(placed, *binding))
+            .collect()
+    }
     /// Project a current datum point into a current sketch frame without requiring a solved sketch.
     /// Example: `snapshot.project_datum_point_into_sketch(id, WorkPointReference::Origin)?`.
     pub fn project_datum_point_into_sketch(

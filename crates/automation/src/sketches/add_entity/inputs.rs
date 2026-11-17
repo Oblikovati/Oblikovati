@@ -107,7 +107,7 @@ fn require_point_count(
     }
     Ok(())
 }
-fn length_expression(snapshot: &DocumentSnapshot, source: &str) -> Result<f64, Error> {
+pub(super) fn length_expression(snapshot: &DocumentSnapshot, source: &str) -> Result<f64, Error> {
     snapshot.parameters.evaluate_scalar_expression(source, Dimension::Length).map(|quantity| quantity.value).map_err(|cause| Error(format!("sketch.addEntity length expression {source:?}: expected a healthy finite length: {cause}")))
 }
 impl PrimitiveConstructor {

@@ -326,7 +326,15 @@ fn expect_fills_view(world: &mut ApplicationWorld) {
 #[then("the selected face appears larger and fills most of the viewport")]
 #[then("the face appears larger and fills most of the viewport")]
 fn fills_view(world: &mut ApplicationWorld) {
-    expect_fills_view(world);
+    if world.state().model_face_chosen {
+        let capture = super::capture_framebuffer(&mut world.app().window.native);
+        let windows = super::diagnostics::window_occlusions();
+        assert!(super::solid_visibility::visible_selected_face_fill(
+            &capture, &windows
+        ));
+    } else {
+        expect_fills_view(world);
+    }
     let edges = world.observed_zoom_face_edges.clone();
     assert!(!edges.is_empty(), "expected the clicked face boundary");
     face_selection_regression::assert_face_is_framed(world, &edges);

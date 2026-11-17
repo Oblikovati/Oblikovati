@@ -214,3 +214,50 @@ fn drag_pan_with_x11(world: &mut ApplicationWorld) {
     super::x11_input::left_button(destination, false);
     world.pump(Vec::new());
 }
+
+#[cfg(target_os = "linux")]
+#[test]
+fn x11_pan_context_menu_owns_right_click_and_restores_part_menu() {
+    let mut world = ApplicationWorld::new();
+    open_block(&mut world);
+    let before = camera(&mut world);
+    let document = world.state().document;
+    start_pan_with_x11(&mut world);
+    open_pan_menu_with_x11(&mut world);
+    pan_menu(&mut world);
+    world.save_capture("pan-context-4059");
+    choose_pan_menu_with_x11(&mut world, "Done");
+    world.expect_ready();
+    assert_eq!(camera(&mut world), before);
+    start_pan_with_x11(&mut world);
+    open_pan_menu_with_x11(&mut world);
+    choose_pan_menu_with_x11(&mut world, "Zoom");
+    world.expect_status("Zoom:");
+    super::x11_input::press_escape();
+    world.pump(Vec::new());
+    world.expect_ready();
+    assert_eq!(camera(&mut world), before);
+    assert_eq!(world.state().document, document);
+    super::x11_input::right_click(EMPTY_VIEW);
+    world.pump(Vec::new());
+    world.expect_text("Look At");
+    super::x11_input::press_escape();
+    world.pump(Vec::new());
+    world.close();
+}
+
+#[cfg(target_os = "linux")]
+fn open_pan_menu_with_x11(world: &mut ApplicationWorld) {
+    super::x11_input::right_click(EMPTY_VIEW);
+    world.pump(Vec::new());
+    world.pump(Vec::new());
+    world.expect_status("Pan:");
+}
+
+#[cfg(target_os = "linux")]
+fn choose_pan_menu_with_x11(world: &mut ApplicationWorld, label: &str) {
+    let position = super::rendered_label_center(label);
+    super::x11_input::click(position);
+    world.pump(Vec::new());
+    world.pump(Vec::new());
+}

@@ -5,6 +5,7 @@ type DimensionShape = (DimensionConstraintKind, &'static str, bool);
 pub(super) fn require(relation: &PlanarConstraint) -> Result<DimensionShape, Error> {
     use PlanarConstraint::*;
     let shape = match relation {
+        CornerSetback { .. } => (DIM_CONSTRAINT_DISTANCE, "", false),
         Distance { measure, .. } => (DIM_CONSTRAINT_DISTANCE, orientation(*measure), false),
         EllipseRadius { .. } => (DIM_CONSTRAINT_ELLIPSE_RADIUS, "", false),
         EllipseMinorRadius { .. } => (DIM_CONSTRAINT_ELLIPSE_MINOR_RADIUS, "", false),

@@ -12,6 +12,9 @@ pub enum SketchDimensionalConstraintCreation {
 /// Dimensions whose authored relation needs no geometric branch selection.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum MeasuredDimensionOperands {
+    CornerSetback {
+        points: [SketchEntityId; 3],
+    },
     Distance {
         points: [SketchEntityId; 2],
         measure: DistanceMeasure,
@@ -30,6 +33,9 @@ pub enum MeasuredDimensionOperands {
     },
     ArcLength {
         arc: SketchEntityId,
+    },
+    SignedOffsetSpline {
+        offset: SketchEntityId,
     },
 }
 /// Branch-sensitive operands; arrays name their role and retain the API operand order.
@@ -98,6 +104,7 @@ impl SketchDimensionalConstraintCreation {
 impl MeasuredDimensionOperands {
     fn relation(&self, parameter: u64) -> PlanarConstraint {
         match *self {
+            Self::CornerSetback { points } => PlanarConstraint::CornerSetback { points, parameter },
             Self::Distance { points, measure } => PlanarConstraint::Distance {
                 points,
                 measure,
@@ -112,6 +119,12 @@ impl MeasuredDimensionOperands {
             Self::Radius { curve } => PlanarConstraint::Radius { curve, parameter },
             Self::Diameter { curve } => PlanarConstraint::Diameter { curve, parameter },
             Self::ArcLength { arc } => PlanarConstraint::ArcLength { arc, parameter },
+            Self::SignedOffsetSpline { offset } => PlanarConstraint::OffsetSplineDistance {
+                offset,
+                parameter,
+                side: super::LineContactSide::Left,
+                signed: true,
+            },
         }
     }
 }

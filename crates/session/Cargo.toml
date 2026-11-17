@@ -16,7 +16,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 oblikovati-solve = { path = "../solve" }
 oblikovati-model = { path = "../model" }
-oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "a8e651bc537e516953c7d9313792719e5b474a25", version = "=0.159.0" }
+oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "a87a7fc945232c1d73c67c6dcfd08967e4738aa3", version = "=0.159.0" }
 oblikovati-persistence = { path = "../persistence" }
 
 [dev-dependencies]
