@@ -73,8 +73,8 @@ fn grows_expected_axes(world: &mut ApplicationWorld, direction: String) {
     assert_eq!(direction, expected);
     let before = world.window_frame_before.unwrap();
     let after = super::x11_input::application_bounds();
-    for axis in 0..2 {
-        super::main_window_frame_native::verify_resize_axis(before, after, axis, axes[axis]);
+    for (axis, direction) in axes.into_iter().enumerate() {
+        super::main_window_frame_native::verify_resize_axis(before, after, axis, direction);
     }
 }
 #[then("the opposite boundary stays fixed")]
