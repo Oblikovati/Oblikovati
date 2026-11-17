@@ -65,11 +65,11 @@ Last checked: 2026-11-16 on `rust-work`. Refresh from current evidence at each c
   projection-only diagnostic and native hover run are recorded in
   `receipts/2026-11-16-glyph-projection-4035/`; 60 fps remains unproven.
 - Application closing (#4030) has a native close guard and save prompt. The
-  current live feature passed 3/3 scenarios in an X11 diagnostic at `2dee60eef`;
-  see `receipts/2026-11-16-application-closing-4030/`. The feature is in the
-  pinned snapshot and its live hash matches. The diagnostic used unversioned
-  source; two scenarios have reference capture gaps, and #3978 prevents a
-  verified acceptance claim. A wider GUI run also found the clean-base #3850
+  pinned feature passed 3/3 scenarios in an X11 diagnostic at `e9c57772c`;
+  see `receipts/2026-11-17-application-closing-pinned-4030/`. Its live hash
+  matches the local snapshot derived from unversioned source. Two scenarios
+  have reference capture gaps, and #3978 prevents a verified acceptance claim.
+  The multi-document once-per-operation prompt remains open (#4056). A wider GUI run also found the clean-base #3850
   UI-scale test failure.
 - Martensite v0.13.1 is pinned at `bef25f47548431c8f128f08f66a1f719bcee4982`
   (#4025). The adapter and native cube checks passed; the curved profile
