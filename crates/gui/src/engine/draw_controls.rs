@@ -174,12 +174,17 @@ impl GuiFrameEngine {
             request.commands.document.filter(|_| !self.home.active);
         if !self.home.active {
             let mut menu_actions = Vec::new();
+            let mut repeat_wheel = self.orientation.can_repeat_wheel().then_some(false);
             self.part_context_open = crate::part_context_menu::canvas_menu(
                 ui,
                 &request.commands,
                 area,
                 &mut menu_actions,
+                &mut repeat_wheel,
             );
+            if repeat_wheel == Some(true) {
+                self.orientation.repeat_wheel();
+            }
             for action in &mut menu_actions {
                 if *action == GuiShellAction::OpenExtrude {
                     *action = crate::extrude_dialog::start_action(&request.commands);

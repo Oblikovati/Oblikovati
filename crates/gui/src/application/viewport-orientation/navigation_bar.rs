@@ -270,7 +270,9 @@ impl NavigationBar {
         actions: &mut Vec<GuiShellAction>,
     ) {
         let Some(mode) = self.mode else {
-            self.repeat_menu(ui);
+            if request.commands.authoring != crate::GuiAuthoringContext::Part {
+                self.repeat_menu(ui);
+            }
             return;
         };
         self.view_menu(ui, mode, actions);
@@ -291,6 +293,12 @@ impl NavigationBar {
             GuiNavigationMode::ZoomSelected => self.face_click(ui, request, over_panel, actions),
             _ => self.drag(ui, mode, over_panel, actions),
         }
+    }
+    pub(super) fn can_repeat_wheel(&self) -> bool {
+        self.wheel.can_repeat()
+    }
+    pub(super) fn repeat_wheel(&mut self) {
+        self.wheel.request();
     }
     /// With nothing running, a right-click on the view offers the wheel that was last up.
     fn repeat_menu(&mut self, ui: &Ui) {

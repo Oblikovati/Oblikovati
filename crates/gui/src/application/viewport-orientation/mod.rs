@@ -406,6 +406,12 @@ impl OrientationControl {
         }
     }
     /// A frame must follow so the dialog opens without waiting for an event.
+    pub(crate) fn can_repeat_wheel(&self) -> bool {
+        self.navigation.can_repeat_wheel()
+    }
+    pub(crate) fn repeat_wheel(&mut self) {
+        self.navigation.repeat_wheel();
+    }
     pub(crate) fn needs_frame(&self) -> bool {
         self.options.needs_frame() || self.navigation.needs_frame()
     }
