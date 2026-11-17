@@ -37,6 +37,7 @@ pub(crate) struct CreateBlockDialog {
     description: String,
     visible: bool,
     pending: Option<(String, bool)>,
+    pending_dock_close: bool,
 }
 impl DockableWindow for CreateBlockDialog {}
 impl CreateBlockDialog {
@@ -46,6 +47,13 @@ impl CreateBlockDialog {
         self.description.clear();
         self.visible = false;
         self.pending = None;
+    }
+    /// Finish a deferred dock close and request another frame (#4073).
+    /// Example: `dialog.flush_dock_close(ui)` after drawing the dialog.
+    pub(crate) fn flush_dock_close(&mut self, ui: &Ui) -> bool {
+        let pending = std::mem::take(&mut self.pending_dock_close);
+        Self::close_dockable(ui, "Create Block", pending);
+        pending
     }
     pub(crate) fn panel(
         &mut self,
@@ -59,8 +67,10 @@ impl CreateBlockDialog {
             }
             self.document = None;
         }
+        let was_open = self.document.is_some();
         self.finish_pending(state, actions);
         if self.document.is_none() {
+            self.pending_dock_close = was_open;
             return;
         }
         Self::fit_dockable(ui, "Create Block", [620., 260.], [390., 245.]);
@@ -69,6 +79,7 @@ impl CreateBlockDialog {
             self.fields(ui);
             self.buttons(ui, state, actions);
         });
+        Self::close_dockable(ui, "Create Block", open && self.document.is_none());
         if !open && self.document.take().is_some() {
             actions.push(GuiShellAction::SelectBlockGeometry(false));
         }
