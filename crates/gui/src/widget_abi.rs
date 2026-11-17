@@ -2,6 +2,7 @@
 use imgui::{Condition, ImColor32, ImString, SelectableFlags, Ui};
 unsafe extern "C" {
     fn oblikovati_gui_window_is_moving() -> bool;
+    fn oblikovati_gui_drag_current_window() -> bool;
     fn oblikovati_gui_workspace_dockspace(width: f32, height: f32) -> u32;
     fn oblikovati_gui_outer_dockspace(width: f32, height: f32) -> u32;
     fn oblikovati_gui_dockspace_center(
@@ -39,6 +40,11 @@ unsafe extern "C" {
     );
 }
 
+/// Transfer an active tab drag to its owning window.
+/// Example: call `drag_current_window(ui)` while the Model tab is held.
+pub(crate) fn drag_current_window(_: &Ui) -> bool {
+    unsafe { oblikovati_gui_drag_current_window() }
+}
 /// Let workspace targets receive pointer input while an ImGui window is dragged.
 /// Example: `moving_window(ui)` when drawing a fixed document-tab strip.
 pub(crate) fn moving_window(_: &Ui) -> bool {

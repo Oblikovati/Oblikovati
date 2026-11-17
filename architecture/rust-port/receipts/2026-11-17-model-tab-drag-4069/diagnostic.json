@@ -1,0 +1,11 @@
+{
+  "application_base": "f5ffd32fa",
+  "source_feature_sha256": null,
+  "provenance": "Native regression tests; not a pinned scenario acceptance run.",
+  "results": [
+    "Inner Model tab floats and redocks with a visible preview.",
+    "Dragging Model from a shared node leaves Material Browser docked.",
+    "Head clippy all targets and Windows GNU cross-build passed."
+  ],
+  "environment": "Linux Xvfb with Mesa lavapipe"
+}

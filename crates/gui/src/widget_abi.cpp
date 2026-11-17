@@ -25,6 +25,18 @@ void draw_ribbon_icon(const char* label, std::uint32_t texture, ImVec2 icon, boo
 }
 }
 extern "C" {
+bool oblikovati_gui_drag_current_window() {
+    ImGuiWindow* window = ImGui::GetCurrentWindow();
+    if (window->DockNode) {
+        ImGui::DockContextQueueUndockWindow(ImGui::GetCurrentContext(), window);
+        return false;
+    }
+    ImGui::StartMouseMovingWindow(window);
+    // ImGui starts docking only for a title-bar grip; the inner Model tab is below it (#4069).
+    ImGui::GetCurrentContext()->ActiveIdClickOffset.y = ImGui::GetFrameHeight() * 0.5f;
+    return true;
+}
+
 bool oblikovati_gui_window_is_moving() {
     return ImGui::GetCurrentContext()->MovingWindow != nullptr;
 }
