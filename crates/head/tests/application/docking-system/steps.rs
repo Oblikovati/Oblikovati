@@ -4,6 +4,8 @@ use super::{ApplicationWorld, diagnostics, quick_access_icons, workspace_layout}
 use cucumber::{given, then, when};
 use workspace_layout::dockspace_native::{native_drag, resize_boundary, viewport};
 
+#[path = "edges_scenario.rs"]
+mod edges_scenario;
 #[path = "float_scenario.rs"]
 mod float_scenario;
 #[path = "preview_scenario.rs"]
