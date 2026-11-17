@@ -65,6 +65,7 @@ impl<
         depth_window: Option<f64>,
         toggle: bool,
     ) -> Result<bool, String> {
+        self.model_pick_cue = None;
         let Some(allowed) = self.part_pick_filter(document, depth_window.is_some()) else {
             return Ok(false);
         };
@@ -100,7 +101,7 @@ impl<
         if allowed.accepts(oblikovati_session::selection::SelectionKind::WorkPlane) {
             self.append_visible_plane_hits(document, line, &mut candidates)?;
         }
-        let picked = candidates.resolve(
+        let picked = candidates.resolve_hit(
             &allowed,
             &self.ambient_selection,
             depth_window.unwrap_or(0.),
@@ -112,7 +113,14 @@ impl<
                 return Ok(true);
             }
         };
-        self.apply_part_candidate(document, picked, toggle)
+        let cue = if toggle {
+            None
+        } else {
+            self.face_cue_from_hit(document, line, picked.as_ref())?
+        };
+        let changed = self.apply_part_candidate(document, picked.map(|hit| hit.target), toggle)?;
+        self.model_pick_cue = cue;
+        Ok(changed)
     }
     fn part_pick_filter(
         &self,

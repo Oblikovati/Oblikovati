@@ -18,6 +18,7 @@ impl GuiFrameEngine {
         );
         let ui = self.context.frame();
         crate::sketch_pick_cue::draw_sketch_pick_cue(ui, request);
+        crate::sketch_pick_cue::draw_model_pick_cue(ui, request);
         self.workspace
             .sync_origin_document(request.commands.document);
         crate::dimension_labels::draw_dimension_labels(ui, request);

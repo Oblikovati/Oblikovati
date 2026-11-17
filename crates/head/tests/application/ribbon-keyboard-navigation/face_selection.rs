@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Face selection while the ribbon key tips are open.
 use super::*;
+#[cfg(target_os = "linux")]
+use crate::HeadWindow;
 
 #[when("the user presses Alt and then the 3D Model tab key tip")]
 fn show_commands(world: &mut ApplicationWorld) {
@@ -68,5 +70,56 @@ fn choosing_a_feature_replaces_face_selection_and_its_toolbar() {
     world.click_text("Extrude1");
     assert!(!world.state().model_face_chosen);
     world.run_in_window("##selection-toolbar", "EditSketch");
+    world.close();
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn native_face_click_cue_retires_when_pointer_leaves() {
+    let mut world = ApplicationWorld::new();
+    super::super::workspace_layout::browser_feature::open_visible_extruded_part(&mut world);
+    world.click_text("Select");
+    world.click_text("Faces");
+    super::super::x11_input::focus_window();
+    let capture = super::super::capture_framebuffer(&mut world.app().window.native);
+    let windows = super::super::diagnostics::window_occlusions();
+    let (low, high) = super::super::solid_visibility::visible_fixture_bounds(&capture, &windows)
+        .expect("expected a visible solid face outside the UI");
+    let at = [
+        ((low[0] + high[0]) / 2) as i32,
+        ((low[1] + high[1]) / 2) as i32,
+    ];
+    super::super::x11_input::move_pointer(at);
+    world.pump(Vec::new());
+    super::super::x11_input::click(at);
+    world.pump(Vec::new());
+    assert!(
+        world.state().model_face_chosen,
+        "native click at {at:?}: expected a selected face; text: {}",
+        world.text()
+    );
+    toolbar_visible(&mut world);
+    let cue = world.state().model_pick_cue.clone();
+    assert!(cue.is_some(), "selected face should retain its model cue");
+    let projected = world
+        .app()
+        .window
+        .model_pixel(cue.unwrap().position)
+        .unwrap();
+    assert!(
+        (projected[0] - at[0]).abs() <= 12 && (projected[1] - at[1]).abs() <= 12,
+        "cue projects to {projected:?}, click is {at:?}"
+    );
+    world.expect_text("1. Face");
+    super::super::x11_input::move_pointer([at[0] + 40, at[1] + 40]);
+    world.pump(Vec::new());
+    world.expect_no_text("1. Face");
+    assert!(
+        world.state().model_face_chosen,
+        "pointer movement should retain the face"
+    );
+    super::super::x11_input::move_pointer(at);
+    world.pump(Vec::new());
+    world.expect_no_text("1. Face");
     world.close();
 }

@@ -12,6 +12,20 @@ pub struct GuiSketchPickCue {
     pub position: [f64; 2],
 }
 
+/// A transient cue anchored to an analytically selected model face.
+/// Example: project `position` to update `pixel` when the view changes.
+#[derive(Clone, Debug, PartialEq)]
+pub struct GuiModelPickCue {
+    pub pixel: [i32; 2],
+    pub position: [f64; 3],
+}
+
+pub(crate) fn draw_model_pick_cue(ui: &imgui::Ui, request: &GuiFrameRequest) {
+    if let Some(cue) = request.commands.model_pick_cue.as_ref() {
+        draw_positioned_cue(ui, request, cue.pixel, "1. Face");
+    }
+}
+
 pub(crate) fn draw_sketch_pick_cue(ui: &imgui::Ui, request: &GuiFrameRequest) {
     let Some(cue) = request.commands.sketch_pick_cue.as_ref() else {
         return;
@@ -19,17 +33,18 @@ pub(crate) fn draw_sketch_pick_cue(ui: &imgui::Ui, request: &GuiFrameRequest) {
     if !request.commands.sketch_at_ready {
         return;
     }
+    draw_positioned_cue(ui, request, cue.pixel, &cue.text);
+}
+
+fn draw_positioned_cue(ui: &imgui::Ui, request: &GuiFrameRequest, pixel: [i32; 2], text: &str) {
     let scale = request.layout_scale();
     let mouse = ui.io().mouse_pos;
-    let anchor = [
-        cue.pixel[0] as f32 / scale[0],
-        cue.pixel[1] as f32 / scale[1],
-    ];
-    let size = ui.calc_text_size(&cue.text);
+    let anchor = [pixel[0] as f32 / scale[0], pixel[1] as f32 / scale[1]];
+    let size = ui.calc_text_size(text);
     let Some(position) = cue_position(anchor, mouse, size, ui.io().display_size, scale) else {
         return;
     };
-    draw_cue(ui, position, size, &cue.text);
+    draw_cue(ui, position, size, text);
 }
 
 fn draw_cue(ui: &imgui::Ui, position: [f32; 2], size: [f32; 2], text: &str) {

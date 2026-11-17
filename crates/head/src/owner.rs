@@ -50,6 +50,8 @@ mod line_commit;
 mod metadata;
 #[path = "owner_browser.rs"]
 mod model_browser;
+#[path = "owner_model_pick_cue.rs"]
+mod model_pick_cue;
 #[path = "owner_precise_input.rs"]
 pub(crate) mod owner_precise_input;
 #[path = "owner_work_sketch.rs"]
@@ -172,6 +174,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     sketch_formats: oblikovati_api::types::SketchFormatModes,
     sketch_memory: owner_precise_input::SketchCommandMemory,
     sketch_pick_cue: Option<sketch_pick_cue::SketchPickCue>,
+    model_pick_cue: Option<model_pick_cue::ModelPickCue>,
     block_selection: Option<crate::HeadSketchEdit>,
     block_created: Option<String>,
     opened_hidden_sketch: Option<oblikovati_model::document_sketch::DocumentSketchId>,
@@ -265,6 +268,7 @@ impl<
             sketch_formats: Default::default(),
             sketch_memory: Default::default(),
             sketch_pick_cue: None,
+            model_pick_cue: None,
             block_selection: None,
             block_created: None,
             opened_hidden_sketch: None,

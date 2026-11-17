@@ -105,7 +105,7 @@ pub use commands::{
     GuiSketchLineStyle,
 };
 pub use engine::{GuiFrameEngine, GuiFrameOutput, GuiFrameRequest};
-pub use sketch_pick_cue::GuiSketchPickCue;
+pub use sketch_pick_cue::{GuiModelPickCue, GuiSketchPickCue};
 mod sketch_pick_cue;
 pub use input::{GuiInputCapture, GuiInputEvent, GuiKey, GuiModifiers, GuiPointerButton};
 pub use oblikovati_viewport::{

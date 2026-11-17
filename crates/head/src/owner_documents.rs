@@ -119,6 +119,7 @@ impl<
         if self.files.workspace().active_document() == Some(request.id) {
             return Ok(false);
         }
+        self.model_pick_cue = None;
         self.park_active_sketch_edit()?;
         Client::new(self.document_host())
             .documents()

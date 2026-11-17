@@ -31,6 +31,12 @@ pub(super) fn advance_gui(
             Err(_) => commands.sketch_pick_cue = None,
         }
     }
+    if let Some(cue) = commands.model_pick_cue.as_mut() {
+        match window.model_pixel(cue.position) {
+            Ok(pixel) => cue.pixel = pixel,
+            Err(_) => commands.model_pick_cue = None,
+        }
+    }
     commands.dimension_labels = dimension_labels::projected_dimension_labels(window, owner)?;
     commands.origin_planes = dimension_labels::origin_plane_outlines(window, &commands);
     if commands.selected_edge_count > 0 {

@@ -41,6 +41,9 @@ Last checked: 2026-11-16 on `rust-work`. Refresh from current evidence at each c
   (#4041, #4042). Ready-state point and line hover also have native mouse
   diagnostics (#4043). Rectangle selection, context-menu dismissal and clearing
   also have an X11 diagnostic (#4033); reference fixture and capture gaps remain.
+- Face selection with the Faces filter has a native X11 diagnostic for the
+  selected-face cue and its dismissal (#4048). Default-filter selection, face
+  colors and the full live scenario still need verification.
 - The 60 fps sketch target is not met on the measured GPU. A 4-segment
   pointer-motion run measured 20.738 ms median and 24.861 ms p95 at 1440 × 900;
   the 60 fps frame budget is 16.67 ms. See `receipts/2026-11-16-sketch-frame-baseline-4031/`.

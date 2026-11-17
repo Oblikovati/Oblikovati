@@ -25,6 +25,8 @@ pub struct GuiCommandState {
     pub sketch_selection: oblikovati_viewport::ViewportSketchSelection,
     /// Transient type cue for a checked canvas pick.
     pub sketch_pick_cue: Option<crate::GuiSketchPickCue>,
+    /// Transient type cue for a checked model face pick.
+    pub model_pick_cue: Option<crate::GuiModelPickCue>,
     /// Names in the active document's block registry.
     pub sketch_block_names: Vec<String>,
     /// Last block creation acknowledged by the document owner during this dialog.

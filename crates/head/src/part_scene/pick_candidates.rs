@@ -43,9 +43,9 @@ pub(crate) enum PickCoverage {
 }
 
 #[derive(Debug)]
-struct PickCandidate {
-    target: PickTarget,
-    line_parameter: f64,
+pub(crate) struct PickCandidate {
+    pub(crate) target: PickTarget,
+    pub(crate) line_parameter: f64,
 }
 
 pub(crate) struct PickCandidates {
@@ -104,6 +104,17 @@ impl PickCandidates {
         ambient: &oblikovati_session::selection::AmbientSelectionFilter,
         window: f64,
     ) -> Result<Option<PickTarget>, String> {
+        Ok(self
+            .resolve_hit(allowed, ambient, window)?
+            .map(|hit| hit.target))
+    }
+
+    pub(crate) fn resolve_hit(
+        self,
+        allowed: &oblikovati_session::selection::SelectionFilter,
+        ambient: &oblikovati_session::selection::AmbientSelectionFilter,
+        window: f64,
+    ) -> Result<Option<PickCandidate>, String> {
         if !window.is_finite() || window < 0. {
             return Err(format!(
                 "pick depth window {window}: expected a finite nonnegative distance"
@@ -131,7 +142,7 @@ fn select_ranked(
     depth: f64,
     window: f64,
     coverage: PickCoverage,
-) -> Result<Option<PickTarget>, String> {
+) -> Result<Option<PickCandidate>, String> {
     let rank = candidates
         .iter()
         .filter(|hit| hit.line_parameter - depth <= window)
@@ -153,7 +164,7 @@ fn nearest_ranked(
     candidates: Vec<PickCandidate>,
     rank: usize,
     coverage: PickCoverage,
-) -> Result<Option<PickTarget>, String> {
+) -> Result<Option<PickCandidate>, String> {
     let Some(nearest) = candidates
         .iter()
         .map(|hit| hit.line_parameter)
@@ -172,7 +183,7 @@ fn nearest_ranked(
             "pick rank {rank} ({coverage:?}): expected an unambiguous identity"
         ));
     }
-    Ok(Some(first.target))
+    Ok(Some(first))
 }
 
 #[cfg(test)]
@@ -180,6 +191,23 @@ mod tests {
     use super::*;
     fn face(id: u64) -> PickTarget {
         PickTarget::Face(oblikovati_model::feature::FeatureId(id), vec![id as u8])
+    }
+    #[test]
+    fn arbitration_retains_the_selected_face_and_its_ray_distance() {
+        use oblikovati_session::selection::{AmbientSelectionFilter, SelectionFilter};
+        let mut batch = PickCandidates::new(PickCoverage::NearestFacePerBody);
+        batch.push(face(1), 3.).unwrap();
+        batch.push(face(2), 2.).unwrap();
+        let hit = batch
+            .resolve_hit(
+                &SelectionFilter::All,
+                &AmbientSelectionFilter::default(),
+                0.,
+            )
+            .unwrap()
+            .unwrap();
+        assert_eq!(hit.target, face(2));
+        assert_eq!(hit.line_parameter, 2.);
     }
     #[test]
     fn batch_refuses_distinct_equal_depths_but_accepts_repeat_identity() {

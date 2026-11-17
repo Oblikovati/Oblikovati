@@ -457,7 +457,8 @@ impl<
         inputs: &[oblikovati_viewport::ViewportEvent],
         window: &dyn crate::HeadWindow,
     ) -> Result<bool, String> {
-        self.process_placement_inputs(inputs, window)
+        let cue_changed = self.update_model_pick_cue(inputs, window);
+        Ok(self.process_placement_inputs(inputs, window)? || cue_changed)
     }
     fn take_command_notice(&mut self) -> Option<DesktopCommandNotice> {
         self.command_notice.take()
@@ -469,6 +470,7 @@ impl<
         let serviced = self.drain_calls(budget)?;
         let changed = self.factory.take_changed() || serviced != 0;
         let changed = self.synchronize_sketch_edit() || changed;
+        let changed = self.synchronize_model_pick_cue() || changed;
         let pending = self.dispatch.pending().map_err(|error| error.to_string())? != 0;
         Ok(HeadWorkStatus {
             changed,
