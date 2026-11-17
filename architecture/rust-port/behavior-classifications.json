@@ -49431,7 +49431,18 @@
         "https://github.com/Oblikovati/Oblikovati/issues/4038"
       ],
       "state": "inventoried",
-      "last_receipt": null
+      "last_receipt": null,
+      "baseline_source_sha256": "d87eaf041fc93701e0de5c911dd3b4c0622386d184f05954a8409400e412c0d0",
+      "go_reference": "Go aa8297d1b: head/ui/close_guard.go dirtyDocuments and head/ui/close_guard_draw.go HandleClose and drawCloseModal; Go uses Save, Don't Save, Cancel rather than the scenario's Yes, No, Cancel labels.",
+      "go_test_premise": "Go head/ui/close_guard_test.go TestDirtyDocuments checks the dirty-document set; TestDocumentCloseGuardRequestsPromptOnlyForDirtyDocument covers document-tab close, not the OS application-close flow. Both passed on Linux; the scenario labels and clean/no-document application exits were not established by those tests.",
+      "api_revision": "Diagnostic 2dee60eef Cargo.lock: Oblikovati.API a8e651bc537e516953c7d9313792719e5b474a25 (unreleased; release gate #3965 remains open).",
+      "kernel_revision": "Diagnostic 2dee60eef Cargo.lock: Martensite bef25f47548431c8f128f08f66a1f719bcee4982.",
+      "kernel_capabilities": "No solid or sketch geometry operation is an oracle for application closing. Native window initialization uses the viewport backend.",
+      "platforms": "Diagnostic only: Linux X11, Xvfb 1920x1080 and Vulkan Lavapipe; macOS and Windows behavior is not established.",
+      "kernel_integration": "Close decisions come from the desktop owner and GUI save prompt, not a topology query. The native window and renderer are needed to exercise the UI path.",
+      "rust_tests": "Historical native diagnostic at 2dee60eef: architecture/rust-port/receipts/2026-11-16-application-closing-4030/; WM_DELETE_WINDOW and XTEST Cancel, fixture setup via frame-loop input. Build provenance and receipt reuse are unverified (#3978); this is not an acceptance pass.",
+      "oracle": "Pinned Gherkin close outcome and prompt assertions; Go source is a design reference with different button labels. The two no-prompt scenarios still need source-owner reference captures.",
+      "expected_result": "The close request shows the part name and Yes, No, Cancel; Cancel closes the prompt and keeps the part and application open."
     },
     {
       "id": "scenario:886b80cdc8a9c8dbf49c813c73519783870c5579bbef4897da45a919267ea6a5",
@@ -49446,7 +49457,18 @@
         "https://github.com/Oblikovati/Oblikovati/issues/4038"
       ],
       "state": "inventoried",
-      "last_receipt": null
+      "last_receipt": null,
+      "baseline_source_sha256": "d87eaf041fc93701e0de5c911dd3b4c0622386d184f05954a8409400e412c0d0",
+      "go_reference": "Go aa8297d1b: head/ui/close_guard.go dirtyDocuments and head/ui/close_guard_draw.go HandleClose and drawCloseModal; Go uses Save, Don't Save, Cancel rather than the scenario's Yes, No, Cancel labels.",
+      "go_test_premise": "Go head/ui/close_guard_test.go TestDirtyDocuments checks the dirty-document set; TestDocumentCloseGuardRequestsPromptOnlyForDirtyDocument covers document-tab close, not the OS application-close flow. Both passed on Linux; the scenario labels and clean/no-document application exits were not established by those tests.",
+      "api_revision": "Diagnostic 2dee60eef Cargo.lock: Oblikovati.API a8e651bc537e516953c7d9313792719e5b474a25 (unreleased; release gate #3965 remains open).",
+      "kernel_revision": "Diagnostic 2dee60eef Cargo.lock: Martensite bef25f47548431c8f128f08f66a1f719bcee4982.",
+      "kernel_capabilities": "No solid or sketch geometry operation is an oracle for application closing. Native window initialization uses the viewport backend.",
+      "platforms": "Diagnostic only: Linux X11, Xvfb 1920x1080 and Vulkan Lavapipe; macOS and Windows behavior is not established.",
+      "kernel_integration": "Close decisions come from the desktop owner and GUI save prompt, not a topology query. The native window and renderer are needed to exercise the UI path.",
+      "rust_tests": "Historical native diagnostic at 2dee60eef: architecture/rust-port/receipts/2026-11-16-application-closing-4030/; WM_DELETE_WINDOW and XTEST Cancel, fixture setup via frame-loop input. Build provenance and receipt reuse are unverified (#3978); this is not an acceptance pass.",
+      "oracle": "Pinned Gherkin close outcome and prompt assertions; Go source is a design reference with different button labels. The two no-prompt scenarios still need source-owner reference captures.",
+      "expected_result": "A close request exits with the saved, unchanged document open and no save-changes prompt."
     },
     {
       "id": "scenario:90d22010136b75b1fe258fadbb35be6781a37fdb71404d1ae976446cfedec62f",
@@ -49461,7 +49483,18 @@
         "https://github.com/Oblikovati/Oblikovati/issues/4038"
       ],
       "state": "inventoried",
-      "last_receipt": null
+      "last_receipt": null,
+      "baseline_source_sha256": "d87eaf041fc93701e0de5c911dd3b4c0622386d184f05954a8409400e412c0d0",
+      "go_reference": "Go aa8297d1b: head/ui/close_guard.go dirtyDocuments and head/ui/close_guard_draw.go HandleClose and drawCloseModal; Go uses Save, Don't Save, Cancel rather than the scenario's Yes, No, Cancel labels.",
+      "go_test_premise": "Go head/ui/close_guard_test.go TestDirtyDocuments checks the dirty-document set; TestDocumentCloseGuardRequestsPromptOnlyForDirtyDocument covers document-tab close, not the OS application-close flow. Both passed on Linux; the scenario labels and clean/no-document application exits were not established by those tests.",
+      "api_revision": "Diagnostic 2dee60eef Cargo.lock: Oblikovati.API a8e651bc537e516953c7d9313792719e5b474a25 (unreleased; release gate #3965 remains open).",
+      "kernel_revision": "Diagnostic 2dee60eef Cargo.lock: Martensite bef25f47548431c8f128f08f66a1f719bcee4982.",
+      "kernel_capabilities": "No solid or sketch geometry operation is an oracle for application closing. Native window initialization uses the viewport backend.",
+      "platforms": "Diagnostic only: Linux X11, Xvfb 1920x1080 and Vulkan Lavapipe; macOS and Windows behavior is not established.",
+      "kernel_integration": "Close decisions come from the desktop owner and GUI save prompt, not a topology query. The native window and renderer are needed to exercise the UI path.",
+      "rust_tests": "Historical native diagnostic at 2dee60eef: architecture/rust-port/receipts/2026-11-16-application-closing-4030/; WM_DELETE_WINDOW and XTEST Cancel, fixture setup via frame-loop input. Build provenance and receipt reuse are unverified (#3978); this is not an acceptance pass.",
+      "oracle": "Pinned Gherkin close outcome and prompt assertions; Go source is a design reference with different button labels. The two no-prompt scenarios still need source-owner reference captures.",
+      "expected_result": "A close request exits from the no-document state without a save-changes prompt."
     },
     {
       "id": "scenario:25ba30c39aff0c094a16d80539528350ba228bd55b8958f0ea4ab78f5300423f",
