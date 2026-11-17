@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Desktop window lifetime and document-owned frame dispatch. Native UI and model display remain open.
 #[cfg(any(target_os = "linux", target_os = "windows", test))]
+mod accessibility;
 mod assembly_producer;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 #[allow(unsafe_code)]
