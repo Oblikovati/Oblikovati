@@ -40,6 +40,8 @@ pub(crate) struct GuiScalePreferences {
     open: bool,
     document_units: crate::document_units::GuiDocumentUnits,
     part_draft: crate::part_options_ui::PartOptionsDraft,
+    #[cfg(test)]
+    pub(crate) scale_200_bounds: Option<[[f32; 2]; 2]>,
 }
 impl DockableWindow for GuiScalePreferences {}
 impl GuiScalePreferences {
@@ -68,7 +70,13 @@ impl GuiScalePreferences {
                 ui.text("UI");
                 ui.separator();
                 ui.text("Text size");
-                scale_choices(ui, options, actions);
+                scale_choices(
+                    ui,
+                    options,
+                    actions,
+                    #[cfg(test)]
+                    &mut self.scale_200_bounds,
+                );
                 self.part_draft.draw(ui, state.part_options, actions);
                 crate::sketch_options_ui::draw(ui, state, actions);
                 ui.is_window_focused() && ui.is_key_pressed_no_repeat(imgui::Key::Escape)
@@ -96,10 +104,20 @@ fn preference_geometry(ui: &Ui) {
         size,
     );
 }
-fn scale_choices(ui: &Ui, options: UiScaleOptions, actions: &mut Vec<GuiShellAction>) {
+fn scale_choices(
+    ui: &Ui,
+    options: UiScaleOptions,
+    actions: &mut Vec<GuiShellAction>,
+    #[cfg(test)] scale_200_bounds: &mut Option<[[f32; 2]; 2]>,
+) {
     for percent in [75_u16, 100, 125, 150, 175, 200] {
         let scale = f32::from(percent) / 100.;
-        if ui.radio_button_bool(format!("{percent}%"), options.font() == scale) {
+        let selected = ui.radio_button_bool(format!("{percent}%"), options.font() == scale);
+        #[cfg(test)]
+        if percent == 200 {
+            *scale_200_bounds = Some([ui.item_rect_min(), ui.item_rect_max()]);
+        }
+        if selected {
             // Every choice is finite and within the model bounds; retain the independently stored icon factor.
             if let Ok(updated) = UiScaleOptions::new(scale, options.icon()) {
                 actions.push(GuiShellAction::SetUiScale(updated));
