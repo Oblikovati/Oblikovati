@@ -262,3 +262,21 @@ fn minimum_viewport_keeps_part(world: &mut ApplicationWorld) {
     same_part_in_viewport(world);
     assert_eq!(&super::x11_input::application_bounds()[2..], &[640, 480]);
 }
+
+#[then("File and the ribbon tabs appear on a separate row beneath the application bar")]
+fn ribbon_tabs_beneath_bar(world: &mut ApplicationWorld) {
+    super::wireframe_ribbon::assert_controls_above_tabs(world);
+    super::wireframe_ribbon::assert_tabs_share_row(world);
+}
+#[then("the active tab's command panels are below the ribbon tab row")]
+fn panels_beneath_tabs(world: &mut ApplicationWorld) {
+    super::wireframe_ribbon::assert_panels_below_tabs(world);
+}
+#[then("the window controls remain in the application bar")]
+fn controls_remain_in_bar(world: &mut ApplicationWorld) {
+    let (position, size) = super::window_geometry("##application-window-controls").unwrap();
+    let file = world.run("File");
+    assert!(position[1] + size[1] <= file.minimum[1]);
+    let width = world.app().window.native.drawable_extent().unwrap()[0] as f32;
+    assert_eq!(position[0] + size[0], width);
+}

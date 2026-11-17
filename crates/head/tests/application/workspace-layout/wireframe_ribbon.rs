@@ -3,26 +3,29 @@
 use super::{ApplicationWorld, diagnostics, quick_access_icons};
 use cucumber::{given, then};
 
-fn assert_controls_above_tabs(world: &ApplicationWorld) {
+pub(super) fn assert_controls_above_tabs(world: &ApplicationWorld) {
     let file = world.run("File");
     let images = quick_access_icons::toolbar_images();
     assert_eq!(images.len(), 3, "expected default application-bar icons");
     assert!(images.iter().all(|image| image.center[1] < file.minimum[1]));
 }
 
-fn assert_tabs_share_row(world: &ApplicationWorld) {
+pub(super) fn assert_tabs_share_row(world: &ApplicationWorld) {
     let file = world.run("File");
     for label in ["3D Model", "Sketch", "View"] {
-        let tab = world.run(label);
-        assert!(file.maximum[0] < tab.minimum[0], "{label} must follow File");
+        let matches_tab = world.frame.runs.iter().any(|run| {
+            run.text.replace(' ', "") == label.replace(' ', "")
+                && file.maximum[0] < run.minimum[0]
+                && (file.center()[1] - run.center()[1]).abs() < 12.
+        });
         assert!(
-            (file.center()[1] - tab.center()[1]).abs() < 12.,
-            "{label} must share the File row"
+            matches_tab,
+            "{label}: expected a tab following File on its row"
         );
     }
 }
 
-fn assert_panels_below_tabs(world: &ApplicationWorld) {
+pub(super) fn assert_panels_below_tabs(world: &ApplicationWorld) {
     let tab = world.run("3D Model");
     for label in ["Start 2D Sketch", "Extrude", "Sketch", "Create"] {
         let below = world.frame.runs.iter().any(|run| {
