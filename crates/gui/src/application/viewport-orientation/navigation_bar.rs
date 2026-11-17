@@ -294,6 +294,9 @@ impl NavigationBar {
             _ => self.drag(ui, mode, over_panel, actions),
         }
     }
+    pub(super) fn owns_viewport_input(&self) -> bool {
+        self.mode.is_some()
+    }
     pub(super) fn can_repeat_wheel(&self) -> bool {
         self.wheel.can_repeat()
     }
@@ -455,6 +458,25 @@ pub(super) fn drag_command(mode: GuiNavigationMode, [dx, dy]: [f32; 2]) -> GuiVi
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn only_running_navigation_owns_viewport_input() {
+        let mut navigation = NavigationBar::default();
+        let mut actions = Vec::new();
+        assert!(!navigation.owns_viewport_input());
+        for mode in [
+            GuiNavigationMode::Pan,
+            GuiNavigationMode::Zoom,
+            GuiNavigationMode::Orbit,
+            GuiNavigationMode::ConstrainedOrbit,
+            GuiNavigationMode::ZoomWindow,
+            GuiNavigationMode::ZoomSelected,
+        ] {
+            navigation.start(mode, &mut actions);
+            assert!(navigation.owns_viewport_input());
+            navigation.end(&mut actions);
+            assert!(!navigation.owns_viewport_input());
+        }
+    }
     #[test]
     fn a_drag_becomes_the_running_commands_motion() {
         assert_eq!(
