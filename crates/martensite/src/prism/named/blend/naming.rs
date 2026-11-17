@@ -7,7 +7,7 @@ use oblikovati_model::identity::{DerivedReferenceName, ExactReferenceBindings};
 use std::collections::{BTreeMap, BTreeSet};
 
 /// Exact live and deleted names for a validated candidate result.
-pub struct FilletNamedTopology {
+pub struct BlendNamedTopology {
     live: Vec<Vec<u8>>,
     deleted: Vec<Vec<u8>>,
     pub(super) bindings: ExactReferenceBindings<Shape>,
@@ -16,7 +16,7 @@ pub struct FilletNamedTopology {
     shape: Shape,
 }
 
-impl FilletNamedTopology {
+impl BlendNamedTopology {
     pub(in crate::prism::named) fn native_edge<'a>(
         &'a self,
         history: &'a DocumentEditHistory,
@@ -77,7 +77,7 @@ impl FilletNamedTopology {
         let body = self
             .bindings
             .bind(history, document, &self.active_body, 4)?;
-        crate::checked_shape::analytic_properties(body, "named fillet result")
+        crate::checked_shape::analytic_properties(body, "named blend result")
             .map(|properties| properties.volume)
             .map_err(|cause| cause.to_string())
     }
@@ -124,7 +124,39 @@ impl FilletNamedTopology {
         document: DocumentGuid,
         edges: &[Vec<u8>],
         radius: f64,
-    ) -> Result<FilletCandidate, String> {
+    ) -> Result<BlendCandidate, String> {
+        self.blend_candidate(
+            history,
+            document,
+            edges,
+            super::BlendOperation::Fillet(radius),
+        )
+    }
+
+    /// Construct a detached chamfer from this current named result.
+    /// Example: `named.chamfer_candidate(&history, document, &[edge], 0.1)?`.
+    pub fn chamfer_candidate(
+        &self,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        edges: &[Vec<u8>],
+        distance: f64,
+    ) -> Result<BlendCandidate, String> {
+        self.blend_candidate(
+            history,
+            document,
+            edges,
+            super::BlendOperation::Chamfer(distance),
+        )
+    }
+
+    fn blend_candidate(
+        &self,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        edges: &[Vec<u8>],
+        operation: super::BlendOperation,
+    ) -> Result<BlendCandidate, String> {
         let mut bodies = Vec::new();
         let mut sources = Vec::new();
         for key in self.bindings.encoded_keys(history, document)? {
@@ -142,10 +174,10 @@ impl FilletNamedTopology {
         }
         let first = bodies
             .first()
-            .ok_or("fillet result: expected a named body")?;
+            .ok_or("blend result: expected a named body")?;
         let body = self.bindings.bind(history, document, first, 4)?.clone();
         super::build_candidate(
-            super::FilletInputTopology {
+            super::BlendInputTopology {
                 body: &body,
                 source: sources,
                 source_bodies: bodies,
@@ -156,12 +188,12 @@ impl FilletNamedTopology {
             history,
             document,
             edges,
-            radius,
+            operation,
         )
     }
 }
 
-impl FilletCandidate {
+impl BlendCandidate {
     /// Name result topology from kernel history and exact incidence.
     /// Example: `candidate.name_topology(&history, document, feature)?`.
     pub fn name_topology(
@@ -169,10 +201,10 @@ impl FilletCandidate {
         history: &DocumentEditHistory,
         document: DocumentGuid,
         feature: FeatureId,
-    ) -> Result<FilletNamedTopology, String> {
+    ) -> Result<BlendNamedTopology, String> {
         if document != self.document || !self.scope.is_current(history) {
             return Err(format!(
-                "fillet document {document}, feature {feature:?}: expected the current source evaluation in {}",
+                "blend document {document}, feature {feature:?}: expected the current source evaluation in {}",
                 self.document
             ));
         }
@@ -190,7 +222,7 @@ impl FilletCandidate {
         let mut names = Vec::new();
         for face in shapes(&self.shape, ShapeEnum::Face)? {
             let key = direct_name(&self.history, &face, 1, document, feature)?
-                .ok_or("fillet face: expected kernel history")?;
+                .ok_or("blend face: expected kernel history")?;
             names.push((key, face));
         }
         require_unique(&names)?;
@@ -226,7 +258,7 @@ impl FilletCandidate {
         faces: Vec<(Vec<u8>, Shape)>,
         edges: Vec<(Vec<u8>, Shape)>,
         vertices: Vec<(Vec<u8>, Shape)>,
-    ) -> Result<FilletNamedTopology, String> {
+    ) -> Result<BlendNamedTopology, String> {
         let body = DerivedReferenceName::new(
             document,
             feature.0,
@@ -253,7 +285,7 @@ impl FilletCandidate {
             .encoded_keys(history, document)?
             .map(<[u8]>::to_vec)
             .collect();
-        Ok(FilletNamedTopology {
+        Ok(BlendNamedTopology {
             live,
             deleted,
             bindings,
@@ -272,7 +304,7 @@ impl FilletCandidate {
             }
             if !record.deleted {
                 return Err(format!(
-                    "fillet input {:?}: expected a preserved name or kernel deletion",
+                    "blend input {:?}: expected a preserved name or kernel deletion",
                     record.name
                 ));
             }
@@ -296,7 +328,7 @@ fn shapes(shape: &Shape, kind: ShapeEnum) -> Result<Vec<Shape>, String> {
 }
 
 fn direct_name(
-    history: &[FilletHistoryRecord],
+    history: &[BlendHistoryRecord],
     output: &Shape,
     kind: u32,
     document: DocumentGuid,
@@ -327,7 +359,7 @@ fn direct_name(
         }
         (0, true) => Ok(None),
         _ => Err(format!(
-            "fillet result kind {kind}, retained {}, generated {}: expected one unambiguous history",
+            "blend result kind {kind}, retained {}, generated {}: expected one unambiguous history",
             retained.len(),
             generated.len()
         )),
@@ -353,7 +385,7 @@ fn incident_name(
     }
     if parents.is_empty() {
         return Err(format!(
-            "fillet result kind {target_kind}: expected named incident entities"
+            "blend result kind {target_kind}: expected named incident entities"
         ));
     }
     DerivedReferenceName::new(document, feature.0, target_kind, "incidence", &parents)?.encode()
@@ -363,7 +395,7 @@ fn require_unique(names: &[(Vec<u8>, Shape)]) -> Result<(), String> {
     let mut seen = BTreeMap::new();
     for (name, shape) in names {
         if seen.insert(name, shape).is_some() {
-            return Err(format!("fillet name {name:?}: expected one result entity"));
+            return Err(format!("blend name {name:?}: expected one result entity"));
         }
     }
     Ok(())
@@ -381,7 +413,7 @@ fn verify_round_trip(
             .kind;
         if !bindings.bind(history, document, key, kind)?.is_same(shape) {
             return Err(format!(
-                "fillet name {key:?}: expected exact entity round trip"
+                "blend name {key:?}: expected exact entity round trip"
             ));
         }
     }
@@ -402,7 +434,7 @@ mod tests {
             .unwrap()
             .clone();
         let face = shapes(&shape, ShapeEnum::Face).unwrap().remove(0);
-        let record = |id| FilletHistoryRecord {
+        let record = |id| BlendHistoryRecord {
             name: SemanticReferenceName::new(document, id, 1, "fixture", "face", &[1])
                 .unwrap()
                 .encode()

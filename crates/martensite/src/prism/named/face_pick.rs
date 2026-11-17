@@ -33,7 +33,7 @@ impl NamedSolid {
     }
 }
 
-impl FilletNamedTopology {
+impl BlendNamedTopology {
     /// Resolve an unambiguous nearest face; example: `body.face_key_on_line(&history, document, ray)?`.
     pub fn face_key_on_line(
         &self,

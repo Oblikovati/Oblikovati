@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Exact named topology queries for the current fillet result (#4045).
+//! Exact named topology queries for the current blend result (#4045).
 use super::*;
 use martensite_tkgeombase::gprop::GProps;
 use martensite_tktopalgo::brep_gprop::BRepGProp;
 
-impl FilletNamedTopology {
+impl BlendNamedTopology {
     /// Read analytic bounds center for a body; example: `body.body_bounds_center(&history, document, key)?`.
     pub fn body_bounds_center(
         &self,

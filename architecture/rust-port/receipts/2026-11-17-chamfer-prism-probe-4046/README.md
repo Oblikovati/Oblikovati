@@ -20,3 +20,10 @@ cargo test -p oblikovati-martensite --lib prism::fillet_prism_history_probe \
 
 Both the existing Fillet probe and the new Chamfer probe passed. Clippy passed
 for the Martensite adapter library and tests with warnings denied.
+
+The subsequent shared blend adapter supports a detached equal-distance
+Chamfer candidate and names its result from kernel history. Six focused
+tests passed for invalid inputs, unchanged source volume, name resolution,
+distance changes, multiple edges, and both Chamfer/Fillet orders. The affected Fillet test
+group passed 14 tests; one manual performance test was ignored. This does
+not yet cover feature replay, persistence, the host command, or the UI.

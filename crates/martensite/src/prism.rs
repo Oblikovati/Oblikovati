@@ -10,9 +10,9 @@ pub use certified::{
 };
 mod named;
 pub use named::{
-    CertifiedNamedPrismEvaluator, CertifiedNamedSolidEvaluator, CertifiedPrismEvidence,
-    DrawingBaseProjection, DrawingProjectedCurve, DrawingProjection, DrawingProjectionCurveKind,
-    DrawingProjectionFrame, FilletCandidate, FilletHistoryRecord, FilletNamedTopology,
+    BlendCandidate, BlendHistoryRecord, BlendNamedTopology, CertifiedNamedPrismEvaluator,
+    CertifiedNamedSolidEvaluator, CertifiedPrismEvidence, DrawingBaseProjection,
+    DrawingProjectedCurve, DrawingProjection, DrawingProjectionCurveKind, DrawingProjectionFrame,
     NamedEdgeHit, NamedPrismEvaluator, NamedPrismSnapshot, NamedSolid, PrismFaceTopology,
     PrismSurfaceKind, drawing_base_view_bodies, drawing_projection_bodies, named_part_properties,
     named_solid_part_properties, retain_certified_named_sketch_prism, retain_named_sketch_prism,

@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 
+#[path = "chamfer_candidate.rs"]
+mod chamfer_candidate;
+
 #[path = "fillet_candidate.rs"]
 mod candidate;
 

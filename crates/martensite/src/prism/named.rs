@@ -39,20 +39,20 @@ pub fn retain_named_sketch_prism(
     let decline = crate::stored_prism::stored_body_decline(&evaluation, feature);
     evaluation.into_body(feature).ok_or(decline)
 }
+mod blend;
 mod bounds;
 mod edge_pick;
 mod evaluate;
 mod face_pick;
 mod face_topology;
-mod fillet;
 mod solid;
 pub use edge_pick::NamedEdgeHit;
 mod subentities;
+pub use blend::{BlendCandidate, BlendHistoryRecord, BlendNamedTopology};
 pub use evaluate::{
     CertifiedNamedPrismEvaluator, NamedPrismEvaluator, retain_certified_named_sketch_prism,
 };
 pub use face_topology::{PrismFaceTopology, PrismSurfaceKind};
-pub use fillet::{FilletCandidate, FilletHistoryRecord, FilletNamedTopology};
 pub use solid::{CertifiedNamedSolidEvaluator, NamedSolid, named_solid_part_properties};
 fn attach_names(
     snapshot: PrismProbeSnapshot,
