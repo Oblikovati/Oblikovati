@@ -216,16 +216,29 @@ fn send_click(connection: &RustConnection, root: Window, x: i16, y: i16, button:
 }
 
 fn application_window(connection: &RustConnection, root: Window) -> Window {
-    let tree = connection.query_tree(root).unwrap().reply().unwrap();
-    let windows: Vec<_> = tree
-        .children
-        .into_iter()
-        .filter(|id| is_application(connection, *id))
-        .collect();
+    let windows = application_descendants(connection, root);
     let [window] = windows.as_slice() else {
         panic!("X11 application windows {windows:?}: expected exactly one Oblikovati window");
     };
     *window
+}
+
+fn application_descendants(connection: &RustConnection, root: Window) -> Vec<Window> {
+    let mut pending = vec![root];
+    let mut matches = Vec::new();
+    while let Some(parent) = pending.pop() {
+        let Ok(query) = connection.query_tree(parent) else {
+            continue;
+        };
+        let Ok(tree) = query.reply() else { continue };
+        for child in tree.children {
+            if is_application(connection, child) {
+                matches.push(child);
+            }
+            pending.push(child);
+        }
+    }
+    matches
 }
 
 fn is_application(connection: &RustConnection, window: Window) -> bool {
@@ -278,3 +291,7 @@ pub(super) fn type_digits(digits: &str) {
         );
     }
 }
+
+#[cfg(test)]
+#[path = "x11_input_tests.rs"]
+mod tests;
