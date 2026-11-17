@@ -386,6 +386,7 @@ impl NavigationWheel {
             close = self.options_buttons(ui)
                 || ui.is_window_focused() && ui.is_key_pressed_no_repeat(Key::Escape);
         });
+        WheelOptions::close_dockable(ui, OPTIONS_TITLE, close);
         self.options_visible = open && !close;
     }
     fn options_buttons(&mut self, ui: &Ui) -> bool {

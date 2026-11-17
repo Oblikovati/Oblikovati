@@ -65,6 +65,8 @@
 
 ### Fixed
 
+- Kept the remaining dock tab active when Navigation Wheel Options closes. (#4073)
+
 - Rejected a selected-face Measure action when its face or document changed. (#4052)
 
 - Started an associative sketch on the selected face from the Part marking menu. (#4050)
