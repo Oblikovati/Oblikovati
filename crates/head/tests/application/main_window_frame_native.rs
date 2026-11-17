@@ -14,7 +14,7 @@ pub(super) fn pump_until(world: &mut ApplicationWorld, expected: bool) {
         std::thread::sleep(Duration::from_millis(30));
     }
 }
-fn press_maximize(world: &mut ApplicationWorld) {
+pub(super) fn press_maximize(world: &mut ApplicationWorld) {
     let width = world.app().window.native.drawable_extent().unwrap()[0] as i32;
     x11_input::click([width - 72, 16]);
     world.pump(Vec::new());
@@ -152,7 +152,7 @@ fn native_frame_respects_minimum_size() {
     world.close();
 }
 
-fn drag_resize_handle(world: &mut ApplicationWorld, point: [i32; 2], target: [i32; 2]) {
+pub(super) fn drag_resize_handle(world: &mut ApplicationWorld, point: [i32; 2], target: [i32; 2]) {
     x11_input::move_pointer(point);
     world.pump(Vec::new());
     x11_input::left_button(point, true);
@@ -298,6 +298,7 @@ fn exercise_minimize_reactivation(use_taskbar: bool) {
     for maximized in [false, true] {
         let mut world = ApplicationWorld::new();
         let document = world.add_part();
+        let camera = crate::HeadWindow::view_camera(&world.app().window).unwrap();
         x11_input::focus_window();
         if maximized {
             press_maximize(&mut world);
@@ -315,6 +316,10 @@ fn exercise_minimize_reactivation(use_taskbar: bool) {
         world.pump(Vec::new());
         pump_until(&mut world, maximized);
         assert_eq!(world.active_id(), document);
+        assert_eq!(
+            crate::HeadWindow::view_camera(&world.app().window).unwrap(),
+            camera
+        );
         world.close();
     }
 }
