@@ -321,3 +321,12 @@ fn publish_owner_sketches(
     window.submit_sketch_scene(update)?;
     Ok(true)
 }
+
+#[cfg(test)]
+pub(crate) fn advance_gui_for_native_test(
+    window: &mut dyn HeadWindow,
+    owner: &mut dyn HeadWork,
+    event: Option<&ViewportEvent>,
+) -> Result<HeadGuiUpdate, String> {
+    gui::advance_gui(window, owner, event)
+}

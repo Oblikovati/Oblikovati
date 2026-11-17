@@ -31,7 +31,20 @@ fn request_application_close(world: &mut ApplicationWorld) {
     world.application_close_requested = true;
     let can_close = world.app().owner.close_allowed().unwrap();
     #[cfg(target_os = "linux")]
-    super::x11_input::request_native_close();
+    {
+        super::x11_input::focus_window();
+        let width = world.app().window.native.drawable_extent().unwrap()[0] as i32;
+        let close = [width - 24, 17];
+        super::x11_input::move_pointer(close);
+        world.pump(Vec::new());
+        if can_close {
+            super::x11_input::click(close);
+        } else {
+            super::x11_input::left_button(close, true);
+            world.pump(Vec::new());
+            super::x11_input::left_button(close, false);
+        }
+    }
     #[cfg(not(target_os = "linux"))]
     if !can_close {
         return world.pump(vec![ViewportEvent::CloseRequested]);
@@ -45,6 +58,7 @@ fn request_application_close(world: &mut ApplicationWorld) {
     if can_close {
         return finish_clean_application(world);
     }
+    world.pump(Vec::new());
     world.pump(Vec::new());
 }
 

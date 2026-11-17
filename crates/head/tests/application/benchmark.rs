@@ -14,6 +14,9 @@ mod diagnostics;
 mod documents;
 mod gap_runner;
 #[cfg(target_os = "linux")]
+#[path = "main-window-frame/steps.rs"]
+mod main_window_frame;
+#[cfg(target_os = "linux")]
 mod main_window_frame_native;
 mod quick_access_icons;
 mod refinements;
