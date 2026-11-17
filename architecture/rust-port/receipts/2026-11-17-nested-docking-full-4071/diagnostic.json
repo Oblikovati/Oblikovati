@@ -1,0 +1,8 @@
+{
+  "application_commit": "d18903436",
+  "source_feature_sha256": "139cea92a16ace53d22a47ba7839233d1000cbefc2ce2e51500844926651a3d0",
+  "source_revision": null,
+  "provenance": "Diagnostic against copied unversioned source; the source hash was unchanged after the run. Not pinned acceptance evidence. Restart setup explicitly saves through the workspace settings store.",
+  "result": "8 scenarios and 65 steps passed; 2 capture-only scenarios excluded by the runner.",
+  "environment": "Linux Xvfb with Mesa lavapipe"
+}

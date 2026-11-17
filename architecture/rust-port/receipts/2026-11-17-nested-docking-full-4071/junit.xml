@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Dockable workspace panels: tmp/obk-child-full-source/features/application/docking-system/docking-system.feature" package="testsuite/Feature: Dockable workspace panels: tmp/obk-child-full-source/features/application/docking-system/docking-system.feature" tests="8" errors="0" failures="0" hostname="localhost" timestamp="2026-11-17T17:06:25.164932238Z" time="307.205859676"><testcase name="Scenario: Dock a floating panel to an edge with a visible target preview: tmp/obk-child-full-source/features/application/docking-system/docking-system.feature:6:3" time="30.401203755"><system-out><![CDATA[  Scenario: Dock a floating panel to an edge with a visible target preview
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And a dockable panel is floating over the workspace
+   ✔  When the user drags the panel title bar toward the left workspace edge
+   ✔  Then the left docking target is indicated before the panel is released
+   ✔  When the user releases the panel over that target
+   ✔  Then the panel docks along the left edge of the workspace
+   ✔  And the viewport resizes to occupy the remaining workspace
+   ✔  And the active part remains visible
+]]></system-out></testcase><testcase name="Scenario: Dock a panel to each supported workspace edge: tmp/obk-child-full-source/features/application/docking-system/docking-system.feature:17:3" time="40.576790234"><system-out><![CDATA[  Scenario: Dock a panel to each supported workspace edge
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And a dockable panel is floating over the workspace
+   ✔  When the user docks the panel to the right workspace edge
+   ✔  Then the panel is attached along the right edge
+   ✔  And the viewport occupies the workspace to its left
+   ✔  When the user docks the panel to the top workspace edge
+   ✔  Then the panel is attached below the ribbon
+   ✔  And the viewport occupies the workspace below the panel
+   ✔  When the user docks the panel to the bottom workspace edge
+   ✔  Then the panel is attached above the document tabs and status area
+   ✔  And the viewport occupies the workspace above the panel
+]]></system-out></testcase><testcase name="Scenario: Resize a docked panel from its shared boundary: tmp/obk-child-full-source/features/application/docking-system/docking-system.feature:31:3" time="37.977835592"><system-out><![CDATA[  Scenario: Resize a docked panel from its shared boundary
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And a dockable panel is docked beside the viewport
+   ✔  When the user drags the panel boundary away from the viewport
+   ✔  Then the panel becomes wider
+   ✔  And the viewport becomes narrower by the corresponding amount
+   ✔  And the panel contents and active part remain visible
+   ✔  When the user drags the boundary back
+   ✔  Then the panel and viewport return to their previous proportions
+]]></system-out></testcase><testcase name="Scenario: Join panels in one dock region as selectable tabs: tmp/obk-child-full-source/features/application/docking-system/docking-system.feature:79:3" time="41.779370325"><system-out><![CDATA[  Scenario: Join panels in one dock region as selectable tabs
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And two dockable panels are open in separate workspace regions
+   ✔  When the user drags one panel onto the center of the other panel's dock region
+   ✔  Then the destination region indicates a tab insertion target
+   ✔  When the user releases the panel over that target
+   ✔  Then both panels occupy the same dock region as tabs
+   ✔  And one panel is active while the other remains available
+   ✔  When the user selects the other panel tab
+   ✔  Then its contents replace the active panel contents in that region
+   ✔  And the viewport and active document remain available
+]]></system-out></testcase><testcase name="Scenario: Float a docked panel and dock it again: tmp/obk-child-full-source/features/application/docking-system/docking-system.feature:92:3" time="38.243526963"><system-out><![CDATA[  Scenario: Float a docked panel and dock it again
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And a dockable panel is docked beside the viewport
+   ✔  When the user drags its title bar away from the dock targets
+   ✔  Then the panel floats above the workspace
+   ✔  And the viewport expands into the space released by the panel
+   ✔  When the user drags the floating panel to a workspace dock target
+   ✔  Then the panel docks at that target
+   ✔  And the viewport adjusts to the resulting workspace layout
+]]></system-out></testcase><testcase name="Scenario: Close a docked panel and restore it from the interface menu: tmp/obk-child-full-source/features/application/docking-system/docking-system.feature:103:3" time="30.126488393"><system-out><![CDATA[  Scenario: Close a docked panel and restore it from the interface menu
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And a dockable panel is the active tab in a dock region
+   ✔  When the user closes the panel
+   ✔  Then the panel is removed from the visible workspace
+   ✔  And the remaining dock regions and viewport use the freed space
+   ✔  When the user opens the interface visibility menu
+   ✔  And the user selects the closed panel
+   ✔  Then the panel is restored to the workspace
+   ✔  And its contents are visible
+]]></system-out></testcase><testcase name="Scenario: Retain a panel layout while switching active documents: tmp/obk-child-full-source/features/application/docking-system/docking-system.feature:115:3" time="29.85606083"><system-out><![CDATA[  Scenario: Retain a panel layout while switching active documents
+   ✔  Given two documents are open in the MCAD Software
+   ✔  And a dockable panel has been moved, resized, or tabbed in the workspace
+   ✔  When the user switches to the other document
+   ✔  Then the docked panel arrangement remains in place
+   ✔  And the active document changes in the viewport
+   ✔  When the user returns to the first document
+   ✔  Then the panel arrangement remains available
+]]></system-out></testcase><testcase name="Scenario: Restore the saved panel arrangement after restarting the application: tmp/obk-child-full-source/features/application/docking-system/docking-system.feature:125:3" time="58.244583584"><system-out><![CDATA[  Scenario: Restore the saved panel arrangement after restarting the application
+   ✔  Given the user has changed the workspace panel arrangement
+   ✔  And the MCAD Software has saved that arrangement
+   ✔  When the user closes and restarts the MCAD Software
+   ✔  Then the saved panel positions, sizes and tab groups are restored
+]]></system-out></testcase></testsuite></testsuites>
