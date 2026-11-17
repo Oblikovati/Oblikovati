@@ -79,6 +79,8 @@ fn native_frame_drag_moves_window_without_resizing() {
     x11_input::focus_window();
     let before = x11_input::application_bounds();
     let point = [1050, 18];
+    x11_input::move_pointer(point);
+    world.pump(Vec::new());
     x11_input::left_button(point, true);
     world.pump(Vec::new());
     x11_input::move_pointer([1070, 30]);
@@ -101,7 +103,8 @@ fn native_close_button_obeys_the_unsaved_document_guard() {
     world.start_sketch();
     x11_input::focus_window();
     world.pump(Vec::new());
-    let close = super::diagnostics::pointer_pixels(world.run("X").center());
+    let width = world.app().window.native.drawable_extent().unwrap()[0] as i32;
+    let close = [width - 24, 17];
     x11_input::move_pointer(close);
     world.pump(Vec::new());
     x11_input::left_button(close, true);
@@ -146,5 +149,83 @@ fn native_frame_respects_minimum_size() {
     assert_eq!(&after[2..], &[640, 480]);
     press_maximize(&mut world);
     pump_until(&mut world, true);
+    world.close();
+}
+
+fn drag_resize_handle(world: &mut ApplicationWorld, point: [i32; 2], target: [i32; 2]) {
+    x11_input::move_pointer(point);
+    world.pump(Vec::new());
+    x11_input::left_button(point, true);
+    world.pump(Vec::new());
+    x11_input::move_pointer(target);
+    world.pump(Vec::new());
+    x11_input::left_button(target, false);
+    world.pump(Vec::new());
+}
+fn handle_coordinate(direction: i32, extent: i32) -> i32 {
+    match direction {
+        -1 => 1,
+        1 => extent - 2,
+        _ => extent / 2,
+    }
+}
+fn verify_resize_axis(before: [i32; 4], after: [i32; 4], axis: usize, direction: i32) {
+    assert_eq!(
+        after[axis + 2] > before[axis + 2],
+        direction != 0,
+        "resize axis {axis}, direction {direction}: {before:?} -> {after:?}"
+    );
+    if direction < 0 {
+        assert_eq!(
+            before[axis] + before[axis + 2],
+            after[axis] + after[axis + 2]
+        );
+    }
+    if direction > 0 {
+        assert_eq!(before[axis], after[axis]);
+    }
+}
+#[test]
+#[ignore = "requires an X11 window manager"]
+fn native_frame_all_eight_resize_handles_grow_their_axes() {
+    let mut world = ApplicationWorld::new();
+    world.pump(Vec::new());
+    x11_input::focus_window();
+    for (horizontal, vertical) in [
+        (-1, 0),
+        (1, 0),
+        (0, -1),
+        (0, 1),
+        (-1, -1),
+        (1, 1),
+        (1, -1),
+        (-1, 1),
+    ] {
+        let before = x11_input::application_bounds();
+        let point = [
+            handle_coordinate(horizontal, before[2]),
+            handle_coordinate(vertical, before[3]),
+        ];
+        let target = [point[0] + horizontal * 20, point[1] + vertical * 20];
+        drag_resize_handle(&mut world, point, target);
+        let after = x11_input::application_bounds();
+        verify_resize_axis(before, after, 0, horizontal);
+        verify_resize_axis(before, after, 1, vertical);
+    }
+    world.close();
+}
+
+#[test]
+#[ignore = "requires an X11 window manager"]
+fn native_frame_double_click_toggles_maximize() {
+    let mut world = ApplicationWorld::new();
+    world.pump(Vec::new());
+    x11_input::focus_window();
+    for maximized in [true, false] {
+        x11_input::click([1050, 18]);
+        x11_input::click([1050, 18]);
+        world.pump(Vec::new());
+        pump_until(&mut world, maximized);
+    }
     world.close();
 }

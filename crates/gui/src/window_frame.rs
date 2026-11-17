@@ -10,6 +10,7 @@ pub(crate) fn draw(
     request: &GuiFrameRequest,
     bar_height: f32,
     actions: &mut Vec<GuiShellAction>,
+    drag_armed: &mut bool,
 ) -> (Option<GuiWindowAction>, crate::GuiWindowControls) {
     let width = request.extent[0] as f32 / request.layout_scale()[0];
     let mut action = None;
@@ -33,7 +34,7 @@ pub(crate) fn draw(
         .build(|| {
             if control(
                 ui,
-                "_###window-minimize",
+                "###window-minimize",
                 "Minimize",
                 bar_height,
                 0,
@@ -44,9 +45,9 @@ pub(crate) fn draw(
             }
             ui.same_line();
             let (symbol, title) = if request.commands.window_maximized {
-                ("[][]###window-maximize", "Restore")
+                ("###window-maximize", "Restore")
             } else {
-                ("[]###window-maximize", "Maximize")
+                ("###window-maximize", "Maximize")
             };
             if control(ui, symbol, title, bar_height, 1, &mut bounds, &mut focused) {
                 action = Some(GuiWindowAction::ToggleMaximize);
@@ -54,7 +55,7 @@ pub(crate) fn draw(
             ui.same_line();
             if control(
                 ui,
-                "X###window-close",
+                "###window-close",
                 "Close",
                 bar_height,
                 2,
@@ -72,7 +73,7 @@ pub(crate) fn draw(
         }
     }
     (
-        action.or_else(|| bar_gesture(ui, width, bar_height)),
+        action.or_else(|| bar_gesture(ui, width, bar_height, drag_armed)),
         crate::GuiWindowControls { bounds, focused },
     )
 }
@@ -87,29 +88,75 @@ fn control(
 ) -> bool {
     let clicked = crate::widget_abi::button(ui, label, [CONTROL_WIDTH, bar_height]);
     record_control(ui, index, bounds, focused);
+    draw_icon(ui, accessible);
     if ui.is_item_hovered() {
         ui.tooltip_text(accessible);
     }
     clicked
 }
-fn bar_gesture(ui: &Ui, width: f32, bar_height: f32) -> Option<GuiWindowAction> {
+fn draw_icon(ui: &Ui, kind: &str) {
+    let min = ui.item_rect_min();
+    let max = ui.item_rect_max();
+    let center = [(min[0] + max[0]) / 2., (min[1] + max[1]) / 2.];
+    let draw = ui.get_window_draw_list();
+    let color = ui.style_color(imgui::StyleColor::Text);
+    let point = |x: f32, y: f32| [center[0] + x, center[1] + y];
+    match kind {
+        "Minimize" => {
+            draw.add_line(point(-6., 4.), point(6., 4.), color)
+                .thickness(1.5)
+                .build();
+        }
+        "Maximize" => {
+            draw.add_rect(point(-6., -5.), point(6., 5.), color)
+                .thickness(1.5)
+                .build();
+        }
+        "Restore" => {
+            draw.add_rect(point(-4., -6.), point(6., 3.), color)
+                .thickness(1.5)
+                .build();
+            draw.add_rect(point(-6., -3.), point(4., 6.), color)
+                .thickness(1.5)
+                .build();
+        }
+        "Close" => {
+            draw.add_line(point(-5., -5.), point(5., 5.), color)
+                .thickness(1.5)
+                .build();
+            draw.add_line(point(5., -5.), point(-5., 5.), color)
+                .thickness(1.5)
+                .build();
+        }
+        _ => unreachable!("window control {kind}: expected a known control"),
+    }
+}
+fn bar_gesture(
+    ui: &Ui,
+    width: f32,
+    bar_height: f32,
+    drag_armed: &mut bool,
+) -> Option<GuiWindowAction> {
     let [x, y] = ui.io().mouse_pos;
-    if y < 0.
-        || y >= bar_height
-        || x < 0.
-        || x >= width - CONTROL_WIDTH * 3.
-        || ui.is_any_item_hovered()
-        || ui.is_any_item_active()
-    {
+    if ui.is_mouse_clicked(MouseButton::Left) {
+        *drag_armed = y >= 0.
+            && y < bar_height
+            && x >= 0.
+            && x < width - CONTROL_WIDTH * 3.
+            && !ui.is_any_item_hovered()
+            && !ui.is_any_item_active();
+    }
+    if !ui.is_mouse_down(MouseButton::Left) {
+        *drag_armed = false;
+    }
+    if !*drag_armed {
         return None;
     }
     if ui.is_mouse_double_clicked(MouseButton::Left) {
         return Some(GuiWindowAction::ToggleMaximize);
     }
-    if ui.is_mouse_dragging(MouseButton::Left) {
-        return Some(GuiWindowAction::Move);
-    }
-    None
+    ui.is_mouse_dragging(MouseButton::Left)
+        .then_some(GuiWindowAction::Move)
 }
 
 fn record_control(ui: &Ui, index: usize, bounds: &mut [[f32; 4]; 3], focused: &mut Option<usize>) {
