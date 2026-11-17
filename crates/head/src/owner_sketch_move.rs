@@ -13,11 +13,12 @@ use oblikovati_viewport::{
     ViewportSketchPreview,
 };
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 enum MoveStage {
     Geometry,
     Base,
     Target([f64; 2]),
+    ZeroDisplacement,
 }
 pub(crate) struct SketchMoveState {
     pub edit: HeadSketchEdit,
@@ -50,6 +51,7 @@ impl<
             GuiSketchMoveAction::SetOptimizeSingle(value) => self.set_move_optimize_single(value),
             GuiSketchMoveAction::SetCopy(value) => self.set_move_copy(value),
             GuiSketchMoveAction::ChooseBase => self.choose_move_base(),
+            GuiSketchMoveAction::CancelRejection => self.cancel_move_rejection(),
             GuiSketchMoveAction::Done => {
                 if !matches!(self.sketch_tool, Some(SketchToolState::Move(_))) {
                     return Ok(false);
@@ -102,6 +104,7 @@ impl<
             MoveStage::Geometry => GuiSketchMoveStage::Geometry,
             MoveStage::Base => GuiSketchMoveStage::Base,
             MoveStage::Target(_) => GuiSketchMoveStage::Target,
+            MoveStage::ZeroDisplacement => GuiSketchMoveStage::ZeroDisplacement,
         };
         Some(GuiSketchMoveStatus {
             stage,
@@ -109,6 +112,28 @@ impl<
             optimize_single: self.sketch_memory.move_optimize_single,
             copy: self.sketch_memory.move_copy,
         })
+    }
+    fn cancel_move_rejection(&mut self) -> Result<bool, String> {
+        let Some(SketchToolState::Move(tool)) = &self.sketch_tool else {
+            return Err("move rejection: expected an active Move tool".into());
+        };
+        if !matches!(tool.stage, MoveStage::ZeroDisplacement) {
+            return Err(format!(
+                "move rejection {:?}: expected a rejected endpoint",
+                tool.stage
+            ));
+        }
+        let edit = tool.edit;
+        self.clear_geometric_picks(edit)?;
+        let Some(SketchToolState::Move(tool)) = self.sketch_tool.as_mut() else {
+            return Err("move rejection: expected an active Move tool".into());
+        };
+        tool.stage = MoveStage::Geometry;
+        tool.entities.clear();
+        tool.pointer = None;
+        tool.preview = None;
+        self.placement_notice("Move: Select geometry".into());
+        Ok(true)
     }
     fn set_move_copy(&mut self, value: bool) -> Result<bool, String> {
         let Some(SketchToolState::Move(tool)) = &self.sketch_tool else {
@@ -199,6 +224,7 @@ impl<
             MoveStage::Geometry if click => self.move_select(tool, position, window),
             MoveStage::Base => self.move_base(tool, position, click, window),
             MoveStage::Target(base) => self.move_target(tool, base, position, click, window),
+            MoveStage::ZeroDisplacement => Ok(false),
             _ => Ok(false),
         }
     }
@@ -284,7 +310,8 @@ impl<
         let vector = std::array::from_fn(|axis| point[axis] - base[axis]);
         if vector == [0., 0.] {
             if click {
-                return Err("move vector [0, 0]: expected distinct base and end points".into());
+                tool.stage = MoveStage::ZeroDisplacement;
+                self.placement_notice("Move could not be completed".into());
             }
             return Ok(true);
         }
@@ -298,8 +325,10 @@ impl<
         let Some(SketchToolState::Move(tool)) = &self.sketch_tool else {
             return None;
         };
-        if matches!(tool.stage, MoveStage::Geometry)
-            || !self.sketch_context_valid(tool.edit.document, tool.edit.sketch, tool.generation)
+        if matches!(
+            tool.stage,
+            MoveStage::Geometry | MoveStage::ZeroDisplacement
+        ) || !self.sketch_context_valid(tool.edit.document, tool.edit.sketch, tool.generation)
         {
             return None;
         }
@@ -321,7 +350,7 @@ impl<
             MoveStage::Target(base) => {
                 self.move_to_point(tool, base, position, true)?;
             }
-            MoveStage::Geometry => {
+            MoveStage::Geometry | MoveStage::ZeroDisplacement => {
                 return Err(format!(
                     "precise move {point:?}: expected a base or end point"
                 ));
@@ -354,6 +383,7 @@ impl<
             (None, MoveStage::Geometry) => "Move: Select geometry",
             (None, MoveStage::Base) => "Move: Select base point",
             (None, MoveStage::Target(_)) => "Move: Select end point",
+            (None, MoveStage::ZeroDisplacement) => "Move could not be completed",
         };
         self.placement_notice(prompt.into());
         Ok(())

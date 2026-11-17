@@ -32,8 +32,28 @@ fn move_refuses_open_transactions_without_starting_or_changing_selection() {
         .unwrap();
 }
 #[test]
-fn zero_move_can_be_retried_without_changing_geometry_or_history() {
-    let (mut owner, document, sketch) = geometric_owner(&[[0., 0.], [100., 20.]], true);
+fn rejected_zero_move_returns_to_selection_without_changing_history() {
+    let (mut owner, _) = owner();
+    let document = Client::new(owner.document_host())
+        .documents()
+        .create(&CreateDocumentArgs {
+            type_: "part".into(),
+            name: "Owner part".into(),
+            ..Default::default()
+        })
+        .unwrap()
+        .id;
+    let mut request = super::sketch_edit::request(oblikovati_model::sketch::SketchPlane::xy());
+    request.project_origin = false;
+    let sketch = owner.create_sketch_for_edit(document, &request).unwrap();
+    let recipe = oblikovati_model::sketch::SketchPlacementRecipe::line_chain(
+        &[[0., 0.], [100., 20.]],
+        false,
+    )
+    .unwrap();
+    owner
+        .commit_sketch_placement(document, sketch, &recipe, &[])
+        .unwrap();
     let before = owner
         .documents()
         .workspace()
@@ -59,11 +79,21 @@ fn zero_move_can_be_retried_without_changing_geometry_or_history() {
             .gui_command_state()
             .unwrap()
             .sketch_move
-            .map(|status| status.stage),
-        Some(GuiSketchMoveStage::Target)
+            .unwrap()
+            .stage,
+        GuiSketchMoveStage::ZeroDisplacement
     );
-    assert!(
-        matches!(owner.take_command_notice(), Some(DesktopCommandNotice::AuthoringFailed { cause }) if cause.contains("distinct"))
+    owner
+        .sketch_move_from_gui(GuiSketchMoveAction::CancelRejection)
+        .unwrap();
+    assert_eq!(
+        owner
+            .gui_command_state()
+            .unwrap()
+            .sketch_move
+            .unwrap()
+            .stage,
+        GuiSketchMoveStage::Geometry
     );
     assert!(
         before.same_evaluated_state(
@@ -77,30 +107,42 @@ fn zero_move_can_be_retried_without_changing_geometry_or_history() {
         )
     );
     assert_eq!(owner.gui_command_state().unwrap().undo_label, history);
-    deliver(&mut owner, &[button([20, 30], true)]);
+    assert!(
+        owner
+            .gui_command_state()
+            .unwrap()
+            .sketch_selection
+            .entities
+            .is_empty()
+    );
+    deliver(
+        &mut owner,
+        &[
+            button([50, 10], true),
+            button([0, 0], true),
+            button([20, 30], true),
+        ],
+    );
+    assert!(
+        !before.same_evaluated_state(
+            &owner
+                .documents()
+                .workspace()
+                .session(document)
+                .unwrap()
+                .snapshot()
+                .sketches
+        )
+    );
     assert_eq!(
         owner
             .gui_command_state()
             .unwrap()
             .sketch_move
-            .map(|status| status.stage),
-        Some(GuiSketchMoveStage::Geometry)
+            .unwrap()
+            .stage,
+        GuiSketchMoveStage::Geometry
     );
-    let geometry = owner
-        .documents()
-        .workspace()
-        .session(document)
-        .unwrap()
-        .snapshot()
-        .sketches
-        .get(sketch)
-        .unwrap()
-        .geometry();
-    assert_ne!(geometry.points()[0].position, [0., 0.]);
-    owner
-        .sketch_move_from_gui(GuiSketchMoveAction::Done)
-        .unwrap();
-    assert!(owner.sketch_tool.is_none());
 }
 
 #[test]

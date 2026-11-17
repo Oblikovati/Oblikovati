@@ -51,6 +51,9 @@ impl GuiShellAction {
             ) => state
                 .sketch_move
                 .is_some_and(|status| status.stage == crate::GuiSketchMoveStage::Geometry),
+            Self::SketchMove(crate::GuiSketchMoveAction::CancelRejection) => state
+                .sketch_move
+                .is_some_and(|status| status.stage == crate::GuiSketchMoveStage::ZeroDisplacement),
             Self::SketchMove(crate::GuiSketchMoveAction::ChooseBase) => {
                 state.sketch_move.is_some_and(|status| {
                     status.stage == crate::GuiSketchMoveStage::Geometry

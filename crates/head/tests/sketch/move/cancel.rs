@@ -101,3 +101,64 @@ fn request_base_point(world: &mut ApplicationWorld) {
 fn cancel_before_base(world: &mut ApplicationWorld) {
     world.escape();
 }
+
+#[cfg(target_os = "linux")]
+#[test]
+fn rejected_move_can_be_cancelled_with_native_mouse() {
+    let mut world = ApplicationWorld::new();
+    move_precise::editable_ellipse(&mut world);
+    move_precise::open_move(&mut world);
+    reject_same_endpoint(&mut world);
+    assert_eq!(
+        world.state().sketch_move.unwrap().stage,
+        GuiSketchMoveStage::ZeroDisplacement
+    );
+    world.expect_text("The base point and end point must be different.");
+    world.save_capture("move-rejected-endpoint-4020");
+    let cancel = world
+        .run_in_window("Move could not be completed", "Cancel")
+        .center();
+    super::super::x11_input::click(diagnostics::pointer_pixels(cancel));
+    world.pump(Vec::new());
+    assert_eq!(
+        world.state().sketch_move.unwrap().stage,
+        GuiSketchMoveStage::Geometry
+    );
+    assert!(world.state().sketch_selection.entities.is_empty());
+    world.expect_edited_sketch_retained();
+    reject_same_endpoint(&mut world);
+    super::super::x11_input::press_escape();
+    world.pump(Vec::new());
+    assert_eq!(
+        world.state().sketch_move.unwrap().stage,
+        GuiSketchMoveStage::Geometry
+    );
+    world.expect_edited_sketch_retained();
+    reject_same_endpoint(&mut world);
+    crate::HeadSketchWork::sketch_move_from_gui(
+        &mut world.app().owner,
+        oblikovati_gui::GuiSketchMoveAction::Done,
+    )
+    .unwrap();
+    world.pump(Vec::new());
+    assert!(world.state().sketch_move.is_none());
+    assert!(diagnostics::window_geometry("Move could not be completed").is_none());
+    world.expect_edited_sketch_retained();
+    world.close();
+}
+
+#[cfg(target_os = "linux")]
+fn reject_same_endpoint(world: &mut ApplicationWorld) {
+    for point in [
+        move_precise::EDGE,
+        move_precise::CENTER,
+        move_precise::CENTER,
+    ] {
+        super::super::x11_input::click(point);
+        world.pump(Vec::new());
+    }
+    assert_eq!(
+        world.state().sketch_move.unwrap().stage,
+        GuiSketchMoveStage::ZeroDisplacement
+    );
+}

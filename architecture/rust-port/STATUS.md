@@ -154,6 +154,10 @@ Last checked: 2026-11-16 on `rust-work`. Refresh from current evidence at each c
   8 of 9 native scenarios; point-10 is excluded until its recorded fixture is supplied (#3887).
 - Rectangle visibility now rejects obstructed observations (#3980). Focused
   native checks passed; the full gate is still required.
+- Move reports a zero-displacement endpoint in a dialog and returns to geometry
+  selection on Cancel or Escape (#4020). The native test uses X11 mouse input;
+  the Move constraint-policy contract and scenario acceptance remain open.
+  See `receipts/2026-11-17-move-rejection-4020/`.
 - Move and Measure now show transient sketch candidates (#4034). A native
   Measure scenario passes with mouse input; its unpinned fixture makes this
   diagnostic evidence. Sketch frame time still exceeds the 60 fps budget

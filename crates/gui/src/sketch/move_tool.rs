@@ -4,12 +4,15 @@ use crate::dockable_window::DockableWindow;
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::Ui;
 
+const REJECTION_POPUP: &str = "Move could not be completed";
+
 /// One stage of a canvas move.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GuiSketchMoveStage {
     Geometry,
     Base,
     Target,
+    ZeroDisplacement,
 }
 /// Current move stage and selection settings.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -28,6 +31,7 @@ pub enum GuiSketchMoveAction {
     SetOptimizeSingle(bool),
     SetCopy(bool),
     ChooseBase,
+    CancelRejection,
 }
 
 pub(crate) fn panel(
@@ -37,6 +41,7 @@ pub(crate) fn panel(
     actions: &mut Vec<GuiShellAction>,
 ) {
     precise.sync_move_context(state.sketch_move.is_some());
+    close_stale_rejection(ui, state.sketch_move);
     let Some(status) = state.sketch_move else {
         return;
     };
@@ -47,6 +52,7 @@ pub(crate) fn panel(
             GuiSketchMoveStage::Geometry => "Select geometry",
             GuiSketchMoveStage::Base => "Select base point",
             GuiSketchMoveStage::Target => "Select end point",
+            GuiSketchMoveStage::ZeroDisplacement => "Move could not be completed",
         });
         let mut optimize = status.optimize_single;
         let disabled = ui.begin_disabled(status.stage != GuiSketchMoveStage::Geometry);
@@ -77,7 +83,34 @@ pub(crate) fn panel(
             actions.push(GuiShellAction::SketchMove(GuiSketchMoveAction::Done));
         }
     });
+    rejected_move_dialog(ui, status, actions);
     if !open {
         actions.push(GuiShellAction::SketchMove(GuiSketchMoveAction::Done));
+    }
+}
+
+fn rejected_move_dialog(ui: &Ui, status: GuiSketchMoveStatus, actions: &mut Vec<GuiShellAction>) {
+    if status.stage != GuiSketchMoveStage::ZeroDisplacement {
+        return;
+    }
+    ui.open_popup(REJECTION_POPUP);
+    let Some(_popup) = ui.begin_modal_popup(REJECTION_POPUP) else {
+        return;
+    };
+    ui.text("The base point and end point must be different.");
+    if ui.button("Cancel") || ui.is_key_pressed_no_repeat(imgui::Key::Escape) {
+        ui.close_current_popup();
+        actions.push(GuiShellAction::SketchMove(
+            GuiSketchMoveAction::CancelRejection,
+        ));
+    }
+}
+
+fn close_stale_rejection(ui: &Ui, status: Option<GuiSketchMoveStatus>) {
+    if status.is_some_and(|value| value.stage == GuiSketchMoveStage::ZeroDisplacement) {
+        return;
+    }
+    if let Some(_popup) = ui.begin_modal_popup(REJECTION_POPUP) {
+        ui.close_current_popup();
     }
 }
