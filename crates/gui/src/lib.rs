@@ -104,7 +104,7 @@ pub use commands::{
     GuiPreviewImage, GuiProject, GuiProjectGroup, GuiSelectionMode, GuiShellAction,
     GuiSketchLineStyle,
 };
-pub use engine::{GuiFrameEngine, GuiFrameOutput, GuiFrameRequest};
+pub use engine::{GuiFrameEngine, GuiFrameOutput, GuiFrameRequest, GuiWindowAction};
 pub use sketch_pick_cue::{GuiModelPickCue, GuiSketchPickCue};
 mod sketch_pick_cue;
 pub use input::{GuiInputCapture, GuiInputEvent, GuiKey, GuiModifiers, GuiPointerButton};
@@ -143,3 +143,5 @@ mod clear_appearance;
 #[cfg(test)]
 #[path = "../tests/context/parallel.rs"]
 mod context_parallel_tests;
+
+mod window_frame;

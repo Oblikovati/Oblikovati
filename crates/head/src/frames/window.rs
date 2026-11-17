@@ -14,6 +14,13 @@ pub struct HeadOrientationFitFrame {
 
 /// The desktop owns this boundary; implementations contain all native I/O.
 pub trait HeadWindow {
+    /// Dispatch an application-bar window request; example: `window.window_action(action)?`.
+    fn window_action(&mut self, action: oblikovati_gui::GuiWindowAction) -> Result<bool, String> {
+        Err(format!(
+            "window action {action:?}: expected a native window"
+        ))
+    }
+
     /// Observe the drawable used for capture metadata; example: `window.window_capture_extent()?`.
     fn window_capture_extent(&mut self) -> Result<Option<[u32; 2]>, String> {
         Ok(None)

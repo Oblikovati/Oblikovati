@@ -168,6 +168,14 @@ impl NativeWindow {
         if !self.admit_input_event(&mut event)? {
             return Ok(Vec::new());
         }
+        if event.get_type() == xlib::PropertyNotify
+            && unsafe { event.property.atom } == self.state_atom
+        {
+            self.refresh_maximized()?;
+        }
+        if self.handle_frame_pointer(event)? {
+            return Ok(Vec::new());
+        }
         if let Some(focused) = keyboard_focus_transition(event.get_type()) {
             self.keyboard.focus(focused)?;
         }
