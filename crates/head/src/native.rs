@@ -155,6 +155,21 @@ impl HeadWindow for NativeHeadWindow {
     ) -> Result<bool, String> {
         self.update_tool_feedback(feedback)
     }
+    fn window_action(&mut self, action: oblikovati_gui::GuiWindowAction) -> Result<bool, String> {
+        let action = match action {
+            oblikovati_gui::GuiWindowAction::Minimize => {
+                oblikovati_viewport::ViewportWindowAction::Minimize
+            }
+            oblikovati_gui::GuiWindowAction::ToggleMaximize => {
+                oblikovati_viewport::ViewportWindowAction::ToggleMaximize
+            }
+            oblikovati_gui::GuiWindowAction::Move => {
+                oblikovati_viewport::ViewportWindowAction::Move
+            }
+        };
+        self.view.window_action(action)?;
+        Ok(true)
+    }
     fn gui_frame(
         &mut self,
         event: Option<&ViewportEvent>,
@@ -174,7 +189,9 @@ impl HeadWindow for NativeHeadWindow {
             None => false,
         };
         let selection_changed = self.synchronize_sketch_highlights(commands)?;
-        let mut update = self.advance_native_gui(event, commands)?;
+        let mut window_commands = commands.clone();
+        window_commands.window_maximized = self.view.window_maximized()?;
+        let mut update = self.advance_native_gui(event, &window_commands)?;
         if let Some(hover) = &update.constraint_hover {
             update.changed |= self.update_glyph_hover(hover.as_ref(), commands.document)?;
         }

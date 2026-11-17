@@ -36,7 +36,7 @@ pub(crate) struct NativeWindow {
     hwnd: HWND,
     pub window: Handle<AspectNeutralWindow>,
 }
-const STYLE: u32 = WS_OVERLAPPEDWINDOW;
+const STYLE: u32 = WS_POPUP | WS_THICKFRAME | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
 
 impl NativeWindow {
     pub fn create(title: &str, extent: [u32; 2]) -> Result<Self, String> {
@@ -78,6 +78,32 @@ impl NativeWindow {
         native.mapped(true)?;
         native.refresh_extent();
         Ok(native)
+    }
+
+    pub fn window_action(&self, action: crate::ViewportWindowAction) -> Result<(), String> {
+        match action {
+            crate::ViewportWindowAction::Minimize => unsafe {
+                ShowWindow(self.hwnd, SW_MINIMIZE);
+            },
+            crate::ViewportWindowAction::ToggleMaximize => unsafe {
+                ShowWindow(
+                    self.hwnd,
+                    if IsZoomed(self.hwnd) != 0 {
+                        SW_RESTORE
+                    } else {
+                        SW_MAXIMIZE
+                    },
+                );
+            },
+            crate::ViewportWindowAction::Move => unsafe {
+                windows_sys::Win32::UI::Input::KeyboardAndMouse::ReleaseCapture();
+                SendMessageW(self.hwnd, WM_NCLBUTTONDOWN, HTCAPTION as usize, 0);
+            },
+        }
+        Ok(())
+    }
+    pub fn window_maximized(&self) -> Result<bool, String> {
+        Ok(unsafe { IsZoomed(self.hwnd) != 0 })
     }
 
     pub fn refresh_extent(&self) {
@@ -234,6 +260,15 @@ fn dispatch(
 ) -> Option<LRESULT> {
     match msg {
         WM_CLOSE => events.push(ViewportEvent::CloseRequested),
+        WM_GETMINMAXINFO => {
+            // The application bar must remain usable at the smallest restored size.
+            if let Some(info) = unsafe { (lparam as *mut MINMAXINFO).as_mut() } {
+                info.ptMinTrackSize.x = 640;
+                info.ptMinTrackSize.y = 480;
+            }
+            return Some(0);
+        }
+
         WM_SETFOCUS => events.push(ViewportEvent::Focus(true)),
         WM_KILLFOCUS => {
             events.wheel.set(0);

@@ -5,6 +5,8 @@ use super::*;
 /// Command availability derived from the active document owner.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct GuiCommandState {
+    /// The application window is maximized by the desktop.
+    pub window_maximized: bool,
     pub selection_mode: GuiSelectionMode,
     pub histories: Vec<oblikovati_api::wire::TransactionHistory>,
     pub selection_filter: Option<crate::GuiSelectionFilter>,

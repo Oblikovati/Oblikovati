@@ -295,3 +295,22 @@ pub(super) fn type_digits(digits: &str) {
 #[cfg(test)]
 #[path = "x11_input_tests.rs"]
 mod tests;
+
+/// Read application bounds in root pixels; example: `application_bounds()` before a resize.
+pub(super) fn application_bounds() -> [i32; 4] {
+    let (connection, screen) = x11rb::connect(None).unwrap();
+    let root = connection.setup().roots[screen].root;
+    let window = application_window(&connection, root);
+    let geometry = connection.get_geometry(window).unwrap().reply().unwrap();
+    let origin = connection
+        .translate_coordinates(window, root, 0, 0)
+        .unwrap()
+        .reply()
+        .unwrap();
+    [
+        i32::from(origin.dst_x),
+        i32::from(origin.dst_y),
+        i32::from(geometry.width),
+        i32::from(geometry.height),
+    ]
+}

@@ -20,8 +20,17 @@ pub struct GuiFrameRequest {
     pub delta_seconds: f32,
     pub framebuffer_scale: [f32; 2],
 }
+/// A request from the application window controls.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GuiWindowAction {
+    Minimize,
+    ToggleMaximize,
+    Move,
+}
+
 #[derive(Clone, Debug)]
 pub struct GuiFrameOutput {
+    pub window_action: Option<GuiWindowAction>,
     pub draws: GuiFrame,
     pub actions: Vec<GuiShellAction>,
     pub parameter_actions: Vec<crate::GuiParameterAction>,

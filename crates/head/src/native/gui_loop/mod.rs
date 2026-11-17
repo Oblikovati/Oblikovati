@@ -192,6 +192,7 @@ impl NativeGui {
             .needs_frame()
             .then(|| now.saturating_add(GUI_TICK));
         Ok(HeadGuiUpdate {
+            window_action: output.window_action,
             consumed_input: self.pointer.consumed(event, output.capture),
             actions: output.actions,
             parameter_actions: output.parameter_actions,
