@@ -263,14 +263,14 @@ fn maximized_frame_ignores_resize_edges() {
     world.close();
 }
 
-fn wait_for_hidden(hidden: bool) {
+pub(super) fn wait_for_hidden(hidden: bool) {
     let deadline = Instant::now() + Duration::from_secs(5);
     while x11_input::window_has_state(b"_NET_WM_STATE_HIDDEN") != hidden {
         assert!(Instant::now() < deadline, "expected hidden={hidden}");
         std::thread::sleep(Duration::from_millis(30));
     }
 }
-fn pump_minimize_button(world: &mut ApplicationWorld) {
+pub(super) fn pump_minimize_button(world: &mut ApplicationWorld) {
     use crate::HeadWindow;
     let width = world.app().window.native.drawable_extent().unwrap()[0] as i32;
     x11_input::click([width - 120, 17]);

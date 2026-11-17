@@ -126,3 +126,101 @@ fn enlarged_window_layout(world: &mut ApplicationWorld) {
 fn prior_window_bounds(world: &mut ApplicationWorld) {
     restored_bounds(world);
 }
+
+#[given("the main window is restored")]
+fn remember_restored_part(world: &mut ApplicationWorld) {
+    remember_part_view(world);
+    assert!(!world.app().window.native.view.window_maximized().unwrap());
+}
+#[given("the main window is maximized")]
+fn remember_maximized_part(world: &mut ApplicationWorld) {
+    super::x11_input::focus_window();
+    super::main_window_frame_native::press_maximize(world);
+    super::main_window_frame_native::pump_until(world, true);
+    remember_part_view(world);
+}
+fn remember_part_view(world: &mut ApplicationWorld) {
+    world.previous_document = Some(world.active_id());
+    world.observed_view_camera = Some(crate::HeadWindow::view_camera(&world.app().window).unwrap());
+    super::x11_input::focus_window();
+}
+#[when("the user selects Minimize in the application bar")]
+fn minimize_part_window(world: &mut ApplicationWorld) {
+    super::main_window_frame_native::pump_minimize_button(world);
+}
+#[then("the main window is minimized and its taskbar entry remains available")]
+fn minimized_with_taskbar_entry(_: &mut ApplicationWorld) {
+    assert!(super::x11_input::window_has_state(b"_NET_WM_STATE_HIDDEN"));
+    assert!(!super::x11_input::window_has_state(
+        b"_NET_WM_STATE_SKIP_TASKBAR"
+    ));
+}
+#[when("the user activates the application from the taskbar")]
+fn activate_from_taskbar(world: &mut ApplicationWorld) {
+    std::thread::sleep(std::time::Duration::from_millis(500));
+    super::x11_input::click_test_taskbar();
+    super::main_window_frame_native::wait_for_hidden(false);
+    world.pump(Vec::new());
+}
+#[then("the main window returns in the restored state")]
+fn returns_restored(world: &mut ApplicationWorld) {
+    super::main_window_frame_native::pump_until(world, false);
+}
+#[then("the main window returns in the maximized state")]
+fn returns_maximized(world: &mut ApplicationWorld) {
+    super::main_window_frame_native::pump_until(world, true);
+}
+#[then("the same part and ribbon tab are active")]
+fn same_part_and_ribbon(world: &mut ApplicationWorld) {
+    assert_eq!(world.active_id(), world.previous_document.unwrap());
+    world.expect_text("Start 2D Sketch");
+}
+#[then("the displayed part retains its view orientation")]
+fn same_view_orientation(world: &mut ApplicationWorld) {
+    assert_eq!(
+        crate::HeadWindow::view_camera(&world.app().window).unwrap(),
+        world.observed_view_camera.unwrap()
+    );
+}
+
+#[given("the main window is restored within the desktop work area")]
+fn restored_part_window(world: &mut ApplicationWorld) {
+    restored_window(world);
+    world.previous_document = Some(world.active_id());
+}
+#[when("the user drags an empty region of the application bar within the work area")]
+fn drag_application_bar(world: &mut ApplicationWorld) {
+    let width = world.app().window.native.drawable_extent().unwrap()[0] as i32;
+    let point = [width - 390, 18];
+    super::x11_input::move_pointer(point);
+    world.pump(Vec::new());
+    super::x11_input::left_button(point, true);
+    world.pump(Vec::new());
+    super::x11_input::move_pointer([point[0] + 20, 30]);
+    world.pump(Vec::new());
+    super::x11_input::move_pointer([point[0] + 70, 80]);
+    world.pump(Vec::new());
+    super::x11_input::left_button([point[0] + 70, 80], false);
+    world.pump(Vec::new());
+}
+#[then("the entire window follows the drag without changing size")]
+fn window_moved_without_resize(world: &mut ApplicationWorld) {
+    let before = world.window_frame_before.unwrap();
+    let after = super::x11_input::application_bounds();
+    assert_ne!(&before[..2], &after[..2]);
+    assert_eq!(&before[2..], &after[2..]);
+}
+#[then("the same part remains active in the viewport")]
+fn same_part_in_viewport(world: &mut ApplicationWorld) {
+    assert_eq!(world.active_id(), world.previous_document.unwrap());
+    assert!(
+        world
+            .app()
+            .window
+            .native
+            .drawable_extent()
+            .unwrap()
+            .iter()
+            .all(|value| *value > 0)
+    );
+}
