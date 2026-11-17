@@ -6,6 +6,7 @@ use imgui::{DrawCmd, internal::RawCast, sys};
 pub(super) struct ToolbarImage {
     pub texture: usize,
     pub center: [f32; 2],
+    pub alpha: u8,
 }
 
 /// Read the standard icon row from completed draw data; example: `toolbar_images()` after a frame.
@@ -35,6 +36,7 @@ pub(super) fn toolbar_images() -> Vec<ToolbarImage> {
                 images.push(ToolbarImage {
                     texture: cmd_params.texture_id.id(),
                     center,
+                    alpha: vertices[indices[0] as usize].col[3],
                 });
             }
         }
@@ -52,22 +54,37 @@ fn on_toolbar(center: [f32; 2]) -> bool {
     center[1] < 34.
 }
 
-/// Locate one of the three default icons by its rendered row position.
-/// Example: `standard_icon_center("Save")` after all three defaults are visible.
+/// Find a standard icon by its texture in the completed toolbar draw list.
+/// Example: `standard_icon_center("Save")` when Save is visible.
 pub(super) fn standard_icon_center(label: &str) -> Option<[f32; 2]> {
-    let index = match label {
-        "New" => 0,
-        "Open" => 1,
-        "Save" => 2,
+    standard_icon(label).map(|image| image.center)
+}
+
+pub(super) fn standard_icon(label: &str) -> Option<ToolbarImage> {
+    let name = match label.replace(' ', "").as_str() {
+        "New" => "new-part",
+        "Open" => "open",
+        "Save" => "save",
+        "Undo" => "undo",
+        "Redo" => "redo",
+        "Home" => "home",
+        "Projects" => "qat-projects",
+        "Update" => "qat-update",
+        "Select" => "qat-select",
+        "MaterialBrowser" => "qat-material-browser",
+        "Materials" => "qat-materials",
+        "AppearanceBrowser" => "qat-appearance-browser",
+        "Parameters" => "parameters",
         _ => return None,
     };
-    let images = toolbar_images();
-    if images.len() != 3
-        || images[0].texture == images[1].texture
-        || images[1].texture == images[2].texture
-        || images[0].texture == images[2].texture
-    {
-        return None;
-    }
-    Some(images[index].center)
+    let catalog = include_str!("../../../gui/src/icons/catalog.rs");
+    let index = catalog
+        .lines()
+        .filter_map(|line| line.trim().split_once(" => \""))
+        .map(|(_, value)| value.trim_end_matches([',', '"']))
+        .position(|value| value == name)?;
+    let texture = 2 + index * 2;
+    toolbar_images()
+        .into_iter()
+        .find(|image| image.texture == texture)
 }

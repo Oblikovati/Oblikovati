@@ -7,6 +7,7 @@ const MENU: &str = "##quick-access-materials";
 
 pub(super) fn button(
     ui: &Ui,
+    icons: &crate::icons::GuiRibbonIcons,
     state: &GuiCommandState,
     actions: &mut Vec<GuiShellAction>,
     open: &mut bool,
@@ -14,12 +15,13 @@ pub(super) fn button(
     let disabled =
         ui.begin_disabled(state.authoring != GuiAuthoringContext::Part || state.transaction_open);
     let requested = std::mem::take(open);
-    if ui.button("Materials") || requested {
+    if icons.compact_button(ui, "Materials", crate::icons::IconGlyph::Materials) || requested {
         ui.open_popup(MENU);
     }
     drop(disabled);
     if let Some(_menu) = ui.begin_popup(MENU) {
         choices(ui, state, actions);
+        ui.dummy([0., 2.]);
     }
 }
 

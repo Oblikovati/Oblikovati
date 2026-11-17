@@ -297,7 +297,7 @@ fn application_bar_is_window_top(_: &mut ApplicationWorld) {
 #[then("quick access command icons sit at the leading side of the application bar")]
 fn quick_access_leads_bar(world: &mut ApplicationWorld) {
     let icons = super::quick_access_icons::toolbar_images();
-    assert_eq!(icons.len(), 3);
+    assert_eq!(icons.len(), 13);
     let file = world.run("File");
     let (controls, _) = super::window_geometry("##application-window-controls").unwrap();
     assert!(

@@ -6,7 +6,7 @@ use cucumber::{given, then, when};
 pub(super) fn assert_controls_above_tabs(world: &ApplicationWorld) {
     let file = world.run("File");
     let images = quick_access_icons::toolbar_images();
-    assert_eq!(images.len(), 3, "expected default application-bar icons");
+    assert_eq!(images.len(), 13, "expected default application-bar icons");
     assert!(images.iter().all(|image| image.center[1] < file.minimum[1]));
 }
 

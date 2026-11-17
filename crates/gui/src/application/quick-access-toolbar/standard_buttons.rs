@@ -22,13 +22,14 @@ impl QuickAccessToolbar {
                     icons.compact_button(ui, label, crate::icons::IconGlyph::Open)
             }
             StandardCommand::Home => {
-                if ui.button(label) {
+                if icons.compact_button(ui, label, crate::icons::IconGlyph::Home) {
                     actions.push(GuiShellAction::ShowHome);
                 }
             }
             StandardCommand::Projects => {
                 let disabled = ui.begin_disabled(state.transaction_open);
-                self.requests.open_projects |= ui.button(label);
+                self.requests.open_projects |=
+                    icons.compact_button(ui, label, crate::icons::IconGlyph::Projects);
                 drop(disabled);
             }
             StandardCommand::Save => crate::chrome::command_control(
@@ -39,54 +40,60 @@ impl QuickAccessToolbar {
                 actions,
                 || icons.compact_button(ui, label, crate::icons::IconGlyph::Save),
             ),
-            StandardCommand::Update => crate::chrome::command_button(
+            StandardCommand::Update => compact_action(
                 ui,
+                icons,
                 label,
+                crate::icons::IconGlyph::Update,
                 GuiShellAction::UpdatePart,
                 state,
-                [0.; 2],
                 actions,
             ),
             StandardCommand::Select => {
-                selection::button(ui, state, actions, &mut self.open_selection)
+                selection::button(ui, icons, state, actions, &mut self.open_selection)
             }
             StandardCommand::Undo => {
-                crate::chrome::command_button(
+                compact_action(
                     ui,
+                    icons,
                     label,
+                    crate::icons::IconGlyph::Undo,
                     GuiShellAction::Undo,
                     state,
-                    [0.; 2],
                     actions,
                 );
                 self.undo_history(ui, state, actions);
             }
-            StandardCommand::Redo => crate::chrome::command_button(
+            StandardCommand::Redo => compact_action(
                 ui,
+                icons,
                 label,
+                crate::icons::IconGlyph::Redo,
                 GuiShellAction::Redo,
                 state,
-                [0.; 2],
                 actions,
             ),
             StandardCommand::MaterialBrowser => {
                 let disabled =
                     ui.begin_disabled(state.authoring != crate::GuiAuthoringContext::Part);
-                self.requests.open_material_browser |= ui.button(label);
+                self.requests.open_material_browser |=
+                    icons.compact_button(ui, label, crate::icons::IconGlyph::MaterialBrowser);
                 drop(disabled);
             }
             StandardCommand::Materials => {
-                materials::button(ui, state, actions, &mut self.open_materials)
+                materials::button(ui, icons, state, actions, &mut self.open_materials)
             }
             StandardCommand::AppearanceBrowser => {
                 let disabled =
                     ui.begin_disabled(state.authoring != crate::GuiAuthoringContext::Part);
-                self.requests.open_appearance_browser |= ui.button(label);
+                self.requests.open_appearance_browser |=
+                    icons.compact_button(ui, label, crate::icons::IconGlyph::AppearanceBrowser);
                 drop(disabled);
             }
             StandardCommand::Parameters => {
                 let disabled = ui.begin_disabled(state.document.is_none());
-                self.requests.open_parameters |= ui.button(label);
+                self.requests.open_parameters |=
+                    icons.compact_button(ui, label, crate::icons::IconGlyph::Parameters);
                 drop(disabled);
             }
             StandardCommand::Print
@@ -127,5 +134,22 @@ impl QuickAccessToolbar {
                 actions,
             ),
         }
+    }
+}
+
+fn compact_action(
+    ui: &Ui,
+    icons: &crate::icons::GuiRibbonIcons,
+    label: &str,
+    glyph: crate::icons::IconGlyph,
+    action: GuiShellAction,
+    state: &GuiCommandState,
+    actions: &mut Vec<GuiShellAction>,
+) {
+    let disabled = ui.begin_disabled(!action.enabled(state));
+    let clicked = icons.compact_button(ui, label, glyph);
+    drop(disabled);
+    if clicked && action.dispatchable(state) {
+        actions.push(action);
     }
 }

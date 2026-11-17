@@ -3,7 +3,6 @@ use super::*;
 use oblikovati_api::wire::{ParameterDetail, ParameterInfo};
 
 // This test uses a fixed 1024×768, unit-scale frame on both widget platforms.
-const PARAMETERS_SHORTCUT: [f32; 2] = [820., 14.];
 const NAME_FIELD: [f32; 2] = [295., 200.];
 const EQUATION_FIELD: [f32; 2] = [440., 200.];
 const ADD_BUTTON: [f32; 2] = [535., 200.];
@@ -213,7 +212,28 @@ pub(crate) fn exercise_parameter_journey(mut engine: GuiFrameEngine, mac_osx: bo
 }
 
 fn open_parameters(engine: &mut GuiFrameEngine, request: &mut GuiFrameRequest) {
-    let actions = click(engine, request, PARAMETERS_SHORTCUT);
+    let output = deliver(engine, request, Vec::new());
+    let key = engine.icons.presentation.key(
+        crate::icons::IconGlyph::Parameters,
+        crate::icons::IconSize::Small,
+    );
+    let batch = output
+        .draws
+        .batches
+        .iter()
+        .find(|batch| {
+            batch.texture == key && batch.vertices.iter().any(|vertex| vertex.position[1] < 34.)
+        })
+        .expect("expected the Parameters shortcut icon");
+    let point = std::array::from_fn(|axis| {
+        batch
+            .vertices
+            .iter()
+            .map(|vertex| vertex.position[axis])
+            .sum::<f32>()
+            / batch.vertices.len() as f32
+    });
+    let actions = click(engine, request, point);
     assert!(actions.is_empty(), "unexpected actions: {actions:?}");
     assert!(
         engine.parameters_open(),

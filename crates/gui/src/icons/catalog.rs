@@ -91,4 +91,10 @@ glyph_catalog! {
     WorkAxis => "work-axis",
     WorkPoint => "work-point",
     WorkCoordinateSystem => "coordinate-system",
+    Projects => "qat-projects",
+    Update => "qat-update",
+    Select => "qat-select",
+    MaterialBrowser => "qat-material-browser",
+    Materials => "qat-materials",
+    AppearanceBrowser => "qat-appearance-browser",
 }

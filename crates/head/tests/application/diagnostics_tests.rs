@@ -2,6 +2,27 @@
 use super::*;
 use imgui::Condition;
 #[test]
+fn clip_accepts_small_glyph_overhang_but_rejects_hidden_letters() {
+    let vertex = |pos| DrawVert {
+        pos,
+        uv: [0., 0.],
+        col: [255; 4],
+    };
+    let a = vertex([10., 10.]);
+    let b = vertex([20., 20.]);
+    assert!(inside_clip(a, b, [11., 10., 30., 30.]));
+    assert!(!inside_clip(a, b, [14., 10., 30., 30.]));
+    assert!(!inside_clip(a, b, [21., 10., 30., 30.]));
+}
+#[test]
+fn clipped_glyph_uv_keeps_the_matching_letter_only_when_most_is_visible() {
+    let atlas = [0.1_f32, 0.2, 0.2, 0.3];
+    let lookup = BTreeMap::from([(atlas.map(f32::to_bits), 'p')]);
+    assert_eq!(glyph_for_uv([0.1, 0.2, 0.2, 0.29], &lookup), Some('p'));
+    assert_eq!(glyph_for_uv([0.1, 0.2, 0.2, 0.25], &lookup), None);
+    assert_eq!(glyph_for_uv([0.3, 0.2, 0.4, 0.3], &lookup), None);
+}
+#[test]
 fn pointer_pixels_follow_framebuffer_scale_on_each_axis() {
     let mut context = crate::test_context::create();
     context.io_mut().display_framebuffer_scale = [1.5, 2.];
