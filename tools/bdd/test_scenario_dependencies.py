@@ -108,17 +108,44 @@ class ScenarioDependencyTests(unittest.TestCase):
         """Build the baseline map; example: self.manifest()."""
         return build_map(self.fixture.root, self.inventory, self.fixture.baseline)
 
+    def test_rejects_a_feature_assigned_to_the_wrong_runner_area(self) -> None:
+        row = source_row("wrong-area", "first")
+        row["area"] = "sketch"
+        self.inventory["scenarios"].append(row)
+        with self.assertRaisesRegex(ValueError, "expected.*sketch"):
+            self.manifest()
+
+    def test_rejects_noncanonical_or_nonfeature_paths(self) -> None:
+        for path in (
+            "features/application/../sketch/file.feature",
+            "features/application/file.txt",
+            "features/application//file.feature",
+            "features/application/file.feature/",
+            "features/application/./file.feature",
+            r"features/application/dir\file.feature",
+        ):
+            with self.subTest(path=path):
+                row = source_row("bad-path", "first")
+                row["path"] = path
+                self.inventory["scenarios"] = [row]
+                with self.assertRaises(ValueError):
+                    self.manifest()
+
     def test_sketch3d_is_mapped_without_claiming_a_runner(self) -> None:
         row = source_row("three", "line")
         row["area"] = "sketch3d"
+        row["path"] = "features/sketch3d/line/scenario.feature"
         self.inventory["scenarios"].append(row)
         mapping = self.manifest()
         self.assertIsNone(mapping["scenarios"]["three"]["runner"])
         with tempfile.TemporaryDirectory() as folder:
             with self.assertRaisesRegex(ValueError, "available native runner"):
                 build_map(
-                    self.fixture.root, self.inventory, self.fixture.baseline,
-                    runtime_scenario="three", runtime_root=Path(folder),
+                    self.fixture.root,
+                    self.inventory,
+                    self.fixture.baseline,
+                    runtime_scenario="three",
+                    runtime_root=Path(folder),
                 )
 
     def test_build_rejects_head_change_during_tree_read(self) -> None:
@@ -133,7 +160,11 @@ class ScenarioDependencyTests(unittest.TestCase):
         with patch("scenario_dependencies.git_tree", writer):
             with self.assertRaisesRegex(ValueError, "HEAD"):
                 changed_dependencies(
-                    self.fixture.root, mapping, self.inventory, "one", self.fixture.baseline
+                    self.fixture.root,
+                    mapping,
+                    self.inventory,
+                    "one",
+                    self.fixture.baseline,
                 )
 
     def test_nested_directory_is_not_a_worktree_root(self) -> None:
@@ -150,9 +181,15 @@ class ScenarioDependencyTests(unittest.TestCase):
             self.fixture.write("crates/head/src/lib.rs", "changed")
             with self.assertRaisesRegex(ValueError, "clean"):
                 changed_dependencies(
-                    self.fixture.root, mapping, self.inventory, "one", self.fixture.baseline
+                    self.fixture.root,
+                    mapping,
+                    self.inventory,
+                    "one",
+                    self.fixture.baseline,
                 )
-            self.assertFalse(monitor.marker.exists(), "a Git fsmonitor hook must not run")
+            self.assertFalse(
+                monitor.marker.exists(), "a Git fsmonitor hook must not run"
+            )
 
     @unittest.skipUnless(os.name == "posix", "requires a shell hook")
     def test_cli_compare_does_not_run_local_fsmonitor(self) -> None:
@@ -167,7 +204,9 @@ class ScenarioDependencyTests(unittest.TestCase):
             with patch.object(dependency_cli, "ROOT", self.fixture.root):
                 with patch.object(dependency_cli, "INVENTORY", inventory_path):
                     dependency_cli.compare(map_path, "one", None)
-            self.assertFalse(monitor.marker.exists(), "a Git fsmonitor hook must not run")
+            self.assertFalse(
+                monitor.marker.exists(), "a Git fsmonitor hook must not run"
+            )
 
     def test_local_core_worktree_cannot_hide_a_changed_file(self) -> None:
         mapping = self.manifest()
@@ -176,13 +215,24 @@ class ScenarioDependencyTests(unittest.TestCase):
             self.fixture.git("config", "core.worktree", folder)
             self.fixture.write("crates/head/src/lib.rs", "hidden dirty")
             with self.assertRaisesRegex(ValueError, "worktree|clean"):
-                changed_dependencies(self.fixture.root, mapping, self.inventory, "one", self.fixture.baseline)
+                changed_dependencies(
+                    self.fixture.root,
+                    mapping,
+                    self.inventory,
+                    "one",
+                    self.fixture.baseline,
+                )
 
     def test_runtime_root_for_another_scenario_is_refused(self) -> None:
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
-            mapping = build_map(self.fixture.root, self.inventory, self.fixture.baseline,
-                                runtime_scenario="one", runtime_root=root)
+            mapping = build_map(
+                self.fixture.root,
+                self.inventory,
+                self.fixture.baseline,
+                runtime_scenario="one",
+                runtime_root=root,
+            )
             with self.assertRaisesRegex(ValueError, "runtime"):
                 runtime_changes_for(mapping, "two", root)
 
@@ -197,7 +247,9 @@ class ScenarioDependencyTests(unittest.TestCase):
         self.fixture.write("crates/head/src/lib.rs", "changed")
         self.fixture.commit("new head")
         with self.assertRaisesRegex(ValueError, "HEAD"):
-            changed_dependencies(self.fixture.root, mapping, self.inventory, "one", self.fixture.baseline)
+            changed_dependencies(
+                self.fixture.root, mapping, self.inventory, "one", self.fixture.baseline
+            )
 
     def test_each_scenario_has_its_own_source_and_shared_complete_git_tree(
         self,

@@ -46,8 +46,14 @@ def dependency_checkout_state(root: Path) -> tuple[str, bool]:
 def git_status_command(root: Path, *args: str) -> list[str]:
     """Disable stateful Git extensions for the dependency check; example: git_status_command(repo, 'status')."""
     return [
-        "git", "-C", str(root), "-c", "core.fsmonitor=false", "-c",
-        "core.untrackedCache=false", *args,
+        "git",
+        "-C",
+        str(root),
+        "-c",
+        "core.fsmonitor=false",
+        "-c",
+        "core.untrackedCache=false",
+        *args,
     ]
 
 
@@ -103,19 +109,32 @@ def scenario_record(row: Mapping[str, object]) -> dict[str, object]:
     identifier, path, digest = row.get("id"), row.get("path"), row.get("source_sha256")
     if not isinstance(identifier, str) or not identifier:
         raise ValueError(f"scenario id {identifier!r}: expected a nonempty string")
-    if (
-        not isinstance(path, str)
-        or not path.startswith("features/")
-        or ".." in Path(path).parts
-    ):
-        raise ValueError(f"scenario path {path!r}: expected a relative feature path")
+    area = row.get("area")
+    runner = runner_for(area)
+    require_scenario_path(path, area)
     if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
         raise ValueError(f"scenario source hash {digest!r}: expected a SHA-256 digest")
     return {
         "source": {"path": path, "sha256": digest},
-        "runner": runner_for(row.get("area")),
+        "runner": runner,
         "shared": "application_inputs",
     }
+
+
+def require_scenario_path(path: object, area: object) -> None:
+    """Bind a portable feature path to its area; example: require_scenario_path('features/sketch/a.feature', 'sketch')."""
+    if not isinstance(path, str):
+        raise ValueError(f"scenario path {path!r}: expected a feature path in {area!r}")
+    parts = path.split("/")
+    if (
+        len(parts) < 3
+        or parts[:2] != ["features", area]
+        or any(part in ("", ".", "..") or "\\" in part for part in parts)
+        or not parts[-1].endswith(".feature")
+    ):
+        raise ValueError(
+            f"scenario path {path!r}: expected a canonical .feature path in {area!r}"
+        )
 
 
 def scenario_records(inventory: Mapping[str, object]) -> dict[str, dict[str, object]]:
@@ -138,7 +157,9 @@ def scenario_records(inventory: Mapping[str, object]) -> dict[str, dict[str, obj
 def worktree_clean(root: Path) -> bool:
     """Detect tracked and untracked changes; example: worktree_clean(repo)."""
     output = subprocess.check_output(
-        git_status_command(root, "status", "--porcelain", "-z", "--untracked-files=all"),
+        git_status_command(
+            root, "status", "--porcelain", "-z", "--untracked-files=all"
+        ),
         env=git_environment() | {"GIT_OPTIONAL_LOCKS": "0"},
     )
     if output:
@@ -159,7 +180,12 @@ def case_sensitive_status(root: Path) -> bytes:
     """Check case-distinct paths without changing the user's Git config; example: case_sensitive_status(repo)."""
     return subprocess.check_output(
         git_status_command(
-            root, "-c", "core.ignorecase=false", "status", "--porcelain", "-z",
+            root,
+            "-c",
+            "core.ignorecase=false",
+            "status",
+            "--porcelain",
+            "-z",
             "--untracked-files=all",
         ),
         env=git_environment() | {"GIT_OPTIONAL_LOCKS": "0"},
@@ -179,13 +205,19 @@ def build_map(
     result = collect_map(root, inventory, commit, clean, runtime_scenario, runtime_root)
     require_checkout(root, commit)
     if worktree_clean(root) != clean:
-        raise ValueError("application worktree: expected unchanged cleanliness while mapping")
+        raise ValueError(
+            "application worktree: expected unchanged cleanliness while mapping"
+        )
     return result
 
 
 def collect_map(
-    root: Path, inventory: Mapping[str, object], commit: str, clean: bool,
-    runtime_scenario: str | None, runtime_root: Path | None,
+    root: Path,
+    inventory: Mapping[str, object],
+    commit: str,
+    clean: bool,
+    runtime_scenario: str | None,
+    runtime_root: Path | None,
 ) -> dict[str, object]:
     """Collect tracked and optional runtime inputs; example: collect_map(repo, inventory, sha, True, None, None)."""
     application_inputs = git_tree(root, commit)
@@ -224,7 +256,9 @@ def records_with_runtime(
         if scenario not in records:
             raise ValueError(f"scenario {scenario!r}: expected a mapped scenario")
         if records[scenario]["runner"] is None:
-            raise ValueError(f"scenario {scenario!r}: expected an available native runner")
+            raise ValueError(
+                f"scenario {scenario!r}: expected an available native runner"
+            )
         records[scenario]["runtime"] = "runtime_inputs"
     return records
 
