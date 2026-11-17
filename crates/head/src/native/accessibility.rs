@@ -15,7 +15,7 @@ impl NativeHeadWindow {
         if matches!(event, Some(ViewportEvent::Resized(_))) {
             self.accessibility_bounds = self.view.window_screen_bounds()?;
         }
-        let Some((controls, popup, focused)) =
+        let Some((controls, popup, focused, prompt)) =
             self.gui.as_ref().and_then(|gui| gui.frame_controls())
         else {
             return Ok(());
@@ -26,9 +26,25 @@ impl NativeHeadWindow {
         };
         #[cfg(target_os = "linux")]
         let accessibility = &mut self.accessibility;
+        let mut answered = false;
         while let Some(control) = accessibility.next_request() {
-            if !popup {
-                dispatch_control(control, update);
+            match control {
+                FrameControl::Answer(choice)
+                    if !answered
+                        && prompt.as_ref().is_some_and(|dialog| {
+                            dialog.buttons.iter().any(|button| button.choice == choice)
+                        }) =>
+                {
+                    if let Some(gui) = self.gui.as_mut() {
+                        gui.answer_close_prompt(choice);
+                    }
+                    answered = true;
+                    update.changed = true;
+                    update.wake_after = Some(std::time::Duration::ZERO);
+                }
+                FrameControl::Answer(_) => {}
+                _ if !popup => dispatch_control(control, update),
+                _ => {}
             }
         }
         let semantics = FrameSemantics {
@@ -37,6 +53,7 @@ impl NativeHeadWindow {
             enabled: !popup,
             bounds: controls.bounds.map(|bounds| bounds.map(f64::from)),
             focused: controls.focused.and_then(frame_control),
+            prompt,
         };
         #[cfg(target_os = "linux")]
         {
@@ -68,6 +85,7 @@ fn dispatch_control(control: FrameControl, update: &mut crate::HeadGuiUpdate) {
             update.window_action = Some(oblikovati_gui::GuiWindowAction::ToggleMaximize)
         }
         FrameControl::Close => update.actions.push(oblikovati_gui::GuiShellAction::Exit),
+        FrameControl::Answer(_) => {}
     }
 }
 

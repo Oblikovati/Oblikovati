@@ -287,3 +287,74 @@ fn accept_first_save(
         .into();
     crate::frames::run_frames(window, HeadOptions { frames: Some(20) }, owner).unwrap()
 }
+
+#[test]
+fn guarded_close_exposes_dialog_and_accessible_cancel_keeps_edits() {
+    let (mut window, mut owner) = initialized_window();
+    owner.create_part_document().unwrap();
+    dirty_accessibility_fixture(&mut owner);
+    let document = owner.documents().workspace().active_document().unwrap();
+    window.scripted.push(ViewportEvent::CloseRequested);
+    crate::frames::run_frames(&mut window, HeadOptions { frames: Some(3) }, &mut owner).unwrap();
+    let gui = window.native.gui.as_mut().unwrap();
+    let (_, popup, _, prompt) = gui.frame_controls().unwrap();
+    assert!(popup);
+    let prompt = prompt.expect("dirty close exposes its prompt");
+    assert_eq!(prompt.title, "Save changes");
+    assert_eq!(
+        prompt
+            .buttons
+            .iter()
+            .map(|button| button.label)
+            .collect::<Vec<_>>(),
+        ["Yes", "No", "Cancel"]
+    );
+    assert!(
+        prompt.buttons.iter().all(
+            |button| button.bounds[2] > button.bounds[0] && button.bounds[3] > button.bounds[1]
+        )
+    );
+    gui.answer_close_prompt(oblikovati_gui::GuiClosePromptChoice::Cancel);
+    crate::frames::run_frames(&mut window, HeadOptions { frames: Some(3) }, &mut owner).unwrap();
+    assert!(application_bdd::window_geometry("Save changes").is_none());
+    assert_eq!(
+        owner.documents().workspace().active_document(),
+        Some(document)
+    );
+    assert!(!owner.close_allowed().unwrap());
+    owner.finish().unwrap();
+    window.finish().unwrap();
+}
+
+#[test]
+#[ignore = "run with the AT-SPI client in accessibility_atspi/modal_run.sh"]
+fn accessible_dirty_close_live_fixture() {
+    let (mut window, mut owner) = initialized_window();
+    owner.create_part_document().unwrap();
+    dirty_accessibility_fixture(&mut owner);
+    if let Some(path) = std::env::var_os("OBLIKOVATI_A11Y_READY") {
+        std::fs::write(path, b"ready").unwrap();
+    }
+    crate::run_window_with_owner(&mut window, HeadOptions::default(), &mut owner).unwrap();
+    assert!(owner.documents().workspace().documents().is_empty());
+}
+
+fn dirty_accessibility_fixture(owner: &mut NativeDesktopOwner) {
+    use oblikovati_api::{
+        types::{Variant, VariantValue},
+        wire::SetPropertyArgs,
+    };
+    let document = owner.documents().workspace().active_document().unwrap();
+    Client::new(owner.document_host())
+        .documents()
+        .set_property(&SetPropertyArgs {
+            document,
+            set: oblikovati_model::property::USER_DEFINED.into(),
+            name: "accessible-close".into(),
+            value: Variant {
+                value: VariantValue::String("edited".into()),
+                ..Default::default()
+            },
+        })
+        .unwrap();
+}

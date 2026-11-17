@@ -28,15 +28,30 @@ pub(super) struct NativeGui {
     pointer: input::PointerOwnership,
     last_capture: oblikovati_gui::GuiInputCapture,
     window_controls: Option<oblikovati_gui::GuiWindowControls>,
+    close_prompt: Option<oblikovati_gui::GuiClosePrompt>,
+    accessibility_popup_active: bool,
     clipboard: Option<GuiClipboard>,
 }
 impl NativeGui {
-    pub(super) fn frame_controls(&self) -> Option<(oblikovati_gui::GuiWindowControls, bool, bool)> {
+    pub(super) fn frame_controls(
+        &self,
+    ) -> Option<(
+        oblikovati_gui::GuiWindowControls,
+        bool,
+        bool,
+        Option<oblikovati_gui::GuiClosePrompt>,
+    )> {
         Some((
             self.window_controls.clone()?,
-            self.last_capture.popup,
+            self.accessibility_popup_active,
             self.focused,
+            self.close_prompt.clone(),
         ))
+    }
+    pub(super) fn answer_close_prompt(&mut self, choice: oblikovati_gui::GuiClosePromptChoice) {
+        self.engine.answer_close_prompt(choice);
+        self.parameter_changed = true;
+        self.deadline = Some(Duration::ZERO);
     }
     pub(super) fn request_application_close(&mut self) {
         self.engine.request_application_close();
@@ -166,6 +181,8 @@ impl NativeGui {
             pointer: Default::default(),
             last_capture: Default::default(),
             window_controls: None,
+            close_prompt: None,
+            accessibility_popup_active: false,
             clipboard,
         }
     }
@@ -197,6 +214,8 @@ impl NativeGui {
         self.activity = output.activity;
         self.last_capture = output.capture;
         self.window_controls = Some(output.window_controls);
+        self.close_prompt = output.close_prompt;
+        self.accessibility_popup_active = output.accessibility_popup_active;
         self.deadline = self
             .activity
             .needs_frame()

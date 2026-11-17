@@ -5,6 +5,8 @@ use oblikovati_api::wire::{CloseDocumentArgs, DocumentInfo};
 use oblikovati_model::application_prompts::{ApplicationPrompt, PromptFrequency};
 
 use super::folder_browser::DialogEscape;
+#[path = "close_prompt/accessibility.rs"]
+mod accessibility;
 
 const SAVE_CHANGES: &str = "Save changes";
 const EXIT_ENVIRONMENT: &str = "Exit environment";
@@ -60,6 +62,8 @@ fn close_route(state: &GuiCommandState, id: u64) -> CloseRoute {
 #[derive(Default)]
 pub(crate) struct ClosePrompt {
     asking: Vec<u64>,
+    accessible_prompt: Option<crate::GuiClosePrompt>,
+    accessible_choice: Option<crate::GuiClosePromptChoice>,
     leaving: Vec<u64>,
     /// Closes held until the sketch has finished; the next frame routes them again.
     continuing: Vec<u64>,
@@ -252,6 +256,7 @@ impl ClosePrompt {
     }
     /// Draw the waiting prompt; example: `prompt.panel(ui, &state)` after `intercept`.
     pub(crate) fn panel(&mut self, ui: &Ui, state: &GuiCommandState) -> CloseOutcome {
+        self.accessible_prompt = None;
         let mut outcome = CloseOutcome::default();
         let open = |id: &u64| state.documents.iter().any(|row| row.id == *id);
         self.asking.retain(open);
@@ -275,12 +280,17 @@ impl ClosePrompt {
         let Some(_prompt) = ui.begin_modal_popup(EXIT_ENVIRONMENT) else {
             return;
         };
-        ui.text("Exit the sketch environment and continue?");
+        let message = "Exit the sketch environment and continue?";
+        self.begin_semantics(ui, EXIT_ENVIRONMENT, message.into());
+        ui.text(message);
         frequency_list(ui, state, ApplicationPrompt::ExitEnvironment, outcome);
-        let accepted = crate::widget_abi::button(ui, "OK", [80., 0.]);
+        let choice = self.accessible_choice.take();
+        let accepted = self.prompt_button(ui, "OK", crate::GuiClosePromptChoice::ContinueSketch)
+            || choice == Some(crate::GuiClosePromptChoice::ContinueSketch);
         ui.same_line();
-        let cancelled =
-            crate::widget_abi::button(ui, "Cancel", [80., 0.]) || self.escape.pressed(ui);
+        let cancelled = self.prompt_button(ui, "Cancel", crate::GuiClosePromptChoice::Cancel)
+            || choice == Some(crate::GuiClosePromptChoice::Cancel)
+            || self.escape.pressed(ui);
         if accepted {
             let held = std::mem::take(&mut self.leaving);
             self.leave_sketch(held, outcome);
@@ -288,6 +298,7 @@ impl ClosePrompt {
             self.leaving.clear();
         }
         if accepted || cancelled {
+            self.accessible_prompt = None;
             ui.close_current_popup();
         }
     }
@@ -306,15 +317,18 @@ impl ClosePrompt {
         let Some(_prompt) = ui.begin_modal_popup(SAVE_CHANGES) else {
             return;
         };
-        ui.text(format!(
+        let message = format!(
             "Save changes to {} before closing?",
             document_name(state, id)
-        ));
+        );
+        self.begin_semantics(ui, SAVE_CHANGES, message.clone());
+        ui.text(message);
         self.show_shared_exit_documents(ui, state, id);
         frequency_list(ui, state, ApplicationPrompt::SaveChanges, outcome);
         if let Some(choice) = self.save_changes_buttons(ui) {
             self.resolve(state, choice, outcome);
             self.opening_save = !self.asking.is_empty();
+            self.accessible_prompt = None;
             ui.close_current_popup();
         }
     }
@@ -336,22 +350,6 @@ impl ClosePrompt {
                     ui.text(document_name(state, document));
                 }
             });
-    }
-    fn save_changes_buttons(&mut self, ui: &Ui) -> Option<CloseAnswer> {
-        let mut chosen = None;
-        for (label, choice) in [("Yes", CloseAnswer::Save), ("No", CloseAnswer::Discard)] {
-            if crate::widget_abi::button(ui, label, [80., 0.]) {
-                chosen = Some(choice);
-            }
-            ui.same_line();
-        }
-        let cancelled =
-            crate::widget_abi::button(ui, "Cancel", [80., 0.]) || self.escape.pressed(ui);
-        if cancelled {
-            Some(CloseAnswer::Keep)
-        } else {
-            chosen
-        }
     }
     /// Once per operation, one answer covers every waiting document; Cancel always ends the operation.
     fn resolve(
