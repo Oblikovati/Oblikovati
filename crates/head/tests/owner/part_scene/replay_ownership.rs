@@ -76,6 +76,10 @@ fn headless_replay_tracks_each_document_and_its_own_generation() {
             force: false,
         })
         .unwrap();
+    assert!(replay.slot(second).is_some());
+    replay.retain_open_documents(owner.files.workspace().documents());
+    assert!(replay.slot(second).is_none());
+    assert!(replay.slot(first).is_some());
     assert!(
         replay
             .update_part(&mut owner.files, first)
@@ -91,5 +95,105 @@ fn headless_replay_tracks_each_document_and_its_own_generation() {
             .update_part(&mut owner.files, reopened)
             .unwrap()
             .is_empty()
+    );
+}
+
+#[test]
+fn desktop_replay_keeps_current_results_for_both_documents() {
+    let (mut owner, _) = owner();
+    let first = open_named_prism(&mut owner, "desktop-replay-first.opd");
+    let second = open_named_prism(&mut owner, "desktop-replay-second.opd");
+    assert!(
+        owner
+            .part_scenes
+            .update_part(&mut owner.files, first)
+            .unwrap()
+            .is_empty()
+    );
+    assert!(
+        owner
+            .part_scenes
+            .update_part(&mut owner.files, second)
+            .unwrap()
+            .is_empty()
+    );
+    assert!(
+        !owner
+            .part_scenes
+            .part_requires_update(&owner.files, first)
+            .unwrap()
+    );
+    assert!(
+        !owner
+            .part_scenes
+            .part_requires_update(&owner.files, second)
+            .unwrap()
+    );
+    Client::new(owner.document_host())
+        .documents()
+        .activate(&ActivateDocumentArgs { id: first })
+        .unwrap();
+    owner.part_scenes.refresh(&mut owner.files).unwrap();
+    Client::new(owner.document_host())
+        .documents()
+        .activate(&ActivateDocumentArgs { id: second })
+        .unwrap();
+    owner.part_scenes.refresh(&mut owner.files).unwrap();
+    assert!(
+        !owner
+            .part_scenes
+            .part_requires_update(&owner.files, first)
+            .unwrap()
+    );
+    Client::new(owner.document_host())
+        .documents()
+        .activate(&ActivateDocumentArgs { id: first })
+        .unwrap();
+    set_parameter(&mut owner, "width", "6 cm");
+    assert!(
+        owner
+            .part_scenes
+            .part_requires_update(&owner.files, first)
+            .unwrap()
+    );
+    assert!(
+        !owner
+            .part_scenes
+            .part_requires_update(&owner.files, second)
+            .unwrap()
+    );
+    owner
+        .part_scenes
+        .update_part(&mut owner.files, first)
+        .unwrap();
+    owner.files.commands(first).unwrap().undo().unwrap();
+    assert!(
+        owner
+            .part_scenes
+            .part_requires_update(&owner.files, first)
+            .unwrap()
+    );
+    assert!(
+        !owner
+            .part_scenes
+            .part_requires_update(&owner.files, second)
+            .unwrap()
+    );
+    owner
+        .part_scenes
+        .update_part(&mut owner.files, first)
+        .unwrap();
+    owner.files.commands(first).unwrap().redo().unwrap();
+    assert!(
+        owner
+            .part_scenes
+            .part_requires_update(&owner.files, first)
+            .unwrap()
+    );
+    assert!(
+        !owner
+            .part_scenes
+            .part_requires_update(&owner.files, second)
+            .unwrap()
     );
 }

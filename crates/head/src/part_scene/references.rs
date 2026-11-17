@@ -83,7 +83,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
         face: &oblikovati_model::feature::work_plane::WorkPlaneFaceReference,
     ) -> Result<oblikovati_model::sketch::SketchPlane, String> {
         self.ensure_current(files, document)?;
-        oblikovati_automation::resolve_slot_face(files, document, &self.slot, face)
+        oblikovati_automation::resolve_slot_face(files, document, self.active_slot()?, face)
     }
     fn datum_evaluation(
         &mut self,
@@ -115,7 +115,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
             .workspace()
             .session(document)
             .map_err(|error| error.to_string())?;
-        self.slot
+        self.active_slot()?
             .current_datums(session)
             .map_err(|error| error.to_string())
     }
@@ -126,7 +126,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
         face: &oblikovati_model::feature::work_plane::WorkPlaneFaceReference,
     ) -> Result<oblikovati_session::part_evaluation::CurrentPartDatums, String> {
         self.ensure_current(files, document)?;
-        oblikovati_automation::slot_datums_for_face(files, document, &self.slot, face)
+        oblikovati_automation::slot_datums_for_face(files, document, self.active_slot()?, face)
     }
 }
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartTopologyAccess<O, W, F>

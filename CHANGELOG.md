@@ -143,6 +143,8 @@
 
 ### Changed
 
+- Retained current part replay results per open document in the desktop. (#4079)
+
 - Reused unchanged sketch replay results during part updates to avoid a second full replay. (#4079)
 
 - Separated selected-face context commands from the radial marking menu. (#4055)

@@ -2,6 +2,7 @@
 //! Integrate shared part replay with the desktop presentation owner.
 use super::*;
 use oblikovati_api::wire::FeatureError;
+use oblikovati_automation::PartUpdateAccess;
 
 impl DesktopPartScenes {
     pub(super) fn requires_update_for_api<
@@ -9,18 +10,11 @@ impl DesktopPartScenes {
         W: WorkspaceObserver,
         F: DocumentFiles,
     >(
-        &self,
+        &mut self,
         files: &FileWorkspace<O, W, F>,
         document: u64,
     ) -> Result<bool, String> {
-        let session = files
-            .workspace()
-            .session(document)
-            .map_err(|error| error.to_string())?;
-        Ok(oblikovati_automation::part_replay_is_stale(
-            session,
-            Some(&self.slot),
-        ))
+        self.replay.part_requires_update(files, document)
     }
     pub(super) fn recompute_for_api<
         O: TransactionObserver,
@@ -31,25 +25,9 @@ impl DesktopPartScenes {
         files: &mut FileWorkspace<O, W, F>,
         document: u64,
     ) -> Result<Vec<FeatureError>, String> {
-        if self
-            .slot
-            .latest()
-            .is_some_and(|view| view.document != document)
-        {
-            self.slot.clear();
-        }
-        self.adopt_current(files, document)?;
+        let errors = self.replay.update_part(files, document)?;
+        self.active_replay = Some(document);
         self.invalidate_presentation();
-        let session = files
-            .workspace()
-            .session(document)
-            .map_err(|error| error.to_string())?;
-        oblikovati_automation::part_feature_errors(
-            session.snapshot(),
-            self.slot
-                .current(session)
-                .map_err(|error| error.to_string())?
-                .health(),
-        )
+        Ok(errors)
     }
 }
