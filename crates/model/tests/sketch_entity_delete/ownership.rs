@@ -87,7 +87,7 @@ fn older_schemas_cannot_silently_acquire_hidden_point_ownership() {
     }
     let mut missing = recipe;
     missing.defining_points = None;
-    assert_point_schema_error(&missing, "explicit list in versions 12-17");
+    assert_point_schema_error(&missing, "explicit list in versions 12-20");
 }
 fn assert_point_schema_error(recipe: &SketchRecipe, expected: &str) {
     let error = Sketch2D::from_recipe(recipe).unwrap_err();

@@ -288,3 +288,6 @@ fn centered_arc_refuses_nonfinite_zero_and_identical_radial_directions() {
         assert!(MartensiteSketchConstruction.arc_direction(points).is_err());
     }
 }
+
+#[path = "circumcircle/corner_predicate.rs"]
+mod corner_predicate;

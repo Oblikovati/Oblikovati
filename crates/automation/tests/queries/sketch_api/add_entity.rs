@@ -383,14 +383,13 @@ fn unhealthy_parameter_reads_decline_and_repaired_reads_use_the_new_value() {
     assert_eq!(row(&files, created.entity_id).radius, 2.0);
 }
 #[test]
-fn constructor_expressions_are_seeds_and_do_not_invent_a_live_dimension_binding() {
+fn constructor_parameter_expressions_create_live_dimension_bindings() {
     let (mut files, _, mut source) = fresh();
     let mut input = circle_input();
     input.radius = "width".into();
     let first = add_call(&mut files, &mut source, &input).unwrap();
-    let original = row(&files, first.entity_id);
     set_width(&mut files, &mut source, "2 cm");
-    assert_eq!(row(&files, first.entity_id), original);
+    assert!((row(&files, first.entity_id).radius - 2.0).abs() < 1e-8);
     let second = add_call(&mut files, &mut source, &input).unwrap();
     assert_eq!(row(&files, second.entity_id).radius, 2.0);
 }
@@ -419,6 +418,8 @@ fn invalid_sketch_indices_and_document_kinds_cannot_adopt_geometry() {
     );
 }
 
+#[path = "add_entity/associative.rs"]
+mod associative;
 #[path = "add_entity/line.rs"]
 mod line;
 
@@ -441,3 +442,6 @@ mod three_point;
 
 #[path = "add_entity/slots.rs"]
 mod slots;
+
+#[path = "add_entity/corner.rs"]
+mod corner;

@@ -44,8 +44,8 @@ pub(super) fn spline_records(
 ) -> Result<Option<SplineRecords<'_>>, SketchError> {
     match (recipe.version, &recipe.splines, &recipe.offset_splines) {
         (1..=9, None, None) if recipe.spline_handles.is_none() => Ok(None),
-        (10..=16, Some(parents), Some(offsets))
-            if recipe.spline_handles.is_none() || recipe.version == 13 =>
+        (10..=16 | 18..=20, Some(parents), Some(offsets))
+            if recipe.spline_handles.is_none() || recipe.version == 13 || recipe.version >= 18 =>
         {
             Ok(Some((parents, offsets)))
         }

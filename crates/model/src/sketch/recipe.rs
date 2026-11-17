@@ -3,8 +3,8 @@ use super::{
     Sketch2D, SketchArc2D, SketchCircle2D, SketchConstraint, SketchError, SketchLine2D,
     SketchPoint2D,
 };
-/// Latest planar schema: v2 records order, v3 construction roles, v4 line axis roles, v5 dimension placements, v6 drive settings, v7 analytic ellipses, v8 ground anchors, v9 ellipse minor-radius dimensions, v10 parent and offset splines, v11 offset dimensions, v12 defining-point ownership, v13 point direction dimensions, v14 structural pattern point and radius links, v15 parameter-driven pattern offsets, v16 rectangular pattern records, v17 spline handles.
-pub const SKETCH_RECIPE_VERSION: u32 = 17;
+/// Latest planar schema: v2 records order, v3 construction roles, v4 line axis roles, v5 dimension placements, v6 drive settings, v7 analytic ellipses, v8 ground anchors, v9 ellipse minor-radius dimensions, v10 parent and offset splines, v11 offset dimensions, v12 defining-point ownership, v13 point direction dimensions, v14 structural pattern point and radius links, v15 parameter-driven pattern offsets, v16 rectangular pattern records, v17 spline handles, v18 signed offset sources, v19 structural relation owners, v20 branch-preserving corner setbacks.
+pub const SKETCH_RECIPE_VERSION: u32 = 20;
 /// Owned authored values; no numerical workspace, derived topology or system equations.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -25,6 +25,8 @@ pub struct SketchRecipe {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub defining_points: Option<Vec<super::SketchEntityId>>,
     pub constraints: Vec<SketchConstraint>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub owned_relations: Option<Vec<super::SketchOwnedRelation>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pattern_point_links: Option<Vec<super::SketchPatternPointLink>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -67,6 +69,19 @@ impl Sketch2D {
             self.capture_point_ownership_metadata(&mut recipe);
             recipe.version = 17;
         }
+        if recipe.constraints.iter().any(|c| {
+            matches!(
+                c.relation,
+                super::PlanarConstraint::OffsetSplineDistance { signed: true, .. }
+            )
+        }) {
+            self.capture_point_ownership_metadata(&mut recipe);
+            recipe.version = 18;
+        }
+        self.capture_owned_relations(&mut recipe);
+        if has_corner_setback(&recipe) {
+            recipe.version = 20;
+        }
         recipe
     }
     fn capture_point_angle_schema(&self, recipe: &mut SketchRecipe) {
@@ -89,6 +104,7 @@ impl Sketch2D {
             spline_handles: None,
             defining_points: None,
             constraints: self.constraints.clone(),
+            owned_relations: None,
             pattern_point_links: None,
             pattern_offsets: None,
             rectangular_patterns: None,
@@ -133,6 +149,12 @@ impl Sketch2D {
     /// Restore into a fresh owner after validation; example: `let sketch = Sketch2D::from_recipe(&recipe)?;`.
     pub fn from_recipe(recipe: &SketchRecipe) -> Result<Self, SketchError> {
         require_recipe_version(recipe.version)?;
+        if recipe.version < 20 && has_corner_setback(recipe) {
+            return Err(SketchError::Definition(format!(
+                "corner setback recipe version {}: expected version 20",
+                recipe.version
+            )));
+        }
         require_point_angle_schema(recipe)?;
         super::point_ownership::require_point_ownership_schema(recipe)?;
         super::spline::require_spline_schema(recipe)?;
@@ -149,6 +171,7 @@ impl Sketch2D {
         for constraint in &recipe.constraints {
             sketch.add_constraint(constraint.id, constraint.relation.clone())?;
         }
+        sketch.restore_owned_relations(recipe)?;
         sketch.restore_pattern_point_links(recipe)?;
         sketch.restore_pattern_offsets(recipe)?;
         sketch.restore_rectangular_patterns(recipe)?;
@@ -213,4 +236,11 @@ fn require_point_angle_schema(recipe: &SketchRecipe) -> Result<(), SketchError> 
         )));
     }
     Ok(())
+}
+
+fn has_corner_setback(recipe: &SketchRecipe) -> bool {
+    recipe
+        .constraints
+        .iter()
+        .any(|row| matches!(row.relation, super::PlanarConstraint::CornerSetback { .. }))
 }

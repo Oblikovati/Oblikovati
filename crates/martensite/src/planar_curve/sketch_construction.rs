@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{
     CircumcircleOptions, PlanarCircumcircle, PlanarCurveFailure,
-    circumcircle::{classify_points, measure_residuals, require_options},
+    circumcircle::{classify_points, classify_turn, measure_residuals, require_options},
     construct_planar_circumcircle,
 };
-use oblikovati_model::sketch::{SketchCircleConstruction, SolvedCircularSeed};
+use oblikovati_model::sketch::{
+    SketchCircleConstruction, SketchCornerPredicate, SketchCornerTurn, SolvedCircularSeed,
+};
 use std::error::Error;
 mod arc_direction;
+mod corner;
 /// Stateless geometry service injected at the desktop and CLI composition roots.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct MartensiteSketchConstruction;
@@ -30,6 +33,16 @@ impl SketchCircleConstruction for MartensiteSketchConstruction {
         options: CircumcircleOptions,
     ) -> Result<(), Box<dyn Error>> {
         verify_solved(points, solved, options).map_err(|cause| Box::new(cause) as Box<dyn Error>)
+    }
+}
+impl SketchCornerPredicate for MartensiteSketchConstruction {
+    fn turn(&self, points: [[f64; 2]; 3]) -> Result<SketchCornerTurn, Box<dyn Error>> {
+        use martensite_tkmath::predicates::OrientationSign;
+        match classify_turn(points)? {
+            OrientationSign::Positive => Ok(SketchCornerTurn::CounterClockwise),
+            OrientationSign::Negative => Ok(SketchCornerTurn::Clockwise),
+            OrientationSign::Zero => Ok(SketchCornerTurn::Collinear),
+        }
     }
 }
 fn verify_solved(
@@ -94,4 +107,16 @@ fn verify_endpoint_displacement(
         }
     }
     Ok(())
+}
+
+impl oblikovati_model::sketch::SketchCornerConstruction for MartensiteSketchConstruction {
+    fn construct_corner(
+        &self,
+        points: [[f64; 2]; 3],
+        size: oblikovati_model::sketch::SketchCornerSize,
+        maximum_residual: f64,
+    ) -> Result<oblikovati_model::sketch::SketchCornerSeed, Box<dyn Error>> {
+        corner::construct(points, size, maximum_residual)
+            .map_err(|cause| Box::new(cause) as Box<dyn Error>)
+    }
 }
