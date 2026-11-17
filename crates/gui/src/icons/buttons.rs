@@ -47,8 +47,11 @@ impl GuiRibbonIcons {
             },
         );
         if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
-            // Glyphs can overhang their advance; the extra space prevents clipping (#4062).
-            ui.tooltip_text(format!("{label} "));
+            // Glyphs can overhang their measured size, including descenders (#4062).
+            ui.tooltip(|| {
+                ui.text(format!("{label} "));
+                ui.dummy([0., 2.]);
+            });
         }
         pressed
     }
