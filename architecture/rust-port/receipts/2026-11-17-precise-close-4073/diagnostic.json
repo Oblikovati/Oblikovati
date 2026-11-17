@@ -1,0 +1,12 @@
+{
+  "base": "daa5ed62a",
+  "issue": 4073,
+  "scope": "Precise Input menu close and Line target loss in shared dock",
+  "native_x11": "2 passed; Parameters becomes active and Precise Input reopens in the same dock after each transition",
+  "checks": [
+    "cargo fmt --all -- --check",
+    "cargo clippy --locked --offline -p oblikovati-head --all-targets -- -D warnings",
+    "cargo check --locked --offline -p oblikovati-head --target x86_64-pc-windows-gnu"
+  ],
+  "remaining": "Other target-loss causes and other dockable window close transitions remain unverified."
+}

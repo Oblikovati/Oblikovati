@@ -65,6 +65,8 @@
 
 ### Fixed
 
+- Kept the remaining dock tab active when Precise Input closes from its menu. (#4073)
+
 - Kept the remaining dock tab active when Create Block closes or completes. (#4073)
 
 - Kept the remaining dock tab active when Navigation Wheel Options closes. (#4073)
