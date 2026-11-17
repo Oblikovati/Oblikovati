@@ -69,6 +69,7 @@ fn lighting_retains_each_faces_material_color() {
 #[test]
 fn isometric_cube_has_three_visible_face_tones() {
     let runtime = ViewportRuntime::new(Default::default()).unwrap();
+    println!("viewport lighting device: {}", runtime.device_name());
     let mut view = runtime.open_offscreen([320, 240]).unwrap();
     let mut triangles = Vec::new();
     let color = [0.7, 0.7, 0.7, 1.];
@@ -81,11 +82,11 @@ fn isometric_cube_has_three_visible_face_tones() {
             triangles.push(ViewportTriangle { positions, color });
         }
     }
-    view.submit(&ViewportScene {
+    let mut scene = ViewportScene {
         background: [0., 0., 0.],
         triangles,
-    })
-    .unwrap();
+    };
+    view.submit(&scene).unwrap();
     view.set_camera(ViewportCamera {
         eye: [20.; 3],
         up: [0., 0., 1.],
@@ -95,6 +96,12 @@ fn isometric_cube_has_three_visible_face_tones() {
     let capture = view.redraw().unwrap();
     let faces = [[5., -1., 1.], [-1., 5., 1.], [1., -1., 5.]]
         .map(|point| face_pixel(&view, &capture, point));
+    // Go's shaded-mode ambient term for neutral 0.7 is about 90/255 (#4044).
+    // Allow ten levels for backend and color-conversion differences.
+    assert!(
+        faces.iter().all(|face| face[0] >= 80),
+        "dark face below Go ambient floor: {faces:?}"
+    );
     assert!(
         faces.iter().all(|face| face[0] > 0),
         "faces {faces:?} must be visible"
@@ -102,6 +109,56 @@ fn isometric_cube_has_three_visible_face_tones() {
     assert!(
         faces[0] != faces[1] && faces[1] != faces[2] && faces[0] != faces[2],
         "faces {faces:?} must be distinct"
+    );
+    for channel in 0..3 {
+        let mut color = [0., 0., 0., 1.];
+        color[channel] = 0.7;
+        for triangle in &mut scene.triangles {
+            triangle.color = color;
+        }
+        view.submit(&scene).unwrap();
+        let capture = view.redraw().unwrap();
+        let dark = face_pixel(&view, &capture, [5., -1., 1.]);
+        assert!(dark[channel] >= 80, "channel {channel}: {dark:?}");
+        assert!(
+            (0..3)
+                .filter(|other| *other != channel)
+                .all(|other| dark[other] == 0),
+            "channel {channel}: {dark:?}"
+        );
+    }
+    for triangle in &mut scene.triangles {
+        triangle.color = [0.05, 0., 0., 1.];
+    }
+    view.submit(&scene).unwrap();
+    let capture = view.redraw().unwrap();
+    let dim = face_pixel(&view, &capture, [5., -1., 1.]);
+    assert!(
+        dim[0] > 0 && dim[0] < 80 && dim[1] == 0 && dim[2] == 0,
+        "dim color {dim:?}"
+    );
+    view.close();
+    assert!(runtime.validation_errors().unwrap().is_empty());
+}
+
+#[test]
+fn reversed_visible_face_keeps_ambient_color() {
+    let runtime = ViewportRuntime::new(Default::default()).unwrap();
+    let mut view = runtime.open_offscreen([320, 240]).unwrap();
+    let triangle = ViewportTriangle {
+        positions: [[-8., -4., 0.], [0., 8., 0.], [8., -4., 0.]],
+        color: [0.7, 0., 0., 1.],
+    };
+    view.submit(&ViewportScene {
+        background: [0., 0., 0.],
+        triangles: vec![triangle],
+    })
+    .unwrap();
+    let capture = view.redraw().unwrap();
+    let color = face_pixel(&view, &capture, [0., 0., 0.]);
+    assert!(
+        color[0] >= 80 && color[1] == 0 && color[2] == 0,
+        "back face {color:?}"
     );
     view.close();
     assert!(runtime.validation_errors().unwrap().is_empty());

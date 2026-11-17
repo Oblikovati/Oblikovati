@@ -17,7 +17,8 @@ Last checked: 2026-11-16 on `rust-work`. Refresh from current evidence at each c
   reference-capture gaps prevent acceptance; other mouse scenarios remain open.
 - All five solid viewport interaction scenarios pass X11 diagnostics for
   extrusion and Fillet (#4038, #4045). The live source is not pinned and its
-  fixture and capture tags remain; shading is under review (#4044). See
+  fixture and capture tags remain. The dark-face ambient issue has a host
+  correction (#4044); full Go lighting parity remains open. See
   `receipts/2026-11-17-viewport-fillet-bdd-4045/`.
 - Named-edge Fillet creation, replay, undo/redo and save/reopen have focused
   API and native-window tests (#4045). The typed `features.edit` path supports

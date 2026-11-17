@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::ViewportTriangle;
-use martensite_tkernel::{quantity::ColorRgba, standard::Handle};
+use martensite_tkernel::{
+    quantity::{Color, ColorRgba, NamedColor},
+    standard::Handle,
+};
 use martensite_tkservice::graphic3d::*;
 use martensite_tkv3d::v3d::V3dViewer;
 pub(crate) fn build_scene(
@@ -23,6 +26,12 @@ fn build_triangle(
     let aspects = Handle::new(Graphic3dAspects::default());
     aspects.set_polygon_offsets(0, 0., 0.);
     aspects.set_shading_model(Graphic3dTypeOfShadingModel::Phong);
+    // #4044: the default material multiplies ambient by 0.25 before the scene
+    // color. Use the full scene color as the ambient reflectance, like the Go
+    // shaded view; the viewer still controls the ambient light intensity.
+    aspects.change_front_material(|material| {
+        material.set_ambient_color(Color::named(NamedColor::WHITE))
+    });
     let [red, green, blue, alpha] = triangle.color;
     aspects.set_interior_color_rgba(
         ColorRgba::new(red, green, blue, alpha).map_err(|error| error.to_string())?,

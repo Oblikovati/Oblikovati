@@ -140,3 +140,11 @@ The check concerns display clipping only; it does not affect B-rep geometry or
 model decisions. The native edit regression compares the result to an explicit
 depth fit and covers positive and negative extrusion, resize, empty scenes,
 Previous View, and marked-view restore. See `receipts/2026-11-16-scene-depth-4044/`.
+
+## Ambient response
+
+Color-only scene triangles use their full color for ambient reflectance. This
+avoids multiplying the viewer's ambient light by the default material's 0.25
+coefficient. The desktop capture and the bounded Go shaded-mode floor
+comparison are in `receipts/2026-11-17-ambient-material-4044/`. Full lighting
+and material parity are not established by this check.
