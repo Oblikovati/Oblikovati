@@ -86,3 +86,43 @@ fn maximized_bounds_unchanged(world: &mut ApplicationWorld) {
 fn restore_remains_available(world: &mut ApplicationWorld) {
     control_tooltip(world, "Restore");
 }
+
+#[given("the restored main window occupies a known size and position within the desktop work area")]
+fn remember_restored_bounds(world: &mut ApplicationWorld) {
+    restored_window(world);
+    world.previous_document = Some(world.active_id());
+}
+#[when("the user selects Maximize in the application bar")]
+#[when("the user selects Restore in the application bar")]
+fn click_maximize_restore(world: &mut ApplicationWorld) {
+    super::main_window_frame_native::press_maximize(world);
+}
+#[then("the window fills the monitor's work area and respects the taskbar")]
+fn maximized_to_work_area(world: &mut ApplicationWorld) {
+    super::main_window_frame_native::pump_until(world, true);
+    assert_eq!(
+        super::x11_input::application_bounds(),
+        super::x11_input::desktop_work_area()
+    );
+}
+#[then("Restore replaces Maximize in the same position")]
+fn restore_replaces_maximize(world: &mut ApplicationWorld) {
+    control_tooltip(world, "Restore");
+}
+#[then("Maximize replaces Restore in the same position")]
+fn maximize_replaces_restore(world: &mut ApplicationWorld) {
+    control_tooltip(world, "Maximize");
+}
+#[then("the ribbon and viewport lay out within the enlarged window")]
+fn enlarged_window_layout(world: &mut ApplicationWorld) {
+    let bounds = super::x11_input::application_bounds();
+    let (position, size) =
+        super::window_geometry("##application-ribbon").expect("expected the ribbon");
+    assert!(position[0] >= 0. && position[1] >= 0.);
+    assert!(size[0] <= bounds[2] as f32 && size[1] < bounds[3] as f32);
+    assert!(world.app().window.native.drawable_extent().unwrap()[1] as i32 >= bounds[3]);
+}
+#[then("the window returns to its previous size and position")]
+fn prior_window_bounds(world: &mut ApplicationWorld) {
+    restored_bounds(world);
+}

@@ -398,3 +398,28 @@ pub(super) fn click_test_taskbar() {
     let y = i16::try_from(root.height_in_pixels - 16).unwrap();
     send_click(&connection, root.root, 100, y, 1);
 }
+
+pub(super) fn desktop_work_area() -> [i32; 4] {
+    let (connection, screen) = x11rb::connect(None).expect("X11: expected a display connection");
+    let root = connection.setup().roots[screen].root;
+    let property = connection
+        .get_property(
+            false,
+            root,
+            atom(&connection, b"_NET_WORKAREA"),
+            AtomEnum::CARDINAL,
+            0,
+            4,
+        )
+        .unwrap()
+        .reply()
+        .unwrap();
+    let values: Vec<i32> = property
+        .value32()
+        .unwrap()
+        .map(|value| value as i32)
+        .collect();
+    values
+        .try_into()
+        .expect("_NET_WORKAREA: expected the current desktop rectangle")
+}
