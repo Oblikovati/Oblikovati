@@ -189,6 +189,25 @@ fn application_scenarios_use_the_native_window() {
         .join()
         .unwrap();
 }
+fn scenario_capture_namespace(
+    feature: &cucumber::gherkin::Feature,
+    scenario: &cucumber::gherkin::Scenario,
+) -> String {
+    use sha2::{Digest, Sha256};
+    let path = fs::canonicalize(feature.path.as_ref().expect("scenario feature path"))
+        .expect("scenario feature path must exist");
+    let root = fs::canonicalize(scenario_root()).expect("scenario root must exist");
+    let relative = path
+        .strip_prefix(root)
+        .expect("scenario feature must be inside scenario root");
+    let identity = format!(
+        "{}:{}:{}",
+        relative.display(),
+        scenario.position.line,
+        scenario.name
+    );
+    format!("{:x}", Sha256::digest(identity.as_bytes()))
+}
 fn capture_name(
     feature: &cucumber::gherkin::Feature,
     scenario: &cucumber::gherkin::Scenario,
@@ -264,11 +283,15 @@ fn run_scenarios(root: PathBuf, keep_feature: fn(&cucumber::gherkin::Feature) ->
             // After `with_writer`, which resets the CLI: libtest's arguments are not Cucumber's.
             .with_default_cli()
             .fail_on_skipped_with(|_, _, _| true)
+            .before(|feature, _, scenario, world| {
+                let namespace = scenario_capture_namespace(feature, scenario);
+                Box::pin(async move { world.set_capture_namespace(namespace) })
+            })
             .after(|feature, _, scenario, _, world| {
                 let name = capture_name(feature, scenario);
                 Box::pin(async move {
                     if let Some(world) = world {
-                        world.save_capture(&name);
+                        world.save_final_capture(&name);
                         world.close();
                     }
                 })

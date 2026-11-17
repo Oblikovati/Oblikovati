@@ -7,6 +7,7 @@ pub(super) struct ApplicationWorld {
     pub app: Option<NativeApplication>,
     _preferences: tempfile::TempDir,
     pub frame: diagnostics::RenderedFrame,
+    capture_namespace: Option<String>,
     pub previous_document: Option<u64>,
     pub observed_view_camera: Option<oblikovati_viewport::ViewportCamera>,
     /// The picked face boundary before a Zoom Selected operation.
@@ -73,6 +74,7 @@ impl ApplicationWorld {
             }),
             _preferences: preferences,
             frame: Default::default(),
+            capture_namespace: None,
             previous_document: None,
             observed_view_camera: None,
             observed_zoom_face_edges: Vec::new(),
@@ -263,8 +265,20 @@ impl ApplicationWorld {
             "region x={x:?} y={y:?}: expected viewport gradient outside navigation controls"
         );
     }
-    /// Keep the final frame for visual review; a scenario's image names its scenario.
+    /// Scope intermediate captures to one scenario, preserving its final root image.
+    pub(super) fn set_capture_namespace(&mut self, namespace: String) {
+        self.capture_namespace = Some(namespace);
+    }
     pub fn save_capture(&mut self, scenario: &str) {
+        let folder = capture_folder(&reports_folder(), self.capture_namespace.as_deref());
+        self.save_capture_in(scenario, &folder);
+    }
+    pub(super) fn save_final_capture(&mut self, scenario: &str) {
+        let folder =
+            capture_folder(&reports_folder(), self.capture_namespace.as_deref()).join("final");
+        self.save_capture_in(scenario, &folder);
+    }
+    fn save_capture_in(&mut self, scenario: &str, folder: &std::path::Path) {
         let Some(app) = self.app.as_mut() else { return };
         let capture = super::capture_framebuffer(&mut app.window.native);
         let name: String = scenario
@@ -277,8 +291,7 @@ impl ApplicationWorld {
                 }
             })
             .collect();
-        let folder = reports_folder();
-        std::fs::create_dir_all(&folder).expect("scenario capture directory must exist");
+        std::fs::create_dir_all(folder).expect("scenario capture directory must exist");
         write_png(&folder.join(format!("{name}.png")), &capture)
             .expect("scenario capture must be saved");
     }
@@ -386,4 +399,38 @@ fn scenario_preferences_are_private_and_removed_after_close() {
         .unwrap()
         .join()
         .unwrap();
+}
+
+fn capture_folder(root: &std::path::Path, namespace: Option<&str>) -> std::path::PathBuf {
+    match namespace {
+        Some(name) => root.join("scenarios").join(name),
+        None => root.to_owned(),
+    }
+}
+
+#[cfg(test)]
+mod capture_scope_tests {
+    use super::*;
+
+    #[test]
+    fn scenario_images_are_isolated_and_never_overwritten() {
+        let root = tempfile::tempdir().unwrap();
+        let capture = oblikovati_viewport::ViewportCapture {
+            view_id: 1,
+            scene_generation: 1,
+            camera_generation: 1,
+            surface_generation: 1,
+            overlay_generation: 1,
+            extent: [1, 1],
+            rgba: vec![0, 0, 0, 255],
+        };
+        let first = capture_folder(root.path(), Some("first"));
+        let second = capture_folder(root.path(), Some("second"));
+        std::fs::create_dir_all(&first).unwrap();
+        std::fs::create_dir_all(&second).unwrap();
+        write_png(&first.join("view.png"), &capture).unwrap();
+        write_png(&second.join("view.png"), &capture).unwrap();
+        assert!(write_png(&first.join("view.png"), &capture).is_err());
+        assert_eq!(capture_folder(root.path(), None), root.path());
+    }
 }
