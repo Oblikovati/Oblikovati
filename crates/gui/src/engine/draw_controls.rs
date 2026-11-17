@@ -124,8 +124,7 @@ impl GuiFrameEngine {
             ui,
             &request.commands,
             request.extent[1] as f32 / request.layout_scale()[1]
-                - crate::application::workspace_layout::status_bar::STATUS_BAR_HEIGHT
-                - self.workspace.tab_height(),
+                - crate::application::workspace_layout::status_bar::STATUS_BAR_HEIGHT,
             band_height,
             self.part_context_open,
             &mut selected,

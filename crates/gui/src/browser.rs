@@ -401,6 +401,5 @@ pub(crate) const ORIGIN_ROWS: [&str; 7] = [
     "Center Point",
 ];
 pub(crate) fn model_browser_width(viewport_width: f32) -> f32 {
-    // Keep the native view centre available for picks even when content scale narrows the layout (#3850).
-    300_f32.min((viewport_width * 0.5 - 16.).max(1.))
+    (viewport_width * 0.25).max(1.)
 }

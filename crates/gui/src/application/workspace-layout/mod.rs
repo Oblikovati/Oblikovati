@@ -207,14 +207,12 @@ impl WorkspaceLayout {
         let display = ui.io().display_size[0];
         let width = self.browser_width(display);
         let x = match self.dock {
-            BrowserDock::Left => self.ribbon_left + EDGE_MARGIN + width,
-            BrowserDock::Right => {
-                display - self.ribbon_right - width - EDGE_MARGIN - BOUNDARY_WIDTH
-            }
+            BrowserDock::Left => self.ribbon_left + width - BOUNDARY_WIDTH / 2.,
+            BrowserDock::Right => display - self.ribbon_right - width - BOUNDARY_WIDTH / 2.,
             BrowserDock::Floating(_) => return,
         };
-        let top = band_height + 10.;
-        let size = [BOUNDARY_WIDTH, (height - band_height - 18.).max(120.)];
+        let top = band_height;
+        let size = [BOUNDARY_WIDTH, (height - band_height).max(1.)];
         crate::widget_abi::window_geometry(ui, [x, top], size, Condition::Always);
         // A window's defaults would keep this handle 32 pixels wide and clip its own edges.
         let _padding = ui.push_style_var(imgui::StyleVar::WindowPadding([0., 0.]));
@@ -247,17 +245,11 @@ impl WorkspaceLayout {
             return;
         }
         let width = ui.io().display_size[0];
-        let docked = [
-            self.browser_width(width),
-            (height - band_height - 18.).max(120.),
-        ];
-        let top = band_height + 10.;
+        let docked = [self.browser_width(width), (height - band_height).max(1.)];
+        let top = band_height;
         let (position, size) = match self.dock {
-            BrowserDock::Left => ([self.ribbon_left + EDGE_MARGIN, top], docked),
-            BrowserDock::Right => (
-                [width - self.ribbon_right - docked[0] - EDGE_MARGIN, top],
-                docked,
-            ),
+            BrowserDock::Left => ([self.ribbon_left, top], docked),
+            BrowserDock::Right => ([width - self.ribbon_right - docked[0], top], docked),
             BrowserDock::Floating(position) => (position, FLOATING_SIZE),
         };
         crate::widget_abi::window_geometry(ui, position, size, Condition::Always);
@@ -307,30 +299,25 @@ impl WorkspaceLayout {
     /// The horizontal span the document workspace may use; example: `layout.tab_span(1440.)`.
     pub(crate) fn tab_span(&self, display_width: f32) -> (f32, f32) {
         let width = display_width - self.ribbon_left - self.ribbon_right;
-        let (left, span) = self.span_within(width);
+        let (left, span) = self.span_within(width, self.browser_width(display_width));
         (left + self.ribbon_left, span)
     }
-    fn span_within(&self, width: f32) -> (f32, f32) {
-        let reserved = self.browser_width(width) + 2. * EDGE_MARGIN;
+    fn span_within(&self, width: f32, reserved: f32) -> (f32, f32) {
         match (self.panels.dock_visible(), self.dock) {
             (true, BrowserDock::Left) => (reserved, (width - reserved).max(1.)),
-            (true, BrowserDock::Right) => (EDGE_MARGIN, (width - reserved - EDGE_MARGIN).max(1.)),
+            (true, BrowserDock::Right) => (0., (width - reserved).max(1.)),
             // The plus control that brings a panel back sits in the strip's row.
             (false, _) => {
                 let left = EDGE_MARGIN + PLUS_CONTROL_WIDTH;
                 (left, (width - left - EDGE_MARGIN).max(1.))
             }
-            _ => (EDGE_MARGIN, (width - 2. * EDGE_MARGIN).max(1.)),
+            _ => (0., width.max(1.)),
         }
     }
-    /// The strip spans the window below the browser, between any side ribbons.
+    /// Align the tab strip with the document viewport and any side ribbons.
     /// Example: `layout.tab_strip_span(1440.)` for the bottom row.
     pub(crate) fn tab_strip_span(&self, width: f32) -> (f32, f32) {
-        let left = self.ribbon_left + EDGE_MARGIN;
-        (
-            left,
-            (width - self.ribbon_left - self.ribbon_right - 2. * EDGE_MARGIN).max(1.),
-        )
+        self.tab_span(width)
     }
     /// Reserve the tab row only while tabs are visible; example: `layout.tab_height()`.
     pub(crate) fn tab_height(&self) -> f32 {
@@ -354,9 +341,9 @@ impl WorkspaceLayout {
         let (left, width) = self.tab_span(display[0]);
         crate::application::document_creation::workspaces::WorkspaceArea {
             left,
-            top: band_height + EDGE_MARGIN,
+            top: band_height,
             right: left + width,
-            bottom: self.tab_top(display[1]) - EDGE_MARGIN,
+            bottom: self.tab_top(display[1]),
         }
     }
     /// Draw the View tab's panel checklist; example: `layout.user_interface_menu(ui, [108., 18.], None)`.
