@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-17T10:48:25.361825359Z" time="21.573164978"><testcase name="Scenario: Give quick access and ribbon tabs separate rows: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:29:3" time="21.573164978"><system-out><![CDATA[  Scenario: Give quick access and ribbon tabs separate rows
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And the quick access toolbar is configured to appear above the ribbon
+   ✔  And the ribbon is docked at the top in its expanded Normal appearance
+   ✔  When the user selects the View ribbon tab
+   ✔  Then quick access remains in the top application bar alongside document context
+   ✔  And File appears at the leading edge of the ribbon tab row beneath that bar
+   ✔  And the ribbon tabs share that row with File
+   ✔  And the selected View tab is visually distinct from the other tabs
+   ✔  And the View command panels occupy a separate row beneath the tabs
+   ✔  And each visible panel title sits below its commands
+]]></system-out></testcase></testsuite></testsuites>
