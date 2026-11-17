@@ -194,6 +194,7 @@ impl OrientationOptions {
             close |= crate::widget_abi::button(ui, "Cancel", [80., 0.])
                 || ui.is_window_focused() && ui.is_key_pressed_no_repeat(imgui::Key::Escape);
         });
+        Self::close_dockable(ui, TITLE, close);
         self.open = open && !close;
     }
     fn visibility_rows(&mut self, ui: &Ui) {

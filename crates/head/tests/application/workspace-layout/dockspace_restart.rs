@@ -210,7 +210,7 @@ fn browser_closed_from_its_contents_returns_to_shared_dock() {
     world.close();
 }
 
-fn select_dock_tab(world: &mut ApplicationWorld, title: &str) {
+pub(super) fn select_dock_tab(world: &mut ApplicationWorld, title: &str) {
     let (min, max) = super::super::diagnostics::window_dock_tab_bounds(title).unwrap();
     let center = [(min[0] + max[0]) * 0.5, (min[1] + max[1]) * 0.5];
     super::super::x11_input::click(super::super::diagnostics::pointer_pixels(center));
@@ -221,7 +221,7 @@ fn select_dock_tab(world: &mut ApplicationWorld, title: &str) {
     );
 }
 
-fn native_click_label(world: &mut ApplicationWorld, label: &str) {
+pub(super) fn native_click_label(world: &mut ApplicationWorld, label: &str) {
     let center = world.run(label).center();
     super::super::x11_input::click(super::super::diagnostics::pointer_pixels(center));
     world.pump(Vec::new());
