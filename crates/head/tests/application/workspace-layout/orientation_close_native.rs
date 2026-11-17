@@ -42,7 +42,7 @@ fn dock_orientation(world: &mut ApplicationWorld) -> u32 {
     node
 }
 
-fn drag_title(world: &mut ApplicationWorld, title: &str, target: [i32; 2]) {
+pub(super) fn drag_title(world: &mut ApplicationWorld, title: &str, target: [i32; 2]) {
     let (position, size) = window_geometry(title).unwrap();
     let source = [
         (position[0] + size[0] * 0.4) as i32,

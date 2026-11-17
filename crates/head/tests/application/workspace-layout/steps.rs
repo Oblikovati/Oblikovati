@@ -25,6 +25,9 @@ mod model_dock_native;
 #[cfg(target_os = "linux")]
 #[path = "orientation_close_native.rs"]
 mod orientation_close_native;
+#[cfg(target_os = "linux")]
+#[path = "wheel_close_native.rs"]
+mod wheel_close_native;
 #[path = "wireframe_tabs.rs"]
 mod wireframe_tabs;
 const BROWSER: &str = "Model";

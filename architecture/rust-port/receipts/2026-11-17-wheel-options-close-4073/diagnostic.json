@@ -1,0 +1,12 @@
+{
+  "base": "e673fed9f",
+  "issue": 4073,
+  "scope": "Navigation Wheel Options close actions in shared dock",
+  "native_x11": "Cancel, OK after a setting change, and Escape activate Material Browser; Navigation Wheel Options reopens in the same dock; 1 passed",
+  "checks": [
+    "cargo fmt --all -- --check",
+    "cargo clippy --locked --offline -p oblikovati-head --all-targets -- -D warnings",
+    "cargo check --locked --offline -p oblikovati-head --target x86_64-pc-windows-gnu"
+  ],
+  "remaining": "Other dockable window close transitions remain under investigation."
+}
