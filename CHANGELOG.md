@@ -65,6 +65,8 @@
 
 ### Fixed
 
+- Enabled Link Parameters cancellation without a source and restored the next dock tab on close. (#4073)
+
 - Kept the remaining dock tab active when Precise Input closes from its menu. (#4073)
 
 - Kept the remaining dock tab active when Create Block closes or completes. (#4073)

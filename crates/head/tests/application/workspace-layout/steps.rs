@@ -23,6 +23,9 @@ mod dockspace_restart;
 #[path = "drawing_browser.rs"]
 mod drawing_browser;
 #[cfg(target_os = "linux")]
+#[path = "link_close_native.rs"]
+mod link_close_native;
+#[cfg(target_os = "linux")]
 #[path = "model_dock_native.rs"]
 mod model_dock_native;
 #[cfg(target_os = "linux")]

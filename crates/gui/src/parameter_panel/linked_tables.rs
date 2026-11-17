@@ -53,6 +53,7 @@ impl LinkPicker {
         Self::dockable_window(ui, "Link Parameters", &mut open)
             .size([360., 320.], Condition::FirstUseEver)
             .build(|| self.draw_body(ui, snapshot, actions));
+        Self::close_dockable(ui, "Link Parameters", open && !self.open);
         if !open {
             self.close();
         }
@@ -75,6 +76,7 @@ impl LinkPicker {
         if ui.button("Link") {
             self.enqueue(snapshot, actions);
         }
+        drop(_disabled);
         ui.same_line();
         if ui.button("Cancel") {
             self.close();

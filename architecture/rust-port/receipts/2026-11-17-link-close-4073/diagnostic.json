@@ -1,0 +1,12 @@
+{
+  "base": "c50c8f231",
+  "issue": 4073,
+  "scope": "Link Parameters Cancel, successful link and document-switch snapshot loss in shared dock",
+  "native_x11": "3 passed; remaining panel active and picker reopens in the same dock; linked table verified",
+  "checks": [
+    "cargo fmt --all -- --check",
+    "cargo clippy --locked --offline -p oblikovati-head --all-targets -- -D warnings",
+    "cargo check --locked --offline -p oblikovati-head --target x86_64-pc-windows-gnu"
+  ],
+  "remaining": "Other snapshot-loss causes and other dockable window close transitions remain unverified."
+}
