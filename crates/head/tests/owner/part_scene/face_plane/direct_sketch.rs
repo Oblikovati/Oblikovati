@@ -209,3 +209,84 @@ fn selected_face_starts_associative_sketch_and_rejects_stale_identity() {
     owner.files.commands(document).unwrap().redo().unwrap();
     assert_direct_sketch_height(&mut owner, sketch, 4.);
 }
+
+#[test]
+fn measure_initial_face_requires_one_current_unmixed_selection() {
+    let (mut owner, document) = measure_face_fixture();
+    start_measure(&mut owner);
+    let rows = owner.gui_command_state().unwrap().measure.unwrap().rows;
+    assert_eq!(rows[0], "Selection 1: Face");
+    assert!(rows[1].starts_with("Area "));
+    finish_measure(&mut owner);
+    toggle_back_face(&mut owner, document);
+    assert_eq!(
+        owner
+            .gui_command_state()
+            .unwrap()
+            .selected_face_appearances
+            .len(),
+        2
+    );
+    assert_measure_requests_face(&mut owner);
+    toggle_back_face(&mut owner, document);
+    assert_eq!(
+        owner
+            .gui_command_state()
+            .unwrap()
+            .selected_face_appearances
+            .len(),
+        1
+    );
+    set_parameter(&mut owner, "depth", "3 cm");
+    assert_measure_requests_face(&mut owner);
+}
+fn measure_face_fixture() -> (TestOwner, u64) {
+    let (owner, _) = owner();
+    let mut owner = owner
+        .with_extrusion_policy(crate::part_scene::resolution_policy::desktop_policy())
+        .unwrap();
+    let document = open_prism(&mut owner, false);
+    owner.take_scene().unwrap();
+    owner
+        .click_model(document, [[1., 1., 10.], [0., 0., -1.]])
+        .unwrap();
+    (owner, document)
+}
+fn toggle_back_face(owner: &mut TestOwner, document: u64) {
+    owner
+        .click_model_with_modifiers(document, [[1., 1., -10.], [0., 0., 1.]], None, true)
+        .unwrap();
+}
+fn start_measure(owner: &mut TestOwner) {
+    owner
+        .inspect_from_gui(oblikovati_gui::GuiInspectAction::StartMeasure)
+        .unwrap();
+}
+fn finish_measure(owner: &mut TestOwner) {
+    owner
+        .inspect_from_gui(oblikovati_gui::GuiInspectAction::FinishMeasure)
+        .unwrap();
+}
+fn assert_measure_requests_face(owner: &mut TestOwner) {
+    start_measure(owner);
+    assert_eq!(
+        owner.gui_command_state().unwrap().measure.unwrap().rows,
+        ["Select a solid face to measure its area"]
+    );
+    finish_measure(owner);
+}
+#[test]
+fn measure_does_not_preselect_a_face_when_a_body_is_also_selected() {
+    let (mut owner, document) = measure_face_fixture();
+    let state = owner.gui_command_state().unwrap();
+    let body = &state.browser.unwrap().bodies[0];
+    owner
+        .files
+        .commands(document)
+        .unwrap()
+        .set_browser_body_selection(&body.key, body.feature);
+    let state = owner.gui_command_state().unwrap();
+    assert_eq!(state.selected_face_appearances.len(), 1);
+    assert_eq!(state.selected_body_keys.len(), 1);
+    assert_measure_requests_face(&mut owner);
+}
