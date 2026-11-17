@@ -120,6 +120,25 @@ fn rejected_zero_move_returns_to_selection_without_changing_history() {
         &[
             button([50, 10], true),
             button([0, 0], true),
+            button([0, 0], true),
+            key(oblikovati_viewport::ViewportKey::Cancel, true),
+        ],
+    );
+    assert_eq!(
+        owner
+            .gui_command_state()
+            .unwrap()
+            .sketch_move
+            .unwrap()
+            .stage,
+        GuiSketchMoveStage::Geometry
+    );
+    assert_eq!(owner.gui_command_state().unwrap().undo_label, history);
+    deliver(
+        &mut owner,
+        &[
+            button([50, 10], true),
+            button([0, 0], true),
             button([20, 30], true),
         ],
     );

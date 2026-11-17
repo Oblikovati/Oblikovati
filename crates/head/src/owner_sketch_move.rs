@@ -8,10 +8,10 @@ use oblikovati_gui::{
 };
 use oblikovati_model::sketch::{SketchEntityId, SketchSelectionTransform};
 use oblikovati_session::selection::SelectionClickMode;
-use oblikovati_viewport::{
-    ViewportButton, ViewportEvent, ViewportInput, ViewportKey, ViewportPhysicalKey,
-    ViewportSketchPreview,
-};
+use oblikovati_viewport::{ViewportEvent, ViewportSketchPreview};
+#[path = "owner_sketch_move_input.rs"]
+mod input;
+use input::{is_cancel, move_pointer};
 
 #[derive(Clone, Copy, Debug)]
 enum MoveStage {
@@ -188,6 +188,13 @@ impl<
                 self.command_notice = Some(DesktopCommandNotice::AuthoringFailed { cause });
             }
             self.sketch_tool = Some(SketchToolState::Move(tool));
+            return true;
+        }
+        if is_cancel(event) && matches!(tool.stage, MoveStage::ZeroDisplacement) {
+            self.sketch_tool = Some(SketchToolState::Move(tool));
+            if let Err(cause) = self.cancel_move_rejection() {
+                self.command_notice = Some(DesktopCommandNotice::AuthoringFailed { cause });
+            }
             return true;
         }
         if is_cancel(event) {
@@ -464,31 +471,5 @@ impl<
         tool.pointer = None;
         self.placement_notice("Move: Select geometry".into());
         Ok(())
-    }
-}
-
-fn is_cancel(event: ViewportEvent) -> bool {
-    matches!(
-        event,
-        ViewportEvent::Input(ViewportInput::Key {
-            key: ViewportKey::Cancel,
-            pressed: true
-        }) | ViewportEvent::Input(ViewportInput::PhysicalKey {
-            key: ViewportPhysicalKey::Escape,
-            pressed: true,
-            ..
-        })
-    )
-}
-fn move_pointer(event: ViewportEvent) -> Option<([i32; 2], bool)> {
-    match event {
-        ViewportEvent::Input(ViewportInput::Motion { position, .. }) => Some((position, false)),
-        ViewportEvent::Input(ViewportInput::Button {
-            button: ViewportButton::Left,
-            pressed: true,
-            position,
-            modifiers,
-        }) if !modifiers.alt && !modifiers.super_key => Some((position, true)),
-        _ => None,
     }
 }

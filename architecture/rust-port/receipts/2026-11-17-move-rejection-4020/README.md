@@ -22,3 +22,9 @@ This change covers zero-displacement recovery only. It does not add the
 constraint settings or policy behavior required by move-12 and later cases.
 The pinned scenario was not run. Native build provenance remains open in #3978;
 these diagnostics are not verified BDD acceptance. The full gate was not run.
+
+A follow-up checked Escape sent directly to the desktop owner, without the GUI
+modal dispatching its Cancel action. Before the fix it ended Move; after the fix
+it returned to geometry selection and retained the undo label. The owner
+regression and the X11 native dialog test passed. The source still needs the
+constraint-policy contract and complete scenario acceptance described above.
