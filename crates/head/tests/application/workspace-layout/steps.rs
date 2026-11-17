@@ -10,6 +10,8 @@ pub(super) mod browser_origin;
 pub(super) mod browser_tree;
 #[path = "drawing_browser.rs"]
 mod drawing_browser;
+#[path = "wireframe_tabs.rs"]
+mod wireframe_tabs;
 const BROWSER: &str = "Model";
 fn browser_geometry() -> ([f32; 2], [f32; 2]) {
     window_geometry(BROWSER).expect("model browser: expected a drawn window")
@@ -160,12 +162,23 @@ fn view_left_of_browser(world: &mut ApplicationWorld) {
         [250, extent[1] as usize - 20],
     );
 }
-const TAB_STRIP: &str = "##open-document-tabs";
+fn viewport_left(world: &mut ApplicationWorld) -> f32 {
+    let extent = world.extent();
+    world
+        .app()
+        .window
+        .native
+        .gui
+        .as_ref()
+        .unwrap()
+        .document_area(extent)
+        .unwrap()[0] as f32
+}
 #[given("the model browser is docked to the left of the viewport")]
 fn docked_left_of_viewport(world: &mut ApplicationWorld) {
     expect_docked_left(world);
     world.browser_width = Some(browser_geometry().1[0]);
-    world.strip_left = window_geometry(TAB_STRIP).map(|(position, _)| position[0]);
+    world.strip_left = Some(viewport_left(world));
 }
 /// Press the boundary the Model window's right edge draws, and drag it sideways.
 fn drag_boundary(world: &mut ApplicationWorld, delta: i32) {
@@ -178,6 +191,7 @@ fn drag_boundary(world: &mut ApplicationWorld, delta: i32) {
     world.pump(Vec::new());
 }
 #[when("I drag the boundary between the model browser and viewport to the right")]
+#[when("the user drags the boundary between the model browser and viewport to the right")]
 fn drag_right_boundary(world: &mut ApplicationWorld) {
     drag_boundary(world, 90);
 }
@@ -193,9 +207,7 @@ fn browser_wider(world: &mut ApplicationWorld) {
 #[then("the viewport becomes narrower")]
 fn viewport_narrower(world: &mut ApplicationWorld) {
     let before = world.strip_left.expect("expected a starting strip");
-    let now = window_geometry(TAB_STRIP)
-        .expect("expected the tab strip")
-        .0[0];
+    let now = viewport_left(world);
     assert!(
         now > before + 40.,
         "document area starts at {now}: expected past {before}"
@@ -208,6 +220,7 @@ fn tree_remains(world: &mut ApplicationWorld) {
     world.expect_browser_of(id);
 }
 #[when("I drag the boundary back to its original position")]
+#[when("the user drags the boundary back to its original position")]
 fn drag_back(world: &mut ApplicationWorld) {
     let before = world.browser_width.expect("expected a starting width");
     let now = browser_geometry().1[0];
@@ -222,9 +235,7 @@ fn widths_back(world: &mut ApplicationWorld) {
         "browser width {now}: expected {before}"
     );
     let strip = world.strip_left.expect("expected a starting strip");
-    let left = window_geometry(TAB_STRIP)
-        .expect("expected the tab strip")
-        .0[0];
+    let left = viewport_left(world);
     assert!(
         (left - strip).abs() <= 1.,
         "document area {left}: expected {strip}"
