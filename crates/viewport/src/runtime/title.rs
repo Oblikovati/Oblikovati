@@ -2,6 +2,30 @@
 use super::{ViewTarget, Viewport};
 
 impl Viewport {
+    /// Dispatch an application-bar window action; example: `view.window_action(ViewportWindowAction::Minimize)?`.
+    pub fn window_action(&mut self, action: crate::ViewportWindowAction) -> Result<(), String> {
+        self.live()?;
+        let Some(ViewTarget::Native(native)) = &self.target else {
+            return Err(format!(
+                "viewport {}: expected a native window for {action:?}",
+                self.id
+            ));
+        };
+        native.window_action(action)
+    }
+
+    /// Read the native maximize state; example: `view.window_maximized()?` before drawing Restore.
+    pub fn window_maximized(&self) -> Result<bool, String> {
+        self.live()?;
+        let Some(ViewTarget::Native(native)) = &self.target else {
+            return Err(format!(
+                "viewport {}: expected a native window for maximize state",
+                self.id
+            ));
+        };
+        native.window_maximized()
+    }
+
     /// Update native presentation status without changing geometry; example: `view.set_title("Oblikovati - feature failed")?`.
     pub fn set_title(&mut self, title: &str) -> Result<(), String> {
         self.live()?;

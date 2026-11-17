@@ -8,12 +8,13 @@ mod layout;
 mod pixels;
 mod text;
 mod text_channel;
+mod window_frame;
 use martensite_tkernel::standard::Handle;
 use martensite_tkservice::{
     aspect::{AspectDisplayConnection, AspectWindow, AspectXAtom},
     xw::XwWindow,
 };
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::VecDeque;
 use std::{
     ffi::{CStr, CString},
@@ -69,6 +70,9 @@ pub(crate) struct NativeWindow {
     display: Handle<AspectDisplayConnection>,
     x11: Rc<NativeX11>,
     capture: RefCell<Option<pixels::NativePixelReader>>,
+    maximized: Cell<bool>,
+    frame_cursor: Cell<u32>,
+    state_atom: xlib::Atom,
 }
 impl NativeWindow {
     pub fn create(x11: Rc<NativeX11>, title: &str, extent: [u32; 2]) -> Result<Self, String> {
@@ -90,6 +94,13 @@ impl NativeWindow {
             XwWindow::create(&display, title, 100, 100, width, height)
                 .map_err(|error| error.to_string())?,
         );
+        let state_atom = unsafe {
+            (x11.api.XInternAtom)(
+                display.get_display_aspect() as *mut xlib::Display,
+                c"_NET_WM_STATE".as_ptr(),
+                0,
+            )
+        };
         let result = Self {
             keyboard: keyboard::NativeKeyboard::open(
                 x11.clone(),
@@ -98,10 +109,14 @@ impl NativeWindow {
             )?,
             copied_input: RefCell::new(VecDeque::new()),
             capture: RefCell::new(None),
+            maximized: Cell::new(false),
+            frame_cursor: Cell::new(0),
+            state_atom,
             window,
             display,
             x11,
         };
+        result.set_application_frame()?;
         result.activate_window()?;
         Ok(result)
     }
@@ -145,6 +160,7 @@ impl NativeWindow {
                     | xlib::ButtonPressMask
                     | xlib::ButtonReleaseMask
                     | xlib::PointerMotionMask
+                    | xlib::PropertyChangeMask
                     | xlib::KeyPressMask
                     | xlib::KeyReleaseMask,
             );
@@ -262,6 +278,9 @@ impl NativeWindow {
         }
         match event.get_type() {
             xlib::Expose => Some(ViewportEvent::Expose),
+            xlib::PropertyNotify if unsafe { event.property.atom } == self.state_atom => {
+                Some(ViewportEvent::Expose)
+            }
             xlib::FocusIn | xlib::FocusOut => {
                 Some(ViewportEvent::Focus(event.get_type() == xlib::FocusIn))
             }

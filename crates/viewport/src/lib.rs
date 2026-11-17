@@ -3,6 +3,8 @@
 mod background;
 pub use background::ViewportBackground;
 mod clipboard;
+mod window_frame;
+pub use window_frame::ViewportWindowAction;
 mod input;
 pub use clipboard::ViewportClipboard;
 #[cfg(target_os = "linux")]

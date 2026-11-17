@@ -49,6 +49,12 @@ impl GuiFrameEngine {
             },
             &mut selected,
         );
+        let window_action = crate::window_frame::draw(
+            ui,
+            request,
+            crate::chrome::application_bar_height(&self.icons.presentation),
+            &mut selected,
+        );
         if std::mem::take(&mut self.pending_extrusion_shortcut) {
             selected.push(crate::extrude_dialog::start_action(&request.commands));
         }
@@ -398,6 +404,7 @@ impl GuiFrameEngine {
             || self.workspace.switcher.needs_frame()
             || self.document_tabs.menu.properties.needs_frame();
         Ok(GuiFrameOutput {
+            window_action,
             draws: snapshot,
             actions: selected,
             parameter_actions,

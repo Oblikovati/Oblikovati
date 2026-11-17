@@ -19,6 +19,7 @@ impl<
         let template_materials = document_creation::gui_template_materials(&self.files);
         let Some(document) = self.files.workspace().active_document() else {
             return Ok(oblikovati_gui::GuiCommandState {
+                window_maximized: false,
                 orientation_selection_locked: self.orientation_lock,
                 marking_menus: Some(self.marking_menus.clone()),
                 keymap: Some(self.keymap.clone()),
@@ -42,6 +43,7 @@ impl<
             .session(document)
             .map_err(|cause| cause.to_string())?;
         Ok(oblikovati_gui::GuiCommandState {
+            window_maximized: false,
             selection_mode: self.selection_mode,
             histories: self.gui_histories()?,
             selection_filter: Some(selection_filter::gui_selection_filter(

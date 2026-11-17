@@ -13,6 +13,7 @@ mod dimension_labels;
 /// GUI work joins the existing event and wake paths; lifecycle events remain owner-visible.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct HeadGuiUpdate {
+    pub window_action: Option<oblikovati_gui::GuiWindowAction>,
     pub changed: bool,
     pub consumed_input: bool,
     pub deferred: bool,
@@ -63,6 +64,9 @@ pub(super) fn advance_gui(
     dimension_labels::project_precise_triad(window, owner, &mut commands);
     let mut update = window.gui_frame(event, &commands)?;
     update.changed |= metadata_changed;
+    if let Some(action) = update.window_action {
+        update.changed |= window.window_action(action)?;
+    }
     for action in &update.parameter_actions {
         let result = owner.apply_gui_parameter(action);
         update.changed |= result.as_ref().copied().unwrap_or(false);

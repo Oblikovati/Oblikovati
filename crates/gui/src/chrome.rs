@@ -190,7 +190,9 @@ fn request_context_menu_when_clicked(ui: &Ui, ribbon: &mut DocumentRibbon) {
 fn begin_ribbon_band(ui: &Ui, width: f32, height: f32) -> Option<imgui::WindowToken<'_>> {
     // #3798: chrome owns a fixed band; wheel input must never move its commands.
     crate::widget_abi::window_geometry(ui, [0., 0.], [width, height], Condition::Always);
+    // Keep focused ribbon commands below the window controls in the shared bar (#4063).
     ui.window("##application-ribbon")
+        .bring_to_front_on_focus(false)
         .title_bar(false)
         .movable(false)
         .resizable(false)

@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 impl HeadWindow for ScriptedGuiWindow {
+    fn window_action(&mut self, action: oblikovati_gui::GuiWindowAction) -> Result<bool, String> {
+        self.native.window_action(action)
+    }
+
     fn set_tool_candidate(
         &mut self,
         hover: Option<&oblikovati_viewport::ViewportSketchHover>,
