@@ -1,0 +1,12 @@
+{
+  "base": "fa4df0c26",
+  "issue": 4073,
+  "scope": "Customize asynchronous OK in shared dock",
+  "native_x11": "customize_async_ok_selects_next_tab_and_reopens_in_same_dock passed; host setting confirmed",
+  "checks": [
+    "cargo fmt --all -- --check",
+    "cargo clippy --locked --offline -p oblikovati-head --all-targets -- -D warnings",
+    "cargo check --locked --offline -p oblikovati-head --target x86_64-pc-windows-gnu"
+  ],
+  "remaining": "Other dockable window close transitions remain under investigation."
+}

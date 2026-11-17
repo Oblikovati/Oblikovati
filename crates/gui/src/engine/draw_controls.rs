@@ -311,6 +311,7 @@ impl GuiFrameEngine {
         self.ribbon
             .customization
             .panel(ui, &request.commands, &mut selected);
+        let dock_close = self.ribbon.customization.flush_dock_close(ui);
         self.create_block
             .panel(ui, &request.commands, &mut selected);
         self.sketch_pattern
@@ -443,6 +444,7 @@ impl GuiFrameEngine {
             || self.ribbon.customization.escape_consumed
             || self.ribbon.display.temporary_escape_consumed;
         capture.pointer |= self.dimension_value_editor.over_label || over_fields;
+        activity.pending_layout |= dock_close;
         activity.pending_layout |= self.orientation.needs_frame();
         activity.pending_layout |= self.ribbon.panels.pending_layout || self.ribbon.needs_frame();
         activity.pending_layout |=

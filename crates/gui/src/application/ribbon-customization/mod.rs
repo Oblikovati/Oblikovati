@@ -58,6 +58,7 @@ pub(crate) struct RibbonCustomization {
     keyboard_alias: String,
     keyboard_error: Option<String>,
     close_after_apply: bool,
+    pending_dock_close: bool,
     keyboard_conflict: bool,
     marking_draft: Option<oblikovati_api::wire::MarkingMenuView>,
     marking_base: Option<oblikovati_api::wire::MarkingMenuView>,
@@ -66,6 +67,13 @@ pub(crate) struct RibbonCustomization {
 }
 impl DockableWindow for RibbonCustomization {}
 impl RibbonCustomization {
+    /// Notify ImGui after the dialog closes and request a follow-up frame (#4073).
+    /// Example: `customization.flush_dock_close(ui)` after drawing the dialog.
+    pub(crate) fn flush_dock_close(&mut self, ui: &Ui) -> bool {
+        let pending = std::mem::take(&mut self.pending_dock_close);
+        Self::close_dockable(ui, "Customize", pending);
+        pending
+    }
     pub(crate) fn open(&mut self, tab: RibbonTab) {
         self.draft.open(tab);
         self.builtins.open();
@@ -139,6 +147,7 @@ impl RibbonCustomization {
         self.sync_marking(commands);
         self.finish_apply();
         if !self.open {
+            self.pending_dock_close = true;
             return;
         }
         crate::widget_abi::fit_dialog(ui, "Customize", [340., 185.], [760., 540.]);
