@@ -4,6 +4,20 @@ use crate::ribbon::{DocumentRibbon, RibbonFrame};
 use crate::{GuiCommandState, GuiFrameRequest, GuiShellAction};
 use imgui::{Condition, TabItemFlags, Ui};
 
+/// Vertical space reserved for application controls and the native frame.
+pub(crate) const APPLICATION_BAR_HEIGHT: f32 = 34.;
+/// Right side reserved for the platform window controls (#4063).
+pub(crate) const APPLICATION_BAR_TRAILING_RESERVED: f32 = 150.;
+
+/// Reserve enough space for the chosen quick-access icon scale.
+pub(crate) fn application_bar_height(icons: &crate::icons::GuiRibbonIcons) -> f32 {
+    APPLICATION_BAR_HEIGHT.max(icons.cell([24., 24.])[1] + 8.)
+}
+
+fn tab_row_height(ui: &Ui) -> f32 {
+    ui.frame_height().max(20.) + 4.
+}
+
 mod side;
 use side::{reserve_ribbon_margins, side_ribbon};
 
@@ -35,18 +49,21 @@ pub(crate) fn ribbon_band(
     let scrollbar = owners.ribbon.panels.scrollbar_height(ui);
     let placement = owners.ribbon.display.placement;
     // A moved ribbon leaves only the menu, quick access and status in the top band.
-    let height = if placement == RibbonPlacement::Top {
-        owners.ribbon.display.mode.band_height(scrollbar)
-            + if owners.ribbon.display.mode == RibbonDisplay::Full {
-                (20. + owners.ribbon.display.appearance.command_height())
-                    * owners.icons.layout_factor()
-                    - 80.
-            } else {
-                0.
-            }
-    } else {
-        RibbonDisplay::Tabs.band_height(scrollbar)
-    };
+    let row_growth =
+        application_bar_height(owners.icons) - APPLICATION_BAR_HEIGHT + tab_row_height(ui) - 24.;
+    let height = row_growth
+        + if placement == RibbonPlacement::Top {
+            owners.ribbon.display.mode.band_height(scrollbar)
+                + if owners.ribbon.display.mode == RibbonDisplay::Full {
+                    (20. + owners.ribbon.display.appearance.command_height())
+                        * owners.icons.layout_factor()
+                        - 80.
+                } else {
+                    0.
+                }
+        } else {
+            RibbonDisplay::Tabs.band_height(scrollbar)
+        };
     owners.ribbon.display.temporary_escape_consumed = false;
     let mut frame = owners.ribbon.prepare(&request.commands);
     let blocked = ui.io().want_text_input
@@ -101,13 +118,13 @@ pub(crate) fn ribbon_band(
     }
     owners.quick_access.band_below(
         ui,
-        [0., height],
-        width,
+        ([0., height], width),
+        owners.icons,
         &request.commands,
         actions,
         &owners.ribbon.tips,
     );
-    height + crate::application::quick_access_toolbar::BELOW_ROW_HEIGHT
+    height + owners.quick_access.below_height(owners.icons)
 }
 fn apply_key_tip(
     action: Option<crate::ribbon_key_tips::KeyTipAction>,
@@ -180,7 +197,6 @@ fn begin_ribbon_band(ui: &Ui, width: f32, height: f32) -> Option<imgui::WindowTo
         .collapsible(false)
         .scroll_bar(false)
         .scrollable(false)
-        .menu_bar(true)
         .begin()
 }
 
@@ -192,29 +208,16 @@ fn ribbon_contents(
     open_display_menu: bool,
     actions: &mut Vec<GuiShellAction>,
 ) {
-    ui.menu_bar(|| {
-        owners
-            .files
-            .menu(ui, &request.commands, actions, owners.ribbon.tips.tabs());
-        owners
-            .preferences
-            .menu(ui, &request.commands, owners.home_active);
-    });
-    crate::widget_abi::cursor_position(ui, [16., 35.]);
-    let row_above = !owners.quick_access.below_ribbon;
-    if row_above {
-        owners
-            .quick_access
-            .row(ui, &request.commands, actions, &owners.ribbon.tips);
-    }
+    application_controls_row(ui, request, owners, actions);
+    let tab_top = application_bar_height(owners.icons) + 1.;
+    crate::widget_abi::cursor_position(ui, [16., tab_top]);
+    ribbon_menu_row(ui, request, owners, actions);
     if owners.ribbon.display.placement == RibbonPlacement::Top {
-        if row_above {
-            ui.same_line();
-        }
+        ui.same_line();
         ribbon_tabs(ui, owners.ribbon, frame);
         let control = [
             ui.window_size()[0] - 160. - crate::application::ribbon_display::PANEL_SELECTOR_WIDTH,
-            35.,
+            tab_top,
         ];
         owners
             .ribbon
@@ -230,7 +233,7 @@ fn ribbon_contents(
             .ribbon
             .display
             .panel_selector(ui, owners.ribbon.active, &panels);
-        ribbon_panel_row(ui, request, owners, actions);
+        ribbon_panel_row(ui, request, owners, actions, tab_top + tab_row_height(ui));
     }
     crate::theme_editor::panel(
         ui,
@@ -239,13 +242,80 @@ fn ribbon_contents(
         actions,
     );
 }
-fn ribbon_panel_row(
+fn application_controls_row(
     ui: &Ui,
     request: &GuiFrameRequest,
     owners: &mut RibbonDrawOwners<'_>,
     actions: &mut Vec<GuiShellAction>,
 ) {
-    crate::widget_abi::cursor_position(ui, [16., 59.]);
+    crate::widget_abi::cursor_position(ui, [16., 4.]);
+    let width = (ui.window_size()[0] - APPLICATION_BAR_TRAILING_RESERVED - 16.).max(1.);
+    let _padding = ui.push_style_var(imgui::StyleVar::WindowPadding([0., 0.]));
+    ui.child_window("##application-bar-controls")
+        .size([width, application_bar_height(owners.icons) - 4.])
+        .scroll_bar(false)
+        .scrollable(false)
+        .build(|| {
+            if !owners.quick_access.below_ribbon {
+                owners.quick_access.row(
+                    ui,
+                    owners.icons,
+                    &request.commands,
+                    actions,
+                    &owners.ribbon.tips,
+                );
+            }
+            application_document_context(ui, &request.commands, !owners.quick_access.below_ribbon);
+        });
+}
+fn application_document_context(ui: &Ui, state: &GuiCommandState, follows_toolbar: bool) {
+    let title = state
+        .documents
+        .iter()
+        .find(|item| Some(item.id) == state.document)
+        .map_or("Oblikovati", |document| document.name.as_str());
+    if ui.content_region_avail()[0] > ui.calc_text_size(title)[0] + 16. {
+        if follows_toolbar {
+            ui.same_line();
+        }
+        ui.text_disabled(title);
+    }
+}
+fn ribbon_menu_row(
+    ui: &Ui,
+    request: &GuiFrameRequest,
+    owners: &mut RibbonDrawOwners<'_>,
+    actions: &mut Vec<GuiShellAction>,
+) {
+    let style = ui.clone_style();
+    let width = (ui.calc_text_size("File")[0]
+        + ui.calc_text_size("Tools")[0]
+        + style.frame_padding[0] * 4.
+        + style.item_spacing[0] * 3.
+        + style.window_padding[0] * 2.)
+        .max(100.);
+    ui.child_window("##ribbon-menu-row")
+        .size([width, tab_row_height(ui)])
+        .menu_bar(true)
+        .build(|| {
+            ui.menu_bar(|| {
+                owners
+                    .files
+                    .menu(ui, &request.commands, actions, owners.ribbon.tips.tabs());
+                owners
+                    .preferences
+                    .menu(ui, &request.commands, owners.home_active);
+            });
+        });
+}
+fn ribbon_panel_row(
+    ui: &Ui,
+    request: &GuiFrameRequest,
+    owners: &mut RibbonDrawOwners<'_>,
+    actions: &mut Vec<GuiShellAction>,
+    top: f32,
+) {
+    crate::widget_abi::cursor_position(ui, [16., top]);
     let ribbon = &mut *owners.ribbon;
     let mut icons = owners.icons.clone();
     icons.appearance = ribbon.display.appearance;

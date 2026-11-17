@@ -95,6 +95,7 @@ impl QuickAccessToolbar {
     pub(crate) fn row(
         &mut self,
         ui: &Ui,
+        icons: &crate::icons::GuiRibbonIcons,
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
         tips: &crate::ribbon_key_tips::RibbonKeyTips,
@@ -105,7 +106,7 @@ impl QuickAccessToolbar {
             .filter(|command| selection.shows(*command))
             .enumerate()
         {
-            self.standard_button(ui, command, state, actions);
+            self.standard_button(ui, command, icons, state, actions);
             let tip = (index + 1).to_string();
             if tips.tabs() && index < 9 && tips.matching(&tip) {
                 crate::ribbon_key_tips::badge(ui, &tip);
@@ -323,20 +324,25 @@ impl QuickAccessToolbar {
                 .push(AddedEntry::Command(label.to_owned()));
         }
     }
+    /// Return the height needed by the lower toolbar at the chosen icon scale.
+    /// Example: `toolbar.below_height(icons)` before placing the workspace.
+    pub(crate) fn below_height(&self, icons: &crate::icons::GuiRibbonIcons) -> f32 {
+        BELOW_ROW_HEIGHT.max(icons.cell([24., 24.])[1] + 6.)
+    }
     /// Draw the row that takes its own band under the ribbon; example: `toolbar.band(ui, ...)`.
     pub(crate) fn band_below(
         &mut self,
         ui: &Ui,
-        position: [f32; 2],
-        width: f32,
+        bounds: ([f32; 2], f32),
+        icons: &crate::icons::GuiRibbonIcons,
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
         tips: &crate::ribbon_key_tips::RibbonKeyTips,
     ) {
         crate::widget_abi::window_geometry(
             ui,
-            position,
-            [width, BELOW_ROW_HEIGHT],
+            bounds.0,
+            [bounds.1, self.below_height(icons)],
             imgui::Condition::Always,
         );
         ui.window("##quick-access-below")
@@ -347,7 +353,7 @@ impl QuickAccessToolbar {
                     | imgui::WindowFlags::NO_SAVED_SETTINGS
                     | imgui::WindowFlags::NO_FOCUS_ON_APPEARING,
             )
-            .build(|| self.row(ui, state, actions, tips));
+            .build(|| self.row(ui, icons, state, actions, tips));
     }
 }
 pub(crate) const EXTRUDE: &str = "Extrude";

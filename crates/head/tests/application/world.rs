@@ -213,7 +213,17 @@ impl ApplicationWorld {
     }
     /// Press visible text with a real pointer event; a test never reaches for widget state.
     pub fn click_text(&mut self, text: &str) {
-        let center = self.run(text).center();
+        let exact = self
+            .frame
+            .runs
+            .iter()
+            .any(|run| squeezed(&run.text) == squeezed(text));
+        let center = if exact {
+            self.run(text).center()
+        } else {
+            super::quick_access_icons::standard_icon_center(text)
+                .unwrap_or_else(|| self.run(text).center())
+        };
         self.click(diagnostics::pointer_pixels(center));
     }
     pub fn drag(&mut self, from: [i32; 2], to: [i32; 2]) {

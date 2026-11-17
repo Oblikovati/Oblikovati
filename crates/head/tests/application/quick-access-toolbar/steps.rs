@@ -9,6 +9,7 @@ mod menu_choices;
 mod projects;
 mod redo;
 mod return_command;
+mod wireframe;
 
 const DEFAULT_ENTRIES: [&str; 6] = ["New", "Open", "Save", "Undo", "Redo", "Home"];
 const CONTROL: &str = "...";
@@ -21,11 +22,10 @@ fn open_customization(world: &mut ApplicationWorld) {
 }
 /// A shortcut on the row, as distinct from the same word on the ribbon or in a menu.
 fn on_row(world: &ApplicationWorld, label: &str) -> bool {
-    world
-        .frame
-        .runs
-        .iter()
-        .any(|run| run.text == label && (run.center()[1] < ROW_ABOVE_LIMIT || below_row_holds(run)))
+    super::quick_access_icons::standard_icon_center(label).is_some()
+        || world.frame.runs.iter().any(|run| {
+            run.text == label && (run.center()[1] < ROW_ABOVE_LIMIT || below_row_holds(run))
+        })
 }
 fn below_row_holds(run: &super::diagnostics::RenderedRun) -> bool {
     window_geometry("##quick-access-below").is_some_and(|(position, size)| {
@@ -44,7 +44,9 @@ fn row_run<'a>(world: &'a ApplicationWorld, label: &str) -> &'a super::diagnosti
         .unwrap_or_else(|| panic!("expected {label} on the row in {:?}", world.text()))
 }
 fn row_center(world: &ApplicationWorld, label: &str) -> [i32; 2] {
-    row_run(world, label).center().map(|value| value as i32)
+    super::quick_access_icons::standard_icon_center(label)
+        .unwrap_or_else(|| row_run(world, label).center())
+        .map(|value| value as i32)
 }
 fn add_extrude(world: &mut ApplicationWorld) {
     world.click_text("3D Model");

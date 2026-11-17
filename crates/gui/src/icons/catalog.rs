@@ -15,6 +15,7 @@ macro_rules! glyph_catalog {
 }
 glyph_catalog! {
     NewPart => "new-part",
+    Open => "open",
     NewAssembly => "new-assembly",
     NewDrawing => "new-drawing",
     NewSheetMetal => "sheet-metal-new",

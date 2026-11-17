@@ -7,13 +7,20 @@ impl QuickAccessToolbar {
         &mut self,
         ui: &Ui,
         command: StandardCommand,
+        icons: &crate::icons::GuiRibbonIcons,
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
     ) {
         let label = command.label();
         match command {
-            StandardCommand::New => self.requests.new_document |= ui.button(label),
-            StandardCommand::Open => self.requests.open_document |= ui.button(label),
+            StandardCommand::New => {
+                self.requests.new_document |=
+                    icons.compact_button(ui, label, crate::icons::IconGlyph::NewPart)
+            }
+            StandardCommand::Open => {
+                self.requests.open_document |=
+                    icons.compact_button(ui, label, crate::icons::IconGlyph::Open)
+            }
             StandardCommand::Home => {
                 if ui.button(label) {
                     actions.push(GuiShellAction::ShowHome);
@@ -24,13 +31,13 @@ impl QuickAccessToolbar {
                 self.requests.open_projects |= ui.button(label);
                 drop(disabled);
             }
-            StandardCommand::Save => crate::chrome::command_button(
+            StandardCommand::Save => crate::chrome::command_control(
                 ui,
                 label,
                 GuiShellAction::Save,
                 state,
-                [0.; 2],
                 actions,
+                || icons.compact_button(ui, label, crate::icons::IconGlyph::Save),
             ),
             StandardCommand::Update => crate::chrome::command_button(
                 ui,
