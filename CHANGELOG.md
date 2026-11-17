@@ -4,6 +4,8 @@
 
 ### Changed
 
+- Enabled analytic area measurement from a selected face context menu. (#4052)
+
 - Enabled Chamfer from the default Part marking menu. (#4046)
 
 - Kept selected input edges visible during a Fillet preview. (#4045)

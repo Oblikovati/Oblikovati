@@ -1,0 +1,12 @@
+# Selected-face Measure command
+
+The Part context menu exposes Measure for one current selected face. Opening
+Measure uses that face's named reference to calculate analytic area through the
+existing Part Measure path. A stale, multiple, or mixed selection is not used
+as the initial measurement. The tool then requests a face as usual (#4052).
+
+A native X11 test selects a face, opens the menu, starts Measure, checks the
+fixture's area, closes the tool, and checks the feature list. The existing
+ribbon Measure path also passed its native test. These diagnostics do not
+complete the selected-face context-menu scenario: the separate standard menu,
+Select Other, Select Tangencies, Properties, and face export remain open.

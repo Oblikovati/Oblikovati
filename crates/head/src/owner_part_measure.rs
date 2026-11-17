@@ -35,12 +35,30 @@ impl<
             .active_document()
             .ok_or("Measure: expected an active part")?;
         let generation = self.part_measure_generation(document)?;
+        let selected = self.single_measure_face(document)?;
+        let rows = self.part_measure_rows(document, selected)?;
         self.part_measure = Some(PartMeasure {
             document,
             generation,
-            rows: vec![SELECT_FACE.into()],
+            rows,
         });
         Ok(())
+    }
+    fn single_measure_face(&self, document: u64) -> Result<Option<(FeatureId, Vec<u8>)>, String> {
+        let [pick] = self.current_face_appearance_picks(document) else {
+            return Ok(None);
+        };
+        let session = self
+            .files
+            .workspace()
+            .session(document)
+            .map_err(|cause| cause.to_string())?;
+        if !self.chosen_model_edges(document).is_empty()
+            || !session.selected_browser_bodies().is_empty()
+        {
+            return Ok(None);
+        }
+        Ok(Some((pick.face.feature, pick.face.key.clone())))
     }
     fn part_measure_generation(&self, document: u64) -> Result<u64, String> {
         let kind = self

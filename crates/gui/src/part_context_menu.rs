@@ -21,6 +21,7 @@ pub(crate) fn canvas_menu(
         return false;
     };
     draw_configured_menu(ui, state, actions);
+    draw_selected_face_measure(ui, state, actions);
     let look_at = GuiShellAction::LookAtSelection;
     if ui
         .menu_item_config("Look At")
@@ -33,6 +34,19 @@ pub(crate) fn canvas_menu(
         actions.push(GuiShellAction::Home);
     }
     true
+}
+fn draw_selected_face_measure(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
+    if selected_face_action(state).is_none() {
+        return;
+    }
+    let action = GuiShellAction::Inspect(crate::GuiInspectAction::StartMeasure);
+    if ui
+        .menu_item_config("Measure")
+        .enabled(action.enabled(state))
+        .build()
+    {
+        actions.push(action);
+    }
 }
 fn draw_configured_menu(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
     let Some(menus) = &state.marking_menus else {

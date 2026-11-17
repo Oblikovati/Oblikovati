@@ -211,3 +211,32 @@ fn native_part_menu_chamfer_opens_and_cancels_without_model_changes() {
     assert!(!world.state().extrude_preview_active);
     world.close();
 }
+
+#[test]
+fn native_selected_face_menu_measures_exact_area_and_closes() {
+    let mut world = ApplicationWorld::new();
+    super::workspace_layout::browser_feature::open_visible_extruded_part(&mut world);
+    let (_, point, _) = select_front_face(&mut world);
+    let before = world.state().browser.unwrap().features;
+    x11_input::right_click(point);
+    world.pump(Vec::new());
+    let entry = world
+        .frame
+        .runs
+        .iter()
+        .find(|run| run.text == "Measure" && run.center()[0] > 500.)
+        .unwrap_or_else(|| panic!("face menu: expected Measure; rendered {:?}", world.text()));
+    x11_input::click(diagnostics::pointer_pixels(entry.center()));
+    world.pump(Vec::new());
+    world.expect_text("Selection 1: Face");
+    let text = world.window_text("Measure");
+    assert!(
+        text.contains("Area600.000")
+            || text.contains("Area800.000")
+            || text.contains("Area1200.000"),
+        "{text:?}: expected an analytic fixture face area in mm²"
+    );
+    click_native_label(&mut world, "Done");
+    assert_eq!(world.state().browser.unwrap().features, before);
+    world.close();
+}
