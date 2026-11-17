@@ -43,6 +43,16 @@ impl NativeHeadWindow {
         let clipboard = clipboard::NativeClipboardChannel::open();
         #[cfg(target_os = "windows")]
         let clipboard = clipboard::NativeClipboardChannel::open(view.native_clipboard()?);
+        let wake = ViewportWake::new()?;
+        #[cfg(target_os = "linux")]
+        let accessibility_bounds = view.window_screen_bounds()?;
+        #[cfg(target_os = "linux")]
+        let accessibility = {
+            let signal = wake.clone();
+            crate::accessibility::unix::UnixFrameAccessibility::new(move || {
+                let _ = signal.wake();
+            })
+        };
         Ok(Self {
             capture_files,
             capture_requests: Vec::new(),
@@ -52,7 +62,7 @@ impl NativeHeadWindow {
             view,
             view_projection: Default::default(),
             marked_view: None,
-            wake: ViewportWake::new()?,
+            wake,
             scene_status: None,
             current_scene: None,
             scene_depth_bounds: None,
@@ -68,6 +78,12 @@ impl NativeHeadWindow {
             saved_views: Default::default(),
             command_notice: None,
             gui: None,
+            #[cfg(target_os = "linux")]
+            accessibility,
+            #[cfg(target_os = "linux")]
+            accessibility_bounds,
+            #[cfg(target_os = "linux")]
+            accessibility_title: "Oblikovati".into(),
             injected_events: Default::default(),
             ribbon_settings_directory: None,
             gui_epoch: std::time::Instant::now(),

@@ -26,6 +26,19 @@ impl Viewport {
         native.window_maximized()
     }
 
+    /// Read physical screen bounds after a native geometry event; example: `view.window_screen_bounds()?`.
+    #[cfg(target_os = "linux")]
+    pub fn window_screen_bounds(&self) -> Result<[i32; 4], String> {
+        self.live()?;
+        let Some(ViewTarget::Native(native)) = &self.target else {
+            return Err(format!(
+                "viewport {}: expected a native window for screen bounds",
+                self.id
+            ));
+        };
+        native.window_screen_bounds()
+    }
+
     /// Update native presentation status without changing geometry; example: `view.set_title("Oblikovati - feature failed")?`.
     pub fn set_title(&mut self, title: &str) -> Result<(), String> {
         self.live()?;

@@ -29,8 +29,15 @@ pub enum GuiWindowAction {
 }
 
 #[derive(Clone, Debug)]
+pub struct GuiWindowControls {
+    pub bounds: [[f32; 4]; 3],
+    pub focused: Option<usize>,
+}
+
+#[derive(Clone, Debug)]
 pub struct GuiFrameOutput {
     pub window_action: Option<GuiWindowAction>,
+    pub window_controls: GuiWindowControls,
     pub draws: GuiFrame,
     pub actions: Vec<GuiShellAction>,
     pub parameter_actions: Vec<crate::GuiParameterAction>,

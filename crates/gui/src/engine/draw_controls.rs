@@ -49,7 +49,7 @@ impl GuiFrameEngine {
             },
             &mut selected,
         );
-        let window_action = crate::window_frame::draw(
+        let (window_action, window_controls) = crate::window_frame::draw(
             ui,
             request,
             crate::chrome::application_bar_height(&self.icons.presentation),
@@ -406,6 +406,7 @@ impl GuiFrameEngine {
             || self.document_tabs.menu.properties.needs_frame();
         Ok(GuiFrameOutput {
             window_action,
+            window_controls,
             draws: snapshot,
             actions: selected,
             parameter_actions,

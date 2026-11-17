@@ -27,9 +27,17 @@ pub(super) struct NativeGui {
     mapped: bool,
     pointer: input::PointerOwnership,
     last_capture: oblikovati_gui::GuiInputCapture,
+    window_controls: Option<oblikovati_gui::GuiWindowControls>,
     clipboard: Option<GuiClipboard>,
 }
 impl NativeGui {
+    pub(super) fn frame_controls(&self) -> Option<(oblikovati_gui::GuiWindowControls, bool, bool)> {
+        Some((
+            self.window_controls.clone()?,
+            self.last_capture.popup,
+            self.focused,
+        ))
+    }
     pub(super) fn request_application_close(&mut self) {
         self.engine.request_application_close();
         self.parameter_changed = true;
@@ -157,6 +165,7 @@ impl NativeGui {
             mapped: true,
             pointer: Default::default(),
             last_capture: Default::default(),
+            window_controls: None,
             clipboard,
         }
     }
@@ -187,6 +196,7 @@ impl NativeGui {
         self.last_frame = Some(now);
         self.activity = output.activity;
         self.last_capture = output.capture;
+        self.window_controls = Some(output.window_controls);
         self.deadline = self
             .activity
             .needs_frame()
