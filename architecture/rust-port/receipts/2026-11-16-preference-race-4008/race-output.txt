@@ -1,0 +1,28 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.06s
+     Running tests/preference_race_diagnostic.rs (.task-4008-target/debug/deps/preference_race_diagnostic-6de152142dfb48b0)
+
+running 2 tests
+test change_between_stage_and_commit_must_not_be_overwritten ... FAILED
+test change_between_check_and_staging_must_not_be_overwritten ... FAILED
+
+failures:
+
+---- change_between_stage_and_commit_must_not_be_overwritten stdout ----
+
+thread 'change_between_stage_and_commit_must_not_be_overwritten' (3374007) panicked at crates/persistence/tests/preference_race_diagnostic.rs:51:5:
+assertion failed: file.save(&MarkingMenus::default()).is_err()
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- change_between_check_and_staging_must_not_be_overwritten stdout ----
+
+thread 'change_between_check_and_staging_must_not_be_overwritten' (3374006) panicked at crates/persistence/tests/preference_race_diagnostic.rs:27:5:
+assertion failed: file.save(&MarkingMenus::default()).is_err()
+
+
+failures:
+    change_between_check_and_staging_must_not_be_overwritten
+    change_between_stage_and_commit_must_not_be_overwritten
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p oblikovati-persistence --test preference_race_diagnostic`
