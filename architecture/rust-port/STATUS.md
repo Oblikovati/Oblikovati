@@ -183,6 +183,9 @@ Last checked: 2026-11-16 on `rust-work`. Refresh from current evidence at each c
   A 200-label software-rendered projection diagnostic measured 13.61 ms
   median individually and 4.71 ms batched; it does not measure frame rate.
   See `receipts/2026-11-17-dimension-projection-4035/`.
+- Selected-face Properties shows analytic area in a dockable window (#4053).
+  Native X11 open and title-close checks pass; the complete face context-menu
+  scenario remains open. See `implementation-face-properties.md`.
 - The selected-face context menu can start analytic area measurement with
   one current face already selected (#4052). Native X11 diagnostics pass;
   the full face context-menu scenario remains open.

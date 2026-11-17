@@ -325,6 +325,8 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::DismissSketchContext { .. }
         | GuiShellAction::Inspect(_)
         | GuiShellAction::MeasureSelectedFace { .. }
+        | GuiShellAction::OpenFaceProperties { .. }
+        | GuiShellAction::CloseFaceProperties
         | GuiShellAction::EditDimensionValue(_)
         | GuiShellAction::SetPromptFrequency { .. }
         | GuiShellAction::CaptureWindowPreview

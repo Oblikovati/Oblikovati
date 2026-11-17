@@ -21,6 +21,20 @@ macro_rules! inspect_work_methods {
                 "face {key:?} in document {document}: expected a selected-face measurement owner"
             ))
         }
+        /// Open properties for one selected face; example: `work.open_face_properties_from_gui(document, key)?`.
+        fn open_face_properties_from_gui(
+            &mut self,
+            document: u64,
+            key: &str,
+        ) -> Result<bool, String> {
+            Err(format!(
+                "face {key:?} in document {document}: expected a face properties owner"
+            ))
+        }
+        /// Close face properties; example: `work.close_face_properties_from_gui()?`.
+        fn close_face_properties_from_gui(&mut self) -> Result<bool, String> {
+            Err("face properties: expected a face properties owner".into())
+        }
     };
 }
 pub(crate) use inspect_work_methods;

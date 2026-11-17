@@ -240,3 +240,46 @@ fn native_selected_face_menu_measures_exact_area_and_closes() {
     assert_eq!(world.state().browser.unwrap().features, before);
     world.close();
 }
+
+#[test]
+fn native_selected_face_properties_shows_area_and_title_close() {
+    let mut world = ApplicationWorld::new();
+    super::workspace_layout::browser_feature::open_visible_extruded_part(&mut world);
+    let (_, point, key) = select_front_face(&mut world);
+    let before = world.state().browser.unwrap().features;
+    x11_input::right_click(point);
+    world.pump(Vec::new());
+    let entry = world
+        .frame
+        .runs
+        .iter()
+        .find(|run| run.text == "Properties" && run.center()[0] > 500.)
+        .unwrap_or_else(|| {
+            panic!(
+                "face menu: expected Properties; rendered {:?}",
+                world.text()
+            )
+        });
+    x11_input::click(diagnostics::pointer_pixels(entry.center()));
+    world.pump(Vec::new());
+    let face = world.state().face_properties.unwrap();
+    assert_eq!(face.key, key);
+    assert!(
+        [600., 800., 1200.]
+            .iter()
+            .any(|area| (face.area_mm2 - area).abs() < 1e-6)
+    );
+    world.expect_text("Type: Face");
+    if std::env::var_os("OBK_BDD_REPORTS").is_some() {
+        world.save_capture("face-properties-4053");
+    }
+    let (origin, size) = diagnostics::window_geometry("Face Properties").unwrap();
+    x11_input::click(diagnostics::pointer_pixels([
+        origin[0] + size[0] - 13.,
+        origin[1] + 10.,
+    ]));
+    world.pump(Vec::new());
+    assert!(diagnostics::window_geometry("Face Properties").is_none());
+    assert_eq!(world.state().browser.unwrap().features, before);
+    world.close();
+}

@@ -238,6 +238,13 @@ pub enum GuiShellAction {
         document: u64,
         key: String,
     },
+    /// Open analytic properties for the exact selected named face.
+    OpenFaceProperties {
+        document: u64,
+        key: String,
+    },
+    /// Close the face properties window.
+    CloseFaceProperties,
     /// Start an associative sketch on the one currently selected named face.
     StartSketchOnSelectedFace {
         document: u64,

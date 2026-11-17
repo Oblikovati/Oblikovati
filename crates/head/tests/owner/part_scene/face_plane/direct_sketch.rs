@@ -307,3 +307,24 @@ fn face_measure_command_rejects_changed_selection_and_stale_identity() {
     assert!(owner.measure_selected_face(document, &key).is_err());
     assert!(owner.gui_command_state().unwrap().measure.is_none());
 }
+
+#[test]
+fn face_properties_use_exact_area_and_expire_after_model_change() {
+    let (mut owner, document) = measure_face_fixture();
+    let key = owner.gui_command_state().unwrap().selected_face_appearances[0]
+        .0
+        .clone();
+    assert!(owner.open_face_properties(document, "wrong").is_err());
+    assert!(owner.open_face_properties(document, &key).unwrap());
+    let face = owner.gui_command_state().unwrap().face_properties.unwrap();
+    assert_eq!(face.key, key);
+    assert!((face.area_mm2 - 1200.).abs() < 1e-6);
+    assert!(owner.close_face_properties().unwrap());
+    assert!(owner.gui_command_state().unwrap().face_properties.is_none());
+    assert!(owner.open_face_properties(document, &key).unwrap());
+    set_parameter(&mut owner, "depth", "3 cm");
+    assert!(owner.gui_command_state().unwrap().face_properties.is_none());
+    assert!(owner.retire_stale_face_properties());
+    assert!(!owner.retire_stale_face_properties());
+    assert!(owner.open_face_properties(document, &key).is_err());
+}

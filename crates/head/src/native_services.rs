@@ -231,6 +231,12 @@ impl<D: ScriptDocumentOwner, W: DispatchWakeup + 'static> HeadWork
     fn measure_selected_face_from_gui(&mut self, document: u64, key: &str) -> Result<bool, String> {
         self.owner.measure_selected_face_from_gui(document, key)
     }
+    fn open_face_properties_from_gui(&mut self, document: u64, key: &str) -> Result<bool, String> {
+        self.owner.open_face_properties_from_gui(document, key)
+    }
+    fn close_face_properties_from_gui(&mut self) -> Result<bool, String> {
+        self.owner.close_face_properties_from_gui()
+    }
     fn set_ui_scale_from_gui(
         &mut self,
         options: oblikovati_model::ui_scale::UiScaleOptions,

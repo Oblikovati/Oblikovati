@@ -62,6 +62,10 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
             owner.set_center_point_from_gui(*point, *center)
         }
         GuiShellAction::Inspect(action) => owner.inspect_from_gui(*action),
+        GuiShellAction::OpenFaceProperties { document, key } => {
+            owner.open_face_properties_from_gui(*document, key)
+        }
+        GuiShellAction::CloseFaceProperties => owner.close_face_properties_from_gui(),
         GuiShellAction::MeasureSelectedFace { document, key } => {
             owner.measure_selected_face_from_gui(*document, key)
         }

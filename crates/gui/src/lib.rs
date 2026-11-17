@@ -119,6 +119,8 @@ pub use sketch_constraints::GuiSketchConstraint;
 mod blend_dialog;
 mod dimensions;
 mod extrude_dialog;
+mod face_properties;
+pub use face_properties::GuiFaceProperties;
 mod marking_menu;
 mod offset_plane;
 mod part_context_menu;

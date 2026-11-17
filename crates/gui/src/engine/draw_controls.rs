@@ -288,6 +288,7 @@ impl GuiFrameEngine {
             &mut selected,
         );
         crate::sketch::inspect::measure_panel(ui, &request.commands, &mut selected);
+        crate::face_properties::draw(ui, &request.commands, &mut selected);
         crate::sketch::region_properties::panel(ui, &request.commands, &mut selected);
         crate::sketch_delete::append_keyboard_delete(ui, &request.commands, &mut selected);
         crate::application::document_tabs::document_keys(

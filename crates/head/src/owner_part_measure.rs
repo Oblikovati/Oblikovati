@@ -34,7 +34,7 @@ impl<
             .workspace()
             .active_document()
             .ok_or("Measure: expected an active part")?;
-        let generation = self.part_measure_generation(document)?;
+        let generation = self.part_inspection_generation(document)?;
         let selected = self.single_measure_face(document)?;
         let rows = self.part_measure_rows(document, selected)?;
         self.part_measure = Some(PartMeasure {
@@ -49,19 +49,7 @@ impl<
         document: u64,
         key: &str,
     ) -> Result<bool, String> {
-        self.require_browser_document(document)?;
-        let face = self.only_selected_named_face(document, key)?;
-        let resolved = self.part_scenes.selected_face_reference(
-            &mut self.files,
-            document,
-            face.feature,
-            &face.key,
-        )?;
-        if resolved != key {
-            return Err(format!(
-                "document {document}, selected face {key:?}: expected current face reference {resolved:?}"
-            ));
-        }
+        self.checked_selected_named_face(document, key)?;
         self.start_part_measure()?;
         Ok(true)
     }
@@ -81,14 +69,14 @@ impl<
         }
         Ok(Some((pick.face.feature, pick.face.key.clone())))
     }
-    fn part_measure_generation(&self, document: u64) -> Result<u64, String> {
+    pub(super) fn part_inspection_generation(&self, document: u64) -> Result<u64, String> {
         let kind = self
             .files
             .document_type(document)
             .map_err(|cause| cause.to_string())?;
         if kind != oblikovati_api::types::DOCUMENT_PART {
             return Err(format!(
-                "document {document} type {kind:?}: expected a part for Measure"
+                "document {document} type {kind:?}: expected a part for inspection"
             ));
         }
         let session = self
@@ -98,7 +86,7 @@ impl<
             .map_err(|cause| cause.to_string())?;
         if session.in_transaction() {
             return Err(format!(
-                "document {document}: expected no active transaction for Measure"
+                "document {document}: expected no active transaction for inspection"
             ));
         }
         Ok(session.generation())
@@ -173,3 +161,6 @@ mod tests {
         assert_eq!(measure.rows_for_generation(5), [SELECT_FACE]);
     }
 }
+
+#[path = "owner_face_properties.rs"]
+mod face_properties;
