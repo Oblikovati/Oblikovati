@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use imgui::{Condition, ImColor32, ImString, SelectableFlags, Ui};
 unsafe extern "C" {
+    fn oblikovati_gui_window_is_moving() -> bool;
     fn oblikovati_gui_workspace_dockspace(width: f32, height: f32) -> u32;
+    fn oblikovati_gui_outer_dockspace(width: f32, height: f32) -> u32;
     fn oblikovati_gui_dockspace_center(
         id: u32,
         left: *mut f32,
@@ -37,10 +39,24 @@ unsafe extern "C" {
     );
 }
 
+/// Let workspace targets receive pointer input while an ImGui window is dragged.
+/// Example: `moving_window(ui)` when drawing a fixed document-tab strip.
+pub(crate) fn moving_window(_: &Ui) -> bool {
+    unsafe { oblikovati_gui_window_is_moving() }
+}
 /// Draw a dockspace in the current host and return its central bounds when available.
 /// Example: `workspace_dockspace(ui, [800., 600.])` in a transparent host window.
 pub(crate) fn workspace_dockspace(_: &Ui, size: [f32; 2]) -> Option<[f32; 4]> {
     let id = unsafe { oblikovati_gui_workspace_dockspace(size[0], size[1]) };
+    dockspace_center(id)
+}
+/// Draw the outer workspace, including the default Model dock.
+/// Example: `outer_dockspace(ui, [800., 600.])` in its transparent host.
+pub(crate) fn outer_dockspace(_: &Ui, size: [f32; 2]) -> Option<[f32; 4]> {
+    let id = unsafe { oblikovati_gui_outer_dockspace(size[0], size[1]) };
+    dockspace_center(id)
+}
+fn dockspace_center(id: u32) -> Option<[f32; 4]> {
     let mut bounds = [0.; 4];
     let [left, top, right, bottom] = &mut bounds;
     let found = unsafe { oblikovati_gui_dockspace_center(id, left, top, right, bottom) };

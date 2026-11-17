@@ -1,36 +1,59 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 #[test]
-fn a_header_released_near_a_side_edge_docks_there() {
-    let floating = [500., 300.];
-    assert_eq!(drop_target(10., 1000., floating), BrowserDock::Left);
-    assert_eq!(drop_target(990., 1000., floating), BrowserDock::Right);
-    assert_eq!(
-        drop_target(500., 1000., floating),
-        BrowserDock::Floating(floating)
+fn the_document_span_follows_the_outer_dock_center() {
+    let mut layout = WorkspaceLayout::default();
+    layout.set_outer_center(
+        crate::application::document_creation::workspaces::WorkspaceArea {
+            left: 250.,
+            top: 100.,
+            right: 1000.,
+            bottom: 878.,
+        },
+        crate::application::document_creation::workspaces::WorkspaceArea {
+            left: 0.,
+            top: 100.,
+            right: 1000.,
+            bottom: 878.,
+        },
     );
-}
-#[test]
-fn the_viewport_span_avoids_only_a_docked_visible_browser() {
-    let mut layout = WorkspaceLayout::default();
     assert_eq!(layout.tab_span(1000.), (250., 750.));
-    layout.dock = BrowserDock::Right;
+    layout.set_outer_center(
+        crate::application::document_creation::workspaces::WorkspaceArea {
+            left: 0.,
+            top: 100.,
+            right: 750.,
+            bottom: 878.,
+        },
+        crate::application::document_creation::workspaces::WorkspaceArea {
+            left: 0.,
+            top: 100.,
+            right: 1000.,
+            bottom: 878.,
+        },
+    );
     assert_eq!(layout.tab_span(1000.), (0., 750.));
-    layout.dock = BrowserDock::Floating([50., 50.]);
-    assert_eq!(layout.tab_span(1000.), (0., 1000.));
-    layout.dock = BrowserDock::Left;
-    layout.panels.model_open = false;
-    assert_eq!(layout.tab_span(1000.), (42., 950.));
 }
 #[test]
-fn a_dragged_browser_width_moves_the_viewport() {
+fn the_document_area_follows_all_outer_dock_bounds() {
     let mut layout = WorkspaceLayout::default();
-    let start = layout.tab_span(1440.);
-    layout.browser_width_override = Some(400.);
-    let wider = layout.tab_span(1440.);
-    assert!(wider.0 > start.0 && wider.1 < start.1);
-    layout.browser_width_override = None;
-    assert_eq!(layout.tab_span(1440.), start);
+    layout.set_outer_center(
+        crate::application::document_creation::workspaces::WorkspaceArea {
+            left: 50.,
+            top: 200.,
+            right: 900.,
+            bottom: 700.,
+        },
+        crate::application::document_creation::workspaces::WorkspaceArea {
+            left: 0.,
+            top: 100.,
+            right: 1000.,
+            bottom: 700.,
+        },
+    );
+    let area = layout.document_area([1000., 900.], 100.);
+    assert_eq!((area.left, area.top, area.right), (50., 200., 900.));
+    assert_eq!(area.bottom, 700. - TAB_STRIP_HEIGHT);
 }
 #[test]
 fn the_document_area_leaves_room_for_the_tabs_only_when_they_show() {
@@ -43,13 +66,12 @@ fn the_document_area_leaves_room_for_the_tabs_only_when_they_show() {
     assert_eq!(without.bottom - with_tabs.bottom, TAB_STRIP_HEIGHT);
 }
 #[test]
-fn a_docked_ribbon_narrows_the_document_area_from_its_own_side() {
+fn a_docked_ribbon_narrows_the_outer_dock() {
     let mut layout = WorkspaceLayout::default();
-    let (start, span) = layout.tab_span(1000.);
     layout.reserve_for_ribbon(196., 0.);
-    assert_eq!(layout.tab_span(1000.), (start + 196., span - 196.));
+    assert_eq!(layout.outer_area([1000., 900.], 100.).left, 196.);
     layout.reserve_for_ribbon(0., 196.);
-    assert_eq!(layout.tab_span(1000.), (start, span - 196.));
+    assert_eq!(layout.outer_area([1000., 900.], 100.).right, 804.);
 }
 
 #[test]
@@ -82,14 +104,19 @@ fn selected_origin_plane_is_consumed_and_does_not_cross_documents() {
 }
 
 #[test]
-fn the_workspace_span_follows_the_browser_dock() {
+fn outer_bottom_dock_keeps_document_tabs_below_the_panel() {
+    use crate::application::document_creation::workspaces::WorkspaceArea;
     let mut layout = WorkspaceLayout::default();
-    assert_eq!(layout.tab_span(1000.), (250., 750.));
-    layout.dock = BrowserDock::Right;
-    assert_eq!(layout.tab_span(1000.), (0., 750.));
-    layout.reserve_for_ribbon(196., 0.);
-    assert_eq!(layout.tab_span(1000.), (196., 554.));
+    let root = layout.outer_area([1000., 900.], 100.);
+    layout.set_outer_center(
+        WorkspaceArea {
+            bottom: 600.,
+            ..root
+        },
+        root,
+    );
+    assert!(layout.pending_layout);
+    assert_eq!(layout.outer_area([1000., 900.], 100.).bottom, 852.);
+    assert_eq!(layout.document_area([1000., 900.], 100.).bottom, 600.);
     assert_eq!(layout.tab_top(900.), 852.);
-    layout.tabs_visible = false;
-    assert_eq!(layout.tab_top(900.), 878.);
 }

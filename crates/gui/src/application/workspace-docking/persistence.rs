@@ -15,6 +15,9 @@ pub(crate) struct WorkspaceDockSettings {
     pub parameters: bool,
     pub selection_filter: bool,
     pub history_browser: bool,
+    #[serde(default)]
+    pub browser_panels:
+        Option<crate::application::workspace_layout::panel_tabs::BrowserPanelSettings>,
 }
 
 impl WorkspaceDockSettings {

@@ -56,3 +56,15 @@ fn the_log_stays_within_its_capacity() {
     assert_eq!(panels.messages.len(), MESSAGE_CAPACITY);
     assert_eq!(panels.messages[0], "1");
 }
+#[test]
+fn browser_settings_restore_visibility_and_active_tab() {
+    let mut original = DockPanels::default();
+    original.open_panel(DockPanel::Log);
+    original.active = DockPanel::Log;
+    original.model_open = false;
+    let saved = original.settings();
+    let mut restored = DockPanels::default();
+    restored.restore(&saved);
+    assert!(!restored.model_open && restored.log_open);
+    assert_eq!(restored.select, Some(DockPanel::Log));
+}

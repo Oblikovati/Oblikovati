@@ -140,12 +140,16 @@ fn check_workspace_edge(edge: &str) {
         ((before[1] + before[3]) / 2) as i32,
     ];
     let target = match edge {
-        "left" => [before[0] as i32 + 15, mid[1]],
-        "top" => [mid[0], before[1] as i32 + 15],
-        "bottom" => [mid[0], before[3] as i32 - 15],
+        "left" => [15, mid[1]],
+        "top" => [(world.extent()[0] / 2) as i32, before[1] as i32 + 15],
+        "bottom" => [
+            (world.extent()[0] / 2) as i32,
+            window_geometry("##status-bar").unwrap().0[1] as i32 - 15,
+        ],
         _ => panic!("edge {edge:?}: expected left, top, or bottom"),
     };
     native_drag(&mut world, start, target);
+    world.save_capture(&format!("workspace-dock-{edge}-attempt"));
     let node = super::super::diagnostics::window_dock_id("Material Browser").unwrap();
     assert_ne!(node, 0, "{edge}: expected a docked panel");
     let after = viewport(&mut world);
