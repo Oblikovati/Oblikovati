@@ -66,6 +66,11 @@ impl Default for WorkspaceLayout {
 }
 impl DockableWindow for WorkspaceLayout {}
 impl WorkspaceLayout {
+    /// Inspect test-only browser geometry; example: `layout.test_browser_view()`.
+    #[cfg(test)]
+    pub(crate) fn test_browser_view(&self) -> &browser_view::BrowserView {
+        &self.view
+    }
     /// Clear a browser origin selection when its document changes; example: `layout.sync_origin_document(Some(1))`.
     pub(crate) fn sync_origin_document(&mut self, document: Option<u64>) {
         if self.origin_selection_document != document {

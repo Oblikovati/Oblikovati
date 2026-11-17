@@ -38,3 +38,7 @@ mod tests;
 #[cfg(test)]
 #[path = "../tests/application/ribbon-display/panel_selector.rs"]
 mod panel_selector_tests;
+
+#[cfg(test)]
+#[path = "../tests/browser/click.rs"]
+mod browser_click_tests;

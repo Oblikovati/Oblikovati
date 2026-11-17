@@ -12,6 +12,9 @@ mod browser_bottom_native;
 pub(super) mod browser_feature;
 #[path = "browser_origin.rs"]
 pub(super) mod browser_origin;
+#[cfg(target_os = "linux")]
+#[path = "browser_sketch_native.rs"]
+mod browser_sketch_native;
 #[path = "browser_tree.rs"]
 pub(super) mod browser_tree;
 #[cfg(target_os = "linux")]

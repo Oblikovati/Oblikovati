@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use oblikovati_gui::*;
+use super::*;
+use crate::*;
 use oblikovati_model::document_sketch::DocumentSketchId;
 
 fn browser_request() -> GuiFrameRequest {
@@ -49,7 +50,7 @@ fn single_click_selects_and_double_click_selects_then_opens_the_row() {
     let mut engine = GuiFrameEngine::new().unwrap();
     let mut request = browser_request();
     settle_browser_layout(&mut engine, &request);
-    request.events = vec![GuiInputEvent::PointerMoved([90., 297.])];
+    request.events = vec![GuiInputEvent::PointerMoved(sketch_position(&engine, 7))];
     engine.frame(&request).unwrap();
     assert!(mouse_frame(&mut engine, &mut request, true).is_empty());
     assert_eq!(
@@ -95,18 +96,55 @@ fn pointer_gesture(
     actions.extend(engine.frame(request).unwrap().actions);
     actions
 }
+fn bounds_center(bounds: [[f32; 2]; 2]) -> [f32; 2] {
+    std::array::from_fn(|axis| (bounds[0][axis] + bounds[1][axis]) * 0.5)
+}
+fn sketch_position(engine: &GuiFrameEngine, sketch: u64) -> [f32; 2] {
+    let bounds = *engine
+        .workspace
+        .test_browser_view()
+        .test_sketch_bounds
+        .get(&sketch)
+        .expect("expected the drawn sketch row");
+    bounds_center(bounds)
+}
+fn menu_position(engine: &GuiFrameEngine, visibility: bool) -> [f32; 2] {
+    let view = engine.workspace.test_browser_view();
+    bounds_center(
+        if visibility {
+            view.test_visibility_bounds
+        } else {
+            view.test_edit_bounds
+        }
+        .expect("expected the drawn context-menu item"),
+    )
+}
+fn row_gesture(
+    engine: &mut GuiFrameEngine,
+    request: &mut GuiFrameRequest,
+    sketch: u64,
+    button: GuiPointerButton,
+) -> Vec<GuiShellAction> {
+    let position = sketch_position(engine, sketch);
+    pointer_gesture(engine, request, position, button)
+}
+fn menu_gesture(
+    engine: &mut GuiFrameEngine,
+    request: &mut GuiFrameRequest,
+    visibility: bool,
+    button: GuiPointerButton,
+) -> Vec<GuiShellAction> {
+    let position = menu_position(engine, visibility);
+    pointer_gesture(engine, request, position, button)
+}
+
 fn context_engine() -> (GuiFrameEngine, GuiFrameRequest) {
     let mut engine = GuiFrameEngine::new().unwrap();
     let mut request = browser_request();
     settle_browser_layout(&mut engine, &request);
     // A right-click chooses the row it opens the menu for.
     assert_eq!(
-        pointer_gesture(
-            &mut engine,
-            &mut request,
-            [90., 297.],
-            GuiPointerButton::Right
-        ),
+        row_gesture(&mut engine, &mut request, 7, GuiPointerButton::Right),
         [GuiShellAction::SelectBrowserSketch {
             document: 12,
             sketch: DocumentSketchId(7),
@@ -119,12 +157,7 @@ fn context_engine() -> (GuiFrameEngine, GuiFrameRequest) {
 fn sketch_context_edit_dispatches_the_same_stable_identity_as_double_click() {
     let (mut engine, mut request) = context_engine();
     assert_eq!(
-        pointer_gesture(
-            &mut engine,
-            &mut request,
-            [140., 308.],
-            GuiPointerButton::Left
-        ),
+        menu_gesture(&mut engine, &mut request, false, GuiPointerButton::Left),
         [GuiShellAction::EditSketch {
             document: 12,
             sketch: DocumentSketchId(7)
@@ -141,24 +174,8 @@ fn context_edit_is_inert_during_transactions_and_existing_sketch_edits() {
             request.commands.authoring = GuiAuthoringContext::Sketch;
         }
         settle_browser_layout(&mut engine, &request);
-        assert!(
-            pointer_gesture(
-                &mut engine,
-                &mut request,
-                [90., 297.],
-                GuiPointerButton::Right
-            )
-            .is_empty()
-        );
-        assert!(
-            pointer_gesture(
-                &mut engine,
-                &mut request,
-                [140., 308.],
-                GuiPointerButton::Left
-            )
-            .is_empty()
-        );
+        assert!(row_gesture(&mut engine, &mut request, 7, GuiPointerButton::Right).is_empty());
+        assert!(menu_gesture(&mut engine, &mut request, false, GuiPointerButton::Left).is_empty());
     }
 }
 #[test]
@@ -169,7 +186,7 @@ fn popup_dismissal_or_document_replacement_does_not_edit_a_sketch() {
             request.commands.document = Some(document);
         }
         let position = if replacement.is_some() {
-            [140., 308.]
+            menu_position(&engine, false)
         } else {
             [600., 500.]
         };
@@ -187,15 +204,7 @@ fn an_open_context_menu_rechecks_transaction_and_row_availability() {
         } else {
             request.commands.transaction_open = true;
         }
-        assert!(
-            pointer_gesture(
-                &mut engine,
-                &mut request,
-                [140., 308.],
-                GuiPointerButton::Left
-            )
-            .is_empty()
-        );
+        assert!(menu_gesture(&mut engine, &mut request, false, GuiPointerButton::Left).is_empty());
     }
 }
 #[test]
@@ -208,12 +217,7 @@ fn identically_named_sketch_contexts_use_the_clicked_row_identity() {
     rows.push(second);
     settle_browser_layout(&mut engine, &request);
     assert_eq!(
-        pointer_gesture(
-            &mut engine,
-            &mut request,
-            [90., 314.],
-            GuiPointerButton::Right
-        ),
+        row_gesture(&mut engine, &mut request, 8, GuiPointerButton::Right),
         [GuiShellAction::SelectBrowserSketch {
             document: 12,
             sketch: DocumentSketchId(8),
@@ -221,12 +225,7 @@ fn identically_named_sketch_contexts_use_the_clicked_row_identity() {
         }]
     );
     assert_eq!(
-        pointer_gesture(
-            &mut engine,
-            &mut request,
-            [140., 325.],
-            GuiPointerButton::Left
-        ),
+        menu_gesture(&mut engine, &mut request, false, GuiPointerButton::Left),
         [GuiShellAction::EditSketch {
             document: 12,
             sketch: DocumentSketchId(8)
@@ -245,12 +244,7 @@ fn shift_click_requests_membership_toggle_without_entering_edit_mode() {
     })];
     engine.frame(&request).unwrap();
     assert_eq!(
-        pointer_gesture(
-            &mut engine,
-            &mut request,
-            [90., 297.],
-            GuiPointerButton::Left
-        ),
+        row_gesture(&mut engine, &mut request, 7, GuiPointerButton::Left),
         [GuiShellAction::SelectBrowserSketch {
             document: 12,
             sketch: DocumentSketchId(7),
@@ -269,7 +263,7 @@ fn modified_double_click_selects_the_sketch_before_editing() {
             control: true,
             ..Default::default()
         }),
-        GuiInputEvent::PointerMoved([90., 297.]),
+        GuiInputEvent::PointerMoved(sketch_position(&engine, 7)),
     ];
     engine.frame(&request).unwrap();
     mouse_frame(&mut engine, &mut request, true);
@@ -294,11 +288,21 @@ fn modified_double_click_selects_the_sketch_before_editing() {
 
 fn settle_browser_layout(engine: &mut GuiFrameEngine, request: &GuiFrameRequest) {
     // #3849: measured ribbon widths can move the browser while the first layout settles.
+    let mut previous = None;
     for _ in 0..32 {
         let activity = engine.frame(request).unwrap().activity;
-        if !activity.pending_layout && !activity.pending_navigation {
+        let bounds = engine
+            .workspace
+            .test_browser_view()
+            .test_sketch_bounds
+            .clone();
+        if !activity.pending_layout
+            && !activity.pending_navigation
+            && previous.as_ref() == Some(&bounds)
+        {
             return;
         }
+        previous = Some(bounds);
     }
     panic!("browser layout exceeded 32 frames; expected stable ribbon and browser bounds");
 }
@@ -310,19 +314,9 @@ fn context_visibility_toggles_the_stored_flag_even_during_sketch_editing() {
         request.commands.authoring = GuiAuthoringContext::Sketch;
         request.commands.browser.as_mut().unwrap().sketches[0].visible = visible;
         settle_browser_layout(&mut engine, &request);
-        pointer_gesture(
-            &mut engine,
-            &mut request,
-            [90., 297.],
-            GuiPointerButton::Right,
-        );
+        row_gesture(&mut engine, &mut request, 7, GuiPointerButton::Right);
         assert_eq!(
-            pointer_gesture(
-                &mut engine,
-                &mut request,
-                [140., 393.],
-                GuiPointerButton::Left
-            ),
+            menu_gesture(&mut engine, &mut request, true, GuiPointerButton::Left),
             [GuiShellAction::SetSketchVisibility {
                 document: 12,
                 sketch: DocumentSketchId(7),
@@ -335,13 +329,5 @@ fn context_visibility_toggles_the_stored_flag_even_during_sketch_editing() {
 fn context_visibility_rechecks_an_open_transaction() {
     let (mut engine, mut request) = context_engine();
     request.commands.transaction_open = true;
-    assert!(
-        pointer_gesture(
-            &mut engine,
-            &mut request,
-            [140., 393.],
-            GuiPointerButton::Left
-        )
-        .is_empty()
-    );
+    assert!(menu_gesture(&mut engine, &mut request, true, GuiPointerButton::Left).is_empty());
 }

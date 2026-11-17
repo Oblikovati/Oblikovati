@@ -28,6 +28,12 @@ pub(crate) enum BrowserBranch {
 }
 #[derive(Debug, Default)]
 pub(crate) struct BrowserView {
+    #[cfg(test)]
+    pub(crate) test_sketch_bounds: std::collections::BTreeMap<u64, [[f32; 2]; 2]>,
+    #[cfg(test)]
+    pub(crate) test_edit_bounds: Option<[[f32; 2]; 2]>,
+    #[cfg(test)]
+    pub(crate) test_visibility_bounds: Option<[[f32; 2]; 2]>,
     autoscroll: bool,
     /// Present while the field is open; an empty query still shows the whole tree.
     query: Option<String>,
