@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Panel visibility and the model browser's dock; the viewport fills whatever they leave free.
+use crate::dockable_window::DockableWindow;
 use crate::{GuiCommandState, GuiShellAction};
-use imgui::{Condition, MouseButton, Ui, WindowFlags};
+use imgui::{Condition, Ui, WindowFlags};
 
 pub(crate) mod body_properties;
 pub(crate) mod browser_feature;
@@ -14,25 +15,8 @@ pub(crate) mod panel_tabs;
 pub(crate) mod status_bar;
 /// The document tab row and the gap above it.
 const TAB_STRIP_HEIGHT: f32 = 26.;
-/// A press on the Model tab that travels this far moves the browser.
-const TAB_DRAG_REACH: f32 = 24.;
-/// Where a floated browser hangs from the pointer.
-const TAB_GRIP: [f32; 2] = [40., 12.];
-const BOUNDARY_WIDTH: f32 = 6.;
-const PLUS_CONTROL_WIDTH: f32 = 34.;
-const MINIMUM_BROWSER_WIDTH: f32 = 180.;
 const EDGE_MARGIN: f32 = 8.;
-/// A header released this close to a side edge docks there.
-const DOCK_TARGET: f32 = 48.;
-const FLOATING_SIZE: [f32; 2] = [280., 360.];
 
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-enum BrowserDock {
-    #[default]
-    Left,
-    Right,
-    Floating([f32; 2]),
-}
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub(crate) struct ToolVisibility {
     pub material: bool,
@@ -47,17 +31,13 @@ pub(crate) struct WorkspaceLayout {
     pub panels: panel_tabs::DockPanels,
     pub tool_visibility: ToolVisibility,
     pub tabs_visible: bool,
-    dock: BrowserDock,
-    dragging: bool,
-    window_position: [f32; 2],
+    outer_center: Option<crate::application::document_creation::workspaces::WorkspaceArea>,
+    outer_bottom_docked: bool,
     /// GUI frames follow events, and a dropped panel takes its geometry in the next frame.
     pub pending_layout: bool,
     pub switcher: crate::application::document_tabs::WindowSwitcher,
-    browser_width_override: Option<f32>,
     view: browser_view::BrowserView,
     origin_selection_document: Option<u64>,
-    /// Where a press on the Model tab began.
-    tab_press: Option<[f32; 2]>,
     /// A navigation command owns the next click on the view, not the browser's selection.
     pub view_clicks_taken: bool,
     /// What a docked ribbon takes from each side of the window.
@@ -70,21 +50,19 @@ impl Default for WorkspaceLayout {
             panels: Default::default(),
             tool_visibility: Default::default(),
             tabs_visible: true,
-            dock: BrowserDock::default(),
-            dragging: false,
-            window_position: [0.; 2],
+            outer_center: None,
+            outer_bottom_docked: false,
             pending_layout: false,
             switcher: Default::default(),
-            browser_width_override: None,
             view: Default::default(),
             origin_selection_document: None,
-            tab_press: None,
             view_clicks_taken: false,
             ribbon_left: 0.,
             ribbon_right: 0.,
         }
     }
 }
+impl DockableWindow for WorkspaceLayout {}
 impl WorkspaceLayout {
     /// Clear a browser origin selection when its document changes; example: `layout.sync_origin_document(Some(1))`.
     pub(crate) fn sync_origin_document(&mut self, document: Option<u64>) {
@@ -133,10 +111,9 @@ impl WorkspaceLayout {
         part_context_open: bool,
         actions: &mut Vec<GuiShellAction>,
     ) {
-        self.pending_layout = false;
         self.view.arrow_consumed = false;
         self.view.feature_keyboard_focus = false;
-        let (height, band_height) = bounds;
+        let (_, band_height) = bounds;
         self.view.document_area = Some(document_area);
         self.view.view_clicks_taken = self.view_clicks_taken;
         browser_origin::follow_view_click(ui, state, &mut self.view, part_context_open, actions);
@@ -145,19 +122,15 @@ impl WorkspaceLayout {
             self.draw_find(ui, state, actions);
             return;
         }
-        self.place_browser(ui, height, band_height);
-        ui.window("Model")
-            // Restoring the panel must not take focus, which would close the menu that restored it.
-            .flags(WindowFlags::NO_DOCKING | WindowFlags::NO_FOCUS_ON_APPEARING)
-            .resizable(false)
-            .collapsible(false)
-            .build(|| {
-                self.track_header(ui);
-                self.dock_contents(ui, state, actions);
-            });
+        let mut open = true;
+        // Restoring the panel must not take focus, which would close the menu that restored it.
+        Self::dockable_window(ui, "Model", &mut open)
+            .flags(WindowFlags::NO_FOCUS_ON_APPEARING)
+            .build(|| self.dock_contents(ui, state, actions));
+        if !open {
+            self.panels.close_all();
+        }
         self.pending_layout |= self.panels.needs_frame();
-        self.finish_drag(ui);
-        self.boundary_handle(ui, height, band_height);
         self.draw_find(ui, state, actions);
     }
     fn dock_contents(
@@ -209,122 +182,46 @@ impl WorkspaceLayout {
         self.ribbon_left = left;
         self.ribbon_right = right;
     }
-    /// The width the docked browser takes: a user's drag, else the window's default.
-    fn browser_width(&self, display_width: f32) -> f32 {
-        self.browser_width_override
-            .unwrap_or_else(|| crate::browser::model_browser_width(display_width))
-    }
-    /// A thin window over the boundary, so a drag never competes with the tree's own rows.
-    fn boundary_handle(&mut self, ui: &Ui, height: f32, band_height: f32) {
-        let display = ui.io().display_size[0];
-        let width = self.browser_width(display);
-        let x = match self.dock {
-            BrowserDock::Left => self.ribbon_left + width - BOUNDARY_WIDTH / 2.,
-            BrowserDock::Right => display - self.ribbon_right - width - BOUNDARY_WIDTH / 2.,
-            BrowserDock::Floating(_) => return,
-        };
-        let top = band_height;
-        let size = [BOUNDARY_WIDTH, (height - band_height).max(1.)];
-        crate::widget_abi::window_geometry(ui, [x, top], size, Condition::Always);
-        // A window's defaults would keep this handle 32 pixels wide and clip its own edges.
-        let _padding = ui.push_style_var(imgui::StyleVar::WindowPadding([0., 0.]));
-        let _minimum = ui.push_style_var(imgui::StyleVar::WindowMinSize([1., 1.]));
-        ui.window("##browser-boundary")
-            .flags(boundary_flags())
-            .build(|| self.boundary_drag(ui, size, display));
-    }
-    fn boundary_drag(&mut self, ui: &Ui, size: [f32; 2], display: f32) {
-        ui.invisible_button("##browser-boundary-drag", size);
-        if ui.is_item_hovered() || ui.is_item_active() {
-            ui.set_mouse_cursor(Some(imgui::MouseCursor::ResizeEW));
-        }
-        if !ui.is_item_active() {
-            return;
-        }
-        let delta = ui.io().mouse_delta[0];
-        let signed = if self.dock == BrowserDock::Left {
-            delta
-        } else {
-            -delta
-        };
-        let grown = self.browser_width(display) + signed;
-        self.browser_width_override = Some(grown.clamp(MINIMUM_BROWSER_WIDTH, display * 0.5));
-        self.pending_layout = true;
-    }
-    fn place_browser(&self, ui: &Ui, height: f32, band_height: f32) {
-        // While the header is held, Dear ImGui owns the window position.
-        if self.dragging {
-            return;
-        }
-        let width = ui.io().display_size[0];
-        let docked = [self.browser_width(width), (height - band_height).max(1.)];
-        let top = band_height;
-        let (position, size) = match self.dock {
-            BrowserDock::Left => ([self.ribbon_left, top], docked),
-            BrowserDock::Right => ([width - self.ribbon_right - docked[0], top], docked),
-            BrowserDock::Floating(position) => (position, FLOATING_SIZE),
-        };
-        crate::widget_abi::window_geometry(ui, position, size, Condition::Always);
-    }
-    fn track_header(&mut self, ui: &Ui) {
-        self.window_position = ui.window_pos();
-        let header = ui.window_pos()[1] + ui.frame_height();
-        if ui.is_mouse_clicked(MouseButton::Left)
-            && ui.is_window_hovered()
-            && ui.io().mouse_pos[1] < header
-        {
-            self.dragging = true;
+    /// The panel dock fills the region below the ribbon and above the status bar.
+    /// Example: `layout.outer_area([1440., 900.], 120.)` after reserving ribbon margins.
+    pub(crate) fn outer_area(
+        &self,
+        display: [f32; 2],
+        band_height: f32,
+    ) -> crate::application::document_creation::workspaces::WorkspaceArea {
+        crate::application::document_creation::workspaces::WorkspaceArea {
+            left: self.ribbon_left,
+            top: band_height,
+            right: display[0] - self.ribbon_right,
+            bottom: display[1]
+                - status_bar::STATUS_BAR_HEIGHT
+                - if self.outer_bottom_docked {
+                    self.tab_height()
+                } else {
+                    0.
+                },
         }
     }
-    fn finish_drag(&mut self, ui: &Ui) {
-        self.follow_tab_drag(ui);
-        if self.dragging && ui.is_mouse_released(MouseButton::Left) {
-            self.dragging = false;
-            self.pending_layout = true;
-            self.dock = drop_target(
-                ui.io().mouse_pos[0],
-                ui.io().display_size[0],
-                self.window_position,
-            );
-        }
+    /// Record the outer dock's central area for workspace layout.
+    /// Example: `layout.set_outer_center(area, root)` after drawing the outer dock.
+    pub(crate) fn set_outer_center(
+        &mut self,
+        area: crate::application::document_creation::workspaces::WorkspaceArea,
+        root: crate::application::document_creation::workspaces::WorkspaceArea,
+    ) {
+        let bottom_docked = area.bottom < root.bottom - 1.;
+        self.pending_layout |= bottom_docked != self.outer_bottom_docked;
+        self.outer_bottom_docked = bottom_docked;
+        self.outer_center = Some(area);
     }
-    /// The Model tab carries the browser as its title bar does; a press that stays put only
-    /// chooses the tab.
-    fn follow_tab_drag(&mut self, ui: &Ui) {
-        let [x, y] = ui.io().mouse_pos;
-        if std::mem::take(&mut self.panels.model_tab_pressed) {
-            self.tab_press = Some([x, y]);
-        }
-        let Some(from) = self.tab_press else {
-            return;
-        };
-        if !ui.is_mouse_released(MouseButton::Left) {
-            return;
-        }
-        self.tab_press = None;
-        if (x - from[0]).abs().max((y - from[1]).abs()) >= TAB_DRAG_REACH {
-            self.pending_layout = true;
-            let display = ui.io().display_size[0];
-            self.dock = drop_target(x, display, [x - TAB_GRIP[0], y - TAB_GRIP[1]]);
-        }
-    }
-    /// The horizontal span the document workspace may use; example: `layout.tab_span(1440.)`.
+    /// The horizontal span left by docked panels.
+    /// Example: `layout.tab_span(1440.)` after the dockspace has been drawn.
     pub(crate) fn tab_span(&self, display_width: f32) -> (f32, f32) {
-        let width = display_width - self.ribbon_left - self.ribbon_right;
-        let (left, span) = self.span_within(width, self.browser_width(display_width));
-        (left + self.ribbon_left, span)
-    }
-    fn span_within(&self, width: f32, reserved: f32) -> (f32, f32) {
-        match (self.panels.dock_visible(), self.dock) {
-            (true, BrowserDock::Left) => (reserved, (width - reserved).max(1.)),
-            (true, BrowserDock::Right) => (0., (width - reserved).max(1.)),
-            // The plus control that brings a panel back sits in the strip's row.
-            (false, _) => {
-                let left = EDGE_MARGIN + PLUS_CONTROL_WIDTH;
-                (left, (width - left - EDGE_MARGIN).max(1.))
-            }
-            _ => (0., width.max(1.)),
-        }
+        let left = self.outer_center.map_or(self.ribbon_left, |area| area.left);
+        let right = self
+            .outer_center
+            .map_or(display_width - self.ribbon_right, |area| area.right);
+        (left, (right - left).max(1.))
     }
     /// Reserve the tab row only while tabs are visible; example: `layout.tab_height()`.
     pub(crate) fn tab_height(&self) -> f32 {
@@ -336,7 +233,13 @@ impl WorkspaceLayout {
     }
     /// Find the top of the bottom tab row; example: `layout.tab_top(900.)`.
     pub(crate) fn tab_top(&self, height: f32) -> f32 {
-        (height - status_bar::STATUS_BAR_HEIGHT - self.tab_height()).max(0.)
+        let bottom = if self.outer_bottom_docked {
+            height - status_bar::STATUS_BAR_HEIGHT
+        } else {
+            self.outer_center
+                .map_or(height - status_bar::STATUS_BAR_HEIGHT, |area| area.bottom)
+        };
+        (bottom - self.tab_height()).max(0.)
     }
     /// The screen area left for a document after the browser, tabs and ribbon band.
     /// Example: `layout.document_area([1440., 900.], 120.)`.
@@ -348,9 +251,14 @@ impl WorkspaceLayout {
         let (left, width) = self.tab_span(display[0]);
         crate::application::document_creation::workspaces::WorkspaceArea {
             left,
-            top: band_height,
+            top: self.outer_center.map_or(band_height, |area| area.top),
             right: left + width,
-            bottom: self.tab_top(display[1]),
+            bottom: if self.outer_bottom_docked {
+                self.outer_center
+                    .map_or(self.tab_top(display[1]), |area| area.bottom)
+            } else {
+                self.tab_top(display[1])
+            },
         }
     }
     /// Draw the View tab's panel checklist; example: `layout.user_interface_menu(ui, [108., 18.], None)`.
@@ -389,25 +297,6 @@ impl WorkspaceLayout {
         }
     }
 }
-fn drop_target(pointer_x: f32, width: f32, position: [f32; 2]) -> BrowserDock {
-    if pointer_x < DOCK_TARGET {
-        return BrowserDock::Left;
-    }
-    if pointer_x > width - DOCK_TARGET {
-        return BrowserDock::Right;
-    }
-    BrowserDock::Floating(position)
-}
 #[cfg(test)]
 #[path = "../../../tests/application/workspace-layout/layout.rs"]
 mod tests;
-
-fn boundary_flags() -> WindowFlags {
-    WindowFlags::NO_DECORATION
-        | WindowFlags::NO_MOVE
-        | WindowFlags::NO_DOCKING
-        | WindowFlags::NO_BACKGROUND
-        | WindowFlags::NO_SAVED_SETTINGS
-        | WindowFlags::NO_FOCUS_ON_APPEARING
-        | WindowFlags::NO_SCROLLBAR
-}

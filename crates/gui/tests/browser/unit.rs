@@ -217,14 +217,6 @@ fn selection_has_its_own_enablement_and_requires_a_current_row() {
 }
 
 #[test]
-fn browser_defaults_to_a_quarter_of_the_workspace() {
-    for width in [200., 320., 480., 640., 720., 1440.] {
-        assert_eq!(model_browser_width(width), width * 0.25);
-    }
-    assert_eq!(model_browser_width(1.), 1.);
-}
-
-#[test]
 fn pattern_rows_require_unique_identities_current_sketches_and_safe_text() {
     use oblikovati_model::sketch::{
         SketchEntityId, SketchRectangularPattern, SketchRectangularPatternDefinition,

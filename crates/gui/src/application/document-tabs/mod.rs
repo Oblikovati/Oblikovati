@@ -57,9 +57,15 @@ pub(crate) fn document_list_control(
     actions: &mut Vec<GuiShellAction>,
 ) {
     crate::widget_abi::window_geometry(ui, position, [width, 32.], imgui::Condition::Always);
+    let moving = if crate::widget_abi::moving_window(ui) {
+        imgui::WindowFlags::NO_INPUTS
+    } else {
+        imgui::WindowFlags::empty()
+    };
     ui.window("##document-list-control")
         .flags(
-            imgui::WindowFlags::NO_DECORATION
+            moving
+                | imgui::WindowFlags::NO_DECORATION
                 | imgui::WindowFlags::NO_MOVE
                 | imgui::WindowFlags::NO_DOCKING
                 | imgui::WindowFlags::NO_SAVED_SETTINGS

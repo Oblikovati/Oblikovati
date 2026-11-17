@@ -25,9 +25,27 @@ void draw_ribbon_icon(const char* label, std::uint32_t texture, ImVec2 icon, boo
 }
 }
 extern "C" {
+bool oblikovati_gui_window_is_moving() {
+    return ImGui::GetCurrentContext()->MovingWindow != nullptr;
+}
+
 std::uint32_t oblikovati_gui_workspace_dockspace(float width, float height) {
     const ImGuiID id = ImGui::GetID("##workspace-dockspace");
     // The central node is the live viewport and must remain open for rendering and picks (#4069).
+    return ImGui::DockSpace(id, ImVec2(width, height),
+                           ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoDockingInCentralNode);
+}
+
+std::uint32_t oblikovati_gui_outer_dockspace(float width, float height) {
+    const ImGuiID id = ImGui::GetID("##outer-dockspace");
+    if (!ImGui::DockBuilderGetNode(id)) {
+        ImGui::DockBuilderAddNode(id, ImGuiDockNodeFlags_DockSpace);
+        ImGui::DockBuilderSetNodeSize(id, ImVec2(width, height));
+        ImGuiID center = id;
+        const ImGuiID left = ImGui::DockBuilderSplitNode(center, ImGuiDir_Left, 0.25f, nullptr, &center);
+        ImGui::DockBuilderDockWindow("Model", left);
+        ImGui::DockBuilderFinish(id);
+    }
     return ImGui::DockSpace(id, ImVec2(width, height),
                            ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoDockingInCentralNode);
 }

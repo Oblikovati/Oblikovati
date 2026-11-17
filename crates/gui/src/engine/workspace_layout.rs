@@ -39,6 +39,9 @@ impl GuiFrameEngine {
         if settings.history_browser {
             self.history_browser.open();
         }
+        if let Some(browser) = &settings.browser_panels {
+            self.workspace.panels.restore(browser);
+        }
     }
 
     /// Capture the current workspace arrangement for atomic host storage.
@@ -52,6 +55,7 @@ impl GuiFrameEngine {
         settings.parameters = self.parameter_editor.is_open();
         settings.selection_filter = self.selection_filter.is_open();
         settings.history_browser = self.history_browser.is_open();
+        settings.browser_panels = Some(self.workspace.panels.settings());
         settings.encode()
     }
 }

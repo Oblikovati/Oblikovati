@@ -14,12 +14,20 @@ const MESSAGES_HEADING: &str = "Application messages";
 const IDLE_STATUS: &str = "Ready";
 const MESSAGE_CAPACITY: usize = 200;
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub(crate) enum DockPanel {
     #[default]
     Model,
     Log,
     Favorites,
+}
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct BrowserPanelSettings {
+    model: bool,
+    log: bool,
+    favorites: bool,
+    active: DockPanel,
 }
 /// What the dock shows; `model_open` is the View tab's Model Browser option.
 #[derive(Debug)]
@@ -29,8 +37,6 @@ pub(crate) struct DockPanels {
     favorites_open: bool,
     pub favorites: crate::application::model_browser::favorites::FavoritesPane,
     active: DockPanel,
-    /// The Model tab was pressed: a drag from it moves the whole browser.
-    pub model_tab_pressed: bool,
     /// A panel just added or left alone takes the tab bar's selection on the next frame.
     select: Option<DockPanel>,
     messages: Vec<String>,
@@ -42,7 +48,6 @@ impl Default for DockPanels {
             log_open: false,
             favorites_open: false,
             favorites: Default::default(),
-            model_tab_pressed: false,
             active: DockPanel::Model,
             select: None,
             messages: Vec::new(),
@@ -50,8 +55,33 @@ impl Default for DockPanels {
     }
 }
 impl DockPanels {
+    pub(crate) fn settings(&self) -> BrowserPanelSettings {
+        BrowserPanelSettings {
+            model: self.model_open,
+            log: self.log_open,
+            favorites: self.favorites_open,
+            active: self.active,
+        }
+    }
+    pub(crate) fn restore(&mut self, settings: &BrowserPanelSettings) {
+        self.model_open = settings.model;
+        self.log_open = settings.log;
+        self.favorites_open = settings.favorites;
+        self.select = match settings.active {
+            DockPanel::Model if settings.model => Some(DockPanel::Model),
+            DockPanel::Log if settings.log => Some(DockPanel::Log),
+            DockPanel::Favorites if settings.favorites => Some(DockPanel::Favorites),
+            _ => self.first_open_panel(),
+        };
+    }
     pub(crate) fn dock_visible(&self) -> bool {
         self.model_open || self.log_open || self.favorites_open
+    }
+    pub(crate) fn close_all(&mut self) {
+        self.model_open = false;
+        self.log_open = false;
+        self.favorites_open = false;
+        self.select = None;
     }
     /// A frame must follow so a changed selection takes effect without waiting for an event.
     pub(crate) fn needs_frame(&self) -> bool {
@@ -157,9 +187,6 @@ impl DockPanels {
         };
         let mut keep = true;
         let contents = ui.tab_item_with_flags(label, Some(&mut keep), flags);
-        self.model_tab_pressed |= panel == DockPanel::Model
-            && ui.is_item_hovered()
-            && ui.is_mouse_clicked(imgui::MouseButton::Left);
         // A tab that is about to be selected must not report the old one as chosen.
         if contents.is_some() && select.is_none() {
             self.active = panel;

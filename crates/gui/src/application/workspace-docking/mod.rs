@@ -22,6 +22,24 @@ pub(crate) fn draw(ui: &Ui, workspace: WorkspaceArea) -> WorkspaceArea {
         .unwrap_or(workspace)
 }
 
+/// Draw the outer panel dock across the full workspace, including the tab row.
+/// Example: `draw_outer(ui, workspace)` before drawing the inner dock.
+pub(crate) fn draw_outer(ui: &Ui, workspace: WorkspaceArea) -> WorkspaceArea {
+    let size = [
+        (workspace.right - workspace.left).max(1.),
+        (workspace.bottom - workspace.top).max(1.),
+    ];
+    let _padding = ui.push_style_var(StyleVar::WindowPadding([0., 0.]));
+    ui.window("##workspace-outer-host")
+        .position([workspace.left, workspace.top], Condition::Always)
+        .size(size, Condition::Always)
+        .flags(host_flags())
+        .build(|| crate::widget_abi::outer_dockspace(ui, size))
+        .flatten()
+        .and_then(|bounds| contained_center(workspace, bounds))
+        .unwrap_or(workspace)
+}
+
 fn contained_center(workspace: WorkspaceArea, bounds: [f32; 4]) -> Option<WorkspaceArea> {
     let [left, top, right, bottom] = bounds;
     if !bounds.iter().all(|value| value.is_finite())

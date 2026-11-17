@@ -16,6 +16,9 @@ pub(super) mod dockspace_native;
 mod dockspace_restart;
 #[path = "drawing_browser.rs"]
 mod drawing_browser;
+#[cfg(target_os = "linux")]
+#[path = "model_dock_native.rs"]
+mod model_dock_native;
 #[path = "wireframe_tabs.rs"]
 mod wireframe_tabs;
 const BROWSER: &str = "Model";
@@ -26,7 +29,12 @@ fn drag_header(world: &mut ApplicationWorld, to: [i32; 2]) {
     // The title bar, not the Model tab with the same words below it.
     let (position, _) = browser_geometry();
     let from = [position[0] as i32 + 40, position[1] as i32 + 9];
+    #[cfg(target_os = "linux")]
+    dockspace_native::native_drag(world, from, to);
+    #[cfg(not(target_os = "linux"))]
     world.drag(from, to);
+    world.pump(Vec::new());
+    world.pump(Vec::new());
 }
 fn expect_docked_left(world: &mut ApplicationWorld) {
     let (position, size) = browser_geometry();
@@ -96,9 +104,23 @@ fn browser_hidden(world: &mut ApplicationWorld) {
 #[then("the sketch viewport extends into the freed space")]
 #[then("the viewport occupies the space previously used by the docked browser")]
 pub(super) fn left_space_free(world: &mut ApplicationWorld) {
-    let height = world.extent()[1] as usize;
-    world.expect_blank_region([20, 290], [height - 200, height - 20]);
+    let extent = world.extent();
+    let area = world
+        .app()
+        .window
+        .native
+        .gui
+        .as_ref()
+        .unwrap()
+        .document_area(extent)
+        .unwrap();
+    assert!(
+        area[0] < 20,
+        "viewport must extend into the former browser space"
+    );
+    world.expect_blank_region([40, 290], [area[1] as usize + 40, area[1] as usize + 160]);
 }
+
 #[then("the Model Browser option is unchecked")]
 fn option_unchecked(world: &mut ApplicationWorld) {
     assert!(!world.checked("Model Browser"), "expected a cleared option");
@@ -113,6 +135,7 @@ fn browser_returned(world: &mut ApplicationWorld) {
     world.expect_text("Origin");
     expect_docked_left(world);
 }
+#[when("the user drags the model browser by its header into the viewport")]
 #[when("I drag the model browser by its header into the viewport")]
 fn drag_into_viewport(world: &mut ApplicationWorld) {
     drag_header(world, [800, 300]);
@@ -121,35 +144,76 @@ fn drag_into_viewport(world: &mut ApplicationWorld) {
 fn browser_floating(world: &mut ApplicationWorld) {
     let (position, size) = browser_geometry();
     let extent = world.extent();
-    assert!(
-        position[0] > 400.,
-        "browser {position:?}: expected to float over the view"
-    );
-    assert!(
-        size[1] < extent[1] as f32 / 2.,
-        "browser {size:?}: expected a compact panel"
-    );
+    let area = world
+        .app()
+        .window
+        .native
+        .gui
+        .as_ref()
+        .unwrap()
+        .document_area(extent)
+        .unwrap();
+    assert_eq!(super::diagnostics::window_dock_id("Model"), Some(0));
+    assert!(position[0] < area[2] as f32 && position[0] + size[0] > area[0] as f32);
+    assert!(position[1] < area[3] as f32 && position[1] + size[1] > area[1] as f32);
     world.expect_text("Origin");
 }
+
+#[when("the user drags the floating browser by its header to the left edge of the workspace")]
+#[when("the user drags its header to the left edge of the workspace")]
 #[when("I drag the floating browser by its header to the left edge of the workspace")]
 #[when("I drag its header to the left edge of the workspace")]
 #[when("I drag the floating browser header to the left edge of the workspace")]
 fn drag_left(world: &mut ApplicationWorld) {
-    drag_header(world, [10, 400]);
+    let extent = world.extent();
+    let area = world
+        .app()
+        .window
+        .native
+        .gui
+        .as_ref()
+        .unwrap()
+        .document_area(extent)
+        .unwrap();
+    drag_header(world, [15, ((area[1] + area[3]) / 2) as i32]);
 }
+#[when("the user drags its header to the right edge of the workspace")]
 #[when("I drag its header to the right edge of the workspace")]
 fn drag_right(world: &mut ApplicationWorld) {
-    let width = world.extent()[0] as i32;
-    drag_header(world, [width - 10, 400]);
+    let extent = world.extent();
+    let area = world
+        .app()
+        .window
+        .native
+        .gui
+        .as_ref()
+        .unwrap()
+        .document_area(extent)
+        .unwrap();
+    drag_header(
+        world,
+        [extent[0] as i32 - 15, ((area[1] + area[3]) / 2) as i32],
+    );
 }
 #[then("the viewport occupies the remaining workspace")]
 fn right_space_free(world: &mut ApplicationWorld) {
     let extent = world.extent();
+    let area = world
+        .app()
+        .window
+        .native
+        .gui
+        .as_ref()
+        .unwrap()
+        .document_area(extent)
+        .unwrap();
+    assert!(area[0] > 0, "browser must reserve the left edge");
     world.expect_blank_region(
-        [330, extent[0] as usize - 20],
-        [250, extent[1] as usize - 20],
+        [area[0] as usize + 40, area[0] as usize + 240],
+        [area[1] as usize + 40, area[1] as usize + 160],
     );
 }
+
 #[then("the model browser docks at the right edge")]
 fn browser_right(world: &mut ApplicationWorld) {
     let (position, size) = browser_geometry();
@@ -163,11 +227,22 @@ fn browser_right(world: &mut ApplicationWorld) {
 #[then("the viewport occupies the workspace to its left")]
 fn view_left_of_browser(world: &mut ApplicationWorld) {
     let extent = world.extent();
+    let area = world
+        .app()
+        .window
+        .native
+        .gui
+        .as_ref()
+        .unwrap()
+        .document_area(extent)
+        .unwrap();
+    assert!(area[2] < extent[0], "browser must reserve the right edge");
     world.expect_blank_region(
-        [20, extent[0] as usize - 330],
-        [250, extent[1] as usize - 20],
+        [area[0] as usize + 40, area[0] as usize + 240],
+        [area[1] as usize + 40, area[1] as usize + 160],
     );
 }
+
 fn viewport_left(world: &mut ApplicationWorld) -> f32 {
     let extent = world.extent();
     world

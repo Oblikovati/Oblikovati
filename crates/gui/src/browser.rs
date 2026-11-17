@@ -400,6 +400,3 @@ pub(crate) const ORIGIN_ROWS: [&str; 7] = [
     "Z Axis",
     "Center Point",
 ];
-pub(crate) fn model_browser_width(viewport_width: f32) -> f32 {
-    (viewport_width * 0.25).max(1.)
-}

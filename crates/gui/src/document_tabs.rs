@@ -381,7 +381,12 @@ fn document_strip_window(ui: &Ui, span: (f32, f32), strip_top: f32, contents: im
         [span.1, 24.],
         Condition::Always,
     );
+    let mut flags = imgui::WindowFlags::NO_DOCKING;
+    if crate::widget_abi::moving_window(ui) {
+        flags |= imgui::WindowFlags::NO_INPUTS;
+    }
     ui.window("##open-document-tabs")
+        .flags(flags)
         .title_bar(false)
         .movable(false)
         .resizable(false)
