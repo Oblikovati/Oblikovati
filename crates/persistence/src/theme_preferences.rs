@@ -3,6 +3,7 @@ pub use crate::theme_preferences_native::NativeThemePreferenceFiles;
 use crate::{
     atomic::{AtomicFiles, replace_file},
     load::PackageFileReader,
+    preference_revision::PreferenceRevision,
 };
 use oblikovati_model::theme::{ThemeDefinition, ThemeSelectionStore};
 use serde::{Deserialize, Serialize};
@@ -26,22 +27,22 @@ struct ThemePreferenceRecipe {
 pub struct ThemePreferenceFile<Files> {
     path: PathBuf,
     files: Files,
+    revision: PreferenceRevision,
     recipe: ThemePreferenceRecipe,
 }
 impl<Files: PackageFileReader + AtomicFiles> ThemePreferenceFile<Files> {
     /// Load the Go activeTheme preference; example: `ThemePreferenceFile::load(path, files)?`.
     pub fn load(path: &Path, mut files: Files) -> io::Result<Self> {
-        let encoded = match files.read(path) {
-            Ok(bytes) => bytes,
-            Err(cause) if cause.kind() == io::ErrorKind::NotFound => Vec::new(),
-            Err(cause) => return Err(theme_preference_failure(path, cause)),
-        };
-        let recipe = serde_yaml_ng::from_slice::<Option<ThemePreferenceRecipe>>(&encoded)
-            .map_err(|cause| theme_preference_failure(path, cause))?
-            .unwrap_or_default();
+        let revision = PreferenceRevision::read(path, &mut files)
+            .map_err(|cause| theme_preference_failure(path, cause))?;
+        let recipe =
+            serde_yaml_ng::from_slice::<Option<ThemePreferenceRecipe>>(revision.contents())
+                .map_err(|cause| theme_preference_failure(path, cause))?
+                .unwrap_or_default();
         Ok(Self {
             path: path.into(),
             files,
+            revision,
             recipe,
         })
     }
@@ -55,7 +56,9 @@ impl<Files: PackageFileReader + AtomicFiles> ThemePreferenceFile<Files> {
         candidate.active_theme = theme.name().into();
         let encoded = crate::preference_yaml_guard::encode(&candidate)
             .map_err(|cause| theme_preference_failure(&self.path, cause))?;
+        self.revision.require_current(&self.path, &mut self.files)?;
         replace_file(&self.path, encoded.as_bytes(), &mut self.files).map_err(io::Error::other)?;
+        self.revision = PreferenceRevision::Contents(encoded.into_bytes());
         self.recipe = candidate;
         Ok(())
     }

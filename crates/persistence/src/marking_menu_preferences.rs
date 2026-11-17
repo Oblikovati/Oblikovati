@@ -3,6 +3,7 @@
 use crate::{
     atomic::{AtomicFiles, replace_file},
     load::PackageFileReader,
+    preference_revision::PreferenceRevision,
 };
 use oblikovati_api::{
     types::{Environment, ScreenQuadrant},
@@ -42,23 +43,22 @@ struct StoredSlot {
 pub struct MarkingMenuPreferenceFile<Files> {
     path: PathBuf,
     files: Files,
+    revision: PreferenceRevision,
     document: MenuDocument,
 }
 impl<Files: PackageFileReader + AtomicFiles> MarkingMenuPreferenceFile<Files> {
     /// Read existing settings; example: `MarkingMenuPreferenceFile::load(path, files)?`.
     pub fn load(path: &Path, mut files: Files) -> io::Result<Self> {
-        let bytes = match files.read(path) {
-            Ok(bytes) => bytes,
-            Err(error) if error.kind() == io::ErrorKind::NotFound => Vec::new(),
-            Err(error) => return Err(failure(path, error)),
-        };
-        let document = serde_yaml_ng::from_slice::<Option<MenuDocument>>(&bytes)
+        let revision =
+            PreferenceRevision::read(path, &mut files).map_err(|error| failure(path, error))?;
+        let document = serde_yaml_ng::from_slice::<Option<MenuDocument>>(revision.contents())
             .map_err(|error| failure(path, error))?
             .unwrap_or_default();
         validate_document(path, &document)?;
         Ok(Self {
             path: path.into(),
             files,
+            revision,
             document,
         })
     }
@@ -77,8 +77,12 @@ impl<Files: PackageFileReader + AtomicFiles> MarkingMenuPreferenceAccess
         candidate.menus = menus.all().iter().map(to_stored).collect();
         let bytes = crate::preference_yaml_guard::encode(&candidate)
             .map_err(|error| failure(&self.path, error).to_string())?;
+        self.revision
+            .require_current(&self.path, &mut self.files)
+            .map_err(|error| failure(&self.path, error).to_string())?;
         replace_file(&self.path, bytes.as_bytes(), &mut self.files)
             .map_err(|error| failure(&self.path, error).to_string())?;
+        self.revision = PreferenceRevision::Contents(bytes.into_bytes());
         self.document = candidate;
         Ok(())
     }
