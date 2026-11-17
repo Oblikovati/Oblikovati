@@ -53,7 +53,7 @@ oblikovati-solve = { path = "../solve" }
 tempfile = "=3.27.0"
 
 [target.'cfg(target_os = "linux")'.dev-dependencies]
-x11rb = { version = "=0.14.0", features = ["xtest"] }
+x11rb = { version = "=0.14.0", features = ["xtest", "xfixes"] }
 
 [[test]]
 name = "scripts"
