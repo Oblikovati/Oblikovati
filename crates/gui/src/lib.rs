@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Owned Dear ImGui frames for the application viewport draw boundary.
+mod accessibility;
+pub use accessibility::{GuiClosePrompt, GuiClosePromptButton, GuiClosePromptChoice};
 mod activity;
 mod application;
 #[cfg(test)]

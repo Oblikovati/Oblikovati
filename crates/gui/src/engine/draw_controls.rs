@@ -330,6 +330,21 @@ impl GuiFrameEngine {
             .panel(ui, &request.commands);
         self.document_files
             .closing_panel(ui, &request.commands, &mut selected);
+        let close_prompt = self
+            .document_files
+            .close_prompt_semantics()
+            .map(|mut prompt| {
+                let scale = request.layout_scale();
+                for bounds in std::iter::once(&mut prompt.bounds)
+                    .chain(prompt.buttons.iter_mut().map(|button| &mut button.bounds))
+                {
+                    for axis in 0..2 {
+                        bounds[axis] *= scale[axis];
+                        bounds[axis + 2] *= scale[axis];
+                    }
+                }
+                prompt
+            });
         let home_changed = home_follows_actions(&mut self.home, &selected);
         self.known_documents.clone_from(&request.commands.documents);
         self.known_document_type = request.commands.document_type;
@@ -407,6 +422,8 @@ impl GuiFrameEngine {
         Ok(GuiFrameOutput {
             window_action,
             window_controls,
+            close_prompt,
+            accessibility_popup_active: self.popup_was_open,
             draws: snapshot,
             actions: selected,
             parameter_actions,

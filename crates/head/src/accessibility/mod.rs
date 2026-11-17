@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Platform-independent semantics for the native accessibility bridge.
 mod actions;
+mod dialog;
 pub(crate) mod frame;
 
 #[cfg(target_os = "linux")]

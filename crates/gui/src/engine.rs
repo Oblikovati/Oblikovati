@@ -38,6 +38,8 @@ pub struct GuiWindowControls {
 pub struct GuiFrameOutput {
     pub window_action: Option<GuiWindowAction>,
     pub window_controls: GuiWindowControls,
+    pub close_prompt: Option<crate::GuiClosePrompt>,
+    pub accessibility_popup_active: bool,
     pub draws: GuiFrame,
     pub actions: Vec<GuiShellAction>,
     pub parameter_actions: Vec<crate::GuiParameterAction>,
@@ -233,6 +235,10 @@ impl GuiFrameEngine {
             crate::theme::apply_chrome_theme(&mut self.context.style_mut().colors, theme.palette());
         }
         self.draw_controls(request)
+    }
+    /// Answer the active guarded-close prompt; example: `engine.answer_close_prompt(GuiClosePromptChoice::Cancel)`.
+    pub fn answer_close_prompt(&mut self, choice: crate::GuiClosePromptChoice) {
+        self.document_files.answer_close_prompt(choice);
     }
     /// Request a guarded application exit; example: `engine.request_application_close()`.
     pub fn request_application_close(&mut self) {

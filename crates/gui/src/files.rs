@@ -261,6 +261,12 @@ impl GuiDocumentFiles {
         self.open.panel(ui, state, actions);
         self.projects.panel(ui, state);
     }
+    pub(crate) fn answer_close_prompt(&mut self, choice: crate::GuiClosePromptChoice) {
+        self.close_prompt.answer_accessibly(choice);
+    }
+    pub(crate) fn close_prompt_semantics(&self) -> Option<crate::GuiClosePrompt> {
+        self.close_prompt.semantics()
+    }
     /// Route this frame's closes, then draw the prompts and Save As. Runs after every control has
     /// drawn, and answered closes join `actions` after the routing so no answer is asked twice.
     /// Example: `files.closing_panel(ui, &state, &mut actions)` at the end of the frame.
