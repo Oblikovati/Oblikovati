@@ -103,6 +103,46 @@ fn native_mouse_switches_tabs_in_the_bottom_strip() {
     world.close();
 }
 
+#[cfg(target_os = "linux")]
+#[test]
+fn native_mouse_closes_the_selected_document_tab() {
+    let mut world = ApplicationWorld::new();
+    let first = world.add_part();
+    let second = world.add_part();
+    let name = world.document_name(second);
+    let point = super::super::diagnostics::pointer_pixels(world.expect_tab(&name).center());
+    super::super::x11_input::move_pointer(point);
+    world.pump(Vec::new());
+    let center = close_mark_center(&world, &name);
+    super::super::x11_input::click(super::super::diagnostics::pointer_pixels(center));
+    world.pump(Vec::new());
+    assert!(!world.document_is_open(second));
+    assert!(world.document_is_open(first));
+    assert_eq!(world.state().document, Some(first));
+    world.close();
+}
+
+#[cfg(target_os = "linux")]
+fn close_mark_center(world: &ApplicationWorld, name: &str) -> [f32; 2] {
+    let run = world.expect_tab(name);
+    let marks: Vec<_> = world
+        .frame
+        .marks
+        .iter()
+        .filter(|mark| {
+            mark.list == run.list
+                && mark.position[0] > run.maximum[0]
+                && mark.position[0] < run.maximum[0] + 30.
+                && (mark.position[1] - run.center()[1]).abs() < 10.
+        })
+        .map(|mark| mark.position)
+        .collect();
+    assert!(!marks.is_empty(), "tab {run:?}: expected its close mark");
+    std::array::from_fn(|axis| {
+        marks.iter().map(|mark| mark[axis]).sum::<f32>() / marks.len() as f32
+    })
+}
+
 #[given("the model browser is docked at the left")]
 fn model_browser_docked_left(world: &mut ApplicationWorld) {
     let (browser, _) = geometry("Model");

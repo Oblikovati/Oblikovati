@@ -32,14 +32,20 @@ impl QuickAccessToolbar {
                     icons.compact_button(ui, label, crate::icons::IconGlyph::Projects);
                 drop(disabled);
             }
-            StandardCommand::Save => crate::chrome::command_control(
-                ui,
-                label,
-                GuiShellAction::Save,
-                state,
-                actions,
-                || icons.compact_button(ui, label, crate::icons::IconGlyph::Save),
-            ),
+            StandardCommand::Save => {
+                crate::chrome::command_control(
+                    ui,
+                    label,
+                    GuiShellAction::Save,
+                    state,
+                    actions,
+                    || icons.compact_button(ui, label, crate::icons::IconGlyph::Save),
+                );
+                #[cfg(test)]
+                {
+                    self.test_save_bounds = Some([ui.item_rect_min(), ui.item_rect_max()]);
+                }
+            }
             StandardCommand::Update => compact_action(
                 ui,
                 icons,

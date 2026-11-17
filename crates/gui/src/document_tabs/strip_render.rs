@@ -97,6 +97,8 @@ pub(super) fn document_tab(
             .is_some_and(|id| owner.detached.contains(&id));
     let selected = !behind && is_active_window(state, tab);
     let keep = draw_document_tab(ui, tab, selected);
+    #[cfg(test)]
+    record_test_tab_bounds(ui, tab.row.id, owner.test_tab_bounds);
     owner.order.note(
         TabKey::Window(tab.window),
         ui.item_rect_min()[0],
@@ -171,4 +173,16 @@ fn draw_literal_tab_label(ui: &Ui, label: &str) {
         ui.style_color(imgui::StyleColor::Text),
         label,
     );
+}
+
+#[cfg(test)]
+fn record_test_tab_bounds(ui: &Ui, id: u64, bounds: &mut TestTabBounds) {
+    let min = ui.item_rect_min();
+    let max = ui.item_rect_max();
+    // ImGui places the close mark inside the tab's right padding.
+    let close = [
+        max[0] - ui.clone_style().frame_padding[0] * 2. - ui.current_font_size() / 2.,
+        (min[1] + max[1]) / 2.,
+    ];
+    bounds.insert(id, ([min, max], close));
 }
