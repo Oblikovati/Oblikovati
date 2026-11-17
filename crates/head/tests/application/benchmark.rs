@@ -17,6 +17,8 @@ mod gap_runner;
 #[path = "main-window-frame/steps.rs"]
 mod main_window_frame;
 #[cfg(target_os = "linux")]
+mod main_window_frame_accessibility;
+#[cfg(target_os = "linux")]
 mod main_window_frame_native;
 #[cfg(target_os = "linux")]
 #[path = "main-window-frame/resize.rs"]
