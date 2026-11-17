@@ -177,6 +177,10 @@ Last checked: 2026-11-16 on `rust-work`. Refresh from current evidence at each c
   selection; the diagnostic software-rendered run does not establish 60 fps.
   A stale sketch scene after host edits was also fixed (#4051). Martensite
   texture upload and readback work remains open (#510 and #501).
+- Dimension label points now use checked same-plane projection batches (#4035).
+  A 200-label software-rendered projection diagnostic measured 13.61 ms
+  median individually and 4.71 ms batched; it does not measure frame rate.
+  See `receipts/2026-11-17-dimension-projection-4035/`.
 - A selected named face can start a sketch and survive save/reopen (#4050).
   Native X11 coverage exercises the part-menu path.
 - Authored work planes now display in part views (#3981). Viewport plane

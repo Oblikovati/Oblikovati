@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{HeadWindow, HeadWork};
 use oblikovati_gui::GuiDimensionLabel;
+#[path = "gui_dimension_projection.rs"]
+mod dimension_projection;
 
 pub(super) fn projected_dimension_labels(
     window: &mut dyn HeadWindow,
@@ -9,19 +11,11 @@ pub(super) fn projected_dimension_labels(
     let annotations = owner.sketch_dimension_annotations()?;
     let mut declines = annotations.declines;
     let mut labels = Vec::new();
-    for annotation in annotations.labels {
-        match window.sketch_pixel(annotation.plane, annotation.position) {
+    let projections = dimension_projection::project(window, &annotations.labels);
+    for (annotation, projection) in annotations.labels.into_iter().zip(projections) {
+        match projection.position {
             Ok(pixel) => {
-                let line = match annotation
-                    .line
-                    .map(|[from, to]| {
-                        Ok::<_, String>([
-                            window.sketch_pixel(annotation.plane, from)?,
-                            window.sketch_pixel(annotation.plane, to)?,
-                        ])
-                    })
-                    .transpose()
-                {
+                let line = match projection.line.transpose() {
                     Ok(line) => line,
                     Err(cause) => {
                         declines.push(format!("dimension line {:?}: {cause}", annotation.text));
