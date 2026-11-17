@@ -11,6 +11,9 @@ mod capture_only;
 #[cfg(target_os = "linux")]
 mod cube_os_entry;
 mod diagnostics;
+#[cfg(target_os = "linux")]
+#[path = "docking-system/steps.rs"]
+mod docking_system;
 mod documents;
 mod gap_runner;
 #[cfg(target_os = "linux")]

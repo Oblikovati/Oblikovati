@@ -50,6 +50,8 @@ pub(super) struct ApplicationWorld {
     pub observed_quick_access: Option<Vec<(String, bool)>>,
     /// The toolbar icon selected for a tooltip scenario.
     pub observed_toolbar_command: Option<String>,
+    /// Viewport and panel width before a docking-boundary resize.
+    pub docking_resize: Option<([u32; 4], f32)>,
     /// The latest drag, for a step that checks the preview it left.
     pub last_drag: Option<[[i32; 2]; 2]>,
     /// The dimension value last opened, for a step that reopens "the annotation".
@@ -118,6 +120,7 @@ impl ApplicationWorld {
             observed_rows: None,
             observed_quick_access: None,
             observed_toolbar_command: None,
+            docking_resize: None,
             last_drag: None,
             opened_value: None,
         };
