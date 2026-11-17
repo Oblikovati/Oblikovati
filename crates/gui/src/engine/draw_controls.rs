@@ -96,8 +96,10 @@ impl GuiFrameEngine {
         let logical =
             std::array::from_fn(|axis| request.extent[axis] as f32 / request.layout_scale()[axis]);
         let outer = self.workspace.outer_area(logical, band_height);
-        let outer_center = crate::application::workspace_docking::draw_outer(ui, outer);
+        let (outer_center, bottom_span) =
+            crate::application::workspace_docking::draw_outer(ui, outer);
         self.workspace.set_outer_center(outer_center, outer);
+        self.workspace.outer_bottom_span = bottom_span;
         let workspace = self.workspace.document_area(logical, band_height);
         let area = crate::application::workspace_docking::draw(ui, workspace);
         let over_fields = crate::sketch::line::hud_panel(ui, request);

@@ -2,6 +2,9 @@
 use super::{ApplicationWorld, diagnostics::window_geometry};
 use crate::HeadWork;
 use cucumber::{given, then, when};
+#[cfg(target_os = "linux")]
+#[path = "browser_bottom_native.rs"]
+mod browser_bottom_native;
 #[path = "browser_feature.rs"]
 pub(super) mod browser_feature;
 #[path = "browser_origin.rs"]

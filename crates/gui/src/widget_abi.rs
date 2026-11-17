@@ -5,6 +5,7 @@ unsafe extern "C" {
     fn oblikovati_gui_drag_current_window() -> bool;
     fn oblikovati_gui_workspace_dockspace(width: f32, height: f32) -> u32;
     fn oblikovati_gui_outer_dockspace(width: f32, height: f32) -> u32;
+    fn oblikovati_gui_outer_bottom_span(id: u32, left: *mut f32, right: *mut f32) -> bool;
     fn oblikovati_gui_dockspace_center(
         id: u32,
         left: *mut f32,
@@ -58,9 +59,12 @@ pub(crate) fn workspace_dockspace(_: &Ui, size: [f32; 2]) -> Option<[f32; 4]> {
 }
 /// Draw the outer workspace, including the default Model dock.
 /// Example: `outer_dockspace(ui, [800., 600.])` in its transparent host.
-pub(crate) fn outer_dockspace(_: &Ui, size: [f32; 2]) -> Option<[f32; 4]> {
+pub(crate) fn outer_dockspace(_: &Ui, size: [f32; 2]) -> Option<([f32; 4], Option<[f32; 2]>)> {
     let id = unsafe { oblikovati_gui_outer_dockspace(size[0], size[1]) };
-    dockspace_center(id)
+    let mut span = [0.; 2];
+    let [left, right] = &mut span;
+    let has_bottom = unsafe { oblikovati_gui_outer_bottom_span(id, left, right) };
+    dockspace_center(id).map(|center| (center, has_bottom.then_some(span)))
 }
 fn dockspace_center(id: u32) -> Option<[f32; 4]> {
     let mut bounds = [0.; 4];

@@ -56,7 +56,8 @@ pub(crate) fn document_list_control(
     state: &GuiCommandState,
     actions: &mut Vec<GuiShellAction>,
 ) {
-    crate::widget_abi::window_geometry(ui, position, [width, 32.], imgui::Condition::Always);
+    let _minimum = ui.push_style_var(imgui::StyleVar::WindowMinSize([1., 1.]));
+    crate::widget_abi::window_geometry(ui, position, [width, 24.], imgui::Condition::Always);
     let moving = if crate::widget_abi::moving_window(ui) {
         imgui::WindowFlags::NO_INPUTS
     } else {
