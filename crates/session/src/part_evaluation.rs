@@ -205,6 +205,33 @@ impl<O: TransactionObserver> DocumentSession<O> {
         }
         Ok(changed)
     }
+    /// Publish an unchanged sketch replay, or refresh changed sketches for a new replay.
+    /// Example: `session.adopt_sketch_replay(completed, &mut slot)?` returns true if published.
+    pub fn adopt_sketch_replay<Body, Failure>(
+        &mut self,
+        completed: CompletedPartSketchRecompute<Body, Failure>,
+        slot: &mut PartEvaluationSlot<Body, Failure>,
+    ) -> Result<bool, PartSketchAdoptionError> {
+        completed
+            .part
+            .validate(self)
+            .map_err(PartSketchAdoptionError::Evaluation)?;
+        if let Some(previous) = &slot.published {
+            previous
+                .validate_owner(self)
+                .map_err(PartSketchAdoptionError::Evaluation)?;
+        }
+        if completed
+            .sketches
+            .same_evaluated_state(&self.history.snapshot().sketches)
+        {
+            self.adopt_part_evaluation(completed.part, slot)
+                .map_err(PartSketchAdoptionError::Evaluation)?;
+            return Ok(true);
+        }
+        self.adopt_recomputed_part_sketches(completed)?;
+        Ok(false)
+    }
     /// Capture a sealed immutable request without holding the session borrow.
     /// Example: `let request = session.prepare_part_evaluation();` before an owner-thread kernel run.
     pub fn prepare_part_evaluation(&self) -> PartEvaluationRequest {

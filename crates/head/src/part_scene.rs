@@ -186,15 +186,12 @@ impl DesktopPartScenes {
         files: &mut FileWorkspace<O, W, F>,
         document: u64,
     ) -> Result<(), String> {
-        oblikovati_automation::refresh_part_sketches(files, document, self.resolution)?;
-        let completed =
-            oblikovati_automation::complete_part_replay(files, document, self.resolution)?;
-        files
-            .commands(document)
-            .map_err(|cause| cause.to_string())?
-            .adopt_part_evaluation(completed, &mut self.slot)
-            .map_err(|cause| cause.to_string())?;
-        Ok(())
+        oblikovati_automation::refresh_and_adopt_part(
+            files,
+            document,
+            self.resolution,
+            &mut self.slot,
+        )
     }
     /// Borrow only this session's current published bodies; example: `scenes.current(session)?`.
     pub(crate) fn current<'a, O: TransactionObserver>(

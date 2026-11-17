@@ -120,14 +120,8 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
     ) -> Result<Vec<FeatureError>, String> {
         self.slots
             .retain(|id, _| files.workspace().documents().contains(id));
-        refresh_part_sketches(files, document, self.resolution)?;
-        let completed = complete_part_replay(files, document, self.resolution)?;
         let slot = self.slots.entry(document).or_default();
-        files
-            .commands(document)
-            .map_err(|error| error.to_string())?
-            .adopt_part_evaluation(completed, slot)
-            .map_err(|error| error.to_string())?;
+        refresh_and_adopt_part(files, document, self.resolution, slot)?;
         let session = files
             .workspace()
             .session(document)
@@ -204,6 +198,35 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
         let slot = self.current_slot(files, document)?;
         slot_datums_for_face(files, document, slot, face)
     }
+}
+
+/// Refresh sketches and publish a matching part result to the supplied owner.
+/// Example: `refresh_and_adopt_part(files, id, policy, &mut slot)?`.
+pub fn refresh_and_adopt_part<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &mut FileWorkspace<O, W, F>,
+    document: u64,
+    resolution: Option<PrismResolutionPolicy>,
+    slot: &mut PartEvaluationSlot<NamedSolid, EvaluationFailure>,
+) -> Result<(), String> {
+    let completed = prepare_part_sketches(files, document, resolution)?;
+    let published = if let Some(completed) = completed {
+        files
+            .commands(document)
+            .map_err(|error| error.to_string())?
+            .adopt_sketch_replay(completed, slot)
+            .map_err(|error| error.to_string())?
+    } else {
+        false
+    };
+    if !published {
+        let completed = complete_part_replay(files, document, resolution)?;
+        files
+            .commands(document)
+            .map_err(|error| error.to_string())?
+            .adopt_part_evaluation(completed, slot)
+            .map_err(|error| error.to_string())?;
+    }
+    Ok(())
 }
 
 /// Refresh dependent sketches from ordered replay before publishing a part.

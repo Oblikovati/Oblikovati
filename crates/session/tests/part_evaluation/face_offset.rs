@@ -440,3 +440,6 @@ fn face_sketch_continuity_tracks_published_source_failure() {
 
 #[path = "face_offset/creation.rs"]
 mod creation;
+
+#[path = "face_offset/reuse.rs"]
+mod reuse;

@@ -143,6 +143,8 @@
 
 ### Changed
 
+- Reused unchanged sketch replay results during part updates to avoid a second full replay. (#4079)
+
 - Separated selected-face context commands from the radial marking menu. (#4055)
 
 - Enabled analytic area measurement from a selected face context menu. (#4052)
