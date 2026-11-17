@@ -72,6 +72,8 @@ pub(crate) struct QuickAccessRequests {
 /// The toolbar's choices for this session; a later scenario may ask for them to persist.
 #[derive(Default)]
 pub(crate) struct QuickAccessToolbar {
+    #[cfg(test)]
+    pub(crate) test_save_bounds: Option<[[f32; 2]; 2]>,
     kinds: BTreeMap<String, KindSelection>,
     pub below_ribbon: bool,
     shortcut_under_menu: Option<String>,

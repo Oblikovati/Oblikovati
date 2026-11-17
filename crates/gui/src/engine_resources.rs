@@ -42,3 +42,7 @@ mod panel_selector_tests;
 #[cfg(test)]
 #[path = "../tests/browser/click.rs"]
 mod browser_click_tests;
+
+#[cfg(test)]
+#[path = "../tests/document-tabs/click.rs"]
+mod document_tab_click_tests;

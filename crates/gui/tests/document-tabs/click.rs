@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
+use super::*;
+use crate::*;
 use oblikovati_api::wire::{ActivateDocumentArgs, DocumentInfo};
-use oblikovati_gui::*;
 fn tab_request() -> GuiFrameRequest {
     let documents = [1, 2]
         .map(|id| DocumentInfo {
@@ -42,6 +43,23 @@ fn tab_click(
     }
     actions
 }
+fn tab_click_at(
+    engine: &mut GuiFrameEngine,
+    request: &mut GuiFrameRequest,
+    id: u64,
+    close: bool,
+) -> Vec<GuiShellAction> {
+    let point = tab_position(engine, id, close);
+    tab_click(engine, request, point)
+}
+fn tab_position(engine: &GuiFrameEngine, id: u64, close: bool) -> [f32; 2] {
+    let (bounds, close_point) = engine.document_tabs.test_tab_bounds[&id];
+    let center = [
+        (bounds[0][0] + bounds[1][0]) * 0.5,
+        (bounds[0][1] + bounds[1][1]) * 0.5,
+    ];
+    if close { close_point } else { center }
+}
 #[test]
 fn clicking_another_document_tab_dispatches_its_session_identity() {
     let mut engine = GuiFrameEngine::new().unwrap();
@@ -50,7 +68,7 @@ fn clicking_another_document_tab_dispatches_its_session_identity() {
         assert!(engine.frame(&request).unwrap().actions.is_empty());
     }
     assert_eq!(
-        tab_click(&mut engine, &mut request, [452., 178.]),
+        tab_click_at(&mut engine, &mut request, 2, false),
         [GuiShellAction::ActivateDocument(ActivateDocumentArgs {
             id: 2
         })]
@@ -119,7 +137,7 @@ fn active_tab_close_uses_the_existing_guarded_close_request() {
         engine.frame(&request).unwrap();
     }
     assert_eq!(
-        tab_click(&mut engine, &mut request, [422., 178.]),
+        tab_click_at(&mut engine, &mut request, 1, true),
         [GuiShellAction::CloseDocument(
             oblikovati_api::wire::CloseDocumentArgs {
                 id: 1,
@@ -133,6 +151,10 @@ fn hidden_or_disabled_document_tabs_cannot_dispatch_pointer_activation() {
     for mode in 0..2 {
         let mut engine = GuiFrameEngine::new().unwrap();
         let mut request = tab_request();
+        for _ in 0..3 {
+            engine.frame(&request).unwrap();
+        }
+        let point = tab_position(&engine, 2, false);
         match mode {
             0 => request.commands.documents[1].visible = false,
             _ => request.commands.transaction_open = true,
@@ -140,7 +162,7 @@ fn hidden_or_disabled_document_tabs_cannot_dispatch_pointer_activation() {
         for _ in 0..3 {
             engine.frame(&request).unwrap();
         }
-        assert!(tab_click(&mut engine, &mut request, [452., 178.]).is_empty());
+        assert!(tab_click(&mut engine, &mut request, point).is_empty());
     }
 }
 #[test]
@@ -154,7 +176,7 @@ fn literal_identical_tab_labels_keep_separate_click_identities() {
         engine.frame(&request).unwrap();
     }
     assert_eq!(
-        tab_click(&mut engine, &mut request, [522., 178.]),
+        tab_click_at(&mut engine, &mut request, 2, false),
         [GuiShellAction::ActivateDocument(ActivateDocumentArgs {
             id: 2
         })]
@@ -172,7 +194,7 @@ fn refused_active_tab_close_does_not_activate_another_document_on_idle_or_save()
         engine.frame(&request).unwrap();
     }
     assert_eq!(
-        tab_click(&mut engine, &mut request, [494., 178.]),
+        tab_click_at(&mut engine, &mut request, 2, true),
         [GuiShellAction::CloseDocument(
             oblikovati_api::wire::CloseDocumentArgs {
                 id: 2,
@@ -184,8 +206,16 @@ fn refused_active_tab_close_does_not_activate_another_document_on_idle_or_save()
     for _ in 0..10 {
         assert!(engine.frame(&request).unwrap().actions.is_empty());
     }
+    let bounds = engine
+        .quick_access
+        .test_save_bounds
+        .expect("expected Save button");
+    let save = [
+        (bounds[0][0] + bounds[1][0]) * 0.5,
+        (bounds[0][1] + bounds[1][1]) * 0.5,
+    ];
     assert_eq!(
-        tab_click(&mut engine, &mut request, [115., 45.]),
+        tab_click(&mut engine, &mut request, save),
         [GuiShellAction::Save]
     );
 }

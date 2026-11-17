@@ -11,6 +11,9 @@ use strip_render::{active_tab_index, document_strip_window, document_tab, home_t
 use tab_order::{TabKey, TabOrder};
 use tab_overflow::{ARROWS_WIDTH, scroll_arrows, visible_tabs};
 
+#[cfg(test)]
+type TestTabBounds = std::collections::BTreeMap<u64, ([[f32; 2]; 2], [f32; 2])>;
+
 const SETTLING_FRAMES: u8 = 2;
 /// How far above the bottom strip a released tab has left it behind.
 const DETACH_DISTANCE: f32 = 90.;
@@ -20,6 +23,8 @@ const DOCUMENT_LIST_WIDTH: f32 = 92.;
 const TAB_ROOM: f32 = 40.;
 #[derive(Default)]
 pub(crate) struct DocumentTabs {
+    #[cfg(test)]
+    pub(crate) test_tab_bounds: TestTabBounds,
     previous: Option<u64>,
     /// The first tab shown; earlier ones wait behind the left arrow.
     first_tab: usize,
@@ -61,6 +66,8 @@ impl DocumentTabs {
         let span = layout.document_tab_span(width, area);
         let strip = (span.0, (span.1 - DOCUMENT_LIST_WIDTH).max(1.));
         let mut strip_owner = StripOwner {
+            #[cfg(test)]
+            test_tab_bounds: &mut self.test_tab_bounds,
             menu: &mut self.menu,
             detached: &self.detached,
             pressed: &mut self.pressed_tab,
@@ -119,6 +126,8 @@ impl DocumentTabs {
 }
 /// The strip's borrows of its owner, for the frame's tab bar closure.
 struct StripOwner<'a> {
+    #[cfg(test)]
+    test_tab_bounds: &'a mut TestTabBounds,
     menu: &'a mut crate::application::document_tabs::TabMenu,
     detached: &'a [u64],
     pressed: &'a mut Option<u64>,
