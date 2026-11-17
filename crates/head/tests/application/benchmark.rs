@@ -8,6 +8,8 @@ use futures::StreamExt as _;
 use std::{fmt, fs, path::PathBuf};
 mod binding_inventory;
 mod capture_only;
+#[cfg(target_os = "linux")]
+mod cube_os_entry;
 mod diagnostics;
 mod documents;
 mod gap_runner;
