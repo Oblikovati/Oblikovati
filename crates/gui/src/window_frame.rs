@@ -90,7 +90,19 @@ fn control(
     record_control(ui, index, bounds, focused);
     draw_icon(ui, accessible);
     if ui.is_item_hovered() {
-        ui.tooltip_text(accessible);
+        let [x, y] = ui.item_rect_min();
+        // The controls touch the viewport edge; leave room for the full tooltip (#4063).
+        let text = ui.calc_text_size(accessible);
+        crate::widget_abi::window_geometry(
+            ui,
+            [(x - text[0] - 16.).max(0.), y + bar_height],
+            [text[0] + 16., text[1] + 12.],
+            Condition::Always,
+        );
+        ui.tooltip(|| {
+            ui.indent_by(4.);
+            ui.text(accessible);
+        });
     }
     clicked
 }
