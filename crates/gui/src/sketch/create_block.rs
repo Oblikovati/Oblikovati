@@ -58,9 +58,8 @@ impl CreateBlockDialog {
         self.document = document;
         self.dock_state.set_open(document.is_some());
     }
-    pub(crate) fn panel(
+    pub(crate) fn sync_before_docking(
         &mut self,
-        ui: &Ui,
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
     ) {
@@ -71,6 +70,14 @@ impl CreateBlockDialog {
             self.set_document(None);
         }
         self.finish_pending(state, actions);
+    }
+    pub(crate) fn panel(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        self.sync_before_docking(state, actions);
         if self.document.is_none() {
             return;
         }
@@ -154,6 +161,23 @@ mod tests {
     fn proposed_name_skips_existing_definitions() {
         assert_eq!(next_name(&[]), "Block1");
         assert_eq!(next_name(&["Block1".into(), "Block3".into()]), "Block2");
+    }
+    #[test]
+    fn pre_dock_acknowledgement_emits_close_action_once() {
+        let mut dialog = CreateBlockDialog::default();
+        dialog.set_document(Some(1));
+        dialog.pending = Some(("Block1".into(), true));
+        let state = GuiCommandState {
+            document: Some(1),
+            authoring: super::GuiAuthoringContext::Sketch,
+            sketch_block_created: Some("Block1".into()),
+            ..Default::default()
+        };
+        let mut actions = Vec::new();
+        dialog.sync_before_docking(&state, &mut actions);
+        dialog.sync_before_docking(&state, &mut actions);
+        assert_eq!(dialog.document, None);
+        assert_eq!(actions, [GuiShellAction::SelectBlockGeometry(false)]);
     }
     #[test]
     fn owner_acknowledgement_controls_apply_and_close() {

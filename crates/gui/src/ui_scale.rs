@@ -59,6 +59,9 @@ impl GuiScalePreferences {
     pub(crate) fn request_document(&mut self, document: u64) {
         self.document_units.request(document);
     }
+    pub(crate) fn sync_before_docking(&mut self, state: &GuiCommandState, home_active: bool) {
+        self.document_units.sync_before_docking(state, home_active);
+    }
     pub(crate) fn panel(
         &mut self,
         ui: &Ui,

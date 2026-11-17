@@ -99,10 +99,12 @@ fn orientation_suspends_while_home_is_active_and_restores_the_shared_dock() {
     select_dock_tab(&mut world, "Orientation Options");
     let home = world.expect_tab("Home").center();
     super::super::x11_input::click(super::super::diagnostics::pointer_pixels(home));
-    world.pump(Vec::new());
-    world.pump(Vec::new());
+    super::external_close_native::assert_closed_with_visible_tab(
+        &mut world,
+        "Orientation Options",
+        "Material Browser",
+    );
     assert!(window_geometry("##home-workspace").is_some());
-    assert!(window_geometry("Orientation Options").is_none());
     let part = world.expect_tab(&name).center();
     super::super::x11_input::click(super::super::diagnostics::pointer_pixels(part));
     world.pump(Vec::new());

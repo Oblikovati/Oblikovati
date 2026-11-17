@@ -10,7 +10,6 @@ use crate::{
 use imgui::{ConfigFlags, Context, TextureId};
 use std::sync::Arc;
 pub(crate) mod dock_registration;
-mod dock_settle;
 #[path = "engine/document_name.rs"]
 mod document_name;
 #[path = "engine/draw_controls.rs"]
@@ -252,7 +251,7 @@ impl GuiFrameEngine {
             crate::theme::apply_chrome_theme(&mut self.context.style_mut().colors, theme.palette());
         }
         self.external_docks.synchronize(&request.commands);
-        dock_settle::settle(request, |frame| self.draw_controls(frame))
+        self.draw_controls(request)
     }
     /// Focus an accessible control; example: `engine.focus_accessible(GuiAccessibleFocus::Frame(0))`.
     pub fn focus_accessible(&mut self, target: crate::GuiAccessibleFocus) {

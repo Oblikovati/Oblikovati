@@ -26,6 +26,9 @@ impl DockableState {
     pub(crate) fn is_open(&self) -> bool {
         self.0.visibility.get() == DockVisibility::Open
     }
+    pub(crate) fn is_requested(&self) -> bool {
+        self.0.visibility.get() != DockVisibility::Closed
+    }
     pub(crate) fn set_open(&self, open: bool) {
         self.set_visibility(if open {
             DockVisibility::Open
@@ -55,9 +58,9 @@ impl DockableState {
     }
     pub(crate) fn set_visibility(&self, next: DockVisibility) {
         let previous = self.0.visibility.replace(next);
-        if next == DockVisibility::Closed && previous != DockVisibility::Closed {
+        if previous == DockVisibility::Open && next != DockVisibility::Open {
             self.0.close_pending.set(true);
-        } else if next != DockVisibility::Closed {
+        } else if next == DockVisibility::Open {
             self.0.close_pending.set(false);
         }
     }
@@ -108,7 +111,10 @@ impl DockRegistry {
     ) -> Result<bool, String> {
         let active = self.active_identities()?;
         let mut changed = false;
+        let mut index = 0;
         self.windows.retain_mut(|entry| {
+            let entry_index = index;
+            index += 1;
             let dropped = Rc::strong_count(&entry.state) == 1;
             let state = &entry.state;
             let old_identity = crate::widget_abi::dock_window_identity(&entry.title);
@@ -119,21 +125,25 @@ impl DockRegistry {
             let renamed = entry.was_open && next_identity.is_some_and(|id| id != old_identity);
             let pending = state.close_pending.replace(false);
             let dropped_open =
-                dropped && (entry.was_open || state.visibility.get() != DockVisibility::Closed);
+                dropped && (entry.was_open || state.visibility.get() == DockVisibility::Open);
             if renamed && !active.contains_key(&old_identity) {
                 closed(&entry.title);
                 changed = true;
             }
             let final_title = next_title.as_ref().unwrap_or(&entry.title);
             let final_identity = crate::widget_abi::dock_window_identity(final_title);
-            if (pending || dropped_open) && !active.contains_key(&final_identity) {
+            let owned_suspension = state.visibility.get() == DockVisibility::Suspended
+                && active.get(&final_identity) == Some(&entry_index);
+            if (pending || dropped_open)
+                && (!active.contains_key(&final_identity) || owned_suspension)
+            {
                 closed(final_title);
                 changed = true;
             }
             if let Some(title) = next_title {
                 entry.title = title;
             }
-            entry.was_open = state.visibility.get() != DockVisibility::Closed;
+            entry.was_open = state.visibility.get() == DockVisibility::Open;
             !dropped
         });
         Ok(changed)

@@ -23,19 +23,21 @@ impl ClearAppearance {
     pub(crate) fn open(&mut self, document: u64) {
         self.set_document(Some(document));
     }
+    pub(crate) fn sync_before_docking(&mut self, state: &GuiCommandState) {
+        if self.document.is_some() && self.document != state.document {
+            self.set_document(None);
+        }
+    }
     pub(crate) fn panel(
         &mut self,
         ui: &Ui,
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
     ) {
+        self.sync_before_docking(state);
         let Some(document) = self.document else {
             return;
         };
-        if state.document != Some(document) {
-            self.set_document(None);
-            return;
-        }
         let action = Self::action_for(state, document);
         let mut open = true;
         let mut done = false;
@@ -184,6 +186,14 @@ fn confirm_clear(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn document_change_closes_before_docking() {
+        let mut editor = ClearAppearance::default();
+        editor.open(1);
+        editor.sync_before_docking(&GuiCommandState::default());
+        assert!(editor.document.is_none());
+    }
+
     use super::*;
 
     #[test]

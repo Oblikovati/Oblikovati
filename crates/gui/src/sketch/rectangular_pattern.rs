@@ -107,9 +107,8 @@ impl RectangularPatternDialog {
         self.last_preview = None;
         self.pending = None;
     }
-    pub(crate) fn panel(
+    pub(crate) fn sync_before_docking(
         &mut self,
-        ui: &Ui,
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
     ) {
@@ -123,6 +122,14 @@ impl RectangularPatternDialog {
             self.close(actions);
         }
         self.observe_result(state, actions);
+    }
+    pub(crate) fn panel(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        self.sync_before_docking(state, actions);
         if self.document.is_none() {
             return;
         }
@@ -302,6 +309,18 @@ mod tests {
         assert_eq!(request.counts, [3, 1]);
         assert_eq!(request.directions[0], [-1., 0.]);
         assert!(request.fitted);
+    }
+    #[test]
+    fn document_change_closes_pattern_before_docking_once() {
+        let mut dialog = RectangularPatternDialog::default();
+        let mut state = state();
+        dialog.open(&state);
+        state.document = None;
+        let mut actions = Vec::new();
+        dialog.sync_before_docking(&state, &mut actions);
+        dialog.sync_before_docking(&state, &mut actions);
+        assert!(dialog.document.is_none());
+        assert_eq!(actions, [GuiShellAction::PreviewSketchPattern(None)]);
     }
     #[test]
     fn cancel_discards_the_draft_and_clears_the_preview() {

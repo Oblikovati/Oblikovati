@@ -129,6 +129,14 @@ impl RibbonCustomization {
             ui.close_current_popup();
         }
     }
+    pub(crate) fn sync_before_docking(&mut self, commands: &crate::GuiCommandState) {
+        if !self.open.is_open() {
+            return;
+        }
+        self.sync_keyboard(commands);
+        self.sync_marking(commands);
+        self.finish_apply();
+    }
     pub(crate) fn panel(
         &mut self,
         ui: &Ui,
@@ -141,9 +149,7 @@ impl RibbonCustomization {
         if !self.open.is_open() {
             return;
         }
-        self.sync_keyboard(commands);
-        self.sync_marking(commands);
-        self.finish_apply();
+        self.sync_before_docking(commands);
         if !self.open.is_open() {
             return;
         }

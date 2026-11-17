@@ -106,6 +106,14 @@ impl FeatureProperties {
     pub(crate) fn needs_frame(&self) -> bool {
         self.opening
     }
+    pub(crate) fn sync_before_docking(&mut self, state: &GuiCommandState, suspended: bool) {
+        if !self.opening && self.document.is_some() && self.document != state.document {
+            self.editing = None;
+            self.dock_state.set_open(false);
+            self.document = None;
+        }
+        self.dock_state.set_suspended(suspended);
+    }
     pub(crate) fn panel(
         &mut self,
         ui: &Ui,
@@ -238,6 +246,25 @@ fn answer_row(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn document_change_closes_nested_window_before_docking() {
+        let mut dialog = FeatureProperties {
+            editing: Some(editing()),
+            document: Some(1),
+            ..Default::default()
+        };
+        dialog.dock_state.set_open(true);
+        dialog.sync_before_docking(
+            &GuiCommandState {
+                document: Some(2),
+                ..Default::default()
+            },
+            false,
+        );
+        assert!(dialog.editing.is_none());
+        assert!(!dialog.dock_state.is_requested());
+    }
+
     use super::*;
     fn editing() -> Editing {
         Editing::of(&GuiBrowserFeature {

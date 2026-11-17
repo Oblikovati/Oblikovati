@@ -80,6 +80,11 @@ impl GuiDimensionValueEditor {
     pub(crate) fn had_keyboard(&self) -> bool {
         self.open.is_some() || self.closed_this_frame
     }
+    pub(crate) fn sync_before_docking(&mut self, state: &GuiCommandState) {
+        if !state.sketch_at_ready && !state.dimension_tool_active {
+            self.set_edit(None);
+        }
+    }
     /// Open a placed dimension or a selected label, then draw while open.
     pub(crate) fn panel(
         &mut self,
@@ -93,9 +98,7 @@ impl GuiDimensionValueEditor {
             self.open_at_pointer(ui, request);
         }
         let state = &request.commands;
-        if !state.sketch_at_ready && !state.dimension_tool_active {
-            self.set_edit(None);
-        }
+        self.sync_before_docking(state);
         let Some(edit) = self.open.clone() else {
             return;
         };
@@ -338,6 +341,21 @@ fn line_distance(point: [f32; 2], from: [f32; 2], to: [f32; 2]) -> f32 {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn finished_sketch_closes_dimension_before_docking() {
+        let mut editor = super::GuiDimensionValueEditor::default();
+        editor.set_edit(Some(super::GuiDimensionEdit {
+            sketch: 1,
+            constraint: 2,
+            name: "d0".into(),
+            expression: "10 mm".into(),
+            driven: false,
+        }));
+        editor.sync_before_docking(&crate::GuiCommandState::default());
+        assert!(editor.open.is_none());
+        assert!(!editor.driving_dock.is_requested());
+    }
+
     use super::expression_syntax_valid;
 
     #[test]

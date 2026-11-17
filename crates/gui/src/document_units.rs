@@ -25,6 +25,11 @@ impl GuiDocumentUnits {
     pub(crate) fn request(&mut self, document: u64) {
         self.set_document(Some(document));
     }
+    pub(crate) fn sync_before_docking(&mut self, state: &GuiCommandState, home_active: bool) {
+        if self.document != state.document || home_active {
+            self.set_document(None);
+        }
+    }
     pub(crate) fn panel(
         &mut self,
         ui: &Ui,
@@ -32,9 +37,7 @@ impl GuiDocumentUnits {
         actions: &mut Vec<GuiShellAction>,
         home_active: bool,
     ) {
-        if self.document != state.document || home_active {
-            self.set_document(None);
-        }
+        self.sync_before_docking(state, home_active);
         let (Some(document), Some(units)) = (self.document, state.document_units.as_ref()) else {
             return;
         };
@@ -150,5 +153,24 @@ fn precision_controls(
             request.angle_display_precision = Some(Box::new(i64::from(value)));
         }
         actions.push(GuiShellAction::SetDocumentUnits { document, request });
+    }
+}
+
+#[cfg(test)]
+mod dock_tests {
+    use super::*;
+    #[test]
+    fn document_change_closes_settings_before_docking() {
+        let mut dialog = GuiDocumentUnits::default();
+        dialog.request(7);
+        dialog.sync_before_docking(&GuiCommandState::default(), false);
+        assert!(dialog.document.is_none());
+        dialog.request(7);
+        let state = GuiCommandState {
+            document: Some(7),
+            ..Default::default()
+        };
+        dialog.sync_before_docking(&state, true);
+        assert!(dialog.document.is_none());
     }
 }

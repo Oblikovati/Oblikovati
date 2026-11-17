@@ -54,8 +54,6 @@ pub(crate) fn browser_contents(
     // A removed or hidden branch cannot receive a pending keyboard expansion.
     view.feature_expansion = None;
     crate::application::model_browser::feature_keys::follow(ui, state, browser, view, actions);
-    view.body_properties.panel(ui, state, browser, actions);
-    view.dialogs(ui, state, browser, actions);
 }
 /// One frame's tree; `expansion` is set for the single frame after Expand All or Collapse All.
 struct BrowserTree<'a> {

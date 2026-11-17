@@ -66,3 +66,17 @@ fn a_row_reads_as_its_browser_name() {
     );
     assert_eq!(row_name(&browser(), RelatedRow::Feature(FeatureId(9))), "");
 }
+
+#[test]
+fn document_change_closes_relationships_before_docking() {
+    let mut dialog = RelationshipsDialog::default();
+    dialog.request(RelatedRow::Origin(0));
+    dialog.bind_document(Some(1));
+    let state = GuiCommandState {
+        document: Some(2),
+        ..Default::default()
+    };
+    dialog.sync_before_docking(&state, false);
+    assert!(dialog.shown.is_none());
+    assert!(!dialog.dock_state.is_requested());
+}

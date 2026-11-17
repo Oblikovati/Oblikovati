@@ -399,9 +399,11 @@ fn customize_async_ok_selects_next_tab_and_reopens_in_same_dock() {
     select_dock_tab(&mut world, "Customize");
     let close = world.run_in_window("Customize", "OK").center();
     super::super::x11_input::click(super::super::diagnostics::pointer_pixels(close));
-    world.pump(Vec::new());
-    world.pump(Vec::new());
-    assert!(window_geometry("Customize").is_none());
+    super::external_close_native::assert_closed_with_visible_tab(
+        &mut world,
+        "Customize",
+        "Material Browser",
+    );
     let menu = oblikovati_api::client::Client::new(world.app().owner.document_host())
         .ui()
         .marking_menu(&oblikovati_api::wire::GetMarkingMenuArgs {

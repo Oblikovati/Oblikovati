@@ -95,6 +95,11 @@ impl ExtrudeDialog {
             self.edit_feature = None;
         }
     }
+    pub(crate) fn sync_before_docking(&mut self, state: &GuiCommandState) {
+        if !self.requested {
+            self.synchronize(state);
+        }
+    }
     pub(crate) fn panel(
         &mut self,
         ui: &Ui,
@@ -392,6 +397,18 @@ mod tests {
             }),
             ..Default::default()
         }
+    }
+    #[test]
+    fn stale_extrusion_closes_before_docking_without_consuming_a_new_request() {
+        let mut dialog = ExtrudeDialog::default();
+        dialog.set_document(Some(7));
+        let mut state = part();
+        state.document = Some(8);
+        dialog.sync_before_docking(&state);
+        assert!(dialog.document.is_none());
+        dialog.requested = true;
+        dialog.sync_before_docking(&state);
+        assert!(dialog.requested);
     }
     #[test]
     fn draft_is_bound_to_the_open_document() {

@@ -304,11 +304,6 @@ pub(crate) fn dock_window_identity(title: &std::ffi::CStr) -> u32 {
 
 /// Notify ImGui of a validated programmatic dock tab closure (#4073).
 /// Example: `close_dock_tab(ui, c"Tool")` after the owner closes.
-pub(crate) fn close_dock_tab(_ui: &Ui, title: &std::ffi::CStr) -> bool {
-    unsafe {
-        let window = imgui::sys::igFindWindowByName(title.as_ptr());
-        let missing = !window.is_null() && (*window).DockId != 0 && !(*window).Active;
-        imgui::sys::igSetTabItemClosed(title.as_ptr());
-        missing
-    }
+pub(crate) fn close_dock_tab(_ui: &Ui, title: &std::ffi::CStr) {
+    unsafe { imgui::sys::igSetTabItemClosed(title.as_ptr()) };
 }

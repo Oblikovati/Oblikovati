@@ -42,6 +42,24 @@ impl BaseViewDialog {
     pub(super) fn needs_frame(&self) -> bool {
         self.requested
     }
+    pub(super) fn sync_before_docking(
+        &mut self,
+        state: &GuiCommandState,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        if self.requested {
+            return;
+        }
+        if self.drawing != state.document
+            || state.document_type != Some(oblikovati_api::types::DOCUMENT_DRAWING)
+        {
+            self.set_document(None);
+        }
+        if self.drawing.is_none() && self.previewed {
+            actions.push(GuiShellAction::PreviewDrawingBaseView(None));
+            self.previewed = false;
+        }
+    }
     pub(super) fn panel(
         &mut self,
         ui: &Ui,
@@ -55,15 +73,7 @@ impl BaseViewDialog {
         if std::mem::take(&mut self.requested) {
             self.open(state);
         }
-        if self.drawing != state.document
-            || state.document_type != Some(oblikovati_api::types::DOCUMENT_DRAWING)
-        {
-            self.set_document(None);
-        }
-        if self.drawing.is_none() && self.previewed {
-            actions.push(GuiShellAction::PreviewDrawingBaseView(None));
-            self.previewed = false;
-        }
+        self.sync_before_docking(state, actions);
         let Some(drawing) = self.drawing else { return };
         crate::widget_abi::fit_dialog(ui, "Base View", [20., 180.], [360., 210.]);
         let mut open = true;
@@ -197,6 +207,24 @@ mod tests {
     use super::*;
     use oblikovati_api::wire::DocumentInfo;
 
+    #[test]
+    fn pre_dock_sync_does_not_consume_a_new_request() {
+        let mut dialog = BaseViewDialog::default();
+        dialog.request();
+        dialog.sync_before_docking(&GuiCommandState::default(), &mut Vec::new());
+        assert!(dialog.requested);
+    }
+    #[test]
+    fn document_change_closes_base_view_and_clears_preview_once() {
+        let mut dialog = BaseViewDialog::default();
+        dialog.set_document(Some(3));
+        dialog.previewed = true;
+        let mut actions = Vec::new();
+        dialog.sync_before_docking(&GuiCommandState::default(), &mut actions);
+        dialog.sync_before_docking(&GuiCommandState::default(), &mut actions);
+        assert!(dialog.drawing.is_none());
+        assert_eq!(actions, [GuiShellAction::PreviewDrawingBaseView(None)]);
+    }
     #[test]
     fn existing_reference_selects_its_open_part() {
         let mut state = GuiCommandState {

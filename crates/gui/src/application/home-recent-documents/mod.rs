@@ -92,6 +92,11 @@ impl HomeWorkspace {
     ) -> Result<(), String> {
         self.open_options.register_dockable(registry)
     }
+    pub(crate) fn sync_before_docking(&mut self) {
+        if !self.active {
+            self.open_options.close();
+        }
+    }
     /// Draw the workspace over the document area while it is active.
     pub(crate) fn panel(
         &mut self,
@@ -100,8 +105,8 @@ impl HomeWorkspace {
         area: crate::application::document_creation::workspaces::WorkspaceArea,
         actions: &mut Vec<GuiShellAction>,
     ) {
+        self.sync_before_docking();
         if !self.active {
-            self.open_options.close();
             return;
         }
         crate::widget_abi::window_geometry(
@@ -422,5 +427,38 @@ fn kind_of_extension(extension: Option<&str>) -> crate::GuiTemplateKind {
         Some("odd") => Drawing,
         Some("ord") => Presentation,
         _ => Part,
+    }
+}
+
+#[cfg(test)]
+mod dock_tests {
+    use super::*;
+    #[test]
+    fn leaving_home_closes_open_options_before_docking() {
+        let mut home = HomeWorkspace::default();
+        let mut registry = crate::dockable_lifecycle::DockRegistry::default();
+        home.register_dockables(&mut registry).unwrap();
+        home.open_options.request(&GuiRecentDocument {
+            path: "part.opd".into(),
+            name: "part".into(),
+            location: "".into(),
+            kind: crate::GuiTemplateKind::Part,
+            modified: None,
+            modified_text: "".into(),
+            modified_age_days: None,
+            opened: 0,
+            opened_text: "".into(),
+            size_bytes: None,
+            size_text: "".into(),
+            pinned: false,
+            design_views: Vec::new(),
+        });
+        registry.reconcile(|_| {}).unwrap();
+        home.sync_before_docking();
+        let mut closed = Vec::new();
+        registry
+            .reconcile(|title| closed.push(title.to_string_lossy().into_owned()))
+            .unwrap();
+        assert_eq!(closed.len(), 1);
     }
 }

@@ -124,9 +124,8 @@ impl BlendDialog {
         self.attempted_edit = None;
         self.submitted_edit = None;
     }
-    pub(crate) fn panel(
+    pub(crate) fn sync_before_docking(
         &mut self,
-        ui: &Ui,
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
     ) {
@@ -160,6 +159,14 @@ impl BlendDialog {
         }) {
             self.close(actions);
         }
+    }
+    pub(crate) fn panel(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        self.sync_before_docking(state, actions);
         if self.document.is_none() {
             return;
         }
@@ -347,6 +354,19 @@ mod tests {
         state.browser.as_mut().unwrap().bodies[0].visible = false;
         assert!(!GuiShellAction::OpenFillet.enabled(&state));
     }
+    #[test]
+    fn document_change_closes_blend_before_docking_once() {
+        let mut dialog = BlendDialog::default();
+        let mut state = selected_state();
+        dialog.open(&state);
+        state.document = None;
+        let mut actions = Vec::new();
+        dialog.sync_before_docking(&state, &mut actions);
+        dialog.sync_before_docking(&state, &mut actions);
+        assert!(dialog.document.is_none());
+        assert_eq!(actions, [GuiShellAction::PreviewFillet(None)]);
+    }
+
     #[test]
     fn draft_previews_each_selection_once_and_cancel_clears_it() {
         let mut dialog = BlendDialog::default();

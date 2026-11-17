@@ -226,6 +226,25 @@ pub(super) fn details_rows(
 mod tests {
     use super::*;
     #[test]
+    fn parent_close_notifies_file_properties_once() {
+        let mut registry = crate::dockable_lifecycle::DockRegistry::default();
+        let mut dialog =
+            FileProperties::new(Rc::new(crate::application::file_system::NativeFolders));
+        dialog.register_dockable(&mut registry).unwrap();
+        dialog.path = Some("part.opd".into());
+        dialog.dock_state.set_open(true);
+        registry.reconcile(|_| {}).unwrap();
+        dialog.close();
+        let mut titles = Vec::new();
+        assert!(
+            registry
+                .reconcile(|title| titles.push(title.to_string_lossy().into_owned()))
+                .unwrap()
+        );
+        assert_eq!(titles, ["File Properties"]);
+        assert!(!registry.reconcile(|_| {}).unwrap());
+    }
+    #[test]
     fn a_missing_field_reads_as_empty() {
         let file = GuiInspectedFile {
             path: "/a.opd".into(),

@@ -81,9 +81,11 @@ fn precise_target_loss_selects_next_tab_and_restores_same_dock() {
     super::super::x11_input::move_pointer([500, 500]);
     world.pump(Vec::new());
     super::super::x11_input::press_escape();
-    world.pump(Vec::new());
-    world.pump(Vec::new());
-    assert!(window_geometry("Precise Input").is_none());
+    super::external_close_native::assert_closed_with_visible_tab(
+        &mut world,
+        "Precise Input",
+        "Parameters",
+    );
     assert!(world.state().precise_target.is_none());
     assert_eq!(
         super::super::diagnostics::window_dock_tab_visible("Parameters"),

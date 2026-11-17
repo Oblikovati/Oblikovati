@@ -75,17 +75,22 @@ impl DocumentProperties {
     pub(crate) fn needs_frame(&self) -> bool {
         self.opening
     }
+    pub(crate) fn sync_before_docking(&mut self, state: &GuiCommandState) {
+        let stale = self.target.as_ref().is_some_and(|target| {
+            target.file.is_none() && !state.documents.iter().any(|row| row.id == target.id)
+        });
+        if stale {
+            self.target = None;
+            self.dock_state.set_open(false);
+        }
+    }
     /// Draw the read-only dialog; example: `properties.panel(ui, &state)`.
     pub(crate) fn panel(&mut self, ui: &Ui, state: &GuiCommandState) -> Result<(), String> {
+        self.sync_before_docking(state);
         let Some(target) = &self.target else {
             return Ok(());
         };
         let row = state.documents.iter().find(|row| row.id == target.id);
-        if target.file.is_none() && row.is_none() {
-            self.target = None;
-            self.dock_state.set_open(false);
-            return Ok(());
-        }
         let stem = target
             .file
             .as_deref()

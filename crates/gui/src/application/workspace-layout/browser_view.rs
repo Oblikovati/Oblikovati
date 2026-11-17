@@ -151,7 +151,16 @@ impl BrowserView {
             || self.geometry.needs_frame()
             || self.feature_properties.needs_frame()
     }
-    /// The dialogs over the browser; example: each frame, after its tree.
+    pub(crate) fn sync_before_docking(&mut self, state: &GuiCommandState) {
+        let suspended = state.browser.is_none();
+        self.body_properties.sync_before_docking(state, suspended);
+        self.geometry.sync_before_docking(state, suspended);
+        self.feature_properties
+            .sync_before_docking(state, suspended);
+        self.find.set_suspended(suspended);
+        self.relationships.sync_before_docking(state, suspended);
+    }
+    /// Draw browser-owned windows independently of the current tree filter.
     pub(crate) fn dialogs(
         &mut self,
         ui: &Ui,
@@ -159,6 +168,7 @@ impl BrowserView {
         browser: &GuiModelBrowser,
         actions: &mut Vec<GuiShellAction>,
     ) {
+        self.body_properties.panel(ui, state, browser, actions);
         self.relationships.panel(ui, state, browser, actions);
         self.geometry.panel(ui, state, actions);
         self.feature_properties.panel(ui, state, browser, actions);

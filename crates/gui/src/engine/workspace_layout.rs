@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Restore and capture the desktop workspace arrangement.
-use super::GuiFrameEngine;
+use super::{GuiFrameEngine, GuiFrameRequest, GuiInputEvent};
 use crate::application::workspace_docking::persistence::WorkspaceDockSettings;
 
 impl GuiFrameEngine {
@@ -58,6 +58,20 @@ impl GuiFrameEngine {
         settings.browser_panels = Some(self.workspace.panels.settings());
         settings.encode()
     }
+}
+
+pub(super) fn workspace_pointer(context: &imgui::Context, request: &GuiFrameRequest) -> [f32; 2] {
+    request
+        .events
+        .iter()
+        .rev()
+        .find_map(|event| match event {
+            GuiInputEvent::PointerMoved(position) => Some(std::array::from_fn(|axis| {
+                position[axis] / request.layout_scale()[axis]
+            })),
+            _ => None,
+        })
+        .unwrap_or(context.io().mouse_pos)
 }
 
 #[cfg(test)]

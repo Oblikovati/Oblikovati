@@ -51,19 +51,24 @@ impl OffsetPlaneDialog {
         self.offset = offset.to_owned();
         self.error = Some(error.to_owned());
     }
+    pub(crate) fn sync_before_docking(&mut self, state: &GuiCommandState) {
+        if self.document.is_some()
+            && (self.document != state.document
+                || state.authoring != crate::GuiAuthoringContext::Part)
+        {
+            self.set_document(None);
+        }
+    }
     pub(crate) fn panel(
         &mut self,
         ui: &Ui,
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
     ) {
+        self.sync_before_docking(state);
         let Some(document) = self.document else {
             return;
         };
-        if state.document != Some(document) || state.authoring != crate::GuiAuthoringContext::Part {
-            self.set_document(None);
-            return;
-        }
         let mut open = true;
         let mut done = false;
         Self::dockable_window(ui, "Offset Plane", &mut open)
@@ -156,6 +161,14 @@ fn submit_buttons(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn document_change_closes_before_docking() {
+        let mut editor = OffsetPlaneDialog::default();
+        editor.open(1, None);
+        editor.sync_before_docking(&GuiCommandState::default());
+        assert!(editor.document.is_none());
+    }
+
     use super::*;
 
     #[test]

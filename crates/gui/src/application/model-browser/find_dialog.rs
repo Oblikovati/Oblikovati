@@ -94,6 +94,9 @@ impl FindDialog {
     pub(crate) fn needs_frame(&self) -> bool {
         self.opening_prompt.is_some()
     }
+    pub(crate) fn set_suspended(&self, suspended: bool) {
+        self.open.set_suspended(suspended);
+    }
     pub(crate) fn panel(
         &mut self,
         ui: &Ui,

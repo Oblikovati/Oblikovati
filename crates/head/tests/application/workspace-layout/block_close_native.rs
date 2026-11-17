@@ -98,10 +98,12 @@ fn create_block_completed_ok_selects_next_tab_and_reopens() {
     let ok = world.run_in_window("Create Block", "OK");
     assert_eq!(ok.alpha, u8::MAX);
     super::super::x11_input::click(super::super::diagnostics::pointer_pixels(ok.center()));
-    world.pump(Vec::new());
-    world.pump(Vec::new());
+    super::external_close_native::assert_closed_with_visible_tab(
+        &mut world,
+        "Create Block",
+        "Parameters",
+    );
     assert_eq!(world.state().sketch_block_names, ["Block1"]);
-    assert!(window_geometry("Create Block").is_none());
     assert_eq!(
         super::super::diagnostics::window_dock_tab_visible("Parameters"),
         Some(true)

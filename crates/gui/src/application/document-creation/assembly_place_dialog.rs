@@ -64,6 +64,21 @@ impl AssemblyPlaceDialog {
     pub(super) fn needs_frame(&self) -> bool {
         self.requested || self.assembly.is_some()
     }
+    pub(super) fn sync_before_docking(
+        &mut self,
+        state: &GuiCommandState,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        if self.requested {
+            return;
+        }
+        if self.assembly != state.document || state.document_type != Some(DOCUMENT_ASSEMBLY) {
+            self.set_document(None);
+        }
+        if self.assembly.is_none() {
+            self.clear_preview(actions);
+        }
+    }
     pub(super) fn panel(
         &mut self,
         ui: &Ui,
@@ -76,9 +91,7 @@ impl AssemblyPlaceDialog {
             self.selected_path = None;
             self.name.clear();
         }
-        if self.assembly != state.document || state.document_type != Some(DOCUMENT_ASSEMBLY) {
-            self.set_document(None);
-        }
+        self.sync_before_docking(state, actions);
         let Some(assembly) = self.assembly else {
             self.clear_preview(actions);
             return;
@@ -215,5 +228,28 @@ impl AssemblyPlaceDialog {
                 },
             },
         })
+    }
+}
+
+#[cfg(test)]
+mod dock_tests {
+    use super::*;
+    #[test]
+    fn pre_dock_sync_does_not_consume_a_new_request() {
+        let mut dialog = AssemblyPlaceDialog::default();
+        dialog.request();
+        dialog.sync_before_docking(&GuiCommandState::default(), &mut Vec::new());
+        assert!(dialog.requested);
+    }
+    #[test]
+    fn document_change_closes_placement_and_clears_preview_once() {
+        let mut dialog = AssemblyPlaceDialog::default();
+        dialog.set_document(Some(3));
+        dialog.preview_source = Some(4);
+        let mut actions = Vec::new();
+        dialog.sync_before_docking(&GuiCommandState::default(), &mut actions);
+        dialog.sync_before_docking(&GuiCommandState::default(), &mut actions);
+        assert!(dialog.assembly.is_none());
+        assert_eq!(actions, [GuiShellAction::PreviewComponent(None)]);
     }
 }

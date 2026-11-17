@@ -146,3 +146,22 @@ fn tab_row_uses_bottom_dock_width_when_it_spans_the_workspace() {
     layout.outer_bottom_span = Some([100., 950.]);
     assert_eq!(layout.document_tab_span(1000., viewport), (100., 850.));
 }
+
+#[test]
+fn hiding_all_model_panels_closes_the_dock_before_layout() {
+    let mut layout = WorkspaceLayout::default();
+    let mut registry = crate::dockable_lifecycle::DockRegistry::default();
+    layout.register_dockables(&mut registry).unwrap();
+    let state = GuiCommandState::default();
+    layout.sync_before_docking(&state);
+    registry.reconcile(|_| {}).unwrap();
+    layout.panels.close_all();
+    layout.sync_before_docking(&state);
+    let mut titles = Vec::new();
+    assert!(
+        registry
+            .reconcile(|title| titles.push(title.to_string_lossy().into_owned()))
+            .unwrap()
+    );
+    assert_eq!(titles, ["Model"]);
+}

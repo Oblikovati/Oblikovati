@@ -24,9 +24,10 @@ fn explicit_close_is_reported_once_after_a_suspension() {
     state.set_open(true);
     assert!(!closed.reconcile(&mut registry));
     state.set_visibility(DockVisibility::Suspended);
-    assert!(!closed.reconcile(&mut registry));
-    state.set_open(false);
     assert!(closed.reconcile(&mut registry));
+    assert_eq!(closed.0, ["Example"]);
+    state.set_open(false);
+    assert!(!closed.reconcile(&mut registry));
     assert_eq!(closed.0, ["Example"]);
     assert!(!closed.reconcile(&mut registry));
 }
@@ -276,4 +277,42 @@ fn closing_a_new_dynamic_window_uses_its_current_title() {
     state.set_open(false);
     assert!(closed.reconcile(&mut registry));
     assert_eq!(closed.0, ["Actual"]);
+}
+
+#[test]
+fn suspension_detaches_the_tab_once_and_resume_keeps_its_identity() {
+    let state = DockableState::default();
+    let mut registry = DockRegistry::default();
+    let mut closed = ClosedWindows::default();
+    registry
+        .register::<ExampleOwner>("Tool###stable", &state)
+        .unwrap();
+    state.set_open(true);
+    assert!(!closed.reconcile(&mut registry));
+    state.set_suspended(true);
+    assert!(closed.reconcile(&mut registry));
+    assert_eq!(closed.0, ["Tool###stable"]);
+    assert!(!closed.reconcile(&mut registry));
+    state.set_suspended(false);
+    assert!(!closed.reconcile(&mut registry));
+    state.set_open(false);
+    assert!(closed.reconcile(&mut registry));
+    assert_eq!(closed.0, ["Tool###stable", "Tool###stable"]);
+}
+
+#[test]
+fn dropping_a_suspended_owner_does_not_detach_its_tab_twice() {
+    let state = DockableState::default();
+    let mut registry = DockRegistry::default();
+    let mut closed = ClosedWindows::default();
+    registry
+        .register::<ExampleOwner>("Suspended", &state)
+        .unwrap();
+    state.set_open(true);
+    closed.reconcile(&mut registry);
+    state.set_suspended(true);
+    assert!(closed.reconcile(&mut registry));
+    drop(state);
+    assert!(!closed.reconcile(&mut registry));
+    assert_eq!(closed.0, ["Suspended"]);
 }

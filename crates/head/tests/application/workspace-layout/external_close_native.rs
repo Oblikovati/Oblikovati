@@ -40,6 +40,15 @@ fn measure_done_selects_the_other_tab_in_the_first_frame() {
     select_dock_tab(&mut world, "Measure");
     let close = world.run_in_window("Measure", "Done").center();
     super::super::x11_input::click(super::super::diagnostics::pointer_pixels(close));
+    assert_closed_with_visible_tab(&mut world, "Measure", "Material Browser");
+    world.close();
+}
+
+pub(super) fn assert_closed_with_visible_tab(
+    world: &mut ApplicationWorld,
+    closed: &str,
+    visible: &str,
+) {
     for _ in 0..8 {
         let app = world.app();
         crate::frames::run_frames(
@@ -48,14 +57,73 @@ fn measure_done_selects_the_other_tab_in_the_first_frame() {
             &mut app.owner,
         )
         .unwrap();
-        if window_geometry("Measure").is_none() {
+        if window_geometry(closed).is_none() {
             assert_eq!(
-                super::super::diagnostics::window_dock_tab_visible("Material Browser"),
-                Some(true)
+                super::super::diagnostics::window_dock_tab_visible(visible),
+                Some(true),
+                "{visible}: expected the remaining tab in the first frame after {closed} closed"
             );
-            world.close();
+            world.frame = super::super::diagnostics::rendered_frame();
+            let content = match visible {
+                "Material Browser" => "Assigntopart",
+                "Parameters" => "UserParameters",
+                _ => panic!("{visible}: expected a known dock-tab content witness"),
+            };
+            world.run_in_window(visible, content);
             return;
         }
     }
-    panic!("Measure: expected close within eight frames");
+    panic!("{closed}: expected close within eight frames");
+}
+
+#[test]
+fn browser_feature_properties_survives_search_filter() {
+    let mut world = ApplicationWorld::new();
+    super::browser_feature::open_visible_extruded_part(&mut world);
+    super::browser_feature::right_click_row(&mut world, super::browser_feature::FEATURE);
+    super::browser_feature::choose_menu_row(&mut world, "Properties");
+    assert!(window_geometry("Feature Properties").is_some());
+    world.click_text("Search");
+    world.pump(Vec::new());
+    let field = world.run("Search").center();
+    world.click(super::super::diagnostics::pointer_pixels(field));
+    world.type_text("Extrude");
+    world.run("Extrude");
+    assert!(
+        window_geometry("Feature Properties").is_some(),
+        "Feature Properties: expected the independent window to remain visible while filtering the browser"
+    );
+    world.run_in_window("Feature Properties", "Name");
+    world.close();
+}
+
+#[test]
+fn restored_project_dock_survives_parent_closure() {
+    let mut world = ApplicationWorld::new();
+    super::browser_feature::open_visible_extruded_part(&mut world);
+    let area = viewport(&mut world);
+    open_toolbar_tool(&mut world, "Material Browser");
+    drag_title(
+        &mut world,
+        "Material Browser",
+        [area[2] as i32 - 15, ((area[1] + area[3]) / 2) as i32],
+    );
+    world.key(oblikovati_viewport::ViewportPhysicalKey::N, true);
+    world.click_text("Projects");
+    world.pump(Vec::new());
+    let title = "Projects###template-projects";
+    assert!(window_geometry(title).is_some());
+    let node = super::super::diagnostics::window_dock_id("Material Browser").unwrap();
+    let title_c = std::ffi::CString::new(title).unwrap();
+    unsafe {
+        imgui::sys::igDockBuilderDockWindow(title_c.as_ptr(), node);
+        imgui::sys::igDockBuilderFinish(node);
+    }
+    world.pump(Vec::new());
+    assert_eq!(super::super::diagnostics::window_dock_id(title), Some(node));
+    select_dock_tab(&mut world, title);
+    let cancel = world.run_in_window("New document", "Cancel").center();
+    super::super::x11_input::click(super::super::diagnostics::pointer_pixels(cancel));
+    assert_closed_with_visible_tab(&mut world, title, "Material Browser");
+    world.close();
 }
