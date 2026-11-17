@@ -125,6 +125,43 @@ pub fn drawing_projection_bodies(
     bodies: &[&NamedPrismSnapshot],
     frame: DrawingProjectionFrame,
 ) -> Result<DrawingProjection, String> {
+    let inputs = bodies
+        .iter()
+        .map(|body| {
+            Ok((
+                body.body_reference_key(history, document)?.to_vec(),
+                &body.snapshot.shape,
+            ))
+        })
+        .collect::<Result<Vec<_>, String>>()?;
+    drawing_projection_shapes(history, document, &inputs, frame)
+}
+
+/// Project named solids together; example: `drawing_projection_solids(history, guid, &bodies, frame)?`.
+pub fn drawing_projection_solids(
+    history: &DocumentEditHistory,
+    document: DocumentGuid,
+    bodies: &[&NamedSolid],
+    frame: DrawingProjectionFrame,
+) -> Result<DrawingProjection, String> {
+    let inputs = bodies
+        .iter()
+        .map(|body| {
+            Ok((
+                body.body_reference_key(history, document)?.to_vec(),
+                body.native_shape(history, document)?,
+            ))
+        })
+        .collect::<Result<Vec<_>, String>>()?;
+    drawing_projection_shapes(history, document, &inputs, frame)
+}
+
+fn drawing_projection_shapes(
+    history: &DocumentEditHistory,
+    document: DocumentGuid,
+    bodies: &[(Vec<u8>, &Shape)],
+    frame: DrawingProjectionFrame,
+) -> Result<DrawingProjection, String> {
     if bodies.is_empty() {
         return Err("drawing bodies 0: expected at least one current body".into());
     }
@@ -134,14 +171,12 @@ pub fn drawing_projection_bodies(
         .get()
         .ok_or("drawing projection: expected a live HLR engine")?;
     let mut keys = std::collections::BTreeSet::new();
-    for body in bodies {
-        let key = body.body_reference_key(history, document)?;
-        if !keys.insert(key.to_vec()) {
+    for (key, body) in bodies {
+        if !keys.insert(key) {
             return Err(format!("drawing body key {key:?}: expected unique bodies"));
         }
-        let mut copier =
-            crate::checked_shape::copy_shape(&body.snapshot.shape, "drawing projection copy")
-                .map_err(|cause| cause.to_string())?;
+        let mut copier = crate::checked_shape::copy_shape(body, "drawing projection copy")
+            .map_err(|cause| cause.to_string())?;
         let shape = copier.shape().map_err(|cause| cause.to_string())?;
         engine.add(shape, 0);
     }

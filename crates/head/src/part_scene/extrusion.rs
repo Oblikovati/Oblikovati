@@ -2,12 +2,13 @@
 //! Owner-thread bridge from typed commands to certified profile operations.
 use oblikovati_automation::ExtrudeRegionAccess;
 use oblikovati_martensite::{
-    CertifiedPrismEvaluator, PrismResolutionPolicy, certified_sketch_regions_with_policy,
+    CertifiedNamedSolidEvaluator, PrismResolutionPolicy, certified_sketch_regions_with_policy,
 };
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
     feature::{FeatureId, sketch_prism::SketchPrismSelection},
-    history::DocumentSnapshot,
+    history::{DocumentEditHistory, DocumentSnapshot},
+    identity::{DocumentGuid, RecipeIdAllocator},
 };
 
 pub(crate) struct CertifiedExtrudeAccess(pub PrismResolutionPolicy);
@@ -41,8 +42,14 @@ impl ExtrudeRegionAccess for CertifiedExtrudeAccess {
             holes: region.holes.iter().map(|hole| convert(hole)).collect(),
         })
     }
-    fn validate(&self, candidate: &DocumentSnapshot, feature: FeatureId) -> Result<usize, String> {
-        let mut backend = CertifiedPrismEvaluator::with_policy(self.0);
+    fn validate(
+        &self,
+        candidate: &DocumentSnapshot,
+        document: DocumentGuid,
+        feature: FeatureId,
+    ) -> Result<usize, String> {
+        let history = candidate_history(candidate)?;
+        let mut backend = CertifiedNamedSolidEvaluator::with_policy(&history, document, self.0);
         let replay = candidate
             .evaluate_part_features(&mut backend)
             .map_err(|cause| cause.to_string())?;
@@ -57,10 +64,12 @@ impl ExtrudeRegionAccess for CertifiedExtrudeAccess {
     fn feature_health(
         &self,
         candidate: &DocumentSnapshot,
+        document: DocumentGuid,
         feature: FeatureId,
     ) -> Result<String, String> {
         use oblikovati_model::feature::FeatureEvaluationStatus;
-        let mut backend = CertifiedPrismEvaluator::with_policy(self.0);
+        let history = candidate_history(candidate)?;
+        let mut backend = CertifiedNamedSolidEvaluator::with_policy(&history, document, self.0);
         let replay = candidate
             .evaluate_part_features(&mut backend)
             .map_err(|cause| cause.to_string())?;
@@ -74,4 +83,26 @@ impl ExtrudeRegionAccess for CertifiedExtrudeAccess {
             status => format!("{status:?}"),
         })
     }
+}
+
+fn candidate_history(candidate: &DocumentSnapshot) -> Result<DocumentEditHistory, String> {
+    // Replay does not allocate IDs; include both live uses of the recipe stream (#4074).
+    let highest = candidate
+        .parameters
+        .ids()
+        .iter()
+        .copied()
+        .chain(
+            candidate
+                .model_states
+                .iter()
+                .flat_map(|states| states.list())
+                .filter(|state| state.id != 1)
+                .map(|state| state.id),
+        )
+        .max()
+        .unwrap_or(0);
+    let ids = RecipeIdAllocator::restore(Some(highest), candidate.parameters.ids())
+        .map_err(|cause| cause.to_string())?;
+    DocumentEditHistory::new(candidate.clone(), ids).map_err(|cause| cause.to_string())
 }

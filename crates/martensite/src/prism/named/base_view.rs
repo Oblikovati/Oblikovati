@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Standard drawing views retain exact curves and map them to sheet coordinates.
-use super::{DrawingProjection, DrawingProjectionFrame, NamedPrismSnapshot};
+use super::{DrawingProjection, DrawingProjectionFrame, NamedPrismSnapshot, NamedSolid};
 use martensite_tkmath::bnd::BoundingBox3;
 use martensite_tktopalgo::brep_bnd_lib::BRepBndLib;
 use oblikovati_api::types::*;
@@ -95,6 +95,37 @@ pub fn drawing_base_view_bodies(
     bodies: &[&NamedPrismSnapshot],
     view: &DrawingBaseViewDefinition,
 ) -> Result<DrawingBaseProjection, String> {
+    let shapes = bodies
+        .iter()
+        .map(|body| {
+            body.body_reference_key(history, document)?;
+            Ok(&body.snapshot.shape)
+        })
+        .collect::<Result<Vec<_>, String>>()?;
+    base_projection(view, &shapes, |frame| {
+        super::projection::drawing_projection_bodies(history, document, bodies, frame)
+    })
+}
+/// Project current named solids in a standard view; example: `drawing_base_view_solids(history, guid, &bodies, view)?`.
+pub fn drawing_base_view_solids(
+    history: &DocumentEditHistory,
+    document: DocumentGuid,
+    bodies: &[&NamedSolid],
+    view: &DrawingBaseViewDefinition,
+) -> Result<DrawingBaseProjection, String> {
+    let shapes = bodies
+        .iter()
+        .map(|body| body.native_shape(history, document))
+        .collect::<Result<Vec<_>, String>>()?;
+    base_projection(view, &shapes, |frame| {
+        super::projection::drawing_projection_solids(history, document, bodies, frame)
+    })
+}
+fn base_projection(
+    view: &DrawingBaseViewDefinition,
+    shapes: &[&super::Shape],
+    project: impl FnOnce(DrawingProjectionFrame) -> Result<DrawingProjection, String>,
+) -> Result<DrawingBaseProjection, String> {
     let center = [view.center_x_mm, view.center_y_mm];
     if !view.scale.is_finite() || view.scale <= 0. || center.iter().any(|value| !value.is_finite())
     {
@@ -103,24 +134,17 @@ pub fn drawing_base_view_bodies(
             view.scale
         ));
     }
-    let origin = body_bounds_center(history, document, bodies)?;
-    let frame = standard_frame(view.orientation, origin)?;
-    let curves = super::projection::drawing_projection_bodies(history, document, bodies, frame)?;
+    let frame = standard_frame(view.orientation, body_bounds_center(shapes)?)?;
     Ok(DrawingBaseProjection {
-        curves,
+        curves: project(frame)?,
         center,
         scale: view.scale,
     })
 }
-fn body_bounds_center(
-    history: &DocumentEditHistory,
-    document: DocumentGuid,
-    bodies: &[&NamedPrismSnapshot],
-) -> Result<[f64; 3], String> {
+fn body_bounds_center(shapes: &[&super::Shape]) -> Result<[f64; 3], String> {
     let mut bounds = BoundingBox3::default();
-    for body in bodies {
-        body.body_reference_key(history, document)?;
-        BRepBndLib::add_optimal(&body.snapshot.shape, &mut bounds, false, false)
+    for shape in shapes {
+        BRepBndLib::add_optimal(shape, &mut bounds, false, false)
             .map_err(|cause| format!("drawing body bounds: {cause}"))?;
     }
     let point = bounds

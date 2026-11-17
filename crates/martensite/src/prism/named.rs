@@ -257,8 +257,8 @@ mod base_view;
 mod discretize;
 #[path = "named/projection.rs"]
 mod projection;
-pub use base_view::{DrawingBaseProjection, drawing_base_view_bodies};
+pub use base_view::{DrawingBaseProjection, drawing_base_view_bodies, drawing_base_view_solids};
 pub use projection::{
     DrawingProjectedCurve, DrawingProjection, DrawingProjectionCurveKind, DrawingProjectionFrame,
-    drawing_projection_bodies,
+    drawing_projection_bodies, drawing_projection_solids,
 };

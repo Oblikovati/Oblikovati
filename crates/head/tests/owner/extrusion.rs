@@ -294,6 +294,7 @@ impl oblikovati_automation::ExtrudeRegionAccess for RejectExtrusionCandidate {
     fn validate(
         &self,
         _: &oblikovati_model::history::DocumentSnapshot,
+        _: oblikovati_model::identity::DocumentGuid,
         _: oblikovati_model::feature::FeatureId,
     ) -> Result<usize, String> {
         Err("candidate rejected by test geometry service".into())

@@ -167,7 +167,7 @@ fn typed_api_creates_a_named_edge_fillet_and_rejects_unsupported_options() {
     );
 }
 
-fn fillet_package() -> Vec<u8> {
+pub(super) fn fillet_package() -> Vec<u8> {
     let mut snapshot = fixture::selected_prism_document();
     let body = SemanticReferenceName::new(guid(), 1, 4, "sketch-prism", "body", &[1])
         .unwrap()

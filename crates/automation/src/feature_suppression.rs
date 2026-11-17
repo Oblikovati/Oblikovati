@@ -16,6 +16,11 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         .ok_or_else(|| Error("feature suppression: expected a feature replay service".into()))?;
     let document = crate::part_owner::active_part(files)?;
     let id = FeatureId(request.id);
+    let guid = files
+        .workspace()
+        .identity(document)
+        .map_err(api_error)?
+        .internal_name;
     files
         .commands(document)
         .map_err(api_error)?
@@ -27,13 +32,14 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
                     .map_err(api_error)?;
                 Ok(())
             },
-            |candidate, ()| detail(candidate, id, backend),
+            |candidate, ()| detail(candidate, guid, id, backend),
         )
         .map_err(api_error)
 }
 
 fn detail(
     snapshot: &DocumentSnapshot,
+    document: oblikovati_model::identity::DocumentGuid,
     id: FeatureId,
     backend: &dyn crate::ExtrudeRegionAccess,
 ) -> Result<Vec<u8>, Error> {
@@ -44,7 +50,9 @@ fn detail(
         .iter()
         .position(|item| item.id() == id)
         .ok_or_else(|| Error(format!("feature {id:?}: expected a history position")))?;
-    let health = backend.feature_health(snapshot, id).map_err(Error)?;
+    let health = backend
+        .feature_health(snapshot, document, id)
+        .map_err(Error)?;
     crate::encode(&wire::FeatureDetailResult {
         feature: wire::FeatureDetail {
             feature_info: wire::FeatureInfo {
