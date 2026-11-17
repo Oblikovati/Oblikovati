@@ -487,3 +487,25 @@ pub(super) fn reference_cursor(shape: u16) -> (u16, u16, u16, u16, Vec<u32>) {
         image.cursor_image,
     )
 }
+
+pub(super) fn frame_extents() -> [u32; 4] {
+    let (connection, screen) = x11rb::connect(None).expect("X11: expected a display connection");
+    let root = connection.setup().roots[screen].root;
+    let window = application_window(&connection, root);
+    let property = connection
+        .get_property(
+            false,
+            window,
+            atom(&connection, b"_NET_FRAME_EXTENTS"),
+            AtomEnum::CARDINAL,
+            0,
+            4,
+        )
+        .unwrap()
+        .reply()
+        .unwrap();
+    let values: Vec<u32> = property.value32().unwrap().collect();
+    values
+        .try_into()
+        .expect("_NET_FRAME_EXTENTS: expected four decoration widths")
+}

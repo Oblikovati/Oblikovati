@@ -280,3 +280,61 @@ fn controls_remain_in_bar(world: &mut ApplicationWorld) {
     let width = world.app().window.native.drawable_extent().unwrap()[0] as f32;
     assert_eq!(position[0] + size[0], width);
 }
+
+#[given(regex = r"^the MCAD Software is open in a restored window showing (Home|an active part)$")]
+fn restored_window_in_context(world: &mut ApplicationWorld, context: String) {
+    if context == "an active part" {
+        world.add_part();
+    }
+    restored_window(world);
+}
+#[then("the application bar forms the top of the window with no separate system title bar")]
+fn application_bar_is_window_top(_: &mut ApplicationWorld) {
+    assert_eq!(super::x11_input::frame_extents(), [0, 0, 0, 0]);
+    let (position, _) = super::window_geometry("##application-ribbon").unwrap();
+    assert_eq!(position, [0., 0.]);
+}
+#[then("quick access command icons sit at the leading side of the application bar")]
+fn quick_access_leads_bar(world: &mut ApplicationWorld) {
+    let icons = super::quick_access_icons::toolbar_images();
+    assert_eq!(icons.len(), 3);
+    let file = world.run("File");
+    let (controls, _) = super::window_geometry("##application-window-controls").unwrap();
+    assert!(
+        icons
+            .iter()
+            .all(|icon| icon.center[1] < file.minimum[1] && icon.center[0] < controls[0])
+    );
+    assert!(
+        icons
+            .windows(2)
+            .all(|pair| pair[0].center[0] < pair[1].center[0])
+    );
+}
+#[then("the application or active document title occupies the same bar")]
+fn title_shares_bar(world: &mut ApplicationWorld) {
+    let title = match world.parts.last().copied() {
+        Some(document) => world.document_name(document),
+        None => "Oblikovati".to_owned(),
+    };
+    let file = world.run("File");
+    assert!(
+        world
+            .frame
+            .runs
+            .iter()
+            .any(|run| run.text == title && run.center()[1] < file.minimum[1])
+    );
+}
+#[then("Minimize, Maximize and Close sit at the trailing edge in that order")]
+fn controls_at_trailing_edge(world: &mut ApplicationWorld) {
+    controls_remain_in_bar(world);
+    for (offset, name) in [(120, "Minimize"), (72, "Maximize"), (24, "Close")] {
+        let width = world.app().window.native.drawable_extent().unwrap()[0] as i32;
+        super::x11_input::move_pointer([width - offset, 17]);
+        world.pump(Vec::new());
+        std::thread::sleep(std::time::Duration::from_millis(700));
+        world.pump(Vec::new());
+        world.expect_text(name);
+    }
+}
