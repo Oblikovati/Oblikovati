@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport pan: tmp/oblikovati-bdd-zQWQzn/checkout/features/application/viewport-pan/viewport-pan.feature" package="testsuite/Feature: Viewport pan: tmp/oblikovati-bdd-zQWQzn/checkout/features/application/viewport-pan/viewport-pan.feature" tests="4" errors="0" failures="2" hostname="localhost" timestamp="2026-11-17T08:19:23.358778064Z" time="93.005059441"><testcase name="Scenario: Activate and cancel viewport pan: tmp/oblikovati-bdd-zQWQzn/checkout/features/application/viewport-pan/viewport-pan.feature:5:3" time="23.830152822"><system-out><![CDATA[  Scenario: Activate and cancel viewport pan
+   ✔  Given a part containing a visible solid is active in the MCAD Software
+   ✔  And the viewport navigation bar is visible
+   ✔  When the user selects Pan on the navigation bar
+   ✔  Then Pan is active
+   ✔  And the Pan control is highlighted
+   ✔  And the status area prompts the user to pan the current view and indicates cancellation is available
+   ✔  And the active part and solid remain visible
+   ✔  When the user presses Escape
+   ✔  Then the status area returns to Ready
+   ✔  And the active part and solid remain visible
+]]></system-out></testcase><testcase name="Scenario: Cancel Pan by clicking the viewport: tmp/oblikovati-bdd-zQWQzn/checkout/features/application/viewport-pan/viewport-pan.feature:18:3" time="22.611523004"><system-out><![CDATA[  Scenario: Cancel Pan by clicking the viewport
+   ✔  Given a part containing a visible solid is active in the MCAD Software
+   ✔  And Pan is active from the viewport navigation bar
+   ✔  When the user clicks an empty area of the viewport without dragging
+   ✔  Then Pan ends and the status area displays Ready
+   ✔  And the same part and solid remain visible in their previous view
+]]></system-out></testcase><testcase name="Scenario: End Pan using its context menu: tmp/oblikovati-bdd-zQWQzn/checkout/features/application/viewport-pan/viewport-pan.feature:26:3" time="23.07446656"><failure type="Step Panicked" message="Step panicked. Captured output: expected &quot;Done&quot; in rendered text &quot;W\nP\nZ\nv\nO\nv\nFront\nPan:dragtopanthecurrentview.Escapecancels.\nFile\nTools\nNew\nOpen\nSave\nUndo\nRedo\nHome\nProjects\nUpdate\nSelect\nMaterialBrowser\nMaterials\nAppearanceBrowser\nParameters\n...\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nRibbonDisplay\nv\nv\nStart2DSketch\nSketch\nExtrude\nRevolve\nCreate\nHole\nFillet\nChamfer\nModifyv\nPlane\nAxis\nPoint\nUCS\nWorkFeatures\nRectangular\nCircular\nPattern\nSimplify\nSimplificationv\nModel\n+\nModel\nMenu\nSearch\nextruded&lt;Primary&gt;\nRepresentations\nModelState\n&lt;Primary&gt;\n1\nSolidBodies\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nExtrude1\nProfile\n[DOF0]\nEndofPart\nStart2DSketch\nFillet\nExtrude\nChamfer\nOffsetPlane\nLookAt\nHomeView&quot;"/><system-out><![CDATA[  Scenario: End Pan using its context menu
+   ✔  Given a part containing a visible solid is active in the MCAD Software
+   ✔  And Pan is active from the viewport navigation bar
+   ✔  When the user right-clicks an empty area of the viewport
+   ✘  Then a contextual menu offers Done, OK, Home View, Orbit, Zoom and Previous View
+      Step failed:
+      Defined: tmp/oblikovati-bdd-zQWQzn/checkout/features/application/viewport-pan/viewport-pan.feature:30:5
+      Matched: crates/head/src/../tests/application/viewport-pan/steps.rs:101:1
+      Step panicked. Captured output: expected "Done" in rendered text "W\nP\nZ\nv\nO\nv\nFront\nPan:dragtopanthecurrentview.Escapecancels.\nFile\nTools\nNew\nOpen\nSave\nUndo\nRedo\nHome\nProjects\nUpdate\nSelect\nMaterialBrowser\nMaterials\nAppearanceBrowser\nParameters\n...\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nRibbonDisplay\nv\nv\nStart2DSketch\nSketch\nExtrude\nRevolve\nCreate\nHole\nFillet\nChamfer\nModifyv\nPlane\nAxis\nPoint\nUCS\nWorkFeatures\nRectangular\nCircular\nPattern\nSimplify\nSimplificationv\nModel\n+\nModel\nMenu\nSearch\nextruded<Primary>\nRepresentations\nModelState\n<Primary>\n1\nSolidBodies\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nExtrude1\nProfile\n[DOF0]\nEndofPart\nStart2DSketch\nFillet\nExtrude\nChamfer\nOffsetPlane\nLookAt\nHomeView"
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nFront\nPan:dragtopanthecurrentview.Escapecancels.\nFile\nTools\nNew\nOpen\nSave\nUndo\nRedo\nHome\nProjects\nUpdate\nSelect\nMaterialBrowser\nMaterials\nAppearanceBrowser\nParameters\n...\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nRibbonDisplay\nv\nv\nStart2DSketch\nSketch\nExtrude\nRevolve\nCreate\nHole\nFillet\nChamfer\nModifyv\nPlane\nAxis\nPoint\nUCS\nWorkFeatures\nRectangular\nCircular\nPattern\nSimplify\nSimplificationv\nModel\n+\nModel\nMenu\nSearch\nextruded<Primary>\nRepresentations\nModelState\n<Primary>\n1\nSolidBodies\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nExtrude1\nProfile\n[DOF0]\nEndofPart\nStart2DSketch\nFillet\nExtrude\nChamfer\nOffsetPlane\nLookAt\nHomeView",
+          ..
+      }
+]]></system-out></testcase><testcase name="Scenario: Switch from Pan to Zoom using the contextual menu: tmp/oblikovati-bdd-zQWQzn/checkout/features/application/viewport-pan/viewport-pan.feature:37:3" time="23.488917055"><failure type="Step Panicked" message="Step panicked. Captured output: expected &quot;Zoom&quot; in rendered text &quot;W\nP\nZ\nv\nO\nv\nFront\nPan:dragtopanthecurrentview.Escapecancels.\nFile\nTools\nNew\nOpen\nSave\nUndo\nRedo\nHome\nProjects\nUpdate\nSelect\nMaterialBrowser\nMaterials\nAppearanceBrowser\nParameters\n...\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nRibbonDisplay\nv\nv\nStart2DSketch\nSketch\nExtrude\nRevolve\nCreate\nHole\nFillet\nChamfer\nModifyv\nPlane\nAxis\nPoint\nUCS\nWorkFeatures\nRectangular\nCircular\nPattern\nSimplify\nSimplificationv\nModel\n+\nModel\nMenu\nSearch\nextruded&lt;Primary&gt;\nRepresentations\nModelState\n&lt;Primary&gt;\n1\nSolidBodies\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nExtrude1\nProfile\n[DOF0]\nEndofPart\nStart2DSketch\nFillet\nExtrude\nChamfer\nOffsetPlane\nLookAt\nHomeView&quot;"/><system-out><![CDATA[  Scenario: Switch from Pan to Zoom using the contextual menu
+   ✔  Given a part containing a visible solid is active in the MCAD Software
+   ✔  And Pan is active from the viewport navigation bar
+   ✔  When the user right-clicks an empty area of the viewport
+   ✘  And the user chooses Zoom from the contextual menu
+      Step failed:
+      Defined: tmp/oblikovati-bdd-zQWQzn/checkout/features/application/viewport-pan/viewport-pan.feature:41:5
+      Matched: crates/head/src/../tests/application/viewport-pan/steps.rs:113:1
+      Step panicked. Captured output: expected "Zoom" in rendered text "W\nP\nZ\nv\nO\nv\nFront\nPan:dragtopanthecurrentview.Escapecancels.\nFile\nTools\nNew\nOpen\nSave\nUndo\nRedo\nHome\nProjects\nUpdate\nSelect\nMaterialBrowser\nMaterials\nAppearanceBrowser\nParameters\n...\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nRibbonDisplay\nv\nv\nStart2DSketch\nSketch\nExtrude\nRevolve\nCreate\nHole\nFillet\nChamfer\nModifyv\nPlane\nAxis\nPoint\nUCS\nWorkFeatures\nRectangular\nCircular\nPattern\nSimplify\nSimplificationv\nModel\n+\nModel\nMenu\nSearch\nextruded<Primary>\nRepresentations\nModelState\n<Primary>\n1\nSolidBodies\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nExtrude1\nProfile\n[DOF0]\nEndofPart\nStart2DSketch\nFillet\nExtrude\nChamfer\nOffsetPlane\nLookAt\nHomeView"
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nFront\nPan:dragtopanthecurrentview.Escapecancels.\nFile\nTools\nNew\nOpen\nSave\nUndo\nRedo\nHome\nProjects\nUpdate\nSelect\nMaterialBrowser\nMaterials\nAppearanceBrowser\nParameters\n...\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nRibbonDisplay\nv\nv\nStart2DSketch\nSketch\nExtrude\nRevolve\nCreate\nHole\nFillet\nChamfer\nModifyv\nPlane\nAxis\nPoint\nUCS\nWorkFeatures\nRectangular\nCircular\nPattern\nSimplify\nSimplificationv\nModel\n+\nModel\nMenu\nSearch\nextruded<Primary>\nRepresentations\nModelState\n<Primary>\n1\nSolidBodies\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nExtrude1\nProfile\n[DOF0]\nEndofPart\nStart2DSketch\nFillet\nExtrude\nChamfer\nOffsetPlane\nLookAt\nHomeView",
+          ..
+      }
+]]></system-out></testcase></testsuite></testsuites>
