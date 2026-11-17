@@ -65,6 +65,8 @@
 
 ### Fixed
 
+- Kept the remaining dock tab active when Create Block closes or completes. (#4073)
+
 - Kept the remaining dock tab active when Navigation Wheel Options closes. (#4073)
 
 - Rejected a selected-face Measure action when its face or document changed. (#4052)
