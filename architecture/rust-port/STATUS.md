@@ -56,8 +56,9 @@ Last checked: 2026-11-16 on `rust-work`. Refresh from current evidence at each c
   `receipts/2026-11-16-glyph-projection-4035/`; 60 fps remains unproven.
 - Application closing (#4030) has a native close guard and save prompt. The
   current live feature passed 3/3 scenarios in an X11 diagnostic at `2dee60eef`;
-  see `receipts/2026-11-16-application-closing-4030/`. It is not in the pinned
-  snapshot, two scenarios have reference capture gaps, and #3978 prevents a
+  see `receipts/2026-11-16-application-closing-4030/`. The feature is in the
+  pinned snapshot and its live hash matches. The diagnostic used unversioned
+  source; two scenarios have reference capture gaps, and #3978 prevents a
   verified acceptance claim. A wider GUI run also found the clean-base #3850
   UI-scale test failure.
 - Martensite v0.13.1 is pinned at `bef25f47548431c8f128f08f66a1f719bcee4982`
@@ -96,11 +97,12 @@ Last checked: 2026-11-16 on `rust-work`. Refresh from current evidence at each c
   cache race fix; concurrent sketch mutation (#4028) and stale picks after
   in-place geometry edits (#4029) remain separate open defects.
 - Scenario pin: `b576445b98cffd686dcc05aa8c017de2a591c8c8`, a local snapshot
-  of the unversioned source. It is not an upstream commit. At the latest check,
-  the live solid viewport and Sketch3D arc and lifecycle features had changed.
-  Five Sketch3D features were added: curve on face, intersection curve, project
-  to surface, silhouette curve, and spline (#4038). Review them in the next
-  sync; the comparison covers `.feature` files only.
+  of the unversioned source. It is not an upstream commit. On 2026-11-17, the
+  live source had 28 added feature files (one application viewport-selection
+  file and 27 Sketch3D files) and six changed files, with none removed (#4038).
+  The live inventory has 2,892 declarations; the pinned ledger has 2,760.
+  Review the changes at the next scheduled sync; this comparison covers
+  `.feature` files only and is not a test result.
   The source tags 60 declarations as capture-only and 34 more as capture-host
   only; they are not portable passing evidence. Follow `bdd-workflow.md`
   when source files change; use a unique Cargo target for each active worktree.
