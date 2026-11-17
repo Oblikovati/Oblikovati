@@ -70,6 +70,7 @@ pub(crate) struct ClosePrompt {
     exit_advance: bool,
     exit_waiting: Option<u64>,
     exit_progress: bool,
+    shared_exit_answer: Option<(CloseAnswer, Vec<u64>)>,
 }
 impl ClosePrompt {
     /// Begin one guarded application exit; example: `prompt.request_application_exit()`.
@@ -85,6 +86,7 @@ impl ClosePrompt {
         self.exit_advance = false;
         self.exit_waiting = None;
         self.exit_progress = false;
+        self.shared_exit_answer = None;
     }
     /// Continue after a first-save dialog closes; example: `prompt.resume_application_exit()`.
     pub(crate) fn resume_application_exit(&mut self) {
@@ -146,20 +148,30 @@ impl ClosePrompt {
         id: u64,
         actions: &mut Vec<GuiShellAction>,
     ) -> Vec<u64> {
+        if let Some(choice) = self.shared_exit_choice(id) {
+            return self.answer_exit_document(state, id, choice, actions);
+        }
         if state.prompts.save_changes.suppressed() {
-            return self.save_suppressed_exit(state, id, actions);
+            return self.answer_exit_document(state, id, CloseAnswer::Save, actions);
         }
         self.ask(id);
         Vec::new()
     }
-    fn save_suppressed_exit(
+    fn shared_exit_choice(&mut self, id: u64) -> Option<CloseAnswer> {
+        let (choice, documents) = self.shared_exit_answer.as_mut()?;
+        let index = documents.iter().position(|document| *document == id)?;
+        documents.remove(index);
+        Some(*choice)
+    }
+    fn answer_exit_document(
         &mut self,
         state: &GuiCommandState,
         id: u64,
+        choice: CloseAnswer,
         actions: &mut Vec<GuiShellAction>,
     ) -> Vec<u64> {
         let mut outcome = CloseOutcome::default();
-        answer(state, id, CloseAnswer::Save, &mut outcome);
+        answer(state, id, choice, &mut outcome);
         self.exit_waiting = Some(id);
         self.exit_advance = true;
         actions.extend(outcome.actions);
@@ -181,6 +193,8 @@ impl ClosePrompt {
         let mut kept = Vec::with_capacity(actions.len());
         for action in resumed.into_iter().chain(actions.drain(..)) {
             match unforced_close(&action) {
+                // An exit-approved save must reach the owner, which refuses a dirty close (#4056).
+                Some(id) if self.exit_waiting == Some(id) => kept.push(action),
                 Some(id) => self.route(state, id, action, &mut kept, &mut outcome),
                 None => kept.push(action),
             }
@@ -296,12 +310,32 @@ impl ClosePrompt {
             "Save changes to {} before closing?",
             document_name(state, id)
         ));
+        self.show_shared_exit_documents(ui, state, id);
         frequency_list(ui, state, ApplicationPrompt::SaveChanges, outcome);
         if let Some(choice) = self.save_changes_buttons(ui) {
             self.resolve(state, choice, outcome);
             self.opening_save = !self.asking.is_empty();
             ui.close_current_popup();
         }
+    }
+    fn show_shared_exit_documents(&self, ui: &Ui, state: &GuiCommandState, id: u64) {
+        if !self.application_exit || state.prompts.save_changes != PromptFrequency::OncePerOperation
+        {
+            return;
+        }
+        let others = other_edited_documents(state, Some(id));
+        if others.is_empty() {
+            return;
+        }
+        ui.text("This answer also applies to:");
+        ui.child_window("##shared-exit-documents")
+            .size([360., 80.])
+            .border(true)
+            .build(|| {
+                for document in others {
+                    ui.text(document_name(state, document));
+                }
+            });
     }
     fn save_changes_buttons(&mut self, ui: &Ui) -> Option<CloseAnswer> {
         let mut chosen = None;
@@ -330,12 +364,13 @@ impl ClosePrompt {
             if choice == CloseAnswer::Keep {
                 self.cancel_application_exit();
             } else {
+                self.remember_shared_exit_answer(state, choice);
                 self.exit_waiting = self.asking.first().copied();
                 self.exit_advance = true;
             }
         }
         let shared = state.prompts.save_changes == PromptFrequency::OncePerOperation;
-        let count = if shared || choice == CloseAnswer::Keep {
+        let count = if (shared && !self.application_exit) || choice == CloseAnswer::Keep {
             self.asking.len()
         } else {
             1
@@ -343,6 +378,14 @@ impl ClosePrompt {
         for id in self.asking.drain(..count) {
             answer(state, id, choice, outcome);
         }
+    }
+    fn remember_shared_exit_answer(&mut self, state: &GuiCommandState, choice: CloseAnswer) {
+        if state.prompts.save_changes != PromptFrequency::OncePerOperation {
+            return;
+        }
+        let current = self.asking.first().copied();
+        let documents = other_edited_documents(state, current);
+        self.shared_exit_answer = Some((choice, documents));
     }
 }
 fn frequency_list(
@@ -394,6 +437,17 @@ fn activate_unless_active(state: &GuiCommandState, id: u64) -> Option<GuiShellAc
 }
 fn document(state: &GuiCommandState, id: u64) -> Option<&DocumentInfo> {
     state.documents.iter().find(|row| row.id == id)
+}
+fn other_edited_documents(state: &GuiCommandState, current: Option<u64>) -> Vec<u64> {
+    state
+        .documents
+        .iter()
+        .filter_map(|row| {
+            (Some(row.id) != current
+                && storage(state, row.id).is_some_and(|item| item.unsaved_edits))
+            .then_some(row.id)
+        })
+        .collect()
 }
 fn edited_exit_document(state: &GuiCommandState) -> Option<u64> {
     state
