@@ -226,3 +226,57 @@ fn native_click_label(world: &mut ApplicationWorld, label: &str) {
     super::super::x11_input::click(super::super::diagnostics::pointer_pixels(center));
     world.pump(Vec::new());
 }
+
+#[test]
+fn parameters_done_selects_next_tab_and_reopens_in_same_dock() {
+    let mut world = ApplicationWorld::new();
+    super::browser_feature::open_visible_extruded_part(&mut world);
+    let area = viewport(&mut world);
+    open_toolbar_tool(&mut world, "Material Browser");
+    let (position, size) = window_geometry("Material Browser").unwrap();
+    native_drag(
+        &mut world,
+        [
+            (position[0] + size[0] * 0.4) as i32,
+            (position[1] + 10.) as i32,
+        ],
+        [area[2] as i32 - 15, ((area[1] + area[3]) / 2) as i32],
+    );
+    open_toolbar_tool(&mut world, "Parameters");
+    let (source, size) = window_geometry("Parameters").unwrap();
+    let (destination, destination_size) = window_geometry("Material Browser").unwrap();
+    native_drag(
+        &mut world,
+        [(source[0] + size[0] * 0.4) as i32, (source[1] + 10.) as i32],
+        [
+            (destination[0] + destination_size[0] * 0.5) as i32,
+            (destination[1] + 10.) as i32,
+        ],
+    );
+    let node = super::super::diagnostics::window_dock_id("Material Browser").unwrap();
+    assert_ne!(node, 0);
+    assert_eq!(
+        super::super::diagnostics::window_dock_id("Parameters"),
+        Some(node)
+    );
+    select_dock_tab(&mut world, "Parameters");
+    let close = world.run_in_window("Parameters", "Done").center();
+    super::super::x11_input::click(super::super::diagnostics::pointer_pixels(close));
+    world.pump(Vec::new());
+    world.pump(Vec::new());
+    assert!(window_geometry("Parameters").is_none());
+    assert_eq!(
+        super::super::diagnostics::window_dock_tab_visible("Material Browser"),
+        Some(true)
+    );
+    world.run_in_window("Material Browser", "Assigntopart");
+    open_toolbar_tool(&mut world, "Parameters");
+    assert_eq!(
+        super::super::diagnostics::window_dock_id("Parameters"),
+        Some(node)
+    );
+    select_dock_tab(&mut world, "Parameters");
+    world.run_in_window("Parameters", "UserParameters");
+    world.save_capture("parameters-restored-to-shared-dock");
+    world.close();
+}

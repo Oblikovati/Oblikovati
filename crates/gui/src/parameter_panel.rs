@@ -285,6 +285,7 @@ impl ParameterPanel {
         Self::dockable_window(ui, "Parameters", &mut open)
             .size([920., 480.], Condition::FirstUseEver)
             .build(|| self.draw_body(ui, &mut actions));
+        Self::close_dockable(ui, "Parameters", open && !self.open);
         if !open {
             self.open = false;
         }
