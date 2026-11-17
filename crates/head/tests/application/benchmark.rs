@@ -18,6 +18,9 @@ mod gap_runner;
 mod main_window_frame;
 #[cfg(target_os = "linux")]
 mod main_window_frame_native;
+#[cfg(target_os = "linux")]
+#[path = "main-window-frame/resize.rs"]
+mod main_window_frame_resize;
 mod quick_access_icons;
 mod refinements;
 mod report_destination;

@@ -169,7 +169,7 @@ fn handle_coordinate(direction: i32, extent: i32) -> i32 {
         _ => extent / 2,
     }
 }
-fn verify_resize_axis(before: [i32; 4], after: [i32; 4], axis: usize, direction: i32) {
+pub(super) fn verify_resize_axis(before: [i32; 4], after: [i32; 4], axis: usize, direction: i32) {
     assert_eq!(
         after[axis + 2] > before[axis + 2],
         direction != 0,
@@ -341,24 +341,24 @@ fn resize_handles_show_direction_specific_cursors() {
     world.pump(Vec::new());
     x11_input::focus_window();
     let bounds = x11_input::application_bounds();
-    let points = [
-        [bounds[2] / 2, bounds[3] / 2],
-        [1, bounds[3] / 2],
-        [bounds[2] / 2, 1],
-        [1, 1],
-        [bounds[2] - 2, 1],
+    let handles = [
+        ([1, bounds[3] / 2], 70),
+        ([bounds[2] - 2, bounds[3] / 2], 96),
+        ([bounds[2] / 2, 1], 138),
+        ([bounds[2] / 2, bounds[3] - 2], 16),
+        ([1, 1], 134),
+        ([bounds[2] - 2, bounds[3] - 2], 14),
+        ([bounds[2] - 2, 1], 136),
+        ([1, bounds[3] - 2], 12),
     ];
-    let mut sprites = Vec::new();
-    for point in points {
+    for (point, shape) in handles {
+        let expected = x11_input::reference_cursor(shape);
         x11_input::move_pointer(point);
         world.pump(Vec::new());
-        sprites.push(x11_input::cursor_sprite());
-    }
-    for (index, sprite) in sprites.iter().enumerate() {
-        assert!(
-            sprites[..index].iter().all(|other| other != sprite),
-            "cursor for point {:?}: expected a distinct direction",
-            points[index]
+        let actual = x11_input::cursor_sprite();
+        assert_eq!(
+            actual, expected,
+            "cursor for {point:?}: expected X cursor shape {shape}"
         );
     }
     world.close();
