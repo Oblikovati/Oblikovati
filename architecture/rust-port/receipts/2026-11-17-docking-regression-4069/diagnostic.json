@@ -1,0 +1,10 @@
+{
+  "application_commit": "cd22e5b48",
+  "source_feature_sha256_before": "139cea92a16ace53d22a47ba7839233d1000cbefc2ce2e51500844926651a3d0",
+  "source_feature_sha256_after": "139cea92a16ace53d22a47ba7839233d1000cbefc2ce2e51500844926651a3d0",
+  "source_revision": null,
+  "provenance": "Diagnostic against copied unversioned source; source hash unchanged. Not pinned acceptance evidence.",
+  "command": "OBK_BDD_ROOT=/tmp/obk-docking-rerun-source OBK_BDD_FEATURE=docking-system OBK_BDD_REPORTS=/tmp/obk-docking-rerun-report VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json xvfb-run -a -s '-screen 0 1600x1200x24' cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture",
+  "result": "8 scenarios and 65 steps passed; 2 capture-only scenarios excluded.",
+  "environment": "Linux Xvfb with Mesa lavapipe"
+}
