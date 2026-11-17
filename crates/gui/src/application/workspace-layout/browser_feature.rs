@@ -411,11 +411,18 @@ pub(crate) fn draw_feature_edges(ui: &Ui, request: &GuiFrameRequest) {
         }
         return;
     }
+    let color = feature_outline_color(&request.commands);
     for [from, to] in &request.commands.feature_edges {
-        list.add_line(logical(*from), logical(*to), EDGE_COLOR)
+        list.add_line(logical(*from), logical(*to), color)
             .thickness(EDGE_THICKNESS)
             .build();
     }
+}
+fn feature_outline_color(commands: &GuiCommandState) -> [f32; 4] {
+    if commands.model_face_chosen && commands.selected_body_keys.is_empty() {
+        return EDGE_HOVER_COLOR;
+    }
+    EDGE_COLOR
 }
 fn edge_group_hovered(pointer: [f32; 2], segments: &[[[i32; 2]; 2]]) -> bool {
     pointer.iter().all(|value| value.is_finite())
@@ -441,6 +448,15 @@ fn segment_distance_squared(point: [f32; 2], segment: [[i32; 2]; 2]) -> f32 {
 mod tests {
     use super::*;
     use oblikovati_model::feature::FeatureId;
+    #[test]
+    fn selected_face_outline_is_green_and_browser_feature_outline_is_blue() {
+        let mut commands = GuiCommandState::default();
+        assert_eq!(feature_outline_color(&commands), EDGE_COLOR);
+        commands.model_face_chosen = true;
+        assert_eq!(feature_outline_color(&commands), EDGE_HOVER_COLOR);
+        commands.selected_body_keys.push("body".into());
+        assert_eq!(feature_outline_color(&commands), EDGE_COLOR);
+    }
     #[test]
     fn hover_uses_segment_distance_in_window_pixels() {
         let edge = [[[10, 20], [30, 20]], [[30, 20], [35, 25]]];

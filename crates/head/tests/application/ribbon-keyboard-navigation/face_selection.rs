@@ -141,6 +141,7 @@ fn native_default_filter_selects_and_clears_visible_face() {
         !edges.is_empty(),
         "pixel {point:?}: expected an analytic face hit"
     );
+    let before = super::super::capture_framebuffer(&mut world.app().window.native);
     super::super::x11_input::focus_window();
     super::super::x11_input::move_pointer(point);
     world.pump(Vec::new());
@@ -158,6 +159,11 @@ fn native_default_filter_selects_and_clears_visible_face() {
     );
     world.expect_text("1. Face");
     toolbar_visible(&mut world);
+    let selected = super::super::capture_framebuffer(&mut world.app().window.native);
+    assert!(
+        green_pixels(&selected) > green_pixels(&before) + 10,
+        "selected face: expected a bright green boundary"
+    );
     let empty = super::super::viewport_pan::EMPTY_VIEW;
     super::super::x11_input::move_pointer(empty);
     world.pump(Vec::new());
@@ -165,5 +171,25 @@ fn native_default_filter_selects_and_clears_visible_face() {
     world.pump(Vec::new());
     selection_cleared(&mut world);
     world.expect_no_text("1. Face");
+    let cleared = super::super::capture_framebuffer(&mut world.app().window.native);
+    assert!(
+        green_pixels(&cleared) <= green_pixels(&before) + 10,
+        "cleared face: expected no green boundary"
+    );
     world.close();
+}
+
+#[cfg(target_os = "linux")]
+fn green_pixels(capture: &oblikovati_viewport::ViewportCapture) -> usize {
+    capture
+        .rgba
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .filter(|pixel| {
+            pixel[1] > 180
+                && pixel[1] > pixel[0].saturating_add(80)
+                && pixel[1] > pixel[2].saturating_add(80)
+        })
+        .count()
 }
