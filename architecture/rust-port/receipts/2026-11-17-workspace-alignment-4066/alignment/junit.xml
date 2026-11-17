@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: tmp/obk-workspace-4066/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: tmp/obk-workspace-4066/features/application/workspace-layout/workspace-layout.feature" tests="2" errors="0" failures="0" hostname="localhost" timestamp="2026-11-17T12:38:53.577224178Z" time="44.000719606"><testcase name="Scenario: Align the model browser and viewport to the workspace frame: tmp/obk-workspace-4066/features/application/workspace-layout/workspace-layout.feature:38:3" time="21.949199557"><system-out><![CDATA[  Scenario: Align the model browser and viewport to the workspace frame
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And the model browser is docked at the left
+   ✔  When the user inspects the workspace boundaries
+   ✔  Then the model browser begins at the left content edge directly below the ribbon
+   ✔  And the viewport begins at the browser's shared divider without an empty gutter
+   ✔  And the viewport fills the remaining content width
+   ✔  And the ribbon, browser, viewport and status area use aligned outer edges
+]]></system-out></testcase><testcase name="Scenario: Align the document tabs with the viewport instead of the browser: tmp/obk-workspace-4066/features/application/workspace-layout/workspace-layout.feature:59:3" time="22.051520049"><system-out><![CDATA[  Scenario: Align the document tabs with the viewport instead of the browser
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And the model browser is docked at the left
+   ✔  When the user inspects the bottom workspace rows
+   ✔  Then the browser extends to the status area above the bottom row
+   ✔  And the document tab strip begins at the viewport's left edge
+   ✔  And the document tab strip ends at the viewport's right edge
+   ✔  And no document tabs appear below the model browser
+   ✔  And the status area spans the full application width
+]]></system-out></testcase></testsuite></testsuites>

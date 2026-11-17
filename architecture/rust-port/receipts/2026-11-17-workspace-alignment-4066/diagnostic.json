@@ -1,0 +1,13 @@
+{
+  "source_feature_sha256": "f45d745e7ddf78135f058651d24db35d2d416c92aed34ea1422b14ec5d73f1e0",
+  "source_revision": null,
+  "application_base": "357cdb927",
+  "application_changes_commit": "da79bd9b4",
+  "provenance": "Diagnostic: unversioned source and working-tree build. Changes to one parameter shortcut test were made after these runs.",
+  "results": {
+    "compact": "1 scenario, 6 steps passed",
+    "alignment": "2 scenarios, 15 steps passed",
+    "resize": "1 scenario, 8 steps passed"
+  },
+  "environment": "Linux Xvfb with Mesa lavapipe"
+}
