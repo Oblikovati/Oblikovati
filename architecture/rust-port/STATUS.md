@@ -69,7 +69,9 @@ Last checked: 2026-11-16 on `rust-work`. Refresh from current evidence at each c
   see `receipts/2026-11-17-application-closing-pinned-4030/`. Its live hash
   matches the local snapshot derived from unversioned source. Two scenarios
   have reference capture gaps, and #3978 prevents a verified acceptance claim.
-  The multi-document once-per-operation prompt remains open (#4056). A wider GUI run also found the clean-base #3850
+  The once-per-operation exit prompt now lists all affected documents and
+  stops on save failure or Save As cancellation (#4056); reference capture
+  remains open. The GUI library suite had one UI-scale failure (#3850). A wider GUI run also found the clean-base #3850
   UI-scale test failure.
 - Martensite v0.13.1 is pinned at `bef25f47548431c8f128f08f66a1f719bcee4982`
   (#4025). The adapter and native cube checks passed; the curved profile
