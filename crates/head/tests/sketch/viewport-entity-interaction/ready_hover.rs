@@ -92,3 +92,40 @@ fn ready_hover_is_retired_when_the_sketch_is_undone() {
     assert!(world.edited_geometry().lines().is_empty());
     world.close();
 }
+
+#[test]
+fn native_ready_hover_after_external_line_creation_uses_current_sketch() {
+    use oblikovati_model::sketch::{SketchPointInput, SketchPrimitiveCreation};
+    let mut world = ApplicationWorld::new();
+    world.start_empty_sketch();
+    let at = world.sketch_pixel_of([0., 1.]);
+    let edit = world.app().owner.active_sketch_edit().unwrap();
+    let line = world
+        .app()
+        .owner
+        .document_commands(edit.document)
+        .create_sketch_primitive(
+            edit.sketch,
+            &SketchPrimitiveCreation::Line {
+                endpoints: [
+                    SketchPointInput::New([-3., 1.]),
+                    SketchPointInput::New([3., 1.]),
+                ],
+                construction: false,
+                centerline: false,
+            },
+        )
+        .unwrap()
+        .entity;
+    assert!(
+        world.edited_geometry().entity_kind(line).is_ok(),
+        "owner must contain the new line"
+    );
+    world.remember_edited_sketch(Vec::new());
+    super::super::super::x11_input::move_pointer(at);
+    world.pump(Vec::new());
+    world.expect_text("1. Line (Sketch1)");
+    assert!(world.state().sketch_selection.entities.is_empty());
+    world.expect_edited_sketch_retained();
+    world.close();
+}

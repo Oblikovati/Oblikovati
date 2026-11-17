@@ -477,7 +477,13 @@ fn update_tool_candidate(
             return Ok(true);
         }
     };
-    window.set_tool_feedback(candidate.as_ref())
+    // #4051: a pick uses the owner generation; its display must use that same sketch.
+    let updated = if candidate.is_some() {
+        super::publish_owner_sketches(window, owner)?
+    } else {
+        false
+    };
+    Ok(window.set_tool_feedback(candidate.as_ref())? || updated)
 }
 
 fn semantic_command_event(event: ViewportEvent) -> ViewportEvent {
