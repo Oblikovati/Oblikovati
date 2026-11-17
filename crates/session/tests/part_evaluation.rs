@@ -400,3 +400,6 @@ fn verify_empty_slot(slot: &PartSlot, session: &PartSession) {
 
 #[path = "part_evaluation/face_offset.rs"]
 mod face_offset;
+
+#[path = "part_evaluation/reuse.rs"]
+mod reuse;

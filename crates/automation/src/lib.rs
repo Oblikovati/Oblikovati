@@ -304,8 +304,8 @@ pub use part_sketch_continuity::PartSketchContinuity;
 mod part_update;
 pub use part_update::{
     PartReplayService, PartUpdateAccess, complete_part_replay, part_feature_errors,
-    part_replay_is_stale, preview_part_datums, refresh_part_sketches, resolve_slot_face,
-    slot_datums_for_face,
+    part_replay_is_stale, preview_part_datums, refresh_and_adopt_part, refresh_part_sketches,
+    resolve_slot_face, slot_datums_for_face,
 };
 
 mod body_commands;

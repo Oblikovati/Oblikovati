@@ -16,6 +16,15 @@ impl<O: TransactionObserver> SessionCommands<'_, O> {
     ) -> Result<bool, PartSketchAdoptionError> {
         self.session.adopt_recomputed_part_sketches(completed)
     }
+    /// Adopt an unchanged replay, or refresh sketches for another replay.
+    /// Example: `files.commands(id)?.adopt_sketch_replay(completed, &mut slot)?`.
+    pub fn adopt_sketch_replay<Body, Failure>(
+        &mut self,
+        completed: CompletedPartSketchRecompute<Body, Failure>,
+        slot: &mut PartEvaluationSlot<Body, Failure>,
+    ) -> Result<bool, PartSketchAdoptionError> {
+        self.session.adopt_sketch_replay(completed, slot)
+    }
     /// Capture from a fixed file-owned document without keeping the borrowed capability.
     /// Example: `files.commands(id)?.prepare_part_evaluation()` before kernel work.
     pub fn prepare_part_evaluation(&self) -> PartEvaluationRequest {
