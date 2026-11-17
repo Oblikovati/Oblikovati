@@ -5,6 +5,7 @@ unsafe extern "C" {
     fn oblikovati_gui_drag_current_window() -> bool;
     fn oblikovati_gui_workspace_dockspace(width: f32, height: f32) -> u32;
     fn oblikovati_gui_outer_dockspace(width: f32, height: f32) -> u32;
+    fn oblikovati_gui_prepare_dock_hit_test(x: f32, y: f32);
     fn oblikovati_gui_outer_bottom_span(id: u32, left: *mut f32, right: *mut f32) -> bool;
     fn oblikovati_gui_dockspace_center(
         id: u32,
@@ -50,6 +51,11 @@ pub(crate) fn drag_current_window(_: &Ui) -> bool {
 /// Example: `moving_window(ui)` when drawing a fixed document-tab strip.
 pub(crate) fn moving_window(_: &Ui) -> bool {
     unsafe { oblikovati_gui_window_is_moving() }
+}
+/// Route the next drag frame to the outer target when the pointer is over it.
+/// Example: `prepare_dock_hit_test(position)` before starting the next ImGui frame.
+pub(crate) fn prepare_dock_hit_test(position: [f32; 2]) {
+    unsafe { oblikovati_gui_prepare_dock_hit_test(position[0], position[1]) };
 }
 /// Draw a dockspace in the current host and return its central bounds when available.
 /// Example: `workspace_dockspace(ui, [800., 600.])` in a transparent host window.

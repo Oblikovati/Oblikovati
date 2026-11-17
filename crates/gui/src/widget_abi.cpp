@@ -7,6 +7,27 @@
 // #3803: Rust C aggregates and MSVC ARM64 C++ vector classes use different registers.
 // Only scalars and byte pointers cross this boundary; C++ constructs its own vectors.
 namespace {
+ImGuiID workspace_dockspace_id() {
+    // Keep the original host ID so saved inner layouts survive reparenting (#4071).
+    return ImHashStr("##workspace-dockspace", 0, ImHashStr("##workspace-docking-host"));
+}
+// Mirrors DockNodeCalcDropRectsAndTestMousePos in vendored Dear ImGui 1.89.2-docking (#4071).
+static_assert(IMGUI_VERSION_NUM == 18920, "Review outer dock target geometry for the new ImGui version (#4071)");
+bool is_outer_dock_target(const ImGuiWindow* outer, const ImVec2 mouse) {
+    const ImVec2 size = outer->Size;
+    const float half = ImMin(ImGui::GetFontSize() * 1.5f,
+                             ImMax(ImGui::GetFontSize() * 0.5f, ImMin(size.x, size.y) / 8.0f));
+    const float wide = ImFloor(half * 1.5f);
+    const float narrow = ImFloor(half * 0.8f);
+    const ImVec2 center(ImFloor(outer->Pos.x + size.x * 0.5f), ImFloor(outer->Pos.y + size.y * 0.5f));
+    const bool top_or_bottom = ImFabs(mouse.x - center.x) <= wide &&
+        (ImFabs(mouse.y - outer->Pos.y - narrow) <= narrow ||
+         ImFabs(mouse.y - outer->Pos.y - size.y + narrow) <= narrow);
+    const bool left_or_right = ImFabs(mouse.y - center.y) <= wide &&
+        (ImFabs(mouse.x - outer->Pos.x - narrow) <= narrow ||
+         ImFabs(mouse.x - outer->Pos.x - size.x + narrow) <= narrow);
+    return top_or_bottom || left_or_right;
+}
 void draw_ribbon_icon(const char* label, std::uint32_t texture, ImVec2 icon, bool large, bool show_caption) {
     const ImVec2 lo = ImGui::GetItemRectMin(), hi = ImGui::GetItemRectMax();
     const char* end = ImGui::FindRenderedTextEnd(label);
@@ -42,10 +63,35 @@ bool oblikovati_gui_window_is_moving() {
 }
 
 std::uint32_t oblikovati_gui_workspace_dockspace(float width, float height) {
-    const ImGuiID id = ImGui::GetID("##workspace-dockspace");
+    const ImGuiID id = workspace_dockspace_id();
+    ImGuiContext* context = ImGui::GetCurrentContext();
+    ImGuiWindow* outer = ImGui::FindWindowByName("##workspace-outer-host");
+    const bool route_outer = context->MovingWindow && outer && is_outer_dock_target(outer, context->IO.MousePos);
+    ImGuiWindowClass blocked;
+    blocked.ClassId = ImHashStr("##outer-dock-target-only");
+    blocked.DockingAllowUnclassed = false;
     // The central node is the live viewport and must remain open for rendering and picks (#4069).
     return ImGui::DockSpace(id, ImVec2(width, height),
-                           ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoDockingInCentralNode);
+                           ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoDockingInCentralNode,
+                           route_outer ? &blocked : nullptr);
+}
+
+void oblikovati_gui_prepare_dock_hit_test(float x, float y) {
+    ImGuiContext* context = ImGui::GetCurrentContext();
+    const ImGuiID id = workspace_dockspace_id();
+    ImGuiDockNode* node = ImGui::DockBuilderGetNode(id);
+    ImGuiWindow* outer = ImGui::FindWindowByName("##workspace-outer-host");
+    if (!node || !node->HostWindow || !node->HostWindow->ParentWindow || !outer) return;
+    const bool route_outer = context->MovingWindow && is_outer_dock_target(outer, ImVec2(x, y));
+    ImGuiWindow* inner = node->HostWindow;
+    ImGuiWindow* parent = inner->ParentWindow;
+    if (route_outer) {
+        inner->Flags |= ImGuiWindowFlags_NoMouseInputs;
+        parent->Flags |= ImGuiWindowFlags_NoMouseInputs;
+    } else {
+        inner->Flags &= ~ImGuiWindowFlags_NoMouseInputs;
+        parent->Flags &= ~ImGuiWindowFlags_NoMouseInputs;
+    }
 }
 
 std::uint32_t oblikovati_gui_outer_dockspace(float width, float height) {
