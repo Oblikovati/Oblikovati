@@ -177,6 +177,9 @@ fn sketch(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, Str
         GuiShellAction::ActivateWindow(id) => owner.document_window_from_gui(*id, false),
         GuiShellAction::CloseDocumentWindow(id) => owner.document_window_from_gui(*id, true),
         GuiShellAction::NewDocumentWindow => owner.new_document_window_from_gui(),
+        GuiShellAction::StartSketchOnSelectedFace { document, key } => {
+            owner.start_sketch_on_selected_face_from_gui(*document, key)
+        }
         GuiShellAction::StartSketchOn(plane) => owner.start_sketch_on_plane_from_gui(*plane),
         GuiShellAction::StartSketchOnWorkPlane(plane) => {
             owner.start_sketch_on_work_plane_from_gui(*plane)

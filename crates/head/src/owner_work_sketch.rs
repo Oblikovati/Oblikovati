@@ -113,6 +113,13 @@ impl<
     ) -> Result<bool, String> {
         self.start_sketch_on_face_line(document, line)
     }
+    fn start_sketch_on_selected_face_from_gui(
+        &mut self,
+        document: u64,
+        key: &str,
+    ) -> Result<bool, String> {
+        self.start_sketch_on_selected_face(document, key)
+    }
     fn precise_point_from_gui(
         &mut self,
         point: &oblikovati_gui::GuiPrecisePoint,

@@ -233,6 +233,11 @@ pub enum GuiShellAction {
     ChooseSketchPlane,
     /// Choose a sketch plane for a waiting extrusion.
     ChooseSketchPlaneForExtrude,
+    /// Start an associative sketch on the one currently selected named face.
+    StartSketchOnSelectedFace {
+        document: u64,
+        key: String,
+    },
     StartSketchOn(crate::GuiOriginPlaneKind),
     /// Start on a selected authored work plane.
     StartSketchOnWorkPlane(oblikovati_model::feature::FeatureId),

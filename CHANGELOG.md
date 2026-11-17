@@ -54,6 +54,8 @@
 
 ### Fixed
 
+- Started an associative sketch on the selected face from the Part marking menu. (#4050)
+
 - Restored Extrude from the Part marking menu for empty parts and finished sketches. (#4049)
 
 - Listed and selected overlapping sketch point and curve candidates in Select Other. (#4041)

@@ -30,6 +30,14 @@ macro_rules! forward_owner_sketch_work {
         ) -> Result<bool, String> {
             self.$owner.start_sketch_on_face_from_gui(document, line)
         }
+        fn start_sketch_on_selected_face_from_gui(
+            &mut self,
+            document: u64,
+            key: &str,
+        ) -> Result<bool, String> {
+            self.$owner
+                .start_sketch_on_selected_face_from_gui(document, key)
+        }
         fn set_sketch_visibility_from_gui(
             &mut self,
             document: u64,

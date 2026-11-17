@@ -396,6 +396,7 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::CloseDocumentWindow(_)
         | GuiShellAction::StartSketchOn(_)
         | GuiShellAction::StartSketchOnWorkPlane(_)
+        | GuiShellAction::StartSketchOnSelectedFace { .. }
         | GuiShellAction::StartSketchAt { .. }
         | GuiShellAction::FinishSketch
         | GuiShellAction::OpenExtrude

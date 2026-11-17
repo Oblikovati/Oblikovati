@@ -96,6 +96,16 @@ pub trait HeadSketchWork {
             "document {document}, face ray {line:?}: expected a sketch support owner"
         ))
     }
+    /// Start a sketch on the exact selected named face; example: `work.start_sketch_on_selected_face_from_gui(document, &key)?`.
+    fn start_sketch_on_selected_face_from_gui(
+        &mut self,
+        document: u64,
+        key: &str,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "document {document}, face {key:?}: expected a selected face sketch owner"
+        ))
+    }
     /// Place the running command's next point exactly; example: `work.precise_point_from_gui(&point)`.
     fn precise_point_from_gui(
         &mut self,

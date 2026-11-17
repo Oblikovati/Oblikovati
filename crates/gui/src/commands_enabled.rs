@@ -2,6 +2,8 @@
 use super::*;
 #[path = "commands/blend_enabled.rs"]
 mod blend_enabled;
+#[path = "commands/sketch_enabled.rs"]
+mod sketch_enabled;
 impl GuiShellAction {
     /// Preserve Go empty-stack enablement; example: `GuiShellAction::Undo.enabled(&state)`.
     pub fn enabled(&self, state: &GuiCommandState) -> bool {
@@ -441,19 +443,15 @@ impl GuiShellAction {
             Self::Undo => state.undo_label.is_some() && !state.active_express(),
             Self::Redo => state.redo_label.is_some() && !state.active_express(),
             Self::Save => !state.active_express(),
+            Self::StartSketchOnSelectedFace { document, key } => {
+                sketch_enabled::selected_face(state, *document, key)
+            }
             Self::ChooseSketchPlane
             | Self::ChooseSketchPlaneForExtrude
             | Self::StartSketchOn(_)
             | Self::StartSketchOnWorkPlane(_)
             | Self::StartSketchAt { .. } => state.authoring == GuiAuthoringContext::Part,
-            Self::DeleteSketchSelection => {
-                state.authoring == GuiAuthoringContext::Sketch
-                    && state.sketch_delete_available
-                    && !state.transaction_open
-            }
-            Self::Dimension(crate::GuiDimensionAction::Start) => {
-                state.authoring == GuiAuthoringContext::Sketch && !state.transaction_open
-            }
+            Self::DeleteSketchSelection => sketch_enabled::delete_selection(state),
             Self::Dimension(crate::GuiDimensionAction::Apply { id, .. }) => {
                 state
                     .dimension_draft
@@ -465,9 +463,6 @@ impl GuiShellAction {
                 .dimension_draft
                 .as_ref()
                 .is_some_and(|draft| draft.id == *id),
-            Self::ConstrainSketch(_) => {
-                state.authoring == GuiAuthoringContext::Sketch && !state.transaction_open
-            }
             Self::ToggleSketchFormat(_) => {
                 state.authoring == GuiAuthoringContext::Sketch
                     && state.sketch_format_available
@@ -478,7 +473,9 @@ impl GuiShellAction {
                     && state.authoring == GuiAuthoringContext::Sketch
                     && !state.transaction_open
             }
-            Self::FinishSketch => {
+            Self::Dimension(crate::GuiDimensionAction::Start)
+            | Self::ConstrainSketch(_)
+            | Self::FinishSketch => {
                 state.authoring == GuiAuthoringContext::Sketch && !state.transaction_open
             }
             Self::SetMarkingMenu(_) | Self::SetKeymap(_) | Self::NewPart | Self::Home => true,

@@ -80,6 +80,59 @@ impl<
         else {
             return Ok(false);
         };
+        self.create_sketch_on_face(document, face)
+    }
+    pub(super) fn start_sketch_on_selected_face(
+        &mut self,
+        document: u64,
+        key: &str,
+    ) -> Result<bool, String> {
+        self.require_browser_document(document)?;
+        let face = self.only_selected_sketch_face(document, key)?;
+        let resolved = self.part_scenes.selected_face_reference(
+            &mut self.files,
+            document,
+            face.feature,
+            &face.key,
+        )?;
+        if resolved != key {
+            return Err(format!(
+                "document {document}, selected face {key:?}: expected current face reference {resolved:?}"
+            ));
+        }
+        let face = oblikovati_model::feature::work_plane::WorkPlaneFaceReference::new(face.key)?;
+        self.create_sketch_on_face(document, face)
+    }
+    fn only_selected_sketch_face(
+        &self,
+        document: u64,
+        key: &str,
+    ) -> Result<super::browser_selection::ChosenModelFace, String> {
+        let [pick] = self.current_face_appearance_picks(document) else {
+            return Err(format!(
+                "document {document}, selected face {key:?}: expected exactly one current face"
+            ));
+        };
+        let session = self
+            .files
+            .workspace()
+            .session(document)
+            .map_err(|cause| cause.to_string())?;
+        if pick.key != key
+            || !self.chosen_model_edges(document).is_empty()
+            || !session.selected_browser_bodies().is_empty()
+        {
+            return Err(format!(
+                "document {document}, selected face {key:?}: expected the only current selected face"
+            ));
+        }
+        Ok(pick.face.clone())
+    }
+    fn create_sketch_on_face(
+        &mut self,
+        document: u64,
+        face: oblikovati_model::feature::work_plane::WorkPlaneFaceReference,
+    ) -> Result<bool, String> {
         self.create_automatic_sketch_for_edit(
             document,
             &DocumentSketchCreation {
