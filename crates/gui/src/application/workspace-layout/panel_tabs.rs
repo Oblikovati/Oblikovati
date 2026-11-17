@@ -37,6 +37,7 @@ pub(crate) struct DockPanels {
     favorites_open: bool,
     pub favorites: crate::application::model_browser::favorites::FavoritesPane,
     active: DockPanel,
+    moving_model: bool,
     /// A panel just added or left alone takes the tab bar's selection on the next frame.
     select: Option<DockPanel>,
     messages: Vec<String>,
@@ -49,6 +50,7 @@ impl Default for DockPanels {
             favorites_open: false,
             favorites: Default::default(),
             active: DockPanel::Model,
+            moving_model: false,
             select: None,
             messages: Vec::new(),
         }
@@ -177,6 +179,12 @@ impl DockPanels {
         if self.favorites_open {
             self.tab(ui, FAVORITES_PANEL, DockPanel::Favorites, select);
         }
+        if self.moving_model
+            && (!ui.is_mouse_down(imgui::MouseButton::Left)
+                || crate::widget_abi::drag_current_window(ui))
+        {
+            self.moving_model = false;
+        }
         self.active
     }
     fn tab(&mut self, ui: &Ui, label: &str, panel: DockPanel, select: Option<DockPanel>) {
@@ -187,6 +195,12 @@ impl DockPanels {
         };
         let mut keep = true;
         let contents = ui.tab_item_with_flags(label, Some(&mut keep), flags);
+        if panel == DockPanel::Model
+            && ui.is_item_active()
+            && ui.is_mouse_dragging(imgui::MouseButton::Left)
+        {
+            self.moving_model = true;
+        }
         // A tab that is about to be selected must not report the old one as chosen.
         if contents.is_some() && select.is_none() {
             self.active = panel;

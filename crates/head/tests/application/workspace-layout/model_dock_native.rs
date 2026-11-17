@@ -83,6 +83,21 @@ fn tool_and_model_browser_can_join_one_dock_region() {
         Some(model)
     );
     world.save_capture("model-browser-shared-tabs");
+    let (minimum, maximum) = super::super::diagnostics::window_dock_tab_bounds("Model").unwrap();
+    let tab = [
+        (minimum[0] + maximum[0]) * 0.5,
+        (minimum[1] + maximum[1]) * 0.5,
+    ];
+    world.click(super::super::diagnostics::pointer_pixels(tab));
+    world.pump(Vec::new());
+    let (position, _) = window_geometry("Model").unwrap();
+    let from = [(position[0] + 50.) as i32, (position[1] + 37.) as i32];
+    native_drag(&mut world, from, [800, 400]);
+    assert_eq!(super::super::diagnostics::window_dock_id("Model"), Some(0));
+    assert_ne!(
+        super::super::diagnostics::window_dock_id("Material Browser").unwrap(),
+        0
+    );
     world.close();
 }
 
@@ -174,4 +189,44 @@ fn model_browser_can_dock_above_and_below_the_viewport() {
         world.save_capture(&format!("model-browser-{edge}-dock"));
         world.close();
     }
+}
+
+#[test]
+fn dragging_the_inner_model_tab_floats_the_browser() {
+    let mut world = ApplicationWorld::new();
+    super::browser_feature::open_visible_extruded_part(&mut world);
+    let initial = viewport(&mut world);
+    let (position, _) = window_geometry("Model").unwrap();
+    let start = [(position[0] + 50.) as i32, (position[1] + 37.) as i32];
+    native_drag(&mut world, start, [800, 400]);
+    assert_eq!(super::super::diagnostics::window_dock_id("Model"), Some(0));
+    let (floating, _) = window_geometry("Model").unwrap();
+    assert!(
+        floating[0] > initial[0] as f32,
+        "browser must follow the pointer: {floating:?}"
+    );
+    let area = viewport(&mut world);
+    assert!(area[0] < initial[0]);
+    let start = [(floating[0] + 50.) as i32, (floating[1] + 37.) as i32];
+    let end = [15, ((area[1] + area[3]) / 2) as i32];
+    super::super::x11_input::move_pointer(start);
+    world.pump(Vec::new());
+    super::super::x11_input::left_button(start, true);
+    world.pump(Vec::new());
+    for step in 1..=8 {
+        let at = std::array::from_fn(|axis| start[axis] + (end[axis] - start[axis]) * step / 8);
+        super::super::x11_input::move_pointer(at);
+        world.pump(Vec::new());
+    }
+    world.save_capture("inner-model-tab-preview");
+    super::super::x11_input::left_button(end, false);
+    world.pump(Vec::new());
+    world.pump(Vec::new());
+    world.save_capture("inner-model-tab-redock");
+    assert_ne!(
+        super::super::diagnostics::window_dock_id("Model").unwrap(),
+        0
+    );
+    assert!(viewport(&mut world)[0] > area[0]);
+    world.close();
 }
