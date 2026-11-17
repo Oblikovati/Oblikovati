@@ -41,8 +41,8 @@ pub(crate) fn panel(
     actions: &mut Vec<GuiShellAction>,
 ) {
     precise.sync_move_context(state.sketch_move.is_some());
-    close_stale_rejection(ui, state.sketch_move);
     let Some(status) = state.sketch_move else {
+        rejected_move_dialog(ui, None, actions);
         return;
     };
     GuiSketchMoveStatus::fit_dockable(ui, "Move", [1100., 250.], [330., 205.]);
@@ -83,34 +83,37 @@ pub(crate) fn panel(
             actions.push(GuiShellAction::SketchMove(GuiSketchMoveAction::Done));
         }
     });
-    rejected_move_dialog(ui, status, actions);
+    rejected_move_dialog(ui, Some(status), actions);
     if !open {
         actions.push(GuiShellAction::SketchMove(GuiSketchMoveAction::Done));
     }
 }
 
-fn rejected_move_dialog(ui: &Ui, status: GuiSketchMoveStatus, actions: &mut Vec<GuiShellAction>) {
-    if status.stage != GuiSketchMoveStage::ZeroDisplacement {
-        return;
+fn rejected_move_dialog(
+    ui: &Ui,
+    status: Option<GuiSketchMoveStatus>,
+    actions: &mut Vec<GuiShellAction>,
+) {
+    let rejected = status.is_some_and(|value| value.stage == GuiSketchMoveStage::ZeroDisplacement);
+    if rejected {
+        ui.open_popup(REJECTION_POPUP);
     }
-    ui.open_popup(REJECTION_POPUP);
     let Some(_popup) = ui.begin_modal_popup(REJECTION_POPUP) else {
         return;
     };
+    if !rejected {
+        ui.close_current_popup();
+        return;
+    }
+    draw_rejection_content(ui, actions);
+}
+
+fn draw_rejection_content(ui: &Ui, actions: &mut Vec<GuiShellAction>) {
     ui.text("The base point and end point must be different.");
     if ui.button("Cancel") || ui.is_key_pressed_no_repeat(imgui::Key::Escape) {
         ui.close_current_popup();
         actions.push(GuiShellAction::SketchMove(
             GuiSketchMoveAction::CancelRejection,
         ));
-    }
-}
-
-fn close_stale_rejection(ui: &Ui, status: Option<GuiSketchMoveStatus>) {
-    if status.is_some_and(|value| value.stage == GuiSketchMoveStage::ZeroDisplacement) {
-        return;
-    }
-    if let Some(_popup) = ui.begin_modal_popup(REJECTION_POPUP) {
-        ui.close_current_popup();
     }
 }

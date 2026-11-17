@@ -136,6 +136,8 @@ const INFRASTRUCTURE: &[(&str, &str)] = &[
         "modal:MISSING_FILE",
     ),
     ("sketch/dimension-edit/mod.rs", "modal:WARNING"),
+    // One transient confirmation; the Move tool itself remains dockable (#4054).
+    ("sketch/move_tool.rs", "modal:REJECTION_POPUP"),
 ];
 
 #[derive(Default)]
@@ -325,5 +327,16 @@ fn guard_detects_direct_windows_and_ignores_test_fixtures() {
     assert_eq!(
         calls_in("impl DockableWindow for Tool { fn dockable_window() {} }").overridden_trait,
         1
+    );
+}
+
+#[test]
+fn guard_counts_each_modal_call_for_the_same_title() {
+    let calls = calls_in(
+        "fn f(ui: &Ui) { ui.begin_modal_popup(REJECTION_POPUP); ui.begin_modal_popup(REJECTION_POPUP); }",
+    );
+    assert_eq!(
+        calls.names,
+        ["modal:REJECTION_POPUP", "modal:REJECTION_POPUP"]
     );
 }
