@@ -1,0 +1,13 @@
+{
+  "after": {
+    "commit": null,
+    "dirty": null,
+    "root": "/tmp/obk-docking-rerun-source"
+  },
+  "before": {
+    "commit": null,
+    "dirty": null,
+    "root": "/tmp/obk-docking-rerun-source"
+  },
+  "source_changed": false
+}
