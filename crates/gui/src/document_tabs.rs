@@ -377,8 +377,8 @@ fn home_tab(
 fn document_strip_window(ui: &Ui, span: (f32, f32), strip_top: f32, contents: impl FnOnce()) {
     crate::widget_abi::window_geometry(
         ui,
-        [span.0, strip_top + 2.],
-        [span.1, 32.],
+        [span.0, strip_top + 1.],
+        [span.1, 24.],
         Condition::Always,
     );
     ui.window("##open-document-tabs")
