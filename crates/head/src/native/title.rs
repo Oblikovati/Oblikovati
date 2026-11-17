@@ -18,6 +18,11 @@ impl NativeHeadWindow {
         if let Some(notice) = &self.command_notice {
             title.push_str(&format!(" - {}", notice.message()));
         }
-        self.view.set_title(&title)
+        self.view.set_title(&title)?;
+        #[cfg(target_os = "linux")]
+        {
+            self.accessibility_title = title;
+        }
+        Ok(())
     }
 }

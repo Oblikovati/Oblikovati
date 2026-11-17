@@ -18,6 +18,7 @@ pub(crate) enum FrameControl {
 pub(crate) struct FrameSemantics {
     pub title: String,
     pub maximized: bool,
+    pub enabled: bool,
     pub bounds: [[f64; 4]; 3],
     pub focused: Option<FrameControl>,
 }
@@ -40,7 +41,7 @@ impl FrameSemantics {
             .into_iter()
             .zip(names)
             .zip(self.bounds)
-            .map(|((id, name), bounds)| (id, frame_button(name, bounds)));
+            .map(|((id, name), bounds)| (id, frame_button(name, bounds, self.enabled)));
         TreeUpdate {
             nodes: std::iter::once((WINDOW, root)).chain(nodes).collect(),
             tree: Some(TreeInfo::new(WINDOW)),
@@ -50,12 +51,15 @@ impl FrameSemantics {
     }
 }
 
-fn frame_button(name: &str, bounds: [f64; 4]) -> Node {
+fn frame_button(name: &str, bounds: [f64; 4], enabled: bool) -> Node {
     let mut node = Node::new(Role::Button);
     node.set_label(name);
     node.set_bounds(Rect::new(bounds[0], bounds[1], bounds[2], bounds[3]));
-    node.add_action(Action::Click);
-    node.add_action(Action::Focus);
+    if enabled {
+        node.add_action(Action::Click);
+    } else {
+        node.set_disabled();
+    }
     node
 }
 
@@ -84,6 +88,7 @@ mod tests {
         let mut frame = FrameSemantics {
             title: "Part1".into(),
             maximized: false,
+            enabled: true,
             bounds: [[1., 2., 3., 4.]; 3],
             focused: Some(FrameControl::Close),
         };

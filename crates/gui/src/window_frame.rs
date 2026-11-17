@@ -10,9 +10,11 @@ pub(crate) fn draw(
     request: &GuiFrameRequest,
     bar_height: f32,
     actions: &mut Vec<GuiShellAction>,
-) -> Option<GuiWindowAction> {
+) -> (Option<GuiWindowAction>, crate::GuiWindowControls) {
     let width = request.extent[0] as f32 / request.layout_scale()[0];
     let mut action = None;
+    let mut bounds = [[0.; 4]; 3];
+    let mut focused = None;
     crate::widget_abi::window_geometry(
         ui,
         [width - CONTROL_WIDTH * 3., 0.],
@@ -29,7 +31,15 @@ pub(crate) fn draw(
         .scroll_bar(false)
         .scrollable(false)
         .build(|| {
-            if control(ui, "_###window-minimize", "Minimize", bar_height) {
+            if control(
+                ui,
+                "_###window-minimize",
+                "Minimize",
+                bar_height,
+                0,
+                &mut bounds,
+                &mut focused,
+            ) {
                 action = Some(GuiWindowAction::Minimize);
             }
             ui.same_line();
@@ -38,18 +48,45 @@ pub(crate) fn draw(
             } else {
                 ("[]###window-maximize", "Maximize")
             };
-            if control(ui, symbol, title, bar_height) {
+            if control(ui, symbol, title, bar_height, 1, &mut bounds, &mut focused) {
                 action = Some(GuiWindowAction::ToggleMaximize);
             }
             ui.same_line();
-            if control(ui, "X###window-close", "Close", bar_height) {
+            if control(
+                ui,
+                "X###window-close",
+                "Close",
+                bar_height,
+                2,
+                &mut bounds,
+                &mut focused,
+            ) {
                 actions.push(GuiShellAction::Exit);
             }
         });
-    action.or_else(|| bar_gesture(ui, width, bar_height))
+    let scale = request.layout_scale();
+    for bounds in &mut bounds {
+        for axis in 0..2 {
+            bounds[axis] *= scale[axis];
+            bounds[axis + 2] *= scale[axis];
+        }
+    }
+    (
+        action.or_else(|| bar_gesture(ui, width, bar_height)),
+        crate::GuiWindowControls { bounds, focused },
+    )
 }
-fn control(ui: &Ui, label: &str, accessible: &str, bar_height: f32) -> bool {
+fn control(
+    ui: &Ui,
+    label: &str,
+    accessible: &str,
+    bar_height: f32,
+    index: usize,
+    bounds: &mut [[f32; 4]; 3],
+    focused: &mut Option<usize>,
+) -> bool {
     let clicked = crate::widget_abi::button(ui, label, [CONTROL_WIDTH, bar_height]);
+    record_control(ui, index, bounds, focused);
     if ui.is_item_hovered() {
         ui.tooltip_text(accessible);
     }
@@ -73,4 +110,13 @@ fn bar_gesture(ui: &Ui, width: f32, bar_height: f32) -> Option<GuiWindowAction> 
         return Some(GuiWindowAction::Move);
     }
     None
+}
+
+fn record_control(ui: &Ui, index: usize, bounds: &mut [[f32; 4]; 3], focused: &mut Option<usize>) {
+    let min = ui.item_rect_min();
+    let max = ui.item_rect_max();
+    bounds[index] = [min[0], min[1], max[0], max[1]];
+    if ui.is_item_focused() {
+        *focused = Some(index);
+    }
 }

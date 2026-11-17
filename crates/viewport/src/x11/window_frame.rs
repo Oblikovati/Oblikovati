@@ -113,6 +113,28 @@ impl NativeWindow {
             }
         }
     }
+    pub fn window_screen_bounds(&self) -> Result<[i32; 4], String> {
+        let (connection, screen) = connection()?;
+        let window = self.window.native_handle() as u32;
+        let root = connection.setup().roots[screen].root;
+        let position = connection
+            .translate_coordinates(window, root, 0, 0)
+            .map_err(|error| error.to_string())?
+            .reply()
+            .map_err(|error| error.to_string())?;
+        let geometry = connection
+            .get_geometry(window)
+            .map_err(|error| error.to_string())?
+            .reply()
+            .map_err(|error| error.to_string())?;
+        let [x, y] = [i32::from(position.dst_x), i32::from(position.dst_y)];
+        Ok([
+            x,
+            y,
+            x + i32::from(geometry.width),
+            y + i32::from(geometry.height),
+        ])
+    }
     pub fn window_maximized(&self) -> Result<bool, String> {
         Ok(self.maximized.get())
     }
