@@ -355,3 +355,6 @@ mod blend_model_states;
 
 #[path = "part_scene/lazy_producer.rs"]
 mod lazy_producer;
+
+#[path = "part_scene/replay_ownership.rs"]
+mod replay_ownership;
