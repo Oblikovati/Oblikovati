@@ -102,9 +102,16 @@ fn preferences_choose_text_scale_without_changing_the_stored_icon_factor() {
     let mut owner = GuiFrameEngine::new().unwrap();
     let mut request = scale_request(1., 1.);
     settle(&mut owner, &mut request);
-    assert!(click(&mut owner, &mut request, [55., 10.]).is_empty());
-    assert!(click(&mut owner, &mut request, [100., 32.]).is_empty());
-    let actions = click(&mut owner, &mut request, [530., 474.]);
+    owner.preferences.request();
+    settle(&mut owner, &mut request);
+    let [minimum, maximum] = owner
+        .preferences
+        .scale_200_bounds
+        .expect("200% control must be drawn");
+    let point = std::array::from_fn(|axis| {
+        (minimum[axis] + maximum[axis]) * 0.5 * request.layout_scale()[axis]
+    });
+    let actions = click(&mut owner, &mut request, point);
     assert_eq!(
         actions,
         [GuiShellAction::SetUiScale(
