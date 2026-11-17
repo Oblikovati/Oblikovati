@@ -26,6 +26,7 @@ pub(super) struct NativeGui {
     focused: bool,
     mapped: bool,
     pointer: input::PointerOwnership,
+    last_capture: oblikovati_gui::GuiInputCapture,
     clipboard: Option<GuiClipboard>,
 }
 impl NativeGui {
@@ -155,6 +156,7 @@ impl NativeGui {
             focused: true,
             mapped: true,
             pointer: Default::default(),
+            last_capture: Default::default(),
             clipboard,
         }
     }
@@ -184,6 +186,7 @@ impl NativeGui {
         self.notice = notice.map(str::to_owned);
         self.last_frame = Some(now);
         self.activity = output.activity;
+        self.last_capture = output.capture;
         self.deadline = self
             .activity
             .needs_frame()
@@ -196,6 +199,30 @@ impl NativeGui {
             wake_after: self.wake_after(now),
             ..Default::default()
         })
+    }
+    pub(super) fn allows_ready_sketch_motion(&self, [x, y]: [i32; 2]) -> bool {
+        if !self.focused
+            || !self.mapped
+            || self.dirty
+            || self.activity.needs_frame()
+            || !self.pointer.idle()
+            || self.last_capture.pointer
+            || self.last_capture.popup
+            || self.last_capture.text
+            || self.last_capture.keyboard
+        {
+            return false;
+        }
+        let Some((_, Some([left, top, right, bottom]))) = self.document_area else {
+            return false;
+        };
+        let Ok(x) = u32::try_from(x) else {
+            return false;
+        };
+        let Ok(y) = u32::try_from(y) else {
+            return false;
+        };
+        (left..right).contains(&x) && (top..bottom).contains(&y)
     }
     pub(super) fn document_area(&self, extent: [u32; 2]) -> Result<[u32; 4], String> {
         let (observed, area) = self

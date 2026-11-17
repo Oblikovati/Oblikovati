@@ -47,6 +47,7 @@ pub struct NativeHeadWindow {
 mod open;
 mod scene_depth;
 mod scene_status;
+#[macro_use]
 #[path = "native/view_inputs.rs"]
 mod view_inputs;
 use view_inputs::validate_window_extent;
@@ -250,19 +251,7 @@ impl HeadWindow for NativeHeadWindow {
         self.refresh_title()?;
         Ok(true)
     }
-    fn process_view_input(&mut self, event: &ViewportEvent) -> Result<bool, String> {
-        self.apply_navigation_inputs(&[*event])
-    }
-    fn sketch_point(
-        &self,
-        pixel: [i32; 2],
-        plane: oblikovati_model::sketch::SketchPlane,
-    ) -> Result<Option<[f64; 2]>, String> {
-        NativeHeadWindow::sketch_point(self, pixel, plane)
-    }
-    fn navigation_active(&self) -> bool {
-        self.navigation.captures_pointer()
-    }
+    native_view_inputs!();
 
     fn sketch_pixels(
         &self,

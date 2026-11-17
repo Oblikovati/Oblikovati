@@ -75,3 +75,65 @@ fn report_frames(samples: &[Duration]) {
         ordered[119]
     );
 }
+
+#[test]
+#[ignore = "measure batched native Ready hover frames in an optimized build"]
+fn measure_ready_hover_motion_bursts() {
+    let mut world = super::dense_sketch_world();
+    world.pump(Vec::new());
+    let point = world.sketch_pixel_of([0., 0.]);
+    world.pump(vec![ViewportEvent::Input(ViewportInput::Motion {
+        position: [point[0], point[1] + 3],
+        modifiers: Default::default(),
+    })]);
+    let app = world.app();
+    let extent = app.window.native.drawable_extent().unwrap();
+    assert_eq!(extent, [1440, 900]);
+    eprintln!(
+        "ready_hover_burst device={} extent={extent:?}",
+        app.window.native.runtime.device_name()
+    );
+    let mut durations = Vec::new();
+    let mut delivered = Vec::new();
+    for frame in 0..40 {
+        app.window.passed.clear();
+        app.window.scripted = (0..16)
+            .map(|index| {
+                ViewportEvent::Input(ViewportInput::Motion {
+                    position: [point[0] + (index + frame) % 12, point[1] + 3],
+                    modifiers: Default::default(),
+                })
+            })
+            .collect();
+        let start = Instant::now();
+        let summary = crate::frames::run_frames(
+            &mut app.window,
+            crate::HeadOptions { frames: Some(1) },
+            &mut app.owner,
+        )
+        .unwrap();
+        assert_eq!(summary.completed, 1);
+        if frame >= 10 {
+            durations.push(start.elapsed());
+            delivered.push(app.window.passed.len());
+        }
+    }
+    let state = app.owner.gui_command_state().unwrap();
+    assert!(
+        state.sketch_at_ready,
+        "burst must leave the sketch at Ready"
+    );
+    assert!(
+        state.sketch_pick_cue.is_some(),
+        "burst must end over sketch geometry"
+    );
+    durations.sort();
+    eprintln!(
+        "ready_hover_burst events=16 n={} p50={:?} p95={:?} max={:?} delivered={delivered:?}",
+        durations.len(),
+        durations[15],
+        durations[28],
+        durations[29]
+    );
+    world.close();
+}

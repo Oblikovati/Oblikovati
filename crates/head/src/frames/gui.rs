@@ -5,6 +5,9 @@ use oblikovati_viewport::{ViewportInput, ViewportKey};
 use std::time::Duration;
 #[path = "gui_authoring.rs"]
 mod authoring;
+#[path = "gui_input.rs"]
+mod input;
+use input::{semantic_command_event, update_tool_candidate};
 #[path = "gui_dimension_labels.rs"]
 mod dimension_labels;
 /// GUI work joins the existing event and wake paths; lifecycle events remain owner-visible.
@@ -457,45 +460,6 @@ pub(super) fn dispatch_frame_input(
     changed |= synchronize_sketch_view(window, owner)?;
     changed |= update_tool_candidate(window, owner, event)?;
     Ok(changed)
-}
-fn update_tool_candidate(
-    window: &mut dyn HeadWindow,
-    owner: &mut dyn HeadWork,
-    event: &ViewportEvent,
-) -> Result<bool, String> {
-    let ViewportEvent::Input(ViewportInput::Motion { position, .. }) = event else {
-        return window.set_tool_feedback(None);
-    };
-    if window.navigation_active() {
-        return window.set_tool_feedback(None);
-    }
-    let candidate = match owner.sketch_tool_feedback(*position, window) {
-        Ok(candidate) => candidate,
-        Err(cause) => {
-            window.show_command_notice(crate::DesktopCommandNotice::SelectionFailed { cause })?;
-            window.set_tool_feedback(None)?;
-            return Ok(true);
-        }
-    };
-    // #4051: a pick uses the owner generation; its display must use that same sketch.
-    let updated = if candidate.is_some() {
-        super::publish_owner_sketches(window, owner)?
-    } else {
-        false
-    };
-    Ok(window.set_tool_feedback(candidate.as_ref())? || updated)
-}
-
-fn semantic_command_event(event: ViewportEvent) -> ViewportEvent {
-    let ViewportEvent::Input(ViewportInput::PhysicalKey {
-        command: Some(key),
-        pressed,
-        ..
-    }) = event
-    else {
-        return event;
-    };
-    ViewportEvent::Input(ViewportInput::Key { key, pressed })
 }
 pub(super) fn earliest_wake(left: Option<Duration>, right: Option<Duration>) -> Option<Duration> {
     left.into_iter().chain(right).min()

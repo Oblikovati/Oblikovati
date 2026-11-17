@@ -113,6 +113,9 @@ impl HeadWindow for ScriptedGuiWindow {
     fn navigation_active(&self) -> bool {
         self.native.navigation_active()
     }
+    fn allows_ready_sketch_motion(&self, pixel: [i32; 2]) -> bool {
+        self.native.allows_ready_sketch_motion(pixel)
+    }
     fn sketch_point(
         &self,
         pixel: [i32; 2],

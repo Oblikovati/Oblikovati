@@ -237,6 +237,12 @@ pub trait HeadWindow {
         false
     }
 
+    /// Permit discarding an unseen idle sketch motion at this physical pixel.
+    /// Example: `window.allows_ready_sketch_motion([400, 300])` rejects active gestures.
+    fn allows_ready_sketch_motion(&self, _pixel: [i32; 2]) -> bool {
+        false
+    }
+
     /// Project an analytic sketch witness for screen-space hit acceptance.
     /// Example: `window.sketch_pixel(plane, witness.position)?`.
     fn sketch_pixel(

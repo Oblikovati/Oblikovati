@@ -1,0 +1,33 @@
+{
+  "kind": "diagnostic_frame_burst",
+  "base_commit": "5a3ac4d4e",
+  "test_source_sha256": "40493cd6f66dbaf65ad4299f8530567d78bef43e0a45733a358aac87c283819a",
+  "lock_sha256": "b0695ff8c4df2279345908e21ebd90dbeadcaf4f2ab2dbda3d55c471daf245d9",
+  "device": "llvmpipe LLVM 20.1.2, 256 bits",
+  "extent": [
+    1440,
+    900
+  ],
+  "samples": 30,
+  "warmups": 10,
+  "events_per_frame": 16,
+  "delivered_events": 1,
+  "frame_ns": {
+    "p50": 46177171,
+    "p95": 51110528,
+    "max": 54825200
+  },
+  "command": "XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json tools/with-xvfb.sh cargo test --locked --release -p oblikovati-head --lib measure_ready_hover_motion_bursts -- --ignored --nocapture --test-threads=1",
+  "limits": "Scripted pointer events on a 200-segment sketch, using Xvfb and software Vulkan. Other workloads were active. Includes bounded frame-loop processing and capture; excludes OS event delivery and display scanout. Not proof of a production GPU frame rate. Background load varied between runs; the event count is the reliable comparison.",
+  "implementation_files_sha256": {
+    "crates/head/src/frames.rs": "24b2e90662014faab4a6a98cfed8c3343f1d666ea033f026a9b36d8b995f19aa",
+    "crates/head/src/frames/ready_motion.rs": "0fcf9c34c4186ea6c6fc387bfad221bbbaaf7799ed77b2a3a2919d0214db8ae0",
+    "crates/head/src/frames/gui.rs": "5fa8ef305eaf80ee0f8efab3ffc76116b11ddc4caab65c507889409c1ddb140d",
+    "crates/head/src/frames/gui_input.rs": "dc864c9cdddd6cdeecebe7b26a7c22cfa094f533c9b2f555dd150a8c3fd54288",
+    "crates/head/src/frames/window.rs": "e7ad69a63233b2a60eb9d013ef6bf8babe5ae7b180bd85343d542c15ae22085a",
+    "crates/head/src/native.rs": "d0733b4dc9494517b577084a80039c9bbe68b21e604126646e2d4627b66e8fd6",
+    "crates/head/src/native/gui_loop/input.rs": "8193f2db7f5852435417ee4f0c638e4c279cb7f942ae61bcafec9eafb9578ae7",
+    "crates/head/src/native/gui_loop/mod.rs": "3f28487ad04dd6130bca6e355536c063eba3b4b388197e3d002d0ffe574c8326",
+    "crates/head/src/native/view_inputs.rs": "8e9413a98f074d31ce4666e02c0ac14bbca95fc95230dbecfe3c982212fc5465"
+  }
+}

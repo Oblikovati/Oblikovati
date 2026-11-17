@@ -73,3 +73,29 @@ pub(super) fn validate_window_extent(extent: [u32; 2]) -> Result<(), String> {
     }
     Ok(())
 }
+
+// The trait methods share one native navigation owner.
+macro_rules! native_view_inputs {
+    () => {
+        fn process_view_input(&mut self, event: &ViewportEvent) -> Result<bool, String> {
+            self.apply_navigation_inputs(&[*event])
+        }
+        fn sketch_point(
+            &self,
+            pixel: [i32; 2],
+            plane: oblikovati_model::sketch::SketchPlane,
+        ) -> Result<Option<[f64; 2]>, String> {
+            NativeHeadWindow::sketch_point(self, pixel, plane)
+        }
+        fn navigation_active(&self) -> bool {
+            self.navigation.captures_pointer()
+        }
+        fn allows_ready_sketch_motion(&self, pixel: [i32; 2]) -> bool {
+            !self.navigation.captures_pointer()
+                && self
+                    .gui
+                    .as_ref()
+                    .is_some_and(|gui| gui.allows_ready_sketch_motion(pixel))
+        }
+    };
+}

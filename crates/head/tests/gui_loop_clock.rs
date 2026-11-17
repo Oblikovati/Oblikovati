@@ -209,3 +209,33 @@ fn parameter_view_issues_request_one_frame_and_valid_metadata_recovers() {
     gui_step_for_document(&mut gui, 10, 7);
     assert!(!gui.parameter_changed);
 }
+
+#[test]
+fn idle_sketch_motion_gate_rejects_pointer_and_gui_interactions() {
+    let mut gui = NativeGui::new(None).unwrap();
+    gui.document_area = Some(([640, 480], Some([100, 100, 600, 400])));
+    assert!(gui.allows_ready_sketch_motion([300, 200]));
+    assert!(!gui.allows_ready_sketch_motion([99, 200]));
+    let down = click_event(true);
+    gui.pointer.consumed(Some(&down), Default::default());
+    assert!(!gui.allows_ready_sketch_motion([300, 200]));
+    let up = click_event(false);
+    gui.pointer.consumed(Some(&up), Default::default());
+    gui.last_capture.popup = true;
+    assert!(!gui.allows_ready_sketch_motion([300, 200]));
+    gui.last_capture.popup = false;
+    gui.last_capture.pointer = true;
+    assert!(!gui.allows_ready_sketch_motion([300, 200]));
+    gui.last_capture.pointer = false;
+    gui.last_capture.keyboard = true;
+    assert!(!gui.allows_ready_sketch_motion([300, 200]));
+    gui.last_capture.keyboard = false;
+    gui.activity.pending_animation = true;
+    assert!(!gui.allows_ready_sketch_motion([300, 200]));
+    gui.activity.pending_animation = false;
+    gui.dirty = true;
+    assert!(!gui.allows_ready_sketch_motion([300, 200]));
+    gui.dirty = false;
+    gui.focused = false;
+    assert!(!gui.allows_ready_sketch_motion([300, 200]));
+}

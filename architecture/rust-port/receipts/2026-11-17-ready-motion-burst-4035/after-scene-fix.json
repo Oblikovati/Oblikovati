@@ -1,0 +1,22 @@
+{
+  "kind": "diagnostic_frame_burst",
+  "base_commit": "5a3ac4d4e",
+  "test_source_sha256": "40493cd6f66dbaf65ad4299f8530567d78bef43e0a45733a358aac87c283819a",
+  "lock_sha256": "b0695ff8c4df2279345908e21ebd90dbeadcaf4f2ab2dbda3d55c471daf245d9",
+  "device": "llvmpipe LLVM 20.1.2, 256 bits",
+  "extent": [
+    1440,
+    900
+  ],
+  "samples": 30,
+  "warmups": 10,
+  "events_per_frame": 16,
+  "delivered_events": 16,
+  "frame_ns": {
+    "p50": 116134035,
+    "p95": 153118487,
+    "max": 166933744
+  },
+  "command": "XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json tools/with-xvfb.sh cargo test --locked --release -p oblikovati-head --lib measure_ready_hover_motion_bursts -- --ignored --nocapture --test-threads=1",
+  "limits": "Scripted pointer events on a 200-segment sketch, using Xvfb and software Vulkan. Other workloads were active. Includes bounded frame-loop processing and capture; excludes OS event delivery and display scanout. Not proof of a production GPU frame rate. This run followed the sketch-scene ordering fix; background load varied, so do not treat the difference from the earlier run as caused by that fix."
+}

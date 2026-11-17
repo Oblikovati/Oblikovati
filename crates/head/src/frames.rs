@@ -12,6 +12,7 @@ pub struct HeadSummary {
     pub completed: u64,
 }
 mod gui;
+mod ready_motion;
 pub use gui::HeadGuiUpdate;
 mod window;
 pub use window::{HeadOrientationFitFrame, HeadWindow};
@@ -199,11 +200,20 @@ fn process_frame_inputs(
     let mut changed = owner.process_window_inputs(&[], window)?;
     changed |= synchronize_sketch_view(window, owner)?;
     changed |= gui::advance_gui(window, owner, None)?.changed;
-    for event in inputs {
-        if *event == ViewportEvent::CloseRequested {
+    let mut index = 0;
+    while index < inputs.len() {
+        let end = ready_motion::tail(inputs, index, |pixel| {
+            window.allows_ready_sketch_motion(pixel)
+        });
+        if end > index && ready_motion::owner_is_ready(owner)? {
+            index = end;
+        }
+        let event = inputs[index];
+        index += 1;
+        if event == ViewportEvent::CloseRequested {
             continue;
         }
-        let event = owner.resolve_shortcut(*event);
+        let event = owner.resolve_shortcut(event);
         let gui = gui::advance_gui(window, owner, Some(&event))?;
         let shortcut = owner.take_shortcut_action();
         let shortcut = match shortcut {

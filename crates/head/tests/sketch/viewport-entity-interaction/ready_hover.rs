@@ -129,3 +129,24 @@ fn native_ready_hover_after_external_line_creation_uses_current_sketch() {
     world.expect_edited_sketch_retained();
     world.close();
 }
+
+#[test]
+fn native_ready_hover_burst_ends_on_the_last_entity_without_selection() {
+    let mut world = ApplicationWorld::new();
+    world.start_empty_sketch();
+    super::add_isolated_line(&mut world);
+    world.pump(Vec::new());
+    world.remember_edited_sketch(Vec::new());
+    let point = world.sketch_pixel_of([-3., 1.]);
+    let line = world.sketch_pixel_of([0., 1.]);
+    super::super::super::x11_input::move_pointer([1100, 650]);
+    world.pump(Vec::new());
+    for pixel in [point, line, point, line] {
+        super::super::super::x11_input::move_pointer(pixel);
+    }
+    world.pump(Vec::new());
+    world.expect_text("1. Line (Sketch1)");
+    assert!(world.state().sketch_selection.entities.is_empty());
+    world.expect_edited_sketch_retained();
+    world.close();
+}

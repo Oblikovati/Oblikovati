@@ -10,6 +10,9 @@ pub(super) struct PointerOwnership {
     buttons: [Option<bool>; 3],
 }
 impl PointerOwnership {
+    pub(super) fn idle(&self) -> bool {
+        self.buttons.iter().all(Option::is_none)
+    }
     pub fn consumed(&mut self, event: Option<&ViewportEvent>, capture: GuiInputCapture) -> bool {
         match event {
             Some(ViewportEvent::Input(input)) => self.input(*input, capture),

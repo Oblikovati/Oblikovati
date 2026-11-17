@@ -172,6 +172,13 @@ Last checked: 2026-11-16 on `rust-work`. Refresh from current evidence at each c
   Measure scenario passes with mouse input; its unpinned fixture makes this
   diagnostic evidence. Sketch frame time still exceeds the 60 fps budget
   (#4032, #4035 and Martensite #501).
+- Ready-sketch pointer bursts now discard intermediate motion only when no
+  interaction owns the pointer (#4035). Native X11 checks cover hover and
+  selection; the diagnostic software-rendered run does not establish 60 fps.
+  A stale sketch scene after host edits was also fixed (#4051). Martensite
+  texture upload and readback work remains open (#510 and #501).
+- A selected named face can start a sketch and survive save/reopen (#4050).
+  Native X11 coverage exercises the part-menu path.
 - Authored work planes now display in part views (#3981). Viewport plane
   picking now supports sketch and offset-plane creation (#3984); assembly
   overlays and picking remain open. Visibility editing needs the

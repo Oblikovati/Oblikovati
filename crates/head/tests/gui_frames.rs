@@ -15,6 +15,8 @@ struct FakeGuiWindow {
     parameter_results: Vec<Result<(), String>>,
     parameter_view_decline: bool,
     parameter_issues: Vec<String>,
+    permit_idle_motion: bool,
+    pointer_down: bool,
 }
 #[test]
 fn physical_command_dispatch_reuses_the_semantic_command_path() {
@@ -83,11 +85,17 @@ impl HeadWindow for FakeGuiWindow {
 
     fn gui_frame(
         &mut self,
-        _: Option<&ViewportEvent>,
+        event: Option<&ViewportEvent>,
         state: &oblikovati_gui::GuiCommandState,
     ) -> Result<HeadGuiUpdate, String> {
+        if let Some(ViewportEvent::Input(ViewportInput::Button { pressed, .. })) = event {
+            self.pointer_down = *pressed;
+        }
         self.states.push(state.clone());
         Ok(self.packets.pop_front().unwrap_or_default())
+    }
+    fn allows_ready_sketch_motion(&self, _: [i32; 2]) -> bool {
+        self.permit_idle_motion && !self.pointer_down
     }
     fn previous_view(&mut self) -> Result<bool, String> {
         self.previous_views += 1;
@@ -161,6 +169,8 @@ struct FakeGuiOwner {
     accept_cube_actions: bool,
     parameter_failure: bool,
     parameter_view_failure: bool,
+    ready_sketch: bool,
+    transaction_open: bool,
 }
 impl HeadWork for FakeGuiOwner {
     fn create_part_document(&mut self) -> Result<bool, String> {
@@ -218,6 +228,16 @@ impl HeadWork for FakeGuiOwner {
     fn gui_command_state(&self) -> Result<oblikovati_gui::GuiCommandState, String> {
         Ok(oblikovati_gui::GuiCommandState {
             undo_label: Some("Dimension".into()),
+            authoring: if self.ready_sketch {
+                oblikovati_gui::GuiAuthoringContext::Sketch
+            } else {
+                Default::default()
+            },
+            active_sketch: self
+                .ready_sketch
+                .then_some(oblikovati_model::document_sketch::DocumentSketchId(1)),
+            sketch_at_ready: self.ready_sketch,
+            transaction_open: self.transaction_open,
             ..Default::default()
         })
     }
@@ -460,3 +480,6 @@ mod parameter;
 
 #[path = "gui_frames/sketch_scene_order.rs"]
 mod sketch_scene_order;
+
+#[path = "gui_frames/ready_motion.rs"]
+mod ready_motion;
