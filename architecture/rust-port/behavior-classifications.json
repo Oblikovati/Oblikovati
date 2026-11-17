@@ -15790,10 +15790,10 @@
       "go_test_premise": "Go aa8297d1b: TestNewPartCommandSwitchesRibbon and TestNewAssemblyCreatesActiveAssemblyDocument pass for document activation; neither checks template selection or chooser input. See receipts/2026-11-14-go-creation-baseline/README.md.",
       "kernel_capabilities": "No solid modeling operation is needed to select a template or create an empty document.",
       "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
-      "kernel_integration": "The native viewport is initialized for a part; the chooser does not request solid geometry.",
+      "kernel_integration": "The template chooser does not request solid geometry; native viewport behavior needs separate scenario evidence.",
       "rust_tests": "application_scenarios_use_the_native_window: Create a standard metric part",
-      "oracle": "Pinned scenario assertions and reviewed final native capture; Go chooser or visual parity is not established.",
-      "expected_result": "its viewport contains no visible model geometry; its model browser displays an origin and an end-of-part marker; a new document tab is visible",
+      "oracle": "Pinned scenario assertions and a current reviewed native capture are required; Go chooser and visual parity are not established.",
+      "expected_result": "A new part becomes active; its viewport has no visible model geometry, its browser shows origin and end-of-part entries, and a new document tab is visible.",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
@@ -15801,7 +15801,8 @@
           "sha256": "2f9e8b03a2be93d998eb8be9e9fc24e60ad8dd60b640045e1f7c014be1f6cf66"
         }
       ],
-      "reason": "The source permits this scenario only on the capture host with its named installed template data; this environment is not attested as that host."
+      "reason": "The source permits this scenario only on the capture host with its named installed template data; this environment is not attested as that host.",
+      "baseline_source_sha256": "c6211904fc75d1a044949a77a5e1cd089522b4e8951d9ab2e66c2fa72da223a3"
     },
     {
       "id": "scenario:553cd20756fa5ed6dc28cddeb27d3958f8b24976d8bd372475258fc6198af26f",
@@ -16227,9 +16228,9 @@
       "go_test_premise": "Go aa8297d1b: TestNewPartCommandSwitchesRibbon and TestNewAssemblyCreatesActiveAssemblyDocument pass for document activation; neither checks template selection or chooser input. See receipts/2026-11-14-go-creation-baseline/README.md.",
       "kernel_capabilities": "No solid modeling operation is needed to select a template or create an empty document.",
       "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
-      "kernel_integration": "The native viewport is initialized for a part; the chooser does not request solid geometry.",
+      "kernel_integration": "The template chooser does not request solid geometry; native viewport behavior needs separate scenario evidence.",
       "rust_tests": "application_scenarios_use_the_native_window: Create a part by double-clicking its template",
-      "oracle": "Pinned scenario assertions and reviewed final native capture; Go chooser or visual parity is not established.",
+      "oracle": "Pinned scenario assertions and a current reviewed native capture are required; Go chooser and visual parity are not established.",
       "expected_result": "its viewport contains no visible model geometry; its model browser displays an origin and an end-of-part marker; a new document tab is visible",
       "historical_receipts": [
         {
@@ -16238,7 +16239,8 @@
           "sha256": "9655cb023d8d24dffaa9fbc239a03a1f98bbb7c9ad189e9e8832f57452367820"
         }
       ],
-      "reason": "The source permits this scenario only on the capture host with its named installed template data; this environment is not attested as that host."
+      "reason": "The source permits this scenario only on the capture host with its named installed template data; this environment is not attested as that host.",
+      "baseline_source_sha256": "c6211904fc75d1a044949a77a5e1cd089522b4e8951d9ab2e66c2fa72da223a3"
     },
     {
       "id": "scenario:dc7e3e064afa2b62b9b98b143df9d7a730e275b9c56cd41ff50da2ca000cd5dc",
@@ -16261,9 +16263,9 @@
       "go_test_premise": "Go aa8297d1b: TestNewPartCommandSwitchesRibbon and TestNewAssemblyCreatesActiveAssemblyDocument pass for document activation; neither checks template selection or chooser input. See receipts/2026-11-14-go-creation-baseline/README.md.",
       "kernel_capabilities": "No solid modeling operation is needed to select a template or create an empty document.",
       "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
-      "kernel_integration": "The native viewport is initialized for a part; the chooser does not request solid geometry.",
+      "kernel_integration": "The template chooser does not request solid geometry; native viewport behavior needs separate scenario evidence.",
       "rust_tests": "application_scenarios_use_the_native_window: Create a selected part template with Enter",
-      "oracle": "Pinned scenario assertions and reviewed final native capture; Go chooser or visual parity is not established.",
+      "oracle": "Pinned scenario assertions and a current reviewed native capture are required; Go chooser and visual parity are not established.",
       "expected_result": "a new empty part document becomes active; its model browser displays an origin and an end-of-part marker; a new document tab is visible",
       "historical_receipts": [
         {
@@ -16272,7 +16274,8 @@
           "sha256": "189296e7b77541fabefcb2136bb11739a706b0981da5d24ff030468789859b04"
         }
       ],
-      "reason": "The source permits this scenario only on the capture host with its named installed template data; this environment is not attested as that host."
+      "reason": "The source permits this scenario only on the capture host with its named installed template data; this environment is not attested as that host.",
+      "baseline_source_sha256": "c6211904fc75d1a044949a77a5e1cd089522b4e8951d9ab2e66c2fa72da223a3"
     },
     {
       "id": "scenario:b0ddf0f8554f8f266954a7babeb0d9d1a3ebc30a85527dac55cb26a5094ea434",
@@ -16367,9 +16370,9 @@
       "go_test_premise": "Go aa8297d1b: TestNewPartCommandSwitchesRibbon and TestNewAssemblyCreatesActiveAssemblyDocument pass for document activation; neither checks template selection or chooser input. See receipts/2026-11-14-go-creation-baseline/README.md.",
       "kernel_capabilities": "No solid modeling operation is needed to select a template or create an empty document.",
       "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
-      "kernel_integration": "The native viewport is initialized for a part; the chooser does not request solid geometry.",
+      "kernel_integration": "The template chooser does not request solid geometry; native viewport behavior needs separate scenario evidence.",
       "rust_tests": "application_scenarios_use_the_native_window: Create a part after navigating to an empty template root",
-      "oracle": "Pinned scenario assertions and reviewed final native capture; Go chooser or visual parity is not established.",
+      "oracle": "Pinned scenario assertions and a current reviewed native capture are required; Go chooser and visual parity are not established.",
       "expected_result": "a new empty part document becomes active; its model browser displays an origin and an end-of-part marker; a new document tab is visible",
       "historical_receipts": [
         {
@@ -16378,7 +16381,8 @@
           "sha256": "3365a147a3525aba2bb174d87b7c9e64a12e5a33e3968ec53cc74dadc610fa94"
         }
       ],
-      "reason": "The source permits this scenario only on the capture host with its named installed template data; this environment is not attested as that host."
+      "reason": "The source permits this scenario only on the capture host with its named installed template data; this environment is not attested as that host.",
+      "baseline_source_sha256": "c6211904fc75d1a044949a77a5e1cd089522b4e8951d9ab2e66c2fa72da223a3"
     },
     {
       "id": "scenario:7264ec55b1fa3380faef248d62a15b4e41a66720fd3b4e35f5fc8717f34ef8ef",
@@ -16419,9 +16423,9 @@
       "go_test_premise": "Go aa8297d1b: TestNewPartCommandSwitchesRibbon and TestNewAssemblyCreatesActiveAssemblyDocument pass for document activation; neither checks template selection or chooser input. See receipts/2026-11-14-go-creation-baseline/README.md.",
       "kernel_capabilities": "No solid modeling operation is needed to select a template or create an empty document.",
       "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
-      "kernel_integration": "The native viewport is initialized for a part; the chooser does not request solid geometry.",
+      "kernel_integration": "The template chooser does not request solid geometry; native viewport behavior needs separate scenario evidence.",
       "rust_tests": "application_scenarios_use_the_native_window: Create the retained template after changing folders",
-      "oracle": "Pinned scenario assertions and reviewed final native capture; Go chooser or visual parity is not established.",
+      "oracle": "Pinned scenario assertions and a current reviewed native capture are required; Go chooser and visual parity are not established.",
       "expected_result": "a new empty assembly document becomes active; its browser displays representations, relationships and origin entries; a new document tab is visible",
       "historical_receipts": [
         {
@@ -16430,7 +16434,8 @@
           "sha256": "40b82fc8f825d235138bf24e82c19583b3903ffa8134373ae48898831f832af7"
         }
       ],
-      "reason": "The source permits this scenario only on the capture host with its named installed template data; this environment is not attested as that host."
+      "reason": "The source permits this scenario only on the capture host with its named installed template data; this environment is not attested as that host.",
+      "baseline_source_sha256": "c6211904fc75d1a044949a77a5e1cd089522b4e8951d9ab2e66c2fa72da223a3"
     },
     {
       "id": "scenario:731f45c80f92de839fa7b927c425e0d095bbfd766f09db37f70973f4276582d8",
