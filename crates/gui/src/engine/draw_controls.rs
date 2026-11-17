@@ -180,8 +180,26 @@ impl GuiFrameEngine {
                     &mut selected,
                 );
             }
+            let mut menu_actions = Vec::new();
             self.part_context_open =
-                crate::part_context_menu::canvas_menu(ui, &request.commands, &mut selected);
+                crate::part_context_menu::canvas_menu(ui, &request.commands, &mut menu_actions);
+            for action in &mut menu_actions {
+                if *action == GuiShellAction::OpenExtrude {
+                    *action = crate::extrude_dialog::start_action(&request.commands);
+                }
+            }
+            if !menu_actions.is_empty() {
+                apply_quick_access(
+                    &mut self.quick_access,
+                    &mut self.document_files,
+                    (&mut self.plane_selection, &mut self.workspace),
+                    &mut self.extrude_dialog,
+                    (&mut self.material_browser, &mut self.appearance_browser),
+                    (&mut self.parameter_editor, &request.commands),
+                    &mut menu_actions,
+                );
+                selected.extend(menu_actions);
+            }
         } else {
             self.part_context_open = false;
         }

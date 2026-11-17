@@ -14,3 +14,7 @@ customization and collision checks apply to the same action as for the other
 shortcuts. On restore, a saved assignment keeps its chord and a conflicting new
 default is disabled. This also admits saved single-letter chords from older
 versions, while new edits retain the existing chord validation rules.
+
+The configured Part marking menu routes `Create.Extrude` through the same
+plane-selection or dialog path as the ribbon (#4049). The native pointer
+regressions cover an empty part and a part with a finished sketch.
