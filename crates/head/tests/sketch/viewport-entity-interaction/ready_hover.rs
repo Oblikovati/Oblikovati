@@ -87,9 +87,19 @@ fn ready_hover_is_retired_when_the_sketch_is_undone() {
         .transactions()
         .undo()
         .unwrap();
+    // The pointer event arrives before the next frame publishes the undo.
+    super::super::super::x11_input::move_pointer(world.sketch_pixel_of([0.5, 1.]));
     world.pump(Vec::new());
     assert!(world.state().sketch_pick_cue.is_none());
     assert!(world.edited_geometry().lines().is_empty());
+    oblikovati_api::client::Client::new(world.app().owner.document_host())
+        .transactions()
+        .redo()
+        .unwrap();
+    super::super::super::x11_input::move_pointer(world.sketch_pixel_of([0., 1.]));
+    world.pump(Vec::new());
+    world.expect_text("1. Line (Sketch1)");
+    assert!(world.state().sketch_selection.entities.is_empty());
     world.close();
 }
 

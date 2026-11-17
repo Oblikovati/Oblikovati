@@ -177,7 +177,8 @@ Last checked: 2026-11-16 on `rust-work`. Refresh from current evidence at each c
 - Ready-sketch pointer bursts now discard intermediate motion only when no
   interaction owns the pointer (#4035). Native X11 checks cover hover and
   selection; the diagnostic software-rendered run does not establish 60 fps.
-  A stale sketch scene after host edits was also fixed (#4051). Martensite
+  A stale sketch scene after host edits was also fixed (#4051); native X11
+  checks cover pointer motion before scene publication after undo and redo. Martensite
   texture upload and readback work remains open (#510 and #501).
 - Dimension label points now use checked same-plane projection batches (#4035).
   A 200-label software-rendered projection diagnostic measured 13.61 ms
