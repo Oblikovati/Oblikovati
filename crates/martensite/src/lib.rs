@@ -103,7 +103,7 @@ pub use prism::{
     BlendCandidate, BlendHistoryRecord, BlendNamedTopology, BodyPresentationSource,
     CertifiedNamedPrismEvaluator, CertifiedNamedSolidEvaluator, CertifiedPrismEvidence,
     CertifiedPrismSnapshot, DrawingBaseProjection, DrawingProjectedCurve, DrawingProjection,
-    DrawingProjectionCurveKind, DrawingProjectionFrame, FaceProbe, NamedEdgeHit,
+    DrawingProjectionCurveKind, DrawingProjectionFrame, FaceProbe, NamedEdgeHit, NamedFaceMesh,
     NamedPrismEvaluator, NamedPrismSnapshot, NamedSolid, PlanarProfileLoop, PrismAchievedTolerance,
     PrismFaceMesh, PrismFaceProbe, PrismFaceRole, PrismFaceTopology, PrismHistoryRelation,
     PrismHistorySource, PrismMeshOptions, PrismPresentation, PrismPresentationSource,

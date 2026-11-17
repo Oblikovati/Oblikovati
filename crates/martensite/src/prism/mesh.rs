@@ -154,15 +154,27 @@ pub(super) fn named_face_boundaries(
     faces: &[Shape],
     options: PrismMeshOptions,
 ) -> Result<Vec<[[f64; 3]; 2]>, String> {
+    Ok(named_face_triangles(body, faces, options, false)?
+        .iter()
+        .flat_map(|triangles| boundary_segments(triangles))
+        .collect())
+}
+
+pub(super) fn named_face_triangles(
+    body: &Shape,
+    faces: &[Shape],
+    options: PrismMeshOptions,
+    complete: bool,
+) -> Result<Vec<Vec<[[f64; 3]; 3]>>, String> {
     validate_options(options)?;
-    let mut copier = crate::checked_shape::copy_shape(body, "face outline")
+    let mut copier = crate::checked_shape::copy_shape(body, "named face display")
         .map_err(|cause| cause.to_string())?;
     let mut copied = Vec::new();
     for face in faces {
         let mapped = copier.modified(face).map_err(|cause| cause.to_string())?;
         if mapped.len() != 1 {
             return Err(format!(
-                "face outline copies {}: expected one face",
+                "named face copies {}: expected one face",
                 mapped.len()
             ));
         }
@@ -171,10 +183,24 @@ pub(super) fn named_face_boundaries(
     let shape = copier.shape().map_err(|cause| cause.to_string())?.clone();
     mesh_shape(&shape, options)?;
     let body_faces = snapshot::BodyFaceIndex::new(&shape)?;
+    if complete && faces.len() != body_faces.count() {
+        return Err(format!(
+            "named display faces {}, body faces {}: expected one name per face",
+            faces.len(),
+            body_faces.count()
+        ));
+    }
+    let mut indices = std::collections::BTreeSet::new();
     let mut result = Vec::new();
     for face in copied {
         let face = body_faces.resolve(&face)?;
-        result.extend(boundary_segments(&face_triangles(&face, "face outline")?));
+        let index = body_faces.index(&face);
+        if !indices.insert(index) {
+            return Err(format!(
+                "named display face {index}: expected a unique face identity"
+            ));
+        }
+        result.push(face_triangles(&face, "named display face")?);
     }
     Ok(result)
 }

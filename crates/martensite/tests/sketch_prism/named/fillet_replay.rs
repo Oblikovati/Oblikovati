@@ -138,6 +138,32 @@ fn assert_fillet_replay(history: &DocumentEditHistory, size: f64) {
         );
     }
     let keys = result.face_reference_keys(history, document()).unwrap();
+    let meshes = result
+        .named_face_meshes(
+            history,
+            document(),
+            oblikovati_martensite::PrismMeshOptions {
+                chord_error: 0.01,
+                angular_error: 0.2,
+            },
+        )
+        .unwrap();
+    assert_eq!(
+        meshes
+            .iter()
+            .map(|mesh| mesh.key.clone())
+            .collect::<Vec<_>>(),
+        keys
+    );
+    for mesh in &meshes {
+        let area: f64 = mesh.triangles.iter().map(super::triangle_area).sum();
+        let analytic = result.face_area(history, document(), &mesh.key).unwrap();
+        assert!(
+            (area - analytic).abs() <= analytic * 0.02,
+            "named face {:?}: display area {area}, analytic {analytic}",
+            mesh.key
+        );
+    }
     let mut plane_count = 0;
     let mut curved_count = 0;
     for key in &keys {

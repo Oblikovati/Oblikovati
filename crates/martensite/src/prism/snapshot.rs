@@ -299,6 +299,13 @@ impl BodyFaceIndex {
         Ok(Self(index))
     }
 
+    pub(super) fn count(&self) -> usize {
+        self.0.extent()
+    }
+    pub(super) fn index(&self, lineage: &Shape) -> usize {
+        self.0.find_index(lineage)
+    }
+
     pub(super) fn resolve(&self, lineage: &Shape) -> Result<Shape, String> {
         let index = self.0.find_index(lineage);
         if index == 0 {

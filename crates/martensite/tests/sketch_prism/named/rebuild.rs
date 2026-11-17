@@ -301,3 +301,54 @@ fn certified_replay_keeps_named_faces_through_undo_redo_and_reopen() {
 
 #[path = "rebuild_projection.rs"]
 mod projection;
+
+#[test]
+fn named_prism_display_mesh_covers_each_analytic_face_once() {
+    let history = owner(cube_document());
+    let mut evaluator = oblikovati_martensite::CertifiedNamedSolidEvaluator::new(
+        &history,
+        document(),
+        certified_resolution(),
+    );
+    let replay = history
+        .snapshot()
+        .evaluate_part_features(&mut evaluator)
+        .unwrap();
+    let solid = replay.body(FeatureId(1)).unwrap();
+    let options = oblikovati_martensite::PrismMeshOptions {
+        chord_error: 0.01,
+        angular_error: 0.2,
+    };
+    let meshes = solid
+        .named_face_meshes(&history, document(), options)
+        .unwrap();
+    let keys = solid.face_reference_keys(&history, document()).unwrap();
+    assert_eq!(meshes.len(), 6);
+    assert_eq!(
+        meshes
+            .iter()
+            .map(|mesh| mesh.key.clone())
+            .collect::<Vec<_>>(),
+        keys
+    );
+    for mesh in meshes {
+        let area: f64 = mesh.triangles.iter().map(triangle_area).sum();
+        let exact = solid.face_area(&history, document(), &mesh.key).unwrap();
+        assert!(
+            (area - exact).abs() < 1e-10,
+            "mesh face {:?}: area {area}, analytic {exact}",
+            mesh.key
+        );
+    }
+}
+
+fn triangle_area([a, b, c]: &[[f64; 3]; 3]) -> f64 {
+    let u = std::array::from_fn::<_, 3, _>(|i| b[i] - a[i]);
+    let v = std::array::from_fn::<_, 3, _>(|i| c[i] - a[i]);
+    let cross = [
+        u[1] * v[2] - u[2] * v[1],
+        u[2] * v[0] - u[0] * v[2],
+        u[0] * v[1] - u[1] * v[0],
+    ];
+    cross[0].hypot(cross[1]).hypot(cross[2]) / 2.
+}
