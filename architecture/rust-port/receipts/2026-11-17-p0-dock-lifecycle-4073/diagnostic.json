@@ -1,0 +1,11 @@
+{
+  "application_commit": "1ee988bda",
+  "source_feature_sha256_before": "139cea92a16ace53d22a47ba7839233d1000cbefc2ce2e51500844926651a3d0",
+  "source_feature_sha256_after": "139cea92a16ace53d22a47ba7839233d1000cbefc2ce2e51500844926651a3d0",
+  "source_revision": null,
+  "result": "8 scenarios and 65 steps passed; 2 capture-only scenarios excluded",
+  "input": "Mixed X11 XTest and scripted viewport events; step-level paths not captured",
+  "environment": "Linux Xvfb with Mesa Lavapipe",
+  "provenance": "Diagnostic against a copied unversioned source; not pinned acceptance evidence",
+  "limitations": "Projects pointer docking, File Properties native docking, and full saved-layout restart for modal children remain unverified; GUI integration failures are tracked in #4078."
+}
