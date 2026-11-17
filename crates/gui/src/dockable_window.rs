@@ -16,6 +16,14 @@ pub(crate) trait DockableWindow {
         let origin = std::array::from_fn(|axis| (display[axis] - size[axis]) * 0.5);
         Self::fit_dockable(ui, title, origin, size);
     }
+    /// Notify the docking system when window content requests closure (#4072).
+    /// Example: `Self::close_dockable(ui, "Tool", requested)`.
+    fn close_dockable(ui: &Ui, title: &str, requested: bool) {
+        if !requested {
+            return;
+        }
+        crate::widget_abi::close_dock_tab(ui, title);
+    }
     fn dockable_window<'ui, 'open, Label: AsRef<str>>(
         ui: &'ui Ui,
         title: Label,

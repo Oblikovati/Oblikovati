@@ -146,3 +146,83 @@ fn previous_inner_dock_settings_restore_after_reparenting() {
     assert_eq!(viewport(&mut world), [361, 158, 1061, 852]);
     world.close();
 }
+
+#[test]
+fn browser_closed_from_its_contents_returns_to_shared_dock() {
+    let mut world = ApplicationWorld::new();
+    super::browser_feature::open_visible_extruded_part(&mut world);
+    let initial = viewport(&mut world);
+    open_toolbar_tool(&mut world, "Appearance Browser");
+    let (position, size) = window_geometry("Appearance Browser").unwrap();
+    let start = [
+        (position[0] + size[0] * 0.4) as i32,
+        (position[1] + 10.) as i32,
+    ];
+    let target = [
+        initial[2] as i32 - 15,
+        ((initial[1] + initial[3]) / 2) as i32,
+    ];
+    native_drag(&mut world, start, target);
+    open_toolbar_tool(&mut world, "Material Browser");
+    let (source, source_size) = window_geometry("Material Browser").unwrap();
+    let (destination, destination_size) = window_geometry("Appearance Browser").unwrap();
+    let start = [
+        (source[0] + source_size[0] * 0.4) as i32,
+        (source[1] + 10.) as i32,
+    ];
+    let target = [
+        (destination[0] + destination_size[0] * 0.5) as i32,
+        (destination[1] + 10.) as i32,
+    ];
+    native_drag(&mut world, start, target);
+    let node = super::super::diagnostics::window_dock_id("Appearance Browser").unwrap();
+    assert_ne!(node, 0);
+    assert_eq!(
+        super::super::diagnostics::window_dock_id("Material Browser"),
+        Some(node)
+    );
+    select_dock_tab(&mut world, "Material Browser");
+    world.run_in_window("Material Browser", "Assigntopart");
+    select_dock_tab(&mut world, "Appearance Browser");
+    let close = world.run_in_window("Appearance Browser", "Close").center();
+    super::super::x11_input::click(super::super::diagnostics::pointer_pixels(close));
+    world.pump(Vec::new());
+    assert!(window_geometry("Appearance Browser").is_none());
+    world.pump(Vec::new());
+    world.pump(Vec::new());
+    world.save_capture("material-after-appearance-close");
+    assert_eq!(
+        super::super::diagnostics::window_dock_tab_visible("Material Browser"),
+        Some(true)
+    );
+    world.run_in_window("Material Browser", "Assigntopart");
+    native_click_label(&mut world, "View");
+    native_click_label(&mut world, "User Interface");
+    native_click_label(&mut world, "Appearance Browser");
+    world.pump(Vec::new());
+    assert_eq!(
+        super::super::diagnostics::window_dock_id("Appearance Browser"),
+        Some(node)
+    );
+    select_dock_tab(&mut world, "Appearance Browser");
+    world.run_in_window("Appearance Browser", "Assigntopart");
+    world.save_capture("appearance-restored-to-shared-dock");
+    world.close();
+}
+
+fn select_dock_tab(world: &mut ApplicationWorld, title: &str) {
+    let (min, max) = super::super::diagnostics::window_dock_tab_bounds(title).unwrap();
+    let center = [(min[0] + max[0]) * 0.5, (min[1] + max[1]) * 0.5];
+    super::super::x11_input::click(super::super::diagnostics::pointer_pixels(center));
+    world.pump(Vec::new());
+    assert_eq!(
+        super::super::diagnostics::window_dock_tab_visible(title),
+        Some(true)
+    );
+}
+
+fn native_click_label(world: &mut ApplicationWorld, label: &str) {
+    let center = world.run(label).center();
+    super::super::x11_input::click(super::super::diagnostics::pointer_pixels(center));
+    world.pump(Vec::new());
+}

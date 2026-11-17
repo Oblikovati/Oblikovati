@@ -64,6 +64,7 @@ impl MaterialBrowser {
         );
         Self::dockable_window(ui, title, &mut open)
             .build(|| close_requested = self.content(ui, state, actions));
+        Self::close_dockable(ui, title, close_requested);
         self.open = open && !close_requested;
     }
     fn sync_document(&mut self, state: &GuiCommandState) {

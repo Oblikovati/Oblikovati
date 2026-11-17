@@ -295,3 +295,11 @@ pub(crate) fn icon_button(_: &Ui, label: &str, presentation: IconButtonPresentat
         )
     }
 }
+
+/// Notify ImGui of a programmatic dock tab closure (#4072).
+/// Example: `close_dock_tab(ui, "Tool")` after the tool closes.
+pub(crate) fn close_dock_tab(_ui: &Ui, title: &str) {
+    let title = std::ffi::CString::new(title)
+        .unwrap_or_else(|_| panic!("dockable window title {title:?} must be NUL-free"));
+    unsafe { imgui::sys::igSetTabItemClosed(title.as_ptr()) };
+}
