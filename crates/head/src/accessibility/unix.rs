@@ -25,6 +25,8 @@ pub(crate) struct UnixFrameAccessibility {
     adapter: accesskit_unix::Adapter,
     snapshot: Arc<Mutex<Option<FrameSemantics>>>,
     requests: Receiver<FrameControl>,
+    bounds: Option<accesskit::Rect>,
+    focused: Option<bool>,
 }
 impl UnixFrameAccessibility {
     pub fn new(wake: impl Fn() + Send + 'static) -> Self {
@@ -39,11 +41,19 @@ impl UnixFrameAccessibility {
             adapter,
             snapshot,
             requests,
+            bounds: None,
+            focused: None,
         }
     }
     pub fn update(&mut self, semantics: FrameSemantics, bounds: accesskit::Rect, focused: bool) {
-        self.adapter.set_root_window_bounds(bounds, bounds);
-        self.adapter.update_window_focus_state(focused);
+        if self.bounds != Some(bounds) {
+            self.adapter.set_root_window_bounds(bounds, bounds);
+            self.bounds = Some(bounds);
+        }
+        if self.focused != Some(focused) {
+            self.adapter.update_window_focus_state(focused);
+            self.focused = Some(focused);
+        }
         if let Ok(mut snapshot) = self.snapshot.lock() {
             if snapshot.as_ref() == Some(&semantics) {
                 return;
