@@ -167,9 +167,12 @@ fn draw_document_tab(ui: &Ui, tab: &TabRow<'_>, selected: bool) -> bool {
 }
 fn draw_literal_tab_label(ui: &Ui, label: &str) {
     let minimum = ui.item_rect_min();
+    // The tab body can extend past the strip clip and cut off descenders (#3889).
+    let bottom = crate::widget_abi::window_draw_clip_bottom(ui);
+    let label_y = (minimum[1] + 3.).min(bottom - ui.current_font_size());
     crate::widget_abi::literal_text(
         ui,
-        [minimum[0] + 8., minimum[1] + 3.],
+        [minimum[0] + 8., label_y],
         ui.style_color(imgui::StyleColor::Text),
         label,
     );
