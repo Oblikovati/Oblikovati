@@ -204,3 +204,106 @@ fn checkpoint_handles_end_of_part_truncation_without_running_the_kernel() {
             .is_err()
     );
 }
+
+fn replace_radius(
+    snapshot: &mut DocumentSnapshot,
+    feature: u64,
+    source: u64,
+    edge: &str,
+    radius: f64,
+) {
+    let definition = FilletDefinition::new(
+        key(source, 4, "body"),
+        vec![key(2, 2, edge)],
+        DatumLength::Constant(radius),
+    )
+    .unwrap();
+    let reads = definition.reads();
+    snapshot
+        .work_geometry
+        .replace(
+            FeatureId(feature),
+            PartFeatureDefinition::Fillet(Box::new(definition)),
+            reads,
+        )
+        .unwrap();
+}
+
+#[test]
+fn replayed_checkpoints_support_successive_edits_without_rebuilding_the_prism() {
+    let mut source = document();
+    add_fillet(&mut source, 3, 2);
+    add_fillet_edge(&mut source, 4, 3, "other-edge");
+    let original = source
+        .evaluate_part_with_checkpoints(&mut CountingBackend::default())
+        .unwrap();
+    let mut first = source.clone();
+    replace_radius(&mut first, 3, 2, "edge", 0.5);
+    let mut backend = CountingBackend::default();
+    let first_checkpoints = original
+        .replay_with_checkpoints(&first, &mut backend, || false)
+        .unwrap();
+    assert_eq!((backend.prisms, backend.blends), (0, 2));
+    let mut second = first.clone();
+    replace_radius(&mut second, 4, 3, "other-edge", 0.25);
+    let mut backend = CountingBackend::default();
+    let second_checkpoints = first_checkpoints
+        .replay_with_checkpoints(&second, &mut backend, || false)
+        .unwrap();
+    assert_eq!((backend.prisms, backend.blends), (0, 1));
+    let full = second
+        .evaluate_part_features(&mut CountingBackend::default())
+        .unwrap();
+    assert_eq!(second_checkpoints.result().health(), full.health());
+    let actual = second_checkpoints.result().body(FeatureId(4)).unwrap();
+    let expected = full.body(FeatureId(4)).unwrap();
+    assert_eq!(actual.keys, expected.keys);
+    assert_eq!(actual.deleted, expected.deleted);
+    assert_eq!(actual.radius, expected.radius);
+    assert!(original.result().body(FeatureId(4)).is_some());
+}
+
+#[test]
+fn cancelled_checkpoint_suffix_does_not_replace_the_source() {
+    let mut source = document();
+    add_fillet(&mut source, 3, 2);
+    let checkpoints = source
+        .evaluate_part_with_checkpoints(&mut CountingBackend::default())
+        .unwrap();
+    let mut candidate = source.clone();
+    replace_radius(&mut candidate, 3, 2, "edge", 0.5);
+    let mut backend = CountingBackend::default();
+    assert!(
+        checkpoints
+            .replay_with_checkpoints(&candidate, &mut backend, || true)
+            .is_err()
+    );
+    assert_eq!((backend.prisms, backend.blends), (0, 0));
+    assert!(checkpoints.result().body(FeatureId(3)).is_some());
+}
+
+#[test]
+fn replayed_checkpoints_truncate_at_end_of_part_and_can_resume_again() {
+    let mut source = document();
+    add_fillet(&mut source, 3, 2);
+    let original = source
+        .evaluate_part_with_checkpoints(&mut CountingBackend::default())
+        .unwrap();
+    let mut truncated = source.clone();
+    truncated.work_geometry.set_end_of_part(Some(2)).unwrap();
+    let mut backend = CountingBackend::default();
+    let cutoff = original
+        .replay_with_checkpoints(&truncated, &mut backend, || false)
+        .unwrap();
+    assert_eq!((backend.prisms, backend.blends), (0, 0));
+    assert_eq!(cutoff.len(), 3);
+    assert!(cutoff.result().body(FeatureId(2)).is_some());
+    truncated.work_geometry.set_end_of_part(None).unwrap();
+    let mut backend = CountingBackend::default();
+    let resumed = cutoff
+        .replay_with_checkpoints(&truncated, &mut backend, || false)
+        .unwrap();
+    assert_eq!((backend.prisms, backend.blends), (0, 1));
+    assert!(resumed.result().body(FeatureId(3)).is_some());
+    assert_eq!(original.result().health(), resumed.result().health());
+}

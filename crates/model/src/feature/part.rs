@@ -25,6 +25,7 @@ pub use evaluate::{
 mod prefix_replay;
 mod reads;
 pub use prefix_replay::BorrowedPartReplay;
+mod checkpoint_suffix;
 mod replay_boundary;
 mod replay_observer;
 pub use super::work_plane::{
