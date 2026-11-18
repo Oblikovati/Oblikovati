@@ -1,0 +1,8 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.12s
+     Running unittests src/lib.rs (target/debug/deps/oblikovati_head-4bede7ecd41b9dee)
+
+running 1 test
+test native::gui_loop_tests::native_new_part_button_creates_and_selects_an_unsaved_document ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1319 filtered out; finished in 39.31s
+
