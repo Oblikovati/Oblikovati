@@ -77,3 +77,92 @@ fn rejects_missing_duplicate_and_nonfinite_geometry() {
         assert!(result.is_err());
     }
 }
+
+#[test]
+fn document_owns_spatial_ids_and_rejects_planar_collisions() {
+    use oblikovati_model::{
+        document_sketch::DocumentSketches,
+        sketch::{Sketch2D, SketchPlane},
+    };
+    let mut owner = DocumentSketches::default();
+    let spatial = SpatialSketch::new(
+        DocumentSketchId(4),
+        Some("3D Sketch1".into()),
+        vec![point(7, [0.; 3]), point(8, [1.; 3])],
+        vec![line(9, 7, 8)],
+    )
+    .unwrap();
+    owner.add_spatial(spatial.clone()).unwrap();
+    assert_eq!(owner.sketch_ids(), vec![4]);
+    assert_eq!(owner.entity_ids(), vec![7, 8, 9]);
+    assert!(owner.add_spatial(spatial.clone()).is_err());
+    assert!(
+        owner
+            .add(
+                DocumentSketchId(4),
+                "duplicate",
+                SketchPlane::xy(),
+                Sketch2D::default()
+            )
+            .is_err()
+    );
+    let mut planar = Sketch2D::default();
+    planar.add_point(SketchEntityId(7), [0., 0.]).unwrap();
+    assert!(
+        owner
+            .add(DocumentSketchId(5), "collision", SketchPlane::xy(), planar)
+            .is_err()
+    );
+    let saved = owner.recipe();
+    assert_eq!(saved.version, 14);
+    assert!(owner.same_recipe(&DocumentSketches::from_recipe(&saved).unwrap()));
+    let mut old = saved.clone();
+    old.version = 13;
+    assert!(DocumentSketches::from_recipe(&old).is_err());
+    assert_eq!(owner.remove_spatial(DocumentSketchId(4)).unwrap(), spatial);
+    assert!(!owner.same_recipe(&DocumentSketches::from_recipe(&saved).unwrap()));
+}
+
+#[test]
+fn spatial_insertion_rejects_planar_id_and_entity_collisions() {
+    use oblikovati_model::{
+        document_sketch::DocumentSketches,
+        sketch::{Sketch2D, SketchPlane},
+    };
+    let mut owner = DocumentSketches::default();
+    let mut planar = Sketch2D::default();
+    planar.add_point(SketchEntityId(7), [0., 0.]).unwrap();
+    owner
+        .add(DocumentSketchId(4), "planar", SketchPlane::xy(), planar)
+        .unwrap();
+    for sketch in [
+        SpatialSketch::new(DocumentSketchId(4), None, vec![], vec![]).unwrap(),
+        SpatialSketch::new(DocumentSketchId(5), None, vec![point(7, [0.; 3])], vec![]).unwrap(),
+    ] {
+        assert!(owner.add_spatial(sketch).is_err());
+    }
+    assert!(owner.spatial_sketches().is_empty());
+}
+
+#[test]
+fn recipe_validation_rejects_bad_references_and_tracks_coordinate_bits() {
+    use oblikovati_model::document_sketch::DocumentSketches;
+    let mut owner = DocumentSketches::default();
+    owner
+        .add_spatial(
+            SpatialSketch::new(
+                DocumentSketchId(1),
+                None,
+                vec![point(2, [0., 0., 0.])],
+                vec![],
+            )
+            .unwrap(),
+        )
+        .unwrap();
+    let mut recipe = owner.recipe();
+    recipe.spatial_sketches[0].points[0].position[0] = -0.0;
+    let changed = DocumentSketches::from_recipe(&recipe).unwrap();
+    assert!(!owner.same_recipe(&changed));
+    recipe.spatial_sketches[0].lines.push(line(3, 2, 99));
+    assert!(DocumentSketches::from_recipe(&recipe).is_err());
+}
