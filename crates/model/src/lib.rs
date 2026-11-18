@@ -31,6 +31,7 @@ pub mod named_view;
 
 pub mod document_sketch;
 pub mod sketch;
+pub mod spatial_sketch;
 
 pub mod sketch_settings;
 

@@ -44,7 +44,9 @@ using this status; the live scenario directory can change.
 - Corliss 0.1.0 now reads point and line records from the Inventor fixture's
   two populated 3D sketches, with names and endpoint identities. This is a
   read-only prerequisite, not native document opening or viewport support;
-  see `implementation-inventor-spatial.md` (#4092).
+  see `implementation-inventor-spatial.md` (#4092). A validated model now
+  retains the recognized points and lines with shared endpoint identities.
+  Corliss solid conversion is requested in [Martensite #545](https://github.com/Oblikovati/Martensite/issues/545).
 - The ledger reports **0 verified of 2,760** declarations at local snapshot
   `b576445b98cffd686dcc05aa8c017de2a591c8c8`. This is not an upstream scenario
   commit. Run `python3 -B tools/bdd/behavior_cli.py report` for current counts.
