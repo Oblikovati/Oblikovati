@@ -110,6 +110,7 @@
     "cucumber_sha256": "188730e1491cb9f89b2b7daf41d77d511b68580450970da79a2bb86c99562d13",
     "application_commit": "8ddc1d98aecd0d375a443139e7057383dd5add5f",
     "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=file-menu XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
-    "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted window input; no assembly document opened"
+    "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted window input; no assembly document opened",
+    "notes": "A separate native X11 mouse and keyboard test opens the File menu, dismisses it with Escape and an outside click, and checks the active part."
   }
 }
