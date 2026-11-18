@@ -35,6 +35,9 @@ impl DatumAngle {
         }
         Ok(())
     }
+    pub(crate) fn source(self) -> DatumLength {
+        self.0
+    }
     /// Attribute the stable angular driver; example: `angle.parameter_id()` for the read graph.
     pub fn parameter_id(self) -> Option<u64> {
         self.0.parameter()

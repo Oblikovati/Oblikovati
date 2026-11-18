@@ -1,58 +1,17 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{
-    PartFeatureDefinition, PartFeatureProgramError,
+    PartFeatureDefinition, PartFeatureEvaluator, PartFeatureProgramError,
     body_resolution::{resolve_body_face, resolve_body_slot},
 };
 use crate::{
     feature::{
         FeatureHealthRecord, FeatureId, FeatureReplayController, FeatureReplayRange,
-        sketch_prism::{ResolvedSketchPrism, SketchPrismError},
+        sketch_prism::SketchPrismError,
         work_geometry::{WorkGeometryError, WorkGeometryEvaluation},
     },
     history::DocumentSnapshot,
 };
 use std::{borrow::Cow, collections::BTreeMap};
-/// The model resolves current source inputs; the injected adapter owns kernel construction and validation.
-pub trait PartFeatureEvaluator {
-    type Body;
-    type Failure;
-    /// Verify the complete body name before a body-set edit; example: `backend.verify_body_reference(body, key)?`.
-    fn verify_body_reference(&self, body: &Self::Body, key: &[u8]) -> Result<(), String>;
-    /// Resolve a current named planar face; example: `backend.resolve_planar_face(body, key)?`.
-    fn resolve_planar_face(
-        &self,
-        body: &Self::Body,
-        key: &[u8],
-    ) -> Result<crate::sketch::SketchPlane, String>;
-    /// Construct and validate one blend or return a named decline.
-    /// Example: `backend.evaluate_blend(kind, feature, body, edges, distance)`.
-    fn evaluate_blend(
-        &mut self,
-        kind: PartBlendKind,
-        feature: FeatureId,
-        body: &Self::Body,
-        edges: &[Vec<u8>],
-        distance: f64,
-    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>>;
-    /// Construct a named straight bore; example: `backend.evaluate_hole(id, body, face, input)`.
-    fn evaluate_hole(
-        &mut self,
-        _feature: FeatureId,
-        _body: &Self::Body,
-        _face: &[u8],
-        _input: crate::feature::hole::ResolvedHole,
-    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
-        Err(PartFeatureFailure::Unsupported(
-            "hole: expected an available named-face evaluator".into(),
-        ))
-    }
-    /// Construct an isolated result from checked inputs; example: `backend.evaluate_prism(feature.id(), input)?`.
-    fn evaluate_prism(
-        &mut self,
-        feature: FeatureId,
-        input: ResolvedSketchPrism<'_>,
-    ) -> Result<Self::Body, Self::Failure>;
-}
 /// Decline a named-face query when a diagnostic evaluator cannot resolve it.
 /// Example: `unavailable_planar_face(&key)` reports the offending key.
 pub fn unavailable_planar_face(key: &[u8]) -> String {
@@ -87,6 +46,7 @@ pub enum PartFeatureFailure<Failure> {
     FilletInput(String),
     ChamferInput(String),
     HoleInput(String),
+    MoveBodyInput(String),
     Unsupported(String),
 }
 /// Derived results from a fresh replay. This does not implement the complete extrude operation or a prefix cache.
@@ -380,6 +340,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
                 | PartFeatureDefinition::Fillet(_)
                 | PartFeatureDefinition::Chamfer(_)
                 | PartFeatureDefinition::Hole(_)
+                | PartFeatureDefinition::MoveBody(_)
         ) {
             feature
                 .validate_plane_metadata()
@@ -397,6 +358,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             }
             PartFeatureDefinition::Chamfer(definition) => {
                 self.evaluate_chamfer(snapshot, backend, id, definition)
+            }
+            PartFeatureDefinition::MoveBody(definition) => {
+                self.evaluate_move_body(snapshot, backend, id, definition)
             }
             PartFeatureDefinition::Hole(definition) => {
                 self.evaluate_hole(snapshot, backend, id, definition)

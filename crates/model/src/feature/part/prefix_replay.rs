@@ -55,6 +55,16 @@ where
             .evaluate_blend(kind, feature, body.get(), edges, distance)
             .map(PrefixBody::Created)
     }
+    fn evaluate_move_body(
+        &mut self,
+        feature: FeatureId,
+        body: &Self::Body,
+        motions: &[crate::feature::move_body::ResolvedBodyMotion],
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_move_body(feature, body.get(), motions)
+            .map(PrefixBody::Created)
+    }
     fn evaluate_hole(
         &mut self,
         feature: FeatureId,

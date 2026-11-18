@@ -112,6 +112,17 @@ fn malformed_sources_axes_and_dimensions_are_refused() {
     )
     .unwrap();
     assert!(wrong_angle.resolve(&inputs()).is_err());
+    assert!(
+        MoveBodyDefinition::new(
+            key(4),
+            vec![MoveBodyOperation::Rotation {
+                origin: point([0.; 3]),
+                direction: [1., 0., 0.],
+                angle: DatumAngle::parameter(0),
+            }],
+        )
+        .is_err()
+    );
 }
 #[test]
 fn extreme_directions_and_exact_recipe_comparison_are_stable() {
@@ -141,4 +152,35 @@ fn extreme_directions_and_exact_recipe_comparison_are_stable() {
     )
     .unwrap();
     assert!(!a.same_recipe(&b));
+}
+
+#[test]
+fn recipe_round_trips_ordered_scalar_sources_and_rejects_new_versions() {
+    let definition = MoveBodyDefinition::new(
+        key(4),
+        vec![
+            MoveBodyOperation::Translation([
+                DatumLength::Parameter(1),
+                DatumLength::Constant(-0.),
+                DatumLength::Constant(2.),
+            ]),
+            MoveBodyOperation::AlongRay {
+                direction: [1., 2., 3.],
+                distance: DatumLength::Parameter(1),
+            },
+            MoveBodyOperation::Rotation {
+                origin: point([0.; 3]),
+                direction: [0., 0., 1.],
+                angle: DatumAngle::parameter(2),
+            },
+        ],
+    )
+    .unwrap();
+    let encoded = serde_json::to_vec(&definition.recipe()).unwrap();
+    let recipe = serde_json::from_slice(&encoded).unwrap();
+    let restored = MoveBodyDefinition::from_recipe(recipe).unwrap();
+    assert!(definition.same_recipe(&restored));
+    let mut unsupported = definition.recipe();
+    unsupported.version = 2;
+    assert!(MoveBodyDefinition::from_recipe(unsupported).is_err());
 }

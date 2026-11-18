@@ -86,6 +86,7 @@ fn status_reason(
         | FeatureEvaluationStatus::Failed(PartFeatureFailure::FilletInput(cause))
         | FeatureEvaluationStatus::Failed(PartFeatureFailure::ChamferInput(cause))
         | FeatureEvaluationStatus::Failed(PartFeatureFailure::HoleInput(cause))
+        | FeatureEvaluationStatus::Failed(PartFeatureFailure::MoveBodyInput(cause))
         | FeatureEvaluationStatus::Failed(PartFeatureFailure::Unsupported(cause)) => cause.clone(),
         FeatureEvaluationStatus::ConditionFailed(cause) => cause.to_string(),
         FeatureEvaluationStatus::Blocked { drivers } => {

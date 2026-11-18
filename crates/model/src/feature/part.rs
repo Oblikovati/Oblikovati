@@ -14,15 +14,18 @@ mod body_lineage;
 mod body_resolution;
 mod checkpoints;
 mod hole_evaluation;
+mod move_body_evaluation;
 pub use checkpoints::{CheckpointedPart, PartReplayCheckpoints};
 mod delete;
 mod error;
 pub use delete::DeleteBodyDefinition;
 mod evaluate;
+mod evaluator;
 pub use evaluate::{
-    PartBlendKind, PartFeatureEvaluation, PartFeatureEvaluator, PartFeatureFailure, RecomputedPart,
+    PartBlendKind, PartFeatureEvaluation, PartFeatureFailure, RecomputedPart,
     unavailable_planar_face,
 };
+pub use evaluator::PartFeatureEvaluator;
 mod prefix_replay;
 mod reads;
 mod resolver;
@@ -45,6 +48,7 @@ pub enum PartFeatureDefinition {
     Chamfer(Box<super::chamfer::ChamferDefinition>),
     Fillet(Box<super::fillet::FilletDefinition>),
     Hole(Box<super::hole::HoleDefinition>),
+    MoveBody(Box<super::move_body::MoveBodyDefinition>),
     SketchPrism(Box<super::sketch_prism::SketchPrismDefinition>),
     Fixed(SketchPlane),
     Offset {
@@ -71,6 +75,7 @@ impl PartFeatureDefinition {
             Self::Chamfer(_) => "chamfer",
             Self::Fillet(_) => "fillet",
             Self::Hole(_) => "hole",
+            Self::MoveBody(_) => "move-body",
             Self::Axis(_) | Self::AxisThroughPoints(_) => "work-axis",
             Self::Point(_) | Self::PointAtReference(_) => "work-point",
             _ => "work-plane",

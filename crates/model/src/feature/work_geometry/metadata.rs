@@ -10,6 +10,7 @@ impl AuthoredFeature<WorkGeometryDefinition> {
                     | WorkGeometryDefinition::Fillet(_)
                     | WorkGeometryDefinition::Chamfer(_)
                     | WorkGeometryDefinition::Hole(_)
+                    | WorkGeometryDefinition::MoveBody(_)
             )
         {
             return Err(WorkGeometryError::Kind(super::WorkGeometryKindMismatch {

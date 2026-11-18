@@ -7,6 +7,7 @@ use super::{
 };
 use crate::parameter::ParameterCollection;
 mod operation;
+mod serde_operations;
 use operation::{parameters, resolve, validate};
 
 /// A body motion retains its named source and ordered drivers.
@@ -15,6 +16,15 @@ pub struct MoveBodyDefinition {
     body: Vec<u8>,
     body_source: FeatureId,
     operations: Vec<MoveBodyOperation>,
+}
+/// Versioned motion inputs stored without evaluated geometry.
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct MoveBodyRecipe {
+    pub version: u32,
+    pub body: Vec<u8>,
+    #[serde(with = "serde_operations")]
+    pub operations: Vec<MoveBodyOperation>,
 }
 /// One authored motion in document order.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -55,6 +65,24 @@ impl MoveBodyDefinition {
             body_source,
             operations,
         })
+    }
+    /// Restore a validated recipe; example: `MoveBodyDefinition::from_recipe(recipe)?`.
+    pub fn from_recipe(recipe: MoveBodyRecipe) -> Result<Self, String> {
+        if recipe.version != 1 {
+            return Err(format!(
+                "move body recipe version {}: expected version 1",
+                recipe.version
+            ));
+        }
+        Self::new(recipe.body, recipe.operations)
+    }
+    /// Capture authored inputs; example: `motion.recipe()` before save.
+    pub fn recipe(&self) -> MoveBodyRecipe {
+        MoveBodyRecipe {
+            version: 1,
+            body: self.body.clone(),
+            operations: self.operations.clone(),
+        }
     }
     /// Inspect the exact input name; example: `motion.body()` before replay.
     pub fn body(&self) -> &[u8] {
