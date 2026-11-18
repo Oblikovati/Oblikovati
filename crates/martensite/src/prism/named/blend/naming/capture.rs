@@ -3,6 +3,8 @@
 use super::*;
 
 pub(in crate::prism::named) struct CapturedBlendTopology {
+    resolution: Option<PrismResolution>,
+    achieved_tolerance: Option<PrismAchievedTolerance>,
     live: Vec<Vec<u8>>,
     deleted: Vec<Vec<u8>>,
     entries: Vec<(Vec<u8>, Shape)>,
@@ -35,6 +37,8 @@ impl CapturedBlendTopology {
             }
         }
         Ok(BlendNamedTopology {
+            resolution: self.resolution,
+            achieved_tolerance: self.achieved_tolerance,
             live: self.live,
             deleted: self.deleted,
             bindings,
@@ -52,6 +56,8 @@ impl BlendNamedTopology {
         document: DocumentGuid,
     ) -> Result<CapturedBlendTopology, String> {
         Ok(CapturedBlendTopology {
+            resolution: self.resolution,
+            achieved_tolerance: self.achieved_tolerance,
             live: self.live.clone(),
             deleted: self.deleted.clone(),
             entries: self.bindings.capture_entries(history, document)?,

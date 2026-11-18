@@ -42,6 +42,7 @@ impl NamedPrismSnapshot {
 /// Measured tolerance and authored point identities retained with a certified replay.
 #[derive(Clone, Debug, PartialEq)]
 pub struct CertifiedPrismEvidence {
+    pub resolution: PrismResolution,
     pub achieved_tolerance: PrismAchievedTolerance,
     pub subentities: PrismSubentityHistory,
     pub vertex_sources: std::collections::BTreeMap<u64, Vec<u64>>,

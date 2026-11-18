@@ -283,7 +283,7 @@ fn named_fillet_result_accepts_another_edge_and_keeps_deleted_history() {
     }) {
         assert!(names.contains(&history, document(), body_key, 4).unwrap());
     }
-    let solid = oblikovati_martensite::NamedSolid::Fillet(Box::new(names));
+    let solid = oblikovati_martensite::NamedSolid::Derived(Box::new(names));
     let hits = solid
         .edge_hits_on_segment(&history, document(), [[0.5, -1., -1.], [0.5, 2., 2.]])
         .unwrap();

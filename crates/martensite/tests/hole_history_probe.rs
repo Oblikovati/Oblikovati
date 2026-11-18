@@ -184,3 +184,25 @@ fn blind_hole_at_the_placement_face_has_valid_analytic_geometry() {
         &[pi, 10. * pi, 100. - pi, 100., 100., 100., 100., 100.],
     );
 }
+
+#[test]
+fn through_hole_with_both_caps_on_the_body_is_valid() {
+    let (_, _, cut) = cylindrical_cut(0., 10.);
+    assert!(cut.is_done() && !cut.has_errors());
+    let result = cut.shape();
+    assert!(
+        BRepCheckAnalyzer::new(result, true, false, true)
+            .unwrap()
+            .is_valid()
+            .unwrap()
+    );
+    let mut volume = GProps::new();
+    BRepGProp::volume_properties(result, &mut volume, true, false, false).unwrap();
+    let expected = 1000. - 10. * std::f64::consts::PI;
+    assert!(
+        (volume.mass() - expected).abs() < 1e-6,
+        "volume {}: expected {expected}",
+        volume.mass()
+    );
+    assert_eq!(shapes(result, ShapeEnum::Face).len(), 7);
+}

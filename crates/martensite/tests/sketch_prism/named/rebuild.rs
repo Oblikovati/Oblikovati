@@ -212,6 +212,8 @@ fn subentity_keys(history: &DocumentEditHistory) -> Vec<Vec<u8>> {
 
 #[path = "fillet_replay.rs"]
 mod fillet_replay;
+#[path = "rebuild/hole_replay.rs"]
+mod hole_replay;
 
 #[test]
 fn one_size_parameter_drives_certified_cube_replay_and_saved_names() {
