@@ -154,14 +154,32 @@ impl<Body, Failure> PartEvaluationSlot<Body, Failure> {
     pub fn latest(&self) -> Option<PartEvaluationView<'_, Body, Failure>> {
         self.published.as_ref().map(|published| PartEvaluationView {
             document: published.document,
-            generation: published.scope.generation(),
-            is_current: !published.scope.is_superseded(),
+            generation: published.scope().generation(),
+            is_current: !published.scope().is_superseded(),
             evaluation: &published.evaluation,
         })
     }
     /// Retire retained outputs on their owner thread; example: `slot.clear()` before closing its viewport.
     pub fn clear(&mut self) {
         self.published = None;
+    }
+    /// Find changes since this owner's retained recipe, without authorizing reuse.
+    /// Example: `slot.replay_change(&session)?` reports a possible dirty tail.
+    pub fn replay_change<O: TransactionObserver>(
+        &self,
+        session: &DocumentSession<O>,
+    ) -> Result<Option<oblikovati_model::feature::FeatureReplayRange>, PartEvaluationError> {
+        let published = self
+            .published
+            .as_ref()
+            .ok_or(PartEvaluationError::Unavailable {
+                document: session.document,
+            })?;
+        published.validate_owner(session)?;
+        Ok(published
+            .snapshot
+            .snapshot()
+            .part_replay_change(session.snapshot()))
     }
 }
 impl<O: TransactionObserver> DocumentSession<O> {
