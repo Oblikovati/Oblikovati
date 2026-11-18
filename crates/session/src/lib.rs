@@ -75,7 +75,7 @@ struct BoundedGroup {
 
 /// One document owner; observers can inspect snapshots but cannot mutate this owner.
 pub struct DocumentSession<O> {
-    part_replay: Option<part_replay_store::DocumentPartReplay>,
+    part_replay: Vec<part_replay_store::DocumentPartReplay>,
     pending_sketch_navigation: Option<sketch_edit_navigation::SketchEditNavigation>,
     document: u64,
     browser_selection: selection::SelectionSet<selection::BrowserSketchPick>,
@@ -113,7 +113,7 @@ impl<O: TransactionObserver> DocumentSession<O> {
         sketch_options: oblikovati_solve::nonlinear::SolveOptions,
     ) -> Self {
         Self {
-            part_replay: None,
+            part_replay: Vec::new(),
             pending_sketch_navigation: None,
             document,
             browser_selection: Default::default(),
