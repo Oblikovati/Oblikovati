@@ -54,6 +54,9 @@ impl PanelExpansions {
         }
         self.titles_visible = Some(visible);
     }
+    pub(super) fn close_one(&mut self, tab: RibbonTab, panel: RibbonPanel) {
+        self.open.remove(&(tab, panel));
+    }
     pub(super) fn close_unpinned(&mut self) {
         self.open.retain(|_, item| item.pinned);
     }

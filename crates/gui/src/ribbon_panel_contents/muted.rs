@@ -18,11 +18,11 @@ pub(super) fn muted_commands(
 pub(super) fn part_modify_controls(
     ui: &Ui,
     origin: [f32; 2],
-    icons: &crate::icons::GuiRibbonIcons,
-    hole_tip: bool,
     state: &crate::GuiCommandState,
     actions: &mut Vec<crate::GuiShellAction>,
+    owners: &mut crate::ribbon_panels::RibbonPanelOwners<'_>,
 ) {
+    let icons = owners.icons;
     use crate::icons::IconGlyph;
     let size = muted_command_position(ui, origin, icons, 0);
     let action = crate::GuiShellAction::OpenHole;
@@ -31,7 +31,7 @@ pub(super) fn part_modify_controls(
         actions.push(action);
     }
     drop(disabled);
-    if hole_tip {
+    if owners.hole_tip {
         crate::ribbon_key_tips::badge(ui, "HO");
     }
     let size = muted_command_position(ui, origin, icons, 1);
@@ -48,6 +48,18 @@ pub(super) fn part_modify_controls(
         actions.push(action);
     }
     drop(disabled);
+    if crate::move_body_ribbon::is_main(owners.customization) {
+        let size = muted_command_position(ui, origin, icons, 3);
+        crate::move_body_ribbon::main_button(
+            ui,
+            size,
+            state,
+            actions,
+            icons,
+            owners.customization,
+            owners.quick_access,
+        );
+    }
 }
 pub(super) fn muted_icon_commands(
     ui: &Ui,

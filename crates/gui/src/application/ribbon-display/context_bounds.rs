@@ -19,6 +19,38 @@ impl RibbonDisplayState {
         self.request_expansion_context(tab, panel);
         self.context_command = Some(command);
     }
+    pub(crate) fn take_context_relocated(&mut self) -> Option<(RibbonTab, RibbonPanel)> {
+        self.context_relocated.take()
+    }
+    pub(super) fn expanded_command_menu(
+        &mut self,
+        ui: &Ui,
+        customization: &mut crate::application::ribbon_customization::RibbonCustomization,
+        (state, toolbar): (
+            &crate::GuiCommandState,
+            &mut crate::application::quick_access_toolbar::QuickAccessToolbar,
+        ),
+    ) {
+        if self.context_command != Some(crate::move_body_ribbon::LABEL) {
+            muted_context_item(ui, "Add to Quick Access Toolbar");
+            muted_context_item(ui, "Move to Main Panel");
+            return;
+        }
+        let label = crate::move_body_ribbon::LABEL;
+        if ui
+            .menu_item_config("Add to Quick Access Toolbar")
+            .enabled(!toolbar.has_ribbon_command(state, label))
+            .build()
+        {
+            toolbar.add_ribbon_command(state, label);
+        }
+        if ui.menu_item("Move to Main Panel") {
+            match crate::move_body_ribbon::set_main(customization, true) {
+                Ok(()) => self.context_relocated = self.context_expansion,
+                Err(error) => customization.report_command_error(error),
+            }
+        }
+    }
     pub(crate) fn expansion_context_escape(
         &self,
         ui: &Ui,
@@ -67,4 +99,11 @@ fn window_bounds(ui: &Ui) -> [[f32; 2]; 2] {
     let position = ui.window_pos();
     let size = ui.window_size();
     [position, [position[0] + size[0], position[1] + size[1]]]
+}
+
+fn muted_context_item(ui: &Ui, label: &str) {
+    ui.menu_item_config(label).enabled(false).build();
+    if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
+        ui.tooltip_text("This command is not available in this build.");
+    }
 }
