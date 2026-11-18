@@ -17,6 +17,20 @@ pub struct BlendNamedTopology {
 }
 
 impl BlendNamedTopology {
+    pub(in crate::prism::named) fn capture_current(
+        &self,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+    ) -> Result<Self, String> {
+        Ok(Self {
+            live: self.live.clone(),
+            deleted: self.deleted.clone(),
+            bindings: self.bindings.clone_current(history, document)?,
+            active_body: self.active_body.clone(),
+            primary_body: self.primary_body.clone(),
+            shape: self.shape.clone(),
+        })
+    }
     pub(in crate::prism::named) fn native_edge<'a>(
         &'a self,
         history: &'a DocumentEditHistory,

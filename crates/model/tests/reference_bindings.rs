@@ -40,6 +40,30 @@ fn bindings(owner: &DocumentEditHistory) -> ExactReferenceBindings<&'static str>
     )
     .unwrap()
 }
+
+#[test]
+fn cloned_binding_index_keeps_the_same_document_and_generation_guard() {
+    let mut owner = history();
+    let index = bindings(&owner);
+    let copy = index.clone_current(&owner, document()).unwrap();
+    assert_eq!(
+        *copy
+            .bind(&owner, document(), &key(2, 1, b"cap"), 1)
+            .unwrap(),
+        "face"
+    );
+    assert!(index.clone_current(&history(), document()).is_err());
+    let foreign: DocumentGuid = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee".parse().unwrap();
+    assert!(index.clone_current(&owner, foreign).is_err());
+    owner
+        .refresh(|snapshot| snapshot.parameters.set_expression(3, "3 cm"))
+        .unwrap();
+    assert!(index.clone_current(&owner, document()).is_err());
+    assert!(
+        copy.bind(&owner, document(), &key(2, 1, b"cap"), 1)
+            .is_err()
+    );
+}
 #[test]
 fn derived_names_bind_only_in_their_own_document() {
     use oblikovati_model::identity::{DerivedReferenceName, SemanticReferenceName};

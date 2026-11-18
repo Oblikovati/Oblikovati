@@ -47,6 +47,9 @@ using this status; the live scenario directory can change.
 - A retained candidate can capture independent bodies while current and verify
   its accepted generation transition and inputs. It does not yet transfer names
   or publish geometry (#4079).
+- Martensite can capture prism, Fillet, and Chamfer bodies with their exact
+  name bindings while the source is current. Captures keep the original
+  generation guard and become stale after an edit (#4079).
 - A newly appended feature may add parameters without dirtying an unchanged
   prefix when no earlier feature reads them. Other parameter changes remain
   conservative (#4079).

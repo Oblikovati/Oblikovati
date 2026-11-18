@@ -13,6 +13,25 @@ pub struct ExactReferenceBindings<Entity> {
     entries: BTreeMap<Vec<u8>, Entity>,
 }
 impl<Entity> ExactReferenceBindings<Entity> {
+    /// Copy an index while retaining its current generation and document guard.
+    /// Example: `bindings.clone_current(&history, document)?` before a transaction.
+    pub fn clone_current(
+        &self,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+    ) -> Result<Self, String>
+    where
+        Entity: Clone,
+    {
+        self.require_owner(history, document)?;
+        let entries = self.entries.clone();
+        self.require_owner(history, document)?;
+        Ok(Self {
+            document: self.document,
+            scope: self.scope.clone(),
+            entries,
+        })
+    }
     /// Admit names and entities together; duplicate names refuse the entire index.
     /// Example: `ExactReferenceBindings::from_entries(document, job.scope().clone(), entries)?`.
     pub fn from_entries(

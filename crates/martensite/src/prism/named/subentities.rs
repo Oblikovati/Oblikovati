@@ -6,6 +6,7 @@ use martensite_tkgeombase::gprop::GProps;
 use martensite_tktopalgo::brep_gprop::BRepGProp;
 use oblikovati_model::identity::{ReferenceEnvelope, SemanticReferenceName};
 
+#[derive(Clone)]
 pub(super) struct BoundSubentity {
     provenance: PrismSubentityProvenance,
     pub(super) shape: Shape,
