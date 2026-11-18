@@ -171,6 +171,6 @@
     "application_commit": "ad879407f7b46b9a34456890533f8a70850c322e",
     "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=viewport-orientation XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
     "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted window input",
-    "notes": "The rotated-front image is from the initial failing diagnostic; the full passing run uses the corrected draw-data collector."
+    "notes": "The rotated-front image is from the initial failing diagnostic; the full passing run uses the corrected draw-data collector. A separate native X11 pointer test rotates and restores Front, checking the label, camera and active part."
   }
 }

@@ -17,6 +17,8 @@ mod behaviour;
 #[path = "compass_observation.rs"]
 mod compass_observation;
 pub(super) use behaviour::whole_block_visible;
+#[path = "native_input.rs"]
+mod native_input;
 #[path = "option_rows.rs"]
 mod option_rows;
 #[path = "selection_pivot_regression.rs"]
