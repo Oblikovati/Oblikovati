@@ -14,7 +14,7 @@ pub use named::{
     CertifiedNamedSolidEvaluator, CertifiedPrismEvidence, DrawingBaseProjection,
     DrawingProjectedCurve, DrawingProjection, DrawingProjectionCurveKind, DrawingProjectionFrame,
     NamedEdgeHit, NamedFaceMesh, NamedPrismSnapshot, NamedSolid, PrismFaceTopology,
-    PrismSurfaceKind, complete_named_candidate, complete_named_checkpoints,
+    PrismSurfaceKind, RigidMotion, complete_named_candidate, complete_named_checkpoints,
     drawing_base_view_bodies, drawing_base_view_solids, drawing_projection_bodies,
     drawing_projection_solids, named_part_properties, named_solid_part_properties,
     retain_certified_named_sketch_prism, retain_named_sketch_prism,
