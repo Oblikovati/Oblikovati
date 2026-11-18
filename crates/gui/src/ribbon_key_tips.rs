@@ -17,6 +17,7 @@ pub(crate) struct RibbonKeyTips {
     expected_text: Option<char>,
     command_tab: Option<RibbonTab>,
     tools_face_mode: bool,
+    defer_pointer: bool,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum KeyTipAction {
@@ -35,6 +36,9 @@ pub(crate) enum KeyTipAction {
     OpenAdditional(crate::ribbon_panels::RibbonPanel),
 }
 impl RibbonKeyTips {
+    pub(crate) fn defer_pointer_once(&mut self) {
+        self.defer_pointer = true;
+    }
     pub(crate) fn set_tools_face_mode(&mut self, enabled: bool) {
         self.tools_face_mode = enabled;
     }
@@ -92,6 +96,9 @@ impl RibbonKeyTips {
                 None
             }
             GuiInputEvent::PointerButton { pressed: true, .. } => {
+                if std::mem::take(&mut self.defer_pointer) {
+                    return None;
+                }
                 self.dismiss();
                 None
             }

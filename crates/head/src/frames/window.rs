@@ -110,6 +110,12 @@ pub trait HeadWindow {
     ) -> Result<HeadGuiUpdate, String> {
         Ok(HeadGuiUpdate::default())
     }
+    /// Check whether the ribbon awaits a model pick; example: `window.has_pending_ribbon_model_pick()`.
+    fn has_pending_ribbon_model_pick(&self) -> bool {
+        false
+    }
+    /// Resolve a deferred ribbon click after the model pick; example: `window.resolve_ribbon_model_pick(true)`.
+    fn resolve_ribbon_model_pick(&mut self, _face: bool) {}
     /// Open an extrusion draft; example: `window.request_extrusion()`.
     fn request_extrusion(&mut self) {}
     /// Return a rejected draft and its reason; example: `window.reject_dimension_edit(&value, "invalid")`.

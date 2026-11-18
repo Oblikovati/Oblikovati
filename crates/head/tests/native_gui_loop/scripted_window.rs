@@ -161,6 +161,12 @@ impl HeadWindow for ScriptedGuiWindow {
         self.gui_actions.extend(result.actions.iter().cloned());
         Ok(result)
     }
+    fn has_pending_ribbon_model_pick(&self) -> bool {
+        self.native.has_pending_ribbon_model_pick()
+    }
+    fn resolve_ribbon_model_pick(&mut self, face: bool) {
+        self.native.resolve_ribbon_model_pick(face);
+    }
     fn request_extrusion(&mut self) {
         self.native.request_extrusion();
     }

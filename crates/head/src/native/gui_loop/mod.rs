@@ -68,6 +68,14 @@ impl NativeGui {
         self.parameter_changed = true;
     }
 
+    pub(super) fn has_pending_ribbon_model_pick(&self) -> bool {
+        self.engine.has_pending_ribbon_model_pick()
+    }
+    pub(super) fn resolve_ribbon_model_pick(&mut self, face: bool) {
+        self.engine.resolve_ribbon_model_pick(face);
+        self.dirty = true;
+        self.deadline = Some(Duration::ZERO);
+    }
     pub(super) fn request_extrusion(&mut self) {
         self.engine.request_extrusion();
         self.deadline = Some(Duration::ZERO);

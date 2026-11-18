@@ -11,8 +11,11 @@ pub(crate) const APPLICATION_BAR_TRAILING_RESERVED: f32 = 150.;
 pub(crate) fn application_bar_height(icons: &crate::icons::GuiRibbonIcons) -> f32 {
     APPLICATION_BAR_HEIGHT.max(icons.cell([24., 24.])[1] + 8.)
 }
+#[path = "chrome/model_click.rs"]
+mod model_click;
 mod side;
 mod tab_click;
+use model_click::process_ribbon_key_tips;
 mod tab_overflow;
 use side::{reserve_ribbon_margins, side_ribbon};
 use tab_overflow::tab_row_height;
@@ -81,10 +84,8 @@ pub(crate) fn ribbon_band(
             ))
             && request.commands.selected_face_appearances.len() == 1,
     );
-    let action = owners
-        .ribbon
-        .tips
-        .process(&request.events, &frame.tabs, blocked, grouped);
+    let action =
+        process_ribbon_key_tips(ui, request, &mut owners, &frame, blocked, grouped, height);
     let open_menu = apply_key_tip(action, &mut owners, &request.commands, &mut frame, actions);
     owners.quick_access.command_took_right_click = false;
     if let Some(_band) = begin_ribbon_band(ui, width, height) {
