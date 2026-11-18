@@ -14,12 +14,27 @@ fn commands_visible(world: &mut ApplicationWorld) {
 }
 #[when("the user clicks a visible solid face")]
 fn click_face(world: &mut ApplicationWorld) {
-    let capture = super::super::capture_framebuffer(&mut world.app().window.native);
-    let windows = super::super::diagnostics::window_occlusions();
-    let at = super::super::solid_visibility::visible_fixture_point(&capture, &windows)
-        .expect("expected a visible solid face outside the UI");
+    let at = visible_face_point(world);
     world.click(at);
     world.pump(Vec::new());
+}
+fn visible_face_point(world: &mut ApplicationWorld) -> [i32; 2] {
+    use crate::HeadWork;
+    let capture = super::super::capture_framebuffer(&mut world.app().window.native);
+    let windows = super::super::diagnostics::window_occlusions();
+    let (low, high) = super::super::solid_visibility::visible_fixture_bounds(&capture, &windows)
+        .expect("expected a visible solid face outside the UI");
+    let at = [
+        ((low[0] + high[0]) / 2) as i32,
+        ((low[1] + high[1]) / 2) as i32,
+    ];
+    let ray = world.app().window.view_line(at).unwrap();
+    let hit = world.app().owner.face_edges_on_line(ray).unwrap();
+    assert!(
+        !hit.is_empty(),
+        "point {at:?}: expected an analytic face hit"
+    );
+    at
 }
 #[then("the ribbon key tips disappear")]
 fn tips_disappear(world: &mut ApplicationWorld) {
@@ -39,6 +54,22 @@ fn toolbar_visible(world: &mut ApplicationWorld) {
 fn selection_cleared(world: &mut ApplicationWorld) {
     assert!(!world.state().model_face_chosen);
     assert!(super::super::diagnostics::window_geometry("##selection-toolbar").is_none());
+}
+#[cfg(target_os = "linux")]
+#[test]
+fn native_face_click_dismisses_key_tips_and_selects_face() {
+    let mut world = ApplicationWorld::new();
+    super::super::workspace_layout::browser_feature::open_visible_extruded_part(&mut world);
+    show_commands(&mut world);
+    commands_visible(&mut world);
+    let at = visible_face_point(&mut world);
+    super::super::x11_input::click(at);
+    world.pump(Vec::new());
+    tips_disappear(&mut world);
+    face_selected(&mut world);
+    toolbar_visible(&mut world);
+    world.save_capture("keytips-native-face-3856");
+    world.close();
 }
 #[test]
 fn face_toolbar_zoom_frames_the_selected_face() {
