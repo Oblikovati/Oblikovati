@@ -3,8 +3,8 @@
 use crate::{
     DocumentSession, TransactionObserver,
     part_evaluation::{
-        CompletedPartCheckpoints, CompletedPartEvaluation, CompletedPartSketchRecompute,
-        PartCheckpointSlot, PartEvaluationSlot,
+        CompletedPartCheckpoints, CompletedPartEvaluation, CompletedPartSketchCheckpoints,
+        CompletedPartSketchRecompute, PartCheckpointSlot, PartEvaluationSlot,
     },
 };
 use oblikovati_martensite::{EvaluationFailure, NamedSolid, PrismResolutionPolicy};
@@ -14,6 +14,7 @@ type NamedCheckpointSlot = PartCheckpointSlot<NamedSolid, EvaluationFailure>;
 type NamedPartResult = CompletedPartEvaluation<NamedSolid, EvaluationFailure>;
 type NamedCheckpoints = CompletedPartCheckpoints<NamedSolid, EvaluationFailure>;
 type NamedSketchResult = CompletedPartSketchRecompute<NamedSolid, EvaluationFailure>;
+type NamedSketchCheckpoints = CompletedPartSketchCheckpoints<NamedSolid, EvaluationFailure>;
 
 pub(crate) struct DocumentPartReplay {
     policy: Option<PrismResolutionPolicy>,
@@ -116,6 +117,23 @@ impl<O: TransactionObserver> DocumentSession<O> {
                 owner.checkpoints = Default::default();
             }
             Ok(published)
+        })
+    }
+    /// Publish settled sketches, their part, and boundaries from one ordered replay.
+    /// Example: `session.adopt_owned_sketch_checkpoints(policy, completed)?`.
+    pub fn adopt_owned_sketch_checkpoints(
+        &mut self,
+        policy: Option<PrismResolutionPolicy>,
+        completed: NamedSketchCheckpoints,
+    ) -> Result<bool, String> {
+        self.with_part_replay(policy, |session, owner| {
+            session
+                .adopt_checkpointed_sketch_replay(
+                    completed,
+                    &mut owner.part,
+                    &mut owner.checkpoints,
+                )
+                .map_err(|error| error.to_string())
         })
     }
     /// Store current feature boundaries for later edits.

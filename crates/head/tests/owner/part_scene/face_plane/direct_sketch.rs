@@ -3,6 +3,81 @@ use super::*;
 use oblikovati_model::document_sketch::SketchPlacement;
 
 #[test]
+fn settled_face_sketch_and_checkpoints_share_one_cold_replay() {
+    use oblikovati_automation::{PartReplayService, PartUpdateAccess};
+    use oblikovati_martensite::PrismResolutionPolicy;
+    let policy = crate::part_scene::resolution_policy::desktop_policy();
+    let (owner, _) = owner();
+    let mut owner = owner.with_extrusion_policy(policy).unwrap();
+    let document = open_prism(&mut owner, false);
+    assert!(
+        owner
+            .start_sketch_on_face_line(document, [[1., 1., 10.], [0., 0., -1.]])
+            .unwrap()
+    );
+    let sketch = owner.active_sketch_edit().unwrap().sketch;
+    owner.finish_sketch_edit().unwrap();
+    assert_direct_sketch_height(&mut owner, sketch, 2.);
+    owner.take_scene().unwrap();
+    let PrismResolutionPolicy::ModelRelative {
+        reference,
+        reference_size,
+        minimum_size,
+    } = policy
+    else {
+        panic!("expected a model-relative desktop policy");
+    };
+    let alternate = PrismResolutionPolicy::ModelRelative {
+        reference,
+        reference_size: reference_size * 2.,
+        minimum_size,
+    };
+    let mut replay = PartReplayService::with_policy(alternate).unwrap();
+    replay
+        .ensure_checkpoints(&mut owner.files, document)
+        .unwrap();
+    assert_eq!(replay.replay_count(), 1);
+    assert!(
+        replay
+            .checkpoint_prefix(&owner.files, document)
+            .unwrap()
+            .is_some()
+    );
+    assert_eq!(
+        replay
+            .current_part(&owner.files, document)
+            .unwrap()
+            .ordered_bodies()
+            .count(),
+        1
+    );
+    replay
+        .ensure_checkpoints(&mut owner.files, document)
+        .unwrap();
+    assert_eq!(replay.replay_count(), 1);
+    owner
+        .files
+        .commands(document)
+        .unwrap()
+        .run("Invalidate sketch solve", |snapshot, _| {
+            let geometry = snapshot.sketches.get(sketch)?.geometry().clone();
+            snapshot.sketches.replace_geometry(sketch, geometry)
+        })
+        .unwrap();
+    replay
+        .ensure_checkpoints(&mut owner.files, document)
+        .unwrap();
+    assert_eq!(replay.replay_count(), 3);
+    assert!(replay.current_part(&owner.files, document).is_ok());
+    assert!(
+        replay
+            .checkpoint_prefix(&owner.files, document)
+            .unwrap()
+            .is_some()
+    );
+}
+
+#[test]
 fn picked_face_creates_a_direct_associative_sketch_without_a_work_plane() {
     let (owner, _) = owner();
     let mut owner = owner

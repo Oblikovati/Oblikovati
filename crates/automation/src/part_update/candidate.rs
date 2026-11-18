@@ -94,12 +94,15 @@ impl PartReplayService {
         let current = self
             .slot(files, document)
             .is_some_and(|slot| slot.current(session).is_ok());
-        if needs_sketch_recompute {
-            self.ensure_current(files, document)?;
-        }
         let policy = self
             .resolution
             .ok_or("part checkpoints: expected a certified resolution policy")?;
+        if needs_sketch_recompute
+            && !current
+            && self.recompute_checkpointed_sketches(files, document, policy)?
+        {
+            return Ok(());
+        }
         let workspace = files.workspace();
         let session = workspace
             .session(document)
@@ -118,12 +121,42 @@ impl PartReplayService {
         let mut commands = files
             .commands(document)
             .map_err(|error| error.to_string())?;
-        if current || needs_sketch_recompute {
+        if current {
             commands.adopt_owned_checkpoints(self.resolution, completed)?;
         } else {
             commands.adopt_owned_full_checkpoints(self.resolution, completed)?;
         }
         Ok(())
+    }
+    fn recompute_checkpointed_sketches<
+        O: TransactionObserver,
+        W: WorkspaceObserver,
+        F: DocumentFiles,
+    >(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+        policy: PrismResolutionPolicy,
+    ) -> Result<bool, String> {
+        let workspace = files.workspace();
+        let session = workspace
+            .session(document)
+            .map_err(|error| error.to_string())?;
+        let guid = workspace
+            .identity(document)
+            .map_err(|error| error.to_string())?
+            .internal_name;
+        let mut evaluator =
+            CertifiedNamedSolidEvaluator::with_policy(session.history(), guid, policy);
+        self.replay_count = self.replay_count.saturating_add(1);
+        let completed = session
+            .prepare_part_evaluation()
+            .recompute_sketches_with_checkpoints(&mut evaluator, session.sketch_solve_options())
+            .map_err(|error| error.to_string())?;
+        files
+            .commands(document)
+            .map_err(|error| error.to_string())?
+            .adopt_owned_sketch_checkpoints(self.resolution, completed)
     }
     /// Borrow current checkpoints when available; example: `owner.checkpoint_prefix(files, id)?`.
     pub fn checkpoint_prefix<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
