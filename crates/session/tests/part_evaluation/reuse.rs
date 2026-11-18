@@ -436,7 +436,30 @@ fn retired_shared_prefix_cannot_prepare_or_capture_a_candidate() {
         )
         .unwrap()
         .unwrap();
-    slot.clear();
+    assert!(
+        pending
+            .inspect_body(owner.history(), FeatureId(2), |body| *body)
+            .unwrap()
+            .is_some()
+    );
+    assert!(
+        pending
+            .inspect_body(session(7).history(), FeatureId(2), |body| *body)
+            .is_err()
+    );
+    assert!(
+        pending
+            .inspect_body(owner.history(), FeatureId(2), |body| {
+                slot.clear();
+                *body
+            })
+            .is_err()
+    );
+    assert!(
+        pending
+            .inspect_body(owner.history(), FeatureId(2), |body| *body)
+            .is_err()
+    );
     assert!(
         pending
             .capture(owner.history(), |_, body| Ok(*body))

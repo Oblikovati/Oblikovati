@@ -39,8 +39,9 @@ using this status; the live scenario directory can change.
   Hosts with the same policy share them; a policy change replaces and retires
   the old result. Closing the document drops both (#4079).
 - Certified Extrude creation publishes its validated document replay before
-  display when a current prefix is available. Two-extrusion tests retain the
-  first body's exact names; injected validators still reject candidates (#4079).
+  display when a current prefix is available. Repeated previews reuse that
+  prefix and cancel without an edit. Tests check two-extrusion names, policy
+  isolation, and rejection by injected validators (#4079).
 - Parameter Set and Update reuse a current document checkpoint for a proven
   clean prefix. A typed API test edits a Fillet parameter twice, checks named
   faces against a full replay, and exercises undo, redo, save, and reopen (#4079).

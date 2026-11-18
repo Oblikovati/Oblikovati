@@ -12,6 +12,15 @@ impl DesktopPartScenes {
     pub(crate) fn checkpoint_preview_metrics(&self) -> (u64, usize) {
         (self.replay.replay_count(), self.checkpoint_previews.get())
     }
+    #[cfg(test)]
+    pub(crate) fn extrusion_prefix_previews(&self) -> usize {
+        self.extrusion_prefix_previews.get()
+    }
+    #[cfg(test)]
+    pub(crate) fn note_extrusion_prefix_preview(&self) {
+        self.extrusion_prefix_previews
+            .set(self.extrusion_prefix_previews.get() + 1);
+    }
     pub(crate) fn ensure_edit_checkpoints<
         O: TransactionObserver,
         W: WorkspaceObserver,
