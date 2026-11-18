@@ -1,0 +1,465 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature" tests="50" errors="0" failures="22" hostname="localhost" timestamp="2026-11-18T17:17:42.52589856Z" time="286.502670373"><testcase name="Scenario: Reduce the full ribbon to compact group buttons: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:5:3" time="7.028956539"><system-out><![CDATA[  Scenario: Reduce the full ribbon to compact group buttons
+   ✔  Given a part document is open in the MCAD Software
+   ✔  And the View ribbon tab displays its full groups of commands
+   ✔  When the user opens the ribbon display menu
+   ✔  Then Minimize to Panel Buttons is selected
+   ✔  When the user dismisses the menu with Escape
+   ✔  Then the full View ribbon remains visible
+   ✔  When the user activates the ribbon display control once
+   ✔  Then the View ribbon shows compact buttons for Visibility, Appearance, Windows and Navigate
+   ✔  And the viewport has more vertical space
+   ✔  When the user selects the Windows group button
+   ✔  Then a temporary panel displays that group's commands
+   ✔  When the user activates the ribbon display control again
+   ✔  Then the full View ribbon is restored
+   ✔  And the temporary Windows panel closes
+]]></system-out></testcase><testcase name="Scenario: Open a group from the title-only ribbon: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:20:3" time="10.724548316"><system-out><![CDATA[  Scenario: Open a group from the title-only ribbon
+   ✔  Given a part document is open in the MCAD Software
+   ✔  And the full View ribbon is visible
+   ✔  When the user opens the ribbon display menu
+   ✔  Then Minimize to Panel Buttons is selected
+   ✔  When the user selects Minimize to Panel Titles
+   ✔  Then the View ribbon displays group titles in a narrow strip
+   ✔  When the user selects the Windows group title
+   ✔  Then a temporary panel displays the Windows commands
+   ✔  When the user activates the ribbon display control
+   ✔  Then the full View ribbon is restored
+   ✔  And the temporary Windows panel closes
+   ✔  When the user opens the ribbon display menu again
+   ✔  Then Minimize to Panel Titles is selected
+   ✔  When the user selects Minimize to Panel Buttons
+   ✔  Then the View ribbon displays compact group buttons
+   ✔  When the user activates the ribbon display control again
+   ✔  Then the full View ribbon is restored
+]]></system-out></testcase><testcase name="Scenario: Access a ribbon tab in tabs-only mode: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:39:3" time="7.450282255"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Access a ribbon tab in tabs-only mode
+   ✔  Given a part document is open in the MCAD Software
+   ✔  And the ribbon display control is configured to cycle through all modes
+   ✔  And the View ribbon displays its group titles
+   ✔  When the user activates the ribbon display control once
+   ✔  Then the ribbon shows its tabs without the group strip
+   ✔  When the user selects the View tab
+   ✔  Then the View commands appear in a temporary panel below the tabs
+   ✔  When the user activates the ribbon display control
+   ✔  Then the expanded View ribbon is restored
+   ✔  When the user clicks in an empty area of the viewport
+   ✔  Then the expanded View ribbon remains visible
+   ✘  When the user chooses Minimize to Panel Buttons from the ribbon display menu
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:51:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: View available ribbon minimization choices: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:55:3" time="4.897503929"><system-out><![CDATA[  Scenario: View available ribbon minimization choices
+   ✔  Given a part document is open in the MCAD Software
+   ✔  And Minimize to Tabs is the selected ribbon display mode
+   ✔  When the user opens the ribbon display control menu
+   ✔  Then the menu offers minimization to tabs, panel titles and panel buttons
+   ✔  And it offers a cycle-through-all choice
+   ✔  And Minimize to Tabs is checked
+]]></system-out></testcase><testcase name="Scenario: Choose tabs-only mode and switches ribbon tabs: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:63:3" time="5.916008075"><system-out><![CDATA[  Scenario: Choose tabs-only mode and switches ribbon tabs
+   ✔  Given a part document is open in the MCAD Software
+   ✔  And the full Tools ribbon is visible
+   ✔  When the user opens the ribbon display control menu
+   ✔  And the user chooses Minimize to Tabs
+   ✔  Then the command groups are hidden and the ribbon tabs remain visible
+   ✔  When the user selects the 3D Model tab
+   ✔  Then its command groups appear temporarily below the tabs
+   ✔  When the user clicks an empty area of the viewport
+   ✔  Then the temporary command groups close
+   ✔  And the 3D Model tab remains selected
+   ✔  When the user opens the ribbon display control menu
+   ✔  Then Minimize to Tabs is checked
+]]></system-out></testcase><testcase name="Scenario: Inspect a selected minimization policy while the full ribbon is open: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:78:3" time="6.40196773"><system-out><![CDATA[  Scenario: Inspect a selected minimization policy while the full ribbon is open
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full Tools ribbon is visible
+   ✔  And Minimize to Tabs is the selected ribbon display policy
+   ✔  When the user opens the ribbon display policy menu
+   ✔  Then Minimize to Tabs is marked as selected
+   ✔  And Minimize to Panel Titles, Minimize to Panel Buttons and Cycle Through All are listed
+   ✔  And the full Tools ribbon remains visible
+   ✔  When the user dismisses the menu with Escape
+   ✔  Then the menu closes without changing the display policy
+   ✔  And the full Tools ribbon remains visible
+]]></system-out></testcase><testcase name="Scenario: Cycle drawing ribbon display by double-clicking its active tab: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:90:3" time="6.397246786"><system-out><![CDATA[  Scenario: Cycle drawing ribbon display by double-clicking its active tab
+   ✔  Given a drawing document is active in the MCAD Software
+   ✔  And the ribbon display control is configured to cycle through all modes
+   ✔  And the Place Views tab shows its full command groups
+   ✔  When the user double-clicks the active Place Views tab
+   ✔  Then the ribbon shows compact Create, Modify, Sketch and Sheets group buttons
+   ✔  And the drawing workspace has more vertical space
+   ✔  When the user double-clicks the active Place Views tab again
+   ✔  Then the ribbon shows the group titles in a narrow strip
+   ✔  When the user double-clicks the active Place Views tab again
+   ✔  Then the ribbon shows tabs without the group strip
+   ✔  When the user double-clicks the active Place Views tab again
+   ✔  Then the full Place Views command groups are visible
+   ✔  And the drawing document remains active
+]]></system-out></testcase><testcase name="Scenario: Keep compact ribbon display when switching document types: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:105:3" time="5.4201508050000005"><system-out><![CDATA[  Scenario: Keep compact ribbon display when switching document types
+   ✔  Given a drawing and a part are open in the MCAD Software
+   ✔  And the drawing is active with its ribbon in compact group-button mode
+   ✔  When the user activates the part document
+   ✔  Then the part ribbon displays its command groups as compact buttons
+   ✔  And those buttons include Sketch, Create and Modify
+   ✔  When the user returns to the drawing document
+   ✔  Then its ribbon displays compact Create, Modify, Sketch and Sheets group buttons
+]]></system-out></testcase><testcase name="Scenario: Switch between temporary compact ribbon groups: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:114:3" time="5.557475703"><system-out><![CDATA[  Scenario: Switch between temporary compact ribbon groups
+   ✔  Given a drawing document is active in the MCAD Software
+   ✔  And the Place Views ribbon shows compact group buttons
+   ✔  When the user selects the Create group button
+   ✔  Then a temporary Create panel displays drawing-view commands
+   ✔  When the user selects the Modify group button
+   ✔  Then the Create panel closes
+   ✔  And a temporary Modify panel displays modification commands
+   ✔  When the user clicks an empty area of the drawing outside the panel
+   ✔  Then the temporary Modify panel closes
+   ✔  And the compact group buttons remain visible
+]]></system-out></testcase><testcase name="Scenario: Switch ribbon tabs while a compact group panel is open: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:126:3" time="5.431633472"><system-out><![CDATA[  Scenario: Switch ribbon tabs while a compact group panel is open
+   ✔  Given a drawing is active in the MCAD Software
+   ✔  And the Place Views ribbon shows compact group buttons
+   ✔  And the temporary Create group panel is open
+   ✔  When the user selects the Annotate tab
+   ✔  Then the temporary Create panel closes
+   ✔  And the full Annotate ribbon is visible
+   ✔  And it includes Dimension, Text and Symbols commands
+   ✔  And the drawing sheet remains visible
+   ✔  And the drawing remains active
+]]></system-out></testcase><testcase name="Scenario: Choose panel titles as the ribbon minimization mode: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:137:3" time="6.570135346"><system-out><![CDATA[  Scenario: Choose panel titles as the ribbon minimization mode
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the Tools ribbon is expanded
+   ✔  When the user opens the ribbon display control menu
+   ✔  And the user chooses Minimize to Panel Titles
+   ✔  Then the Tools command groups are reduced to a narrow strip of titles
+   ✔  When the user activates the ribbon display control
+   ✔  Then the full Tools command groups are visible
+   ✔  When the user activates the ribbon display control again
+   ✔  Then the Tools ribbon displays the group-title strip
+   ✔  When the user opens the ribbon display control menu
+   ✔  Then Minimize to Panel Titles is checked
+   ✔  When the user presses Escape
+   ✔  Then the display menu closes and the group-title strip remains
+   ✔  When the user activates the ribbon display control
+   ✔  Then the full Tools command groups are visible
+]]></system-out></testcase><testcase name="Scenario: Choose panel buttons as the ribbon minimization mode: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:154:3" time="5.968335094"><system-out><![CDATA[  Scenario: Choose panel buttons as the ribbon minimization mode
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the Tools ribbon is expanded
+   ✔  When the user opens the ribbon display control menu
+   ✔  And the user chooses Minimize to Panel Buttons
+   ✔  Then the Tools command groups appear as compact buttons
+   ✔  When the user opens the ribbon display control menu
+   ✔  Then Minimize to Panel Buttons is checked
+   ✔  When the user presses Escape
+   ✔  Then the display menu closes and the compact buttons remain
+   ✔  When the user activates the ribbon display control
+   ✔  Then the full Tools command groups are visible
+]]></system-out></testcase><testcase name="Scenario: Toggle between tabs-only and full Sketch ribbon display: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:167:3" time="8.647957676"><system-out><![CDATA[  Scenario: Toggle between tabs-only and full Sketch ribbon display
+   ✔  Given a part with an editable sketch is active in the MCAD Software
+   ✔  And Minimize to Tabs is the selected ribbon display mode
+   ✔  And the full Sketch command groups are visible
+   ✔  When the user activates the ribbon display control
+   ✔  Then the command groups disappear and the ribbon tabs remain visible
+   ✔  And the sketch remains in edit mode
+   ✔  When the user activates the ribbon display control again
+   ✔  Then the full Sketch command groups are visible
+   ✔  And the sketch remains in edit mode
+   ✔  When the user activates the ribbon display control again
+   ✔  Then the command groups disappear and the ribbon tabs remain visible
+   ✔  When the user activates the ribbon display control again
+   ✔  Then the full Sketch command groups are visible
+   ✔  And the sketch remains in edit mode
+]]></system-out></testcase><testcase name="Scenario: Cycle all ribbon display modes in one part session: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:183:3" time="7.303880883"><system-out><![CDATA[  Scenario: Cycle all ribbon display modes in one part session
+   ✔  Given a part document is open in the MCAD Software
+   ✔  And the ribbon display control is configured to cycle through all modes
+   ✔  And the View ribbon tab displays its full groups of commands
+   ✔  When the user activates the ribbon display control
+   ✔  Then the View groups are shown as compact buttons
+   ✔  When the user activates the ribbon display control again
+   ✔  Then the View group titles appear in a narrow strip
+   ✔  When the user activates the ribbon display control again
+   ✔  Then the tabs remain visible without a permanent group strip
+   ✔  When the user selects the View tab
+   ✔  Then its commands appear in a temporary panel
+   ✔  When the user activates the ribbon display control again
+   ✔  And the user clicks an empty area of the viewport
+   ✔  Then the full View command groups remain visible
+   ✔  And the same part remains active
+]]></system-out></testcase><testcase name="Scenario: View additional Options commands from a compact panel button: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:200:3" time="3.759357571"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: View additional Options commands from a compact panel button
+   ✔  Given a part document is open in the MCAD Software
+   ✘  And the Tools ribbon displays compact panel buttons
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:202:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Keep a temporary ribbon open when repeating its tab click: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:211:3" time="6.499226495"><system-out><![CDATA[  Scenario: Keep a temporary ribbon open when repeating its tab click
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the Tools tab is selected in tabs-only ribbon display
+   ✔  When the user clicks the Tools tab
+   ✔  Then the Tools command groups appear temporarily below the tabs
+   ✔  When the user clicks the Tools tab again
+   ✔  Then the temporary Tools command groups remain visible
+   ✔  When the user presses Escape
+   ✔  Then the temporary Tools command groups remain visible
+   ✔  When the user clicks empty viewport space
+   ✔  Then the temporary command groups close
+   ✔  And the Tools tab remains visible
+]]></system-out></testcase><testcase name="Scenario: Double-click an inactive ribbon tab before cycling its display: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:224:3" time="10.861675389"><system-out><![CDATA[  Scenario: Double-click an inactive ribbon tab before cycling its display
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon is visible
+   ✔  And the ribbon display control is set to cycle through all modes
+   ✔  When the user double-clicks the inactive Tools tab
+   ✔  Then Tools becomes the active tab
+   ✔  And the full Tools ribbon is visible
+   ✔  When the user double-clicks the active Tools tab
+   ✔  Then the Tools ribbon displays panel buttons
+   ✔  When the user double-clicks the active Tools tab three more times
+   ✔  Then the full Tools ribbon is visible again
+]]></system-out></testcase><testcase name="Scenario: Double-click an inactive tab in tabs-only display: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:236:3" time="8.24326713"><system-out><![CDATA[  Scenario: Double-click an inactive tab in tabs-only display
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the ribbon display control is set to cycle through all modes
+   ✔  And Tools is the active tab in tabs-only ribbon display
+   ✔  When the user double-clicks the inactive View tab
+   ✔  Then View becomes the active tab
+   ✔  And its command groups appear in a temporary panel
+   ✔  When the user clicks empty viewport space
+   ✔  Then the temporary command groups close
+   ✔  And View remains the active tab in tabs-only display
+   ✔  When the user double-clicks the active View tab
+   ✔  Then the full View command groups are visible
+]]></system-out></testcase><testcase name="Scenario: Switch tabs while temporary commands are open in tabs-only mode: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:250:3" time="6.25323243"><system-out><![CDATA[  Scenario: Switch tabs while temporary commands are open in tabs-only mode
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the ribbon is in tabs-only display with View active
+   ✔  And the temporary View command groups are open
+   ✔  When the user clicks the Tools tab
+   ✔  Then Tools becomes the active tab
+   ✔  And the temporary Tools command groups replace the View command groups
+   ✔  When the user clicks empty viewport space
+   ✔  Then the temporary Tools command groups close
+   ✔  And Tools remains the active tab in tabs-only display
+]]></system-out></testcase><testcase name="Scenario: Switch adjacent ribbon tabs with the mouse wheel: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:262:3" time="6.107777109"><system-out><![CDATA[  Scenario: Switch adjacent ribbon tabs with the mouse wheel
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full Tools ribbon is visible
+   ✔  When the user scrolls down over the Tools tab
+   ✔  Then Manage becomes the active tab
+   ✔  And the full Manage command groups are visible
+   ✔  When the user scrolls up over the same position on the tab row
+   ✔  Then Tools becomes the active tab
+   ✔  And the full Tools command groups are visible
+   ✔  And the part remains visible
+]]></system-out></testcase><testcase name="Scenario: Stop wheel navigation at the visible ends of the part ribbon: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:274:3" time="4.510983832"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Stop wheel navigation at the visible ends of the part ribbon
+   ✔  Given a part is active in the MCAD Software with the full ribbon visible
+   ✔  And the 3D Model tab is the first visible command tab and is active
+   ✔  When the user scrolls up over the 3D Model tab
+   ✔  Then the 3D Model tab remains active
+   ✔  And its command groups remain visible
+   ✘  When the user selects Fusion, the last visible command tab
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:280:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Switch tabs with the mouse wheel in tabs-only display: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:287:3" time="7.139359213"><system-out><![CDATA[  Scenario: Switch tabs with the mouse wheel in tabs-only display
+   ✔  Given a part is active in the MCAD Software
+   ✔  And Tools is the active tab in tabs-only ribbon display
+   ✔  And no temporary ribbon commands are open
+   ✔  When the user scrolls down over the Tools tab
+   ✔  Then Manage becomes the active tab
+   ✔  And the ribbon remains in tabs-only display without opening temporary commands
+   ✔  When the user scrolls up over the same position on the tab row
+   ✔  Then Tools becomes the active tab
+   ✔  And the ribbon remains in tabs-only display without opening temporary commands
+   ✔  And the part remains visible
+]]></system-out></testcase><testcase name="Scenario: Switch an open temporary ribbon with the mouse wheel: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:300:3" time="6.963782969"><system-out><![CDATA[  Scenario: Switch an open temporary ribbon with the mouse wheel
+   ✔  Given a part is active in the MCAD Software
+   ✔  And Tools is the active tab in tabs-only ribbon display
+   ✔  And the temporary Tools command groups are open
+   ✔  When the user scrolls down over the Tools tab
+   ✔  Then Manage becomes the active tab
+   ✔  And temporary Manage command groups replace the Tools command groups
+   ✔  When the user clicks empty viewport space
+   ✔  Then the temporary command groups close
+   ✔  And Manage remains active in tabs-only display
+]]></system-out></testcase><testcase name="Scenario: Open a panel compacted by a narrow application window: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:312:3" time="3.29238673"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Open a panel compacted by a narrow application window
+   ✘  Given a part is active in the MCAD Software with the full Manage ribbon displayed
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:313:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Select a ribbon tab from the overflow menu: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:326:3" time="3.257841322"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Select a ribbon tab from the overflow menu
+   ✘  Given a part is active in the MCAD Software with the full Manage ribbon visible
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:327:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Dismiss tab overflow without changing the active ribbon: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:338:3" time="3.250673309"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Dismiss tab overflow without changing the active ribbon
+   ✘  Given a part is active in the MCAD Software with the full ribbon displayed
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:339:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Select an overflowed tab while the ribbon is minimized to tabs: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:354:3" time="3.199196623"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Select an overflowed tab while the ribbon is minimized to tabs
+   ✘  Given a part is active in the MCAD Software with Tools active in tabs-only ribbon display
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:355:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Switch between panels compacted by a narrow window: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:365:3" time="3.231290306"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Switch between panels compacted by a narrow window
+   ✘  Given a part is active in the MCAD Software with the full View ribbon displayed
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:366:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Close a width-compacted panel by switching ribbon tabs: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:378:3" time="3.19236329"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Close a width-compacted panel by switching ribbon tabs
+   ✘  Given a part is active in the MCAD Software with the full View ribbon displayed
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:379:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Launch document settings from a width-compacted ribbon panel: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:390:3" time="3.255578776"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Launch document settings from a width-compacted ribbon panel
+   ✘  Given a part is active in the MCAD Software with the full Tools ribbon displayed
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:391:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Open Document Settings from the full Tools ribbon: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:401:3" time="3.21461939"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Open Document Settings from the full Tools ribbon
+   ✘  Given a part is active in the MCAD Software with the full Tools ribbon displayed
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:402:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Maximize while a width-compacted panel is open: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:412:3" time="6.531833187"><system-out><![CDATA[  Scenario: Maximize while a width-compacted panel is open
+   ✔  Given a part is active in the MCAD Software with the full 3D Model ribbon displayed
+   ✔  And the narrow window shows Modify as a compact panel button
+   ✔  And the temporary Modify panel is open
+   ✔  When the user maximizes the application window
+   ✔  Then the temporary Modify panel closes
+   ✔  And the Modify commands are displayed directly in the ribbon
+   ✔  And the part remains visible
+]]></system-out></testcase><testcase name="Scenario: Press Escape with a compact Options panel open: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:421:3" time="5.605139794"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Press Escape with a compact Options panel open
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the Tools ribbon is minimized to panel buttons
+   ✔  When the user clicks the Options panel button
+   ✘  Then the Options commands appear in a temporary panel below the buttons
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:425:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Repeat the active compact panel button: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:434:3" time="6.976090753"><system-out><![CDATA[  Scenario: Repeat the active compact panel button
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the Tools ribbon is minimized to panel buttons
+   ✔  When the user clicks the Options panel button
+   ✔  Then the temporary Options command panel appears below the button strip
+   ✔  And the Options panel button is highlighted
+   ✔  When the user clicks the Options panel button again
+   ✔  Then the temporary Options command panel remains visible
+   ✔  And the Options panel button remains highlighted
+   ✔  When the user opens the ribbon display-mode menu
+   ✔  Then the menu shows "Minimize to Panel Buttons" as selected
+   ✔  And the temporary Options command panel remains visible
+   ✔  When the user selects "Minimize to Tabs"
+   ✔  Then the temporary Options command panel closes
+   ✔  And the ribbon displays tabs without a permanent panel-button strip
+]]></system-out></testcase><testcase name="Scenario: Dismiss a compact panel using the selected tab: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:450:3" time="5.964023286"><system-out><![CDATA[  Scenario: Dismiss a compact panel using the selected tab
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the Tools ribbon is minimized to panel buttons
+   ✔  When the user clicks the Options panel button
+   ✔  Then the temporary Options command panel appears below the button strip
+   ✔  When the user clicks the selected Tools tab
+   ✔  Then the temporary Options command panel closes
+   ✔  And the Tools panel buttons remain visible
+]]></system-out></testcase><testcase name="Scenario: Dismiss a compact panel using its lower title: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:459:3" time="6.005345833"><system-out><![CDATA[  Scenario: Dismiss a compact panel using its lower title
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the Tools ribbon is minimized to panel buttons
+   ✔  When the user clicks the Options panel button
+   ✔  Then the temporary Options command panel appears below the button strip
+   ✔  When the user clicks the Options title at the bottom of that panel
+   ✔  Then the temporary Options command panel closes
+   ✔  And the Tools panel buttons remain visible
+]]></system-out></testcase><testcase name="Scenario: Change ribbon context while editing an existing sketch: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:468:3" time="9.810014383"><system-out><![CDATA[  Scenario: Change ribbon context while editing an existing sketch
+   ✔  Given a part containing an existing extrusion and sketch is active in the MCAD Software
+   ✔  And the ribbon is minimized to tabs with Tools selected
+   ✔  When the user expands the extrusion in the model browser
+   ✔  And the user double-clicks its sketch
+   ✔  Then the Sketch tab is selected while the ribbon remains minimized to tabs
+   ✔  When the user selects the Tools tab
+   ✔  Then temporary Tools command groups appear beneath the tabs
+   ✔  And Finish is available in an Exit group
+   ✔  When the user selects Finish
+   ✔  Then sketch editing ends and the part model is displayed
+   ✔  And the ribbon remains minimized to tabs with Tools selected
+]]></system-out></testcase><testcase name="Scenario: Finish a sketch from a tabs-only ribbon: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:480:3" time="9.487200451"><system-out><![CDATA[  Scenario: Finish a sketch from a tabs-only ribbon
+   ✔  Given an existing sketch is being edited in the MCAD Software
+   ✔  And the Sketch ribbon is minimized to tabs
+   ✔  When the user clicks the Sketch tab
+   ✔  Then the Sketch command groups appear temporarily beneath the tabs
+   ✔  And the temporary ribbon includes the Finish action
+   ✔  When the user selects Finish
+   ✔  Then sketch editing ends and the part model is displayed
+   ✔  And the ribbon remains minimized to tabs
+]]></system-out></testcase><testcase name="Scenario: Switch ribbon tabs with a command panel open: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:490:3" time="4.966809142"><system-out><![CDATA[  Scenario: Switch ribbon tabs with a command panel open
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full Tools ribbon is visible
+   ✔  When the user selects Measure
+   ✔  Then the Measure panel opens over the workspace
+   ✔  When the user selects the View tab
+   ✔  Then the View ribbon command groups are displayed
+   ✔  And the Measure panel remains open
+   ✔  When the user selects Done in the Measure panel
+   ✔  Then the Measure panel closes
+   ✔  And the View ribbon remains visible
+]]></system-out></testcase><testcase name="Scenario: Switch between an open part and the Home workspace: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:502:3" time="3.724009818"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Switch between an open part and the Home workspace
+   ✔  Given a part is active in the MCAD Software
+   ✘  And the full Tools ribbon is displayed
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:504:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Keep tabs-only ribbon when switching between a part and Home: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:515:3" time="3.840857299"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Keep tabs-only ribbon when switching between a part and Home
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the Tools ribbon tab is selected
+   ✘  And the ribbon display policy is "Minimize to Tabs"
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:518:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Dismiss temporary Home commands when activating an open part: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:530:3" time="3.661725186"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Dismiss temporary Home commands when activating an open part
+   ✔  Given a part is open in the MCAD Software
+   ✘  And the Home workspace is active
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:532:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Dismiss temporary part commands when activating Home: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:544:3" time="3.845568776"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Dismiss temporary part commands when activating Home
+   ✔  Given a part is active in the MCAD Software
+   ✘  And the ribbon is minimized to tabs
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:546:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Minimize while a panel context menu is open: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:561:3" time="3.844465173"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Minimize while a panel context menu is open
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon is visible
+   ✘  And the display control is configured to toggle between the full ribbon and compact group buttons
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:564:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Continue a modeling command after switching ribbon tabs: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:575:3" time="3.248583973"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Continue a modeling command after switching ribbon tabs
+   ✘  Given a part containing a solid block is active in the MCAD Software
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:576:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Minimize and restore the ribbon during a modeling preview: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:588:3" time="3.174525566"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Minimize and restore the ribbon during a modeling preview
+   ✘  Given a part containing a solid block is active in the MCAD Software
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:589:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Toggle full and tabs-only display by double-clicking the active tab: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:604:3" time="6.030157471"><system-out><![CDATA[  Scenario: Toggle full and tabs-only display by double-clicking the active tab
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full Tools ribbon is visible
+   ✔  When the user double-clicks the active Tools tab
+   ✔  Then the ribbon shows its tabs without permanent command groups
+   ✔  When the user double-clicks the active Tools tab again
+   ✔  Then the full Tools command groups are visible again
+   ✔  And the part remains active
+]]></system-out></testcase><testcase name="Scenario: Inspect ribbon appearance choices without changing the display mode: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:613:3" time="5.90152685"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Inspect ribbon appearance choices without changing the display mode
+   ✔  Given a part has an active editable sketch in the MCAD Software
+   ✘  And ribbon appearance is set to Normal
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:615:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Dismiss the ribbon appearance submenu with Escape: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:627:3" time="3.80943043"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Dismiss the ribbon appearance submenu with Escape
+   ✔  Given a part is active in the MCAD Software with the full 3D Model ribbon displayed
+   ✘  And the Modify panel context menu is open with Ribbon Appearance expanded
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:629:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Hide command labels and restore the normal ribbon appearance: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:636:3" time="10.126668509"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Hide command labels and restore the normal ribbon appearance
+   ✔  Given a part has an active editable sketch in the MCAD Software
+   ✔  And Ribbon Appearance is set to Normal
+   ✔  When the user opens Ribbon Appearance from the Create panel title context menu
+   ✔  And the user selects Text Off
+   ✘  Then command labels are hidden while command icons and panel titles remain visible
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:641:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>
