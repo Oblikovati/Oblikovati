@@ -98,6 +98,7 @@ pub(crate) struct RibbonDisplayState {
     pub placement: RibbonPlacement,
     pub side_anchor: Option<SideAnchor>,
     context_requested: bool,
+    context_relocated: Option<(RibbonTab, RibbonPanel)>,
     context_expansion: Option<(RibbonTab, RibbonPanel)>,
     context_command: Option<&'static str>,
     context_had_submenu: bool,
@@ -138,6 +139,7 @@ impl Default for RibbonDisplayState {
             placement: RibbonPlacement::default(),
             side_anchor: None,
             context_requested: false,
+            context_relocated: None,
             context_expansion: None,
             context_command: None,
             context_had_submenu: false,
@@ -259,6 +261,10 @@ impl RibbonDisplayState {
         panels: &[RibbonPanel],
         customizable: bool,
         customization: &mut crate::application::ribbon_customization::RibbonCustomization,
+        toolbar: (
+            &crate::GuiCommandState,
+            &mut crate::application::quick_access_toolbar::QuickAccessToolbar,
+        ),
     ) {
         if std::mem::take(&mut self.context_requested) {
             ui.open_popup(CONTEXT_MENU);
@@ -277,8 +283,7 @@ impl RibbonDisplayState {
         self.capture_context_bounds(ui);
         self.appearance_menu(ui, submenu_open, customization);
         if self.context_command.is_some() {
-            muted_context_item(ui, "Add to Quick Access Toolbar");
-            muted_context_item(ui, "Move to Main Panel");
+            self.expanded_command_menu(ui, customization, toolbar);
         }
         self.show_panels_menu(ui, tab, panels, submenu_open);
         if ui
@@ -489,9 +494,3 @@ fn submenu_row_pressed(ui: &Ui, label: &str, submenu_open: bool) -> bool {
 #[cfg(test)]
 #[path = "../../../tests/application/ribbon-display/modes.rs"]
 mod tests;
-fn muted_context_item(ui: &Ui, label: &str) {
-    ui.menu_item_config(label).enabled(false).build();
-    if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
-        ui.tooltip_text("This command is not available in this build.");
-    }
-}

@@ -45,6 +45,10 @@ pub(super) fn draw(
         _ => return,
     };
     for &label in labels {
+        if label == "Move Bodies" && crate::move_body_ribbon::is_main(context.owners.customization)
+        {
+            continue;
+        }
         let action = (label == "Move Bodies").then_some(GuiShellAction::OpenMoveBody);
         let disabled = ui.begin_disabled(
             action
@@ -74,6 +78,10 @@ fn additional_icons(
     let icons = context.owners.icons;
     let origin = ui.cursor_pos();
     for (index, &(label, glyph)) in entries.iter().enumerate() {
+        if label == "Move Bodies" && crate::move_body_ribbon::is_main(context.owners.customization)
+        {
+            continue;
+        }
         let (position, size) = icons.appearance.cell(index);
         icons.cursor(ui, origin, position);
         let action = (label == "Move Bodies").then_some(GuiShellAction::OpenMoveBody);

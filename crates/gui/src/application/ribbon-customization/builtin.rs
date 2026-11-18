@@ -159,7 +159,7 @@ impl RibbonCustomization {
     pub(crate) fn builtin_expanded(&self, id: &str) -> bool {
         self.builtins.applied.contains(id)
     }
-    pub(super) fn relocate_builtin(&mut self, id: &str, expanded: bool) -> Result<(), String> {
+    pub(crate) fn relocate_builtin(&mut self, id: &str, expanded: bool) -> Result<(), String> {
         let mut document = self.applied_document();
         if expanded {
             document.expanded_builtins.insert(id.to_owned());
@@ -175,6 +175,18 @@ impl RibbonCustomization {
             }
         }
         Ok(())
+    }
+    pub(crate) fn report_command_error(&mut self, error: String) {
+        self.command_error = Some(error);
+        self.command_error_opening = true;
+    }
+    pub(crate) fn relocate_builtin_reported(&mut self, id: &str, expanded: bool) -> bool {
+        if let Err(error) = self.relocate_builtin(id, expanded) {
+            self.command_error = Some(error);
+            self.command_error_opening = true;
+            return false;
+        }
+        true
     }
     /// Draw a built-in command and its location menu; example: `layout.builtin_draw(ui, id, false, draw)`.
     pub(crate) fn builtin_draw(

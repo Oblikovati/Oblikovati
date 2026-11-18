@@ -11,11 +11,9 @@ pub(crate) const APPLICATION_BAR_TRAILING_RESERVED: f32 = 150.;
 pub(crate) fn application_bar_height(icons: &crate::icons::GuiRibbonIcons) -> f32 {
     APPLICATION_BAR_HEIGHT.max(icons.cell([24., 24.])[1] + 8.)
 }
-
 fn tab_row_height(ui: &Ui) -> f32 {
     ui.frame_height().max(20.) + 4.
 }
-
 mod side;
 mod tab_click;
 mod tab_overflow;
@@ -108,7 +106,11 @@ pub(crate) fn ribbon_band(
             &panels,
             request.commands.document_type == Some(oblikovati_api::types::DOCUMENT_PART),
             &mut owners.ribbon.customization,
+            (&request.commands, owners.quick_access),
         );
+        if let Some((tab, panel)) = owners.ribbon.display.take_context_relocated() {
+            owners.ribbon.panels.close_additional(tab, panel);
+        }
         if owners.ribbon.display.take_customization_request() {
             owners.ribbon.panels.close_unpinned_additional();
             owners.ribbon.customization.open(tab);
@@ -244,7 +246,6 @@ fn begin_ribbon_band(ui: &Ui, width: f32, height: f32) -> Option<imgui::WindowTo
         .scrollable(false)
         .begin()
 }
-
 fn ribbon_contents(
     ui: &Ui,
     request: &GuiFrameRequest,

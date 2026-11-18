@@ -177,3 +177,19 @@ fn selecting_an_appearance_keeps_applied_state_when_saving_fails() {
     reopened.set_store(Box::new(store)).unwrap();
     assert_eq!(reopened.appearance(), RibbonAppearance::Compact);
 }
+
+#[test]
+fn move_body_main_placement_round_trips_and_reset_restores_additional_area() {
+    let store = FakeRibbonStore::default();
+    let mut customization = RibbonCustomization::default();
+    customization.set_store(Box::new(store.clone())).unwrap();
+    assert!(!crate::move_body_ribbon::is_main(&customization));
+    crate::move_body_ribbon::set_main(&mut customization, true).unwrap();
+    let mut reopened = RibbonCustomization::default();
+    reopened.set_store(Box::new(store.clone())).unwrap();
+    assert!(crate::move_body_ribbon::is_main(&reopened));
+    crate::move_body_ribbon::set_main(&mut reopened, false).unwrap();
+    let mut restored = RibbonCustomization::default();
+    restored.set_store(Box::new(store)).unwrap();
+    assert!(!crate::move_body_ribbon::is_main(&restored));
+}

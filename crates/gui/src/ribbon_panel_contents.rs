@@ -297,7 +297,7 @@ pub(crate) fn draw_panel_content(
         }
         RibbonPanel::PartCreate => part_create_controls(ui, origin, state, owners, actions),
         RibbonPanel::PartModify => {
-            part_modify_controls(ui, origin, owners.icons, owners.hole_tip, state, actions);
+            part_modify_controls(ui, origin, state, actions, owners);
         }
         RibbonPanel::PartPattern => {
             use crate::icons::IconGlyph;

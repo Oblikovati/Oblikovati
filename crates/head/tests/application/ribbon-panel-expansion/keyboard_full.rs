@@ -162,3 +162,88 @@ fn expansion_tips_closed(world: &mut ApplicationWorld) {
     expansion_and_tips_close(world);
     assert!(!world.frame.runs.iter().any(|run| run.text == "OD"));
 }
+
+#[cfg(target_os = "linux")]
+#[test]
+fn move_body_context_placement_round_trips_and_keeps_command_live() {
+    let mut world = ApplicationWorld::new();
+    super::solid_part(&mut world);
+    super::opened_unpinned(&mut world);
+    let row = world
+        .run_in_window("##ribbon-additional-PartModify", "MoveBodies")
+        .center();
+    world.right_click(diagnostics::pointer_pixels(row));
+    world.click_text("Move to Main Panel");
+    world.pump(Vec::new());
+    assert!(diagnostics::window_geometry("##ribbon-additional-PartModify").is_none());
+    let main = world
+        .run_in_window("##application-ribbon", "MoveBodies")
+        .center();
+    world.click_text("Tools");
+    world.click_text("3D Model");
+    let returned = world
+        .run_in_window("##application-ribbon", "MoveBodies")
+        .center();
+    assert_eq!(main, returned);
+    world.click(diagnostics::pointer_pixels(returned));
+    assert!(diagnostics::window_geometry("Move Bodies").is_some());
+    world.click_text("Cancel");
+    let main = world
+        .run_in_window("##application-ribbon", "MoveBodies")
+        .center();
+    world.right_click(diagnostics::pointer_pixels(main));
+    world.click_text("Move to Expanded Panel");
+    world.pump(Vec::new());
+    super::opened_unpinned(&mut world);
+    world.run_in_window("##ribbon-additional-PartModify", "MoveBodies");
+    world.close();
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn move_body_context_adds_a_working_quick_access_command() {
+    let mut world = ApplicationWorld::new();
+    super::solid_part(&mut world);
+    super::opened_unpinned(&mut world);
+    let row = world
+        .run_in_window("##ribbon-additional-PartModify", "MoveBodies")
+        .center();
+    world.right_click(diagnostics::pointer_pixels(row));
+    world.click_text("Add to Quick Access Toolbar");
+    world.pump(Vec::new());
+    world.click_text("Tools");
+    world.click_text("3D Model");
+    let shortcut = world
+        .frame
+        .runs
+        .iter()
+        .find(|run| run.text == "MoveBodies" && run.center()[1] < 34.)
+        .expect("quick access Move Bodies")
+        .center();
+    world.click(diagnostics::pointer_pixels(shortcut));
+    assert!(diagnostics::window_geometry("Move Bodies").is_some());
+    world.click_text("Cancel");
+    world.close();
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+#[ignore = "#4098: popup keyboard navigation does not activate a menu item"]
+fn move_body_context_menu_accepts_keyboard_selection() {
+    let mut world = ApplicationWorld::new();
+    super::solid_part(&mut world);
+    super::opened_unpinned(&mut world);
+    let row = world
+        .run_in_window("##ribbon-additional-PartModify", "MoveBodies")
+        .center();
+    super::super::x11_input::right_click(diagnostics::pointer_pixels(row));
+    world.pump(Vec::new());
+    world.expect_text("Move to Main Panel");
+    for key in [0xff54, 0xff54, 0xff54, 0xff0d] {
+        super::super::x11_input::press_keysym(key);
+        world.pump(Vec::new());
+    }
+    assert!(diagnostics::window_geometry("##ribbon-additional-PartModify").is_none());
+    world.run_in_window("##application-ribbon", "MoveBodies");
+    world.close();
+}

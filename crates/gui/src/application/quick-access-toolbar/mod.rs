@@ -115,8 +115,19 @@ impl QuickAccessToolbar {
             }
             ui.same_line();
         }
+        let mut added_index = STANDARD
+            .into_iter()
+            .filter(|command| selection.shows(*command))
+            .count();
         for entry in &selection.added {
-            self.added_entry(ui, entry, state);
+            self.added_entry(ui, entry, state, actions);
+            if matches!(entry, AddedEntry::Command(_)) {
+                added_index += 1;
+                let tip = added_index.to_string();
+                if tips.tabs() && added_index <= 9 && tips.matching(&tip) {
+                    crate::ribbon_key_tips::badge(ui, &tip);
+                }
+            }
             ui.same_line();
         }
         self.shortcut_menu(ui, state);
@@ -129,10 +140,15 @@ impl QuickAccessToolbar {
         actions: &mut Vec<GuiShellAction>,
     ) {
         let selection = self.selection(state).clone();
-        let command = STANDARD
+        let standard: Vec<_> = STANDARD
             .into_iter()
             .filter(|command| selection.shows(*command))
-            .nth(index);
+            .collect();
+        if index >= standard.len() {
+            self.activate_added_tip(&selection, index - standard.len(), state, actions);
+            return;
+        }
+        let command = standard.get(index).copied();
         let action = match command {
             Some(StandardCommand::New) => {
                 self.requests.new_document = true;
@@ -198,6 +214,25 @@ impl QuickAccessToolbar {
             actions.push(action);
         }
     }
+    fn activate_added_tip(
+        &self,
+        selection: &KindSelection,
+        index: usize,
+        state: &GuiCommandState,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        let label = selection
+            .added
+            .iter()
+            .filter_map(|entry| match entry {
+                AddedEntry::Command(label) => Some(label.as_str()),
+                AddedEntry::Separator => None,
+            })
+            .nth(index);
+        if label == Some("Move Bodies") && GuiShellAction::OpenMoveBody.dispatchable(state) {
+            actions.push(GuiShellAction::OpenMoveBody);
+        }
+    }
     /// Right-click on Undo reads what it would undo, latest first.
     fn undo_history(
         &mut self,
@@ -224,12 +259,25 @@ impl QuickAccessToolbar {
         // The last row's descenders must fit inside the popup clip (#4068).
         ui.dummy([0., 2.]);
     }
-    fn added_entry(&mut self, ui: &Ui, entry: &AddedEntry, state: &GuiCommandState) {
+    fn added_entry(
+        &mut self,
+        ui: &Ui,
+        entry: &AddedEntry,
+        state: &GuiCommandState,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
         let AddedEntry::Command(label) = entry else {
             separator(ui);
             return;
         };
-        if label == EXTRUDE && extrude_can_start(state) {
+        if label == "Move Bodies" {
+            let action = GuiShellAction::OpenMoveBody;
+            let disabled = ui.begin_disabled(!action.dispatchable(state));
+            if ui.button(label) {
+                actions.push(action);
+            }
+            drop(disabled);
+        } else if label == EXTRUDE && extrude_can_start(state) {
             if ui.button(label) {
                 match crate::extrude_dialog::start_action(state) {
                     GuiShellAction::ChooseSketchPlaneForExtrude => {
@@ -297,6 +345,15 @@ impl QuickAccessToolbar {
         if ui.menu_item(placement) {
             self.below_ribbon = !self.below_ribbon;
         }
+    }
+    pub(crate) fn add_ribbon_command(&mut self, state: &GuiCommandState, label: &str) {
+        let selection = self.selection(state);
+        if !selection.has_command(label) {
+            selection.added.push(AddedEntry::Command(label.to_owned()));
+        }
+    }
+    pub(crate) fn has_ribbon_command(&mut self, state: &GuiCommandState, label: &str) -> bool {
+        self.selection(state).has_command(label)
     }
     /// A ribbon command's own menu; example: right-click Extrude on the 3D Model tab.
     pub(crate) fn ribbon_command_menu(

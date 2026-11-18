@@ -157,3 +157,32 @@ fn return_cannot_finish_while_a_transaction_is_open() {
     state.authoring = crate::GuiAuthoringContext::OtherDocument;
     assert!(!GuiShellAction::FinishSketch.enabled(&state));
 }
+
+#[test]
+fn move_body_shortcut_is_unique_scoped_and_dispatches_when_available() {
+    let mut toolbar = QuickAccessToolbar::default();
+    let mut state = GuiCommandState {
+        document: Some(7),
+        document_type: Some(oblikovati_api::types::DOCUMENT_PART),
+        authoring: crate::GuiAuthoringContext::Part,
+        fillet_available: true,
+        ..Default::default()
+    };
+    toolbar.add_ribbon_command(&state, "Move Bodies");
+    toolbar.add_ribbon_command(&state, "Move Bodies");
+    let selection = toolbar.selection(&state).clone();
+    assert_eq!(selection.added.len(), 1);
+    let index = STANDARD
+        .into_iter()
+        .filter(|command| selection.shows(*command))
+        .count();
+    let mut actions = Vec::new();
+    toolbar.activate_tip(index, &state, &mut actions);
+    assert_eq!(actions, vec![GuiShellAction::OpenMoveBody]);
+    state.transaction_open = true;
+    actions.clear();
+    toolbar.activate_tip(index, &state, &mut actions);
+    assert!(actions.is_empty());
+    state.document_type = Some(oblikovati_api::types::DOCUMENT_DRAWING);
+    assert!(!toolbar.has_ribbon_command(&state, "Move Bodies"));
+}
