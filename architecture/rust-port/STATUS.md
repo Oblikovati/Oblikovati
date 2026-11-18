@@ -28,6 +28,11 @@ using this status; the live scenario directory can change.
 - Viewport navigation wheel has a full-feature diagnostic: all 12 scenarios
   and 143 steps passed at SHA-256 `9793d6a9ad9655ef4412295075dfbf9f6f5a5f97566e5564f2ca9f5a9c68f62a`.
   This run used scripted window input.
+- Main-window-frame passed 20 executed cases and 149 steps using X11,
+  Openbox, tint2, and AT-SPI. Functional and visual notes were reviewed;
+  minimize and maximize use a saved-part fixture. One prior full run failed
+  intermittently at the application-bar double-click; its report is retained
+  beside the passing run (#4063).
 - Viewport orbit has a full-feature diagnostic: all 10 executed cases,
   including both examples of one outline, passed at SHA-256
   `d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6`.

@@ -75,6 +75,20 @@ class FeatureProgressTests(unittest.TestCase):
         with patch.object(progress, "source_inventory", return_value=[]):
             self.assertEqual(self.status(), ("needs_outline_review", 0))
 
+    def test_recorded_inventory_requires_its_artifact_hash(self) -> None:
+        parsed = self.root / "parsed.json"
+        parsed.write_text(json.dumps({"scenarios": [{"path": self.path}]}))
+        record = {
+            "scenario_inventory": "parsed.json",
+            "scenario_inventory_sha256": progress.digest(parsed),
+        }
+        with patch.object(progress, "ROOT", self.root):
+            self.assertEqual(progress.recorded_inventory(record), [{"path": self.path}])
+            parsed.write_text("{}")
+            self.assertIsNone(progress.recorded_inventory(record))
+            record["scenario_inventory"] = "../outside.json"
+            self.assertIsNone(progress.recorded_inventory(record))
+
     def test_blocker_is_visible_until_source_changes(self) -> None:
         self.record["blocker"] = "Scenario is capture-only"
         self.assertEqual(self.status(), ("blocked", 0))
@@ -113,6 +127,16 @@ class FeatureProgressTests(unittest.TestCase):
         self.assertEqual(
             progress.count_checked_scenarios(report, [row]), ("incomplete", 0)
         )
+
+    def test_supporting_document_change_invalidates_the_run(self) -> None:
+        note = self.feature.parent / "FUNCTIONAL.md"
+        note.write_text("Saved part fixture")
+        self.record["supporting_files"] = {
+            note.relative_to(self.root).as_posix(): progress.digest(note)
+        }
+        self.assertEqual(self.status(), ("green", 2))
+        note.write_text("Changed fixture")
+        self.assertEqual(self.status(), ("support_changed", 0))
 
     def test_unrecorded_feature_is_not_run(self) -> None:
         self.assertEqual(

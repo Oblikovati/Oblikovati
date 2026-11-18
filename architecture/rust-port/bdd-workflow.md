@@ -244,8 +244,12 @@ Do not overwrite future behavior classifications with this raw inventory.
 
 ## Feature-by-feature run inventory
 
-Work on one feature until all its scenarios pass. To inspect the live source and
-its recorded full-feature runs, use:
+Work on one feature until all its scenarios pass. Before implementation and
+verification, read its `.feature` file and its available `FUNCTIONAL.md`,
+`VISUAL.md`, `FIXTURES.md`, `BLOCKERS.md`, and reference images. Check fixture
+and visual assumptions against those files. Record the hashes of supporting
+files used for the run; a changed supporting file requires review as well.
+To inspect the live source and its recorded full-feature runs, use:
 
 ```sh
 python3 -B tools/bdd/feature_progress.py /mnt/vininas-projects/MCAD-Scenarios
@@ -255,12 +259,15 @@ The report includes the current SHA-256 of each `.feature` file, its scenario
 declaration count, and the number of scenarios passed in the recorded run. A
 feature is `green` only when the source hash matches, the report hash matches,
 every scenario and its source steps are present, and every step and cleanup
-hook passed. A source change becomes `source_changed`; a removed file is listed
-separately. A `blocker` on a hash-matched result reports the feature as
+hook passed. A source change becomes `source_changed`; a change to a recorded
+supporting file becomes `support_changed`. A removed feature is listed separately. A `blocker` on a hash-matched result reports the feature as
 `blocked` without counting its scenarios as passed. For outlines, the inventory
-checks every example against the parsed scenario snapshot when its feature hash
-matches. Changed outlines and features with backgrounds, rules, or step tables
-need further review before the inventory can mark them green.
+checks every example against a parsed scenario snapshot when its feature hash
+matches. A run may provide a separate parsed inventory and its SHA-256 in
+`scenario_inventory` and `scenario_inventory_sha256`; generate it with the
+standard `cargo xtask scenario-ledger` from a clean snapshot of the source.
+Changed outlines without a matching parsed inventory, and ordinary features with
+backgrounds, rules, or step tables, need further review before they are green.
 
 After running a whole feature, retain its Cucumber report and other artifacts
 under `receipts/`, then add the source hash, report path and hash, tested commit,

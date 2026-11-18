@@ -89,6 +89,7 @@ fn restore_remains_available(world: &mut ApplicationWorld) {
 
 #[given("the restored main window occupies a known size and position within the desktop work area")]
 fn remember_restored_bounds(world: &mut ApplicationWorld) {
+    save_active_part_fixture(world);
     restored_window(world);
     world.previous_document = Some(world.active_id());
 }
@@ -140,10 +141,17 @@ fn remember_maximized_part(world: &mut ApplicationWorld) {
     remember_part_view(world);
 }
 fn remember_part_view(world: &mut ApplicationWorld) {
+    save_active_part_fixture(world);
     world.previous_document = Some(world.active_id());
     world.observed_view_camera = Some(crate::HeadWindow::view_camera(&world.app().window).unwrap());
     super::x11_input::focus_window();
 }
+fn save_active_part_fixture(world: &mut ApplicationWorld) {
+    let document = world.active_id();
+    world.save_part_to_file(document, "main-window-frame.opd");
+    assert!(!world.state().document_storage[&document].unsaved_edits);
+}
+
 #[when("the user selects Minimize in the application bar")]
 fn minimize_part_window(world: &mut ApplicationWorld) {
     super::main_window_frame_native::pump_minimize_button(world);
