@@ -17,6 +17,11 @@ pub struct NamedPrismSnapshot {
     subentity_bindings: Option<ExactReferenceBindings<subentities::BoundSubentity>>,
     certification: Option<CertifiedPrismEvidence>,
 }
+impl NamedPrismSnapshot {
+    pub(crate) fn into_probe_snapshot(self) -> PrismProbeSnapshot {
+        self.snapshot
+    }
+}
 /// Measured tolerance and authored point identities retained with a certified replay.
 #[derive(Clone, Debug, PartialEq)]
 pub struct CertifiedPrismEvidence {

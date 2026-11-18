@@ -15,8 +15,8 @@ return a named decline before it constructs a blend. (#4079)
 Named planar-face resolution also requires an explicit evaluator implementation.
 Placement and projections borrow the current datum catalogue from this replay.
 The backend receives checked inputs and does not read or replay the document.
-`MartensitePrismEvaluator` uses the existing selected-profile construction,
-validation, provenance checks, and isolated diagnostic snapshot path.
+`CertifiedNamedSolidEvaluator` uses selected-profile construction, validation,
+and provenance checks for both diagnostic and certified replay.
 
 Failures retain their source kind: datum, metadata, input preparation, or kernel adapter.
 Failed features block their immediate readers. Independent entries continue.
@@ -24,7 +24,8 @@ Blocked dependencies take precedence over suppression, as required by ADR-0004.
 Suppressed, cutoff, and failed entries have no current body output. A fresh replay
 can recover without changing earlier reports or serving last-good bodies.
 
-`retain_stored_sketch_prism` now consumes this common replay. Its separate
+`retain_stored_sketch_prism` takes a document GUID and consumes this complete
+named replay before returning a detached diagnostic prism. Its separate
 suppression and active-entry helpers were deleted. No geometry algorithm,
 recognizer, tolerance constant, or fallback was added. Kernel construction and
 meshing remain in Martensite.

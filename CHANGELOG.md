@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+Stored prism diagnostics now use document-scoped complete replay. (#4079)
+
 ### Added
 
 - Enabled the Rust desktop application on Windows through a native Win32 window and Martensite Vulkan rendering.

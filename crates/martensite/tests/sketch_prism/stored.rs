@@ -1,11 +1,19 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use oblikovati_martensite::retain_stored_sketch_prism;
 use oblikovati_model::{
     feature::{FeatureId, sketch_prism::SketchPrismDefinition, work_geometry::DatumLength},
     history::{DocumentEditHistory, DocumentSnapshot},
     identity::RecipeIdAllocator,
 };
+fn stored_document_guid() -> oblikovati_model::identity::DocumentGuid {
+    "11111111-2222-3333-4444-555555555555".parse().unwrap()
+}
+fn retain_stored_sketch_prism(
+    snapshot: &DocumentSnapshot,
+    feature: FeatureId,
+) -> Result<oblikovati_martensite::PrismProbeSnapshot, String> {
+    oblikovati_martensite::retain_stored_sketch_prism(snapshot, stored_document_guid(), feature)
+}
 fn stored_owner() -> DocumentEditHistory {
     let mut document = selected_sketch_document();
     document
