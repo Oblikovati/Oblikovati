@@ -294,6 +294,8 @@ mod assignments;
 mod bodies;
 #[path = "part_scene/cutoff_checkpoint.rs"]
 mod cutoff_checkpoint;
+#[path = "part_scene/delete_checkpoint.rs"]
+mod delete_checkpoint;
 #[path = "part_scene/measure.rs"]
 mod measure;
 #[path = "part_scene/part_mass.rs"]
