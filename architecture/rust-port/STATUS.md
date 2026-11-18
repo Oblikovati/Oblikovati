@@ -37,6 +37,9 @@ using this status; the live scenario directory can change.
   cached geometry safe or enable prefix reuse.
 - A session test places a newly authored Fillet at the dirty boundary and
   checks undo and redo. It uses a fake evaluator; it is not a replay-count test.
+- A headless typed Fillet test measures three full replays without a shared
+  source result and two with a warm source result: candidate and publication
+  still each replay the complete part. Prefix reuse remains open (#4079).
 - The dock lifecycle inventory and representative first-frame native tests pass.
   Projects pointer docking, modal-child saved-layout restart, and File Properties
   native docking remain open in #4073.

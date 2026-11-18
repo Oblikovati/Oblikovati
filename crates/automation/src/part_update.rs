@@ -32,6 +32,7 @@ pub use access::PartUpdateAccess;
 pub struct PartReplayService {
     slots: BTreeMap<u64, PartEvaluationSlot<NamedSolid, EvaluationFailure>>,
     resolution: Option<PrismResolutionPolicy>,
+    replay_count: u64,
 }
 impl PartReplayService {
     /// Create a certified headless replay owner; example: `PartReplayService::with_policy(policy)?`.
@@ -39,7 +40,12 @@ impl PartReplayService {
         Ok(Self {
             slots: BTreeMap::new(),
             resolution: Some(policy.validate()?),
+            replay_count: 0,
         })
+    }
+    /// Count complete part replay attempts by this owner; example: `service.replay_count()`.
+    pub fn replay_count(&self) -> u64 {
+        self.replay_count
     }
     /// Borrow a document's retained replay; example: `service.slot(document)`.
     pub fn slot(
@@ -132,7 +138,13 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
     ) -> Result<Vec<FeatureError>, String> {
         self.retain_open_documents(files.workspace().documents());
         let slot = self.slots.entry(document).or_default();
-        refresh_and_adopt_part(files, document, self.resolution, slot)?;
+        refresh_and_adopt_counted(
+            files,
+            document,
+            self.resolution,
+            slot,
+            &mut self.replay_count,
+        )?;
         let session = files
             .workspace()
             .session(document)
@@ -219,7 +231,17 @@ pub fn refresh_and_adopt_part<O: TransactionObserver, W: WorkspaceObserver, F: D
     resolution: Option<PrismResolutionPolicy>,
     slot: &mut PartEvaluationSlot<NamedSolid, EvaluationFailure>,
 ) -> Result<(), String> {
-    let completed = prepare_part_sketches(files, document, resolution)?;
+    refresh_and_adopt_counted(files, document, resolution, slot, &mut 0)
+}
+
+fn refresh_and_adopt_counted<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &mut FileWorkspace<O, W, F>,
+    document: u64,
+    resolution: Option<PrismResolutionPolicy>,
+    slot: &mut PartEvaluationSlot<NamedSolid, EvaluationFailure>,
+    replay_count: &mut u64,
+) -> Result<(), String> {
+    let completed = prepare_part_sketches(files, document, resolution, replay_count)?;
     let published = if let Some(completed) = completed {
         files
             .commands(document)
@@ -230,7 +252,7 @@ pub fn refresh_and_adopt_part<O: TransactionObserver, W: WorkspaceObserver, F: D
         false
     };
     if !published {
-        let completed = complete_part_replay(files, document, resolution)?;
+        let completed = complete_part_replay_counted(files, document, resolution, replay_count)?;
         files
             .commands(document)
             .map_err(|error| error.to_string())?
@@ -247,7 +269,7 @@ pub fn refresh_part_sketches<O: TransactionObserver, W: WorkspaceObserver, F: Do
     document: u64,
     resolution: Option<PrismResolutionPolicy>,
 ) -> Result<bool, String> {
-    let Some(completed) = prepare_part_sketches(files, document, resolution)? else {
+    let Some(completed) = prepare_part_sketches(files, document, resolution, &mut 0)? else {
         return Ok(false);
     };
     files
@@ -260,6 +282,7 @@ fn prepare_part_sketches<O: TransactionObserver, W: WorkspaceObserver, F: Docume
     files: &FileWorkspace<O, W, F>,
     document: u64,
     resolution: Option<PrismResolutionPolicy>,
+    replay_count: &mut u64,
 ) -> Result<Option<NamedSketchRecompute>, String> {
     let workspace = files.workspace();
     let session = workspace
@@ -276,6 +299,7 @@ fn prepare_part_sketches<O: TransactionObserver, W: WorkspaceObserver, F: Docume
     let request = session.prepare_part_evaluation();
     let mut evaluator =
         CertifiedNamedSolidEvaluator::with_optional_policy(session.history(), guid, resolution);
+    *replay_count = replay_count.saturating_add(1);
     let completed = request
         .recompute_sketches(&mut evaluator, options)
         .map_err(|error| error.to_string())?;
@@ -367,6 +391,14 @@ pub fn complete_part_replay<O: TransactionObserver, W: WorkspaceObserver, F: Doc
     document: u64,
     resolution: Option<PrismResolutionPolicy>,
 ) -> Result<CompletedPartEvaluation<NamedSolid, EvaluationFailure>, String> {
+    complete_part_replay_counted(files, document, resolution, &mut 0)
+}
+fn complete_part_replay_counted<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &FileWorkspace<O, W, F>,
+    document: u64,
+    resolution: Option<PrismResolutionPolicy>,
+    replay_count: &mut u64,
+) -> Result<CompletedPartEvaluation<NamedSolid, EvaluationFailure>, String> {
     let workspace = files.workspace();
     let guid = workspace
         .identity(document)
@@ -378,6 +410,7 @@ pub fn complete_part_replay<O: TransactionObserver, W: WorkspaceObserver, F: Doc
     let request = session.prepare_part_evaluation();
     let mut evaluator =
         CertifiedNamedSolidEvaluator::with_optional_policy(session.history(), guid, resolution);
+    *replay_count = replay_count.saturating_add(1);
     request
         .evaluate(&mut evaluator)
         .map_err(|error| error.to_string())
