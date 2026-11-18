@@ -116,7 +116,7 @@ fn changed_named_fillet_replays_from_the_prism_checkpoint() {
         .unwrap();
     assert_eq!((original.prisms, original.blends), (1, 1));
     let mut candidate = history.snapshot().clone();
-    replace_fillet(&mut candidate, definition(edge, 0.15)).unwrap();
+    replace_fillet(&mut candidate, definition(edge.clone(), 0.15)).unwrap();
     let mut resumed_backend = CountingEvaluator::new(&history);
     let replay = checkpoints
         .replay_candidate_tail(&candidate, &mut resumed_backend)
@@ -141,9 +141,42 @@ fn changed_named_fillet_replays_from_the_prism_checkpoint() {
         );
     }
     drop(replay);
+    let mut first_backend = CountingEvaluator::new(&history);
+    let first = checkpoints
+        .replay_with_checkpoints(&candidate, &mut first_backend, || false)
+        .unwrap();
+    assert_eq!((first_backend.prisms, first_backend.blends), (0, 1));
+    let mut second_candidate = candidate.clone();
+    replace_fillet(&mut second_candidate, definition(edge, 0.2)).unwrap();
+    let mut second_backend = CountingEvaluator::new(&history);
+    let second = first
+        .replay_with_checkpoints(&second_candidate, &mut second_backend, || false)
+        .unwrap();
+    assert_eq!((second_backend.prisms, second_backend.blends), (0, 1));
+    let mut baseline = CountingEvaluator::new(&history);
+    let expected = second_candidate
+        .evaluate_part_features(&mut baseline)
+        .unwrap();
+    let actual = second.result().body(FeatureId(2)).unwrap();
+    let expected = expected.body(FeatureId(2)).unwrap();
+    assert_eq!(
+        actual.reference_keys(&history, document()).unwrap(),
+        expected.reference_keys(&history, document()).unwrap()
+    );
+    for face in actual.face_reference_keys(&history, document()).unwrap() {
+        assert!(
+            (actual.face_area(&history, document(), &face).unwrap()
+                - expected.face_area(&history, document(), &face).unwrap())
+            .abs()
+                < 1e-10
+        );
+    }
     drop(original);
     drop(resumed_backend);
     drop(full_backend);
+    drop(first_backend);
+    drop(second_backend);
+    drop(baseline);
     history
         .refresh(|snapshot| snapshot.parameters.set_expression(1, "20 mm"))
         .unwrap();

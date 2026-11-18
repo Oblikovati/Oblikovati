@@ -16,7 +16,7 @@ pub type CheckpointedPart<Body, Failure> = (
 
 /// Complete prefix states from one replay; the owner must guard document and policy freshness.
 pub struct PartReplayCheckpoints<Body, Failure> {
-    states: Vec<PartFeatureEvaluation<Body, Failure>>,
+    pub(super) states: Vec<PartFeatureEvaluation<Body, Failure>>,
 }
 impl<Body, Failure> PartReplayCheckpoints<Body, Failure> {
     /// Borrow the final state; example: `checkpoints.result()` after a complete replay.
@@ -134,7 +134,7 @@ impl DocumentSnapshot {
         ))
     }
 }
-fn copy_state<Body: Clone, Failure: Clone>(
+pub(super) fn copy_state<Body: Clone, Failure: Clone>(
     state: &PartFeatureEvaluation<Body, Failure>,
     health: &[FeatureHealthRecord<PartFeatureFailure<Failure>>],
     source: &Arc<DocumentSnapshot>,
