@@ -172,6 +172,12 @@ fn apply_key_tip(
                 owners.preferences.request_document(id);
             }
         }
+        Some(KeyTipAction::OpenAdditional(panel)) => {
+            let tab = owners.ribbon.active;
+            if !owners.home_active && !owners.ribbon.display.hidden_panels.contains(&(tab, panel)) {
+                owners.ribbon.panels.request_additional(tab, panel);
+            }
+        }
         Some(KeyTipAction::OpenGroup(panel)) => {
             if !owners.home_active
                 && !owners

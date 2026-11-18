@@ -153,8 +153,9 @@ fn draw_window(
     let ui = context.ui;
     let scale = context.owners.icons.layout_factor();
     let [viewport_width, viewport_height] = ui.io().display_size;
-    let left = area.left.clamp(0., (viewport_width - 1.).max(0.));
-    let right = area.right.clamp(left + 1., viewport_width.max(left + 1.));
+    // Additional commands may cover the browser as well as the viewport (#3856).
+    let left = 0.;
+    let right = viewport_width.max(1.);
     let appearance = context.owners.icons.appearance;
     let preferred_width = if appearance == crate::ribbon_command_layout::RibbonAppearance::Normal {
         ADDITIONAL_WIDTH

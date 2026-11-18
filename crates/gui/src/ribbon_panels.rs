@@ -21,8 +21,11 @@ pub(crate) struct RibbonPanelLayout {
     measured_appearance: Option<crate::ribbon_command_layout::RibbonAppearance>,
     popup_press: crate::popup_press::PopupPress<(RibbonTab, RibbonPanel)>,
     pub pending_layout: bool,
+    pending_additional: Option<(RibbonTab, RibbonPanel)>,
     additional: additional::PanelExpansions,
 }
+#[path = "ribbon_panel_keyboard.rs"]
+mod keyboard;
 #[path = "ribbon_panel_measurements.rs"]
 mod measurements;
 /// Editors and layout a ribbon panel's controls can change.
@@ -110,6 +113,7 @@ pub(crate) fn draw_panels(
     };
     if display.mode == RibbonDisplay::Full {
         full_row(&mut context, tab, layout);
+        layout.pending_additional = None;
         additional::draw(&mut context, tab, layout, display);
     } else {
         compact_row(&mut context, tab, display);
@@ -425,7 +429,11 @@ fn draw_expanded(
             let title_clicked = ui.is_item_clicked();
             local_action |= title_clicked && !expandable;
             if expandable {
-                additional::trigger(ui, tab, panel, anchor, title_clicked, layout);
+                let requested = layout.take_additional(tab, panel);
+                additional::trigger(ui, tab, panel, anchor, title_clicked || requested, layout);
+                if panel == RibbonPanel::PartModify && context.owners.modify_group_tip {
+                    crate::ribbon_key_tips::badge(ui, "Y");
+                }
             }
         } else if expandable {
             crate::widget_abi::dummy(ui, [0., ui.text_line_height()]);

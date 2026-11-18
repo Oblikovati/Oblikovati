@@ -142,11 +142,16 @@ fn model_commands_resolve_and_leave_the_tip_mode() {
     assert!(!tips.active());
 }
 #[test]
-fn modify_group_tip_opens_only_for_a_grouped_model_ribbon() {
+fn modify_tip_opens_the_matching_panel_for_each_ribbon_layout() {
     let mut tips = RibbonKeyTips::default();
     press(&mut tips, GuiKey::LeftAlt);
     press(&mut tips, GuiKey::M);
-    assert_eq!(press(&mut tips, GuiKey::Y), None);
+    assert_eq!(
+        press(&mut tips, GuiKey::Y),
+        Some(KeyTipAction::OpenAdditional(
+            crate::ribbon_panels::RibbonPanel::PartModify
+        ))
+    );
     let action = tips.process(
         &[GuiInputEvent::Key {
             key: GuiKey::Y,
@@ -206,4 +211,18 @@ fn text_focus_blocks_activation_and_arrows_remain_unclaimed() {
     assert!(tips.tabs() && !tips.consumed);
     tips.process(&[GuiInputEvent::Focus(false)], &[], false, false);
     assert!(!tips.active());
+}
+
+#[test]
+fn model_modify_tip_opens_additional_area_in_a_full_ribbon() {
+    let mut tips = RibbonKeyTips::default();
+    press(&mut tips, GuiKey::LeftAlt);
+    press(&mut tips, GuiKey::M);
+    assert_eq!(
+        press(&mut tips, GuiKey::Y),
+        Some(KeyTipAction::OpenAdditional(
+            crate::ribbon_panels::RibbonPanel::PartModify
+        ))
+    );
+    assert!(tips.commands());
 }
