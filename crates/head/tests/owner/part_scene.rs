@@ -354,6 +354,8 @@ mod clear_face;
 mod fillet_edit;
 #[path = "part_scene/fillet_scene.rs"]
 mod fillet_scene;
+#[path = "part_scene/hole_scene.rs"]
+mod hole_scene;
 
 #[path = "part_scene/fillet_replay_consumers.rs"]
 mod fillet_replay_consumers;
