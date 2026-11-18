@@ -62,6 +62,7 @@ fn cloned_binding_index_keeps_the_same_document_and_generation_guard() {
     let mut owner = history();
     let index = bindings(&owner);
     let copy = index.clone_current(&owner, document()).unwrap();
+    let shared = index.clone();
     assert_eq!(
         *copy
             .bind(&owner, document(), &key(2, 1, b"cap"), 1)
@@ -75,6 +76,11 @@ fn cloned_binding_index_keeps_the_same_document_and_generation_guard() {
         .refresh(|snapshot| snapshot.parameters.set_expression(3, "3 cm"))
         .unwrap();
     assert!(index.clone_current(&owner, document()).is_err());
+    assert!(
+        shared
+            .bind(&owner, document(), &key(2, 1, b"cap"), 1)
+            .is_err()
+    );
     assert!(
         copy.bind(&owner, document(), &key(2, 1, b"cap"), 1)
             .is_err()

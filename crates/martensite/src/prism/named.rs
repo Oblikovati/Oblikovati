@@ -11,6 +11,7 @@ use oblikovati_model::{
 };
 
 /// Retained exact geometry and current semantic names; native handles remain private.
+#[derive(Clone)]
 pub struct NamedPrismSnapshot {
     snapshot: PrismProbeSnapshot,
     bindings: ExactReferenceBindings<Option<PrismFaceRole>>,

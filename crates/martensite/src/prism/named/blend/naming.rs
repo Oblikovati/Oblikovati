@@ -7,6 +7,7 @@ use oblikovati_model::identity::{DerivedReferenceName, ExactReferenceBindings};
 use std::collections::{BTreeMap, BTreeSet};
 
 /// Exact live and deleted names for a validated candidate result.
+#[derive(Clone)]
 pub struct BlendNamedTopology {
     live: Vec<Vec<u8>>,
     deleted: Vec<Vec<u8>>,
