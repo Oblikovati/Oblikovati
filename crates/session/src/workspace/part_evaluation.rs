@@ -87,6 +87,18 @@ impl<O: TransactionObserver> SessionCommands<'_, O> {
     ) -> Result<bool, String> {
         self.session.adopt_owned_sketches(policy, completed)
     }
+    /// Publish settled sketch checkpoints; example: `commands.adopt_owned_sketch_checkpoints(policy, result)?`.
+    pub fn adopt_owned_sketch_checkpoints(
+        &mut self,
+        policy: Option<oblikovati_martensite::PrismResolutionPolicy>,
+        completed: CompletedPartSketchCheckpoints<
+            oblikovati_martensite::NamedSolid,
+            oblikovati_martensite::EvaluationFailure,
+        >,
+    ) -> Result<bool, String> {
+        self.session
+            .adopt_owned_sketch_checkpoints(policy, completed)
+    }
     /// Retain named checkpoints; example: `commands.adopt_owned_checkpoints(policy, result)?`.
     pub fn adopt_owned_checkpoints(
         &mut self,

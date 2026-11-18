@@ -25,6 +25,8 @@ using this status; the live scenario directory can change.
 - The GUI library passed 587 tests during the P0 work. A full all-target run
   reported 22 integration failures across four targets; triage is #4078. That
   run preceded the final dock lifecycle change and is not a current green suite.
+- The head part-scene suite passed 134 of 135 tests; a modified body click
+  selection test fails on both this work and clean parent `7ebc06bdb` (#4091).
 - The scripted native-window cube journey passed on `1ac04f5f3`, including
   undo, redo, save/reopen, and named-face checks. Its images show a front
   projection, and input is injected into the GUI loop; OS-level acceptance and
@@ -46,6 +48,9 @@ using this status; the live scenario directory can change.
 - A cold checkpoint request for a part without associative sketch recompute
   publishes its result and boundaries from one replay instead of two. Ownership
   tests cover repeat requests and isolation between documents (#4079).
+- A cold checkpoint request with a settled face sketch also publishes from one
+  ordered replay. When sketch state changes, a second replay publishes the
+  updated state; the native-owner test checks both paths (#4079).
 - Certified Extrude creation publishes its validated document replay before
   display when a current prefix is available. Repeated previews reuse that
   prefix and cancel without an edit. Tests check two-extrusion names, policy
