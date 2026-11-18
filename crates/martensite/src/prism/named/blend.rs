@@ -10,6 +10,7 @@ use oblikovati_model::identity::ReferenceEnvelope;
 mod naming;
 mod queries;
 pub use naming::BlendNamedTopology;
+pub(super) use naming::CapturedBlendTopology;
 
 /// A validated detached result and its input history, before assigning result names.
 pub struct BlendCandidate {
