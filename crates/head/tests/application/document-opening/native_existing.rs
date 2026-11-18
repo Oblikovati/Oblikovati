@@ -43,8 +43,14 @@ fn native_input_opens_saved_drawing_with_its_sheet_and_view() {
     super::super::x11_input::press_control_o();
     settle(&mut world);
     world.expect_text("Look in");
-    let folder = models_folder(&mut world);
-    look_in(&mut world, &folder);
+    let folder = models_folder(&mut world).join("Caps_Fixture 2");
+    std::fs::create_dir_all(&folder).unwrap();
+    std::fs::rename(
+        world.saved_path.as_ref().unwrap(),
+        folder.join(DRAWING_FILE),
+    )
+    .unwrap();
+    native_enter_folder(&mut world, &folder);
     native_click_run(&mut world, DRAWING_FILE);
     native_click_run(&mut world, "Open");
     world.expect_no_text("Look in");
@@ -56,4 +62,20 @@ fn native_input_opens_saved_drawing_with_its_sheet_and_view() {
     world.expect_tab(&part_name);
     world.save_capture("native-open-drawing-3889");
     world.close();
+}
+
+fn native_enter_folder(world: &mut ApplicationWorld, folder: &std::path::Path) {
+    let label = world.run("Look in").clone();
+    let field = [label.maximum[0] + 60., label.center()[1]];
+    super::super::x11_input::click(super::super::diagnostics::pointer_pixels(field));
+    settle(world);
+    super::super::x11_input::press_control_a();
+    settle(world);
+    for character in folder.to_str().unwrap().chars() {
+        super::super::x11_input::press_path_character(character);
+        world.pump(Vec::new());
+    }
+    super::super::x11_input::press_keysym(0xff0d);
+    settle(world);
+    world.expect_text(DRAWING_FILE);
 }

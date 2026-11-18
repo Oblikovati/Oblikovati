@@ -113,6 +113,41 @@ pub(super) fn press_keysym(keysym: u32) {
     );
 }
 
+/// Type one ASCII path character through X11; example: `press_path_character('A')`.
+pub(super) fn press_path_character(character: char) {
+    let shifted = character.is_ascii_uppercase() || character == '_';
+    let base = if character == '_' {
+        '-'
+    } else {
+        character.to_ascii_lowercase()
+    };
+    assert!(
+        base.is_ascii_alphanumeric() || matches!(base, '/' | '.' | '-' | ' '),
+        "path character {character:?}: expected an ASCII letter, digit, slash, dot, hyphen, underscore or space"
+    );
+    if shifted {
+        press_shifted_keysym(u32::from(base));
+    } else {
+        press_keysym(u32::from(base));
+    }
+}
+
+fn press_shifted_keysym(keysym: u32) {
+    let (connection, root) = keyboard_target();
+    let shift = keyboard_keycode(&connection, 0xffe1);
+    let key = keyboard_keycode(&connection, keysym);
+    send_key_sequence(
+        &connection,
+        root,
+        &[
+            (KEY_PRESS_EVENT, shift),
+            (KEY_PRESS_EVENT, key),
+            (KEY_RELEASE_EVENT, key),
+            (KEY_RELEASE_EVENT, shift),
+        ],
+    );
+}
+
 pub(super) fn press_escape() {
     let (connection, root) = keyboard_target();
     let escape = keyboard_keycode(&connection, 0xff1b);
