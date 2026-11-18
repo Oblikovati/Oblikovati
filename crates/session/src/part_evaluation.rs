@@ -24,6 +24,27 @@ pub struct PartCandidateResult<'a, Body, Failure> {
     candidate: oblikovati_model::history::DocumentSnapshot,
     replay: oblikovati_model::feature::part::BorrowedPartReplay<'a, Body, Failure>,
 }
+/// An independently captured candidate that is not yet a published result.
+pub struct CapturedPartCandidate<Body, Failure> {
+    source: oblikovati_model::history::EvaluationScope,
+    candidate: oblikovati_model::history::DocumentSnapshot,
+    evaluation: PartFeatureEvaluation<Body, Failure>,
+}
+impl<Body, Failure> CapturedPartCandidate<Body, Failure> {
+    /// Count captured live bodies; example: `captured.body_count()`.
+    pub fn body_count(&self) -> usize {
+        self.evaluation.ordered_bodies().count()
+    }
+    /// Match the committed generation and candidate inputs, without authorizing name transfer.
+    /// Example: `captured.matches_transition(&transition, &history)` after the edit.
+    pub fn matches_transition(
+        &self,
+        transition: &oblikovati_model::history::EvaluationTransition,
+        history: &oblikovati_model::history::DocumentEditHistory,
+    ) -> bool {
+        candidate_matches_transition(&self.source, &self.candidate, transition, history)
+    }
+}
 impl<Body, Failure> PartCandidateResult<'_, Body, Failure> {
     /// Count current bodies in the candidate; example: `result.body_count()`.
     pub fn body_count(&self) -> usize {
@@ -36,11 +57,38 @@ impl<Body, Failure> PartCandidateResult<'_, Body, Failure> {
         transition: &oblikovati_model::history::EvaluationTransition,
         history: &oblikovati_model::history::DocumentEditHistory,
     ) -> bool {
-        transition.matches(&self.source, history)
-            && self
-                .candidate
-                .part_replay_change(history.snapshot())
-                .is_none()
+        candidate_matches_transition(&self.source, &self.candidate, transition, history)
+    }
+}
+fn candidate_matches_transition(
+    source: &oblikovati_model::history::EvaluationScope,
+    candidate: &oblikovati_model::history::DocumentSnapshot,
+    transition: &oblikovati_model::history::EvaluationTransition,
+    history: &oblikovati_model::history::DocumentEditHistory,
+) -> bool {
+    transition.matches(source, history)
+        && candidate.part_replay_change(history.snapshot()).is_none()
+}
+impl<Body, Failure: Clone> PartCandidateResult<'_, Body, Failure> {
+    /// Capture all candidate bodies while their source generation remains current.
+    /// Example: `candidate.capture(history, |feature, body| copy(feature, body))?`.
+    pub fn capture<Mapped>(
+        &self,
+        history: &oblikovati_model::history::DocumentEditHistory,
+        capture: impl FnMut(oblikovati_model::feature::FeatureId, &Body) -> Result<Mapped, String>,
+    ) -> Result<CapturedPartCandidate<Mapped, Failure>, String> {
+        if !self.source.is_current(history) {
+            return Err("part candidate capture: expected its current owning history".into());
+        }
+        let evaluation = self.replay.try_map_bodies(capture)?;
+        if !self.source.is_current(history) {
+            return Err("part candidate capture: expected an unchanged owner after capture".into());
+        }
+        Ok(CapturedPartCandidate {
+            source: self.source.clone(),
+            candidate: self.candidate.clone(),
+            evaluation,
+        })
     }
 }
 impl<Body, Failure: Clone + std::fmt::Debug> PartCandidatePrefix<'_, Body, Failure> {

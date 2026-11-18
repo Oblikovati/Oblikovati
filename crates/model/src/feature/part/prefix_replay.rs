@@ -89,6 +89,30 @@ impl<Body, Failure> BorrowedPartReplay<'_, Body, Failure> {
     }
 }
 
+impl<Body, Failure: Clone> BorrowedPartReplay<'_, Body, Failure> {
+    /// Capture every live body through the backend without changing the candidate.
+    /// Example: `candidate.try_map_bodies(|id, body| copy(id, body))?`.
+    pub fn try_map_bodies<Mapped, E>(
+        &self,
+        mut capture: impl FnMut(FeatureId, &Body) -> Result<Mapped, E>,
+    ) -> Result<PartFeatureEvaluation<Mapped, Failure>, E> {
+        let bodies = self
+            .0
+            .bodies
+            .iter()
+            .map(|(id, body)| capture(*id, body.get()).map(|body| (*id, body)))
+            .collect::<Result<_, _>>()?;
+        Ok(PartFeatureEvaluation {
+            datums: self.0.datums.clone(),
+            bodies,
+            body_lineage: self.0.body_lineage.clone(),
+            deleted: self.0.deleted.clone(),
+            health: self.0.health.clone(),
+            source: self.0.source.clone(),
+        })
+    }
+}
+
 impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
     /// Find a possible dirty tail since this result's source recipe.
     /// Example: `evaluation.replay_change(&candidate)` before planning a replay.
@@ -163,6 +187,7 @@ impl<Body, Failure: Clone> PartFeatureEvaluation<Body, Failure> {
             .map_err(|error| error.to_string())?;
         result.refresh_sketch_faces(&candidate, &backend);
         result.health = controller.finish().map_err(|error| error.to_string())?;
+        result.source = Some(Box::new(candidate.as_ref().clone()));
         Ok(BorrowedPartReplay(result))
     }
     fn borrow_prefix(&self) -> PartFeatureEvaluation<PrefixBody<'_, Body>, Failure> {
