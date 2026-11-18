@@ -410,3 +410,46 @@ fn candidate_result_rejects_a_different_edit_from_the_same_source() {
 
 #[path = "capture.rs"]
 mod capture;
+
+#[test]
+fn retired_shared_prefix_cannot_prepare_or_capture_a_candidate() {
+    use oblikovati_model::feature::AuthoredFeature;
+    let mut owner = session(7);
+    let mut slot = PartSlot::default();
+    publish(&mut owner, &mut slot);
+    let prefix = slot.candidate_prefix(&owner).unwrap();
+    let mut candidate = owner.snapshot().clone();
+    let feature = AuthoredFeature::sketch_prism(
+        FeatureId(2),
+        "Second",
+        fixture::selected_prism_definition(),
+        &candidate,
+    )
+    .unwrap();
+    candidate.work_geometry.append(feature).unwrap();
+    let pending = prefix
+        .prepare_tail(
+            owner.history(),
+            &candidate,
+            FeatureId(2),
+            &mut FakePrismEvaluator::default(),
+        )
+        .unwrap()
+        .unwrap();
+    slot.clear();
+    assert!(
+        pending
+            .capture(owner.history(), |_, body| Ok(*body))
+            .is_err()
+    );
+    assert!(
+        prefix
+            .prepare_tail(
+                owner.history(),
+                &candidate,
+                FeatureId(2),
+                &mut FakePrismEvaluator::default()
+            )
+            .is_err()
+    );
+}

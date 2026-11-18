@@ -41,7 +41,8 @@ and accepted edit. The session checks the completed transfer before adoption. Ea
 matches the accepted edit, including when document identifiers are equal. The
 adapter completes transfers through the model without a session dependency. The
 replay owner reuses checkpoints for blend creation and edits when policy and
-sketch inputs permit it. Associative sketches use ordered
+sketch inputs permit it. Prefixes share immutable retained results and are
+retired when their source slot is cleared, replaced, or dropped. Associative sketches use ordered
 recompute. General dirty-prefix replay, session ownership, full validity levels,
 achieved tolerance budgets, and operation-result requirements remain open.
 

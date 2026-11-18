@@ -79,7 +79,6 @@ fn evaluate_preview<O: TransactionObserver>(
     policy: oblikovati_martensite::PrismResolutionPolicy,
     prefix: Option<
         oblikovati_session::part_evaluation::PartCheckpointPrefix<
-            '_,
             NamedSolid,
             oblikovati_martensite::EvaluationFailure,
         >,

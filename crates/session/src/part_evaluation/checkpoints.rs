@@ -19,7 +19,8 @@ pub struct CompletedPartSketchCheckpoints<Body, Failure> {
 }
 /// An injected result store for one document's checkpoint set.
 pub struct PartCheckpointSlot<Body, Failure> {
-    published: Option<CompletedPartCheckpoints<Body, Failure>>,
+    published:
+        Option<std::sync::Arc<super::retained::Retained<CompletedPartCheckpoints<Body, Failure>>>>,
 }
 impl<Body, Failure> Default for PartCheckpointSlot<Body, Failure> {
     fn default() -> Self {
@@ -27,8 +28,8 @@ impl<Body, Failure> Default for PartCheckpointSlot<Body, Failure> {
     }
 }
 /// A source-checked checkpoint set for a private projected edit.
-pub struct PartCheckpointPrefix<'a, Body, Failure> {
-    published: &'a CompletedPartCheckpoints<Body, Failure>,
+pub struct PartCheckpointPrefix<Body, Failure> {
+    published: std::sync::Arc<super::retained::Retained<CompletedPartCheckpoints<Body, Failure>>>,
 }
 /// Private replayed boundaries still bound to the live source generation.
 pub struct PartCheckpointCandidate<Body, Failure> {
@@ -36,6 +37,7 @@ pub struct PartCheckpointCandidate<Body, Failure> {
     source: EvaluationScope,
     candidate: DocumentSnapshot,
     checkpoints: PartReplayCheckpoints<Body, Failure>,
+    lease: std::sync::Arc<std::sync::atomic::AtomicBool>,
 }
 /// Detached boundaries awaiting an accepted document transition.
 pub struct CapturedPartCheckpointCandidate<Body, Failure> {
@@ -154,14 +156,20 @@ impl<Body, Failure> PartCheckpointSlot<Body, Failure> {
         if let Some(previous) = &self.published {
             previous.validate_owner(session)?;
         }
-        self.published = Some(completed);
+        self.publish(completed);
         Ok(())
     }
+    fn publish(&mut self, completed: CompletedPartCheckpoints<Body, Failure>) {
+        if let Some(previous) = self.published.take() {
+            previous.retire();
+        }
+        self.published = Some(super::retained::Retained::new(completed));
+    }
     /// Borrow a current prefix; example: `slot.candidate_prefix(&session)?` before an edit.
-    pub fn candidate_prefix<'a, O: TransactionObserver>(
-        &'a self,
+    pub fn candidate_prefix<O: TransactionObserver>(
+        &self,
         session: &DocumentSession<O>,
-    ) -> Result<PartCheckpointPrefix<'a, Body, Failure>, PartEvaluationError> {
+    ) -> Result<PartCheckpointPrefix<Body, Failure>, PartEvaluationError> {
         let published = self
             .published
             .as_ref()
@@ -169,10 +177,19 @@ impl<Body, Failure> PartCheckpointSlot<Body, Failure> {
                 document: session.document,
             })?;
         published.validate(session)?;
-        Ok(PartCheckpointPrefix { published })
+        Ok(PartCheckpointPrefix {
+            published: std::sync::Arc::clone(published),
+        })
     }
 }
-impl<Body, Failure: Clone> PartCheckpointPrefix<'_, Body, Failure> {
+impl<Body, Failure> Drop for PartCheckpointSlot<Body, Failure> {
+    fn drop(&mut self) {
+        if let Some(previous) = self.published.take() {
+            previous.retire();
+        }
+    }
+}
+impl<Body, Failure: Clone> PartCheckpointPrefix<Body, Failure> {
     /// Replay an edited tail and retain all resulting boundaries before commit.
     /// Example: `prefix.prepare_checkpoints(history, candidate, &mut backend)?`.
     pub fn prepare_checkpoints<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
@@ -184,7 +201,7 @@ impl<Body, Failure: Clone> PartCheckpointPrefix<'_, Body, Failure> {
     where
         Body: Clone,
     {
-        if !self.published.scope.is_current(history) {
+        if !self.published.is_active() || !self.published.scope.is_current(history) {
             return Err("part checkpoints: expected the current owning history".into());
         }
         if self
@@ -200,9 +217,9 @@ impl<Body, Failure: Clone> PartCheckpointPrefix<'_, Body, Failure> {
             self.published
                 .checkpoints
                 .replay_with_checkpoints(candidate, backend, || {
-                    self.published.scope.is_superseded()
+                    !self.published.is_active() || self.published.scope.is_superseded()
                 })?;
-        if !self.published.scope.is_current(history) {
+        if !self.published.is_active() || !self.published.scope.is_current(history) {
             return Err("part checkpoints: expected an unchanged owner after replay".into());
         }
         Ok(Some(PartCheckpointCandidate {
@@ -210,6 +227,7 @@ impl<Body, Failure: Clone> PartCheckpointPrefix<'_, Body, Failure> {
             source: self.published.scope.clone(),
             candidate: candidate.clone(),
             checkpoints,
+            lease: self.published.lease(),
         }))
     }
     /// Replay the earliest dirty tail while the source history is still current.
@@ -220,7 +238,7 @@ impl<Body, Failure: Clone> PartCheckpointPrefix<'_, Body, Failure> {
         candidate: &DocumentSnapshot,
         backend: &mut B,
     ) -> Result<Option<PartCandidateResult<'a, Body, Failure>>, String> {
-        if !self.published.scope.is_current(history) {
+        if !self.published.is_active() || !self.published.scope.is_current(history) {
             return Err("part checkpoints: expected the current owning history".into());
         }
         if self
@@ -236,7 +254,7 @@ impl<Body, Failure: Clone> PartCheckpointPrefix<'_, Body, Failure> {
             .published
             .checkpoints
             .replay_candidate_tail(candidate, backend)?;
-        if !self.published.scope.is_current(history) {
+        if !self.published.is_active() || !self.published.scope.is_current(history) {
             return Err("part checkpoints: expected an unchanged owner after replay".into());
         }
         Ok(Some(PartCandidateResult {
@@ -244,6 +262,7 @@ impl<Body, Failure: Clone> PartCheckpointPrefix<'_, Body, Failure> {
             source: self.published.scope.clone(),
             candidate: candidate.clone(),
             replay,
+            lease: self.published.lease(),
         }))
     }
 }
@@ -259,11 +278,11 @@ impl<Body, Failure: Clone> PartCheckpointCandidate<Body, Failure> {
         history: &DocumentEditHistory,
         capture: impl FnMut(oblikovati_model::feature::FeatureId, &Body) -> Result<Mapped, String>,
     ) -> Result<CapturedPartCheckpointCandidate<Mapped, Failure>, String> {
-        if !self.source.is_current(history) {
+        if !super::retained::lease_is_active(&self.lease) || !self.source.is_current(history) {
             return Err("part checkpoint capture: expected its current owning history".into());
         }
         let checkpoints = self.checkpoints.try_map_bodies(capture)?;
-        if !self.source.is_current(history) {
+        if !super::retained::lease_is_active(&self.lease) || !self.source.is_current(history) {
             return Err("part checkpoint capture: expected unchanged source after capture".into());
         }
         Ok(CapturedPartCheckpointCandidate {
@@ -345,8 +364,8 @@ impl<O: TransactionObserver> DocumentSession<O> {
             scope: completed.scope.clone(),
             evaluation: completed.checkpoints.result().clone(),
         };
-        part.published = Some(result);
-        checkpoints.published = Some(completed);
+        part.publish(result);
+        checkpoints.publish(completed);
         Ok(())
     }
 }
@@ -361,13 +380,13 @@ impl<Body, Failure: Clone> PartCandidateResult<'_, Body, Failure> {
     where
         Body: Clone,
     {
-        if !self.source.is_current(history) {
+        if !super::retained::lease_is_active(&self.lease) || !self.source.is_current(history) {
             return Err("part candidate preview: expected its current owning history".into());
         }
         let evaluation = self
             .replay
             .try_map_bodies(|_, body| Ok::<_, String>(body.clone()))?;
-        if !self.source.is_current(history) {
+        if !super::retained::lease_is_active(&self.lease) || !self.source.is_current(history) {
             return Err("part candidate preview: expected an unchanged owner after copying".into());
         }
         Ok(evaluation)

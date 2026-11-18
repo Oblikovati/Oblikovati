@@ -15,11 +15,11 @@ pub trait PartUpdateAccess<O: TransactionObserver, W: WorkspaceObserver, F: Docu
     ) -> Result<(), String>;
     /// Borrow a current policy-scoped checkpoint when one is retained.
     /// Example: `owner.cached_checkpoint_prefix(files, id)?` before an edit.
-    fn cached_checkpoint_prefix<'a>(
-        &'a self,
+    fn cached_checkpoint_prefix(
+        &self,
         files: &FileWorkspace<O, W, F>,
         document: u64,
-    ) -> Result<Option<CertifiedCheckpointPrefix<'a>>, String>;
+    ) -> Result<Option<CertifiedCheckpointPrefix>, String>;
     /// Publish an accepted policy-matched candidate; example: `owner.adopt_candidate(files, id, candidate, &transition)?`.
     fn adopt_candidate(
         &mut self,
@@ -46,11 +46,11 @@ pub trait PartUpdateAccess<O: TransactionObserver, W: WorkspaceObserver, F: Docu
         String,
     >;
     /// Capture a current candidate prefix; example: `owner.candidate_prefix(files, id)?`.
-    fn candidate_prefix<'a>(
-        &'a self,
+    fn candidate_prefix(
+        &self,
         files: &FileWorkspace<O, W, F>,
         document: u64,
-    ) -> Result<CertifiedPartPrefix<'a>, String>;
+    ) -> Result<CertifiedPartPrefix, String>;
     /// Resolve edge keys against the current part; example: `owner.blend_body(files, id, &edges)?`.
     fn blend_body(
         &mut self,

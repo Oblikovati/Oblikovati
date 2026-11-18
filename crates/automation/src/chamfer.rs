@@ -130,7 +130,7 @@ fn create<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     guid: oblikovati_model::identity::DocumentGuid,
     backend: &dyn FilletAccess,
     prepared: PreparedChamfer,
-    prefix: Option<crate::CertifiedPartPrefix<'_>>,
+    prefix: Option<crate::CertifiedPartPrefix>,
 ) -> Result<crate::fillet::BlendTransaction, Error> {
     let name = prepared.name.clone();
     files.commands(document).map_err(api_error)?.run_projected_with_transition(

@@ -4,6 +4,7 @@ mod checkpoints;
 mod error;
 mod owner;
 mod request;
+mod retained;
 use crate::{DocumentSession, TransactionObserver};
 pub use checkpoints::{
     CapturedPartCheckpointCandidate, CompletedPartCheckpoints, CompletedPartSketchCheckpoints,
@@ -18,11 +19,11 @@ use oblikovati_model::{
 pub use request::{CompletedPartEvaluation, CompletedPartSketchRecompute, PartEvaluationRequest};
 /// One derived result store, injected into the document owner. No graph or model mutation lives here.
 pub struct PartEvaluationSlot<Body, Failure> {
-    published: Option<CompletedPartEvaluation<Body, Failure>>,
+    published: Option<std::sync::Arc<retained::Retained<CompletedPartEvaluation<Body, Failure>>>>,
 }
 /// A retained prefix whose source generation is checked when it is used.
-pub struct PartCandidatePrefix<'a, Body, Failure> {
-    published: &'a CompletedPartEvaluation<Body, Failure>,
+pub struct PartCandidatePrefix<Body, Failure> {
+    published: std::sync::Arc<retained::Retained<CompletedPartEvaluation<Body, Failure>>>,
 }
 /// A private candidate replay retained until its transaction finishes.
 pub struct PartCandidateResult<'a, Body, Failure> {
@@ -30,6 +31,7 @@ pub struct PartCandidateResult<'a, Body, Failure> {
     source: oblikovati_model::history::EvaluationScope,
     candidate: oblikovati_model::history::DocumentSnapshot,
     replay: oblikovati_model::feature::part::BorrowedPartReplay<'a, Body, Failure>,
+    lease: std::sync::Arc<std::sync::atomic::AtomicBool>,
 }
 /// An independently captured candidate that is not yet a published result.
 pub struct CapturedPartCandidate<Body, Failure> {
@@ -134,11 +136,11 @@ impl<Body, Failure: Clone> PartCandidateResult<'_, Body, Failure> {
         history: &oblikovati_model::history::DocumentEditHistory,
         capture: impl FnMut(oblikovati_model::feature::FeatureId, &Body) -> Result<Mapped, String>,
     ) -> Result<CapturedPartCandidate<Mapped, Failure>, String> {
-        if !self.source.is_current(history) {
+        if !retained::lease_is_active(&self.lease) || !self.source.is_current(history) {
             return Err("part candidate capture: expected its current owning history".into());
         }
         let evaluation = self.replay.try_map_bodies(capture)?;
-        if !self.source.is_current(history) {
+        if !retained::lease_is_active(&self.lease) || !self.source.is_current(history) {
             return Err("part candidate capture: expected an unchanged owner after capture".into());
         }
         Ok(CapturedPartCandidate {
@@ -152,7 +154,7 @@ impl<Body, Failure: Clone> PartCandidateResult<'_, Body, Failure> {
         })
     }
 }
-impl<Body, Failure: Clone + std::fmt::Debug> PartCandidatePrefix<'_, Body, Failure> {
+impl<Body, Failure: Clone + std::fmt::Debug> PartCandidatePrefix<Body, Failure> {
     /// Validate an appended candidate, or return none when the prefix is ineligible.
     /// Example: `prefix.validate_tail(history, candidate, feature, &mut backend)?`.
     pub fn validate_tail<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
@@ -175,7 +177,7 @@ impl<Body, Failure: Clone + std::fmt::Debug> PartCandidatePrefix<'_, Body, Failu
         feature: oblikovati_model::feature::FeatureId,
         backend: &mut B,
     ) -> Result<Option<PartCandidateResult<'a, Body, Failure>>, String> {
-        if !self.published.scope().is_current(history) {
+        if !self.published.is_active() || !self.published.scope().is_current(history) {
             return Err("part candidate prefix: expected its current owning history".into());
         }
         let evaluation = &self.published.evaluation;
@@ -192,7 +194,7 @@ impl<Body, Failure: Clone + std::fmt::Debug> PartCandidatePrefix<'_, Body, Failu
                 result.health()
             ));
         }
-        if !self.published.scope().is_current(history) {
+        if !self.published.is_active() || !self.published.scope().is_current(history) {
             return Err("part candidate prefix: expected an unchanged owner after replay".into());
         }
         Ok(Some(PartCandidateResult {
@@ -200,6 +202,7 @@ impl<Body, Failure: Clone + std::fmt::Debug> PartCandidatePrefix<'_, Body, Failu
             source: self.published.scope().clone(),
             candidate: candidate.clone(),
             replay: result,
+            lease: self.published.lease(),
         }))
     }
 }
@@ -263,10 +266,10 @@ pub struct PartEvaluationView<'a, Body, Failure> {
 impl<Body, Failure> PartEvaluationSlot<Body, Failure> {
     /// Capture a current prefix with a freshness check at each later use.
     /// Example: `slot.candidate_prefix(&session)?` before a transaction.
-    pub fn candidate_prefix<'a, O: TransactionObserver>(
-        &'a self,
+    pub fn candidate_prefix<O: TransactionObserver>(
+        &self,
         session: &DocumentSession<O>,
-    ) -> Result<PartCandidatePrefix<'a, Body, Failure>, PartEvaluationError> {
+    ) -> Result<PartCandidatePrefix<Body, Failure>, PartEvaluationError> {
         let published = self
             .published
             .as_ref()
@@ -274,7 +277,9 @@ impl<Body, Failure> PartEvaluationSlot<Body, Failure> {
                 document: session.document,
             })?;
         published.validate(session)?;
-        Ok(PartCandidatePrefix { published })
+        Ok(PartCandidatePrefix {
+            published: std::sync::Arc::clone(published),
+        })
     }
     /// Seal current datums including one prospective face support.
     /// Example: `slot.current_datums_for_face(&session, &backend, &face)?`.
@@ -362,10 +367,6 @@ impl<Body, Failure> PartEvaluationSlot<Body, Failure> {
             is_current: !published.scope().is_superseded(),
             evaluation: &published.evaluation,
         })
-    }
-    /// Retire retained outputs on their owner thread; example: `slot.clear()` before closing its viewport.
-    pub fn clear(&mut self) {
-        self.published = None;
     }
     /// Find changes since this owner's retained recipe, without authorizing reuse.
     /// Example: `slot.replay_change(&session)?` reports a possible dirty tail.
@@ -487,7 +488,7 @@ impl<O: TransactionObserver> DocumentSession<O> {
         if let Some(previous) = &slot.published {
             previous.validate_owner(self)?;
         }
-        slot.published = Some(completed);
+        slot.publish(completed);
         Ok(())
     }
 }

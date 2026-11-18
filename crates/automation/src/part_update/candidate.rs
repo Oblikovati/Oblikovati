@@ -18,9 +18,9 @@ pub(super) type NamedSketchRecompute =
     >;
 
 /// A current part prefix bound to the policy that produced it.
-pub struct CertifiedPartPrefix<'a> {
+pub struct CertifiedPartPrefix {
     pub(crate) prefix:
-        oblikovati_session::part_evaluation::PartCandidatePrefix<'a, NamedSolid, EvaluationFailure>,
+        oblikovati_session::part_evaluation::PartCandidatePrefix<NamedSolid, EvaluationFailure>,
     pub(crate) policy: Option<PrismResolutionPolicy>,
 }
 /// A candidate sealed to the policy that produced its exact bodies.
@@ -32,12 +32,9 @@ pub struct CertifiedPartCandidate {
     >,
 }
 /// A current checkpoint set bound to the policy that produced it.
-pub struct CertifiedCheckpointPrefix<'a> {
-    pub(crate) prefix: oblikovati_session::part_evaluation::PartCheckpointPrefix<
-        'a,
-        NamedSolid,
-        EvaluationFailure,
-    >,
+pub struct CertifiedCheckpointPrefix {
+    pub(crate) prefix:
+        oblikovati_session::part_evaluation::PartCheckpointPrefix<NamedSolid, EvaluationFailure>,
     pub(crate) policy: Option<PrismResolutionPolicy>,
 }
 /// A replayed checkpoint set sealed to its certified resolution policy.
@@ -137,14 +134,13 @@ impl PartReplayService {
         Ok(())
     }
     /// Borrow current checkpoints when available; example: `owner.checkpoint_prefix(files, id)?`.
-    pub fn checkpoint_prefix<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
-        &'a self,
+    pub fn checkpoint_prefix<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+        &self,
         files: &FileWorkspace<O, W, F>,
         document: u64,
     ) -> Result<
         Option<
             oblikovati_session::part_evaluation::PartCheckpointPrefix<
-                'a,
                 NamedSolid,
                 EvaluationFailure,
             >,

@@ -50,7 +50,7 @@ impl FilletAccess for CertifiedFilletAccess {
         document: DocumentGuid,
         candidate: &DocumentSnapshot,
         feature: FeatureId,
-        prefix: &crate::CertifiedCheckpointPrefix<'_>,
+        prefix: &crate::CertifiedCheckpointPrefix,
     ) -> Result<Option<crate::CertifiedCheckpointCandidate>, String> {
         if prefix.policy != Some(self.policy) {
             return Err("part checkpoints: expected the blend validation policy".into());
@@ -95,7 +95,7 @@ impl FilletAccess for CertifiedFilletAccess {
         document: DocumentGuid,
         candidate: &DocumentSnapshot,
         feature: FeatureId,
-        prefix: &crate::CertifiedPartPrefix<'_>,
+        prefix: &crate::CertifiedPartPrefix,
     ) -> Result<(usize, Option<crate::CertifiedPartCandidate>), String> {
         if prefix.policy != Some(self.policy) {
             return Err("part candidate prefix: expected the blend validation policy".into());
@@ -168,7 +168,7 @@ impl FilletAccess for CertifiedFilletAccess {
         document: DocumentGuid,
         candidate: &DocumentSnapshot,
         feature: FeatureId,
-        prefix: &crate::CertifiedPartPrefix<'_>,
+        prefix: &crate::CertifiedPartPrefix,
     ) -> Result<usize, String> {
         if prefix.policy != Some(self.policy) {
             return Err("part candidate prefix: expected the blend validation policy".into());

@@ -458,3 +458,6 @@ fn stale_checkpointed_sketch_replay_does_not_replace_current_results() {
     assert!(slot.current(&owner).is_err());
     assert!(checkpoints.candidate_prefix(&owner).is_err());
 }
+
+#[path = "checkpoint_retire.rs"]
+mod retire;
