@@ -173,6 +173,7 @@ fn active_editable_sketch(world: &mut ApplicationWorld) {
 fn create_area_open(world: &mut ApplicationWorld) {
     open_create(world);
 }
+#[when("the user selects Create Block from that area")]
 #[when("I select Create Block from that area")]
 fn choose_create_block(world: &mut ApplicationWorld) {
     let control = world.run_in_window("##ribbon-additional-Create", "CreateBlock");
