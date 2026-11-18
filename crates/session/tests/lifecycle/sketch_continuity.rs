@@ -101,8 +101,12 @@ fn missing_watch_is_refused_and_retired_readers_do_not_affect_live_readers() {
 
 struct PermissiveSketchResolver;
 impl oblikovati_session::SketchContinuityResolver for PermissiveSketchResolver {
-    fn resolve(&self, _: &DocumentEditHistory, _: DocumentSketchId) -> Result<(), String> {
-        Ok(())
+    fn resolve(
+        &self,
+        _: &DocumentEditHistory,
+        sketches: &[DocumentSketchId],
+    ) -> Vec<Result<(), String>> {
+        sketches.iter().map(|_| Ok(())).collect()
     }
 }
 #[test]
@@ -119,4 +123,87 @@ fn injected_resolver_cannot_keep_a_removed_sketch_live() {
         .unwrap();
     session.undo().unwrap();
     assert!(!watch.is_live());
+}
+
+struct CountingSketchResolver {
+    calls: std::sync::Arc<std::sync::atomic::AtomicUsize>,
+    mode: std::sync::Arc<std::sync::atomic::AtomicUsize>,
+    rejected: DocumentSketchId,
+}
+impl oblikovati_session::SketchContinuityResolver for CountingSketchResolver {
+    fn resolve(
+        &self,
+        _: &DocumentEditHistory,
+        sketches: &[DocumentSketchId],
+    ) -> Vec<Result<(), String>> {
+        use std::sync::atomic::Ordering;
+        self.calls.fetch_add(1, Ordering::SeqCst);
+        let mode = self.mode.load(Ordering::SeqCst);
+        if mode == 2 {
+            return Vec::new();
+        }
+        sketches
+            .iter()
+            .map(|sketch| {
+                if mode == 1 && *sketch == self.rejected {
+                    Err("unavailable sketch".into())
+                } else {
+                    Ok(())
+                }
+            })
+            .collect()
+    }
+}
+
+#[test]
+fn continuity_refresh_batches_watches_and_rejects_invalid_results() {
+    use std::sync::{
+        Arc,
+        atomic::{AtomicUsize, Ordering},
+    };
+    let mut session = sketch_fixture::owned_sketch_session(None, "First", Sketch2D::default());
+    let second = session
+        .create_sketch(&DocumentSketchCreation {
+            name: "Second".into(),
+            placement: SketchPlacement::Fixed(SketchPlane::xy()),
+            orientation: None,
+            project_origin: false,
+        })
+        .unwrap();
+    let calls = Arc::new(AtomicUsize::new(0));
+    let mode = Arc::new(AtomicUsize::new(0));
+    session.set_sketch_continuity_resolver(std::boxed::Box::new(CountingSketchResolver {
+        calls: calls.clone(),
+        mode: mode.clone(),
+        rejected: second,
+    }));
+    let first_watch = session
+        .watch_sketch_continuity(DocumentSketchId(1))
+        .unwrap();
+    let second_watch = session.watch_sketch_continuity(second).unwrap();
+    let duplicate = session.watch_sketch_continuity(second).unwrap();
+    calls.store(0, Ordering::SeqCst);
+    session
+        .run("Rename first", |snapshot, _| {
+            snapshot.sketches.rename(DocumentSketchId(1), "Renamed")
+        })
+        .unwrap();
+    assert_eq!(calls.load(Ordering::SeqCst), 1);
+    assert!(first_watch.is_live() && second_watch.is_live() && duplicate.is_live());
+    mode.store(1, Ordering::SeqCst);
+    session
+        .run("Rename second", |snapshot, _| {
+            snapshot.sketches.rename(second, "Other")
+        })
+        .unwrap();
+    assert_eq!(calls.load(Ordering::SeqCst), 2);
+    assert!(first_watch.is_live());
+    assert!(!second_watch.is_live() && !duplicate.is_live());
+    mode.store(2, Ordering::SeqCst);
+    session
+        .run("Rename again", |snapshot, _| {
+            snapshot.sketches.rename(DocumentSketchId(1), "Final")
+        })
+        .unwrap();
+    assert!(!first_watch.is_live());
 }

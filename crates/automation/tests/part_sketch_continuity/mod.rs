@@ -56,6 +56,18 @@ fn certified_continuity_resolves_a_datum_after_a_fillet() {
     );
     let datums = resolver.datums(&history).unwrap();
     assert!(datums.plane(FeatureId(3)).is_ok());
+    let sketch = history.snapshot().sketches.sketches()[0].id();
+    let before = resolver
+        .replay_count
+        .load(std::sync::atomic::Ordering::Relaxed);
+    let results = resolver.resolve(&history, &[sketch, sketch, DocumentSketchId(u64::MAX)]);
+    assert!(results[0].is_ok() && results[1].is_ok() && results[2].is_err());
+    assert_eq!(
+        resolver
+            .replay_count
+            .load(std::sync::atomic::Ordering::Relaxed),
+        before + 1
+    );
 }
 
 fn append_fillet_and_datum(

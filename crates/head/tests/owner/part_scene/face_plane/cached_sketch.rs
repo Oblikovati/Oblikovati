@@ -86,6 +86,52 @@ fn sketch_inspection_reuses_only_current_matching_datums() {
             .iter()
             .any(|row| row.index == sketch_index && row.healthy)
     );
+    let original_generation = owner
+        .files
+        .workspace()
+        .session(document)
+        .unwrap()
+        .generation();
+    owner
+        .files
+        .commands(document)
+        .unwrap()
+        .begin("Draft depth")
+        .unwrap();
+    let workspace = owner.files.workspace();
+    let session = workspace.session(document).unwrap();
+    let resolver = PartSketchContinuity::new(guid, Some(policy), session.sketch_solve_options());
+    assert!(
+        resolver
+            .cached_datums(workspace, document)
+            .unwrap()
+            .is_some()
+    );
+    owner
+        .files
+        .commands(document)
+        .unwrap()
+        .run("Draft depth edit", |snapshot, _| {
+            let id = snapshot.parameters.find("depth").unwrap();
+            snapshot.parameters.set_expression(id, "4 cm")
+        })
+        .unwrap();
+    let workspace = owner.files.workspace();
+    let session = workspace.session(document).unwrap();
+    assert!(session.generation() > original_generation);
+    assert!(
+        resolver
+            .cached_datums(workspace, document)
+            .unwrap()
+            .is_none()
+    );
+    let draft = resolver.datums_for_document(workspace, document).unwrap();
+    let plane = session
+        .snapshot()
+        .resolve_sketch_plane_with_datums(sketch, &draft)
+        .unwrap();
+    assert!((plane.recipe().origin[2] - 4.).abs() < 1e-9);
+    owner.files.commands(document).unwrap().abort().unwrap();
     owner
         .files
         .commands(document)

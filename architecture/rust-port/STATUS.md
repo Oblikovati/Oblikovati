@@ -78,6 +78,9 @@ using this status; the live scenario directory can change.
 - Sketch inspection reads a retained part result when identity, resolution,
   solver options, and generation match. It recomputes for a stale or unmatched
   result; tests check face-sketch placement after a depth edit (#4079).
+- Sketch continuity resolves all live watches in one batch per history refresh.
+  Tests count one resolver call, preserve individual failures, and reject a
+  malformed result count; the 60 fps target is not yet established (#4079).
 - The native Extrude parameter-change test cannot find its Parameters window;
   it fails at the same lookup on clean parent `6cbed854e` (#4078). It is not
   acceptance evidence for this change.
