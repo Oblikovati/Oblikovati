@@ -84,6 +84,44 @@ fn checkpoint_cache_is_lazy_and_scoped_to_each_document_generation() {
 }
 
 #[test]
+fn closing_a_document_retires_its_part_and_checkpoints_together() {
+    let (mut owner, _) = owner();
+    let document = open_named_prism(&mut owner, "checkpoint-close.opd");
+    let mut replay =
+        PartReplayService::with_policy(crate::part_scene::resolution_policy::desktop_policy())
+            .unwrap();
+    replay
+        .ensure_checkpoints(&mut owner.files, document)
+        .unwrap();
+    assert!(replay.slot(document).is_some());
+    assert!(
+        replay
+            .checkpoint_prefix(&owner.files, document)
+            .unwrap()
+            .is_some()
+    );
+    Client::new(owner.document_host())
+        .documents()
+        .close(&CloseDocumentArgs {
+            id: document,
+            force: false,
+        })
+        .unwrap();
+    replay.retain_open_documents(owner.files.workspace().documents());
+    assert!(replay.slot(document).is_none());
+    assert!(replay.checkpoint_prefix(&owner.files, document).is_err());
+    let reopened = open_named_prism(&mut owner, "checkpoint-close.opd");
+    assert_ne!(reopened, document);
+    assert!(replay.slot(reopened).is_none());
+    assert!(
+        replay
+            .checkpoint_prefix(&owner.files, reopened)
+            .unwrap()
+            .is_none()
+    );
+}
+
+#[test]
 fn headless_replay_tracks_each_document_and_its_own_generation() {
     let (mut owner, _) = owner();
     let first = open_named_prism(&mut owner, "replay-owner-first.opd");

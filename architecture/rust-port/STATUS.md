@@ -1,6 +1,6 @@
 # Rust port status
 
-Last checked: 2026-11-17. Recheck the branch, issues, and scenario source before
+Last checked: 2026-11-18. Recheck the branch, issues, and scenario source before
 using this status; the live scenario directory can change.
 
 ## Start here
@@ -26,30 +26,20 @@ using this status; the live scenario directory can change.
   reported 22 integration failures across four targets; triage is #4078. That
   run preceded the final dock lifecycle change and is not a current green suite.
 - Fillet drawing, suppression-health, and extrusion-preview regressions pass
-  using the complete named-solid evaluator (#4074). The single document-owned
-  incremental evaluation service and replay-count measurement remain #4079.
-- The model uses explicit blend and face operations. Named prism construction
-  helpers and the partial certified-prism evaluator no longer implement
-  whole-part evaluation. Diagnostic prism replay now uses the complete named
-  evaluator. The document-owned incremental service remains (#4079).
-- Each retained part result keeps its source recipe and can report a
-  conservative dirty tail to the same history owner. It does not yet prove
-  cached geometry safe or enable prefix reuse.
-- A session test places a newly authored Fillet at the dirty boundary and
-  checks undo and redo. It uses a fake evaluator; it is not a replay-count test.
-- Headless typed Fillet and Chamfer tests measure three full replays without a
-  shared source result and one with a warm source result. Candidate validation
-  replays its tail; publication still replays the complete part (#4079).
-- Candidate tail replay can borrow a current complete prefix. A certified cube
-  Fillet test compares its names, topology, and face areas with full replay.
-  The Fillet and Chamfer commands use it with a current, policy-matched prefix;
-  publication and general dirty-prefix replay remain open (#4079).
-- A retained candidate can capture independent bodies while current and verify
-  its accepted generation transition and inputs. It does not yet transfer names
-  or publish geometry (#4079).
-- Martensite can capture prism, Fillet, and Chamfer bodies with their exact
-  name bindings while the source is current. Captures keep the original
-  generation guard and become stale after an edit (#4079).
+  using the complete named-solid evaluator (#4074). The evaluator requires
+  explicit blend and named-face operations.
+- Fillet and Chamfer creation reuse a current matching prefix. Tests count zero
+  full body lookup, validation, and publication replays with a warm prefix;
+  without it they count one of each. This does not measure frame rate (#4079).
+- Feature-boundary checkpoints retain bodies, lineage, datums, and health.
+  Session guards reject stale or foreign histories and restore exact names only
+  for the accepted edit. Real-kernel tests compare named face areas with a full
+  replay, including a Fillet consumed by a later Chamfer (#4079).
+- The desktop replay owner creates checkpoints on demand for blend edit
+  previews. Successive previews and accepted edits reuse matching checkpoints.
+  Associative sketches use ordered recompute. The per-document session does not
+  yet own the complete evaluation service, and other edits and parameter changes
+  still use conservative replay (#4079).
 - A newly appended feature may add parameters without dirtying an unchanged
   prefix when no earlier feature reads them. Other parameter changes remain
   conservative (#4079).

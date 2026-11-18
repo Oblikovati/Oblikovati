@@ -4,8 +4,9 @@ The model now executes stored datum and selected-prism inputs through one
 `FeatureReplayController`. This implements part of
 [ADR-0004](../decisions/ADR-0004-session-and-feature-evaluation.md) and the
 model-owned interface in [ADR-0007](../decisions/ADR-0007-martensite-integration.md).
-There is one ordered health report for every active feature. Each replay starts
-with empty derived result tables; authored recipes remain unchanged.
+There is one ordered health report for every active feature. A full replay starts
+with empty derived result tables; a guarded tail replay starts at a retained
+feature boundary. Authored recipes remain unchanged.
 
 Datum entries use the existing datum implementation. Prism entries resolve their
 current scalar inputs, fully constrained sketch, host frame, orientation, and
@@ -35,11 +36,11 @@ tests check a directed-boundary decline beside a valid independent prism, and a
 failed host plane followed by recovery. Existing owner edit, undo, package,
 condition, placed-frame, and native pixel tests consume the same path.
 
-This does not close the complete extrude contract. Prefix reuse, cancellation,
-generation-scoped session adoption, accumulated body state for later operations,
-full validity levels, achieved tolerance budgets, persistent naming, and general
-scene publication remain open. The retained prism is still a diagnostic kernel
-result, not a claim that all operation-result requirements are met.
+The session guards checkpoint capture and adoption by document, generation, and
+accepted edit. The replay owner reuses checkpoints for blend creation and edits
+when policy and sketch inputs permit it. Associative sketches use ordered
+recompute. General dirty-prefix replay, session ownership, full validity levels,
+achieved tolerance budgets, and operation-result requirements remain open.
 
 Run `CARGO_NET_OFFLINE=true make gate` for the complete local Linux checks.
 
