@@ -22,20 +22,16 @@ use std::collections::BTreeMap;
 mod access;
 mod candidate;
 pub use access::PartUpdateAccess;
-use candidate::NamedSketchRecompute;
 pub use candidate::{
     CertifiedCheckpointCandidate, CertifiedCheckpointPrefix, CertifiedPartCandidate,
     CertifiedPartPrefix,
 };
+use candidate::{DocumentPartReplay, NamedSketchRecompute};
 
 /// A headless owner of generation-checked Martensite replay results.
 #[derive(Default)]
 pub struct PartReplayService {
-    slots: BTreeMap<u64, PartEvaluationSlot<NamedSolid, EvaluationFailure>>,
-    checkpoints: BTreeMap<
-        u64,
-        oblikovati_session::part_evaluation::PartCheckpointSlot<NamedSolid, EvaluationFailure>,
-    >,
+    slots: BTreeMap<u64, DocumentPartReplay>,
     resolution: Option<PrismResolutionPolicy>,
     replay_count: u64,
 }
@@ -44,7 +40,6 @@ impl PartReplayService {
     pub fn with_policy(policy: PrismResolutionPolicy) -> Result<Self, String> {
         Ok(Self {
             slots: BTreeMap::new(),
-            checkpoints: BTreeMap::new(),
             resolution: Some(policy.validate()?),
             replay_count: 0,
         })
@@ -58,7 +53,7 @@ impl PartReplayService {
         &self,
         document: u64,
     ) -> Option<&PartEvaluationSlot<NamedSolid, EvaluationFailure>> {
-        self.slots.get(&document)
+        self.slots.get(&document).map(|owner| &owner.part)
     }
 }
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateAccess<O, W, F>
@@ -165,22 +160,24 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
         document: u64,
     ) -> Result<Vec<FeatureError>, String> {
         self.retain_open_documents(files.workspace().documents());
-        let slot = self.slots.entry(document).or_default();
+        let owner = self.slots.entry(document).or_default();
         refresh_and_adopt_counted(
             files,
             document,
             self.resolution,
-            slot,
+            &mut owner.part,
             &mut self.replay_count,
         )?;
-        self.checkpoints.remove(&document);
+        owner.checkpoints = None;
         let session = files
             .workspace()
             .session(document)
             .map_err(|error| error.to_string())?;
         part_feature_errors(
             session.snapshot(),
-            slot.current(session)
+            owner
+                .part
+                .current(session)
                 .map_err(|error| error.to_string())?
                 .health(),
         )
@@ -194,7 +191,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
             .workspace()
             .session(document)
             .map_err(|error| error.to_string())?;
-        Ok(part_replay_is_stale(session, self.slots.get(&document)))
+        Ok(part_replay_is_stale(session, self.slot(document)))
     }
     fn resolve_planar_face(
         &mut self,

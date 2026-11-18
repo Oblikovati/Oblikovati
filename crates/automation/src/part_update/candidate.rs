@@ -2,6 +2,15 @@
 //! Adopt accepted part candidates through their policy owner.
 use super::*;
 
+/// Derived part state for a single document and its current policy.
+#[derive(Default)]
+pub(super) struct DocumentPartReplay {
+    pub(super) part: PartEvaluationSlot<NamedSolid, EvaluationFailure>,
+    pub(super) checkpoints: Option<
+        oblikovati_session::part_evaluation::PartCheckpointSlot<NamedSolid, EvaluationFailure>,
+    >,
+}
+
 pub(super) type NamedSketchRecompute =
     oblikovati_session::part_evaluation::CompletedPartSketchRecompute<
         NamedSolid,
@@ -72,18 +81,18 @@ impl PartReplayService {
             session,
             guid,
         )?;
-        let part = self
+        let owner = self
             .slots
             .get_mut(&document)
             .ok_or_else(|| format!("document {document}: expected its retained part slot"))?;
-        let checkpoints = self
+        let checkpoints = owner
             .checkpoints
-            .get_mut(&document)
+            .as_mut()
             .ok_or_else(|| format!("document {document}: expected its retained checkpoint slot"))?;
         files
             .commands(document)
             .map_err(|error| error.to_string())?
-            .adopt_replayed_checkpoints(completed, part, checkpoints)
+            .adopt_replayed_checkpoints(completed, &mut owner.part, checkpoints)
             .map_err(|error| error.to_string())
     }
     /// Retain feature boundaries for the current document on demand.
@@ -118,7 +127,11 @@ impl PartReplayService {
         let mut slot = oblikovati_session::part_evaluation::PartCheckpointSlot::default();
         slot.adopt(session, completed)
             .map_err(|error| error.to_string())?;
-        self.checkpoints.insert(document, slot);
+        let owner = self
+            .slots
+            .get_mut(&document)
+            .ok_or_else(|| format!("document {document}: expected its retained part slot"))?;
+        owner.checkpoints = Some(slot);
         Ok(())
     }
     /// Borrow current checkpoints when available; example: `owner.checkpoint_prefix(files, id)?`.
@@ -141,8 +154,9 @@ impl PartReplayService {
             .session(document)
             .map_err(|error| error.to_string())?;
         Ok(self
-            .checkpoints
+            .slots
             .get(&document)
+            .and_then(|owner| owner.checkpoints.as_ref())
             .and_then(|slot| slot.candidate_prefix(session).ok()))
     }
     pub(super) fn adopt_named_candidate<
@@ -176,16 +190,16 @@ impl PartReplayService {
             session,
             guid,
         )?;
-        let slot = self
+        let owner = self
             .slots
             .get_mut(&document)
             .ok_or_else(|| format!("document {document}: expected its retained part slot"))?;
         files
             .commands(document)
             .map_err(|error| error.to_string())?
-            .adopt_part_evaluation(completed, slot)
+            .adopt_part_evaluation(completed, &mut owner.part)
             .map_err(|error| error.to_string())?;
-        self.checkpoints.remove(&document);
+        owner.checkpoints = None;
         Ok(())
     }
 }
@@ -194,12 +208,10 @@ impl PartReplayService {
     /// Retire results for closed documents; example: `service.retain_open_documents(ids)`.
     pub fn retain_open_documents(&mut self, documents: &[u64]) {
         self.slots.retain(|id, _| documents.contains(id));
-        self.checkpoints.retain(|id, _| documents.contains(id));
     }
     /// Retire all retained kernel outputs; example: `service.clear()` on policy change.
     pub fn clear(&mut self) {
         self.slots.clear();
-        self.checkpoints.clear();
     }
 }
 
@@ -214,13 +226,12 @@ impl PartReplayService {
             .session(document)
             .map_err(|error| error.to_string())?;
         if self
-            .slots
-            .get(&document)
+            .slot(document)
             .is_none_or(|slot| slot.current(session).is_err())
         {
             self.update_part(files, document)?;
         }
-        self.slots.get(&document).ok_or_else(|| {
+        self.slot(document).ok_or_else(|| {
             format!("document {document} part replay: expected an adopted current result")
         })
     }
