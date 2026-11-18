@@ -81,5 +81,20 @@
     "application_commit": "80cbeda3f",
     "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=document-saving VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
     "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted window input; first-save cancellation separately passed with X11 keyboard and pointer input"
+  },
+  "features/application/document-opening/document-opening.feature": {
+    "feature_sha256": "ce0be44dd1e0ded53c12de6a96465ffafca2307db3029351147c6d9606bf4b8b",
+    "supporting_files": {
+      "features/application/document-opening/FUNCTIONAL.md": "05912fd64ef7fc579a11b2c0c14607f6728eed0f138d3d7a32d87c93b03b6bac",
+      "features/application/document-opening/VISUAL.md": "788c60876a734b13c25eaad5a1d34a043f95ec73bd847ae319140ce115088cc3",
+      "features/application/document-opening/FIXTURES.md": "0467dc99bc70783a1c875316baedeeb8cfa8ca2cb7cc9f90d45465929392fa9e",
+      "features/application/document-opening/BLOCKERS.md": "45017eef4ff192760837f93e73339eebdc4be0d70dd8fddbe30ead2a65dd5ba6"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-18-document-opening/cucumber.json",
+    "cucumber_sha256": "ecef00a45ea5505d23878aa2d144eb923d4f72d0c86cf40da765bd559f7c596a",
+    "application_commit": "bb4553dbc",
+    "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=document-opening VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted window input; reopening an already open part separately passed with X11 keyboard and pointer input",
+    "notes": "The run has one failed scenario, tracked in #3963. After the run BLOCKERS.md received a request for the observed assembly command outcomes."
   }
 }
