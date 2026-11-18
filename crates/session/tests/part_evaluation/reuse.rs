@@ -121,3 +121,25 @@ fn retained_recipe_reports_a_later_feature_change() {
     );
     assert!(slot.current(&owner).is_err());
 }
+
+#[test]
+fn fillet_creation_marks_only_its_new_feature_as_dirty() {
+    use oblikovati_model::feature::FeatureReplayRange;
+    let mut owner = session(7);
+    let mut slot = PartSlot::default();
+    publish(&mut owner, &mut slot);
+    let feature = owner.create_fillet("Fillet", fillet_input()).unwrap();
+    assert_eq!(feature, FeatureId(2));
+    assert_eq!(
+        slot.replay_change(&owner).unwrap(),
+        Some(FeatureReplayRange { start: 1, end: 2 })
+    );
+    assert!(slot.current(&owner).is_err());
+    owner.undo().unwrap();
+    assert_eq!(slot.replay_change(&owner).unwrap(), None);
+    owner.redo().unwrap();
+    assert_eq!(
+        slot.replay_change(&owner).unwrap(),
+        Some(FeatureReplayRange { start: 1, end: 2 })
+    );
+}
