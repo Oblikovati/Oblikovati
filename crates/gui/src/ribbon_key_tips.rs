@@ -293,5 +293,5 @@ pub(crate) fn badge(ui: &imgui::Ui, label: &str) {
 }
 
 #[cfg(test)]
-#[path = "../tests/ribbon_key_tips.rs"]
+#[path = "ribbon_key_tips/tests.rs"]
 mod tests;
