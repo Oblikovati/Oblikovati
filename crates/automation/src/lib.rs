@@ -30,6 +30,7 @@ pub use fillet::{
     CertifiedFilletAccess, CertifiedFilletValidation, FilletAccess, FilletValidation,
     PreparedFillet, prepare_fillet,
 };
+pub use hole::{PreparedHole, prepare_hole};
 mod interests;
 pub use file_host::{
     APPLICATION_PREFERENCE_METHODS, ASSEMBLY_COMMAND_METHODS, AssemblyReferenceFailure,

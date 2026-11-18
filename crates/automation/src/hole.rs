@@ -45,7 +45,7 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         .session(document)
         .map_err(api_error)?
         .snapshot();
-    let prepared = prepare(snapshot, body, face, &input)?;
+    let prepared = prepare_hole(snapshot, body, face, &input)?;
     let prefix = owner.candidate_prefix(files, document).map_err(Error)?;
     let ((reply, candidate), transition) = create(files, document, guid, policy, prefix, prepared)?;
     crate::fillet::publish_blend_candidate(files, Some(owner), document, candidate, &transition)?;
@@ -85,12 +85,15 @@ fn current_face_body<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFi
     }
 }
 
-struct PreparedHole {
+/// A validated straight-hole recipe shared by preview and commit.
+#[derive(Clone)]
+pub struct PreparedHole {
     name: String,
     definition: HoleDefinition,
 }
 impl PreparedHole {
-    fn create(
+    /// Add the prepared recipe to a private candidate; example: `prepared.create(candidate, ids)?`.
+    pub fn create(
         self,
         snapshot: &mut DocumentSnapshot,
         ids: &mut RecipeReservations<'_>,
@@ -100,12 +103,15 @@ impl PreparedHole {
             .map_err(api_error)
     }
 }
-fn prepare(
+/// Prepare a straight hole without changing the document.
+/// Example: `prepare_hole(snapshot, body_key, face_key, &request)?` before a preview.
+pub fn prepare_hole(
     snapshot: &DocumentSnapshot,
     body: Vec<u8>,
     face: Vec<u8>,
     input: &Hole,
 ) -> Result<PreparedHole, Error> {
+    input::require_supported(input)?;
     let recipe = input::recipe(snapshot, body, face, input)?;
     let definition = HoleDefinition::from_recipe(recipe).map_err(Error)?;
     Ok(PreparedHole {
