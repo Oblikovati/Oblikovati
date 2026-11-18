@@ -1,0 +1,26 @@
+{
+  "repository": "https://github.com/Oblikovati/Oblikovati.API",
+  "candidate_commit": "a87a7fc945232c1d73c67c6dcfd08967e4738aa3",
+  "candidate_branch": "work/api-release-3965",
+  "checked_at_utc": "2026-11-18T13:19:59+00:00",
+  "command": "CARGO_BUILD_JOBS=2 make gate",
+  "environment": "Linux; existing clean candidate worktree; local execution",
+  "exit_code": 0,
+  "checks": [
+    "generated-source consistency",
+    "Go and Rust build and tests",
+    "Go vet and formatting",
+    "Rust formatting and Clippy",
+    "SPDX and license boundary",
+    "Markdown and wiki generation",
+    "C ABI and Go package",
+    "duplication gate"
+  ],
+  "duplication": "1082 of 104150 lines, 1.0389 percent",
+  "warnings": [
+    "Go API documentation generation reported unresolved symbol references"
+  ],
+  "hosted_ci": "No hosted runs were found for the candidate branch at the time of this check.",
+  "release_status": "Not released; API issues 187 and 301-304 remain open and the candidate has not been promoted.",
+  "evidence_limit": "This record transcribes the local process result; a complete console log was not retained."
+}
