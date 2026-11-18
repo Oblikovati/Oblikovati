@@ -5,14 +5,16 @@ use std::collections::BTreeSet;
 use crate::{document_sketch::DocumentSketchId, sketch::SketchEntityId};
 
 /// A spatial point in the document's working length unit.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct SpatialSketchPoint {
     pub id: SketchEntityId,
     pub position: [f64; 3],
 }
 
 /// A spatial line references two points in the same sketch.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct SpatialSketchLine {
     pub id: SketchEntityId,
     pub endpoints: [SketchEntityId; 2],
@@ -25,6 +27,16 @@ pub struct SpatialSketch {
     name: Option<String>,
     points: Vec<SpatialSketchPoint>,
     lines: Vec<SpatialSketchLine>,
+}
+
+/// Serialized spatial geometry, validated when restored into a document.
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SpatialSketchRecipe {
+    pub id: DocumentSketchId,
+    pub name: Option<String>,
+    pub points: Vec<SpatialSketchPoint>,
+    pub lines: Vec<SpatialSketchLine>,
 }
 
 impl SpatialSketch {
@@ -48,6 +60,42 @@ impl SpatialSketch {
             points,
             lines,
         })
+    }
+
+    /// Compare authored coordinates by their exact bits; example: `first.same_recipe(&second)`.
+    pub fn same_recipe(&self, other: &Self) -> bool {
+        self.id == other.id
+            && self.name == other.name
+            && self.lines == other.lines
+            && self.points.len() == other.points.len()
+            && self.points.iter().zip(&other.points).all(|(left, right)| {
+                left.id == right.id
+                    && left
+                        .position
+                        .iter()
+                        .zip(right.position)
+                        .all(|(a, b)| a.to_bits() == b.to_bits())
+            })
+    }
+
+    /// Capture validated geometry; example: `sketch.recipe()`.
+    pub fn recipe(&self) -> SpatialSketchRecipe {
+        SpatialSketchRecipe {
+            id: self.id,
+            name: self.name.clone(),
+            points: self.points.clone(),
+            lines: self.lines.clone(),
+        }
+    }
+
+    /// Validate saved geometry; example: `SpatialSketch::from_recipe(&recipe)?`.
+    pub fn from_recipe(recipe: &SpatialSketchRecipe) -> Result<Self, String> {
+        Self::new(
+            recipe.id,
+            recipe.name.clone(),
+            recipe.points.clone(),
+            recipe.lines.clone(),
+        )
     }
 
     /// Return the document sketch identity; example: `sketch.id()`.

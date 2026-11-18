@@ -6,12 +6,14 @@ use crate::sketch::{
 use std::collections::BTreeSet;
 mod block_definitions;
 mod block_instances;
+mod comparison;
 mod construction;
 mod corner_component;
 mod curve_format;
 mod dimension_placement;
 mod dimension_settings;
 mod health;
+mod spatial;
 pub use block_definitions::{SketchBlockDefinition, SketchBlockDefinitionRecipe};
 pub use block_instances::SketchBlockInstance;
 mod translation;
@@ -76,6 +78,7 @@ pub struct PlacedSketch {
 pub struct DocumentSketches {
     sketches: Vec<PlacedSketch>,
     block_definitions: Vec<SketchBlockDefinition>,
+    spatial_sketches: Vec<crate::spatial_sketch::SpatialSketch>,
 }
 /// One authored placed sketch, without solver or normal caches.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -121,6 +124,8 @@ pub struct DocumentSketchRecipe {
     pub sketches: Vec<PlacedSketchRecipe>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub block_definitions: Vec<SketchBlockDefinitionRecipe>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub spatial_sketches: Vec<crate::spatial_sketch::SpatialSketchRecipe>,
 }
 impl PlacedSketch {
     fn new(
@@ -221,7 +226,13 @@ impl PlacedSketch {
 impl DocumentSketches {
     /// Compare exact authored contents for dirty/history decisions; example: `baseline.same_recipe(&candidate)`.
     pub fn same_recipe(&self, other: &Self) -> bool {
-        self.same_block_recipes(other)
+        self.spatial_sketches.len() == other.spatial_sketches.len()
+            && self
+                .spatial_sketches
+                .iter()
+                .zip(&other.spatial_sketches)
+                .all(|(left, right)| left.same_recipe(right))
+            && self.same_block_recipes(other)
             && self.sketches.len() == other.sketches.len()
             && self
                 .sketches
@@ -282,7 +293,7 @@ impl DocumentSketches {
         placement: SketchPlacement,
         geometry: Sketch2D,
     ) -> Result<(), SketchError> {
-        if id.0 == 0 || self.sketches.iter().any(|sketch| sketch.id == id) {
+        if id.0 == 0 || self.sketch_ids().contains(&id.0) {
             return Err(SketchError::Definition(format!(
                 "document sketch ID {id:?}: expected a unique nonzero sketch identity"
             )));
@@ -332,9 +343,17 @@ impl DocumentSketches {
             version: self.placement_recipe_version(),
             sketches: self.sketches.iter().map(PlacedSketch::recipe).collect(),
             block_definitions: self.block_definition_recipes(),
+            spatial_sketches: self
+                .spatial_sketches
+                .iter()
+                .map(|sketch| sketch.recipe())
+                .collect(),
         }
     }
     fn placement_recipe_version(&self) -> u32 {
+        if !self.spatial_sketches.is_empty() {
+            return 14;
+        }
         if self
             .sketches
             .iter()
@@ -374,9 +393,15 @@ impl DocumentSketches {
     }
     /// Restore a complete collection before replacing a document owner; example: `DocumentSketches::from_recipe(&recipe)?`.
     pub fn from_recipe(recipe: &DocumentSketchRecipe) -> Result<Self, SketchError> {
-        if !matches!(recipe.version, 1..=13) {
+        if !matches!(recipe.version, 1..=14) {
             return Err(SketchError::Definition(format!(
-                "document sketch recipe version {}: expected 1 through 13",
+                "document sketch recipe version {}: expected 1 through 14",
+                recipe.version
+            )));
+        }
+        if recipe.version < 14 && !recipe.spatial_sketches.is_empty() {
+            return Err(SketchError::Definition(format!(
+                "spatial sketches in recipe version {}: expected version 14",
                 recipe.version
             )));
         }
@@ -393,11 +418,16 @@ impl DocumentSketches {
             visibility::restore_line_style(&mut restored, sketch, recipe.version)?;
             restored.restore_block_instances(sketch, recipe.version)?;
         }
+        restored.restore_spatial_sketches(&recipe.spatial_sketches)?;
         Ok(restored)
     }
     /// Inspect live sketch IDs for a separate reservation owner; example: `ids.restore(mark, &document.sketch_ids())`.
     pub fn sketch_ids(&self) -> Vec<u64> {
-        self.sketches.iter().map(|sketch| sketch.id.0).collect()
+        self.sketches
+            .iter()
+            .map(|sketch| sketch.id.0)
+            .chain(self.spatial_sketches.iter().map(|sketch| sketch.id().0))
+            .collect()
     }
     /// Inspect globally unique entity IDs; constraint IDs stay local to their sketch.
     /// Example: `entity_ids.restore(mark, &document.entity_ids())`.
@@ -412,6 +442,7 @@ impl DocumentSketches {
                         .map(|instance| instance.id().0),
                 )
             })
+            .chain(self.spatial_entity_ids())
             .collect()
     }
     fn index(&self, id: DocumentSketchId) -> Result<usize, SketchError> {
@@ -436,6 +467,7 @@ impl DocumentSketches {
                     .iter()
                     .map(|instance| instance.id().0)
             }))
+            .chain(self.spatial_entity_ids())
             .collect();
         for id in geometry_ids(geometry) {
             if retained.contains(&id) {
@@ -464,20 +496,4 @@ fn missing_sketch(id: DocumentSketchId) -> SketchError {
     SketchError::Definition(format!(
         "document sketch ID {id:?}: expected an existing sketch"
     ))
-}
-
-impl PartialEq for PlacedSketch {
-    fn eq(&self, other: &Self) -> bool {
-        // Derived verification is not authored content and is rebuilt after loading (#3722).
-        self.id == other.id
-            && self.name == other.name
-            && self.visible == other.visible
-            && self.constraints_shown == other.constraints_shown
-            && self.line_style == other.line_style
-            && self.placement == other.placement
-            && self.orientation == other.orientation
-            && self.point_projections == other.point_projections
-            && self.block_instances == other.block_instances
-            && self.geometry == other.geometry
-    }
 }

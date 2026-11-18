@@ -486,3 +486,6 @@ fn origin_plane_identity_round_trips_and_old_fixed_frames_stay_fixed() {
         .is_err()
     );
 }
+
+#[path = "package_sketches/spatial.rs"]
+mod spatial;
