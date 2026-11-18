@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Additional ribbon commands stay anchored to their panel and can be pinned.
 use super::*;
+#[path = "ribbon_panel_additional/commands.rs"]
+mod commands;
 #[path = "ribbon_panel_additional/temporary_tab.rs"]
 mod temporary_tab;
 const ADDITIONAL_WIDTH: f32 = 230.;
@@ -51,6 +53,9 @@ impl PanelExpansions {
             self.open.retain(|_, expansion| expansion.pinned);
         }
         self.titles_visible = Some(visible);
+    }
+    pub(super) fn close_unpinned(&mut self) {
+        self.open.retain(|_, item| item.pinned);
     }
     pub(super) fn contains(&self, point: [f32; 2]) -> bool {
         self.open.values().any(|entry| inside(point, entry.bounds))
@@ -222,7 +227,13 @@ fn draw_window(
                 context.owners.quick_access.command_took_right_click |= right;
                 close |= !context.owners.customization.has_expanded(tab);
             } else {
-                commands(context, tab, panel, display);
+                let before = context.actions.len();
+                commands::draw(context, tab, panel, display);
+                if !expansion.pinned
+                    && context.actions[before..].contains(&GuiShellAction::OpenMoveBody)
+                {
+                    close = true;
+                }
                 if builtin::supports(panel) {
                     close |=
                         !builtin::is_expanded(panel, context.state, context.owners.customization);
@@ -296,145 +307,6 @@ fn inside_window(ui: &Ui) -> bool {
         ui.io().mouse_pos,
         [position, [position[0] + size[0], position[1] + size[1]]],
     )
-}
-fn commands(
-    context: &mut PanelDrawContext<'_>,
-    tab: RibbonTab,
-    panel: RibbonPanel,
-    display: &mut RibbonDisplayState,
-) {
-    let ui = context.ui;
-    if builtin::supports(panel) {
-        builtin::draw(
-            ui,
-            panel,
-            context.state,
-            &mut context.owners,
-            context.actions,
-            true,
-        );
-        return;
-    }
-    if panel == RibbonPanel::Create {
-        create_commands(
-            ui,
-            context.state,
-            context.owners.precise_input,
-            context.owners.create_block,
-            context.owners.icons,
-            context.actions,
-        );
-        return;
-    }
-    if context.owners.icons.appearance != crate::ribbon_command_layout::RibbonAppearance::Normal
-        && let Some(entries) = additional_icon_entries(panel)
-    {
-        additional_icons(context, tab, panel, display, entries);
-        return;
-    }
-    let disabled = ui.begin_disabled(true);
-    let labels = match panel {
-        RibbonPanel::PartModify => &["Move Bodies", "Bend Part", "Copy Object"][..],
-        RibbonPanel::PartSimplification => {
-            &["Remove Details", "Fill Voids", "Define Envelopes"][..]
-        }
-        RibbonPanel::Constrain => &["Edit Coordinate System", "Constraint Inference Scope"][..],
-        _ => return,
-    };
-    for &label in labels {
-        ui.button(label);
-        unavailable_tooltip(ui, tab, panel, label, display);
-    }
-    drop(disabled);
-}
-fn additional_icons(
-    context: &mut PanelDrawContext<'_>,
-    tab: RibbonTab,
-    panel: RibbonPanel,
-    display: &mut RibbonDisplayState,
-    entries: &'static [(&'static str, crate::icons::IconGlyph)],
-) {
-    let ui = context.ui;
-    let icons = context.owners.icons;
-    let origin = ui.cursor_pos();
-    let disabled = ui.begin_disabled(true);
-    for (index, &(label, glyph)) in entries.iter().enumerate() {
-        let (position, size) = icons.appearance.cell(index);
-        icons.cursor(ui, origin, position);
-        icons.button(ui, label, glyph, size);
-        unavailable_tooltip(ui, tab, panel, label, display);
-    }
-    drop(disabled);
-    icons.cursor(ui, origin, [0., icons.appearance.command_height()]);
-}
-fn additional_icon_entries(
-    panel: RibbonPanel,
-) -> Option<&'static [(&'static str, crate::icons::IconGlyph)]> {
-    use crate::icons::IconGlyph as Glyph;
-    Some(match panel {
-        RibbonPanel::PartModify => &[
-            ("Move Bodies", Glyph::MoveBodies),
-            ("Bend Part", Glyph::BendPart),
-            ("Copy Object", Glyph::Copy),
-        ],
-        RibbonPanel::PartSimplification => &[
-            ("Remove Details", Glyph::Simplify),
-            ("Fill Voids", Glyph::FillVoids),
-            ("Define Envelopes", Glyph::Envelope),
-        ],
-        RibbonPanel::Constrain => &[
-            ("Edit Coordinate System", Glyph::WorkCoordinateSystem),
-            ("Constraint Inference Scope", Glyph::ConstraintScope),
-        ],
-        _ => return None,
-    })
-}
-fn unavailable_tooltip(
-    ui: &Ui,
-    tab: RibbonTab,
-    panel: RibbonPanel,
-    label: &'static str,
-    display: &mut RibbonDisplayState,
-) {
-    if !ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
-        return;
-    }
-    if ui.is_mouse_clicked(imgui::MouseButton::Right) {
-        display.request_expansion_command_context(tab, panel, label);
-    }
-    let help = if label == "Edit Coordinate System" {
-        "Change the sketch origin and coordinate axes.\n"
-    } else {
-        ""
-    };
-    ui.tooltip_text(format!(
-        "{label}\n{help}This command is not available in this build."
-    ));
-}
-fn create_commands(
-    ui: &Ui,
-    state: &GuiCommandState,
-    precise_input: &mut crate::sketch::precise_input::PreciseInputBar,
-    create_block: &mut crate::sketch::create_block::CreateBlockDialog,
-    icons: &crate::icons::GuiRibbonIcons,
-    actions: &mut Vec<GuiShellAction>,
-) {
-    let size = if icons.appearance == crate::ribbon_command_layout::RibbonAppearance::Normal {
-        [0., 0.]
-    } else {
-        icons.appearance.cell(0).1
-    };
-    let origin = ui.cursor_pos();
-    crate::sketch::create_block::ribbon_button(ui, state, create_block, actions, size, icons);
-    let disabled = ui.begin_disabled(state.precise_target.is_none() || state.transaction_open);
-    if icons.appearance == crate::ribbon_command_layout::RibbonAppearance::Normal {
-        precise_input.toggle(ui);
-    } else {
-        icons.cursor(ui, origin, icons.appearance.cell(1).0);
-        precise_input.toggle_icon(ui, icons);
-        icons.cursor(ui, origin, [0., icons.appearance.command_height()]);
-    }
-    drop(disabled);
 }
 fn inside(point: [f32; 2], bounds: [[f32; 2]; 2]) -> bool {
     (0..2).all(|axis| point[axis] >= bounds[0][axis] && point[axis] <= bounds[1][axis])

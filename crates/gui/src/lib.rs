@@ -129,6 +129,7 @@ mod dimensions;
 mod extrude_dialog;
 mod face_properties;
 mod hole_dialog;
+mod move_body_dialog;
 pub use face_properties::GuiFaceProperties;
 mod marking_menu;
 mod marking_menu_layout;

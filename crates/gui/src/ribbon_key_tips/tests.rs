@@ -226,3 +226,17 @@ fn model_modify_tip_opens_additional_area_in_a_full_ribbon() {
     );
     assert!(tips.commands());
 }
+
+#[test]
+fn modify_additional_move_body_tip_opens_the_tool() {
+    let mut tips = RibbonKeyTips::default();
+    press(&mut tips, GuiKey::LeftAlt);
+    press(&mut tips, GuiKey::M);
+    assert!(matches!(
+        press(&mut tips, GuiKey::Y),
+        Some(KeyTipAction::OpenAdditional(_))
+    ));
+    assert_eq!(press(&mut tips, GuiKey::O), None);
+    assert_eq!(press(&mut tips, GuiKey::D), Some(KeyTipAction::MoveBody));
+    assert!(!tips.active());
+}

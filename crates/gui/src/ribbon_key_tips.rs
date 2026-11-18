@@ -28,6 +28,7 @@ pub(crate) enum KeyTipAction {
     StartSketch,
     Extrude,
     Hole,
+    MoveBody,
     ApplicationOptions,
     DocumentSettings,
     OpenGroup(crate::ribbon_panels::RibbonPanel),
@@ -213,13 +214,14 @@ impl RibbonKeyTips {
             "SK" => Some(KeyTipAction::StartSketch),
             "EX" => Some(KeyTipAction::Extrude),
             "HO" => Some(KeyTipAction::Hole),
+            "OD" => Some(KeyTipAction::MoveBody),
             _ => None,
         };
         if action.is_some() {
             self.dismiss();
             return action;
         }
-        if ["HO", "SK", "EX"]
+        if ["HO", "SK", "EX", "OD"]
             .iter()
             .any(|tip| tip.starts_with(&candidate))
         {
