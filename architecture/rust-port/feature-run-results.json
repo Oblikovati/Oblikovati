@@ -1,0 +1,10 @@
+{
+  "features/application/application-closing/application-closing.feature": {
+    "feature_sha256": "d87eaf041fc93701e0de5c911dd3b4c0622386d184f05954a8409400e412c0d0",
+    "cucumber": "architecture/rust-port/receipts/2026-11-18-application-closing-4030/cucumber.json",
+    "cucumber_sha256": "798fa5b5442ac842e617005b88669dae320af7ed141733e9afa3e9a9c21294fa",
+    "application_commit": "2e8c651a8ab9e0689b806c9e3fa531dc2c83badb",
+    "command": "OBK_BDD_FEATURE=application-closing tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11, Xvfb, Vulkan Lavapipe"
+  }
+}
