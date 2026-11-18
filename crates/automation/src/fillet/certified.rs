@@ -21,6 +21,9 @@ impl CertifiedFilletAccess {
     }
 }
 impl FilletAccess for CertifiedFilletAccess {
+    fn accepts_policy(&self, policy: Option<PrismResolutionPolicy>) -> bool {
+        policy == Some(self.0)
+    }
     fn body(
         &self,
         history: &DocumentEditHistory,

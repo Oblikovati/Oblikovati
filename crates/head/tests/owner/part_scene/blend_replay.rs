@@ -11,6 +11,9 @@ use oblikovati_model::{
 
 struct NoBodyReplay(CertifiedFilletAccess);
 impl FilletAccess for NoBodyReplay {
+    fn accepts_policy(&self, policy: Option<oblikovati_martensite::PrismResolutionPolicy>) -> bool {
+        self.0.accepts_policy(policy)
+    }
     fn body(
         &self,
         _: &DocumentEditHistory,
@@ -91,5 +94,100 @@ fn typed_blends_resolve_edges_from_the_current_replay() {
             };
             client.features().add_feature(&request).unwrap();
         }
+    }
+}
+
+#[test]
+fn typed_blends_decline_replay_owner_with_wrong_policy() {
+    for (chamfer, absent) in [(false, true), (true, true), (false, false), (true, false)] {
+        assert_wrong_policy_uses_certified_backend(chamfer, absent);
+    }
+}
+
+fn assert_wrong_policy_uses_certified_backend(chamfer: bool, absent: bool) {
+    let (mut owner, _) = owner();
+    let document = open_prism(&mut owner, false);
+    let guid = owner
+        .files
+        .workspace()
+        .identity(document)
+        .unwrap()
+        .internal_name;
+    let edge =
+        SemanticReferenceName::new(guid, 1, 2, "sketch-prism", "start-edge-curve", &[1, 101])
+            .unwrap()
+            .encode()
+            .unwrap();
+    let text: String = edge.iter().map(|byte| format!("{byte:02x}")).collect();
+    let policy = crate::part_scene::resolution_policy::desktop_policy();
+    let alternate = match policy {
+        oblikovati_martensite::PrismResolutionPolicy::ModelRelative {
+            reference,
+            reference_size,
+            minimum_size,
+        } => oblikovati_martensite::PrismResolutionPolicy::ModelRelative {
+            reference,
+            reference_size: reference_size * 2.,
+            minimum_size,
+        },
+        _ => panic!("desktop modelling policy: expected model-relative bounds"),
+    };
+    let mut replay = if absent {
+        PartReplayService::default()
+    } else {
+        PartReplayService::with_policy(alternate).unwrap()
+    };
+    replay.update_part(&mut owner.files, document).unwrap();
+    let backend = NoBodyReplay(CertifiedFilletAccess::new(policy).unwrap());
+    let host = FileHost::new(&mut owner.files, &mut owner.guids, &owner.version)
+        .with_fillet(&backend)
+        .with_part_update(&mut replay);
+    let client = Client::new(host);
+    let result = if chamfer {
+        client
+            .features()
+            .add_feature(&oblikovati_api::wire::featureargs::Chamfer {
+                edge_refs: Some(vec![text.clone()]),
+                distance: "1 mm".into(),
+                ..Default::default()
+            })
+    } else {
+        client
+            .features()
+            .add_feature(&oblikovati_api::wire::featureargs::Fillet {
+                edge_refs: Some(vec![text.clone()]),
+                radius: "1 mm".into(),
+                ..Default::default()
+            })
+    };
+    let error = result.unwrap_err().to_string();
+    assert!(
+        error.contains("unexpected independent body replay"),
+        "chamfer={chamfer}, absent={absent}: {error}"
+    );
+    drop(client);
+    let certified = CertifiedFilletAccess::new(policy).unwrap();
+    let host = FileHost::new(&mut owner.files, &mut owner.guids, &owner.version)
+        .with_fillet(&certified)
+        .with_part_update(&mut replay);
+    let client = Client::new(host);
+    if chamfer {
+        client
+            .features()
+            .add_feature(&oblikovati_api::wire::featureargs::Chamfer {
+                edge_refs: Some(vec![text]),
+                distance: "1 mm".into(),
+                ..Default::default()
+            })
+            .unwrap();
+    } else {
+        client
+            .features()
+            .add_feature(&oblikovati_api::wire::featureargs::Fillet {
+                edge_refs: Some(vec![text]),
+                radius: "1 mm".into(),
+                ..Default::default()
+            })
+            .unwrap();
     }
 }
