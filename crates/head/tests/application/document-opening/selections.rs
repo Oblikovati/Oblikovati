@@ -345,6 +345,9 @@ fn file_row_context_menu_properties_remains_clickable() {
     world.expect_text("File Properties");
     world.close();
 }
+
+#[path = "native_context.rs"]
+mod native_context;
 // Several drawings
 #[given("the Open dialog in the MCAD Software displays two adjacent saved drawings as thumbnails")]
 fn adjacent_tiles(world: &mut ApplicationWorld) {
