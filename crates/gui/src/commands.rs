@@ -392,7 +392,7 @@ pub struct GuiBaseViewRequest {
 mod feature_requests;
 pub use feature_requests::{
     GuiDrawingLine, GuiDrawingProjection, GuiExtrudeEditRequest, GuiExtrudePreview,
-    GuiFilletEditRequest, GuiFilletRequest, GuiHoleRequest,
+    GuiFilletEditRequest, GuiFilletRequest, GuiHoleRequest, GuiMoveBodyRequest,
 };
 /// Owner validation for one extrusion expression and active document.
 #[derive(Clone, Debug, PartialEq, Eq)]

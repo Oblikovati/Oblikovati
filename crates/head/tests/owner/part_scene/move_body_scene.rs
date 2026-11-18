@@ -117,3 +117,57 @@ fn invalid_motion_does_not_change_the_document() {
     );
     expect_centroid(&mut owner, 20.);
 }
+
+#[test]
+fn preview_cancel_commit_and_stale_requests_preserve_document_identity() {
+    let (owner, _) = owner();
+    let mut owner = owner
+        .with_extrusion_policy(crate::part_scene::resolution_policy::desktop_policy())
+        .unwrap();
+    let document = open_prism(&mut owner, false);
+    owner.take_scene().unwrap().unwrap();
+    let workspace = owner.files.workspace();
+    let session = workspace.session(document).unwrap();
+    let guid = workspace.identity(document).unwrap().internal_name;
+    let body = owner
+        .part_scenes
+        .current(session)
+        .unwrap()
+        .ordered_bodies()
+        .next()
+        .unwrap();
+    let request = oblikovati_gui::GuiMoveBodyRequest {
+        document,
+        generation: session.generation(),
+        body_key: body
+            .body_reference_key(session.history(), guid)
+            .unwrap()
+            .to_vec(),
+        input: MoveBody {
+            translation: Some(vec![1., 0., 0.]),
+            ..Default::default()
+        },
+    };
+    let mut stale = request.clone();
+    stale.generation += 1;
+    assert!(crate::HeadWork::preview_move_body_from_gui(&mut owner, Some(&stale)).is_err());
+    let mut wrong_body = request.clone();
+    wrong_body.body_key.push(0);
+    assert!(crate::HeadWork::commit_move_body_from_gui(&mut owner, &wrong_body).is_err());
+    assert!(crate::HeadWork::preview_move_body_from_gui(&mut owner, Some(&request)).unwrap());
+    assert!(owner.extrusion_preview.is_some());
+    assert_eq!(
+        owner
+            .files
+            .workspace()
+            .session(document)
+            .unwrap()
+            .generation(),
+        request.generation
+    );
+    assert!(crate::HeadWork::preview_move_body_from_gui(&mut owner, None).unwrap());
+    assert!(owner.extrusion_preview.is_none());
+    expect_centroid(&mut owner, 20.);
+    assert!(crate::HeadWork::commit_move_body_from_gui(&mut owner, &request).unwrap());
+    expect_centroid(&mut owner, 30.);
+}

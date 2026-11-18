@@ -3,6 +3,8 @@
 use super::*;
 #[path = "owner_hole.rs"]
 mod owner_hole;
+#[path = "owner_move_body.rs"]
+mod owner_move_body;
 use oblikovati_automation::{PreparedChamfer, PreparedFillet, prepare_chamfer, prepare_fillet};
 
 impl<

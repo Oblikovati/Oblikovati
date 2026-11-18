@@ -26,6 +26,21 @@ macro_rules! desktop_extrusion_work {
         ) -> Result<bool, String> {
             self.commit_edited_fillet(request)
         }
+        fn preview_move_body_from_gui(
+            &mut self,
+            request: Option<&oblikovati_gui::GuiMoveBodyRequest>,
+        ) -> Result<bool, String> {
+            let Some(request) = request else {
+                return Ok(self.clear_extrusion_preview());
+            };
+            self.preview_move_body(request)
+        }
+        fn commit_move_body_from_gui(
+            &mut self,
+            request: &oblikovati_gui::GuiMoveBodyRequest,
+        ) -> Result<bool, String> {
+            self.commit_move_body(request)
+        }
         fn preview_hole_from_gui(
             &mut self,
             request: Option<&oblikovati_gui::GuiHoleRequest>,

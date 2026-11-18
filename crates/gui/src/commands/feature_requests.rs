@@ -17,6 +17,14 @@ pub struct GuiHoleRequest {
     pub diameter: String,
     pub depth: String,
 }
+/// One generation-scoped, exactly identified body and its ordered motion draft.
+#[derive(Clone, Debug, PartialEq)]
+pub struct GuiMoveBodyRequest {
+    pub document: u64,
+    pub generation: u64,
+    pub body_key: Vec<u8>,
+    pub input: oblikovati_api::wire::featureargs::MoveBody,
+}
 /// One immutable edge selection and radius for a fillet draft.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GuiFilletRequest {
