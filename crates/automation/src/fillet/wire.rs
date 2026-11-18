@@ -36,12 +36,7 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         .map_err(api_error)?
         .internal_name;
     let prepared = prepare_fillet(session.snapshot(), body, edges, &input.radius)?;
-    let prefix = match replay.as_deref() {
-        Some(owner) if backend.accepts_policy(owner.resolution_policy()) => {
-            Some(owner.candidate_prefix(files, document).map_err(Error)?)
-        }
-        _ => None,
-    };
+    let prefix = super::matching_blend_prefix(files, backend, replay.as_deref(), document)?;
     create(files, document, guid, backend, prepared, prefix)
 }
 fn parse_edges(input: &Fillet) -> Result<Vec<Vec<u8>>, Error> {
@@ -111,7 +106,7 @@ fn create<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
         |candidate, ids| prepared.create(candidate, ids),
         |candidate, id, history| {
             let bodies = if let Some(prefix) = prefix {
-                backend.validate_with_prefix(history, guid, candidate, id, &prefix).map_err(Error)?
+                backend.validate_with_prefix(oblikovati_model::feature::part::PartBlendKind::Fillet, history, guid, candidate, id, &prefix).map_err(Error)?
             } else { backend.validate(guid, candidate, id).map_err(Error)? };
             let feature = candidate.work_geometry.get(id).map_err(api_error)?;
             crate::encode(&serde_json::json!({"id": id.0, "name": feature.name(), "kind": feature.definition().kind(), "suppressed": candidate.feature_suppressed(id).map_err(api_error)?, "health": "", "feature": name, "bodies": bodies, "healthy": true}))

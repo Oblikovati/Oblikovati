@@ -8,7 +8,7 @@ use oblikovati_model::{
     history::{DocumentEditHistory, DocumentSnapshot},
     identity::{DocumentGuid, SemanticReferenceName},
 };
-fn count_fillet_replays(reuse: bool) -> (u64, u64, u64) {
+fn count_blend_replays(reuse: bool, chamfer: bool) -> (u64, u64, u64) {
     let (mut owner, _) = owner();
     let document = open_prism(&mut owner, false);
     let text = counted_edge_key(&owner, document);
@@ -18,7 +18,7 @@ fn count_fillet_replays(reuse: bool) -> (u64, u64, u64) {
     let mut replay = PartReplayService::with_policy(policy).unwrap();
     replay.update_part(&mut owner.files, document).unwrap();
     let initial = replay.replay_count();
-    create_counted_fillet(&mut owner, &backend, &mut replay, text, reuse);
+    create_counted_blend(&mut owner, &backend, &mut replay, text, reuse, chamfer);
     replay.update_part(&mut owner.files, document).unwrap();
     let (body, validation) = backend.replay_counts();
     (body, validation, replay.replay_count() - initial)
@@ -56,12 +56,13 @@ fn counted_edge_key(owner: &TestOwner, document: u64) -> String {
     edge.iter().map(|byte| format!("{byte:02x}")).collect()
 }
 
-fn create_counted_fillet(
+fn create_counted_blend(
     owner: &mut TestOwner,
     backend: &CertifiedFilletAccess,
     replay: &mut PartReplayService,
     text: String,
     reuse: bool,
+    chamfer: bool,
 ) {
     let host =
         FileHost::new(&mut owner.files, &mut owner.guids, &owner.version).with_fillet(backend);
@@ -70,22 +71,40 @@ fn create_counted_fillet(
     } else {
         host
     };
-    Client::new(host)
-        .features()
-        .add_feature(&oblikovati_api::wire::featureargs::Fillet {
-            edge_refs: Some(vec![text]),
-            radius: "1 mm".into(),
-            ..Default::default()
-        })
-        .unwrap();
+    let client = Client::new(host);
+    if chamfer {
+        client
+            .features()
+            .add_feature(&oblikovati_api::wire::featureargs::Chamfer {
+                edge_refs: Some(vec![text]),
+                distance: "1 mm".into(),
+                ..Default::default()
+            })
+            .unwrap();
+    } else {
+        client
+            .features()
+            .add_feature(&oblikovati_api::wire::featureargs::Fillet {
+                edge_refs: Some(vec![text]),
+                radius: "1 mm".into(),
+                ..Default::default()
+            })
+            .unwrap();
+    }
 }
 
 #[test]
 fn fillet_creation_counts_body_candidate_and_published_replays() {
-    let before = count_fillet_replays(false);
-    let current = count_fillet_replays(true);
+    let before = count_blend_replays(false, false);
+    let current = count_blend_replays(true, false);
     assert_eq!(before, (1, 1, 1));
     assert_eq!(current, (0, 0, 1));
+}
+
+#[test]
+fn chamfer_creation_counts_body_candidate_and_published_replays() {
+    assert_eq!(count_blend_replays(false, true), (1, 1, 1));
+    assert_eq!(count_blend_replays(true, true), (0, 0, 1));
 }
 
 struct RejectCandidate(CertifiedFilletAccess);
@@ -109,10 +128,23 @@ impl FilletAccess for RejectCandidate {
     ) -> Result<usize, String> {
         Err("injected candidate refusal".into())
     }
+    fn validate_chamfer(
+        &self,
+        _: DocumentGuid,
+        _: &DocumentSnapshot,
+        _: FeatureId,
+    ) -> Result<usize, String> {
+        Err("injected candidate refusal".into())
+    }
 }
 
 #[test]
 fn injected_validator_still_rejects_a_candidate_with_a_current_prefix() {
+    assert_injected_rejection(false);
+    assert_injected_rejection(true);
+}
+
+fn assert_injected_rejection(chamfer: bool) {
     let (mut owner, _) = owner();
     let document = open_prism(&mut owner, false);
     let text = counted_edge_key(&owner, document);
@@ -129,14 +161,24 @@ fn injected_validator_still_rejects_a_candidate_with_a_current_prefix() {
     let host = FileHost::new(&mut owner.files, &mut owner.guids, &owner.version)
         .with_fillet(&backend)
         .with_part_update(&mut replay);
-    let result =
-        Client::new(host)
+    let client = Client::new(host);
+    let result = if chamfer {
+        client
+            .features()
+            .add_feature(&oblikovati_api::wire::featureargs::Chamfer {
+                edge_refs: Some(vec![text]),
+                distance: "1 mm".into(),
+                ..Default::default()
+            })
+    } else {
+        client
             .features()
             .add_feature(&oblikovati_api::wire::featureargs::Fillet {
                 edge_refs: Some(vec![text]),
                 radius: "1 mm".into(),
                 ..Default::default()
-            });
+            })
+    };
     assert!(
         result
             .unwrap_err()
@@ -150,6 +192,15 @@ fn injected_validator_still_rejects_a_candidate_with_a_current_prefix() {
 
 #[test]
 fn rejected_fillet_tail_does_not_commit_or_invalidate_current_result() {
+    reject_large_blend(false);
+}
+
+#[test]
+fn rejected_chamfer_tail_does_not_commit_or_invalidate_current_result() {
+    reject_large_blend(true);
+}
+
+fn reject_large_blend(chamfer: bool) {
     let (mut owner, _) = owner();
     let document = open_prism(&mut owner, false);
     let text = counted_edge_key(&owner, document);
@@ -166,14 +217,24 @@ fn rejected_fillet_tail_does_not_commit_or_invalidate_current_result() {
     let host = FileHost::new(&mut owner.files, &mut owner.guids, &owner.version)
         .with_fillet(&backend)
         .with_part_update(&mut replay);
-    let result =
-        Client::new(host)
+    let client = Client::new(host);
+    let result = if chamfer {
+        client
+            .features()
+            .add_feature(&oblikovati_api::wire::featureargs::Chamfer {
+                edge_refs: Some(vec![text]),
+                distance: "1000 mm".into(),
+                ..Default::default()
+            })
+    } else {
+        client
             .features()
             .add_feature(&oblikovati_api::wire::featureargs::Fillet {
                 edge_refs: Some(vec![text]),
                 radius: "1000 mm".into(),
                 ..Default::default()
-            });
+            })
+    };
     assert!(result.is_err());
     let session = owner.files.workspace().session(document).unwrap();
     assert_eq!(session.generation(), generation);

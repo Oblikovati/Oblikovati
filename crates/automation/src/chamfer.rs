@@ -15,7 +15,7 @@ use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::W
 pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
     backend: Option<&dyn FilletAccess>,
-    replay: Option<&mut dyn crate::PartUpdateAccess<O, W, F>>,
+    mut replay: Option<&mut dyn crate::PartUpdateAccess<O, W, F>>,
     request: AddFeatureArgs,
 ) -> Result<Vec<u8>, Error> {
     let input: Chamfer = serde_json::from_value(
@@ -31,7 +31,12 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     let document = crate::part_owner::active_part(files)?;
     let backend = backend
         .ok_or_else(|| Error("chamfer: expected an injected certified geometry service".into()))?;
-    let body = crate::fillet::blend_input_body(files, backend, replay, document, &edges)?;
+    let body = match &mut replay {
+        Some(owner) => {
+            crate::fillet::blend_input_body(files, backend, Some(&mut **owner), document, &edges)?
+        }
+        None => crate::fillet::blend_input_body(files, backend, None, document, &edges)?,
+    };
     let workspace = files.workspace();
     let session = workspace.session(document).map_err(api_error)?;
     let guid = workspace
@@ -39,7 +44,8 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         .map_err(api_error)?
         .internal_name;
     let prepared = prepare_chamfer(session.snapshot(), body, edges, &input.distance)?;
-    create(files, document, guid, backend, prepared)
+    let prefix = crate::fillet::matching_blend_prefix(files, backend, replay.as_deref(), document)?;
+    create(files, document, guid, backend, prepared, prefix)
 }
 
 fn validate_options(input: &Chamfer) -> Result<(), Error> {
@@ -121,13 +127,16 @@ fn create<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     guid: oblikovati_model::identity::DocumentGuid,
     backend: &dyn FilletAccess,
     prepared: PreparedChamfer,
+    prefix: Option<crate::CertifiedPartPrefix<'_>>,
 ) -> Result<Vec<u8>, Error> {
     let name = prepared.name.clone();
-    files.commands(document).map_err(api_error)?.run_projected(
+    files.commands(document).map_err(api_error)?.run_projected_with_view(
         "Create chamfer",
         |candidate, ids| prepared.create(candidate, ids),
-        |candidate, id| {
-            let bodies = backend.validate_chamfer(guid, candidate, id).map_err(Error)?;
+        |candidate, id, history| {
+            let bodies = if let Some(prefix) = prefix {
+                backend.validate_with_prefix(oblikovati_model::feature::part::PartBlendKind::Chamfer, history, guid, candidate, id, &prefix).map_err(Error)?
+            } else { backend.validate_chamfer(guid, candidate, id).map_err(Error)? };
             let feature = candidate.work_geometry.get(id).map_err(api_error)?;
             crate::encode(&serde_json::json!({"id": id.0, "name": feature.name(), "kind": feature.definition().kind(), "suppressed": candidate.feature_suppressed(id).map_err(api_error)?, "health": "", "feature": name, "bodies": bodies, "healthy": true}))
         },
