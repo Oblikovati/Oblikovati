@@ -49,6 +49,14 @@ impl<O: TransactionObserver> DocumentSession<O> {
             .filter(|owner| owner.policy == policy)
             .map(|owner| &owner.checkpoints)
     }
+    /// Capture a current part prefix for an appended feature.
+    /// Example: `session.owned_part_prefix(Some(policy))` before extrusion.
+    pub fn owned_part_prefix(
+        &self,
+        policy: Option<PrismResolutionPolicy>,
+    ) -> Option<crate::part_evaluation::PartCandidatePrefix<NamedSolid, EvaluationFailure>> {
+        self.owned_part_slot(policy)?.candidate_prefix(self).ok()
+    }
     /// Capture the current document-owned checkpoint and its policy.
     /// Example: `session.owned_checkpoint_prefix()` before an edit.
     pub fn owned_checkpoint_prefix(

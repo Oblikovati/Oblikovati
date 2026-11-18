@@ -304,6 +304,10 @@ impl oblikovati_automation::ExtrudeRegionAccess for RejectExtrusionCandidate {
 fn rejected_candidate_preserves_the_document_and_sketch_visibility() {
     let (mut owner, _) = owner();
     let document = open_sketch(&mut owner);
+    let policy = oblikovati_martensite::PrismResolutionPolicy::Fixed(resolution());
+    let mut replay = oblikovati_automation::PartReplayService::with_policy(policy).unwrap();
+    oblikovati_automation::PartUpdateAccess::ensure_part(&mut replay, &mut owner.files, document)
+        .unwrap();
     let session = owner.documents().workspace().session(document).unwrap();
     let generation = session.generation();
     let history = session
@@ -473,3 +477,6 @@ mod topology;
 
 #[path = "extrusion_edit.rs"]
 mod edit;
+
+#[path = "extrusion_replay.rs"]
+mod replay;
