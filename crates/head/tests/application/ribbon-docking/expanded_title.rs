@@ -6,6 +6,7 @@ use cucumber::{given, then, when};
 const MODIFY_AREA: &str = "##ribbon-additional-PartModify";
 
 #[given("a part is active in the MCAD Software with the full 3D Model ribbon docked at the top")]
+#[given("a part is active in the MCAD Software with the full 3D Model ribbon at the top")]
 fn part_with_top_ribbon(world: &mut ApplicationWorld) {
     part_active(world);
     expect_top_dock(world);
