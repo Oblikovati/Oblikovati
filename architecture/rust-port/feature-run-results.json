@@ -112,5 +112,20 @@
     "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=file-menu XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
     "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted window input; no assembly document opened",
     "notes": "A separate native X11 mouse and keyboard test opens the File menu, dismisses it with Escape and an outside click, and checks the active part."
+  },
+  "features/application/ribbon-command-availability/ribbon-command-availability.feature": {
+    "feature_sha256": "59959ff37cf45000a2fc634c665c70a0b784ae721f6fe8db1dd7d4399d659a0d",
+    "blocker": "Outside-edit Create commands need an established sketch selection and cancellation workflow; no enabled placeholders (#3956).",
+    "supporting_files": {
+      "features/application/ribbon-command-availability/FUNCTIONAL.md": "27f79a33563fe74970c552aa9cb4b8dc9617a048a0673f0c25076ffe891b71e9",
+      "features/application/ribbon-command-availability/VISUAL.md": "343ed7f280cecad6372b24b4590b613c37d5664a66f1e6af8e6e0ce180939f66",
+      "features/application/ribbon-command-availability/FIXTURES.md": "31a9ce49e8582ecc3f1fd8c264319422fc1c3a3c1805c63357c9facec3a0684d",
+      "features/application/ribbon-command-availability/BLOCKERS.md": "ef3a58272f56720b51f1db72ffa483924d338b8066f986b450e6fdb51224be0c"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-18-ribbon-availability/cucumber.json",
+    "cucumber_sha256": "a95c0f0a413bde3f65b3f021efdb7778a09665cf7a759e3e17d2a502f48f6b35",
+    "application_commit": "8ddb2767f",
+    "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=ribbon-command-availability XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted window input"
   }
 }
