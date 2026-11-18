@@ -5,7 +5,10 @@ mod error;
 mod owner;
 mod request;
 use crate::{DocumentSession, TransactionObserver};
-pub use checkpoints::{CompletedPartCheckpoints, PartCheckpointPrefix, PartCheckpointSlot};
+pub use checkpoints::{
+    CompletedPartCheckpoints, CompletedPartSketchCheckpoints, PartCheckpointPrefix,
+    PartCheckpointSlot,
+};
 pub use error::{PartEvaluationError, PartSketchAdoptionError};
 use oblikovati_model::feature::part::PartFeatureEvaluation;
 use oblikovati_model::{

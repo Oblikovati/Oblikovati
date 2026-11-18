@@ -143,10 +143,34 @@ fn verify_face_hosted_prism(direct: bool) {
                 .evaluate_part_features(&mut FaceEvaluator::default())
                 .unwrap();
             assert!(before.body(FeatureId(4)).is_none());
-            let (result, _) = candidate
+            let (result, solved) = candidate
                 .recompute_part_with_sketches(&mut FaceEvaluator::default(), Default::default())
                 .unwrap();
             assert!(result.body(FeatureId(4)).is_some());
+            let (checkpoints, checkpoint_sketches) = candidate
+                .recompute_part_with_checkpoints_cancellable(
+                    &mut FaceEvaluator::default(),
+                    Default::default(),
+                    || false,
+                )
+                .unwrap();
+            assert!(solved.same_evaluated_state(&checkpoint_sketches));
+            assert_eq!(checkpoints.result().health(), result.health());
+            assert!(checkpoints.result().body(FeatureId(4)).is_some());
+            let mut edited = candidate.clone();
+            edited.sketches = checkpoint_sketches;
+            edited
+                .work_geometry
+                .set_suppressed(FeatureId(4), true)
+                .unwrap();
+            let resumed = checkpoints
+                .replay_candidate_tail(&edited, &mut FaceEvaluator::default())
+                .unwrap();
+            let full = edited
+                .evaluate_part_features(&mut FaceEvaluator::default())
+                .unwrap();
+            assert_eq!(resumed.health(), full.health());
+            assert!(resumed.body(FeatureId(4)).is_none());
             let (failed, _) = candidate
                 .recompute_part_with_sketches(
                     &mut FaceEvaluator {
@@ -182,6 +206,19 @@ fn ordered_recompute_discards_cancelled_sketch_work() {
     );
     assert!(matches!(
         result,
+        Err(PartFeatureProgramError::Cancelled { .. })
+    ));
+    let mut checkpoint_polls = 0;
+    let checkpoints = snapshot.recompute_part_with_checkpoints_cancellable(
+        &mut FaceEvaluator::default(),
+        Default::default(),
+        || {
+            checkpoint_polls += 1;
+            checkpoint_polls == 3
+        },
+    );
+    assert!(matches!(
+        checkpoints,
         Err(PartFeatureProgramError::Cancelled { .. })
     ));
     assert_eq!(snapshot.work_geometry.part_recipe().unwrap(), before);

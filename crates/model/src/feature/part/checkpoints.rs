@@ -4,10 +4,15 @@ use super::{
     BorrowedPartReplay, PartFeatureEvaluation, PartFeatureEvaluator, PartFeatureFailure,
     PartFeatureProgramError,
 };
-use crate::feature::{FeatureHealthRecord, FeatureReplayController};
+use crate::feature::FeatureHealthRecord;
 use crate::history::DocumentSnapshot;
-use std::borrow::Cow;
 use std::sync::Arc;
+
+/// A checkpoint set and the solved sketches that produced it.
+pub type CheckpointedPart<Body, Failure> = (
+    PartReplayCheckpoints<Body, Failure>,
+    crate::document_sketch::DocumentSketches,
+);
 
 /// Complete prefix states from one replay; the owner must guard document and policy freshness.
 pub struct PartReplayCheckpoints<Body, Failure> {
@@ -68,45 +73,65 @@ impl DocumentSnapshot {
     pub fn evaluate_part_with_checkpoints_cancellable<B: PartFeatureEvaluator>(
         &self,
         backend: &mut B,
-        mut cancelled: impl FnMut() -> bool,
+        cancelled: impl FnMut() -> bool,
     ) -> Result<PartReplayCheckpoints<B::Body, B::Failure>, PartFeatureProgramError>
     where
         B::Body: Clone,
         B::Failure: Clone,
     {
-        let sequence =
-            super::body_dependencies::with_replacement_reads(self.effective_work_geometry())?;
-        let mut controller = FeatureReplayController::new_with_parameters(
-            &sequence,
-            self.part_replay_range()?,
-            vec![],
-            &self.parameters,
-        )
-        .map_err(PartFeatureProgramError::Reads)?;
-        let mut evaluation = PartFeatureEvaluation::empty();
+        self.checkpoints_with_options(backend, None, cancelled)
+            .map(|(checkpoints, _)| checkpoints)
+    }
+    /// Solve sketches in feature order and retain checkpoints for the solved inputs.
+    /// Example: `snapshot.recompute_part_with_checkpoints_cancellable(&mut backend, options, || superseded())?`.
+    pub fn recompute_part_with_checkpoints_cancellable<B: PartFeatureEvaluator>(
+        &self,
+        backend: &mut B,
+        options: oblikovati_solve::nonlinear::SolveOptions,
+        cancelled: impl FnMut() -> bool,
+    ) -> Result<CheckpointedPart<B::Body, B::Failure>, PartFeatureProgramError>
+    where
+        B::Body: Clone,
+        B::Failure: Clone,
+    {
+        self.checkpoints_with_options(backend, Some(options), cancelled)
+    }
+    fn checkpoints_with_options<B: PartFeatureEvaluator>(
+        &self,
+        backend: &mut B,
+        options: Option<oblikovati_solve::nonlinear::SolveOptions>,
+        mut cancelled: impl FnMut() -> bool,
+    ) -> Result<CheckpointedPart<B::Body, B::Failure>, PartFeatureProgramError>
+    where
+        B::Body: Clone,
+        B::Failure: Clone,
+    {
+        let empty = PartFeatureEvaluation::empty();
         let source = Arc::new(self.clone());
-        let mut states = vec![copy_state(&evaluation, &[], &source)];
-        let mut candidate = Cow::Borrowed(self);
-        evaluation.replay_observed(
-            &mut candidate,
+        let mut states = vec![copy_state(&empty, &[], &source)];
+        let (evaluation, candidate) = self.replay_part_with_sketches_observed(
             backend,
-            &mut controller,
-            None,
+            options,
             &mut cancelled,
             &mut |state, health| states.push(copy_state(state, health, &source)),
         )?;
-        evaluation.refresh_sketch_faces(&candidate, backend);
-        let health = controller
-            .finish()
-            .map_err(PartFeatureProgramError::Reads)?;
         if cancelled() {
             return Err(PartFeatureProgramError::Cancelled {
-                completed: health.len(),
+                completed: evaluation.health().len(),
             });
         }
-        *states.last_mut().expect("empty prefix exists") =
-            copy_state(&evaluation, &health, &source);
-        Ok(PartReplayCheckpoints { states })
+        let source = evaluation
+            .source
+            .as_ref()
+            .expect("completed replay has its source");
+        for state in &mut states {
+            state.source = Some(Arc::clone(source));
+        }
+        *states.last_mut().expect("empty prefix exists") = evaluation;
+        Ok((
+            PartReplayCheckpoints { states },
+            candidate.into_owned().sketches,
+        ))
     }
 }
 fn copy_state<Body: Clone, Failure: Clone>(

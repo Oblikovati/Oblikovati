@@ -126,3 +126,67 @@ fn superseded_checkpoint_request_stops_before_kernel_evaluation() {
     ));
     assert_eq!(backend.calls, 0);
 }
+
+#[test]
+fn checkpointed_sketch_replay_publishes_only_after_sketch_state_settles() {
+    let mut document = fixture::selected_prism_document();
+    let geometry = document
+        .sketches
+        .get(fixture::SKETCH)
+        .unwrap()
+        .geometry()
+        .clone();
+    document
+        .sketches
+        .replace_geometry(fixture::SKETCH, geometry)
+        .unwrap();
+    let ids = RecipeIdAllocator::restore(None, document.parameters.ids()).unwrap();
+    let mut owner = DocumentSession::new(
+        7,
+        DocumentEditHistory::new(document, ids).unwrap(),
+        RecordingPartObserver::default(),
+    );
+    let mut slot = PartSlot::default();
+    let mut checkpoints = PartCheckpointSlot::default();
+    let first = owner
+        .prepare_part_evaluation()
+        .recompute_sketches_with_checkpoints(&mut FakePrismEvaluator::default(), Default::default())
+        .unwrap();
+    let first_published = owner
+        .adopt_checkpointed_sketch_replay(first, &mut slot, &mut checkpoints)
+        .unwrap();
+    assert!(!first_published);
+    assert!(slot.current(&owner).is_err());
+    assert!(checkpoints.candidate_prefix(&owner).is_err());
+    let settled = owner
+        .prepare_part_evaluation()
+        .recompute_sketches_with_checkpoints(&mut FakePrismEvaluator::default(), Default::default())
+        .unwrap();
+    assert!(
+        owner
+            .adopt_checkpointed_sketch_replay(settled, &mut slot, &mut checkpoints)
+            .unwrap()
+    );
+    assert_eq!(current_depth(&slot, &owner), 2.);
+    assert!(checkpoints.candidate_prefix(&owner).is_ok());
+}
+
+#[test]
+fn stale_checkpointed_sketch_replay_does_not_replace_current_results() {
+    let mut owner = session(7);
+    let old = owner
+        .prepare_part_evaluation()
+        .recompute_sketches_with_checkpoints(&mut FakePrismEvaluator::default(), Default::default())
+        .unwrap();
+    edit_depth(&mut owner, "3 cm");
+    let mut slot = PartSlot::default();
+    let mut checkpoints = PartCheckpointSlot::default();
+    assert!(matches!(
+        owner.adopt_checkpointed_sketch_replay(old, &mut slot, &mut checkpoints),
+        Err(PartSketchAdoptionError::Evaluation(
+            PartEvaluationError::Superseded { .. }
+        ))
+    ));
+    assert!(slot.current(&owner).is_err());
+    assert!(checkpoints.candidate_prefix(&owner).is_err());
+}

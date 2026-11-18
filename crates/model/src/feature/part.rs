@@ -13,7 +13,7 @@ mod body_dependencies;
 mod body_lineage;
 mod body_resolution;
 mod checkpoints;
-pub use checkpoints::PartReplayCheckpoints;
+pub use checkpoints::{CheckpointedPart, PartReplayCheckpoints};
 mod delete;
 mod error;
 pub use delete::DeleteBodyDefinition;
