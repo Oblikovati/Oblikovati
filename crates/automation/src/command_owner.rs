@@ -63,6 +63,17 @@ pub(super) fn edit(
 ) -> Result<Vec<u8>, Error> {
     let edit = PreparedEdit::decode(method, request)?;
     let id = edit.document(owner.workspace().active_document())?;
+    if edit.is_parameter_value_edit() {
+        return crate::parameter_replay::try_edit(owner, edit, id);
+    }
+    apply_edit(owner, edit, id)
+}
+
+pub(super) fn apply_edit(
+    owner: &mut impl CommandOwner,
+    edit: PreparedEdit,
+    id: u64,
+) -> Result<Vec<u8>, Error> {
     let response = owner
         .commands(id)
         .map_err(|error| Error(error.to_string()))?

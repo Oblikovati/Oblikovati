@@ -38,6 +38,9 @@ using this status; the live scenario directory can change.
 - Each document session owns its policy-scoped part result and checkpoints.
   Hosts with the same policy share them; a policy change replaces and retires
   the old result. Closing the document drops both (#4079).
+- Parameter Set and Update reuse a current document checkpoint for a proven
+  clean prefix. A typed API test edits a Fillet parameter twice, checks named
+  faces against a full replay, and exercises undo, redo, save, and reopen (#4079).
 - The desktop replay owner creates checkpoints on demand for blend edit
   previews. Successive previews and accepted edits reuse matching checkpoints.
   Associative sketches use ordered recompute. The per-document session does not

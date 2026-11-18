@@ -69,6 +69,7 @@ mod model_tree;
 mod parameter_choices;
 mod parameter_edit;
 mod parameter_exchange;
+mod parameter_replay;
 mod parameter_tolerance;
 mod parameter_update;
 mod parameter_value;
