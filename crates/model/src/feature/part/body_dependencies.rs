@@ -58,6 +58,7 @@ fn track_replacement(
         }
         PartFeatureDefinition::Fillet(fillet) => fillet.body_source(),
         PartFeatureDefinition::Chamfer(chamfer) => chamfer.body_source(),
+        PartFeatureDefinition::Hole(hole) => hole.body_source(),
         PartFeatureDefinition::DeleteBody(delete) => delete.source(),
         _ => return,
     };

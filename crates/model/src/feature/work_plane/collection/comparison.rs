@@ -10,6 +10,7 @@ impl WorkPlaneDefinition {
             (DeleteBody(first), DeleteBody(second)) => first == second,
             (Fillet(first), Fillet(second)) => first == second,
             (Chamfer(first), Chamfer(second)) => first == second,
+            (Hole(first), Hole(second)) => first.same_recipe(second),
             (SketchPrism(first), SketchPrism(second)) => first.same_recipe(second),
             (AtAngleAboutAxis(first), AtAngleAboutAxis(second)) => {
                 same_line_angle(first.clone(), second.clone())

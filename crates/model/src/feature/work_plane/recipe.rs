@@ -18,6 +18,7 @@ pub enum WorkPlaneDefinitionRecipe {
     DeleteBody(Vec<u8>),
     Chamfer(crate::feature::chamfer::ChamferRecipe),
     Fillet(crate::feature::fillet::FilletRecipe),
+    Hole(crate::feature::hole::HoleRecipe),
     SketchPrism(crate::feature::sketch_prism::SketchPrismRecipe),
     AtAngleAboutAxis(crate::feature::work_geometry::WorkPlaneLineAngle),
     ThroughTwoAxes([crate::feature::work_axis::WorkAxisReference; 2]),
@@ -55,6 +56,7 @@ impl WorkPlaneDefinition {
             Self::DeleteBody(definition) => Source::DeleteBody(definition.key().to_vec()),
             Self::Chamfer(definition) => Source::Chamfer(definition.recipe()),
             Self::Fillet(definition) => Source::Fillet(definition.recipe()),
+            Self::Hole(definition) => Source::Hole(definition.recipe()),
             Self::SketchPrism(definition) => Source::SketchPrism(definition.recipe()),
             Self::AtAngleAboutAxis(source) => Source::AtAngleAboutAxis(source.clone()),
             Self::ThroughTwoAxes(axes) => Source::ThroughTwoAxes(*axes),
@@ -86,6 +88,9 @@ fn restore_definition(
 ) -> Result<WorkPlaneDefinition, WorkPlaneError> {
     use WorkPlaneDefinitionRecipe::*;
     match definition {
+        Hole(recipe) => crate::feature::hole::HoleDefinition::from_recipe(recipe)
+            .map(|definition| WorkPlaneDefinition::Hole(Box::new(definition)))
+            .map_err(WorkPlaneError::BodyReference),
         Chamfer(recipe) => crate::feature::chamfer::ChamferDefinition::from_recipe(&recipe)
             .map(|definition| WorkPlaneDefinition::Chamfer(Box::new(definition)))
             .map_err(WorkPlaneError::BodyReference),
@@ -153,6 +158,7 @@ impl WorkPlaneDefinitionRecipe {
         }
         match self {
             Self::Chamfer(_) => 16,
+            Self::Hole(_) => 17,
             Self::Fillet(_) => 15,
             Self::DeleteBody(_) => 12,
             Self::SketchPrism(_) => 11,
@@ -177,6 +183,7 @@ impl WorkPlaneDefinitionRecipe {
         }
         match self {
             Self::Chamfer(_) => 21,
+            Self::Hole(_) => 22,
             Self::Fillet(_) => 20,
             Self::DeleteBody(_) => 17,
             Self::SketchPrism(_) => 16,
