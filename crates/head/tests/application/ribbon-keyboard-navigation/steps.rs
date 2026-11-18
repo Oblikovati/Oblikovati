@@ -451,6 +451,7 @@ mod view_rotation;
 mod browser_navigation;
 #[path = "face_selection.rs"]
 mod face_selection;
+pub(super) use face_selection::visible_face_point;
 
 #[when("the user presses \"O\"")]
 fn hole_key(world: &mut ApplicationWorld) {

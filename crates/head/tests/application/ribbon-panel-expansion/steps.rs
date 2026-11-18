@@ -11,6 +11,8 @@ mod builtin_commands;
 mod command_context;
 #[path = "custom_commands.rs"]
 mod custom_commands;
+#[path = "face_selection.rs"]
+mod face_selection;
 #[path = "keyboard_full.rs"]
 mod keyboard_full;
 #[path = "sketch_block_placement.rs"]
