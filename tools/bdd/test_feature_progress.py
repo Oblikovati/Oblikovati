@@ -74,6 +74,12 @@ class FeatureProgressTests(unittest.TestCase):
         self.record["feature_sha256"] = inventory.feature_record(self.feature)["sha256"]
         self.assertEqual(self.status(), ("needs_outline_review", 0))
 
+    def test_blocker_is_visible_until_source_changes(self) -> None:
+        self.record["blocker"] = "Scenario is capture-only"
+        self.assertEqual(self.status(), ("blocked", 0))
+        self.feature.write_text(self.feature.read_text() + "# updated\n")
+        self.assertEqual(self.status(), ("source_changed", 0))
+
     def test_unrecorded_feature_is_not_run(self) -> None:
         self.assertEqual(
             progress.result_status(

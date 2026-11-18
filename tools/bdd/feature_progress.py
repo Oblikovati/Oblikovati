@@ -47,6 +47,8 @@ def result_status(
         return "not_run", 0
     if record.get("feature_sha256") != info["sha256"]:
         return "source_changed", 0
+    if isinstance(record.get("blocker"), str) and record["blocker"].strip():
+        return "blocked", 0
     if info["outlines"]:
         return "needs_outline_review", 0
     report = ROOT / str(record.get("cucumber", ""))
@@ -126,12 +128,14 @@ def report_progress(source: Path, records: dict[str, object]) -> dict[str, objec
             "status": status,
             "passed_scenarios": count,
             "tested_application_commit": commit,
+            "blocker": record.get("blocker") if isinstance(record, dict) else None,
         }
     return {
         "features": rows,
         "removed_features": sorted(set(records) - set(features)),
         "total_features": len(rows),
         "green_features": sum(row["status"] == "green" for row in rows.values()),
+        "blocked_features": sum(row["status"] == "blocked" for row in rows.values()),
         "scenario_declarations": sum(
             row["scenario_declarations"] for row in rows.values()
         ),
