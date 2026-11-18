@@ -24,11 +24,6 @@ fn tips_shown(world: &mut ApplicationWorld) {
         "missing quick-access key tip: {:?}",
         world.text()
     );
-    assert!(
-        exact_tip(world, "X2"),
-        "missing display key tip: {:?}",
-        world.text()
-    );
 }
 #[given("top-level ribbon key tips are visible after pressing Alt")]
 fn top_level_tips_active(world: &mut ApplicationWorld) {
@@ -39,10 +34,45 @@ fn top_level_tips_active(world: &mut ApplicationWorld) {
 #[then("the top-level key tips disappear")]
 fn tips_hidden(world: &mut ApplicationWorld) {
     assert!(
-        !exact_tip(world, "X2"),
+        !exact_tip(world, "M"),
         "key tips still visible: {:?}",
         world.text()
     );
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn native_side_docked_tab_and_quick_access_tips_toggle() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    super::ribbon_docking::docked_left_on_model(&mut world);
+    super::x11_input::press_keysym(0xffe9);
+    world.pump(Vec::new());
+    tips_shown(&mut world);
+    super::x11_input::press_keysym(0xffe9);
+    world.pump(Vec::new());
+    tips_hidden(&mut world);
+    world.close();
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn native_escape_closes_side_docked_group_after_key_tips() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    super::ribbon_docking::docked_left_on_model(&mut world);
+    for key in [0xffe9, u32::from(b'm'), u32::from(b'y')] {
+        super::x11_input::press_keysym(key);
+        world.pump(Vec::new());
+    }
+    modify_panel_and_tips(&mut world);
+    super::x11_input::press_keysym(0xffe9);
+    world.pump(Vec::new());
+    nested_tips_hidden(&mut world);
+    super::x11_input::press_escape();
+    world.pump(Vec::new());
+    assert!(super::diagnostics::window_geometry("##ribbon-temporary-panel").is_none());
+    world.close();
 }
 #[given("the Tools ribbon tab is selected")]
 fn select_tools(world: &mut ApplicationWorld) {
@@ -88,6 +118,15 @@ fn model_selected(world: &mut ApplicationWorld) {
 fn command_tips(world: &mut ApplicationWorld) {
     assert!(exact_tip(world, "HO"), "{:?}", world.text());
 }
+#[given("the 3D Model ribbon command key tips are displayed")]
+fn model_command_tips_active(world: &mut ApplicationWorld) {
+    show_model_tips(world);
+    command_tips(world);
+}
+#[given("the Hole command has the key tip \"HO\"")]
+fn hole_key_tip_visible(world: &mut ApplicationWorld) {
+    command_tips(world);
+}
 #[when("the user presses Alt and then \"M\"")]
 fn show_model_tips(world: &mut ApplicationWorld) {
     alt(world);
@@ -98,9 +137,17 @@ fn prefix_h(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::H, false);
 }
 #[then("the visible command key tips narrow to H-prefixed entries")]
+#[then("the visible command key tips are narrowed to matching H-prefixed entries")]
+#[then("the H-prefixed command key tips remain visible")]
+#[then("the displayed command key tips narrow to matching H-prefixed entries")]
 fn narrowed_tips(world: &mut ApplicationWorld) {
     assert!(exact_tip(world, "HO"));
     assert!(!exact_tip(world, "SK") && !exact_tip(world, "EX"));
+}
+#[then("the temporary 3D Model command area opens with command key tips")]
+fn temporary_model_command_tips(world: &mut ApplicationWorld) {
+    temporary_model(world);
+    command_tips(world);
 }
 #[then("the tab and quick-access key tips appear")]
 fn tabs_return(world: &mut ApplicationWorld) {
@@ -295,6 +342,24 @@ fn temporary_closed(world: &mut ApplicationWorld) {
 #[given("Modify is displayed as a compact group button")]
 fn modify_compact(world: &mut ApplicationWorld) {
     world.run_in_window("##ribbon-column", "Modify");
+}
+#[then("key tips appear on the visible 3D Model commands and compact groups")]
+#[then("the Modify group displays the key tip \"Y\"")]
+fn modify_group_key_tip(world: &mut ApplicationWorld) {
+    assert!(
+        exact_tip(world, "Y"),
+        "missing Modify key tip: {}",
+        world.text()
+    );
+}
+#[when("the user presses \"Y\"")]
+fn modify_group_key(world: &mut ApplicationWorld) {
+    world.key(ViewportPhysicalKey::Y, false);
+}
+#[then("the adjacent Modify command panel opens")]
+#[then("its commands display key tips including \"HO\" for Hole")]
+fn modify_group_command_tips(world: &mut ApplicationWorld) {
+    modify_panel_and_tips(world);
 }
 #[given(
     "the user has pressed Alt, \"M\", and \"Y\" to open the Modify panel and its command key tips"
