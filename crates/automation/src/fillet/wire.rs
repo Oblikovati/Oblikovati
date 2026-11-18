@@ -37,7 +37,10 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         .internal_name;
     let prepared = prepare_fillet(session.snapshot(), body, edges, &input.radius)?;
     let prefix = super::matching_blend_prefix(files, backend, replay.as_deref(), document)?;
-    create(files, document, guid, backend, prepared, prefix)
+    let ((reply, candidate), transition) =
+        create(files, document, guid, backend, prepared, prefix)?;
+    super::publish_blend_candidate(files, replay, document, candidate, &transition)?;
+    Ok(reply)
 }
 fn parse_edges(input: &Fillet) -> Result<Vec<Vec<u8>>, Error> {
     require_supported(input)?;
@@ -99,17 +102,18 @@ fn create<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     backend: &dyn FilletAccess,
     prepared: PreparedFillet,
     prefix: Option<crate::CertifiedPartPrefix<'_>>,
-) -> Result<Vec<u8>, Error> {
+) -> Result<super::BlendTransaction, Error> {
     let name = prepared.name.clone();
-    files.commands(document).map_err(api_error)?.run_projected_with_view(
+    files.commands(document).map_err(api_error)?.run_projected_with_transition(
         "Create fillet",
         |candidate, ids| prepared.create(candidate, ids),
         |candidate, id, history| {
-            let bodies = if let Some(prefix) = prefix {
-                backend.validate_with_prefix(oblikovati_model::feature::part::PartBlendKind::Fillet, history, guid, candidate, id, &prefix).map_err(Error)?
-            } else { backend.validate(guid, candidate, id).map_err(Error)? };
+            let (bodies, captured) = if let Some(prefix) = prefix {
+                backend.capture_with_prefix(oblikovati_model::feature::part::PartBlendKind::Fillet, history, guid, candidate, id, &prefix).map_err(Error)?
+            } else { (backend.validate(guid, candidate, id).map_err(Error)?, None) };
             let feature = candidate.work_geometry.get(id).map_err(api_error)?;
-            crate::encode(&serde_json::json!({"id": id.0, "name": feature.name(), "kind": feature.definition().kind(), "suppressed": candidate.feature_suppressed(id).map_err(api_error)?, "health": "", "feature": name, "bodies": bodies, "healthy": true}))
+            let reply = crate::encode(&serde_json::json!({"id": id.0, "name": feature.name(), "kind": feature.definition().kind(), "suppressed": candidate.feature_suppressed(id).map_err(api_error)?, "health": "", "feature": name, "bodies": bodies, "healthy": true}))?;
+            Ok((reply, captured))
         },
     ).map_err(api_error)
 }

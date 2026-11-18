@@ -43,6 +43,45 @@ impl CertifiedFilletAccess {
     }
 }
 impl FilletAccess for CertifiedFilletAccess {
+    fn capture_with_prefix(
+        &self,
+        kind: oblikovati_model::feature::part::PartBlendKind,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        candidate: &DocumentSnapshot,
+        feature: FeatureId,
+        prefix: &crate::CertifiedPartPrefix<'_>,
+    ) -> Result<(usize, Option<crate::CertifiedPartCandidate>), String> {
+        if prefix.policy != Some(self.policy) {
+            return Err("part candidate prefix: expected the blend validation policy".into());
+        }
+        let expected = match kind {
+            oblikovati_model::feature::part::PartBlendKind::Fillet => "fillet",
+            oblikovati_model::feature::part::PartBlendKind::Chamfer => "chamfer",
+        };
+        require_feature_kind(candidate, feature, expected)?;
+        let mut evaluator =
+            CertifiedNamedSolidEvaluator::with_policy(history, document, self.policy);
+        let Some(result) =
+            prefix
+                .prefix
+                .prepare_tail(history, candidate, feature, &mut evaluator)?
+        else {
+            return self
+                .validate_with_prefix(kind, history, document, candidate, feature, prefix)
+                .map(|count| (count, None));
+        };
+        let count = result.body_count();
+        let candidate =
+            result.capture(history, |_, body| body.capture_detached(history, document))?;
+        Ok((
+            count,
+            Some(crate::CertifiedPartCandidate {
+                policy: self.policy,
+                candidate,
+            }),
+        ))
+    }
     fn accepts_policy(&self, policy: Option<PrismResolutionPolicy>) -> bool {
         policy == Some(self.policy)
     }

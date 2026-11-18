@@ -4,6 +4,14 @@ use super::*;
 
 /// Part replay capability independent of viewport and topology queries.
 pub trait PartUpdateAccess<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> {
+    /// Publish an accepted policy-matched candidate; example: `owner.adopt_candidate(files, id, candidate, &transition)?`.
+    fn adopt_candidate(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+        candidate: CertifiedPartCandidate,
+        transition: &oblikovati_model::history::EvaluationTransition,
+    ) -> Result<(), String>;
     /// Report the policy used for retained results; example: `owner.resolution_policy()`.
     fn resolution_policy(&self) -> Option<PrismResolutionPolicy>;
     /// Ensure a current result exists; example: `owner.ensure_part(files, id)?` before a query.

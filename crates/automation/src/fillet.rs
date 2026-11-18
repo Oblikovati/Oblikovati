@@ -10,6 +10,10 @@ mod wire;
 pub(crate) use certified::resolve_blend_body;
 pub use certified::{CertifiedFilletAccess, CertifiedFilletValidation};
 pub(crate) use wire::apply as apply_wire;
+pub(crate) type BlendTransaction = (
+    (Vec<u8>, Option<crate::CertifiedPartCandidate>),
+    oblikovati_model::history::EvaluationTransition,
+);
 
 pub(crate) fn blend_input_body<O, W, F>(
     files: &mut oblikovati_session::files::FileWorkspace<O, W, F>,
@@ -57,8 +61,51 @@ where
     }
 }
 
+pub(crate) fn publish_blend_candidate<O, W, F>(
+    files: &mut oblikovati_session::files::FileWorkspace<O, W, F>,
+    replay: Option<&mut dyn crate::PartUpdateAccess<O, W, F>>,
+    document: u64,
+    candidate: Option<crate::CertifiedPartCandidate>,
+    transition: &oblikovati_model::history::EvaluationTransition,
+) -> Result<(), Error>
+where
+    O: oblikovati_session::TransactionObserver,
+    W: oblikovati_session::workspace::WorkspaceObserver,
+    F: oblikovati_persistence::file_access::DocumentFiles,
+{
+    let Some(candidate) = candidate else {
+        return Ok(());
+    };
+    let owner = replay.ok_or_else(|| {
+        Error(format!(
+            "document {document}: committed blend expected its replay owner"
+        ))
+    })?;
+    owner
+        .adopt_candidate(files, document, candidate, transition)
+        .map_err(|error| {
+            Error(format!(
+                "document {document}: blend committed but result adoption failed: {error}"
+            ))
+        })
+}
+
 /// Exact body resolution and validation for typed Fillet commands.
 pub trait FilletAccess {
+    /// Validate a candidate and optionally retain its exact result for adoption.
+    /// Example: `access.capture_with_prefix(kind, history, document, candidate, feature, prefix)?`.
+    fn capture_with_prefix(
+        &self,
+        kind: oblikovati_model::feature::part::PartBlendKind,
+        history: &oblikovati_model::history::DocumentEditHistory,
+        document: oblikovati_model::identity::DocumentGuid,
+        candidate: &DocumentSnapshot,
+        feature: FeatureId,
+        prefix: &crate::CertifiedPartPrefix<'_>,
+    ) -> Result<(usize, Option<crate::CertifiedPartCandidate>), String> {
+        self.validate_with_prefix(kind, history, document, candidate, feature, prefix)
+            .map(|count| (count, None))
+    }
     /// Require the validator's policy for reuse; example: `access.accepts_policy(policy)`.
     fn accepts_policy(&self, policy: Option<oblikovati_martensite::PrismResolutionPolicy>) -> bool;
     /// Resolve all selected keys to one current body; example: `access.body(history, document, &edges)?`.

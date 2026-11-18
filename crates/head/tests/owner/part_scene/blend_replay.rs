@@ -16,10 +16,25 @@ fn count_blend_replays(reuse: bool, chamfer: bool) -> (u64, u64, u64) {
     let backend = CertifiedFilletAccess::new(policy).unwrap();
     verify_declines_do_not_count_replays(&owner, document, &backend);
     let mut replay = PartReplayService::with_policy(policy).unwrap();
-    replay.update_part(&mut owner.files, document).unwrap();
+    replay.ensure_part(&mut owner.files, document).unwrap();
     let initial = replay.replay_count();
     create_counted_blend(&mut owner, &backend, &mut replay, text, reuse, chamfer);
-    replay.update_part(&mut owner.files, document).unwrap();
+    replay.ensure_part(&mut owner.files, document).unwrap();
+    let session = owner.files.workspace().session(document).unwrap();
+    let guid = owner
+        .files
+        .workspace()
+        .identity(document)
+        .unwrap()
+        .internal_name;
+    let body = replay
+        .current_part(&owner.files, document)
+        .unwrap()
+        .body(FeatureId(2))
+        .unwrap();
+    let faces = body.face_reference_keys(session.history(), guid).unwrap();
+    assert!(!faces.is_empty());
+    assert!(body.face_area(session.history(), guid, &faces[0]).unwrap() > 0.);
     let (body, validation) = backend.replay_counts();
     (body, validation, replay.replay_count() - initial)
 }
@@ -98,13 +113,13 @@ fn fillet_creation_counts_body_candidate_and_published_replays() {
     let before = count_blend_replays(false, false);
     let current = count_blend_replays(true, false);
     assert_eq!(before, (1, 1, 1));
-    assert_eq!(current, (0, 0, 1));
+    assert_eq!(current, (0, 0, 0));
 }
 
 #[test]
 fn chamfer_creation_counts_body_candidate_and_published_replays() {
     assert_eq!(count_blend_replays(false, true), (1, 1, 1));
-    assert_eq!(count_blend_replays(true, true), (0, 0, 1));
+    assert_eq!(count_blend_replays(true, true), (0, 0, 0));
 }
 
 struct RejectCandidate(CertifiedFilletAccess);

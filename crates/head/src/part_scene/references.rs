@@ -62,6 +62,19 @@ impl DesktopPartScenes {
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateAccess<O, W, F>
     for DesktopPartScenes
 {
+    fn adopt_candidate(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+        candidate: oblikovati_automation::CertifiedPartCandidate,
+        transition: &oblikovati_model::history::EvaluationTransition,
+    ) -> Result<(), String> {
+        self.replay
+            .adopt_candidate(files, document, candidate, transition)?;
+        self.active_replay = Some(document);
+        self.invalidate_presentation();
+        Ok(())
+    }
     fn resolution_policy(&self) -> Option<oblikovati_martensite::PrismResolutionPolicy> {
         self.resolution
     }
