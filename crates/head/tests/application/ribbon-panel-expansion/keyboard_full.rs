@@ -228,7 +228,6 @@ fn move_body_context_adds_a_working_quick_access_command() {
 
 #[cfg(target_os = "linux")]
 #[test]
-#[ignore = "#4098: popup keyboard navigation does not activate a menu item"]
 fn move_body_context_menu_accepts_keyboard_selection() {
     let mut world = ApplicationWorld::new();
     super::solid_part(&mut world);
@@ -239,11 +238,47 @@ fn move_body_context_menu_accepts_keyboard_selection() {
     super::super::x11_input::right_click(diagnostics::pointer_pixels(row));
     world.pump(Vec::new());
     world.expect_text("Move to Main Panel");
-    for key in [0xff54, 0xff54, 0xff54, 0xff0d] {
+    for key in [0xff54, 0xff54, 0xff0d] {
         super::super::x11_input::press_keysym(key);
         world.pump(Vec::new());
     }
     assert!(diagnostics::window_geometry("##ribbon-additional-PartModify").is_none());
-    world.run_in_window("##application-ribbon", "MoveBodies");
+    let main = world
+        .run_in_window("##application-ribbon", "MoveBodies")
+        .center();
+    super::super::x11_input::right_click(diagnostics::pointer_pixels(main));
+    world.pump(Vec::new());
+    world.expect_text("Move to Expanded Panel");
+    super::super::x11_input::press_keysym(0xff0d);
+    world.pump(Vec::new());
+    super::opened_unpinned(&mut world);
+    world.run_in_window("##ribbon-additional-PartModify", "MoveBodies");
+    world.close();
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn move_body_context_adds_quick_access_with_keyboard() {
+    let mut world = ApplicationWorld::new();
+    super::solid_part(&mut world);
+    super::opened_unpinned(&mut world);
+    let row = world
+        .run_in_window("##ribbon-additional-PartModify", "MoveBodies")
+        .center();
+    super::super::x11_input::right_click(diagnostics::pointer_pixels(row));
+    world.pump(Vec::new());
+    world.expect_text("Add to Quick Access Toolbar");
+    for key in [0xff54, 0xff0d] {
+        super::super::x11_input::press_keysym(key);
+        world.pump(Vec::new());
+    }
+    assert!(
+        world
+            .frame
+            .runs
+            .iter()
+            .any(|run| run.text == "MoveBodies" && run.center()[1] < 34.)
+    );
+    assert!(diagnostics::window_geometry("##ribbon-additional-PartModify").is_some());
     world.close();
 }
