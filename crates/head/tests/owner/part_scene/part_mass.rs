@@ -139,6 +139,24 @@ fn model_tree_publishes_native_feature_ids_and_current_body_count() {
     assert!(features.iter().all(|feature| feature.kind == "extrude"));
 }
 #[test]
+fn model_tree_reuses_current_replay_and_refreshes_after_edits() {
+    let (mut owner, _) = owner();
+    let document = open_prism(&mut owner, false);
+    owner.take_scene().unwrap().unwrap();
+    assert_eq!(tree(&mut owner).bodies, 1);
+    assert!(owner.take_scene().unwrap().is_none());
+    assert_eq!(tree(&mut owner).bodies, 1);
+    assert!(owner.take_scene().unwrap().is_none());
+    set_parameter(&mut owner, "depth", "0 cm");
+    let failed = tree(&mut owner);
+    assert_eq!(failed.bodies, 0);
+    assert!(!failed.features.unwrap()[0].health.is_empty());
+    owner.files.commands(document).unwrap().undo().unwrap();
+    let recovered = tree(&mut owner);
+    assert_eq!(recovered.bodies, 1);
+    assert!(recovered.features.unwrap()[0].health.is_empty());
+}
+#[test]
 fn native_reference_keys_list_verified_face_keys_per_body() {
     let (owner, _) = owner();
     let mut owner = owner
