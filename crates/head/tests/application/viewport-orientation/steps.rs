@@ -27,7 +27,7 @@ mod wireframe;
 const CONTROL: &str = "##orientation-control";
 const NAVIGATION: &str = "##navigation-bar";
 const OPTIONS_TITLE: &str = "Orientation Options";
-/// Letters a compass adds around the control; no face's label holds them.
+/// Letters used by the compass around the control.
 const COMPASS_LETTERS: [&str; 4] = ["N", "E", "S", "W"];
 const PIXEL_ROUNDING: usize = 2;
 const AWAY: [i32; 2] = [420, 300];
@@ -58,18 +58,16 @@ pub(super) fn press_part(
 }
 /// Letters of a label drawn on the control, whichever way it is turned.
 fn control_runs(world: &ApplicationWorld) -> Vec<diagnostics::RenderedRun> {
-    let (position, size) = control_geometry();
+    let (position, layout) = layout();
     world
         .frame
         .runs
         .iter()
-        .filter(|run| !COMPASS_LETTERS.contains(&run.text.as_str()))
         .filter(|run| {
-            let [x, y] = run.center();
-            x >= position[0]
-                && x <= position[0] + size[0]
-                && y >= position[1]
-                && y <= position[1] + size[1]
+            let center = run.center();
+            (0..2).all(|axis| {
+                (center[axis] - position[axis] - layout.center[axis]).abs() <= layout.half
+            })
         })
         .cloned()
         .collect()
