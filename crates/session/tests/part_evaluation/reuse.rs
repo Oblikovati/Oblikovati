@@ -58,3 +58,66 @@ fn unchanged_replay_cannot_replace_a_foreign_document_slot() {
     ));
     assert_eq!(current_depth(&slot, &first), 2.);
 }
+
+#[test]
+fn retained_recipe_reports_dirty_changes_only_for_its_history() {
+    let mut owner = session(7);
+    let mut slot = PartSlot::default();
+    assert!(matches!(
+        slot.replay_change(&owner),
+        Err(PartEvaluationError::Unavailable { .. })
+    ));
+    publish(&mut owner, &mut slot);
+    assert_eq!(slot.replay_change(&owner).unwrap(), None);
+    edit_depth(&mut owner, "3 cm");
+    assert_eq!(
+        slot.replay_change(&owner).unwrap(),
+        Some(oblikovati_model::feature::FeatureReplayRange { start: 0, end: 1 })
+    );
+    assert!(slot.current(&owner).is_err());
+    owner.undo().unwrap();
+    assert_eq!(slot.replay_change(&owner).unwrap(), None);
+    assert!(slot.current(&owner).is_err());
+    assert!(matches!(
+        slot.replay_change(&session(8)),
+        Err(PartEvaluationError::ForeignDocument { .. })
+    ));
+    assert!(matches!(
+        slot.replay_change(&session(7)),
+        Err(PartEvaluationError::ForeignHistory { .. })
+    ));
+}
+
+#[test]
+fn retained_recipe_reports_a_later_feature_change() {
+    use oblikovati_model::feature::{
+        AuthoredFeature, FeatureReplayRange, work_plane::WorkPlaneDefinition,
+    };
+    let mut document = fixture::selected_prism_document();
+    document
+        .work_geometry
+        .append(AuthoredFeature::work_plane(
+            FeatureId(2),
+            "Later plane",
+            WorkPlaneDefinition::Fixed(oblikovati_model::sketch::SketchPlane::xy()),
+        ))
+        .unwrap();
+    let ids = RecipeIdAllocator::restore(None, document.parameters.ids()).unwrap();
+    let mut owner = DocumentSession::new(
+        7,
+        DocumentEditHistory::new(document, ids).unwrap(),
+        RecordingPartObserver::default(),
+    );
+    let mut slot = PartSlot::default();
+    publish(&mut owner, &mut slot);
+    owner
+        .run("Suppress later plane", |snapshot, _| {
+            snapshot.work_geometry.set_suppressed(FeatureId(2), true)
+        })
+        .unwrap();
+    assert_eq!(
+        slot.replay_change(&owner).unwrap(),
+        Some(FeatureReplayRange { start: 1, end: 2 })
+    );
+    assert!(slot.current(&owner).is_err());
+}

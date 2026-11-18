@@ -26,7 +26,7 @@ impl PartEvaluationRequest {
         Ok(CompletedPartSketchRecompute {
             part: CompletedPartEvaluation {
                 document: self.document,
-                scope,
+                snapshot: self.snapshot,
                 evaluation,
             },
             sketches,
@@ -50,7 +50,7 @@ impl PartEvaluationRequest {
             .map_err(PartEvaluationError::Replay)?;
         Ok(CompletedPartEvaluation {
             document: self.document,
-            scope,
+            snapshot: self.snapshot,
             evaluation,
         })
     }
@@ -63,19 +63,22 @@ pub struct CompletedPartSketchRecompute<Body, Failure> {
 /// A sealed completed receipt. Only its session can publish it into result storage.
 pub struct CompletedPartEvaluation<Body, Failure> {
     pub(super) document: u64,
-    pub(super) scope: EvaluationScope,
+    pub(super) snapshot: HistoryEvaluationSnapshot,
     pub(super) evaluation: PartFeatureEvaluation<Body, Failure>,
 }
 impl<Body, Failure> CompletedPartEvaluation<Body, Failure> {
+    pub(super) fn scope(&self) -> &EvaluationScope {
+        self.snapshot.scope()
+    }
     pub(super) fn validate<O: TransactionObserver>(
         &self,
         session: &DocumentSession<O>,
     ) -> Result<(), PartEvaluationError> {
         self.validate_owner(session)?;
-        if !self.scope.is_current(&session.history) {
+        if !self.scope().is_current(&session.history) {
             return Err(PartEvaluationError::Superseded {
                 document: self.document,
-                supplied: self.scope.generation(),
+                supplied: self.scope().generation(),
                 expected: session.generation(),
             });
         }
@@ -86,10 +89,10 @@ impl<Body, Failure> CompletedPartEvaluation<Body, Failure> {
         session: &DocumentSession<O>,
     ) -> Result<(), PartEvaluationError> {
         self.validate_document(session.document)?;
-        if !self.scope.belongs_to(&session.history) {
+        if !self.scope().belongs_to(&session.history) {
             return Err(PartEvaluationError::ForeignHistory {
                 document: self.document,
-                generation: self.scope.generation(),
+                generation: self.scope().generation(),
             });
         }
         Ok(())

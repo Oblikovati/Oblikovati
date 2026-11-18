@@ -32,8 +32,9 @@ using this status; the live scenario directory can change.
   helpers and the partial certified-prism evaluator no longer implement
   whole-part evaluation. Diagnostic prism replay now uses the complete named
   evaluator. The document-owned incremental service remains (#4079).
-- A conservative part-recipe change boundary now identifies a possible dirty
-  tail. It does not yet prove cached geometry safe or enable prefix reuse.
+- Each retained part result keeps its source recipe and can report a
+  conservative dirty tail to the same history owner. It does not yet prove
+  cached geometry safe or enable prefix reuse.
 - The dock lifecycle inventory and representative first-frame native tests pass.
   Projects pointer docking, modal-child saved-layout restart, and File Properties
   native docking remain open in #4073.
