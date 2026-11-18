@@ -118,6 +118,31 @@ fn coordinate_command_menu(world: &mut ApplicationWorld) {
         );
     }
 }
+#[then("Sketch, Create, Modify, Pattern, Constrain, Insert and Format are checked")]
+fn sketch_panels_checked(world: &mut ApplicationWorld) {
+    for label in [
+        "Sketch",
+        "Create",
+        "Modify",
+        "Pattern",
+        "Constrain",
+        "Insert",
+        "Format",
+    ] {
+        assert!(world.checked(label), "expected {label} to be checked");
+    }
+}
+#[then("Layout and Parameters are unchecked")]
+fn optional_sketch_panels_unchecked(world: &mut ApplicationWorld) {
+    for label in ["Layout", "Parameters"] {
+        assert!(!world.checked(label), "expected {label} to be unchecked");
+    }
+}
+#[then("the Show Panels submenu closes and the command context menu remains open")]
+fn sketch_panel_submenu_closed(world: &mut ApplicationWorld) {
+    world.expect_no_text("Layout");
+    coordinate_command_menu(world);
+}
 #[then("the command context menu closes")]
 fn command_menu_closes(world: &mut ApplicationWorld) {
     world.expect_no_text("Add to Quick Access Toolbar");
