@@ -46,7 +46,11 @@ impl DesktopPartScenes {
             .identity(document)
             .map_err(|cause| cause.to_string())?
             .internal_name;
-        let prefix = self.replay.checkpoint_prefix(files, document)?;
+        let prefix = if candidate.sketches.requires_part_dependency_recompute() {
+            None
+        } else {
+            self.replay.checkpoint_prefix(files, document)?
+        };
         let (evaluated, edited_key, used_checkpoint) =
             evaluate_preview(session, candidate, feature, guid, policy, prefix)?;
         #[cfg(test)]
@@ -96,6 +100,10 @@ fn evaluate_preview<O: TransactionObserver>(
     let used_checkpoint = reused.is_some();
     let evaluated = match reused {
         Some(result) => result,
+        None if candidate.sketches.requires_part_dependency_recompute() => candidate
+            .recompute_part_with_sketches(&mut evaluator, session.sketch_solve_options())
+            .map(|(part, _)| part)
+            .map_err(|cause| cause.to_string())?,
         None => candidate
             .evaluate_part_features(&mut evaluator)
             .map_err(|cause| cause.to_string())?,

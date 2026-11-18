@@ -227,8 +227,18 @@ impl<
     ) -> Result<bool, String> {
         self.require_blend_edit(request)?;
         self.clear_extrusion_preview();
-        self.part_scenes
-            .ensure_edit_checkpoints(&mut self.files, request.document)?;
+        let requires_ordered_recompute = self
+            .files
+            .workspace()
+            .session(request.document)
+            .map_err(|cause| cause.to_string())?
+            .snapshot()
+            .sketches
+            .requires_part_dependency_recompute();
+        if !requires_ordered_recompute {
+            self.part_scenes
+                .ensure_edit_checkpoints(&mut self.files, request.document)?;
+        }
         self.require_blend_edit(request)?;
         let session = self
             .files

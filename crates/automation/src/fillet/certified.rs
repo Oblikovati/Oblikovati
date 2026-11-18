@@ -43,6 +43,51 @@ impl CertifiedFilletAccess {
     }
 }
 impl FilletAccess for CertifiedFilletAccess {
+    fn capture_with_checkpoints(
+        &self,
+        kind: oblikovati_model::feature::part::PartBlendKind,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        candidate: &DocumentSnapshot,
+        feature: FeatureId,
+        prefix: &crate::CertifiedCheckpointPrefix<'_>,
+    ) -> Result<Option<crate::CertifiedPartCandidate>, String> {
+        if prefix.policy != Some(self.policy) {
+            return Err("part checkpoints: expected the blend validation policy".into());
+        }
+        let expected = match kind {
+            oblikovati_model::feature::part::PartBlendKind::Fillet => "fillet",
+            oblikovati_model::feature::part::PartBlendKind::Chamfer => "chamfer",
+        };
+        require_feature_kind(candidate, feature, expected)?;
+        let mut evaluator =
+            CertifiedNamedSolidEvaluator::with_policy(history, document, self.policy);
+        let Some(result) = prefix
+            .prefix
+            .prepare_candidate(history, candidate, &mut evaluator)?
+        else {
+            match kind {
+                oblikovati_model::feature::part::PartBlendKind::Fillet => {
+                    self.validate(document, candidate, feature)
+                }
+                oblikovati_model::feature::part::PartBlendKind::Chamfer => {
+                    self.validate_chamfer(document, candidate, feature)
+                }
+            }?;
+            return Ok(None);
+        };
+        if !result.has_current_source(feature) {
+            return Err(format!(
+                "{expected} {feature:?}: expected a valid current descendant body"
+            ));
+        }
+        let candidate =
+            result.capture(history, |_, body| body.capture_detached(history, document))?;
+        Ok(Some(crate::CertifiedPartCandidate {
+            policy: self.policy,
+            candidate,
+        }))
+    }
     fn capture_with_prefix(
         &self,
         kind: oblikovati_model::feature::part::PartBlendKind,
@@ -228,7 +273,7 @@ impl CertifiedFilletValidation {
             .snapshot()
             .evaluate_part_features(&mut evaluator)
             .map_err(|cause| cause.to_string())?;
-        if result.body(feature).is_none() {
+        if result.body_from_source(feature).is_err() {
             return Err(format!(
                 "{expected} {feature:?}, health {:?}: expected a valid named result",
                 result.health()

@@ -29,6 +29,7 @@ pub(super) fn kind<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFile
 
 pub(super) fn edit<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
+    access: &mut Option<&mut dyn PartTopologyAccess<O, W, F>>,
     document: u64,
     backend: Option<&dyn crate::FilletAccess>,
     request: &EditFeatureArgs,
@@ -45,22 +46,60 @@ pub(super) fn edit<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFile
         BlendEditKind::Fillet => "Edit fillet",
         BlendEditKind::Chamfer => "Edit chamfer",
     };
-    files
+    let prefix = match access.as_deref() {
+        Some(owner) if backend.accepts_policy(owner.resolution_policy()) => owner
+            .cached_checkpoint_prefix(files, document)
+            .map_err(Error)?,
+        _ => None,
+    };
+    let ((id, captured), transition) = files
         .commands(document)
         .map_err(api_error)?
-        .run_projected(
+        .run_projected_with_transition(
             label,
             |snapshot, _| apply_blend_edit(snapshot, request, kind),
-            |snapshot, id| {
-                match kind {
-                    BlendEditKind::Fillet => backend.validate(guid, snapshot, id),
-                    BlendEditKind::Chamfer => backend.validate_chamfer(guid, snapshot, id),
-                }
-                .map_err(Error)?;
-                Ok(id.0)
+            |snapshot, id, history| {
+                let captured = if let Some(prefix) =
+                    prefix.filter(|_| !snapshot.sketches.requires_part_dependency_recompute())
+                {
+                    let operation = match kind {
+                        BlendEditKind::Fillet => {
+                            oblikovati_model::feature::part::PartBlendKind::Fillet
+                        }
+                        BlendEditKind::Chamfer => {
+                            oblikovati_model::feature::part::PartBlendKind::Chamfer
+                        }
+                    };
+                    backend
+                        .capture_with_checkpoints(operation, history, guid, snapshot, id, &prefix)
+                        .map_err(Error)?
+                } else {
+                    match kind {
+                        BlendEditKind::Fillet => backend.validate(guid, snapshot, id),
+                        BlendEditKind::Chamfer => backend.validate_chamfer(guid, snapshot, id),
+                    }
+                    .map_err(Error)?;
+                    None
+                };
+                Ok((id.0, captured))
             },
         )
-        .map_err(api_error)
+        .map_err(api_error)?;
+    if let Some(candidate) = captured {
+        let owner = access.as_deref_mut().ok_or_else(|| {
+            Error(format!(
+                "document {document}: committed blend expected its replay owner"
+            ))
+        })?;
+        owner
+            .adopt_candidate(files, document, candidate, &transition)
+            .map_err(|error| {
+                Error(format!(
+                    "document {document}: blend committed but result adoption failed: {error}"
+                ))
+            })?;
+    }
+    Ok(id)
 }
 
 /// Update a private Fillet candidate; example: `apply_fillet_radius_edit(candidate, &request)?`.

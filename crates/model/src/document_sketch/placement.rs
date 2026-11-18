@@ -8,6 +8,20 @@ use crate::{
     sketch::{Sketch2D, SketchError, SketchPlane},
 };
 
+impl DocumentSketches {
+    /// Report inputs that can require ordered recompute after a part feature changes.
+    /// Example: `sketches.requires_part_dependency_recompute()` before reusing a part result.
+    pub fn requires_part_dependency_recompute(&self) -> bool {
+        self.sketches.iter().any(|sketch| {
+            !matches!(
+                sketch.placement,
+                SketchPlacement::Fixed(_) | SketchPlacement::OriginPlane(_)
+            ) || sketch.orientation.is_some()
+                || !sketch.point_projections.is_empty()
+        })
+    }
+}
+
 /// Authored placement; a feature reference stores no derived frame.
 #[derive(Clone, Debug, PartialEq)]
 pub enum SketchPlacement {
