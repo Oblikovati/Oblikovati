@@ -23,7 +23,6 @@ mod sketch_target_steps;
 mod target_steps;
 #[path = "view_category.rs"]
 mod view_category;
-
 #[given("a part document is active in The MCAD Software")]
 fn active_part(world: &mut ApplicationWorld) {
     world.add_part();
@@ -38,6 +37,7 @@ fn choose_customize(world: &mut ApplicationWorld) {
     world.click_text("Customize User Commands");
     world.pump(Vec::new());
 }
+#[then("the customization dialog opens on its Ribbon tab")]
 #[then("the customization dialog opens on the \"Ribbon\" tab")]
 fn ribbon_tab_open(world: &mut ApplicationWorld) {
     assert!(diagnostics::window_geometry("Customize").is_some());
@@ -54,11 +54,11 @@ fn command_lists_visible(world: &mut ApplicationWorld) {
     assert!(content.contains("Custompanel"));
     assert!(content.contains("AllCommands"));
 }
+#[then("the target is \"Part | 3D Model\"")]
 #[then("the target tab is \"Part | 3D Model\"")]
 fn model_target(world: &mut ApplicationWorld) {
     assert!(world.window_text("Customize").contains("Part|3DModel"));
 }
-
 #[given(
     "the ribbon customization dialog is open with an empty custom panel for \"Part | 3D Model\""
 )]
@@ -408,7 +408,6 @@ fn both_target_rows_selected(world: &mut ApplicationWorld) {
         assert_ne!(world.pixel_at([x, row.center()[1] as usize]), blank);
     }
 }
-
 fn click_in_customize(world: &mut ApplicationWorld, label: &str) {
     if label == "Line" && !world.window_text("Customize").contains("Line") {
         scroll_source_to_line(world);

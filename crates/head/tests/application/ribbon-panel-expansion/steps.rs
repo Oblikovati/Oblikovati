@@ -26,6 +26,8 @@ mod sketch_layout;
 #[cfg(target_os = "linux")]
 #[path = "temporary_tab_native.rs"]
 mod temporary_tab_native;
+#[path = "title_customization.rs"]
+mod title_customization;
 const WINDOW: &str = "##ribbon-additional-PartModify";
 const SIMPLIFICATION: &str = "##ribbon-additional-PartSimplification";
 
@@ -151,6 +153,7 @@ fn pin_highlight(world: &mut ApplicationWorld) {
     assert_ne!(selected, unselected);
     toggle_pin(world);
 }
+#[then("the Modify additional command area is closed")]
 #[then("the additional command area closes")]
 #[then("the additional command area is no longer open")]
 #[then("the Modify additional command area remains closed")]
@@ -389,4 +392,14 @@ fn open_and_pin_modify(world: &mut ApplicationWorld) {
 fn title_menu_with_expansion(world: &mut ApplicationWorld) {
     world.expect_text("Show Panels");
     pinned_visible(world);
+}
+
+#[then("the context menu offers \"Customize User Commands\"")]
+fn context_offers_customization(world: &mut ApplicationWorld) {
+    world.expect_text("Customize User Commands");
+}
+#[then("the dialog closes and the full 3D Model ribbon remains visible")]
+fn customization_closed_with_model_ribbon(world: &mut ApplicationWorld) {
+    assert!(diagnostics::window_geometry("Customize").is_none());
+    world.expect_text("Start 2D Sketch");
 }

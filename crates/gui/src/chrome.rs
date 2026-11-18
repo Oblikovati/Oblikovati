@@ -7,7 +7,6 @@ use imgui::{Condition, TabItemFlags, Ui};
 pub(crate) const APPLICATION_BAR_HEIGHT: f32 = 34.;
 /// Right side reserved for the platform window controls (#4063).
 pub(crate) const APPLICATION_BAR_TRAILING_RESERVED: f32 = 150.;
-
 /// Reserve enough space for the chosen quick-access icon scale.
 pub(crate) fn application_bar_height(icons: &crate::icons::GuiRibbonIcons) -> f32 {
     APPLICATION_BAR_HEIGHT.max(icons.cell([24., 24.])[1] + 8.)
@@ -111,6 +110,7 @@ pub(crate) fn ribbon_band(
             &mut owners.ribbon.customization,
         );
         if owners.ribbon.display.take_customization_request() {
+            owners.ribbon.panels.close_unpinned_additional();
             owners.ribbon.customization.open(tab);
         }
         owners.ribbon.reset_confirmation(ui, &request.commands);
