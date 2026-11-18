@@ -98,16 +98,17 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
     fn batch_save(&mut self, request: BatchSaveArgs) -> Result<Vec<u8>, Error> {
         let backend = self.drawing_views;
         let topology = &mut self.part_topology;
-        let replay = &self.part_update;
+        let replay = &mut self.part_update;
         let response = self
             .files
             .batch_save_with_report(request, self.version, self.source, |files, id, path| {
-                let owner: Option<&dyn crate::PartUpdateAccess<O, W, F>> = match replay.as_deref() {
-                    Some(owner) => Some(owner),
-                    None => topology
-                        .as_deref()
-                        .map(|owner| owner as &dyn crate::PartUpdateAccess<O, W, F>),
-                };
+                let owner: Option<&mut dyn crate::PartUpdateAccess<O, W, F>> =
+                    match replay.as_deref_mut() {
+                        Some(owner) => Some(owner),
+                        None => topology
+                            .as_deref_mut()
+                            .map(|owner| owner as &mut dyn crate::PartUpdateAccess<O, W, F>),
+                    };
                 drawing_snapshots::stage(files, backend, owner, id)?;
                 let access = topology.as_deref_mut();
                 Ok(assembly_snapshots::stage(files, access, id, path)?
@@ -205,14 +206,14 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
         Ok(warning.map(|warning| vec![warning]))
     }
     pub(super) fn stage_drawing_views(&mut self, document: u64) -> Result<(), Error> {
-        let owner: Option<&dyn crate::PartUpdateAccess<O, W, F>> = match self.part_update.as_deref()
-        {
-            Some(owner) => Some(owner),
-            None => self
-                .part_topology
-                .as_deref()
-                .map(|owner| owner as &dyn crate::PartUpdateAccess<O, W, F>),
-        };
+        let owner: Option<&mut dyn crate::PartUpdateAccess<O, W, F>> =
+            match self.part_update.as_deref_mut() {
+                Some(owner) => Some(owner),
+                None => self
+                    .part_topology
+                    .as_deref_mut()
+                    .map(|owner| owner as &mut dyn crate::PartUpdateAccess<O, W, F>),
+            };
         drawing_snapshots::stage(self.files, self.drawing_views, owner, document).map_err(Error)
     }
 }

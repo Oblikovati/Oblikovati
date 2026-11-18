@@ -7,7 +7,7 @@ use oblikovati_persistence::package::{SavedDrawingView, SavedDrawingViews};
 pub(super) fn stage<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
     backend: Option<&dyn crate::DrawingViewProjectionAccess>,
-    replay: Option<&dyn crate::PartUpdateAccess<O, W, F>>,
+    replay: Option<&mut dyn crate::PartUpdateAccess<O, W, F>>,
     id: u64,
 ) -> Result<(), String> {
     if files.document_type(id).map_err(|cause| cause.to_string())? != DOCUMENT_DRAWING {
@@ -19,9 +19,9 @@ pub(super) fn stage<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         .map_err(|cause| cause.to_string())
 }
 fn capture<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
-    files: &FileWorkspace<O, W, F>,
+    files: &mut FileWorkspace<O, W, F>,
     backend: Option<&dyn crate::DrawingViewProjectionAccess>,
-    replay: Option<&dyn crate::PartUpdateAccess<O, W, F>>,
+    replay: Option<&mut dyn crate::PartUpdateAccess<O, W, F>>,
     id: u64,
 ) -> Result<SavedDrawingViews, String> {
     let drawing = files
@@ -31,7 +31,8 @@ fn capture<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
         .snapshot()
         .drawing
         .as_ref()
-        .ok_or_else(|| format!("drawing {id}: expected drawing content"))?;
+        .ok_or_else(|| format!("drawing {id}: expected drawing content"))?
+        .clone();
     if let Some(frozen) = files
         .deferred_drawing_views(id)
         .map_err(|cause| cause.to_string())?
@@ -51,32 +52,26 @@ fn capture<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     if drawing.sheets().iter().all(|sheet| sheet.views.is_empty()) {
         return Ok(saved);
     }
-    saved.views = capture_from_source(files, drawing, backend, replay, id)?;
+    saved.views = capture_from_source(files, &drawing, backend, replay, id)?;
     Ok(saved)
 }
 fn capture_from_source<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
-    files: &FileWorkspace<O, W, F>,
+    files: &mut FileWorkspace<O, W, F>,
     drawing: &oblikovati_model::drawing::DrawingDocument,
     backend: Option<&dyn crate::DrawingViewProjectionAccess>,
-    replay: Option<&dyn crate::PartUpdateAccess<O, W, F>>,
+    replay: Option<&mut dyn crate::PartUpdateAccess<O, W, F>>,
     id: u64,
 ) -> Result<Vec<SavedDrawingView>, String> {
     let source = drawing_source(files, id, drawing.model_reference())?;
     let backend = backend
         .ok_or_else(|| format!("drawing {id}: expected a projection service for saved views"))?;
-    let session = files
-        .workspace()
-        .session(source)
-        .map_err(|cause| cause.to_string())?;
-    let guid = files
-        .workspace()
-        .identity(source)
-        .map_err(|cause| cause.to_string())?
-        .internal_name;
-    let part = replay
-        .filter(|owner| backend.accepts_policy(owner.resolution_policy()))
-        .and_then(|owner| owner.current_part(files, source).ok());
-    sample_views(drawing, session.history(), guid, backend, part)
+    crate::drawing_views::with_current_part(
+        files,
+        backend,
+        replay,
+        source,
+        |history, guid, part| sample_views(drawing, history, guid, backend, part),
+    )
 }
 fn drawing_source<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &FileWorkspace<O, W, F>,
@@ -108,11 +103,9 @@ fn sample_views(
     history: &oblikovati_model::history::DocumentEditHistory,
     guid: oblikovati_model::identity::DocumentGuid,
     backend: &dyn crate::DrawingViewProjectionAccess,
-    part: Option<
-        &oblikovati_model::feature::part::PartFeatureEvaluation<
-            oblikovati_martensite::NamedSolid,
-            oblikovati_martensite::EvaluationFailure,
-        >,
+    part: &oblikovati_model::feature::part::PartFeatureEvaluation<
+        oblikovati_martensite::NamedSolid,
+        oblikovati_martensite::EvaluationFailure,
     >,
 ) -> Result<Vec<SavedDrawingView>, String> {
     let mut views = Vec::new();
@@ -121,10 +114,7 @@ fn sample_views(
             views.push(SavedDrawingView {
                 sheet: sheet.name.clone(),
                 view: view.name.clone(),
-                lines: match part {
-                    Some(part) => backend.saved_lines_current(history, guid, view, part)?,
-                    None => backend.saved_lines(history, guid, view)?,
-                },
+                lines: backend.saved_lines_current(history, guid, view, part)?,
             });
         }
     }

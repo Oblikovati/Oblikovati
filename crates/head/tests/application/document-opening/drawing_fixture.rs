@@ -36,8 +36,9 @@ fn write_drawing(path: &Path, source: &Path) {
             .unwrap();
     let history = oblikovati_model::history::DocumentEditHistory::new(snapshot, ids).unwrap();
     let guid = "11111111-2222-3333-4444-555555555555".parse().unwrap();
+    let part = oblikovati_drawing::evaluate_part(&history, guid).unwrap();
     let lines = oblikovati_drawing::DrawingProjectionService
-        .saved_lines(&history, guid, &view)
+        .saved_lines_current(&history, guid, &view, &part)
         .unwrap();
     let views = oblikovati_persistence::package::SavedDrawingViews {
         version: oblikovati_persistence::package::SavedDrawingViews::VERSION,

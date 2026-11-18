@@ -47,8 +47,9 @@ fn base_view_projects_fillet_cube() {
         [100., 100.],
     )
     .unwrap();
+    let fresh = oblikovati_drawing::evaluate_part(session.history(), guid).unwrap();
     let counts = oblikovati_drawing::DrawingProjectionService
-        .counts(session.history(), guid, &view)
+        .counts_current(session.history(), guid, &view, &fresh)
         .unwrap();
     let current = owner
         .part_scenes
@@ -62,7 +63,7 @@ fn base_view_projects_fillet_cube() {
         .saved_lines_current(session.history(), guid, &view, current)
         .unwrap();
     let fresh_lines = oblikovati_drawing::DrawingProjectionService
-        .saved_lines(session.history(), guid, &view)
+        .saved_lines_current(session.history(), guid, &view, &fresh)
         .unwrap();
     assert_eq!(cached_lines, fresh_lines);
     assert!(counts[0] > 0, "fillet cube must project visible curves");

@@ -16,6 +16,9 @@ use oblikovati_persistence::package::SavedDrawingLine;
 /// The shared Martensite projection backend; example: `let backend = DrawingProjectionService`.
 pub struct DrawingProjectionService;
 impl DrawingViewProjectionAccess for DrawingProjectionService {
+    fn resolution_policy(&self) -> oblikovati_martensite::PrismResolutionPolicy {
+        crate::modelling_policy()
+    }
     fn accepts_policy(&self, policy: Option<oblikovati_martensite::PrismResolutionPolicy>) -> bool {
         policy == Some(crate::modelling_policy())
     }
@@ -42,27 +45,6 @@ impl DrawingViewProjectionAccess for DrawingProjectionService {
         let projection = project_evaluated_part(history, document, view, part)?;
         sample_projection(&projection, view.style, history, document)
     }
-    fn counts(
-        &self,
-        history: &DocumentEditHistory,
-        document: DocumentGuid,
-        view: &DrawingBaseViewDefinition,
-    ) -> Result<[usize; 2], String> {
-        let projection = project_view(history, document, view)?;
-        Ok([
-            projection.curves.visible.len(),
-            projection.curves.hidden.len(),
-        ])
-    }
-    fn saved_lines(
-        &self,
-        history: &DocumentEditHistory,
-        document: DocumentGuid,
-        view: &DrawingBaseViewDefinition,
-    ) -> Result<Vec<SavedDrawingLine>, String> {
-        let projection = project_view(history, document, view)?;
-        sample_projection(&projection, view.style, history, document)
-    }
 }
 /// Project one current, healthy part; example: `project_evaluated_part(history, guid, view, part)?`.
 pub fn project_evaluated_part(
@@ -74,14 +56,6 @@ pub fn project_evaluated_part(
     require_healthy(part)?;
     let bodies: Vec<_> = part.ordered_bodies().collect();
     oblikovati_martensite::drawing_base_view_solids(history, document, &bodies, view)
-}
-fn project_view(
-    history: &DocumentEditHistory,
-    document: DocumentGuid,
-    view: &DrawingBaseViewDefinition,
-) -> Result<DrawingBaseProjection, String> {
-    let result = evaluate_part(history, document)?;
-    project_evaluated_part(history, document, view, &result)
 }
 /// Evaluate the part and refuse a sick feature; example: `evaluate_part(history, guid)?`.
 pub fn evaluate_part(
