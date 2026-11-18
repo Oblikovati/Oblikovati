@@ -35,6 +35,8 @@ using this status; the live scenario directory can change.
 - Each retained part result keeps its source recipe and can report a
   conservative dirty tail to the same history owner. It does not yet prove
   cached geometry safe or enable prefix reuse.
+- A session test places a newly authored Fillet at the dirty boundary and
+  checks undo and redo. It uses a fake evaluator; it is not a replay-count test.
 - The dock lifecycle inventory and representative first-frame native tests pass.
   Projects pointer docking, modal-child saved-layout restart, and File Properties
   native docking remain open in #4073.
