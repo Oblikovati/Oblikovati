@@ -132,7 +132,7 @@ impl<
             && target.candidates.iter().any(|item| item.entity == entity)
             && self.sketch_context_valid(edit.document, edit.sketch, target.generation)
     }
-    fn require_context_relation(&self, id: u64) -> Result<(), String> {
+    fn require_context_relation(&mut self, id: u64) -> Result<(), String> {
         let state = self.gui_command_state()?;
         let action = oblikovati_gui::GuiShellAction::DeleteSketchRelation(id);
         if action.enabled(&state)

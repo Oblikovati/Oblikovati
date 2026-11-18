@@ -68,7 +68,7 @@ fn part_sketch_view_preference_is_staged_reverted_and_applied() {
             application_bdd::rendered_label_center(label),
         );
     }
-    let current = |owner: &NativeDesktopOwner| {
+    let current = |owner: &mut NativeDesktopOwner| {
         owner
             .gui_command_state()
             .unwrap()
@@ -76,7 +76,7 @@ fn part_sketch_view_preference_is_staged_reverted_and_applied() {
             .unwrap()
             .look_at_sketch_plane
     };
-    assert!(current(&owner));
+    assert!(current(&mut owner));
     assert!(
         !owner
             .gui_command_state()
@@ -90,13 +90,13 @@ fn part_sketch_view_preference_is_staged_reverted_and_applied() {
         &mut owner,
         application_bdd::rendered_label_center("Look at sketch plane"),
     );
-    assert!(current(&owner));
+    assert!(current(&mut owner));
     click_shell_position(
         &mut window,
         &mut owner,
         application_bdd::rendered_label_center("Revert Part"),
     );
-    assert!(current(&owner));
+    assert!(current(&mut owner));
     click_shell_position(
         &mut window,
         &mut owner,
@@ -107,7 +107,7 @@ fn part_sketch_view_preference_is_staged_reverted_and_applied() {
         &mut owner,
         application_bdd::rendered_label_center("Apply Part"),
     );
-    assert!(!current(&owner));
+    assert!(!current(&mut owner));
     let reloaded =
         crate::native::preferences::load_native_application_options(preferences.path()).unwrap();
     assert!(

@@ -41,7 +41,9 @@ pub trait DrawingViewProjectionAccess {
     ) -> Result<Vec<oblikovati_persistence::package::SavedDrawingLine>, String>;
 }
 
-pub(super) fn with_current_part<
+/// Project a current document-owned part under the drawing policy.
+/// Example: `with_current_drawing_part(files, backend, owner, id, project)?`.
+pub fn with_current_drawing_part<
     O: TransactionObserver,
     W: WorkspaceObserver,
     F: DocumentFiles,
@@ -131,10 +133,11 @@ pub(super) fn add_base<O: TransactionObserver, W: WorkspaceObserver, F: Document
     let backend = backend.ok_or_else(|| {
         Error("drawing view: expected an injected exact projection service".into())
     })?;
-    let counts = with_current_part(files, backend, replay, source, |history, guid, part| {
-        backend.counts_current(history, guid, &definition, part)
-    })
-    .map_err(Error)?;
+    let counts =
+        with_current_drawing_part(files, backend, replay, source, |history, guid, part| {
+            backend.counts_current(history, guid, &definition, part)
+        })
+        .map_err(Error)?;
     let response = view_result(&definition, &request, counts)?;
     files
         .commands(drawing_id)

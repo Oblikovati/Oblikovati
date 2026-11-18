@@ -65,7 +65,7 @@ fn capture_from_source<O: TransactionObserver, W: WorkspaceObserver, F: Document
     let source = drawing_source(files, id, drawing.model_reference())?;
     let backend = backend
         .ok_or_else(|| format!("drawing {id}: expected a projection service for saved views"))?;
-    crate::drawing_views::with_current_part(
+    crate::drawing_views::with_current_drawing_part(
         files,
         backend,
         replay,

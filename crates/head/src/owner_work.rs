@@ -245,7 +245,7 @@ impl<
     ) -> Result<bool, String> {
         self.persist_ui_scale(options)
     }
-    fn gui_command_state(&self) -> Result<oblikovati_gui::GuiCommandState, String> {
+    fn gui_command_state(&mut self) -> Result<oblikovati_gui::GuiCommandState, String> {
         self.gui_command_snapshot()
     }
     fn gui_parameter_snapshot(

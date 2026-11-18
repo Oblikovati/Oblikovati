@@ -9,7 +9,7 @@ fn size_request(expression: &str) -> ParameterSetArgs {
         ..Default::default()
     }
 }
-fn editor_expression(owner: &TestOwner) -> String {
+fn editor_expression(owner: &mut TestOwner) -> String {
     owner
         .gui_command_state()
         .unwrap()
@@ -34,23 +34,23 @@ fn parameter_editor_uses_typed_owner_commands_and_history() {
             .edit_parameter_from_gui(Add, &size_request("10 mm"))
             .unwrap()
     );
-    assert_eq!(editor_expression(&owner), "10 mm");
+    assert_eq!(editor_expression(&mut owner), "10 mm");
     assert!(
         owner
             .edit_parameter_from_gui(Set, &size_request("20 mm"))
             .unwrap()
     );
-    assert_eq!(editor_expression(&owner), "20 mm");
+    assert_eq!(editor_expression(&mut owner), "20 mm");
     Client::new(owner.document_host())
         .transactions()
         .undo()
         .unwrap();
-    assert_eq!(editor_expression(&owner), "10 mm");
+    assert_eq!(editor_expression(&mut owner), "10 mm");
     Client::new(owner.document_host())
         .transactions()
         .redo()
         .unwrap();
-    assert_eq!(editor_expression(&owner), "20 mm");
+    assert_eq!(editor_expression(&mut owner), "20 mm");
 }
 #[test]
 fn duplicate_parameter_creation_keeps_the_existing_value_and_history() {

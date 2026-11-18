@@ -3,7 +3,7 @@
 use super::*;
 use oblikovati_viewport::ViewportInput;
 
-pub(super) fn owner_is_ready(owner: &dyn HeadWork) -> Result<bool, String> {
+pub(super) fn owner_is_ready(owner: &mut dyn HeadWork) -> Result<bool, String> {
     let state = owner.gui_command_state()?;
     Ok(
         state.authoring == oblikovati_gui::GuiAuthoringContext::Sketch

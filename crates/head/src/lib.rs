@@ -143,6 +143,10 @@ fn write_output(output: &mut dyn Write, text: &str) -> Result<(), String> {
 mod fixture_color;
 
 #[cfg(test)]
+#[path = "../tests/drawing_fixture_replay.rs"]
+mod drawing_fixture_replay;
+
+#[cfg(test)]
 #[allow(dead_code)]
 #[path = "../../../test-utilities/rust/selected_sketch_prism.rs"]
 mod scene_fixture;

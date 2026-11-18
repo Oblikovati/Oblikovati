@@ -124,11 +124,11 @@ fn location_gone(world: &mut ApplicationWorld) {
     assert!(!home_shows(world, "/tmp"), "expected no location values");
     assert!(list_row.center()[0] > 0., "expected the row to remain");
 }
-fn rows_by_size(world: &ApplicationWorld) -> Vec<(f32, u64)> {
+fn rows_by_size(world: &mut ApplicationWorld) -> Vec<(f32, u64)> {
     let state = world
         .app
-        .as_ref()
-        .map(|app| crate::HeadWork::gui_command_state(&app.owner).unwrap())
+        .as_mut()
+        .map(|app| crate::HeadWork::gui_command_state(&mut app.owner).unwrap())
         .expect("expected an application");
     let mut rows: Vec<(f32, u64)> = state
         .recent_documents

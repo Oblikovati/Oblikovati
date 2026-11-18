@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Drawing display state follows the current drawing and referenced part generations.
 use super::*;
-use oblikovati_automation::PartUpdateAccess;
-use oblikovati_drawing::{evaluate_part, project_evaluated_part};
+use oblikovati_drawing::project_evaluated_part;
 use oblikovati_gui::{GuiDrawingLine, GuiDrawingProjection};
 use oblikovati_model::drawing::DrawingDocument;
 use std::collections::BTreeMap;
@@ -28,18 +27,24 @@ impl<
 > DesktopOwner<O, W, F, G, R, S>
 {
     pub(super) fn gui_drawing_projections(
-        &self,
+        &mut self,
     ) -> Result<BTreeMap<u64, GuiDrawingProjection>, String> {
         let mut outputs = BTreeMap::new();
-        let workspace = self.files.workspace();
-        for &id in workspace.documents() {
-            let session = workspace.session(id).map_err(|cause| cause.to_string())?;
-            let Some(drawing) = &session.snapshot().drawing else {
+        let ids = self.files.workspace().documents().to_vec();
+        for id in ids {
+            let session = self
+                .files
+                .workspace()
+                .session(id)
+                .map_err(|cause| cause.to_string())?;
+            let generation = session.generation();
+            let Some(drawing) = session.snapshot().drawing.clone() else {
                 continue;
             };
-            let output = self.drawing_projection(id, session.generation(), drawing);
+            let output = self.drawing_projection(id, generation, &drawing);
             outputs.insert(id, output);
         }
+        let workspace = self.files.workspace();
         if let Some(preview) = &self.drawing_view_preview
             && workspace.active_document() == Some(preview.drawing)
             && workspace.retains_focus(&preview.focus)
@@ -86,21 +91,6 @@ impl<
         };
         let view = oblikovati_automation::prepare_base_view(content, &args)
             .map_err(|cause| cause.to_string())?;
-        let policy =
-            <crate::part_scene::DesktopPartScenes as PartUpdateAccess<O, W, F>>::resolution_policy(
-                &self.part_scenes,
-            );
-        if policy == Some(oblikovati_drawing::modelling_policy()) {
-            self.part_scenes
-                .ensure_part(&mut self.files, request.source)?;
-        }
-        let workspace = self.files.workspace();
-        let drawing = workspace
-            .session(request.drawing)
-            .map_err(|cause| cause.to_string())?;
-        let source = workspace
-            .session(request.source)
-            .map_err(|cause| cause.to_string())?;
         let mut projection =
             self.with_drawing_part(request.source, |part, history, document| {
                 let projected = project_evaluated_part(history, document, &view, part)?;
@@ -108,6 +98,13 @@ impl<
                 append_curves(&mut output, &projected, view.style, history, document)?;
                 Ok(output)
             })?;
+        let workspace = self.files.workspace();
+        let drawing = workspace
+            .session(request.drawing)
+            .map_err(|cause| cause.to_string())?;
+        let source = workspace
+            .session(request.source)
+            .map_err(|cause| cause.to_string())?;
         for line in &mut projection.lines {
             line.preview = true;
         }
@@ -122,7 +119,7 @@ impl<
         Ok(true)
     }
     fn drawing_projection(
-        &self,
+        &mut self,
         drawing_id: u64,
         generation: u64,
         drawing: &DrawingDocument,
@@ -152,7 +149,7 @@ impl<
         })
     }
     fn resolve_drawing_projection(
-        &self,
+        &mut self,
         drawing_id: u64,
         generation: u64,
         drawing: &DrawingDocument,
@@ -211,7 +208,7 @@ impl<
         Ok(output)
     }
     fn evaluate_drawing_projection(
-        &self,
+        &mut self,
         source: u64,
         drawing: &DrawingDocument,
     ) -> Result<GuiDrawingProjection, String> {
@@ -232,7 +229,7 @@ impl<
     }
 
     pub(super) fn with_drawing_part<T>(
-        &self,
+        &mut self,
         source: u64,
         project: impl FnOnce(
             &oblikovati_model::feature::part::PartFeatureEvaluation<
@@ -243,25 +240,13 @@ impl<
             oblikovati_model::identity::DocumentGuid,
         ) -> Result<T, String>,
     ) -> Result<T, String> {
-        let workspace = self.files.workspace();
-        let session = workspace
-            .session(source)
-            .map_err(|cause| cause.to_string())?;
-        let document = workspace
-            .identity(source)
-            .map_err(|cause| cause.to_string())?
-            .internal_name;
-        let policy =
-            <crate::part_scene::DesktopPartScenes as PartUpdateAccess<O, W, F>>::resolution_policy(
-                &self.part_scenes,
-            );
-        if policy == Some(oblikovati_drawing::modelling_policy())
-            && let Ok(part) = self.part_scenes.current_part(&self.files, source)
-        {
-            return project(part, session.history(), document);
-        }
-        let part = evaluate_part(session.history(), document)?;
-        project(&part, session.history(), document)
+        oblikovati_automation::with_current_drawing_part(
+            &mut self.files,
+            &self.drawing_projection_access,
+            Some(&mut self.part_scenes),
+            source,
+            |history, document, part| project(part, history, document),
+        )
     }
 }
 fn saved_sheet_projection(

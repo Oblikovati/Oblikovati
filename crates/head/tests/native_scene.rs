@@ -439,7 +439,7 @@ mod inferred_chain_tests;
 
 /// Apply the same owner palette before recording a model-only baseline; example: `apply_application_appearance(owner, window)`.
 pub(super) fn apply_application_appearance(
-    owner: &dyn crate::HeadWork,
+    owner: &mut dyn crate::HeadWork,
     window: &mut NativeHeadWindow,
 ) {
     let state = owner.gui_command_state().unwrap();

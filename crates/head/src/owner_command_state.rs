@@ -10,7 +10,9 @@ impl<
     S: DispatchWakeup,
 > DesktopOwner<O, W, F, G, R, S>
 {
-    pub(super) fn gui_command_snapshot(&self) -> Result<oblikovati_gui::GuiCommandState, String> {
+    pub(super) fn gui_command_snapshot(
+        &mut self,
+    ) -> Result<oblikovati_gui::GuiCommandState, String> {
         let theme = self.gui_theme_snapshot();
         let color_scheme = Some(oblikovati_gui::GuiColorSchemeState::from_registry(
             &self.color_schemes,
@@ -37,6 +39,7 @@ impl<
                 ..Default::default()
             });
         };
+        let drawing_projections = self.gui_drawing_projections()?;
         let session = self
             .files
             .workspace()
@@ -99,7 +102,7 @@ impl<
             document_model_states: self.gui_document_model_states()?,
             document_storage: self.gui_document_storage()?,
             drawing_documents: self.gui_drawing_documents()?,
-            drawing_projections: self.gui_drawing_projections()?,
+            drawing_projections,
             drawing_updates_deferred: self
                 .files
                 .deferred_drawing_views(document)

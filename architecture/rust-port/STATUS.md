@@ -58,10 +58,10 @@ using this status; the live scenario directory can change.
 - Parameter Set and Update reuse a current document checkpoint for a proven
   clean prefix. A typed API test edits a Fillet parameter twice, checks named
   faces against a full replay, and exercises undo, redo, save, and reopen (#4079).
-- Drawing creation and saved views now obtain a current document-owned part,
-  including when the injected owner uses another policy or is absent. Tests
-  cover source edits and refusing to save an unhealthy source (#4079). Live
-  drawing display still has a separate replay path.
+- Drawing creation, live display, previews, and saved views obtain a current
+  document-owned part, including when the injected owner uses another policy
+  or is absent. Tests cover source edits, undo, retained results, and refusing
+  to save an unhealthy source (#4079).
 - On isolated Xvfb, 8 of 9 native drawing-opening tests passed. The remaining
   test could not select the clipped `layout` tab; it failed the same way on
   clean parent `01c398155` (related clipped-tab investigation #4082).

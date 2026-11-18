@@ -63,7 +63,7 @@ fn native_selection_preferences_survive_restart_and_reset_from_the_panel() {
     assert!(filter.entries.iter().all(|row| row.enabled));
     finish_window(window, owner);
 
-    let (window, owner) = preference_window(directory.path());
+    let (window, mut owner) = preference_window(directory.path());
     let state = owner.gui_command_state().unwrap();
     let filter = state.selection_filter.unwrap();
     assert_eq!(filter.entries[0].kind, GuiSelectionKind::WorkPoint);
@@ -101,7 +101,7 @@ fn panel_priority_and_checkbox_changes_survive_a_native_restart() {
     assert!(!filter.entries[1].enabled);
     finish_window(window, owner);
 
-    let (window, owner) = preference_window(directory.path());
+    let (window, mut owner) = preference_window(directory.path());
     let filter = owner.gui_command_state().unwrap().selection_filter.unwrap();
     assert_eq!(filter.entries[1].kind, GuiSelectionKind::WorkPoint);
     assert!(!filter.entries[1].enabled);
