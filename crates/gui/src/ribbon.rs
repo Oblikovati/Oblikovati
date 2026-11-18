@@ -53,6 +53,8 @@ pub(crate) struct DocumentRibbon {
     settling_frames: u8,
     pending_tab: Option<RibbonTab>,
     pub double_click_tab: Option<RibbonTab>,
+    pub visible_tabs: Vec<RibbonTab>,
+    pub tab_popup_press: crate::popup_press::PopupPress<RibbonTab>,
     reset_error: Option<String>,
     reset_open: bool,
 }
@@ -62,6 +64,18 @@ pub(crate) struct RibbonFrame {
 }
 const TAB_SETTLING_FRAMES: u8 = 2;
 impl DocumentRibbon {
+    /// Settle a changed tab subset after ImGui lays out its new entries.
+    pub(crate) fn tabs_changed(&mut self, visible: &[RibbonTab]) -> bool {
+        if self.visible_tabs == visible {
+            return false;
+        }
+        self.visible_tabs = visible.to_vec();
+        self.settling_frames = TAB_SETTLING_FRAMES;
+        true
+    }
+    pub(crate) fn tabs_settling(&self) -> bool {
+        self.settling_frames > 0
+    }
     pub(crate) fn select_tab(&mut self, tab: RibbonTab) {
         self.active = tab;
         self.pending_tab = Some(tab);

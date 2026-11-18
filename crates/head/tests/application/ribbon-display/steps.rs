@@ -7,6 +7,8 @@ mod drawing;
 mod home_transition;
 mod measure;
 mod mode_policy;
+#[cfg(target_os = "linux")]
+mod overflow;
 mod sketch_exit;
 mod tabs_only;
 #[cfg(target_os = "linux")]
@@ -398,6 +400,7 @@ fn model_groups_visible(world: &mut ApplicationWorld) {
     world.expect_text("Extrude");
 }
 #[then("the ribbon returns to tabs-only display")]
+#[then("the ribbon remains in tabs-only display")]
 fn back_to_tabs_only(world: &mut ApplicationWorld) {
     groups_gone(world);
 }
