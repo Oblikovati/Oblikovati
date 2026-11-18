@@ -3,6 +3,44 @@
 use super::*;
 
 #[test]
+fn appended_part_capability_rejects_foreign_and_stale_owners() {
+    let (mut owner, _) = owner();
+    let first = open_named_prism(&mut owner, "append-capability-first.opd");
+    let second = open_named_prism(&mut owner, "append-capability-second.opd");
+    let policy = Some(crate::part_scene::resolution_policy::desktop_policy());
+    owner
+        .files
+        .recompute_owned_part(first, policy, &mut 0)
+        .unwrap();
+    let workspace = owner.files.workspace();
+    let replay = workspace.owned_part_replay(first, policy).unwrap();
+    assert!(replay.owns_identity(workspace.identity(first).unwrap().internal_name));
+    assert!(!replay.owns_identity(workspace.identity(second).unwrap().internal_name));
+    assert!(workspace.owned_part_replay(second, policy).is_err());
+    assert!(workspace.owned_part_replay(first, None).is_err());
+    let foreign = workspace.session(second).unwrap();
+    assert!(
+        replay
+            .validate(foreign.history(), foreign.snapshot(), FeatureId(1))
+            .is_err()
+    );
+    owner
+        .files
+        .commands(first)
+        .unwrap()
+        .run("Change width", |snapshot, _| {
+            snapshot.parameters.set_expression(1, "5 cm")
+        })
+        .unwrap();
+    let changed = owner.files.workspace().session(first).unwrap();
+    assert!(
+        replay
+            .validate(changed.history(), changed.snapshot(), FeatureId(1))
+            .is_err()
+    );
+}
+
+#[test]
 fn private_preview_uses_document_identity_without_publishing() {
     let (mut owner, _) = owner();
     let document = open_named_prism(&mut owner, "preview-owner.opd");
