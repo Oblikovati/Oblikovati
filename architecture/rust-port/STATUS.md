@@ -75,6 +75,9 @@ using this status; the live scenario directory can change.
 - Face-based datum previews use the same session preview service and current
   checkpoints. Tests check the offset geometry, unchanged document generation,
   and the face-plane command through history and reopening (#4079).
+- Sketch inspection reads a retained part result when identity, resolution,
+  solver options, and generation match. It recomputes for a stale or unmatched
+  result; tests check face-sketch placement after a depth edit (#4079).
 - The native Extrude parameter-change test cannot find its Parameters window;
   it fails at the same lookup on clean parent `6cbed854e` (#4078). It is not
   acceptance evidence for this change.

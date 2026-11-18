@@ -2,6 +2,8 @@
 use super::*;
 use oblikovati_api::wire::CreateWorkPlaneArgs;
 
+#[path = "face_plane/cached_sketch.rs"]
+mod cached_sketch;
 #[path = "face_plane/owned_preview.rs"]
 mod owned_preview;
 
