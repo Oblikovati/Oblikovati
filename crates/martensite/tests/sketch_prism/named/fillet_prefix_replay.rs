@@ -22,6 +22,80 @@ impl TransactionObserver for CaptureObserver {
 }
 
 #[test]
+fn accepted_second_prism_restores_both_captured_named_bodies() {
+    let mut session = DocumentSession::new(7, owner(cube_document()), CaptureObserver);
+    session
+        .run("Hide source sketch", |snapshot, _| {
+            snapshot.sketches.set_visible(SKETCH, false)
+        })
+        .unwrap();
+    let definition = match session
+        .history()
+        .snapshot()
+        .work_geometry
+        .get(FeatureId(1))
+        .unwrap()
+        .definition()
+    {
+        PartFeatureDefinition::SketchPrism(definition) => (**definition).clone(),
+        _ => panic!("expected source prism"),
+    };
+    let mut slot = PartEvaluationSlot::default();
+    let mut backend =
+        CertifiedNamedSolidEvaluator::new(session.history(), document(), certified_resolution());
+    let initial = session
+        .prepare_part_evaluation()
+        .evaluate(&mut backend)
+        .unwrap();
+    session.adopt_part_evaluation(initial, &mut slot).unwrap();
+    let (captured, transition) = {
+        let prefix = slot.candidate_prefix(&session).unwrap();
+        session
+            .run_projected_with_transition(
+                "Second prism",
+                |snapshot, ids| {
+                    snapshot
+                        .create_sketch_prism("Second", definition, ids)
+                        .map_err(|error| error.to_string())
+                },
+                |snapshot, feature, history| {
+                    let mut backend = CertifiedNamedSolidEvaluator::new(
+                        history,
+                        document(),
+                        certified_resolution(),
+                    );
+                    let candidate = prefix
+                        .prepare_tail(history, snapshot, feature, &mut backend)?
+                        .ok_or("expected eligible prefix")?;
+                    candidate.capture(history, |_, body| {
+                        body.capture_detached(history, document())
+                    })
+                },
+            )
+            .unwrap()
+    };
+    let completed = oblikovati_martensite::complete_named_candidate(
+        captured,
+        &transition,
+        &session,
+        document(),
+    )
+    .unwrap();
+    session.adopt_part_evaluation(completed, &mut slot).unwrap();
+    let result = slot.current(&session).unwrap();
+    assert_eq!(result.ordered_bodies().count(), 2);
+    for body in result.ordered_bodies() {
+        assert_eq!(
+            body.face_reference_keys(session.history(), document())
+                .unwrap()
+                .len(),
+            6
+        );
+        assert!((body.volume(session.history(), document()).unwrap() - 1.).abs() < 1e-10);
+    }
+}
+
+#[test]
 fn transaction_captures_a_named_fillet_before_retiring_the_prefix() {
     let mut session = DocumentSession::new(7, owner(cube_document()), CaptureObserver);
     let edge = certified(session.history())
@@ -50,7 +124,7 @@ fn transaction_captures_a_named_fillet_before_retiring_the_prefix() {
             .unwrap()
     };
     session.adopt_part_evaluation(completed, &mut slot).unwrap();
-    let (captured, transition) = {
+    let ((captured, foreign, stale), transition) = {
         let prefix = slot.candidate_prefix(&session).unwrap();
         session
             .run_projected_with_transition(
@@ -69,16 +143,74 @@ fn transaction_captures_a_named_fillet_before_retiring_the_prefix() {
                     let candidate = prefix
                         .prepare_tail(history, snapshot, feature, &mut backend)?
                         .ok_or("expected eligible prefix")?;
-                    candidate.capture(history, |_, body| body.capture_current(history, document()))
+                    let capture = || {
+                        candidate.capture(history, |_, body| {
+                            body.capture_detached(history, document())
+                        })
+                    };
+                    Ok((capture()?, capture()?, capture()?))
                 },
             )
             .unwrap()
     };
-    slot.clear();
     assert_eq!(captured.body_count(), 1);
     assert!(captured.matches_transition(&transition, session.history()));
+    let foreign_document = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee".parse().unwrap();
+    assert!(
+        oblikovati_martensite::complete_named_candidate(
+            foreign,
+            &transition,
+            &session,
+            foreign_document
+        )
+        .is_err()
+    );
+    let completed = oblikovati_martensite::complete_named_candidate(
+        captured,
+        &transition,
+        &session,
+        document(),
+    )
+    .unwrap();
+    session.adopt_part_evaluation(completed, &mut slot).unwrap();
+    let actual = slot.current(&session).unwrap().body(FeatureId(2)).unwrap();
+    let mut backend =
+        CertifiedNamedSolidEvaluator::new(session.history(), document(), certified_resolution());
+    let full = session
+        .history()
+        .snapshot()
+        .evaluate_part_features(&mut backend)
+        .unwrap();
+    let expected = full.body(FeatureId(2)).unwrap();
+    assert_eq!(
+        actual
+            .reference_keys(session.history(), document())
+            .unwrap(),
+        expected
+            .reference_keys(session.history(), document())
+            .unwrap()
+    );
+    for face in actual
+        .face_reference_keys(session.history(), document())
+        .unwrap()
+    {
+        assert!(
+            (actual
+                .face_area(session.history(), document(), &face)
+                .unwrap()
+                - expected
+                    .face_area(session.history(), document(), &face)
+                    .unwrap())
+            .abs()
+                < 1e-10
+        );
+    }
     session.undo().unwrap();
-    assert!(!captured.matches_transition(&transition, session.history()));
+    assert!(slot.current(&session).is_err());
+    assert!(
+        oblikovati_martensite::complete_named_candidate(stale, &transition, &session, document())
+            .is_err()
+    );
     let closing_scope = session.history().evaluation_scope();
     session.close();
     assert!(closing_scope.is_superseded());

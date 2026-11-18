@@ -42,6 +42,22 @@ fn bindings(owner: &DocumentEditHistory) -> ExactReferenceBindings<&'static str>
 }
 
 #[test]
+fn captured_entries_require_the_current_owning_history() {
+    let mut owner = history();
+    let index = bindings(&owner);
+    let entries = index.capture_entries(&owner, document()).unwrap();
+    assert_eq!(entries.len(), 3);
+    assert!(entries.contains(&(key(2, 1, b"cap"), "face")));
+    assert!(index.capture_entries(&history(), document()).is_err());
+    let foreign: DocumentGuid = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee".parse().unwrap();
+    assert!(index.capture_entries(&owner, foreign).is_err());
+    owner
+        .refresh(|snapshot| snapshot.parameters.set_expression(3, "3 cm"))
+        .unwrap();
+    assert!(index.capture_entries(&owner, document()).is_err());
+}
+
+#[test]
 fn cloned_binding_index_keeps_the_same_document_and_generation_guard() {
     let mut owner = history();
     let index = bindings(&owner);

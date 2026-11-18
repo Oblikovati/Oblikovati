@@ -16,6 +16,9 @@ pub struct BlendNamedTopology {
     shape: Shape,
 }
 
+mod capture;
+pub(in crate::prism::named) use capture::CapturedBlendTopology;
+
 impl BlendNamedTopology {
     pub(in crate::prism::named) fn capture_current(
         &self,
