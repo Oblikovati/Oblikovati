@@ -2,7 +2,7 @@
 //! Ordered evaluation of named prism and fillet bodies (#4045).
 use super::*;
 use oblikovati_model::feature::{
-    part::{ChamferEvaluator, FilletEvaluator, SketchPrismEvaluator},
+    part::{PartBlendKind, PartFeatureEvaluator, PartFeatureFailure},
     sketch_prism::ResolvedSketchPrism,
 };
 use std::collections::BTreeSet;
@@ -385,7 +385,7 @@ impl<'a> CertifiedNamedSolidEvaluator<'a> {
     }
 }
 
-impl SketchPrismEvaluator for CertifiedNamedSolidEvaluator<'_> {
+impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
     type Body = NamedSolid;
     type Failure = EvaluationFailure;
     fn verify_body_reference(&self, body: &NamedSolid, key: &[u8]) -> Result<(), String> {
@@ -419,15 +419,22 @@ impl SketchPrismEvaluator for CertifiedNamedSolidEvaluator<'_> {
         }?;
         Ok(NamedSolid::Prism(Box::new(body)))
     }
-    fn fillet_evaluator(
+    fn evaluate_blend(
         &mut self,
-    ) -> Option<&mut dyn FilletEvaluator<NamedSolid, EvaluationFailure>> {
-        Some(self)
-    }
-    fn chamfer_evaluator(
-        &mut self,
-    ) -> Option<&mut dyn ChamferEvaluator<NamedSolid, EvaluationFailure>> {
-        Some(self)
+        kind: PartBlendKind,
+        feature: FeatureId,
+        body: &NamedSolid,
+        edges: &[Vec<u8>],
+        distance: f64,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        let result = match kind {
+            PartBlendKind::Fillet => self.evaluate_fillet(feature, body, edges, distance),
+            PartBlendKind::Chamfer => self.evaluate_chamfer(feature, body, edges, distance),
+        }
+        .map_err(PartFeatureFailure::Kernel)?;
+        self.verify_blend_lineage(body, &result)
+            .map_err(PartFeatureFailure::BodyReference)?;
+        Ok(result)
     }
 }
 

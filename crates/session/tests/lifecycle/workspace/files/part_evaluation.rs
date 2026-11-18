@@ -4,13 +4,25 @@ use super::*;
 #[path = "../../../../../../test-utilities/rust/selected_sketch_prism.rs"]
 pub(super) mod prism_fixture;
 use oblikovati_model::feature::{
-    FeatureId, part::SketchPrismEvaluator, sketch_prism::ResolvedSketchPrism,
+    FeatureId, part::PartFeatureEvaluator, sketch_prism::ResolvedSketchPrism,
 };
 use oblikovati_session::part_evaluation::PartEvaluationSlot;
 struct FilePrismEvaluator;
-impl SketchPrismEvaluator for FilePrismEvaluator {
+impl PartFeatureEvaluator for FilePrismEvaluator {
     type Body = f64;
     type Failure = &'static str;
+    fn evaluate_blend(
+        &mut self,
+        kind: oblikovati_model::feature::part::PartBlendKind,
+        _feature: oblikovati_model::feature::FeatureId,
+        _body: &Self::Body,
+        _edges: &[Vec<u8>],
+        _distance: f64,
+    ) -> Result<Self::Body, oblikovati_model::feature::part::PartFeatureFailure<Self::Failure>>
+    {
+        Err(kind.unsupported())
+    }
+
     fn verify_body_reference(&self, _body: &Self::Body, key: &[u8]) -> Result<(), String> {
         Err(format!(
             "unnamed fake reference {key:?}: expected a named test body"

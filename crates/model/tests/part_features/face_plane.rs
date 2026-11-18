@@ -4,7 +4,7 @@ use super::*;
 use oblikovati_model::{
     feature::{
         FeatureEvaluationStatus, FeatureReadKey,
-        part::SketchPrismEvaluator,
+        part::PartFeatureEvaluator,
         sketch_prism::ResolvedSketchPrism,
         work_plane::{WorkPlaneDistance, WorkPlaneFaceReference, WorkPlaneReference},
     },
@@ -29,9 +29,21 @@ struct FaceEvaluator {
     fail_body: bool,
     fail_face: bool,
 }
-impl SketchPrismEvaluator for FaceEvaluator {
+impl PartFeatureEvaluator for FaceEvaluator {
     type Body = ();
     type Failure = &'static str;
+    fn evaluate_blend(
+        &mut self,
+        kind: oblikovati_model::feature::part::PartBlendKind,
+        _feature: oblikovati_model::feature::FeatureId,
+        _body: &Self::Body,
+        _edges: &[Vec<u8>],
+        _distance: f64,
+    ) -> Result<Self::Body, oblikovati_model::feature::part::PartFeatureFailure<Self::Failure>>
+    {
+        Err(kind.unsupported())
+    }
+
     fn verify_body_reference(&self, _: &(), key: &[u8]) -> Result<(), String> {
         if key == face_key(4) {
             return Ok(());

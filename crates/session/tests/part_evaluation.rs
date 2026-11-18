@@ -4,7 +4,7 @@
 mod fixture;
 use oblikovati_api::wire::TransactionEventPayload;
 use oblikovati_model::{
-    feature::{FeatureId, part::SketchPrismEvaluator, sketch_prism::ResolvedSketchPrism},
+    feature::{FeatureId, part::PartFeatureEvaluator, sketch_prism::ResolvedSketchPrism},
     history::{DocumentEditHistory, DocumentSnapshot},
     identity::RecipeIdAllocator,
 };
@@ -30,9 +30,21 @@ impl TransactionObserver for RecordingPartObserver {
 struct FakePrismEvaluator {
     calls: usize,
 }
-impl SketchPrismEvaluator for FakePrismEvaluator {
+impl PartFeatureEvaluator for FakePrismEvaluator {
     type Body = f64;
     type Failure = &'static str;
+    fn evaluate_blend(
+        &mut self,
+        kind: oblikovati_model::feature::part::PartBlendKind,
+        _feature: oblikovati_model::feature::FeatureId,
+        _body: &Self::Body,
+        _edges: &[Vec<u8>],
+        _distance: f64,
+    ) -> Result<Self::Body, oblikovati_model::feature::part::PartFeatureFailure<Self::Failure>>
+    {
+        Err(kind.unsupported())
+    }
+
     fn verify_body_reference(&self, _body: &Self::Body, key: &[u8]) -> Result<(), String> {
         Err(format!(
             "unnamed fake reference {key:?}: expected a named test body"
@@ -334,9 +346,21 @@ struct EditingPrismEvaluator<'a> {
     owner: &'a mut PartSession,
     calls: usize,
 }
-impl SketchPrismEvaluator for EditingPrismEvaluator<'_> {
+impl PartFeatureEvaluator for EditingPrismEvaluator<'_> {
     type Body = f64;
     type Failure = &'static str;
+    fn evaluate_blend(
+        &mut self,
+        kind: oblikovati_model::feature::part::PartBlendKind,
+        _feature: oblikovati_model::feature::FeatureId,
+        _body: &Self::Body,
+        _edges: &[Vec<u8>],
+        _distance: f64,
+    ) -> Result<Self::Body, oblikovati_model::feature::part::PartFeatureFailure<Self::Failure>>
+    {
+        Err(kind.unsupported())
+    }
+
     fn verify_body_reference(&self, _body: &Self::Body, key: &[u8]) -> Result<(), String> {
         Err(format!(
             "unnamed fake reference {key:?}: expected a named test body"

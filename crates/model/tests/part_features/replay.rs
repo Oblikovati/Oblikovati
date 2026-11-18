@@ -2,7 +2,7 @@
 use super::*;
 use oblikovati_model::feature::{
     FeatureEvaluationStatus,
-    part::{PartFeatureFailure, SketchPrismEvaluator},
+    part::{PartFeatureEvaluator, PartFeatureFailure},
     sketch_prism::ResolvedSketchPrism,
 };
 #[derive(Debug, PartialEq)]
@@ -15,9 +15,21 @@ struct FakePrismEvaluator {
     calls: usize,
     fail_first: bool,
 }
-impl SketchPrismEvaluator for FakePrismEvaluator {
+impl PartFeatureEvaluator for FakePrismEvaluator {
     type Body = FakePrismBody;
     type Failure = &'static str;
+    fn evaluate_blend(
+        &mut self,
+        kind: oblikovati_model::feature::part::PartBlendKind,
+        _feature: oblikovati_model::feature::FeatureId,
+        _body: &Self::Body,
+        _edges: &[Vec<u8>],
+        _distance: f64,
+    ) -> Result<Self::Body, oblikovati_model::feature::part::PartFeatureFailure<Self::Failure>>
+    {
+        Err(kind.unsupported())
+    }
+
     fn verify_body_reference(&self, _body: &Self::Body, key: &[u8]) -> Result<(), String> {
         Err(format!(
             "unnamed fake reference {key:?}: expected a named test body"

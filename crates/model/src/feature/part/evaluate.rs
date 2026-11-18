@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{
-    ChamferEvaluator, FilletEvaluator, PartFeatureDefinition, PartFeatureProgramError,
+    PartFeatureDefinition, PartFeatureProgramError,
     body_resolution::{resolve_body_face, resolve_body_slot},
 };
 use crate::{
@@ -14,7 +14,7 @@ use crate::{
 };
 use std::{borrow::Cow, collections::BTreeMap};
 /// The model resolves current source inputs; the injected adapter owns kernel construction and validation.
-pub trait SketchPrismEvaluator {
+pub trait PartFeatureEvaluator {
     type Body;
     type Failure;
     /// Verify the complete body name before a body-set edit; example: `backend.verify_body_reference(body, key)?`.
@@ -29,22 +29,40 @@ pub trait SketchPrismEvaluator {
             "face key {key:?}: expected a named planar-face evaluator"
         ))
     }
-    /// Select fillet capability before construction; example: `backend.fillet_evaluator()`.
-    fn fillet_evaluator(&mut self) -> Option<&mut dyn FilletEvaluator<Self::Body, Self::Failure>> {
-        None
-    }
-    /// Select chamfer capability; example: `backend.chamfer_evaluator()`.
-    fn chamfer_evaluator(
+    /// Construct and validate one blend or return a named decline.
+    /// Example: `backend.evaluate_blend(kind, feature, body, edges, distance)`.
+    fn evaluate_blend(
         &mut self,
-    ) -> Option<&mut dyn ChamferEvaluator<Self::Body, Self::Failure>> {
-        None
-    }
+        kind: PartBlendKind,
+        feature: FeatureId,
+        body: &Self::Body,
+        edges: &[Vec<u8>],
+        distance: f64,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>>;
     /// Construct an isolated result from checked inputs; example: `backend.evaluate_prism(feature.id(), input)?`.
     fn evaluate_prism(
         &mut self,
         feature: FeatureId,
         input: ResolvedSketchPrism<'_>,
     ) -> Result<Self::Body, Self::Failure>;
+}
+/// One blend operation selected before construction.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PartBlendKind {
+    Fillet,
+    Chamfer,
+}
+impl PartBlendKind {
+    /// Decline an unavailable operation; example: `kind.unsupported()`.
+    pub fn unsupported<Failure>(self) -> PartFeatureFailure<Failure> {
+        let kind = match self {
+            Self::Fillet => "fillet",
+            Self::Chamfer => "chamfer",
+        };
+        PartFeatureFailure::Unsupported(format!(
+            "{kind}: expected an available named-edge evaluator"
+        ))
+    }
 }
 /// Current ordered diagnostics; these errors are not stored in authored recipes.
 #[derive(Clone, Debug, PartialEq)]
@@ -85,7 +103,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
     }
     /// Resolve a prospective sketch support against this part result.
     /// Example: `part.datum_evaluation_for_face(&backend, &reference)?` before sketch creation.
-    pub fn datum_evaluation_for_face<B: SketchPrismEvaluator<Body = Body, Failure = Failure>>(
+    pub fn datum_evaluation_for_face<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
         &self,
         backend: &B,
         reference: &crate::feature::work_plane::WorkPlaneFaceReference,
@@ -166,7 +184,7 @@ fn datum_health<Failure>(
 impl DocumentSnapshot {
     /// Replay every active datum and prism input with local failure quarantine.
     /// Example: `let result = snapshot.evaluate_part_features(&mut backend)?;` never reuses last-good outputs.
-    pub fn evaluate_part_features<B: SketchPrismEvaluator>(
+    pub fn evaluate_part_features<B: PartFeatureEvaluator>(
         &self,
         backend: &mut B,
     ) -> Result<PartFeatureEvaluation<B::Body, B::Failure>, PartFeatureProgramError> {
@@ -174,7 +192,7 @@ impl DocumentSnapshot {
     }
     /// Poll cancellation between entries and discard an incomplete report.
     /// Example: `snapshot.evaluate_part_features_cancellable(&mut backend, || scope.is_superseded())?`.
-    pub fn evaluate_part_features_cancellable<B: SketchPrismEvaluator>(
+    pub fn evaluate_part_features_cancellable<B: PartFeatureEvaluator>(
         &self,
         backend: &mut B,
         mut cancelled: impl FnMut() -> bool,
@@ -184,7 +202,7 @@ impl DocumentSnapshot {
     }
     /// Recompute sketches in feature order using each current datum prefix.
     /// Example: `let (part, sketches) = snapshot.recompute_part_with_sketches(&mut backend, options)?`.
-    pub fn recompute_part_with_sketches<B: SketchPrismEvaluator>(
+    pub fn recompute_part_with_sketches<B: PartFeatureEvaluator>(
         &self,
         backend: &mut B,
         options: oblikovati_solve::nonlinear::SolveOptions,
@@ -193,7 +211,7 @@ impl DocumentSnapshot {
     }
     /// Recompute an ordered part and discard all results on cancellation.
     /// Example: `snapshot.recompute_part_with_sketches_cancellable(&mut backend, options, || false)?`.
-    pub fn recompute_part_with_sketches_cancellable<B: SketchPrismEvaluator>(
+    pub fn recompute_part_with_sketches_cancellable<B: PartFeatureEvaluator>(
         &self,
         backend: &mut B,
         options: oblikovati_solve::nonlinear::SolveOptions,
@@ -203,7 +221,7 @@ impl DocumentSnapshot {
             self.replay_part_with_sketches(backend, Some(options), &mut cancelled)?;
         Ok((part, candidate.into_owned().sketches))
     }
-    fn replay_part_with_sketches<'a, B: SketchPrismEvaluator>(
+    fn replay_part_with_sketches<'a, B: PartFeatureEvaluator>(
         &'a self,
         backend: &mut B,
         options: Option<oblikovati_solve::nonlinear::SolveOptions>,
@@ -243,7 +261,7 @@ impl DocumentSnapshot {
     }
 }
 impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
-    fn replay<B: SketchPrismEvaluator<Body = Body, Failure = Failure>>(
+    fn replay<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
         &mut self,
         snapshot: &mut Cow<'_, DocumentSnapshot>,
         backend: &mut B,
@@ -281,7 +299,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             }
         }
     }
-    fn refresh_sketch_faces<B: SketchPrismEvaluator<Body = Body, Failure = Failure>>(
+    fn refresh_sketch_faces<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
         &mut self,
         snapshot: &DocumentSnapshot,
         backend: &B,
@@ -324,7 +342,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         }
         Ok(())
     }
-    fn evaluate_entry<B: SketchPrismEvaluator<Body = Body, Failure = Failure>>(
+    fn evaluate_entry<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
         &mut self,
         snapshot: &DocumentSnapshot,
         backend: &mut B,
@@ -378,7 +396,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             }
         }
     }
-    fn delete_body<B: SketchPrismEvaluator<Body = Body, Failure = Failure>>(
+    fn delete_body<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
         &mut self,
         backend: &B,
         feature: FeatureId,
@@ -399,7 +417,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         Ok(())
     }
 
-    fn evaluate_prism<B: SketchPrismEvaluator<Body = Body, Failure = Failure>>(
+    fn evaluate_prism<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
         &mut self,
         snapshot: &DocumentSnapshot,
         backend: &mut B,

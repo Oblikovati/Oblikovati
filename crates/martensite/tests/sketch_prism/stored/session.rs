@@ -159,7 +159,7 @@ fn candidate_certification_rolls_back_a_refused_extrusion_before_commit() {
         .unwrap();
     let body = replay.body(id).unwrap();
     assert_analytic_scalar(body.body.report().properties.volume, 24.);
-    use oblikovati_model::feature::part::SketchPrismEvaluator;
+    use oblikovati_model::feature::part::PartFeatureEvaluator;
     assert!(evaluator.verify_body_reference(body, b"unscoped").is_err());
     owner.undo().unwrap();
     assert_eq!(owner.snapshot().work_geometry.features().len(), before);

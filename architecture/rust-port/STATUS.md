@@ -28,6 +28,8 @@ using this status; the live scenario directory can change.
 - Fillet drawing, suppression-health, and extrusion-preview regressions pass
   using the complete named-solid evaluator (#4074). The single document-owned
   incremental evaluation service and replay-count measurement remain #4079.
+- The model uses an explicit blend operation instead of optional Fillet and
+  Chamfer evaluator lookups. Partial diagnostic evaluators remain (#4079).
 - The dock lifecycle inventory and representative first-frame native tests pass.
   Projects pointer docking, modal-child saved-layout restart, and File Properties
   native docking remain open in #4073.

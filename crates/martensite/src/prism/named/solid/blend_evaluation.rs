@@ -2,8 +2,8 @@
 //! Named blend execution and lineage checks (#4045, #4046).
 use super::*;
 
-impl FilletEvaluator<NamedSolid, EvaluationFailure> for CertifiedNamedSolidEvaluator<'_> {
-    fn evaluate_fillet(
+impl CertifiedNamedSolidEvaluator<'_> {
+    pub(super) fn evaluate_fillet(
         &mut self,
         feature: FeatureId,
         body: &NamedSolid,
@@ -24,14 +24,10 @@ impl FilletEvaluator<NamedSolid, EvaluationFailure> for CertifiedNamedSolidEvalu
             .map_err(|message| failure(Phase::Naming, feature, message))?;
         Ok(NamedSolid::Fillet(Box::new(named)))
     }
-
-    fn verify_fillet_lineage(&self, before: &NamedSolid, after: &NamedSolid) -> Result<(), String> {
-        self.verify_blend_lineage(before, after)
-    }
 }
 
-impl ChamferEvaluator<NamedSolid, EvaluationFailure> for CertifiedNamedSolidEvaluator<'_> {
-    fn evaluate_chamfer(
+impl CertifiedNamedSolidEvaluator<'_> {
+    pub(super) fn evaluate_chamfer(
         &mut self,
         feature: FeatureId,
         body: &NamedSolid,
@@ -52,17 +48,14 @@ impl ChamferEvaluator<NamedSolid, EvaluationFailure> for CertifiedNamedSolidEval
             .map_err(|message| failure(Phase::Naming, feature, message))?;
         Ok(NamedSolid::Chamfer(Box::new(named)))
     }
-    fn verify_chamfer_lineage(
+}
+
+impl CertifiedNamedSolidEvaluator<'_> {
+    pub(super) fn verify_blend_lineage(
         &self,
         before: &NamedSolid,
         after: &NamedSolid,
     ) -> Result<(), String> {
-        self.verify_blend_lineage(before, after)
-    }
-}
-
-impl CertifiedNamedSolidEvaluator<'_> {
-    fn verify_blend_lineage(&self, before: &NamedSolid, after: &NamedSolid) -> Result<(), String> {
         let (prior_live, prior_deleted) = before.names(self.history, self.document)?;
         let (live, deleted) = after.names(self.history, self.document)?;
         let accounted: BTreeSet<_> = live.iter().chain(&deleted).collect();

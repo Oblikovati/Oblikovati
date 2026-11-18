@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use oblikovati_model::feature::{part::SketchPrismEvaluator, sketch_prism::ResolvedSketchPrism};
+use oblikovati_model::feature::{part::PartFeatureEvaluator, sketch_prism::ResolvedSketchPrism};
 /// Name native results inside the common replay before the session publishes them.
 pub struct NamedPrismEvaluator<'a> {
     history: &'a DocumentEditHistory,
@@ -17,9 +17,21 @@ impl<'a> NamedPrismEvaluator<'a> {
         }
     }
 }
-impl SketchPrismEvaluator for NamedPrismEvaluator<'_> {
+impl PartFeatureEvaluator for NamedPrismEvaluator<'_> {
     type Body = NamedPrismSnapshot;
     type Failure = EvaluationFailure;
+    fn evaluate_blend(
+        &mut self,
+        kind: oblikovati_model::feature::part::PartBlendKind,
+        _feature: oblikovati_model::feature::FeatureId,
+        _body: &Self::Body,
+        _edges: &[Vec<u8>],
+        _distance: f64,
+    ) -> Result<Self::Body, oblikovati_model::feature::part::PartFeatureFailure<Self::Failure>>
+    {
+        Err(kind.unsupported())
+    }
+
     fn verify_body_reference(&self, body: &Self::Body, key: &[u8]) -> Result<(), String> {
         body.body_report(self.history, self.document, key)
             .map(|_| ())
@@ -101,9 +113,21 @@ impl<'a> CertifiedNamedPrismEvaluator<'a> {
         }
     }
 }
-impl SketchPrismEvaluator for CertifiedNamedPrismEvaluator<'_> {
+impl PartFeatureEvaluator for CertifiedNamedPrismEvaluator<'_> {
     type Body = NamedPrismSnapshot;
     type Failure = EvaluationFailure;
+    fn evaluate_blend(
+        &mut self,
+        kind: oblikovati_model::feature::part::PartBlendKind,
+        _feature: oblikovati_model::feature::FeatureId,
+        _body: &Self::Body,
+        _edges: &[Vec<u8>],
+        _distance: f64,
+    ) -> Result<Self::Body, oblikovati_model::feature::part::PartFeatureFailure<Self::Failure>>
+    {
+        Err(kind.unsupported())
+    }
+
     fn verify_body_reference(&self, body: &Self::Body, key: &[u8]) -> Result<(), String> {
         self.names.verify_body_reference(body, key)
     }
