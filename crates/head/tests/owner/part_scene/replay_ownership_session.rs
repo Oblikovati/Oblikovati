@@ -163,3 +163,62 @@ fn session_builds_and_reuses_checkpoints_per_document() {
     );
     assert_eq!(attempts, 3);
 }
+
+#[test]
+fn candidate_capability_rejects_foreign_policy_and_stale_prefix() {
+    let (mut owner, _) = owner();
+    let first = open_named_prism(&mut owner, "candidate-owner-first.opd");
+    let second = open_named_prism(&mut owner, "candidate-owner-second.opd");
+    let policy = Some(crate::part_scene::resolution_policy::desktop_policy());
+    let mut attempts = 0;
+    owner
+        .files
+        .ensure_owned_checkpoints(first, policy, &mut attempts)
+        .unwrap();
+    let workspace = owner.files.workspace();
+    let session = workspace.session(first).unwrap();
+    let slot = session.owned_checkpoint_slot(policy).unwrap();
+    let prefix = slot.candidate_prefix(session).unwrap();
+    assert!(
+        workspace
+            .owned_checkpoint_replay(second, policy, prefix)
+            .is_err()
+    );
+    let prefix = slot.candidate_prefix(session).unwrap();
+    assert!(
+        workspace
+            .owned_checkpoint_replay(first, None, prefix)
+            .is_err()
+    );
+    let prefix = slot.candidate_prefix(session).unwrap();
+    let replay = workspace
+        .owned_checkpoint_replay(first, policy, slot.candidate_prefix(session).unwrap())
+        .unwrap();
+    let foreign = workspace.session(second).unwrap();
+    assert!(
+        replay
+            .prepare(foreign.snapshot(), foreign.history())
+            .is_err()
+    );
+    owner
+        .files
+        .commands(first)
+        .unwrap()
+        .run("Change width", |snapshot, _| {
+            snapshot.parameters.set_expression(1, "5 cm")
+        })
+        .unwrap();
+    assert!(
+        owner
+            .files
+            .workspace()
+            .owned_checkpoint_replay(first, policy, prefix)
+            .is_err()
+    );
+    let changed = owner.files.workspace().session(first).unwrap();
+    assert!(
+        replay
+            .prepare(changed.snapshot(), changed.history())
+            .is_err()
+    );
+}

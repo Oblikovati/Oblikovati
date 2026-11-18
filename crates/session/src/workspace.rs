@@ -5,6 +5,7 @@ mod browser_selection;
 mod commands;
 mod derived_edit;
 mod open_verification;
+mod part_candidate;
 mod part_evaluation;
 pub use commands::SessionCommands;
 mod copy;

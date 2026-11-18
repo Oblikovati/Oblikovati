@@ -145,6 +145,17 @@ impl<Body, Failure> CompletedPartCheckpoints<Body, Failure> {
     }
 }
 impl<Body, Failure> PartCheckpointSlot<Body, Failure> {
+    pub(crate) fn owns_current_prefix<O: TransactionObserver>(
+        &self,
+        session: &DocumentSession<O>,
+        prefix: &PartCheckpointPrefix<Body, Failure>,
+    ) -> bool {
+        self.published.as_ref().is_some_and(|published| {
+            std::sync::Arc::ptr_eq(published, &prefix.published)
+                && published.is_active()
+                && published.validate(session).is_ok()
+        })
+    }
     /// Adopt only current checkpoints from the same history; rejection leaves the slot intact.
     /// Example: `slot.adopt(&session, completed)?`.
     pub fn adopt<O: TransactionObserver>(
@@ -189,6 +200,14 @@ impl<Body, Failure> Drop for PartCheckpointSlot<Body, Failure> {
         }
     }
 }
+impl<Body, Failure> PartCheckpointPrefix<Body, Failure> {
+    pub(crate) fn validate_history(&self, history: &DocumentEditHistory) -> Result<(), String> {
+        if !self.published.is_active() || !self.published.scope.is_current(history) {
+            return Err("part checkpoints: expected the current owning history".into());
+        }
+        Ok(())
+    }
+}
 impl<Body, Failure: Clone> PartCheckpointPrefix<Body, Failure> {
     /// Replay an edited tail and retain all resulting boundaries before commit.
     /// Example: `prefix.prepare_checkpoints(history, candidate, &mut backend)?`.
@@ -201,9 +220,7 @@ impl<Body, Failure: Clone> PartCheckpointPrefix<Body, Failure> {
     where
         Body: Clone,
     {
-        if !self.published.is_active() || !self.published.scope.is_current(history) {
-            return Err("part checkpoints: expected the current owning history".into());
-        }
+        self.validate_history(history)?;
         if self
             .published
             .checkpoints
