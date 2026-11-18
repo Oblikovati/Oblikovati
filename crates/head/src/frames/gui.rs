@@ -7,6 +7,8 @@ use std::time::Duration;
 mod authoring;
 #[path = "gui_input.rs"]
 mod input;
+#[path = "gui_model_click.rs"]
+mod model_click;
 use input::{semantic_command_event, update_tool_candidate};
 #[path = "gui_dimension_labels.rs"]
 mod dimension_labels;
@@ -64,6 +66,19 @@ pub(super) fn advance_gui(
     dimension_labels::project_precise_triad(window, owner, &mut commands);
     let mut update = window.gui_frame(event, &commands)?;
     update.changed |= metadata_changed;
+    if let Err(cause) = dispatch_frame_actions(window, owner, &mut update) {
+        if window.has_pending_ribbon_model_pick() {
+            window.resolve_ribbon_model_pick(false);
+        }
+        return Err(cause);
+    }
+    Ok(update)
+}
+fn dispatch_frame_actions(
+    window: &mut dyn HeadWindow,
+    owner: &mut dyn HeadWork,
+    update: &mut HeadGuiUpdate,
+) -> Result<(), String> {
     if let Some(action) = update.window_action {
         update.changed |= window.window_action(action)?;
     }
@@ -75,8 +90,9 @@ pub(super) fn advance_gui(
     for action in &update.actions {
         update.changed |= dispatch_gui_action(window, owner, action)?;
     }
-    Ok(update)
+    Ok(())
 }
+
 fn orient_view(
     window: &mut dyn HeadWindow,
     owner: &mut dyn HeadWork,
@@ -211,21 +227,7 @@ pub(super) fn dispatch_gui_action(
             pixel,
             toggle,
         } => {
-            let line = window.view_line(*pixel)?;
-            let depth_window = match window.window_capture_extent()? {
-                Some([_, height]) => Some(crate::part_scene::pick_candidates::depth_window(
-                    window.view_camera()?.scale,
-                    height,
-                )?),
-                None => None,
-            };
-            let changed =
-                owner.click_model_with_modifiers(*document, line, depth_window, *toggle)?;
-            if window.has_pending_ribbon_model_pick() {
-                let face = owner.gui_command_state()?.model_pick_cue.is_some();
-                window.resolve_ribbon_model_pick(face);
-            }
-            return Ok(changed);
+            return model_click::dispatch(window, owner, *document, *pixel, *toggle);
         }
         GuiShellAction::StartSketchAt {
             document,

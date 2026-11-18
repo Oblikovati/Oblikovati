@@ -398,6 +398,7 @@ impl GuiFrameEngine {
                 }
                 prompt
             });
+        let cancelled_pick = self.ribbon.cancel_unrouted_model_pick(&selected);
         let home_changed = home_follows_actions(&mut self.home, &selected);
         self.known_documents.clone_from(&request.commands.documents);
         self.known_document_type = request.commands.document_type;
@@ -467,7 +468,7 @@ impl GuiFrameEngine {
             || self.ribbon.customization.escape_consumed
             || self.ribbon.display.temporary_escape_consumed;
         capture.pointer |= self.dimension_value_editor.over_label || over_fields;
-        activity.pending_layout |= dock_lifecycle_changed;
+        activity.pending_layout |= dock_lifecycle_changed || cancelled_pick;
         activity.pending_layout |= self.orientation.needs_frame();
         activity.pending_layout |= self.ribbon.panels.pending_layout || self.ribbon.needs_frame();
         activity.pending_layout |=
