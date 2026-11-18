@@ -140,9 +140,17 @@ pub(super) fn press_alt_f4() {
 }
 
 pub(super) fn press_control_o() {
+    press_control_letter(b'o');
+}
+
+pub(super) fn press_control_s() {
+    press_control_letter(b's');
+}
+
+fn press_control_letter(key: u8) {
     let (connection, root) = keyboard_target();
     let control = keyboard_keycode(&connection, 0xffe3);
-    let letter = keyboard_keycode(&connection, u32::from(b'o'));
+    let letter = keyboard_keycode(&connection, u32::from(key));
     send_key_sequence(
         &connection,
         root,

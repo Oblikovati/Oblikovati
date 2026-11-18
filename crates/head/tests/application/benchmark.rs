@@ -14,6 +14,7 @@ mod diagnostics;
 #[cfg(target_os = "linux")]
 #[path = "docking-system/steps.rs"]
 mod docking_system;
+mod document_save_native;
 mod documents;
 mod gap_runner;
 #[cfg(target_os = "linux")]
