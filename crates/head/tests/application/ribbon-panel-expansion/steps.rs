@@ -131,6 +131,7 @@ pub(super) fn toggle_pin(world: &mut ApplicationWorld) {
     let position = [label.minimum[0] + 6., label.center()[1]];
     world.click(diagnostics::pointer_pixels(position));
 }
+#[then("the Modify additional commands remain visible")]
 #[then("the expanded Modify command area remains visible")]
 #[then("the Modify additional command area remains visible")]
 #[then("the Modify additional-command area opens")]
@@ -380,4 +381,10 @@ fn temporary_model(world: &mut ApplicationWorld) {
 fn open_and_pin_modify(world: &mut ApplicationWorld) {
     open_modify(world);
     toggle_pin(world);
+}
+
+#[then("the ribbon context menu appears and the additional commands remain visible")]
+fn title_menu_with_expansion(world: &mut ApplicationWorld) {
+    world.expect_text("Show Panels");
+    pinned_visible(world);
 }
