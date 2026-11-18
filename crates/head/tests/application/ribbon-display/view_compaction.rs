@@ -17,11 +17,18 @@ fn narrow_view_panels(world: &mut ApplicationWorld) {
     world.expect_no_text("User Interface");
 }
 
+#[given("the narrow window shows Windows as a compact panel button")]
+fn narrow_windows_panel(world: &mut ApplicationWorld) {
+    super::overflow::view_in_overflow(world);
+    world.expect_text("Windows");
+    world.expect_no_text("User Interface");
+}
+
 fn compact_panel_point(world: &ApplicationWorld, name: &str) -> [i32; 2] {
     let label = world.run(name).center();
     super::super::diagnostics::pointer_pixels([label[0], label[1] - 35.])
 }
-fn click_compact_panel(world: &mut ApplicationWorld, name: &str) {
+pub(super) fn click_compact_panel(world: &mut ApplicationWorld, name: &str) {
     super::super::x11_input::click(compact_panel_point(world, name));
     world.pump(Vec::new());
 }
@@ -40,6 +47,11 @@ fn appearance_popup(world: &mut ApplicationWorld) {
 fn click_windows(world: &mut ApplicationWorld) {
     click_compact_panel(world, "Windows");
 }
+#[given("the temporary Windows panel is open")]
+fn open_windows_panel(world: &mut ApplicationWorld) {
+    click_windows(world);
+    windows_popup(world);
+}
 #[then("the Appearance panel closes and the temporary Windows panel opens")]
 #[then("the Windows panel remains open")]
 fn windows_popup(world: &mut ApplicationWorld) {
@@ -48,8 +60,26 @@ fn windows_popup(world: &mut ApplicationWorld) {
     assert!(world.run("User Interface").minimum[1] > band_height());
 }
 #[then("the Windows panel closes")]
+#[then("the temporary Windows panel remains closed")]
 fn windows_popup_closed(world: &mut ApplicationWorld) {
     world.expect_no_text("User Interface");
+}
+
+#[then("the Tools ribbon groups are displayed")]
+fn tools_groups_visible(world: &mut ApplicationWorld) {
+    for _ in 0..4 {
+        if world.shows("Options") {
+            break;
+        }
+        world.pump(Vec::new());
+    }
+    world.expect_text("Options");
+    world.expect_no_text("Show Sketches");
+}
+
+#[then("the View ribbon groups are displayed")]
+fn view_groups_visible(world: &mut ApplicationWorld) {
+    world.expect_text("Show Sketches");
 }
 
 #[test]

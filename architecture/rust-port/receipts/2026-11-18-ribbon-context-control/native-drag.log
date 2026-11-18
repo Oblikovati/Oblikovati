@@ -1,0 +1,9 @@
+   Compiling oblikovati-head v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/crates/head)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 30.59s
+     Running unittests src/lib.rs (target/debug/deps/oblikovati_head-ce56125549edf4ba)
+
+running 1 test
+test native::gui_loop_tests::application_bdd::ribbon_display::context_control::dragging_off_display_control_after_menu_dismissal_cancels_toggle ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1357 filtered out; finished in 6.25s
+

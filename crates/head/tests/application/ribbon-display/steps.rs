@@ -2,6 +2,10 @@
 use super::{ApplicationWorld, diagnostics::window_geometry};
 use cucumber::{given, then, when};
 mod compact_options;
+#[cfg(target_os = "linux")]
+mod context_control;
+#[cfg(target_os = "linux")]
+mod document_settings;
 mod double_click;
 mod drawing;
 mod home_transition;

@@ -2,6 +2,7 @@
 //! Preserve button release semantics when a non-modal popup closes on press.
 use imgui::{ItemHoveredFlags, MouseButton, Ui};
 
+#[derive(Debug)]
 pub(crate) struct PopupPress<T> {
     pending: Option<T>,
 }

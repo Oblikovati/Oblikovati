@@ -1,0 +1,73 @@
+   Compiling oblikovati-head v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/crates/head)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 30.75s
+     Running unittests src/lib.rs (target/debug/deps/oblikovati_head-ce56125549edf4ba)
+
+running 1 test
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... Feature: Ribbon display modes
+  Scenario: Close a width-compacted panel by switching ribbon tabs
+   ✔  Given a part is active in the MCAD Software with the full View ribbon displayed
+   ✔  And the narrow window shows Windows as a compact panel button
+   ✔  And the temporary Windows panel is open
+   ✔  When the user selects the visible Tools tab
+   ✔  Then the Windows panel closes
+   ✔  And the Tools ribbon groups are displayed
+   ✔  When the user selects View from the tab overflow menu
+   ✔  Then the View ribbon groups are displayed
+   ✔  And the temporary Windows panel remains closed
+   ✔  And the part remains visible
+[Summary]
+1 feature
+1 scenario (1 passed)
+10 steps (10 passed)
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1357 filtered out; finished in 6.95s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.10s
+     Running unittests src/lib.rs (target/debug/deps/oblikovati_head-ce56125549edf4ba)
+
+running 1 test
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... Feature: Ribbon display modes
+  Scenario: Close a width-compacted panel by switching ribbon tabs
+   ✔  Given a part is active in the MCAD Software with the full View ribbon displayed
+   ✔  And the narrow window shows Windows as a compact panel button
+   ✔  And the temporary Windows panel is open
+   ✔  When the user selects the visible Tools tab
+   ✔  Then the Windows panel closes
+   ✔  And the Tools ribbon groups are displayed
+   ✔  When the user selects View from the tab overflow menu
+   ✔  Then the View ribbon groups are displayed
+   ✔  And the temporary Windows panel remains closed
+   ✔  And the part remains visible
+[Summary]
+1 feature
+1 scenario (1 passed)
+10 steps (10 passed)
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1357 filtered out; finished in 6.67s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.10s
+     Running unittests src/lib.rs (target/debug/deps/oblikovati_head-ce56125549edf4ba)
+
+running 1 test
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... Feature: Ribbon display modes
+  Scenario: Close a width-compacted panel by switching ribbon tabs
+   ✔  Given a part is active in the MCAD Software with the full View ribbon displayed
+   ✔  And the narrow window shows Windows as a compact panel button
+   ✔  And the temporary Windows panel is open
+   ✔  When the user selects the visible Tools tab
+   ✔  Then the Windows panel closes
+   ✔  And the Tools ribbon groups are displayed
+   ✔  When the user selects View from the tab overflow menu
+   ✔  Then the View ribbon groups are displayed
+   ✔  And the temporary Windows panel remains closed
+   ✔  And the part remains visible
+[Summary]
+1 feature
+1 scenario (1 passed)
+10 steps (10 passed)
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1357 filtered out; finished in 6.82s
+

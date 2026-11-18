@@ -34,7 +34,7 @@ fn active_view_in_overflow(world: &mut ApplicationWorld) {
 
 #[given("the application window is narrow enough that View is outside the visible tab row")]
 #[given("the narrow application window places View in the tab overflow menu")]
-fn view_in_overflow(world: &mut ApplicationWorld) {
+pub(super) fn view_in_overflow(world: &mut ApplicationWorld) {
     use crate::HeadWork;
     let scale = oblikovati_model::ui_scale::UiScaleOptions::new(1.25, 1.).unwrap();
     world.app().owner.set_ui_scale_from_gui(scale).unwrap();
@@ -86,6 +86,7 @@ fn select_hidden_view(world: &mut ApplicationWorld) {
 }
 
 #[when("the user opens the tab overflow menu and selects View")]
+#[when("the user selects View from the tab overflow menu")]
 fn open_and_select_view(world: &mut ApplicationWorld) {
     open_overflow(world);
     select_hidden_view(world);
@@ -104,6 +105,7 @@ fn view_commands_remain(world: &mut ApplicationWorld) {
 }
 
 #[when("the user clicks the visible Tools tab")]
+#[when("the user selects the visible Tools tab")]
 fn click_visible_tools(world: &mut ApplicationWorld) {
     let point = super::super::diagnostics::pointer_pixels(world.run("Tools").center());
     super::super::x11_input::click(point);

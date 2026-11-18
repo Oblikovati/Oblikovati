@@ -263,11 +263,11 @@
       "features/application/ribbon-display/wheel-tab-navigation.svg": "a7768245a07ca78c28a2ccd4aca1a0533df328fb2d22abc4caf6027b3742e9da",
       "features/application/ribbon-display/wheel-tabs-only.svg": "3647e88e7456c04629f2b42536e16cfa2d5f07860ff29826711a5c11879f2a34"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-18-ribbon-tab-overflow/cucumber.json",
-    "cucumber_sha256": "8b47565b456547d171f29cb339ebeec0b2e65bb6a503789c737910ac074703b0",
-    "application_commit": "e8be0b8941d07a60f315ed4989e5e53508ff2ad1",
+    "cucumber": "architecture/rust-port/receipts/2026-11-18-ribbon-context-control/cucumber.json",
+    "cucumber_sha256": "b77c1edf59f682d3db19ba43a6547ee0482d6a2232b8ca3b88f43a929550b26c",
+    "application_commit": "364abf3095cc94274b4f213fee2ad8bf858d31c4",
     "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=ribbon-display XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh sh architecture/rust-port/receipts/2026-11-18-ribbon-display-maximize/run.sh",
     "environment": "Linux X11, Xvfb, Openbox and Vulkan Lavapipe; scripted window input plus native X11 resize and maximize",
-    "notes": "36 of 50 scenarios passed; 12 stopped at unbound steps and two failed behavior checks. Options command scope and the two-toggle restoration sequence need scenario-owner clarification (BLOCKERS.md; #4095). Feature and support files stayed unchanged during the run. Three overflow scenarios use X11 input at 125% text scale; all 639 GUI library tests passed. Unversioned source: diagnostic only, not strict verified acceptance (#3849, #3856)."
+    "notes": "39 of 50 scenarios passed; eight stopped at unbound steps and three failed behavior checks. Options scope and the two-toggle sequence need scenario-owner clarification (BLOCKERS.md; #4095); Document Settings is #4096. An earlier full run missed the compact Tools label in the first frame; the test waits for layout, then passed three focused repetitions and the final full run. Source and support files stayed unchanged; unversioned source is diagnostic only (#3849, #3856)."
   }
 }
