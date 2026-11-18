@@ -11,6 +11,7 @@ use oblikovati_martensite::{
     PrismResolutionPolicy,
 };
 use oblikovati_model::{
+    feature::FeatureId,
     history::{DocumentEditHistory, DocumentSnapshot, EvaluationTransition},
     identity::DocumentGuid,
 };
@@ -45,6 +46,10 @@ impl OwnedCheckpointReplay {
     pub fn document(&self) -> u64 {
         self.document
     }
+    /// Check the persistent identity bound to this replay; example: `replay.owns_identity(guid)`.
+    pub fn owns_identity(&self, guid: DocumentGuid) -> bool {
+        self.guid == guid
+    }
     /// Read the policy used by its checkpoints; example: `replay.policy()`.
     pub fn policy(&self) -> Option<PrismResolutionPolicy> {
         self.policy
@@ -56,7 +61,28 @@ impl OwnedCheckpointReplay {
         candidate: &DocumentSnapshot,
         history: &DocumentEditHistory,
     ) -> Result<Option<OwnedCheckpointCandidate>, String> {
-        self.prefix.validate_history(history)?;
+        self.prepare_checked(candidate, history, None)
+            .map_err(|error| error.0)
+    }
+    /// Replay an edit and require a valid current descendant for the changed feature.
+    /// Example: `replay.prepare_feature(candidate, history, feature)?` before commit.
+    pub fn prepare_feature(
+        &self,
+        candidate: &DocumentSnapshot,
+        history: &DocumentEditHistory,
+        feature: FeatureId,
+    ) -> Result<Option<OwnedCheckpointCandidate>, oblikovati_api::Error> {
+        self.prepare_checked(candidate, history, Some(feature))
+    }
+    fn prepare_checked(
+        &self,
+        candidate: &DocumentSnapshot,
+        history: &DocumentEditHistory,
+        required: Option<FeatureId>,
+    ) -> Result<Option<OwnedCheckpointCandidate>, oblikovati_api::Error> {
+        self.prefix
+            .validate_history(history)
+            .map_err(oblikovati_api::Error)?;
         if candidate.sketches.requires_part_dependency_recompute() {
             return Ok(None);
         }
@@ -68,15 +94,24 @@ impl OwnedCheckpointReplay {
         }
         let mut evaluator =
             CertifiedNamedSolidEvaluator::with_optional_policy(history, self.guid, self.policy);
-        let Some(candidate) =
-            self.prefix
-                .prepare_checkpoints(history, candidate, &mut evaluator)?
+        let Some(candidate) = self
+            .prefix
+            .prepare_checkpoints(history, candidate, &mut evaluator)
+            .map_err(oblikovati_api::Error)?
         else {
             return Ok(None);
         };
+        if let Some(feature) = required
+            && !candidate.has_current_source(feature)
+        {
+            return Err(oblikovati_api::Error(format!(
+                "feature {feature:?}: expected a valid current descendant body"
+            )));
+        }
         candidate
             .capture(history, |_, body| body.capture_detached(history, self.guid))
             .map(Some)
+            .map_err(oblikovati_api::Error)
     }
     /// Restore a captured candidate only after the exact accepted transition.
     /// Example: `replay.complete(session, candidate, &transition)?`.
