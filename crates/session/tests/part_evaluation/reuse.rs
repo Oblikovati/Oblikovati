@@ -407,3 +407,6 @@ fn candidate_result_rejects_a_different_edit_from_the_same_source() {
         .unwrap();
     assert!(!candidate.matches_transition(&transition, owner.history()));
 }
+
+#[path = "capture.rs"]
+mod capture;

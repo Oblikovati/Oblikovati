@@ -44,8 +44,9 @@ using this status; the live scenario directory can change.
   Fillet test compares its names, topology, and face areas with full replay.
   The Fillet and Chamfer commands use it with a current, policy-matched prefix;
   publication and general dirty-prefix replay remain open (#4079).
-- A retained candidate can verify its accepted generation transition and
-  evaluated inputs. It does not yet transfer names or publish geometry (#4079).
+- A retained candidate can capture independent bodies while current and verify
+  its accepted generation transition and inputs. It does not yet transfer names
+  or publish geometry (#4079).
 - A newly appended feature may add parameters without dirtying an unchanged
   prefix when no earlier feature reads them. Other parameter changes remain
   conservative (#4079).
