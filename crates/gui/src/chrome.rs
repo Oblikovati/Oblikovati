@@ -11,13 +11,11 @@ pub(crate) const APPLICATION_BAR_TRAILING_RESERVED: f32 = 150.;
 pub(crate) fn application_bar_height(icons: &crate::icons::GuiRibbonIcons) -> f32 {
     APPLICATION_BAR_HEIGHT.max(icons.cell([24., 24.])[1] + 8.)
 }
-fn tab_row_height(ui: &Ui) -> f32 {
-    ui.frame_height().max(20.) + 4.
-}
 mod side;
 mod tab_click;
 mod tab_overflow;
 use side::{reserve_ribbon_margins, side_ribbon};
+use tab_overflow::tab_row_height;
 pub(crate) struct RibbonDrawOwners<'a> {
     pub home_active: bool,
     pub icons: &'a crate::icons::GuiRibbonIcons,

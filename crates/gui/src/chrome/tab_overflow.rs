@@ -25,7 +25,7 @@ pub(super) fn draw(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame) {
     let changed = ribbon.tabs_changed(visible) || ribbon.tabs_settling();
     let _padding = ui.push_style_var(imgui::StyleVar::WindowPadding([0., 0.]));
     ui.child_window("##ribbon-tab-region")
-        .size([tabs_width, super::tab_row_height(ui)])
+        .size([tabs_width, tab_row_height(ui)])
         .scroll_bar(false)
         .scrollable(false)
         .build(|| draw_visible(ui, ribbon, frame, visible, changed));
@@ -91,6 +91,10 @@ fn overflow_menu(ui: &Ui, ribbon: &mut DocumentRibbon, hidden: &[RibbonTab], wid
             }
         }
     }
+}
+
+pub(super) fn tab_row_height(ui: &Ui) -> f32 {
+    ui.frame_height().max(20.) + 4.
 }
 
 #[cfg(test)]
