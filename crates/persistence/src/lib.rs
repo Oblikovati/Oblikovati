@@ -5,6 +5,7 @@
 pub mod application_options;
 pub mod assets;
 pub mod atomic;
+pub mod inventor_spatial;
 pub mod keymap_preferences;
 pub mod load;
 pub mod marking_menu_preferences;
