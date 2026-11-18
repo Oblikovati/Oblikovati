@@ -46,3 +46,32 @@ fn create_area_visible(_: &mut ApplicationWorld) {
 fn create_area_closes(world: &mut ApplicationWorld) {
     create_closed(world);
 }
+#[then("the full Sketch ribbon is displayed")]
+fn full_sketch_ribbon_displayed(world: &mut ApplicationWorld) {
+    world.expect_text("Constrain");
+    assert_eq!(
+        world.state().authoring,
+        oblikovati_gui::GuiAuthoringContext::Part
+    );
+}
+#[cfg(target_os = "linux")]
+#[test]
+fn x11_sketch_tab_closes_unpinned_modify_expansion() {
+    let mut world = ApplicationWorld::new();
+    part_with_sketch(&mut world);
+    let part = world.active_id();
+    super::super::opened_unpinned(&mut world);
+    let tab = world
+        .frame
+        .runs
+        .iter()
+        .find(|run| run.text == "Sketch")
+        .unwrap();
+    super::super::super::x11_input::click(diagnostics::pointer_pixels(tab.center()));
+    world.pump(Vec::new());
+    assert!(diagnostics::window_geometry("##ribbon-additional-PartModify").is_none());
+    full_sketch_ribbon_displayed(&mut world);
+    world.expect_active(part);
+    expect_solid_visible(&mut world);
+    world.close();
+}

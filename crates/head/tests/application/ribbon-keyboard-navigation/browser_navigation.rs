@@ -8,6 +8,7 @@ use super::*;
 #[given("a part is active in the MCAD Software with the full 3D Model ribbon visible")]
 fn part_with_feature(world: &mut ApplicationWorld) {
     open_visible_extruded_part(world);
+    world.previous_document = world.state().document;
     world.expect_text("Extrude");
 }
 #[given("an extrusion is expanded in the model browser to show its child sketch")]
