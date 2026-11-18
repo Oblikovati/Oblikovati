@@ -106,3 +106,94 @@ fn a_changed_read_footprint_invalidates_its_feature() {
             .same_work_geometry_recipe(&edited.work_geometry)
     );
 }
+
+fn append_parameter_and_point(document: &mut DocumentSnapshot) {
+    document
+        .parameters
+        .insert_expression(4, "new_length", oblikovati_api::types::USER_PARAM, "1 cm")
+        .unwrap();
+    let point = PartFeatureDefinition::Point([
+        DatumLength::Parameter(4),
+        DatumLength::Constant(0.),
+        DatumLength::Constant(0.),
+    ]);
+    document
+        .work_geometry
+        .append(AuthoredFeature::datum(FeatureId(3), "New point", point))
+        .unwrap();
+}
+
+#[test]
+fn new_tail_parameter_does_not_invalidate_an_unrelated_prefix() {
+    let source = document_with_two_planes();
+    let mut candidate = source.clone();
+    append_parameter_and_point(&mut candidate);
+    assert_eq!(
+        source.part_replay_change(&candidate),
+        Some(FeatureReplayRange { start: 2, end: 3 })
+    );
+    candidate.parameters.set_expression(3, "3 cm").unwrap();
+    assert_eq!(
+        source.part_replay_change(&candidate),
+        Some(FeatureReplayRange { start: 0, end: 3 })
+    );
+}
+
+#[test]
+fn added_parameter_restarts_when_an_existing_feature_already_reads_it() {
+    let mut source = part_document();
+    let point = PartFeatureDefinition::Point([
+        DatumLength::Parameter(4),
+        DatumLength::Constant(0.),
+        DatumLength::Constant(0.),
+    ]);
+    source
+        .work_geometry
+        .append(AuthoredFeature::datum(FeatureId(2), "Missing input", point))
+        .unwrap();
+    let mut candidate = source.clone();
+    append_parameter_and_point(&mut candidate);
+    assert_eq!(
+        source.part_replay_change(&candidate),
+        Some(FeatureReplayRange { start: 0, end: 3 })
+    );
+}
+
+#[test]
+fn added_parameter_without_an_appended_feature_restarts_the_program() {
+    let source = document_with_two_planes();
+    let mut candidate = source.clone();
+    candidate
+        .parameters
+        .insert_expression(4, "new_length", oblikovati_api::types::USER_PARAM, "1 cm")
+        .unwrap();
+    assert_eq!(
+        source.part_replay_change(&candidate),
+        Some(FeatureReplayRange { start: 0, end: 2 })
+    );
+}
+
+#[test]
+fn added_parameter_with_unknown_prefix_reads_restarts_the_program() {
+    let mut source = document_with_two_planes();
+    let definition = source
+        .work_geometry
+        .get(FeatureId(1))
+        .unwrap()
+        .definition()
+        .clone();
+    source
+        .work_geometry
+        .replace(
+            FeatureId(1),
+            definition,
+            FeatureReadFootprint::new([], true),
+        )
+        .unwrap();
+    let mut candidate = source.clone();
+    append_parameter_and_point(&mut candidate);
+    assert_eq!(
+        source.part_replay_change(&candidate),
+        Some(FeatureReplayRange { start: 0, end: 3 })
+    );
+}

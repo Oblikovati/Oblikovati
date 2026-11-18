@@ -12,6 +12,9 @@ pub struct BoundExpression<Id> {
 }
 
 impl<Id: Copy + Ord> BoundExpression<Id> {
+    pub(crate) fn same_id_bindings(&self, other: &Self) -> bool {
+        self.bindings == other.bindings
+    }
     pub(crate) fn reference_id(&self, name: &str) -> Option<Id> {
         let index = self
             .expression

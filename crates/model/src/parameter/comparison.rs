@@ -3,6 +3,25 @@
 use super::*;
 
 impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
+    /// Identify parameters added after an otherwise unchanged collection.
+    /// Example: `before.appended_unchanged_parameters(&after)` for a feature-tail edit.
+    pub(crate) fn appended_unchanged_parameters(&self, other: &Self) -> Option<BTreeSet<Id>> {
+        if !other.order.starts_with(&self.order)
+            || self.units != other.units
+            || self.settings != other.settings
+            || self.groups != other.groups
+            || self.derived_tables != other.derived_tables
+            || !self.records.iter().all(|(id, record)| {
+                other
+                    .records
+                    .get(id)
+                    .is_some_and(|other| same_evaluated_record(record, other))
+            })
+        {
+            return None;
+        }
+        Some(other.order[self.order.len()..].iter().copied().collect())
+    }
     /// Compare owned recipe values, excluding evaluation health and change queues.
     /// Example: `before.same_recipe(&after)` before recording an undo step.
     pub fn same_recipe(&self, other: &Self) -> bool {
@@ -34,6 +53,22 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
                 .iter()
                 .zip(&other.derived_tables)
                 .all(|(left, right)| left.health == right.health)
+    }
+}
+
+fn same_evaluated_record<Id: Copy + Ord + Debug>(
+    left: &ParameterRecord<Id>,
+    right: &ParameterRecord<Id>,
+) -> bool {
+    if comparison_state(&left.state) != comparison_state(&right.state)
+        || left.state.health != right.state.health
+    {
+        return false;
+    }
+    match (&left.formula, &right.formula) {
+        (None, None) => true,
+        (Some(left), Some(right)) => left.binding.same_id_bindings(&right.binding),
+        _ => false,
     }
 }
 
