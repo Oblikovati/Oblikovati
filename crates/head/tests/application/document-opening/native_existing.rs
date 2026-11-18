@@ -27,7 +27,7 @@ fn native_input_activates_existing_part_without_an_extra_tab() {
     world.close();
 }
 
-fn native_click_run(world: &mut ApplicationWorld, label: &str) {
+pub(super) fn native_click_run(world: &mut ApplicationWorld, label: &str) {
     let center = world.run(label).center();
     let position = super::super::diagnostics::pointer_pixels(center);
     super::super::x11_input::click(position);
@@ -50,7 +50,7 @@ fn native_input_opens_saved_drawing_with_its_sheet_and_view() {
         folder.join(DRAWING_FILE),
     )
     .unwrap();
-    native_enter_folder(&mut world, &folder);
+    native_enter_folder(&mut world, &folder, DRAWING_FILE);
     native_click_run(&mut world, DRAWING_FILE);
     native_click_run(&mut world, "Open");
     world.expect_no_text("Look in");
@@ -64,7 +64,11 @@ fn native_input_opens_saved_drawing_with_its_sheet_and_view() {
     world.close();
 }
 
-fn native_enter_folder(world: &mut ApplicationWorld, folder: &std::path::Path) {
+pub(super) fn native_enter_folder(
+    world: &mut ApplicationWorld,
+    folder: &std::path::Path,
+    expected: &str,
+) {
     let label = world.run("Look in").clone();
     let field = [label.maximum[0] + 60., label.center()[1]];
     super::super::x11_input::click(super::super::diagnostics::pointer_pixels(field));
@@ -77,5 +81,5 @@ fn native_enter_folder(world: &mut ApplicationWorld, folder: &std::path::Path) {
     }
     super::super::x11_input::press_keysym(0xff0d);
     settle(world);
-    world.expect_text(DRAWING_FILE);
+    world.expect_text(expected);
 }
