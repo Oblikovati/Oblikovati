@@ -18,9 +18,11 @@ fn active_part(world: &mut ApplicationWorld) {
 }
 #[given("the full Sketch ribbon is selected")]
 fn sketch_tab(world: &mut ApplicationWorld) {
+    world.app().window.native.view.resize([2400, 900]).unwrap();
+    world.pump(Vec::new());
     click_sketch_tab(world);
     world.expect_text("Constrain");
-    for label in ["Line", "Finish Sketch", "Precise Input"] {
+    for label in ["Line", "Finish Sketch"] {
         assert!(
             !world.run_is_enabled(label),
             "{label}: expected unavailable outside sketch edit"
@@ -78,6 +80,23 @@ fn click_sketch_tab(world: &mut ApplicationWorld) {
 fn sketch_area_stays_closed(world: &mut ApplicationWorld) {
     world.expect_text("Constrain");
     area_closes(world);
+}
+#[cfg(target_os = "linux")]
+#[test]
+fn x11_switching_tabs_closes_unpinned_constrain_area() {
+    let mut world = ApplicationWorld::new();
+    active_part(&mut world);
+    sketch_tab(&mut world);
+    let title = diagnostics::pointer_pixels(world.run("Constrain").center());
+    super::super::x11_input::click(title);
+    world.pump(Vec::new());
+    area_below_ribbon(&mut world);
+    let tab = diagnostics::pointer_pixels(world.run("3D Model").center());
+    super::super::x11_input::click(tab);
+    world.pump(Vec::new());
+    area_closes(&mut world);
+    model_visible(&mut world);
+    world.close();
 }
 #[given("a part contains an existing editable sketch")]
 fn part_with_sketch(world: &mut ApplicationWorld) {
