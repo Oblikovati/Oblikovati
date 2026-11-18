@@ -54,15 +54,34 @@ fn projects_fixture_sketches_with_caller_owned_ids_and_preserves_references() {
     use oblikovati_persistence::inventor_spatial::project_inventor_point_and_line_sketch;
     let source = read_inventor_spatial_lines_and_points(FIXTURE).unwrap();
     let units = oblikovati_model::units::UnitsOfMeasure::default();
+    let mut ids = oblikovati_model::identity::RecipeIdAllocator::restore(Some(1000), &[]).unwrap();
     let first =
-        project_inventor_point_and_line_sketch(DocumentSketchId(101), &source[0], &units).unwrap();
+        project_inventor_point_and_line_sketch(DocumentSketchId(101), &source[0], &units, &mut ids)
+            .unwrap();
     let second =
-        project_inventor_point_and_line_sketch(DocumentSketchId(102), &source[1], &units).unwrap();
+        project_inventor_point_and_line_sketch(DocumentSketchId(102), &source[1], &units, &mut ids)
+            .unwrap();
     let scaled = units.clone().with_working_scale(0.1).unwrap();
-    let millimetre_working =
-        project_inventor_point_and_line_sketch(DocumentSketchId(103), &source[0], &scaled).unwrap();
+    let millimetre_working = project_inventor_point_and_line_sketch(
+        DocumentSketchId(103),
+        &source[0],
+        &scaled,
+        &mut ids,
+    )
+    .unwrap();
     assert_eq!(millimetre_working.points()[0].position, [0., 0., 20.]);
+    let mut document = oblikovati_model::document_sketch::DocumentSketches::default();
+    document.add_spatial(first.clone()).unwrap();
+    document.add_spatial(second.clone()).unwrap();
+    assert!(
+        document.same_recipe(
+            &oblikovati_model::document_sketch::DocumentSketches::from_recipe(&document.recipe())
+                .unwrap()
+        )
+    );
     assert_eq!(first.id(), DocumentSketchId(101));
+    assert_eq!(first.points()[0].id.0, 1001);
+    assert!(second.points()[0].id.0 > first.lines()[0].id.0);
     assert_eq!(second.name(), Some("3D Sketch6"));
     assert_eq!(first.points()[0].position, [0., 0., 2.]);
     assert_eq!(
@@ -74,7 +93,8 @@ fn projects_fixture_sketches_with_caller_owned_ids_and_preserves_references() {
         [second.points()[1].id, second.points()[2].id]
     );
     assert!(
-        project_inventor_point_and_line_sketch(DocumentSketchId(0), &source[0], &units).is_err()
+        project_inventor_point_and_line_sketch(DocumentSketchId(0), &source[0], &units, &mut ids)
+            .is_err()
     );
 }
 
@@ -94,7 +114,63 @@ fn refuses_spatial_coordinate_overflow_in_working_units() {
         lines: vec![],
     };
     let units = UnitsOfMeasure::default().with_working_scale(0.1).unwrap();
+    let mut ids = oblikovati_model::identity::RecipeIdAllocator::default();
     let error =
-        project_inventor_point_and_line_sketch(DocumentSketchId(1), &source, &units).unwrap_err();
+        project_inventor_point_and_line_sketch(DocumentSketchId(1), &source, &units, &mut ids)
+            .unwrap_err();
     assert!(error.contains("finite coordinates"), "{error}");
+}
+
+#[test]
+fn projection_rejects_invalid_references_and_exhausted_document_ids() {
+    use oblikovati_model::{
+        document_sketch::DocumentSketchId, identity::RecipeIdAllocator, units::UnitsOfMeasure,
+    };
+    use oblikovati_persistence::inventor_spatial::{
+        InventorSpatialLine, InventorSpatialPoint, InventorSpatialSketch,
+        project_inventor_point_and_line_sketch,
+    };
+    let mut source = InventorSpatialSketch {
+        node: 1,
+        name: None,
+        points: vec![InventorSpatialPoint {
+            node: 2,
+            position_cm: [0.; 3],
+        }],
+        lines: vec![InventorSpatialLine {
+            node: 3,
+            endpoints: [2, 99],
+        }],
+    };
+    let mut ids = RecipeIdAllocator::default();
+    assert!(
+        project_inventor_point_and_line_sketch(
+            DocumentSketchId(1),
+            &source,
+            &UnitsOfMeasure::default(),
+            &mut ids
+        )
+        .is_err()
+    );
+    source.lines.clear();
+    let mut exhausted = RecipeIdAllocator::restore(Some(u64::MAX), &[]).unwrap();
+    assert!(
+        project_inventor_point_and_line_sketch(
+            DocumentSketchId(1),
+            &source,
+            &UnitsOfMeasure::default(),
+            &mut exhausted
+        )
+        .is_err()
+    );
+    source.points.push(source.points[0].clone());
+    assert!(
+        project_inventor_point_and_line_sketch(
+            DocumentSketchId(1),
+            &source,
+            &UnitsOfMeasure::default(),
+            &mut ids
+        )
+        .is_err()
+    );
 }
