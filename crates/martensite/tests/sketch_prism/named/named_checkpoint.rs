@@ -234,13 +234,7 @@ fn session_accepts_checkpointed_named_fillet_and_invalidates_it_on_undo() {
             )
             .unwrap()
     };
-    let completed = oblikovati_martensite::complete_named_candidate(
-        captured,
-        &transition,
-        &session,
-        document(),
-    )
-    .unwrap();
+    let completed = complete_named_candidate(captured, &transition, &session, document()).unwrap();
     let mut slot = PartEvaluationSlot::default();
     session.adopt_part_evaluation(completed, &mut slot).unwrap();
     let actual = slot.current(&session).unwrap().body(FeatureId(2)).unwrap();
@@ -319,21 +313,9 @@ fn commit_checkpointed_fillet(
             .unwrap()
     };
     assert!(
-        oblikovati_martensite::complete_named_checkpoints(
-            foreign_capture,
-            &transition,
-            session,
-            document(),
-        )
-        .is_err()
+        complete_named_checkpoints(foreign_capture, &transition, session, document(),).is_err()
     );
-    let completed = oblikovati_martensite::complete_named_checkpoints(
-        captured,
-        &transition,
-        session,
-        document(),
-    )
-    .unwrap();
+    let completed = complete_named_checkpoints(captured, &transition, session, document()).unwrap();
     session
         .adopt_replayed_checkpoints(completed, part, checkpoints)
         .unwrap();

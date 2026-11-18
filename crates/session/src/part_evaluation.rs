@@ -33,9 +33,8 @@ pub struct PartCandidateResult<'a, Body, Failure> {
 }
 /// An independently captured candidate that is not yet a published result.
 pub struct CapturedPartCandidate<Body, Failure> {
-    document: u64,
-    guard: oblikovati_model::history::PartCandidateGuard,
-    evaluation: PartFeatureEvaluation<Body, Failure>,
+    transfer:
+        oblikovati_model::feature::part::CapturedPartTransfer<PartFeatureEvaluation<Body, Failure>>,
 }
 impl<Body, Failure> CapturedPartCandidate<Body, Failure> {
     /// Complete a captured result only for its accepted edit and unchanged inputs.
@@ -51,31 +50,26 @@ impl<Body, Failure> CapturedPartCandidate<Body, Failure> {
             &oblikovati_model::history::DocumentEditHistory,
         ) -> Result<Mapped, String>,
     ) -> Result<CompletedPartEvaluation<Mapped, Failure>, String> {
-        if self.document != session.document
-            || !self.matches_transition(transition, &session.history)
-        {
-            return Err(format!(
-                "part candidate document {}, session {}: expected its accepted edit and current inputs",
-                self.document, session.document
-            ));
-        }
-        let evaluation = self
-            .evaluation
-            .try_map_owned_bodies(|id, body| restore(id, body, &session.history))?;
-        if !self.guard.matches(transition, &session.history) {
-            return Err(
-                "part candidate completion: expected unchanged inputs after restore".into(),
-            );
-        }
-        Ok(CompletedPartEvaluation {
-            document: session.document,
-            scope: session.history.evaluation_scope(),
-            evaluation,
-        })
+        let completed = self.transfer.complete(
+            session.document,
+            transition,
+            &session.history,
+            |evaluation, history| {
+                evaluation.try_map_owned_bodies(|id, body| restore(id, body, history))
+            },
+        )?;
+        session.complete_part_transfer(completed)
+    }
+    /// Move the sealed transfer to a kernel adapter; example: `candidate.into_transfer()`.
+    pub fn into_transfer(
+        self,
+    ) -> oblikovati_model::feature::part::CapturedPartTransfer<PartFeatureEvaluation<Body, Failure>>
+    {
+        self.transfer
     }
     /// Count captured live bodies; example: `captured.body_count()`.
     pub fn body_count(&self) -> usize {
-        self.evaluation.ordered_bodies().count()
+        self.transfer.body_count()
     }
     /// Match the committed generation and candidate inputs, without authorizing name transfer.
     /// Example: `captured.matches_transition(&transition, &history)` after the edit.
@@ -84,7 +78,24 @@ impl<Body, Failure> CapturedPartCandidate<Body, Failure> {
         transition: &oblikovati_model::history::EvaluationTransition,
         history: &oblikovati_model::history::DocumentEditHistory,
     ) -> bool {
-        self.guard.matches(transition, history)
+        self.transfer.matches(transition, history)
+    }
+}
+impl<O: TransactionObserver> DocumentSession<O> {
+    /// Seal a completed model transfer to this session before publication.
+    /// Example: `session.complete_part_transfer(completed)?`.
+    pub fn complete_part_transfer<Body, Failure>(
+        &self,
+        completed: oblikovati_model::feature::part::CompletedPartTransfer<
+            PartFeatureEvaluation<Body, Failure>,
+        >,
+    ) -> Result<CompletedPartEvaluation<Body, Failure>, String> {
+        let evaluation = completed.into_current(self.document, &self.history)?;
+        Ok(CompletedPartEvaluation {
+            document: self.document,
+            scope: self.history.evaluation_scope(),
+            evaluation,
+        })
     }
 }
 impl<Body, Failure> PartCandidateResult<'_, Body, Failure> {
@@ -131,13 +142,13 @@ impl<Body, Failure: Clone> PartCandidateResult<'_, Body, Failure> {
             return Err("part candidate capture: expected an unchanged owner after capture".into());
         }
         Ok(CapturedPartCandidate {
-            document: self.document,
-            guard: oblikovati_model::history::PartCandidateGuard::capture(
+            transfer: oblikovati_model::feature::part::CapturedPartTransfer::capture_result(
+                self.document,
                 &self.source,
                 &self.candidate,
+                evaluation,
                 history,
             )?,
-            evaluation,
         })
     }
 }

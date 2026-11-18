@@ -92,6 +92,11 @@ pub struct DocumentSession<O> {
 }
 
 impl<O: TransactionObserver> DocumentSession<O> {
+    /// Identify the owning workspace document; example: `session.document_id()`.
+    pub fn document_id(&self) -> u64 {
+        self.document
+    }
+
     /// Attach a document's history and observer; example: `DocumentSession::new(id, history, observer)`.
     pub fn new(document: u64, history: DocumentEditHistory, observer: O) -> Self {
         Self::new_with_sketch_options(document, history, observer, Default::default())

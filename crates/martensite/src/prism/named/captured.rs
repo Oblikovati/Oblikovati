@@ -1,14 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Capture and restore exact names only through an accepted session transition.
 use super::*;
-use oblikovati_model::history::{EvaluationScope, EvaluationTransition};
-use oblikovati_session::{
-    DocumentSession, TransactionObserver,
-    part_evaluation::{
-        CapturedPartCandidate, CapturedPartCheckpointCandidate, CompletedPartCheckpoints,
-        CompletedPartEvaluation,
-    },
+use oblikovati_model::feature::part::{
+    CapturedPartTransfer, CompletedPartTransfer, PartFeatureEvaluation, PartReplayCheckpoints,
 };
+use oblikovati_model::history::{EvaluationScope, EvaluationTransition};
 
 /// Opaque body capture; restoring it requires a matching committed candidate.
 pub struct CapturedNamedSolid {
@@ -157,27 +153,33 @@ impl CapturedNamedSolid {
         }
     }
 }
-/// Complete exact named bodies after the owning session accepts their candidate.
-/// Example: `complete_named_candidate(captured, &transition, &session, document)?`.
-pub fn complete_named_candidate<O: TransactionObserver, Failure>(
-    candidate: CapturedPartCandidate<CapturedNamedSolid, Failure>,
+/// Complete exact named bodies after their owning history accepts the candidate.
+/// Example: `complete_named_candidate(captured, document_id, &transition, &history, document)?`.
+pub fn complete_named_candidate<Failure>(
+    candidate: CapturedPartTransfer<PartFeatureEvaluation<CapturedNamedSolid, Failure>>,
+    document_id: u64,
     transition: &EvaluationTransition,
-    session: &DocumentSession<O>,
+    history: &DocumentEditHistory,
     document: DocumentGuid,
-) -> Result<CompletedPartEvaluation<NamedSolid, Failure>, String> {
-    candidate.try_complete(transition, session, |_, body, history| {
-        body.restore_for_transition(transition, history, document)
+) -> Result<CompletedPartTransfer<PartFeatureEvaluation<NamedSolid, Failure>>, String> {
+    candidate.complete(document_id, transition, history, |result, history| {
+        result.try_map_owned_bodies(|_, body| {
+            body.restore_for_transition(transition, history, document)
+        })
     })
 }
-/// Restore exact named checkpoints after their document accepts the candidate.
-/// Example: `complete_named_checkpoints(captured, &transition, &session, document)?`.
-pub fn complete_named_checkpoints<O: TransactionObserver, Failure>(
-    candidate: CapturedPartCheckpointCandidate<CapturedNamedSolid, Failure>,
+/// Restore named boundaries after their owning history accepts the candidate.
+/// Example: `complete_named_checkpoints(captured, document_id, &transition, &history, document)?`.
+pub fn complete_named_checkpoints<Failure>(
+    candidate: CapturedPartTransfer<PartReplayCheckpoints<CapturedNamedSolid, Failure>>,
+    document_id: u64,
     transition: &EvaluationTransition,
-    session: &DocumentSession<O>,
+    history: &DocumentEditHistory,
     document: DocumentGuid,
-) -> Result<CompletedPartCheckpoints<NamedSolid, Failure>, String> {
-    candidate.try_complete(transition, session, |_, body, history| {
-        body.restore_for_transition(transition, history, document)
+) -> Result<CompletedPartTransfer<PartReplayCheckpoints<NamedSolid, Failure>>, String> {
+    candidate.complete(document_id, transition, history, |result, history| {
+        result.try_map_owned_bodies(|_, body| {
+            body.restore_for_transition(transition, history, document)
+        })
     })
 }

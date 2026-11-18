@@ -74,13 +74,7 @@ fn accepted_second_prism_restores_both_captured_named_bodies() {
             )
             .unwrap()
     };
-    let completed = oblikovati_martensite::complete_named_candidate(
-        captured,
-        &transition,
-        &session,
-        document(),
-    )
-    .unwrap();
+    let completed = complete_named_candidate(captured, &transition, &session, document()).unwrap();
     session.adopt_part_evaluation(completed, &mut slot).unwrap();
     let result = slot.current(&session).unwrap();
     assert_eq!(result.ordered_bodies().count(), 2);
@@ -166,32 +160,10 @@ fn transaction_captures_a_named_fillet_before_retiring_the_prefix() {
     };
     assert_eq!(captured.body_count(), 1);
     assert!(captured.matches_transition(&transition, session.history()));
-    assert!(
-        oblikovati_martensite::complete_named_candidate(
-            foreign_owner,
-            &transition,
-            &session,
-            document()
-        )
-        .is_err()
-    );
+    assert!(complete_named_candidate(foreign_owner, &transition, &session, document()).is_err());
     let foreign_document = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee".parse().unwrap();
-    assert!(
-        oblikovati_martensite::complete_named_candidate(
-            foreign,
-            &transition,
-            &session,
-            foreign_document
-        )
-        .is_err()
-    );
-    let completed = oblikovati_martensite::complete_named_candidate(
-        captured,
-        &transition,
-        &session,
-        document(),
-    )
-    .unwrap();
+    assert!(complete_named_candidate(foreign, &transition, &session, foreign_document).is_err());
+    let completed = complete_named_candidate(captured, &transition, &session, document()).unwrap();
     session.adopt_part_evaluation(completed, &mut slot).unwrap();
     let actual = slot.current(&session).unwrap().body(FeatureId(2)).unwrap();
     let mut backend =
@@ -227,10 +199,7 @@ fn transaction_captures_a_named_fillet_before_retiring_the_prefix() {
     }
     session.undo().unwrap();
     assert!(slot.current(&session).is_err());
-    assert!(
-        oblikovati_martensite::complete_named_candidate(stale, &transition, &session, document())
-            .is_err()
-    );
+    assert!(complete_named_candidate(stale, &transition, &session, document()).is_err());
     let closing_scope = session.history().evaluation_scope();
     session.close();
     assert!(closing_scope.is_superseded());

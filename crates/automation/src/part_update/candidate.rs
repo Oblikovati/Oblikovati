@@ -76,11 +76,13 @@ impl PartReplayService {
             .session(document)
             .map_err(|error| error.to_string())?;
         let completed = oblikovati_martensite::complete_named_checkpoints(
-            candidate.candidate,
+            candidate.candidate.into_transfer(),
+            document,
             transition,
-            session,
+            session.history(),
             guid,
         )?;
+        let completed = session.complete_checkpoint_transfer(completed)?;
         let owner = self
             .slots
             .get_mut(&document)
@@ -185,11 +187,13 @@ impl PartReplayService {
             .session(document)
             .map_err(|error| error.to_string())?;
         let completed = oblikovati_martensite::complete_named_candidate(
-            candidate.candidate,
+            candidate.candidate.into_transfer(),
+            document,
             transition,
-            session,
+            session.history(),
             guid,
         )?;
+        let completed = session.complete_part_transfer(completed)?;
         let owner = self
             .slots
             .get_mut(&document)
