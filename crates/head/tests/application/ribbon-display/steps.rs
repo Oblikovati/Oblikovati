@@ -9,6 +9,8 @@ mod measure;
 mod mode_policy;
 mod sketch_exit;
 mod tabs_only;
+#[cfg(target_os = "linux")]
+mod view_compaction;
 #[path = "wheel_tools.rs"]
 mod wheel_tools;
 #[cfg(target_os = "linux")]

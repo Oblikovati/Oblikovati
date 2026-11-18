@@ -152,4 +152,5 @@ mod clear_appearance;
 #[path = "../tests/context/parallel.rs"]
 mod context_parallel_tests;
 
+mod popup_press;
 mod window_frame;
