@@ -22,12 +22,16 @@ mod sketch_layout;
 const WINDOW: &str = "##ribbon-additional-PartModify";
 const SIMPLIFICATION: &str = "##ribbon-additional-PartSimplification";
 
+#[given("a part with a solid body is active in the MCAD Software")]
+#[given("a part containing a solid is active in the MCAD Software")]
 #[given("a part containing visible solid bodies is active in the MCAD Software")]
 #[given("a part with a visible solid is active in the MCAD Software")]
 fn solid_part(world: &mut ApplicationWorld) {
     open_visible_extruded_part(world);
     expect_solid_visible(world);
 }
+#[given("the full 3D Model ribbon is visible with the Modify panel")]
+#[given("the full 3D Model ribbon is displayed")]
 #[given("the 3D Model ribbon is expanded and the Modify panel is visible")]
 fn full_modify(world: &mut ApplicationWorld) {
     world.expect_text("Start 2D Sketch");
@@ -109,6 +113,8 @@ fn opened_pinned(world: &mut ApplicationWorld) {
     opened_unpinned(world);
     toggle_pin(world);
 }
+#[when("the user selects the pin control")]
+#[when("the user selects the pin control again")]
 #[when("I select the pin control")]
 #[when("I select the pin control again")]
 #[when("the user unpins the Modify additional command area")]
