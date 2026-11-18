@@ -197,11 +197,11 @@
       "features/application/ribbon-keyboard-navigation/FIXTURES.md": "53d28b3a02b8e56ba5a458529c93e469f15f82c537cce4f179190c78ab595e2c",
       "features/application/ribbon-keyboard-navigation/BLOCKERS.md": "247a89fc61b82bd5a3604f1df222bbf57352cb536ec22767ea61cf15cbcd15b4"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-18-ribbon-keyboard-recheck/cucumber.json",
-    "cucumber_sha256": "c4c580fa7e01999739502752e72d473f0563e584d45485200051420ff2813040",
-    "application_commit": "ed297fae053bfc72398aceee0f12f03fff24018a",
+    "cucumber": "architecture/rust-port/receipts/2026-11-18-ribbon-keyboard-face/cucumber.json",
+    "cucumber_sha256": "6b3ff34187f0694dc82cb9c7d11c056338a17ff919cb357b501542d650c44f3e",
+    "application_commit": "7995b3517daa0fd4ec049ae6bf58859b40734aca",
     "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=ribbon-keyboard-navigation XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
     "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted window input",
-    "notes": "The display-mode fixture now selects Cycle Through All; nine scenarios still fail at undefined steps or behavior checks, including disabled Hole, side docking and selection (#3856)."
+    "notes": "The face-selection scenario uses an interior analytic hit; a separate native X11 click also passed. Eight scenarios still fail at undefined steps or behavior checks, including disabled Hole and side docking (#3856)."
   }
 }
