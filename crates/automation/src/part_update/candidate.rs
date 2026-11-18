@@ -10,9 +10,7 @@ pub(super) type NamedSketchRecompute =
 
 /// A current part prefix bound to the policy that produced it.
 pub struct CertifiedPartPrefix {
-    pub(crate) prefix:
-        oblikovati_session::part_evaluation::PartCandidatePrefix<NamedSolid, EvaluationFailure>,
-    pub(crate) policy: Option<PrismResolutionPolicy>,
+    pub(crate) replay: oblikovati_session::OwnedPartReplay,
 }
 /// A candidate sealed to the policy that produced its exact bodies.
 pub struct CertifiedPartCandidate {

@@ -123,19 +123,11 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
         files: &FileWorkspace<O, W, F>,
         document: u64,
     ) -> Result<CertifiedPartPrefix, String> {
-        let session = files
+        let replay = files
             .workspace()
-            .session(document)
+            .owned_part_replay(document, self.resolution)
             .map_err(|error| error.to_string())?;
-        let prefix = self
-            .slot(files, document)
-            .ok_or_else(|| format!("document {document}: expected a retained part replay"))?
-            .candidate_prefix(session)
-            .map_err(|error| error.to_string())?;
-        Ok(CertifiedPartPrefix {
-            prefix,
-            policy: self.resolution,
-        })
+        Ok(CertifiedPartPrefix { replay })
     }
     fn blend_body(
         &mut self,

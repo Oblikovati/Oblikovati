@@ -93,28 +93,34 @@ impl FilletAccess for CertifiedFilletAccess {
         feature: FeatureId,
         prefix: &crate::CertifiedPartPrefix,
     ) -> Result<(usize, Option<crate::CertifiedPartCandidate>), String> {
-        if prefix.policy != Some(self.policy) {
+        if prefix.replay.policy() != Some(self.policy) {
             return Err("part candidate prefix: expected the blend validation policy".into());
+        }
+        if !prefix.replay.owns_identity(document) {
+            return Err(format!(
+                "document {document:?}: expected the part replay owner identity"
+            ));
         }
         let expected = match kind {
             oblikovati_model::feature::part::PartBlendKind::Fillet => "fillet",
             oblikovati_model::feature::part::PartBlendKind::Chamfer => "chamfer",
         };
         require_feature_kind(candidate, feature, expected)?;
-        let mut evaluator =
-            CertifiedNamedSolidEvaluator::with_policy(history, document, self.policy);
-        let Some(result) =
-            prefix
-                .prefix
-                .prepare_tail(history, candidate, feature, &mut evaluator)?
+        let Some((count, candidate)) = prefix
+            .replay
+            .prepare(history, candidate, feature)
+            .map_err(|error| error.to_string())?
         else {
-            return self
-                .validate_with_prefix(kind, history, document, candidate, feature, prefix)
-                .map(|count| (count, None));
+            let count = match kind {
+                oblikovati_model::feature::part::PartBlendKind::Fillet => {
+                    self.validate(document, candidate, feature)
+                }
+                oblikovati_model::feature::part::PartBlendKind::Chamfer => {
+                    self.validate_chamfer(document, candidate, feature)
+                }
+            }?;
+            return Ok((count, None));
         };
-        let count = result.body_count();
-        let candidate =
-            result.capture(history, |_, body| body.capture_detached(history, document))?;
         Ok((
             count,
             Some(crate::CertifiedPartCandidate {
@@ -166,19 +172,23 @@ impl FilletAccess for CertifiedFilletAccess {
         feature: FeatureId,
         prefix: &crate::CertifiedPartPrefix,
     ) -> Result<usize, String> {
-        if prefix.policy != Some(self.policy) {
+        if prefix.replay.policy() != Some(self.policy) {
             return Err("part candidate prefix: expected the blend validation policy".into());
+        }
+        if !prefix.replay.owns_identity(document) {
+            return Err(format!(
+                "document {document:?}: expected the part replay owner identity"
+            ));
         }
         let expected = match kind {
             oblikovati_model::feature::part::PartBlendKind::Fillet => "fillet",
             oblikovati_model::feature::part::PartBlendKind::Chamfer => "chamfer",
         };
         require_feature_kind(candidate, feature, expected)?;
-        let mut evaluator =
-            CertifiedNamedSolidEvaluator::with_policy(history, document, self.policy);
         match prefix
-            .prefix
-            .validate_tail(history, candidate, feature, &mut evaluator)?
+            .replay
+            .validate(history, candidate, feature)
+            .map_err(|error| error.to_string())?
         {
             Some(count) => Ok(count),
             None => match kind {

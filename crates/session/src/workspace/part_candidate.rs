@@ -3,6 +3,27 @@
 use super::*;
 
 impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
+    /// Bind the current named part to its registered document and policy.
+    /// Example: `workspace.owned_part_replay(id, Some(policy))?` before an append.
+    pub fn owned_part_replay(
+        &self,
+        document: u64,
+        policy: Option<oblikovati_martensite::PrismResolutionPolicy>,
+    ) -> Result<crate::OwnedPartReplay, oblikovati_api::Error> {
+        let session = self
+            .session(document)
+            .map_err(|error| oblikovati_api::Error(error.to_string()))?;
+        let prefix = session.owned_part_prefix(policy).ok_or_else(|| {
+            oblikovati_api::Error(format!(
+                "document {document} policy {policy:?}: expected its current owned part"
+            ))
+        })?;
+        let guid = self
+            .identity(document)
+            .map_err(|error| oblikovati_api::Error(error.to_string()))?
+            .internal_name;
+        Ok(crate::OwnedPartReplay::new(guid, policy, prefix))
+    }
     /// Issue a replay capability for a current checkpoint of this document and policy.
     /// Example: `workspace.owned_checkpoint_replay(id, policy, prefix)?` before an edit.
     pub fn owned_checkpoint_replay(
