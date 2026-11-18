@@ -13,6 +13,9 @@ mod command_context;
 mod custom_commands;
 #[path = "face_selection.rs"]
 mod face_selection;
+#[cfg(target_os = "linux")]
+#[path = "keyboard_face_retention.rs"]
+mod keyboard_face_retention;
 #[path = "keyboard_full.rs"]
 mod keyboard_full;
 #[path = "sketch_block_placement.rs"]

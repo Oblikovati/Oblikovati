@@ -219,7 +219,13 @@ pub(super) fn dispatch_gui_action(
                 )?),
                 None => None,
             };
-            return owner.click_model_with_modifiers(*document, line, depth_window, *toggle);
+            let changed =
+                owner.click_model_with_modifiers(*document, line, depth_window, *toggle)?;
+            if window.has_pending_ribbon_model_pick() {
+                let face = owner.gui_command_state()?.model_pick_cue.is_some();
+                window.resolve_ribbon_model_pick(face);
+            }
+            return Ok(changed);
         }
         GuiShellAction::StartSketchAt {
             document,

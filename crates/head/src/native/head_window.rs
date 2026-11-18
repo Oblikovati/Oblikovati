@@ -154,6 +154,16 @@ impl HeadWindow for NativeHeadWindow {
             gui.request_extrusion();
         }
     }
+    fn has_pending_ribbon_model_pick(&self) -> bool {
+        self.gui
+            .as_ref()
+            .is_some_and(|gui| gui.has_pending_ribbon_model_pick())
+    }
+    fn resolve_ribbon_model_pick(&mut self, face: bool) {
+        if let Some(gui) = self.gui.as_mut() {
+            gui.resolve_ribbon_model_pick(face);
+        }
+    }
     fn reject_dimension_edit(&mut self, value: &oblikovati_gui::GuiDimensionValue, cause: &str) {
         if let Some(gui) = self.gui.as_mut() {
             gui.reject_dimension_edit(value, cause);

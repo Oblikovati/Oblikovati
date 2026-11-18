@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
+#[path = "engine/model_click.rs"]
+mod model_click;
 use crate::{
     GuiAtlas, GuiCommandState, GuiFrame, GuiFrameActivity, GuiInputCapture, GuiInputEvent,
     GuiShellAction,
@@ -489,7 +491,6 @@ fn apply_quick_access(
 #[cfg(test)]
 #[path = "../tests/parameter_journey/platform.rs"]
 mod parameter_shortcuts;
-
 #[path = "engine_resources.rs"]
 mod resources;
 

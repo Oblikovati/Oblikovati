@@ -22,6 +22,8 @@ pub(crate) struct RibbonPanelLayout {
     popup_press: crate::popup_press::PopupPress<(RibbonTab, RibbonPanel)>,
     pub pending_layout: bool,
     pending_additional: Option<(RibbonTab, RibbonPanel)>,
+    pending_model_pick: bool,
+    retained_model_face: bool,
     additional: additional::PanelExpansions,
 }
 #[path = "ribbon_panel_keyboard.rs"]

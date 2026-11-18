@@ -141,7 +141,8 @@ pub(super) fn draw(
             && !display.hidden_panels.contains(&(tab, *panel))
             && context.additional_allowed
     });
-    let preserve_tab_press = std::mem::take(&mut layout.additional.preserve_tab_press);
+    let preserve_tab_press =
+        std::mem::take(&mut layout.additional.preserve_tab_press) || layout.pending_model_pick;
     let keys: Vec<_> = layout.additional.open.keys().copied().collect();
     for key in keys {
         let Some(expansion) = layout.additional.open.get_mut(&key) else {
