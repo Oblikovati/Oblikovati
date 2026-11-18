@@ -172,5 +172,21 @@
     "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=viewport-orientation XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
     "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted window input",
     "notes": "The rotated-front image is from the initial failing diagnostic; the full passing run uses the corrected draw-data collector. A separate native X11 pointer test rotates and restores Front, checking the label, camera and active part."
+  },
+  "features/application/ribbon-appearance/ribbon-appearance.feature": {
+    "feature_sha256": "7ebd05f3a8b347bd7eee5a132e7782ba9731a16f1bb0e8ac26a756fe5da312fa",
+    "blocker": "Tools panel contents and actions need clarification before the missing panels can be implemented (#3957).",
+    "supporting_files": {
+      "features/application/ribbon-appearance/FUNCTIONAL.md": "a87820c34c5544dfc5de6b71580971b615f4dba3be43c752780b818a8404ce5c",
+      "features/application/ribbon-appearance/VISUAL.md": "81ab2112301ee140c1784b57fc645aaa7100c581ed8978ea0756079ff93aa7a2",
+      "features/application/ribbon-appearance/FIXTURES.md": "d8875f4951d338e80447b55ff38bf06fc38eb8ecbbfc9a077184eaba434ee2df",
+      "features/application/ribbon-appearance/BLOCKERS.md": "7bae04aa6d1ecd373d681556262b80e074c436fff76802696e79018af35f68b0"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-18-ribbon-appearance/cucumber.json",
+    "cucumber_sha256": "2744b63e8552a9fe52e87767659d5358357e63031a395e2485cfe98cc132de2c",
+    "application_commit": "fde1b74b8b72969cf98eb6934878873f8126436f",
+    "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=ribbon-appearance XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted window input",
+    "notes": "The blocker request was added to BLOCKERS.md after the run; the feature and other support files stayed unchanged during the run."
   }
 }
