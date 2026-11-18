@@ -223,6 +223,8 @@ mod ribbon_panel_visibility;
 mod sketch;
 #[path = "../solid-model/extrusion/steps.rs"]
 mod solid_extrusion;
+#[path = "viewport-entity-selection/steps.rs"]
+mod viewport_entity_selection;
 #[path = "viewport-navigation-wheel/steps.rs"]
 mod viewport_navigation_wheel;
 #[path = "viewport-orbit/steps.rs"]
