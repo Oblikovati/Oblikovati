@@ -307,3 +307,13 @@ pub(crate) fn dock_window_identity(title: &std::ffi::CStr) -> u32 {
 pub(crate) fn close_dock_tab(_ui: &Ui, title: &std::ffi::CStr) {
     unsafe { imgui::sys::igSetTabItemClosed(title.as_ptr()) };
 }
+
+/// Find the active draw-list clip bottom; example: align a label within the window clip.
+pub(crate) fn window_draw_clip_bottom(_ui: &Ui) -> f32 {
+    let mut maximum = imgui::sys::ImVec2 { x: 0., y: 0. };
+    // The current window and its draw list remain live for the enclosing ImGui frame.
+    unsafe {
+        imgui::sys::ImDrawList_GetClipRectMax(&mut maximum, imgui::sys::igGetWindowDrawList())
+    };
+    maximum.y
+}
