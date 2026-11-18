@@ -13,6 +13,8 @@ mod command_context;
 mod custom_commands;
 #[path = "face_selection.rs"]
 mod face_selection;
+#[path = "footer_comparison.rs"]
+mod footer_comparison;
 #[cfg(target_os = "linux")]
 #[path = "keyboard_face_retention.rs"]
 mod keyboard_face_retention;
