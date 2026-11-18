@@ -20,17 +20,59 @@ pub struct PartCandidatePrefix<'a, Body, Failure> {
 }
 /// A private candidate replay retained until its transaction finishes.
 pub struct PartCandidateResult<'a, Body, Failure> {
+    document: u64,
     source: oblikovati_model::history::EvaluationScope,
     candidate: oblikovati_model::history::DocumentSnapshot,
     replay: oblikovati_model::feature::part::BorrowedPartReplay<'a, Body, Failure>,
 }
 /// An independently captured candidate that is not yet a published result.
 pub struct CapturedPartCandidate<Body, Failure> {
+    document: u64,
     source: oblikovati_model::history::EvaluationScope,
     candidate: oblikovati_model::history::DocumentSnapshot,
     evaluation: PartFeatureEvaluation<Body, Failure>,
 }
 impl<Body, Failure> CapturedPartCandidate<Body, Failure> {
+    /// Complete a captured result only for its accepted edit and unchanged inputs.
+    /// The mapper must validate its own kernel bodies and names.
+    /// Example: `candidate.try_complete(&transition, &session, restore)?`.
+    pub fn try_complete<O: TransactionObserver, Mapped>(
+        self,
+        transition: &oblikovati_model::history::EvaluationTransition,
+        session: &DocumentSession<O>,
+        mut restore: impl FnMut(
+            oblikovati_model::feature::FeatureId,
+            Body,
+            &oblikovati_model::history::DocumentEditHistory,
+        ) -> Result<Mapped, String>,
+    ) -> Result<CompletedPartEvaluation<Mapped, Failure>, String> {
+        if self.document != session.document
+            || !self.matches_transition(transition, &session.history)
+        {
+            return Err(format!(
+                "part candidate document {}, session {}: expected its accepted edit and current inputs",
+                self.document, session.document
+            ));
+        }
+        let evaluation = self
+            .evaluation
+            .try_map_owned_bodies(|id, body| restore(id, body, &session.history))?;
+        if !candidate_matches_transition(
+            &self.source,
+            &self.candidate,
+            transition,
+            &session.history,
+        ) {
+            return Err(
+                "part candidate completion: expected unchanged inputs after restore".into(),
+            );
+        }
+        Ok(CompletedPartEvaluation {
+            document: session.document,
+            scope: session.history.evaluation_scope(),
+            evaluation,
+        })
+    }
     /// Count captured live bodies; example: `captured.body_count()`.
     pub fn body_count(&self) -> usize {
         self.evaluation.ordered_bodies().count()
@@ -85,6 +127,7 @@ impl<Body, Failure: Clone> PartCandidateResult<'_, Body, Failure> {
             return Err("part candidate capture: expected an unchanged owner after capture".into());
         }
         Ok(CapturedPartCandidate {
+            document: self.document,
             source: self.source.clone(),
             candidate: self.candidate.clone(),
             evaluation,
@@ -135,6 +178,7 @@ impl<Body, Failure: Clone + std::fmt::Debug> PartCandidatePrefix<'_, Body, Failu
             return Err("part candidate prefix: expected an unchanged owner after replay".into());
         }
         Ok(Some(PartCandidateResult {
+            document: self.published.document,
             source: self.published.scope().clone(),
             candidate: candidate.clone(),
             replay: result,
