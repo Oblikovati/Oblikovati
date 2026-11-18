@@ -124,7 +124,15 @@ fn transaction_captures_a_named_fillet_before_retiring_the_prefix() {
             .unwrap()
     };
     session.adopt_part_evaluation(completed, &mut slot).unwrap();
-    let ((captured, foreign, stale), transition) = {
+    let foreign_history = owner(cube_document());
+    let mut foreign_backend =
+        CertifiedNamedSolidEvaluator::new(&foreign_history, document(), certified_resolution());
+    let foreign_evaluation = foreign_history
+        .snapshot()
+        .evaluate_part_features(&mut foreign_backend)
+        .unwrap();
+    let foreign_body = foreign_evaluation.body(FeatureId(1)).unwrap();
+    let ((captured, foreign, stale, foreign_owner), transition) = {
         let prefix = slot.candidate_prefix(&session).unwrap();
         session
             .run_projected_with_transition(
@@ -148,13 +156,25 @@ fn transaction_captures_a_named_fillet_before_retiring_the_prefix() {
                             body.capture_detached(history, document())
                         })
                     };
-                    Ok((capture()?, capture()?, capture()?))
+                    let foreign_owner = candidate.capture(history, |_, _| {
+                        foreign_body.capture_detached(&foreign_history, document())
+                    })?;
+                    Ok((capture()?, capture()?, capture()?, foreign_owner))
                 },
             )
             .unwrap()
     };
     assert_eq!(captured.body_count(), 1);
     assert!(captured.matches_transition(&transition, session.history()));
+    assert!(
+        oblikovati_martensite::complete_named_candidate(
+            foreign_owner,
+            &transition,
+            &session,
+            document()
+        )
+        .is_err()
+    );
     let foreign_document = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee".parse().unwrap();
     assert!(
         oblikovati_martensite::complete_named_candidate(

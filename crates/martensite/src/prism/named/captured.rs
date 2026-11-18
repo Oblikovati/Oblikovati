@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Capture and restore exact names only through an accepted session transition.
 use super::*;
-use oblikovati_model::history::EvaluationTransition;
+use oblikovati_model::history::{EvaluationScope, EvaluationTransition};
 use oblikovati_session::{
     DocumentSession, TransactionObserver,
     part_evaluation::{
@@ -13,6 +13,7 @@ use oblikovati_session::{
 /// Opaque body capture; restoring it requires a matching committed candidate.
 pub struct CapturedNamedSolid {
     document: DocumentGuid,
+    source: EvaluationScope,
     body: CapturedBody,
 }
 enum CapturedBody {
@@ -41,7 +42,11 @@ impl NamedSolid {
             Self::Fillet(body) => CapturedBody::Fillet(body.capture_detached(history, document)?),
             Self::Chamfer(body) => CapturedBody::Chamfer(body.capture_detached(history, document)?),
         };
-        Ok(CapturedNamedSolid { document, body })
+        Ok(CapturedNamedSolid {
+            document,
+            source: history.evaluation_scope(),
+            body,
+        })
     }
 }
 impl CapturedPrism {
@@ -117,6 +122,17 @@ fn restore_subentities(
     Ok(bindings)
 }
 impl CapturedNamedSolid {
+    fn restore_for_transition(
+        self,
+        transition: &EvaluationTransition,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+    ) -> Result<NamedSolid, String> {
+        if !transition.matches(&self.source, history) {
+            return Err("captured named solid: expected its accepted source transition".into());
+        }
+        self.restore(history, document)
+    }
     fn restore(
         self,
         history: &DocumentEditHistory,
@@ -150,7 +166,7 @@ pub fn complete_named_candidate<O: TransactionObserver, Failure>(
     document: DocumentGuid,
 ) -> Result<CompletedPartEvaluation<NamedSolid, Failure>, String> {
     candidate.try_complete(transition, session, |_, body, history| {
-        body.restore(history, document)
+        body.restore_for_transition(transition, history, document)
     })
 }
 /// Restore exact named checkpoints after their document accepts the candidate.
@@ -162,6 +178,6 @@ pub fn complete_named_checkpoints<O: TransactionObserver, Failure>(
     document: DocumentGuid,
 ) -> Result<CompletedPartCheckpoints<NamedSolid, Failure>, String> {
     candidate.try_complete(transition, session, |_, body, history| {
-        body.restore(history, document)
+        body.restore_for_transition(transition, history, document)
     })
 }
