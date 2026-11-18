@@ -13,6 +13,9 @@ pub(super) struct ToolbarImage {
 pub(super) fn toolbar_images() -> Vec<ToolbarImage> {
     let raw = unsafe { sys::igGetDrawData().as_ref() }.expect("expected completed GUI draws");
     let draws = unsafe { imgui::DrawData::from_raw(raw) };
+    let scale = unsafe { sys::igGetIO().as_ref() }
+        .expect("expected a live GUI context")
+        .DisplayFramebufferScale;
     let mut images = Vec::new();
     for list in draws.draw_lists() {
         for command in list.commands() {
@@ -30,8 +33,8 @@ pub(super) fn toolbar_images() -> Vec<ToolbarImage> {
             let side = [b[0] - a[0], b[1] - a[1]];
             let center = [(a[0] + b[0]) / 2., (a[1] + b[1]) / 2.];
             if on_toolbar(center)
-                && (14. ..=22.).contains(&side[0])
-                && (14. ..=22.).contains(&side[1])
+                && (14. ..=22.).contains(&(side[0] * scale.x))
+                && (14. ..=22.).contains(&(side[1] * scale.y))
             {
                 images.push(ToolbarImage {
                     texture: cmd_params.texture_id.id(),
