@@ -19,6 +19,7 @@ pub enum WorkPlaneDefinitionRecipe {
     Chamfer(crate::feature::chamfer::ChamferRecipe),
     Fillet(crate::feature::fillet::FilletRecipe),
     Hole(crate::feature::hole::HoleRecipe),
+    MoveBody(crate::feature::move_body::MoveBodyRecipe),
     SketchPrism(crate::feature::sketch_prism::SketchPrismRecipe),
     AtAngleAboutAxis(crate::feature::work_geometry::WorkPlaneLineAngle),
     ThroughTwoAxes([crate::feature::work_axis::WorkAxisReference; 2]),
@@ -57,6 +58,7 @@ impl WorkPlaneDefinition {
             Self::Chamfer(definition) => Source::Chamfer(definition.recipe()),
             Self::Fillet(definition) => Source::Fillet(definition.recipe()),
             Self::Hole(definition) => Source::Hole(definition.recipe()),
+            Self::MoveBody(definition) => Source::MoveBody(definition.recipe()),
             Self::SketchPrism(definition) => Source::SketchPrism(definition.recipe()),
             Self::AtAngleAboutAxis(source) => Source::AtAngleAboutAxis(source.clone()),
             Self::ThroughTwoAxes(axes) => Source::ThroughTwoAxes(*axes),
@@ -88,6 +90,9 @@ fn restore_definition(
 ) -> Result<WorkPlaneDefinition, WorkPlaneError> {
     use WorkPlaneDefinitionRecipe::*;
     match definition {
+        MoveBody(recipe) => crate::feature::move_body::MoveBodyDefinition::from_recipe(recipe)
+            .map(|definition| WorkPlaneDefinition::MoveBody(Box::new(definition)))
+            .map_err(WorkPlaneError::BodyReference),
         Hole(recipe) => crate::feature::hole::HoleDefinition::from_recipe(recipe)
             .map(|definition| WorkPlaneDefinition::Hole(Box::new(definition)))
             .map_err(WorkPlaneError::BodyReference),
@@ -159,6 +164,7 @@ impl WorkPlaneDefinitionRecipe {
         match self {
             Self::Chamfer(_) => 16,
             Self::Hole(_) => 17,
+            Self::MoveBody(_) => 18,
             Self::Fillet(_) => 15,
             Self::DeleteBody(_) => 12,
             Self::SketchPrism(_) => 11,
@@ -184,6 +190,7 @@ impl WorkPlaneDefinitionRecipe {
         match self {
             Self::Chamfer(_) => 21,
             Self::Hole(_) => 22,
+            Self::MoveBody(_) => 23,
             Self::Fillet(_) => 20,
             Self::DeleteBody(_) => 17,
             Self::SketchPrism(_) => 16,

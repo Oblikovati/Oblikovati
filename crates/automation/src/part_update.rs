@@ -400,6 +400,7 @@ fn feature_kind(definition: &PartFeatureDefinition) -> &'static str {
         Fillet(_) => "fillet",
         Chamfer(_) => "chamfer",
         Hole(_) => "hole",
+        MoveBody(_) => "move-body",
         Fixed(_) => "fixed-frame",
         Offset { .. } => "plane-offset",
         ParallelThroughPoint(_) => "plane-point",

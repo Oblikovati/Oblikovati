@@ -434,6 +434,14 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
             .map_err(PartFeatureFailure::BodyReference)?;
         Ok(result)
     }
+    fn evaluate_move_body(
+        &mut self,
+        feature: FeatureId,
+        body: &NamedSolid,
+        motions: &[oblikovati_model::feature::move_body::ResolvedBodyMotion],
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        self.evaluate_named_move_body(feature, body, motions)
+    }
     fn evaluate_hole(
         &mut self,
         feature: FeatureId,
@@ -448,3 +456,4 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
 mod blend_evaluation;
 mod hole_evaluation;
 mod hole_placement;
+mod move_body_evaluation;

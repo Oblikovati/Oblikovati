@@ -214,6 +214,8 @@ fn subentity_keys(history: &DocumentEditHistory) -> Vec<Vec<u8>> {
 mod fillet_replay;
 #[path = "rebuild/hole_replay.rs"]
 mod hole_replay;
+#[path = "rebuild/move_body_replay.rs"]
+mod move_body_replay;
 #[path = "rigid_candidate.rs"]
 mod rigid_candidate;
 
