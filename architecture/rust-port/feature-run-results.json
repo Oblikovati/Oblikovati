@@ -188,5 +188,20 @@
     "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=ribbon-appearance XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
     "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted window input",
     "notes": "The blocker request was added to BLOCKERS.md after the run; the feature and other support files stayed unchanged during the run."
+  },
+  "features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature": {
+    "feature_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4",
+    "supporting_files": {
+      "features/application/ribbon-keyboard-navigation/FUNCTIONAL.md": "0071bbdd5b8bafcd6bb65bb749f7114a5fbd26de960d08a2accd699041d035c3",
+      "features/application/ribbon-keyboard-navigation/VISUAL.md": "4455872833e235fe242c49eeab738f44cb1828033cab1b1206d8e4a72c862826",
+      "features/application/ribbon-keyboard-navigation/FIXTURES.md": "53d28b3a02b8e56ba5a458529c93e469f15f82c537cce4f179190c78ab595e2c",
+      "features/application/ribbon-keyboard-navigation/BLOCKERS.md": "247a89fc61b82bd5a3604f1df222bbf57352cb536ec22767ea61cf15cbcd15b4"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-18-ribbon-keyboard/cucumber.json",
+    "cucumber_sha256": "ffbff8213184bc9599191702dd8b5b7f8bc23548a609529ca47d1bd2065aef5e",
+    "application_commit": "2ac42b4d080320b7b2ff74f4d8926bcdca639b41",
+    "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=ribbon-keyboard-navigation XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted window input",
+    "notes": "Ten scenarios failed at undefined steps or behavior checks, including disabled Hole, display mode, side docking and selection (#3856)."
   }
 }
