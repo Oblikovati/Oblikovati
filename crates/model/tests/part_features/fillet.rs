@@ -5,7 +5,7 @@ use oblikovati_model::{
     feature::{
         FeatureEvaluationStatus,
         fillet::FilletDefinition,
-        part::{DeleteBodyDefinition, FilletEvaluator, SketchPrismEvaluator},
+        part::{DeleteBodyDefinition, PartBlendKind, PartFeatureEvaluator, PartFeatureFailure},
         sketch_prism::ResolvedSketchPrism,
         work_plane::{WorkPlaneFaceReference, WorkPlaneReference},
     },
@@ -32,7 +32,7 @@ struct NamedFilletBackend {
     unsupported: bool,
     lose_names: bool,
 }
-impl SketchPrismEvaluator for NamedFilletBackend {
+impl PartFeatureEvaluator for NamedFilletBackend {
     type Body = NamedBody;
     type Failure = String;
     fn verify_body_reference(&self, body: &NamedBody, key: &[u8]) -> Result<(), String> {
@@ -65,11 +65,26 @@ impl SketchPrismEvaluator for NamedFilletBackend {
             radius: None,
         })
     }
-    fn fillet_evaluator(&mut self) -> Option<&mut dyn FilletEvaluator<NamedBody, String>> {
-        if self.unsupported { None } else { Some(self) }
+    fn evaluate_blend(
+        &mut self,
+        kind: PartBlendKind,
+        id: FeatureId,
+        body: &NamedBody,
+        edges: &[Vec<u8>],
+        radius: f64,
+    ) -> Result<NamedBody, PartFeatureFailure<String>> {
+        if self.unsupported || kind != PartBlendKind::Fillet {
+            return Err(kind.unsupported());
+        }
+        let result = self
+            .evaluate_fillet(id, body, edges, radius)
+            .map_err(PartFeatureFailure::Kernel)?;
+        self.verify_fillet_lineage(body, &result)
+            .map_err(PartFeatureFailure::BodyReference)?;
+        Ok(result)
     }
 }
-impl FilletEvaluator<NamedBody, String> for NamedFilletBackend {
+impl NamedFilletBackend {
     fn verify_fillet_lineage(&self, before: &NamedBody, after: &NamedBody) -> Result<(), String> {
         (before.keys.is_subset(&after.keys) && before.deleted.is_subset(&after.deleted))
             .then_some(())
@@ -225,6 +240,10 @@ fn failed_or_unavailable_fillet_does_not_consume_the_input_body() {
         }
     }
 }
+
+#[path = "fillet/declines.rs"]
+mod declines;
+
 #[test]
 fn fillet_recipe_roundtrips_in_the_ordered_part_program() {
     let mut snapshot = document();

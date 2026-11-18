@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Resolve an exact body or face name without accepting ambiguous matches.
-use super::{SketchPrismEvaluator, body_lineage::BodyLineageIndex};
+use super::{PartFeatureEvaluator, body_lineage::BodyLineageIndex};
 use crate::feature::{
     FeatureId, work_geometry::WorkGeometryError, work_plane::WorkPlaneFaceReference,
 };
 use std::collections::BTreeMap;
 
-pub(super) fn resolve_body_slot<B: SketchPrismEvaluator>(
+pub(super) fn resolve_body_slot<B: PartFeatureEvaluator>(
     bodies: &BTreeMap<FeatureId, B::Body>,
     lineage: &BodyLineageIndex,
     backend: &B,
@@ -19,7 +19,7 @@ pub(super) fn resolve_body_slot<B: SketchPrismEvaluator>(
     .map(|(id, ())| id)
 }
 
-pub(super) fn resolve_body_face<B: SketchPrismEvaluator>(
+pub(super) fn resolve_body_face<B: PartFeatureEvaluator>(
     bodies: &BTreeMap<FeatureId, B::Body>,
     lineage: &BodyLineageIndex,
     backend: &B,

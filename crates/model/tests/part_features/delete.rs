@@ -3,15 +3,27 @@ use super::*;
 use oblikovati_model::{
     feature::{
         FeatureEvaluationStatus,
-        part::{DeleteBodyDefinition, PartFeatureFailure, SketchPrismEvaluator},
+        part::{DeleteBodyDefinition, PartFeatureEvaluator, PartFeatureFailure},
         sketch_prism::ResolvedSketchPrism,
     },
     identity::SemanticReferenceName,
 };
 struct NamedReplayFake;
-impl SketchPrismEvaluator for NamedReplayFake {
+impl PartFeatureEvaluator for NamedReplayFake {
     type Body = Vec<u8>;
     type Failure = String;
+    fn evaluate_blend(
+        &mut self,
+        kind: oblikovati_model::feature::part::PartBlendKind,
+        _feature: oblikovati_model::feature::FeatureId,
+        _body: &Self::Body,
+        _edges: &[Vec<u8>],
+        _distance: f64,
+    ) -> Result<Self::Body, oblikovati_model::feature::part::PartFeatureFailure<Self::Failure>>
+    {
+        Err(kind.unsupported())
+    }
+
     fn evaluate_prism(
         &mut self,
         feature: FeatureId,

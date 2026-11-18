@@ -143,6 +143,8 @@
 
 ### Changed
 
+- Made Fillet and Chamfer dispatch explicit in the part evaluator. (#4079)
+
 - Reused current source part results when saving drawing view snapshots. (#4079)
 
 - Reused current part results for drawing view previews and display when their modelling policy matches. (#4079)

@@ -6,7 +6,7 @@ use crate::{DocumentSession, TransactionObserver};
 pub use error::{PartEvaluationError, PartSketchAdoptionError};
 use oblikovati_model::feature::part::PartFeatureEvaluation;
 use oblikovati_model::{
-    feature::{part::SketchPrismEvaluator, work_plane::WorkPlaneFaceReference},
+    feature::{part::PartFeatureEvaluator, work_plane::WorkPlaneFaceReference},
     sketch::SketchPlane,
 };
 pub use request::{CompletedPartEvaluation, CompletedPartSketchRecompute, PartEvaluationRequest};
@@ -82,7 +82,7 @@ impl<Body, Failure> PartEvaluationSlot<Body, Failure> {
     ) -> Result<CurrentPartDatums, String>
     where
         O: TransactionObserver,
-        B: SketchPrismEvaluator<Body = Body, Failure = Failure>,
+        B: PartFeatureEvaluator<Body = Body, Failure = Failure>,
     {
         let part = self.current(session).map_err(|error| error.to_string())?;
         let datums = part
@@ -116,7 +116,7 @@ impl<Body, Failure> PartEvaluationSlot<Body, Failure> {
     ) -> Result<SketchPlane, String>
     where
         O: TransactionObserver,
-        B: SketchPrismEvaluator<Body = Body, Failure = Failure>,
+        B: PartFeatureEvaluator<Body = Body, Failure = Failure>,
     {
         let current = self.current(session).map_err(|error| error.to_string())?;
         let body = current.body(reference.source()).ok_or_else(|| {

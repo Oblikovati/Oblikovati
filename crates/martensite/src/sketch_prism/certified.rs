@@ -5,7 +5,7 @@ use martensite_tkbo::profile_extrusion::{
     ProfileCurve, ProfileCurveId, ProfileVertex, ProfileVertexId, Resolution,
 };
 use oblikovati_model::feature::sketch_prism::ResolvedSketchPrism;
-use oblikovati_model::feature::{FeatureId, part::SketchPrismEvaluator};
+use oblikovati_model::feature::{FeatureId, part::PartFeatureEvaluator};
 use std::collections::BTreeMap;
 
 /// Certified replay for candidate validation with an explicit modelling resolution.
@@ -24,9 +24,21 @@ impl CertifiedPrismEvaluator {
         Self { resolution }
     }
 }
-impl SketchPrismEvaluator for CertifiedPrismEvaluator {
+impl PartFeatureEvaluator for CertifiedPrismEvaluator {
     type Body = crate::CertifiedPrismSnapshot;
     type Failure = EvaluationFailure;
+    fn evaluate_blend(
+        &mut self,
+        kind: oblikovati_model::feature::part::PartBlendKind,
+        _feature: oblikovati_model::feature::FeatureId,
+        _body: &Self::Body,
+        _edges: &[Vec<u8>],
+        _distance: f64,
+    ) -> Result<Self::Body, oblikovati_model::feature::part::PartFeatureFailure<Self::Failure>>
+    {
+        Err(kind.unsupported())
+    }
+
     fn verify_body_reference(&self, _body: &Self::Body, key: &[u8]) -> Result<(), String> {
         Err(format!(
             "certified prism reference {key:?}: expected a document-scoped named evaluator"

@@ -14,9 +14,21 @@ use oblikovati_model::{
 };
 
 struct NamedFaceEvaluator;
-impl SketchPrismEvaluator for NamedFaceEvaluator {
+impl PartFeatureEvaluator for NamedFaceEvaluator {
     type Body = f64;
     type Failure = &'static str;
+    fn evaluate_blend(
+        &mut self,
+        kind: oblikovati_model::feature::part::PartBlendKind,
+        _feature: oblikovati_model::feature::FeatureId,
+        _body: &Self::Body,
+        _edges: &[Vec<u8>],
+        _distance: f64,
+    ) -> Result<Self::Body, oblikovati_model::feature::part::PartFeatureFailure<Self::Failure>>
+    {
+        Err(kind.unsupported())
+    }
+
     fn verify_body_reference(&self, _: &f64, key: &[u8]) -> Result<(), String> {
         Err(format!("body key {key:?}: expected no body deletion"))
     }

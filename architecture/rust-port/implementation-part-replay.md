@@ -9,7 +9,9 @@ with empty derived result tables; authored recipes remain unchanged.
 
 Datum entries use the existing datum implementation. Prism entries resolve their
 current scalar inputs, fully constrained sketch, host frame, orientation, and
-projected point sources before calling the injected `SketchPrismEvaluator`.
+projected point sources before calling the injected `PartFeatureEvaluator`.
+Fillet and Chamfer use its explicit blend operation; a partial evaluator must
+return a named decline before it constructs a blend. (#4079)
 Placement and projections borrow the current datum catalogue from this replay.
 The backend receives checked inputs and does not read or replay the document.
 `MartensitePrismEvaluator` uses the existing selected-profile construction,

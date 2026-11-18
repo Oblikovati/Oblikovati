@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{DocumentSession, PartEvaluationError, TransactionObserver};
 use oblikovati_model::{
-    feature::part::{PartFeatureEvaluation, SketchPrismEvaluator},
+    feature::part::{PartFeatureEvaluation, PartFeatureEvaluator},
     history::{EvaluationScope, HistoryEvaluationSnapshot},
 };
 /// A request owns immutable inputs and cannot keep the source history alive.
@@ -12,7 +12,7 @@ pub struct PartEvaluationRequest {
 impl PartEvaluationRequest {
     /// Recompute sketches and part features in dependency order without adopting them.
     /// Example: `request.recompute_sketches(&mut backend, options)?`.
-    pub fn recompute_sketches<B: SketchPrismEvaluator>(
+    pub fn recompute_sketches<B: PartFeatureEvaluator>(
         self,
         backend: &mut B,
         options: oblikovati_solve::nonlinear::SolveOptions,
@@ -38,7 +38,7 @@ impl PartEvaluationRequest {
     }
     /// Compute one complete generation through the model-owned backend interface.
     /// Example: `let completed = request.evaluate(&mut backend)?;` consumes the request, including cancellation.
-    pub fn evaluate<B: SketchPrismEvaluator>(
+    pub fn evaluate<B: PartFeatureEvaluator>(
         self,
         backend: &mut B,
     ) -> Result<CompletedPartEvaluation<B::Body, B::Failure>, PartEvaluationError> {

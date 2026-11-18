@@ -100,9 +100,21 @@ fn selected_definition(
 /// ```
 #[derive(Default)]
 pub struct MartensitePrismEvaluator;
-impl oblikovati_model::feature::part::SketchPrismEvaluator for MartensitePrismEvaluator {
+impl oblikovati_model::feature::part::PartFeatureEvaluator for MartensitePrismEvaluator {
     type Body = PrismProbeSnapshot;
     type Failure = EvaluationFailure;
+    fn evaluate_blend(
+        &mut self,
+        kind: oblikovati_model::feature::part::PartBlendKind,
+        _feature: oblikovati_model::feature::FeatureId,
+        _body: &Self::Body,
+        _edges: &[Vec<u8>],
+        _distance: f64,
+    ) -> Result<Self::Body, oblikovati_model::feature::part::PartFeatureFailure<Self::Failure>>
+    {
+        Err(kind.unsupported())
+    }
+
     fn verify_body_reference(&self, _body: &Self::Body, key: &[u8]) -> Result<(), String> {
         Err(format!(
             "diagnostic prism reference {key:?}: expected a document-scoped NamedPrismEvaluator for body-set edits"
