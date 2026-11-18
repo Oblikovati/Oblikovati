@@ -286,6 +286,13 @@ fn draw_window(
                 display.temporary_escape_consumed = true;
                 close = true;
             }
+            if !expansion.pinned
+                && context.owners.workspace.part_context_open
+                && ui.is_key_pressed_no_repeat(imgui::Key::Escape)
+            {
+                display.temporary_escape_consumed = true;
+                close = true;
+            }
             if !expansion.pinned && display.selector_escape {
                 close = true;
             }

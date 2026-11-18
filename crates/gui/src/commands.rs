@@ -185,6 +185,11 @@ pub enum GuiShellAction {
         pixel: [i32; 2],
         toggle: bool,
     },
+    /// Select the target of a context menu without clearing selection on empty space.
+    ContextClickModel {
+        document: u64,
+        pixel: [i32; 2],
+    },
     SelectBrowserSketch {
         document: u64,
         sketch: oblikovati_model::document_sketch::DocumentSketchId,

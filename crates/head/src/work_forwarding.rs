@@ -336,6 +336,14 @@ macro_rules! forward_owner_view_work {
             self.$owner
                 .click_model_with_modifiers(document, line, window, toggle)
         }
+        fn context_click_model(
+            &mut self,
+            document: u64,
+            line: [[f64; 3]; 2],
+            window: Option<f64>,
+        ) -> Result<bool, String> {
+            self.$owner.context_click_model(document, line, window)
+        }
         fn selected_browser_outline(&mut self) -> Vec<[[f64; 3]; 2]> {
             self.$owner.selected_browser_outline()
         }

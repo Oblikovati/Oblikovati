@@ -40,6 +40,8 @@ impl GuiFrameEngine {
         crate::application::workspace_layout::browser_feature::draw_feature_edges(ui, request);
         self.workspace.draw_selected_origin(ui, request);
         self.document_files.home_in_front = self.home.active;
+        self.workspace.part_context_open =
+            self.part_context_open && request.commands.model_face_chosen;
         let band_height = crate::chrome::ribbon_band(
             ui,
             request,

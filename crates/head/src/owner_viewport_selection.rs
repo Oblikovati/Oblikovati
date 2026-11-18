@@ -56,7 +56,16 @@ impl<
             }
             return self.click_assembly(document, line);
         }
-        self.click_part_with_window(document, line, depth_window, toggle)
+        self.click_part_with_window(document, line, depth_window, toggle, false)
+    }
+    pub(in crate::owner) fn context_click_model(
+        &mut self,
+        document: u64,
+        line: [[f64; 3]; 2],
+        depth_window: Option<f64>,
+    ) -> Result<bool, String> {
+        self.require_browser_document(document)?;
+        self.click_part_with_window(document, line, depth_window, false, true)
     }
     fn click_part_with_window(
         &mut self,
@@ -64,8 +73,11 @@ impl<
         line: [[f64; 3]; 2],
         depth_window: Option<f64>,
         toggle: bool,
+        preserve_on_miss: bool,
     ) -> Result<bool, String> {
-        self.model_pick_cue = None;
+        if !preserve_on_miss {
+            self.model_pick_cue = None;
+        }
         let Some(allowed) = self.part_pick_filter(document, depth_window.is_some()) else {
             return Ok(false);
         };
@@ -113,6 +125,9 @@ impl<
                 return Ok(true);
             }
         };
+        if preserve_on_miss && picked.is_none() {
+            return Ok(false);
+        }
         let cue = if toggle {
             None
         } else {

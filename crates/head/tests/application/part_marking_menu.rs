@@ -352,3 +352,45 @@ fn native_selected_face_keeps_classic_menu_linear() {
     assert!(diagnostics::window_geometry("Face Properties").is_some());
     world.close();
 }
+
+#[test]
+fn context_pick_preserves_selected_face_on_repeat_miss_and_panel_click() {
+    let mut world = ApplicationWorld::new();
+    super::workspace_layout::browser_feature::open_visible_extruded_part(&mut world);
+    let (_, point, key) = select_front_face(&mut world);
+    x11_input::right_click(point);
+    world.pump(Vec::new());
+    assert_eq!(world.state().selected_face_appearances[0].0, key);
+    world.expect_text("Properties");
+    x11_input::press_escape();
+    world.pump(Vec::new());
+    x11_input::right_click([1000, 600]);
+    world.pump(Vec::new());
+    assert_eq!(world.state().selected_face_appearances[0].0, key);
+    x11_input::press_escape();
+    world.pump(Vec::new());
+    let panel = diagnostics::pointer_pixels(world.run("Start 2D Sketch").center());
+    x11_input::right_click(panel);
+    world.pump(Vec::new());
+    assert_eq!(world.state().selected_face_appearances[0].0, key);
+    world.close();
+}
+
+#[test]
+fn context_pick_does_not_select_face_while_navigation_owns_viewport() {
+    let mut world = ApplicationWorld::new();
+    super::workspace_layout::browser_feature::open_visible_extruded_part(&mut world);
+    let (low, high) = super::viewport_orientation::solid_bounds(&mut world);
+    let point = [
+        ((low[0] + high[0]) / 2) as i32,
+        ((low[1] + high[1]) / 2) as i32,
+    ];
+    super::viewport_pan::press_bar(&mut world, "W");
+    x11_input::click([760, 480]);
+    world.pump(Vec::new());
+    assert!(diagnostics::window_geometry("##navigation-wheel").is_some());
+    x11_input::right_click(point);
+    world.pump(Vec::new());
+    assert!(!world.state().model_face_chosen);
+    world.close();
+}
