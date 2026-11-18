@@ -16,6 +16,7 @@ fn context_menu_visible(world: &mut ApplicationWorld) {
     world.expect_text("Show Panels");
     world.expect_text("Ribbon Appearance");
 }
+#[when("the user clicks the ribbon display control to restore the full ribbon")]
 #[when("the user clicks the ribbon display control")]
 #[when("the user clicks the ribbon display control again")]
 fn native_display_click(world: &mut ApplicationWorld) {

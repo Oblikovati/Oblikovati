@@ -191,7 +191,13 @@ fn draw_window(
         (position[0] + size[0] + 28.).max(88.)
     };
     let width = (preferred_width * scale).min((right - left - VIEWPORT_MARGIN).max(1.));
-    let top = area.top.min((viewport_height - 1.).max(0.));
+    let anchor_top =
+        if display.placement == crate::application::ribbon_display::RibbonPlacement::Top {
+            area.top.max(context.ribbon_bottom)
+        } else {
+            area.top
+        };
+    let top = anchor_top.min((viewport_height - 1.).max(0.));
     let preferred_height = if appearance == crate::ribbon_command_layout::RibbonAppearance::Normal {
         ADDITIONAL_HEIGHT
     } else {
