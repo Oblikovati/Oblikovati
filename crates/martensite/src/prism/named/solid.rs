@@ -459,3 +459,4 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
 }
 
 mod blend_evaluation;
+mod hole_placement;

@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+#[path = "named/hole_placement.rs"]
+mod hole_placement;
 use oblikovati_martensite::{NamedPrismSnapshot, retain_named_sketch_prism};
 use oblikovati_model::{
     feature::FeatureId,

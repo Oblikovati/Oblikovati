@@ -4,7 +4,7 @@ use oblikovati_model::feature::{
     part::PartFeatureDefinition, sketch_prism::SketchPrismDefinition, work_geometry::DatumLength,
 };
 use oblikovati_persistence::package::DocumentPackage;
-fn holed_document(rotation: usize) -> DocumentSnapshot {
+pub(super) fn holed_document(rotation: usize) -> DocumentSnapshot {
     let mut snapshot = selected_prism_document();
     add_fixed_sketch_hole(&mut snapshot);
     let mut selection = selected_sketch_boundary();
@@ -105,7 +105,7 @@ fn saved_recipes_rebuild_the_same_keys_under_a_new_history_owner() {
     assert_faces(&after, &restored, 2.);
     assert!(before.reference_keys(&restored, document()).is_err());
 }
-fn certified_resolution() -> oblikovati_martensite::PrismResolution {
+pub(super) fn certified_resolution() -> oblikovati_martensite::PrismResolution {
     oblikovati_martensite::PrismResolution {
         version: 1,
         weld: 1e-6,
