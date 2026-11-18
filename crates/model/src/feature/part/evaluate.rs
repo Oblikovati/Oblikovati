@@ -77,6 +77,7 @@ pub enum PartFeatureFailure<Failure> {
     Unsupported(String),
 }
 /// Derived results from a fresh replay. This does not implement the complete extrude operation or a prefix cache.
+#[derive(Clone)]
 pub struct PartFeatureEvaluation<Body, Failure> {
     pub(super) datums: WorkGeometryEvaluation,
     pub(super) bodies: BTreeMap<FeatureId, Body>,
@@ -90,7 +91,7 @@ pub type RecomputedPart<Body, Failure> = (
     PartFeatureEvaluation<Body, Failure>,
     crate::document_sketch::DocumentSketches,
 );
-type PartReplayCandidate<'a, Body, Failure> = (
+pub(super) type PartReplayCandidate<'a, Body, Failure> = (
     PartFeatureEvaluation<Body, Failure>,
     Cow<'a, DocumentSnapshot>,
 );
@@ -229,6 +230,18 @@ impl DocumentSnapshot {
         options: Option<oblikovati_solve::nonlinear::SolveOptions>,
         cancelled: &mut impl FnMut() -> bool,
     ) -> Result<PartReplayCandidate<'a, B::Body, B::Failure>, PartFeatureProgramError> {
+        self.replay_part_with_sketches_observed(backend, options, cancelled, &mut |_, _| {})
+    }
+    pub(super) fn replay_part_with_sketches_observed<'a, B: PartFeatureEvaluator>(
+        &'a self,
+        backend: &mut B,
+        options: Option<oblikovati_solve::nonlinear::SolveOptions>,
+        cancelled: &mut impl FnMut() -> bool,
+        observe: &mut impl FnMut(
+            &PartFeatureEvaluation<B::Body, B::Failure>,
+            &[FeatureHealthRecord<PartFeatureFailure<B::Failure>>],
+        ),
+    ) -> Result<PartReplayCandidate<'a, B::Body, B::Failure>, PartFeatureProgramError> {
         let range = self.part_replay_range()?;
         let sequence =
             super::body_dependencies::with_replacement_reads(self.effective_work_geometry())?;
@@ -241,7 +254,14 @@ impl DocumentSnapshot {
         .map_err(PartFeatureProgramError::Reads)?;
         let mut evaluation = PartFeatureEvaluation::empty();
         let mut candidate = Cow::Borrowed(self);
-        evaluation.replay(&mut candidate, backend, &mut controller, options, cancelled)?;
+        evaluation.replay_observed(
+            &mut candidate,
+            backend,
+            &mut controller,
+            options,
+            cancelled,
+            observe,
+        )?;
         evaluation.refresh_sketch_faces(&candidate, backend);
         evaluation.health = controller
             .finish()
