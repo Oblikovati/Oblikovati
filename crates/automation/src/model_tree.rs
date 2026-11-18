@@ -16,7 +16,16 @@ pub(crate) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     let owner = access
         .as_deref_mut()
         .ok_or_else(|| missing_owner(document))?;
-    let errors = owner.update_part(files, document).map_err(Error)?;
+    owner.ensure_part(files, document).map_err(Error)?;
+    let errors = crate::part_feature_errors(
+        files
+            .workspace()
+            .session(document)
+            .map_err(api_error)?
+            .snapshot(),
+        owner.current_part(files, document).map_err(Error)?.health(),
+    )
+    .map_err(Error)?;
     let bodies = owner.list_bodies(files, document).map_err(Error)?;
     let snapshot = files
         .workspace()
