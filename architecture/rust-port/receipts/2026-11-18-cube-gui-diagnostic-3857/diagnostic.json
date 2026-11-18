@@ -1,0 +1,42 @@
+{
+  "kind": "diagnostic",
+  "issue": 3857,
+  "checked_at": "2026-11-18T07:11:04.199144+00:00",
+  "application_commit": "1ac04f5f3ae4807e4eb584afebe0f8dbf5fa8557",
+  "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+  "api_locked_revision": "a87a7fc945232c1d73c67c6dcfd08967e4738aa3",
+  "command": "VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json XMODIFIERS=@im=none tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib native_new_part_button_creates_and_selects_an_unsaved_document -- --nocapture --test-threads=1",
+  "result": {
+    "passed": 1,
+    "failed": 0,
+    "ignored": 0,
+    "exit_code": 0
+  },
+  "scope": "Native window GUI-loop scripted pointer and keyboard input, zero-DOF size-driven rectangle, extrusion preview and commit, parameter edit, undo/redo, save/reopen, named face and topology key checks.",
+  "artifacts": [
+    {
+      "path": "architecture/rust-port/receipts/2026-11-18-cube-gui-diagnostic-3857/native.log",
+      "sha256": "3911dd5d85bcca70abd7191f54b1c41bc0176e117ada12d8e619ead57fc3dabb"
+    },
+    {
+      "path": "architecture/rust-port/receipts/2026-11-18-cube-gui-diagnostic-3857/sketch.png",
+      "sha256": "4a6543b96d069525cd633424d8b7099658187d2ab335f5e7a147018a654faeb8"
+    },
+    {
+      "path": "architecture/rust-port/receipts/2026-11-18-cube-gui-diagnostic-3857/extrusion-front.png",
+      "sha256": "83c6e70bb686fe60e4b8b3e11ab8358d0791245f50bd51a3505a8e6d511b3186"
+    },
+    {
+      "path": "architecture/rust-port/receipts/2026-11-18-cube-gui-diagnostic-3857/redo-front.png",
+      "sha256": "677c40f4584be35db4beee9aa604f1cb5dc770f8e1d7208b8083936f427e5e15"
+    }
+  ],
+  "limitations": [
+    "Input is injected into the application GUI loop, not through operating-system mouse and keyboard events.",
+    "Images show the sketch and a front projection; they do not independently establish an isometric 3D presentation.",
+    "This is not a BDD scenario receipt or the complete R3 milestone exit.",
+    "Sketch solve precision qualification remains open in #3928.",
+    "The full gate is blocked by the released API pin mismatch in #3965."
+  ],
+  "capture_method": "The test command ran as a subprocess under the Xvfb wrapper while ImageMagick captured the X root window every three seconds. The logged output is the subprocess output."
+}

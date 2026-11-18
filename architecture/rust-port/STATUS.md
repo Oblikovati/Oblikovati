@@ -25,6 +25,11 @@ using this status; the live scenario directory can change.
 - The GUI library passed 587 tests during the P0 work. A full all-target run
   reported 22 integration failures across four targets; triage is #4078. That
   run preceded the final dock lifecycle change and is not a current green suite.
+- The scripted native-window cube journey passed on `1ac04f5f3`, including
+  undo, redo, save/reopen, and named-face checks. Its images show a front
+  projection, and input is injected into the GUI loop; OS-level acceptance and
+  solve-precision qualification remain open (#3857, #3928). See
+  `receipts/2026-11-18-cube-gui-diagnostic-3857/diagnostic.json`.
 - Fillet drawing, suppression-health, and extrusion-preview regressions pass
   using the complete named-solid evaluator (#4074). The evaluator requires
   explicit blend and named-face operations.
