@@ -75,11 +75,11 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
         self.invalidate_presentation();
         Ok(())
     }
-    fn cached_checkpoint_prefix<'a>(
-        &'a self,
+    fn cached_checkpoint_prefix(
+        &self,
         files: &FileWorkspace<O, W, F>,
         document: u64,
-    ) -> Result<Option<oblikovati_automation::CertifiedCheckpointPrefix<'a>>, String> {
+    ) -> Result<Option<oblikovati_automation::CertifiedCheckpointPrefix>, String> {
         self.replay.cached_checkpoint_prefix(files, document)
     }
     fn adopt_candidate(
@@ -118,11 +118,11 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
     > {
         self.replay.current_part(files, document)
     }
-    fn candidate_prefix<'a>(
-        &'a self,
+    fn candidate_prefix(
+        &self,
         files: &FileWorkspace<O, W, F>,
         document: u64,
-    ) -> Result<oblikovati_automation::CertifiedPartPrefix<'a>, String> {
+    ) -> Result<oblikovati_automation::CertifiedPartPrefix, String> {
         self.replay.candidate_prefix(files, document)
     }
     fn blend_body(

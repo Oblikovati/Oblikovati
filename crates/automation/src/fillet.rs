@@ -41,12 +41,12 @@ where
     backend.body(session.history(), guid, edges).map_err(Error)
 }
 
-pub(crate) fn matching_blend_prefix<'a, O, W, F>(
+pub(crate) fn matching_blend_prefix<O, W, F>(
     files: &oblikovati_session::files::FileWorkspace<O, W, F>,
     backend: &dyn FilletAccess,
-    replay: Option<&'a dyn crate::PartUpdateAccess<O, W, F>>,
+    replay: Option<&dyn crate::PartUpdateAccess<O, W, F>>,
     document: u64,
-) -> Result<Option<crate::CertifiedPartPrefix<'a>>, Error>
+) -> Result<Option<crate::CertifiedPartPrefix>, Error>
 where
     O: oblikovati_session::TransactionObserver,
     W: oblikovati_session::workspace::WorkspaceObserver,
@@ -101,7 +101,7 @@ pub trait FilletAccess {
         document: oblikovati_model::identity::DocumentGuid,
         candidate: &DocumentSnapshot,
         feature: FeatureId,
-        _prefix: &crate::CertifiedCheckpointPrefix<'_>,
+        _prefix: &crate::CertifiedCheckpointPrefix,
     ) -> Result<Option<crate::CertifiedCheckpointCandidate>, String> {
         match kind {
             oblikovati_model::feature::part::PartBlendKind::Fillet => {
@@ -122,7 +122,7 @@ pub trait FilletAccess {
         document: oblikovati_model::identity::DocumentGuid,
         candidate: &DocumentSnapshot,
         feature: FeatureId,
-        prefix: &crate::CertifiedPartPrefix<'_>,
+        prefix: &crate::CertifiedPartPrefix,
     ) -> Result<(usize, Option<crate::CertifiedPartCandidate>), String> {
         self.validate_with_prefix(kind, history, document, candidate, feature, prefix)
             .map(|count| (count, None))
@@ -151,7 +151,7 @@ pub trait FilletAccess {
         document: oblikovati_model::identity::DocumentGuid,
         candidate: &DocumentSnapshot,
         feature: FeatureId,
-        _prefix: &crate::CertifiedPartPrefix<'_>,
+        _prefix: &crate::CertifiedPartPrefix,
     ) -> Result<usize, String> {
         match kind {
             oblikovati_model::feature::part::PartBlendKind::Fillet => {

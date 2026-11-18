@@ -68,11 +68,11 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
     ) -> Result<(), String> {
         self.adopt_named_checkpoints(files, document, candidate, transition)
     }
-    fn cached_checkpoint_prefix<'a>(
-        &'a self,
+    fn cached_checkpoint_prefix(
+        &self,
         files: &FileWorkspace<O, W, F>,
         document: u64,
-    ) -> Result<Option<CertifiedCheckpointPrefix<'a>>, String> {
+    ) -> Result<Option<CertifiedCheckpointPrefix>, String> {
         Ok(self
             .checkpoint_prefix(files, document)?
             .map(|prefix| CertifiedCheckpointPrefix {
@@ -117,11 +117,11 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
             .current(session)
             .map_err(|error| error.to_string())
     }
-    fn candidate_prefix<'a>(
-        &'a self,
+    fn candidate_prefix(
+        &self,
         files: &FileWorkspace<O, W, F>,
         document: u64,
-    ) -> Result<CertifiedPartPrefix<'a>, String> {
+    ) -> Result<CertifiedPartPrefix, String> {
         let session = files
             .workspace()
             .session(document)
