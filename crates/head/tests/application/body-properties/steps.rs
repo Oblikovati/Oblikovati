@@ -8,6 +8,10 @@ use cucumber::{given, then, when};
 use oblikovati_api::{client::Client, wire::CreateAppearanceArgs};
 use oblikovati_viewport::{ViewportEvent, ViewportInput};
 
+#[cfg(test)]
+#[path = "native_input.rs"]
+mod native_input;
+
 const TITLE: &str = "Body Properties";
 const BODY: &str = "Solid1";
 const AS_PART: &str = "As Part";

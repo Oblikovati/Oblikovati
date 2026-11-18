@@ -140,6 +140,7 @@
     "cucumber_sha256": "62d624333d1e1504c1adb76f37e94c0890a98f5d58262ac94fc4351f3ec6fcc3",
     "application_commit": "57aa06841",
     "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=body-properties XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
-    "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted window input"
+    "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted window input",
+    "notes": "A separate native X11 mouse and keyboard test opens Body Properties from the body row and checks Escape preserves selection and highlight."
   }
 }
