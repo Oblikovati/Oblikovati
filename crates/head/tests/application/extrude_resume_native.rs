@@ -369,7 +369,7 @@ fn preview_height(world: &mut ApplicationWorld) -> f32 {
 }
 
 fn edit_depth_in_parameter_window(world: &mut ApplicationWorld) {
-    world.click_text("Parameters");
+    world.click(super::toolbar_icon_center("Parameters"));
     let (position, size) = super::diagnostics::window_geometry("Parameters").unwrap();
     let name = super::rendered_label_in_rect(
         "depth",

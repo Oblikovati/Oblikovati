@@ -84,9 +84,9 @@ using this status; the live scenario directory can change.
 - Fixed and origin-plane sketch continuity avoids a part replay when orientation
   has no feature-axis dependency. A mixed or feature-oriented batch still uses
   ordered replay; real-kernel tests count both paths (#4079).
-- The native Extrude parameter-change test cannot find its Parameters window;
-  it fails at the same lookup on clean parent `6cbed854e` (#4078). It is not
-  acceptance evidence for this change.
+- The scripted native Extrude preview test now opens Parameters from its
+  Quick Access icon. Its former text lookup clicked the browser node; the test
+  checks preview updates, stale requests, and cancellation (#4078).
 - The native Fillet edit test now targets the radius input using its visible
   label. The previous click hit the edge count; the corrected scripted test
   checks preview, cancel, commit, undo, redo, and save/reopen (#4078).
