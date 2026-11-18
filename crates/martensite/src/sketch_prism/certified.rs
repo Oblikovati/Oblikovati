@@ -4,64 +4,9 @@ use super::*;
 use martensite_tkbo::profile_extrusion::{
     ProfileCurve, ProfileCurveId, ProfileVertex, ProfileVertexId, Resolution,
 };
+use oblikovati_model::feature::FeatureId;
 use oblikovati_model::feature::sketch_prism::ResolvedSketchPrism;
-use oblikovati_model::feature::{FeatureId, part::PartFeatureEvaluator};
 use std::collections::BTreeMap;
-
-/// Certified replay for candidate validation with an explicit modelling resolution.
-pub struct CertifiedPrismEvaluator {
-    resolution: crate::PrismResolutionPolicy,
-}
-impl CertifiedPrismEvaluator {
-    /// Bind the caller's resolution; example: `CertifiedPrismEvaluator::new(resolution)`.
-    pub fn new(resolution: crate::PrismResolution) -> Self {
-        Self {
-            resolution: crate::PrismResolutionPolicy::Fixed(resolution),
-        }
-    }
-    /// Bind per-sketch policy; example: `CertifiedPrismEvaluator::with_policy(policy)`.
-    pub fn with_policy(resolution: crate::PrismResolutionPolicy) -> Self {
-        Self { resolution }
-    }
-}
-impl PartFeatureEvaluator for CertifiedPrismEvaluator {
-    type Body = crate::CertifiedPrismSnapshot;
-    type Failure = EvaluationFailure;
-    fn resolve_planar_face(
-        &self,
-        _body: &Self::Body,
-        key: &[u8],
-    ) -> Result<oblikovati_model::sketch::SketchPlane, String> {
-        Err(oblikovati_model::feature::part::unavailable_planar_face(
-            key,
-        ))
-    }
-
-    fn evaluate_blend(
-        &mut self,
-        kind: oblikovati_model::feature::part::PartBlendKind,
-        _feature: oblikovati_model::feature::FeatureId,
-        _body: &Self::Body,
-        _edges: &[Vec<u8>],
-        _distance: f64,
-    ) -> Result<Self::Body, oblikovati_model::feature::part::PartFeatureFailure<Self::Failure>>
-    {
-        Err(kind.unsupported())
-    }
-
-    fn verify_body_reference(&self, _body: &Self::Body, key: &[u8]) -> Result<(), String> {
-        Err(format!(
-            "certified prism reference {key:?}: expected a document-scoped named evaluator"
-        ))
-    }
-    fn evaluate_prism(
-        &mut self,
-        feature: FeatureId,
-        input: ResolvedSketchPrism<'_>,
-    ) -> Result<Self::Body, Self::Failure> {
-        evaluate_feature(input, self.resolution, feature)
-    }
-}
 
 pub(crate) fn evaluate_feature(
     input: ResolvedSketchPrism<'_>,
