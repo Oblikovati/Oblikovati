@@ -9,6 +9,8 @@ use cucumber::{given, then, when};
 mod builtin_commands;
 #[path = "custom_commands.rs"]
 mod custom_commands;
+#[path = "keyboard_full.rs"]
+mod keyboard_full;
 #[path = "sketch_block_placement.rs"]
 mod sketch_block_placement;
 #[path = "sketch_constrain.rs"]

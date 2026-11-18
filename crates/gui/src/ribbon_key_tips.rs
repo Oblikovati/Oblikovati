@@ -31,6 +31,7 @@ pub(crate) enum KeyTipAction {
     ApplicationOptions,
     DocumentSettings,
     OpenGroup(crate::ribbon_panels::RibbonPanel),
+    OpenAdditional(crate::ribbon_panels::RibbonPanel),
 }
 impl RibbonKeyTips {
     pub(crate) fn set_tools_face_mode(&mut self, enabled: bool) {
@@ -201,6 +202,11 @@ impl RibbonKeyTips {
             if let Some(panel) = panel {
                 return Some(KeyTipAction::OpenGroup(panel));
             }
+        }
+        if !grouped && self.prefix.is_empty() && character == 'Y' {
+            return Some(KeyTipAction::OpenAdditional(
+                crate::ribbon_panels::RibbonPanel::PartModify,
+            ));
         }
         let candidate = format!("{}{character}", self.prefix);
         let action = match candidate.as_str() {
