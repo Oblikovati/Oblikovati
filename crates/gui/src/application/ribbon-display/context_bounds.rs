@@ -28,7 +28,7 @@ impl RibbonDisplayState {
         self.context_expansion == Some((tab, panel))
             && self.context_bounds.is_some()
             && self.submenu_bounds.is_none()
-            && (self.context_command.is_none() || self.context_had_submenu)
+            && self.context_had_submenu
             && ui.is_key_pressed_no_repeat(imgui::Key::Escape)
     }
     pub(super) fn capture_context_bounds(&mut self, ui: &Ui) {
