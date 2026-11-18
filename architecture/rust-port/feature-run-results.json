@@ -22,5 +22,12 @@
     "application_commit": "5781e24c03e9bc01c845a128e22b46e415d919b9",
     "command": "OBK_BDD_FEATURE=viewport-zoom tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
     "environment": "Linux X11, Xvfb, Vulkan Lavapipe; X11 wheel and scripted window input"
+  },
+  "features/application/viewport-entity-selection/viewport-entity-selection.feature": {
+    "feature_sha256": "1ed760a441ee45e66bba0b3def61766615cf15a00a3cc1b7a896434bd3b34782",
+    "application_commit": "b30b319bd",
+    "blocker": "All seven scenarios are tagged capture-only and capture-host-only; the native runner excludes them. The scenario owner must supply executable requirements and fixtures.",
+    "command": "OBK_BDD_FEATURE=viewport-entity-selection tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11, Xvfb, Vulkan Lavapipe; no scenario was executed"
   }
 }

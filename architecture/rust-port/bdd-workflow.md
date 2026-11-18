@@ -256,7 +256,8 @@ declaration count, and the number of scenarios passed in the recorded run. A
 feature is `green` only when the source hash matches, the report hash matches,
 every scenario and its source steps are present, and every step and cleanup
 hook passed. A source change becomes `source_changed`; a removed file is listed
-separately. Outlines, backgrounds, rules, and step tables need further support
+separately. A `blocker` on a hash-matched result reports the feature as
+`blocked` without counting its scenarios as passed. Outlines, backgrounds, rules, and step tables need further support
 before this inventory can mark them green. They are reported for review.
 
 After running a whole feature, retain its Cucumber report and other artifacts
