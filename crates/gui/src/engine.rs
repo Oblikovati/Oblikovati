@@ -35,13 +35,11 @@ pub enum GuiWindowAction {
     ToggleMaximize,
     Move,
 }
-
 #[derive(Clone, Debug)]
 pub struct GuiWindowControls {
     pub bounds: [[f32; 4]; 3],
     pub focused: Option<usize>,
 }
-
 #[derive(Clone, Debug)]
 pub struct GuiFrameOutput {
     pub window_action: Option<GuiWindowAction>,
@@ -76,6 +74,7 @@ pub struct GuiFrameEngine {
     extrude_dialog: crate::extrude_dialog::ExtrudeDialog,
     blend_dialog: crate::blend_dialog::BlendDialog,
     hole_dialog: crate::hole_dialog::HoleDialog,
+    move_body_dialog: crate::move_body_dialog::MoveBodyDialog,
     part_context_open: bool,
     offset_plane: crate::offset_plane::OffsetPlaneDialog,
     pending_extrusion_shortcut: bool,
@@ -151,6 +150,7 @@ impl GuiFrameEngine {
             extrude_dialog: Default::default(),
             blend_dialog: Default::default(),
             hole_dialog: Default::default(),
+            move_body_dialog: Default::default(),
             part_context_open: false,
             offset_plane: Default::default(),
             pending_extrusion_shortcut: false,
@@ -314,7 +314,6 @@ impl GuiFrameEngine {
             .request_save_path(document, &name, self.known_document_type)
     }
 }
-
 fn configure_owner_context(context: &mut Context) -> GuiAtlas {
     context.set_ini_filename(None);
     context.set_log_filename(None);

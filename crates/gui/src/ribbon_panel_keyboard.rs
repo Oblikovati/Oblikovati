@@ -5,6 +5,9 @@ impl RibbonPanelLayout {
     pub(crate) fn temporary_tab_press(&mut self) -> Option<bool> {
         self.additional.temporary_tab_press()
     }
+    pub(crate) fn close_unpinned_additional(&mut self) {
+        self.additional.close_unpinned();
+    }
     pub(crate) fn request_additional(&mut self, tab: RibbonTab, panel: RibbonPanel) {
         self.pending_additional = Some((tab, panel));
     }

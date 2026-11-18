@@ -193,6 +193,11 @@ fn sketch(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, Str
         }
         GuiShellAction::FinishSketch => owner.edit_sketch_from_gui(false),
         GuiShellAction::OpenExtrude => Ok(false),
+        GuiShellAction::OpenMoveBody => Ok(false),
+        GuiShellAction::PreviewMoveBody(request) => {
+            owner.preview_move_body_from_gui(request.as_ref())
+        }
+        GuiShellAction::CreateMoveBody(request) => owner.commit_move_body_from_gui(request),
         GuiShellAction::OpenHole => Ok(false),
         GuiShellAction::PreviewHole(request) => owner.preview_hole_from_gui(request.as_ref()),
         GuiShellAction::CreateHole(request) => owner.commit_hole_from_gui(request),

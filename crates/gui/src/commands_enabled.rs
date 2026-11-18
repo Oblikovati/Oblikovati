@@ -6,6 +6,8 @@ mod blend_enabled;
 mod dispatchable;
 #[path = "commands/hole_enabled.rs"]
 mod hole_enabled;
+#[path = "commands/move_body_enabled.rs"]
+mod motion;
 #[path = "commands/sketch_enabled.rs"]
 mod sketch_enabled;
 impl GuiShellAction {
@@ -46,7 +48,6 @@ impl GuiShellAction {
             | Self::EditSketchPattern { .. } => {
                 state.sketch_pattern_available && state.sketch_at_ready && !state.transaction_open
             }
-
             Self::SketchMove(crate::GuiSketchMoveAction::Start) => {
                 state.sketch_at_ready && !state.transaction_open
             }
@@ -337,8 +338,9 @@ impl GuiShellAction {
                     }
             }
             Self::LookAtSelection => state.look_at_available,
-            Self::OpenHole => hole_enabled::open(state),
-            Self::PreviewHole(None) => true,
+            Self::OpenMoveBody | Self::OpenHole => hole_enabled::open(state),
+            Self::PreviewMoveBody(None) | Self::PreviewHole(None) => true,
+            Self::PreviewMoveBody(Some(r)) | Self::CreateMoveBody(r) => motion::request(state, r),
             Self::PreviewHole(Some(request)) | Self::CreateHole(request) => {
                 hole_enabled::request(state, request)
             }

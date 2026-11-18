@@ -3,7 +3,6 @@ use crate::application::ribbon_display::{RibbonDisplay, RibbonPlacement, Tempora
 use crate::ribbon::{DocumentRibbon, RibbonFrame};
 use crate::{GuiCommandState, GuiFrameRequest, GuiShellAction};
 use imgui::{Condition, TabItemFlags, Ui};
-
 /// Vertical space reserved for application controls and the native frame.
 pub(crate) const APPLICATION_BAR_HEIGHT: f32 = 34.;
 /// Right side reserved for the platform window controls (#4063).
@@ -22,7 +21,6 @@ mod side;
 mod tab_click;
 mod tab_overflow;
 use side::{reserve_ribbon_margins, side_ribbon};
-
 pub(crate) struct RibbonDrawOwners<'a> {
     pub home_active: bool,
     pub icons: &'a crate::icons::GuiRibbonIcons,
@@ -207,6 +205,13 @@ fn apply_key_tip(
         {
             owners.ribbon.display.temporary = None;
             actions.push(crate::extrude_dialog::start_action(state));
+        }
+        Some(KeyTipAction::MoveBody) => {
+            let action = GuiShellAction::OpenMoveBody;
+            if !owners.home_active && action.enabled(state) {
+                owners.ribbon.panels.close_unpinned_additional();
+                actions.push(action);
+            }
         }
         Some(KeyTipAction::Hole) => {
             let action = GuiShellAction::OpenHole;
