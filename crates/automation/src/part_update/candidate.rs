@@ -15,10 +15,7 @@ pub struct CertifiedPartPrefix {
 /// A candidate sealed to the policy that produced its exact bodies.
 pub struct CertifiedPartCandidate {
     pub(crate) policy: PrismResolutionPolicy,
-    pub(crate) candidate: oblikovati_session::part_evaluation::CapturedPartCandidate<
-        oblikovati_martensite::CapturedNamedSolid,
-        EvaluationFailure,
-    >,
+    pub(crate) candidate: oblikovati_session::OwnedPartCandidate,
 }
 /// A current checkpoint set bound to the policy that produced it.
 pub struct CertifiedCheckpointPrefix {
@@ -122,26 +119,9 @@ impl PartReplayService {
                 candidate.policy, self.resolution
             ));
         }
-        let workspace = files.workspace();
-        let guid = workspace
-            .identity(document)
-            .map_err(|error| error.to_string())?
-            .internal_name;
-        let session = workspace
-            .session(document)
-            .map_err(|error| error.to_string())?;
-        let completed = oblikovati_martensite::complete_named_candidate(
-            candidate.candidate.into_transfer(),
-            document,
-            transition,
-            session.history(),
-            guid,
-        )?;
-        let completed = session.complete_part_transfer(completed)?;
         files
-            .commands(document)
-            .map_err(|error| error.to_string())?
-            .adopt_owned_part(self.resolution, completed)
+            .adopt_owned_part_candidate(document, self.resolution, candidate.candidate, transition)
+            .map_err(|error| error.to_string())
     }
 }
 

@@ -25,10 +25,7 @@ use replay::{ExtrudeProjection, adopt_extrude_candidate, prepare_owned_prefix};
 /// A current named result prefix for certified extrusion validation.
 pub type ExtrudeReplayPrefix = oblikovati_session::OwnedPartReplay;
 /// Detached named bodies produced by an extrusion candidate.
-pub type CapturedExtrudeCandidate = oblikovati_session::part_evaluation::CapturedPartCandidate<
-    oblikovati_martensite::CapturedNamedSolid,
-    oblikovati_martensite::EvaluationFailure,
->;
+pub type CapturedExtrudeCandidate = oblikovati_session::OwnedPartCandidate;
 /// The candidate body count and its captured results.
 pub type ExtrudePrefixReplay = (usize, CapturedExtrudeCandidate);
 type PolicyExtrudePrefix = (
@@ -175,7 +172,7 @@ fn create<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
         )
         .map_err(api_error)?;
     if let (Some((policy, _)), Some(captured)) = (prefix, captured) {
-        adopt_extrude_candidate(files, document, guid, policy, captured, &transition)?;
+        adopt_extrude_candidate(files, document, policy, captured, &transition)?;
     }
     Ok(response)
 }
