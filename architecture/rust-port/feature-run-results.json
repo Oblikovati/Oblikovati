@@ -127,5 +127,19 @@
     "application_commit": "8ddb2767f",
     "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=ribbon-command-availability XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
     "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted window input"
+  },
+  "features/application/body-properties/body-properties.feature": {
+    "feature_sha256": "0b20ae95482d755cafe546d0bae98db647acdaa2ebfb5353e3fcb3bc6af0cf50",
+    "supporting_files": {
+      "features/application/body-properties/FUNCTIONAL.md": "b7d83161f4750bde4c521cef1c8e81dbf06c7e7dc8d402a9c574f930bc72f331",
+      "features/application/body-properties/VISUAL.md": "d7f5ef9d69c4f1ff7604282c9f979283e3a5112bd67362f0eca143fb0523474e",
+      "features/application/body-properties/FIXTURES.md": "498d90f776e605b71fa9c5c60e4bb19c7d536139f2d11dcd23b9b59a09ce433c",
+      "features/application/body-properties/BLOCKERS.md": "1b0d8fb3eff46e173ec4ca5f22f1d06b1c9c3aab60acf5f2458a4db2b2eb6331"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-18-body-properties/cucumber.json",
+    "cucumber_sha256": "62d624333d1e1504c1adb76f37e94c0890a98f5d58262ac94fc4351f3ec6fcc3",
+    "application_commit": "57aa06841",
+    "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=body-properties XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted window input"
   }
 }
