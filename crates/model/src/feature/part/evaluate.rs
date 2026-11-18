@@ -79,11 +79,12 @@ pub enum PartFeatureFailure<Failure> {
 }
 /// Derived results from a fresh replay. This does not implement the complete extrude operation or a prefix cache.
 pub struct PartFeatureEvaluation<Body, Failure> {
-    datums: WorkGeometryEvaluation,
+    pub(super) datums: WorkGeometryEvaluation,
     pub(super) bodies: BTreeMap<FeatureId, Body>,
     pub(super) body_lineage: super::body_lineage::BodyLineageIndex,
-    deleted: BTreeMap<FeatureId, Vec<u8>>,
-    health: Vec<FeatureHealthRecord<PartFeatureFailure<Failure>>>,
+    pub(super) deleted: BTreeMap<FeatureId, Vec<u8>>,
+    pub(super) health: Vec<FeatureHealthRecord<PartFeatureFailure<Failure>>>,
+    pub(super) source: Option<Box<DocumentSnapshot>>,
 }
 /// One ordered part result and the solved sketches that produced it.
 pub type RecomputedPart<Body, Failure> = (
@@ -121,6 +122,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             body_lineage: super::body_lineage::BodyLineageIndex::default(),
             deleted: BTreeMap::new(),
             health: Vec::new(),
+            source: None,
         }
     }
     /// Inspect the exact body consumed by a successful deletion. Example: `evaluation.deleted_body(delete_id)`.
@@ -258,11 +260,12 @@ impl DocumentSnapshot {
             )?;
             candidate.sketches = solved.candidate;
         }
+        evaluation.source = Some(Box::new(candidate.as_ref().clone()));
         Ok((evaluation, candidate))
     }
 }
 impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
-    fn replay<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
+    pub(super) fn replay<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
         &mut self,
         snapshot: &mut Cow<'_, DocumentSnapshot>,
         backend: &mut B,
@@ -300,7 +303,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             }
         }
     }
-    fn refresh_sketch_faces<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
+    pub(super) fn refresh_sketch_faces<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
         &mut self,
         snapshot: &DocumentSnapshot,
         backend: &B,
@@ -440,7 +443,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
 }
 
 impl DocumentSnapshot {
-    fn part_replay_range(&self) -> Result<FeatureReplayRange, PartFeatureProgramError> {
+    pub(super) fn part_replay_range(&self) -> Result<FeatureReplayRange, PartFeatureProgramError> {
         self.validate_prism_reads()?;
         self.work_geometry
             .validate_work_plane_reads()

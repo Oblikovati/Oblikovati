@@ -3,7 +3,7 @@
 use crate::feature::FeatureId;
 use std::collections::{BTreeMap, BTreeSet};
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub(super) struct BodyLineageIndex {
     owners: BTreeMap<FeatureId, BTreeSet<FeatureId>>,
 }

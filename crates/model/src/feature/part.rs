@@ -20,7 +20,9 @@ pub use evaluate::{
     PartBlendKind, PartFeatureEvaluation, PartFeatureEvaluator, PartFeatureFailure, RecomputedPart,
     unavailable_planar_face,
 };
+mod prefix_replay;
 mod reads;
+pub use prefix_replay::BorrowedPartReplay;
 mod replay_boundary;
 pub use super::work_plane::{
     WorkPlaneProgramRecipe as PartFeatureProgramRecipe,

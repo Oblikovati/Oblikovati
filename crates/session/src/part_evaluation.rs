@@ -176,10 +176,24 @@ impl<Body, Failure> PartEvaluationSlot<Body, Failure> {
                 document: session.document,
             })?;
         published.validate_owner(session)?;
-        Ok(published
-            .snapshot
-            .snapshot()
-            .part_replay_change(session.snapshot()))
+        Ok(published.evaluation.replay_change(session.snapshot()))
+    }
+    /// Validate a candidate tail using only a current retained prefix.
+    /// Example: `slot.preview_candidate_tail(&session, &candidate, &mut backend)?`.
+    pub fn preview_candidate_tail<'a, O, B>(
+        &'a self,
+        session: &'a DocumentSession<O>,
+        candidate: &oblikovati_model::history::DocumentSnapshot,
+        backend: &mut B,
+    ) -> Result<oblikovati_model::feature::part::BorrowedPartReplay<'a, Body, Failure>, String>
+    where
+        O: TransactionObserver,
+        B: PartFeatureEvaluator<Body = Body, Failure = Failure>,
+        Failure: Clone,
+    {
+        self.current(session)
+            .map_err(|error| error.to_string())?
+            .replay_candidate_tail(candidate, backend)
     }
 }
 impl<O: TransactionObserver> DocumentSession<O> {
