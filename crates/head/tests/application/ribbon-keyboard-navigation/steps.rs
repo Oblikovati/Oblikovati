@@ -156,6 +156,11 @@ fn display_key_tips_cycle_and_open_the_policy_menu() {
 fn tools_full(world: &mut ApplicationWorld) {
     world.click_text("Tools");
     world.expect_text("Application Options");
+    display_tip(world, ViewportPhysicalKey::Alpha3);
+    world.click_text("Cycle through All");
+    display_tip(world, ViewportPhysicalKey::Alpha3);
+    assert!(world.checked("Cycle through All"));
+    world.escape();
 }
 fn display_tip(world: &mut ApplicationWorld, key: ViewportPhysicalKey) {
     alt(world);
