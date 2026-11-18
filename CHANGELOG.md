@@ -213,6 +213,8 @@
 
 ### Fixed
 
+- Refused named-prism queries when a later blend replaces the requested body. (#4086)
+
 - Preserved exact curve bounds when sampling saved drawing views. (#4085)
 
 - Resolve Fillet and Chamfer inputs with the certified policy when the retained part uses different bounds. (#4084)
