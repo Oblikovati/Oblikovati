@@ -64,6 +64,8 @@ using this status; the live scenario directory can change.
   for transactions and mismatched policies (#4079).
 - Feature deletion uses the same owner-checked replay path. Tests check later
   and first-feature deletion, replay counts, names, undo/redo, and reopen (#4079).
+- Feature reorder reuses the unchanged prefix before the first moved feature.
+  Tests cover replay counts, names, rejected moves, undo/redo, and reopen (#4079).
 - Drawing creation, live display, previews, and saved views obtain a current
   document-owned part, including when the injected owner uses another policy
   or is absent. Tests cover source edits, undo, retained results, and refusing
