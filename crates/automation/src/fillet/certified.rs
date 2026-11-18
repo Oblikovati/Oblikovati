@@ -50,21 +50,24 @@ impl FilletAccess for CertifiedFilletAccess {
         document: DocumentGuid,
         candidate: &DocumentSnapshot,
         feature: FeatureId,
-        prefix: &crate::CertifiedCheckpointPrefix,
+        prefix: &oblikovati_session::OwnedCheckpointReplay,
     ) -> Result<Option<crate::CertifiedCheckpointCandidate>, String> {
-        if prefix.policy != Some(self.policy) {
+        if prefix.policy() != Some(self.policy) {
             return Err("part checkpoints: expected the blend validation policy".into());
+        }
+        if !prefix.owns_identity(document) {
+            return Err(format!(
+                "document {document:?}: expected the checkpoint owner identity"
+            ));
         }
         let expected = match kind {
             oblikovati_model::feature::part::PartBlendKind::Fillet => "fillet",
             oblikovati_model::feature::part::PartBlendKind::Chamfer => "chamfer",
         };
         require_feature_kind(candidate, feature, expected)?;
-        let mut evaluator =
-            CertifiedNamedSolidEvaluator::with_policy(history, document, self.policy);
-        let Some(result) = prefix
-            .prefix
-            .prepare_checkpoints(history, candidate, &mut evaluator)?
+        let Some(candidate) = prefix
+            .prepare_feature(candidate, history, feature)
+            .map_err(|error| error.to_string())?
         else {
             match kind {
                 oblikovati_model::feature::part::PartBlendKind::Fillet => {
@@ -76,13 +79,6 @@ impl FilletAccess for CertifiedFilletAccess {
             }?;
             return Ok(None);
         };
-        if !result.has_current_source(feature) {
-            return Err(format!(
-                "{expected} {feature:?}: expected a valid current descendant body"
-            ));
-        }
-        let candidate =
-            result.capture(history, |_, body| body.capture_detached(history, document))?;
         Ok(Some(crate::CertifiedCheckpointCandidate {
             policy: self.policy,
             candidate,

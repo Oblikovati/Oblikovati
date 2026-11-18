@@ -101,7 +101,7 @@ pub trait FilletAccess {
         document: oblikovati_model::identity::DocumentGuid,
         candidate: &DocumentSnapshot,
         feature: FeatureId,
-        _prefix: &crate::CertifiedCheckpointPrefix,
+        _prefix: &oblikovati_session::OwnedCheckpointReplay,
     ) -> Result<Option<crate::CertifiedCheckpointCandidate>, String> {
         match kind {
             oblikovati_model::feature::part::PartBlendKind::Fillet => {

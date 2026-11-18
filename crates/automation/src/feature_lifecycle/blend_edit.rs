@@ -47,9 +47,17 @@ pub(super) fn edit<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFile
         BlendEditKind::Chamfer => "Edit chamfer",
     };
     let prefix = match access.as_deref() {
-        Some(owner) if backend.accepts_policy(owner.resolution_policy()) => owner
-            .cached_checkpoint_prefix(files, document)
-            .map_err(Error)?,
+        Some(owner) if backend.accepts_policy(owner.resolution_policy()) => {
+            match owner
+                .cached_checkpoint_prefix(files, document)
+                .map_err(Error)?
+            {
+                Some(prefix) => {
+                    crate::checkpoint_replay::certified_prefix(files, document, prefix)?
+                }
+                None => None,
+            }
+        }
         _ => None,
     };
     let ((id, captured), transition) = files
