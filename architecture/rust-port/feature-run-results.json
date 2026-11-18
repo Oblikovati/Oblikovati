@@ -197,12 +197,12 @@
       "features/application/ribbon-keyboard-navigation/FIXTURES.md": "53d28b3a02b8e56ba5a458529c93e469f15f82c537cce4f179190c78ab595e2c",
       "features/application/ribbon-keyboard-navigation/BLOCKERS.md": "247a89fc61b82bd5a3604f1df222bbf57352cb536ec22767ea61cf15cbcd15b4"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-18-ribbon-keyboard-selector/cucumber.json",
-    "cucumber_sha256": "19ec28d6082d23e70dd03a91e944e0df77a63d720ea6627868b8ee4a90a3e8ad",
-    "application_commit": "24bc104533ef8af3b93391fb6d56a4ec2c1f9a7a",
+    "cucumber": "architecture/rust-port/receipts/2026-11-18-keyboard-side-final/cucumber.json",
+    "cucumber_sha256": "3555fdce6618fde101a7556acc0e3c0f02cd04887863b595a5c8386e004a6bc2",
+    "application_commit": "233974834ca87f6fd1c8ef5cf1daceb0a06e849f",
     "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=ribbon-keyboard-navigation XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
-    "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted window input",
-    "notes": "The panel selector scenario now verifies checked panels and popup dismissal; five scenarios still fail at undefined steps or behavior checks, including disabled Hole and selected-face Tools key tips (#3856)."
+    "environment": "Linux X11, Xvfb, Openbox and Vulkan Lavapipe; scripted scenario input; separate native X11 keyboard tests passed",
+    "notes": "13 of 18 scenarios passed; five are undefined. Four need Hole command access (#4093); selected-face Tools key tips need implementation. Side-docked Escape passed; the top-docked Escape checks passed before an unrelated undefined face-click step."
   },
   "features/application/document-tabs/document-tabs.feature": {
     "feature_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f",
