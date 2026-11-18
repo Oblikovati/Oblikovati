@@ -285,8 +285,10 @@ fn temporary_panel(
     if escape {
         display.temporary_escape_consumed = true;
     }
-    // The observed temporary ribbon stays visible on Escape; selector dismissal is separate (#3856).
-    if display.selector_escape || !keep || context.actions.len() != before {
+    // Top-docked panels stay open; side-docked groups close on Escape (#3856).
+    let close_group =
+        escape && display.side_anchor.is_some() && matches!(shown, TemporaryPanel::Group(_));
+    if display.selector_escape || close_group || !keep || context.actions.len() != before {
         display.temporary = None;
     }
 }
