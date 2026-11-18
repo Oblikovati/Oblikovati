@@ -157,5 +157,20 @@
     "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=project-dialog XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
     "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted window input",
     "notes": "A separate native X11 mouse and keyboard test expands and collapses Folder Options while retaining the active project."
+  },
+  "features/application/viewport-orientation/viewport-orientation.feature": {
+    "feature_sha256": "65989d7b418fdc203bed1c3050624c407208d6019eaed74364fa5fa1330775d4",
+    "supporting_files": {
+      "features/application/viewport-orientation/FUNCTIONAL.md": "a4c7d2f874d08a126462298ef4f646a0191fb551d3d06322ca704638d0a2b20c",
+      "features/application/viewport-orientation/VISUAL.md": "2715359ed8d3e62d0cc3113bd20df24d014b0346351d5ed2daaa2b25c1ec731d",
+      "features/application/viewport-orientation/FIXTURES.md": "9d1692ab576a5bbb1294868771aec1cddde6c2980b018629d9e15cdf3c3fb3f2",
+      "features/application/viewport-orientation/BLOCKERS.md": "1e1842ab23a2ce1b6e6300486320b8850bd763bfb62604b6146d285bd4e271d7"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-18-viewport-orientation/cucumber.json",
+    "cucumber_sha256": "5647e456ba7cfc5dd81405698d26a6932182e697f30b9fb0db596f940a817289",
+    "application_commit": "ad879407f7b46b9a34456890533f8a70850c322e",
+    "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=viewport-orientation XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted window input",
+    "notes": "The rotated-front image is from the initial failing diagnostic; the full passing run uses the corrected draw-data collector."
   }
 }
