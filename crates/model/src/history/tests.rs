@@ -28,6 +28,31 @@ fn empty_history() -> DocumentEditHistory {
 }
 
 #[test]
+fn edit_view_tracks_source_generation_and_rejection_keeps_the_owner() {
+    let mut history = empty_history();
+    let scope = history.evaluation_scope();
+    let token = history.begin("Rejected candidate").unwrap();
+    let result: Result<(), _> = history.edit_with_view(&token, |candidate, _, view| {
+        assert!(scope.is_current(view));
+        candidate.design_views.push("Candidate".into());
+        assert!(view.snapshot().design_views.is_empty());
+        Err("rejected")
+    });
+    assert!(result.is_err());
+    assert!(scope.is_current(&history));
+    assert!(history.snapshot().design_views.is_empty());
+    history
+        .edit_with_view(&token, |candidate, _, view| {
+            assert!(scope.is_current(view));
+            candidate.design_views.push("Accepted".into());
+            Ok::<(), ()>(())
+        })
+        .unwrap();
+    assert!(scope.is_superseded());
+    assert_eq!(history.snapshot().design_views, ["Accepted"]);
+}
+
+#[test]
 fn assembly_occurrence_changes_follow_undo_and_redo() {
     let mut history = empty_history();
     let before = history.snapshot().clone();

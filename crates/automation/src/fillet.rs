@@ -55,6 +55,17 @@ pub trait FilletAccess {
         candidate: &DocumentSnapshot,
         feature: FeatureId,
     ) -> Result<usize, String>;
+    /// Validate with an available current prefix; example: `access.validate_with_prefix(history, document, candidate, feature, prefix)?`.
+    fn validate_with_prefix(
+        &self,
+        _history: &oblikovati_model::history::DocumentEditHistory,
+        document: oblikovati_model::identity::DocumentGuid,
+        candidate: &DocumentSnapshot,
+        feature: FeatureId,
+        _prefix: &crate::CertifiedPartPrefix<'_>,
+    ) -> Result<usize, String> {
+        self.validate(document, candidate, feature)
+    }
     /// Validate a chamfer candidate; example: `access.validate_chamfer(document, candidate, feature)?`.
     fn validate_chamfer(
         &self,

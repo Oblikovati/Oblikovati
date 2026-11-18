@@ -77,6 +77,28 @@ impl FilletAccess for CertifiedFilletAccess {
             &self.validation_replays,
         )
     }
+    fn validate_with_prefix(
+        &self,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        candidate: &DocumentSnapshot,
+        feature: FeatureId,
+        prefix: &crate::CertifiedPartPrefix<'_>,
+    ) -> Result<usize, String> {
+        if prefix.policy != Some(self.policy) {
+            return Err("part candidate prefix: expected the Fillet validation policy".into());
+        }
+        require_feature_kind(candidate, feature, "fillet")?;
+        let mut evaluator =
+            CertifiedNamedSolidEvaluator::with_policy(history, document, self.policy);
+        match prefix
+            .prefix
+            .validate_tail(history, candidate, feature, &mut evaluator)?
+        {
+            Some(count) => Ok(count),
+            None => self.validate(document, candidate, feature),
+        }
+    }
     fn validate_chamfer(
         &self,
         document: DocumentGuid,
@@ -142,16 +164,7 @@ impl CertifiedFilletValidation {
         expected: &str,
         replay_count: &AtomicU64,
     ) -> Result<usize, String> {
-        let authored = candidate
-            .work_geometry
-            .get(feature)
-            .map_err(|cause| cause.to_string())?;
-        if authored.definition().kind() != expected {
-            return Err(format!(
-                "feature {feature:?}, kind {}: expected {expected}",
-                authored.definition().kind()
-            ));
-        }
+        require_feature_kind(candidate, feature, expected)?;
         let history = SnapshotReplay::new(candidate).map_err(|cause| cause.to_string())?;
         let mut evaluator = CertifiedNamedSolidEvaluator::with_policy(
             history.history(),
@@ -172,4 +185,22 @@ impl CertifiedFilletValidation {
         }
         Ok(result.ordered_bodies().count())
     }
+}
+
+fn require_feature_kind(
+    candidate: &DocumentSnapshot,
+    feature: FeatureId,
+    expected: &str,
+) -> Result<(), String> {
+    let authored = candidate
+        .work_geometry
+        .get(feature)
+        .map_err(|cause| cause.to_string())?;
+    if authored.definition().kind() == expected {
+        return Ok(());
+    }
+    Err(format!(
+        "feature {feature:?}, kind {}: expected {expected}",
+        authored.definition().kind()
+    ))
 }
