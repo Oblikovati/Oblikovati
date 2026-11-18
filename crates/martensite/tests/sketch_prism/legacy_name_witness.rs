@@ -253,10 +253,10 @@ fn face_offset_history(key: Vec<u8>) -> DocumentEditHistory {
     DocumentEditHistory::new(snapshot, ids).unwrap()
 }
 fn assert_face_offset(history: &DocumentEditHistory, expected_x: f64) {
-    use oblikovati_martensite::CertifiedNamedPrismEvaluator;
+    use oblikovati_martensite::CertifiedNamedSolidEvaluator;
     use oblikovati_model::feature::work_plane::WorkPlaneResolver;
     let mut evaluator =
-        CertifiedNamedPrismEvaluator::new(history, document_guid(), app_resolution());
+        CertifiedNamedSolidEvaluator::new(history, document_guid(), app_resolution());
     let replay = history
         .snapshot()
         .evaluate_part_features(&mut evaluator)
@@ -289,7 +289,7 @@ fn face_offset_replays_from_named_body_through_edit_history_and_recipe() {
 
 #[test]
 fn face_offset_rejects_a_foreign_document_name_without_dropping_its_body() {
-    use oblikovati_martensite::CertifiedNamedPrismEvaluator;
+    use oblikovati_martensite::CertifiedNamedSolidEvaluator;
     use oblikovati_model::feature::work_plane::WorkPlaneResolver;
     let foreign = "11111111-2222-3333-4444-555555555555".parse().unwrap();
     let key = SemanticReferenceName::new(foreign, 1, 1, "sketch-prism", "side", &[1, 7])
@@ -298,7 +298,7 @@ fn face_offset_rejects_a_foreign_document_name_without_dropping_its_body() {
         .unwrap();
     let history = face_offset_history(key);
     let mut evaluator =
-        CertifiedNamedPrismEvaluator::new(&history, document_guid(), app_resolution());
+        CertifiedNamedSolidEvaluator::new(&history, document_guid(), app_resolution());
     let replay = history
         .snapshot()
         .evaluate_part_features(&mut evaluator)
@@ -309,14 +309,14 @@ fn face_offset_rejects_a_foreign_document_name_without_dropping_its_body() {
 
 #[test]
 fn ordered_recompute_moves_face_sketch_after_size_edit() {
-    use oblikovati_martensite::CertifiedNamedPrismEvaluator;
+    use oblikovati_martensite::CertifiedNamedSolidEvaluator;
     use oblikovati_model::{
         document_sketch::{PlacedSketchHealth, SketchEvaluation, SketchPlacement},
         history::DocumentSketchCreation,
     };
     let history = face_offset_history(native_side_name(7));
     let mut evaluator =
-        CertifiedNamedPrismEvaluator::new(&history, document_guid(), app_resolution());
+        CertifiedNamedSolidEvaluator::new(&history, document_guid(), app_resolution());
     let datums = history
         .snapshot()
         .evaluate_part_features(&mut evaluator)
@@ -337,7 +337,7 @@ fn ordered_recompute_moves_face_sketch_after_size_edit() {
                 .solve_pending_document_sketches(Default::default(), || false)
                 .candidate;
             let mut evaluator =
-                CertifiedNamedPrismEvaluator::new(&history, document_guid(), app_resolution());
+                CertifiedNamedSolidEvaluator::new(&history, document_guid(), app_resolution());
             let (result, sketches) = candidate
                 .recompute_part_with_sketches(&mut evaluator, Default::default())
                 .unwrap();
@@ -387,10 +387,10 @@ fn go_face_offset_history() -> DocumentEditHistory {
 }
 
 fn assert_go_offset_frame(history: &DocumentEditHistory, expected_x: f64) {
-    use oblikovati_martensite::CertifiedNamedPrismEvaluator;
+    use oblikovati_martensite::CertifiedNamedSolidEvaluator;
     use oblikovati_model::feature::work_plane::WorkPlaneResolver;
     let mut evaluator =
-        CertifiedNamedPrismEvaluator::new(history, document_guid(), app_resolution());
+        CertifiedNamedSolidEvaluator::new(history, document_guid(), app_resolution());
     let replay = history
         .snapshot()
         .evaluate_part_features(&mut evaluator)

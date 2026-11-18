@@ -143,6 +143,8 @@
 
 ### Changed
 
+- Removed whole-part replay from the partial named-prism evaluators. (#4079)
+
 - Required part evaluators to explicitly resolve or decline named planar faces. (#4079)
 
 - Made Fillet and Chamfer dispatch explicit in the part evaluator. (#4079)

@@ -17,7 +17,8 @@ privately and requires the current owning history for every query and enumeratio
 An edit, undo, close, or different history owner makes an old binding unusable.
 A rebuilt result can bind the same saved name to its current face.
 
-The desktop now uses `NamedPrismEvaluator` inside its ordinary part replay. The
+The desktop uses `CertifiedNamedSolidEvaluator` for ordinary part replay. Its
+internal prism builder assigns the exact names. The
 model passes the authored feature ID to the backend. Each result is named and
 verified before the completed receipt can enter `PartEvaluationSlot`. Rendering
 and exact queries borrow that same retained result; naming does not trigger a

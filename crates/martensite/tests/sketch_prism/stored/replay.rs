@@ -152,7 +152,7 @@ fn unnamed_diagnostic_replay_refuses_body_deletion_without_losing_geometry() {
         .unwrap();
     assert_current_volume(&result, 1);
     assert!(
-        matches!(&result.health()[1].status, FeatureEvaluationStatus::Failed(PartFeatureFailure::BodyReference(cause)) if cause.contains("document-scoped NamedPrismEvaluator"))
+        matches!(&result.health()[1].status, FeatureEvaluationStatus::Failed(PartFeatureFailure::BodyReference(cause)) if cause.contains("document-scoped named part evaluator"))
     );
     assert!(result.deleted_body(FeatureId(2)).is_none());
 }
