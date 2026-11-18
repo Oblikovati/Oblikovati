@@ -102,7 +102,7 @@ pub trait FilletAccess {
         candidate: &DocumentSnapshot,
         feature: FeatureId,
         _prefix: &crate::CertifiedCheckpointPrefix<'_>,
-    ) -> Result<Option<crate::CertifiedPartCandidate>, String> {
+    ) -> Result<Option<crate::CertifiedCheckpointCandidate>, String> {
         match kind {
             oblikovati_model::feature::part::PartBlendKind::Fillet => {
                 self.validate(document, candidate, feature)

@@ -92,7 +92,7 @@ pub(super) fn edit<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFile
             ))
         })?;
         owner
-            .adopt_candidate(files, document, candidate, &transition)
+            .adopt_checkpoints(files, document, candidate, &transition)
             .map_err(|error| {
                 Error(format!(
                     "document {document}: blend committed but result adoption failed: {error}"

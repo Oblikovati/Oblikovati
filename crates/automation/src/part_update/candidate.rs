@@ -31,8 +31,61 @@ pub struct CertifiedCheckpointPrefix<'a> {
     >,
     pub(crate) policy: Option<PrismResolutionPolicy>,
 }
+/// A replayed checkpoint set sealed to its certified resolution policy.
+pub struct CertifiedCheckpointCandidate {
+    pub(crate) policy: PrismResolutionPolicy,
+    pub(crate) candidate: oblikovati_session::part_evaluation::CapturedPartCheckpointCandidate<
+        oblikovati_martensite::CapturedNamedSolid,
+        EvaluationFailure,
+    >,
+}
 
 impl PartReplayService {
+    pub(super) fn adopt_named_checkpoints<
+        O: TransactionObserver,
+        W: WorkspaceObserver,
+        F: DocumentFiles,
+    >(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+        candidate: CertifiedCheckpointCandidate,
+        transition: &oblikovati_model::history::EvaluationTransition,
+    ) -> Result<(), String> {
+        if self.resolution != Some(candidate.policy) {
+            return Err(format!(
+                "checkpoint policy {:?}: expected {:?}",
+                candidate.policy, self.resolution
+            ));
+        }
+        let workspace = files.workspace();
+        let guid = workspace
+            .identity(document)
+            .map_err(|error| error.to_string())?
+            .internal_name;
+        let session = workspace
+            .session(document)
+            .map_err(|error| error.to_string())?;
+        let completed = oblikovati_martensite::complete_named_checkpoints(
+            candidate.candidate,
+            transition,
+            session,
+            guid,
+        )?;
+        let part = self
+            .slots
+            .get_mut(&document)
+            .ok_or_else(|| format!("document {document}: expected its retained part slot"))?;
+        let checkpoints = self
+            .checkpoints
+            .get_mut(&document)
+            .ok_or_else(|| format!("document {document}: expected its retained checkpoint slot"))?;
+        files
+            .commands(document)
+            .map_err(|error| error.to_string())?
+            .adopt_replayed_checkpoints(completed, part, checkpoints)
+            .map_err(|error| error.to_string())
+    }
     /// Retain feature boundaries for the current document on demand.
     /// Example: `owner.ensure_checkpoints(files, document)?` before interactive edits.
     pub fn ensure_checkpoints<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(

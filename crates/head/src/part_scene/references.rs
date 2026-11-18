@@ -62,6 +62,19 @@ impl DesktopPartScenes {
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateAccess<O, W, F>
     for DesktopPartScenes
 {
+    fn adopt_checkpoints(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+        candidate: oblikovati_automation::CertifiedCheckpointCandidate,
+        transition: &oblikovati_model::history::EvaluationTransition,
+    ) -> Result<(), String> {
+        self.replay
+            .adopt_checkpoints(files, document, candidate, transition)?;
+        self.active_replay = Some(document);
+        self.invalidate_presentation();
+        Ok(())
+    }
     fn cached_checkpoint_prefix<'a>(
         &'a self,
         files: &FileWorkspace<O, W, F>,

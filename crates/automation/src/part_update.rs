@@ -23,7 +23,10 @@ mod access;
 mod candidate;
 pub use access::PartUpdateAccess;
 use candidate::NamedSketchRecompute;
-pub use candidate::{CertifiedCheckpointPrefix, CertifiedPartCandidate, CertifiedPartPrefix};
+pub use candidate::{
+    CertifiedCheckpointCandidate, CertifiedCheckpointPrefix, CertifiedPartCandidate,
+    CertifiedPartPrefix,
+};
 
 /// A headless owner of generation-checked Martensite replay results.
 #[derive(Default)]
@@ -61,6 +64,15 @@ impl PartReplayService {
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateAccess<O, W, F>
     for PartReplayService
 {
+    fn adopt_checkpoints(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+        candidate: CertifiedCheckpointCandidate,
+        transition: &oblikovati_model::history::EvaluationTransition,
+    ) -> Result<(), String> {
+        self.adopt_named_checkpoints(files, document, candidate, transition)
+    }
     fn cached_checkpoint_prefix<'a>(
         &'a self,
         files: &FileWorkspace<O, W, F>,
