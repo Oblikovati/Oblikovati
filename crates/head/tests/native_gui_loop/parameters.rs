@@ -133,6 +133,10 @@ pub(super) fn verify_rectangle(
 }
 
 fn open_parameter_ribbon(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOwner) {
-    let parameters = application_bdd::rendered_label_center("Parameters");
+    let parameters = application_bdd::toolbar_icon_center("Parameters");
     click_shell_position(window, owner, parameters);
+    assert!(
+        application_bdd::window_geometry("Parameters").is_some(),
+        "Parameters toolbar command must open its window"
+    );
 }

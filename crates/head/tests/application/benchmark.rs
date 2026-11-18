@@ -47,6 +47,12 @@ pub(super) fn window_occlusions() -> Vec<[f32; 4]> {
 pub(super) fn pointer_pixels(position: [f32; 2]) -> [i32; 2] {
     diagnostics::pointer_pixels(position)
 }
+/// Locate a visible Quick Access icon; example: `toolbar_icon_center("Parameters")`.
+pub(super) fn toolbar_icon_center(label: &str) -> [i32; 2] {
+    let center = quick_access_icons::standard_icon_center(label)
+        .unwrap_or_else(|| panic!("toolbar icon {label:?}: expected a visible command"));
+    diagnostics::pointer_pixels(center)
+}
 pub(super) fn rendered_label_center(label: &str) -> [i32; 2] {
     let frame = diagnostics::rendered_frame();
     let wanted: String = label.chars().filter(|ch| !ch.is_whitespace()).collect();
