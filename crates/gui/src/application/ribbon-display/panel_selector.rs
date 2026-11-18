@@ -4,6 +4,10 @@ use super::*;
 pub(crate) const PANEL_SELECTOR_WIDTH: f32 = 32.;
 const SELECTOR_POPUP: &str = "##ribbon-panel-selector-list";
 impl RibbonDisplayState {
+    pub(crate) fn close_temporary_from_tab(&mut self) {
+        self.temporary = None;
+        self.tab_release_consumed = true;
+    }
     /// Toggle panels without reopening the list; example: `display.panel_selector(ui, tab, panels)`.
     pub(crate) fn panel_selector(&mut self, ui: &Ui, tab: RibbonTab, panels: &[RibbonPanel]) {
         self.selector_escape =
