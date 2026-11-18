@@ -67,5 +67,19 @@
     "application_commit": "8460b6dd4dbe78156e9b3bcfc3d75d54b55fc11f",
     "command": "OBK_BDD_FEATURE=main-window-frame tools/with-xvfb.sh dbus-run-session -- architecture/rust-port/receipts/2026-11-18-main-window-frame/run.sh",
     "environment": "Linux X11, Xvfb, Openbox, tint2, AT-SPI and Vulkan Lavapipe; X11 window input; earlier full run had intermittent double-click failure"
+  },
+  "features/application/document-saving/document-saving.feature": {
+    "feature_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2",
+    "supporting_files": {
+      "features/application/document-saving/FUNCTIONAL.md": "0770591a562fa705ec763afefadc463a62190111f716479b352369adb90dbb8d",
+      "features/application/document-saving/VISUAL.md": "e6f81d82ed882bb46b88c72ba63c714b4f33b338d76ddfb84c54cce97b06d21d",
+      "features/application/document-saving/FIXTURES.md": "de3d427b5f1851ce957cb61d01b9ac5271cbe4c1c76b032a98077dd73ea51e2f",
+      "features/application/document-saving/BLOCKERS.md": "006973f8a44666b747efa0e94292d2590e8b1cf78240b41c5c0e173ce33d4708"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-18-document-saving/cucumber.json",
+    "cucumber_sha256": "dab620d33979791fc9d6c6c695c47c00e4500ffa9cddee3cf503bfb181e4d89f",
+    "application_commit": "80cbeda3f",
+    "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=document-saving VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted window input; first-save cancellation separately passed with X11 keyboard and pointer input"
   }
 }
