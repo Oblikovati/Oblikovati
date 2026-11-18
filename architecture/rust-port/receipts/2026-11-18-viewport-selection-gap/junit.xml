@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Select entities in the 3D model viewport: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature" package="testsuite/Feature: Select entities in the 3D model viewport: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature" tests="7" errors="0" failures="7" hostname="localhost" timestamp="2026-11-18T11:53:22.837228679Z" time="24.010650716"><testcase name="Scenario: Pick a 3D sketch endpoint: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:9:3" time="3.461738127"><failure type="Step Panicked" message="Step panicked. Captured output: fixture &quot;/mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/viewport-selection-solid.ipt&quot;: expected an open Inventor part: load &quot;/mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/viewport-selection-solid.ipt&quot;: expected a readable valid schema-2 package: YAML input: expected one valid schema-2 mapping: invalid trailing UTF-8 octet at position 1"/><system-out><![CDATA[  Scenario: Pick a 3D sketch endpoint
+   ✘> Given the MCAD Software displays fixture "viewport-selection-solid.ipt" in the part modeling workspace
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:5:5
+      Matched: crates/head/src/../tests/application/viewport-entity-selection/steps.rs:7:1
+      Step panicked. Captured output: fixture "/mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/viewport-selection-solid.ipt": expected an open Inventor part: load "/mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/viewport-selection-solid.ipt": expected a readable valid schema-2 package: YAML input: expected one valid schema-2 mapping: invalid trailing UTF-8 octet at position 1
+      ApplicationWorld {
+          text: "Model\n+\nModel\n(nodocument)\nReady\nGetStarted\nTools\nRibbonDisplay\nv\nv\n...\nOblikovati\nFile\nNewPart\nLaunch",
+          ..
+      }
+]]></system-out></testcase><testcase name="Scenario: Select a visible 3D sketch curve: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:16:3" time="3.37821144"><failure type="Step Panicked" message="Step panicked. Captured output: fixture &quot;/mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/viewport-selection-solid.ipt&quot;: expected an open Inventor part: load &quot;/mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/viewport-selection-solid.ipt&quot;: expected a readable valid schema-2 package: YAML input: expected one valid schema-2 mapping: invalid trailing UTF-8 octet at position 1"/><system-out><![CDATA[  Scenario: Select a visible 3D sketch curve
+   ✘> Given the MCAD Software displays fixture "viewport-selection-solid.ipt" in the part modeling workspace
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:5:5
+      Matched: crates/head/src/../tests/application/viewport-entity-selection/steps.rs:7:1
+      Step panicked. Captured output: fixture "/mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/viewport-selection-solid.ipt": expected an open Inventor part: load "/mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/viewport-selection-solid.ipt": expected a readable valid schema-2 package: YAML input: expected one valid schema-2 mapping: invalid trailing UTF-8 octet at position 1
+      ApplicationWorld {
+          text: "Model\n+\nModel\n(nodocument)\nReady\nGetStarted\nTools\nRibbonDisplay\nv\nv\n...\nOblikovati\nFile\nNewPart\nLaunch",
+          ..
+      }
+]]></system-out></testcase><testcase name="Scenario: Select a solid face: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:23:3" time="3.384583916"><failure type="Step Panicked" message="Step panicked. Captured output: fixture &quot;/mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/viewport-selection-solid.ipt&quot;: expected an open Inventor part: load &quot;/mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/viewport-selection-solid.ipt&quot;: expected a readable valid schema-2 package: YAML input: expected one valid schema-2 mapping: invalid trailing UTF-8 octet at position 1"/><system-out><![CDATA[  Scenario: Select a solid face
+   ✘> Given the MCAD Software displays fixture "viewport-selection-solid.ipt" in the part modeling workspace
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:5:5
+      Matched: crates/head/src/../tests/application/viewport-entity-selection/steps.rs:7:1
+      Step panicked. Captured output: fixture "/mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/viewport-selection-solid.ipt": expected an open Inventor part: load "/mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/viewport-selection-solid.ipt": expected a readable valid schema-2 package: YAML input: expected one valid schema-2 mapping: invalid trailing UTF-8 octet at position 1
+      ApplicationWorld {
+          text: "Model\n+\nModel\n(nodocument)\nReady\nGetStarted\nTools\nRibbonDisplay\nv\nv\n...\nOblikovati\nFile\nNewPart\nLaunch",
+          ..
+      }
+]]></system-out></testcase><testcase name="Scenario: Open the context menus for a selected solid face: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:31:3" time="3.387587164"><failure type="Step Panicked" message="Step panicked. Captured output: fixture &quot;/mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/viewport-selection-solid.ipt&quot;: expected an open Inventor part: load &quot;/mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/viewport-selection-solid.ipt&quot;: expected a readable valid schema-2 package: YAML input: expected one valid schema-2 mapping: invalid trailing UTF-8 octet at position 1"/><system-out><![CDATA[  Scenario: Open the context menus for a selected solid face
+   ✘> Given the MCAD Software displays fixture "viewport-selection-solid.ipt" in the part modeling workspace
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:5:5
+      Matched: crates/head/src/../tests/application/viewport-entity-selection/steps.rs:7:1
+      Step panicked. Captured output: fixture "/mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/viewport-selection-solid.ipt": expected an open Inventor part: load "/mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/viewport-selection-solid.ipt": expected a readable valid schema-2 package: YAML input: expected one valid schema-2 mapping: invalid trailing UTF-8 octet at position 1
+      ApplicationWorld {
+          text: "Model\n+\nModel\n(nodocument)\nReady\nGetStarted\nTools\nRibbonDisplay\nv\nv\n...\nOblikovati\nFile\nNewPart\nLaunch",
+          ..
+      }
+]]></system-out></testcase><testcase name="Scenario: Clear an entity selection from empty viewport space: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:40:3" time="3.401062788"><failure type="Step Panicked" message="Step panicked. Captured output: fixture &quot;/mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/viewport-selection-solid.ipt&quot;: expected an open Inventor part: load &quot;/mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/viewport-selection-solid.ipt&quot;: expected a readable valid schema-2 package: YAML input: expected one valid schema-2 mapping: invalid trailing UTF-8 octet at position 1"/><system-out><![CDATA[  Scenario: Clear an entity selection from empty viewport space
+   ✘> Given the MCAD Software displays fixture "viewport-selection-solid.ipt" in the part modeling workspace
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:5:5
+      Matched: crates/head/src/../tests/application/viewport-entity-selection/steps.rs:7:1
+      Step panicked. Captured output: fixture "/mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/viewport-selection-solid.ipt": expected an open Inventor part: load "/mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/viewport-selection-solid.ipt": expected a readable valid schema-2 package: YAML input: expected one valid schema-2 mapping: invalid trailing UTF-8 octet at position 1
+      ApplicationWorld {
+          text: "Model\n+\nModel\n(nodocument)\nReady\nGetStarted\nTools\nRibbonDisplay\nv\nv\n...\nOblikovati\nFile\nNewPart\nLaunch",
+          ..
+      }
+]]></system-out></testcase><testcase name="Scenario: Pick a sketch point in the 3D viewport: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:51:3" time="3.562452107"><failure type="Step Panicked" message="Step panicked. Captured output: fixture &quot;/mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/viewport-selection-solid.ipt&quot;: expected an open Inventor part: load &quot;/mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/viewport-selection-solid.ipt&quot;: expected a readable valid schema-2 package: YAML input: expected one valid schema-2 mapping: invalid trailing UTF-8 octet at position 1"/><system-out><![CDATA[  Scenario: Pick a sketch point in the 3D viewport
+   ✘> Given the MCAD Software displays fixture "viewport-selection-solid.ipt" in the part modeling workspace
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:5:5
+      Matched: crates/head/src/../tests/application/viewport-entity-selection/steps.rs:7:1
+      Step panicked. Captured output: fixture "/mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/viewport-selection-solid.ipt": expected an open Inventor part: load "/mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/viewport-selection-solid.ipt": expected a readable valid schema-2 package: YAML input: expected one valid schema-2 mapping: invalid trailing UTF-8 octet at position 1
+      ApplicationWorld {
+          text: "Model\n+\nModel\n(nodocument)\nReady\nGetStarted\nTools\nRibbonDisplay\nv\nv\n...\nOblikovati\nFile\nNewPart\nLaunch",
+          ..
+      }
+]]></system-out></testcase><testcase name="Scenario: Open sketch-curve context menus during a 3D sketch: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:57:3" time="3.435015174"><failure type="Step Panicked" message="Step panicked. Captured output: fixture &quot;/mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/viewport-selection-solid.ipt&quot;: expected an open Inventor part: load &quot;/mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/viewport-selection-solid.ipt&quot;: expected a readable valid schema-2 package: YAML input: expected one valid schema-2 mapping: invalid trailing UTF-8 octet at position 1"/><system-out><![CDATA[  Scenario: Open sketch-curve context menus during a 3D sketch
+   ✘> Given the MCAD Software displays fixture "viewport-selection-solid.ipt" in the part modeling workspace
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:5:5
+      Matched: crates/head/src/../tests/application/viewport-entity-selection/steps.rs:7:1
+      Step panicked. Captured output: fixture "/mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/viewport-selection-solid.ipt": expected an open Inventor part: load "/mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/viewport-selection-solid.ipt": expected a readable valid schema-2 package: YAML input: expected one valid schema-2 mapping: invalid trailing UTF-8 octet at position 1
+      ApplicationWorld {
+          text: "Model\n+\nModel\n(nodocument)\nReady\nGetStarted\nTools\nRibbonDisplay\nv\nv\n...\nOblikovati\nFile\nNewPart\nLaunch",
+          ..
+      }
+]]></system-out></testcase></testsuite></testsuites>
