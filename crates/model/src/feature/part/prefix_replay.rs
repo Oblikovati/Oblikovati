@@ -100,19 +100,29 @@ impl<Body, Failure: Clone> BorrowedPartReplay<'_, Body, Failure> {
         &self,
         mut capture: impl FnMut(FeatureId, &Body) -> Result<Mapped, E>,
     ) -> Result<PartFeatureEvaluation<Mapped, Failure>, E> {
+        self.0.try_map_bodies(|id, body| capture(id, body.get()))
+    }
+}
+
+impl<Body, Failure: Clone> PartFeatureEvaluation<Body, Failure> {
+    /// Capture each body while retaining the exact replay metadata.
+    /// Example: `result.try_map_bodies(|feature, body| capture(feature, body))?`.
+    pub fn try_map_bodies<Mapped, E>(
+        &self,
+        mut capture: impl FnMut(FeatureId, &Body) -> Result<Mapped, E>,
+    ) -> Result<PartFeatureEvaluation<Mapped, Failure>, E> {
         let bodies = self
-            .0
             .bodies
             .iter()
-            .map(|(id, body)| capture(*id, body.get()).map(|body| (*id, body)))
+            .map(|(id, body)| capture(*id, body).map(|body| (*id, body)))
             .collect::<Result<_, _>>()?;
         Ok(PartFeatureEvaluation {
-            datums: self.0.datums.clone(),
+            datums: self.datums.clone(),
             bodies,
-            body_lineage: self.0.body_lineage.clone(),
-            deleted: self.0.deleted.clone(),
-            health: self.0.health.clone(),
-            source: self.0.source.clone(),
+            body_lineage: self.body_lineage.clone(),
+            deleted: self.deleted.clone(),
+            health: self.health.clone(),
+            source: self.source.clone(),
         })
     }
 }

@@ -30,6 +30,20 @@ impl<Body, Failure> Default for PartCheckpointSlot<Body, Failure> {
 pub struct PartCheckpointPrefix<'a, Body, Failure> {
     published: &'a CompletedPartCheckpoints<Body, Failure>,
 }
+/// Private replayed boundaries still bound to the live source generation.
+pub struct PartCheckpointCandidate<Body, Failure> {
+    document: u64,
+    source: EvaluationScope,
+    candidate: DocumentSnapshot,
+    checkpoints: PartReplayCheckpoints<Body, Failure>,
+}
+/// Detached boundaries awaiting an accepted document transition.
+pub struct CapturedPartCheckpointCandidate<Body, Failure> {
+    document: u64,
+    source: EvaluationScope,
+    candidate: DocumentSnapshot,
+    checkpoints: PartReplayCheckpoints<Body, Failure>,
+}
 impl super::request::PartEvaluationRequest {
     /// Solve sketches and capture matching checkpoints in a single ordered replay.
     /// Example: `request.recompute_sketches_with_checkpoints(&mut backend, options)?`.
@@ -161,6 +175,45 @@ impl<Body, Failure> PartCheckpointSlot<Body, Failure> {
     }
 }
 impl<Body, Failure: Clone> PartCheckpointPrefix<'_, Body, Failure> {
+    /// Replay an edited tail and retain all resulting boundaries before commit.
+    /// Example: `prefix.prepare_checkpoints(history, candidate, &mut backend)?`.
+    pub fn prepare_checkpoints<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
+        &self,
+        history: &DocumentEditHistory,
+        candidate: &DocumentSnapshot,
+        backend: &mut B,
+    ) -> Result<Option<PartCheckpointCandidate<Body, Failure>>, String>
+    where
+        Body: Clone,
+    {
+        if !self.published.scope.is_current(history) {
+            return Err("part checkpoints: expected the current owning history".into());
+        }
+        if self
+            .published
+            .checkpoints
+            .result()
+            .replay_change(candidate)
+            .is_none()
+        {
+            return Ok(None);
+        }
+        let checkpoints =
+            self.published
+                .checkpoints
+                .replay_with_checkpoints(candidate, backend, || {
+                    self.published.scope.is_superseded()
+                })?;
+        if !self.published.scope.is_current(history) {
+            return Err("part checkpoints: expected an unchanged owner after replay".into());
+        }
+        Ok(Some(PartCheckpointCandidate {
+            document: self.published.document,
+            source: self.published.scope.clone(),
+            candidate: candidate.clone(),
+            checkpoints,
+        }))
+    }
     /// Replay the earliest dirty tail while the source history is still current.
     /// Example: `prefix.prepare_candidate(history, candidate, &mut backend)?`.
     pub fn prepare_candidate<'a, B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
@@ -194,6 +247,106 @@ impl<Body, Failure: Clone> PartCheckpointPrefix<'_, Body, Failure> {
             candidate: candidate.clone(),
             replay,
         }))
+    }
+}
+impl<Body, Failure: Clone> PartCheckpointCandidate<Body, Failure> {
+    /// Resolve a feature to its live descendant; example: `candidate.has_current_source(id)`.
+    pub fn has_current_source(&self, feature: oblikovati_model::feature::FeatureId) -> bool {
+        self.checkpoints.result().body_from_source(feature).is_ok()
+    }
+    /// Capture every boundary while its source generation is current.
+    /// Example: `candidate.capture(history, |id, body| capture(id, body))?`.
+    pub fn capture<Mapped>(
+        &self,
+        history: &DocumentEditHistory,
+        capture: impl FnMut(oblikovati_model::feature::FeatureId, &Body) -> Result<Mapped, String>,
+    ) -> Result<CapturedPartCheckpointCandidate<Mapped, Failure>, String> {
+        if !self.source.is_current(history) {
+            return Err("part checkpoint capture: expected its current owning history".into());
+        }
+        let checkpoints = self.checkpoints.try_map_bodies(capture)?;
+        if !self.source.is_current(history) {
+            return Err("part checkpoint capture: expected unchanged source after capture".into());
+        }
+        Ok(CapturedPartCheckpointCandidate {
+            document: self.document,
+            source: self.source.clone(),
+            candidate: self.candidate.clone(),
+            checkpoints,
+        })
+    }
+}
+impl<Body, Failure> CapturedPartCheckpointCandidate<Body, Failure> {
+    /// Restore captured boundaries only for their accepted edit and current inputs.
+    /// The mapper must validate its own kernel bodies and names.
+    /// Example: `candidate.try_complete(&transition, &session, restore)?`.
+    pub fn try_complete<O: TransactionObserver, Mapped>(
+        self,
+        transition: &oblikovati_model::history::EvaluationTransition,
+        session: &DocumentSession<O>,
+        mut restore: impl FnMut(
+            oblikovati_model::feature::FeatureId,
+            Body,
+            &DocumentEditHistory,
+        ) -> Result<Mapped, String>,
+    ) -> Result<CompletedPartCheckpoints<Mapped, Failure>, String> {
+        if self.document != session.document
+            || !super::candidate_matches_transition(
+                &self.source,
+                &self.candidate,
+                transition,
+                &session.history,
+            )
+        {
+            return Err(format!(
+                "part checkpoint document {}, session {}: expected its accepted edit and current inputs",
+                self.document, session.document
+            ));
+        }
+        let checkpoints = self
+            .checkpoints
+            .try_map_owned_bodies(|id, body| restore(id, body, &session.history))?;
+        if !super::candidate_matches_transition(
+            &self.source,
+            &self.candidate,
+            transition,
+            &session.history,
+        ) {
+            return Err(
+                "part checkpoint completion: expected unchanged inputs after restore".into(),
+            );
+        }
+        Ok(CompletedPartCheckpoints {
+            document: session.document,
+            scope: session.history.evaluation_scope(),
+            checkpoints,
+        })
+    }
+}
+impl<O: TransactionObserver> DocumentSession<O> {
+    /// Publish an accepted checkpoint set and its final part result together.
+    /// Example: `session.adopt_replayed_checkpoints(completed, &mut part, &mut checkpoints)?`.
+    pub fn adopt_replayed_checkpoints<Body: Clone, Failure: Clone>(
+        &mut self,
+        completed: CompletedPartCheckpoints<Body, Failure>,
+        part: &mut PartEvaluationSlot<Body, Failure>,
+        checkpoints: &mut PartCheckpointSlot<Body, Failure>,
+    ) -> Result<(), PartEvaluationError> {
+        completed.validate(self)?;
+        if let Some(previous) = &part.published {
+            previous.validate_owner(self)?;
+        }
+        if let Some(previous) = &checkpoints.published {
+            previous.validate_owner(self)?;
+        }
+        let result = CompletedPartEvaluation {
+            document: completed.document,
+            scope: completed.scope.clone(),
+            evaluation: completed.checkpoints.result().clone(),
+        };
+        part.published = Some(result);
+        checkpoints.published = Some(completed);
+        Ok(())
     }
 }
 
