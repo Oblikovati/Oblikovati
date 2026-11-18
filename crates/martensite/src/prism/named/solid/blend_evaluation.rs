@@ -14,7 +14,7 @@ impl CertifiedNamedSolidEvaluator<'_> {
             NamedSolid::Prism(body) => {
                 body.fillet_candidate(self.history, self.document, edges, radius)
             }
-            NamedSolid::Fillet(body) | NamedSolid::Chamfer(body) => {
+            NamedSolid::Derived(body) => {
                 body.fillet_candidate(self.history, self.document, edges, radius)
             }
         }
@@ -22,7 +22,7 @@ impl CertifiedNamedSolidEvaluator<'_> {
         let named = candidate
             .name_topology(self.history, self.document, feature)
             .map_err(|message| failure(Phase::Naming, feature, message))?;
-        Ok(NamedSolid::Fillet(Box::new(named)))
+        Ok(NamedSolid::Derived(Box::new(named)))
     }
 }
 
@@ -38,7 +38,7 @@ impl CertifiedNamedSolidEvaluator<'_> {
             NamedSolid::Prism(body) => {
                 body.chamfer_candidate(self.history, self.document, edges, distance)
             }
-            NamedSolid::Fillet(body) | NamedSolid::Chamfer(body) => {
+            NamedSolid::Derived(body) => {
                 body.chamfer_candidate(self.history, self.document, edges, distance)
             }
         }
@@ -46,12 +46,12 @@ impl CertifiedNamedSolidEvaluator<'_> {
         let named = candidate
             .name_topology(self.history, self.document, feature)
             .map_err(|message| failure(Phase::Naming, feature, message))?;
-        Ok(NamedSolid::Chamfer(Box::new(named)))
+        Ok(NamedSolid::Derived(Box::new(named)))
     }
 }
 
 impl CertifiedNamedSolidEvaluator<'_> {
-    pub(super) fn verify_blend_lineage(
+    pub(super) fn verify_result_lineage(
         &self,
         before: &NamedSolid,
         after: &NamedSolid,
@@ -62,14 +62,14 @@ impl CertifiedNamedSolidEvaluator<'_> {
         for key in &prior_live {
             if !accounted.contains(key) {
                 return Err(format!(
-                    "blend input name {key:?}: expected a live or deleted result record"
+                    "input name {key:?}: expected a live or deleted result record"
                 ));
             }
         }
         for key in &prior_deleted {
             if !deleted.contains(key) {
                 return Err(format!(
-                    "blend deleted name {key:?}: expected a retained deletion record"
+                    "deleted name {key:?}: expected a retained deletion record"
                 ));
             }
         }

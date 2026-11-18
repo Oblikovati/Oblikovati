@@ -9,6 +9,8 @@ use std::collections::{BTreeMap, BTreeSet};
 /// Exact live and deleted names for a validated candidate result.
 #[derive(Clone)]
 pub struct BlendNamedTopology {
+    resolution: Option<PrismResolution>,
+    achieved_tolerance: Option<PrismAchievedTolerance>,
     live: Vec<Vec<u8>>,
     deleted: Vec<Vec<u8>>,
     pub(super) bindings: ExactReferenceBindings<Shape>,
@@ -18,15 +20,22 @@ pub struct BlendNamedTopology {
 }
 
 mod capture;
+mod hole;
+mod source;
 pub(in crate::prism::named) use capture::CapturedBlendTopology;
 
 impl BlendNamedTopology {
+    pub(in crate::prism::named) fn resolution(&self) -> Option<PrismResolution> {
+        self.resolution
+    }
     pub(in crate::prism::named) fn capture_current(
         &self,
         history: &DocumentEditHistory,
         document: DocumentGuid,
     ) -> Result<Self, String> {
         Ok(Self {
+            resolution: self.resolution,
+            achieved_tolerance: self.achieved_tolerance,
             live: self.live.clone(),
             deleted: self.deleted.clone(),
             bindings: self.bindings.clone_current(history, document)?,
@@ -175,33 +184,16 @@ impl BlendNamedTopology {
         edges: &[Vec<u8>],
         operation: super::BlendOperation,
     ) -> Result<BlendCandidate, String> {
-        let mut bodies = Vec::new();
-        let mut sources = Vec::new();
-        for key in self.bindings.encoded_keys(history, document)? {
-            let kind = ReferenceEnvelope::decode(key)
-                .map_err(|cause| cause.to_string())?
-                .kind;
-            if kind == 4 {
-                bodies.push(key.to_vec());
-                continue;
-            }
-            sources.push((
-                key.to_vec(),
-                self.bindings.bind(history, document, key, kind)?.clone(),
-            ));
-        }
-        let first = bodies
-            .first()
-            .ok_or("blend result: expected a named body")?;
-        let body = self.bindings.bind(history, document, first, 4)?.clone();
+        let input = self.source_topology(history, document)?;
         super::build_candidate(
             super::BlendInputTopology {
-                body: &body,
-                source: sources,
-                source_bodies: bodies,
+                body: &input.body,
+                source: input.entities,
+                source_bodies: input.body_keys,
                 body_parent: self.active_body.clone(),
                 primary_body: self.primary_body.clone(),
                 inherited_deleted: self.deleted.clone(),
+                resolution: self.resolution,
             },
             history,
             document,
@@ -304,6 +296,8 @@ impl BlendCandidate {
             .map(<[u8]>::to_vec)
             .collect();
         Ok(BlendNamedTopology {
+            resolution: self.resolution,
+            achieved_tolerance: self.achieved_tolerance,
             live,
             deleted,
             bindings,
@@ -317,6 +311,9 @@ impl BlendCandidate {
         let live: BTreeSet<_> = live.iter().collect();
         let mut deleted: BTreeSet<_> = self.inherited_deleted.iter().cloned().collect();
         for record in &self.history {
+            if record.transient {
+                continue;
+            }
             if live.contains(&record.name) {
                 continue;
             }
@@ -461,6 +458,7 @@ mod tests {
             generated: Vec::new(),
             modified: Vec::new(),
             deleted: false,
+            transient: false,
         };
         assert!(
             direct_name(&[record(1), record(2)], &face, 1, document, FeatureId(3))

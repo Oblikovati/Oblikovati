@@ -12,8 +12,7 @@ type NameLists = (Vec<Vec<u8>>, Vec<Vec<u8>>);
 #[derive(Clone)]
 pub enum NamedSolid {
     Prism(Box<NamedPrismSnapshot>),
-    Fillet(Box<BlendNamedTopology>),
-    Chamfer(Box<BlendNamedTopology>),
+    Derived(Box<BlendNamedTopology>),
 }
 
 impl NamedSolid {
@@ -28,10 +27,7 @@ impl NamedSolid {
             Self::Prism(body) => Ok(Self::Prism(Box::new(
                 body.capture_current(history, document)?,
             ))),
-            Self::Fillet(body) => Ok(Self::Fillet(Box::new(
-                body.capture_current(history, document)?,
-            ))),
-            Self::Chamfer(body) => Ok(Self::Chamfer(Box::new(
+            Self::Derived(body) => Ok(Self::Derived(Box::new(
                 body.capture_current(history, document)?,
             ))),
         }
@@ -40,7 +36,7 @@ impl NamedSolid {
     pub fn as_prism(&self) -> Option<&NamedPrismSnapshot> {
         match self {
             Self::Prism(body) => Some(body),
-            Self::Fillet(_) | Self::Chamfer(_) => None,
+            Self::Derived(_) => None,
         }
     }
 
@@ -92,7 +88,7 @@ impl NamedSolid {
                     .ok_or_else(|| format!("face {key:?}: expected a face role"))?;
                 unique_face(&body.snapshot, role)
             }
-            Self::Fillet(body) | Self::Chamfer(body) => body.native_face(history, document, key),
+            Self::Derived(body) => body.native_face(history, document, key),
         }
     }
     pub(super) fn native_shape<'a>(
@@ -105,7 +101,7 @@ impl NamedSolid {
                 body.body_reference_key(history, document)?;
                 Ok(&body.snapshot.shape)
             }
-            Self::Fillet(body) | Self::Chamfer(body) => body.native_shape(history, document),
+            Self::Derived(body) => body.native_shape(history, document),
         }
     }
     /// Read analytic body bounds center; example: `body.body_bounds_center(&history, document, key)?`.
@@ -117,9 +113,7 @@ impl NamedSolid {
     ) -> Result<[f64; 3], String> {
         match self {
             Self::Prism(body) => body.body_bounds_center(history, document, key),
-            Self::Fillet(body) | Self::Chamfer(body) => {
-                body.body_bounds_center(history, document, key)
-            }
+            Self::Derived(body) => body.body_bounds_center(history, document, key),
         }
     }
 
@@ -132,9 +126,7 @@ impl NamedSolid {
     ) -> Result<[f64; 3], String> {
         match self {
             Self::Prism(body) => body.face_bounds_center(history, document, key),
-            Self::Fillet(body) | Self::Chamfer(body) => {
-                body.face_bounds_center(history, document, key)
-            }
+            Self::Derived(body) => body.face_bounds_center(history, document, key),
         }
     }
     /// Read analytic face information; example: `body.face_topology(&history, document, key)?`.
@@ -146,7 +138,7 @@ impl NamedSolid {
     ) -> Result<PrismFaceTopology, String> {
         match self {
             Self::Prism(body) => body.face_topology(history, document, key),
-            Self::Fillet(body) | Self::Chamfer(body) => body.face_topology(history, document, key),
+            Self::Derived(body) => body.face_topology(history, document, key),
         }
     }
 
@@ -161,9 +153,7 @@ impl NamedSolid {
             Self::Prism(body) => body
                 .face_report(history, document, key)
                 .map(|report| report.loops),
-            Self::Fillet(body) | Self::Chamfer(body) => {
-                body.face_loop_count(history, document, key)
-            }
+            Self::Derived(body) => body.face_loop_count(history, document, key),
         }
     }
     /// Enumerate exact face names; example: `body.face_reference_keys(&history, document)?`.
@@ -184,7 +174,7 @@ impl NamedSolid {
                     }
                 })
                 .collect(),
-            Self::Fillet(body) | Self::Chamfer(body) => body.keys_of_kinds(history, document, &[1]),
+            Self::Derived(body) => body.keys_of_kinds(history, document, &[1]),
         }
     }
     /// Count exact body topology; example: `body.topology_summary(&history, document, key)?`.
@@ -198,9 +188,7 @@ impl NamedSolid {
             Self::Prism(body) => body
                 .body_report(history, document, key)
                 .map(|report| report.topology.clone()),
-            Self::Fillet(body) | Self::Chamfer(body) => {
-                body.topology_summary(history, document, key)
-            }
+            Self::Derived(body) => body.topology_summary(history, document, key),
         }
     }
 
@@ -215,7 +203,7 @@ impl NamedSolid {
             Self::Prism(body) => body
                 .face_report(history, document, key)
                 .map(|report| report.area),
-            Self::Fillet(body) | Self::Chamfer(body) => body.face_area(history, document, key),
+            Self::Derived(body) => body.face_area(history, document, key),
         }
     }
 
@@ -227,9 +215,7 @@ impl NamedSolid {
     ) -> Result<Vec<Vec<u8>>, String> {
         match self {
             Self::Prism(body) => body.subentity_reference_keys(history, document),
-            Self::Fillet(body) | Self::Chamfer(body) => {
-                body.keys_of_kinds(history, document, &[2, 3])
-            }
+            Self::Derived(body) => body.keys_of_kinds(history, document, &[2, 3]),
         }
     }
 
@@ -242,7 +228,7 @@ impl NamedSolid {
     ) -> Result<f64, String> {
         match self {
             Self::Prism(body) => body.edge_length(history, document, key),
-            Self::Fillet(body) | Self::Chamfer(body) => body.edge_length(history, document, key),
+            Self::Derived(body) => body.edge_length(history, document, key),
         }
     }
 
@@ -257,9 +243,7 @@ impl NamedSolid {
             Self::Prism(body) => body
                 .subentity_provenance(history, document, key)
                 .map(|record| record.point),
-            Self::Fillet(body) | Self::Chamfer(body) => {
-                body.subentity_point(history, document, key)
-            }
+            Self::Derived(body) => body.subentity_point(history, document, key),
         }
     }
     /// Resolve the primary body key; example: `body.body_reference_key(&history, document)?`.
@@ -270,7 +254,7 @@ impl NamedSolid {
     ) -> Result<&'a [u8], String> {
         match self {
             Self::Prism(body) => body.body_reference_key(history, document),
-            Self::Fillet(body) | Self::Chamfer(body) => body.body_reference_key(history, document),
+            Self::Derived(body) => body.body_reference_key(history, document),
         }
     }
 
@@ -283,9 +267,7 @@ impl NamedSolid {
     ) -> Result<crate::AnalyticBodyProperties, String> {
         match self {
             Self::Prism(body) => body.physical_properties(history, document, key),
-            Self::Fillet(body) | Self::Chamfer(body) => {
-                body.physical_properties(history, document, key)
-            }
+            Self::Derived(body) => body.physical_properties(history, document, key),
         }
     }
     /// Integrate the current body; example: `body.volume(&history, document)?`.
@@ -302,7 +284,7 @@ impl NamedSolid {
                     body.body_reference_key(history, document)?,
                 )
                 .map(|properties| properties.geometry.volume),
-            Self::Fillet(body) | Self::Chamfer(body) => body.volume(history, document),
+            Self::Derived(body) => body.volume(history, document),
         }
     }
 
@@ -317,9 +299,7 @@ impl NamedSolid {
                 live.extend(body.subentity_reference_keys(history, document)?);
                 Ok((live, Vec::new()))
             }
-            Self::Fillet(body) | Self::Chamfer(body) => {
-                Ok((body.live_keys().to_vec(), body.deleted_keys().to_vec()))
-            }
+            Self::Derived(body) => Ok((body.live_keys().to_vec(), body.deleted_keys().to_vec())),
         }
     }
 }
@@ -344,7 +324,7 @@ impl crate::BodyPresentationSource for NamedSolid {
             Self::Prism(body) => {
                 super::super::BodyPresentationSource::body_triangles(body.as_ref(), options)
             }
-            Self::Fillet(body) | Self::Chamfer(body) => body.display_triangles(options),
+            Self::Derived(body) => body.display_triangles(options),
         }
     }
 }
@@ -411,7 +391,7 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
     fn verify_body_reference(&self, body: &NamedSolid, key: &[u8]) -> Result<(), String> {
         match body {
             NamedSolid::Prism(body) => self.diagnostic.verify_body_reference(body, key),
-            NamedSolid::Fillet(body) | NamedSolid::Chamfer(body) => body
+            NamedSolid::Derived(body) => body
                 .contains(self.history, self.document, key, 4)
                 .map(|_| ()),
         }
@@ -423,9 +403,7 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
     ) -> Result<oblikovati_model::sketch::SketchPlane, String> {
         match body {
             NamedSolid::Prism(body) => self.diagnostic.resolve_planar_face(body, key),
-            NamedSolid::Fillet(body) | NamedSolid::Chamfer(body) => {
-                body.face_plane(self.history, self.document, key)
-            }
+            NamedSolid::Derived(body) => body.face_plane(self.history, self.document, key),
         }
     }
     fn evaluate_prism(
@@ -452,11 +430,21 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
             PartBlendKind::Chamfer => self.evaluate_chamfer(feature, body, edges, distance),
         }
         .map_err(PartFeatureFailure::Kernel)?;
-        self.verify_blend_lineage(body, &result)
+        self.verify_result_lineage(body, &result)
             .map_err(PartFeatureFailure::BodyReference)?;
         Ok(result)
+    }
+    fn evaluate_hole(
+        &mut self,
+        feature: FeatureId,
+        body: &NamedSolid,
+        face: &[u8],
+        input: oblikovati_model::feature::hole::ResolvedHole,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        self.evaluate_named_hole(feature, body, face, input)
     }
 }
 
 mod blend_evaluation;
+mod hole_evaluation;
 mod hole_placement;

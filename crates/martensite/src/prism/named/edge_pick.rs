@@ -118,7 +118,7 @@ impl NamedSolid {
                 .ok_or("edge selection: expected certified subentities")?
                 .bind(history, document, key, 2)
                 .map(|entry| &entry.shape),
-            Self::Fillet(body) | Self::Chamfer(body) => body.native_edge(history, document, key),
+            Self::Derived(body) => body.native_edge(history, document, key),
         }
     }
 }

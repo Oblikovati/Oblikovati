@@ -7,13 +7,17 @@ use martensite_tkfillet::{
 };
 use martensite_tktopalgo::brep_builder_api::{BRepBuilderAPICopy, BRepBuilderAPIMakeShape};
 use oblikovati_model::identity::ReferenceEnvelope;
+mod hole;
 mod naming;
+pub(super) use hole::HoleRequest;
 mod queries;
 pub use naming::BlendNamedTopology;
 pub(super) use naming::CapturedBlendTopology;
 
 /// A validated detached result and its input history, before assigning result names.
 pub struct BlendCandidate {
+    resolution: Option<PrismResolution>,
+    achieved_tolerance: Option<PrismAchievedTolerance>,
     shape: Shape,
     history: Vec<BlendHistoryRecord>,
     source_bodies: Vec<Vec<u8>>,
@@ -31,6 +35,7 @@ pub struct BlendHistoryRecord {
     generated: Vec<Shape>,
     modified: Vec<Shape>,
     deleted: bool,
+    transient: bool,
 }
 
 impl BlendCandidate {
@@ -108,6 +113,7 @@ impl NamedPrismSnapshot {
                 body_parent: source_body.clone(),
                 primary_body: source_body,
                 inherited_deleted: Vec::new(),
+                resolution: self.certification.as_ref().map(|value| value.resolution),
             },
             history,
             document,
@@ -176,6 +182,7 @@ impl NamedPrismSnapshot {
 }
 
 struct BlendInputTopology<'a> {
+    resolution: Option<PrismResolution>,
     body: &'a Shape,
     source: Vec<(Vec<u8>, Shape)>,
     source_bodies: Vec<Vec<u8>>,
@@ -213,6 +220,8 @@ fn build_candidate(
     let shape = copier.shape().map_err(|cause| cause.to_string())?.clone();
     let (shape, history_records) = construct_candidate(&shape, &copied, edges, operation)?;
     Ok(BlendCandidate {
+        resolution: input.resolution,
+        achieved_tolerance: None,
         shape,
         history: history_records,
         source_bodies: input.source_bodies,
@@ -367,5 +376,6 @@ fn history_record(
         generated,
         modified,
         deleted,
+        transient: false,
     })
 }

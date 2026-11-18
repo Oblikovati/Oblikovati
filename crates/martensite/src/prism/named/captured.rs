@@ -14,8 +14,7 @@ pub struct CapturedNamedSolid {
 }
 enum CapturedBody {
     Prism(CapturedPrism),
-    Fillet(blend::CapturedBlendTopology),
-    Chamfer(blend::CapturedBlendTopology),
+    Derived(blend::CapturedBlendTopology),
 }
 struct CapturedPrism {
     snapshot: PrismProbeSnapshot,
@@ -35,8 +34,7 @@ impl NamedSolid {
             Self::Prism(body) => {
                 CapturedBody::Prism(CapturedPrism::capture(body, history, document)?)
             }
-            Self::Fillet(body) => CapturedBody::Fillet(body.capture_detached(history, document)?),
-            Self::Chamfer(body) => CapturedBody::Chamfer(body.capture_detached(history, document)?),
+            Self::Derived(body) => CapturedBody::Derived(body.capture_detached(history, document)?),
         };
         Ok(CapturedNamedSolid {
             document,
@@ -144,10 +142,7 @@ impl CapturedNamedSolid {
             CapturedBody::Prism(body) => Ok(NamedSolid::Prism(Box::new(
                 body.restore(history, document)?,
             ))),
-            CapturedBody::Fillet(body) => Ok(NamedSolid::Fillet(Box::new(
-                body.restore(history, document)?,
-            ))),
-            CapturedBody::Chamfer(body) => Ok(NamedSolid::Chamfer(Box::new(
+            CapturedBody::Derived(body) => Ok(NamedSolid::Derived(Box::new(
                 body.restore(history, document)?,
             ))),
         }

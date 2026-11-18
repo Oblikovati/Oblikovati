@@ -12,13 +12,14 @@ pub(crate) fn evaluate_feature(
     input: ResolvedSketchPrism<'_>,
     resolution: crate::PrismResolutionPolicy,
     feature: FeatureId,
-) -> Result<crate::CertifiedPrismSnapshot, EvaluationFailure> {
+) -> Result<(crate::CertifiedPrismSnapshot, crate::PrismResolution), EvaluationFailure> {
     let sketch = input.sketch.sketch.id();
     let resolution = resolution
         .for_sketch(&input.sketch)
         .map_err(|error| error.for_feature(feature))?;
-    evaluate(input, resolution.kernel())
-        .map_err(|error| error.with_sketch_identity(sketch).for_feature(feature))
+    let result = evaluate(input, resolution.kernel())
+        .map_err(|error| error.with_sketch_identity(sketch).for_feature(feature))?;
+    Ok((result, resolution))
 }
 
 /// Evaluate a current, converged saved prism with an explicit modelling resolution.

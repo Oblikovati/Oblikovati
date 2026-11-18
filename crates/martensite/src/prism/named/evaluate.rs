@@ -110,7 +110,7 @@ impl CertifiedNamedPrismEvaluator<'_> {
         input: ResolvedSketchPrism<'_>,
     ) -> Result<NamedPrismSnapshot, EvaluationFailure> {
         let sketch = input.sketch.sketch.id();
-        let result =
+        let (result, resolution) =
             crate::sketch_prism::certified::evaluate_feature(input, self.resolution, feature)?;
         let mut named = self
             .names
@@ -127,6 +127,7 @@ impl CertifiedNamedPrismEvaluator<'_> {
             )
             .map_err(|message| naming_decline(sketch, message).for_feature(feature))?;
         named.certification = Some(CertifiedPrismEvidence {
+            resolution,
             achieved_tolerance: result.achieved_tolerance,
             subentities: result.subentities,
             vertex_sources: result.vertex_sources,
