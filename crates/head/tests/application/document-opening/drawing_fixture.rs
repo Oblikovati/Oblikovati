@@ -59,7 +59,7 @@ fn write_drawing(path: &Path, source: &Path) {
 }
 #[given("a saved drawing with a sheet, border and view is available and not already open")]
 #[given("a saved drawing with a sheet, border and views is available and not already open")]
-fn drawing_available(world: &mut ApplicationWorld) {
+pub(super) fn drawing_available(world: &mut ApplicationWorld) {
     let folder = models_folder(world);
     let source = folder.join("source.opd");
     write_source_model(&source);
@@ -330,7 +330,7 @@ fn drawing_active(world: &mut ApplicationWorld) {
     world.expect_tab(&name);
 }
 #[then("the drawing sheet and border are displayed")]
-fn sheet_and_border(world: &mut ApplicationWorld) {
+pub(super) fn sheet_and_border(world: &mut ApplicationWorld) {
     let state = world.state();
     let drawing = state.document.unwrap();
     assert!(state.drawing_documents[&drawing].sheets()[0].border);
