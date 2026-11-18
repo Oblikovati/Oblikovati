@@ -53,6 +53,10 @@ using this status; the live scenario directory can change.
 - Checkpoint candidate replay and restoration now use a session-issued
   capability. The workspace rejects a foreign, wrong-policy, or stale prefix;
   tests also reject stale candidate histories (#4079).
+- Feature-edit previews now replay through the document session, under its
+  identity and policy. A private preview does not publish a result or change
+  the document generation; the Fillet test compares full and checkpoint
+  previews and checks cancellation and history (#4079).
 - A cold checkpoint request for a part without associative sketch recompute
   publishes its result and boundaries from one replay instead of two. Ownership
   tests cover repeat requests and isolation between documents (#4079).

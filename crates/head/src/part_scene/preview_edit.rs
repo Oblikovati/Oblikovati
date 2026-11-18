@@ -55,13 +55,20 @@ impl DesktopPartScenes {
             .identity(document)
             .map_err(|cause| cause.to_string())?
             .internal_name;
-        let prefix = if candidate.sketches.requires_part_dependency_recompute() {
-            None
-        } else {
-            self.replay.checkpoint_prefix(files, document)?
-        };
-        let (evaluated, edited_key, used_checkpoint) =
-            evaluate_preview(session, candidate, feature, guid, policy, prefix)?;
+        let preview = files
+            .workspace()
+            .preview_owned_part(document, Some(policy), candidate)
+            .map_err(|error| error.to_string())?;
+        let evaluated = preview.evaluation;
+        let used_checkpoint = preview.used_checkpoint;
+        let edited = evaluated.body(feature).ok_or_else(|| {
+            format!(
+                "feature {feature:?} preview: expected a valid body; health {:?}",
+                evaluated.health()
+            )
+        })?;
+        let edited_key =
+            bodies::body_reference_text(edited.body_reference_key(session.history(), guid)?);
         #[cfg(test)]
         if used_checkpoint {
             self.checkpoint_previews
@@ -79,51 +86,6 @@ impl DesktopPartScenes {
             document,
         )
     }
-}
-fn evaluate_preview<O: TransactionObserver>(
-    session: &DocumentSession<O>,
-    candidate: &DocumentSnapshot,
-    feature: FeatureId,
-    guid: DocumentGuid,
-    policy: oblikovati_martensite::PrismResolutionPolicy,
-    prefix: Option<
-        oblikovati_session::part_evaluation::PartCheckpointPrefix<
-            NamedSolid,
-            oblikovati_martensite::EvaluationFailure,
-        >,
-    >,
-) -> Result<(PreviewEvaluation, String, bool), String> {
-    let mut evaluator = oblikovati_martensite::CertifiedNamedSolidEvaluator::with_policy(
-        session.history(),
-        guid,
-        policy,
-    );
-    let reused = match prefix {
-        Some(prefix) => prefix
-            .prepare_candidate(session.history(), candidate, &mut evaluator)?
-            .map(|result| result.copy_current(session.history()))
-            .transpose()?,
-        None => None,
-    };
-    let used_checkpoint = reused.is_some();
-    let evaluated = match reused {
-        Some(result) => result,
-        None if candidate.sketches.requires_part_dependency_recompute() => candidate
-            .recompute_part_with_sketches(&mut evaluator, session.sketch_solve_options())
-            .map(|(part, _)| part)
-            .map_err(|cause| cause.to_string())?,
-        None => candidate
-            .evaluate_part_features(&mut evaluator)
-            .map_err(|cause| cause.to_string())?,
-    };
-    let edited = evaluated.body(feature).ok_or_else(|| {
-        format!(
-            "feature {feature:?} preview: expected a valid body; health {:?}",
-            evaluated.health()
-        )
-    })?;
-    let key = bodies::body_reference_text(edited.body_reference_key(session.history(), guid)?);
-    Ok((evaluated, key, used_checkpoint))
 }
 fn render_preview<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &FileWorkspace<O, W, F>,
