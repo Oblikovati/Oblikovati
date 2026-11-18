@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Preview and commit blends from exact desktop edge selections (#4045, #4046).
 use super::*;
+#[path = "owner_hole.rs"]
+mod owner_hole;
 use oblikovati_automation::{PreparedChamfer, PreparedFillet, prepare_chamfer, prepare_fillet};
 
 impl<
@@ -102,7 +104,7 @@ impl<
         self.preview_selected_blend(document, |candidate, ids| prepared.create(candidate, ids))
     }
 
-    fn preview_selected_blend(
+    pub(super) fn preview_selected_blend(
         &mut self,
         document: u64,
         create: impl FnOnce(

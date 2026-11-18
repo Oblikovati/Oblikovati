@@ -2,6 +2,10 @@
 use super::*;
 #[path = "commands/blend_enabled.rs"]
 mod blend_enabled;
+#[path = "commands/dispatchable.rs"]
+mod dispatchable;
+#[path = "commands/hole_enabled.rs"]
+mod hole_enabled;
 #[path = "commands/sketch_enabled.rs"]
 mod sketch_enabled;
 impl GuiShellAction {
@@ -333,6 +337,11 @@ impl GuiShellAction {
                     }
             }
             Self::LookAtSelection => state.look_at_available,
+            Self::OpenHole => hole_enabled::open(state),
+            Self::PreviewHole(None) => true,
+            Self::PreviewHole(Some(request)) | Self::CreateHole(request) => {
+                hole_enabled::request(state, request)
+            }
             Self::OpenFillet => blend_enabled::create(state),
             Self::OpenChamfer => blend_enabled::create(state),
             Self::PreviewFillet(None) => true,
@@ -482,18 +491,6 @@ impl GuiShellAction {
                 state.authoring == GuiAuthoringContext::Sketch && !state.transaction_open
             }
             Self::SetMarkingMenu(_) | Self::SetKeymap(_) | Self::NewPart | Self::Home => true,
-        }
-    }
-    /// Keep available history controls inert during an edit; example: `action.dispatchable(&state)` after a click.
-    pub fn dispatchable(&self, state: &GuiCommandState) -> bool {
-        let history = matches!(self, Self::Undo | Self::Redo | Self::EditSketch { .. });
-        self.enabled(state) && !(history && state.transaction_open)
-    }
-    pub(crate) fn next_label<'a>(&self, state: &'a GuiCommandState) -> Option<&'a str> {
-        match self {
-            Self::Undo => state.undo_label.as_deref(),
-            Self::Redo => state.redo_label.as_deref(),
-            _ => None,
         }
     }
 }

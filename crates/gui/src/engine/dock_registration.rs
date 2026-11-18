@@ -38,6 +38,7 @@ fn register_model_windows(engine: &mut GuiFrameEngine) -> Result<(), String> {
     engine.metadata.register_dockable(registry)?;
     engine.extrude_dialog.register_dockable(registry)?;
     engine.blend_dialog.register_dockables(registry)?;
+    engine.hole_dialog.register_dockable(registry)?;
     engine.history_browser.register_dockable(registry)?;
     engine.selection_filter.register_dockable(registry)
 }
@@ -80,6 +81,7 @@ impl GuiFrameEngine {
     }
     fn prepare_model_docks(&mut self, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
         self.blend_dialog.sync_before_docking(state, actions);
+        self.hole_dialog.sync_before_docking(state, actions);
         self.sketch_pattern.sync_before_docking(state, actions);
         self.metadata.sync_before_docking(state);
         self.clear_appearance.sync_before_docking(state);

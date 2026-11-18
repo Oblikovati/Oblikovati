@@ -152,3 +152,62 @@ fn typed_blind_hole_removes_only_the_requested_depth() {
         "volume {volume}: expected {expected}"
     );
 }
+
+#[test]
+fn selected_face_hole_preview_cancel_and_commit_use_current_generation() {
+    let (owner, _) = owner();
+    let mut owner = owner
+        .with_extrusion_policy(crate::part_scene::resolution_policy::desktop_policy())
+        .unwrap();
+    let document = open_prism(&mut owner, false);
+    owner.take_scene().unwrap().unwrap();
+    owner.ambient_selection.disable_all();
+    owner
+        .ambient_selection
+        .set_enabled(oblikovati_session::selection::SelectionKind::Face, true);
+    owner
+        .click_model_with_window(document, [[2., 1.5, 10.], [0., 0., -1.]], Some(0.01))
+        .unwrap();
+    let face = owner.chosen_model_face(document).expect("selected face");
+    let generation = owner
+        .files
+        .workspace()
+        .session(document)
+        .unwrap()
+        .generation();
+    let request = oblikovati_gui::GuiHoleRequest {
+        document,
+        generation,
+        face: face.key.iter().map(|byte| format!("{byte:02x}")).collect(),
+        diameter: "2 mm".into(),
+        depth: String::new(),
+    };
+    let mut stale = request.clone();
+    stale.generation += 1;
+    assert!(crate::HeadWork::preview_hole_from_gui(&mut owner, Some(&stale)).is_err());
+    assert!(crate::HeadWork::commit_hole_from_gui(&mut owner, &stale).is_err());
+    assert!(crate::HeadWork::preview_hole_from_gui(&mut owner, Some(&request)).unwrap());
+    assert!(owner.extrusion_preview.is_some());
+    assert_eq!(
+        owner
+            .files
+            .workspace()
+            .session(document)
+            .unwrap()
+            .generation(),
+        generation
+    );
+    assert!(crate::HeadWork::preview_hole_from_gui(&mut owner, None).unwrap());
+    assert!(owner.extrusion_preview.is_none());
+    assert_eq!(
+        owner
+            .files
+            .workspace()
+            .session(document)
+            .unwrap()
+            .generation(),
+        generation
+    );
+    assert!(crate::HeadWork::commit_hole_from_gui(&mut owner, &request).unwrap());
+    expect_area(&mut owner, &request.face, 2.);
+}

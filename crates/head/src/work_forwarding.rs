@@ -126,6 +126,18 @@ macro_rules! forward_owner_view_work {
         ) -> Result<bool, String> {
             self.$owner.commit_chamfer_edit(request)
         }
+        fn preview_hole_from_gui(
+            &mut self,
+            request: Option<&oblikovati_gui::GuiHoleRequest>,
+        ) -> Result<bool, String> {
+            self.$owner.preview_hole_from_gui(request)
+        }
+        fn commit_hole_from_gui(
+            &mut self,
+            request: &oblikovati_gui::GuiHoleRequest,
+        ) -> Result<bool, String> {
+            self.$owner.commit_hole_from_gui(request)
+        }
         fn preview_fillet_from_gui(
             &mut self,
             request: Option<&oblikovati_gui::GuiFilletRequest>,

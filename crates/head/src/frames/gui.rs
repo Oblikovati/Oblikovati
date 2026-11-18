@@ -410,6 +410,9 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::StartSketchAt { .. }
         | GuiShellAction::FinishSketch
         | GuiShellAction::OpenExtrude
+        | GuiShellAction::OpenHole
+        | GuiShellAction::PreviewHole(_)
+        | GuiShellAction::CreateHole(_)
         | GuiShellAction::OpenFillet
         | GuiShellAction::OpenChamfer
         | GuiShellAction::OpenFilletEdit(_)
