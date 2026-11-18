@@ -79,13 +79,13 @@ fn finds_recipe_and_cutoff_changes_without_losing_the_clean_prefix() {
 }
 
 #[test]
-fn input_changes_force_the_complete_active_program() {
+fn unused_parameter_change_keeps_features_but_sketch_edits_restart() {
     let old = document_with_two_planes();
     let mut edited = old.clone();
     edited.parameters.set_expression(3, "3 cm").unwrap();
     assert_eq!(
         old.part_replay_change(&edited),
-        Some(FeatureReplayRange { start: 0, end: 2 })
+        Some(FeatureReplayRange { start: 2, end: 2 })
     );
     let mut sketch_edit = old.clone();
     sketch_edit.sketches.set_visible(SKETCH, false).unwrap();
@@ -238,5 +238,124 @@ fn added_parameter_with_unknown_prefix_reads_restarts_the_program() {
     assert_eq!(
         source.part_replay_change(&candidate),
         Some(FeatureReplayRange { start: 0, end: 3 })
+    );
+}
+
+fn append_parameter_point(document: &mut DocumentSnapshot, parameter: u64) {
+    let point = PartFeatureDefinition::Point([
+        DatumLength::Parameter(parameter),
+        DatumLength::Constant(0.),
+        DatumLength::Constant(0.),
+    ]);
+    document
+        .work_geometry
+        .append(AuthoredFeature::datum(FeatureId(3), "Point", point))
+        .unwrap();
+}
+
+#[test]
+fn parameter_change_starts_at_the_first_actual_reader() {
+    let mut source = document_with_two_planes();
+    append_parameter_point(&mut source, 3);
+    let mut candidate = source.clone();
+    candidate.parameters.set_expression(3, "3 cm").unwrap();
+    assert_eq!(
+        source.part_replay_change(&candidate),
+        Some(FeatureReplayRange { start: 2, end: 3 })
+    );
+}
+
+#[test]
+fn derived_parameter_reader_is_dirty_when_its_driver_changes() {
+    let mut source = document_with_two_planes();
+    source
+        .parameters
+        .insert_expression(4, "derived", oblikovati_api::types::USER_PARAM, "depth * 2")
+        .unwrap();
+    append_parameter_point(&mut source, 4);
+    let mut candidate = source.clone();
+    candidate.parameters.set_expression(3, "3 cm").unwrap();
+    assert_eq!(
+        source.part_replay_change(&candidate),
+        Some(FeatureReplayRange { start: 2, end: 3 })
+    );
+}
+
+#[test]
+fn current_definitions_recover_missing_stored_parameter_reads() {
+    let mut source = document_with_two_planes();
+    let point = PartFeatureDefinition::Point([
+        DatumLength::Parameter(3),
+        DatumLength::Constant(0.),
+        DatumLength::Constant(0.),
+    ]);
+    source
+        .work_geometry
+        .append(AuthoredFeature::new(
+            FeatureId(3),
+            "Point",
+            point,
+            FeatureReadFootprint::new([], false),
+        ))
+        .unwrap();
+    let mut candidate = source.clone();
+    candidate.parameters.set_expression(3, "3 cm").unwrap();
+    assert_eq!(
+        source.part_replay_change(&candidate),
+        Some(FeatureReplayRange { start: 2, end: 3 })
+    );
+}
+
+#[test]
+fn current_sketch_dependencies_recover_missing_stored_reads() {
+    let mut source = document_with_two_planes();
+    let prism =
+        AuthoredFeature::sketch_prism(FeatureId(3), "Prism", selected_prism_definition(), &source)
+            .unwrap();
+    source.work_geometry.append(prism).unwrap();
+    let definition = source
+        .work_geometry
+        .get(FeatureId(3))
+        .unwrap()
+        .definition()
+        .clone();
+    source
+        .work_geometry
+        .replace(
+            FeatureId(3),
+            definition,
+            FeatureReadFootprint::new([], false),
+        )
+        .unwrap();
+    let mut candidate = source.clone();
+    candidate.parameters.set_expression(1, "5 cm").unwrap();
+    assert_eq!(
+        source.part_replay_change(&candidate),
+        Some(FeatureReplayRange { start: 2, end: 3 })
+    );
+}
+
+#[test]
+fn unknown_reads_force_full_replay_for_parameter_changes() {
+    let mut source = document_with_two_planes();
+    let definition = source
+        .work_geometry
+        .get(FeatureId(2))
+        .unwrap()
+        .definition()
+        .clone();
+    source
+        .work_geometry
+        .replace(
+            FeatureId(2),
+            definition,
+            FeatureReadFootprint::new([], true),
+        )
+        .unwrap();
+    let mut candidate = source.clone();
+    candidate.parameters.set_expression(3, "3 cm").unwrap();
+    assert_eq!(
+        source.part_replay_change(&candidate),
+        Some(FeatureReplayRange { start: 0, end: 2 })
     );
 }

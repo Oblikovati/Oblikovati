@@ -307,3 +307,47 @@ fn replayed_checkpoints_truncate_at_end_of_part_and_can_resume_again() {
     assert!(resumed.result().body(FeatureId(3)).is_some());
     assert_eq!(original.result().health(), resumed.result().health());
 }
+
+#[test]
+fn parameter_driven_fillet_replays_only_its_dirty_suffix() {
+    let mut source = document();
+    source
+        .parameters
+        .insert_expression(4, "radius", oblikovati_api::types::USER_PARAM, "1 mm")
+        .unwrap();
+    let definition = FilletDefinition::new(
+        key(2, 4, "body"),
+        vec![key(2, 2, "edge")],
+        DatumLength::Parameter(4),
+    )
+    .unwrap();
+    let reads = definition.reads();
+    source
+        .work_geometry
+        .append(AuthoredFeature::new(
+            FeatureId(3),
+            "Fillet",
+            PartFeatureDefinition::Fillet(Box::new(definition)),
+            reads,
+        ))
+        .unwrap();
+    let checkpoints = source
+        .evaluate_part_with_checkpoints(&mut CountingBackend::default())
+        .unwrap();
+    let mut edited = source.clone();
+    edited.parameters.set_expression(4, "2 mm").unwrap();
+    let mut resumed_backend = CountingBackend::default();
+    let replay = checkpoints
+        .replay_with_checkpoints(&edited, &mut resumed_backend, || false)
+        .unwrap();
+    let mut full_backend = CountingBackend::default();
+    let full = edited.evaluate_part_features(&mut full_backend).unwrap();
+    assert_eq!((resumed_backend.prisms, resumed_backend.blends), (0, 1));
+    assert_eq!((full_backend.prisms, full_backend.blends), (1, 1));
+    assert_eq!(replay.result().health(), full.health());
+    let actual = replay.result().body(FeatureId(3)).unwrap();
+    let expected = full.body(FeatureId(3)).unwrap();
+    assert_eq!(actual.keys, expected.keys);
+    assert_eq!(actual.deleted, expected.deleted);
+    assert_eq!(actual.radius, expected.radius);
+}

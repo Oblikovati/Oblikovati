@@ -22,6 +22,26 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
         }
         Some(other.order[self.order.len()..].iter().copied().collect())
     }
+    /// Identify changed parameter records when the collection structure is unchanged.
+    /// Example: `before.changed_evaluated_parameters(&after)` for replay planning.
+    pub(crate) fn changed_evaluated_parameters(&self, other: &Self) -> Option<BTreeSet<Id>> {
+        if self.order != other.order
+            || self.units != other.units
+            || self.settings != other.settings
+            || self.groups != other.groups
+            || self.derived_tables != other.derived_tables
+        {
+            return None;
+        }
+        let mut changed = BTreeSet::new();
+        for (id, record) in &self.records {
+            let right = other.records.get(id)?;
+            if !same_evaluated_record(record, right) {
+                changed.insert(*id);
+            }
+        }
+        (self.records.len() == other.records.len()).then_some(changed)
+    }
     /// Compare owned recipe values, excluding evaluation health and change queues.
     /// Example: `before.same_recipe(&after)` before recording an undo step.
     pub fn same_recipe(&self, other: &Self) -> bool {
