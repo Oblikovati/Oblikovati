@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::ApplicationWorld;
 use cucumber::{given, then, when};
+
+#[cfg(test)]
+#[path = "native_input.rs"]
+mod native_input;
 #[when("I select File")]
 #[when("the user selects File")]
 fn select_file(world: &mut ApplicationWorld) {
