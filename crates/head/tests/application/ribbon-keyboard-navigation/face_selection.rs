@@ -147,6 +147,7 @@ fn native_face_click_cue_retires_when_pointer_leaves() {
         "cue projects to {projected:?}, click is {at:?}"
     );
     world.expect_text("1. Face");
+    world.run_in_window("##status-bar", "1Face");
     super::super::x11_input::move_pointer([at[0] + 40, at[1] + 40]);
     world.pump(Vec::new());
     world.expect_no_text("1. Face");
@@ -157,6 +158,57 @@ fn native_face_click_cue_retires_when_pointer_leaves() {
     super::super::x11_input::move_pointer(at);
     world.pump(Vec::new());
     world.expect_no_text("1. Face");
+    world.close();
+}
+
+#[given("a part is active in the MCAD Software with one face selected")]
+fn part_with_selected_face(world: &mut ApplicationWorld) {
+    super::super::workspace_layout::browser_feature::open_visible_extruded_part(world);
+    click_face(world);
+    face_selected(world);
+}
+#[then("key tips appear on the Tools ribbon commands")]
+fn tools_command_tips(world: &mut ApplicationWorld) {
+    assert!(super::exact_tip(world, "OA"));
+    assert!(super::exact_tip(world, "OD"));
+}
+#[then("the top-level and Tools command key tips remain visible")]
+fn selected_face_tips_remain(world: &mut ApplicationWorld) {
+    super::tips_shown(world);
+    tools_command_tips(world);
+    face_selected(world);
+}
+#[then("the selection indicator still reports one face")]
+fn one_face_still_selected(world: &mut ApplicationWorld) {
+    face_selected(world);
+    assert_eq!(world.state().selected_face_appearances.len(), 1);
+    world.run_in_window("##status-bar", "1Face");
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn native_selected_face_tools_tips_survive_escape_and_open_options() {
+    let mut world = ApplicationWorld::new();
+    super::super::workspace_layout::browser_feature::open_visible_extruded_part(&mut world);
+    let face = visible_face_point(&mut world);
+    super::super::x11_input::click(face);
+    world.pump(Vec::new());
+    face_selected(&mut world);
+    let tools = world.run("Tools").center();
+    super::super::x11_input::click(super::super::diagnostics::pointer_pixels(tools));
+    world.pump(Vec::new());
+    for key in [0xffe9, 0xff1b] {
+        super::super::x11_input::press_keysym(key);
+        world.pump(Vec::new());
+    }
+    selected_face_tips_remain(&mut world);
+    one_face_still_selected(&mut world);
+    for key in [u32::from(b'o'), u32::from(b'a')] {
+        super::super::x11_input::press_keysym(key);
+        world.pump(Vec::new());
+    }
+    assert!(super::super::diagnostics::window_geometry("Application Options").is_some());
+    face_selected(&mut world);
     world.close();
 }
 
@@ -224,6 +276,10 @@ fn native_default_filter_selects_and_clears_visible_face() {
     super::super::x11_input::click(empty);
     world.pump(Vec::new());
     selection_cleared(&mut world);
+    assert!(
+        !world.frame.runs.iter().any(|run| run.text == "1 Face"),
+        "the status bar must clear its face count"
+    );
     assert_eq!(
         world.app().owner.face_mesh_builds(),
         1,

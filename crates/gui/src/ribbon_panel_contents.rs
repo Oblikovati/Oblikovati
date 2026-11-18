@@ -157,6 +157,9 @@ pub(crate) fn draw_panel_content(
             crate::widget_abi::cursor_position(ui, origin);
             let disabled = ui.begin_disabled(state.ui_scale.is_none());
             let application = crate::widget_abi::button(ui, "Application Options", [150., 26.]);
+            if owners.tools_application_tip {
+                crate::ribbon_key_tips::badge(ui, "OA");
+            }
             if application {
                 owners.preferences.request();
             }
@@ -166,6 +169,9 @@ pub(crate) fn draw_panel_content(
                 state.document_units.is_none() || state.transaction_open || owners.home_active,
             );
             let document = crate::widget_abi::button(ui, "Document Settings", [150., 26.]);
+            if owners.tools_document_tip {
+                crate::ribbon_key_tips::badge(ui, "OD");
+            }
             drop(disabled);
             if document && let Some(id) = state.document {
                 owners.preferences.request_document(id);

@@ -76,6 +76,17 @@ pub(crate) fn ribbon_band(
             owners.ribbon.display.mode,
             RibbonDisplay::PanelButtons | RibbonDisplay::PanelTitles
         );
+    owners.ribbon.tips.set_tools_face_mode(
+        owners.ribbon.active == crate::ribbon::RibbonTab::Tools
+            && owners.ribbon.display.mode == RibbonDisplay::Full
+            && owners.ribbon.display.placement == RibbonPlacement::Top
+            && !owners.home_active
+            && !owners.ribbon.display.hidden_panels.contains(&(
+                crate::ribbon::RibbonTab::Tools,
+                crate::ribbon_panels::RibbonPanel::ToolOptions,
+            ))
+            && request.commands.selected_face_appearances.len() == 1,
+    );
     let action = owners
         .ribbon
         .tips
@@ -149,6 +160,18 @@ fn apply_key_tip(
         Some(KeyTipAction::CycleDisplay) => owners.ribbon.display.advance_from_tab(),
         Some(KeyTipAction::OpenDisplayMenu) => return true,
         Some(KeyTipAction::OpenFileMenu) => owners.files.request_menu(),
+        Some(KeyTipAction::ApplicationOptions) => {
+            if state.ui_scale.is_some() {
+                owners.preferences.request();
+            }
+        }
+        Some(KeyTipAction::DocumentSettings) => {
+            if !state.transaction_open
+                && let Some(id) = state.document.filter(|_| state.document_units.is_some())
+            {
+                owners.preferences.request_document(id);
+            }
+        }
         Some(KeyTipAction::OpenGroup(panel)) => {
             if !owners.home_active
                 && !owners
@@ -344,6 +367,8 @@ fn ribbon_panel_row(
             key_tips_active: ribbon.tips.active(),
             sketch_tip: ribbon.tips.model_commands() && ribbon.tips.matching("SK"),
             extrude_tip: ribbon.tips.model_commands() && ribbon.tips.matching("EX"),
+            tools_application_tip: ribbon.tips.tools_face_tip("OA"),
+            tools_document_tip: ribbon.tips.tools_face_tip("OD"),
         },
         &mut ribbon.panels,
         &mut ribbon.display,

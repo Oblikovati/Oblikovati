@@ -153,6 +153,8 @@ fn side_groups(
                     key_tips_active: ribbon.tips.active(),
                     sketch_tip: ribbon.tips.model_commands() && ribbon.tips.matching("SK"),
                     extrude_tip: ribbon.tips.model_commands() && ribbon.tips.matching("EX"),
+                    tools_application_tip: ribbon.tips.tools_face_tip("OA"),
+                    tools_document_tip: ribbon.tips.tools_face_tip("OD"),
                 },
                 &mut ribbon.panels,
                 &mut ribbon.display,
