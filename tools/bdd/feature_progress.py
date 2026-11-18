@@ -49,6 +49,8 @@ def result_status(
         return "not_run", 0
     if record.get("feature_sha256") != info["sha256"]:
         return "source_changed", 0
+    if not supporting_files_match(source, record.get("supporting_files", {})):
+        return "support_changed", 0
     if isinstance(record.get("blocker"), str) and record["blocker"].strip():
         return "blocked", 0
     report = ROOT / str(record.get("cucumber", ""))
@@ -58,7 +60,24 @@ def result_status(
         result = compare_inventoried_report(path, info, report, record)
     else:
         result = compare_report(source, path, report)
-    return result if digest(source / path) == info["sha256"] else ("source_changed", 0)
+    if digest(source / path) != info["sha256"]:
+        return "source_changed", 0
+    if not supporting_files_match(source, record.get("supporting_files", {})):
+        return "support_changed", 0
+    return result
+
+
+def supporting_files_match(source: Path, values: object) -> bool:
+    """Check recorded feature notes; for example, supporting_files_match(root, hashes)."""
+    if not isinstance(values, dict):
+        return False
+    for name, expected in values.items():
+        path = (source / name).resolve()
+        if not path.is_relative_to(source.resolve()) or not path.is_file():
+            return False
+        if digest(path) != expected:
+            return False
+    return True
 
 
 @lru_cache(maxsize=1)

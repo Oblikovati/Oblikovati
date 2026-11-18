@@ -128,6 +128,16 @@ class FeatureProgressTests(unittest.TestCase):
             progress.count_checked_scenarios(report, [row]), ("incomplete", 0)
         )
 
+    def test_supporting_document_change_invalidates_the_run(self) -> None:
+        note = self.feature.parent / "FUNCTIONAL.md"
+        note.write_text("Saved part fixture")
+        self.record["supporting_files"] = {
+            note.relative_to(self.root).as_posix(): progress.digest(note)
+        }
+        self.assertEqual(self.status(), ("green", 2))
+        note.write_text("Changed fixture")
+        self.assertEqual(self.status(), ("support_changed", 0))
+
     def test_unrecorded_feature_is_not_run(self) -> None:
         self.assertEqual(
             progress.result_status(

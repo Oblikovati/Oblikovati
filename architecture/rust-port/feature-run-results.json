@@ -45,5 +45,20 @@
     "application_commit": "c69eb89dde71bd2bf49376774ef7a34b2cd919b1",
     "command": "OBK_BDD_FEATURE=viewport-orbit tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
     "environment": "Linux X11, Xvfb, Vulkan Lavapipe; scripted window input"
+  },
+  "features/application/main-window-frame/main-window-frame.feature": {
+    "feature_sha256": "382162b5c11e33a252989ae65fee05e83d2e53a9ec3cac2f8ccad9ee05d7fe55",
+    "supporting_files": {
+      "features/application/main-window-frame/FUNCTIONAL.md": "fccd47cb75b957dfaa171f4cb132f1553c4ef086c4fc9f1b402f2cf8517ca794",
+      "features/application/main-window-frame/VISUAL.md": "9ed34b18c720015394a39da6c660d72f089cc5aa056c90de0e8208acbe107fc0",
+      "features/application/main-window-frame/BLOCKERS.md": "aebc922c7c04ba61ba14d3a26546de0fd5c6d30bb6b71d94dff3e0b5cefc8c17"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-18-main-window-frame/cucumber.json",
+    "cucumber_sha256": "98924d576091e5a6728a757286d110d780c841888eddf383e431db02a2d99ae3",
+    "scenario_inventory": "architecture/rust-port/receipts/2026-11-18-main-window-frame/scenario-inventory.json",
+    "scenario_inventory_sha256": "2bea7f0088cecbf2d607b39c6811c70c1af7bd12c865aa1191d6c928c7a91747",
+    "application_commit": "8460b6dd4dbe78156e9b3bcfc3d75d54b55fc11f",
+    "command": "OBK_BDD_FEATURE=main-window-frame tools/with-xvfb.sh dbus-run-session -- architecture/rust-port/receipts/2026-11-18-main-window-frame/run.sh",
+    "environment": "Linux X11, Xvfb, Openbox, tint2, AT-SPI and Vulkan Lavapipe; X11 window input; earlier full run had intermittent double-click failure"
   }
 }
