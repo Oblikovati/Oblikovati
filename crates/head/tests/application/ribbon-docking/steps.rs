@@ -319,7 +319,7 @@ fn remains_left(world: &mut ApplicationWorld) {
         position[0], 0.,
         "column at {position:?}: expected the left edge"
     );
-    world.expect_text("Save");
+    tabs_on_left(world);
 }
 fn work_features_y(world: &ApplicationWorld) -> f32 {
     world.run("Work Features").center()[1]
