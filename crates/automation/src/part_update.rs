@@ -19,20 +19,11 @@ use oblikovati_session::{
     workspace::WorkspaceObserver,
 };
 use std::collections::BTreeMap;
-type NamedSketchRecompute = oblikovati_session::part_evaluation::CompletedPartSketchRecompute<
-    NamedSolid,
-    EvaluationFailure,
->;
-
 mod access;
+mod candidate;
 pub use access::PartUpdateAccess;
-
-/// A current part prefix bound to the policy that produced it.
-pub struct CertifiedPartPrefix<'a> {
-    pub(crate) prefix:
-        oblikovati_session::part_evaluation::PartCandidatePrefix<'a, NamedSolid, EvaluationFailure>,
-    pub(crate) policy: Option<PrismResolutionPolicy>,
-}
+use candidate::NamedSketchRecompute;
+pub use candidate::{CertifiedPartCandidate, CertifiedPartPrefix};
 
 /// A headless owner of generation-checked Martensite replay results.
 #[derive(Default)]
@@ -93,6 +84,16 @@ impl PartReplayService {
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateAccess<O, W, F>
     for PartReplayService
 {
+    fn adopt_candidate(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+        candidate: CertifiedPartCandidate,
+        transition: &oblikovati_model::history::EvaluationTransition,
+    ) -> Result<(), String> {
+        self.adopt_named_candidate(files, document, candidate, transition)
+    }
+
     fn resolution_policy(&self) -> Option<PrismResolutionPolicy> {
         self.resolution
     }
