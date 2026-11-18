@@ -97,5 +97,19 @@
     "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=document-opening VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
     "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted window input; reopening an already open part separately passed with X11 keyboard and pointer input",
     "notes": "The run has one failed scenario, tracked in #3963. After the run BLOCKERS.md received a request for the observed assembly command outcomes. A separate X11 test opened a native drawing using a mixed-case folder path with an underscore and a space, and XMODIFIERS=@im=none. A separate X11 test opened an assembly in Express mode and chose Load Full; it does not cover the missing Finish and Simplify commands."
+  },
+  "features/application/file-menu/file-menu.feature": {
+    "feature_sha256": "fd33924caea15cf97ba75ad3600c7244cf17592b6bdf26bdc9882f7cae71fb91",
+    "supporting_files": {
+      "features/application/file-menu/FUNCTIONAL.md": "76c106ccc2274f38d03b1a992a742a8e24f5fdb67f7a1989b9accd15d95e23dd",
+      "features/application/file-menu/VISUAL.md": "9977612cdcec5137ca8dd49f8116a75043fa4f4aaeb0830b1d18b43299870692",
+      "features/application/file-menu/FIXTURES.md": "9d7162a0a1bbcc979c1fcb974f4744333b20d55c31718a632e3e9f4f3c6c8ead",
+      "features/application/file-menu/BLOCKERS.md": "0c117202f775f28f1d3001f25e573994a26ea71f2032549c1962b1bd598b6bf4"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-18-file-menu/cucumber.json",
+    "cucumber_sha256": "188730e1491cb9f89b2b7daf41d77d511b68580450970da79a2bb86c99562d13",
+    "application_commit": "8ddc1d98aecd0d375a443139e7057383dd5add5f",
+    "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=file-menu XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted window input; no assembly document opened"
   }
 }
