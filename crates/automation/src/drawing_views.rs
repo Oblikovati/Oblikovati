@@ -13,6 +13,8 @@ use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::W
 
 /// Project a current part before a drawing view is adopted.
 pub trait DrawingViewProjectionAccess {
+    /// Give the certified policy for drawing geometry; example: `backend.resolution_policy()`.
+    fn resolution_policy(&self) -> oblikovati_martensite::PrismResolutionPolicy;
     /// Check whether retained geometry uses this projection's policy; example: `backend.accepts_policy(policy)`.
     fn accepts_policy(&self, policy: Option<oblikovati_martensite::PrismResolutionPolicy>) -> bool;
     /// Project a generation-checked part; example: `backend.counts_current(history, guid, view, part)?`.
@@ -37,20 +39,48 @@ pub trait DrawingViewProjectionAccess {
             oblikovati_martensite::EvaluationFailure,
         >,
     ) -> Result<Vec<oblikovati_persistence::package::SavedDrawingLine>, String>;
-    /// Return visible and hidden exact curve counts; example: `backend.counts(history, guid, &view)?`.
-    fn counts(
-        &self,
-        history: &DocumentEditHistory,
-        document: DocumentGuid,
-        view: &DrawingBaseViewDefinition,
-    ) -> Result<[usize; 2], String>;
-    /// Sample one view for saved presentation; example: `backend.saved_lines(history, document, view)?`.
-    fn saved_lines(
-        &self,
-        history: &DocumentEditHistory,
-        document: DocumentGuid,
-        view: &DrawingBaseViewDefinition,
-    ) -> Result<Vec<oblikovati_persistence::package::SavedDrawingLine>, String>;
+}
+
+pub(super) fn with_current_part<
+    O: TransactionObserver,
+    W: WorkspaceObserver,
+    F: DocumentFiles,
+    T,
+>(
+    files: &mut FileWorkspace<O, W, F>,
+    backend: &dyn DrawingViewProjectionAccess,
+    replay: Option<&mut dyn crate::PartUpdateAccess<O, W, F>>,
+    source: u64,
+    project: impl FnOnce(
+        &DocumentEditHistory,
+        DocumentGuid,
+        &oblikovati_model::feature::part::PartFeatureEvaluation<
+            oblikovati_martensite::NamedSolid,
+            oblikovati_martensite::EvaluationFailure,
+        >,
+    ) -> Result<T, String>,
+) -> Result<T, String> {
+    let policy = backend.resolution_policy();
+    if !backend.accepts_policy(Some(policy)) {
+        return Err(format!(
+            "drawing policy {policy:?}: expected a policy accepted by the projection service"
+        ));
+    }
+    let mut fallback = crate::PartReplayService::with_policy(policy)?;
+    let owner: &mut dyn crate::PartUpdateAccess<O, W, F> = match replay {
+        Some(owner) if backend.accepts_policy(owner.resolution_policy()) => owner,
+        _ => &mut fallback,
+    };
+    owner.ensure_part(files, source)?;
+    let workspace = files.workspace();
+    let session = workspace
+        .session(source)
+        .map_err(|cause| cause.to_string())?;
+    let guid = workspace
+        .identity(source)
+        .map_err(|cause| cause.to_string())?
+        .internal_name;
+    project(session.history(), guid, owner.current_part(files, source)?)
 }
 /// Drawing calls served by the document owner.
 pub const DRAWING_COMMAND_METHODS: [&str; 2] = [
@@ -101,28 +131,9 @@ pub(super) fn add_base<O: TransactionObserver, W: WorkspaceObserver, F: Document
     let backend = backend.ok_or_else(|| {
         Error("drawing view: expected an injected exact projection service".into())
     })?;
-    let replay = match replay.filter(|owner| backend.accepts_policy(owner.resolution_policy())) {
-        Some(replay) => {
-            replay.ensure_part(files, source).map_err(Error)?;
-            Some(replay)
-        }
-        None => None,
-    };
-    let session = files.workspace().session(source).map_err(api_error)?;
-    let guid = files
-        .workspace()
-        .identity(source)
-        .map_err(api_error)?
-        .internal_name;
-    let counts = match replay {
-        Some(replay) => backend.counts_current(
-            session.history(),
-            guid,
-            &definition,
-            replay.current_part(files, source).map_err(Error)?,
-        ),
-        None => backend.counts(session.history(), guid, &definition),
-    }
+    let counts = with_current_part(files, backend, replay, source, |history, guid, part| {
+        backend.counts_current(history, guid, &definition, part)
+    })
     .map_err(Error)?;
     let response = view_result(&definition, &request, counts)?;
     files

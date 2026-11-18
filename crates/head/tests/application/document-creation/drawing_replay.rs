@@ -11,6 +11,9 @@ use oblikovati_persistence::package::SavedDrawingLine;
 
 struct CurrentOnlyProjection;
 impl DrawingViewProjectionAccess for CurrentOnlyProjection {
+    fn resolution_policy(&self) -> oblikovati_martensite::PrismResolutionPolicy {
+        oblikovati_drawing::modelling_policy()
+    }
     fn saved_lines_current(
         &self,
         history: &DocumentEditHistory,
@@ -24,14 +27,6 @@ impl DrawingViewProjectionAccess for CurrentOnlyProjection {
     fn accepts_policy(&self, policy: Option<oblikovati_martensite::PrismResolutionPolicy>) -> bool {
         oblikovati_drawing::DrawingProjectionService.accepts_policy(policy)
     }
-    fn counts(
-        &self,
-        _: &DocumentEditHistory,
-        _: DocumentGuid,
-        _: &DrawingBaseViewDefinition,
-    ) -> Result<[usize; 2], String> {
-        Err("unexpected separate drawing replay".into())
-    }
     fn counts_current(
         &self,
         history: &DocumentEditHistory,
@@ -41,25 +36,18 @@ impl DrawingViewProjectionAccess for CurrentOnlyProjection {
     ) -> Result<[usize; 2], String> {
         oblikovati_drawing::DrawingProjectionService.counts_current(history, document, view, part)
     }
-    fn saved_lines(
-        &self,
-        _: &DocumentEditHistory,
-        _: DocumentGuid,
-        _: &DrawingBaseViewDefinition,
-    ) -> Result<Vec<SavedDrawingLine>, String> {
-        Err("unexpected separate saved-view replay".into())
-    }
 }
 
 #[test]
 fn drawing_base_uses_current_part_instead_of_independent_replay() {
     for headless in [false, true] {
-        assert_current_projection(headless, true);
+        assert_current_projection(headless, true, true);
     }
-    assert_current_projection(true, false);
+    assert_current_projection(true, false, true);
+    assert_current_projection(true, false, false);
 }
 
-fn assert_current_projection(headless: bool, matching_policy: bool) {
+fn assert_current_projection(headless: bool, matching_policy: bool, injected: bool) {
     use oblikovati_api::wire::{
         AddBaseViewArgs, BatchSaveArgs, BatchSaveItem, SaveDocumentAsArgs, SetModelReferenceArgs,
     };
@@ -104,7 +92,9 @@ fn assert_current_projection(headless: bool, matching_policy: bool) {
     let host =
         oblikovati_automation::FileHost::new(&mut owner.files, &mut owner.guids, &owner.version)
             .with_drawing_views(&CurrentOnlyProjection);
-    let host = if headless {
+    let host = if !injected {
+        host
+    } else if headless {
         host.with_part_update(&mut replay)
     } else {
         host.with_part_topology(&mut owner.part_scenes)
@@ -115,7 +105,7 @@ fn assert_current_projection(headless: bool, matching_policy: bool) {
         center_ymm: 80.,
         ..Default::default()
     });
-    if matching_policy {
+    {
         assert!(result.unwrap().view.visible_count > 0);
         client
             .documents()
@@ -135,16 +125,9 @@ fn assert_current_projection(headless: bool, matching_policy: bool) {
             })
             .unwrap();
         assert_eq!(batch.saved, 1);
-    } else {
-        assert!(
-            result
-                .unwrap_err()
-                .to_string()
-                .contains("unexpected separate drawing replay")
-        );
     }
     drop(client);
-    if matching_policy {
+    {
         let bytes = owner
             .files
             .files()
@@ -174,22 +157,55 @@ fn assert_current_projection(headless: bool, matching_policy: bool) {
             &owner.version,
         )
         .with_drawing_views(&CurrentOnlyProjection);
-        let host = if headless {
+        let host = if !injected {
+            host
+        } else if headless {
             host.with_part_update(&mut replay)
         } else {
             host.with_part_topology(&mut owner.part_scenes)
         };
-        let error = Client::new(host)
+        Client::new(host)
             .documents()
             .save_as(&SaveDocumentAsArgs {
                 document: drawing,
                 new_full_document_name: "/memory/stale-replay.odd".into(),
             })
-            .unwrap_err();
+            .unwrap();
         assert!(
-            error
-                .to_string()
-                .contains("unexpected separate saved-view replay")
+            owner
+                .files
+                .files()
+                .saved
+                .borrow()
+                .contains_key(std::path::Path::new("/memory/stale-replay.odd"))
+        );
+        let session = owner.files.workspace().session(part).unwrap();
+        let retained = session
+            .owned_part_slot(Some(oblikovati_drawing::modelling_policy()))
+            .unwrap();
+        assert!(retained.current(session).is_ok());
+        owner
+            .files
+            .commands(part)
+            .unwrap()
+            .run("Invalidate extrusion", |snapshot, _| {
+                snapshot.parameters.set_expression(3, "0 cm")
+            })
+            .unwrap();
+        let host = oblikovati_automation::FileHost::new(
+            &mut owner.files,
+            &mut owner.guids,
+            &owner.version,
+        )
+        .with_drawing_views(&CurrentOnlyProjection);
+        assert!(
+            Client::new(host)
+                .documents()
+                .save_as(&SaveDocumentAsArgs {
+                    document: drawing,
+                    new_full_document_name: "/memory/invalid-replay.odd".into(),
+                })
+                .is_err()
         );
         assert!(
             !owner
@@ -197,7 +213,7 @@ fn assert_current_projection(headless: bool, matching_policy: bool) {
                 .files()
                 .saved
                 .borrow()
-                .contains_key(std::path::Path::new("/memory/stale-replay.odd"))
+                .contains_key(std::path::Path::new("/memory/invalid-replay.odd"))
         );
     }
 }
