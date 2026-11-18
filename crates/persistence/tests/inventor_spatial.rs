@@ -174,3 +174,47 @@ fn projection_rejects_invalid_references_and_exhausted_document_ids() {
         .is_err()
     );
 }
+
+#[test]
+fn fixture_spatial_records_survive_document_save_and_reopen() {
+    use oblikovati_model::{
+        document_sketch::{DocumentSketchId, DocumentSketches},
+        identity::RecipeIdAllocator,
+        units::UnitsOfMeasure,
+    };
+    use oblikovati_persistence::{
+        inventor_spatial::project_inventor_point_and_line_sketch, package::DocumentPackage,
+    };
+    let sources = read_inventor_spatial_lines_and_points(FIXTURE).unwrap();
+    let mut owner = DocumentSketches::default();
+    let mut sketch_ids = RecipeIdAllocator::restore(Some(10), &[]).unwrap();
+    let mut entity_ids = RecipeIdAllocator::restore(Some(100), &[]).unwrap();
+    let units = UnitsOfMeasure::default().with_working_scale(0.1).unwrap();
+    for source in &sources {
+        let id = DocumentSketchId(sketch_ids.allocate().unwrap());
+        let sketch =
+            project_inventor_point_and_line_sketch(id, source, &units, &mut entity_ids).unwrap();
+        owner.add_spatial(sketch).unwrap();
+    }
+    let base =
+        DocumentPackage::decode(b"schemaVersion: 2\ndocumentType: 1\nmodel:\n  parameters: []\n")
+            .unwrap();
+    let package = base
+        .with_sketches(&owner, sketch_ids.high_water(), entity_ids.high_water())
+        .unwrap();
+    let mut restored = DocumentPackage::decode(&package.encode().unwrap())
+        .unwrap()
+        .restore_sketches()
+        .unwrap();
+    assert!(owner.same_recipe(&restored.sketches));
+    let sketches = restored.sketches.spatial_sketches();
+    assert_eq!(sketches[0].name(), Some("3D Sketch1"));
+    assert_eq!(sketches[1].name(), Some("3D Sketch6"));
+    assert_eq!(sketches[0].points()[1].position, [15., 0., 20.]);
+    assert_eq!(
+        sketches[1].lines()[0].endpoints,
+        [sketches[1].points()[1].id, sketches[1].points()[2].id]
+    );
+    assert_eq!(restored.sketch_ids.allocate().unwrap(), 13);
+    assert_eq!(restored.entity_ids.allocate().unwrap(), 108);
+}
