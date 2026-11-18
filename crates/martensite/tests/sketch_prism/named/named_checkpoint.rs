@@ -7,6 +7,23 @@ use oblikovati_model::feature::{
     part::{PartBlendKind, PartFeatureEvaluator, PartFeatureFailure},
     sketch_prism::ResolvedSketchPrism,
 };
+use oblikovati_session::{
+    DocumentSession, TransactionObserver,
+    part_evaluation::{PartCheckpointSlot, PartEvaluationSlot},
+};
+
+struct CheckpointObserver;
+impl TransactionObserver for CheckpointObserver {
+    fn before(
+        &mut self,
+        _: &oblikovati_api::wire::TransactionEventPayload,
+        _: &DocumentSnapshot,
+    ) -> Result<(), String> {
+        Ok(())
+    }
+    fn after(&mut self, _: &oblikovati_api::wire::TransactionEventPayload, _: &DocumentSnapshot) {}
+    fn changed(&mut self, _: u64, _: u64) {}
+}
 
 struct CountingEvaluator<'a> {
     kernel: CertifiedNamedSolidEvaluator<'a>,
@@ -138,4 +155,93 @@ fn changed_named_fillet_replays_from_the_prism_checkpoint() {
             .volume(&history, document())
             .is_err()
     );
+}
+
+#[test]
+fn session_accepts_checkpointed_named_fillet_and_invalidates_it_on_undo() {
+    let mut session = DocumentSession::new(7, owner(cube_document()), CheckpointObserver);
+    let edge = certified(session.history())
+        .subentity_reference_keys(session.history(), document())
+        .unwrap()
+        .into_iter()
+        .find(|key| {
+            oblikovati_model::identity::ReferenceEnvelope::decode(key)
+                .unwrap()
+                .kind
+                == 2
+        })
+        .unwrap();
+    session
+        .create_fillet("Fillet", definition(edge.clone(), 0.1))
+        .unwrap();
+    let mut checkpoints = PartCheckpointSlot::default();
+    let mut evaluator = CountingEvaluator::new(session.history());
+    let completed = session
+        .prepare_part_evaluation()
+        .evaluate_checkpoints(&mut evaluator)
+        .unwrap();
+    drop(evaluator);
+    checkpoints.adopt(&session, completed).unwrap();
+    let (captured, transition) = {
+        let prefix = checkpoints.candidate_prefix(&session).unwrap();
+        session
+            .run_projected_with_transition(
+                "Edit fillet",
+                |snapshot, _| replace_fillet(snapshot, definition(edge, 0.15)),
+                |snapshot, _, history| {
+                    let mut backend = CountingEvaluator::new(history);
+                    let candidate = prefix
+                        .prepare_candidate(history, snapshot, &mut backend)?
+                        .ok_or("expected changed fillet")?;
+                    assert_eq!((backend.prisms, backend.blends), (0, 1));
+                    candidate.capture(history, |_, body| {
+                        body.capture_detached(history, document())
+                    })
+                },
+            )
+            .unwrap()
+    };
+    let completed = oblikovati_martensite::complete_named_candidate(
+        captured,
+        &transition,
+        &session,
+        document(),
+    )
+    .unwrap();
+    let mut slot = PartEvaluationSlot::default();
+    session.adopt_part_evaluation(completed, &mut slot).unwrap();
+    let actual = slot.current(&session).unwrap().body(FeatureId(2)).unwrap();
+    let mut backend = CountingEvaluator::new(session.history());
+    let full = session
+        .snapshot()
+        .evaluate_part_features(&mut backend)
+        .unwrap();
+    let expected = full.body(FeatureId(2)).unwrap();
+    assert_eq!(
+        actual
+            .reference_keys(session.history(), document())
+            .unwrap(),
+        expected
+            .reference_keys(session.history(), document())
+            .unwrap()
+    );
+    for face in actual
+        .face_reference_keys(session.history(), document())
+        .unwrap()
+    {
+        assert!(
+            (actual
+                .face_area(session.history(), document(), &face)
+                .unwrap()
+                - expected
+                    .face_area(session.history(), document(), &face)
+                    .unwrap())
+            .abs()
+                < 1e-10
+        );
+    }
+    drop(backend);
+    session.undo().unwrap();
+    assert!(slot.current(&session).is_err());
+    assert!(checkpoints.candidate_prefix(&session).is_err());
 }
