@@ -27,6 +27,13 @@ type NamedSketchRecompute = oblikovati_session::part_evaluation::CompletedPartSk
 mod access;
 pub use access::PartUpdateAccess;
 
+/// A current part prefix bound to the policy that produced it.
+pub struct CertifiedPartPrefix<'a> {
+    pub(crate) prefix:
+        oblikovati_session::part_evaluation::PartCandidatePrefix<'a, NamedSolid, EvaluationFailure>,
+    pub(crate) policy: Option<PrismResolutionPolicy>,
+}
+
 /// A headless owner of generation-checked Martensite replay results.
 #[derive(Default)]
 pub struct PartReplayService {
@@ -112,6 +119,25 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
             .ok_or_else(|| format!("document {document}: expected a retained part replay"))?
             .current(session)
             .map_err(|error| error.to_string())
+    }
+    fn candidate_prefix<'a>(
+        &'a self,
+        files: &FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<CertifiedPartPrefix<'a>, String> {
+        let session = files
+            .workspace()
+            .session(document)
+            .map_err(|error| error.to_string())?;
+        let prefix = self
+            .slot(document)
+            .ok_or_else(|| format!("document {document}: expected a retained part replay"))?
+            .candidate_prefix(session)
+            .map_err(|error| error.to_string())?;
+        Ok(CertifiedPartPrefix {
+            prefix,
+            policy: self.resolution,
+        })
     }
     fn blend_body(
         &mut self,

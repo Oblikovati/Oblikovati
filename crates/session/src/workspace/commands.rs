@@ -94,6 +94,20 @@ impl<O: TransactionObserver> SessionCommands<'_, O> {
     ) -> Result<T, CommandError<E>> {
         self.session.run_projected(label, command, project)
     }
+    /// Validate against the unchanged source history; example: `commands.run_projected_with_view(label, edit, validate)?`.
+    pub fn run_projected_with_view<R, T, E>(
+        &mut self,
+        label: &str,
+        command: impl FnOnce(&mut DocumentSnapshot, &mut RecipeReservations<'_>) -> Result<R, E>,
+        project: impl FnOnce(
+            &DocumentSnapshot,
+            R,
+            &oblikovati_model::history::DocumentEditHistory,
+        ) -> Result<T, E>,
+    ) -> Result<T, CommandError<E>> {
+        self.session
+            .run_projected_with_view(label, command, project)
+    }
     /// Run through this document's normal transaction path.
     /// Example: `commands.run("width", |snapshot, _| snapshot.parameters.set_expression(1, "2 cm"))?;`.
     pub fn run<R, E>(

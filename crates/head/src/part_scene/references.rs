@@ -85,6 +85,13 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
     > {
         self.replay.current_part(files, document)
     }
+    fn candidate_prefix<'a>(
+        &'a self,
+        files: &FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<oblikovati_automation::CertifiedPartPrefix<'a>, String> {
+        self.replay.candidate_prefix(files, document)
+    }
     fn blend_body(
         &mut self,
         files: &mut FileWorkspace<O, W, F>,

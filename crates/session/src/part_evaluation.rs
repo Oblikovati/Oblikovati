@@ -14,6 +14,43 @@ pub use request::{CompletedPartEvaluation, CompletedPartSketchRecompute, PartEva
 pub struct PartEvaluationSlot<Body, Failure> {
     published: Option<CompletedPartEvaluation<Body, Failure>>,
 }
+/// A retained prefix whose source generation is checked when it is used.
+pub struct PartCandidatePrefix<'a, Body, Failure> {
+    published: &'a CompletedPartEvaluation<Body, Failure>,
+}
+impl<Body, Failure: Clone + std::fmt::Debug> PartCandidatePrefix<'_, Body, Failure> {
+    /// Validate an appended candidate, or return none when the prefix is ineligible.
+    /// Example: `prefix.validate_tail(history, candidate, feature, &mut backend)?`.
+    pub fn validate_tail<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
+        &self,
+        history: &oblikovati_model::history::DocumentEditHistory,
+        candidate: &oblikovati_model::history::DocumentSnapshot,
+        feature: oblikovati_model::feature::FeatureId,
+        backend: &mut B,
+    ) -> Result<Option<usize>, String> {
+        if !self.published.scope().is_current(history) {
+            return Err("part candidate prefix: expected its current owning history".into());
+        }
+        let evaluation = &self.published.evaluation;
+        let Some(change) = evaluation.replay_change(candidate) else {
+            return Ok(None);
+        };
+        if change.start != evaluation.health().len() {
+            return Ok(None);
+        }
+        let result = evaluation.replay_candidate_tail(candidate, backend)?;
+        if !result.has_body(feature) {
+            return Err(format!(
+                "feature {feature:?}, health {:?}: expected a valid candidate body",
+                result.health()
+            ));
+        }
+        if !self.published.scope().is_current(history) {
+            return Err("part candidate prefix: expected an unchanged owner after replay".into());
+        }
+        Ok(Some(result.body_count()))
+    }
+}
 /// Owned datum results sealed to one document history and generation.
 pub struct CurrentPartDatums {
     document: u64,
@@ -72,6 +109,21 @@ pub struct PartEvaluationView<'a, Body, Failure> {
     pub evaluation: &'a PartFeatureEvaluation<Body, Failure>,
 }
 impl<Body, Failure> PartEvaluationSlot<Body, Failure> {
+    /// Capture a current prefix with a freshness check at each later use.
+    /// Example: `slot.candidate_prefix(&session)?` before a transaction.
+    pub fn candidate_prefix<'a, O: TransactionObserver>(
+        &'a self,
+        session: &DocumentSession<O>,
+    ) -> Result<PartCandidatePrefix<'a, Body, Failure>, PartEvaluationError> {
+        let published = self
+            .published
+            .as_ref()
+            .ok_or(PartEvaluationError::Unavailable {
+                document: session.document,
+            })?;
+        published.validate(session)?;
+        Ok(PartCandidatePrefix { published })
+    }
     /// Seal current datums including one prospective face support.
     /// Example: `slot.current_datums_for_face(&session, &backend, &face)?`.
     pub fn current_datums_for_face<O, B>(

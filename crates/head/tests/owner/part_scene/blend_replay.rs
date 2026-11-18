@@ -85,7 +85,101 @@ fn fillet_creation_counts_body_candidate_and_published_replays() {
     let before = count_fillet_replays(false);
     let current = count_fillet_replays(true);
     assert_eq!(before, (1, 1, 1));
-    assert_eq!(current, (0, 1, 1));
+    assert_eq!(current, (0, 0, 1));
+}
+
+struct RejectCandidate(CertifiedFilletAccess);
+impl FilletAccess for RejectCandidate {
+    fn accepts_policy(&self, policy: Option<oblikovati_martensite::PrismResolutionPolicy>) -> bool {
+        self.0.accepts_policy(policy)
+    }
+    fn body(
+        &self,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        edges: &[Vec<u8>],
+    ) -> Result<Vec<u8>, String> {
+        self.0.body(history, document, edges)
+    }
+    fn validate(
+        &self,
+        _: DocumentGuid,
+        _: &DocumentSnapshot,
+        _: FeatureId,
+    ) -> Result<usize, String> {
+        Err("injected candidate refusal".into())
+    }
+}
+
+#[test]
+fn injected_validator_still_rejects_a_candidate_with_a_current_prefix() {
+    let (mut owner, _) = owner();
+    let document = open_prism(&mut owner, false);
+    let text = counted_edge_key(&owner, document);
+    let policy = crate::part_scene::resolution_policy::desktop_policy();
+    let backend = RejectCandidate(CertifiedFilletAccess::new(policy).unwrap());
+    let mut replay = PartReplayService::with_policy(policy).unwrap();
+    replay.update_part(&mut owner.files, document).unwrap();
+    let generation = owner
+        .files
+        .workspace()
+        .session(document)
+        .unwrap()
+        .generation();
+    let host = FileHost::new(&mut owner.files, &mut owner.guids, &owner.version)
+        .with_fillet(&backend)
+        .with_part_update(&mut replay);
+    let result =
+        Client::new(host)
+            .features()
+            .add_feature(&oblikovati_api::wire::featureargs::Fillet {
+                edge_refs: Some(vec![text]),
+                radius: "1 mm".into(),
+                ..Default::default()
+            });
+    assert!(
+        result
+            .unwrap_err()
+            .to_string()
+            .contains("injected candidate refusal")
+    );
+    let session = owner.files.workspace().session(document).unwrap();
+    assert_eq!(session.generation(), generation);
+    assert_eq!(session.snapshot().work_geometry.features().len(), 1);
+}
+
+#[test]
+fn rejected_fillet_tail_does_not_commit_or_invalidate_current_result() {
+    let (mut owner, _) = owner();
+    let document = open_prism(&mut owner, false);
+    let text = counted_edge_key(&owner, document);
+    let policy = crate::part_scene::resolution_policy::desktop_policy();
+    let backend = CertifiedFilletAccess::new(policy).unwrap();
+    let mut replay = PartReplayService::with_policy(policy).unwrap();
+    replay.update_part(&mut owner.files, document).unwrap();
+    let generation = owner
+        .files
+        .workspace()
+        .session(document)
+        .unwrap()
+        .generation();
+    let host = FileHost::new(&mut owner.files, &mut owner.guids, &owner.version)
+        .with_fillet(&backend)
+        .with_part_update(&mut replay);
+    let result =
+        Client::new(host)
+            .features()
+            .add_feature(&oblikovati_api::wire::featureargs::Fillet {
+                edge_refs: Some(vec![text]),
+                radius: "1000 mm".into(),
+                ..Default::default()
+            });
+    assert!(result.is_err());
+    let session = owner.files.workspace().session(document).unwrap();
+    assert_eq!(session.generation(), generation);
+    assert_eq!(session.snapshot().work_geometry.features().len(), 1);
+    assert!(replay.current_part(&owner.files, document).is_ok());
+    assert_eq!(backend.replay_counts(), (0, 0));
 }
 
 struct NoBodyReplay(CertifiedFilletAccess);

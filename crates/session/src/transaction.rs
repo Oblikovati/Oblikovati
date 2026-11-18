@@ -59,6 +59,29 @@ impl<O: TransactionObserver> DocumentSession<O> {
             .map_err(CommandError::Edit)
     }
 
+    pub(crate) fn edit_projected_with_view<R, T, E>(
+        &mut self,
+        command: impl FnOnce(&mut DocumentSnapshot, &mut RecipeReservations<'_>) -> Result<R, E>,
+        project: impl FnOnce(
+            &DocumentSnapshot,
+            R,
+            &oblikovati_model::history::DocumentEditHistory,
+        ) -> Result<T, E>,
+    ) -> Result<T, CommandError<E>> {
+        let group = self
+            .group
+            .as_ref()
+            .ok_or(CommandError::Session(SessionError::NoGroup))?;
+        let options = SketchUpdateMode::Automatic.options(self.sketch_options);
+        self.history
+            .edit_with_view(&group.token, |snapshot, ids, view| {
+                apply_recipe_edit(snapshot, ids, command, options, |candidate, result| {
+                    project(candidate, result, view)
+                })
+            })
+            .map_err(CommandError::Edit)
+    }
+
     /// Close one level; only the outer end records a step and emits events.
     /// Example: `session.end()?;`.
     pub fn end(&mut self) -> Result<(), SessionError> {

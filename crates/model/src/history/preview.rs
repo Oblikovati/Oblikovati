@@ -36,6 +36,21 @@ impl SnapshotReplay {
 }
 
 impl DocumentEditHistory {
+    /// Edit while a read-only view keeps the source generation available to validation.
+    /// Example: `history.edit_with_view(&token, |candidate, ids, source| validate(candidate, source))?`.
+    pub fn edit_with_view<R, E>(
+        &mut self,
+        token: &super::TransactionToken,
+        edit: impl FnOnce(
+            &mut DocumentSnapshot,
+            &mut RecipeReservations<'_>,
+            &DocumentEditHistory,
+        ) -> Result<R, E>,
+    ) -> Result<R, EditError<E>> {
+        let mut view = self.preview_owner().map_err(EditError::History)?;
+        view.generation = self.generation.clone();
+        self.edit(token, |candidate, ids| edit(candidate, ids, &view))
+    }
     /// Validate an edit on a private current-state copy without consuming owner IDs or history.
     /// Example: `history.preview(|snapshot, ids| snapshot.create_sketch_primitive(sketch, &input, ids))?;`.
     pub fn preview<R, E>(

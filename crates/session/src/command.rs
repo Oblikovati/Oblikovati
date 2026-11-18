@@ -32,6 +32,22 @@ impl<O: TransactionObserver> DocumentSession<O> {
     ) -> Result<T, CommandError<E>> {
         self.run_recomputed_projected(label, command, SketchUpdateMode::Automatic, project)
     }
+    /// Validate a candidate against its unchanged source history before adoption.
+    /// Example: `session.run_projected_with_view("Edit", edit, validate)?`.
+    pub fn run_projected_with_view<R, T, E>(
+        &mut self,
+        label: &str,
+        command: impl FnOnce(&mut DocumentSnapshot, &mut RecipeReservations<'_>) -> Result<R, E>,
+        project: impl FnOnce(
+            &DocumentSnapshot,
+            R,
+            &oblikovati_model::history::DocumentEditHistory,
+        ) -> Result<T, E>,
+    ) -> Result<T, CommandError<E>> {
+        self.run_grouped(label, |session| {
+            session.edit_projected_with_view(command, project)
+        })
+    }
     /// Evaluate a command on a private solved candidate without reserving live IDs.
     /// Example: `session.preview_projected(edit, |candidate, value| inspect(candidate, value))?`.
     pub fn preview_projected<R, T, E>(
@@ -58,11 +74,20 @@ impl<O: TransactionObserver> DocumentSession<O> {
         mode: SketchUpdateMode,
         project: impl FnOnce(&DocumentSnapshot, R) -> Result<T, E>,
     ) -> Result<T, CommandError<E>> {
+        self.run_grouped(label, |session| {
+            session.edit_projected(command, mode, project)
+        })
+    }
+    fn run_grouped<T, E>(
+        &mut self,
+        label: &str,
+        operation: impl FnOnce(&mut Self) -> Result<T, CommandError<E>>,
+    ) -> Result<T, CommandError<E>> {
         let automatic = !self.in_transaction();
         if automatic {
             self.begin(label).map_err(CommandError::Session)?;
         }
-        let result = self.edit_projected(command, mode, project);
+        let result = operation(self);
         if automatic {
             // A rejected candidate is unchanged, so end drops its frame without notifications.
             self.end().map_err(CommandError::Session)?;

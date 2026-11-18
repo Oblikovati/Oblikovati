@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+Fillet validation reuses a current matching part prefix before commit. (#4079)
+
 Stored prism diagnostics now use document-scoped complete replay. (#4079)
 
 Model tree reads reuse current part results and refresh them after edits. (#4079)

@@ -21,6 +21,12 @@ pub trait PartUpdateAccess<O: TransactionObserver, W: WorkspaceObserver, F: Docu
         &'a oblikovati_model::feature::part::PartFeatureEvaluation<NamedSolid, EvaluationFailure>,
         String,
     >;
+    /// Capture a current candidate prefix; example: `owner.candidate_prefix(files, id)?`.
+    fn candidate_prefix<'a>(
+        &'a self,
+        files: &FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<CertifiedPartPrefix<'a>, String>;
     /// Resolve edge keys against the current part; example: `owner.blend_body(files, id, &edges)?`.
     fn blend_body(
         &mut self,

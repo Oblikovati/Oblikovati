@@ -176,3 +176,94 @@ fn candidate_tail_requires_the_current_document_history() {
             .is_err()
     );
 }
+
+#[test]
+fn transaction_validates_tail_against_source_and_rejects_stale_prefix() {
+    let mut owner = session(7);
+    owner
+        .run("Hide source sketch", |snapshot, _| {
+            snapshot.sketches.set_visible(fixture::SKETCH, false)
+        })
+        .unwrap();
+    let mut slot = PartSlot::default();
+    publish(&mut owner, &mut slot);
+    let prefix = slot.candidate_prefix(&owner).unwrap();
+    let feature = owner
+        .run_projected_with_view(
+            "Second prism",
+            |candidate, ids| {
+                candidate
+                    .create_sketch_prism("Second", fixture::selected_prism_definition(), ids)
+                    .map_err(|error| error.to_string())
+            },
+            |candidate, feature, source| {
+                let count = prefix.validate_tail(
+                    source,
+                    candidate,
+                    feature,
+                    &mut FakePrismEvaluator::default(),
+                )?;
+                assert_eq!(count, Some(2));
+                Ok::<_, String>(feature)
+            },
+        )
+        .unwrap();
+    assert_eq!(feature, FeatureId(2));
+    let generation = owner.generation();
+    let result = owner.run_projected_with_view(
+        "Stale prefix",
+        |candidate, ids| {
+            candidate
+                .create_sketch_prism("Third", fixture::selected_prism_definition(), ids)
+                .map_err(|error| error.to_string())
+        },
+        |candidate, feature, source| {
+            prefix
+                .validate_tail(
+                    source,
+                    candidate,
+                    feature,
+                    &mut FakePrismEvaluator::default(),
+                )
+                .map(|_| ())
+        },
+    );
+    assert!(result.is_err());
+    assert_eq!(owner.generation(), generation);
+    assert_eq!(owner.snapshot().work_geometry.features().len(), 2);
+}
+
+#[test]
+fn candidate_prefix_declines_reuse_after_a_prefix_input_change() {
+    use oblikovati_model::feature::{AuthoredFeature, part::PartFeatureDefinition};
+    let owner = session(7);
+    let mut slot = PartSlot::default();
+    let completed = complete_fake(&owner);
+    let mut owner = owner;
+    owner.adopt_part_evaluation(completed, &mut slot).unwrap();
+    let prefix = slot.candidate_prefix(&owner).unwrap();
+    let mut candidate = owner.snapshot().clone();
+    let definition = fillet_input();
+    let reads = definition.reads();
+    candidate
+        .work_geometry
+        .append(AuthoredFeature::new(
+            FeatureId(2),
+            "Fillet",
+            PartFeatureDefinition::Fillet(Box::new(definition)),
+            reads,
+        ))
+        .unwrap();
+    candidate.parameters.set_expression(3, "3 cm").unwrap();
+    assert_eq!(
+        prefix
+            .validate_tail(
+                owner.history(),
+                &candidate,
+                FeatureId(2),
+                &mut FakePrismEvaluator::default()
+            )
+            .unwrap(),
+        None
+    );
+}
