@@ -87,14 +87,13 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
                 && let Some(resolver) = &self.part_sketch_continuity
             {
                 let document = crate::sketches::owner::active_sketch_host(self.files)?;
-                let session = self
-                    .files
-                    .workspace()
-                    .session(document)
-                    .map_err(|error| Error(error.to_string()))?;
                 let datums = self
                     .sketch_datums
-                    .get_or_init(|| resolver.datums(session.history()))
+                    .get_or_init(|| {
+                        resolver
+                            .datums_for_document(self.files.workspace(), document)
+                            .map_err(|error| error.to_string())
+                    })
                     .as_ref()
                     .map_err(|error| Error(error.clone()))?;
                 return crate::sketches::inspection::query_with_datums(
