@@ -5,9 +5,9 @@ use cucumber::{given, then, when};
 
 #[path = "cancellation.rs"]
 mod cancellation;
-
+#[path = "native_input.rs"]
+mod native_input;
 const PROJECT_NAME: &str = "Gearbox";
-
 #[test]
 fn projects_window_closes_to_the_document_chooser() {
     let mut world = ApplicationWorld::new();

@@ -155,6 +155,7 @@
     "cucumber_sha256": "828dd66e168853b0a737deadf39bbbb1bb54a544ec40f53120242e98ce507bca",
     "application_commit": "68ff0ccf6ef2c4cd9265519d0da700e0da514b8e",
     "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=project-dialog XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
-    "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted window input"
+    "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted window input",
+    "notes": "A separate native X11 mouse and keyboard test expands and collapses Folder Options while retaining the active project."
   }
 }
