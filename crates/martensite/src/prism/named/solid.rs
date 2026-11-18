@@ -16,6 +16,25 @@ pub enum NamedSolid {
 }
 
 impl NamedSolid {
+    /// Capture a body without changing its document and generation guards.
+    /// Example: `body.capture_current(&history, document)?` before a transaction.
+    pub fn capture_current(
+        &self,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+    ) -> Result<Self, String> {
+        match self {
+            Self::Prism(body) => Ok(Self::Prism(Box::new(
+                body.capture_current(history, document)?,
+            ))),
+            Self::Fillet(body) => Ok(Self::Fillet(Box::new(
+                body.capture_current(history, document)?,
+            ))),
+            Self::Chamfer(body) => Ok(Self::Chamfer(Box::new(
+                body.capture_current(history, document)?,
+            ))),
+        }
+    }
     /// Borrow the source prism when this result is a prism; example: `body.as_prism()`.
     pub fn as_prism(&self) -> Option<&NamedPrismSnapshot> {
         match self {

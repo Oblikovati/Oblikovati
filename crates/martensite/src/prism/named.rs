@@ -18,6 +18,22 @@ pub struct NamedPrismSnapshot {
     certification: Option<CertifiedPrismEvidence>,
 }
 impl NamedPrismSnapshot {
+    fn capture_current(
+        &self,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+    ) -> Result<Self, String> {
+        Ok(Self {
+            snapshot: self.snapshot.clone(),
+            bindings: self.bindings.clone_current(history, document)?,
+            subentity_bindings: self
+                .subentity_bindings
+                .as_ref()
+                .map(|bindings| bindings.clone_current(history, document))
+                .transpose()?,
+            certification: self.certification.clone(),
+        })
+    }
     pub(crate) fn into_probe_snapshot(self) -> PrismProbeSnapshot {
         self.snapshot
     }

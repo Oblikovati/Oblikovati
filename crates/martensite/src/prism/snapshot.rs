@@ -20,6 +20,7 @@ pub(super) fn sight_line([x, y, z]: [f64; 3], [dx, dy, dz]: [f64; 3]) -> Result<
 /// fn require_send<T: Send>() {}
 /// require_send::<oblikovati_martensite::PrismProbeSnapshot>();
 /// ```
+#[derive(Clone)]
 pub struct PrismProbeSnapshot {
     pub(super) shape: Shape,
     pub(super) faces: Vec<(PrismFaceRole, Shape)>,

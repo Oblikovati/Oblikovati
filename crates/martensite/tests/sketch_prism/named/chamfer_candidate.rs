@@ -247,6 +247,20 @@ fn assert_chamfer_replay(history: &DocumentEditHistory, distance: f64) {
         .evaluate_part_features(&mut evaluator)
         .unwrap();
     let result = replay.body(FeatureId(2)).unwrap();
+    let captured = result.capture_current(history, document()).unwrap();
+    assert_eq!(
+        captured.reference_keys(history, document()).unwrap(),
+        result.reference_keys(history, document()).unwrap()
+    );
+    assert_eq!(
+        captured.volume(history, document()).unwrap(),
+        result.volume(history, document()).unwrap()
+    );
+    assert!(
+        result
+            .capture_current(&owner(cube_document()), document())
+            .is_err()
+    );
     assert!(
         (result.volume(history, document()).unwrap() - (1. - distance * distance / 2.)).abs()
             < 1e-8
