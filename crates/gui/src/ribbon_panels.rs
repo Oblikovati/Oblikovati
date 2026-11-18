@@ -284,7 +284,8 @@ fn temporary_panel(
     if escape {
         display.temporary_escape_consumed = true;
     }
-    if escape || !keep || context.actions.len() != before {
+    // The observed temporary ribbon stays visible on Escape; selector dismissal is separate (#3856).
+    if display.selector_escape || !keep || context.actions.len() != before {
         display.temporary = None;
     }
 }
