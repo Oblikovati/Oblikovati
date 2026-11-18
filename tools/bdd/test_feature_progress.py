@@ -72,13 +72,47 @@ class FeatureProgressTests(unittest.TestCase):
     def test_outline_is_not_mistaken_for_complete(self) -> None:
         self.feature.write_text("Feature: X\n  Scenario Outline: case\n")
         self.record["feature_sha256"] = inventory.feature_record(self.feature)["sha256"]
-        self.assertEqual(self.status(), ("needs_outline_review", 0))
+        with patch.object(progress, "source_inventory", return_value=[]):
+            self.assertEqual(self.status(), ("needs_outline_review", 0))
 
     def test_blocker_is_visible_until_source_changes(self) -> None:
         self.record["blocker"] = "Scenario is capture-only"
         self.assertEqual(self.status(), ("blocked", 0))
         self.feature.write_text(self.feature.read_text() + "# updated\n")
         self.assertEqual(self.status(), ("source_changed", 0))
+
+    def test_outline_requires_each_expanded_example(self) -> None:
+        row = {
+            "id": "outline:1",
+            "path": self.path,
+            "line": 2,
+            "scenario": "Move <axis>",
+            "rule": None,
+            "outline": True,
+            "background_steps": [],
+            "scenario_steps": [{"line": 3, "name": "move <axis>"}],
+            "examples": [
+                {"line": 6, "columns": ["axis"], "values": ["X"]},
+                {"line": 7, "columns": ["axis"], "values": ["Y"]},
+            ],
+        }
+
+        def case(axis: str, line: int) -> dict[str, object]:
+            result = {"status": "passed"}
+            return {
+                "type": "scenario",
+                "name": f"Move {axis}",
+                "line": line,
+                "steps": [{"line": 3, "name": f"move {axis}", "result": result}],
+                "after": [{"result": result}],
+            }
+
+        report = [{"uri": self.path, "elements": [case("X", 6), case("Y", 7)]}]
+        self.assertEqual(progress.count_checked_scenarios(report, [row]), ("green", 1))
+        report[0]["elements"].pop()
+        self.assertEqual(
+            progress.count_checked_scenarios(report, [row]), ("incomplete", 0)
+        )
 
     def test_unrecorded_feature_is_not_run(self) -> None:
         self.assertEqual(

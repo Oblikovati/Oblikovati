@@ -257,8 +257,10 @@ feature is `green` only when the source hash matches, the report hash matches,
 every scenario and its source steps are present, and every step and cleanup
 hook passed. A source change becomes `source_changed`; a removed file is listed
 separately. A `blocker` on a hash-matched result reports the feature as
-`blocked` without counting its scenarios as passed. Outlines, backgrounds, rules, and step tables need further support
-before this inventory can mark them green. They are reported for review.
+`blocked` without counting its scenarios as passed. For outlines, the inventory
+checks every example against the parsed scenario snapshot when its feature hash
+matches. Changed outlines and features with backgrounds, rules, or step tables
+need further review before the inventory can mark them green.
 
 After running a whole feature, retain its Cucumber report and other artifacts
 under `receipts/`, then add the source hash, report path and hash, tested commit,
