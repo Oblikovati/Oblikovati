@@ -348,6 +348,7 @@ impl<
         let prepared =
             oblikovati_automation::prepare_extrusion(session.snapshot(), backend, request)
                 .map_err(|cause| cause.to_string())?;
+        let prefix = session.owned_part_prefix(Some(backend.0));
         session
             .preview_projected(
                 |snapshot, ids| prepared.create(snapshot, ids),
@@ -358,6 +359,26 @@ impl<
                             guid,
                             backend.0,
                         );
+                    if !candidate.sketches.requires_part_dependency_recompute()
+                        && let Some(prefix) = &prefix
+                        && let Some(result) = prefix
+                            .prepare_tail(session.history(), candidate, id, &mut evaluator)
+                            .map_err(oblikovati_api::Error)?
+                    {
+                        let presentation = result
+                            .inspect_body(session.history(), id, |body| {
+                                extrusion_preview_presentation(body, id)
+                            })
+                            .map_err(oblikovati_api::Error)?
+                            .ok_or_else(|| {
+                                oblikovati_api::Error(format!(
+                                    "preview feature {id:?}: expected a current body"
+                                ))
+                            })??;
+                        #[cfg(test)]
+                        self.part_scenes.note_extrusion_prefix_preview();
+                        return Ok(presentation);
+                    }
                     let result = candidate
                         .evaluate_part_features(&mut evaluator)
                         .map_err(|cause| oblikovati_api::Error(cause.to_string()))?;
@@ -367,18 +388,22 @@ impl<
                             result.health()
                         ))
                     })?;
-                    body.as_prism()
-                        .ok_or_else(|| {
-                            oblikovati_api::Error(format!(
-                                "preview feature {id:?}: expected a prism result"
-                            ))
-                        })?
-                        .presentation(crate::part_scene::DISPLAY_MESH)
-                        .map_err(oblikovati_api::Error)
+                    extrusion_preview_presentation(body, id)
                 },
             )
             .map_err(|cause| cause.to_string())
     }
+}
+fn extrusion_preview_presentation(
+    body: &oblikovati_martensite::NamedSolid,
+    id: oblikovati_model::feature::FeatureId,
+) -> Result<oblikovati_martensite::PrismPresentation, oblikovati_api::Error> {
+    body.as_prism()
+        .ok_or_else(|| {
+            oblikovati_api::Error(format!("preview feature {id:?}: expected a prism result"))
+        })?
+        .presentation(crate::part_scene::DISPLAY_MESH)
+        .map_err(oblikovati_api::Error)
 }
 pub(super) fn feature_distance_request(
     feature: u64,

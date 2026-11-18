@@ -392,3 +392,38 @@ impl<Body, Failure: Clone> PartCandidateResult<'_, Body, Failure> {
         Ok(evaluation)
     }
 }
+
+impl<Body, Failure> PartCandidateResult<'_, Body, Failure> {
+    /// Inspect a candidate body while its source prefix remains current.
+    /// Example: `candidate.inspect_body(&history, feature, |body| body.mass())?`.
+    /// ```compile_fail
+    /// use oblikovati_model::{feature::FeatureId, history::DocumentEditHistory};
+    /// use oblikovati_session::part_evaluation::PartCandidateResult;
+    /// fn escape<'a>(candidate: &'a PartCandidateResult<'_, f64, ()>, history: &'a DocumentEditHistory) -> &'a f64 {
+    ///     candidate.inspect_body(history, FeatureId(1), |body| body).unwrap().unwrap()
+    /// }
+    /// ```
+    pub fn inspect_body<R>(
+        &self,
+        history: &DocumentEditHistory,
+        feature: oblikovati_model::feature::FeatureId,
+        inspect: impl FnOnce(&Body) -> R,
+    ) -> Result<Option<R>, String> {
+        self.require_current_source(history, feature)?;
+        let result = self.replay.body(feature).map(inspect);
+        self.require_current_source(history, feature)?;
+        Ok(result)
+    }
+    fn require_current_source(
+        &self,
+        history: &DocumentEditHistory,
+        feature: oblikovati_model::feature::FeatureId,
+    ) -> Result<(), String> {
+        if !super::retained::lease_is_active(&self.lease) || !self.source.is_current(history) {
+            return Err(format!(
+                "candidate feature {feature:?}: expected its current source prefix"
+            ));
+        }
+        Ok(())
+    }
+}
