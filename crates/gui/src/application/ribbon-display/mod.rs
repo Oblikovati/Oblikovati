@@ -89,6 +89,7 @@ pub(crate) struct RibbonDisplayState {
     minimized: Option<RibbonDisplay>,
     pub temporary: Option<TemporaryPanel>,
     pub temporary_focus: bool,
+    control_press: crate::popup_press::PopupPress<()>,
     pending_keyboard_group: Option<RibbonPanel>,
     pub temporary_escape_consumed: bool,
     pub keep_temporary_on_click: bool,
@@ -128,6 +129,7 @@ impl Default for RibbonDisplayState {
             minimized: Some(RibbonDisplay::Tabs),
             temporary: None,
             temporary_focus: false,
+            control_press: Default::default(),
             pending_keyboard_group: None,
             temporary_escape_consumed: false,
             keep_temporary_on_click: false,
@@ -394,10 +396,12 @@ impl RibbonDisplayState {
     ) {
         crate::widget_abi::cursor_position(ui, position);
         let clicked = crate::widget_abi::button(ui, "Ribbon Display", [0.; 2]);
+        let through_popup = self.control_press.released(ui, ());
+        self.control_press.finish_frame(ui);
         if tips.tabs() && tips.matching("X2") {
             crate::ribbon_key_tips::badge(ui, "X2");
         }
-        if clicked || self.selector_pointer_press(ui) {
+        if clicked || through_popup || self.selector_pointer_press(ui) {
             self.advance();
         }
         if ui.is_item_hovered() {

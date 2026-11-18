@@ -373,6 +373,7 @@ fn home_menu(world: &mut ApplicationWorld) {
 fn home_menu_closed(world: &mut ApplicationWorld) {
     world.expect_no_text("Close Tabs");
     world.expect_no_text("Undock Ribbon");
+    world.expect_no_text("Show Panels");
 }
 #[then("the Home workspace remains active")]
 fn home_remains(world: &mut ApplicationWorld) {
