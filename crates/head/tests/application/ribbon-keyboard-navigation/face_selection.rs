@@ -4,6 +4,11 @@ use super::*;
 #[cfg(target_os = "linux")]
 use crate::HeadWindow;
 
+#[given("no model face is selected")]
+fn no_face_selected(world: &mut ApplicationWorld) {
+    assert!(!world.state().model_face_chosen);
+}
+
 #[when("the user presses Alt and then the 3D Model tab key tip")]
 fn show_commands(world: &mut ApplicationWorld) {
     super::show_model_tips(world);
