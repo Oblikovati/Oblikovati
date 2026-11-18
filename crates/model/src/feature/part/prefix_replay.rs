@@ -114,6 +114,26 @@ impl<Body, Failure: Clone> BorrowedPartReplay<'_, Body, Failure> {
 }
 
 impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
+    /// Convert captured bodies while retaining the evaluation recipe and lineage.
+    /// Example: `evaluation.try_map_owned_bodies(|id, body| restore(id, body))?`.
+    pub fn try_map_owned_bodies<Mapped, E>(
+        self,
+        mut map: impl FnMut(FeatureId, Body) -> Result<Mapped, E>,
+    ) -> Result<PartFeatureEvaluation<Mapped, Failure>, E> {
+        let bodies = self
+            .bodies
+            .into_iter()
+            .map(|(id, body)| map(id, body).map(|body| (id, body)))
+            .collect::<Result<_, _>>()?;
+        Ok(PartFeatureEvaluation {
+            datums: self.datums,
+            bodies,
+            body_lineage: self.body_lineage,
+            deleted: self.deleted,
+            health: self.health,
+            source: self.source,
+        })
+    }
     /// Find a possible dirty tail since this result's source recipe.
     /// Example: `evaluation.replay_change(&candidate)` before planning a replay.
     pub fn replay_change(&self, candidate: &DocumentSnapshot) -> Option<FeatureReplayRange> {
