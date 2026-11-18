@@ -179,12 +179,11 @@ pub fn retain_certified_named_sketch_prism(
     let job = history.evaluation_snapshot();
     let evaluation = job
         .snapshot()
-        .evaluate_part_features(&mut CertifiedNamedPrismEvaluator::new(
+        .evaluate_part_features(&mut CertifiedNamedSolidEvaluator::new(
             history, document, resolution,
         ))
         .map_err(|cause| cause.to_string())?;
-    let decline = crate::stored_prism::stored_body_decline(&evaluation, feature);
-    evaluation.into_body(feature).ok_or(decline)
+    current_prism_result(evaluation, feature)
 }
 fn naming_decline(
     sketch: oblikovati_model::document_sketch::DocumentSketchId,

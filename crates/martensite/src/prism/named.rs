@@ -34,10 +34,75 @@ pub fn retain_named_sketch_prism(
     let job = history.evaluation_snapshot();
     let evaluation = job
         .snapshot()
-        .evaluate_part_features(&mut NamedPrismEvaluator::new(history, document))
+        .evaluate_part_features(&mut CertifiedNamedSolidEvaluator::with_optional_policy(
+            history, document, None,
+        ))
         .map_err(|cause| cause.to_string())?;
+    require_diagnostic_blend_certainty(job.snapshot(), &evaluation, feature)?;
+    current_prism_result(evaluation, feature)
+}
+
+fn require_diagnostic_blend_certainty(
+    snapshot: &oblikovati_model::history::DocumentSnapshot,
+    evaluation: &oblikovati_model::feature::part::PartFeatureEvaluation<
+        NamedSolid,
+        EvaluationFailure,
+    >,
+    source: FeatureId,
+) -> Result<(), String> {
+    use oblikovati_model::feature::FeatureEvaluationStatus;
+    for record in evaluation.health() {
+        if matches!(
+            record.status,
+            FeatureEvaluationStatus::Healthy | FeatureEvaluationStatus::Suppressed
+        ) {
+            continue;
+        }
+        if diagnostic_blend_source(snapshot, record.feature).map_err(|error| error.to_string())?
+            == Some(source)
+        {
+            return Err(format!(
+                "prism {source:?}, blend {:?}: expected a certified policy to establish the current body",
+                record.feature
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn diagnostic_blend_source(
+    snapshot: &oblikovati_model::history::DocumentSnapshot,
+    feature: FeatureId,
+) -> Result<Option<FeatureId>, oblikovati_model::feature::FeatureSequenceError> {
+    use oblikovati_model::feature::part::PartFeatureDefinition;
+    let authored = snapshot.work_geometry.get(feature)?;
+    Ok(match authored.definition() {
+        PartFeatureDefinition::Fillet(blend) => Some(blend.body_source()),
+        PartFeatureDefinition::Chamfer(blend) => Some(blend.body_source()),
+        _ => None,
+    })
+}
+
+fn current_prism_result(
+    evaluation: oblikovati_model::feature::part::PartFeatureEvaluation<
+        NamedSolid,
+        EvaluationFailure,
+    >,
+    feature: FeatureId,
+) -> Result<NamedPrismSnapshot, String> {
+    if evaluation.body(feature).is_none() && evaluation.body_from_source(feature).is_ok() {
+        return Err(format!(
+            "prism {feature:?}: expected a current prism body; a later feature replaced it"
+        ));
+    }
     let decline = crate::stored_prism::stored_body_decline(&evaluation, feature);
-    evaluation.into_body(feature).ok_or(decline)
+    match evaluation.into_body(feature) {
+        Some(NamedSolid::Prism(prism)) => Ok(*prism),
+        Some(_) => Err(format!(
+            "feature {feature:?}: expected a current prism body"
+        )),
+        None => Err(decline),
+    }
 }
 mod blend;
 mod bounds;

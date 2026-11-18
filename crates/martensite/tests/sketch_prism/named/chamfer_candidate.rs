@@ -207,6 +207,7 @@ fn chamfer_replays_across_undo_redo_and_recipe_restore() {
         })
         .unwrap();
     history.commit(&token, false).unwrap();
+    assert_consumed_prism(&history);
     assert_chamfer_replay(&history, 0.1);
     let mut recipe = history.snapshot().work_geometry.part_recipe().unwrap();
     assert_eq!(recipe.version, 21);
@@ -220,6 +221,7 @@ fn chamfer_replays_across_undo_redo_and_recipe_restore() {
     history.undo().unwrap();
     assert_eq!(history.snapshot().work_geometry.features().len(), 1);
     history.redo().unwrap();
+    assert_consumed_prism(&history);
     assert_chamfer_replay(&history, 0.1);
     let token = history.begin("Change chamfer").unwrap();
     history
@@ -231,7 +233,9 @@ fn chamfer_replays_across_undo_redo_and_recipe_restore() {
         .unwrap();
     history.commit(&token, false).unwrap();
     assert_chamfer_replay(&history, 0.2);
-    assert_chamfer_replay(&restored_owner(history.snapshot()), 0.2);
+    let reopened = restored_owner(history.snapshot());
+    assert_consumed_prism(&reopened);
+    assert_chamfer_replay(&reopened, 0.2);
 }
 
 fn assert_chamfer_replay(history: &DocumentEditHistory, distance: f64) {

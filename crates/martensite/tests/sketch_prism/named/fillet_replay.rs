@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 
+#[path = "diagnostic_isolation.rs"]
+mod diagnostic_isolation;
+
 #[path = "chamfer_candidate.rs"]
 mod chamfer_candidate;
 
@@ -43,8 +46,22 @@ fn ordered_part_replay_builds_a_named_fillet() {
         })
         .unwrap();
     history.commit(&token, false).unwrap();
+    assert_consumed_prism(&history);
     assert_fillet_replay(&history, 1.);
     history.undo().unwrap();
+    assert!(
+        oblikovati_martensite::retain_named_sketch_prism(&history, document(), FeatureId(1))
+            .is_ok()
+    );
+    assert!(
+        oblikovati_martensite::retain_certified_named_sketch_prism(
+            &history,
+            document(),
+            FeatureId(1),
+            certified_resolution()
+        )
+        .is_ok()
+    );
     assert!(
         history
             .snapshot()
@@ -54,6 +71,7 @@ fn ordered_part_replay_builds_a_named_fillet() {
             .all(|feature| feature.id() != FeatureId(2))
     );
     history.redo().unwrap();
+    assert_consumed_prism(&history);
     assert_fillet_replay(&history, 1.);
     let token = history.begin("Size").unwrap();
     history
@@ -64,9 +82,26 @@ fn ordered_part_replay_builds_a_named_fillet() {
         })
         .unwrap();
     history.commit(&token, false).unwrap();
+    assert_consumed_prism(&restored_owner(history.snapshot()));
     assert_fillet_replay(&history, 2.);
     let reopened = restored_owner(history.snapshot());
     assert_fillet_replay(&reopened, 2.);
+}
+
+fn assert_consumed_prism(history: &DocumentEditHistory) {
+    let result = oblikovati_martensite::retain_certified_named_sketch_prism(
+        history,
+        document(),
+        FeatureId(1),
+        certified_resolution(),
+    );
+    let error = result.err().expect("a consumed prism must be refused");
+    assert!(error.contains("a later feature replaced it"), "{error}");
+    assert!(
+        oblikovati_martensite::retain_named_sketch_prism(history, document(), FeatureId(1))
+            .is_err(),
+        "diagnostic replay must not expose a consumed prism"
+    );
 }
 
 fn assert_fillet_replay(history: &DocumentEditHistory, size: f64) {
