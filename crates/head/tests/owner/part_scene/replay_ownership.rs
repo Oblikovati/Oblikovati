@@ -427,3 +427,6 @@ fn checkpoints_require_a_current_document_owned_result() {
             .is_none()
     );
 }
+
+#[path = "replay_ownership_parameter.rs"]
+mod parameter;

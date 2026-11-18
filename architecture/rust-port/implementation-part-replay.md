@@ -45,8 +45,9 @@ Prefixes share immutable results and retire when their slot is replaced or the
 document closes. Parameter changes use current feature and sketch reads to find
 the earliest dirty boundary; unclassified inputs restart replay. Martensite
 checkpoint tests compare the changed Fillet and each named face with a full
-replay. Parameter commands do not yet route through this checkpoint path.
-Associative sketches use ordered recompute. General dirty-prefix replay, full
+replay. Parameter Set and Update use a current checkpoint when its clean
+prefix and independent sketches allow it. First-feature changes, associative
+sketches, and open transactions retain the full-replay path. General dirty-prefix replay, full
 validity levels, achieved tolerance budgets, and operation-result requirements
 remain open.
 

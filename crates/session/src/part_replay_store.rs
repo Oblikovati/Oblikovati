@@ -49,6 +49,17 @@ impl<O: TransactionObserver> DocumentSession<O> {
             .filter(|owner| owner.policy == policy)
             .map(|owner| &owner.checkpoints)
     }
+    /// Capture the current document-owned checkpoint and its policy.
+    /// Example: `session.owned_checkpoint_prefix()` before an edit.
+    pub fn owned_checkpoint_prefix(
+        &self,
+    ) -> Option<(
+        Option<PrismResolutionPolicy>,
+        crate::part_evaluation::PartCheckpointPrefix<NamedSolid, EvaluationFailure>,
+    )> {
+        let owner = self.part_replay.as_ref()?;
+        Some((owner.policy, owner.checkpoints.candidate_prefix(self).ok()?))
+    }
     fn with_part_replay<T, E>(
         &mut self,
         policy: Option<PrismResolutionPolicy>,

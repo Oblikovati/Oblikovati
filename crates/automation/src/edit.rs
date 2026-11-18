@@ -69,6 +69,10 @@ pub(super) enum PreparedEdit {
 }
 
 impl PreparedEdit {
+    pub(super) fn is_parameter_value_edit(&self) -> bool {
+        matches!(self, Self::Set(_) | Self::Update(_))
+    }
+
     pub(super) fn decode(method: &str, request: &[u8]) -> Result<Self, Error> {
         match method {
             METHOD_MODEL_STATES_CREATE => Ok(Self::ModelState(
