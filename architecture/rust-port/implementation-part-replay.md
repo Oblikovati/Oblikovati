@@ -42,9 +42,13 @@ records the policy, and checks each transfer before adoption. Each captured
 named body also checks its own source history, even when document IDs match.
 The adapter completes transfers through the model without a session dependency.
 Prefixes share immutable results and retire when their slot is replaced or the
-document closes. Associative sketches use ordered recompute. General dirty-prefix
-replay, full validity levels, achieved tolerance budgets, and operation-result
-requirements remain open.
+document closes. Parameter changes use current feature and sketch reads to find
+the earliest dirty boundary; unclassified inputs restart replay. Martensite
+checkpoint tests compare the changed Fillet and each named face with a full
+replay. Parameter commands do not yet route through this checkpoint path.
+Associative sketches use ordered recompute. General dirty-prefix replay, full
+validity levels, achieved tolerance budgets, and operation-result requirements
+remain open.
 
 Run `CARGO_NET_OFFLINE=true make gate` for the complete local Linux checks.
 

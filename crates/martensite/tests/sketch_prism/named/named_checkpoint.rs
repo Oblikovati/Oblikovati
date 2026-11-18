@@ -391,3 +391,55 @@ fn accepted_named_checkpoints_survive_successive_fillet_edits() {
     assert!(part.current(&session).is_err());
     assert!(checkpoints.candidate_prefix(&session).is_err());
 }
+
+#[test]
+fn parameter_driven_fillet_reuses_named_prism_checkpoint() {
+    let mut snapshot = cube_document();
+    snapshot
+        .parameters
+        .insert_expression(4, "radius", oblikovati_api::types::USER_PARAM, "1 mm")
+        .unwrap();
+    let mut history = owner(snapshot);
+    let edge = certified(&history)
+        .subentity_reference_keys(&history, document())
+        .unwrap()
+        .into_iter()
+        .find(|key| {
+            oblikovati_model::identity::ReferenceEnvelope::decode(key)
+                .unwrap()
+                .kind
+                == 2
+        })
+        .unwrap();
+    let definition =
+        FilletDefinition::new(key("body", &[1]), vec![edge], DatumLength::Parameter(4)).unwrap();
+    let token = history.begin("Fillet").unwrap();
+    history.create_fillet(&token, "Fillet", definition).unwrap();
+    history.commit(&token, false).unwrap();
+    let checkpoints = history
+        .snapshot()
+        .evaluate_part_with_checkpoints(&mut CountingEvaluator::new(&history))
+        .unwrap();
+    let mut candidate = history.snapshot().clone();
+    candidate.parameters.set_expression(4, "1.5 mm").unwrap();
+    let mut incremental = CountingEvaluator::new(&history);
+    let replay = checkpoints
+        .replay_with_checkpoints(&candidate, &mut incremental, || false)
+        .unwrap();
+    let mut baseline = CountingEvaluator::new(&history);
+    let full = candidate.evaluate_part_features(&mut baseline).unwrap();
+    assert_eq!((incremental.prisms, incremental.blends), (0, 1));
+    assert_eq!((baseline.prisms, baseline.blends), (1, 1));
+    assert_eq!(replay.result().health(), full.health());
+    let actual = replay.result().body(FeatureId(2)).unwrap();
+    let expected = full.body(FeatureId(2)).unwrap();
+    assert_eq!(
+        actual.reference_keys(&history, document()).unwrap(),
+        expected.reference_keys(&history, document()).unwrap()
+    );
+    for face in actual.face_reference_keys(&history, document()).unwrap() {
+        let actual_area = actual.face_area(&history, document(), &face).unwrap();
+        let expected_area = expected.face_area(&history, document(), &face).unwrap();
+        assert!((actual_area - expected_area).abs() < 1e-10);
+    }
+}
