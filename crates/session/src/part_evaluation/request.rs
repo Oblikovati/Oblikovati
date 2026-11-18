@@ -74,36 +74,12 @@ impl<Body, Failure> CompletedPartEvaluation<Body, Failure> {
         &self,
         session: &DocumentSession<O>,
     ) -> Result<(), PartEvaluationError> {
-        self.validate_owner(session)?;
-        if !self.scope().is_current(&session.history) {
-            return Err(PartEvaluationError::Superseded {
-                document: self.document,
-                supplied: self.scope().generation(),
-                expected: session.generation(),
-            });
-        }
-        Ok(())
+        super::owner::validate_current(self.document, self.scope(), session)
     }
     pub(super) fn validate_owner<O: TransactionObserver>(
         &self,
         session: &DocumentSession<O>,
     ) -> Result<(), PartEvaluationError> {
-        self.validate_document(session.document)?;
-        if !self.scope().belongs_to(&session.history) {
-            return Err(PartEvaluationError::ForeignHistory {
-                document: self.document,
-                generation: self.scope().generation(),
-            });
-        }
-        Ok(())
-    }
-    fn validate_document(&self, expected: u64) -> Result<(), PartEvaluationError> {
-        if self.document != expected {
-            return Err(PartEvaluationError::ForeignDocument {
-                supplied: self.document,
-                expected,
-            });
-        }
-        Ok(())
+        super::owner::validate_owner(self.document, self.scope(), session)
     }
 }

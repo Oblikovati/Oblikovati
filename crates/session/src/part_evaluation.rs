@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Generation-checked adoption; retained kernel results are not undo recipe contents.
+mod checkpoints;
 mod error;
+mod owner;
 mod request;
 use crate::{DocumentSession, TransactionObserver};
+pub use checkpoints::{CompletedPartCheckpoints, PartCheckpointPrefix, PartCheckpointSlot};
 pub use error::{PartEvaluationError, PartSketchAdoptionError};
 use oblikovati_model::feature::part::PartFeatureEvaluation;
 use oblikovati_model::{
