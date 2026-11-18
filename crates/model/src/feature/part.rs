@@ -18,6 +18,7 @@ pub use delete::DeleteBodyDefinition;
 mod evaluate;
 pub use evaluate::{
     PartBlendKind, PartFeatureEvaluation, PartFeatureEvaluator, PartFeatureFailure, RecomputedPart,
+    unavailable_planar_face,
 };
 mod reads;
 pub use super::work_plane::{

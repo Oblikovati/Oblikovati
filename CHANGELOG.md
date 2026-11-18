@@ -143,6 +143,8 @@
 
 ### Changed
 
+- Required part evaluators to explicitly resolve or decline named planar faces. (#4079)
+
 - Made Fillet and Chamfer dispatch explicit in the part evaluator. (#4079)
 
 - Reused current source part results when saving drawing view snapshots. (#4079)

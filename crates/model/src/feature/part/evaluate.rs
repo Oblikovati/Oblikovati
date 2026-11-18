@@ -22,13 +22,9 @@ pub trait PartFeatureEvaluator {
     /// Resolve a current named planar face; example: `backend.resolve_planar_face(body, key)?`.
     fn resolve_planar_face(
         &self,
-        _body: &Self::Body,
+        body: &Self::Body,
         key: &[u8],
-    ) -> Result<crate::sketch::SketchPlane, String> {
-        Err(format!(
-            "face key {key:?}: expected a named planar-face evaluator"
-        ))
-    }
+    ) -> Result<crate::sketch::SketchPlane, String>;
     /// Construct and validate one blend or return a named decline.
     /// Example: `backend.evaluate_blend(kind, feature, body, edges, distance)`.
     fn evaluate_blend(
@@ -45,6 +41,11 @@ pub trait PartFeatureEvaluator {
         feature: FeatureId,
         input: ResolvedSketchPrism<'_>,
     ) -> Result<Self::Body, Self::Failure>;
+}
+/// Decline a named-face query when a diagnostic evaluator cannot resolve it.
+/// Example: `unavailable_planar_face(&key)` reports the offending key.
+pub fn unavailable_planar_face(key: &[u8]) -> String {
+    format!("face key {key:?}: expected a named planar-face evaluator")
 }
 /// One blend operation selected before construction.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

@@ -12,6 +12,7 @@ current scalar inputs, fully constrained sketch, host frame, orientation, and
 projected point sources before calling the injected `PartFeatureEvaluator`.
 Fillet and Chamfer use its explicit blend operation; a partial evaluator must
 return a named decline before it constructs a blend. (#4079)
+Named planar-face resolution also requires an explicit evaluator implementation.
 Placement and projections borrow the current datum catalogue from this replay.
 The backend receives checked inputs and does not read or replay the document.
 `MartensitePrismEvaluator` uses the existing selected-profile construction,
