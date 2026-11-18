@@ -52,6 +52,50 @@ impl EvaluationTransition {
         self.target.generation
     }
 }
+/// Candidate inputs and their original history, retained across one accepted edit.
+/// This guard checks freshness only; it does not authorize native name restoration.
+pub struct PartCandidateGuard {
+    source: EvaluationScope,
+    candidate: DocumentSnapshot,
+}
+impl PartCandidateGuard {
+    /// Capture the candidate while its source is current.
+    /// Example: `PartCandidateGuard::capture(&scope, &candidate, &history)?`.
+    pub fn capture(
+        source: &EvaluationScope,
+        candidate: &DocumentSnapshot,
+        history: &DocumentEditHistory,
+    ) -> Result<Self, String> {
+        if !source.is_current(history) {
+            return Err("part candidate guard: expected its current source history".into());
+        }
+        Ok(Self {
+            source: source.clone(),
+            candidate: candidate.clone(),
+        })
+    }
+    /// Check the accepted transition and all replay inputs.
+    /// Example: `guard.matches(&transition, &history)` before restoring bodies.
+    pub fn matches(
+        &self,
+        transition: &EvaluationTransition,
+        history: &DocumentEditHistory,
+    ) -> bool {
+        transition.matches_part_candidate(&self.source, &self.candidate, history)
+    }
+}
+impl EvaluationTransition {
+    /// Check both source ownership and the committed candidate replay inputs.
+    /// Example: `transition.matches_part_candidate(&scope, &candidate, &history)`.
+    pub fn matches_part_candidate(
+        &self,
+        source: &EvaluationScope,
+        candidate: &DocumentSnapshot,
+        history: &DocumentEditHistory,
+    ) -> bool {
+        self.matches(source, history) && candidate.part_replay_change(history.snapshot()).is_none()
+    }
+}
 /// An owned immutable evaluation recipe, separate from live history and its reservation state.
 pub struct HistoryEvaluationSnapshot {
     snapshot: DocumentSnapshot,

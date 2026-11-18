@@ -36,6 +36,7 @@ tests check a directed-boundary decline beside a valid independent prism, and a
 failed host plane followed by recovery. Existing owner edit, undo, package,
 condition, placed-frame, and native pixel tests consume the same path.
 
+The model stores each captured candidate's source generation and replay inputs.
 The session guards checkpoint capture and adoption by document, generation, and
 accepted edit. Each captured named body also checks that its own source history
 matches the accepted edit, including when document identifiers are equal. The

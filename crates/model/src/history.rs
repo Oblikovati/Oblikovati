@@ -8,7 +8,9 @@ use crate::{
 };
 mod checkpoints;
 mod evaluation;
-pub use evaluation::{EvaluationScope, EvaluationTransition, HistoryEvaluationSnapshot};
+pub use evaluation::{
+    EvaluationScope, EvaluationTransition, HistoryEvaluationSnapshot, PartCandidateGuard,
+};
 mod datum_delete;
 mod datum_metadata;
 mod derived_ids;
