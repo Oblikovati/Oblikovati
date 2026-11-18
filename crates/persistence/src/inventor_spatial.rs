@@ -187,56 +187,64 @@ fn validate_endpoints(sketch: &InventorSpatialSketch) -> Result<(), String> {
     Ok(())
 }
 
-/// Project recognized Inventor points and lines into a caller-owned sketch identity.
-/// Example: `project_inventor_point_and_line_sketch(id, &source, &units)?`.
+/// Project recognized Inventor points and lines with document-reserved entity identities.
+/// Example: `project_inventor_point_and_line_sketch(id, &source, &units, &mut ids)?`.
 /// This does not establish that the source sketch has no other entity types.
 pub fn project_inventor_point_and_line_sketch(
     id: oblikovati_model::document_sketch::DocumentSketchId,
     source: &InventorSpatialSketch,
     units: &oblikovati_model::units::UnitsOfMeasure,
+    ids: &mut oblikovati_model::identity::RecipeIdAllocator,
 ) -> Result<oblikovati_model::spatial_sketch::SpatialSketch, String> {
     use oblikovati_model::spatial_sketch::SpatialSketch;
-    let points = source
-        .points
-        .iter()
-        .map(|point| project_point(point, units))
-        .collect::<Result<Vec<_>, _>>()?;
-    let lines = source
-        .lines
-        .iter()
-        .map(project_line)
-        .collect::<Result<Vec<_>, _>>()?;
+    validate_endpoints(source)?;
+    let mut mapping = BTreeMap::new();
+    let mut points = Vec::new();
+    for point in &source.points {
+        let id = reserve_node(&mut mapping, point.node, ids)?;
+        points.push(oblikovati_model::spatial_sketch::SpatialSketchPoint {
+            id,
+            position: point
+                .position_cm
+                .map(|coordinate| coordinate / units.working_scale()),
+        });
+    }
+    let mut lines = Vec::new();
+    for line in &source.lines {
+        let endpoints = [
+            mapped_point(&mapping, line.endpoints[0])?,
+            mapped_point(&mapping, line.endpoints[1])?,
+        ];
+        let id = reserve_node(&mut mapping, line.node, ids)?;
+        lines.push(oblikovati_model::spatial_sketch::SpatialSketchLine { id, endpoints });
+    }
     SpatialSketch::new(id, source.name.clone(), points, lines)
 }
 
-fn project_point(
-    source: &InventorSpatialPoint,
-    units: &oblikovati_model::units::UnitsOfMeasure,
-) -> Result<oblikovati_model::spatial_sketch::SpatialSketchPoint, String> {
-    Ok(oblikovati_model::spatial_sketch::SpatialSketchPoint {
-        id: project_entity_id(source.node)?,
-        position: source
-            .position_cm
-            .map(|coordinate| coordinate / units.working_scale()),
-    })
+fn reserve_node(
+    mapping: &mut BTreeMap<usize, oblikovati_model::sketch::SketchEntityId>,
+    node: usize,
+    ids: &mut oblikovati_model::identity::RecipeIdAllocator,
+) -> Result<oblikovati_model::sketch::SketchEntityId, String> {
+    if mapping.contains_key(&node) {
+        return Err(format!(
+            "Inventor geometry node {node}: expected a unique node identity"
+        ));
+    }
+    let id = oblikovati_model::sketch::SketchEntityId(ids.allocate().map_err(|error| {
+        format!("Inventor geometry node {node}: expected an available document entity ID: {error}")
+    })?);
+    mapping.insert(node, id);
+    Ok(id)
 }
 
-fn project_line(
-    source: &InventorSpatialLine,
-) -> Result<oblikovati_model::spatial_sketch::SpatialSketchLine, String> {
-    Ok(oblikovati_model::spatial_sketch::SpatialSketchLine {
-        id: project_entity_id(source.node)?,
-        endpoints: [
-            project_entity_id(source.endpoints[0])?,
-            project_entity_id(source.endpoints[1])?,
-        ],
+fn mapped_point(
+    mapping: &BTreeMap<usize, oblikovati_model::sketch::SketchEntityId>,
+    node: usize,
+) -> Result<oblikovati_model::sketch::SketchEntityId, String> {
+    mapping.get(&node).copied().ok_or_else(|| {
+        format!("Inventor endpoint node {node}: expected a point in the same spatial sketch")
     })
-}
-
-fn project_entity_id(node: usize) -> Result<oblikovati_model::sketch::SketchEntityId, String> {
-    let id = u64::try_from(node)
-        .map_err(|_| format!("Inventor node {node}: expected a representable sketch identity"))?;
-    Ok(oblikovati_model::sketch::SketchEntityId(id))
 }
 
 #[cfg(test)]
