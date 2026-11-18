@@ -8,6 +8,7 @@ pub trait HeadWork: HeadSketchWork {
     selection_work_methods!();
     crate::work_blend::blend_work_methods!();
     crate::work_hole::hole_work_methods!();
+    crate::work_move_body::move_body_work_methods!();
     /// Move a document's transaction cursor.
     /// Example: `work.jump_history_from_gui(document, 0)?`.
     fn jump_history_from_gui(&mut self, document: u64, position: i64) -> Result<bool, String> {
