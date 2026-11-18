@@ -4,7 +4,7 @@ use imgui::{DrawCmd, DrawData, internal::RawCast, sys};
 
 type Rectangle = ([f32; 2], [f32; 2]);
 
-pub(super) fn ribbon_icon_quads(band_bottom: f32) -> Vec<Rectangle> {
+pub(in super::super) fn ribbon_icon_quads(band_bottom: f32) -> Vec<Rectangle> {
     icon_quads_inside(([0., 58.], [f32::MAX, band_bottom]))
 }
 

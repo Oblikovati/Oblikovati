@@ -64,6 +64,7 @@ fn additional_closed(_: &mut ApplicationWorld) {
 #[when("I select the expansion arrow on the Modify panel title")]
 #[when("the user opens the Modify panel's additional commands")]
 #[when("the user opens the Modify additional command area")]
+#[when("the user opens the Modify additional command area again")]
 #[when("the user opens the Modify additional-command area")]
 fn open_modify(world: &mut ApplicationWorld) {
     click_expansion_arrow(world, "Modify");
