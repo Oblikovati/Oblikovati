@@ -28,11 +28,32 @@ pub(super) fn caption_is_visible(world: &ApplicationWorld) -> bool {
 #[when("the user clicks the ribbon panel selector")]
 #[when("the user clicks the ribbon panel selector again")]
 #[when("the user opens the ribbon panel selector")]
+#[when("the user clicks the direct panel visibility selector")]
 #[when("I click the direct panel selector")]
 fn open_selector(world: &mut ApplicationWorld) {
     let (_, size) = window_geometry("##application-ribbon").unwrap();
     world.click([size[0] as i32 - 22, 45]);
     world.pump(Vec::new());
+}
+#[then("the 3D Model panel visibility list opens")]
+fn model_panel_list_open(world: &mut ApplicationWorld) {
+    assert!(selector_is_open(world), "expected the direct panel list");
+    for panel in ["Sketch", "Create", "Modify"] {
+        assert!(world.checked(panel), "expected {panel} checked");
+    }
+}
+#[then("the panel visibility list closes")]
+fn model_panel_list_closed(_world: &mut ApplicationWorld) {
+    assert_eq!(
+        super::side_selector::popup_depth(),
+        0,
+        "expected selector closed"
+    );
+}
+#[then("the full 3D Model ribbon remains visible")]
+fn full_model_ribbon_visible(world: &mut ApplicationWorld) {
+    world.expect_text("Start 2D Sketch");
+    world.expect_text("Extrude");
 }
 #[given("the full 3D Model ribbon shows the Modify panel")]
 #[given("the expanded 3D Model ribbon shows the Modify panel")]

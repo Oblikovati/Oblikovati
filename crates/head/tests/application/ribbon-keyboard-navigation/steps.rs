@@ -30,6 +30,11 @@ fn tips_shown(world: &mut ApplicationWorld) {
         world.text()
     );
 }
+#[given("top-level ribbon key tips are visible after pressing Alt")]
+fn top_level_tips_active(world: &mut ApplicationWorld) {
+    alt(world);
+    tips_shown(world);
+}
 #[then("the key tips disappear")]
 #[then("the top-level key tips disappear")]
 fn tips_hidden(world: &mut ApplicationWorld) {
