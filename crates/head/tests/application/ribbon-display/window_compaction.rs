@@ -17,10 +17,14 @@ fn narrow_modify(world: &mut ApplicationWorld) {
 }
 
 pub(super) fn narrow_window(world: &mut ApplicationWorld) {
+    resize_window(world, 700);
+}
+
+pub(super) fn resize_window(world: &mut ApplicationWorld, width: i32) {
     super::super::x11_input::focus_window();
     let bounds = super::super::x11_input::application_bounds();
     let edge = [bounds[2] - 2, bounds[3] / 2];
-    let target = [700, edge[1]];
+    let target = [width, edge[1]];
     super::super::main_window_frame_native::drag_resize_handle(world, edge, target);
     world.pump(Vec::new());
     assert!(world.app().window.native.drawable_extent().unwrap()[0] < 800);
@@ -40,6 +44,8 @@ fn open_modify(world: &mut ApplicationWorld) {
 fn maximize_window(world: &mut ApplicationWorld) {
     super::super::main_window_frame_native::press_maximize(world);
     super::super::main_window_frame_native::pump_until(world, true);
+    world.pump(Vec::new());
+    world.pump(Vec::new());
 }
 
 #[then("the Modify commands are displayed directly in the ribbon")]

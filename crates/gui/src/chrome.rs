@@ -19,6 +19,7 @@ fn tab_row_height(ui: &Ui) -> f32 {
 }
 
 mod side;
+mod tab_overflow;
 use side::{reserve_ribbon_margins, side_ribbon};
 
 pub(crate) struct RibbonDrawOwners<'a> {
@@ -216,7 +217,7 @@ fn ribbon_contents(
     ribbon_menu_row(ui, request, owners, actions);
     if owners.ribbon.display.placement == RibbonPlacement::Top {
         ui.same_line();
-        ribbon_tabs(ui, owners.ribbon, frame);
+        tab_overflow::draw(ui, owners.ribbon, frame);
         let control = [
             ui.window_size()[0] - 160. - crate::application::ribbon_display::PANEL_SELECTOR_WIDTH,
             tab_top,
@@ -349,14 +350,23 @@ fn ribbon_panel_row(
         actions,
     );
 }
-fn ribbon_tabs(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame) {
+fn ribbon_tabs(
+    ui: &Ui,
+    ribbon: &mut DocumentRibbon,
+    frame: &RibbonFrame,
+    visible: &[crate::ribbon::RibbonTab],
+    changed: bool,
+) {
     let Some(_tabs) = ui.tab_bar("##document-ribbon-tabs") else {
         return;
     };
     let mut hovered = false;
     let mut selector_tab = None;
-    for tab in &frame.tabs {
-        let flags = if frame.select == Some(*tab) {
+    let hidden_active = !visible.contains(&ribbon.active);
+    let selected_target = frame.select.or_else(|| changed.then_some(ribbon.active));
+    for tab in visible {
+        let selected = selected_target == Some(*tab);
+        let flags = if selected {
             TabItemFlags::SET_SELECTED
         } else {
             TabItemFlags::empty()
@@ -373,6 +383,7 @@ fn ribbon_tabs(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame) {
         // On release: the press itself is a click outside any panel still open, and closes it.
         let released = ui.is_item_hovered() && ui.is_mouse_released(imgui::MouseButton::Left);
         let clicked = ui.is_item_hovered() && ui.is_mouse_clicked(imgui::MouseButton::Left);
+        let through_popup = ribbon.tab_popup_press.released(ui, *tab);
         let double_click = clicked && ui.is_mouse_double_clicked(imgui::MouseButton::Left);
         if clicked && ribbon.active != *tab {
             ribbon.display.switch_from_open_compact_panel();
@@ -384,7 +395,13 @@ fn ribbon_tabs(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame) {
         if double_click {
             ribbon.double_click_tab = None;
         }
-        if item.is_some() {
+        if (hidden_active && clicked) || through_popup {
+            ribbon.select_tab(*tab);
+        }
+        if item.is_some()
+            && (!hidden_active || clicked || selected)
+            && (selected_target.is_none() || clicked || selected)
+        {
             ribbon.active = *tab;
         }
         drop(item);
@@ -395,6 +412,7 @@ fn ribbon_tabs(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame) {
             ribbon.display.open_temporary(TemporaryPanel::WholeTab);
         }
     }
+    ribbon.tab_popup_press.finish_frame(ui);
     if let Some(tab) = selector_tab {
         ribbon.select_tab(tab);
     }

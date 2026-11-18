@@ -271,8 +271,8 @@ impl ApplicationWorld {
     pub fn pixel_left_of(&mut self, label: &str) -> [u8; 4] {
         let run = self.run(label).clone();
         let capture = super::capture_framebuffer(&mut self.app().window.native);
-        let x = run.minimum[0] as usize - 3;
-        let at = (run.center()[1] as usize * capture.extent[0] as usize + x) * 4;
+        let point = diagnostics::pointer_pixels([run.minimum[0] - 3., run.center()[1]]);
+        let at = (point[1] as usize * capture.extent[0] as usize + point[0] as usize) * 4;
         std::array::from_fn(|channel| capture.rgba[at + channel])
     }
     pub fn extent(&mut self) -> [u32; 2] {
