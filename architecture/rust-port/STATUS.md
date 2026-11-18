@@ -25,6 +25,9 @@ using this status; the live scenario directory can change.
 - Viewport zoom has a full-feature diagnostic: all seven scenarios and 74
   steps passed at SHA-256 `cb07444a13797a6d98fac5b8f26463343a1cbff5ed4781c359290bd6e4856e9c`.
   The wheel steps used X11 input; other actions used scripted window input.
+- Viewport navigation wheel has a full-feature diagnostic: all 12 scenarios
+  and 143 steps passed at SHA-256 `9793d6a9ad9655ef4412295075dfbf9f6f5a5f97566e5564f2ca9f5a9c68f62a`.
+  This run used scripted window input.
 - Viewport entity selection is blocked at the scenario source: all seven
   scenarios are capture-only and excluded from execution. The source folder's
   `BLOCKERS.md` asks for executable requirements and a reproducible fixture.
