@@ -207,7 +207,7 @@ impl<Body, Failure: Clone> PartFeatureEvaluation<Body, Failure> {
             .map_err(|error| error.to_string())?;
         result.refresh_sketch_faces(&candidate, &backend);
         result.health = controller.finish().map_err(|error| error.to_string())?;
-        result.source = Some(Box::new(candidate.as_ref().clone()));
+        result.source = Some(std::sync::Arc::new(candidate.as_ref().clone()));
         Ok(BorrowedPartReplay(result))
     }
     fn borrow_prefix(&self) -> PartFeatureEvaluation<PrefixBody<'_, Body>, Failure> {
