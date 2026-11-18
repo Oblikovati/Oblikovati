@@ -207,6 +207,8 @@
 
 ### Fixed
 
+- Resolve Fillet and Chamfer inputs with the certified policy when the retained part uses different bounds. (#4084)
+
 - Avoided computing the assembly producer identity for ordinary document commands. (#4081)
 
 - Allow Fillet and Chamfer creation after model-state changes and reopening a part. (#4080)

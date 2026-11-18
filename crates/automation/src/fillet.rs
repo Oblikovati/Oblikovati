@@ -23,7 +23,7 @@ where
     W: oblikovati_session::workspace::WorkspaceObserver,
     F: oblikovati_persistence::file_access::DocumentFiles,
 {
-    if let Some(replay) = replay {
+    if let Some(replay) = replay.filter(|owner| backend.accepts_policy(owner.resolution_policy())) {
         return replay.blend_body(files, document, edges).map_err(Error);
     }
     let workspace = files.workspace();
@@ -39,6 +39,8 @@ where
 
 /// Exact body resolution and validation for typed Fillet commands.
 pub trait FilletAccess {
+    /// Require the validator's policy for reuse; example: `access.accepts_policy(policy)`.
+    fn accepts_policy(&self, policy: Option<oblikovati_martensite::PrismResolutionPolicy>) -> bool;
     /// Resolve all selected keys to one current body; example: `access.body(history, document, &edges)?`.
     fn body(
         &self,
