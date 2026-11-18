@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Drawing display state follows the current drawing and referenced part generations.
 use super::*;
-use oblikovati_drawing::evaluate_part;
+use oblikovati_automation::PartUpdateAccess;
+use oblikovati_drawing::{evaluate_part, project_evaluated_part};
 use oblikovati_gui::{GuiDrawingLine, GuiDrawingProjection};
 use oblikovati_model::drawing::DrawingDocument;
 use std::collections::BTreeMap;
@@ -71,9 +72,6 @@ impl<
         let drawing = workspace
             .session(request.drawing)
             .map_err(|cause| cause.to_string())?;
-        let source = workspace
-            .session(request.source)
-            .map_err(|cause| cause.to_string())?;
         let content = drawing
             .snapshot()
             .drawing
@@ -88,17 +86,28 @@ impl<
         };
         let view = oblikovati_automation::prepare_base_view(content, &args)
             .map_err(|cause| cause.to_string())?;
-        let document = workspace
-            .identity(request.source)
-            .map_err(|cause| cause.to_string())?
-            .internal_name;
-        let history = source.history();
-        let evaluated = evaluate_part(history, document)?;
-        let bodies: Vec<_> = evaluated.ordered_bodies().collect();
-        let projected =
-            oblikovati_martensite::drawing_base_view_solids(history, document, &bodies, &view)?;
-        let mut projection = GuiDrawingProjection::default();
-        append_curves(&mut projection, &projected, view.style, history, document)?;
+        let policy =
+            <crate::part_scene::DesktopPartScenes as PartUpdateAccess<O, W, F>>::resolution_policy(
+                &self.part_scenes,
+            );
+        if policy == Some(oblikovati_drawing::modelling_policy()) {
+            self.part_scenes
+                .ensure_part(&mut self.files, request.source)?;
+        }
+        let workspace = self.files.workspace();
+        let drawing = workspace
+            .session(request.drawing)
+            .map_err(|cause| cause.to_string())?;
+        let source = workspace
+            .session(request.source)
+            .map_err(|cause| cause.to_string())?;
+        let mut projection =
+            self.with_drawing_part(request.source, |part, history, document| {
+                let projected = project_evaluated_part(history, document, &view, part)?;
+                let mut output = GuiDrawingProjection::default();
+                append_curves(&mut output, &projected, view.style, history, document)?;
+                Ok(output)
+            })?;
         for line in &mut projection.lines {
             line.preview = true;
         }
@@ -206,6 +215,34 @@ impl<
         source: u64,
         drawing: &DrawingDocument,
     ) -> Result<GuiDrawingProjection, String> {
+        self.with_drawing_part(source, |part, history, document| {
+            let mut output = GuiDrawingProjection::default();
+            for definition in &drawing.sheets()[drawing.active_sheet()].views {
+                let projection = project_evaluated_part(history, document, definition, part)?;
+                append_curves(
+                    &mut output,
+                    &projection,
+                    definition.style,
+                    history,
+                    document,
+                )?;
+            }
+            Ok(output)
+        })
+    }
+
+    pub(super) fn with_drawing_part<T>(
+        &self,
+        source: u64,
+        project: impl FnOnce(
+            &oblikovati_model::feature::part::PartFeatureEvaluation<
+                oblikovati_martensite::NamedSolid,
+                oblikovati_martensite::EvaluationFailure,
+            >,
+            &oblikovati_model::history::DocumentEditHistory,
+            oblikovati_model::identity::DocumentGuid,
+        ) -> Result<T, String>,
+    ) -> Result<T, String> {
         let workspace = self.files.workspace();
         let session = workspace
             .session(source)
@@ -214,23 +251,17 @@ impl<
             .identity(source)
             .map_err(|cause| cause.to_string())?
             .internal_name;
-        let history = session.history();
-        let result = evaluate_part(history, document)?;
-        let bodies: Vec<_> = result.ordered_bodies().collect();
-        let mut output = GuiDrawingProjection::default();
-        for definition in &drawing.sheets()[drawing.active_sheet()].views {
-            let projection = oblikovati_martensite::drawing_base_view_solids(
-                history, document, &bodies, definition,
-            )?;
-            append_curves(
-                &mut output,
-                &projection,
-                definition.style,
-                history,
-                document,
-            )?;
+        let policy =
+            <crate::part_scene::DesktopPartScenes as PartUpdateAccess<O, W, F>>::resolution_policy(
+                &self.part_scenes,
+            );
+        if policy == Some(oblikovati_drawing::modelling_policy())
+            && let Ok(part) = self.part_scenes.current_part(&self.files, source)
+        {
+            return project(part, session.history(), document);
         }
-        Ok(output)
+        let part = evaluate_part(session.history(), document)?;
+        project(&part, session.history(), document)
     }
 }
 fn saved_sheet_projection(

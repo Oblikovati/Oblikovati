@@ -26,10 +26,7 @@ impl DrawingViewProjectionAccess for DrawingProjectionService {
         view: &DrawingBaseViewDefinition,
         part: &PartFeatureEvaluation<NamedSolid, EvaluationFailure>,
     ) -> Result<[usize; 2], String> {
-        require_healthy(part)?;
-        let bodies: Vec<_> = part.ordered_bodies().collect();
-        let projection =
-            oblikovati_martensite::drawing_base_view_solids(history, document, &bodies, view)?;
+        let projection = project_evaluated_part(history, document, view, part)?;
         Ok([
             projection.curves.visible.len(),
             projection.curves.hidden.len(),
@@ -56,6 +53,17 @@ impl DrawingViewProjectionAccess for DrawingProjectionService {
         let projection = project_view(history, document, view)?;
         sample_projection(&projection, view.style, history, document)
     }
+}
+/// Project one current, healthy part; example: `project_evaluated_part(history, guid, view, part)?`.
+pub fn project_evaluated_part(
+    history: &DocumentEditHistory,
+    document: DocumentGuid,
+    view: &DrawingBaseViewDefinition,
+    part: &PartFeatureEvaluation<NamedSolid, EvaluationFailure>,
+) -> Result<DrawingBaseProjection, String> {
+    require_healthy(part)?;
+    let bodies: Vec<_> = part.ordered_bodies().collect();
+    oblikovati_martensite::drawing_base_view_solids(history, document, &bodies, view)
 }
 fn project_view(
     history: &DocumentEditHistory,
