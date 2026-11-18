@@ -50,3 +50,20 @@ fn x11_pinned_expansion_survives_face_click() {
     assert!(expansion_visible());
     world.close();
 }
+
+#[test]
+fn x11_navigation_consumed_click_cannot_leave_a_pending_pick() {
+    let mut world = ApplicationWorld::new();
+    super::solid_part(&mut world);
+    super::super::viewport_pan::press_bar(&mut world, "P");
+    keyboard_open(&mut world);
+    assert!(expansion_visible());
+    super::super::x11_input::click([1000, 600]);
+    world.pump(Vec::new());
+    assert!(!expansion_visible());
+    super::opened_unpinned(&mut world);
+    super::super::x11_input::click([1000, 600]);
+    world.pump(Vec::new());
+    assert!(!expansion_visible());
+    world.close();
+}
