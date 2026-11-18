@@ -19,3 +19,4 @@ serde = { version = "1.0.229", features = ["derive"] }
 serde_yaml_ng = "=0.10.0"
 tempfile = "=3.27.0"
 time = { version = "=0.3.55", default-features = false, features = ["std", "parsing", "formatting"] }
+corliss = { git = "https://github.com/Oblikovati/Corliss", rev = "872ff91ea0fd9ebb3ad34d0030c67bbc7b5989fb", version = "=0.1.0" }

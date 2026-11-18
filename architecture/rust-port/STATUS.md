@@ -41,6 +41,10 @@ using this status; the live scenario directory can change.
   fixture. The fixture step reaches the document host, which rejects the binary
   file as invalid YAML; native Inventor and 3D-sketch support remain open
   (#4092). Separate X11 face-selection tests do not count as scenario passes.
+- Corliss 0.1.0 now reads point and line records from the Inventor fixture's
+  two populated 3D sketches, with names and endpoint identities. This is a
+  read-only prerequisite, not native document opening or viewport support;
+  see `implementation-inventor-spatial.md` (#4092).
 - The ledger reports **0 verified of 2,760** declarations at local snapshot
   `b576445b98cffd686dcc05aa8c017de2a591c8c8`. This is not an upstream scenario
   commit. Run `python3 -B tools/bdd/behavior_cli.py report` for current counts.
