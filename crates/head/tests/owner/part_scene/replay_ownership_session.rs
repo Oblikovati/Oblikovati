@@ -3,6 +3,42 @@
 use super::*;
 
 #[test]
+fn private_preview_uses_document_identity_without_publishing() {
+    let (mut owner, _) = owner();
+    let document = open_named_prism(&mut owner, "preview-owner.opd");
+    let policy = Some(crate::part_scene::resolution_policy::desktop_policy());
+    let workspace = owner.files.workspace();
+    let session = workspace.session(document).unwrap();
+    let generation = session.generation();
+    let had_published_part = session.owned_part_slot(policy).is_some();
+    let candidate = session.snapshot().clone();
+    let preview = workspace
+        .preview_owned_part(document, policy, &candidate)
+        .unwrap();
+    let guid = workspace.identity(document).unwrap().internal_name;
+    assert!(!preview.used_checkpoint);
+    assert!(
+        !preview
+            .evaluation
+            .body(FeatureId(1))
+            .unwrap()
+            .face_reference_keys(session.history(), guid)
+            .unwrap()
+            .is_empty()
+    );
+    assert_eq!(session.generation(), generation);
+    assert_eq!(
+        session.owned_part_slot(policy).is_some(),
+        had_published_part
+    );
+    let error = workspace
+        .preview_owned_part(u64::MAX, policy, &candidate)
+        .err()
+        .unwrap();
+    assert!(error.to_string().contains(&u64::MAX.to_string()));
+}
+
+#[test]
 fn session_recomputes_each_document_under_its_own_identity() {
     let (mut owner, _) = owner();
     let first = open_named_prism(&mut owner, "session-replay-first.opd");
