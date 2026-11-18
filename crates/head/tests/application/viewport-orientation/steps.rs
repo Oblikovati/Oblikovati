@@ -59,15 +59,20 @@ pub(super) fn press_part(
 /// Letters of a label drawn on the control, whichever way it is turned.
 fn control_runs(world: &ApplicationWorld) -> Vec<diagnostics::RenderedRun> {
     let (position, layout) = layout();
+    let (_, size) = control_geometry();
     world
         .frame
         .runs
         .iter()
         .filter(|run| {
             let center = run.center();
-            (0..2).all(|axis| {
+            let in_control = (0..2).all(|axis| {
+                center[axis] >= position[axis] && center[axis] <= position[axis] + size[axis]
+            });
+            let in_cube = (0..2).all(|axis| {
                 (center[axis] - position[axis] - layout.center[axis]).abs() <= layout.half
-            })
+            });
+            in_control && (in_cube || !COMPASS_LETTERS.contains(&run.text.as_str()))
         })
         .cloned()
         .collect()
