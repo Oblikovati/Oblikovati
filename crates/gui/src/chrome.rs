@@ -107,13 +107,7 @@ pub(crate) fn ribbon_band(
             &mut owners.ribbon.customization,
             (&request.commands, owners.quick_access),
         );
-        if let Some((tab, panel)) = owners.ribbon.display.take_context_relocated() {
-            owners.ribbon.panels.close_additional(tab, panel);
-        }
-        if owners.ribbon.display.take_customization_request() {
-            owners.ribbon.panels.close_unpinned_additional();
-            owners.ribbon.customization.open(tab);
-        }
+        owners.ribbon.apply_context_actions(tab);
         owners.ribbon.reset_confirmation(ui, &request.commands);
     }
     side_ribbon(

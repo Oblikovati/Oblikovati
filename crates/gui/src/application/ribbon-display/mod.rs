@@ -6,6 +6,7 @@ use imgui::Ui;
 use std::collections::BTreeSet;
 mod appearance_menu;
 mod context_bounds;
+use context_bounds::submenu_row_pressed;
 mod docking_menu;
 mod panel_selector;
 pub(crate) use panel_selector::PANEL_SELECTOR_WIDTH;
@@ -110,6 +111,7 @@ pub(crate) struct RibbonDisplayState {
     reset_requested: bool,
     /// A choice in Show Panels ends the whole menu, as a choice in any other row does.
     close_context_menu: bool,
+    close_unpinned_expansion: bool,
     selector_keyboard_started: bool,
     selector_focused_panel: Option<RibbonPanel>,
     display_menu_cursor: Option<usize>,
@@ -150,6 +152,7 @@ impl Default for RibbonDisplayState {
             customize_requested: false,
             reset_requested: false,
             close_context_menu: false,
+            close_unpinned_expansion: false,
             selector_keyboard_started: false,
             selector_focused_panel: None,
             display_menu_cursor: None,
@@ -485,13 +488,6 @@ impl RibbonDisplayState {
         .then_some(self.display_menu_cursor)
         .flatten()
     }
-}
-fn submenu_row_pressed(ui: &Ui, label: &str, submenu_open: bool) -> bool {
-    let selected = crate::widget_abi::dialog_selectable(ui, label, false);
-    // ImGui consumes the first click to dismiss a child popup before its parent row activates.
-    let hovered =
-        ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_BLOCKED_BY_POPUP);
-    selected || submenu_open && hovered && ui.is_mouse_clicked(imgui::MouseButton::Left)
 }
 #[cfg(test)]
 #[path = "../../../tests/application/ribbon-display/modes.rs"]
