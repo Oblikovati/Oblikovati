@@ -48,6 +48,8 @@ pub(crate) struct RibbonPanelOwners<'a> {
     pub key_tips_active: bool,
     pub sketch_tip: bool,
     pub extrude_tip: bool,
+    pub tools_application_tip: bool,
+    pub tools_document_tip: bool,
 }
 struct PanelDrawContext<'a> {
     ui: &'a Ui,

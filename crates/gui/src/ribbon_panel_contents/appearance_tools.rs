@@ -14,6 +14,9 @@ pub(super) fn options(
     icons.cursor(ui, origin, position);
     let disabled = ui.begin_disabled(state.ui_scale.is_none());
     let application = icons.button(ui, "Application Options", IconGlyph::Preferences, size);
+    if owners.tools_application_tip {
+        crate::ribbon_key_tips::badge(ui, "OA");
+    }
     drop(disabled);
     if application {
         owners.preferences.request();
@@ -24,6 +27,9 @@ pub(super) fn options(
         state.document_units.is_none() || state.transaction_open || owners.home_active,
     );
     let document = icons.button(ui, "Document Settings", IconGlyph::Preferences, size);
+    if owners.tools_document_tip {
+        crate::ribbon_key_tips::badge(ui, "OD");
+    }
     drop(disabled);
     if document && let Some(id) = state.document {
         owners.preferences.request_document(id);

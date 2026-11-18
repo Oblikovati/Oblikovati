@@ -20,18 +20,30 @@ pub(crate) fn status_bar(ui: &Ui, request: &GuiFrameRequest, alias: Option<&str>
                 let advance = ui.calc_text_size(&text)[0];
                 crate::widget_abi::cursor_position(ui, [width - advance - 12., 4.]);
                 ui.text(text);
-            } else if let Some(text) = selected_edge_text(request.commands.selected_edge_count) {
+            } else if let Some(text) = selected_entities_text(
+                request.commands.selected_face_appearances.len(),
+                request.commands.selected_edge_count,
+            ) {
                 let advance = ui.calc_text_size(&text)[0];
                 crate::widget_abi::cursor_position(ui, [width - advance - 12., 4.]);
                 ui.text(text);
             }
         });
 }
-fn selected_edge_text(count: usize) -> Option<String> {
+fn selected_entities_text(faces: usize, edges: usize) -> Option<String> {
+    let face_text = selection_count_text(faces, "Face", "Faces");
+    let edge_text = selection_count_text(edges, "Edge", "Edges");
+    match (face_text, edge_text) {
+        (Some(faces), Some(edges)) => Some(format!("{faces}, {edges}")),
+        (Some(text), None) | (None, Some(text)) => Some(text),
+        (None, None) => None,
+    }
+}
+fn selection_count_text(count: usize, singular: &str, plural: &str) -> Option<String> {
     match count {
         0 => None,
-        1 => Some("1 Edge".into()),
-        count => Some(format!("{count} Edges")),
+        1 => Some(format!("1 {singular}")),
+        count => Some(format!("{count} {plural}")),
     }
 }
 fn command_status<'a>(prompt: Option<&'a str>, alias: Option<&str>) -> std::borrow::Cow<'a, str> {
@@ -65,9 +77,14 @@ mod tests {
     use super::*;
     #[test]
     fn edge_selection_status_reports_count() {
-        assert_eq!(selected_edge_text(0), None);
-        assert_eq!(selected_edge_text(1).as_deref(), Some("1 Edge"));
-        assert_eq!(selected_edge_text(2).as_deref(), Some("2 Edges"));
+        assert_eq!(selected_entities_text(0, 0), None);
+        assert_eq!(selected_entities_text(0, 1).as_deref(), Some("1 Edge"));
+        assert_eq!(selected_entities_text(0, 2).as_deref(), Some("2 Edges"));
+        assert_eq!(selected_entities_text(1, 0).as_deref(), Some("1 Face"));
+        assert_eq!(
+            selected_entities_text(2, 1).as_deref(),
+            Some("2 Faces, 1 Edge")
+        );
     }
     #[test]
     fn status_feedback_reads_the_existing_alias_before_the_tool_prompt() {

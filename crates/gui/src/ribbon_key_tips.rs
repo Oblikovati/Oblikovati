@@ -16,6 +16,7 @@ pub(crate) struct RibbonKeyTips {
     pub consumed: bool,
     expected_text: Option<char>,
     command_tab: Option<RibbonTab>,
+    tools_face_mode: bool,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum KeyTipAction {
@@ -26,9 +27,17 @@ pub(crate) enum KeyTipAction {
     QuickAccess(usize),
     StartSketch,
     Extrude,
+    ApplicationOptions,
+    DocumentSettings,
     OpenGroup(crate::ribbon_panels::RibbonPanel),
 }
 impl RibbonKeyTips {
+    pub(crate) fn set_tools_face_mode(&mut self, enabled: bool) {
+        self.tools_face_mode = enabled;
+    }
+    pub(crate) fn tools_face_tip(&self, tip: &str) -> bool {
+        self.tools_face_mode && self.tabs() && self.matching(tip)
+    }
     pub(crate) fn active(&self) -> bool {
         self.level != Level::Off
     }
@@ -114,7 +123,7 @@ impl RibbonKeyTips {
             if self.commands() && !self.prefix.is_empty() {
                 self.level = Level::Tabs;
                 self.prefix.clear();
-            } else if self.tabs() {
+            } else if self.tabs() && !self.tools_face_mode {
                 self.dismiss();
             }
             return None;
@@ -127,6 +136,9 @@ impl RibbonKeyTips {
         self.command_key(character, grouped)
     }
     fn tab_key(&mut self, character: char, tabs: &[RibbonTab]) -> Option<KeyTipAction> {
+        if self.tools_face_mode && (self.prefix == "O" || character == 'O') {
+            return self.tools_option_key(character);
+        }
         if self.prefix == "X" {
             let action = match character {
                 '2' => Some(KeyTipAction::CycleDisplay),
@@ -158,6 +170,21 @@ impl RibbonKeyTips {
         self.command_tab = Some(tab);
         self.prefix.clear();
         Some(KeyTipAction::SelectTab(tab))
+    }
+    fn tools_option_key(&mut self, character: char) -> Option<KeyTipAction> {
+        if self.prefix.is_empty() && character == 'O' {
+            self.prefix.push(character);
+            return None;
+        }
+        let action = match character {
+            'A' => Some(KeyTipAction::ApplicationOptions),
+            'D' => Some(KeyTipAction::DocumentSettings),
+            _ => None,
+        };
+        if action.is_some() {
+            self.dismiss();
+        }
+        action
     }
     fn command_key(&mut self, character: char, grouped: bool) -> Option<KeyTipAction> {
         if self.command_tab != Some(RibbonTab::Model) {
@@ -274,6 +301,31 @@ mod tests {
             false,
             false,
         )
+    }
+    #[test]
+    fn selected_face_tools_tips_retain_escape_and_open_options() {
+        let mut tips = RibbonKeyTips::default();
+        tips.set_tools_face_mode(true);
+        press(&mut tips, GuiKey::LeftAlt);
+        assert!(tips.tools_face_tip("OA") && tips.tools_face_tip("OD"));
+        press(&mut tips, GuiKey::Escape);
+        assert!(tips.tabs());
+        press(&mut tips, GuiKey::O);
+        assert_eq!(
+            press(&mut tips, GuiKey::D),
+            Some(KeyTipAction::DocumentSettings)
+        );
+        assert!(!tips.active());
+        press(&mut tips, GuiKey::LeftAlt);
+        press(&mut tips, GuiKey::O);
+        assert_eq!(
+            press(&mut tips, GuiKey::A),
+            Some(KeyTipAction::ApplicationOptions)
+        );
+        tips.set_tools_face_mode(false);
+        press(&mut tips, GuiKey::LeftAlt);
+        press(&mut tips, GuiKey::Escape);
+        assert!(!tips.active());
     }
     #[test]
     fn tab_tips_ignore_unknown_keys_and_select_a_document_tab() {

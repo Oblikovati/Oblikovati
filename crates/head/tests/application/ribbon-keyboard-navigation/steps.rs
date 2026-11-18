@@ -12,6 +12,7 @@ fn alt(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::LeftAlt, false);
 }
 #[then("key tips appear on the ribbon tabs and quick-access controls")]
+#[then("top-level key tips appear on the ribbon tabs and quick-access controls")]
 #[then("top-level key tips appear")]
 fn tips_shown(world: &mut ApplicationWorld) {
     assert!(
