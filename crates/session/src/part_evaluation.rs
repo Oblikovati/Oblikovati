@@ -34,8 +34,7 @@ pub struct PartCandidateResult<'a, Body, Failure> {
 /// An independently captured candidate that is not yet a published result.
 pub struct CapturedPartCandidate<Body, Failure> {
     document: u64,
-    source: oblikovati_model::history::EvaluationScope,
-    candidate: oblikovati_model::history::DocumentSnapshot,
+    guard: oblikovati_model::history::PartCandidateGuard,
     evaluation: PartFeatureEvaluation<Body, Failure>,
 }
 impl<Body, Failure> CapturedPartCandidate<Body, Failure> {
@@ -63,12 +62,7 @@ impl<Body, Failure> CapturedPartCandidate<Body, Failure> {
         let evaluation = self
             .evaluation
             .try_map_owned_bodies(|id, body| restore(id, body, &session.history))?;
-        if !candidate_matches_transition(
-            &self.source,
-            &self.candidate,
-            transition,
-            &session.history,
-        ) {
+        if !self.guard.matches(transition, &session.history) {
             return Err(
                 "part candidate completion: expected unchanged inputs after restore".into(),
             );
@@ -90,7 +84,7 @@ impl<Body, Failure> CapturedPartCandidate<Body, Failure> {
         transition: &oblikovati_model::history::EvaluationTransition,
         history: &oblikovati_model::history::DocumentEditHistory,
     ) -> bool {
-        candidate_matches_transition(&self.source, &self.candidate, transition, history)
+        self.guard.matches(transition, history)
     }
 }
 impl<Body, Failure> PartCandidateResult<'_, Body, Failure> {
@@ -119,8 +113,7 @@ fn candidate_matches_transition(
     transition: &oblikovati_model::history::EvaluationTransition,
     history: &oblikovati_model::history::DocumentEditHistory,
 ) -> bool {
-    transition.matches(source, history)
-        && candidate.part_replay_change(history.snapshot()).is_none()
+    transition.matches_part_candidate(source, candidate, history)
 }
 impl<Body, Failure: Clone> PartCandidateResult<'_, Body, Failure> {
     /// Capture all candidate bodies while their source generation remains current.
@@ -139,8 +132,11 @@ impl<Body, Failure: Clone> PartCandidateResult<'_, Body, Failure> {
         }
         Ok(CapturedPartCandidate {
             document: self.document,
-            source: self.source.clone(),
-            candidate: self.candidate.clone(),
+            guard: oblikovati_model::history::PartCandidateGuard::capture(
+                &self.source,
+                &self.candidate,
+                history,
+            )?,
             evaluation,
         })
     }

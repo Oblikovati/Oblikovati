@@ -203,3 +203,39 @@ fn candidate_capture_rejects_backend_failure_and_a_stale_owner() {
     );
     assert!(!called);
 }
+
+#[test]
+fn model_candidate_guard_tracks_the_exact_accepted_history_and_inputs() {
+    use oblikovati_model::history::PartCandidateGuard;
+    let mut owner = session(7);
+    let source = owner.history().evaluation_scope();
+    let foreign = session(7);
+    assert!(
+        PartCandidateGuard::capture(&source, foreign.history().snapshot(), foreign.history())
+            .is_err()
+    );
+    let ((guard, wrong_inputs), transition) = owner
+        .run_projected_with_transition(
+            "Second prism",
+            |snapshot, ids| {
+                snapshot
+                    .create_sketch_prism("Second", fixture::selected_prism_definition(), ids)
+                    .map_err(|error| error.to_string())
+            },
+            |snapshot, _, history| {
+                Ok((
+                    PartCandidateGuard::capture(&source, snapshot, history)?,
+                    PartCandidateGuard::capture(&source, history.snapshot(), history)?,
+                ))
+            },
+        )
+        .unwrap();
+    assert!(guard.matches(&transition, owner.history()));
+    assert!(!wrong_inputs.matches(&transition, owner.history()));
+    assert!(!guard.matches(&transition, foreign.history()));
+    assert!(
+        PartCandidateGuard::capture(&source, owner.history().snapshot(), owner.history()).is_err()
+    );
+    owner.undo().unwrap();
+    assert!(!guard.matches(&transition, owner.history()));
+}

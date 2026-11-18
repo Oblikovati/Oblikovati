@@ -40,8 +40,7 @@ pub struct PartCheckpointCandidate<Body, Failure> {
 /// Detached boundaries awaiting an accepted document transition.
 pub struct CapturedPartCheckpointCandidate<Body, Failure> {
     document: u64,
-    source: EvaluationScope,
-    candidate: DocumentSnapshot,
+    guard: oblikovati_model::history::PartCandidateGuard,
     checkpoints: PartReplayCheckpoints<Body, Failure>,
 }
 impl super::request::PartEvaluationRequest {
@@ -270,8 +269,11 @@ impl<Body, Failure: Clone> PartCheckpointCandidate<Body, Failure> {
         }
         Ok(CapturedPartCheckpointCandidate {
             document: self.document,
-            source: self.source.clone(),
-            candidate: self.candidate.clone(),
+            guard: oblikovati_model::history::PartCandidateGuard::capture(
+                &self.source,
+                &self.candidate,
+                history,
+            )?,
             checkpoints,
         })
     }
@@ -290,14 +292,7 @@ impl<Body, Failure> CapturedPartCheckpointCandidate<Body, Failure> {
             &DocumentEditHistory,
         ) -> Result<Mapped, String>,
     ) -> Result<CompletedPartCheckpoints<Mapped, Failure>, String> {
-        if self.document != session.document
-            || !super::candidate_matches_transition(
-                &self.source,
-                &self.candidate,
-                transition,
-                &session.history,
-            )
-        {
+        if self.document != session.document || !self.guard.matches(transition, &session.history) {
             return Err(format!(
                 "part checkpoint document {}, session {}: expected its accepted edit and current inputs",
                 self.document, session.document
@@ -306,12 +301,7 @@ impl<Body, Failure> CapturedPartCheckpointCandidate<Body, Failure> {
         let checkpoints = self
             .checkpoints
             .try_map_owned_bodies(|id, body| restore(id, body, &session.history))?;
-        if !super::candidate_matches_transition(
-            &self.source,
-            &self.candidate,
-            transition,
-            &session.history,
-        ) {
+        if !self.guard.matches(transition, &session.history) {
             return Err(
                 "part checkpoint completion: expected unchanged inputs after restore".into(),
             );
