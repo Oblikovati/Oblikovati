@@ -2,6 +2,9 @@
 use super::*;
 use oblikovati_api::wire::CreateWorkPlaneArgs;
 
+#[path = "face_plane/owned_preview.rs"]
+mod owned_preview;
+
 #[test]
 fn face_offset_command_binds_a_current_face_and_reports_its_geometry() {
     let (owner, _) = owner();
