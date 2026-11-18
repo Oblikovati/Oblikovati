@@ -263,11 +263,11 @@
       "features/application/ribbon-display/wheel-tab-navigation.svg": "a7768245a07ca78c28a2ccd4aca1a0533df328fb2d22abc4caf6027b3742e9da",
       "features/application/ribbon-display/wheel-tabs-only.svg": "3647e88e7456c04629f2b42536e16cfa2d5f07860ff29826711a5c11879f2a34"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-18-ribbon-display-maximize/cucumber.json",
-    "cucumber_sha256": "f57a9c497810f687502fd76e0fcacde74fd2eaeae667a6c186681a46aa9ffc59",
-    "application_commit": "2163564f9b251ba56b4577c0fd2285e4c390ea81",
+    "cucumber": "architecture/rust-port/receipts/2026-11-18-ribbon-sketch-context/cucumber.json",
+    "cucumber_sha256": "abe5954fc4ecfc7ef9017cd95f3c2b611bcbc4aeb73579d6a83816d7a305b82b",
+    "application_commit": "54876099cdcdd8e88d4e81805f164761b4455b73",
     "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=ribbon-display XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh sh architecture/rust-port/receipts/2026-11-18-ribbon-display-maximize/run.sh",
     "environment": "Linux X11, Xvfb, Openbox and Vulkan Lavapipe; scripted window input plus native X11 resize and maximize",
-    "notes": "26 of 50 scenarios passed; 24 stopped at unbound steps, leaving later assertions untested. The feature and support files stayed unchanged during the run. Separate X11 tests verify modal blocking and drag cancellation. Unversioned source: diagnostic only, not strict verified acceptance (#3849, #3856)."
+    "notes": "28 of 50 scenarios passed; 22 stopped at unbound steps, leaving later assertions untested. The feature and support files stayed unchanged during the run. A separate native X11 pointer test covers the Sketch ribbon display toggle. Unversioned source: diagnostic only, not strict verified acceptance (#3856)."
   }
 }
