@@ -46,9 +46,10 @@ using this status; the live scenario directory can change.
   checkpoints. Hosts share a matching result; publishing a fifth policy retires
   the least recently published one. An edit invalidates all old generations,
   and closing the document drops all results (#4079).
-- The document session now runs and publishes normal full and ordered-sketch
-  recomputes. The file workspace supplies the document identity and validates
-  the policy; tests cover separate documents and stale generations (#4079).
+- The document session runs and publishes normal full and ordered-sketch
+  recomputes and creates feature checkpoints. The file workspace supplies the
+  document identity and validates the policy; tests cover separate documents,
+  stale generations, and checkpoint reuse (#4079).
 - A cold checkpoint request for a part without associative sketch recompute
   publishes its result and boundaries from one replay instead of two. Ownership
   tests cover repeat requests and isolation between documents (#4079).
@@ -80,7 +81,7 @@ using this status; the live scenario directory can change.
   clean parent `01c398155` (related clipped-tab investigation #4082).
 - The desktop replay owner creates checkpoints on demand for blend edit
   previews. Successive previews and accepted edits reuse matching checkpoints.
-  Associative sketches use ordered recompute. Checkpoint and preview orchestration
+  Associative sketches use ordered recompute. Candidate and preview orchestration
   still lives outside the session, so the complete evaluation service remains
   unfinished (#4079).
 - A newly appended feature may add parameters without dirtying an unchanged
