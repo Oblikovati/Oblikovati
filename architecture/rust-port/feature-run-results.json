@@ -14,5 +14,13 @@
     "application_commit": "4831f0df806ea081dab95f4eb3f455e60ed6d6b3",
     "command": "OBK_BDD_FEATURE=viewport-pan tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
     "environment": "Linux X11, Xvfb, Vulkan Lavapipe; scripted scenario input; separate X11 pan tests passed"
+  },
+  "features/application/viewport-zoom/viewport-zoom.feature": {
+    "feature_sha256": "cb07444a13797a6d98fac5b8f26463343a1cbff5ed4781c359290bd6e4856e9c",
+    "cucumber": "architecture/rust-port/receipts/2026-11-18-viewport-zoom/cucumber.json",
+    "cucumber_sha256": "09a693645053f4fc37cbc19153dde4b5bfa4b734eabeffc7b3fa77351d825766",
+    "application_commit": "5781e24c03e9bc01c845a128e22b46e415d919b9",
+    "command": "OBK_BDD_FEATURE=viewport-zoom tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11, Xvfb, Vulkan Lavapipe; X11 wheel and scripted window input"
   }
 }

@@ -22,6 +22,9 @@ using this status; the live scenario directory can change.
 - Viewport pan has a full-feature diagnostic: all four scenarios and 32 steps
   passed at SHA-256 `4303c8a64b9262841dba3b8b48a74e51581a6a0ef9d98798286d514c53155647`.
   Two separate X11 mouse tests passed for pan dragging and context-menu actions.
+- Viewport zoom has a full-feature diagnostic: all seven scenarios and 74
+  steps passed at SHA-256 `cb07444a13797a6d98fac5b8f26463343a1cbff5ed4781c359290bd6e4856e9c`.
+  The wheel steps used X11 input; other actions used scripted window input.
 - The ledger reports **0 verified of 2,760** declarations at local snapshot
   `b576445b98cffd686dcc05aa8c017de2a591c8c8`. This is not an upstream scenario
   commit. Run `python3 -B tools/bdd/behavior_cli.py report` for current counts.
