@@ -187,6 +187,58 @@ fn validate_endpoints(sketch: &InventorSpatialSketch) -> Result<(), String> {
     Ok(())
 }
 
+/// Project recognized Inventor points and lines into a caller-owned sketch identity.
+/// Example: `project_inventor_point_and_line_sketch(id, &source, &units)?`.
+/// This does not establish that the source sketch has no other entity types.
+pub fn project_inventor_point_and_line_sketch(
+    id: oblikovati_model::document_sketch::DocumentSketchId,
+    source: &InventorSpatialSketch,
+    units: &oblikovati_model::units::UnitsOfMeasure,
+) -> Result<oblikovati_model::spatial_sketch::SpatialSketch, String> {
+    use oblikovati_model::spatial_sketch::SpatialSketch;
+    let points = source
+        .points
+        .iter()
+        .map(|point| project_point(point, units))
+        .collect::<Result<Vec<_>, _>>()?;
+    let lines = source
+        .lines
+        .iter()
+        .map(project_line)
+        .collect::<Result<Vec<_>, _>>()?;
+    SpatialSketch::new(id, source.name.clone(), points, lines)
+}
+
+fn project_point(
+    source: &InventorSpatialPoint,
+    units: &oblikovati_model::units::UnitsOfMeasure,
+) -> Result<oblikovati_model::spatial_sketch::SpatialSketchPoint, String> {
+    Ok(oblikovati_model::spatial_sketch::SpatialSketchPoint {
+        id: project_entity_id(source.node)?,
+        position: source
+            .position_cm
+            .map(|coordinate| coordinate / units.working_scale()),
+    })
+}
+
+fn project_line(
+    source: &InventorSpatialLine,
+) -> Result<oblikovati_model::spatial_sketch::SpatialSketchLine, String> {
+    Ok(oblikovati_model::spatial_sketch::SpatialSketchLine {
+        id: project_entity_id(source.node)?,
+        endpoints: [
+            project_entity_id(source.endpoints[0])?,
+            project_entity_id(source.endpoints[1])?,
+        ],
+    })
+}
+
+fn project_entity_id(node: usize) -> Result<oblikovati_model::sketch::SketchEntityId, String> {
+    let id = u64::try_from(node)
+        .map_err(|_| format!("Inventor node {node}: expected a representable sketch identity"))?;
+    Ok(oblikovati_model::sketch::SketchEntityId(id))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
