@@ -23,6 +23,8 @@ mod sketch_constrain_menu;
 mod sketch_create_live;
 #[path = "sketch_layout.rs"]
 mod sketch_layout;
+#[path = "temporary_restore.rs"]
+mod temporary_restore;
 #[cfg(target_os = "linux")]
 #[path = "temporary_tab_native.rs"]
 mod temporary_tab_native;
@@ -51,6 +53,7 @@ fn additional_closed(_: &mut ApplicationWorld) {
     assert!(diagnostics::window_geometry(WINDOW).is_none());
 }
 #[when("I select the expansion arrow on the Modify panel title")]
+#[when("the user opens the Modify panel's additional commands")]
 #[when("the user opens the Modify additional command area")]
 #[when("the user opens the Modify additional-command area")]
 fn open_modify(world: &mut ApplicationWorld) {
@@ -154,6 +157,7 @@ fn pin_highlight(world: &mut ApplicationWorld) {
     toggle_pin(world);
 }
 #[then("the Modify additional command area is closed")]
+#[then("the additional commands are closed")]
 #[then("the additional command area closes")]
 #[then("the additional command area is no longer open")]
 #[then("the Modify additional command area remains closed")]
