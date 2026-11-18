@@ -63,6 +63,14 @@ impl DocumentSnapshot {
     ) -> Result<SketchPlane, DocumentSketchPlacementError> {
         self.resolve_axis_inputs(id, None)
     }
+    /// Check whether resolving a sketch needs feature-derived frames.
+    /// Example: `snapshot.sketch_plane_needs_work_geometry(id)?` before ordered replay.
+    pub fn sketch_plane_needs_work_geometry(
+        &self,
+        id: DocumentSketchId,
+    ) -> Result<bool, SketchError> {
+        Ok(placement_needs_datums(self.sketches.get(id)?, true))
+    }
     /// Resolve placement with the current injected axis catalogue; example: `snapshot.resolve_sketch_plane_with_axes(id, &axes)?`.
     pub fn resolve_sketch_plane_with_axes(
         &self,
@@ -96,18 +104,7 @@ impl DocumentSnapshot {
         placed: &PlacedSketch,
         owned_axes: bool,
     ) -> Result<Option<WorkPlaneEvaluation>, DocumentSketchPlacementError> {
-        let needs_axis = owned_axes
-            && placed.orientation().is_some_and(|definition| {
-                matches!(
-                    definition.reference,
-                    crate::document_sketch::SketchAxisReference::Feature(_)
-                )
-            });
-        if matches!(
-            placed.placement(),
-            SketchPlacement::Fixed(_) | SketchPlacement::OriginPlane(_)
-        ) && !needs_axis
-        {
+        if !placement_needs_datums(placed, owned_axes) {
             return Ok(None);
         }
         self.effective_work_geometry()
@@ -177,6 +174,21 @@ impl DocumentSnapshot {
             verification,
         })
     }
+}
+
+fn placement_needs_datums(placed: &PlacedSketch, owned_axes: bool) -> bool {
+    let needs_axis = owned_axes
+        && placed.orientation().is_some_and(|definition| {
+            matches!(
+                definition.reference,
+                crate::document_sketch::SketchAxisReference::Feature(_)
+            )
+        });
+    needs_axis
+        || !matches!(
+            placed.placement(),
+            SketchPlacement::Fixed(_) | SketchPlacement::OriginPlane(_)
+        )
 }
 impl fmt::Display for DocumentSketchPlacementError {
     fn fmt(&self, output: &mut fmt::Formatter<'_>) -> fmt::Result {

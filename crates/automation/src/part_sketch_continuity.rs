@@ -41,6 +41,14 @@ impl PartSketchContinuity {
         sketch: DocumentSketchId,
     ) -> Result<oblikovati_model::sketch::SketchPlane, String> {
         let snapshot = history.snapshot();
+        if !snapshot
+            .sketch_plane_needs_work_geometry(sketch)
+            .map_err(|error| error.to_string())?
+        {
+            return snapshot
+                .resolve_sketch_plane(sketch)
+                .map_err(|error| error.to_string());
+        }
         let datums = self.datums(history)?;
         snapshot
             .resolve_sketch_plane_with_datums(sketch, &datums)
@@ -128,6 +136,21 @@ impl SketchContinuityResolver for PartSketchContinuity {
         history: &DocumentEditHistory,
         sketches: &[DocumentSketchId],
     ) -> Vec<Result<(), String>> {
+        let snapshot = history.snapshot();
+        if !sketches
+            .iter()
+            .any(|sketch| matches!(snapshot.sketch_plane_needs_work_geometry(*sketch), Ok(true)))
+        {
+            return sketches
+                .iter()
+                .map(|sketch| {
+                    snapshot
+                        .resolve_sketch_plane(*sketch)
+                        .map(|_| ())
+                        .map_err(|error| error.to_string())
+                })
+                .collect();
+        }
         let datums = self.datums(history);
         sketches
             .iter()
