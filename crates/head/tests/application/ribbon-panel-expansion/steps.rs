@@ -161,19 +161,7 @@ fn area_closed(_: &mut ApplicationWorld) {
 #[when("the user clicks its Modify title again")]
 #[when("the user clicks the lower Modify title")]
 fn click_lower_title(world: &mut ApplicationWorld) {
-    let (position, size) = diagnostics::window_geometry(WINDOW).unwrap();
-    let row = world
-        .frame
-        .runs
-        .iter()
-        .find(|run| {
-            run.text.contains("Modif")
-                && run.center()[0] >= position[0]
-                && run.center()[0] <= position[0] + size[0]
-                && run.center()[1] >= position[1]
-                && run.center()[1] <= position[1] + size[1]
-        })
-        .expect("expected the additional area's Modify title");
+    let row = world.run_in_window(WINDOW, "Modify");
     world.click(diagnostics::pointer_pixels([
         row.maximum[0] - 4.,
         row.center()[1],
