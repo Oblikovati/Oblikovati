@@ -98,7 +98,9 @@ fn apply_edit<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
             crate::decode(method, encoded)?,
         ),
         METHOD_FEATURES_RENAME => rename(files, document, crate::decode(method, encoded)?),
-        METHOD_FEATURES_REORDER => reorder(files, document, crate::decode(method, encoded)?),
+        METHOD_FEATURES_REORDER => {
+            reorder(files, access, document, crate::decode(method, encoded)?)
+        }
         _ => Err(Error(format!(
             "feature lifecycle {method:?}: expected an implemented lifecycle method"
         ))),
@@ -209,21 +211,30 @@ fn rename<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
 
 fn reorder<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
+    access: &mut Option<&mut dyn PartTopologyAccess<O, W, F>>,
     document: u64,
     request: ReorderFeatureArgs,
 ) -> Result<u64, Error> {
     let index = history_index(request.new_index)?;
-    files
-        .commands(document)
-        .map_err(api_error)?
-        .run("Reorder Feature", |snapshot, _| {
+    let owner = access.as_deref_mut().ok_or_else(|| {
+        Error(format!(
+            "document {document}: expected a feature replay owner"
+        ))
+    })?;
+    let (id, _) = crate::checkpoint_replay::edit_with_owner(
+        files,
+        owner,
+        document,
+        "Reorder Feature",
+        |snapshot, _| {
             snapshot
                 .work_geometry
                 .reorder(FeatureId(request.id), index)
                 .map_err(api_error)?;
             Ok::<_, Error>(request.id)
-        })
-        .map_err(api_error)
+        },
+    )?;
+    Ok(id)
 }
 
 fn history_index(index: i64) -> Result<usize, Error> {

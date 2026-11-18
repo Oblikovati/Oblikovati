@@ -302,6 +302,8 @@ mod measure;
 mod part_mass;
 #[path = "part_scene/physical.rs"]
 mod physical;
+#[path = "part_scene/reorder_checkpoint.rs"]
+mod reorder_checkpoint;
 #[test]
 fn typed_kernel_decline_reaches_desktop_status_and_recovers() {
     use oblikovati_martensite::{EvaluationEntity, EvaluationFailureKind, EvaluationPhase};
