@@ -5,18 +5,29 @@ use imgui::{Condition, MouseButton, Ui};
 
 const CONTROL_WIDTH: f32 = 48.;
 
+#[derive(Default)]
+pub(crate) struct FrameInteraction {
+    drag_armed: bool,
+    popup_press: Option<usize>,
+}
+
+#[derive(Default)]
+struct ControlResults {
+    bounds: [[f32; 4]; 3],
+    focused: Option<usize>,
+}
+
 pub(crate) fn draw(
     ui: &Ui,
     request: &GuiFrameRequest,
     bar_height: f32,
     actions: &mut Vec<GuiShellAction>,
-    drag_armed: &mut bool,
+    interaction: &mut FrameInteraction,
     focus: Option<usize>,
 ) -> (Option<GuiWindowAction>, crate::GuiWindowControls) {
     let width = request.extent[0] as f32 / request.layout_scale()[0];
     let mut action = None;
-    let mut bounds = [[0.; 4]; 3];
-    let mut focused = None;
+    let mut controls = ControlResults::default();
     crate::widget_abi::window_geometry(
         ui,
         [width - CONTROL_WIDTH * 3., 0.],
@@ -43,8 +54,8 @@ pub(crate) fn draw(
                 "Minimize",
                 bar_height,
                 0,
-                &mut bounds,
-                &mut focused,
+                &mut controls,
+                interaction,
             ) {
                 action = Some(GuiWindowAction::Minimize);
             }
@@ -57,7 +68,7 @@ pub(crate) fn draw(
             if focus == Some(1) {
                 ui.set_keyboard_focus_here();
             }
-            if control(ui, symbol, title, bar_height, 1, &mut bounds, &mut focused) {
+            if control(ui, symbol, title, bar_height, 1, &mut controls, interaction) {
                 action = Some(GuiWindowAction::ToggleMaximize);
             }
             ui.same_line();
@@ -70,22 +81,25 @@ pub(crate) fn draw(
                 "Close",
                 bar_height,
                 2,
-                &mut bounds,
-                &mut focused,
+                &mut controls,
+                interaction,
             ) {
                 actions.push(GuiShellAction::Exit);
             }
         });
     let scale = request.layout_scale();
-    for bounds in &mut bounds {
+    for bounds in &mut controls.bounds {
         for axis in 0..2 {
             bounds[axis] *= scale[axis];
             bounds[axis + 2] *= scale[axis];
         }
     }
     (
-        action.or_else(|| bar_gesture(ui, width, bar_height, drag_armed)),
-        crate::GuiWindowControls { bounds, focused },
+        action.or_else(|| bar_gesture(ui, width, bar_height, &mut interaction.drag_armed)),
+        crate::GuiWindowControls {
+            bounds: controls.bounds,
+            focused: controls.focused,
+        },
     )
 }
 fn control(
@@ -94,12 +108,14 @@ fn control(
     accessible: &str,
     bar_height: f32,
     index: usize,
-    bounds: &mut [[f32; 4]; 3],
-    focused: &mut Option<usize>,
+    controls: &mut ControlResults,
+    interaction: &mut FrameInteraction,
 ) -> bool {
     let clicked = crate::widget_abi::button(ui, label, [CONTROL_WIDTH, bar_height]);
+    let through_popup = released_after_popup(ui, index, interaction);
+    let clicked = clicked || through_popup;
     let clicked = clicked || crate::accessibility::focused_activation(ui);
-    record_control(ui, index, bounds, focused);
+    record_control(ui, index, &mut controls.bounds, &mut controls.focused);
     draw_icon(ui, accessible);
     if ui.is_item_hovered() {
         let [x, y] = ui.item_rect_min();
@@ -117,6 +133,20 @@ fn control(
         });
     }
     clicked
+}
+fn released_after_popup(ui: &Ui, index: usize, interaction: &mut FrameInteraction) -> bool {
+    // Non-modal popups dismiss on press; retain the target until release (#3849).
+    if !ui.is_item_hovered()
+        && ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_BLOCKED_BY_POPUP)
+        && ui.is_mouse_clicked(MouseButton::Left)
+    {
+        interaction.popup_press = Some(index);
+    }
+    if !ui.is_mouse_released(MouseButton::Left) || interaction.popup_press != Some(index) {
+        return false;
+    }
+    interaction.popup_press = None;
+    ui.is_item_hovered()
 }
 fn draw_icon(ui: &Ui, kind: &str) {
     let min = ui.item_rect_min();

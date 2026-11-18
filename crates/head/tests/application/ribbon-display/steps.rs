@@ -10,6 +10,8 @@ mod sketch_exit;
 mod tabs_only;
 #[path = "wheel_tools.rs"]
 mod wheel_tools;
+#[cfg(target_os = "linux")]
+mod window_compaction;
 use wheel_tools::full_tools;
 const VIEW_GROUPS: [&str; 4] = ["Visibility", "Appearance", "Windows", "Navigate"];
 const WINDOWS_COMMAND: &str = "User Interface";

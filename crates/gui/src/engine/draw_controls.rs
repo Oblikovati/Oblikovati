@@ -78,7 +78,7 @@ impl GuiFrameEngine {
             request,
             crate::chrome::application_bar_height(&self.icons.presentation),
             &mut selected,
-            &mut self.window_bar_drag_armed,
+            &mut self.window_frame_interaction,
             frame_focus,
         );
         if std::mem::take(&mut self.pending_extrusion_shortcut) {

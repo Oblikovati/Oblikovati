@@ -132,6 +132,9 @@ fn click_drawing(world: &mut ApplicationWorld) {
 #[then("the temporary Modify panel closes")]
 fn modify_closed(world: &mut ApplicationWorld) {
     world.expect_no_text("Break");
+    if world.state().document_type == Some(oblikovati_api::types::DOCUMENT_PART) {
+        assert!(world.run("Hole").minimum[1] < band_height());
+    }
 }
 #[then("the compact group buttons remain visible")]
 fn compact_remains(world: &mut ApplicationWorld) {
