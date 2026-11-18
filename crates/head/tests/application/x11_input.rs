@@ -102,6 +102,17 @@ pub(super) fn focus_window() {
         .expect("X11 focus: expected a flushed request");
 }
 
+/// Send a mapped key; example: `press_keysym(u32::from(b'a'))` types a letter.
+pub(super) fn press_keysym(keysym: u32) {
+    let (connection, root) = keyboard_target();
+    let key = keyboard_keycode(&connection, keysym);
+    send_key_sequence(
+        &connection,
+        root,
+        &[(KEY_PRESS_EVENT, key), (KEY_RELEASE_EVENT, key)],
+    );
+}
+
 pub(super) fn press_escape() {
     let (connection, root) = keyboard_target();
     let escape = keyboard_keycode(&connection, 0xff1b);
