@@ -15,6 +15,8 @@ mod sketch_block_placement;
 mod sketch_constrain;
 #[path = "sketch_constrain_menu.rs"]
 mod sketch_constrain_menu;
+#[path = "sketch_create_live.rs"]
+mod sketch_create_live;
 #[path = "sketch_layout.rs"]
 mod sketch_layout;
 const WINDOW: &str = "##ribbon-additional-PartModify";
