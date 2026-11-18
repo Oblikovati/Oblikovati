@@ -31,6 +31,16 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         .as_deref_mut()
         .ok_or_else(|| missing_owner(document))?;
     let cutoff = cutoff(request.position)?;
+    let policy = owner.resolution_policy();
+    let prefix = owner
+        .cached_checkpoint_prefix(files, document)
+        .map_err(Error)?;
+    if let Some(prefix) = prefix.filter(|prefix| prefix.policy == policy)
+        && let Some(policy) = policy
+        && let Some(replay) = crate::checkpoint_replay::certified_prefix(files, document, prefix)
+    {
+        return apply_with_checkpoint(files, owner, document, cutoff, policy, replay);
+    }
     files
         .commands(document)
         .map_err(api_error)?
@@ -43,6 +53,47 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         })
         .map_err(api_error)
         .and_then(|reply| refresh(files, owner, document, reply))
+}
+
+fn apply_with_checkpoint<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &mut FileWorkspace<O, W, F>,
+    owner: &mut dyn PartTopologyAccess<O, W, F>,
+    document: u64,
+    cutoff: Option<usize>,
+    policy: oblikovati_martensite::PrismResolutionPolicy,
+    replay: crate::checkpoint_replay::CheckpointReplay,
+) -> Result<Vec<u8>, Error> {
+    let ((reply, candidate), transition) = files
+        .commands(document)
+        .map_err(api_error)?
+        .run_projected_with_transition(
+            "Set End of Part",
+            |snapshot, _| {
+                snapshot
+                    .work_geometry
+                    .set_end_of_part(cutoff)
+                    .map_err(api_error)?;
+                Ok::<_, Error>(result(snapshot.work_geometry.end_of_part()))
+            },
+            |snapshot, reply, history| Ok((reply, replay.prepare(snapshot, history)?)),
+        )
+        .map_err(api_error)?;
+    let Some(candidate) = candidate else {
+        return refresh(files, owner, document, reply);
+    };
+    owner
+        .adopt_checkpoints(
+            files,
+            document,
+            crate::CertifiedCheckpointCandidate { policy, candidate },
+            &transition,
+        )
+        .map_err(|error| {
+            Error(format!(
+                "document {document}: end of part committed but replay adoption failed: {error}"
+            ))
+        })?;
+    encode(&reply)
 }
 
 fn refresh<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
