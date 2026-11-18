@@ -62,6 +62,8 @@ using this status; the live scenario directory can change.
 - End-of-Part edits use matching retained checkpoints for a proven clean prefix.
   Tests check rollback, restore, names, undo/redo, save/reopen, and full replay
   for transactions and mismatched policies (#4079).
+- Feature deletion uses the same owner-checked replay path. Tests check later
+  and first-feature deletion, replay counts, names, undo/redo, and reopen (#4079).
 - Drawing creation, live display, previews, and saved views obtain a current
   document-owned part, including when the injected owner uses another policy
   or is absent. Tests cover source edits, undo, retained results, and refusing

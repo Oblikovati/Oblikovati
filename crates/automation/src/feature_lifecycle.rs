@@ -56,7 +56,24 @@ pub(crate) fn delete<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFi
     let document = active_part(files)?;
     require_owner(access, document)?;
     let request: FeatureRefArgs = crate::decode(METHOD_FEATURES_DELETE, encoded)?;
-    remove(files, document, request.id)?;
+    let owner = access.as_deref_mut().ok_or_else(|| {
+        Error(format!(
+            "document {document}: expected a feature replay owner"
+        ))
+    })?;
+    crate::checkpoint_replay::edit_with_owner(
+        files,
+        owner,
+        document,
+        "Delete Feature",
+        |snapshot, _| {
+            snapshot
+                .work_geometry
+                .remove(FeatureId(request.id))
+                .map_err(api_error)?;
+            Ok(())
+        },
+    )?;
     refresh(access, files, document)?;
     encode(&DeleteFeatureResult {
         id: request.id,
@@ -215,24 +232,6 @@ fn history_index(index: i64) -> Result<usize, Error> {
             "features.reorder index {index}: expected a non-negative history index: {cause}"
         ))
     })
-}
-
-fn remove<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
-    files: &mut FileWorkspace<O, W, F>,
-    document: u64,
-    id: u64,
-) -> Result<(), Error> {
-    files
-        .commands(document)
-        .map_err(api_error)?
-        .run("Delete Feature", |snapshot, _| {
-            snapshot
-                .work_geometry
-                .remove(FeatureId(id))
-                .map_err(api_error)?;
-            Ok::<_, Error>(())
-        })
-        .map_err(api_error)
 }
 
 fn detail<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(

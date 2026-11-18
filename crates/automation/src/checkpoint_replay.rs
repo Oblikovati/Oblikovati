@@ -99,6 +99,108 @@ pub(super) fn certified_prefix(
     }
     replay_for_prefix(workspace, document, prefix.policy, prefix.prefix)
 }
+
+/// Commit an edit and publish a matching checkpoint when its prefix is safe.
+/// Example: `edit_with_owner(files, owner, document, label, edit)?`.
+pub(super) fn edit_with_owner<
+    R,
+    O: oblikovati_session::TransactionObserver,
+    W: oblikovati_session::workspace::WorkspaceObserver,
+    F: oblikovati_persistence::file_access::DocumentFiles,
+>(
+    files: &mut oblikovati_session::files::FileWorkspace<O, W, F>,
+    owner: &mut dyn crate::PartTopologyAccess<O, W, F>,
+    document: u64,
+    label: &str,
+    edit: impl FnOnce(
+        &mut DocumentSnapshot,
+        &mut oblikovati_model::history::RecipeReservations<'_>,
+    ) -> Result<R, Error>,
+) -> Result<(R, bool), Error> {
+    let policy = owner.resolution_policy();
+    let prefix = owner
+        .cached_checkpoint_prefix(files, document)
+        .map_err(Error)?;
+    let replay = prefix
+        .filter(|prefix| prefix.policy == policy)
+        .and_then(|prefix| certified_prefix(files, document, prefix));
+    let Some((policy, replay)) = policy.zip(replay) else {
+        return files
+            .commands(document)
+            .map_err(|error| Error(error.to_string()))?
+            .run(label, edit)
+            .map(|reply| (reply, false))
+            .map_err(|error| Error(error.to_string()));
+    };
+    apply_checkpointed_edit(files, owner, document, label, edit, policy, replay)
+}
+
+fn apply_checkpointed_edit<
+    R,
+    O: oblikovati_session::TransactionObserver,
+    W: oblikovati_session::workspace::WorkspaceObserver,
+    F: oblikovati_persistence::file_access::DocumentFiles,
+>(
+    files: &mut oblikovati_session::files::FileWorkspace<O, W, F>,
+    owner: &mut dyn crate::PartTopologyAccess<O, W, F>,
+    document: u64,
+    label: &str,
+    edit: impl FnOnce(
+        &mut DocumentSnapshot,
+        &mut oblikovati_model::history::RecipeReservations<'_>,
+    ) -> Result<R, Error>,
+    policy: PrismResolutionPolicy,
+    replay: CheckpointReplay,
+) -> Result<(R, bool), Error> {
+    let ((reply, candidate), transition) = files
+        .commands(document)
+        .map_err(|error| Error(error.to_string()))?
+        .run_projected_with_transition(label, edit, |snapshot, reply, history| {
+            Ok((reply, replay.prepare(snapshot, history)?))
+        })
+        .map_err(|error| Error(error.to_string()))?;
+    let Some(candidate) = candidate else {
+        return Ok((reply, false));
+    };
+    publish_checkpoint(
+        files,
+        owner,
+        document,
+        label,
+        policy,
+        candidate,
+        &transition,
+    )?;
+    Ok((reply, true))
+}
+
+fn publish_checkpoint<
+    O: oblikovati_session::TransactionObserver,
+    W: oblikovati_session::workspace::WorkspaceObserver,
+    F: oblikovati_persistence::file_access::DocumentFiles,
+>(
+    files: &mut oblikovati_session::files::FileWorkspace<O, W, F>,
+    owner: &mut dyn crate::PartTopologyAccess<O, W, F>,
+    document: u64,
+    label: &str,
+    policy: PrismResolutionPolicy,
+    candidate: NamedCandidate,
+    transition: &EvaluationTransition,
+) -> Result<(), Error> {
+    owner
+        .adopt_checkpoints(
+            files,
+            document,
+            crate::CertifiedCheckpointCandidate { policy, candidate },
+            transition,
+        )
+        .map_err(|error| {
+            Error(format!(
+                "document {document} edit {label:?} committed but replay adoption failed: {error}"
+            ))
+        })
+}
+
 fn replay_for_prefix<
     O: oblikovati_session::TransactionObserver,
     W: oblikovati_session::workspace::WorkspaceObserver,
