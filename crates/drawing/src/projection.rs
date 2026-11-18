@@ -32,6 +32,16 @@ impl DrawingViewProjectionAccess for DrawingProjectionService {
             projection.curves.hidden.len(),
         ])
     }
+    fn saved_lines_current(
+        &self,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        view: &DrawingBaseViewDefinition,
+        part: &PartFeatureEvaluation<NamedSolid, EvaluationFailure>,
+    ) -> Result<Vec<SavedDrawingLine>, String> {
+        let projection = project_evaluated_part(history, document, view, part)?;
+        sample_projection(&projection, view.style, history, document)
+    }
     fn counts(
         &self,
         history: &DocumentEditHistory,
@@ -71,8 +81,7 @@ fn project_view(
     view: &DrawingBaseViewDefinition,
 ) -> Result<DrawingBaseProjection, String> {
     let result = evaluate_part(history, document)?;
-    let bodies: Vec<_> = result.ordered_bodies().collect();
-    oblikovati_martensite::drawing_base_view_solids(history, document, &bodies, view)
+    project_evaluated_part(history, document, view, &result)
 }
 /// Evaluate the part and refuse a sick feature; example: `evaluate_part(history, guid)?`.
 pub fn evaluate_part(
