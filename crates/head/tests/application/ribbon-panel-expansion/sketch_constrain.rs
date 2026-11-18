@@ -163,7 +163,7 @@ fn sketch_edit_inactive(world: &mut ApplicationWorld) {
 }
 
 #[given("a part has an active editable sketch in the MCAD Software")]
-fn active_editable_sketch(world: &mut ApplicationWorld) {
+pub(super) fn active_editable_sketch(world: &mut ApplicationWorld) {
     world.start_empty_sketch();
     world.app().window.native.view.resize([2400, 900]).unwrap();
     world.pump(Vec::new());
