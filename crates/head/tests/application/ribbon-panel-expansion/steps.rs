@@ -98,6 +98,7 @@ fn additional_below(_: &mut ApplicationWorld) {
     assert!(position[1] >= ribbon[1] + size[1]);
 }
 #[then("Move Bodies, Bend Part and Copy Object are visible")]
+#[then("Move Bodies, Bend Part and Copy Object are visible in the additional area")]
 fn extra_commands(world: &mut ApplicationWorld) {
     for label in ["Move Bodies", "Bend Part", "Copy Object"] {
         world.expect_text(label);
@@ -164,12 +165,46 @@ fn pin_highlight(world: &mut ApplicationWorld) {
 #[then("the Modify additional command area is closed")]
 #[then("the additional commands are closed")]
 #[then("the additional command area closes")]
+#[then("the additional area closes")]
 #[then("the additional command area is no longer open")]
 #[then("the Modify additional command area remains closed")]
 #[then("the Modify additional command area is no longer visible")]
 #[then("the Modify additional command area is not automatically displayed")]
 fn area_closed(_: &mut ApplicationWorld) {
     assert!(diagnostics::window_geometry(WINDOW).is_none());
+}
+#[given("the Modify additional command area is unpinned")]
+fn modify_starts_unpinned(world: &mut ApplicationWorld) {
+    open_modify(world);
+    click_lower_title(world);
+    area_closed(world);
+}
+#[when("the user clicks the Modify panel title")]
+fn click_modify_title(world: &mut ApplicationWorld) {
+    world.click_text("Modify");
+}
+#[then("the additional area remains visible with those commands")]
+fn commands_remain_visible(world: &mut ApplicationWorld) {
+    pinned_visible(world);
+    extra_commands(world);
+}
+#[cfg(target_os = "linux")]
+#[test]
+fn x11_pointer_expansion_stays_open_after_escape() {
+    let mut world = ApplicationWorld::new();
+    solid_part(&mut world);
+    let title = diagnostics::pointer_pixels(world.run("Modify").center());
+    super::x11_input::click(title);
+    world.pump(Vec::new());
+    commands_remain_visible(&mut world);
+    super::x11_input::press_escape();
+    world.pump(Vec::new());
+    commands_remain_visible(&mut world);
+    let lower = world.run_in_window(WINDOW, "Modify");
+    super::x11_input::click(diagnostics::pointer_pixels(lower.center()));
+    world.pump(Vec::new());
+    area_closed(&mut world);
+    world.close();
 }
 #[when("the user clicks the Modify title at the bottom of the expanded area")]
 #[when("the user clicks the Modify title at the bottom of the additional area")]
