@@ -138,7 +138,17 @@ fn typed_radius_edit_validates_before_commit_and_survives_history() {
     assert_ne!(before_scene, preview);
     assert!(owner.preview_fillet_from_gui(None).unwrap());
     assert_eq!(radius(&mut owner, id), 1.);
+    let before_commit = owner.part_scenes.checkpoint_preview_metrics();
+    let backend_before = owner.fillet_access.as_ref().unwrap().replay_counts();
     assert!(owner.commit_fillet_edit(&draft).unwrap());
+    assert_eq!(
+        owner.part_scenes.checkpoint_preview_metrics(),
+        before_commit
+    );
+    assert_eq!(
+        owner.fillet_access.as_ref().unwrap().replay_counts(),
+        backend_before
+    );
     assert_eq!(radius(&mut owner, id), 2.);
     assert!(owner.commit_fillet_edit(&draft).is_err());
     let after_scene: Vec<_> = owner

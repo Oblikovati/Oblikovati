@@ -23,7 +23,7 @@ mod access;
 mod candidate;
 pub use access::PartUpdateAccess;
 use candidate::NamedSketchRecompute;
-pub use candidate::{CertifiedPartCandidate, CertifiedPartPrefix};
+pub use candidate::{CertifiedCheckpointPrefix, CertifiedPartCandidate, CertifiedPartPrefix};
 
 /// A headless owner of generation-checked Martensite replay results.
 #[derive(Default)]
@@ -57,30 +57,22 @@ impl PartReplayService {
     ) -> Option<&PartEvaluationSlot<NamedSolid, EvaluationFailure>> {
         self.slots.get(&document)
     }
-    fn current_slot<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
-        &mut self,
-        files: &mut FileWorkspace<O, W, F>,
-        document: u64,
-    ) -> Result<&PartEvaluationSlot<NamedSolid, EvaluationFailure>, String> {
-        let session = files
-            .workspace()
-            .session(document)
-            .map_err(|error| error.to_string())?;
-        if self
-            .slots
-            .get(&document)
-            .is_none_or(|slot| slot.current(session).is_err())
-        {
-            self.update_part(files, document)?;
-        }
-        self.slots.get(&document).ok_or_else(|| {
-            format!("document {document} part replay: expected an adopted current result")
-        })
-    }
 }
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateAccess<O, W, F>
     for PartReplayService
 {
+    fn cached_checkpoint_prefix<'a>(
+        &'a self,
+        files: &FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<Option<CertifiedCheckpointPrefix<'a>>, String> {
+        Ok(self
+            .checkpoint_prefix(files, document)?
+            .map(|prefix| CertifiedCheckpointPrefix {
+                prefix,
+                policy: self.resolution,
+            }))
+    }
     fn adopt_candidate(
         &mut self,
         files: &mut FileWorkspace<O, W, F>,

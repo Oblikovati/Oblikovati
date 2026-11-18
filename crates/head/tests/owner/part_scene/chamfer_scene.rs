@@ -229,7 +229,17 @@ fn typed_chamfer_distance_edit_validates_and_replays() {
             .generation(),
         before
     );
+    let before_commit = owner.part_scenes.checkpoint_preview_metrics();
+    let backend_before = owner.fillet_access.as_ref().unwrap().replay_counts();
     assert!(owner.commit_chamfer_edit(&draft).unwrap());
+    assert_eq!(
+        owner.part_scenes.checkpoint_preview_metrics(),
+        before_commit
+    );
+    assert_eq!(
+        owner.fillet_access.as_ref().unwrap().replay_counts(),
+        backend_before
+    );
     assert!(owner.commit_chamfer_edit(&draft).is_err());
     let scalar = Client::new(owner.document_host())
         .features()

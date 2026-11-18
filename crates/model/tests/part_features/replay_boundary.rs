@@ -2,6 +2,49 @@
 use super::*;
 use oblikovati_model::feature::{FeatureReadFootprint, FeatureReplayRange};
 
+#[test]
+fn associative_sketch_inputs_require_ordered_part_recompute() {
+    use oblikovati_model::{
+        document_sketch::{SketchOrientationDefinition, SketchPointProjection},
+        feature::{work_axis::WorkAxisReference, work_geometry::WorkPointReference},
+        sketch::{SketchEntityId, SketchFrameAxis},
+    };
+    let source = selected_prism_document();
+    assert!(!source.sketches.requires_part_dependency_recompute());
+    let mut placed = source.clone();
+    placed
+        .sketches
+        .attach_work_plane(SKETCH, FeatureId(7))
+        .unwrap();
+    assert!(placed.sketches.requires_part_dependency_recompute());
+    let mut projected = source.clone();
+    projected
+        .sketches
+        .set_point_projections(
+            SKETCH,
+            vec![SketchPointProjection {
+                anchor: SketchEntityId(1),
+                reference: WorkPointReference::Origin,
+            }],
+        )
+        .unwrap();
+    assert!(projected.sketches.requires_part_dependency_recompute());
+    let mut oriented = source;
+    oriented
+        .sketches
+        .set_orientation(
+            SKETCH,
+            Some(SketchOrientationDefinition {
+                reference: WorkAxisReference::OriginX,
+                sketch_axis: SketchFrameAxis::X,
+                reverse: false,
+                origin: None,
+            }),
+        )
+        .unwrap();
+    assert!(oriented.sketches.requires_part_dependency_recompute());
+}
+
 fn document_with_two_planes() -> DocumentSnapshot {
     let mut document = part_document();
     document

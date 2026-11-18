@@ -124,6 +124,10 @@ fn checkpoint_replays_changed_and_dependent_blends_in_order() {
     assert_eq!(replay.health(), full.health());
     let actual = replay.body(FeatureId(4)).unwrap();
     let expected = full.body(FeatureId(4)).unwrap();
+    assert_eq!(
+        replay.body_from_source(FeatureId(3)).unwrap().keys,
+        expected.keys
+    );
     assert_eq!(actual.keys, expected.keys);
     assert_eq!(actual.deleted, expected.deleted);
     assert_eq!(actual.radius, expected.radius);

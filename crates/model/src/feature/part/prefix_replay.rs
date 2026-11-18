@@ -87,6 +87,10 @@ impl<Body, Failure> BorrowedPartReplay<'_, Body, Failure> {
     pub fn body(&self, feature: FeatureId) -> Option<&Body> {
         self.0.body(feature).map(PrefixBody::get)
     }
+    /// Resolve a producer through later body replacements; example: `candidate.body_from_source(feature)?`.
+    pub fn body_from_source(&self, feature: FeatureId) -> Result<&Body, String> {
+        self.0.body_from_source(feature).map(PrefixBody::get)
+    }
 }
 
 impl<Body, Failure: Clone> BorrowedPartReplay<'_, Body, Failure> {

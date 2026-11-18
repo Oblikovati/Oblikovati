@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Typed blends reuse the current document replay for edge ownership.
 use super::*;
+#[path = "blend_replay/descendant_edit.rs"]
+mod descendant_edit;
+#[path = "blend_replay/edit_validation.rs"]
+mod edit_validation;
 use oblikovati_automation::{
     CertifiedFilletAccess, FileHost, FilletAccess, PartReplayService, PartUpdateAccess,
 };

@@ -94,6 +94,11 @@ impl<Body, Failure> CapturedPartCandidate<Body, Failure> {
     }
 }
 impl<Body, Failure> PartCandidateResult<'_, Body, Failure> {
+    /// Check whether a feature has a current descendant body.
+    /// Example: `candidate.has_current_source(feature)` after later blends.
+    pub fn has_current_source(&self, feature: oblikovati_model::feature::FeatureId) -> bool {
+        self.replay.body_from_source(feature).is_ok()
+    }
     /// Count current bodies in the candidate; example: `result.body_count()`.
     pub fn body_count(&self) -> usize {
         self.replay.body_count()

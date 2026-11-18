@@ -92,6 +92,27 @@ where
 
 /// Exact body resolution and validation for typed Fillet commands.
 pub trait FilletAccess {
+    /// Validate an edited blend and optionally retain its checkpoint replay.
+    /// Example: `access.capture_with_checkpoints(kind, history, document, candidate, feature, prefix)?`.
+    fn capture_with_checkpoints(
+        &self,
+        kind: oblikovati_model::feature::part::PartBlendKind,
+        _history: &oblikovati_model::history::DocumentEditHistory,
+        document: oblikovati_model::identity::DocumentGuid,
+        candidate: &DocumentSnapshot,
+        feature: FeatureId,
+        _prefix: &crate::CertifiedCheckpointPrefix<'_>,
+    ) -> Result<Option<crate::CertifiedPartCandidate>, String> {
+        match kind {
+            oblikovati_model::feature::part::PartBlendKind::Fillet => {
+                self.validate(document, candidate, feature)
+            }
+            oblikovati_model::feature::part::PartBlendKind::Chamfer => {
+                self.validate_chamfer(document, candidate, feature)
+            }
+        }?;
+        Ok(None)
+    }
     /// Validate a candidate and optionally retain its exact result for adoption.
     /// Example: `access.capture_with_prefix(kind, history, document, candidate, feature, prefix)?`.
     fn capture_with_prefix(

@@ -22,6 +22,15 @@ pub struct CertifiedPartCandidate {
         EvaluationFailure,
     >,
 }
+/// A current checkpoint set bound to the policy that produced it.
+pub struct CertifiedCheckpointPrefix<'a> {
+    pub(crate) prefix: oblikovati_session::part_evaluation::PartCheckpointPrefix<
+        'a,
+        NamedSolid,
+        EvaluationFailure,
+    >,
+    pub(crate) policy: Option<PrismResolutionPolicy>,
+}
 
 impl PartReplayService {
     /// Retain feature boundaries for the current document on demand.
@@ -138,5 +147,28 @@ impl PartReplayService {
     pub fn clear(&mut self) {
         self.slots.clear();
         self.checkpoints.clear();
+    }
+}
+
+impl PartReplayService {
+    pub(super) fn current_slot<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<&PartEvaluationSlot<NamedSolid, EvaluationFailure>, String> {
+        let session = files
+            .workspace()
+            .session(document)
+            .map_err(|error| error.to_string())?;
+        if self
+            .slots
+            .get(&document)
+            .is_none_or(|slot| slot.current(session).is_err())
+        {
+            self.update_part(files, document)?;
+        }
+        self.slots.get(&document).ok_or_else(|| {
+            format!("document {document} part replay: expected an adopted current result")
+        })
     }
 }

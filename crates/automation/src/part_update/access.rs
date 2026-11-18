@@ -4,6 +4,13 @@ use super::*;
 
 /// Part replay capability independent of viewport and topology queries.
 pub trait PartUpdateAccess<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> {
+    /// Borrow a current policy-scoped checkpoint when one is retained.
+    /// Example: `owner.cached_checkpoint_prefix(files, id)?` before an edit.
+    fn cached_checkpoint_prefix<'a>(
+        &'a self,
+        files: &FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<Option<CertifiedCheckpointPrefix<'a>>, String>;
     /// Publish an accepted policy-matched candidate; example: `owner.adopt_candidate(files, id, candidate, &transition)?`.
     fn adopt_candidate(
         &mut self,

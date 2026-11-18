@@ -42,7 +42,7 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
 ) -> Result<Vec<u8>, Error> {
     let document = active_part(files)?;
     require_owner(access, document)?;
-    let id = apply_edit(files, document, fillet, method, encoded)?;
+    let id = apply_edit(files, access, document, fillet, method, encoded)?;
     let errors = refresh(access, files, document)?;
     detail(files, document, id, errors)
 }
@@ -66,13 +66,20 @@ pub(crate) fn delete<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFi
 
 fn apply_edit<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
+    access: &mut Option<&mut dyn PartTopologyAccess<O, W, F>>,
     document: u64,
     fillet: Option<&dyn crate::FilletAccess>,
     method: &str,
     encoded: &[u8],
 ) -> Result<u64, Error> {
     match method {
-        METHOD_FEATURES_EDIT => edit(files, document, fillet, crate::decode(method, encoded)?),
+        METHOD_FEATURES_EDIT => edit(
+            files,
+            access,
+            document,
+            fillet,
+            crate::decode(method, encoded)?,
+        ),
         METHOD_FEATURES_RENAME => rename(files, document, crate::decode(method, encoded)?),
         METHOD_FEATURES_REORDER => reorder(files, document, crate::decode(method, encoded)?),
         _ => Err(Error(format!(
@@ -83,12 +90,13 @@ fn apply_edit<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
 
 fn edit<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
+    access: &mut Option<&mut dyn PartTopologyAccess<O, W, F>>,
     document: u64,
     fillet: Option<&dyn crate::FilletAccess>,
     request: EditFeatureArgs,
 ) -> Result<u64, Error> {
     if let Some(kind) = blend_edit::kind(files, document, request.id)? {
-        return blend_edit::edit(files, document, fillet, &request, kind);
+        return blend_edit::edit(files, access, document, fillet, &request, kind);
     }
     files
         .commands(document)
@@ -363,7 +371,10 @@ fn refresh<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
             "feature lifecycle document {document}: expected an injected exact topology owner"
         ))
     })?;
-    owner.update_part(files, document).map_err(Error)
+    owner.ensure_part(files, document).map_err(Error)?;
+    let session = files.workspace().session(document).map_err(api_error)?;
+    let evaluation = owner.current_part(files, document).map_err(Error)?;
+    crate::part_feature_errors(session.snapshot(), evaluation.health()).map_err(Error)
 }
 
 fn require_owner<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
