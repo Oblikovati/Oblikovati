@@ -5,6 +5,7 @@ mod compact_options;
 mod double_click;
 mod drawing;
 mod measure;
+mod mode_policy;
 mod sketch_exit;
 mod tabs_only;
 #[path = "wheel_tools.rs"]
@@ -101,6 +102,7 @@ fn activate(world: &mut ApplicationWorld) {
     activate_display_control(world);
 }
 #[then("the View groups are shown as compact buttons")]
+#[then("the View ribbon displays compact group buttons")]
 #[then("the View ribbon shows compact buttons for Visibility, Appearance, Windows and Navigate")]
 fn compact_buttons(world: &mut ApplicationWorld) {
     expect_compact_groups(world);
@@ -169,6 +171,7 @@ fn click_viewport(world: &mut ApplicationWorld) {
     world.click([extent[0] as i32 - 100, extent[1] as i32 - 100]);
 }
 #[then("the expanded View ribbon remains visible")]
+#[then("the expanded View ribbon is restored")]
 #[then("the full View ribbon remains visible")]
 #[then("the full View ribbon is restored")]
 fn expanded_remains(world: &mut ApplicationWorld) {
@@ -263,6 +266,7 @@ fn compact_annotate(world: &mut ApplicationWorld) {
     world.expect_no_text("Sheets");
 }
 #[then("those buttons include Dimension, Text and Symbols")]
+#[then("it includes Dimension, Text and Symbols commands")]
 fn annotate_groups(world: &mut ApplicationWorld) {
     for group in ["Dimension", "Text", "Symbols"] {
         world.expect_text(group);
@@ -280,6 +284,7 @@ fn annotate_expanded(world: &mut ApplicationWorld) {
 }
 #[when("I choose Minimize to Panel Titles")]
 #[when("the user chooses Minimize to Panel Titles")]
+#[when("the user selects Minimize to Panel Titles")]
 fn minimize_to_titles(world: &mut ApplicationWorld) {
     world.click_text("Minimize to Panel Titles");
 }
@@ -297,11 +302,13 @@ fn annotate_titles(world: &mut ApplicationWorld) {
     expect_annotate_titles(world);
 }
 #[then("the full Annotate command groups are visible")]
+#[then("the full Annotate ribbon is visible")]
 fn full_annotate(world: &mut ApplicationWorld) {
     world.expect_text("Baseline");
     world.expect_text("Leader");
 }
 #[then("Minimize to Panel Titles is checked")]
+#[then("Minimize to Panel Titles is selected")]
 fn titles_checked(world: &mut ApplicationWorld) {
     assert!(
         world.checked("Minimize to Panel Titles"),
@@ -310,6 +317,7 @@ fn titles_checked(world: &mut ApplicationWorld) {
 }
 #[when("I choose Minimize to Panel Buttons")]
 #[when("the user chooses Minimize to Panel Buttons")]
+#[when("the user selects Minimize to Panel Buttons")]
 fn minimize_to_buttons(world: &mut ApplicationWorld) {
     world.click_text("Minimize to Panel Buttons");
 }

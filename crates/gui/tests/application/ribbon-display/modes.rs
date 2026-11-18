@@ -56,6 +56,28 @@ fn changing_mode_closes_the_temporary_panel() {
     assert_eq!(state.temporary, None);
 }
 #[test]
+fn switching_tabs_expands_only_an_open_compact_group() {
+    let mut compact = RibbonDisplayState {
+        mode: RibbonDisplay::PanelButtons,
+        minimized: Some(RibbonDisplay::PanelButtons),
+        temporary: Some(TemporaryPanel::Group(RibbonPanel::Create)),
+        ..Default::default()
+    };
+    compact.switch_from_open_compact_panel();
+    assert_eq!(compact.mode, RibbonDisplay::Full);
+    assert_eq!(compact.temporary, None);
+    assert_eq!(compact.minimized, Some(RibbonDisplay::PanelButtons));
+
+    let mut tabs = RibbonDisplayState {
+        mode: RibbonDisplay::Tabs,
+        temporary: Some(TemporaryPanel::WholeTab),
+        ..Default::default()
+    };
+    tabs.switch_from_open_compact_panel();
+    assert_eq!(tabs.mode, RibbonDisplay::Tabs);
+    assert_eq!(tabs.temporary, Some(TemporaryPanel::WholeTab));
+}
+#[test]
 fn a_double_click_advances_and_its_release_opens_no_panel() {
     let mut state = RibbonDisplayState {
         mode: RibbonDisplay::PanelTitles,

@@ -374,6 +374,9 @@ fn ribbon_tabs(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame) {
         let released = ui.is_item_hovered() && ui.is_mouse_released(imgui::MouseButton::Left);
         let clicked = ui.is_item_hovered() && ui.is_mouse_clicked(imgui::MouseButton::Left);
         let double_click = clicked && ui.is_mouse_double_clicked(imgui::MouseButton::Left);
+        if clicked && ribbon.active != *tab {
+            ribbon.display.switch_from_open_compact_panel();
+        }
         let doubled = double_click && ribbon.double_click_tab == Some(*tab);
         if clicked && !double_click {
             ribbon.double_click_tab = (ribbon.active == *tab).then_some(*tab);

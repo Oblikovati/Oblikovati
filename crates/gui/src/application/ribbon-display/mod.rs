@@ -165,6 +165,15 @@ impl Default for RibbonDisplayState {
     }
 }
 impl RibbonDisplayState {
+    /// Expand a new tab after an open compact panel; for example, Create to Annotate (#3856).
+    pub(crate) fn switch_from_open_compact_panel(&mut self) {
+        if self.mode == RibbonDisplay::PanelButtons
+            && matches!(self.temporary, Some(TemporaryPanel::Group(_)))
+        {
+            self.temporary = None;
+            self.mode = RibbonDisplay::Full;
+        }
+    }
     pub(crate) fn open_temporary(&mut self, panel: TemporaryPanel) {
         if self.temporary != Some(panel) {
             self.temporary_focus = true;
