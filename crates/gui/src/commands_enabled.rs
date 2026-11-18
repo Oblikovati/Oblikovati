@@ -241,9 +241,9 @@ impl GuiShellAction {
             | Self::SetOrientationSelectionLock(_)
             | Self::ViewCommand(_) => state.document.is_some(),
             Self::InspectFile(_) | Self::KeepDocumentPicture { .. } => true,
-            Self::ClickModel { document, .. } | Self::UpdateBodyProperties { document, .. } => {
-                state.document == Some(*document)
-            }
+            Self::ClickModel { document, .. }
+            | Self::ContextClickModel { document, .. }
+            | Self::UpdateBodyProperties { document, .. } => state.document == Some(*document),
             Self::AssignPartAsset { document, .. } => {
                 state.document == Some(*document)
                     && state.authoring == GuiAuthoringContext::Part

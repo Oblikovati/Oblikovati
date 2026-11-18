@@ -2,6 +2,18 @@
 //! Owner services for selection settings and selected geometry.
 macro_rules! selection_work_methods {
     () => {
+        /// Select a context target, retaining the selection when the ray misses.
+        /// Example: `work.context_click_model(document, ray, Some(0.1))?`.
+        fn context_click_model(
+            &mut self,
+            document: u64,
+            line: [[f64; 3]; 2],
+            _window: Option<f64>,
+        ) -> Result<bool, String> {
+            Err(format!(
+                "context click {line:?}, document {document}: expected a selection owner"
+            ))
+        }
         /// Set the viewport selection mode; example: `work.set_selection_mode_from_gui(mode)?`.
         fn set_selection_mode_from_gui(
             &mut self,

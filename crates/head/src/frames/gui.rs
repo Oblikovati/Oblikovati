@@ -212,14 +212,13 @@ pub(super) fn dispatch_gui_action(
             toggle,
         } => {
             let line = window.view_line(*pixel)?;
-            let depth_window = match window.window_capture_extent()? {
-                Some([_, height]) => Some(crate::part_scene::pick_candidates::depth_window(
-                    window.view_camera()?.scale,
-                    height,
-                )?),
-                None => None,
-            };
+            let depth_window = model_pick_depth_window(window)?;
             return owner.click_model_with_modifiers(*document, line, depth_window, *toggle);
+        }
+        GuiShellAction::ContextClickModel { document, pixel } => {
+            let line = window.view_line(*pixel)?;
+            let depth_window = model_pick_depth_window(window)?;
+            return owner.context_click_model(*document, line, depth_window);
         }
         GuiShellAction::StartSketchAt {
             document,
@@ -287,6 +286,12 @@ pub(super) fn dispatch_gui_action(
     }
     let changed = report_authoring_result(window, result)?;
     Ok(synchronize_sketch_view(window, owner)? || changed)
+}
+fn model_pick_depth_window(window: &mut dyn HeadWindow) -> Result<Option<f64>, String> {
+    let Some([_, height]) = window.window_capture_extent()? else {
+        return Ok(None);
+    };
+    crate::part_scene::pick_candidates::depth_window(window.view_camera()?.scale, height).map(Some)
 }
 fn report_authoring_result(
     window: &mut dyn HeadWindow,
@@ -370,6 +375,7 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::PreviewExtrudeEdit(_)
         | GuiShellAction::EditExtrudeDistance(_)
         | GuiShellAction::ClickModel { .. }
+        | GuiShellAction::ContextClickModel { .. }
         | GuiShellAction::InspectFile(_)
         | GuiShellAction::KeepDocumentPicture { .. }
         | GuiShellAction::OrientView { .. }

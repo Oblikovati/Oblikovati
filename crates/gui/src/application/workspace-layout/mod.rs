@@ -42,6 +42,7 @@ pub(crate) struct WorkspaceLayout {
     origin_selection_document: Option<u64>,
     /// A navigation command owns the next click on the view, not the browser's selection.
     pub view_clicks_taken: bool,
+    pub part_context_open: bool,
     /// What a docked ribbon takes from each side of the window.
     ribbon_left: f32,
     ribbon_right: f32,
@@ -61,6 +62,7 @@ impl Default for WorkspaceLayout {
             view: Default::default(),
             origin_selection_document: None,
             view_clicks_taken: false,
+            part_context_open: false,
             ribbon_left: 0.,
             ribbon_right: 0.,
         }

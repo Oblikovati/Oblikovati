@@ -167,9 +167,12 @@ pub(crate) fn follow_view_click(
     part_context_open: bool,
     actions: &mut Vec<GuiShellAction>,
 ) {
-    let on_view = ui.is_mouse_clicked(MouseButton::Left)
-        && !ui.is_window_hovered_with_flags(crate::widget_abi::over_any_panel())
+    let left_click = ui.is_mouse_clicked(MouseButton::Left)
         && (part_context_open || !crate::widget_abi::any_popup_open(ui));
+    let context_click =
+        ui.is_mouse_clicked(MouseButton::Right) && !crate::widget_abi::any_popup_open(ui);
+    let on_view = (left_click || context_click)
+        && !ui.is_window_hovered_with_flags(crate::widget_abi::over_any_panel());
     let [x, y] = ui.io().mouse_pos;
     // A tab may change the document in this same frame; the click was never on its model.
     let on_document = view.document_area.is_some_and(|area| {
@@ -183,6 +186,7 @@ pub(crate) fn follow_view_click(
     if !on_view
         || !on_document
         || view.view_clicks_taken
+        || (assembly && context_click && !left_click)
         || (state.authoring != crate::GuiAuthoringContext::Part && !assembly)
     {
         return;
@@ -190,11 +194,17 @@ pub(crate) fn follow_view_click(
     view.selected_origin_row = None;
     view.origin_folder_chosen = false;
     let scale = view.layout_scale;
-    actions.push(GuiShellAction::ClickModel {
-        document: state.document.unwrap_or(0),
-        pixel: [(x * scale[0]) as i32, (y * scale[1]) as i32],
-        toggle: ui.io().key_ctrl || ui.io().key_shift,
-    });
+    let document = state.document.unwrap_or(0);
+    let pixel = [(x * scale[0]) as i32, (y * scale[1]) as i32];
+    if context_click && !assembly {
+        actions.push(GuiShellAction::ContextClickModel { document, pixel });
+    } else if left_click {
+        actions.push(GuiShellAction::ClickModel {
+            document,
+            pixel,
+            toggle: ui.io().key_ctrl || ui.io().key_shift,
+        });
+    }
 }
 /// Show the chosen origin row in the view, in the accent, and those made visible, muted.
 pub(crate) fn draw_selected_origin(
