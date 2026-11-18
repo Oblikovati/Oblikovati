@@ -3,6 +3,7 @@ use super::{ApplicationWorld, diagnostics::window_geometry};
 use cucumber::{given, then, when};
 mod compact_options;
 mod double_click;
+mod drawing;
 mod measure;
 mod sketch_exit;
 mod tabs_only;
@@ -72,15 +73,30 @@ fn cycling(world: &mut ApplicationWorld) {
 fn view_groups_remain(world: &mut ApplicationWorld) {
     world.expect_text(WINDOWS_COMMAND);
 }
-#[given("the View ribbon tab displays its full groups of commands")]
 #[given("the View ribbon is expanded")]
 fn view_expanded(world: &mut ApplicationWorld) {
     world.click_text("View");
     world.expect_text(WINDOWS_COMMAND);
 }
+#[given("the View ribbon tab displays its full groups of commands")]
+#[given("the full View ribbon is visible")]
+fn view_expanded_with_panel_buttons_policy(world: &mut ApplicationWorld) {
+    view_expanded(world);
+    click_display_menu(world);
+    if world.checked("Cycle through All") {
+        world.key(oblikovati_viewport::ViewportPhysicalKey::Escape, false);
+        return;
+    }
+    world.click_text("Minimize to Panel Buttons");
+    activate_display_control(world);
+    world.expect_text(WINDOWS_COMMAND);
+}
 #[when("I activate the ribbon display control")]
+#[when("the user activates the ribbon display control")]
 #[when("I activate the ribbon display control once")]
+#[when("the user activates the ribbon display control once")]
 #[when("I activate the ribbon display control again")]
+#[when("the user activates the ribbon display control again")]
 fn activate(world: &mut ApplicationWorld) {
     activate_display_control(world);
 }
@@ -94,7 +110,9 @@ fn more_space(world: &mut ApplicationWorld) {
     expect_shorter_band(world);
 }
 #[when("I select the Windows group button")]
+#[when("the user selects the Windows group button")]
 #[when("I select the Windows group title")]
+#[when("the user selects the Windows group title")]
 fn open_windows_group(world: &mut ApplicationWorld) {
     world.click_text("Windows");
 }
@@ -144,12 +162,15 @@ fn view_commands_below(world: &mut ApplicationWorld) {
     );
 }
 #[when("I click in an empty area of the viewport")]
+#[when("the user clicks in an empty area of the viewport")]
 #[when("I click an empty area of the viewport")]
 fn click_viewport(world: &mut ApplicationWorld) {
     let extent = world.extent();
     world.click([extent[0] as i32 - 100, extent[1] as i32 - 100]);
 }
 #[then("the expanded View ribbon remains visible")]
+#[then("the full View ribbon remains visible")]
+#[then("the full View ribbon is restored")]
 fn expanded_remains(world: &mut ApplicationWorld) {
     world.expect_text(WINDOWS_COMMAND);
     assert!(
@@ -157,7 +178,20 @@ fn expanded_remains(world: &mut ApplicationWorld) {
         "expected the full ribbon"
     );
 }
+#[when("the user dismisses the menu with Escape")]
+fn dismiss_display_menu(world: &mut ApplicationWorld) {
+    world.key(oblikovati_viewport::ViewportPhysicalKey::Escape, false);
+    world.expect_no_text("Minimize to Panel Buttons");
+}
+#[then("the temporary Windows panel closes")]
+fn windows_panel_closed(world: &mut ApplicationWorld) {
+    assert!(window_geometry("##ribbon-temporary-panel").is_none());
+    world.expect_text(WINDOWS_COMMAND);
+}
 #[when("I open the ribbon display control menu")]
+#[when("the user opens the ribbon display control menu")]
+#[when("the user opens the ribbon display menu")]
+#[when("the user opens the ribbon display menu again")]
 fn open_menu(world: &mut ApplicationWorld) {
     click_display_menu(world);
 }
@@ -176,6 +210,7 @@ fn cycle_choice(world: &mut ApplicationWorld) {
     world.expect_text("Cycle through All");
 }
 #[when("I choose Minimize to Tabs")]
+#[when("the user chooses Minimize to Tabs")]
 fn choose_tabs(world: &mut ApplicationWorld) {
     world.click_text("Minimize to Tabs");
 }
@@ -185,6 +220,7 @@ fn groups_hidden(world: &mut ApplicationWorld) {
     world.expect_text("3D Model");
 }
 #[when("I select the 3D Model tab")]
+#[when("the user selects the 3D Model tab")]
 fn select_model(world: &mut ApplicationWorld) {
     world.click_text("3D Model");
 }
@@ -211,145 +247,8 @@ fn tabs_checked(world: &mut ApplicationWorld) {
         "expected a checked choice"
     );
 }
-const DRAWING_GROUPS: [&str; 4] = ["Create", "Modify", "Sketch", "Sheets"];
-#[given("the Place Views tab shows its full command groups")]
-fn place_views_full(world: &mut ApplicationWorld) {
-    world.expect_text("Base View");
-    world.ribbon_height = band_height();
-}
-fn double_click_place_views(world: &mut ApplicationWorld) {
-    let center = world.run("Place Views").center().map(|value| value as i32);
-    world.pump(crate::native::gui_loop_tests::pointer_click_events(
-        center, 2,
-    ));
-    world.pump(Vec::new());
-}
-#[when("I double-click the active Place Views tab")]
-#[when("I double-click the active Place Views tab again")]
-fn double_click(world: &mut ApplicationWorld) {
-    double_click_place_views(world);
-}
-fn expect_compact_drawing(world: &mut ApplicationWorld) {
-    for group in DRAWING_GROUPS {
-        world.expect_text(group);
-    }
-    world.expect_no_text("Base View");
-}
-#[then("the ribbon shows compact Create, Modify, Sketch and Sheets group buttons")]
-#[then("its ribbon displays compact Create, Modify, Sketch and Sheets group buttons")]
-fn compact_drawing(world: &mut ApplicationWorld) {
-    expect_compact_drawing(world);
-}
-#[then("the ribbon shows the group titles in a narrow strip")]
-fn titles_strip(world: &mut ApplicationWorld) {
-    for group in DRAWING_GROUPS {
-        world.expect_text(group);
-    }
-    world.expect_no_text("Base View");
-    assert!(
-        band_height() < world.ribbon_height,
-        "expected a narrower ribbon"
-    );
-}
-#[then("the ribbon shows tabs without the group strip")]
-fn tabs_without_strip(world: &mut ApplicationWorld) {
-    world.expect_text("Place Views");
-    for group in ["Modify", "Sheets"] {
-        world.expect_no_text(group);
-    }
-}
-#[then("the full Place Views command groups are visible")]
-fn full_groups(world: &mut ApplicationWorld) {
-    world.expect_text("Base View");
-    world.expect_text("New Sheet");
-}
-#[then("the drawing document remains active")]
-fn drawing_remains(world: &mut ApplicationWorld) {
-    let state = world.state();
-    assert_eq!(state.document, world.previous_document);
-    assert_eq!(
-        state.document_type,
-        Some(oblikovati_api::types::DOCUMENT_DRAWING)
-    );
-}
-#[given("a drawing and a part are open in the MCAD Software")]
-fn drawing_and_part(world: &mut ApplicationWorld) {
-    world.other_document = Some(world.add_part());
-    world.previous_document = Some(world.add_drawing());
-}
-#[given("the drawing is active with its ribbon in compact group-button mode")]
-#[given("the Place Views ribbon shows compact group buttons")]
-fn compact_mode(world: &mut ApplicationWorld) {
-    click_display_menu(world);
-    world.click_text("Minimize to Panel Buttons");
-    expect_compact_drawing(world);
-}
-#[when("I activate the part document")]
-fn activate_part(world: &mut ApplicationWorld) {
-    let part = world.other_document.expect("expected a part");
-    world.click_tab(part);
-}
-#[then("the part ribbon displays its command groups as compact buttons")]
-fn part_compact(world: &mut ApplicationWorld) {
-    world.expect_no_text("Start 2D Sketch");
-    world.expect_no_text("Extrude");
-}
-#[then("those buttons include Sketch, Create and Modify")]
-fn part_groups(world: &mut ApplicationWorld) {
-    for group in ["Sketch", "Create", "Modify"] {
-        world.expect_text(group);
-    }
-}
-#[when("I return to the drawing document")]
-fn back_to_drawing(world: &mut ApplicationWorld) {
-    let drawing = world.previous_document.expect("expected a drawing");
-    world.click_tab(drawing);
-}
-#[when("I select the Create group button")]
-fn select_create(world: &mut ApplicationWorld) {
-    world.click_text("Create");
-    world.pump(Vec::new());
-}
-#[then("a temporary Create panel displays drawing-view commands")]
-fn create_panel(world: &mut ApplicationWorld) {
-    world.expect_text("Base View");
-}
-#[when("I select the Modify group button")]
-fn select_modify(world: &mut ApplicationWorld) {
-    world.click_text("Modify");
-    world.pump(Vec::new());
-}
-#[then("the Create panel closes")]
-fn create_closed(world: &mut ApplicationWorld) {
-    world.expect_no_text("Base View");
-    world.expect_no_text("Extrude");
-}
-#[then("a temporary Modify panel displays modification commands")]
-fn modify_panel(world: &mut ApplicationWorld) {
-    world.expect_text("Break");
-}
-#[when("I click an empty area of the drawing outside the panel")]
-fn click_drawing(world: &mut ApplicationWorld) {
-    world.click([1000, 600]);
-}
-#[then("the temporary Modify panel closes")]
-fn modify_closed(world: &mut ApplicationWorld) {
-    world.expect_no_text("Break");
-}
-#[then("the compact group buttons remain visible")]
-fn compact_remains(world: &mut ApplicationWorld) {
-    expect_compact_drawing(world);
-}
-#[given("a drawing is active in the MCAD Software")]
-fn a_drawing_active(world: &mut ApplicationWorld) {
-    world.previous_document = Some(world.add_drawing());
-}
-#[given("the temporary Create group panel is open")]
-fn create_group_open(world: &mut ApplicationWorld) {
-    select_create(world);
-    world.expect_text("Base View");
-}
 #[when("I select the Annotate tab")]
+#[when("the user selects the Annotate tab")]
 fn select_annotate(world: &mut ApplicationWorld) {
     world.click_text("Annotate");
     world.pump(Vec::new());
@@ -371,7 +270,7 @@ fn annotate_groups(world: &mut ApplicationWorld) {
 }
 #[then("the drawing remains active")]
 fn drawing_stays(world: &mut ApplicationWorld) {
-    drawing_remains(world);
+    drawing::drawing_remains(world);
 }
 #[given("the Annotate ribbon is expanded")]
 fn annotate_expanded(world: &mut ApplicationWorld) {
@@ -380,6 +279,7 @@ fn annotate_expanded(world: &mut ApplicationWorld) {
     world.ribbon_height = band_height();
 }
 #[when("I choose Minimize to Panel Titles")]
+#[when("the user chooses Minimize to Panel Titles")]
 fn minimize_to_titles(world: &mut ApplicationWorld) {
     world.click_text("Minimize to Panel Titles");
 }
@@ -409,6 +309,7 @@ fn titles_checked(world: &mut ApplicationWorld) {
     );
 }
 #[when("I choose Minimize to Panel Buttons")]
+#[when("the user chooses Minimize to Panel Buttons")]
 fn minimize_to_buttons(world: &mut ApplicationWorld) {
     world.click_text("Minimize to Panel Buttons");
 }
@@ -418,6 +319,7 @@ fn annotate_buttons(world: &mut ApplicationWorld) {
     world.expect_no_text("Baseline");
 }
 #[then("Minimize to Panel Buttons is checked")]
+#[then("Minimize to Panel Buttons is selected")]
 fn buttons_checked(world: &mut ApplicationWorld) {
     assert!(
         world.checked("Minimize to Panel Buttons"),
