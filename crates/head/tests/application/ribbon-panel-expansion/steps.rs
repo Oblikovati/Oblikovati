@@ -35,6 +35,8 @@ mod temporary_restore;
 #[cfg(target_os = "linux")]
 #[path = "temporary_tab_native.rs"]
 mod temporary_tab_native;
+#[path = "title_appearance.rs"]
+mod title_appearance;
 #[path = "title_customization.rs"]
 mod title_customization;
 const WINDOW: &str = "##ribbon-additional-PartModify";
