@@ -112,7 +112,6 @@ pub(super) fn full_tools(world: &mut ApplicationWorld) {
 fn wheel_down_on_tools(world: &mut ApplicationWorld) {
     scroll_tab(world, "Tools", -1);
 }
-#[then("Manage becomes the active tab")]
 #[then("the full Manage command groups are visible")]
 fn manage_active(world: &mut ApplicationWorld) {
     assert!(
@@ -125,15 +124,68 @@ fn manage_active(world: &mut ApplicationWorld) {
             > 1
     );
 }
+#[then("Manage becomes the active tab")]
+#[then("Manage remains active in tabs-only display")]
+fn manage_tab_selected(world: &mut ApplicationWorld) {
+    world.hover([1000, 600]);
+    let inactive = world.pixel_left_of("View");
+    assert_eq!(world.pixel_left_of("Tools"), inactive);
+    assert_ne!(world.pixel_left_of("Manage"), inactive);
+}
 #[when("the user scrolls up over the same position on the tab row")]
 fn wheel_up_over_same_tab_position(world: &mut ApplicationWorld) {
     scroll_tab(world, "Tools", 1);
 }
-#[then("Tools becomes the active tab")]
 #[then("the full Tools command groups are visible")]
 fn tools_active(world: &mut ApplicationWorld) {
     world.expect_text("Application Options");
     world.expect_text("Document Settings");
+}
+#[then("Tools becomes the active tab")]
+fn tools_tab_selected(world: &mut ApplicationWorld) {
+    world.hover([1000, 600]);
+    let inactive = world.pixel_left_of("View");
+    assert_eq!(world.pixel_left_of("Manage"), inactive);
+    assert_ne!(world.pixel_left_of("Tools"), inactive);
+}
+
+#[given("no temporary ribbon commands are open")]
+#[then("the ribbon remains in tabs-only display without opening temporary commands")]
+fn no_temporary_commands(world: &mut ApplicationWorld) {
+    assert!(window_geometry("##ribbon-temporary-panel").is_none());
+    world.expect_no_text("Application Options");
+}
+
+#[given("the temporary Tools command groups are open")]
+fn temporary_tools_open(world: &mut ApplicationWorld) {
+    world.click_text("Tools");
+    world.expect_text("Application Options");
+    assert!(window_geometry("##ribbon-temporary-panel").is_some());
+}
+
+#[then("temporary Manage command groups replace the Tools command groups")]
+fn temporary_manage_replaces_tools(world: &mut ApplicationWorld) {
+    assert!(window_geometry("##ribbon-temporary-panel").is_some());
+    world.expect_no_text("Application Options");
+    manage_active(world);
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn native_wheel_switches_open_tabs_only_commands() {
+    let mut world = ApplicationWorld::new();
+    part_with_full_ribbon(&mut world);
+    full_tools(&mut world);
+    choose_tabs_mode(&mut world);
+    temporary_tools_open(&mut world);
+    let at = super::super::diagnostics::pointer_pixels(world.run("Tools").center());
+    super::super::x11_input::focus_window();
+    super::super::x11_input::scroll(at, -1);
+    world.pump(Vec::new());
+    world.pump(Vec::new());
+    manage_tab_selected(&mut world);
+    temporary_manage_replaces_tools(&mut world);
+    world.close();
 }
 
 #[test]
@@ -281,9 +333,11 @@ fn widening_an_open_width_collapsed_panel_closes_its_popup() {
         modify[1] - 35.,
     ]));
     world.expect_text("Hole");
+    assert!(world.run("Hole").minimum[1] > band_height());
     world.app().window.native.view.resize([1600, 900]).unwrap();
     world.pump(Vec::new());
     world.expect_text("Hole");
+    assert!(world.run("Hole").minimum[1] < band_height());
     world.app().window.native.view.resize([700, 600]).unwrap();
     world.pump(Vec::new());
     world.expect_no_text("Hole");
