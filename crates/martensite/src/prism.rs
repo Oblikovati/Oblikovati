@@ -119,3 +119,6 @@ impl PrismPresentationSource for PrismProbeSnapshot {
 #[cfg(test)]
 #[path = "../tests/unit/fillet_prism_history_probe.rs"]
 mod fillet_prism_history_probe;
+#[cfg(test)]
+#[path = "../tests/unit/hole_prism_history_probe.rs"]
+mod hole_prism_history_probe;
