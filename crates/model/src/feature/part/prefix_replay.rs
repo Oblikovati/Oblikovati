@@ -55,6 +55,17 @@ where
             .evaluate_blend(kind, feature, body.get(), edges, distance)
             .map(PrefixBody::Created)
     }
+    fn evaluate_hole(
+        &mut self,
+        feature: FeatureId,
+        body: &Self::Body,
+        face: &[u8],
+        input: crate::feature::hole::ResolvedHole,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_hole(feature, body.get(), face, input)
+            .map(PrefixBody::Created)
+    }
     fn evaluate_prism(
         &mut self,
         feature: FeatureId,

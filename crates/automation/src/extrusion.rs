@@ -248,11 +248,21 @@ pub(crate) fn positive_length(
     source: &str,
     label: &str,
 ) -> Result<DatumLength, Error> {
+    let length = finite_length(snapshot, source, label)?;
+    let quantity = length.resolve(&snapshot.parameters).map_err(api_error)?;
+    require_positive(quantity, Dimension::Length, source, label)?;
+    Ok(length)
+}
+pub(crate) fn finite_length(
+    snapshot: &DocumentSnapshot,
+    source: &str,
+    label: &str,
+) -> Result<DatumLength, Error> {
     let parameters = &snapshot.parameters;
     let text = source.trim();
     if let Some(id) = parameters.find(text) {
         let quantity = parameters.model_value(id).map_err(api_error)?;
-        require_positive(quantity.value, quantity.dimension, source, label)?;
+        require_finite_length(quantity.value, quantity.dimension, source, label)?;
         return Ok(DatumLength::Parameter(id));
     }
     let expression = Expression::parse(text, parameters.units()).map_err(api_error)?;
@@ -267,7 +277,7 @@ pub(crate) fn positive_length(
             .units()
             .from_preferred(quantity.value, Dimension::Length);
     }
-    require_positive(quantity.value, quantity.dimension, source, label)?;
+    require_finite_length(quantity.value, quantity.dimension, source, label)?;
     Ok(DatumLength::Constant(quantity.value))
 }
 /// Check an extrusion expression with the same rules as feature creation.
@@ -281,9 +291,23 @@ fn require_positive(
     source: &str,
     label: &str,
 ) -> Result<(), Error> {
-    if dimension != Dimension::Length || !value.is_finite() || value <= 0. {
+    require_finite_length(value, dimension, source, label)?;
+    if value <= 0. {
         return Err(Error(format!(
             "{label} {source:?} resolved to {value:?} {dimension:?}: expected a finite positive length"
+        )));
+    }
+    Ok(())
+}
+fn require_finite_length(
+    value: f64,
+    dimension: Dimension,
+    source: &str,
+    label: &str,
+) -> Result<(), Error> {
+    if dimension != Dimension::Length || !value.is_finite() {
+        return Err(Error(format!(
+            "{label} {source:?} resolved to {value:?} {dimension:?}: expected a finite length"
         )));
     }
     Ok(())

@@ -15,6 +15,7 @@ mod assembly_references;
 mod attachments;
 mod blend;
 mod document_update;
+mod feature;
 pub use assembly_references::{AssemblyReferenceFailure, AssemblyReferenceReport};
 pub use document_update::DOCUMENT_UPDATE_METHODS;
 mod assembly_snapshots;
@@ -424,16 +425,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
             return Ok(result);
         }
         if method == METHOD_FEATURES_ADD {
-            let args: AddFeatureArgs = decode(method, request)?;
-            if [
-                oblikovati_api::wire::featureargs::KIND_FILLET,
-                oblikovati_api::wire::featureargs::KIND_CHAMFER,
-            ]
-            .contains(&args.kind.as_str())
-            {
-                return self.add_blend(args);
-            }
-            return crate::extrusion::apply(self.files, self.extrusion, request);
+            return self.add_feature(request);
         }
         if method == METHOD_FEATURES_SET_SUPPRESSED {
             return crate::feature_suppression::apply(self.files, self.extrusion, request);
