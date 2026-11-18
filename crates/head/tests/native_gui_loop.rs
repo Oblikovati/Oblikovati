@@ -53,7 +53,6 @@ fn scripted_window(native: NativeHeadWindow) -> ScriptedGuiWindow {
         template_size_issue_override: None,
     }
 }
-const STATUS_LINE_ROWS: usize = 22;
 #[path = "native_gui_loop/scripted_window.rs"]
 mod scripted_window;
 fn click_shell_position(
@@ -250,31 +249,54 @@ fn verify_browser_reentry_pixels(
     );
     move_pointer_away(window, owner);
     let before = capture_framebuffer(&mut window.native);
+    let before_area = window
+        .native
+        .gui
+        .as_ref()
+        .unwrap()
+        .document_area(before.extent)
+        .unwrap();
     let original = window.native.view.camera_state().unwrap();
     browser::double_click_browser_row(window, owner);
     assert_eq!(owner.active_sketch_edit().unwrap(), edit);
     assert_eq!(window.native.view.camera_state().unwrap(), original);
     move_pointer_away(window, owner);
     let after = capture_framebuffer(&mut window.native);
+    let after_area = window
+        .native
+        .gui
+        .as_ref()
+        .unwrap()
+        .document_area(after.extent)
+        .unwrap();
+    assert_eq!(
+        before.extent, after.extent,
+        "expected the same drawable size"
+    );
     let width = before.extent[0] as usize;
-    let (tabs, size) = application_bdd::window_geometry("##open-document-tabs").unwrap();
-    let content_top = application_bdd::pointer_pixels([0., tabs[1] + size[1] + 1.])[1] as usize;
-    assert!(width >= 1200 && content_top + STATUS_LINE_ROWS < before.extent[1] as usize);
+    let left = before_area[0].max(after_area[0]).max(500) as usize;
+    let right = before_area[2].min(after_area[2]).min(1200) as usize;
+    let top = before_area[1].max(after_area[1]) as usize;
+    let bottom = before_area[3].min(after_area[3]) as usize;
+    assert!(
+        left < right && top < bottom,
+        "expected overlapping document areas {before_area:?} and {after_area:?}"
+    );
     // #3798: contextual chrome changes on entry; the camera and visible model must not.
     for (row, (old, new)) in before
         .rgba
         .chunks_exact(width * 4)
         .zip(after.rgba.chunks_exact(width * 4))
         .enumerate()
-        .skip(content_top)
-        // The status line at the foot reports the edit, as it should.
-        .take((before.extent[1] as usize).saturating_sub(content_top + STATUS_LINE_ROWS))
+        .skip(top)
+        // The document area excludes the status line, which reports the edit.
+        .take(bottom - top)
     {
         assert!(
             // The view controls overlap the right side of the viewport in the part workspace.
-            old[500 * 4..1200 * 4] == new[500 * 4..1200 * 4],
+            old[left * 4..right * 4] == new[left * 4..right * 4],
             "re-entering the same XY camera must preserve rectangle pixels on row {row}, first difference at {:?}",
-            (500..1200).find(|x| old[x * 4..x * 4 + 4] != new[x * 4..x * 4 + 4])
+            (left..right).find(|x| old[x * 4..x * 4 + 4] != new[x * 4..x * 4 + 4])
         );
     }
     let finish = application_bdd::rendered_label_center("Finish Sketch");

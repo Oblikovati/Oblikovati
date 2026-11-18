@@ -77,14 +77,18 @@ fn close_and_reopen(
 }
 fn cancel_save_dialog(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOwner) {
     let before = owner.gui_command_state().unwrap();
-    click_shell_position(
-        window,
-        owner,
-        application_bdd::rendered_label_center("Save"),
+    click_shell_position(window, owner, application_bdd::toolbar_icon_center("Save"));
+    assert!(
+        application_bdd::window_geometry("Save As").is_some(),
+        "Save must open the Save As dialog"
     );
     assert_eq!(owner.gui_command_state().unwrap(), before);
     // Enter would accept the proposed name, so only Escape leaves the document unbound.
     press_shell_key(window, owner, ViewportPhysicalKey::Escape);
+    assert!(
+        application_bdd::window_geometry("Save As").is_none(),
+        "Escape must close Save As"
+    );
     assert_eq!(owner.gui_command_state().unwrap(), before);
     assert!(!owner.close_allowed().unwrap());
 }
@@ -93,10 +97,10 @@ fn save_from_dialog(
     owner: &mut NativeDesktopOwner,
     path: &std::path::Path,
 ) {
-    click_shell_position(
-        window,
-        owner,
-        application_bdd::rendered_label_center("Save"),
+    click_shell_position(window, owner, application_bdd::toolbar_icon_center("Save"));
+    assert!(
+        application_bdd::window_geometry("Save As").is_some(),
+        "Save must open the Save As dialog"
     );
     type_native_text(window, owner, path.to_str().unwrap());
     press_shell_key(window, owner, ViewportPhysicalKey::Enter);
