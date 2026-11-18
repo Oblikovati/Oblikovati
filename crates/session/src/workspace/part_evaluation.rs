@@ -3,12 +3,23 @@ use super::SessionCommands;
 use crate::{
     TransactionObserver,
     part_evaluation::{
-        CompletedPartEvaluation, CompletedPartSketchCheckpoints, CompletedPartSketchRecompute,
-        PartCheckpointSlot, PartEvaluationError, PartEvaluationRequest, PartEvaluationSlot,
-        PartSketchAdoptionError,
+        CompletedPartCheckpoints, CompletedPartEvaluation, CompletedPartSketchCheckpoints,
+        CompletedPartSketchRecompute, PartCheckpointSlot, PartEvaluationError,
+        PartEvaluationRequest, PartEvaluationSlot, PartSketchAdoptionError,
     },
 };
 impl<O: TransactionObserver> SessionCommands<'_, O> {
+    /// Publish an accepted checkpoint set with its part result.
+    /// Example: `files.commands(id)?.adopt_replayed_checkpoints(done, &mut part, &mut checkpoints)?`.
+    pub fn adopt_replayed_checkpoints<Body: Clone, Failure: Clone>(
+        &mut self,
+        completed: CompletedPartCheckpoints<Body, Failure>,
+        part: &mut PartEvaluationSlot<Body, Failure>,
+        checkpoints: &mut PartCheckpointSlot<Body, Failure>,
+    ) -> Result<(), PartEvaluationError> {
+        self.session
+            .adopt_replayed_checkpoints(completed, part, checkpoints)
+    }
     /// Publish solved part checkpoints through their document owner.
     /// Example: `files.commands(id)?.adopt_checkpointed_sketch_replay(done, &mut part, &mut checkpoints)?`.
     pub fn adopt_checkpointed_sketch_replay<Body, Failure>(

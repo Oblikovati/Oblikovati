@@ -278,3 +278,115 @@ fn session_accepts_checkpointed_named_fillet_and_invalidates_it_on_undo() {
     assert!(slot.current(&session).is_err());
     assert!(checkpoints.candidate_prefix(&session).is_err());
 }
+
+fn commit_checkpointed_fillet(
+    session: &mut DocumentSession<CheckpointObserver>,
+    part: &mut PartEvaluationSlot<NamedSolid, EvaluationFailure>,
+    checkpoints: &mut PartCheckpointSlot<NamedSolid, EvaluationFailure>,
+    edge: &[u8],
+    radius: f64,
+) -> (usize, usize) {
+    let ((captured, counts), transition) = {
+        let prefix = checkpoints.candidate_prefix(session).unwrap();
+        session
+            .run_projected_with_transition(
+                "Edit fillet",
+                |snapshot, _| replace_fillet(snapshot, definition(edge.to_vec(), radius)),
+                |snapshot, _, history| {
+                    let mut backend = CountingEvaluator::new(history);
+                    let candidate = prefix
+                        .prepare_checkpoints(history, snapshot, &mut backend)?
+                        .ok_or("expected changed checkpoints")?;
+                    if !candidate.has_current_source(FeatureId(2)) {
+                        return Err("expected a live fillet descendant".into());
+                    }
+                    let captured = candidate.capture(history, |_, body| {
+                        body.capture_detached(history, document())
+                    })?;
+                    Ok((captured, (backend.prisms, backend.blends)))
+                },
+            )
+            .unwrap()
+    };
+    let completed = oblikovati_martensite::complete_named_checkpoints(
+        captured,
+        &transition,
+        session,
+        document(),
+    )
+    .unwrap();
+    session
+        .adopt_replayed_checkpoints(completed, part, checkpoints)
+        .unwrap();
+    counts
+}
+
+#[test]
+fn accepted_named_checkpoints_survive_successive_fillet_edits() {
+    let mut session = DocumentSession::new(7, owner(cube_document()), CheckpointObserver);
+    let edge = certified(session.history())
+        .subentity_reference_keys(session.history(), document())
+        .unwrap()
+        .into_iter()
+        .find(|key| {
+            oblikovati_model::identity::ReferenceEnvelope::decode(key)
+                .unwrap()
+                .kind
+                == 2
+        })
+        .unwrap();
+    session
+        .create_fillet("Fillet", definition(edge.clone(), 0.1))
+        .unwrap();
+    let mut checkpoints = PartCheckpointSlot::default();
+    let mut backend = CountingEvaluator::new(session.history());
+    let completed = session
+        .prepare_part_evaluation()
+        .evaluate_checkpoints(&mut backend)
+        .unwrap();
+    drop(backend);
+    checkpoints.adopt(&session, completed).unwrap();
+    let mut part = PartEvaluationSlot::default();
+    assert_eq!(
+        commit_checkpointed_fillet(&mut session, &mut part, &mut checkpoints, &edge, 0.15),
+        (0, 1)
+    );
+    assert_eq!(
+        commit_checkpointed_fillet(&mut session, &mut part, &mut checkpoints, &edge, 0.2),
+        (0, 1)
+    );
+    let actual = part.current(&session).unwrap().body(FeatureId(2)).unwrap();
+    let mut backend = CountingEvaluator::new(session.history());
+    let full = session
+        .snapshot()
+        .evaluate_part_features(&mut backend)
+        .unwrap();
+    let expected = full.body(FeatureId(2)).unwrap();
+    assert_eq!(
+        actual
+            .reference_keys(session.history(), document())
+            .unwrap(),
+        expected
+            .reference_keys(session.history(), document())
+            .unwrap()
+    );
+    for face in actual
+        .face_reference_keys(session.history(), document())
+        .unwrap()
+    {
+        assert!(
+            (actual
+                .face_area(session.history(), document(), &face)
+                .unwrap()
+                - expected
+                    .face_area(session.history(), document(), &face)
+                    .unwrap())
+            .abs()
+                < 1e-10
+        );
+    }
+    drop(backend);
+    session.undo().unwrap();
+    assert!(part.current(&session).is_err());
+    assert!(checkpoints.candidate_prefix(&session).is_err());
+}

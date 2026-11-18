@@ -4,7 +4,10 @@ use super::*;
 use oblikovati_model::history::EvaluationTransition;
 use oblikovati_session::{
     DocumentSession, TransactionObserver,
-    part_evaluation::{CapturedPartCandidate, CompletedPartEvaluation},
+    part_evaluation::{
+        CapturedPartCandidate, CapturedPartCheckpointCandidate, CompletedPartCheckpoints,
+        CompletedPartEvaluation,
+    },
 };
 
 /// Opaque body capture; restoring it requires a matching committed candidate.
@@ -146,6 +149,18 @@ pub fn complete_named_candidate<O: TransactionObserver, Failure>(
     session: &DocumentSession<O>,
     document: DocumentGuid,
 ) -> Result<CompletedPartEvaluation<NamedSolid, Failure>, String> {
+    candidate.try_complete(transition, session, |_, body, history| {
+        body.restore(history, document)
+    })
+}
+/// Restore exact named checkpoints after their document accepts the candidate.
+/// Example: `complete_named_checkpoints(captured, &transition, &session, document)?`.
+pub fn complete_named_checkpoints<O: TransactionObserver, Failure>(
+    candidate: CapturedPartCheckpointCandidate<CapturedNamedSolid, Failure>,
+    transition: &EvaluationTransition,
+    session: &DocumentSession<O>,
+    document: DocumentGuid,
+) -> Result<CompletedPartCheckpoints<NamedSolid, Failure>, String> {
     candidate.try_complete(transition, session, |_, body, history| {
         body.restore(history, document)
     })

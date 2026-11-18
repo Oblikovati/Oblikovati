@@ -35,6 +35,19 @@ impl<Body, Failure> PartReplayCheckpoints<Body, Failure> {
     }
 }
 impl<Body, Failure: Clone> PartReplayCheckpoints<Body, Failure> {
+    /// Capture every boundary without changing its source or lineage.
+    /// Example: `checkpoints.try_map_bodies(|feature, body| capture(feature, body))?`.
+    pub fn try_map_bodies<Mapped, E>(
+        &self,
+        mut capture: impl FnMut(crate::feature::FeatureId, &Body) -> Result<Mapped, E>,
+    ) -> Result<PartReplayCheckpoints<Mapped, Failure>, E> {
+        let states = self
+            .states
+            .iter()
+            .map(|state| state.try_map_bodies(&mut capture))
+            .collect::<Result<_, _>>()?;
+        Ok(PartReplayCheckpoints { states })
+    }
     /// Replay from the earliest changed boundary, retaining earlier bodies by reference.
     /// Example: `checkpoints.replay_candidate_tail(&edited, &mut backend)?`.
     pub fn replay_candidate_tail<'a, B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
@@ -53,6 +66,21 @@ impl<Body, Failure: Clone> PartReplayCheckpoints<Body, Failure> {
             )
         })?;
         checkpoint.replay_candidate_tail(candidate, backend)
+    }
+}
+impl<Body, Failure> PartReplayCheckpoints<Body, Failure> {
+    /// Restore captured bodies across all boundaries as one fallible operation.
+    /// Example: `captured.try_map_owned_bodies(|feature, body| restore(feature, body))?`.
+    pub fn try_map_owned_bodies<Mapped, E>(
+        self,
+        mut restore: impl FnMut(crate::feature::FeatureId, Body) -> Result<Mapped, E>,
+    ) -> Result<PartReplayCheckpoints<Mapped, Failure>, E> {
+        let states = self
+            .states
+            .into_iter()
+            .map(|state| state.try_map_owned_bodies(&mut restore))
+            .collect::<Result<_, _>>()?;
+        Ok(PartReplayCheckpoints { states })
     }
 }
 impl DocumentSnapshot {

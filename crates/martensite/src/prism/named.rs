@@ -136,7 +136,7 @@ pub use face_mesh::NamedFaceMesh;
 mod captured;
 mod face_topology;
 mod solid;
-pub use captured::{CapturedNamedSolid, complete_named_candidate};
+pub use captured::{CapturedNamedSolid, complete_named_candidate, complete_named_checkpoints};
 pub use edge_pick::NamedEdgeHit;
 mod subentities;
 pub use blend::{BlendCandidate, BlendHistoryRecord, BlendNamedTopology};

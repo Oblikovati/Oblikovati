@@ -6,8 +6,8 @@ mod owner;
 mod request;
 use crate::{DocumentSession, TransactionObserver};
 pub use checkpoints::{
-    CompletedPartCheckpoints, CompletedPartSketchCheckpoints, PartCheckpointPrefix,
-    PartCheckpointSlot,
+    CapturedPartCheckpointCandidate, CompletedPartCheckpoints, CompletedPartSketchCheckpoints,
+    PartCheckpointCandidate, PartCheckpointPrefix, PartCheckpointSlot,
 };
 pub use error::{PartEvaluationError, PartSketchAdoptionError};
 use oblikovati_model::feature::part::PartFeatureEvaluation;
