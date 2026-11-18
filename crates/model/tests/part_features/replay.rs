@@ -65,6 +65,38 @@ fn replay_document() -> DocumentSnapshot {
     append_prism(&mut owner);
     owner.snapshot().clone()
 }
+
+#[test]
+fn candidate_tail_with_a_new_parameter_does_not_rebuild_the_prism() {
+    let source = replay_document();
+    let retained = source
+        .evaluate_part_features(&mut FakePrismEvaluator::default())
+        .unwrap();
+    let mut candidate = source.clone();
+    candidate
+        .parameters
+        .insert_expression(4, "point_x", oblikovati_api::types::USER_PARAM, "1 cm")
+        .unwrap();
+    let point = PartFeatureDefinition::Point([
+        DatumLength::Parameter(4),
+        DatumLength::Constant(0.),
+        DatumLength::Constant(0.),
+    ]);
+    candidate
+        .work_geometry
+        .append(AuthoredFeature::datum(FeatureId(3), "Point", point))
+        .unwrap();
+    let mut backend = FakePrismEvaluator::default();
+    let tail = retained
+        .replay_candidate_tail(&candidate, &mut backend)
+        .unwrap();
+    assert_eq!(backend.calls, 0);
+    let full = candidate
+        .evaluate_part_features(&mut FakePrismEvaluator::default())
+        .unwrap();
+    assert_eq!(tail.health(), full.health());
+    assert_eq!(tail.body_count(), full.ordered_bodies().count());
+}
 fn append_independent_prism(snapshot: &mut DocumentSnapshot) {
     let feature =
         AuthoredFeature::sketch_prism(FeatureId(3), "Independent prism", prism_source(), snapshot)
