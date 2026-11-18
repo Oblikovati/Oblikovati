@@ -143,6 +143,8 @@
 
 ### Changed
 
+- Reused the current source part result when creating a drawing base view. (#4079)
+
 - Reused current part results when typed Fillet and Chamfer commands resolve selected edges. (#4079)
 
 - Retained current part replay results per open document in the desktop. (#4079)

@@ -442,3 +442,6 @@ fn unassigned_template_metadata_does_not_require_a_catalog() {
             .all(|row| row.material == oblikovati_gui::GuiTemplateMaterial::Unassigned)
     );
 }
+
+#[path = "drawing_replay.rs"]
+mod drawing_replay;

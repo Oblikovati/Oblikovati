@@ -13,6 +13,19 @@ use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::W
 
 /// Project a current part before a drawing view is adopted.
 pub trait DrawingViewProjectionAccess {
+    /// Check whether retained geometry uses this projection's policy; example: `backend.accepts_policy(policy)`.
+    fn accepts_policy(&self, policy: Option<oblikovati_martensite::PrismResolutionPolicy>) -> bool;
+    /// Project a generation-checked part; example: `backend.counts_current(history, guid, view, part)?`.
+    fn counts_current(
+        &self,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        view: &DrawingBaseViewDefinition,
+        part: &oblikovati_model::feature::part::PartFeatureEvaluation<
+            oblikovati_martensite::NamedSolid,
+            oblikovati_martensite::EvaluationFailure,
+        >,
+    ) -> Result<[usize; 2], String>;
     /// Return visible and hidden exact curve counts; example: `backend.counts(history, guid, &view)?`.
     fn counts(
         &self,
@@ -37,6 +50,7 @@ pub const DRAWING_COMMAND_METHODS: [&str; 2] = [
 pub(super) fn add_base<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
     backend: Option<&dyn DrawingViewProjectionAccess>,
+    replay: Option<&mut dyn crate::PartUpdateAccess<O, W, F>>,
     request: AddBaseViewArgs,
 ) -> Result<Vec<u8>, Error> {
     let drawing_id = files
@@ -76,15 +90,29 @@ pub(super) fn add_base<O: TransactionObserver, W: WorkspaceObserver, F: Document
     let backend = backend.ok_or_else(|| {
         Error("drawing view: expected an injected exact projection service".into())
     })?;
+    let replay = match replay.filter(|owner| backend.accepts_policy(owner.resolution_policy())) {
+        Some(replay) => {
+            replay.ensure_part(files, source).map_err(Error)?;
+            Some(replay)
+        }
+        None => None,
+    };
     let session = files.workspace().session(source).map_err(api_error)?;
     let guid = files
         .workspace()
         .identity(source)
         .map_err(api_error)?
         .internal_name;
-    let counts = backend
-        .counts(session.history(), guid, &definition)
-        .map_err(Error)?;
+    let counts = match replay {
+        Some(replay) => backend.counts_current(
+            session.history(),
+            guid,
+            &definition,
+            replay.current_part(files, source).map_err(Error)?,
+        ),
+        None => backend.counts(session.history(), guid, &definition),
+    }
+    .map_err(Error)?;
     let response = view_result(&definition, &request, counts)?;
     files
         .commands(drawing_id)

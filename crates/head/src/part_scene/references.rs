@@ -62,6 +62,29 @@ impl DesktopPartScenes {
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateAccess<O, W, F>
     for DesktopPartScenes
 {
+    fn resolution_policy(&self) -> Option<oblikovati_martensite::PrismResolutionPolicy> {
+        self.resolution
+    }
+    fn ensure_part(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<(), String> {
+        self.ensure_current(files, document)
+    }
+    fn current_part<'a>(
+        &'a self,
+        files: &'a FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<
+        &'a oblikovati_model::feature::part::PartFeatureEvaluation<
+            oblikovati_martensite::NamedSolid,
+            oblikovati_martensite::EvaluationFailure,
+        >,
+        String,
+    > {
+        self.replay.current_part(files, document)
+    }
     fn blend_body(
         &mut self,
         files: &mut FileWorkspace<O, W, F>,
