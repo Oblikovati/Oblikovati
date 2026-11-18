@@ -209,6 +209,8 @@
 
 ### Fixed
 
+- Preserved exact curve bounds when sampling saved drawing views. (#4085)
+
 - Resolve Fillet and Chamfer inputs with the certified policy when the retained part uses different bounds. (#4084)
 
 - Avoided computing the assembly producer identity for ordinary document commands. (#4081)
