@@ -177,7 +177,7 @@ fn feature_health(owner: &NativeDesktopOwner, document: u64) -> String {
     let workspace = owner.documents().workspace();
     let session = workspace.session(document).unwrap();
     let guid = workspace.identity(document).unwrap().internal_name;
-    let mut evaluator = oblikovati_martensite::CertifiedNamedPrismEvaluator::with_policy(
+    let mut evaluator = oblikovati_martensite::CertifiedNamedSolidEvaluator::with_policy(
         session.history(),
         guid,
         crate::part_scene::resolution_policy::desktop_policy(),
@@ -192,7 +192,7 @@ pub(super) fn face_keys(owner: &NativeDesktopOwner, document: u64, side: f64) ->
     let workspace = owner.documents().workspace();
     let session = workspace.session(document).unwrap();
     let guid = workspace.identity(document).unwrap().internal_name;
-    let mut evaluator = oblikovati_martensite::CertifiedNamedPrismEvaluator::with_policy(
+    let mut evaluator = oblikovati_martensite::CertifiedNamedSolidEvaluator::with_policy(
         session.history(),
         guid,
         crate::part_scene::resolution_policy::desktop_policy(),
@@ -217,7 +217,11 @@ pub(super) fn face_keys(owner: &NativeDesktopOwner, document: u64, side: f64) ->
         .collect();
     assert_eq!(keys.len(), 6);
     for key in &keys {
-        let face = body.face_report(session.history(), guid, key).unwrap();
+        let face = body
+            .as_prism()
+            .unwrap()
+            .face_report(session.history(), guid, key)
+            .unwrap();
         assert_eq!(face.loops, 1);
         assert!((face.area - side.powi(2)).abs() < 1e-8);
     }

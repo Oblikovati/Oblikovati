@@ -116,9 +116,8 @@ mod solid;
 pub use edge_pick::NamedEdgeHit;
 mod subentities;
 pub use blend::{BlendCandidate, BlendHistoryRecord, BlendNamedTopology};
-pub use evaluate::{
-    CertifiedNamedPrismEvaluator, NamedPrismEvaluator, retain_certified_named_sketch_prism,
-};
+pub use evaluate::retain_certified_named_sketch_prism;
+use evaluate::{CertifiedNamedPrismEvaluator, NamedPrismEvaluator};
 pub use face_topology::{PrismFaceTopology, PrismSurfaceKind};
 pub use solid::{CertifiedNamedSolidEvaluator, NamedSolid, named_solid_part_properties};
 fn attach_names(

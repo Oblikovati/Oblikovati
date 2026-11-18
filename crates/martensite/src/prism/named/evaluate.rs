@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use oblikovati_model::feature::{part::PartFeatureEvaluator, sketch_prism::ResolvedSketchPrism};
+use oblikovati_model::feature::sketch_prism::ResolvedSketchPrism;
 /// Name native results inside the common replay before the session publishes them.
-pub struct NamedPrismEvaluator<'a> {
+pub(super) struct NamedPrismEvaluator<'a> {
     history: &'a DocumentEditHistory,
     document: DocumentGuid,
     scope: EvaluationScope,
 }
 impl<'a> NamedPrismEvaluator<'a> {
     /// Bind one document namespace and live owner; example: `NamedPrismEvaluator::new(session.history(), guid)`.
-    pub fn new(history: &'a DocumentEditHistory, document: DocumentGuid) -> Self {
+    pub(super) fn new(history: &'a DocumentEditHistory, document: DocumentGuid) -> Self {
         Self {
             history,
             document,
@@ -17,37 +17,27 @@ impl<'a> NamedPrismEvaluator<'a> {
         }
     }
 }
-impl PartFeatureEvaluator for NamedPrismEvaluator<'_> {
-    type Body = NamedPrismSnapshot;
-    type Failure = EvaluationFailure;
-    fn evaluate_blend(
-        &mut self,
-        kind: oblikovati_model::feature::part::PartBlendKind,
-        _feature: oblikovati_model::feature::FeatureId,
-        _body: &Self::Body,
-        _edges: &[Vec<u8>],
-        _distance: f64,
-    ) -> Result<Self::Body, oblikovati_model::feature::part::PartFeatureFailure<Self::Failure>>
-    {
-        Err(kind.unsupported())
-    }
-
-    fn verify_body_reference(&self, body: &Self::Body, key: &[u8]) -> Result<(), String> {
+impl NamedPrismEvaluator<'_> {
+    pub(super) fn verify_body_reference(
+        &self,
+        body: &NamedPrismSnapshot,
+        key: &[u8],
+    ) -> Result<(), String> {
         body.body_report(self.history, self.document, key)
             .map(|_| ())
     }
-    fn resolve_planar_face(
+    pub(super) fn resolve_planar_face(
         &self,
-        body: &Self::Body,
+        body: &NamedPrismSnapshot,
         key: &[u8],
     ) -> Result<oblikovati_model::sketch::SketchPlane, String> {
         body.face_plane(self.history, self.document, key)
     }
-    fn evaluate_prism(
+    pub(super) fn evaluate_prism(
         &mut self,
         feature: FeatureId,
         input: ResolvedSketchPrism<'_>,
-    ) -> Result<Self::Body, EvaluationFailure> {
+    ) -> Result<NamedPrismSnapshot, EvaluationFailure> {
         self.evaluate_named(feature, input)
             .map_err(|cause| cause.for_feature(feature))
     }
@@ -84,13 +74,13 @@ impl NamedPrismEvaluator<'_> {
 }
 
 /// Inject an explicit model resolution into certified, named feature replay.
-pub struct CertifiedNamedPrismEvaluator<'a> {
+pub(super) struct CertifiedNamedPrismEvaluator<'a> {
     names: NamedPrismEvaluator<'a>,
     resolution: PrismResolutionPolicy,
 }
 impl<'a> CertifiedNamedPrismEvaluator<'a> {
     /// Bind the document and its explicit resolution; example: `CertifiedNamedPrismEvaluator::new(&history, guid, resolution)`.
-    pub fn new(
+    pub(super) fn new(
         history: &'a DocumentEditHistory,
         document: DocumentGuid,
         resolution: PrismResolution,
@@ -102,7 +92,7 @@ impl<'a> CertifiedNamedPrismEvaluator<'a> {
     }
     /// Bind the same per-sketch policy used by profile discovery.
     /// Example: `CertifiedNamedPrismEvaluator::with_policy(history, guid, policy)`.
-    pub fn with_policy(
+    pub(super) fn with_policy(
         history: &'a DocumentEditHistory,
         document: DocumentGuid,
         resolution: PrismResolutionPolicy,
@@ -113,36 +103,12 @@ impl<'a> CertifiedNamedPrismEvaluator<'a> {
         }
     }
 }
-impl PartFeatureEvaluator for CertifiedNamedPrismEvaluator<'_> {
-    type Body = NamedPrismSnapshot;
-    type Failure = EvaluationFailure;
-    fn evaluate_blend(
-        &mut self,
-        kind: oblikovati_model::feature::part::PartBlendKind,
-        _feature: oblikovati_model::feature::FeatureId,
-        _body: &Self::Body,
-        _edges: &[Vec<u8>],
-        _distance: f64,
-    ) -> Result<Self::Body, oblikovati_model::feature::part::PartFeatureFailure<Self::Failure>>
-    {
-        Err(kind.unsupported())
-    }
-
-    fn verify_body_reference(&self, body: &Self::Body, key: &[u8]) -> Result<(), String> {
-        self.names.verify_body_reference(body, key)
-    }
-    fn resolve_planar_face(
-        &self,
-        body: &Self::Body,
-        key: &[u8],
-    ) -> Result<oblikovati_model::sketch::SketchPlane, String> {
-        self.names.resolve_planar_face(body, key)
-    }
-    fn evaluate_prism(
+impl CertifiedNamedPrismEvaluator<'_> {
+    pub(super) fn evaluate_prism(
         &mut self,
         feature: FeatureId,
         input: ResolvedSketchPrism<'_>,
-    ) -> Result<Self::Body, Self::Failure> {
+    ) -> Result<NamedPrismSnapshot, EvaluationFailure> {
         let sketch = input.sketch.sketch.id();
         let result =
             crate::sketch_prism::certified::evaluate_feature(input, self.resolution, feature)?;

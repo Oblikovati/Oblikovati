@@ -127,7 +127,7 @@ impl oblikovati_model::feature::part::PartFeatureEvaluator for MartensitePrismEv
 
     fn verify_body_reference(&self, _body: &Self::Body, key: &[u8]) -> Result<(), String> {
         Err(format!(
-            "diagnostic prism reference {key:?}: expected a document-scoped NamedPrismEvaluator for body-set edits"
+            "diagnostic prism reference {key:?}: expected a document-scoped named part evaluator for body-set edits"
         ))
     }
     fn evaluate_prism(

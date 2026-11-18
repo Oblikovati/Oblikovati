@@ -298,7 +298,7 @@ fn standard_base_view_centers_and_scales_current_cube_on_sheet() {
 #[test]
 fn standard_view_projects_all_current_part_bodies_together() {
     use oblikovati_api::types::BASE_VIEW_FRONT;
-    use oblikovati_martensite::{CertifiedNamedPrismEvaluator, drawing_base_view_bodies};
+    use oblikovati_martensite::{CertifiedNamedSolidEvaluator, drawing_base_view_bodies};
     use oblikovati_model::{drawing::DrawingBaseViewDefinition, feature::AuthoredFeature};
     let mut snapshot = cube_document();
     let definition = SketchPrismDefinition::new(
@@ -312,12 +312,15 @@ fn standard_view_projects_all_current_part_bodies_together() {
     snapshot.work_geometry.append(second).unwrap();
     let mut history = owner(snapshot);
     let mut evaluator =
-        CertifiedNamedPrismEvaluator::new(&history, document(), certified_resolution());
+        CertifiedNamedSolidEvaluator::new(&history, document(), certified_resolution());
     let result = history
         .snapshot()
         .evaluate_part_features(&mut evaluator)
         .unwrap();
-    let bodies: Vec<_> = result.ordered_bodies().collect();
+    let bodies: Vec<_> = result
+        .ordered_bodies()
+        .map(|body| body.as_prism().unwrap())
+        .collect();
     assert_eq!(bodies.len(), 2);
     let definition =
         DrawingBaseViewDefinition::new("Front", BASE_VIEW_FRONT, 1., [100., 80.]).unwrap();

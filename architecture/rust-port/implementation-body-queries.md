@@ -156,7 +156,7 @@ retains the exact target and source dependency. Malformed, non-body, and legacy
 keys are refused by this current semantic-key definition; conversion of old Go
 body keys and legacy feature recipes remains open. The unnamed diagnostic prism
 evaluator has no document namespace and explicitly refuses reference edits.
-Production replay uses `NamedPrismEvaluator` and its exact current bindings.
+Production replay uses `CertifiedNamedSolidEvaluator` and its exact current bindings.
 
 Tests cover consumed targets, full-key mismatch, source failure, suppression,
 end-of-part, dependency protection, metadata rejection, recipe versions, invalid
