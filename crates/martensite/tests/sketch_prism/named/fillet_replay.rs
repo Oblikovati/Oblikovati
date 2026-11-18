@@ -9,6 +9,8 @@ mod chamfer_candidate;
 
 #[path = "fillet_candidate.rs"]
 mod candidate;
+#[path = "fillet_prefix_replay.rs"]
+mod prefix_replay;
 
 #[test]
 fn ordered_part_replay_builds_a_named_fillet() {

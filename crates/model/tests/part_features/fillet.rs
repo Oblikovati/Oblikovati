@@ -12,6 +12,8 @@ use oblikovati_model::{
     identity::{DocumentGuid, SemanticReferenceName},
 };
 use std::collections::BTreeSet;
+#[path = "fillet/prefix_replay.rs"]
+mod prefix_replay;
 
 fn key(feature: u64, kind: u32, role: &str) -> Vec<u8> {
     let document: DocumentGuid = "11111111-2222-3333-4444-555555555555".parse().unwrap();

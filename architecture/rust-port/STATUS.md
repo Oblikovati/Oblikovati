@@ -40,6 +40,9 @@ using this status; the live scenario directory can change.
 - A headless typed Fillet test measures three full replays without a shared
   source result and two with a warm source result: candidate and publication
   still each replay the complete part. Prefix reuse remains open (#4079).
+- Candidate tail replay can borrow a current complete prefix. A certified cube
+  Fillet test compares its names, topology, and face areas with full replay.
+  The command and publication paths do not yet use it (#4079).
 - The dock lifecycle inventory and representative first-frame native tests pass.
   Projects pointer docking, modal-child saved-layout restart, and File Properties
   native docking remain open in #4073.

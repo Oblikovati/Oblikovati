@@ -143,3 +143,36 @@ fn fillet_creation_marks_only_its_new_feature_as_dirty() {
         Some(FeatureReplayRange { start: 1, end: 2 })
     );
 }
+
+#[test]
+fn candidate_tail_requires_the_current_document_history() {
+    use oblikovati_model::feature::{AuthoredFeature, part::PartFeatureDefinition};
+    let mut owner = session(7);
+    let mut slot = PartSlot::default();
+    publish(&mut owner, &mut slot);
+    let mut candidate = owner.snapshot().clone();
+    let definition = fillet_input();
+    let reads = definition.reads();
+    candidate
+        .work_geometry
+        .append(AuthoredFeature::new(
+            FeatureId(2),
+            "Fillet",
+            PartFeatureDefinition::Fillet(Box::new(definition)),
+            reads,
+        ))
+        .unwrap();
+    assert!(
+        slot.preview_candidate_tail(&owner, &candidate, &mut FakePrismEvaluator::default())
+            .is_ok()
+    );
+    assert!(
+        slot.preview_candidate_tail(&session(7), &candidate, &mut FakePrismEvaluator::default())
+            .is_err()
+    );
+    edit_depth(&mut owner, "3 cm");
+    assert!(
+        slot.preview_candidate_tail(&owner, &candidate, &mut FakePrismEvaluator::default())
+            .is_err()
+    );
+}

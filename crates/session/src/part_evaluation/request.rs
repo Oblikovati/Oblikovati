@@ -26,7 +26,7 @@ impl PartEvaluationRequest {
         Ok(CompletedPartSketchRecompute {
             part: CompletedPartEvaluation {
                 document: self.document,
-                snapshot: self.snapshot,
+                scope,
                 evaluation,
             },
             sketches,
@@ -50,7 +50,7 @@ impl PartEvaluationRequest {
             .map_err(PartEvaluationError::Replay)?;
         Ok(CompletedPartEvaluation {
             document: self.document,
-            snapshot: self.snapshot,
+            scope,
             evaluation,
         })
     }
@@ -63,12 +63,12 @@ pub struct CompletedPartSketchRecompute<Body, Failure> {
 /// A sealed completed receipt. Only its session can publish it into result storage.
 pub struct CompletedPartEvaluation<Body, Failure> {
     pub(super) document: u64,
-    pub(super) snapshot: HistoryEvaluationSnapshot,
+    pub(super) scope: EvaluationScope,
     pub(super) evaluation: PartFeatureEvaluation<Body, Failure>,
 }
 impl<Body, Failure> CompletedPartEvaluation<Body, Failure> {
     pub(super) fn scope(&self) -> &EvaluationScope {
-        self.snapshot.scope()
+        &self.scope
     }
     pub(super) fn validate<O: TransactionObserver>(
         &self,

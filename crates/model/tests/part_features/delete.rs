@@ -100,6 +100,64 @@ fn deletion_consumes_current_body_and_reports_its_exact_key() {
             .all(|r| r.status == FeatureEvaluationStatus::Healthy)
     );
 }
+
+#[test]
+fn candidate_tail_replays_deletion_without_mutating_the_retained_prefix() {
+    let mut owner = part_owner();
+    append_prism(&mut owner);
+    let source = owner.snapshot().clone();
+    let retained = source.evaluate_part_features(&mut NamedReplayFake).unwrap();
+    let mut candidate = source.clone();
+    delete_entry(&mut candidate, 3, body_key(2, 4));
+    let preview = retained
+        .replay_candidate_tail(&candidate, &mut NamedReplayFake)
+        .unwrap();
+    let full = candidate
+        .evaluate_part_features(&mut NamedReplayFake)
+        .unwrap();
+    assert_eq!(preview.health(), full.health());
+    assert_eq!(preview.body_count(), full.ordered_bodies().count());
+    assert!(!preview.has_body(FeatureId(2)));
+    assert!(retained.body(FeatureId(2)).is_some());
+}
+
+#[test]
+fn candidate_tail_refuses_changed_prefix_inputs_and_retains_failures() {
+    let mut owner = part_owner();
+    append_prism(&mut owner);
+    let source = owner.snapshot().clone();
+    let retained = source.evaluate_part_features(&mut NamedReplayFake).unwrap();
+    let mut candidate = source.clone();
+    delete_entry(&mut candidate, 3, body_key(2, 4));
+    candidate.parameters.set_expression(3, "3 cm").unwrap();
+    assert!(
+        retained
+            .replay_candidate_tail(&candidate, &mut NamedReplayFake)
+            .is_err()
+    );
+    let mut invalid = source.clone();
+    let wrong = SemanticReferenceName::new(
+        "11111111-2222-3333-4444-555555555555".parse().unwrap(),
+        2,
+        4,
+        "other",
+        "body",
+        &[1],
+    )
+    .unwrap()
+    .encode()
+    .unwrap();
+    delete_entry(&mut invalid, 3, wrong);
+    let preview = retained
+        .replay_candidate_tail(&invalid, &mut NamedReplayFake)
+        .unwrap();
+    let full = invalid
+        .evaluate_part_features(&mut NamedReplayFake)
+        .unwrap();
+    assert_eq!(preview.health(), full.health());
+    assert_eq!(preview.body_count(), full.ordered_bodies().count());
+    assert!(retained.body(FeatureId(2)).is_some());
+}
 #[test]
 fn a_second_deletion_fails_locally_and_independent_feature_runs() {
     let mut snapshot = deletion_document();
